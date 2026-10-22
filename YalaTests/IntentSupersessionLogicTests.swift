@@ -87,4 +87,37 @@ struct IntentSupersessionLogicTests {
         #expect(drops.isEmpty)
         #expect(accept == true)
     }
+
+    // MARK: - Cambio de Apple ID vs. aviso del espejo tardío (2026-09-14)
+
+    @Test func appleIDChanged_supersedes_iCloudMismatch() {
+        // Los dos salen del MISMO disparador (`NSUbiquityIdentityDidChange`) y el viejo se encola
+        // primero, porque es síncrono. Sin la regla se drenan los dos: dos `.alert` encadenados del
+        // anchor de `ContentView`. Y el consejo del viejo —«reabre para sincronizar»— es falso con la
+        // cuenta cambiada: sincronizaría el corpus del Apple ID anterior contra el nuevo.
+        let (drops, accept) = IntentSupersessionLogic.decisions(
+            queued: [.iCloudMismatch], incoming: .appleIDChangedClosePrivate)
+        #expect(drops == ["iCloudMismatch"])
+        #expect(accept == true)
+    }
+
+    @Test func appleIDChanged_noTiraOtrosCriticos() {
+        // El control en la dirección contraria: la regla nombra UN intent, no «todo lo que haya».
+        // Un `.remoteWipe` en cola es otro borrado con su propia confirmación y no se le pisa.
+        let (drops, _) = IntentSupersessionLogic.decisions(
+            queued: [.remoteWipe(skipOnboarding: false), .showInviteError("x")],
+            incoming: .appleIDChangedClosePrivate)
+        #expect(drops.isEmpty)
+    }
+
+    @Test func iCloudMismatch_noTiraAlDelAppleID() {
+        // La simetría NO está en las reglas a propósito: `decisions` solo mira la cola, así que el caso
+        // «el mismatch llega DESPUÉS» no se puede expresar aquí. Lo cierra un guard en
+        // `AppBootstrapper.checkForICloudMismatch`. Este caso fija que aquí no se resuelve, para que
+        // nadie retire aquel guard creyendo que esta regla lo cubre.
+        let (drops, accept) = IntentSupersessionLogic.decisions(
+            queued: [.appleIDChangedClosePrivate], incoming: .iCloudMismatch)
+        #expect(drops.isEmpty)
+        #expect(accept == true)
+    }
 }

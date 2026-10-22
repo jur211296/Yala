@@ -12,6 +12,15 @@ struct GroupMemberRow: View {
     let member: SplitMember
     let groupColorHex: String
     let isCurrentUserAdmin: Bool
+    /// ¿Esta fila soy YO? Lo decide quien monta la lista, con la identidad RESUELTA — no se lee
+    /// `member.isCurrentUser` aquí a propósito.
+    ///
+    /// El flag es local y `applyMember` no lo enciende: un admin cuyo member bajó por el pull (2º
+    /// device, reinstalación, aprobación en vivo) resuelve identidad por `sub` y ve
+    /// `isCurrentUserAdmin == true`, pero su fila sigue con el flag apagado. Con la condición
+    /// leyendo el flag, su PROPIA fila mostraba «quitar» y «cambiar rol» — y el botón funciona:
+    /// llama al RPC. Se podía echar de su propio grupo.
+    let isSelf: Bool
     let onChangeRole: () -> Void
     let onRemove: () -> Void
     var onApprove: (() -> Void)? = nil
@@ -27,7 +36,7 @@ struct GroupMemberRow: View {
             // Name + role
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xs) {
-                    Text(member.displayName)
+                    Text(member.resolvedDisplayName)
                         .font(DS.Typography.body)
                         .foregroundStyle(member.isActive ? .primary : .secondary)
 
@@ -48,7 +57,7 @@ struct GroupMemberRow: View {
             Spacer()
 
             // Admin actions
-            if isCurrentUserAdmin && !member.isCurrentUser && !member.isGroupOwner {
+            if isCurrentUserAdmin && !isSelf && !member.isGroupOwner {
                 if member.memberStatus == .pendingApproval, let onApprove, let onReject {
                     // Iconos circulares (vs botones text): caben junto al badge
                     // "Pendiente de aprobación" sin truncar nombre/label.
@@ -62,6 +71,7 @@ struct GroupMemberRow: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(L10n.Groups.Member.approve)
+                        .accessibilityIdentifier("group_member_approve_\(member.displayName)")
 
                         Button(action: onReject) {
                             Image(systemName: "xmark.circle.fill")
@@ -72,6 +82,7 @@ struct GroupMemberRow: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(L10n.Groups.Member.reject)
+                        .accessibilityIdentifier("group_member_reject_\(member.displayName)")
                     }
                 } else if member.isActive {
                     Menu {
@@ -94,6 +105,10 @@ struct GroupMemberRow: View {
                             .contentShape(Rectangle())
                     }
                     .accessibilityLabel(L10n.Groups.Member.actions)
+                    // El id lleva el nombre dentro para poder afirmar de QUIÉN es el control. Es lo
+                    // que permite el test de la auto-expulsión: que exista el de otro miembro y NO
+                    // exista el propio. Sin nombre solo se podría contar, y contar no dice de quién.
+                    .accessibilityIdentifier("group_member_actions_\(member.displayName)")
                 }
             }
         }
@@ -156,6 +171,6 @@ struct GroupMemberRow: View {
     }
 
     private var initialLetter: String {
-        String(member.displayName.prefix(1)).uppercased()
+        String(member.resolvedDisplayName.prefix(1)).uppercased()
     }
 }

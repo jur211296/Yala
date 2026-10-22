@@ -122,12 +122,14 @@ struct AmountText: View {
         integerFont: Font = .subheadline,
         secondaryFont: Font = .caption,
         tintColor: Color? = nil,
-        forceFullPrecision: Bool = false
+        forceFullPrecision: Bool = false,
+        isEstimate: Bool = false
     ) -> AttributedString {
         let formatted = prefs.currency(
             value,
             currencyCode: currencyCode,
-            forceFullPrecision: forceFullPrecision
+            forceFullPrecision: forceFullPrecision,
+            isEstimate: isEstimate
         )
         let identifier = prefs.currencyIdentifier(for: currencyCode)
         let decimalSep = Locale.current.decimalSeparator ?? "."

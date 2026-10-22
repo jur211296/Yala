@@ -60,7 +60,7 @@ struct GroupExpenseComposerView: View {
                 selectedGroup = picked
                 showGroupPicker = false
             }
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+            .yalaSheetDetents([.medium, .large])
         }
     }
 

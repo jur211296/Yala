@@ -75,6 +75,10 @@ struct PlannedOccurrenceBuilderTests {
     private struct IdentityConverter: CurrencyConverting {
         func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal { amount }
         func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal { amount }
+        func convertChecked(_ amount: Decimal, from: String, to: String, on date: Date)
+            -> (amount: Decimal, quality: RateQuality) { (amount, .exact) }
+        func convertCheckedWithLatestRate(_ amount: Decimal, from: String, to: String)
+            -> (amount: Decimal, quality: RateQuality) { (amount, .exact) }
     }
 
     /// Fixed-rate converter (USD → PEN at 4.0).
@@ -82,6 +86,10 @@ struct PlannedOccurrenceBuilderTests {
         let rate: Decimal
         func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal { amount * rate }
         func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal { amount * rate }
+        func convertChecked(_ amount: Decimal, from: String, to: String, on date: Date)
+            -> (amount: Decimal, quality: RateQuality) { (amount * rate, .exact) }
+        func convertCheckedWithLatestRate(_ amount: Decimal, from: String, to: String)
+            -> (amount: Decimal, quality: RateQuality) { (amount * rate, .exact) }
     }
 
     // MARK: - Tests

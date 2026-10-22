@@ -13,13 +13,16 @@ import UIKit
 /// but still want the native iOS swipe-back gesture to work.
 struct SwipeBackModifier: ViewModifier {
     @Environment(\.dismiss) private var dismiss
+    /// `false` deja la vista como si no llevara el modificador, sin cambiar su identidad (el detalle de grupo en la
+    /// columna de un split, que alterna con el empujado al redimensionar la ventana).
+    var isEnabled = true
 
     func body(content: Content) -> some View {
         content
-            .navigationBarBackButtonHidden(true)
-            .background(
-                SwipeBackHelper()
-            )
+            .navigationBarBackButtonHidden(isEnabled)
+            .background {
+                if isEnabled { SwipeBackHelper() }
+            }
     }
 }
 
@@ -49,7 +52,7 @@ extension View {
     /// Hides the navigation back button while preserving the swipe-back gesture.
     /// Use this instead of `.navigationBarBackButtonHidden(true)` when you want custom toolbar buttons
     /// but still want the native iOS swipe-back gesture to work.
-    func swipeBack() -> some View {
-        modifier(SwipeBackModifier())
+    func swipeBack(isEnabled: Bool = true) -> some View {
+        modifier(SwipeBackModifier(isEnabled: isEnabled))
     }
 }

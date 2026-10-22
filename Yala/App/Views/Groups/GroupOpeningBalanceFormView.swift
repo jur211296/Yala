@@ -133,7 +133,7 @@ struct GroupOpeningBalanceFormView: View {
                 NavigationStack {
                     CurrencySelectorView(selectedCurrency: $selectedCurrency)
                 }
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
             }
             .alert(L10n.Common.error, isPresented: $showError) {
                 Button(L10n.Common.ok) {}

@@ -256,7 +256,10 @@ struct ReportConfig: Equatable, Sendable {
 @Model
 final class NotificationItem {
     // CloudKit: defaults required
-    var id: UUID = UUID()
+    // I12: identidad de sync del Modo Nube (`sync_id_source = NotificationItem.id`).
+    // `.preserveValueOnDeletion` para que el history tombstone conserve el `id` (metadata de History;
+    // sin deploy .ckdb).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
     var name: String = ""
     var text: String = ""
     var hour: Int = 12
@@ -449,13 +452,16 @@ final class NotificationItem {
                 reportConfig: ReportConfig(dataType: .expenses, dayPreference: .firstDay)
             ),
             // Sistema
+            // isActive: true — el gate horario es HONESTO (inactive = silencio real, ver
+            // ScheduledPaymentNotificationGateLogic); con el default histórico en false los
+            // usuarios nuevos no recibirían ningún recordatorio de pagos hasta tocar Ajustes.
             NotificationItem(
                 name: L10n.Notifications.scheduledPaymentsName,
                 text: "", // Generated dynamically based on payment
                 hour: NotificationType.scheduledPayments.defaultTime.hour,
                 minute: NotificationType.scheduledPayments.defaultTime.minute,
                 type: .scheduledPayments,
-                isActive: false,
+                isActive: true,
                 sortOrder: 5
             ),
             // Grupos

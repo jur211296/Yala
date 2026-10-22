@@ -22,6 +22,8 @@ struct SuggestedLine: Identifiable {
     var estimationMethod: EstimationMethod
     let monthsWithActivity: Int
     var isSelected: Bool
+    /// `suggestedAmount` salió de convertir el pago programado con una tasa no exacta («≈»).
+    var isApproximate: Bool = false
 }
 
 // MARK: - ViewModel
@@ -115,9 +117,14 @@ final class CashFlowPlanViewModel {
                 && $0.subcategory?.isAnySystem != true
         }
         let resolvedCurrency = currencyCode.isEmpty ? "USD" : currencyCode
+        // Netea los gastos de grupo bridgeados a "mi parte". Se construye del set AMPLIO
+        // (`transactions`, con AMBAS hermanas) aunque el index se arme del subset filtrado.
+        let adjustment: GroupBridgeStatsAdjustment = modelContext
+            .map { GroupBridgeStatsAdjustment.build(from: transactions, context: $0) }
+            ?? .build(from: transactions)
         let index = TransactionIndex(
             transactions: validTransactions, currencyCode: resolvedCurrency,
-            converter: CurrencyConverter.shared, calendar: calendar
+            adjustment: adjustment, converter: CurrencyConverter.shared, calendar: calendar
         )
         cachedIndex = index
         cachedReferenceDate = currentMonthStart
@@ -201,6 +208,9 @@ final class CashFlowPlanViewModel {
         let existingCatKeys = Set(suggestions.compactMap { $0.category?.persistentModelID })
 
         for payment in scheduledPayments where payment.isActive {
+            let converted = ScheduledPaymentAmountConversion.magnitude(
+                of: payment, in: resolvedCurrency, converter: CurrencyConverter.shared
+            )
             let paymentSubKey = payment.subcategory?.persistentModelID
             let paymentCatKey = payment.subcategory?.category?.persistentModelID
 
@@ -214,10 +224,11 @@ final class CashFlowPlanViewModel {
                 scheduledPayment: payment,
                 name: payment.name,
                 isIncome: payment.transactionType == "income",
-                suggestedAmount: abs(payment.amount),
+                suggestedAmount: converted.amount,
                 estimationMethod: .scheduled,
                 monthsWithActivity: 6,
-                isSelected: true
+                isSelected: true,
+                isApproximate: converted.isApproximate
             ))
         }
 
@@ -245,6 +256,8 @@ final class CashFlowPlanViewModel {
         suggestedLines[idx].suggestedAmount = calculateAmount(
             for: suggestedLines[idx], method: method, manualAmount: manualAmount
         )
+        suggestedLines[idx].isApproximate = method == .scheduled
+            && (scheduledConversion(for: suggestedLines[idx])?.isApproximate ?? false)
     }
 
     /// Preview amount for a method without mutating state
@@ -252,12 +265,20 @@ final class CashFlowPlanViewModel {
         calculateAmount(for: line, method: method, manualAmount: manualAmount)
     }
 
+    /// El pago de la línea en la divisa del plan; `nil` si la línea no lleva pago.
+    private func scheduledConversion(for line: SuggestedLine) -> ScheduledPaymentAmountConversion.Result? {
+        guard let payment = line.scheduledPayment else { return nil }
+        return ScheduledPaymentAmountConversion.magnitude(
+            of: payment, in: cachedCurrencyCode ?? payment.currencyCode, converter: CurrencyConverter.shared
+        )
+    }
+
     private func calculateAmount(for line: SuggestedLine, method: EstimationMethod, manualAmount: Double? = nil) -> Double {
         if method == .manual {
             return manualAmount ?? line.suggestedAmount
         }
-        if method == .scheduled, let payment = line.scheduledPayment {
-            return abs(payment.amount)
+        if method == .scheduled, let converted = scheduledConversion(for: line) {
+            return converted.amount
         }
         guard let index = cachedIndex, let refDate = cachedReferenceDate else {
             return line.suggestedAmount
@@ -411,14 +432,17 @@ final class CashFlowPlanViewModel {
     func setOverride(line: CashFlowLine, monthKey: String, amount: Double, note: String) {
         guard let ctx = modelContext else { return }
 
-        // Remove existing override for same monthKey
-        if let existing = line.overrides?.first(where: { $0.monthKey == monthKey }) {
+        // Remove existing override for same monthKey. También uno del legado (`overrides`) que aún no migró:
+        // si no, quedarían dos ajustes del mismo mes y la pantalla enseñaría cualquiera de los dos.
+        for existing in Self.overrides(of: line, monthKey: monthKey) {
             ctx.delete(existing)
         }
 
         let override = CashFlowOverride(monthKey: monthKey, amount: amount, note: note)
         ctx.insert(override)
-        override.line = line
+        // `cashFlowLine`, NUNCA `line`: el campo de `line` lo rechaza iCloud en Production
+        // (`CashFlowOverrideLineMigration`).
+        override.cashFlowLine = line
 
         do {
             try ctx.save()
@@ -447,8 +471,9 @@ final class CashFlowPlanViewModel {
 
     func removeOverride(line: CashFlowLine, monthKey: String) {
         guard let ctx = modelContext else { return }
-        if let existing = line.overrides?.first(where: { $0.monthKey == monthKey }) {
-            ctx.delete(existing)
+        let existing = Self.overrides(of: line, monthKey: monthKey)
+        if !existing.isEmpty {
+            existing.forEach { ctx.delete($0) }
             do {
                 try ctx.save()
             } catch {
@@ -457,6 +482,11 @@ final class CashFlowPlanViewModel {
                 #endif
             }
         }
+    }
+
+    /// Los ajustes de ese mes de la línea, en las dos relaciones: la nueva y la de legado que aún no migró.
+    static func overrides(of line: CashFlowLine, monthKey: String) -> [CashFlowOverride] {
+        ((line.monthOverrides ?? []) + (line.overrides ?? [])).filter { $0.monthKey == monthKey }
     }
 
     // MARK: - Recalculate
@@ -490,6 +520,12 @@ final class CashFlowPlanViewModel {
             monthsBack = 0 // Free: only current month
         }
 
+        // Netea los gastos de grupo bridgeados a "mi parte" en la proyección. Set AMPLIO
+        // (`transactions`, con AMBAS hermanas); sin context cae al `build(from:)` puro.
+        let adjustment: GroupBridgeStatsAdjustment = modelContext
+            .map { GroupBridgeStatsAdjustment.build(from: transactions, context: $0) }
+            ?? .build(from: transactions)
+
         projection = CashFlowProjectionCalculator.calculate(
             plan: plan,
             lines: lines,
@@ -500,6 +536,7 @@ final class CashFlowPlanViewModel {
             monthsBack: monthsBack,
             monthsAhead: monthsAhead,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
     }

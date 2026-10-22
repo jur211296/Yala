@@ -204,9 +204,6 @@ enum DS {
         static let infoForeground = Color.blue
         static let undoForeground = Color.teal
         static let imageAccent = Color.teal
-        // Group expense split-method chip — teal con mejor contraste que infoBackground (azul) en dark mode.
-        static let splitMethodBackground = Color.teal.opacity(0.18)
-        static let splitMethodForeground = Color.teal
     }
 
     // MARK: - Shadow
@@ -376,6 +373,16 @@ enum DS {
 
         /// Icon size inside FAB menu buttons
         static let fabMenuIconSize: CGFloat = 24
+
+        /// Margen inferior que necesita el contenido de un scroll para que su última fila suba por encima de una pila
+        /// de `buttons` botones flotantes plegada: los botones, su separación (`Spacing.md`), su margen inferior
+        /// (`Spacing.xxl`) y `Spacing.lg` de aire. Va DENTRO del contenido del scroll, que ya suma el área segura por
+        /// debajo, así que es relativo a ella y no a una altura fija. Con un botón da 96 (el `Spacing.safeBottom` de
+        /// 100 ya lo cubre); con dos (Yala IA + «+», `FABStackView`), 164.
+        static func fabStackClearance(buttons: Int) -> CGFloat {
+            let count = CGFloat(max(buttons, 1))
+            return count * fabSize + (count - 1) * Spacing.md + Spacing.xxl + Spacing.lg
+        }
     }
 
     // MARK: - Icon Badge Dimensions
@@ -421,20 +428,133 @@ enum DS {
             isWideScreen(sizeClass) ? DS.Spacing.xxxl : DS.Spacing.lg
         }
 
-        /// True on iPad and Mac Catalyst, where medium/fixed-height sheets are
-        /// forced to `.large` (too small otherwise for pickers / complex content).
-        /// Used both to adapt detents and to pick the sheet background variant:
-        /// a "partial" sheet is effectively `.large` here, so it must be `.subtle`,
-        /// not `.transparent`.
-        static var usesLargeSheets: Bool {
-            UIDevice.current.userInterfaceIdiom == .pad
-                || ProcessInfo.processInfo.isiOSAppOnMac
+        /// Si las hojas con detent parcial (`.medium`, `.height`) se fuerzan a `.large`.
+        ///
+        /// Decide el ESPACIO de la ventana, no el aparato (ADR «Yala se adapta por espacio, no por
+        /// dispositivo», 2026-09-27): una ventana de ancho regular —iPad a pantalla completa, iPhone Duo
+        /// abierto— las fuerza a grandes; una compacta —cualquier iPhone, iPad en ventana estrecha o
+        /// Split View— deja los detents de iPhone. En Mac, siempre grandes.
+        ///
+        /// Las vistas no la llaman: leen `\.usesLargeSheets`, que la raíz calcula con el size class de
+        /// la ventana (`sizesSheetsByWindow()`). Dentro de una hoja el `horizontalSizeClass` lo fija la
+        /// presentación y no tiene por qué ser el de la ventana que la presenta.
+        static func usesLargeSheets(
+            windowHorizontalSizeClass: UserInterfaceSizeClass?,
+            isiOSAppOnMac: Bool = ProcessInfo.processInfo.isiOSAppOnMac
+        ) -> Bool {
+            isiOSAppOnMac || windowHorizontalSizeClass == .regular
         }
 
-        /// Forces .large detents on iPad and Mac Catalyst where
-        /// medium/fixed-height sheets are too small for pickers and complex content.
-        static func sheetDetents(_ detents: Set<PresentationDetent>) -> Set<PresentationDetent> {
+        /// Ancho de gráfica a partir del cual crece su alto. Una gráfica de un iPhone de 375 pt mide ~311 pt dentro
+        /// de su tarjeta: por debajo de este umbral, así que en el iPhone más pequeño no cambia nada.
+        static let chartGrowthReferenceWidth: CGFloat = 320
+
+        /// Techo del crecimiento: +20 %. En un Pro Max (gráfica de ~376 pt) la de 170 pt pasa a ~200 pt.
+        static let chartMaxGrowth: CGFloat = 1.2
+
+        /// Alto de una gráfica que aprovecha el ancho de los iPhone grandes (ticket
+        /// `iphone-large-models-use-the-extra-width`): conserva la proporción que tiene en el iPhone pequeño, con
+        /// techo. Decide el ANCHO medido de la gráfica, no el aparato. Solo en ancho compacto: en regular (iPad, Duo
+        /// abierto) la composición la decide la fase 2b y el alto se queda en `base`. Sin size class conocido o sin
+        /// ancho medido todavía, `base`.
+        ///
+        /// En la vista, `AdaptiveChartHeight`.
+        static func chartHeight(
+            base: CGFloat,
+            width: CGFloat,
+            sizeClass: UserInterfaceSizeClass?
+        ) -> CGFloat {
+            guard sizeClass == .compact, width > chartGrowthReferenceWidth else { return base }
+            let growth = min(width / chartGrowthReferenceWidth, chartMaxGrowth)
+            return (base * growth).rounded()
+        }
+
+        /// Fuerza `.large` cuando la ventana pide hojas grandes: ahí un detent medio o de altura fija se
+        /// queda corto para selectores y contenido complejo. En la vista, `.yalaSheetDetents(_:)`.
+        static func sheetDetents(
+            _ detents: Set<PresentationDetent>,
+            usesLargeSheets: Bool
+        ) -> Set<PresentationDetent> {
             usesLargeSheets ? [.large] : detents
+        }
+
+        /// Ancho legible: tope del contenido de una columna de detalle o de un formulario en una ventana
+        /// ancha. Más allá, las filas se separan tanto que concepto e importe dejan de leerse juntos.
+        static let readableWidth: CGFloat = 700
+
+        /// Margen lateral de una lista agrupada de ajustes (`YalaSettingsList`). Con la ventana estrecha, el
+        /// margen adaptativo de siempre (`horizontalPadding`); cuando el contenido pasaría de `readableWidth`, lo
+        /// que sobre a cada lado, para que los bloques queden centrados y no más anchos que eso. Decide el ancho
+        /// MEDIDO de la lista, no el aparato ni la orientación. Sin ancho medido todavía, el margen de siempre.
+        static func readableListMargin(containerWidth: CGFloat, sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+            let base = horizontalPadding(sizeClass)
+            guard containerWidth > 0 else { return base }
+            return max(base, ((containerWidth - readableWidth) / 2).rounded(.down))
+        }
+
+        /// Margen de cada lado de una lista agrupada de ajustes, contando lo que la tapa por ese lado: el margen
+        /// legible MÁS el área segura de ese lado. Hace falta sumarla a mano porque el sistema no lo hace: con
+        /// `contentMargins` se queda con el mayor de los dos, y al lado de la columna de lista de un split (área
+        /// segura de 400 pt en el iPad mini girado) el bloque arrancaba pegado a ella (medido 2026-10-03).
+        /// `containerWidth` es el que mide la vista, que ya viene sin el área segura.
+        static func readableListInsets(
+            containerWidth: CGFloat,
+            safeLeading: CGFloat,
+            safeTrailing: CGFloat,
+            sizeClass: UserInterfaceSizeClass?
+        ) -> (leading: CGFloat, trailing: CGFloat) {
+            let margin = readableListMargin(containerWidth: containerWidth, sizeClass: sizeClass)
+            return (max(safeLeading, 0) + margin, max(safeTrailing, 0) + margin)
+        }
+
+        /// Anchos de la columna de lista de un `NavigationSplitView` (Registros, Planificación). El mínimo
+        /// es el ancho del iPhone más estrecho (375): las filas ya están medidas ahí. Sin tope propio el split
+        /// la deja en ~280-320 y las filas de presupuesto parten el importe en tres líneas (medido 2026-09-29).
+        static let listColumnMinWidth: CGFloat = 375
+        static let listColumnIdealWidth: CGFloat = 400
+        static let listColumnMaxWidth: CGFloat = 480
+
+        /// Los mismos anchos con tamaños de texto de accesibilidad (AX1–AX5). Con AX5, «Este mes» y el chip
+        /// «Presupuestos» (392 pt) caben en los 408 pt de contenido del Pro Max vertical y se parten en un SE:
+        /// 408 + 32 de márgenes = 440. El margen de la isla del iPhone girado NO cuenta: el split lo suma encima
+        /// (pedida a 520, la columna midió 582 en el Pro Max girado, medido 2026-10-01). El mínimo es también el
+        /// umbral de dos columnas: por debajo, la lista se aparta al abrir algo (`listYieldsToDetail`) y la página se
+        /// pliega a la pila (`foldsForAccessibilityText`) — en el Pro Max girado el split no la pone AL LADO del
+        /// detalle a ningún ancho que lea AX5 (a 522 y a 582 la superponía sobre «Elige un…»).
+        static let listColumnAccessibilityMinWidth: CGFloat = 440
+        static let listColumnAccessibilityIdealWidth: CGFloat = 460
+        static let listColumnAccessibilityMaxWidth: CGFloat = 520
+
+        /// Anchos de la columna de lista según el tamaño del texto: con los de accesibilidad, más ancha.
+        static func listColumnWidths(isAccessibilityText: Bool) -> ListColumnWidths {
+            isAccessibilityText
+                ? ListColumnWidths(
+                    min: listColumnAccessibilityMinWidth,
+                    ideal: listColumnAccessibilityIdealWidth,
+                    max: listColumnAccessibilityMaxWidth)
+                : ListColumnWidths(min: listColumnMinWidth, ideal: listColumnIdealWidth, max: listColumnMaxWidth)
+        }
+
+        struct ListColumnWidths: Equatable {
+            let min: CGFloat
+            let ideal: CGFloat
+            let max: CGFloat
+        }
+
+        /// Ancho mínimo de cada columna de una rejilla en pares (`PairedColumnsLayout`, `HeaderBandLayout`): si no
+        /// caben dos, una. Un pelo por debajo del contenido de un iPhone SE (343), donde las tarjetas ya están medidas,
+        /// y por encima de las 290 que quedarían con Yala IA abierto al lado.
+        static let pairedColumnMinWidth: CGFloat = 320
+
+        /// Por debajo de este alto, un contenedor tiene «poco alto» y la cabecera de resumen se compacta
+        /// (`SummaryHeaderStack`). El alto es el del contenedor CONTANDO las barras que se le superponen (navegación,
+        /// pestañas): lo visible a secas cambia con el título grande y en un SE vertical, bajo el título y los chips
+        /// de Estadísticas, ya bajaba de 420. Así medido (2026-10-01): girados ≤ ~440 (Pro Max), en vertical ≥ ~615
+        /// (Estadísticas en un SE). Queda en medio.
+        static let shortContainerMaxHeight: CGFloat = 500
+
+        static func isShortContainer(height: CGFloat) -> Bool {
+            height > 0 && height < shortContainerMaxHeight
         }
     }
 
@@ -479,6 +599,13 @@ enum DS {
 
         /// Corner radius (uses Radius.card)
         static let radius: CGFloat = 14
+
+        /// Radio de la sombra de la fila (`.listRowCard()`). Más ajustada que
+        /// `DS.Shadow.*`: una lista larga con sombras difusas se ensucia.
+        static let shadowRadius: CGFloat = 6
+
+        /// Desplazamiento vertical de la sombra de la fila (`.listRowCard()`).
+        static let shadowY: CGFloat = 3
     }
 
     // MARK: - Typography
@@ -489,6 +616,9 @@ enum DS {
         // MARK: Headings
         /// Screen titles, large headers
         static let largeTitle = Font.largeTitle.weight(.semibold)
+        /// Titular de las pantallas de entrada del Welcome: serif del sistema (New York), cálido, en el
+        /// tamaño de `largeTitle` y con Dynamic Type. Solo para el Welcome (referencia del 15-sep).
+        static let welcomeHeadline = Font.system(.largeTitle, design: .serif, weight: .bold)
         /// Section headers
         static let title = Font.title2.weight(.semibold)
         /// Subsection headers
@@ -559,8 +689,19 @@ enum DS {
         // minimumScaleFactor(0.7) en AmountText (no Dynamic Type).
         /// Hero amount integer — monto protagonista (Panel hero, Stats heroes, success screens).
         static let heroAmount = Font.system(size: 44, weight: .semibold)
+
+        /// Cifra del hero DEL PANEL. Vive aparte de `heroAmount` (44) a
+        /// propósito: ese token lo comparten 14 ficheros —Estadísticas, Bandeja,
+        /// Grupos, Transacciones, Planificación, Favoritos— y encogerlo ahí
+        /// cambiaría la cifra grande de toda la app. En el Panel el hero compite
+        /// con trece widgets debajo y 44 pt se comen el aire de todo lo que sigue.
+        static let panelHeroAmount = Font.system(size: 36, weight: .semibold)
         /// Hero amount secondary — symbol/decimal del hero (20pt regular).
         static let heroAmountSecondary = Font.system(size: 20, weight: .regular)
+
+        /// Símbolo y decimales de `panelHeroAmount`. Mantiene la misma
+        /// proporción respecto al entero que la pareja `heroAmount`/`Secondary`.
+        static let panelHeroAmountSecondary = Font.system(size: 17, weight: .regular)
     }
 
     // MARK: - Sizing

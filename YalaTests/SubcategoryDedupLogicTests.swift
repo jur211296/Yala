@@ -12,6 +12,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct SubcategoryDedupLogicTests {
 
     // Stable, orderable shortcutIDs for deterministic keeper assertions.

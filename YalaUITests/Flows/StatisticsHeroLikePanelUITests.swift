@@ -1,0 +1,203 @@
+//
+//  StatisticsHeroLikePanelUITests.swift
+//  YalaUITests
+//
+//  El hero de Estadísticas es el del Panel en las cuatro pestañas y en todas las subvistas de Distribución, y lleva
+//  los mismos flotantes (Yala IA y «+»). Ticket `distribution-subviews-miss-the-new-panel-hero`, decisión de Jürgen
+//  del 2026-10-03.
+//
+//  Qué distingue el hero del Panel del de antes, en una medida: el rótulo de la cifra («Neto del período», «Saldo de
+//  cuentas»…) va ARRIBA A LA IZQUIERDA, en el eje del resto de la pantalla, y no centrado bajo la cifra. Centrado, su
+//  borde izquierdo caía a ~140 pt en un iPhone 17 Pro; alineado, a 16. El umbral de 40 pt separa los dos con margen
+//  en cualquier iPhone y con el texto de accesibilidad.
+//
+//  Seed `minimal`, en Pro (los flotantes de voz e imagen no cambian nada aquí, pero así el chat no sale bloqueado).
+//
+
+import XCTest
+
+final class StatisticsHeroLikePanelUITests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = false
+    }
+
+    /// Lo que el hero tiene que cumplir en cada sitio: rótulo a la vista y a la izquierda, y los dos flotantes.
+    private func assertPanelHero(_ app: XCUIApplication, in place: String, file: StaticString = #filePath, line: UInt = #line) {
+        let caption = app.staticTexts["stats_hero_caption"]
+        XCTAssertTrue(caption.waitForExistence(timeout: 15), "\(place): no se ve el rótulo del hero.", file: file, line: line)
+        let leftEdge = app.windows.firstMatch.frame.minX
+        XCTAssertLessThan(
+            caption.frame.minX - leftEdge, 40,
+            "\(place): el rótulo del hero (\(caption.frame)) no está a la izquierda como en el Panel: volvió la "
+                + "cabecera centrada.",
+            file: file, line: line)
+        XCTAssertTrue(
+            app.buttons["fab_new_transaction"].waitForExistence(timeout: 5),
+            "\(place): falta «+» (fab_new_transaction), que en el Panel está siempre a mano.", file: file, line: line)
+        XCTAssertTrue(
+            app.buttons["fab_chat"].exists,
+            "\(place): falta Yala IA (fab_chat) junto a «+».", file: file, line: line)
+    }
+
+    /// El hero queda a la misma distancia de los chips que el contenido de Planificación o del detalle de grupo, el aire
+    /// del Panel (ticket de tablero `hay-un-vacio-sobrante-entre-los-chips-y`, 2026-10-10). Del borde inferior del chip al
+    /// del rótulo había 42 pt en un iPhone 17 Pro, porque el hero sumaba su propio margen superior (12 pt, y más con el
+    /// texto grande) a los de la barra y el scroll; sin él quedan 30. El umbral de 36 separa los dos.
+    private func assertHeroHugsChips(_ app: XCUIApplication, chip identifier: String, in place: String,
+                                     file: StaticString = #filePath, line: UInt = #line) {
+        let caption = app.staticTexts["stats_hero_caption"]
+        XCTAssertTrue(caption.waitForExistence(timeout: 15), "\(place): no se ve el rótulo del hero.", file: file, line: line)
+        let gap = caption.frame.minY - app.buttons[identifier].frame.maxY
+        XCTAssertLessThan(
+            gap, 36,
+            "\(place): hay \(gap) pt entre los chips y el rótulo del hero; volvió el hueco sobrante bajo los chips.",
+            file: file, line: line)
+    }
+
+    /// Una página del carrusel existe en el árbol aunque esté fuera de pantalla (el `LazyHStack` monta la vecina):
+    /// lo que dice que el carrusel llegó a ella es que su centro caiga dentro de la ventana.
+    private func waitUntilOnScreen(_ element: XCUIElement, timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            // Por el marco, no por `isHittable`: fuera de pantalla éste lanza en vez de contestar `false`.
+            let window = XCUIApplication().windows.firstMatch.frame
+            if element.exists, window.contains(CGPoint(x: element.frame.midX, y: element.frame.midY)) { return true }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+        return false
+    }
+
+    private func openChip(_ app: XCUIApplication, _ identifier: String) {
+        let chip = app.buttons[identifier]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10), "No apareció el chip \(identifier).")
+        // `isHittable` no vale aquí: con el chip fuera de pantalla no contesta `false`, lanza («Activation point
+        // invalid»). Se mira el marco contra la ventana.
+        let window = app.windows.firstMatch.frame
+        if chip.frame.maxX > window.maxX || chip.frame.minX < window.minX {
+            let chipsBar = app.scrollViews.containing(.button, identifier: "detail_chip_insights").firstMatch
+            if chipsBar.exists { chipsBar.swipeLeft() }
+        }
+        chip.tap()
+    }
+
+    func test_statisticsHeroIsThePanelHero_inEveryTab() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        assertPanelHero(app, in: "Resumen")
+        assertHeroHugsChips(app, chip: "detail_chip_insights", in: "Resumen")
+
+        openChip(app, "detail_chip_tendencias")
+        assertPanelHero(app, in: "Tendencias")
+        assertHeroHugsChips(app, chip: "detail_chip_tendencias", in: "Tendencias")
+
+        openChip(app, "detail_chip_categorías")
+        assertPanelHero(app, in: "Distribución")
+        assertHeroHugsChips(app, chip: "detail_chip_categorías", in: "Distribución")
+
+        openChip(app, "detail_chip_registros")
+        assertPanelHero(app, in: "Registros")
+        assertHeroHugsChips(app, chip: "detail_chip_registros", in: "Registros")
+    }
+
+    /// «Ver más en Tendencias» abre Estadísticas directamente en Tendencias, sin pasar por Resumen. El hero de
+    /// Tendencias lee el resumen del período que antes solo se calculaba con Resumen o Distribución a la vista, así
+    /// que entrando por aquí salía vacío: sin rótulo y sin cifra (medido el 2026-10-05). Ticket
+    /// `trends-hero-keeps-the-previous-period-after-changing-it-on-trends`.
+    func test_trendsOpenedFromThePanelShowsItsHero() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let seeMore = app.buttons["Ver más en Tendencias"]
+        XCTAssertTrue(seeMore.waitForExistence(timeout: 15), "No está «Ver más en Tendencias» en el Panel.")
+        seeMore.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["stats_tab_trends"].waitForExistence(timeout: 10),
+            "«Ver más en Tendencias» no abrió Estadísticas › Tendencias.")
+        assertPanelHero(app, in: "Tendencias abierta desde el Panel")
+    }
+
+    /// Distribución tiene un solo hero para el carrusel (categoría, subcategoría, etiquetas) y para Gráficas/Detalle:
+    /// ninguna subvista lo sustituye ni lo oculta.
+    func test_distributionSubviewsKeepThePanelHero() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        openChip(app, "detail_chip_categorías")
+        assertPanelHero(app, in: "Distribución › categoría")
+
+        let page: (String) -> XCUIElement = { id in
+            app.descendants(matching: .any).matching(identifier: "distribution_page_\(id)").firstMatch
+        }
+        XCTAssertTrue(page("category").waitForExistence(timeout: 10), "No está la página de categorías del carrusel.")
+        page("category").swipeLeft()
+        XCTAssertTrue(waitUntilOnScreen(page("subcategory")), "El carrusel no pasó a subcategorías.")
+        assertPanelHero(app, in: "Distribución › subcategoría")
+
+        page("subcategory").swipeLeft()
+        XCTAssertTrue(waitUntilOnScreen(page("tags")), "El carrusel no pasó a etiquetas.")
+        assertPanelHero(app, in: "Distribución › etiquetas")
+
+        // Los dos segmentos heredan el id del contenedor, en el orden Gráficas, Detalle.
+        let modes = app.buttons.matching(identifier: "distribution_content_mode")
+        XCTAssertEqual(modes.count, 2, "El selector Gráficas/Detalle no tiene dos segmentos.")
+        modes.element(boundBy: 1).tap()
+        assertPanelHero(app, in: "Distribución › Detalle")
+
+        modes.element(boundBy: 0).tap()
+        assertPanelHero(app, in: "Distribución › Gráficas")
+    }
+
+    /// Registrar un movimiento desde Distribución cambia la cifra del hero sin salir de la pestaña. Hasta el 2026-10-09 el
+    /// hero (el saldo, y el flujo fuera de Balance) solo se recalculaba al tocar un filtro: tras el alta seguía con el
+    /// número viejo mientras el Panel ya enseñaba el nuevo (ticket `el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo`).
+    /// Con el observador viejo (`allTransactions.count`, que solo recalculaba el Sankey) este caso da rojo.
+    func test_distributionHeroFollowsANewRecord() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.tabBars.buttons.element(boundBy: 1).tap()
+        openChip(app, "detail_chip_categorías")
+
+        let heroAmount = app.descendants(matching: .any)["stats_hero_amount"]
+        XCTAssertTrue(heroAmount.waitForExistence(timeout: 15), "No se ve la cifra del hero de Distribución.")
+        let before = heroAmount.label
+
+        let fab = app.buttons["fab_new_transaction"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 5), "Falta «+» en Distribución.")
+        XCTAssertTrue(fab.waitForHittable(timeout: 5), "«+» no es alcanzable en Distribución.")
+        fab.tap()
+        let manual = app.buttons["fab_manual"]
+        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del «+» (fab_manual).")
+        manual.tap()
+
+        let amountField = app.textFields["new_transaction_amount"]
+        XCTAssertTrue(amountField.waitForExistence(timeout: 5), "No apareció new_transaction_amount.")
+        amountField.tap()
+        amountField.typeText("50")
+        app.chooseFirstSelectorRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
+        XCTAssertTrue(
+            app.buttons["new_transaction_subcategory_chip"].waitForExistence(timeout: 5),
+            "No volvió al formulario tras elegir cuenta.")
+        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
+        let save = app.buttons["new_transaction_save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "No apareció new_transaction_save.")
+        save.tap()
+        app.dismissTransactionSuccess()
+
+        XCTAssertTrue(heroAmount.waitForExistence(timeout: 5), "Tras el alta ya no se ve la cifra del hero.")
+        let changed = NSPredicate(format: "label != %@", before)
+        let result = XCTWaiter.wait(for: [expectation(for: changed, evaluatedWith: heroAmount)], timeout: 5)
+        XCTAssertEqual(
+            result, .completed,
+            "El hero de Distribución sigue en \(before) tras registrar un gasto de 50: no se recalculó con el alta.")
+    }
+}

@@ -1,0 +1,416 @@
+//
+//  SyncIdentityService.swift
+//  Yala
+//
+//  Asigna y reconcilia identidades de sync (`syncID`) para las 6 entidades sincronizables
+//  (Modo Nube, incremento I2). Dos responsabilidades:
+//
+//  1. `ensureSyncID` / `captureIfEnabled` — born-cloud: acuñar un UUIDv4 en la fila al crearse.
+//     `captureIfEnabled` está gateado por `CloudSyncFlags.identityCaptureEnabled` (HOY siempre
+//     `false`); es el que invocan los hubs de creación, así que es un no-op en producción actual.
+//
+//  2. `backfillIdentities` — la MIGRACIÓN (I10) es el llamador: recorre las filas preexistentes,
+//     les asigna `syncID` y materializa la fila testigo `SyncIdentity`, con REBIND por ancla de
+//     contenido (recupera el `syncID` de una fila borrada+recreada con el mismo contenido).
+//     Born-cloud NO hace backfill masivo (las filas ya nacen con identidad vía el hub).
+//
+//  Idempotente y resumible: dos corridas producen el mismo resultado (una vez asignados los
+//  `syncID`, la segunda no cambia nada). Cubre también el caso de una fila que YA tiene `syncID`
+//  pero sin fila testigo (crash a mitad de una migración previa) → crea la testigo sin regenerar.
+//
+//  `@MainActor`: manipula `ModelContext` y `@Model` (regla inviolable del repo).
+//
+
+import Foundation
+import SwiftData
+
+// MARK: - SyncIdentifiable
+
+/// Entidades que llevan un `syncID` de sync. `@MainActor` porque los `@Model` conformes están
+/// aislados al main actor bajo `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
+@MainActor
+protocol SyncIdentifiable: AnyObject {
+    var syncID: UUID? { get set }
+}
+
+extension TransactionItem: SyncIdentifiable {}
+extension InboxDraft: SyncIdentifiable {}
+extension Category: SyncIdentifiable {}
+extension FavoritePayment: SyncIdentifiable {}
+extension MerchantMemory: SyncIdentifiable {}
+extension ExchangeRate: SyncIdentifiable {}
+
+// MARK: - SyncIdentityService
+
+@MainActor
+enum SyncIdentityService {
+
+    /// Entidades (nombre de clase, `SyncIdentity` incluida) cuyo `fetch` del backfill LANZA. Lanza un `CocoaError` en el
+    /// mismo punto que el fetch real, así que el camino que recorre el test es el `catch` de producción. ESTÁTICO:
+    /// resetéalo en `defer`. SOLO tests (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`).
+    static var _testThrowOnBackfillFetchOf: Set<String> = []
+
+    // MARK: Born-cloud (hubs de creación)
+
+    /// Asigna un `syncID` (UUIDv4) si la fila aún no tiene. Idempotente: una segunda llamada no
+    /// cambia el valor ya asignado.
+    static func ensureSyncID(_ model: SyncIdentifiable) {
+        if model.syncID == nil {
+            model.syncID = UUID()
+        }
+    }
+
+    /// Igual que `ensureSyncID` pero gateado por el flag DARK. Es lo que invocan los hubs de
+    /// creación de entidades → hoy no-op (el flag es `false` en producción). Lo encenderá el Modo
+    /// Nube en I12/I14.
+    static func captureIfEnabled(_ model: SyncIdentifiable) {
+        guard CloudSyncFlags.identityCaptureEnabled else { return }
+        ensureSyncID(model)
+    }
+
+    // MARK: Backfill (migración I10)
+
+    /// Recorre las 6 entidades sincronizables y garantiza que cada fila tenga `syncID` + su fila
+    /// testigo `SyncIdentity`, con REBIND por ancla de contenido. Idempotente y resumible.
+    ///
+    /// **LANZA desde el 2026-09-23** (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`). Tragaba su error bajo
+    /// un `print` de `#if DEBUG`, y sus dos llamadores —la captura de identidad de la ida y el adopt— seguían con filas
+    /// sin identidad: el snapshot las saltaba (`identityGap`) y el adopt las contaba como `needsIdentity` y no como
+    /// huérfanas, así que podía cerrarse sin subirlas. Si lanza a mitad, lo ya escrito queda sucio en el contexto (no
+    /// hay `rollback`: el contexto es compartido) y la pasada siguiente lo reescribe igual.
+    ///
+    /// - Parameters:
+    ///   - context: contexto sobre el que fetchear/insertar (el mismo de la migración).
+    ///   - now: inyectable para determinismo en tests (marca `createdAt`/`lastReboundAt`).
+    static func backfillIdentities(context: ModelContext, now: Date = .now) throws {
+        do {
+            // Índice de identidades existentes por (entityType + ancla) para el rebind, y set de
+            // syncIDs ya cubiertos por una fila testigo (para detectar filas con id pero sin testigo).
+            var rowsByKey: [String: SyncIdentity] = [:]
+            var knownSyncIDs: Set<UUID> = []
+            // syncIDs portados por filas VIVAS procesadas en ESTA corrida (bug device 2026-07-10 /
+            // residual A3 materializado): el rebind por ancla le daba el MISMO syncID a dos filas
+            // COEXISTENTES con contenido idéntico (2 pares de InboxDraft reales) → el upsert server-side
+            // las colapsaba (8 local vs 6 server) → divergencia Merkle PERMANENTE → failedRollback tras
+            // los topes. Regla: el rebind es para "borrada y RECREADA" — jamás para dos filas vivas.
+            var liveSyncIDs: Set<UUID> = []
+            var healedCollisions = 0
+            if _testThrowOnBackfillFetchOf.contains("SyncIdentity") { throw CocoaError(.fileReadCorruptFile) }
+            let existingRows = try context.fetch(FetchDescriptor<SyncIdentity>())
+            for row in existingRows {
+                rowsByKey[key(row.entityType, row.localAnchor)] = row
+                knownSyncIDs.insert(row.syncID)
+            }
+
+            try backfillType(
+                TransactionItem.self, entityType: SyncEntityType.transactionItem,
+                anchor: anchor(for:), context: context, now: now,
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
+            )
+            try backfillType(
+                InboxDraft.self, entityType: SyncEntityType.inboxDraft,
+                anchor: anchor(for:), context: context, now: now,
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
+            )
+            try backfillType(
+                Category.self, entityType: SyncEntityType.category,
+                anchor: anchor(for:), context: context, now: now,
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
+            )
+            try backfillType(
+                FavoritePayment.self, entityType: SyncEntityType.favoritePayment,
+                anchor: anchor(for:), context: context, now: now,
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
+            )
+            try backfillType(
+                MerchantMemory.self, entityType: SyncEntityType.merchantMemory,
+                anchor: anchor(for:), context: context, now: now,
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
+            )
+            try backfillType(
+                ExchangeRate.self, entityType: SyncEntityType.exchangeRate,
+                anchor: anchor(for:), context: context, now: now,
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
+            )
+
+            // I12: entidades cuya identidad de sync es su UUID EXISTENTE (D3). SIN rebind por contenido
+            // (esos UUID no se regeneran-por-pérdida) → solo materializan la fila testigo si falta, con
+            // `localAnchor = stableID` (la identidad misma). NO conforman `SyncIdentifiable` (D1).
+            try backfillIdentityType(
+                Budget.self, entityType: SyncEntityType.budget, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                ScheduledPayment.self, entityType: SyncEntityType.scheduledPayment, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+
+            // I12 commit B: las 8 restantes. Account/Subcategory usan `shortcutID`; el resto `id`.
+            try backfillIdentityType(
+                Account.self, entityType: SyncEntityType.account, id: { $0.shortcutID },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                Subcategory.self, entityType: SyncEntityType.subcategory, id: { $0.shortcutID },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                Tag.self, entityType: SyncEntityType.tag, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                NotificationItem.self, entityType: SyncEntityType.notificationItem, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                CashFlowPlan.self, entityType: SyncEntityType.cashFlowPlan, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                CashFlowLine.self, entityType: SyncEntityType.cashFlowLine, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                CashFlowOverride.self, entityType: SyncEntityType.cashFlowOverride, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                GroupBridgePreference.self, entityType: SyncEntityType.groupBridgePreference, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+
+            if healedCollisions > 0 {
+                CloudSyncBreadcrumb.identityCollisionHealed(count: healedCollisions)
+            }
+            if context.hasChanges {
+                try context.save()
+            }
+        } catch {
+            #if DEBUG
+            print("SyncIdentityService: backfill error: \(error)")
+            #endif
+            CloudSyncBreadcrumb.migrationIdentityBackfillFailed(errorType: String(describing: type(of: error)))
+            throw error
+        }
+    }
+
+    /// Procesa un tipo concreto. Fetch CONCRETO por tipo (nunca genérico sobre keypath de protocolo
+    /// — regla inviolable de `#Predicate`): traemos TODAS las filas del tipo y partimos en Swift
+    /// (evita las esquinas de `== nil` sobre `UUID?` en `#Predicate` y cubre de una los dos casos:
+    /// sin `syncID` y con `syncID` pero sin testigo).
+    private static func backfillType<T: PersistentModel & SyncIdentifiable>(
+        _ type: T.Type,
+        entityType: String,
+        anchor: (T) -> String,
+        context: ModelContext,
+        now: Date,
+        rowsByKey: inout [String: SyncIdentity],
+        knownSyncIDs: inout Set<UUID>,
+        liveSyncIDs: inout Set<UUID>,
+        healedCollisions: inout Int
+    ) throws {
+        if _testThrowOnBackfillFetchOf.contains(String(describing: T.self)) { throw CocoaError(.fileReadCorruptFile) }
+        let models = try context.fetch(FetchDescriptor<T>())
+        for model in models {
+            let contentAnchor = anchor(model)
+            let anchorKey = key(entityType, contentAnchor)
+            if let existingID = model.syncID {
+                // COLISIÓN VIVA (auto-cura del bug device 2026-07-10): otra fila VIVA ya porta este
+                // syncID (un rebind viejo sobre anclas idénticas). Re-acuñar para ESTA fila — dejarla
+                // colapsaría en el upsert server-side (count/hash divergen → failedRollback perpetuo).
+                // Seguro re-ejecutar pre-upload: la migración limpia/re-sube; el testigo nuevo se añade.
+                if liveSyncIDs.contains(existingID) {
+                    let newID = UUID()
+                    model.syncID = newID
+                    context.insert(SyncIdentity(
+                        syncID: newID, entityType: entityType,
+                        localAnchor: contentAnchor, createdAt: now
+                    ))
+                    knownSyncIDs.insert(newID)
+                    liveSyncIDs.insert(newID)
+                    healedCollisions += 1
+                    continue
+                }
+                liveSyncIDs.insert(existingID)
+                // Garantizar que exista su fila testigo (crash a mitad de una migración previa dejó la
+                // fila con id pero sin testigo) — SIN regenerar el id.
+                guard !knownSyncIDs.contains(existingID) else { continue }
+                let row = SyncIdentity(
+                    syncID: existingID, entityType: entityType,
+                    localAnchor: contentAnchor, createdAt: now
+                )
+                context.insert(row)
+                rowsByKey[anchorKey] = row
+                knownSyncIDs.insert(existingID)
+            } else {
+                if let existing = rowsByKey[anchorKey], !liveSyncIDs.contains(existing.syncID) {
+                    // REBIND legítimo: el testigo existe y NINGUNA fila viva porta ya ese syncID (= la
+                    // fila original fue borrada y esta es su recreación, §b.3/H3). Si otra fila VIVA ya
+                    // lo porta, NO se rebindea (dos filas coexistentes con contenido idéntico son DOS
+                    // filas — el caso InboxDraft del bug) → cae al else y acuña fresco.
+                    model.syncID = existing.syncID
+                    existing.lastReboundAt = now
+                    liveSyncIDs.insert(existing.syncID)
+                } else {
+                    let newID = UUID()
+                    model.syncID = newID
+                    let row = SyncIdentity(
+                        syncID: newID, entityType: entityType,
+                        localAnchor: contentAnchor, createdAt: now
+                    )
+                    context.insert(row)
+                    rowsByKey[anchorKey] = row
+                    knownSyncIDs.insert(newID)
+                    liveSyncIDs.insert(newID)
+                }
+            }
+        }
+    }
+
+    /// I12 (D3): materializa la fila testigo `SyncIdentity` de una entidad cuya identidad de sync es su
+    /// UUID persistido (`id`). SIN rebind (esos UUID no se regeneran-por-pérdida): `localAnchor` es la
+    /// identidad misma (`stableID`). Idempotente vía `knownSyncIDs` (crash a mitad de migración previa →
+    /// no duplica). Fetch CONCRETO por tipo (regla inviolable de `#Predicate`).
+    private static func backfillIdentityType<T: PersistentModel>(
+        _ type: T.Type,
+        entityType: String,
+        id: (T) -> UUID,
+        context: ModelContext,
+        now: Date,
+        knownSyncIDs: inout Set<UUID>
+    ) throws {
+        if _testThrowOnBackfillFetchOf.contains(String(describing: T.self)) { throw CocoaError(.fileReadCorruptFile) }
+        let models = try context.fetch(FetchDescriptor<T>())
+        for model in models {
+            let sid = id(model)
+            guard !knownSyncIDs.contains(sid) else { continue }
+            context.insert(SyncIdentity(
+                syncID: sid, entityType: entityType,
+                localAnchor: SyncContentAnchor.stableID(sid), createdAt: now
+            ))
+            knownSyncIDs.insert(sid)
+        }
+    }
+
+    // MARK: - Re-key del testigo (DIFERIDOS #29, §b.4/§b.5)
+
+    /// Re-vincula la fila testigo `SyncIdentity` de una identidad regenerada (`oldID → newID`), PRESERVANDO
+    /// las coordenadas CloudKit (`ckRecordName`/`ckZoneName`/`ckOwnerName`) — crítico §b.5: el CKRecord
+    /// congelado es EL MISMO (el `recordName` ≠ el UUID de dominio), la fila solo cambia su sync_id local; en
+    /// la reversa, un tombstone(oldID) del backend ya no resuelve testigo → skip correcto (borrar el CK record
+    /// sería el FATAL). Estampa `lastReboundAt` (señal de la reversa, §b.5) y re-ancla `localAnchor` a
+    /// `stableID(newID)`.
+    ///
+    /// Semántica de N testigos para un mismo `oldID` (grupo colisionado X→A, X→B, …): el PRIMER par re-keyea el
+    /// testigo X→A; los SIGUIENTES NO encuentran ya el testigo por `oldID` → CREAN uno nuevo para su `newID`
+    /// (con `lastReboundAt` estampado) — jamás dos testigos al mismo sync_id.
+    ///
+    /// Colisión defensiva (regla `00439727`, astronómica con UUID() fresco): si ya existe un testigo con
+    /// `syncID == newID`, NO se crea un segundo → breadcrumb + retorna `false`. MENOR 4 del review: el llamador
+    /// real (`repairCollapsedIdentityUUIDs`) acuña los newID EVITANDO todo id vivo y todo testigo existente
+    /// (`freshIdentityID()`), así que este path es INALCANZABLE desde el repair — queda como RED con breadcrumb,
+    /// y por eso su retorno puede descartarse allí sin pérdida de información.
+    ///
+    /// Fetch CONCRETO por tipo dentro de un `#Predicate<SyncIdentity>` (SyncIdentity es un tipo CONCRETO —
+    /// nunca un requisito de protocolo → seguro). SIN save: el llamador comitea en su transacción (§b.4).
+    @discardableResult
+    static func rekeyIdentity(
+        entityType: String,
+        oldID: UUID,
+        newID: UUID,
+        in context: ModelContext,
+        now: Date = .now
+    ) -> Bool {
+        do {
+            // Colisión defensiva: ¿ya hay testigo para el newID? (UUID() fresco → astronómico.)
+            let newRows = try context.fetch(FetchDescriptor<SyncIdentity>(
+                predicate: #Predicate<SyncIdentity> { $0.syncID == newID }
+            ))
+            guard newRows.isEmpty else {
+                CloudSyncBreadcrumb.identityCollisionHealed(count: 1)
+                #if DEBUG
+                print("SyncIdentityService.rekeyIdentity: testigo YA existe para newID \(newID) (\(entityType)) — el llamador debe regenerar")
+                #endif
+                return false
+            }
+
+            let oldRows = try context.fetch(FetchDescriptor<SyncIdentity>(
+                predicate: #Predicate<SyncIdentity> { $0.syncID == oldID && $0.entityType == entityType }
+            ))
+            if let witness = oldRows.first {
+                // Re-key PRESERVANDO ck* (el CKRecord es EL MISMO).
+                witness.syncID = newID
+                witness.localAnchor = SyncContentAnchor.stableID(newID)
+                witness.lastReboundAt = now
+            } else {
+                // Sin testigo previo (flag de captura apagado en eras previas, o par N>1 del grupo colisionado):
+                // crear uno nuevo con `lastReboundAt` estampado (señal de rebind para la reversa).
+                context.insert(SyncIdentity(
+                    syncID: newID, entityType: entityType,
+                    localAnchor: SyncContentAnchor.stableID(newID), createdAt: now, lastReboundAt: now
+                ))
+            }
+            return true
+        } catch {
+            #if DEBUG
+            print("SyncIdentityService.rekeyIdentity error (\(entityType) \(oldID)→\(newID)): \(error)")
+            #endif
+            return false
+        }
+    }
+
+    // MARK: - Anclas por tipo (extracción de valores + delegación a la capa pura)
+
+    private static func anchor(for model: TransactionItem) -> String {
+        SyncContentAnchor.transactionItem(
+            createdAt: model.createdAt,
+            date: model.date,
+            amount: model.amount,
+            currencyCode: model.currencyCode,
+            accountShortcutID: model.account?.shortcutID
+        )
+    }
+
+    private static func anchor(for model: InboxDraft) -> String {
+        SyncContentAnchor.inboxDraft(
+            createdAt: model.createdAt,
+            sourceTypeRaw: model.sourceTypeRaw,
+            rawText: model.rawText
+        )
+    }
+
+    private static func anchor(for model: Category) -> String {
+        SyncContentAnchor.category(name: model.name)
+    }
+
+    private static func anchor(for model: FavoritePayment) -> String {
+        SyncContentAnchor.favoritePayment(
+            name: model.name,
+            amount: model.amount,
+            createdAt: model.createdAt,
+            displayOrder: model.displayOrder
+        )
+    }
+
+    private static func anchor(for model: MerchantMemory) -> String {
+        SyncContentAnchor.merchantMemory(merchantCanonical: model.merchantCanonical)
+    }
+
+    private static func anchor(for model: ExchangeRate) -> String {
+        SyncContentAnchor.exchangeRate(dateKey: model.dateKey, base: model.base)
+    }
+
+    // MARK: - Helpers
+
+    /// Clave de índice (entityType + ancla). Separador U+0001 (nunca aparece en un entityType
+    /// literal ni en un hex de ancla).
+    private static func key(_ entityType: String, _ anchor: String) -> String {
+        entityType + "\u{1}" + anchor
+    }
+}

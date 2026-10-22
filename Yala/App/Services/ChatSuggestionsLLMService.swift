@@ -83,10 +83,8 @@ final class ChatSuggestionsLLMService {
                 language: context.language
             )
             Self.setCached(validated, for: Date.now, language: language)
-            TelemetryService.track(.chatSuggestionsLLMSucceeded, parameters: ["count": String(validated.count)])
             return validated
         } catch {
-            TelemetryService.track(.chatSuggestionsLLMFailed, parameters: ["reason": String(describing: error)])
             return []
         }
     }
@@ -132,7 +130,7 @@ final class ChatSuggestionsLLMService {
     private func generate(context: ChatSuggestionsContext) async throws -> [ChatSuggestion] {
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .suggestions)
+            client = try await ProxyClientFactory.makeOpenAI(task: .chatSuggestions)
         } catch {
             throw ChatSuggestionsLLMError.noAPIKey
         }
@@ -196,60 +194,46 @@ final class ChatSuggestionsLLMService {
                 predicate: #Predicate<TransactionItem> { $0.date >= monthStart },
                 sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
             )
-            let txs = try modelContext.fetch(descriptor).filter {
+            let monthTxs = try modelContext.fetch(descriptor)
+            // Gastos de grupo: "mi parte" y la pata de préstamo fuera, como el hero del Panel (el
+            // contexto del chat aplica el ajuste pero no el interruptor de abajo). Se construye con el fetch CRUDO del mes: la pata de préstamo vive en la cuenta
+            // sistema de Grupos y el ajuste necesita las dos hermanas antes de filtrar cuentas.
+            let adjustment = GroupBridgeStatsAdjustment.build(from: monthTxs, context: modelContext)
+            let txs = monthTxs.filter {
                 $0.balanceAdjustmentType == nil && $0.account?.excludeFromStatistics != true
             }
 
-            for tx in txs {
-                if tx.category?.isIncome == true {
-                    totalIncome += abs(tx.amountInPreferredCurrency)
-                } else {
-                    totalExpense += abs(tx.amountInPreferredCurrency)
-                }
+            // Tags: CSV-mirror SSOT via resolver + catalog construido del fetch local. Su fallo
+            // solo deja sin etiquetas, como antes: el resto del contexto sigue saliendo.
+            var allTagsFetched: [Tag] = []
+            do {
+                allTagsFetched = try modelContext.fetch(FetchDescriptor<Tag>())
+            } catch {
+                #if DEBUG
+                print("ChatSuggestionsLLMService: tag fetch failed \(error)")
+                #endif
             }
-
-            let expenseTxs = txs.filter { $0.category?.isIncome == false }
-
+            let sums = Self.monthSums(
+                txs,
+                tagCatalog: Tag.byIDLookup(allTagsFetched),
+                currencyCode: CurrencyDefaults.currentPreferred,
+                adjustment: adjustment,
+                // El interruptor que sigue el hero del Panel para ingreso/gasto (default ON).
+                includeGroupTransactions: (UserDefaults.standard.object(
+                    forKey: AppPreferences.Keys.includeGroupTransactionsInStats
+                ) as? Bool) ?? true,
+                converter: CurrencyConverter.shared
+            )
+            totalIncome = sums.totalIncome
+            totalExpense = sums.totalExpense
             // Top 10 categorías (era top 3) — el rewriter necesita whitelist amplio.
-            var catTotals: [String: Double] = [:]
-            for tx in expenseTxs {
-                guard let name = tx.category?.name else { continue }
-                catTotals[name, default: 0] += abs(tx.amountInPreferredCurrency)
-            }
-            topCategories = catTotals.sorted { $0.value > $1.value }.prefix(10).map(\.key)
-
+            topCategories = sums.categories.sorted { $0.value > $1.value }.prefix(10).map(\.key)
             // Todas las subcategorías con tx>0 del mes.
-            var subTotals: [String: Double] = [:]
-            for tx in expenseTxs {
-                guard let name = tx.subcategory?.name else { continue }
-                subTotals[name, default: 0] += abs(tx.amountInPreferredCurrency)
-            }
-            subcategoryNames = subTotals.keys.sorted()
-
+            subcategoryNames = sums.subcategories.keys.sorted()
             // Top 10 merchants (era top 1).
-            var merchantTotals: [String: Double] = [:]
-            for tx in expenseTxs {
-                if let note = tx.note, !note.isEmpty {
-                    let canonical = MerchantCanonicalizer.canonicalize(note)
-                    if !canonical.isEmpty {
-                        merchantTotals[canonical, default: 0] += abs(tx.amountInPreferredCurrency)
-                    }
-                }
-            }
-            merchantNames = merchantTotals.sorted { $0.value > $1.value }.prefix(10).map(\.key)
-
-            // Top 5 tags — CSV-mirror SSOT via resolver + catalog construido del fetch local.
-            let allTagsFetched = try modelContext.fetch(FetchDescriptor<Tag>())
-            let tagCatalog = Tag.byIDLookup(allTagsFetched)
-            var tagTotals: [String: Double] = [:]
-            for tx in expenseTxs {
-                let txTagIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
-                for uuid in txTagIDs {
-                    guard let tag = tagCatalog[uuid] else { continue }
-                    tagTotals[tag.name, default: 0] += abs(tx.amountInPreferredCurrency)
-                }
-            }
-            tagNames = tagTotals.sorted { $0.value > $1.value }.prefix(5).map(\.key)
+            merchantNames = sums.merchants.sorted { $0.value > $1.value }.prefix(10).map(\.key)
+            // Top 5 tags.
+            tagNames = sums.tags.sorted { $0.value > $1.value }.prefix(5).map(\.key)
         } catch {
             #if DEBUG
             print("ChatSuggestionsLLMService: fetch failed \(error)")
@@ -292,6 +276,70 @@ final class ChatSuggestionsLLMService {
             totalIncome: totalIncome,
             totalExpense: totalExpense
         )
+    }
+
+    /// Sumas del mes con las que se arma el contexto de las sugerencias.
+    struct MonthSums {
+        var totalIncome: Double = 0
+        var totalExpense: Double = 0
+        var categories: [String: Double] = [:]
+        var subcategories: [String: Double] = [:]
+        var merchants: [String: Double] = [:]
+        var tags: [String: Double] = [:]
+    }
+
+    /// Cada fila se resuelve con `CashFlowCalculator.resolvedAmount`, la regla de Estadísticas: una
+    /// fila guardada con otra divisa principal (cambio de divisa sin recalcular) se reconvierte a
+    /// `currencyCode` con la tasa de su día. Sumar su `amountInPreferredCurrency` tal cual mezclaba
+    /// dos escalas en los totales y en el orden de los rankings que recibe la IA.
+    ///
+    /// Un gasto de grupo cuenta como en el Panel: `adjustment` lo proyecta a "mi parte" y su pata de
+    /// préstamo se salta (no es un ingreso), e `includeGroupTransactions` es el interruptor de
+    /// Estadísticas (`BridgedTransactionFilter`). Con `.none` el resumen sumaba el gasto entero y el
+    /// préstamo como ingreso (ticket `chat-suggestions-context-counts-the-whole-group-expense`).
+    static func monthSums(
+        _ txs: [TransactionItem],
+        tagCatalog: [UUID: Tag],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        includeGroupTransactions: Bool,
+        converter: CurrencyConverting
+    ) -> MonthSums {
+        var sums = MonthSums()
+        for tx in txs {
+            if adjustment.isSuppressed(tx) { continue }
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: tx.splitExpenseID,
+                splitSettlementID: tx.splitSettlementID,
+                includeGroupsToggle: includeGroupTransactions
+            ) else { continue }
+            let amount = abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
+            if tx.category?.isIncome == true {
+                sums.totalIncome += amount
+            } else {
+                sums.totalExpense += amount
+            }
+            guard tx.category?.isIncome == false else { continue }
+            if let name = tx.category?.name {
+                sums.categories[name, default: 0] += amount
+            }
+            if let name = tx.subcategory?.name {
+                sums.subcategories[name, default: 0] += amount
+            }
+            if let note = tx.note, !note.isEmpty {
+                let canonical = MerchantCanonicalizer.canonicalize(note)
+                if !canonical.isEmpty {
+                    sums.merchants[canonical, default: 0] += amount
+                }
+            }
+            for uuid in tx.resolvedTagIDs(scheduleBackfill: true) ?? [] {
+                guard let tag = tagCatalog[uuid] else { continue }
+                sums.tags[tag.name, default: 0] += amount
+            }
+        }
+        return sums
     }
 
     // MARK: - Prompts

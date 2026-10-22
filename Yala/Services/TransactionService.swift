@@ -32,7 +32,7 @@ final class TransactionService {
     // MARK: - Context Injection
 
     /// Sets the model context (call this from views that use the service)
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 
@@ -51,6 +51,8 @@ final class TransactionService {
     /// - Parameter transaction: The transaction to insert
     func create(_ transaction: TransactionItem) throws {
         let context = try requireContext()
+        // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+        SyncIdentityService.captureIfEnabled(transaction)
         context.insert(transaction)
         try context.save()
 
@@ -104,20 +106,40 @@ final class TransactionService {
 
     // MARK: - Bulk Update Operations
 
-    /// Updates account for multiple transactions
-    /// - Parameters:
-    ///   - transactions: The transactions to update
-    ///   - account: The new account
-    func bulkUpdateAccount(_ transactions: [TransactionItem], account: Account) throws {
-        let context = try requireContext()
-        for transaction in transactions {
-            transaction.account = account
-            transaction.currencyCode = account.currencyCode
-        }
-        try context.save()
-        WidgetDataCache.updateCache(context: context)
-        SessionState.shared.incrementDataVersion()
-    }
+    // **Aquí había un `bulkUpdateAccount` y se BORRÓ el 2026-09-08, no se arregló**
+    // (`bulk-update-account-leaves-converted-amount-stale`). Reasignaba la cuenta y con ella
+    // `currencyCode` —el input de la conversión— y guardaba sin recomputar las derivadas, así que las
+    // cuatro columnas DERIVADAS del grupo `money` se quedaban con la divisa anterior (el grupo tiene
+    // CINCO: la quinta es `amount`, que esta operación no tocaba). La nota vale la línea porque **la
+    // papelera no se lee y este método invitaba a llamarlo**:
+    //
+    // - **Nunca tuvo un llamador, en toda la historia del repo** (`git log -S`, todas las ramas, cero
+    //   commits). Nació especulativo en el refactor C.3 (`461cc0ea`, 29-ene) para "estandarizar
+    //   operaciones", y la UI nunca migró: `BulkEditSheet.swift` llama a `RecordsViewModel` para las
+    //   seis operaciones bulk. Un mes más tarde `2eb7acc6` arregló la integridad del bulk edit **en el
+    //   ViewModel**, y esta copia se quedó atrás sin que nadie lo notara.
+    // - **Tenía DOS divergencias con la ruta viva, no la una que se reportó.** Además del recalculo
+    //   faltaba el bloqueo de transferencias que `RecordsViewModel.bulkUpdateAccount` sí hace: una
+    //   transferencia tiene dos cuentas inherentes ligadas por `transferPairID`, y colapsarlas a una
+    //   sola parte el par y descuadra ambos balances. Añadir solo la línea del recalculo habría dejado
+    //   ese segundo daño dentro y —peor— el método con aspecto de revisado.
+    // - **El canario no lo habría cazado, y el mecanismo no es el que parece.** Ni `currency_code` ni
+    //   `account_ref` pertenecen a ningún grupo de coherencia en `EntityEmissionMap` (el grupo `money`
+    //   lo forman `amount`, `amount_in_preferred_currency`, `preferred_currency_code`, `exchange_rate`
+    //   e `is_exchange_rate_provisional`). Como `DeltaEmitter` construye `touchedGroups` **a partir de
+    //   las columnas cambiadas que tienen grupo**, tocar solo esas dos lo deja VACÍO: no expande el
+    //   grupo, no lo mete en `fields`, no avanza su `field_hlcs` y el guard `coherenceGroupPartial`
+    //   itera sobre el conjunto vacío. O sea que no es que emitiera un grupo `money` aparentemente
+    //   coherente —eso invitaría a buscar el fallo en el guard—: **es que el guard no llegaba a
+    //   evaluarse nunca**, y el PATCH viajaba con la divisa nueva junto al monto convertido viejo.
+    //
+    // ⇒ Si algún día hace falta esta operación desde el servicio, la referencia es
+    // `RecordsViewModel.bulkUpdateAccount` —no este hueco— y cualquier reimplementación debe hacer las
+    // dos cosas: bloquear transferencias y llamar `recalculatePreferredCurrency` tras reasignar la
+    // divisa. Quien vigila que este fichero siga cumpliéndolo es el source-scan
+    // `BulkAccountCurrencyRecalcSourceScanTests` (mutante comprobado: repegar el método de arriba tal
+    // cual lo pone rojo). El comportamiento de la ruta viva lo fija, aparte,
+    // `RecordsViewModelBulkAccountCurrencyTests`.
 
     /// Updates subcategory for multiple transactions.
     /// Throws si la selección contiene transferencias — usan subcat sistema obligatoria.
@@ -234,12 +256,17 @@ final class TransactionService {
             // Preserve sign (expense = negative, income = positive)
             let sign: Double = transaction.amount < 0 ? -1 : 1
             transaction.amount = sign * abs(amount)
+            // Grupo de coherencia "money" (Modo Nube §d.4bis): al tocar `amount` SIEMPRE recomputar
+            // las derivadas (amountInPreferredCurrency/exchangeRate/preferredCurrencyCode), o el
+            // drain de sync emitiría un money-group incoherente (canario cloudSyncCoherenceGroupPartial).
+            transaction.recalculatePreferredCurrency(context: context)
 
             if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
                let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
                 processedPairIDs.insert(pairID)
                 let partnerSign: Double = partner.amount < 0 ? -1 : 1
                 partner.amount = partnerSign * abs(amount)
+                partner.recalculatePreferredCurrency(context: context)
             }
         }
         try context.save()

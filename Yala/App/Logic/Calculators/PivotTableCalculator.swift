@@ -24,15 +24,23 @@ struct PivotTableCalculator {
         previousTransactions: [TransactionItem],
         hierarchy: [ReportGroupingDimension],
         preferredCurrency: String,
-        allTags: [Tag]
+        allTags: [Tag],
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [PivotNode] {
         guard !hierarchy.isEmpty else { return [] }
 
         let dimension = hierarchy[0]
         let remaining = Array(hierarchy.dropFirst())
 
-        let currentGroups = group(transactions: currentTransactions, by: dimension, allTags: allTags)
-        let previousGroups = group(transactions: previousTransactions, by: dimension, allTags: allTags)
+        // Income-aware: suprime las patas de préstamo derivadas del bridge (ingreso fantasma)
+        // antes de agrupar — evita nodos vacíos; la pata real se netea a `-myShare` en la
+        // acumulación vía los accessors del adjustment.
+        let currentInput = currentTransactions.filter { !adjustment.isSuppressed($0) }
+        let previousInput = previousTransactions.filter { !adjustment.isSuppressed($0) }
+
+        let currentGroups = group(transactions: currentInput, by: dimension, allTags: allTags)
+        let previousGroups = group(transactions: previousInput, by: dimension, allTags: allTags)
 
         // Collect all keys from both periods
         let allKeys = Set(currentGroups.keys).union(previousGroups.keys)
@@ -41,12 +49,21 @@ struct PivotTableCalculator {
             let currentTxns = currentGroups[key] ?? []
             let previousTxns = previousGroups[key] ?? []
 
-            // When grouped by currency or account, sum in original currency; otherwise preferred
+            // When grouped by currency or account, sum in original currency; otherwise preferred.
+            // Los montos pasan por el adjustment (pata real Caso A neteada a `-myShare`). El
+            // preferido se resuelve con `CashFlowCalculator.resolvedAmount`: una fila guardada en
+            // otra divisa principal se reconvierte en vez de sumarse en su escala.
             let useOriginalAmount = (dimension == .divisa || dimension == .cuenta)
-            let amountKeyPath: KeyPath<TransactionItem, Double> = useOriginalAmount ? \.amount : \.amountInPreferredCurrency
+            let amountOf: (TransactionItem) -> Double = { tx in
+                useOriginalAmount
+                    ? adjustment.amount(tx)
+                    : CashFlowCalculator.resolvedAmount(
+                        tx, currencyCode: preferredCurrency, adjustment: adjustment, converter: converter
+                    ).value
+            }
 
-            let currentAmount = currentTxns.reduce(0) { $0 + $1[keyPath: amountKeyPath] }
-            let previousAmountValue = previousTxns.reduce(0) { $0 + $1[keyPath: amountKeyPath] }
+            let currentAmount = currentTxns.reduce(0.0) { $0 + amountOf($1) }
+            let previousAmountValue = previousTxns.reduce(0.0) { $0 + amountOf($1) }
 
             let previousAmount: Double? = previousTxns.isEmpty ? nil : previousAmountValue
             let variation = PreviousPeriodHelper.calculateVariation(
@@ -74,7 +91,9 @@ struct PivotTableCalculator {
                     previousTransactions: previousTxns,
                     hierarchy: remaining,
                     preferredCurrency: preferredCurrency,
-                    allTags: allTags
+                    allTags: allTags,
+                    adjustment: adjustment,
+                    converter: converter
                 )
             }
 

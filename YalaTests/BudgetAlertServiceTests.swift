@@ -31,8 +31,12 @@ struct BudgetAlertServiceTests {
         let budget = makeBudget(periodType: "weekly")
         let interval = service.getCurrentPeriodInterval(for: budget, now: Self.testNow)
 
-        let days = Calendar.current.dateComponents([.day], from: interval.start, to: interval.end).day!
-        #expect(days == 7)
+        // Siete días enteros, cerrando en el último segundo del séptimo: la medianoche del lunes
+        // siguiente ya no es de esta semana (`budget-interval-counts-next-period-midnight`).
+        #expect(DateIntervalDayCount.days(in: interval, calendar: Calendar.current) == 7)
+        let nextWeekStart = Calendar.current.date(byAdding: .day, value: 7, to: interval.start)!
+        #expect(interval.end == nextWeekStart.addingTimeInterval(-1))
+        #expect(!interval.contains(nextWeekStart))
     }
 
     @MainActor @Test func monthlyPeriod_containsNow() {
@@ -62,15 +66,19 @@ struct BudgetAlertServiceTests {
         #expect(components.day == 1)
     }
 
-    @MainActor @Test func uniquePeriod_usesExactDates() {
+    /// El único cuenta sus dos días enteros: el 30 de junio guardado a las 00:00 (como lo deja el
+    /// selector) llega hasta las 23:59:59 de ese día, no hasta su primer instante.
+    @MainActor @Test func uniquePeriod_usesWholeDays() {
         let start = Calendar.current.date(from: DateComponents(year: 2026, month: 3, day: 1))!
         let end = Calendar.current.date(from: DateComponents(year: 2026, month: 6, day: 30))!
         let service = BudgetAlertService.shared
         let budget = makeBudget(periodType: "unique", startDate: start, endDate: end)
         let interval = service.getCurrentPeriodInterval(for: budget, now: Self.testNow)
 
+        let july1 = Calendar.current.date(from: DateComponents(year: 2026, month: 7, day: 1))!
         #expect(interval.start == start)
-        #expect(interval.end == end)
+        #expect(interval.end == july1.addingTimeInterval(-1))
+        #expect(!interval.contains(july1))
     }
 
     @MainActor @Test func uniquePeriod_noDates_fallbackMonthly() {
@@ -82,5 +90,72 @@ struct BudgetAlertServiceTests {
         #expect(interval.contains(Self.testNow))
         let day = Calendar.current.component(.day, from: interval.start)
         #expect(day == 1)
+    }
+
+    // MARK: - notifyCrossedThresholds — dedup del threshold ENVIADO solo con entrega confirmada
+    // (ticket pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega, D3: superficie hermana).
+    // Instancia aislada (`init(tracker:)`) + tracker con UserDefaults propio ⇒ el singleton
+    // `.shared` no se toca y no hay dependencia de `ModelContext`/`Date.now`.
+
+    private static let notifyPeriodKey = "2026-04"
+
+    @MainActor @Test func notify_sendFails_maxThresholdNotMarked_othersMarked() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in false }   // iOS rechaza el request
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [50, 75, 90], spent: 90, limit: 100, currencyCode: "USD"
+        )
+
+        // 90 = el ENVIADO (falló) ⇒ NO marcado (se reintenta); 50/75 = supresión intencional.
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey) == [50, 75])
+    }
+
+    @MainActor @Test func notify_sendSucceeds_allThresholdsMarked() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in true }
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [50, 75, 90], spent: 90, limit: 100, currencyCode: "USD"
+        )
+
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey) == [50, 75, 90])
+    }
+
+    @MainActor @Test func notify_singleThreshold_sendFails_notMarked() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in false }
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [50], spent: 55, limit: 100, currencyCode: "USD"
+        )
+
+        // Único threshold cruzado y no entregado ⇒ nada marcado (retry en el próximo check).
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey).isEmpty)
+    }
+
+    @MainActor @Test func notify_emptyThresholds_noSendNoMark() async {
+        let tracker = BudgetAlertTracker(defaults: makeIsolatedDefaults())
+        let service = BudgetAlertService(tracker: tracker)
+        service.sendOverride = { _, _, _, _, _ in true }
+
+        let id = UUID()
+        await service.notifyCrossedThresholds(
+            budgetID: id, budgetName: "Comida", periodKey: Self.notifyPeriodKey,
+            newThresholds: [], spent: 0, limit: 100, currencyCode: "USD"
+        )
+
+        // Sin thresholds cruzados: el guard `max()` sale temprano ⇒ nada enviado ni marcado.
+        // (Caza un mutante que sustituya el guard por `?? 0`: enviaría/marcaría un 0 espurio.)
+        #expect(tracker.notifiedThresholds(budgetID: id, periodKey: Self.notifyPeriodKey).isEmpty)
     }
 }

@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { type Env, acceptedBundleIDs } from "../env";
-import { updateEntitlementByOriginalTxn } from "../db";
+import { updateAccountEntitlementByOriginalTxn, updateEntitlementByOriginalTxn } from "../db";
 import { verifyAppleJWS } from "../storekit/verifyAppleJWS";
 
 type Ctx = Context<{ Bindings: Env }>;
@@ -36,10 +36,17 @@ export async function handleAppStoreWebhook(c: Ctx): Promise<Response> {
     // El G3 firma transacciones de TODAS las apps de la App Store → exigir nuestro bundleId,
     // o un atacante con su propia app podría enviar transacciones ajenas.
     if (tx?.originalTransactionId && tx.bundleId && acceptedBundleIDs(c.env).includes(tx.bundleId)) {
+      // C-8: la misma reconciliación se aplica a las DOS superficies — por device (attest_keys) y
+      // por cuenta (account_entitlements). Si solo se actualizara la primera, un reembolso dejaría
+      // el derecho vivo en la cuenta hasta la fecha de expiración original.
       if (tx.revocationDate != null) {
-        await updateEntitlementByOriginalTxn(c.env, tx.originalTransactionId, { product: tx.productId ?? null, expiresAtMs: 0 });
+        const revoked = { product: tx.productId ?? null, expiresAtMs: 0 };
+        await updateEntitlementByOriginalTxn(c.env, tx.originalTransactionId, revoked);
+        await updateAccountEntitlementByOriginalTxn(c.env, tx.originalTransactionId, revoked);
       } else if (tx.expiresDate != null) {
-        await updateEntitlementByOriginalTxn(c.env, tx.originalTransactionId, { product: tx.productId ?? null, expiresAtMs: tx.expiresDate });
+        const renewed = { product: tx.productId ?? null, expiresAtMs: tx.expiresDate };
+        await updateEntitlementByOriginalTxn(c.env, tx.originalTransactionId, renewed);
+        await updateAccountEntitlementByOriginalTxn(c.env, tx.originalTransactionId, renewed);
       }
       // Sin expiresDate ni revocación (notificación no-relevante) → no tocar, para no revocar a un pagador.
     }

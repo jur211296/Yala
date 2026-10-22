@@ -174,6 +174,10 @@ final class StatisticsViewModel: Filterable {
     /// educativo "Tu saldo hoy" desde la pill "Hoy ⓘ" del chart.
     var trendLiveAnchorBreakdown: [String: Decimal]? = nil
 
+    /// `true` si el saldo vivo se armó con alguna tasa que no era la de hoy. Va a la misma hoja
+    /// educativa, que sin la marca declaraba exacto el número que existe para explicar que no lo es.
+    var trendLiveAnchorIsApproximate: Bool = false
+
     /// Trend grouping based on period
     var trendGrouping: TrendGrouping = .month
 
@@ -199,6 +203,24 @@ final class StatisticsViewModel: Filterable {
     /// Computed via `calculateSankeyData(...)`; recomputes only when the non-category
     /// deps change (see `sankeyInputKey`). Tap-filtering does NOT invalidate this.
     private(set) var sankeyData: SankeyData = .empty
+
+    /// Totales de los últimos 12 períodos COMPLETOS anteriores al seleccionado,
+    /// del más antiguo al más reciente (ticket trends-insight-card-v2-bullets, D2).
+    /// Alimenta la racha del Trend Insight Card y el contexto de la IA de
+    /// Tendencias. Vacío en Todo el tiempo / Personalizado.
+    private(set) var historicalTotals: [TrendHistoryPoint] = []
+
+    /// Movimientos del período seleccionado con los filtros activos — el gate
+    /// «≥ 5 movimientos» del Trend Insight Card. Se calcula aquí porque, cuando se
+    /// escribió, `InsightsViewModel.insightData` solo se recalculaba en Resumen y
+    /// Distribución y en Tendencias quedaba con el conteo del período anterior.
+    /// Desde el 2026-10-05 `insightData` sigue al período en todas las pestañas
+    /// (`StatisticsRecalculation`); este conteo se mantiene porque es correcto.
+    private(set) var periodTransactionCount: Int = 0
+
+    /// Firma de las entradas del último `calculateHistoricalTotals`: si no cambia,
+    /// no se recalcula (R-V2-4 — cambiar de métrica no la invalida).
+    @ObservationIgnored private var historicalTotalsSignature: Int?
 
     /// Maximum number of records to show
     let maxRecentRecords: Int = 10
@@ -335,7 +357,8 @@ final class StatisticsViewModel: Filterable {
         accounts: [Account],
         transactions: [TransactionItem],
         allTags: [Tag],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         // Enforce metric lock based on filters
         enforceMetricLock()
@@ -363,7 +386,8 @@ final class StatisticsViewModel: Filterable {
             filtered: filtered,
             eligibleAccounts: eligibleAccounts,
             allTransactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: adjustment
         )
 
         // Calculate trend points based on metric using unified TrendDataProcessor
@@ -384,6 +408,7 @@ final class StatisticsViewModel: Filterable {
                 grouping: trendGrouping,
                 interval: interval,
                 currencyCode: defaultCurrencyCode,
+                adjustment: adjustment,
                 liveBalanceOverride: liveBalanceOverride
             )
             if result.points != trendPoints { trendPoints = result.points }
@@ -393,18 +418,122 @@ final class StatisticsViewModel: Filterable {
             if result.totalExpense != totalExpense { totalExpense = result.totalExpense }
             if result.liveAnchor != trendLiveAnchor { trendLiveAnchor = result.liveAnchor }
             if result.liveAnchorNativeBalances != trendLiveAnchorBreakdown { trendLiveAnchorBreakdown = result.liveAnchorNativeBalances }
+            if result.liveAnchorIsApproximate != trendLiveAnchorIsApproximate { trendLiveAnchorIsApproximate = result.liveAnchorIsApproximate }
             dataMetric = selectedMetric
         } else {
             calculatePerAccountTrend(
                 transactions: filtered,
                 accounts: eligibleAccounts,
                 interval: interval,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: defaultCurrencyCode,
+                adjustment: adjustment
             )
         }
 
         // Calculate recent records
         buildRecentRecords(from: filtered)
+
+        // `filtered` no lleva recorte de fecha con la métrica Saldo: se cuenta
+        // dentro del intervalo para que el gate no dependa de la métrica.
+        let count = filtered.reduce(0) { partial, tx in
+            interval.contains(tx.date) && tx.balanceAdjustmentType == nil ? partial + 1 : partial
+        }
+        if count != periodTransactionCount { periodTransactionCount = count }
+
+        calculateHistoricalTotals(
+            accounts: accounts,
+            transactions: transactions,
+            allTags: allTags,
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: adjustment
+        )
+    }
+
+    // MARK: - Historical Totals (Trend Insight Card V2)
+
+    /// Recalcula `historicalTotals` si cambió alguna entrada. Usa los mismos
+    /// filtros que la tendencia (sin recorte de métrica) y la misma clasificación
+    /// que `calculateTotals`: la categoría decide el bucket y la acumulación es
+    /// signed, con la proyección «mi parte» de los gastos de grupo.
+    func calculateHistoricalTotals(
+        accounts: [Account],
+        transactions: [TransactionItem],
+        allTags: [Tag],
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
+    ) {
+        let calendar = userConfiguredCalendar()
+        let intervals = TrendHistoryLogic.previousIntervals(
+            for: detailPeriod,
+            anchor: TrendHistoryLogic.historyAnchor(for: detailPeriod, interval: panelDateInterval),
+            calendar: calendar
+        )
+        guard let first = intervals.first, let last = intervals.last else {
+            historicalTotalsSignature = nil
+            if !historicalTotals.isEmpty { historicalTotals = [] }
+            return
+        }
+
+        var criteria = FilterCriteria(
+            selectedAccounts: selectedAccounts,
+            selectedCategories: selectedCategories,
+            selectedSubcategories: selectedSubcategories,
+            selectedTags: selectedTags,
+            selectedNeeds: selectedNeeds,
+            selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
+            transactionTypeFilter: .all,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            dateInterval: DateInterval(start: first.start, end: last.end)
+        )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+        )
+
+        var hasher = Hasher()
+        hasher.combine(criteria.hashValue)
+        hasher.combine(SessionState.shared.dataVersion)
+        hasher.combine(transactions.count)
+        hasher.combine(defaultCurrencyCode)
+        // El toggle «incluir gastos de grupo en estadísticas» cambia qué filas cuentan
+        // (mismo motivo que la firma de InsightsViewModel.calculateInsightsData).
+        hasher.combine((UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true)
+        let signature = hasher.finalize()
+        guard signature != historicalTotalsSignature else { return }
+        historicalTotalsSignature = signature
+
+        let filtered = FilterService.filterForTrends(
+            transactions: transactions,
+            accounts: accounts,
+            criteria: criteria
+        )
+        let entries = Self.historyEntries(
+            filtered: filtered, currencyCode: defaultCurrencyCode, adjustment: adjustment
+        )
+        let points = TrendHistoryLogic.aggregate(entries: entries, intervals: intervals)
+        if points != historicalTotals { historicalTotals = points }
+    }
+
+    /// Las entradas del histórico: ingreso y gasto de cada fila, con la clasificación de
+    /// `periodTotals`. Cada importe se resuelve con `CashFlowCalculator.resolvedAmount`: una fila
+    /// guardada en otra divisa principal se reconvierte, o el histórico y el total del período que
+    /// tiene al lado darían números distintos para el mismo mes
+    /// (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`).
+    static func historyEntries(
+        filtered: [TransactionItem],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [TrendHistoryEntry] {
+        filtered.compactMap { tx in
+            guard tx.balanceAdjustmentType == nil, !adjustment.isSuppressed(tx) else { return nil }
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
+            let amount = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
+            return TrendHistoryEntry(date: tx.date, isIncome: isIncome, amount: isIncome ? amount : -amount)
+        }
     }
 
     // MARK: - Sankey Data
@@ -424,7 +553,8 @@ final class StatisticsViewModel: Filterable {
         accounts: [Account],
         scheduledPayments: [ScheduledPayment],
         allTags: [Tag],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         let interval = panelDateInterval
         let criteria = buildSankeyFilterCriteria(interval: interval, allTags: allTags)
@@ -452,10 +582,12 @@ final class StatisticsViewModel: Filterable {
         let newData = SankeyFlowCalculator.compute(
             transactions: filtered,
             interval: interval,
+            currencyCode: defaultCurrencyCode,
             maxPerColumn: 15,
             plannedPending: plannedPending,
             plannedSplit: .byKind,
-            propagatePlannedToCategories: true
+            propagatePlannedToCategories: true,
+            adjustment: adjustment
         )
         if newData != sankeyData { sankeyData = newData }
     }
@@ -520,24 +652,102 @@ final class StatisticsViewModel: Filterable {
         }
     }
 
+    /// KPI de Balance para las pestañas que muestran un número bajo el selector
+    /// de período (hoy: Distribución). Devuelve **el mismo número que el Panel**
+    /// — stock vivo al TC actual si el período cubre hoy, saldo histórico al
+    /// cierre si es un período cerrado.
+    ///
+    /// Replica los insumos de `PanelViewModel.balanceTransactions`, que son la
+    /// razón por la que las dos pantallas divergían:
+    ///
+    /// - **Sin recorte de fecha.** El saldo acumula todo el histórico; recortarlo
+    ///   al período devuelve el FLUJO del período, que es el bug original.
+    /// - **Sin `BridgedTransactionFilter`.** Igual que el Panel: el toggle de
+    ///   "incluir gastos de grupo en estadísticas" no aplica al saldo, porque el
+    ///   saldo refleja montos reales que sí están en la cuenta.
+    /// - **Cuentas pre-filtradas**, por eso el criteria va con `selectedAccounts`
+    ///   vacío: filtrar dos veces por cuenta no cambia el resultado, pero deja
+    ///   dos sitios donde la regla puede divergir.
+    ///
+    /// Límite conocido: con **dos o más cuentas seleccionadas** el número puede
+    /// no coincidir con el Panel, porque el Panel colapsa la selección a su
+    /// primer elemento (`selectedAccountID` = `selectedAccountIDs.first`) y aquí
+    /// se respeta el set completo. Es una asimetría preexistente del Panel y
+    /// corregirla queda fuera de este cambio ("no tocar Panel").
+    func balanceKPI(
+        accounts: [Account],
+        transactions: [TransactionItem],
+        allTags: [Tag],
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> BalanceKPICalculator.Result {
+        let eligibleAccounts = computeEligibleAccounts(from: accounts)
+        let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
+        let interval = panelDateInterval
+
+        var criteria = buildTrendFilterCriteria(interval: interval, allTags: allTags)
+        criteria.selectedAccounts = []
+        // Explícito, no heredado de `selectedMetric`: este KPI necesita el
+        // histórico completo aunque lo llame alguien con otra métrica activa.
+        criteria.dateInterval = nil
+
+        let balanceTransactions = transactions.filter { transaction in
+            guard let account = transaction.account,
+                eligibleAccountIDs.contains(account.persistentModelID)
+            else { return false }
+            return FilterService.matchesCriteria(transaction, criteria: criteria)
+        }
+
+        return BalanceKPICalculator.result(
+            transactions: balanceTransactions,
+            accounts: eligibleAccounts,
+            interval: interval,
+            period: detailPeriod,
+            currencyCode: defaultCurrencyCode,
+            adjustment: adjustment,
+            converter: converter
+        )
+    }
+
+    /// Ingreso y gasto del período: el KPI de la tarjeta de Tendencias.
+    ///
+    /// La categoría decide el bucket; acumulación signed (paridad con
+    /// TrendDataProcessor/CashFlowCalculator): un reembolso reduce el bucket.
+    /// `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto) y excluye las
+    /// patas de préstamo derivadas (préstamo a grupos). Cada importe se resuelve con la regla
+    /// de la curva de debajo (`CashFlowCalculator.resolvedAmount`): una fila guardada en otra
+    /// divisa principal se reconvierte, o el KPI y su curva darían números distintos.
+    static func periodTotals(
+        filtered: [TransactionItem],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> (income: Double, expense: Double) {
+        var income: Double = 0
+        var expense: Double = 0
+        for tx in filtered where tx.balanceAdjustmentType == nil && !adjustment.isSuppressed(tx) {
+            let value = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
+            if TransactionClassificationLogic.isIncome(tx) { income += value } else { expense -= value }
+        }
+        return (income, expense)
+    }
+
     /// Calculate total income, expense, and current balance
     private func calculateTotals(
         filtered: [TransactionItem],
         eligibleAccounts: [Account],
         allTransactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment
     ) {
-        let newIncome =
-            filtered
-            .filter { $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil }
-            .reduce(0) { $0 + $1.amountInPreferredCurrency }
-        if newIncome != totalIncome { totalIncome = newIncome }
-
-        let newExpense =
-            filtered
-            .filter { $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil }
-            .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
-        if newExpense != totalExpense { totalExpense = newExpense }
+        let totals = Self.periodTotals(
+            filtered: filtered, currencyCode: defaultCurrencyCode, adjustment: adjustment
+        )
+        if totals.income != totalIncome { totalIncome = totals.income }
+        if totals.expense != totalExpense { totalExpense = totals.expense }
 
         // KPI Saldo Actual: usa LiveBalanceCalculator (TC actual sobre saldo
         // nativo) en vez de sumar snapshots históricos — coherente con la
@@ -558,11 +768,11 @@ final class StatisticsViewModel: Filterable {
             metricFiltered = filtered
         case .income:
             metricFiltered = filtered.filter {
-                $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil
+                $0.balanceAdjustmentType == nil && TransactionClassificationLogic.isIncome($0)
             }
         case .expense:
             metricFiltered = filtered.filter {
-                $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil
+                $0.balanceAdjustmentType == nil && !TransactionClassificationLogic.isIncome($0)
             }
         }
         let newRecent = Array(
@@ -587,7 +797,8 @@ final class StatisticsViewModel: Filterable {
         transactions: [TransactionItem],
         accounts: [Account],
         interval: DateInterval,
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         let calendar = Calendar.current
         var allSeries: [AccountTrendSeries] = []
@@ -614,56 +825,19 @@ final class StatisticsViewModel: Filterable {
         ]
 
         for (index, account) in accounts.enumerated() {
-            var buckets: [Date: Double] = Dictionary(
-                uniqueKeysWithValues: bucketDates.map { ($0, 0.0) })
-
             let accountTransactions = transactions.filter {
                 $0.account?.persistentModelID == account.persistentModelID
             }
-
-            switch selectedMetric {
-            case .balance:
-                // Initial balance is now a transaction, start from 0
-                var runningBalance = 0.0
-
-                // Add transactions before interval
-                let allAccountTxns = transactions.filter {
-                    $0.account?.persistentModelID == account.persistentModelID
-                }
-                for txn in allAccountTxns where txn.date < interval.start {
-                    runningBalance += txn.amountInPreferredCurrency
-                }
-
-                // Fill buckets
-                let transactionsByBucket = Dictionary(grouping: accountTransactions) { txn in
-                    trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                }
-
-                for date in bucketDates.sorted() {
-                    if let txns = transactionsByBucket[date] {
-                        for txn in txns {
-                            runningBalance += txn.amountInPreferredCurrency
-                        }
-                    }
-                    buckets[date] = runningBalance
-                }
-
-            case .income:
-                // Exclude balance adjustments from income
-                for txn in accountTransactions
-                where txn.amountInPreferredCurrency > 0 && txn.balanceAdjustmentType == nil {
-                    let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                    buckets[bucketDate, default: 0] += txn.amountInPreferredCurrency
-                }
-
-            case .expense:
-                // Exclude balance adjustments from expense
-                for txn in accountTransactions
-                where txn.amountInPreferredCurrency < 0 && txn.balanceAdjustmentType == nil {
-                    let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                    buckets[bucketDate, default: 0] += abs(txn.amountInPreferredCurrency)
-                }
-            }
+            let buckets = Self.accountBuckets(
+                metric: selectedMetric,
+                accountTransactions: accountTransactions,
+                bucketDates: bucketDates,
+                intervalStart: interval.start,
+                grouping: trendGrouping,
+                calendar: calendar,
+                currencyCode: defaultCurrencyCode,
+                adjustment: adjustment
+            )
 
             let points = buckets.map { date, value in
                 PanelViewModel.BarPoint(date: date, value: value)
@@ -695,6 +869,92 @@ final class StatisticsViewModel: Filterable {
             trendPoints = first.points
             dataMetric = selectedMetric
         }
+    }
+
+    /// Los puntos de la curva de UNA cuenta, por fecha de bucket.
+    ///
+    /// Cada importe sale en `currencyCode` aunque la fila se guardara con otra divisa principal
+    /// (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`), con la misma regla
+    /// que la vista agregada: ingreso y gasto con `CashFlowCalculator.resolvedAmount` y «mi parte»
+    /// de los gastos de grupo; el saldo, la fila entera en su divisa nativa, valorado cada día a su tipo de
+    /// cambio y hoy con la regla del saldo vivo (`BalanceValuation`, como la curva agregada). Sin
+    /// esto, pasar de la vista agregada a la de cuentas cambiaba el número del mismo período.
+    static func accountBuckets(
+        metric: TrendMetric,
+        accountTransactions: [TransactionItem],
+        bucketDates: [Date],
+        intervalStart: Date,
+        grouping: TrendGrouping,
+        calendar: Calendar,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [Date: Double] {
+        var buckets: [Date: Double] = Dictionary(
+            uniqueKeysWithValues: bucketDates.map { ($0, 0.0) })
+
+        switch metric {
+        case .balance:
+            // Initial balance is now a transaction, start from 0. Saldo NATIVO acumulado, valorado al cierre de
+            // cada bucket con el tipo de cambio de ese día y hoy con la regla del saldo vivo (`BalanceValuation`):
+            // la regla de la curva agregada (`TrendDataProcessor.fillBalanceBuckets`), así que la vista por cuenta
+            // y la agregada siguen dando el mismo número.
+            var native: [String: Decimal] = [:]
+            let sortedBuckets = bucketDates.sorted()
+            let closings = sortedBuckets.map {
+                BalanceValuation.closingInstant(bucketStart: $0, grouping: grouping, cap: Date.now, calendar: calendar)
+            }
+            let valuation = BalanceValuation(
+                currencies: Set(accountTransactions.map(\.currencyCode)),
+                to: currencyCode,
+                closingDates: closings,
+                converter: converter,
+                calendar: calendar
+            )
+
+            // Add transactions before interval
+            for txn in accountTransactions where txn.date < intervalStart {
+                LiveBalanceCalculator.addNative(txn, to: &native)
+            }
+
+            // Fill buckets
+            let transactionsByBucket = Dictionary(grouping: accountTransactions) { txn in
+                grouping.dateKey(for: txn.date, calendar: calendar)
+            }
+
+            for (index, date) in sortedBuckets.enumerated() {
+                if let txns = transactionsByBucket[date] {
+                    for txn in txns {
+                        LiveBalanceCalculator.addNative(txn, to: &native)
+                    }
+                }
+                buckets[date] = valuation.doubleValue(native, at: closings[index])
+            }
+
+        case .income:
+            // Clasificación por categoría; signed (paridad con TrendDataProcessor).
+            // `adjustment` proyecta el Caso A a "mi parte" y excluye patas de préstamo.
+            for txn in accountTransactions
+            where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
+                && TransactionClassificationLogic.isIncome(txn) {
+                let bucketDate = grouping.dateKey(for: txn.date, calendar: calendar)
+                buckets[bucketDate, default: 0] += CashFlowCalculator.resolvedAmount(
+                    txn, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value
+            }
+
+        case .expense:
+            // Signed: gasto (monto negativo) sube la curva; reembolso la baja.
+            for txn in accountTransactions
+            where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
+                && !TransactionClassificationLogic.isIncome(txn) {
+                let bucketDate = grouping.dateKey(for: txn.date, calendar: calendar)
+                buckets[bucketDate, default: 0] -= CashFlowCalculator.resolvedAmount(
+                    txn, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value
+            }
+        }
+        return buckets
     }
 
     // MARK: - Filter Actions

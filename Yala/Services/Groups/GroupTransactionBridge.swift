@@ -33,6 +33,9 @@ final class GroupTransactionBridge {
 
     /// Ejecuta `body` con `skipDraftCleanup=true` y resetea garantizado vía `defer`,
     /// incluso si `body` lanza. Único path autorizado para mutar el flag.
+    /// `@discardableResult` porque el `T` puede venir de una función que ya lo es (`bridgeExpense` devuelve
+    /// si atendió el gasto): sin esto, envolverla aquí resucita el warning que su propio atributo silencia.
+    @discardableResult
     func withSkippedDraftCleanup<T>(_ body: () throws -> T) rethrows -> T {
         skipDraftCleanup = true
         defer { skipDraftCleanup = false }
@@ -45,15 +48,73 @@ final class GroupTransactionBridge {
 
     // MARK: - Context Injection
 
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
+
+    #if DEBUG
+    /// Devuelve el bridge al estado «todavía sin contexto» del arranque, que es el ÚNICO en el que
+    /// `isReady` es `false`. Lo necesita la celda del gemelo: ese `false` hace que `scheduleBridge` retorne
+    /// ANTES de cualquier acumulación, y el intent tiene que quedar armado igual o esos IDs se pierden sin
+    /// dejar rastro. Producción nunca lo llama (`AppBootstrapper` inyecta el contexto y no lo retira).
+    func _testClearContext() {
+        self.modelContext = nil
+    }
+    #endif
 
     private func requireContext() throws -> ModelContext {
         guard let context = modelContext else {
             throw GroupTransactionBridgeError.noContext
         }
         return context
+    }
+
+    // MARK: - Gate de dominio (handover de dispositivo)
+
+    /// Adaptador runtime de `GroupsDomainAdoptionLogic.isBridgeAllowed`. En un dispositivo normal
+    /// devuelve SIEMPRE `true` (byte-idéntico al comportamiento anterior al fix); solo cambia en el
+    /// que pasó por «empiezo de cero» en el Welcome, donde lo que decide si el bridge escribe es si
+    /// el dueño NUEVO adoptó Grupos con un acto deliberado (entrar al tab, aceptar una invitación o
+    /// darse de alta en solo-grupos).
+    ///
+    /// Con el sello puesto y la puerta cerrada, el bridge no materializa NADA en el corpus
+    /// personal: es lo que impide que los gastos de grupo del usuario ANTERIOR de este dispositivo
+    /// (mismo Apple ID, corpus personal ya vaciado) reaparezcan en Panel, Inbox, presupuestos,
+    /// reportes y widgets cuando el motor re-descarga las zonas. Ver el doc-comment de
+    /// `isBridgeAllowed` para por qué la identidad de CloudKit NO sirve aquí.
+    ///
+    /// SOLO gatea la CREACIÓN. Los caminos que BORRAN o limpian lo bridgeado siguen abiertos:
+    /// cerrar la puerta jamás debe dejar filas huérfanas que nadie pueda recoger.
+    ///
+    /// **El sello no aplica bajo el runner de unit tests** (`isRunningTests`, mismo seam que abre
+    /// `SwiftDataConfiguration.performSignOutWipeIfArmed`). Razón concreta, no cosmética: el host de
+    /// los tests es la propia app, así que su `UserDefaults.standard` es el del simulador — y
+    /// verificar el handover A MANO en ese simulador deja el sello escrito, cerrando el bridge para
+    /// las 14 pruebas de comportamiento del bridge que sí lo necesitan abierto. Sin este guard, QA
+    /// manual y suite unitaria se pisan. Los tests del gate NO pierden cobertura: ejercitan
+    /// `GroupsDomainAdoptionLogic.isBridgeAllowed` directamente y este adaptador con `defaults` inyectado.
+    ///
+    /// `defaults` inyectable por la misma razón en la otra dirección: un test que escriba estas keys
+    /// en `UserDefaults.standard` afectaría a las suites que se interleavan con él.
+    static func isDomainOpenForBridge(defaults: UserDefaults = .standard) -> Bool {
+        let sealed = !SwiftDataConfiguration.isRunningTests
+            && defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart)
+        // **Paso 8 · con una activación privada de Yala completo a medias, la puerta está cerrada.** Entre el
+        // relanzamiento que adjunta el espejo y el final de la activación, la sesión sigue siendo solo-grupos y
+        // el espejo puede estar bajando un corpus RESTAURADO: re-puentear así borra la transacción real de
+        // cada gasto y de cada liquidación (`createGroupsOnlyCaseAVirtualPair`, `bridgeSettlement`), o sea lo
+        // que la persona había clasificado en su vida anterior. Cerrar no pierde nada: lo no atendido queda en
+        // `GroupsPendingBridgeIntent` y la activación converge al terminar. Mismo seam de tests que el sello.
+        let activationInFlight = !SwiftDataConfiguration.isRunningTests
+            && FullModeActivationResumeStore.isPrivateActivationInFlight(
+                pending: WelcomePendingDestinationStore.peek(defaults),
+                current: FullModeActivationResumeStore.peek(defaults))
+        guard !activationInFlight else { return false }
+        return GroupsDomainAdoptionLogic.isBridgeAllowed(
+            sealedForFreshStart: sealed,
+            isUnlocked: defaults.bool(forKey: AppPreferences.Keys.groupsBetaUnlocked),
+            hasPrivateSession: SessionState.shared.hasPrivateSession
+        )
     }
 
     // MARK: - Bridge Operations
@@ -68,12 +129,12 @@ final class GroupTransactionBridge {
     /// - **TX virtual lent** (`+lentAmount` sistema "Préstamo a grupos"): siempre derivada,
     ///   delete+recreate. Skip si `lentAmount == 0` (yo solo en split).
     ///
-    /// **Caso A modo `.groupInvite`** (sin cuentas reales): fallback a M5 puro — TX1 virtual
+    /// **Caso A en sesión solo-grupos** (sin cuentas reales): fallback a M5 puro — TX1 virtual
     /// `-myShare` con subcat manual + TX2 virtual `+totalAmount` sistema. Sin TX cuenta real.
     ///
     /// **Caso B** (paga otro): TX1 virtual `-myShare` con subcat manual o nil. Sin cambios M5.
     ///
-    /// **Auto-match subcat**: si falla Y Caso B (o A groupInvite): draft con TX-puntero. En
+    /// **Auto-match subcat**: si falla Y Caso B (o A en solo-grupos): draft con TX-puntero. En
     /// Caso A `.full/.completed` la TX cuenta real se crea con subcat=nil + draft con puntero
     /// (path heredado M5 para subcat assignment via Inbox).
     ///
@@ -91,6 +152,17 @@ final class GroupTransactionBridge {
     ///   - isRemoteSync: `true` cuando se invoca desde `bridgeRemoteExpenses` (sync de grupos).
     ///     Distingue path local vs sync para guard defensivo.
     ///   - shouldSave: Whether to save the context (false when called from sync batch).
+    ///
+    /// Devuelve si el gasto quedó **ATENDIDO**: o se puenteó, o esta función decidió CONSCIENTEMENTE que no
+    /// hay nada que crear (grupo oculto, gasto de terceros en el que no participo). `false` significa
+    /// «todavía no se puede decidir» — un estado INCOMPLETO que puede resolverse más tarde: el `SplitMember`
+    /// propio aún sin marcar (`isCurrentUser` es local-only y `refreshCurrentUserFlags` puede tardar o
+    /// fallar), o las `SplitShare` del gasto todavía sin bajar. La distinción existe para
+    /// `GroupsPendingBridgeIntent`: sin ella, un early-return silencioso de esos dos casos contaba como
+    /// puenteado y DESARMABA la intención de un gasto que nunca obtuvo su transacción personal — la misma
+    /// pérdida permanente que el intent existe para cerrar, y por un camino que ni siquiera necesita que el
+    /// proceso muera. Los callers que no persisten intención pueden ignorarlo.
+    @discardableResult
     func bridgeExpense(
         _ expense: SplitExpense,
         in group: SplitGroup,
@@ -98,8 +170,44 @@ final class GroupTransactionBridge {
         isRemoteSync: Bool = false,
         isBulkImport: Bool = false,
         shouldSave: Bool = true
-    ) throws {
+    ) throws -> Bool {
         let context = try requireContext()
+
+        // Gate de dominio (handover): con Grupos cerrado en este dispositivo, ningún gasto de
+        // grupo entra al corpus personal. Único punto de corte del path de CREACIÓN — todos los
+        // callers (user-action, sync remoto, retry de boot, import del activation sheet) pasan
+        // por aquí. Sin `bridgePending`: no es un fallo a reintentar, es una puerta cerrada.
+        //
+        // El log va FUERA de `#if DEBUG` a propósito (misma excepción consciente que el resto del
+        // logging de Grupos): esta rama es la explicación de un síntoma que el usuario reportaría
+        // como «no veo mis gastos de grupo», y en release no hay otra forma de distinguirla de un
+        // bug del bridge. Mensaje fijo, sin PII.
+        guard Self.isDomainOpenForBridge() else {
+            Self.logger.info("bridgeExpense: skip — groups domain closed (sealed for a new user, or a full activation in flight)")
+            return false
+        }
+
+        // Paso 10 · **este gasto ya está en el Panel como movimiento personal**, porque el usuario
+        // desasoció esta misma cuenta y eligió conservarlo. Volver a puentearlo lo duplicaría: una vez el
+        // movimiento que conservó y otra la transacción que el puente crearía ahora.
+        //
+        // Va DESPUÉS del gate de dominio y ANTES de todo lo demás por el mismo criterio que aquél: es una
+        // puerta cerrada, no un fallo a reintentar. Y devuelve `true` (atendido) a propósito — `false`
+        // dejaría el gasto en `GroupsPendingBridgeIntent` reintentándose para siempre.
+        //
+        // El libro está SELLADO con el `sub` de la cuenta que se fue: con otra cuenta asociada no frena
+        // nada, que es lo que hace que «asociar otra cuenta» reciba sus gastos limpios.
+        //
+        // Y solo frena **mientras el movimiento conservado siga en el Panel** (ticket
+        // `groups-detach-ledger-has-no-exit`): si la persona lo borró, el libro retira la entrada y el gasto
+        // sigue por aquí abajo como cualquier otro. Es también lo que desbloquea una edición remota del gasto.
+        guard !GroupsDetachedBridgeLedger.stillHoldsBridge(
+            expenseID: expense.id.uuidString,
+            associatedSub: GroupsAccountAssociation.shared.associatedSub,
+            context: context) else {
+            Self.logger.info("bridgeExpense: skip — expense kept as a personal movement on a previous detach")
+            return true
+        }
 
         // Defensa-en-profundidad: si el grupo está hidden (soft-deleted), no bridgear
         // expenses — el cleanup observer ya corrió o correrá. Previene bridging en el
@@ -108,27 +216,38 @@ final class GroupTransactionBridge {
             #if DEBUG
             Self.logger.info("bridgeExpense: skip hidden group \(group.cloudKitZoneID, privacy: .public)")
             #endif
-            return
+            return true  // decidido y permanente: un grupo oculto no vuelve a puentear.
         }
 
         // Find current user's member in this group.
         // pending/rejected members no triguean bridge.
         let zoneID = group.cloudKitZoneID
-        let memberDescriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
-        )
-        guard let currentMember = try context.fetch(memberDescriptor).first,
-              currentMember.isActive else { return }
+        // Identidad RESUELTA, no el flag pelado. Con el `#Predicate` sobre `isCurrentUser == true` que
+        // había aquí, al recién llegado a un grupo del canal backend NO se le encontraba: su `SplitMember`
+        // baja del pull con el flag apagado y solo lo enciende `refreshCurrentUserFlags` en el arranque
+        // SIGUIENTE. Consecuencia con dinero de por medio: su gasto no llegaba a sus cuentas personales
+        // hasta relanzar la app, y al repescarlo `GroupsPendingBridgeResume` (que corre con
+        // `accountForCurrentUser: nil`) aterrizaba en la cuenta virtual «Grupos» en vez de en la cuenta
+        // real que había elegido en el formulario. Resolviendo aquí, el gasto se puentea en el mismo
+        // gesto que lo crea y conserva su cuenta.
+        //
+        // NO atendido cuando tampoco resuelve así: ninguna de las tres identidades está disponible
+        // todavía (primer arranque sin sesión ni recordName). Un `pendingApproval` que el admin acepta
+        // después cae aquí igual. En los dos casos el gasto SÍ tendrá que puentearse cuando el estado se
+        // resuelva, y devolver `false` es lo que mantiene viva la intención de `GroupsPendingBridgeIntent`.
+        guard let currentMember = try GroupExpenseService.resolveCurrentUserMember(
+                  inZone: zoneID, context: context),
+              currentMember.isActive else { return false }
         let currentMemberID = currentMember.id.uuidString
 
         // Saldo inicial (deuda de apertura): bridge virtual-only, independiente del modo
-        // del bridge / `.groupInvite` / toggle ON-OFF. Va ANTES del `guard let myShare`
+        // del bridge, de la sesión solo-grupos y del toggle ON-OFF. Va ANTES del `guard let myShare`
         // porque el acreedor (es `paidByMemberID` pero NO tiene share propio) también debe
         // reflejar su +Z en la cuenta virtual.
         if expense.isOpeningBalance {
             try bridgeOpeningBalance(expense, in: group, currentMemberID: currentMemberID, context: context)
             try saveIfNeeded(shouldSave: shouldSave, context: context)
-            return
+            return true
         }
 
         // Find current user's share in this expense.
@@ -144,17 +263,26 @@ final class GroupTransactionBridge {
         // El pagador SIEMPRE participa (modelo Splitwise): pagar algo cuya parte propia es 0
         // (otro lo devuelve todo) = prestar el total, y ese préstamo DEBE reflejarse en la cuenta
         // virtual "Grupos". Solo un NO-pagador sin share queda fuera del gasto → nada que bridgear.
-        guard isCaseA || myShareRecord != nil else { return }
+        //
+        // Atendido SOLO si las shares del gasto YA bajaron: sin ninguna en el store, «no participo» es
+        // indistinguible de «las `SplitShare` viajan en un batch posterior», y darlo por decidido dejaría
+        // el gasto sin puentear para siempre (aplicar una share remota no re-clasifica su gasto). Con
+        // shares presentes y ninguna mía, la decisión sí es firme y permanente.
+        guard isCaseA || myShareRecord != nil else {
+            let anySharesArrived = try context.fetchCount(FetchDescriptor<SplitShare>(
+                predicate: #Predicate { $0.expenseID == expenseID })) > 0
+            return anySharesArrived
+        }
 
         let expenseIDStr = expense.id.uuidString
-        let isGroupInvite = SessionState.shared.onboardingMode == .groupInvite
+        let isGroupsOnlySession = !SessionState.shared.hasPrivateSession
         let totalAmount = expense.amount
         let mySharedAmount = myShareRecord?.amount ?? 0
         let lentAmount = totalAmount - mySharedAmount
 
-        // Resolver decide si crear TX real para Caso A `.full/.completed`. Cuando OFF,
-        // redirige al path "virtual-only" idéntico al Caso B. Caso B y `.groupInvite`
-        // siempre virtual (no afectados por el modo del bridge).
+        // Resolver decide si crear TX real para el Caso A de quien tiene cuentas personales. Cuando OFF,
+        // redirige al path "virtual-only" idéntico al Caso B. El Caso B y una sesión solo-grupos son
+        // siempre virtuales (no afectados por el modo del bridge).
         let effectiveBridgeEnabled = BridgeModeResolver.shared.isBridgeEnabled(
             for: group, context: context
         )
@@ -179,8 +307,26 @@ final class GroupTransactionBridge {
             $0.optInPersonalOnly && $0.needsUserInput.contains(DraftInputRequirement.subcategory)
         }
 
-        // Cleanup: TX virtuales son derivadas, siempre delete+recreate.
-        for tx in existingVirtualTxs { context.delete(tx) }
+        // Cleanup: las TX virtuales derivadas (lent, opening balance — subcat de sistema)
+        // son delete+recreate; la ÚNICA virtual clasificable (la `-myShare` del Caso B, con
+        // subcat nil o de usuario) se PRESERVA para no perder subcat manual / tags entre
+        // re-bridges (paridad con el preserve+update del Caso A real). La partición es
+        // determinista ante duplicadas históricas (gana la que porte metadatos, empate → la
+        // más antigua). El path terminal (Caso B / groupInvite / Caso A) la consume o la borra.
+        let partition = BridgeBranchLogic.partitionVirtualTxs(existingVirtualTxs.map { tx in
+            let sub = tx.subcategory
+            let hasUserSubcat = sub != nil && sub?.isAnySystem != true
+            let hasTags = !(tx.resolvedTagIDs()?.isEmpty ?? true)
+            return BridgeBranchLogic.VirtualTxShape(
+                subcategoryIsNil: sub == nil,
+                subcategoryIsSystem: sub?.isAnySystem == true,
+                hasUserMetadata: hasUserSubcat || hasTags || tx.needOverride != nil,
+                date: tx.date,
+                createdAt: tx.createdAt
+            )
+        })
+        let preservedClassifiable: TransactionItem? = partition.preservedIndex.map { existingVirtualTxs[$0] }
+        for idx in partition.deletedIndices { context.delete(existingVirtualTxs[idx]) }
         // Drafts pendientes: cleanup salvo si DraftService los está procesando (race).
         // Opt-in drafts (`optInPersonalOnly==true`) NUNCA se borran aquí — representan
         // intent del user pendiente de aprobación que sobrevive cualquier re-bridge.
@@ -211,6 +357,7 @@ final class GroupTransactionBridge {
             try bridgeVirtualOnly(
                 expense: expense,
                 existingRealTx: existingRealTx,
+                preservedVirtual: preservedClassifiable,
                 deleteStaleReal: effectiveBridgeEnabled,
                 myShareAmount: mySharedAmount,
                 lentAmount: lentAmount,
@@ -222,14 +369,15 @@ final class GroupTransactionBridge {
             )
             try saveIfNeeded(shouldSave: shouldSave, context: context)
             Self.logger.info("caseB saved expense=\(expenseIDStr, privacy: .public) shouldSave=\(shouldSave, privacy: .public)")
-            return
+            return true
         }
 
-        // Path Caso A modo .groupInvite: fallback M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount).
-        if isGroupInvite {
+        // Path Caso A sin cuentas personales: par virtual puro (TX1 -myShare + TX2 +totalAmount).
+        if isGroupsOnlySession {
             if let stale = existingRealTx { context.delete(stale) }
-            createGroupInviteCaseAVirtualPair(
+            createGroupsOnlyCaseAVirtualPair(
                 expense: expense,
+                preservedVirtual: preservedClassifiable,
                 myShareAmount: mySharedAmount,
                 lentAmount: lentAmount,
                 totalAmount: totalAmount,
@@ -239,7 +387,7 @@ final class GroupTransactionBridge {
                 context: context
             )
             try saveIfNeeded(shouldSave: shouldSave, context: context)
-            return
+            return true
         }
 
         // Path Caso A bridge effective OFF: virtual-only. Sin opt-in (no hay TX real) el
@@ -252,6 +400,7 @@ final class GroupTransactionBridge {
             try bridgeVirtualOnly(
                 expense: expense,
                 existingRealTx: existingRealTx,
+                preservedVirtual: preservedClassifiable,
                 deleteStaleReal: false,
                 myShareAmount: mySharedAmount,
                 lentAmount: lentAmount,
@@ -262,8 +411,13 @@ final class GroupTransactionBridge {
                 context: context
             )
             try saveIfNeeded(shouldSave: shouldSave, context: context)
-            return
+            return true
         }
+
+        // Path Caso A modo .full/.completed: la virtual clasificable superviviente (p.ej. de
+        // cuando yo era NO-pagador, Caso B) ya no aplica — aquí mi costo lo lleva la TX real
+        // `-total` + la virtual lent derivada. Borrarla evita una virtual `-myShare` huérfana.
+        if let stale = preservedClassifiable { context.delete(stale) }
 
         // Path Caso A modo .full/.completed: gestionar TX cuenta real con preserve+update.
         if let realTx = existingRealTx {
@@ -379,6 +533,7 @@ final class GroupTransactionBridge {
         }
 
         try saveIfNeeded(shouldSave: shouldSave, context: context)
+        return true
     }
 
     // MARK: - Helpers (M6)
@@ -392,9 +547,14 @@ final class GroupTransactionBridge {
     /// Resuelve el doble conteo B6-25 (virtual `-myShare` + real `-total`, mismo signo).
     /// - Parameter deleteStaleReal: `true` solo en Caso B bridge-ON (la TX real solo tiene
     ///   sentido cuando yo soy payer; un cambio de payer con bridge ON la vuelve obsoleta).
+    /// - Parameter preservedVirtual: la TX virtual clasificable `-myShare` superviviente del
+    ///   cleanup (con subcat manual / tags del usuario). En la rama `.myShareCost` se hace
+    ///   upsert (preserva su identidad y metadatos); en `.lendingToCompensateReal`/`.noVirtual`
+    ///   se BORRA (el usuario tiene TX real → la virtual `-myShare` sobra).
     private func bridgeVirtualOnly(
         expense: SplitExpense,
         existingRealTx: TransactionItem?,
+        preservedVirtual: TransactionItem?,
         deleteStaleReal: Bool,
         myShareAmount: Double,
         lentAmount: Double,
@@ -437,6 +597,7 @@ final class GroupTransactionBridge {
         case .myShareCost:
             createCaseBVirtualMyShare(
                 expense: expense,
+                existing: preservedVirtual,
                 myShareAmount: myShareAmount,
                 realSubcat: realSubcat,
                 optInCoversSubcategory: optInCoversSubcategory,
@@ -444,6 +605,8 @@ final class GroupTransactionBridge {
                 context: context
             )
         case .lendingToCompensateReal:
+            // El usuario tiene TX real -total → la virtual `-myShare` clasificable sobra.
+            if let preservedVirtual { context.delete(preservedVirtual) }
             try createVirtualLent(
                 expense: expense,
                 lentAmount: lentAmount,
@@ -452,7 +615,8 @@ final class GroupTransactionBridge {
                 context: context
             )
         case .noVirtual:
-            break  // real -total ya es mi costo total (yo solo en el split).
+            // real -total ya es mi costo total (yo solo en el split) → sin virtual.
+            if let preservedVirtual { context.delete(preservedVirtual) }
         }
     }
 
@@ -544,38 +708,92 @@ final class GroupTransactionBridge {
     }
 
     /// Caso B (otro pagó): TX virtual -myShare con subcat manual o draft TX-puntero.
-    /// No-op si `myShareAmount <= 0` (no participo en la división → sin costo personal que
-    /// registrar; evita una TX de monto 0). Simétrico con `createVirtualLent` (`lent > 0`).
+    /// **Upsert** con preserve+update: si `existing != nil` se preserva su identidad (y su
+    /// subcat manual / tags / needOverride / cuenta), actualizando SOLO los campos derivados
+    /// del grupo (monto/fecha/nota/split*). A diferencia del Caso A real, la NOTA aquí SÍ se
+    /// deriva de `expenseDescription` — no es editable en la UI (vive en `centralContent`,
+    /// bloqueada) y es el título visible del gasto.
+    /// No-op de CREACIÓN si `myShareAmount <= 0` (no participo en la división → sin costo
+    /// personal); en ese caso, si había una `existing`, se BORRA (evita una TX huérfana con
+    /// monto stale). Simétrico con `createVirtualLent` (`lent > 0`).
     private func createCaseBVirtualMyShare(
         expense: SplitExpense,
+        existing: TransactionItem?,
         myShareAmount: Double,
         realSubcat: Subcategory?,
         optInCoversSubcategory: Bool,
         virtualAccount: Account,
         context: ModelContext
     ) {
-        guard myShareAmount > 0 else { return }
         let expenseIDStr = expense.id.uuidString
-        let tx = TransactionItem(
-            date: expense.date,
-            amount: -myShareAmount,
-            currencyCode: expense.currencyCode,
-            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
-            category: realSubcat?.safeCategory,
-            subcategory: realSubcat,
-            account: virtualAccount
-        )
-        tx.splitExpenseID = expenseIDStr
-        tx.splitGroupZoneID = expense.groupZoneID
-        tx.splitTotalAmount = expense.amount
-        tx.splitType = expense.splitType
-        context.insert(tx)
-        tx.recalculatePreferredCurrency(context: context)
+        let derivedNote = expense.expenseDescription.isEmpty ? nil : expense.expenseDescription
 
-        // Draft TX-puntero para asignar subcat si auto-match falló (path heredado M5).
+        guard myShareAmount > 0 else {
+            // Con preserve, dejar la TX existente la volvería huérfana (monto stale) → borrar.
+            if let existing { context.delete(existing) }
+            return
+        }
+
+        let tx: TransactionItem
+        if let existing, existing.currencyCode == expense.currencyCode {
+            // UPDATE preserve: SOLO campos del grupo (jamás cuenta/tags/subcat ya puesta/
+            // needOverride). Nota derivada del gasto (no editable en Caso B).
+            existing.amount = -myShareAmount
+            existing.date = expense.date
+            existing.note = derivedNote
+            existing.splitTotalAmount = expense.amount
+            existing.splitType = expense.splitType
+            // Rellenar subcat+category SOLO si la TX nunca tuvo una y el gasto resuelve una.
+            // Residual documentado: `subcategory` es to-one CloudKit-lazy
+            // SIN mirror CSV — en la ventana de hidratación multi-device puede leerse nil y
+            // este fill pisar una subcat manual aún no hidratada con el auto-match. NO es
+            // regresión (el delete+recreate previo la pisaba SIEMPRE); el cierre real exige
+            // un mirror de subcat en TransactionItem (cambio de schema, fuera de este fix).
+            if GroupDraftFinalizationLogic.shouldFillPreservedSubcategory(
+                currentSubcatIsNil: existing.subcategory == nil,
+                resolvedSubcatAvailable: realSubcat != nil
+            ), let realSubcat {
+                existing.subcategory = realSubcat
+                existing.category = realSubcat.safeCategory
+            }
+            existing.recalculatePreferredCurrency(context: context)
+            tx = existing
+        } else if let existing {
+            // Currency INCOMPATIBLE (el gasto cambió de moneda): delete + recreate CON
+            // trasplante de los metadatos del usuario (independientes de la moneda).
+            let carriedSubcat = existing.subcategory
+            // Tags CSV-first (regla CSV mirror): la relación M2M puede venir nil en ventana
+            // lazy con sync activo — leerla directo perdería las etiquetas del usuario.
+            let carriedTags = TagResolver.fetchOrEmpty(
+                ids: existing.resolvedTagIDs() ?? [],
+                in: context,
+                errorContext: "GroupTransactionBridge/currencyTransplant"
+            )
+            let carriedNeedOverride = existing.needOverride
+            context.delete(existing)
+            let newTx = insertVirtualMyShareTx(
+                expense: expense, myShareAmount: myShareAmount, note: derivedNote,
+                subcategory: carriedSubcat ?? realSubcat, virtualAccount: virtualAccount,
+                context: context
+            )
+            newTx.needOverride = carriedNeedOverride
+            newTx.setTags(from: carriedTags)
+            tx = newTx
+        } else {
+            // CREATE (primera vez): sin `existing`, no hay metadatos que preservar.
+            tx = insertVirtualMyShareTx(
+                expense: expense, myShareAmount: myShareAmount, note: derivedNote,
+                subcategory: realSubcat, virtualAccount: virtualAccount,
+                context: context
+            )
+        }
+
+        // Draft TX-puntero para asignar subcat si la TX quedó sin clasificar (path heredado
+        // M5). Se decide por el estado FINAL de la TX (`tx.subcategory == nil`) — no por el
+        // auto-match — para no recrear el puntero sobre una TX ya clasificada manualmente.
         // Skip si un draft opt-in pendiente ya pide la subcategoría (B6-26 parte 2).
         if GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
-            autoMatchFailed: realSubcat == nil,
+            autoMatchFailed: tx.subcategory == nil,
             optInDraftCoversSubcategory: optInCoversSubcategory
         ) {
             let draft = InboxDraft(
@@ -599,9 +817,40 @@ final class GroupTransactionBridge {
         }
     }
 
-    /// Caso A modo .groupInvite: M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount sistema).
-    private func createGroupInviteCaseAVirtualPair(
+    /// Construye e inserta la TX virtual `-myShare` con los campos derivados del gasto.
+    /// Compartido por las ramas recreate-con-trasplante y create del upsert de Caso B —
+    /// un campo `split*` nuevo se añade en UN solo sitio.
+    private func insertVirtualMyShareTx(
         expense: SplitExpense,
+        myShareAmount: Double,
+        note: String?,
+        subcategory: Subcategory?,
+        virtualAccount: Account,
+        context: ModelContext
+    ) -> TransactionItem {
+        let newTx = TransactionItem(
+            date: expense.date,
+            amount: -myShareAmount,
+            currencyCode: expense.currencyCode,
+            note: note,
+            category: subcategory?.safeCategory,
+            subcategory: subcategory,
+            account: virtualAccount
+        )
+        newTx.splitExpenseID = expense.id.uuidString
+        newTx.splitGroupZoneID = expense.groupZoneID
+        newTx.splitTotalAmount = expense.amount
+        newTx.splitType = expense.splitType
+        context.insert(newTx)
+        newTx.recalculatePreferredCurrency(context: context)
+        return newTx
+    }
+
+    /// Caso A en sesión solo-grupos: M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount sistema).
+    /// TX1 reusa el upsert de Caso B → preserva la subcat manual / tags entre re-bridges.
+    private func createGroupsOnlyCaseAVirtualPair(
+        expense: SplitExpense,
+        preservedVirtual: TransactionItem?,
         myShareAmount: Double,
         lentAmount: Double,
         totalAmount: Double,
@@ -611,11 +860,12 @@ final class GroupTransactionBridge {
         context: ModelContext
     ) {
         let expenseIDStr = expense.id.uuidString
-        // TX1 virtual -myShare (idéntica a Caso B): reusa el helper de Caso B en vez de duplicar
-        // la TX + su draft puntero. El propio helper es no-op si myShare==0 (pagador sin parte:
-        // prestó el total → solo se crea la TX2 +total de abajo).
+        // TX1 virtual -myShare (idéntica a Caso B): reusa el helper de Caso B (upsert) en vez de
+        // duplicar la TX + su draft puntero. El propio helper borra `preservedVirtual` si
+        // myShare==0 (pagador sin parte: prestó el total → solo se crea la TX2 +total de abajo).
         createCaseBVirtualMyShare(
             expense: expense,
+            existing: preservedVirtual,
             myShareAmount: myShareAmount,
             realSubcat: realSubcat,
             optInCoversSubcategory: optInCoversSubcategory,
@@ -649,9 +899,7 @@ final class GroupTransactionBridge {
                 #if DEBUG
                 print("GroupTransactionBridge: TX2 virtual lent falló: \(error)")
                 #endif
-                TelemetryService.track(.bridgeVirtualLentTxFailed, parameters: [
-                    "role": "loanToGroups"
-                ])
+                MetricsService.canary(.bridgeVirtualLentTxFailed, detail: "loanToGroups")
             }
         }
     }
@@ -743,14 +991,24 @@ final class GroupTransactionBridge {
     /// Bridge remote expenses received in a sync batch. Called after context.save().
     /// `ids`: re-fetch en ESTE context (mainContext) en lugar de pasar objetos `SplitExpense` —
     /// el sync persiste los expenses y luego invoca esto con sus IDs; re-fetchear evita objetos stale.
-    func bridgeRemoteExpenses(ids: [UUID]) throws {
+    ///
+    /// Devuelve los IDs ATENDIDOS DE VERDAD: fila encontrada, grupo resuelto y `bridgeExpense` devolviendo
+    /// `true`. Quedan fuera los que este método salta (fila que ya no existe, grupo que aún no ha bajado),
+    /// los que su `catch` por gasto se traga y —la parte que no se ve— los que `bridgeExpense` deja en
+    /// estado INCOMPLETO sin lanzar: el member propio todavía sin marcar, las shares que no han bajado. Es
+    /// lo que permite a `GroupsPendingBridgeIntent` desarmarse POR ID en vez de por lote: sin esta
+    /// distinción, un gasto que nunca obtuvo su transacción personal desaparecía en silencio junto a los
+    /// que sí. **Precondición del llamador:** haber comprobado `isDomainOpenForBridge()`.
+    @discardableResult
+    func bridgeRemoteExpenses(ids: [UUID]) throws -> Set<UUID> {
         let context = try requireContext()
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty else { return [] }
         let idSet = Set(ids)
         let expenses = try context.fetch(FetchDescriptor<SplitExpense>()).filter { idSet.contains($0.id) }
         // DIAG: re-bridge por sync remoto (distingue del edit local). Quitar tras QA.
         Self.logger.info("bridgeRemoteExpenses count=\(expenses.count, privacy: .public)")
 
+        var bridged: Set<UUID> = []
         for expense in expenses {
             // Find the group for this expense
             let zoneID = expense.groupZoneID
@@ -762,7 +1020,9 @@ final class GroupTransactionBridge {
             do {
                 // M6: isRemoteSync=true marca path remoto. Sin accountForCurrentUser local
                 // → bridge crea draft pendiente con hint si Caso A y no existe TX real.
-                try bridgeExpense(expense, in: group, accountForCurrentUser: nil, isRemoteSync: true, shouldSave: false)
+                if try bridgeExpense(expense, in: group, accountForCurrentUser: nil, isRemoteSync: true, shouldSave: false) {
+                    bridged.insert(expense.id)
+                }
             } catch {
                 #if DEBUG
                 print("GroupTransactionBridge: Failed to bridge expense \(expense.id): \(error)")
@@ -770,8 +1030,11 @@ final class GroupTransactionBridge {
             }
         }
 
+        // El `save()` va ANTES del return a propósito: si lanza, el llamador no recibe ningún ID y la
+        // intención sigue armada entera — lo puenteado en memoria no llegó a disco.
         try context.save()
         // UI refresh handled by SplitSyncManager's deferred markRemoteChangePending()
+        return bridged
     }
 
     // MARK: - Settlement Bridge (A0-Bridge: Caso C + D)
@@ -784,39 +1047,66 @@ final class GroupTransactionBridge {
     ///   + persiste defaultSettlementAccount preference.
     /// Si cuenta proveída es nil (form skipped): InboxDraft `groupSettlement` con
     ///   subcategory="Liquidación enviada", account=nil, splitSettlementID.
-    /// Si `userType == .groupInvite`: solo TX1 virtual; NO draft. UI muestra toast upsell.
+    /// Sin sesión privada (solo-grupos): solo TX1 virtual; NO draft. UI muestra toast upsell.
     ///
     /// **Caso D** (yo `to`, reactivo): TX1 virtual `-amount` con sistema "Cobro de préstamo" (expense).
     /// Si `.full|.completed`: InboxDraft `groupSettlement` con subcategory="Liquidación recibida",
     ///   amount=+amount, splitSettlementID. User finaliza desde Inbox para crear TX cuenta real.
-    /// Si `.groupInvite`: solo TX1 virtual; NO draft.
+    /// Si es solo-grupos: solo TX1 virtual; NO draft.
     ///
     /// Idempotency: delete + recreate (mismo patrón que bridgeExpense).
+    ///
+    /// Devuelve si la liquidación quedó **ATENDIDA**, con el mismo contrato que `bridgeExpense`: `false`
+    /// solo para los estados INCOMPLETOS que pueden resolverse después (todavía sin confirmar, o el
+    /// `SplitMember` propio aún sin marcar). Una liquidación entre terceros SÍ está atendida — es una
+    /// decisión firme, no un estado a medias.
+    @discardableResult
     func bridgeSettlement(
         _ settlement: SplitSettlement,
         in group: SplitGroup,
         accountForCurrentUser: Account? = nil,
         shouldSave: Bool = true
-    ) throws {
+    ) throws -> Bool {
         let context = try requireContext()
 
-        // Solo bridge si confirmed.
-        guard settlement.isConfirmed else { return }
+        // Gate de dominio (handover) — gemelo del de `bridgeExpense`, mismo racional (incluido el
+        // del log fuera de `#if DEBUG`).
+        guard Self.isDomainOpenForBridge() else {
+            Self.logger.info("bridgeSettlement: skip — groups domain sealed for a new user on this device")
+            return false
+        }
+
+        // Paso 10 · gemelo del de `bridgeExpense`: esta liquidación ya está en el Panel como movimiento
+        // personal conservado en una desasociación anterior de ESTA misma cuenta. Ver allí el racional,
+        // incluido que deja de frenar cuando el movimiento conservado ya no está.
+        guard !GroupsDetachedBridgeLedger.stillHoldsBridge(
+            settlementID: settlement.id.uuidString,
+            associatedSub: GroupsAccountAssociation.shared.associatedSub,
+            context: context) else {
+            Self.logger.info("bridgeSettlement: skip — settlement kept as a personal movement on a previous detach")
+            return true
+        }
+
+        // Solo bridge si confirmed. NO atendida: confirmarla es una edición REMOTA de una fila que este
+        // device ya tiene, y esas no se re-clasifican en `newSettlements` ⇒ darla por decidida aquí la
+        // dejaría sin puentear cuando la confirmen.
+        guard settlement.isConfirmed else { return false }
 
         // Find current user.
         // pending/rejected members no triguean bridge.
         let zoneID = group.cloudKitZoneID
-        let memberDescriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
-        )
-        guard let currentMember = try context.fetch(memberDescriptor).first,
-              currentMember.isActive else { return }
+        // Identidad RESUELTA — gemelo del de `bridgeExpense`, mismo racional: con el flag pelado, a quien
+        // acaba de entrar al grupo no se le reconoce como parte de la liquidación hasta el arranque
+        // siguiente, y su cobro o su pago no llega a sus cuentas.
+        guard let currentMember = try GroupExpenseService.resolveCurrentUserMember(
+                  inZone: zoneID, context: context),
+              currentMember.isActive else { return false }
         let currentMemberID = currentMember.id.uuidString
 
         // Determinar caso C/D. Skip si user no es from ni to (settlement entre otros).
         let isCaseC = settlement.fromMemberID == currentMemberID
         let isCaseD = settlement.toMemberID == currentMemberID
-        guard isCaseC || isCaseD else { return }
+        guard isCaseC || isCaseD else { return true }
 
         // Idempotency: delete previous TX/Drafts.
         let settlementIDStr = settlement.id.uuidString
@@ -828,14 +1118,27 @@ final class GroupTransactionBridge {
         let existingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitSettlementID == settlementIDStr }
         ))
-        // Opt-in drafts preservados (mismo razonamiento que bridgeExpense).
-        for draft in existingDrafts where !draft.optInPersonalOnly {
+        // Solo se sustituyen los borradores PENDIENTES. Los opt-in se preservan (mismo razonamiento que
+        // bridgeExpense), y los ya RESUELTOS también: el aprobado es la marca de que esta liquidación ya se
+        // registró en una cuenta, y el rechazado, la de que la persona no quiere registrarla. Borrarlos aquí
+        // era lo que hacía volver a preguntar tras un borrado tardío (ticket
+        // `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`).
+        //
+        // Los avisos de importe cambiado (`isSettlementAmountChangeNotice`) no cuentan aquí ni se sustituyen: no dicen
+        // si la liquidación se registró, y los gestiona `reconcileAmountChangeNotices` al final.
+        let resolution = GroupSettlementDraftResolutionLogic.resolution(
+            of: existingDrafts.filter { !$0.isSettlementAmountChangeNotice }.map(\.status))
+        // Lo que baja por el espejo de otro dispositivo puede traer un pendiente junto a la marca: el re-puente ya lo
+        // sustituye arriba; en frío lo poda `pruneSettlementDraftsAlreadyResolved`.
+        for draft in existingDrafts where !draft.isSettlementAmountChangeNotice
+            && GroupSettlementDraftResolutionLogic.isReplacedOnReBridge(
+                status: draft.status, optInPersonalOnly: draft.optInPersonalOnly) {
             context.delete(draft)
         }
 
         let amount = settlement.amount
         let currencyCode = settlement.currencyCode
-        let userType = SessionState.shared.onboardingMode
+        let hasPrivateSession = SessionState.shared.hasPrivateSession
 
         // Caso C: si bridge OFF se omiten TX2 cuenta real + draft auto. La creación
         // queda diferida al alert opt-in del form que crea draft Inbox bajo demanda.
@@ -869,8 +1172,9 @@ final class GroupTransactionBridge {
             context.insert(tx1)
             tx1.recalculatePreferredCurrency(context: context)
 
-            // TX2 cuenta real solo para .full/.completed Y bridge effective ON.
-            if userType != .groupInvite && effectiveBridgeEnabled {
+            // TX2 en cuenta real solo con vida personal en este teléfono Y bridge effective ON, y nunca si el
+            // pago ya se registró en una cuenta (marca de aprobación): sería el mismo dinero dos veces.
+            if hasPrivateSession && effectiveBridgeEnabled && resolution != .approved {
                 if let account = accountForCurrentUser {
                     let sentSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context)
                     let tx2 = TransactionItem(
@@ -887,7 +1191,7 @@ final class GroupTransactionBridge {
                     context.insert(tx2)
                     tx2.recalculatePreferredCurrency(context: context)
                     // M6: NO defaults — eliminada persistencia de defaultSettlementAccount.
-                } else {
+                } else if resolution == nil {
                     // Sin cuenta proveída: draft pendiente. La subcat sistema es opcional (el user
                     // la completa en Inbox); do/catch para no tragar un error real con try?.
                     let sentSubcat: Subcategory?
@@ -934,9 +1238,10 @@ final class GroupTransactionBridge {
             context.insert(tx1)
             tx1.recalculatePreferredCurrency(context: context)
 
-            // Para .full/.completed: draft groupSettlement para asignar cuenta real.
+            // Con vida personal: draft groupSettlement para asignar cuenta real, salvo que la persona ya lo
+            // resolviera (aprobado o rechazado): ese borrador sigue ahí y no se vuelve a preguntar.
             // M6: NO defaults universales — sin preselect, user siempre elige cuenta.
-            if userType != .groupInvite {
+            if hasPrivateSession && resolution == nil {
                 let receivedSubcat: Subcategory?
                 do {
                     receivedSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementReceived, context: context)
@@ -965,22 +1270,217 @@ final class GroupTransactionBridge {
             }
         }
 
+        // Ticket `settlement-amount-edited-after-approval-leaves-the-bank-stale`: si el importe cambió y la persona ya lo
+        // registró en una cuenta real, el Inbox avisa. La transacción real no se toca aquí (D7): solo si acepta el aviso.
+        if hasPrivateSession {
+            let counterpartID = isCaseC ? settlement.toMemberID : settlement.fromMemberID
+            Self.reconcileAmountChangeNotices(
+                for: settlement,
+                expectsOutflow: isCaseC,
+                drafts: existingDrafts.filter { $0.isSettlementAmountChangeNotice || $0.status != .pending },
+                counterpartName: resolveMemberDisplayName(memberID: counterpartID, in: group, context: context),
+                groupName: group.name,
+                context: context)
+        }
+
         if shouldSave {
             try context.save()
             SessionState.shared.incrementDataVersion()
             WidgetDataCache.updateCache(context: context)
         }
+        return true
+    }
+
+    // MARK: - Aviso de importe cambiado tras aprobar
+
+    /// **Aplica `GroupSettlementAmountChangeLogic` a una liquidación**: pone al día el aviso pendiente, lo crea o retira los
+    /// que sobran. No guarda. `drafts` son los borradores de esa liquidación que siguen vivos (las marcas y los avisos; los
+    /// pendientes de «¿a qué cuenta llegó?» no cuentan). `expectsOutflow` es el sentido que la liquidación tiene HOY para
+    /// mí (yo pago ⇒ `true`), `nil` si no se pudo resolver. Devuelve si escribió algo.
+    ///
+    /// El aviso lleva la cuenta y la subcategoría de la transacción real (solo para enseñarlo) y NO se enlaza a ella
+    /// (`InboxDraft.isSettlementAmountChangeNotice` dice por qué): ajustar la resuelve por la marca.
+    @discardableResult
+    static func reconcileAmountChangeNotices(
+        for settlement: SplitSettlement,
+        expectsOutflow: Bool?,
+        drafts: [InboxDraft],
+        counterpartName: String?,
+        groupName: String,
+        context: ModelContext
+    ) -> Bool {
+        let marks = drafts.filter {
+            $0.sourceType == .groupSettlement && $0.status == .approved && !$0.isSettlementAmountChangeNotice
+        }
+        // Orden estable, el más antiguo primero: dos dispositivos con los mismos avisos conservan el mismo.
+        let notices = drafts.filter(\.isSettlementAmountChangeNotice).sorted {
+            if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+            return ($0.syncID?.uuidString ?? "") < ($1.syncID?.uuidString ?? "")
+        }
+        guard !marks.isEmpty || !notices.isEmpty else { return false }
+
+        let plan = GroupSettlementAmountChangeLogic.plan(
+            settlementAmount: settlement.amount,
+            settlementCurrency: settlement.currencyCode,
+            expectsOutflow: expectsOutflow,
+            marks: marks.map {
+                .init(amount: $0.amount,
+                      transactionAmount: $0.approvedTransaction?.amount,
+                      transactionCurrency: $0.approvedTransaction?.currencyCode)
+            },
+            notices: notices.map { .init(status: $0.status, amount: $0.amount) })
+
+        var wrote = false
+        if let amount = plan.pendingAmount,
+           let mark = marks.first(where: { $0.approvedTransaction != nil }),
+           let transaction = mark.approvedTransaction {
+            if let index = plan.keepPendingIndex {
+                // Solo lo que cambia: el arranque pasa por aquí cada vez, y una reescritura idéntica guardaría para nada.
+                let notice = notices[index]
+                var changed = false
+                if notice.amount != amount { notice.amount = amount; changed = true }
+                if let account = transaction.account, notice.account?.persistentModelID != account.persistentModelID {
+                    notice.account = account
+                    changed = true
+                }
+                if let counterpartName, notice.originActorName != counterpartName {
+                    notice.originActorName = counterpartName
+                    changed = true
+                }
+                if !groupName.isEmpty, notice.originGroupName != groupName {
+                    notice.originGroupName = groupName
+                    changed = true
+                }
+                if changed {
+                    notice.updatedAt = Date.now
+                    wrote = true
+                }
+            } else {
+                let notice = InboxDraft(
+                    note: settlement.note ?? mark.note,
+                    amount: amount,
+                    date: settlement.date,
+                    account: transaction.account,
+                    subcategory: transaction.subcategory ?? mark.subcategory,
+                    sourceType: .groupSettlement,
+                    confidenceAmount: 1.0,
+                    confidenceDate: 1.0,
+                    confidenceMerchant: 1.0,
+                    confidenceSubcategory: 1.0,
+                    needsUserInput: [],
+                    splitGroupZoneID: settlement.groupZoneID,
+                    splitSettlementID: settlement.id.uuidString,
+                    originReasonKey: DraftOriginReason.settlementAmountChanged.rawValue,
+                    originActorName: counterpartName,
+                    originGroupName: groupName
+                )
+                context.insert(notice)
+                logger.notice("settlementAmountChange: notice created")
+                wrote = true
+            }
+        }
+        for index in plan.deleteIndices {
+            InboxRowPruneCoordinator.shared.pruneRow(notices[index].persistentModelID)
+            context.delete(notices[index])
+            wrote = true
+        }
+        return wrote
+    }
+
+    /// **En frío, pone al día los avisos de importe cambiado de todas las liquidaciones con marca o aviso.** Cubre lo que el
+    /// re-puente no ve: la transacción real que llega por CloudKit después de la marca, el aviso duplicado que creó otro
+    /// dispositivo y el que borró una versión anterior de la app. Corre en `AppBootstrapper.retryPendingBridges`, detrás de
+    /// sus gates, y solo con vida personal en este teléfono. Una liquidación que ya no existe retira sus avisos pendientes.
+    @discardableResult
+    static func reconcileSettlementAmountChangeNotices(context: ModelContext) throws -> Int {
+        guard SessionState.shared.hasPrivateSession else { return 0 }
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        let approvedRaw = DraftStatus.approved.rawValue
+        let noticeKey = DraftOriginReason.settlementAmountChanged.rawValue
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate {
+                $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID != nil
+                    && ($0.statusRaw == approvedRaw || $0.originReasonKey == noticeKey)
+            }))
+        guard !drafts.isEmpty else { return 0 }
+        let byID = Dictionary(grouping: drafts) { $0.splitSettlementID ?? "" }
+
+        var touched = 0
+        for (idString, group) in byID {
+            guard let uuid = UUID(uuidString: idString) else { continue }
+            var descriptor = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == uuid })
+            descriptor.fetchLimit = 1
+            guard let settlement = try context.fetch(descriptor).first else {
+                for notice in group where notice.isSettlementAmountChangeNotice && notice.status == .pending {
+                    InboxRowPruneCoordinator.shared.pruneRow(notice.persistentModelID)
+                    context.delete(notice)
+                    touched += 1
+                }
+                continue
+            }
+            let zoneID = settlement.groupZoneID
+            var groupDescriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID })
+            groupDescriptor.fetchLimit = 1
+            // Sin grupo, u oculto, no hay a quién seguir: se retiran los pendientes, como el re-puente que no corre.
+            guard let splitGroup = try context.fetch(groupDescriptor).first, !splitGroup.isHiddenForAll else {
+                for notice in group where notice.isSettlementAmountChangeNotice && notice.status == .pending {
+                    InboxRowPruneCoordinator.shared.pruneRow(notice.persistentModelID)
+                    context.delete(notice)
+                    touched += 1
+                }
+                continue
+            }
+            let me = try GroupExpenseService.resolveCurrentUserMember(inZone: zoneID, context: context)
+            let myID = me?.id.uuidString
+            // Ya no soy parte de la liquidación (la editaron a otros dos): nada que ajustar, fuera los pendientes.
+            if let myID, myID != settlement.fromMemberID, myID != settlement.toMemberID {
+                for notice in group where notice.isSettlementAmountChangeNotice && notice.status == .pending {
+                    InboxRowPruneCoordinator.shared.pruneRow(notice.persistentModelID)
+                    context.delete(notice)
+                    touched += 1
+                }
+                continue
+            }
+            let expectsOutflow = myID.map { $0 == settlement.fromMemberID }
+            let counterpartID = myID.map { $0 == settlement.fromMemberID
+                ? settlement.toMemberID : settlement.fromMemberID }
+            let counterpartName: String?
+            if let counterpartID, let memberUUID = UUID(uuidString: counterpartID) {
+                var memberDescriptor = FetchDescriptor<SplitMember>(
+                    predicate: #Predicate { $0.groupZoneID == zoneID && $0.id == memberUUID })
+                memberDescriptor.fetchLimit = 1
+                counterpartName = try context.fetch(memberDescriptor).first?.displayName
+            } else {
+                counterpartName = nil
+            }
+            if reconcileAmountChangeNotices(
+                for: settlement, expectsOutflow: expectsOutflow, drafts: group, counterpartName: counterpartName,
+                groupName: splitGroup.name, context: context) {
+                touched += 1
+            }
+        }
+        guard touched > 0 else { return 0 }
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        logger.notice("reconcileSettlementAmountChangeNotices touched=\(touched, privacy: .public)")
+        return touched
     }
 
     /// Bridge remote settlements received via sync. Llamado desde SplitSyncManager.
     /// Solo procesa settlements confirmed (skipea unconfirmed).
     /// `ids`: re-fetch en ESTE context (mainContext) — ver `bridgeRemoteExpenses(ids:)`.
-    func bridgeRemoteSettlements(ids: [UUID]) throws {
+    ///
+    /// Devuelve los IDs atendidos, con el mismo contrato que su gemelo de gastos: una liquidación entre
+    /// terceros cuenta como atendida (decisión firme), pero una todavía sin confirmar o con el member
+    /// propio sin resolver NO — esos estados se resuelven después y su bridge no puede darse por hecho.
+    @discardableResult
+    func bridgeRemoteSettlements(ids: [UUID]) throws -> Set<UUID> {
         let context = try requireContext()
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty else { return [] }
         let idSet = Set(ids)
         let settlements = try context.fetch(FetchDescriptor<SplitSettlement>()).filter { idSet.contains($0.id) }
 
+        var bridged: Set<UUID> = []
         for settlement in settlements {
             let zoneID = settlement.groupZoneID
             let groupDescriptor = FetchDescriptor<SplitGroup>(
@@ -989,7 +1489,9 @@ final class GroupTransactionBridge {
             guard let group = try context.fetch(groupDescriptor).first else { continue }
 
             do {
-                try bridgeSettlement(settlement, in: group, accountForCurrentUser: nil, shouldSave: false)
+                if try bridgeSettlement(settlement, in: group, accountForCurrentUser: nil, shouldSave: false) {
+                    bridged.insert(settlement.id)
+                }
             } catch {
                 #if DEBUG
                 print("GroupTransactionBridge: Failed to bridge settlement \(settlement.id): \(error)")
@@ -998,6 +1500,7 @@ final class GroupTransactionBridge {
         }
 
         try context.save()
+        return bridged
     }
 
     /// Remove all bridged TransactionItems and InboxDrafts vinculadas a un settlement.
@@ -1038,6 +1541,132 @@ final class GroupTransactionBridge {
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
+    }
+
+    // MARK: - Transacción que ajusta un aviso de importe cambiado
+
+    /// **La transacción real que ajusta el aviso de importe cambiado, resuelta por la marca**: la única marca viva
+    /// (aprobada, con transacción) de esa liquidación. `nil` si no hay ninguna o hay dos (dos dispositivos que aprobaron el
+    /// mismo pago: no se elige una a ciegas). La usan `DraftService` al ajustar, la hoja y la fila del Inbox.
+    static func amountChangeTarget(
+        settlementID: String?, in context: ModelContext
+    ) throws -> (mark: InboxDraft, transaction: TransactionItem)? {
+        guard let settlementID else { return nil }
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        let approvedRaw = DraftStatus.approved.rawValue
+        let live = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate {
+                $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID == settlementID && $0.statusRaw == approvedRaw
+            }))
+            .filter { !$0.isSettlementAmountChangeNotice && $0.approvedTransaction != nil }
+        guard live.count == 1, let mark = live.first, let transaction = mark.approvedTransaction else { return nil }
+        return (mark, transaction)
+    }
+
+    // MARK: - Poda de borradores de liquidación ya aprobada
+
+    /// **En frío, retira los borradores pendientes de una liquidación que la persona ya resolvió**
+    /// (`GroupSettlementDraftResolutionLogic.redundantPendingDrafts`). Corre en `AppBootstrapper.retryPendingBridges`, detrás
+    /// de sus gates (store listo y dominio abierto): un `save()` durante un import es el SIGTRAP que esos gates evitan.
+    @discardableResult
+    static func pruneSettlementDraftsAlreadyResolved(context: ModelContext) throws -> Int {
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        // Los avisos de importe cambiado no son borradores de «¿a qué cuenta llegó?»: ni resuelven ni se podan aquí.
+        let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID != nil }))
+            .filter { !$0.isSettlementAmountChangeNotice }
+        let redundant = GroupSettlementDraftResolutionLogic.redundantPendingDrafts(
+            drafts.map { ($0.splitSettlementID, $0.status, $0.optInPersonalOnly) })
+        guard !redundant.isEmpty else { return 0 }
+        for index in redundant {
+            InboxRowPruneCoordinator.shared.pruneRow(drafts[index].persistentModelID)
+            context.delete(drafts[index])
+        }
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        logger.notice("pruneSettlementDraftsAlreadyResolved removed=\(redundant.count, privacy: .public)")
+        return redundant.count
+    }
+
+    // MARK: - Unbridge por borrado REMOTO (tombstone de un canal de sync)
+
+    /// Des-puentea EN LOTE los gastos y liquidaciones que un canal de sync acaba de borrar por
+    /// tombstone remoto, con UN SOLO `save()` para toda la página/batch.
+    ///
+    /// **Por qué existe además de `unbridgeExpense`/`unbridgeSettlement`:** esos cierran con su propio
+    /// `save()` + `incrementDataVersion()` + `updateCache()` por llamada, y los dos canales aplican los
+    /// tombstones DENTRO de un bucle por delta. Llamarlos ahí dentro pone un `save()` del `mainContext`
+    /// COMPARTIDO por fila borrada. Este acumula y cierra una sola vez, simétrico al bridge de alta
+    /// (`bridgeExpenseIDs`, que también se drena al terminar la página).
+    ///
+    /// **Por qué unbridge y NO `freezeForSoftDelete`:** el freeze es para cuando desaparece el GRUPO
+    /// ENTERO (salir, expulsión, soft-delete) y existe para preservar el rastro de gastos que SÍ
+    /// ocurrieron. Un gasto SUELTO que el pagador borró no ocurrió, y aquí manda la simetría con el
+    /// borrado LOCAL (`GroupExpenseService.performExpenseDeletion` → `unbridgeExpense`, y
+    /// `deleteSettlement` → `unbridgeSettlement`): si el device que borra DESTRUYE su `TransactionItem`
+    /// y el que recibe el tombstone la CONGELA, los dos Panel nunca convergen — se cambiaría una
+    /// divergencia por otra, y la congelada además queda sin dueño (el gasto ya no existe en el grupo).
+    ///
+    /// Un ID cuyo gasto ya no tiene nada colgando no produce escritura: idempotente y sin `save()`
+    /// espurio, que es lo que permite pasarle TODOS los tombstones de la página sin mirar si la fila
+    /// local existía — un tombstone re-emitido de un gasto que este device ya no tiene sigue siendo la
+    /// única señal capaz de limpiar una `TransactionItem` que quedó suelta.
+    ///
+    /// - Returns: cuántas `TransactionItem` y cuántos `InboxDraft` se borraron.
+    @discardableResult
+    func unbridgeDeletedRemotely(
+        expenseIDs: Set<UUID>, settlementIDs: Set<UUID>
+    ) throws -> (transactions: Int, drafts: Int) {
+        guard !expenseIDs.isEmpty || !settlementIDs.isEmpty else { return (0, 0) }
+        let context = try requireContext()
+
+        var deletedTxs = 0
+        var deletedDrafts = 0
+
+        // Un fetch por ID con igualdad EXACTA sobre el opcional (el mismo `#Predicate` concreto que ya
+        // usan `unbridgeExpense`/`unbridgeSettlement`, y el único patrón probado en device sobre estos
+        // campos), en vez de un fetch amplio + filtro en memoria: los IDs de una página son pocos y el
+        // corpus de TX bridgeadas puede ser de miles.
+        for id in expenseIDs {
+            let key = id.uuidString
+            for tx in try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == key }
+            )) {
+                context.delete(tx); deletedTxs += 1
+            }
+            for draft in try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == key }
+            )) {
+                context.delete(draft); deletedDrafts += 1
+            }
+        }
+
+        for id in settlementIDs {
+            let key = id.uuidString
+            for tx in try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitSettlementID == key }
+            )) {
+                context.delete(tx); deletedTxs += 1
+            }
+            for draft in try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitSettlementID == key }
+            )) {
+                context.delete(draft); deletedDrafts += 1
+            }
+        }
+
+        guard deletedTxs > 0 || deletedDrafts > 0 else { return (0, 0) }
+
+        SaveBreadcrumb.willSave("GroupTransactionBridge.unbridgeDeletedRemotely")
+        try context.save()
+        SaveBreadcrumb.didSave("GroupTransactionBridge.unbridgeDeletedRemotely")
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+
+        #if DEBUG
+        Self.logger.info("unbridgeDeletedRemotely txs=\(deletedTxs, privacy: .public) drafts=\(deletedDrafts, privacy: .public)")
+        #endif
+        return (deletedTxs, deletedDrafts)
     }
 
     // MARK: - Freeze on Soft-delete / Leave / Remove
@@ -1082,6 +1711,12 @@ final class GroupTransactionBridge {
         var draftsToConvert: [InboxDraft] = []
         var draftsToDelete: [InboxDraft] = []
         for draft in drafts where draft.sourceTypeRaw == groupExpenseRaw || draft.sourceTypeRaw == groupSettlementRaw {
+            // El aviso de importe cambiado de una liquidación ya aprobada ofrece ajustar una transacción que ya existe:
+            // convertido a manual, aprobarlo crearía OTRA. Se borra, con su liquidación fuera ya no hay nada que avisar.
+            if draft.isSettlementAmountChangeNotice {
+                draftsToDelete.append(draft)
+                continue
+            }
             // Puntero de clasificación: draft `.groupExpense` que SOLO pide subcategoría (no cuenta)
             // y apunta a una TX existente vía `splitExpenseID`. Esa TX se preserva en el freeze (la
             // real, liberada arriba; o la virtual sistema, intacta), así que el user la clasifica
@@ -1108,8 +1743,16 @@ final class GroupTransactionBridge {
     /// Reemplaza el destructive `unbridgeExpenses` eliminado — preserva el rastro financiero.
     /// Idempotente: TX/drafts ya limpios se excluyen del plan.
     func freezeForSoftDelete(group: SplitGroup) throws {
+        try freezeForSoftDelete(zoneID: group.cloudKitZoneID)
+    }
+
+    /// Igual que `freezeForSoftDelete(group:)` pero por zona, para los caminos donde el `SplitGroup` YA no
+    /// existe cuando toca soltar el puente: el tombstone remoto del grupo entero borra la fila dentro de la
+    /// transacción del apply, y el drenaje corre después. Refetchear el grupo ahí devuelve `nil` y la
+    /// limpieza se saltaba entera — el `SplitGroup` es solo el portador del `cloudKitZoneID`, que es lo
+    /// único que esta función necesita.
+    func freezeForSoftDelete(zoneID: String) throws {
         let context = try requireContext()
-        let zoneID = group.cloudKitZoneID
 
         let txDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitGroupZoneID == zoneID }
@@ -1186,6 +1829,57 @@ final class GroupTransactionBridge {
         return nil
     }
 
+}
+
+// MARK: - Resolución de un borrador de liquidación
+
+/// **Qué dicen los borradores que ya existen de una liquidación sobre su lado real** (ticket
+/// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`).
+///
+/// Aprobar el borrador de una liquidación crea la transacción real SIN `splitSettlementID` (D7 de `DraftService`: el
+/// bridge la borraría al re-puentear). Lo que queda como marca es un borrador APROBADO de esa liquidación, enlazado a la
+/// transacción y creado en el mismo guardado (`DraftService.approveDraft`). El re-puente lo lee aquí:
+///
+/// - `.approved`: el pago ya está en una cuenta. Se rehace la pata virtual y nada más: ni borrador ni pata real del
+///   Caso C, que serían el mismo dinero dos veces.
+/// - `.rejected`: la persona no quiere registrarlo. Se rehace la pata virtual, y la pata real del Caso C solo si el
+///   formulario trae una cuenta elegida ahora (un gesto explícito); borrador nuevo, no.
+/// - `nil`: nada resuelto; el bridge pregunta como siempre.
+///
+/// El aprobado gana al rechazado: si conviven, el dinero ya se registró.
+nonisolated enum GroupSettlementDraftResolutionLogic {
+
+    enum Resolution: Equatable {
+        case approved
+        case rejected
+    }
+
+    static func resolution(of statuses: [DraftStatus]) -> Resolution? {
+        if statuses.contains(.approved) { return .approved }
+        if statuses.contains(.rejected) { return .rejected }
+        return nil
+    }
+
+    /// El re-puente sustituye solo los borradores pendientes que creó él. El opt-in lo creó el formulario (su TX virtual ya
+    /// existe y el bridge no lo recrearía), y el resuelto es la decisión de la persona.
+    static func isReplacedOnReBridge(status: DraftStatus, optInPersonalOnly: Bool) -> Bool {
+        status == .pending && !optInPersonalOnly
+    }
+
+    /// Los borradores que sobran en frío: los pendientes que creó el bridge para una liquidación que la persona ya resolvió
+    /// (su marca de aprobación, o un rechazo). Aparecen cuando otro dispositivo re-puenteó antes de que lo resuelto le
+    /// llegara por el espejo (un receptor tardío con grupos que converge, un dispositivo que puentea el mismo id). Aprobarlos
+    /// ya no duplica (`DraftService` lo rechaza), pero el Inbox volvería a preguntar. Devuelve los índices.
+    static func redundantPendingDrafts(
+        _ drafts: [(settlementID: String?, status: DraftStatus, optInPersonalOnly: Bool)]
+    ) -> [Int] {
+        let resolved = Set(drafts.compactMap { $0.status != .pending ? $0.settlementID : nil })
+        return drafts.indices.filter { index in
+            let draft = drafts[index]
+            guard let id = draft.settlementID, resolved.contains(id) else { return false }
+            return isReplacedOnReBridge(status: draft.status, optInPersonalOnly: draft.optInPersonalOnly)
+        }
+    }
 }
 
 // MARK: - Errors

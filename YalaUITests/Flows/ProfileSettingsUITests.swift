@@ -36,6 +36,35 @@ final class ProfileSettingsUITests: XCTestCase {
         )
     }
 
+    /// En "Más", el avatar de Perfil está en la barra, a la derecha de Personalizar
+    /// (la misma chrome que el Panel), y abre el Perfil.
+    func test_moreTabShowsProfileButtonNextToEditor() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let moreTab = app.tabBars.buttons.element(boundBy: 3)
+        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
+        moreTab.tap()
+
+        let editorButton = app.buttons["more_editor_button"]
+        XCTAssertTrue(editorButton.waitForExistence(timeout: 5), "No apareció el botón del editor en Más.")
+
+        let avatar = app.buttons["profile_avatar"]
+        XCTAssertTrue(avatar.waitForExistence(timeout: 5), "No apareció el avatar de Perfil en la barra de Más.")
+        XCTAssertTrue(avatar.isHittable, "El avatar de Perfil en Más no se puede tocar.")
+        XCTAssertGreaterThan(
+            avatar.frame.minX, editorButton.frame.maxX - 1,
+            "El avatar de Perfil debería ir a la derecha de Personalizar, como en el Panel."
+        )
+
+        avatar.tap()
+        XCTAssertTrue(
+            app.buttons["profile_accounts"].waitForExistence(timeout: 5),
+            "El avatar de Más no abrió el Perfil."
+        )
+    }
+
     /// Flujo — desde el editor del dashboard "Más" (icono del toolbar), abrir la
     /// configuración de la barra de pestañas, quitar un tab y guardar; verificar
     /// que la configuración se guarda y se vuelve al editor.
@@ -66,7 +95,13 @@ final class ProfileSettingsUITests: XCTestCase {
         XCTAssertTrue(save.waitForExistence(timeout: 5), "No apareció tabconfig_save.")
         save.tap()
 
-        // El sheet de configuración cierra y volvemos al editor de "Más".
+        // El sheet de configuración cierra y volvemos al editor de "Más". El desmontaje va
+        // PRIMERO: `more_editor_tabbar_button` es del fondo y sigue en el árbol con el sheet
+        // puesto, así que por sí sola su existencia no prueba el regreso (medido 2026-08-04).
+        XCTAssertTrue(
+            app.buttons["tabconfig_save"].waitForNonExistence(timeout: 5),
+            "El sheet de configuración de tabs no se cerró tras guardar."
+        )
         XCTAssertTrue(
             app.buttons["more_editor_tabbar_button"].waitForExistence(timeout: 5),
             "Tras guardar la configuración no se volvió al editor de Más."

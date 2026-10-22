@@ -2,11 +2,22 @@
 //  GroupUserIdentityService.swift
 //  Yala
 //
-//  Fetches the current iCloud user record name for the Groups CloudKit container
-//  and provides deterministic IDs for per-user records (e.g., SplitMember).
+//  Cache in-memory del record name de iCloud del usuario, y los IDs deterministas de los records
+//  por-usuario (p. ej. `SplitMember`).
+//
+//  Fase 2 bis: el ESCRITOR de `cachedRecordName` ya NO vive aquí. Vive en
+//  `GroupICloudIdentitySeed` (`Yala/Services/CloudSync/Groups/`), con la key y el fetch, porque este
+//  fichero se vació de CloudKit en la Fase 3 y la propiedad se conserva: dejar el `UserDefaults.set`
+//  dentro de `currentUserRecordName()` era dejar la key sin nadie que la escribiera en cuanto el método
+//  muriera. Lo que queda aquí es el CACHE (in-memory, dueño de la propiedad) y `deterministicUUID`.
+//
+//  Fase 3: se fue `fetchFreshRecordName()` —el fetch DIRECTO a `CKContainer` del boot-guard de identidad,
+//  cuyo único llamador era `SplitSyncManager`— y con él el `import CloudKit`. También
+//  `deterministicMemberID`, que ya estaba sin call-sites. **Esto es lo que deja al canal superviviente
+//  sin ningún fetch a CloudKit propio**: la identidad la siembra `GroupICloudIdentitySeed`, que sí lo
+//  conserva a propósito (ver su docblock).
 //
 
-import CloudKit
 import CryptoKit
 import Foundation
 
@@ -15,46 +26,43 @@ final class GroupUserIdentityService {
 
     static let shared = GroupUserIdentityService()
 
-    private let defaultsKey = "groups_currentUserRecordName"
-    private var inflightFetch: Task<String, Error>?
-
     private(set) var cachedRecordName: String?
 
     private init() {
-        cachedRecordName = UserDefaults.standard.string(forKey: defaultsKey)
+        cachedRecordName = GroupICloudIdentitySeed.persistedRecordName
     }
 
+    /// Fachada histórica del seed. Sus tres consumidores están VIVOS y son del canal superviviente
+    /// (`GroupService.createGroup`, `ensureCurrentUserMemberExists`, `refreshCurrentUserFlags`), así que la
+    /// Fase 3 no la toca. Delega en el escritor del canal nuevo: mismo coalescing, misma persistencia,
+    /// mismo error propagado.
     func currentUserRecordName() async throws -> String {
-        if let cachedRecordName, !cachedRecordName.isEmpty { return cachedRecordName }
-        if let inflightFetch { return try await inflightFetch.value }
+        try await GroupICloudIdentitySeed.seedIfNeeded()
+    }
 
-        let task = Task { () throws -> String in
-            let id = try await CKContainer(identifier: CKConstants.containerID).userRecordID()
-            return id.recordName
-        }
-
-        inflightFetch = task
-        defer { inflightFetch = nil }
-
-        let name = try await task.value
-        cachedRecordName = name
-        UserDefaults.standard.set(name, forKey: defaultsKey)
-        return name
+    /// Escritura del cache in-memory. La llama SOLO `GroupICloudIdentitySeed.adopt(_:)`, que es quien
+    /// persiste — separar el par (cache, `UserDefaults`) en dos dueños los desincronizaría.
+    func applySeededRecordName(_ recordName: String) {
+        cachedRecordName = recordName
     }
 
     func clearCache() {
         cachedRecordName = nil
-        inflightFetch?.cancel()
-        inflightFetch = nil
-        UserDefaults.standard.removeObject(forKey: defaultsKey)
+        GroupICloudIdentitySeed.forgetPersisted()
     }
 
-    func deterministicMemberID(groupZoneID: String) async throws -> UUID {
-        let recordName = try await currentUserRecordName()
-        return Self.deterministicUUID(namespace: "SplitMember", name: "\(groupZoneID):\(recordName)")
+    #if DEBUG
+    /// Test-only: fija la identidad cacheada sin tocar CKContainer (los tests de
+    /// GroupJoinReconciler necesitan que `currentUserRecordName()` resuelva
+    /// determinístico y offline). No persiste en UserDefaults.
+    func _testSetCachedRecordName(_ name: String?) {
+        cachedRecordName = name
     }
+    #endif
 
-    static func deterministicUUID(namespace: String, name: String) -> UUID {
+    /// `nonisolated`: primitiva pura (solo CryptoKit, sin estado del actor). Compartida con
+    /// `GroupBackendIdentityLogic` (canal backend), que corre fuera del main actor.
+    nonisolated static func deterministicUUID(namespace: String, name: String) -> UUID {
         let data = Data("\(namespace):\(name)".utf8)
         let digest = SHA256.hash(data: data)
         let bytes = Array(digest.prefix(16))

@@ -18,32 +18,43 @@ PASOS:
 3. CLASIFICA LA IDEA:
    - Tipo: [Feature | Improvement | Tech Debt | Bug | Research]
    - Categoría: [UI/UX | Data Model | Business Logic | Performance | Architecture]
-   - Prioridad estimada: [High | Medium | Low] basada en:
-     * High: bloquea trabajo actual o tiene impacto grande
-     * Medium: mejora importante pero no urgente
-     * Low: nice-to-have sin impacto inmediato
+   - Prioridad estimada: [critical | very-high | high | medium | low | very-low] basada en:
+     * critical: emergencia en produccion o ship roto ahora. Reservado, no se usa "por si acaso"
+     * very-high: bloquea salir 2.1 en modo nube sin callejon (dato en riesgo o usuario atrapado)
+     * high: importante; incluye el device-QA que Jurgen debe correr, sin callejon de codigo abierto
+     * medium: mejora clara, no urgente
+     * low: nice-to-have sin impacto inmediato
+     * very-low: polish, tooling lejano, docs de higiene
 
-4. CAPTURA EN STATE.MD:
-   - Abre STATE.md sección "Parking Lot"
-   - Agrega entrada con formato:
-     [FECHA] [TIPO] [CATEGORÍA] [PRIORIDAD]: [Descripción]
-     Contexto: [Por qué surgió esta idea]
-     Dependencias: [Si tiene]
+4. CAPTURA EN `tickets/backlog/<english-kebab-slug>.md`:
+   - Slug inglés kebab-case (filename = id)
+   - Frontmatter: `id`, `status: backlog`, `priority` si la clasificaste, `updated` (hoy), `source` si aplica
+   - Título + descripción + contexto + dependencias
+   - Si la idea bloquea el trabajo actual y espera a Jürgen, una tarjeta: `tablero crear --proyecto Yala --asignado jurgen --titulo "…" --fecha hoy --agente frank`
+   - Añadir la fila en `docs/TICKETS.md`
 
 5. CONFIRMA:
-   - "Idea capturada en Parking Lot. ¿Continuamos con el incremento actual?"
+   - "Idea capturada en tickets/backlog/<slug>.md. ¿Continuamos con el incremento actual?"
 
 EJEMPLO DE CAPTURA:
 ```markdown
-- 2025-01-16 [Feature] [UI/UX] [Medium]: Agregar filtro por rango de fechas en lista de transacciones
-  Contexto: Surgió mientras implementaba filtro por categoría, los usuarios probablemente querrán ambos
-  Dependencias: Ninguna, puede implementarse independientemente
+---
+id: filter-transactions-by-date-range
+status: backlog
+priority: medium
+updated: 2026-08-26
+---
+# Filter transactions by date range
+
+Contexto: Surgió mientras implementaba filtro por categoría, los usuarios probablemente querrán ambos
+Dependencias: Ninguna, puede implementarse independientemente
 ```
 
 REGLAS:
 - Captura la idea en menos de 2 minutos
 - NO empieces a implementarla ahora
 - NO interrumpas el incremento actual
+- NO escribas en Obsidian ni en STATE.md
 - Si el usuario insiste en que es crítica, pregunta: "¿Quieres detener el incremento actual y replanear para incluir esto?"
 
-Este comando te permite capturar ideas sin perder momentum. La clasificación estructurada hace que después sea fácil priorizar cuando revisas el Parking Lot.
+Este comando te permite capturar ideas sin perder momentum. La clasificación estructurada hace que después sea fácil priorizar cuando revisas `tickets/backlog/`.

@@ -15,6 +15,20 @@ struct ReportData {
     let totalExpense: Double
     let totalIncome: Double
     let topCategory: String?
+    /// `true` si hubo ≥1 TX clasificada de ese tipo en el período. Distingue
+    /// "no hubo actividad del tipo" de "el neto quedó en 0" (p.ej. gasto −100 +
+    /// reembolso +100) → el empty-check del copy se basa en actividad, no en neto.
+    let hasExpenseActivity: Bool
+    let hasIncomeActivity: Bool
+}
+
+/// Totales income/expense de un reporte + señal de actividad por tipo,
+/// producidos por `ReportNotificationService.accumulateReportTotals`.
+struct ReportTotals {
+    let totalIncome: Decimal
+    let totalExpense: Decimal
+    let hasIncomeActivity: Bool
+    let hasExpenseActivity: Bool
 }
 
 /// Service for sending report notifications with real financial data
@@ -27,6 +41,57 @@ final class ReportNotificationService {
     /// Guard flag to prevent concurrent sendDueReports calls (race between bootstrap and becameActive)
     private var isSendingReports = false
 
+    // MARK: - Test seams (nil/default en producción; patrón de closures inyectables del repo,
+    // espejo de `ScheduledPaymentNotificationService`). El singleton `.shared` no se toca en tests.
+
+    /// Sustituye el envío real (`NotificationService.sendNotification`) en tests.
+    /// Mismo contrato: `true` = iOS aceptó el request.
+    var sendOverride: ((_ title: String, _ body: String, _ deepLink: String?) async -> Bool)?
+    /// Sustituye el check de permisos del sistema en tests.
+    var isAuthorizedOverride: (() async -> Bool)?
+    /// Sustituye la lectura de quiescencia del import en tests.
+    var isQuiescentOverride: (() -> Bool)?
+    /// Sustituye la lectura del modo Solo Gastos en tests.
+    var expensesOnlyOverride: (() -> Bool)?
+
+    #if DEBUG
+    /// Instancia aislada para tests (evita contaminar el singleton `.shared`). Jamás en producción.
+    static func makeForTesting() -> ReportNotificationService { ReportNotificationService() }
+    #endif
+
+    private func send(title: String, body: String, deepLink: String?) async -> Bool {
+        if let override = sendOverride { return await override(title, body, deepLink) }
+        return await NotificationService.shared.sendNotification(title: title, body: body, deepLink: deepLink)
+    }
+
+    private func isAuthorized() async -> Bool {
+        if let override = isAuthorizedOverride { return await override() }
+        return await NotificationService.shared.isAuthorized()
+    }
+
+    private func isImportQuiescent() -> Bool {
+        isQuiescentOverride?() ?? iCloudSyncService.shared.isImportQuiescent
+    }
+
+    /// Modo Solo Gastos. Lee `UserDefaults` directo (no `SessionState.shared`): el valor
+    /// está respaldado 1:1 por esa key (`SessionState`/`AppPreferences`) y así la capa
+    /// Service no depende del singleton de UI ni de su inicialización.
+    private func isExpensesOnly() -> Bool {
+        expensesOnlyOverride?() ?? UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode)
+    }
+
+    /// En Solo Gastos, los tipos de dato income/balance quedan huérfanos de config
+    /// (el editor los oculta/coacciona, pero un `NotificationItem` guardado antes de
+    /// activar el modo conserva su `dataType`). Coacciona income/balance → expenses en
+    /// el send path (paridad con `NotificationEditorSheet.availableDataTypes`). Solo lógica.
+    static func effectiveDataType(_ dataType: ReportDataType, expensesOnly: Bool) -> ReportDataType {
+        guard expensesOnly else { return dataType }
+        switch dataType {
+        case .income, .balance: return .expenses
+        case .expenses, .topCategory: return dataType
+        }
+    }
+
     // MARK: - Public Methods
 
     /// Sends report notifications that are due based on their configuration
@@ -34,11 +99,11 @@ final class ReportNotificationService {
         guard !isSendingReports else { return }
         isSendingReports = true
         defer { isSendingReports = false }
-        guard await NotificationService.shared.isAuthorized() else { return }
+        guard await isAuthorized() else { return }
 
         // Gate de quiescencia: persiste `NotificationItem.lastNotifiedDate` (store personal); diferir
         // durante el import del restore (idempotente: se reevalúa al asentar / próximo arranque).
-        guard iCloudSyncService.shared.isImportQuiescent else {
+        guard isImportQuiescent() else {
             SaveBreadcrumb.deferred("ReportNotificationService.sendDueReports", "import not quiescent")
             return
         }
@@ -46,18 +111,29 @@ final class ReportNotificationService {
         let reports = fetchActiveReportNotifications(context: context)
         var sentCount = 0
 
+        let expensesOnly = isExpensesOnly()
+
         for report in reports {
             guard Self.shouldSendNow(report) else { continue }
 
-            let data = calculateReportData(config: report.reportConfig, type: report.notificationType, context: context)
+            // Coacción de solo-display en runtime (Solo Gastos): income/balance → expenses.
+            // No muta el config persistido → sin `save()` extra ni riesgo de quiescencia.
+            var effectiveConfig = report.reportConfig
+            effectiveConfig.dataType = Self.effectiveDataType(report.reportConfig.dataType, expensesOnly: expensesOnly)
 
-            await NotificationService.shared.sendNotification(
+            let data = calculateReportData(config: effectiveConfig, type: report.notificationType, context: context)
+
+            let delivered = await send(
                 title: report.localizedName,
-                body: Self.formatReportBody(report.reportConfig, reportType: report.notificationType, data: data),
+                body: Self.formatReportBody(effectiveConfig, reportType: report.notificationType, data: data),
                 deepLink: "statistics"
             )
 
-            // Mark as notified to prevent duplicate sends
+            // Marca de dedup SOLO con entrega confirmada por iOS (paridad con
+            // `ScheduledPaymentNotificationService`): un fallo silencioso — permisos revocados,
+            // wipe personal armado, throttle de iOS — no debe suprimir el reporte hasta el próximo
+            // período. Si no se entregó, el próximo pass lo reintenta.
+            guard delivered else { continue }
             report.lastNotifiedDate = Date.now
             sentCount += 1
         }
@@ -153,10 +229,56 @@ final class ReportNotificationService {
             preferredCurrencyCode: currencyCode
         )
 
-        // Calculate income/expense with proper currency conversion (R2, R4, R5)
+        // Netea los gastos de grupo bridgeados a "mi parte". El fetch por rango
+        // (`transactions`) trae AMBAS hermanas del bridge (comparten fecha).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
+
+        // Income/expense: clasificación por categoría + acumulación signed vía
+        // helper puro (testeable sin ModelContext). Excluye balance adjustments y
+        // cuentas no elegibles dentro del helper.
+        let eligibleAccountIDs = Set(accounts.map { $0.persistentModelID })
+        let totals = Self.accumulateReportTotals(
+            transactions: transactions,
+            eligibleAccountIDs: eligibleAccountIDs,
+            currencyCode: currencyCode,
+            adjustment: adjustment
+        )
+
+        // Get top category using TopSpendingCategoriesCalculator
+        let topCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
+            transactions: transactions,
+            interval: interval,
+            currencyCode: currencyCode,
+            adjustment: adjustment
+        )
+
+        return ReportData(
+            balance: balance,
+            totalExpense: NSDecimalNumber(decimal: totals.totalExpense).doubleValue,
+            totalIncome: NSDecimalNumber(decimal: totals.totalIncome).doubleValue,
+            topCategory: topCategories.first?.category.name,
+            hasExpenseActivity: totals.hasExpenseActivity,
+            hasIncomeActivity: totals.hasIncomeActivity
+        )
+    }
+
+    /// Acumula income/expense de las transacciones de un reporte. Clasifica por
+    /// categoría (regla canónica `TransactionClassificationLogic`) y acumula
+    /// *signed* (paridad con `CashFlowCalculator`): un monto de signo contrario a
+    /// su categoría (reembolso) REDUCE el bucket. Excluye balance adjustments y
+    /// cuentas no elegibles. Clasifica y acumula sobre el MISMO valor con signo.
+    /// Pure-logic (sin `ModelContext`) para tests; el converter es inyectable.
+    static func accumulateReportTotals(
+        transactions: [TransactionItem],
+        eligibleAccountIDs: Set<PersistentIdentifier>,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> ReportTotals {
         var totalIncome: Decimal = 0
         var totalExpense: Decimal = 0
-        let eligibleAccountIDs = Set(accounts.map { $0.persistentModelID })
+        var hasIncomeActivity = false
+        var hasExpenseActivity = false
 
         for tx in transactions {
             // Exclude balance adjustments (same as TrendDataProcessor)
@@ -164,42 +286,41 @@ final class ReportNotificationService {
             // Filter by eligible accounts (consistent with BalanceHelper)
             guard let account = tx.account,
                   eligibleAccountIDs.contains(account.persistentModelID) else { continue }
+            // Suprime la pata de préstamo derivada (bridge): mata el ingreso fantasma +lent.
+            guard !adjustment.isSuppressed(tx) else { continue }
 
             let amount: Decimal
-            // R2: Check currency and convert if needed (BalanceHelper pattern)
-            if tx.preferredCurrencyCode == currencyCode {
-                amount = Decimal(tx.amountInPreferredCurrency)
+            // Check currency and convert if needed (BalanceHelper pattern); el signo
+            // se preserva desde el monto ajustado (Caso A ⇒ `-myShare`).
+            if CashFlowCalculator.readsStoredAmount(tx, currencyCode: currencyCode, adjustment: adjustment) {
+                amount = Decimal(adjustment.amountInPreferredCurrency(tx))
             } else {
                 let sourceCurrency = CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
                     ?? (CurrencyCode(rawValue: currencyCode) ?? .usd)
-                amount = CurrencyConverter.shared.convert(
-                    Decimal(tx.amount),
+                amount = converter.convert(
+                    Decimal(adjustment.amount(tx)),
                     from: sourceCurrency.rawValue,
                     to: currencyCode,
                     on: tx.date
                 )
             }
 
-            // R4: Same sign convention as TrendDataProcessor (income > 0, expense < 0)
-            if amount > 0 {
+            // La categoría decide el bucket; acumulación signed sobre el mismo
+            // `amount` (reembolso reduce). La actividad marca "hubo TX del tipo".
+            if TransactionClassificationLogic.isIncome(tx) {
                 totalIncome += amount
+                hasIncomeActivity = true
             } else {
-                totalExpense += abs(amount)
+                totalExpense -= amount
+                hasExpenseActivity = true
             }
         }
 
-        // Get top category using TopSpendingCategoriesCalculator
-        let topCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
-            transactions: transactions,
-            interval: interval,
-            currencyCode: currencyCode
-        )
-
-        return ReportData(
-            balance: balance,
-            totalExpense: NSDecimalNumber(decimal: totalExpense).doubleValue,
-            totalIncome: NSDecimalNumber(decimal: totalIncome).doubleValue,
-            topCategory: topCategories.first?.category.name
+        return ReportTotals(
+            totalIncome: totalIncome,
+            totalExpense: totalExpense,
+            hasIncomeActivity: hasIncomeActivity,
+            hasExpenseActivity: hasExpenseActivity
         )
     }
 
@@ -230,7 +351,8 @@ final class ReportNotificationService {
                 from: calendar.dateComponents([.year, .month], from: now)
             ) ?? now
             let previousMonthStart = calendar.date(byAdding: .month, value: -1, to: currentMonthStart) ?? currentMonthStart
-            return DateInterval(start: previousMonthStart, end: currentMonthStart)
+            let previousMonthEnd = calendar.date(byAdding: .second, value: -1, to: currentMonthStart) ?? currentMonthStart
+            return DateInterval(start: previousMonthStart, end: previousMonthEnd)
         case .lastDay:
             // Last day of month: report current month up to now
             let monthStart = calendar.date(
@@ -252,7 +374,9 @@ final class ReportNotificationService {
             let formatted = YalaFormatterStatic.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true)
             return L10n.Notifications.reportData(.balance, period: period, value: formatted)
         case .expenses:
-            if data.totalExpense == 0 {
+            // "Vacío" = no hubo gastos del período, NO "el neto quedó en 0"
+            // (un reembolso que cancela el gasto no debe disparar el copy vacío).
+            if !data.hasExpenseActivity {
                 switch reportType {
                 case .dailyReport: return L10n.Notifications.emptyExpensesDaily
                 case .weeklyReport: return L10n.Notifications.emptyExpensesWeekly
@@ -263,7 +387,7 @@ final class ReportNotificationService {
             let formatted = YalaFormatterStatic.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true)
             return L10n.Notifications.reportData(.expenses, period: period, value: formatted)
         case .income:
-            if data.totalIncome == 0 {
+            if !data.hasIncomeActivity {
                 return L10n.Notifications.emptyIncome
             }
             let formatted = YalaFormatterStatic.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true)

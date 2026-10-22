@@ -12,12 +12,23 @@ Astro.response.headers.set('Vary', 'Accept-Language');
 // Parse query params server-side for OG tags
 const url = Astro.url;
 const groupName = url.searchParams.get('n') || t.inviteFallbackGroupName;
-const colorHex = url.searchParams.get('c') || '8B5CF6';
+// `c` va directo a un atributo style: solo se acepta un hex de 6 dígitos (evita inyección CSS por query).
+const rawColor = url.searchParams.get('c') || '';
+const colorHex = /^[0-9A-Fa-f]{6}$/.test(rawColor) ? rawColor : '8B5CF6';
 const membersParam = url.searchParams.get('m') || '';
 const shareParam = url.searchParams.get('s') || '';
 const inviterName = url.searchParams.get('u') || '';
 const iconParam = url.searchParams.get('i') || 'person.2.fill';
-const members = membersParam ? membersParam.split(',').map((m: string) => decodeURIComponent(m.trim())).filter(Boolean) : [];
+// `searchParams` ya decodifica; el segundo decode solo cubre enlaces doblemente codificados.
+// Un `%` suelto lanzaba URIError y la página devolvía 500: se cae al valor tal cual.
+const safeDecode = (value: string) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+const members = membersParam ? membersParam.split(',').map((m: string) => safeDecode(m.trim())).filter(Boolean) : [];
 
 const pageTitle = inviterName
   ? t.invitePageTitleWithInviter.replace('{inviter}', inviterName).replace('{group}', groupName)
@@ -127,19 +138,19 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
 
-    <!-- Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fuente propia, en diferido igual que en el resto del sitio -->
+    <link rel="stylesheet" href="/fonts/fonts.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/fonts/fonts.css"></noscript>
 
     <title>{pageTitle} — Yala</title>
   </head>
 
   <body class="bg-yala-slate text-neutral-100 font-sans min-h-screen flex flex-col items-center justify-center px-4 py-8">
+  <main class="w-full flex flex-col items-center">
 
     <!-- Logo -->
     <div class="mb-8">
-      <img src="/images/logo.png" alt="Yala" class="h-12" />
+      <img src="/images/logo.png" alt="Yala" class="h-12" width="1200" height="400" style="width:auto" />
     </div>
 
     <!-- Invite Card -->
@@ -149,7 +160,7 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
       <!-- Group Icon -->
       <div class="mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center"
            style={`background: ${groupColor}20; border: 2px solid ${groupColor};`}>
-        <svg class="w-7 h-7" fill={groupColor} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg class="w-7 h-7" aria-hidden="true" fill={groupColor} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <Fragment set:html={iconSVG} />
         </svg>
       </div>
@@ -163,8 +174,8 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
           <p class="text-sm text-neutral-400 mb-2">{t.inviteMembers}</p>
           <div class="flex flex-wrap justify-center gap-2">
             {members.map((name: string) => (
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border"
-                    style={`background: ${groupColor}10; border-color: ${groupColor}40; color: ${groupColor};`}>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border text-neutral-100"
+                    style={`background: ${groupColor}22; border-color: ${groupColor}66;`}>
                 {name}
               </span>
             ))}
@@ -186,7 +197,7 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
         )}
 
         <a href={appStoreURL} target="_blank" rel="noopener"
-           class="block w-full px-6 py-3 rounded-xl font-semibold border-2 border-yala-indigo text-yala-indigo text-center transition-all duration-300 hover:bg-yala-indigo hover:text-white">
+           class="block w-full text-center btn-secondary">
           {t.inviteDownloadAppStore}
         </a>
       </div>
@@ -197,5 +208,6 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
       {t.inviteFooter}
     </p>
 
+  </main>
   </body>
 </html>

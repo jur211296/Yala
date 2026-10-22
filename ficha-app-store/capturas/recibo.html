@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Yala · recibo de la ficha</title>
+<link rel="stylesheet" href="lamina.css">
+<script>
+// recibo.html?lang=en → la foto del recibo de OBJ["02_foto"].boleta que la app «lee» en la captura 02 y en el vídeo
+// (`-uitest-image-file`). Papel sobre una mesa, con luz lateral: así parece una foto y dice lo mismo que la lámina.
+const LANG = new URLSearchParams(location.search).get("lang") || "es";
+document.write(`<script src="../textos/${LANG}.js"><\/script>`);
+</script>
+<style>
+  html,body{width:1500px;height:2000px;overflow:hidden}
+  body{background:#5B4632;background-image:
+    repeating-linear-gradient(92deg,rgba(0,0,0,.06) 0 3px,transparent 3px 22px),
+    repeating-linear-gradient(88deg,rgba(255,255,255,.035) 0 2px,transparent 2px 37px),
+    radial-gradient(ellipse at 30% 20%,#7A5E43 0%,#5B4632 55%,#3E2F21 100%)}
+  .boleta{left:50%;top:50%;width:880px;font-size:40px;padding:96px 64px;
+    transform:translate(-50%,-50%) rotate(-3deg);box-shadow:0 50px 90px rgba(0,0,0,.55),0 4px 10px rgba(0,0,0,.3)}
+  .luz{position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.10),transparent 45%,rgba(0,0,0,.18));pointer-events:none}
+</style>
+</head><body>
+<div id="r"></div><div class="luz"></div>
+<script>
+const b = window.YALA_TEXTOS[LANG].OBJ["02_foto"].boleta;
+document.getElementById("r").innerHTML = `<div class="boleta">
+  ${b.cab.map(l => `<div class="cab" style="font-size:1.25em">${l}</div>`).join("")}
+  ${b.peq.map((l, i) => `<div class="peq"${i === 0 ? ' style="margin-top:.4em"' : ""}>${l}</div>`).join("")}
+  <hr style="margin:.8em 0"><table>${b.items.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}</table>
+  <hr style="margin:.8em 0"><table>${b.totales.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}
+  <tr class="tot" style="font-size:1.25em"><td>${b.total[0]}</td><td>${b.total[1]}</td></tr></table>
+  <hr style="margin:.8em 0"><div class="peq">${b.pie}</div></div>`;
+</script>
+</body></html>

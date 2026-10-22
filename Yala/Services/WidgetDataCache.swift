@@ -26,6 +26,20 @@ struct WidgetTransaction: Codable {
     let subcategoryName: String?
     let isIncome: Bool
     let amountInPreferredCurrency: Double
+    /// `true` si el `amountInPreferredCurrency` de arriba se selló con una tasa que no era la de su
+    /// día. Viaja al widget porque su camino de emergencia (`WidgetDataService.buildPeriodSummary`)
+    /// recalcula los totales desde estas filas y, sin el flag, los declararía exactos sin saberlo.
+    ///
+    /// **Opcional aunque este lado solo escriba**: esta struct y su gemela de `YalaWidgets` tienen
+    /// que decodificar el MISMO payload, y en los discos de hoy hay snapshots sin esta clave. Un
+    /// `Bool` a secas los rompería enteros.
+    ///
+    /// Lo fija `WidgetSnapshotLegacyDecodeTests`, y con una salvedad que importa: **ese test solo
+    /// alcanza a ESTA copia**. El target `YalaTests` sincroniza el grupo `YalaTests` y compila `Yala`,
+    /// no `YalaWidgets` (`project.pbxproj`), así que su `decode(WidgetDataSnapshot.self, …)` resuelve
+    /// aquí. A la copia del widget —la que de verdad lee en producción— la vigila el source-scan
+    /// de `ApproximateMarkSecondarySurfacesWiringTests`.
+    let isExchangeRateProvisional: Bool?
 }
 
 /// Lightweight budget data for widgets
@@ -144,6 +158,25 @@ struct WidgetPeriodSummary: Codable {
     /// For current periods: current total balance
     /// For past periods: balance as it was at the end of that period
     let periodBalance: Double?
+
+    /// Las marcas «≈» de los cuatro números de arriba, una por número.
+    ///
+    /// **Van por lado y no como señal única**, por lo mismo que en `CashFlowSummary`: los widgets
+    /// pintan los totales por separado (`ExpenseWidget` solo el gasto, los pies solo el gasto), y
+    /// una señal común le pondría «≈» a un número en el que no hubo esa conversión. El criterio es
+    /// `ApproximateMarkThreshold`, el mismo umbral del 5 % que usa la app: dos umbrales para el
+    /// mismo problema es como divergen.
+    ///
+    /// **Opcionales aunque este lado solo escriba**, igual que `periodBalance`: esta struct y su
+    /// gemela de `YalaWidgets` decodifican el mismo payload del App Group, y los snapshots ya
+    /// escritos no traen estas claves. Con `Bool` a secas, decodificar uno de esos lanza
+    /// `keyNotFound` y se pierde el snapshot ENTERO —no solo el campo—, porque la clave cuelga de
+    /// `thisMonthSummary`, que no es opcional. Lo fija `WidgetSnapshotLegacyDecodeTests` **para esta
+    /// copia**; la del widget, el source-scan (ver `isExchangeRateProvisional` arriba).
+    let incomeIsApproximate: Bool?
+    let expenseIsApproximate: Bool?
+    let netCashFlowIsApproximate: Bool?
+    let periodBalanceIsApproximate: Bool?
 }
 
 /// Complete widget data snapshot
@@ -175,6 +208,7 @@ struct WidgetDataSnapshot: Codable {
 
     // Precalculated summaries for all periods (keyed by period rawValue)
     let periodSummaries: [String: WidgetPeriodSummary]
+
 }
 
 // MARK: - WidgetDataCache
@@ -182,7 +216,18 @@ struct WidgetDataSnapshot: Codable {
 @MainActor
 enum WidgetDataCache {
 
-    private static let cacheKey = "widget_data_cache"
+    nonisolated static let cacheKey = "widget_data_cache"
+
+    /// **«Esta sesión es solo grupos»**, publicado para el widget en una clave PROPIA del App Group.
+    ///
+    /// El widget no ve las preferencias de la app, así que el eje 1 (`PrivateSessionMark`) tiene que viajar por el App
+    /// Group. Va FUERA del snapshot a propósito: `WidgetDataSnapshot` está duplicado en los dos targets y se decodifica
+    /// entero, así que un campo nuevo mal declarado apaga TODOS los widgets (regla del App Group en
+    /// `swiftdata-cloudkit.md`). Una clave suelta no puede romper el decode, y un widget de una versión anterior la ignora.
+    /// Ausente se lee `false`: sin dato, el widget enseña lo de siempre. Decisión de Jürgen del 2026-09-09 (ticket
+    /// `after-session-redesign-review-widgets-siri-applepay-and-web-copy`): en solo grupos invita a activar Yala completo.
+    /// El lector espejo es `WidgetDataService.groupsOnlySessionKey`, y `WidgetGroupsOnlyInviteParityTests` los compara.
+    nonisolated static let groupsOnlySessionKey = "widget_groupsOnlySession"
 
     /// Shared UserDefaults for App Group
     private static var sharedDefaults: UserDefaults? {
@@ -193,18 +238,69 @@ enum WidgetDataCache {
 
     /// Updates the widget cache with current data from SwiftData
     /// Call this after any data change that should reflect in widgets
+    ///
+    /// LA PUERTA. Con un wipe ARMADO el store montado está a punto de morir y sus datos ya no son de
+    /// nadie: repoblar el snapshot en esa ventana deja en la pantalla de inicio los saldos de la cuenta
+    /// que acaba de cerrar sesión, y ahí se quedan si nadie vuelve a abrir la app. Va AQUÍ y no en los
+    /// **48** call-sites de producción (22 ficheros — el conteo de ficheros decía 18 y estaba desfasado;
+    /// medido el 2026-09-08) por la razón que el gemelo de notificaciones ya dejó
+    /// escrita en `NotificationService.isPersonalWipeArmed`: evaluarlo en el choke-point cierra la ventana
+    /// para cualquier productor, presente o futuro, sin rastrear tareas ni mantener una lista.
+    ///
+    /// `clearCache()` NO lleva guard — retirar siempre es seguro, y es lo que los caminos de cierre piden.
     static func updateCache(context: ModelContext) {
+        guard !isWipeArmed else {
+            #if DEBUG
+            print("WidgetDataCache: updateCache SUSPENDIDO — wipe armado")
+            #endif
+            return
+        }
+
         let snapshot = buildSnapshot(context: context)
         saveSnapshot(snapshot)
+        publishSessionShell(hasPrivateSession: PrivateSessionMark.hasPrivateSession())
 
         // Trigger widget refresh
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    /// El predicado de la puerta, ESPEJO EXACTO de `NotificationService.isPersonalWipeArmed`. NO incluye
+    /// `groupsOnlyWipeArmed`, misma asimetría deliberada que allí — en ese camino el store personal
+    /// sobrevive y lo que pinta el widget sigue siendo legítimo.
+    static var isWipeArmed: Bool {
+        StorageModePersistence.isSignOutWipeArmed()
+    }
+
     /// Clears the widget cache
     static func clearCache() {
-        sharedDefaults?.removeObject(forKey: cacheKey)
+        clearCache(in: sharedDefaults)
+    }
+
+    /// Variante con el store inyectado: la usan los tests de las purgas para medir el vaciado sin tocar el App Group real.
+    /// No toca `groupsOnlySessionKey`: vaciar los datos no cambia QUIÉN usa el teléfono.
+    static func clearCache(in defaults: UserDefaults?) {
+        defaults?.removeObject(forKey: cacheKey)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Publica para el widget si esta sesión es solo grupos (`!hasPrivateSession`, la MISMA lectura laxa que decide la
+    /// shell en `ShellModeLogic`: sin marca no se invita, que es enseñar lo de siempre). Solo escribe y recarga si cambia.
+    ///
+    /// Dos llamadores, y los dos hacen falta: `updateCache` (cubre el arranque, y con él al que actualiza la app ya en
+    /// solo grupos) y el `didSet` de `SessionState.hasPrivateSession`, el embudo del eje, que cubre activar Yala completo
+    /// o entrar por un grupo con la app abierta. Sin el segundo, el widget seguiría invitando hasta el siguiente arranque.
+    static func publishSessionShell(hasPrivateSession: Bool) {
+        publishSessionShell(hasPrivateSession: hasPrivateSession, in: sharedDefaults)
+    }
+
+    @discardableResult
+    static func publishSessionShell(hasPrivateSession: Bool, in defaults: UserDefaults?) -> Bool {
+        guard let defaults else { return false }
+        let groupsOnly = ShellModeLogic.effective(hasPrivateSession: hasPrivateSession) == .groupsFocused
+        guard defaults.object(forKey: groupsOnlySessionKey) as? Bool != groupsOnly else { return false }
+        defaults.set(groupsOnly, forKey: groupsOnlySessionKey)
+        WidgetCenter.shared.reloadAllTimelines()
+        return true
     }
 
     // MARK: - Private Helpers
@@ -283,8 +379,17 @@ enum WidgetDataCache {
         let eligibleTransactions = allTransactions.filter(isEligible)
         let eligibleRecentTransactions = recentTransactions.filter(isEligible)
 
+        // Netea los gastos de grupo bridgeados a "mi parte" en las superficies de stats.
+        // Se construye del set MÁS AMPLIO (`allTransactions`, antes del filtro de elegibilidad)
+        // para garantizar AMBAS hermanas del bridge; el consumo usa el subset elegible.
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: context)
+
         // Get preferred currency from user settings (single source of truth)
         let preferredCurrency = UserDefaults.standard.string(forKey: CurrencyDefaults.preferredCurrencyKey) ?? "USD"
+        // Reconvierte las filas guardadas con otra divisa principal (`CashFlowCalculator.resolvedAmount`).
+        // Memoizado para este snapshot: cada fila se resuelve en hasta ~20 superficies (8 períodos,
+        // saldo, curva) y cada conversión del converter compartido lee sus tasas del store.
+        let converter: CurrencyConverting = SnapshotMemoizedConverter(base: CurrencyConverter.shared)
 
         // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
         // El widget consume este Double ya convertido — el calculator NO se
@@ -297,20 +402,7 @@ enum WidgetDataCache {
 
         // Build widget transactions (last 10 for display, from recent 90 days, excluyendo cuentas excluidas de stats)
         let widgetTransactions = Array(eligibleRecentTransactions.prefix(10)).map { tx in
-            WidgetTransaction(
-                id: tx.persistentModelID.hashValue.description,
-                date: tx.date,
-                amount: tx.amount,
-                currencyCode: tx.currencyCode,
-                note: tx.note,
-                categoryName: tx.category?.name,
-                categoryColor: tx.category?.colorHex,
-                categoryIcon: tx.category?.iconName,
-                subcategoryIcon: tx.subcategory?.iconName ?? tx.category?.iconName,
-                subcategoryName: tx.subcategory?.name,
-                isIncome: isIncomeTx(tx),
-                amountInPreferredCurrency: tx.amountInPreferredCurrency
-            )
+            widgetTransaction(tx, currencyCode: preferredCurrency, converter: converter)
         }
 
         // Build widget budgets with spent calculation
@@ -323,7 +415,7 @@ enum WidgetDataCache {
             } else {
                 transactionsForBudget = recentTransactions
             }
-            let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget)
+            let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget, adjustment: adjustment)
             let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
             // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
             let (icon, color) = Budget.computeDisplayProperties(for: budget, in: context)
@@ -362,7 +454,12 @@ enum WidgetDataCache {
         }
 
         // Build trend data with multiple granularities (uses eligible transactions)
-        let trendData = buildTrendData(transactions: eligibleTransactions, totalBalance: totalBalance)
+        let trendData = buildTrendData(
+            transactions: eligibleTransactions,
+            totalBalance: totalBalance,
+            currencyCode: preferredCurrency,
+            converter: converter
+        )
 
         // Build account balances for widgets (only visible accounts shown as cards).
         // Cada card muestra el saldo en moneda NATIVA de la cuenta. Una sola
@@ -402,7 +499,9 @@ enum WidgetDataCache {
                 periodStart: interval.start,
                 periodEnd: interval.end,
                 currencyCode: preferredCurrency,
-                allTransactionsForBalance: eligibleTransactions
+                allTransactionsForBalance: eligibleTransactions,
+                adjustment: adjustment,
+                converter: converter
             )
             periodSummaries[period.rawValue] = summary
         }
@@ -412,14 +511,18 @@ enum WidgetDataCache {
             transactions: eligibleRecentTransactions,
             periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date.now)) ?? Date.now,
             periodEnd: Date.now,
-            currencyCode: preferredCurrency
+            currencyCode: preferredCurrency,
+            adjustment: adjustment,
+            converter: converter
         )
 
         let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
             transactions: eligibleTransactions,
             periodStart: Date.distantPast,
             periodEnd: Date.now,
-            currencyCode: preferredCurrency
+            currencyCode: preferredCurrency,
+            adjustment: adjustment,
+            converter: converter
         )
 
         return WidgetDataSnapshot(
@@ -439,7 +542,11 @@ enum WidgetDataCache {
     }
 
     /// Spent del budget vía SSOT `BudgetsViewModel.calculateSpending`.
-    static func calculateBudgetSpent(budget: Budget, transactions: [TransactionItem]) -> Double {
+    static func calculateBudgetSpent(
+        budget: Budget,
+        transactions: [TransactionItem],
+        adjustment: GroupBridgeStatsAdjustment = .none
+    ) -> Double {
         let calendar = Calendar.current
         let now = Date.now
         let interval: DateInterval
@@ -456,13 +563,17 @@ enum WidgetDataCache {
             let start = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
             interval = DateInterval(start: start, end: now)
         case .unique:
-            interval = DateInterval(start: budget.startDate ?? now, end: budget.endDate ?? now)
+            // Días enteros, como en Presupuestos: la hora guardada en las fechas no decide nada.
+            interval = BudgetPeriodInterval.unique(
+                start: budget.startDate ?? now, end: budget.endDate ?? now, calendar: calendar
+            )
         }
 
         return BudgetsViewModel.calculateSpending(
             budget: budget,
             transactions: transactions,
-            interval: interval
+            interval: interval,
+            adjustment: adjustment
         )
     }
 
@@ -477,10 +588,37 @@ enum WidgetDataCache {
         accounts.filter { !$0.isArchived && !$0.excludeFromStatistics }
     }
 
-    /// Monto en moneda preferida con fallback al monto nativo si la conversión
-    /// aún no se ha calculado (`amountInPreferredCurrency == 0`).
-    static func preferredAmount(_ tx: TransactionItem) -> Double {
-        tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+    /// La fila tal como la ve la pantalla de inicio.
+    ///
+    /// `amountInPreferredCurrency` lleva el importe YA RESUELTO en la divisa principal vigente
+    /// (`CashFlowCalculator.resolvedAmount`, fila entera), no el monto guardado: el camino de
+    /// emergencia del widget (`WidgetDataService.buildPeriodSummary`) suma este campo, y la fila no
+    /// viaja con la divisa en que se guardó. Así no hace falta un campo nuevo en el DTO, que está
+    /// duplicado en dos targets. `isExchangeRateProvisional` dice si ESA resolución es aproximada.
+    /// El widget de últimos registros pinta el importe nativo y no lee ninguno de los dos.
+    static func widgetTransaction(
+        _ tx: TransactionItem,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> WidgetTransaction {
+        let resolved = CashFlowCalculator.resolvedAmount(
+            tx, currencyCode: currencyCode, adjustment: .none, converter: converter
+        )
+        return WidgetTransaction(
+            id: tx.persistentModelID.hashValue.description,
+            date: tx.date,
+            amount: tx.amount,
+            currencyCode: tx.currencyCode,
+            note: tx.note,
+            categoryName: tx.category?.name,
+            categoryColor: tx.category?.colorHex,
+            categoryIcon: tx.category?.iconName,
+            subcategoryIcon: tx.subcategory?.iconName ?? tx.category?.iconName,
+            subcategoryName: tx.subcategory?.name,
+            isIncome: isIncomeTx(tx),
+            amountInPreferredCurrency: resolved.value,
+            isExchangeRateProvisional: resolved.approximateMagnitude > 0
+        )
     }
 
     /// Extracts display properties (icon, color) from a budget based on its subcategories
@@ -500,14 +638,25 @@ enum WidgetDataCache {
         return ("arrow.trianglehead.2.clockwise.rotate.90", "#6366F1")
     }
 
-    private static func buildTrendData(transactions: [TransactionItem], totalBalance: Double) -> WidgetTrendData {
+    static func buildTrendData(
+        transactions: [TransactionItem],
+        totalBalance: Double,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> WidgetTrendData {
         let calendar = Calendar.current
 
-        // Group transactions by day (amount already has correct sign)
-        var transactionsByDay: [Date: Double] = [:]
-        for tx in transactions {
+        // Lo que cambió cada día, en divisa NATIVA. Cada punto es el saldo al cierre de su día (o de su semana o
+        // mes) valorado con el tipo de cambio de esa fecha, la regla de la curva de la app (`BalanceValuation`,
+        // `panel-balance-chart-contradicts-its-own-figure`). El punto de hoy es `totalBalance`, el saldo vivo.
+        var nativeByDay: [Date: [String: Decimal]] = [:]
+        var totalNative: [String: Decimal] = [:]
+        // Solo las filas con cuenta, como el saldo vivo (`liveBalanceBreakdown` salta las que no tienen): si no, el punto
+        // de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón en hoy.
+        for tx in transactions where tx.account != nil {
             let day = calendar.startOfDay(for: tx.date)
-            transactionsByDay[day, default: 0] += preferredAmount(tx)
+            LiveBalanceCalculator.addNative(tx, to: &nativeByDay[day, default: [:]])
+            LiveBalanceCalculator.addNative(tx, to: &totalNative)
         }
 
         // Find the earliest transaction date to avoid showing flat line before data exists
@@ -519,114 +668,70 @@ enum WidgetDataCache {
             daysOfData = 0
         }
 
-        // Build daily points (limited to days with actual data, max 90)
         let dailyDays = min(daysOfData + 1, 90)  // +1 to include the first transaction day
-        let dailyPoints = buildDailyTrend(
-            transactionsByDay: transactionsByDay,
-            totalBalance: totalBalance,
-            days: dailyDays,
+        let weeklyPeriods = min((daysOfData / 7) + 1, 104)
+        let monthlyPeriods = min((daysOfData / 30) + 1, 120)
+
+        let dailyClosings = dailyTrendClosings(days: dailyDays, calendar: calendar)
+        let weeklyClosings = aggregatedTrendClosings(periods: weeklyPeriods, component: .weekOfYear, calendar: calendar)
+        let monthlyClosings = aggregatedTrendClosings(periods: monthlyPeriods, component: .month, calendar: calendar)
+        let valuation = BalanceValuation(
+            currencies: Set(totalNative.keys),
+            to: currencyCode,
+            closingDates: (dailyClosings + weeklyClosings + monthlyClosings).map(\.closing),
+            converter: converter,
             calendar: calendar
         )
 
-        // Build weekly points (limited to weeks with actual data, max 104)
-        let weeksOfData = (daysOfData / 7) + 1
-        let weeklyPeriods = min(weeksOfData, 104)
-        let weeklyPoints = buildAggregatedTrend(
-            transactionsByDay: transactionsByDay,
-            totalBalance: totalBalance,
-            periods: weeklyPeriods,
-            component: .weekOfYear,
-            calendar: calendar
-        )
-
-        // Build monthly points (limited to months with actual data, max 120)
-        let monthsOfData = (daysOfData / 30) + 1
-        let monthlyPeriods = min(monthsOfData, 120)
-        let monthlyPoints = buildAggregatedTrend(
-            transactionsByDay: transactionsByDay,
-            totalBalance: totalBalance,
-            periods: monthlyPeriods,
-            component: .month,
-            calendar: calendar
-        )
-
-        return WidgetTrendData(
-            dailyPoints: dailyPoints,
-            weeklyPoints: weeklyPoints,
-            monthlyPoints: monthlyPoints
-        )
-    }
-
-    /// Build daily trend points going backwards from current balance
-    private static func buildDailyTrend(
-        transactionsByDay: [Date: Double],
-        totalBalance: Double,
-        days: Int,
-        calendar: Calendar
-    ) -> [WidgetTrendPoint] {
-        var trendPoints: [WidgetTrendPoint] = []
-        var runningBalance = totalBalance
-
-        for daysAgo in 0..<days {
-            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date.now) else { continue }
-            let day = calendar.startOfDay(for: date)
-
-            trendPoints.append(WidgetTrendPoint(date: day, balance: runningBalance))
-
-            if let dayChange = transactionsByDay[day] {
-                runningBalance -= dayChange
-            }
+        func points(_ closings: [(date: Date, closing: Date)]) -> [WidgetTrendPoint] {
+            closings.map { entry in
+                // El primero es hoy: el saldo vivo tal cual, que es el número que pinta el widget al lado.
+                if entry.closing >= calendar.startOfDay(for: Date.now) {
+                    return WidgetTrendPoint(date: entry.date, balance: totalBalance)
+                }
+                var native = totalNative
+                for (day, delta) in nativeByDay where day > entry.closing {
+                    for (code, amount) in delta { native[code, default: 0] -= amount }
+                }
+                return WidgetTrendPoint(date: entry.date, balance: valuation.doubleValue(native, at: entry.closing))
+            }.reversed()
         }
 
-        return trendPoints.reversed()
+        return WidgetTrendData(
+            dailyPoints: points(dailyClosings),
+            weeklyPoints: points(weeklyClosings),
+            monthlyPoints: points(monthlyClosings)
+        )
     }
 
-    /// Build aggregated trend points (weekly or monthly) going backwards
-    private static func buildAggregatedTrend(
-        transactionsByDay: [Date: Double],
-        totalBalance: Double,
-        periods: Int,
-        component: Calendar.Component,
-        calendar: Calendar
-    ) -> [WidgetTrendPoint] {
-        var trendPoints: [WidgetTrendPoint] = []
-        var runningBalance = totalBalance
-        let today = Date.now
+    /// Los días de la curva diaria, de hoy hacia atrás: cada punto lleva la fecha del día y cierra al final de él.
+    private static func dailyTrendClosings(days: Int, calendar: Calendar) -> [(date: Date, closing: Date)] {
+        (0..<days).compactMap { daysAgo in
+            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date.now) else { return nil }
+            let day = calendar.startOfDay(for: date)
+            let next = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+            return (day, min(next.addingTimeInterval(-1), Date.now))
+        }
+    }
 
-        // Get the start of current period
-        var currentPeriodStart: Date
+    /// Las semanas o meses de la curva, del actual hacia atrás: cada punto lleva la fecha de inicio del periodo y
+    /// cierra al final de él (el actual, ahora).
+    private static func aggregatedTrendClosings(
+        periods: Int, component: Calendar.Component, calendar: Calendar
+    ) -> [(date: Date, closing: Date)] {
+        let today = Date.now
+        let currentPeriodStart: Date
         if component == .weekOfYear {
             currentPeriodStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) ?? today
         } else {
             currentPeriodStart = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
         }
-
-        for periodIndex in 0..<periods {
-            guard let periodStart = calendar.date(byAdding: component, value: -periodIndex, to: currentPeriodStart) else { continue }
-
-            // Calculate period end
-            let periodEnd: Date
-            if let nextPeriod = calendar.date(byAdding: component, value: 1, to: periodStart) {
-                periodEnd = nextPeriod
-            } else {
-                continue
-            }
-
-            // For the first period, use current balance
-            // For subsequent periods, subtract all transactions in the period
-            trendPoints.append(WidgetTrendPoint(date: periodStart, balance: runningBalance))
-
-            // Sum all transactions in this period
-            var periodChange: Double = 0
-            for (day, amount) in transactionsByDay {
-                if day >= periodStart && day < periodEnd {
-                    periodChange += amount
-                }
-            }
-            runningBalance -= periodChange
+        return (0..<periods).compactMap { periodIndex in
+            guard let periodStart = calendar.date(byAdding: component, value: -periodIndex, to: currentPeriodStart),
+                  let periodEnd = calendar.date(byAdding: component, value: 1, to: periodStart)
+            else { return nil }
+            return (periodStart, min(periodEnd.addingTimeInterval(-1), today))
         }
-
-        return trendPoints.reversed()
     }
 
     private static func saveSnapshot(_ snapshot: WidgetDataSnapshot) {
@@ -662,24 +767,43 @@ enum WidgetDataCache {
         periodStart: Date,
         periodEnd: Date,
         currencyCode: String,
-        allTransactionsForBalance: [TransactionItem]? = nil
+        allTransactionsForBalance: [TransactionItem]? = nil,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> WidgetPeriodSummary {
         // Filter transactions for the period, excluding balance adjustments
         let periodTransactions = transactions.filter { tx in
             tx.date >= periodStart && tx.date <= periodEnd && tx.balanceAdjustmentType == nil
         }
 
-        // Calculate totals
+        // Calculate totals (income-aware): suprime la pata de préstamo derivada y
+        // proyecta el gasto de grupo Caso A a "mi parte".
         var totalIncome: Double = 0
         var totalExpense: Double = 0
+        // Magnitudes de la parte aproximada, por lado. Suman |contribución|, nunca netos: los
+        // errores de dos conversiones distintas no se cancelan entre sí (mismo razonamiento que
+        // `ApproximateMarkThreshold` documenta y que `CashFlowCalculator` aplica).
+        var incomeApproximateMagnitude: Double = 0
+        var expenseApproximateMagnitude: Double = 0
 
         for tx in periodTransactions {
             guard tx.category != nil else { continue }
-            let amount = preferredAmount(tx)
+            if adjustment.isSuppressed(tx) { continue }
+            // La regla de la app (`CashFlowCalculator.resolvedAmount`): el monto guardado si se
+            // guardó en la divisa vigente —y entonces la señal es la del `adjustment`, que en un
+            // gasto de grupo cuenta todas las patas—; si no, el nativo reconvertido con la tasa de
+            // su fecha, y la señal es la de esa conversión.
+            let resolved = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            )
+            let amount = resolved.value
+            let approximate = resolved.approximateMagnitude
             if isIncomeTx(tx) {
                 totalIncome += abs(amount)
+                incomeApproximateMagnitude += approximate
             } else {
                 totalExpense += abs(amount)
+                expenseApproximateMagnitude += approximate
             }
         }
 
@@ -687,33 +811,57 @@ enum WidgetDataCache {
 
         // Calculate historical balance at end of period
         // This is the sum of ALL transactions up to periodEnd (not just period transactions)
-        // Matches TrendDataProcessor.fillBalanceBuckets logic
+        // Matches TrendDataProcessor.fillBalanceBuckets logic: la fila ENTERA en su divisa nativa, y el saldo por
+        // divisa valorado al cierre del período con el tipo de cambio de ese día —o, si el período llega a hoy,
+        // con la regla del saldo vivo— (`BalanceValuation`). Así el saldo de un período en el widget es el último
+        // punto de la curva de la app (ticket `panel-balance-chart-contradicts-its-own-figure`).
         var periodBalance: Double = 0
+        // Numerador en MAGNITUDES aunque el saldo sea una resta: los errores de dos conversiones
+        // distintas no se cancelan entre sí. El denominador, en cambio, es el saldo mismo — ver el
+        // comentario del `return`.
+        var balanceApproximateMagnitude: Double = 0
         if let allTx = allTransactionsForBalance {
+            var native: [String: Decimal] = [:]
             for tx in allTx where tx.date < periodEnd {
-                periodBalance += preferredAmount(tx)
+                LiveBalanceCalculator.addNative(tx, to: &native)
             }
+            let closing = min(periodEnd, Date.now)
+            let valuation = BalanceValuation(
+                currencies: Set(native.keys), to: currencyCode, closingDates: [closing], converter: converter
+            )
+            let converted = valuation.value(native, at: closing)
+            periodBalance = (converted.total as NSDecimalNumber).doubleValue
+            balanceApproximateMagnitude = (converted.approximateMagnitude as NSDecimalNumber).doubleValue
         }
 
         // Build top categories (expenses only, top 20 for Large widgets)
         let topCategories = buildTopCategories(
             transactions: periodTransactions,
             totalExpense: totalExpense,
-            limit: 20
+            limit: 20,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
         )
 
         // Build top subcategories (expenses only, top 20 for Large widgets)
         let topSubcategories = buildTopSubcategories(
             transactions: periodTransactions,
             totalExpense: totalExpense,
-            limit: 20
+            limit: 20,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
         )
 
         // Build cash flow by day
         let cashFlowPoints = buildCashFlowByDay(
             transactions: periodTransactions,
             periodStart: periodStart,
-            periodEnd: periodEnd
+            periodEnd: periodEnd,
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
         )
 
         return WidgetPeriodSummary(
@@ -723,14 +871,43 @@ enum WidgetDataCache {
             topCategories: topCategories,
             topSubcategories: topSubcategories,
             cashFlowPoints: cashFlowPoints,
-            periodBalance: allTransactionsForBalance != nil ? periodBalance : nil
+            periodBalance: allTransactionsForBalance != nil ? periodBalance : nil,
+            incomeIsApproximate: ApproximateMarkThreshold.marks(
+                approximate: incomeApproximateMagnitude, total: totalIncome
+            ),
+            expenseIsApproximate: ApproximateMarkThreshold.marks(
+                approximate: expenseApproximateMagnitude, total: totalExpense
+            ),
+            // El neto lleva la incertidumbre de los DOS lados contra el número que se muestra, no
+            // el OR de las dos marcas: un ingreso grande con un 4,9 % dudoso y un gasto grande
+            // exacto dejan un neto pequeño cuya incertidumbre puede superarlo, y ninguna de las
+            // dos marcas por lado lo habría dicho.
+            netCashFlowIsApproximate: ApproximateMarkThreshold.marks(
+                approximate: incomeApproximateMagnitude + expenseApproximateMagnitude,
+                total: netCashFlow
+            ),
+            // El denominador es el SALDO, no la facturación bruta que lo formó. `periodBalance` es
+            // una resta —ingresos menos gastos de todo el histórico— y el contrato de
+            // `ApproximateMarkThreshold` es explícito: cuando el número es una resta, el
+            // denominador honesto es lo que el usuario ve. Con `Σ|monto|` la marca no salía casi
+            // nunca y fallaba justo en quien más historial tiene: 400 dudosos sobre un saldo de 500
+            // dan un 80 %, pero sobre una facturación de 300.000 dan un 0,13 %.
+            periodBalanceIsApproximate: allTransactionsForBalance != nil
+                ? ApproximateMarkThreshold.marks(
+                    approximate: balanceApproximateMagnitude, total: periodBalance
+                )
+                // Sin `periodBalance` no hay número que marcar.
+                : false
         )
     }
 
     static func buildTopCategories(
         transactions: [TransactionItem],
         totalExpense: Double,
-        limit: Int
+        limit: Int,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetCategory] {
         // Group expenses by category
         var categoryTotals: [String: (category: Category, amount: Double)] = [:]
@@ -738,11 +915,14 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
-            // Skip income (clasificación por categoría, no por signo)
+            // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard !isIncomeTx(tx) else { continue }
             guard let category = tx.category else { continue }
 
-            let amount = abs(preferredAmount(tx))
+            let amount = abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
             let key = category.name
 
             if var existing = categoryTotals[key] {
@@ -773,7 +953,10 @@ enum WidgetDataCache {
     static func buildTopSubcategories(
         transactions: [TransactionItem],
         totalExpense: Double,
-        limit: Int
+        limit: Int,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetSubcategory] {
         // Group expenses by subcategory
         var subcategoryTotals: [String: (subcategory: Subcategory, category: Category, amount: Double)] = [:]
@@ -781,12 +964,15 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
-            // Skip income (clasificación por categoría, no por signo)
+            // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard !isIncomeTx(tx) else { continue }
             guard let subcategory = tx.subcategory,
                   let category = tx.category else { continue }
 
-            let amount = abs(preferredAmount(tx))
+            let amount = abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
             let key = "\(category.name)_\(subcategory.name)"
 
             if var existing = subcategoryTotals[key] {
@@ -818,7 +1004,10 @@ enum WidgetDataCache {
     static func buildCashFlowByDay(
         transactions: [TransactionItem],
         periodStart: Date,
-        periodEnd: Date
+        periodEnd: Date,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetCashFlowPoint] {
         let calendar = Calendar.current
 
@@ -829,9 +1018,13 @@ enum WidgetDataCache {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
             guard tx.category != nil else { continue }
+            // Suprime la pata de préstamo derivada (bridge): mata el ingreso fantasma +lent.
+            if adjustment.isSuppressed(tx) { continue }
 
             let day = calendar.startOfDay(for: tx.date)
-            let rawAmount = preferredAmount(tx)
+            let rawAmount = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
             if isIncomeTx(tx) {
@@ -847,7 +1040,11 @@ enum WidgetDataCache {
         // to avoid generating millions of empty points
         var points: [WidgetCashFlowPoint] = []
 
-        let daysBetween = calendar.dateComponents([.day], from: periodStart, to: periodEnd).day ?? 0
+        // Aquí no es un denominador sino un umbral, así que el día perdido solo importa en la
+        // frontera exacta; se normaliza igual porque es la misma instancia del patrón y dejar una suelta
+        // es lo que hace que el próximo barrido la encuentre como si fuera nueva.
+        let daysBetween = DateIntervalDayCount.days(
+            from: periodStart, to: periodEnd, calendar: calendar)
         let isLongPeriod = daysBetween > 365  // More than 1 year
 
         if isLongPeriod {
@@ -881,5 +1078,57 @@ enum WidgetDataCache {
         }
 
         return points
+    }
+}
+
+/// Memo de conversiones para UN snapshot del widget.
+///
+/// `buildSnapshot` resuelve la misma fila en muchas superficies, y la rama de reconversión de
+/// `CashFlowCalculator.resolvedAmount` llama al converter con los mismos argumentos cada vez. El
+/// converter compartido lee las tasas de esa fecha del store en cada llamada, en el hilo principal.
+/// Vive lo que vive el snapshot: no puede servir una tasa vieja a otro.
+private final class SnapshotMemoizedConverter: CurrencyConverting {
+    private struct Key: Hashable {
+        let amount: Decimal
+        let from: String
+        let to: String
+        let date: Date
+    }
+
+    private let base: CurrencyConverting
+    private var checked: [Key: (amount: Decimal, quality: RateQuality)] = [:]
+
+    init(base: CurrencyConverting) {
+        self.base = base
+    }
+
+    func convertChecked(_ amount: Decimal, from: String, to: String, on date: Date)
+        -> (amount: Decimal, quality: RateQuality)
+    {
+        let key = Key(amount: amount, from: from, to: to, date: date)
+        if let hit = checked[key] { return hit }
+        let result = base.convertChecked(amount, from: from, to: to, on: date)
+        checked[key] = result
+        return result
+    }
+
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
+        convertChecked(amount, from: from, to: to, on: date).amount
+    }
+
+    func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal {
+        base.convertWithLatestRate(amount, from: from, to: to)
+    }
+
+    func convertCheckedWithLatestRate(_ amount: Decimal, from: String, to: String)
+        -> (amount: Decimal, quality: RateQuality)
+    {
+        base.convertCheckedWithLatestRate(amount, from: from, to: to)
+    }
+
+    /// Al converter de base, que las lee en bloque: la curva del widget pide la tasa de ~300 días, y el default del
+    /// protocolo las pediría una a una.
+    func rateFactors(for codes: Set<String>, to: String, on dates: [Date]) -> [Date: [String: RateFactor]] {
+        base.rateFactors(for: codes, to: to, on: dates)
     }
 }

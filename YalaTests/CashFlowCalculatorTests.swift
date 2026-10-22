@@ -532,6 +532,46 @@ struct CashFlowCalculatorTests {
         #expect(result.totalExpense == 100)
         #expect(result.netFlow == 400)
     }
+
+    // MARK: - Refund characterization (categoría manda sobre signo — p20-14 D3)
+
+    @Test func incomeCategory_negativeAmount_reducesIncome() {
+        // Reembolso de un ingreso: categoría income + monto negativo → reduce totalIncome.
+        let incomeCat = makeCategory(name: "Salary", isIncome: true)
+        let today = Calendar.current.startOfDay(for: Self.testNow)
+        let salary = makeTransaction(amount: 500, date: today, category: incomeCat)
+        let refund = makeTransaction(amount: -120, date: today, category: incomeCat)
+
+        let result = CashFlowCalculator.calculateCashFlow(
+            transactions: [salary, refund],
+            interval: weekInterval,
+            grouping: .day,
+            currencyCode: "USD"
+        )
+
+        #expect(result.totalIncome == 380)  // 500 - 120
+        #expect(result.totalExpense == 0)
+        #expect(result.netFlow == 380)
+    }
+
+    @Test func expenseCategory_positiveAmount_reducesExpense() {
+        // Reembolso de un gasto: categoría expense + monto positivo → reduce totalExpense.
+        let expenseCat = makeCategory(name: "Food")
+        let today = Calendar.current.startOfDay(for: Self.testNow)
+        let spend = makeTransaction(amount: -100, date: today, category: expenseCat)
+        let refund = makeTransaction(amount: 30, date: today, category: expenseCat)
+
+        let result = CashFlowCalculator.calculateCashFlow(
+            transactions: [spend, refund],
+            interval: weekInterval,
+            grouping: .day,
+            currencyCode: "USD"
+        )
+
+        #expect(result.totalExpense == 70)  // 100 - 30
+        #expect(result.totalIncome == 0)
+        #expect(result.netFlow == -70)
+    }
 }
 
 /*

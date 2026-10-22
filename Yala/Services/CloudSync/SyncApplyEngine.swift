@@ -1,0 +1,826 @@
+//
+//  SyncApplyEngine.swift
+//  Yala
+//
+//  Consumidor del pull: aplica los deltas remotos al store local (Modo Nube, incremento I8f-1). Es el
+//  código MÁS DELICADO del motor (muta el store con datos remotos), por eso vive como EXTENSIÓN de
+//  `CloudSyncEngine` — comparte `saveWithAuthor`/`loadOrCreateCursor`/el reloj (D-3) sin exponer más
+//  internals. Referencias de diseño: §d.6 (pull/cursor/quarantine), §d.4bis (unidades), §d.4 (delete-
+//  vs-upsert), D-0..D-9 del plan I8f-1 + fixes F-1..F-10 del review adversarial.
+//
+//  INVARIANTES DUROS:
+//   - **D-2/F-1 (anti-laundering)**: el invariante real es "drain SÍNCRONO inmediatamente antes de CADA
+//     `applyPage`" — no basta drenar al entrar: una edición del usuario que aterrice durante la
+//     suspensión del `await client.pull(...)` quedaría sin drenar y el apply la machacaría (y el próximo
+//     drain relee el modelo vivo y LAVA el valor remoto bajo un HLC local fresco). Por eso el loop llama
+//     `drainOnce` tras recibir cada página y ANTES de `applyPage`, ambos síncronos en MainActor sin
+//     `await` entre medio → todo edit de la ventana produce su fila de outbox y el guard D-1 lo protege.
+//   - **D-0 (full-row)**: el pull es FULL-ROW; el apply es materialización full-row con SKIP por-unidad.
+//   - **D-1 (LWW por-unidad vs OUTBOX PENDIENTE)**: la única fuente de escrituras locales que el server
+//     aún no conoce es `SyncOutbox` (filas VIVAS, `rejectedReason == nil`). Una unidad remota se SALTA si
+//     una fila pendiente de ese `syncID` tiene `fieldHlcs[unit] >= remote` (comparación `HLC` estructurada).
+//     Un tombstone se SALTA si un upsert pendiente tiene `hlc > deleted_hlc`.
+//   - **D-4**: todo se escribe bajo `author = outboxSaveAuthor` (echo-suppression del drain).
+//   - **D-5/F-3 (cursor atómico + cero-descartes + rollback)**: por página, aplicar TODOS los deltas +
+//     cuarentenar + `clock` persist + `serverSeqCursor = max` en UN `saveWithAuthor`. TODO delta o se
+//     aplica al @Model o va a `SyncQuarantine` — no hay tercer camino. Va a cuarentena el de una tabla no
+//     cableada y el upsert con dinero o tasa no finitos (`EntityApplyMap.nonFiniteMoneyColumns`). Si el save FALLA, `rollback()`
+//     obligatorio: dejar el contexto sucio con el grafo remoto haría que un autosave posterior lo
+//     flusheara bajo un autor NO-motor → laundering.
+//   - **F-2 (refs colgadas)**: un `_ref` singular sin destino local se registra en `SyncDanglingRef`
+//     (durable, en el save de página); el pase de re-resolución al final de `pullAndApplyOnce` lo cura.
+//
+
+import Foundation
+import SwiftData
+
+// MARK: - PullApplyOutcome
+
+/// Resultado de un ciclo `pullAndApplyOnce` (cero silencios). `pagesApplied` = páginas aplicadas
+/// DURABLEMENTE antes de terminar (un `.transient` a mitad NO pierde lo ya aplicado: cursor avanzó).
+enum PullApplyOutcome: Equatable {
+    /// Se drenó y se pulleó hasta agotar la cola (o el tope de páginas).
+    case completed(pagesApplied: Int)
+    /// Había un drain EN CURSO → se abortó sin aplicar (D-2). Defensivo: `drainOnce` es síncrono en
+    /// MainActor, así que hoy es INALCANZABLE desde producción — queda como red si el drain gana
+    /// suspensión en el futuro.
+    case busy
+    /// 401 en alguna página (sesión) → reintentar tras re-login. Lo aplicado antes queda durable.
+    case sessionExpired
+    /// 403 (cuenta suspendida/deshabilitada).
+    case accountUnavailable
+    /// Fallo transitorio (red/HTTP/decode/save de página, o una lectura LOCAL de la que depende el apply que no se
+    /// dejó leer) → reintentar con backoff. Que lo local caiga aquí es el ticket
+    /// `a-local-read-failure-in-the-migration-apply-reads-as-network`.
+    case transient(pagesApplied: Int)
+}
+
+/// Error del seam de test `_testThrowOnApplySave` (simula un crash antes del commit de una página).
+private enum ApplyTestCrash: Error { case suppressed }
+
+/// Lecturas locales de las que depende el apply para no pisar nada (ticket
+/// `apply-overwrites-a-pending-local-write-without-its-guards`). Seam `_testThrowOnApplyRead`: SOLO tests.
+enum ApplyGuardRead: Equatable {
+    /// El `SyncOutbox` vivo del que sale el guard LWW (D-1).
+    case pendingGuards
+    /// La cuarentena: sus `serverSeq` (dedupe D-5/D-6) y sus filas, que una versión posterior retira.
+    case quarantineSeqs
+}
+
+/// Una lectura de la que depende el apply lanzó. Se propaga para que la página NO se aplique.
+enum ApplyGuardReadError: Error { case unreadable(ApplyGuardRead) }
+
+// MARK: - Guard de pendientes (D-1)
+
+/// Estado LWW derivado del `SyncOutbox` VIVO de UN `syncID`: el MAX HLC de sus upserts pendientes
+/// (guard de tombstone) y el MAX HLC por-unidad (guard por-unidad del upsert).
+private struct PendingGuard {
+    var maxUpsertHLC: HLC?
+    var unitHLCs: [String: HLC] = [:]
+}
+
+// MARK: - SyncApplyEngine
+
+extension CloudSyncEngine {
+
+    /// Orquestador D-2/F-1: drena, pullea y aplica página a página avanzando el cursor DURABLEMENTE por
+    /// página (interrumpir a mitad = re-pull idempotente, D-2b). El drain se repite SÍNCRONO antes de
+    /// CADA `applyPage` (F-1: cubre las ediciones que aterrizan durante la suspensión del `await pull`).
+    /// Al final (haya terminado como haya terminado, salvo `.busy`) corre el pase de re-resolución de
+    /// refs colgadas (F-2). `now` inyectable (determinismo del `receive` del reloj).
+    /// - Parameters:
+    ///   - client: transporte del pull (inyectable; stub en tests).
+    ///   - pageLimit: tamaño de página (= `limit` del wire).
+    ///   - maxPages: tope defensivo de páginas por ciclo (evita loops si el server nunca "agota").
+    ///   - beforeDrain: corre SÍNCRONO justo antes del drain F-1 de cada página —después del `await pull`, sin otro
+    ///     `await` hasta el apply—. Lo pasa la verificación de la ida para devolver las identidades que el espejo cambió por
+    ///     debajo durante la espera (`MigrationWorkExecutor.restoreRelayIdentities`): sin él, una fila re-identificada
+    ///     recibiría su propia copia del backend como born-remote. El drain de ENTRADA no lo lleva: la verificación ya
+    ///     restaura antes, sin `await` en medio. Si lanza, la página no se aplica, como con un drain que no terminó
+    ///     (`.transient`). `nil` en el runtime.
+    func pullAndApplyOnce(
+        using client: SyncPullClient,
+        context: ModelContext,
+        now: Date = .now,
+        pageLimit: Int = 500,
+        maxPages: Int = 50,
+        beforeDrain: (@MainActor () throws -> Void)? = nil
+    ) async -> PullApplyOutcome {
+        // D-2: nunca aplicar con un drain en curso. Defensivo (F-10): `drainOnce` es síncrono bajo
+        // MainActor → esta rama es inalcanzable hoy; queda como red si el drain gana suspensión.
+        guard !isDrainInProgress else { return .busy }
+        // Drenar al entrar: captura las escrituras locales pendientes ANTES del primer fetch.
+        drainOnce(context: context)
+
+        let (outcome, pagesApplied) = await pullLoop(client: client, context: context, now: now,
+                                                     pageLimit: pageLimit, maxPages: maxPages, beforeDrain: beforeDrain)
+        // I8f-3 (guard A-3 del Merkle): registrar si este ciclo AGOTÓ la cola. Un ciclo incompleto
+        // (transient/401/403) deja el flag en false → la verificación se salta (divergencia esperada).
+        if case .completed = outcome {
+            lastPullCycleCompleted = true
+        } else {
+            lastPullCycleCompleted = false
+        }
+        // F-2: pase de re-resolución de refs colgadas — corre SIEMPRE al final del ciclo (también en
+        // salidas tempranas: lo aplicado hasta aquí es durable y puede haber destapado targets).
+        reresolveDanglingRefs(context: context)
+        // I8f-2 (D-D): reconciliadores cross-fila — SOLO si el ciclo aplicó ≥1 página (un ciclo vacío no
+        // pudo introducir divergencia nueva), DESPUÉS de los danglers (una ref recién resuelta completa
+        // la clasificación real-vs-virtual del split). Cada uno en su propio save con rollback-on-fail,
+        // bajo autor NORMAL (sus writes DEBEN drenar/subir en el próximo ciclo).
+        //
+        // I9 (§G): gateados por QUIESCENCIA (`reconcilerQuiescenceGate`). `nil` = comportamiento actual
+        // (corren siempre — tests intactos). Si el gate está PUESTO y CERRADO, se DIFIEREN
+        // (`pendingReconcile = true`) para no saveear (autor NORMAL) sobre un grafo a medio importar
+        // (anti-crash-loop de CLAUDE.md) → se reintentan al inicio de un ciclo futuro cuando el gate
+        // abra, aunque ese ciclo aplique 0 páginas (no se pierde el repair).
+        let gateOpen = reconcilerQuiescenceGate?() ?? true
+        if pagesApplied > 0 {
+            if gateOpen {
+                runPostPullReconcilers(context: context)
+                pendingReconcile = false
+            } else {
+                pendingReconcile = true
+            }
+        } else if pendingReconcile, gateOpen {
+            // Reintento del repair diferido: el ciclo no aplicó páginas nuevas pero el gate ya abrió.
+            runPostPullReconcilers(context: context)
+            pendingReconcile = false
+        }
+        return outcome
+    }
+
+    /// El loop de páginas (separado para que los pases F-2/I8f-2 corran en TODAS las salidas). Devuelve
+    /// también `pagesApplied` aparte del outcome (los cases `.sessionExpired`/`.accountUnavailable` no
+    /// lo llevan, pero el gate de los reconcilers necesita saber si HUBO páginas antes de esa salida).
+    private func pullLoop(
+        client: SyncPullClient, context: ModelContext, now: Date, pageLimit: Int, maxPages: Int,
+        beforeDrain: (@MainActor () throws -> Void)?
+    ) async -> (PullApplyOutcome, Int) {
+        var pagesApplied = 0
+        while pagesApplied < maxPages {
+            let since: Int64
+            do {
+                since = try loadOrCreateCursor(context).serverSeqCursor
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine.pullAndApplyOnce: loadCursor falló: \(error)")
+                #endif
+                return (.transient(pagesApplied: pagesApplied), pagesApplied)
+            }
+
+            let outcome = await client.pull(since: since, limit: pageLimit)
+            switch outcome {
+            case .page(let page):
+                // Página vacía = cola agotada (nada nuevo desde `since`) → sin avanzar cursor.
+                guard !page.deltas.isEmpty else {
+                    return (.completed(pagesApplied: pagesApplied), pagesApplied)
+                }
+                // F-1: RE-drenar SÍNCRONO inmediatamente antes del apply — sin `await` entre medio.
+                // Cubre toda edición local que aterrizó durante la suspensión del `await pull`: su fila
+                // de outbox queda escrita y el guard D-1 protege sus unidades del full-row remoto.
+                // Un drain que NO terminó hizo rollback: la edición de la suspensión no está en el outbox, ni
+                // siquiera sucia en el contexto, así que el guard D-1 no la vería y la página la pisaría (y el
+                // drain siguiente la releería ya pisada). Cortar como con un apply fallido: el cursor no se mueve.
+                if let beforeDrain {
+                    do {
+                        try beforeDrain()
+                    } catch {
+                        return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                    }
+                }
+                guard drainOnce(context: context) else {
+                    return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                }
+                guard applyPage(page, context: context, now: now) else {
+                    // F-3: la página no se aplicó —falló su save o una lectura de la que depende (guard,
+                    // dedupe, búsqueda de fila)— y el rollback ya está hecho → cortar; el cursor NO avanzó,
+                    // así que reintentar el mismo `since` en este loop podría girar hasta maxPages.
+                    return (.transient(pagesApplied: pagesApplied), pagesApplied)
+                }
+                pagesApplied += 1
+                // Última página (menos deltas que el límite) → agotado.
+                if page.deltas.count < pageLimit {
+                    return (.completed(pagesApplied: pagesApplied), pagesApplied)
+                }
+                // Página llena → puede haber más: siguiente vuelta con el cursor ya avanzado.
+            case .sessionExpired:
+                return (.sessionExpired, pagesApplied)
+            case .accountUnavailable:
+                return (.accountUnavailable, pagesApplied)
+            case .transient:
+                return (.transient(pagesApplied: pagesApplied), pagesApplied)
+            }
+        }
+        return (.completed(pagesApplied: pagesApplied), pagesApplied)  // tope defensivo alcanzado
+    }
+
+    // MARK: - Reconciliadores post-pull (I8f-2, D-D)
+
+    /// Corre los 2 reconciliadores cross-fila, cada uno en su propio save con rollback-on-fail (patrón
+    /// F-3), bajo autor NORMAL — el próximo drain captura sus writes (repair del money / tombstones de
+    /// la poda) y los sube con HLC fresco. Un fallo de uno NO impide el otro. `internal` para tests.
+    /// GATE I9 (cableado: `reconcilerQuiescenceGate` ← `SyncQuiescenceCoordinator.
+    /// isQuiescentForEngineSaves`): en `.icloud` estos saves de autor NORMAL respetan la quiescencia
+    /// del import de CloudKit AJENO (regla anti-crash-loop de CLAUDE.md); en `.cloud` la señal es
+    /// `true` SIEMPRE — cuando esto corre, el save de página del PROPIO batch ya commiteó y no hay
+    /// import ajeno. NO cablear `isImportQuiescent` aquí: queda `false` durante toda la ventana
+    /// markApplyBegan/Ended que envuelve al pull (donde esto corre) → deferral perpetuo en `.cloud`
+    /// (SERIO-1 del review de I9).
+    func runPostPullReconcilers(context: ModelContext) {
+        do {
+            _ = CloudSyncReconciler.reconcileTransferPairDivergence(context: context)
+            if context.hasChanges { try context.save() }  // autor NORMAL (debe drenar/subir)
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerTransfer:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.runPostPullReconcilers: transfer save falló: \(error)")
+            #endif
+        }
+        do {
+            _ = CloudSyncReconciler.reconcileSplitRepresentations(context: context)
+            if context.hasChanges { try context.save() }  // autor NORMAL
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerSplit:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.runPostPullReconcilers: split save falló: \(error)")
+            #endif
+        }
+        // Entidades de SISTEMA (política v1, residual gate de flags): GESTIONA SUS PROPIOS saves internos
+        // bajo autor DEFAULT (el CSV-mirror exige el cascade `.nullify` committeado antes del re-encode) →
+        // aquí solo se recoge el residual y se loguea un fallo del save final. Un fallo NO impide los otros.
+        do {
+            _ = CloudSyncReconciler.reconcileSystemEntities(context: context)
+            if context.hasChanges { try context.save() }
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerSystem:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.runPostPullReconcilers: system save falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Aplica UNA página en UN `saveWithAuthor` (D-5, atómico): por cada delta → apply|quarantine +
+    /// `receive` del reloj; al final avanza `serverSeqCursor` y persiste el reloj (D-3). Devuelve `false`
+    /// si el save falló o si no se pudo leer algo de lo que depende para no pisar datos locales (guard
+    /// D-1, dedupe de cuarentena, búsqueda de la fila) — el contexto queda ROLLBACKEADO (F-3: sin rollback, el grafo remoto quedaría
+    /// dirty y un autosave posterior lo flushearía bajo autor NO-motor → laundering) y el cursor NO
+    /// avanza → el re-pull re-aplica idempotente.
+    ///
+    /// GUARDIA (F-8): SOLO llamable desde `pullAndApplyOnce` o tests — llamarla sin un `drainOnce`
+    /// SÍNCRONO inmediatamente antes reintroduce el laundering de D-2 (una edición local sin drenar se
+    /// machaca aquí y el próximo drain la relee del modelo vivo bajo un HLC fresco).
+    @discardableResult
+    func applyPage(_ page: PulledPage, context: ModelContext, now: Date) -> Bool {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            loadClock(from: cursor)  // D-3: reloj desde el estado durable antes de integrar remotos
+
+            // Sin estas dos lecturas NO se aplica nada: un guard vacío o PARCIAL deja que un remoto pise
+            // una escritura local pendiente, y un dedupe vacío re-inserta cuarentenas. Lanzan → `catch` de
+            // abajo (rollback, `false`, cursor quieto) → el ciclo sale `.transient` y reintenta.
+            let guards = try buildPendingGuards(context)
+            // Dinero o tasa NO FINITOS en un upsert cableado (ticket `wire-decoder-accepts-non-finite-money`): ese
+            // delta va ENTERO a cuarentena (D-5: o se aplica o se cuarentena). Aplicarlo sin la columna dejaba un
+            // born-remote en 0 o un grupo `money` mezclado; con ella, el valor rompía los totales y no podía volver a
+            // subir. Por `serverSeq`, que es único dentro de una página.
+            var nonFiniteBySeq: [Int64: [String]] = [:]
+            for delta in page.deltas where delta.op == .upsert && EntityApplyMap.isWired(table: delta.entityType) {
+                let columns = EntityApplyMap.nonFiniteMoneyColumns(table: delta.entityType, fields: delta.fields)
+                if !columns.isEmpty { nonFiniteBySeq[delta.serverSeq] = columns }
+            }
+            // La cuarentena solo se lee si la página trae algo que cuarentenar o si ya hay filas que una versión
+            // posterior podría retirar (el testigo lockstep): hoy casi nunca, así que no cuesta una lectura en el
+            // camino caliente. Con filas pendientes SÍ se lee en cada página, y si no se deja leer la página no se
+            // aplica: sin ella no se puede retirar la versión vieja, y el cursor la dejaría atrás para siempre.
+            let needsQuarantine = !nonFiniteBySeq.isEmpty
+                || page.deltas.contains { !EntityApplyMap.isWired(table: $0.entityType) }
+            let existingQuarantine: [SyncQuarantine] = (needsQuarantine || cursor.quarantinePendingCount > 0)
+                ? try existingQuarantineRows(context) : []
+            var quarantineSeqs = Set(existingQuarantine.map(\.serverSeq))
+            // Por fila (tabla + `syncID`), para que la retirada no recorra la cuarentena entera en cada delta.
+            var quarantined = Dictionary(grouping: existingQuarantine) { QuarantineKey(table: $0.entityType, syncID: $0.syncID) }
+            var newQuarantineCount = 0
+            var retiredQuarantineCount = 0
+            var nonFiniteQuarantined: [(entity: String, serverSeq: Int64, columns: [String])] = []
+            var superseded: [String: Int] = [:]
+
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for delta in page.deltas {
+                    // D-3: integra el HLC de FILA de CADA delta (aplicado o cuarentenado) en el reloj.
+                    if let remote = parseHLC(delta.hlc, site: "applyPage.rowHlc") {
+                        receiveRemoteClock(remote, now: now)
+                    }
+                    if EntityApplyMap.isWired(table: delta.entityType) {
+                        if let columns = nonFiniteBySeq[delta.serverSeq] {
+                            if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
+                                newQuarantineCount += 1
+                                nonFiniteQuarantined.append((delta.entityType, delta.serverSeq, columns))
+                            }
+                        } else {
+                            try dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                        }
+                        // Lo que la cuarentena guardaba de esta fila con un `serverSeq` anterior ya no es su
+                        // versión: el drenaje del arranque lo re-aplicaría encima de esta. Se retira.
+                        let retired = retireSupersededQuarantine(of: delta, rows: &quarantined, seqs: &quarantineSeqs,
+                                                                 context: context)
+                        if retired > 0 {
+                            retiredQuarantineCount += retired
+                            superseded[delta.entityType, default: 0] += retired
+                        }
+                    } else {
+                        // §d.6/D-5: entity_type no materializable → cuarentena (dedup seq).
+                        if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
+                            newQuarantineCount += 1
+                        }
+                    }
+                }
+                // D-5 + D-3: cursor + reloj en el MISMO save. `max` defensivo (nunca retroceder).
+                cursor.serverSeqCursor = max(cursor.serverSeqCursor, page.maxServerSeq)
+                cursor.clockLatestHLC = clockLatestString
+                // I9 (§d.5 A1): testigo lockstep — se mueve en el MISMO save que INSERTA o RETIRA las filas de
+                // cuarentena. Guard de recreación depende de esta atomicidad.
+                if newQuarantineCount > 0 || retiredQuarantineCount > 0 {
+                    cursor.quarantinePendingCount = max(
+                        0, cursor.quarantinePendingCount + Int64(newQuarantineCount - retiredQuarantineCount))
+                }
+                // Seam de test (D-5/F-3): crash antes del commit → rollback, cursor NO avanza.
+                if _testThrowOnApplySave { throw ApplyTestCrash.suppressed }
+            }
+            // Rastro y canario DESPUÉS del save: con rollback no se cuarentenó nada.
+            for item in nonFiniteQuarantined {
+                CloudSyncBreadcrumb.applyNonFiniteQuarantined(entity: item.entity, serverSeq: item.serverSeq,
+                                                              columns: item.columns)
+                MetricsService.cloudSyncPullNonFiniteMoney(channel: "personal", table: item.entity)
+            }
+            for (entity, count) in superseded.sorted(by: { $0.key < $1.key }) {
+                CloudSyncBreadcrumb.quarantineSuperseded(entity: entity, count: count)
+            }
+            return true
+        } catch {
+            // F-3: rollback OBLIGATORIO — el contexto tiene el grafo remoto a medias (born-remotes,
+            // deletes, cursor mutado); dejarlo dirty = laundering vía el próximo autosave/save ajeno.
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.applyPage: save falló (rollback; cursor NO avanza → re-pull idempotente): \(error)")
+            #endif
+            return false
+        }
+    }
+
+    // MARK: - Dispatch concreto por tabla (nunca genérico por protocolo)
+
+    private func dispatchApply(_ delta: PulledDelta, guard g: PendingGuard?, context: ModelContext) throws {
+        switch delta.entityType {
+        case EntityApplyMap.transactionItem.table:
+            try applyToEntity(delta, EntityApplyMap.transactionItem, guard: g, context: context)
+        case EntityApplyMap.inboxDraft.table:
+            try applyToEntity(delta, EntityApplyMap.inboxDraft, guard: g, context: context)
+        case EntityApplyMap.category.table:
+            try applyToEntity(delta, EntityApplyMap.category, guard: g, context: context)
+        case EntityApplyMap.favoritePayment.table:
+            try applyToEntity(delta, EntityApplyMap.favoritePayment, guard: g, context: context)
+        case EntityApplyMap.merchantMemory.table:
+            try applyToEntity(delta, EntityApplyMap.merchantMemory, guard: g, context: context)
+        case EntityApplyMap.exchangeRate.table:
+            try applyToEntity(delta, EntityApplyMap.exchangeRate, guard: g, context: context)
+        case EntityApplyMap.budget.table:
+            try applyToEntity(delta, EntityApplyMap.budget, guard: g, context: context)
+        case EntityApplyMap.scheduledPayment.table:
+            try applyToEntity(delta, EntityApplyMap.scheduledPayment, guard: g, context: context)
+        case EntityApplyMap.account.table:
+            try applyToEntity(delta, EntityApplyMap.account, guard: g, context: context)
+        case EntityApplyMap.subcategory.table:
+            try applyToEntity(delta, EntityApplyMap.subcategory, guard: g, context: context)
+        case EntityApplyMap.tag.table:
+            try applyToEntity(delta, EntityApplyMap.tag, guard: g, context: context)
+        case EntityApplyMap.notificationItem.table:
+            try applyToEntity(delta, EntityApplyMap.notificationItem, guard: g, context: context)
+        case EntityApplyMap.cashFlowPlan.table:
+            try applyToEntity(delta, EntityApplyMap.cashFlowPlan, guard: g, context: context)
+        case EntityApplyMap.cashFlowLine.table:
+            try applyToEntity(delta, EntityApplyMap.cashFlowLine, guard: g, context: context)
+        case EntityApplyMap.cashFlowOverride.table:
+            try applyToEntity(delta, EntityApplyMap.cashFlowOverride, guard: g, context: context)
+        case EntityApplyMap.groupBridgePreference.table:
+            try applyToEntity(delta, EntityApplyMap.groupBridgePreference, guard: g, context: context)
+        default:
+            break  // isWired ya lo filtró; inalcanzable.
+        }
+    }
+
+    /// Aplica un delta de una entidad CONCRETA `M` (upsert full-row con skip por-unidad, o tombstone).
+    ///
+    /// ASIMETRÍA CONSCIENTE (F-10): un upsert remoto sobre una fila con TOMBSTONE local pendiente la
+    /// "resucita" localmente de forma TRANSITORIA — el server arbitra al pushear el tombstone (regla
+    /// delete-vs-upsert de §d.4 cat.3) y el próximo pull converge. Parpadeo esperado; la reconciliación
+    /// fina cross-fila es I8f-2.
+    private func applyToEntity<M: PersistentModel>(
+        _ delta: PulledDelta, _ entry: EntityApply<M>, guard g: PendingGuard?, context: ModelContext
+    ) throws {
+        switch delta.op {
+        case .tombstone:
+            // F-6d: un `deleted_hlc` malformado (nunca desde nuestro server) → NO borrar (skip; el
+            // cursor avanza). Borrar es lo irreversible; el skip es lo conservador.
+            guard let remote = parseHLC(delta.hlc, site: "tombstone.deletedHlc") else { return }
+            // D-1/§d.4 cat.3: si un upsert local pendiente es MÁS NUEVO que el deleted_hlc, NO borramos
+            // (el server reinstalará nuestra edición; convergencia por la regla delete-vs-upsert).
+            if let g, let maxUp = g.maxUpsertHLC, maxUp > remote {
+                return
+            }
+            // D-9: sin fila local → no-op (el cursor avanza igual). Con fila → borrar + matar la identidad.
+            // La búsqueda LANZA si no se pudo leer: «no pude buscar» no es «no hay fila», y darlo por
+            // no-op avanzaría el cursor con el borrado sin hacer.
+            guard let model = try entry.fetchBySyncID(delta.syncID, context) else { return }
+            context.delete(model)
+            if let identity = try EntityApplyMap.findSyncIdentity(bySyncID: delta.syncID, context: context) {
+                context.delete(identity)
+            }
+            // I8f-2 (D-A): higiene del clock por-unidad en el MISMO save de página (si el modelo
+            // resucita por un upsert posterior, drain/apply lo re-pueblan).
+            try SyncUnitClockStore.deleteChecked(syncID: delta.syncID, context: context)
+
+        case .upsert:
+            // D-8: sin fila local → born-remote (crear + fijar syncID para que el sweep del drain no
+            // re-acuñe otro). Con fila → materializar sobre ella.
+            let model: M
+            let isNew: Bool
+            // Lanza si no se pudo leer: tratarlo como «no existe» crearía un born-remote DUPLICADO.
+            if let existing = try entry.fetchBySyncID(delta.syncID, context) {
+                model = existing
+                isNew = false
+            } else {
+                model = entry.make(context)
+                entry.setSyncID(model, delta.syncID)
+                isNew = true
+            }
+            // Full-row (D-0): iterar SOLO las columnas presentes en `fields` (key ausente = no tocar).
+            // F-4: en un BORN-REMOTE el skip por-unidad NO aplica — el guard D-1 protege ediciones
+            // locales de una fila EXISTENTE; una fila outbox huérfana (upsert pendiente de un syncID
+            // sin modelo) saltaría p.ej. el grupo money y dejaría el born-remote con los defaults del
+            // init ($0, moneda equivocada) = fila incoherente. El full-row remoto se materializa ÍNTEGRO.
+            // I8f-2 (D-A): las unidades APLICADAS (no las saltadas por D-1 — la saltada conserva el HLC
+            // local pendiente que el drain ya escribió en el clock) alimentan el `SyncUnitClock` con el
+            // HLC remoto de esa unidad, en el MISMO save de página.
+            var appliedUnits: [String: String] = [:]
+            for (column, value) in delta.fields {
+                guard let applier = entry.appliers[column] else { continue }  // p.ej. local_day / no cableada
+                let unit = entry.unit(for: column)
+                if !isNew {
+                    if shouldSkipUnit(unit, remoteFieldHlcs: delta.fieldHlcs, guard: g) { continue }  // D-1
+                }
+                // Lanza si el destino de una ref, su registro de dangler o los destinos M2M no se dejan leer:
+                // escribir el `nil`/`[]` de la avería pisaría una relación buena (se tira la página entera).
+                try applier.apply(model, value, context)
+                if let remoteUnitHLC = delta.fieldHlcs[unit] {
+                    appliedUnits[unit] = remoteUnitHLC
+                }
+            }
+            if !appliedUnits.isEmpty {
+                try SyncUnitClockStore.upsertChecked(syncID: delta.syncID, entityTable: delta.entityType,
+                                          unitHlcs: appliedUnits, context: context)
+            }
+            if isNew {
+                try ensureIdentity(for: model, entry: entry, syncID: delta.syncID, context: context)
+            }
+        }
+    }
+
+    /// D-1 por-unidad: `true` si una fila de outbox VIVA de este `syncID` tiene la unidad `unit` con un
+    /// HLC `>=` al remoto → la unidad remota se SALTA (la edición local más nueva ganará al pushear).
+    /// Sin base local (unidad ausente en el guard) o sin HLC remoto parseable → NO se salta (aplica).
+    private func shouldSkipUnit(
+        _ unit: String, remoteFieldHlcs: [String: String], guard g: PendingGuard?
+    ) -> Bool {
+        guard let g, let localHLC = g.unitHLCs[unit] else { return false }
+        guard let remoteStr = remoteFieldHlcs[unit],
+              let remote = parseHLC(remoteStr, site: "shouldSkipUnit.fieldHlc") else { return false }
+        return localHLC >= remote
+    }
+
+    /// D-8: materializa la fila testigo `SyncIdentity` del born-remote (ancla del contenido YA aplicado)
+    /// si no existe — para que backfill/rebind (I10) no dupliquen. Idempotente.
+    private func ensureIdentity<M: PersistentModel>(
+        for model: M, entry: EntityApply<M>, syncID: UUID, context: ModelContext
+    ) throws {
+        guard try EntityApplyMap.findSyncIdentity(bySyncID: syncID, context: context) == nil else { return }
+        let row = SyncIdentity(
+            syncID: syncID,
+            entityType: entry.entityTypeName,
+            localAnchor: entry.anchor(model)
+        )
+        context.insert(row)
+    }
+
+    // MARK: - Re-resolución de refs colgadas (F-2)
+
+    /// Pase final de `pullAndApplyOnce`: intenta re-resolver cada `SyncDanglingRef` (el destino pudo
+    /// llegar en una página posterior del MISMO ciclo). Resuelto o fila-origen-borrada → borra el
+    /// dangler; target aún ausente o una lectura ilegible → lo conserva (reintento en el próximo ciclo). Save
+    /// propio bajo `outboxSaveAuthor` (el drain NO re-captura estos sets — echo-suppression D-4).
+    ///
+    /// Un dangler ilegible NO frena a los demás: son independientes (una fila, una columna), así que los que sí se
+    /// resuelven entran en este mismo save.
+    func reresolveDanglingRefs(context: ModelContext) {
+        let danglers: [SyncDanglingRef]
+        do {
+            danglers = try context.fetch(FetchDescriptor<SyncDanglingRef>())
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.reresolveDanglingRefs: fetch falló: \(error)")
+            #endif
+            return
+        }
+        guard !danglers.isEmpty else { return }
+        var unreadable = 0
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for dangler in danglers {
+                    switch EntityApplyMap.reresolveDangler(dangler, context: context) {
+                    case .resolved, .rowGone:
+                        context.delete(dangler)
+                    case .targetMissing:
+                        break  // se conserva; reintento en el próximo ciclo
+                    case .unreadable:
+                        // «No pude leer la fila» no es «la fila ya no existe»: el dangler es el único sitio con el
+                        // UUID del destino. Se conserva y el próximo ciclo lo reintenta.
+                        unreadable += 1
+                    }
+                }
+            }
+            if unreadable > 0 {
+                CloudSyncBreadcrumb.danglersUnreadable(count: unreadable)
+            }
+        } catch {
+            // Sin rollback aquí: los sets de relaciones son idempotentes y el próximo ciclo re-intenta;
+            // pero no dejamos el contexto dirty en silencio.
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "reresolve:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.reresolveDanglingRefs: save falló: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Cuarentena (D-5/D-6)
+
+    /// Inserta el delta en cuarentena. Devuelve `true` si INSERTÓ una fila nueva (para el bump lockstep
+    /// del testigo `quarantinePendingCount`), `false` si el `serverSeq` ya estaba (dedup idempotente).
+    @discardableResult
+    private func quarantineDelta(
+        _ delta: PulledDelta, existing: inout Set<Int64>, context: ModelContext
+    ) -> Bool {
+        guard !existing.contains(delta.serverSeq) else { return false }  // dedup por serverSeq (re-pull idempotente)
+        context.insert(SyncQuarantine(
+            serverSeq: delta.serverSeq,
+            entityType: delta.entityType,
+            syncID: delta.syncID,
+            rawDelta: delta.rawDelta,
+            hlc: delta.hlc
+        ))
+        existing.insert(delta.serverSeq)
+        CloudSyncBreadcrumb.applyQuarantined(entity: delta.entityType, serverSeq: delta.serverSeq)
+        return true
+    }
+
+    /// Filas de la cuarentena: su `serverSeq` es el DEDUPE y su `syncID` lo que una versión posterior retira. LANZA si
+    /// no se puede leer: vacío por error re-insertaría duplicadas las filas ya cuarentenadas (y bumpearía el testigo
+    /// lockstep por ellas), y dejaría sin retirar la versión vieja que el drenaje del arranque re-aplicaría.
+    private func existingQuarantineRows(_ context: ModelContext) throws -> [SyncQuarantine] {
+        do {
+            if _testThrowOnApplyRead == .quarantineSeqs { throw ApplyGuardReadError.unreadable(.quarantineSeqs) }
+            return try context.fetch(FetchDescriptor<SyncQuarantine>())
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.existingQuarantineRows: fetch falló (la página NO se aplica): \(error)")
+            #endif
+            throw ApplyGuardReadError.unreadable(.quarantineSeqs)
+        }
+    }
+
+    /// Retira de la cuarentena lo que guardaba de ESTA fila (misma tabla y `syncID`) con un `serverSeq` anterior al
+    /// del delta que acaba de aplicarse o cuarentenarse. El pull es full-row y por fila llega solo su versión vigente,
+    /// así que lo anterior ya no es la fila: re-aplicarlo en el drenaje del arranque pisaría la buena, y conservarlo
+    /// apagaría el Merkle de esa tabla para siempre (`quarantinedTables`). Devuelve cuántas retiró.
+    private func retireSupersededQuarantine(
+        of delta: PulledDelta, rows: inout [QuarantineKey: [SyncQuarantine]], seqs: inout Set<Int64>,
+        context: ModelContext
+    ) -> Int {
+        let key = QuarantineKey(table: delta.entityType, syncID: delta.syncID)
+        guard var forRow = rows[key], !forRow.isEmpty else { return 0 }
+        var retired = 0
+        forRow.removeAll { row in
+            guard row.serverSeq < delta.serverSeq else { return false }
+            context.delete(row)
+            seqs.remove(row.serverSeq)
+            retired += 1
+            return true
+        }
+        rows[key] = forRow
+        return retired
+    }
+
+    /// Una fila de la cuarentena: su tabla y su `syncID`.
+    private struct QuarantineKey: Hashable {
+        let table: String
+        let syncID: UUID
+    }
+
+    // MARK: - Drenaje de cuarentena (upgrade path, I9 §F)
+
+    /// Re-aplica las filas de `SyncQuarantine` cuya `entityType` YA está cableada al apply (típicamente
+    /// tras un update de app que cablea una entidad antes no materializable). Las 16 tablas están cableadas,
+    /// así que lo único de una tabla cableada que llega a la cuarentena es un upsert con dinero no finito
+    /// (ticket `wire-decoder-accepts-non-finite-money`), y ese se SALTA: no se consume hasta que una versión
+    /// posterior de la fila lo retira en `applyPage`.
+    ///
+    /// GUARDIA (F-8, misma disciplina anti-laundering que `applyPage`): SOLO llamable desde `start()`
+    /// del runtime (o tests) tras `rehydrateOutboxFromMirror` **y** un `drainOnce` SÍNCRONO inmediatamente
+    /// antes (sin `await` entre medio) — sin ese drain, una edición local sin capturar se machacaría al
+    /// re-aplicar el delta cuarentenado y el próximo drain la relee bajo un HLC fresco (laundering D-2).
+    ///
+    /// Contrato: re-decodifica `rawDelta` con EL MISMO decoder del pull (`SyncPullClient.decodeDelta`),
+    /// orden `serverSeq` ASC, integra el HLC de fila en el reloj (D-3), aplica con el guard D-1
+    /// (`buildPendingGuards`), borra las filas consumidas y DECREMENTA el testigo lockstep — todo en UN
+    /// `saveWithAuthor(outboxSaveAuthor)`. **NO toca `serverSeqCursor`** (esos `server_seq` ya pasaron —
+    /// avanzarlo re-saltaría deltas). Falla el save, el guard D-1 no se deja leer o una búsqueda de fila
+    /// lanza → rollback (o nada que deshacer) + las filas siguen (reintento al próximo arranque). Después: `reresolveDanglingRefs` (los deltas re-aplicados pueden colgar refs).
+    func drainQuarantineOnce(context: ModelContext, now: Date = .now) {
+        let rows: [SyncQuarantine]
+        do {
+            rows = try context.fetch(FetchDescriptor<SyncQuarantine>(
+                sortBy: [SortDescriptor(\.serverSeq, order: .forward)]
+            ))
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.drainQuarantineOnce: fetch falló: \(error)")
+            #endif
+            return
+        }
+        let drainable = rows.filter { EntityApplyMap.isWired(table: $0.entityType) }
+        // Una tabla cableada solo llega aquí con dinero no finito (ticket `wire-decoder-accepts-non-finite-money`),
+        // y esa fila se salta abajo: en la práctica no se consume nada.
+        guard !drainable.isEmpty else { return }
+
+        let cursor: SyncCursor
+        do {
+            cursor = try loadOrCreateCursor(context)
+            loadClock(from: cursor)  // D-3: reloj desde el estado durable antes de integrar remotos
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.drainQuarantineOnce: loadCursor falló: \(error)")
+            #endif
+            return
+        }
+        // Guard ilegible → NO drenar (mismo motivo que `applyPage`): las filas siguen y se reintenta en el
+        // próximo arranque.
+        let guards: [UUID: PendingGuard]
+        do {
+            guards = try buildPendingGuards(context)
+        } catch {
+            CloudSyncBreadcrumb.applyPageFailed(reason: "drainQuarantine:\(error)")
+            return
+        }
+        var consumed = 0
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for row in drainable {
+                    let delta: PulledDelta
+                    do {
+                        delta = try SyncPullClient.decodeDelta(row.rawDelta)
+                    } catch {
+                        // `rawDelta` corrupto (no debe ocurrir — lo serializó el propio pull) → dejar la
+                        // fila cuarentenada (no se puede re-aplicar) sin romper el batch.
+                        #if DEBUG
+                        print("CloudSyncEngine.drainQuarantineOnce: rawDelta no decodifica (\(row.entityType)): \(error)")
+                        #endif
+                        continue
+                    }
+                    // Un delta con dinero no finito se queda: la tabla está cableada, pero aplicarlo es justo lo que
+                    // la cuarentena evita. Sale cuando llega una versión posterior de la fila (`applyPage`).
+                    if delta.op == .upsert,
+                       !EntityApplyMap.nonFiniteMoneyColumns(table: delta.entityType, fields: delta.fields).isEmpty {
+                        continue
+                    }
+                    // D-3: integra el HLC de fila en el reloj.
+                    if let remote = parseHLC(delta.hlc, site: "drainQuarantine.rowHlc") {
+                        receiveRemoteClock(remote, now: now)
+                    }
+                    try dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                    context.delete(row)
+                    consumed += 1
+                }
+                // D-3: persistir el reloj. NO tocar `serverSeqCursor` (esos server_seq ya pasaron).
+                cursor.clockLatestHLC = clockLatestString
+                // Testigo lockstep: decrementar por las filas consumidas en el MISMO save que las borra
+                // (floor 0 defensivo por si el testigo divergiera del conteo real).
+                if consumed > 0 {
+                    cursor.quarantinePendingCount = max(0, cursor.quarantinePendingCount - Int64(consumed))
+                }
+            }
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "drainQuarantine:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.drainQuarantineOnce: save falló (rollback; filas siguen → reintento): \(error)")
+            #endif
+            return
+        }
+        if consumed > 0 {
+            CloudSyncBreadcrumb.quarantineDrained(count: consumed)
+            // Los deltas re-aplicados pueden colgar refs → re-resolver (save propio bajo outboxSaveAuthor).
+            reresolveDanglingRefs(context: context)
+        }
+    }
+
+    // MARK: - Reconcilers de arranque (I9 §E AJUSTE review)
+
+    /// Corre `runPostPullReconcilers` UNA vez en el arranque del runtime si el gate de quiescencia está
+    /// abierto — cierra el hueco del `pendingReconcile` EN MEMORIA perdido por un kill (los reconcilers
+    /// son idempotentes). Si el gate está cerrado, arma `pendingReconcile` para el reintento del primer
+    /// ciclo. Usa el `reconcilerQuiescenceGate` ya instalado por el runtime (nil → corre).
+    func runStartupReconcilersIfQuiescent(context: ModelContext) {
+        if reconcilerQuiescenceGate?() ?? true {
+            runPostPullReconcilers(context: context)
+            pendingReconcile = false
+        } else {
+            pendingReconcile = true
+        }
+    }
+
+    // MARK: - Guard de pendientes (D-1)
+
+    /// Construye el guard LWW por `syncID` desde el `SyncOutbox` VIVO (`rejectedReason == nil`). Un
+    /// dead-letter NUNCA llega al server → contarlo bloquearía la unidad remota para siempre (D-1
+    /// exclusión). Solo los UPSERT pendientes cuentan para `maxUpsertHLC` (el árbitro de tombstone) y
+    /// para las unidades (`fieldHlcsJSON`).
+    ///
+    /// LANZA si el outbox no se puede leer. Un guard parcial es peor que ninguno porque parece uno: vacío,
+    /// cualquier remoto pisa una escritura local pendiente y el próximo drain la relee del modelo vivo bajo
+    /// un HLC fresco (laundering D-2) — el cambio del usuario se pierde para siempre.
+    private func buildPendingGuards(_ context: ModelContext) throws -> [UUID: PendingGuard] {
+        var result: [UUID: PendingGuard] = [:]
+        do {
+            if _testThrowOnApplyRead == .pendingGuards { throw ApplyGuardReadError.unreadable(.pendingGuards) }
+            for row in try context.fetch(FetchDescriptor<SyncOutbox>()) {
+                guard row.rejectedReason == nil else { continue }  // dead-letter excluido
+                guard SyncOutboxOp(rawValue: row.opRaw) == .upsert else { continue }
+                var g = result[row.syncID] ?? PendingGuard()
+                if let rowHLC = parseHLC(row.hlc, site: "pendingGuard.rowHlc") {
+                    if g.maxUpsertHLC == nil || rowHLC > g.maxUpsertHLC! { g.maxUpsertHLC = rowHLC }
+                }
+                if let json = row.fieldHlcsJSON, let map = Self.decodeFieldHlcs(json) {
+                    for (unit, hlcStr) in map {
+                        guard let uh = parseHLC(hlcStr, site: "pendingGuard.fieldHlc") else { continue }
+                        if let cur = g.unitHLCs[unit] {
+                            if uh > cur { g.unitHLCs[unit] = uh }
+                        } else {
+                            g.unitHLCs[unit] = uh
+                        }
+                    }
+                }
+                result[row.syncID] = g
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.buildPendingGuards: fetch falló (la página NO se aplica): \(error)")
+            #endif
+            throw ApplyGuardReadError.unreadable(.pendingGuards)
+        }
+        return result
+    }
+
+    /// F-6c: parse de un HLC con rastro (cero silencios). Un HLC malformado en el pipeline del apply
+    /// (wire u outbox) no debe ocurrir desde nuestro server/drain → breadcrumb con el SITE (sin PII) y
+    /// `nil` para que el caller tome la rama CONSERVADORA (aplicar la unidad / no borrar).
+    private func parseHLC(_ raw: String, site: String) -> HLC? {
+        do {
+            return try HLC.parse(raw)
+        } catch {
+            CloudSyncBreadcrumb.hlcUnparseable(site: site)
+            #if DEBUG
+            print("CloudSyncEngine.parseHLC[\(site)]: '\(raw)' no parsea: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// Parsea el `fieldHlcsJSON` (`{unit:hlc}`) del outbox. `nil` si no decodifica (fila corrupta → sin
+    /// guard por-unidad para esa fila; conservador: el peor caso es aplicar un remoto que se re-pushea).
+    /// F-6a: con rastro — un JSON corrupto desactiva el guard de esa fila y debe verse en DEBUG.
+    private static func decodeFieldHlcs(_ json: String) -> [String: String]? {
+        let data = Data(json.utf8)
+        do {
+            return try JSONDecoder().decode([String: String].self, from: data)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.decodeFieldHlcs: fieldHlcsJSON corrupto (guard por-unidad desactivado para esa fila): \(error)")
+            #endif
+            return nil
+        }
+    }
+}

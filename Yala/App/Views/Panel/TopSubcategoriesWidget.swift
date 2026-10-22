@@ -557,7 +557,11 @@ private struct SubcategoryRow: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 6)
                             let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
-                            Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex))
+                            // Mismo 22 % que `TopCategoriesWidget`: las dos tarjetas
+                            // viven juntas dentro de la section «Distribución», así que
+                            // una calmada al lado de otra a color pleno canta más que
+                            // las dos saturadas.
+                            Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex).opacity(0.22))
                                 .frame(width: width, height: 6)
                         }
                         .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in

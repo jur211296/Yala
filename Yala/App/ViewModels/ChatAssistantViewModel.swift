@@ -26,6 +26,12 @@ final class ChatAssistantViewModel {
     var isAIAvailable: Bool { !suggestionsFailed }
     private(set) var isRecording = false
     private(set) var isTranscribing = false
+    /// Lo que duró la última grabación; el panel de dictado lo enseña mientras transcribe.
+    private(set) var lastRecordingDuration: TimeInterval = 0
+
+    /// Tiempo y nivel de voz de la grabación en curso, para el panel de dictado.
+    var recordingDuration: TimeInterval { AudioRecorderService.shared.recordingDuration }
+    var recordingLevel: Double { AudioRecorderService.shared.audioLevel }
     private(set) var errorMessage: String?
     var inputText: String = ""
 
@@ -60,11 +66,176 @@ final class ChatAssistantViewModel {
         sessionKeyPrefix + DayKeyFormatter.string(from: date)
     }
 
+    #if DEBUG
+    /// `-uitest-chat-conversation`: guarda una conversación de hoy en el mismo sitio y formato que `persistSession`.
+    static func seedTodayConversationForUITest(defaults: UserDefaults = .standard) {
+        let now = Date.now
+        let messages = [
+            ChatMessage(role: .user, text: "¿Cuánto gasté en transporte este mes?", timestamp: now),
+            // Con negritas y dos párrafos, como responde el asistente (reglas 5 y 7 de su prompt): así la captura del
+            // hilo enseña la jerarquía del texto dentro de la burbuja.
+            ChatMessage(
+                role: .assistant,
+                text: "Este mes llevas **S/ 120** en Transporte, un **20% más** que el mes pasado (antes S/ 100).\n\n"
+                    + "La mayor parte es **Taxi**: S/ 85 en 6 viajes.",
+                timestamp: now
+            ),
+        ]
+        do {
+            let data = try JSONEncoder().encode(ChatPersistedSession(messages: messages, allTurns: []))
+            defaults.set(data, forKey: sessionKey(for: now))
+        } catch {
+            print("ChatAssistantViewModel: seedTodayConversationForUITest failed: \(error)")
+        }
+    }
+
+    /// `-uitest-chat-draft`: una pregunta de registro y la respuesta del asistente con dos borradores. Necesita el
+    /// contexto porque los borradores apuntan a cuentas y subcategorías reales; por eso no va en el arranque con
+    /// `seedTodayConversationForUITest`, sino aquí, cuando el chat ya tiene el store. No persiste: vive en `messages`.
+    private func seedDraftConversationForUITest(_ ctx: ModelContext) {
+        let accounts: [Account]
+        let subcategories: [Subcategory]
+        do {
+            accounts = try ctx.fetch(FetchDescriptor<Account>(predicate: #Predicate { !$0.isArchived }))
+            subcategories = try ctx.fetch(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.isVisible == true }))
+        } catch {
+            print("ChatAssistantViewModel: seedDraftConversationForUITest fetch failed: \(error)")
+            return
+        }
+        // La cuenta principal en la divisa preferida (soles con la semilla de siempre, dólares o reales con `ficha` en
+        // inglés o en portugués), como `uiTestReplyDrafts`.
+        let preferred = CurrencyDefaults.currentPreferred
+        let inPreferred = accounts.filter { $0.currencyCode == preferred }
+        guard let account = inPreferred.first(where: { $0.name == L10n.DevSeed.accountMain })
+            ?? inPreferred.first
+            ?? accounts.first
+        else { return }
+        let expenseSubs = subcategories.filter { !$0.safeCategory.isIncome }
+        let taxi = expenseSubs.first(where: { $0.name == L10n.Subcategory.rideshare })
+            ?? expenseSubs.first(where: { $0.name.localizedCaseInsensitiveContains("taxi") })
+            ?? expenseSubs.first(where: { $0.safeCategory.name == L10n.Category.transport })
+            ?? expenseSubs.first
+        let now = Date.now
+        let drafts = [
+            ChatTransactionDraft(
+                amount: 45, currencyCode: account.currencyCode, isExpense: true, note: L10n.UITestDemo.Chat.draftNoteTaxi,
+                date: now, accountID: account.persistentModelID, subcategoryID: taxi?.persistentModelID
+            ),
+            ChatTransactionDraft(
+                amount: Decimal(string: "120.50"), currencyCode: account.currencyCode, isExpense: true,
+                note: L10n.UITestDemo.Chat.draftNoteGroceries, date: now, accountID: account.persistentModelID,
+                needsUserInput: ["subcategory"]
+            ),
+        ]
+        messages = [
+            ChatMessage(role: .user, text: L10n.UITestDemo.Chat.draftMessage, timestamp: now),
+            ChatMessage(
+                role: .assistant, text: L10n.Chat.Draft.confirmRegisterPlural, timestamp: now,
+                attachments: [.drafts(drafts)]
+            ),
+        ]
+    }
+
+    /// `-uitest-chat-reply <perfil>`: la respuesta a lo que el usuario acaba de enviar, sin red. Espera un momento con
+    /// el indicador de «pensando» a la vista y contesta por el mismo camino que una respuesta real (mensaje con sus
+    /// borradores, turno del día y sesión guardada), así que la card y su «Guardar» son los de producción. Un perfil
+    /// que no existe, o sin cuenta en la semilla, acaba como cualquier fallo: aviso genérico y el texto de vuelta en la
+    /// caja.
+    private func answerForUITest(profile: String, question: String, context ctx: ModelContext) async {
+        do {
+            try await Task.sleep(for: .milliseconds(1200))
+        } catch {
+            print("ChatAssistantViewModel: answerForUITest sleep cancelled: \(error)")
+            return
+        }
+        guard let drafts = uiTestReplyDrafts(profile: profile, ctx) else {
+            print("ChatAssistantViewModel: -uitest-chat-reply sin respuesta para el perfil «\(profile)»")
+            handleError(.parseFailed)
+            return
+        }
+        let text = drafts.count == 1 ? L10n.Chat.Draft.confirmRegisterSingular : L10n.Chat.Draft.confirmRegisterPlural
+        let assistantMessage = ChatMessage(
+            role: .assistant, text: text, timestamp: Date.now, attachments: [.drafts(drafts)]
+        )
+        messages.append(assistantMessage)
+        allTurns.append(QAPair(
+            question: question,
+            response: text,
+            timestamp: Date.now,
+            messageID: assistantMessage.id,
+            attachments: [.drafts(drafts)]
+        ))
+        persistSession()
+    }
+
+    /// Los borradores de cada perfil de `-uitest-chat-reply`, resueltos contra la semilla. `pizza`: un gasto en la cuenta
+    /// principal de la divisa preferida (con `ficha-mx-vida`, «Cuenta principal» en MXN), en Restaurantes y con fecha
+    /// de hoy, por el importe de la ficha en esa divisa (`DevSeedFicha.Cifras.pizza`: 28 dólares, 90 reales, 280 pesos).
+    private func uiTestReplyDrafts(profile: String, _ ctx: ModelContext) -> [ChatTransactionDraft]? {
+        guard profile == "pizza" else { return nil }
+        let accounts: [Account]
+        let subcategories: [Subcategory]
+        do {
+            accounts = try ctx.fetch(FetchDescriptor<Account>(predicate: #Predicate { !$0.isArchived }))
+            subcategories = try ctx.fetch(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.isVisible == true }))
+        } catch {
+            print("ChatAssistantViewModel: uiTestReplyDrafts fetch failed: \(error)")
+            return nil
+        }
+        let preferred = CurrencyDefaults.currentPreferred
+        let inPreferred = accounts.filter { $0.currencyCode == preferred }
+        guard let account = inPreferred.first(where: { $0.name == L10n.DevSeed.accountMain })
+            ?? inPreferred.first
+            ?? accounts.first
+        else { return nil }
+        let expenseSubs = subcategories.filter { !$0.safeCategory.isIncome }
+        let restaurants = expenseSubs.first(where: { $0.name == L10n.Subcategory.restaurants })
+            ?? expenseSubs.first(where: { $0.name.localizedCaseInsensitiveContains("restaurant") })
+            ?? expenseSubs.first(where: { $0.safeCategory.name == L10n.Category.food })
+        return [
+            ChatTransactionDraft(
+                amount: Decimal(DevSeedFicha.cifras(forMainCurrency: account.currencyCode).pizza),
+                currencyCode: account.currencyCode,
+                isExpense: true, note: L10n.UITestDemo.Chat.pizzaNote,
+                date: Date.now, accountID: account.persistentModelID, subcategoryID: restaurants?.persistentModelID
+            ),
+        ]
+    }
+
+    /// `-uitest-chat-suggestions`: las tres sugerencias del chat vacío, fijas y en el idioma de la app.
+    private static var uiTestSuggestions: [ChatSuggestion] {
+        [
+            ChatSuggestion(text: L10n.UITestDemo.Chat.suggestionSplit, icon: "chart.pie", type: .biggestCategory),
+            ChatSuggestion(text: L10n.UITestDemo.Chat.suggestionMonth, icon: "cart", type: .topMerchant),
+            ChatSuggestion(text: L10n.UITestDemo.Chat.suggestionBudget, icon: "dollarsign.circle", type: .activeBudget),
+        ]
+    }
+    #endif
+
     // MARK: - Setup
+
+    /// Las preferencias de la app, que inyecta la hoja del chat (molde de `PanelViewModel.setAppPreferences`). El
+    /// saldo total que ve Yala IA sigue «Grupos en el total» del Panel; sin preferencias, su default (`true`), como
+    /// el Panel.
+    private weak var appPreferences: AppPreferences?
+
+    func setAppPreferences(_ prefs: AppPreferences) {
+        appPreferences = prefs
+    }
+
+    /// El ajuste «Grupos en el total» con el que se pide la respuesta, leído en el momento de preguntar.
+    var includeGroupsInTotal: Bool {
+        appPreferences?.includeGroupsInPanelTotal ?? true
+    }
 
     func setContext(_ ctx: ModelContext, autoLoadSuggestions: Bool = true) {
         modelContext = ctx
         loadPersistedSession()
+        #if DEBUG
+        if UITestHooks.chatDraft && messages.isEmpty {
+            seedDraftConversationForUITest(ctx)
+        }
+        #endif
         // Restaurar signal persistido si NTV guardó mientras el chat estaba cerrado
         // (o la app fue matada entre NTV-save y reapertura).
         SessionState.shared.restoreChatDraftSavedSignalIfNeeded()
@@ -92,6 +263,13 @@ final class ChatAssistantViewModel {
     /// vía `suggestionsFailed` para que la View muestre estado de no disponible.
     /// La View se encarga de deshabilitar funciones y ofrecer "Reintentar".
     func loadSuggestions() async {
+        #if DEBUG
+        if UITestHooks.chatSuggestions {
+            suggestionsFailed = false
+            suggestions = Self.uiTestSuggestions
+            return
+        }
+        #endif
         guard let context = modelContext else { return }
 
         suggestionsLoading = true
@@ -127,6 +305,14 @@ final class ChatAssistantViewModel {
         let userMessage = ChatMessage(role: .user, text: trimmed, timestamp: Date.now)
         messages.append(userMessage)
 
+        #if DEBUG
+        if let profile = UITestHooks.chatReply {
+            await answerForUITest(profile: profile, question: trimmed, context: context)
+            isLoading = false
+            return
+        }
+        #endif
+
         do {
             let currencyCode = CurrencyDefaults.currentPreferred
             let response = try await service.processQuestion(
@@ -135,6 +321,7 @@ final class ChatAssistantViewModel {
                 modelContext: context,
                 currencyCode: currencyCode,
                 converter: CurrencyConverter.shared,
+                includeGroupsInTotal: includeGroupsInTotal,
                 forceIntent: forceIntent
             )
 
@@ -160,24 +347,6 @@ final class ChatAssistantViewModel {
                 allTurns.removeFirst(allTurns.count - Self.maxTurns)
             }
 
-            // Telemetry — intent clasificado + draft proposed + ambiguous repregunta
-            TelemetryService.track(.chatIntentClassified, parameters: [
-                "intent": response.intent.rawValue,
-                "used_force_intent": forceIntent != nil ? "true" : "false",
-            ])
-            if case .drafts(let drafts) = response.attachments?.first {
-                TelemetryService.track(.chatDraftProposed, parameters: [
-                    "count": String(drafts.count),
-                ])
-            }
-            if case .ambiguous = response.attachments?.first {
-                TelemetryService.track(.chatAmbiguousRepregunta)
-            }
-            TelemetryService.track(.chatQuestionAsked, parameters: [
-                "source": "typed",
-                "turn_count": String(allTurns.count),
-            ])
-
             // Autosave defensivo: persiste la sesión tras cada respuesta exitosa
             persistSession()
         } catch let error as ChatAssistantError {
@@ -190,9 +359,6 @@ final class ChatAssistantViewModel {
     }
 
     func sendSuggestion(_ suggestion: ChatSuggestion) async {
-        TelemetryService.track(.chatSuggestionTapped, parameters: [
-            "type": String(describing: suggestion.type)
-        ])
         await sendQuestion(suggestion.text)
     }
 
@@ -209,7 +375,6 @@ final class ChatAssistantViewModel {
             errorMessage = L10n.Chat.errorOffline
         case .dailyLimitReached:
             errorMessage = L10n.Chat.dailyLimitReached
-            TelemetryService.track(.chatDailyLimitReached)
         case .questionTooLong:
             errorMessage = L10n.Chat.questionTooLong
         case .rateLimited:
@@ -218,12 +383,6 @@ final class ChatAssistantViewModel {
             errorMessage = L10n.Chat.errorNoData
         default:
             errorMessage = L10n.Chat.errorGeneric
-        }
-
-        if errorMessage != nil {
-            TelemetryService.track(.chatErrorOccurred, parameters: [
-                "error": String(describing: error)
-            ])
         }
 
         // Remove the user message if we got an error (so they can retry)
@@ -312,12 +471,6 @@ final class ChatAssistantViewModel {
                 allTurns = blob.allTurns.map { Self.stripToolPayload($0) }
             }
 
-            if !messages.isEmpty {
-                TelemetryService.track(.chatPersistedSessionRehydrated, parameters: [
-                    "messageCount": String(messages.count),
-                    "turnCount": String(allTurns.count)
-                ])
-            }
         } catch {
             #if DEBUG
             print("ChatAssistantViewModel: loadPersistedSession decode failed: \(error)")
@@ -395,6 +548,7 @@ final class ChatAssistantViewModel {
     /// Si ya hay texto tipeado, hace append con espacio (preserva lo escrito por el user).
     func stopVoiceInput() async {
         guard isRecording else { return }
+        lastRecordingDuration = AudioRecorderService.shared.recordingDuration
         isRecording = false
         isTranscribing = true
         defer { isTranscribing = false }
@@ -419,10 +573,6 @@ final class ChatAssistantViewModel {
             } else {
                 inputText = inputText + " " + transcribed
             }
-
-            TelemetryService.track(.chatVoiceInputUsed, parameters: [
-                "transcribedLength": String(transcribed.count)
-            ])
         } catch RecordingError.recordingTooShort {
             errorMessage = L10n.Chat.noVoiceDetected
         } catch {
@@ -537,29 +687,107 @@ final class ChatAssistantViewModel {
 
         let tags: [Tag] = draft.tagIDs.compactMap { context.model(for: $0) as? Tag }
 
-        // Convertir Decimal → Double para TransactionItem (el modelo usa Double)
-        let amountDouble = NSDecimalNumber(decimal: amount).doubleValue
+        // Convertir Decimal → Double para TransactionItem (el modelo usa Double), ya FIRMADO.
+        //
+        // El signo sale de `draft.isExpense` —el mismo campo que ya decide el tipo al abrir el
+        // formulario (`editDraft`) y filtra las subcategorías por naturaleza— y no de una heurística
+        // nueva. Es lo que hacen las demás rutas de creación: `NewTransactionViewModel` guarda
+        // `transactionType.isNegative ? -amount : amount`, y el bridge del Inbox deduce al revés
+        // (`isExpense: amount < 0`), así que la magnitud sin firmar era la excepción.
+        //
+        // Hasta el 2026-09-08 esta ruta persistía la magnitud en crudo, y el daño NO era solo del
+        // saldo. `LiveBalanceCalculator` acumula `Decimal(tx.amount)` sin mirar la categoría, así que
+        // el saldo subía con cada gasto; pero los totales de Registros y Estadísticas eligen el
+        // bucket por categoría y **acumulan con signo** (`expense -= amount` en `RecordsViewModel`,
+        // `.reduce { $0 - … }` en `StatisticsViewModel`), de modo que ese mismo gasto RESTABA del
+        // total de gastos — entraba como el reembolso que describe `TransactionClassificationLogic`:
+        // «un monto de signo contrario a su categoría … REDUCE el bucket». Lo único que sí salía bien
+        // era el RENDER de la fila y del detalle, donde el tipo se decide solo por categoría. De ahí
+        // que el bug pareciera cosa del saldo llevando ocho superficies por delante.
+        //
+        // `dbl` es la magnitud que la guard de arriba ya validó (`isFinite`, `> 0`); se reusa en vez
+        // de recalcularla para que esa garantía viaje en el código y no en la prosa. Y la guard es lo
+        // ÚNICO que impide un doble signo: del parseo SÍ puede llegar un monto negativo —`DraftBuilder`
+        // copia `parsed.amount` en crudo, a diferencia de `SiriDraftService`, que normaliza con
+        // `abs()`— solo que aquí se rechaza a `.failed` en vez de llegar hasta esta línea.
+        let amountDouble = draft.isExpense ? -dbl : dbl
         let preferredCurrency = CurrencyDefaults.currentPreferred
-        let convertedDecimal = CurrencyConverter.shared.convertWithLatestRate(
+        // La divisa la pone la CUENTA, no el dictado. Hasta el 2026-09-08 esta ruta estampaba
+        // `draft.currencyCode`, así que dictar «50 dólares» sin tener cuenta en dólares y elegir
+        // la de soles dejaba una transacción USD dentro de una cuenta PEN. `LiveBalanceCalculator`
+        // agrupa por `tx.currencyCode` y convierte cada grupo con la tasa de HOY, de modo que esa
+        // cuenta enseñaba un saldo que no cuadraba y que además se movía solo al moverse el cambio.
+        //
+        // Es la regla que el formulario YA aplica a este mismo borrador
+        // (`NewTransactionViewModel.prefill(fromChatDraft:)`): la incoherencia era que en la misma
+        // tarjeta «Editar» y «Guardar» hacían lo contrario. Detalle en `effectiveCurrencyCode`.
+        let effectiveCurrency = draft.effectiveCurrencyCode(account: account)
+        // `on: draft.date` y no la tasa de HOY. La transacción se estampa con `draft.date`, que el
+        // parseo resuelve como `parsed.date ?? Date.now`: el usuario puede dictar «un café ayer» y
+        // esta ruta convertía ese gasto a la tasa de hoy. Las otras seis rutas de creación convierten
+        // en la fecha que persisten, y sobre todo **el reparador también**
+        // (`TransactionItem.recalculatePreferredCurrency` usa `on: date`) — así que el número que se
+        // guardaba aquí no era reproducible por el proceso que existe para repararlo: al pasar por él
+        // habría cambiado. Y con la fila de hoy completa, la calidad salía `.exact` y lo sellaba
+        // como definitivo: una tasa de otra fecha, marcada como la buena.
+        let outcome = CurrencyConverter.shared.convertChecked(
             amount,
-            from: draft.currencyCode,
+            from: effectiveCurrency,
             to: preferredCurrency,
+            on: draft.date,
             context: context
         )
-        let amountInPreferred = NSDecimalNumber(decimal: convertedDecimal).doubleValue
+        // Se firma IGUAL que el nativo, y por eso se convierte la MAGNITUD y se firma después: así el
+        // número que devuelve el converter se preserva exactamente y las dos columnas quedan
+        // coherentes. Las cuatro viajan juntas en el grupo de coherencia `money`.
+        //
+        // Ojo con cómo se detecta que alguien firme solo una de las dos: NO por la tasa. Se deriva de
+        // su cociente, pero se guarda con `abs()` unas líneas más abajo, así que saldría positiva y
+        // plausible. El único centinela es el test que exige esta columna NEGATIVA para un gasto.
+        let magnitudeInPreferred = NSDecimalNumber(decimal: outcome.amount).doubleValue
+        let amountInPreferred = draft.isExpense ? -magnitudeInPreferred : magnitudeInPreferred
+
+        // La tasa se DERIVA del resultado que ya está aquí al lado; no se planta. Hasta el
+        // 2026-09-08 esta ruta pasaba `exchangeRate: 1.0` literal mientras el monto convertido de al
+        // lado sí salía de una conversión real, así que el detalle de un gasto en otra divisa decía
+        // «1,00». Mismo cociente y mismo umbral que las otras rutas de creación y que el reparador
+        // (`TransactionItem.recalculatePreferredCurrency`): eso es lo que hace que el número guardado
+        // sea reproducible por el proceso que existe para repararlo.
+        //
+        // El umbral está aquí por PARIDAD con el reparador y con las otras rutas, no por necesidad
+        // aritmética — y la diferencia importa. Medido el 2026-09-08: la guard de arriba ya garantiza
+        // `dbl.isFinite` y `dbl > 0`, así que la división no puede dar infinito ni NaN, y `0.000372 /
+        // 0.00005` son 7,44, un número perfectamente sano. Lo que el umbral hace es reproducir el
+        // mismo escalón que `TransactionItem.recalculatePreferredCurrency`, para que el reparador no
+        // reescriba un número distinto al pasar por la fila.
+        //
+        // Y tiene un residuo CONOCIDO, no un descuido: la banda `0 < monto <= 0.0001` pasa la guard de
+        // arriba (que pide `> 0`, no `> 0.0001`) y cae aquí, de modo que una conversión real acaba
+        // escribiendo 1.0 otra vez — la forma exacta del bug que este bloque cierra, sobreviviendo en
+        // una franja estrecha. Se deja así a propósito porque el reparador tiene el mismo umbral y
+        // escribiría lo mismo: romper la paridad aquí haría que el número cambiara al repararse. El
+        // umbral compartido es lo que hay que mover, y eso es
+        // `fx-rate-derivation-threshold-reseals-one-to-one`, no este fichero.
+        let effectiveRate: Double
+        if abs(amountDouble) > 0.0001 {
+            effectiveRate = amountInPreferred / amountDouble
+        } else {
+            effectiveRate = 1.0
+        }
 
         let transaction = TransactionItem(
             date: draft.date,
             amount: amountDouble,
-            currencyCode: draft.currencyCode,
+            currencyCode: effectiveCurrency,
             note: draft.note.isEmpty ? nil : draft.note,
             category: subcategory.safeCategory,
             subcategory: subcategory,
             account: account,
             tags: tags,
-            exchangeRate: 1.0,
+            exchangeRate: abs(effectiveRate),
             amountInPreferredCurrency: amountInPreferred,
-            preferredCurrencyCode: preferredCurrency
+            preferredCurrencyCode: preferredCurrency,
+            isExchangeRateProvisional: !outcome.quality.isExact
         )
 
         // Inyectar context defensivamente — TransactionService es singleton y otras
@@ -571,8 +799,14 @@ final class ChatAssistantViewModel {
             try TransactionService.shared.create(transaction)
             draft.status = .saved
             draft.savedTransactionID = transaction.persistentModelID
+            // La divisa que REALMENTE se estampó, congelada en el borrador. La tarjeta ya guardada
+            // formatea con `draft.currencyCode`, así que sin esta línea seguiría enseñando un valor
+            // derivado en vivo de la cuenta mientras la fila persistida tiene el suyo congelado: al
+            // editar la divisa de esa cuenta —o al archivarla— la tarjeta se reetiquetaría sola y
+            // diría algo distinto de lo que hay en Registros. Con la línea, lo que se ve es lo que
+            // se guardó, y deja de depender de que nada cambie después.
+            draft.currencyCode = effectiveCurrency
             replaceDraft(draft, at: location)
-            TelemetryService.track(.chatDraftSaved)
             persistSession()
         } catch {
             #if DEBUG
@@ -607,8 +841,6 @@ final class ChatAssistantViewModel {
             tagIDs: draft.tagIDs
         )
         RouterEntryGate.shared.submit(.presentNewTransactionFromChatDraft(prefill))
-
-        TelemetryService.track(.chatDraftEditedExternally)
     }
 
     /// Update inline de un campo del draft (ej. user cambia monto en TextField, o
@@ -642,7 +874,28 @@ final class ChatAssistantViewModel {
             }
         }
         // Double-optional permite distinguir "no cambies" (nil-outer) de "set a nil" (.some(nil)).
-        if case .some(let value) = accountID { draft.accountID = value }
+        if case .some(let value) = accountID {
+            draft.accountID = value
+            // La divisa VIAJA con la cuenta. `updateDraft` no acepta `currencyCode` y no debe: la
+            // divisa no es un campo que el usuario edite aparte, es una consecuencia de la cuenta
+            // (ver `ChatTransactionDraft.effectiveCurrencyCode`). Sincronizarla aquí es lo que
+            // mantiene el borrador coherente CONSIGO MISMO, y eso importa más de lo que parece:
+            // mientras el borrador lleve la divisa dictada, cada consumidor tiene que recalcular la
+            // efectiva por su cuenta, y basta con que dos lo hagan con criterios distintos para que
+            // reaparezca el bug. Pasó, y por eso está esta línea: la tarjeta resolvía la cuenta
+            // contra su `@Query` (que filtra `!isArchived`) y `saveDraft` la resuelve con
+            // `context.model(for:)` (que NO filtra), así que con una cuenta archivada entre medias
+            // la tarjeta enseñaba la divisa dictada y el guardado estampaba la de la cuenta — el
+            // usuario confirmaba «$ 50» y se guardaba «S/ 50».
+            //
+            // Se resuelve contra el contexto, igual que `saveDraft`, y a propósito: si el criterio
+            // fuera otro volvería la asimetría por la puerta de al lado.
+            if let id = value, let context = modelContext,
+                let account = context.model(for: id) as? Account
+            {
+                draft.currencyCode = account.currencyCode
+            }
+        }
         if case .some(let value) = subcategoryID {
             // Validación: si la subcategoría no es nil, debe matchear el tipo del draft
             // (income subcat para ingreso, expense subcat para gasto). La UI ya lo filtra,
@@ -699,7 +952,6 @@ final class ChatAssistantViewModel {
         guard draft.status != .saved && draft.status != .discarded else { return }
         draft.status = .discarded
         replaceDraft(draft, at: location)
-        TelemetryService.track(.chatDraftDismissed)
         persistSession()
     }
 
@@ -733,6 +985,7 @@ final class ChatAssistantViewModel {
                 modelContext: context,
                 currencyCode: currencyCode,
                 converter: CurrencyConverter.shared,
+                includeGroupsInTotal: includeGroupsInTotal,
                 forceIntent: forceIntent
             )
 
@@ -752,14 +1005,6 @@ final class ChatAssistantViewModel {
             ))
             if allTurns.count > Self.maxTurns {
                 allTurns.removeFirst(allTurns.count - Self.maxTurns)
-            }
-
-            TelemetryService.track(.chatIntentClassified, parameters: [
-                "intent": response.intent.rawValue,
-                "used_force_intent": "true",
-            ])
-            if case .drafts(let drafts) = response.attachments?.first {
-                TelemetryService.track(.chatDraftProposed, parameters: ["count": String(drafts.count)])
             }
 
             persistSession()

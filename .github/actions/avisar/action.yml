@@ -1,0 +1,213 @@
+name: Avisar
+description: >
+  Entrega un aviso al webhook de la routine de Grok. Si ese canal no responde, NO calla:
+  lo deja escrito en un issue del repo. Solo rompe cuando no queda ningun canal.
+
+# ---------------------------------------------------------------------------------
+# POR QUE EXISTE  (2026-09-09)
+#
+# El mismo bloque «componer texto + curl + mirar el HTTP» estaba TRIPLICADO —en `qa.yml`,
+# en `avisar-grok-push-principal.yml` y en `nocturna-vigilante.yml`— con tres tratamientos
+# de error ligeramente distintos. Los tres usan el MISMO par de secretos, asi que cuando la
+# credencial caduco fallaron los tres a la vez; y como cada uno decidia por su cuenta que
+# hacer con el fallo, el daño fue distinto en cada sitio y ninguno dejo rastro util.
+#
+# Medido el 2026-09-09: `avisar-grok-push-principal.yml` llevaba **37 runs seguidos en rojo**
+# desde el 2026-09-08T19:09Z (los 63 anteriores, verdes) sin que nadie lo mirara, y en las 40
+# ultimas corridas de `qa.yml` los TRES rojos eran de este mecanismo — dos de ellos tapando
+# señal real: la nocturna con la suite de UI en rojo, y un `Build for testing` roto en `2.1`.
+#
+# EL RESPALDO NO ES UN LUJO. El canal principal es un webhook externo con una credencial que
+# caduca; el issue vive en el mismo repo, con el token del propio run. Cuando el primero cae,
+# el aviso sigue existiendo en un sitio que se mira. La regla no cambia —no callar nunca—,
+# lo que cambia es que ahora hay dos formas de no callar antes de tener que romper el job.
+# ---------------------------------------------------------------------------------
+
+inputs:
+  webhook-url:
+    description: URL de POST de la routine (secreto GROK_WEBHOOK_URL).
+    required: false
+    default: ""
+  sender-key:
+    description: Sender key de la routine (secreto GROK_WEBHOOK_SENDER_KEY), sin 'Bearer '.
+    required: false
+    default: ""
+  asunto:
+    description: Frase corta de que ha pasado. Titula el issue de respaldo.
+    required: true
+  texto:
+    description: Cuerpo entero del aviso.
+    required: true
+  github-token:
+    description: "Token para el canal de respaldo. Necesita permiso `issues: write`."
+    required: false
+    default: ""
+  etiqueta:
+    description: Etiqueta del issue de respaldo. Agrupa los avisos que no se pudieron entregar.
+    required: false
+    default: aviso-ci
+  respaldo:
+    description: >-
+      `true` (por defecto) usa el issue cuando el webhook no responde. `false` lo desactiva y
+      hace que el paso salga en ROJO — es lo que quiere un vigilante cuyo trabajo ES detectar
+      que el canal esta caido: con respaldo saldria en verde el unico dia que importa.
+    required: false
+    default: "true"
+
+outputs:
+  entregado-por:
+    description: "`webhook` si lo recibio la routine, `issue` si hubo que usar el respaldo."
+    value: ${{ steps.entregar.outputs.entregado-por }}
+
+runs:
+  using: composite
+  steps:
+    - id: entregar
+      shell: bash
+      env:
+        WEBHOOK_URL: ${{ inputs.webhook-url }}
+        SENDER_KEY: ${{ inputs.sender-key }}
+        ASUNTO: ${{ inputs.asunto }}
+        TEXTO: ${{ inputs.texto }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        ETIQUETA: ${{ inputs.etiqueta }}
+        RESPALDO: ${{ inputs.respaldo }}
+        REPO: ${{ github.repository }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        set -euo pipefail
+
+        # Un aviso sin contenido es el mismo silencio, pero con acuse de recibo. Si el
+        # llamador no compuso nada, eso es un error SUYO y hay que verlo: no se entrega.
+        if [ -z "${ASUNTO:-}" ] || [ -z "${TEXTO:-}" ]; then
+          echo "::error title=Aviso vacio::La accion se llamo sin asunto o sin texto. No hay nada que entregar."
+          exit 1
+        fi
+
+        printf '%s\n' "$TEXTO" | sed 's/^/  /'
+
+        # ---------- Canal principal: el webhook de la routine ----------
+        motivo=""
+        if [ -z "${WEBHOOK_URL:-}" ] || [ -z "${SENDER_KEY:-}" ]; then
+          motivo="faltan los secretos GROK_WEBHOOK_URL / GROK_WEBHOOK_SENDER_KEY en el repo"
+        else
+          jq -n --arg context "$TEXTO" '{context: $context}' > "$RUNNER_TEMP/aviso-payload.json"
+
+          # `--retry` de curl reintenta SOLO lo transitorio (conexion, timeout, 408, 429, 5xx).
+          # Un 401/403/404 no se reintenta: una clave mala o una URL muerta no se arreglan
+          # insistiendo, y reintentarlas solo retrasa el aviso por el otro canal.
+          set +e
+          codigo=$(curl -sS -X POST "$WEBHOOK_URL" \
+            -H "Authorization: Bearer $SENDER_KEY" \
+            -H "Content-Type: application/json" \
+            --data-binary "@$RUNNER_TEMP/aviso-payload.json" \
+            --retry 3 --retry-delay 5 --retry-connrefused \
+            --max-time 30 \
+            -o "$RUNNER_TEMP/aviso-respuesta.txt" -w '%{http_code}')
+          rc=$?
+          set -e
+
+          if [ "$rc" -ne 0 ]; then
+            motivo="curl salio con $rc tras los reintentos: el webhook no respondio"
+          else
+            case "$codigo" in
+              2??) motivo="" ;;
+              401|403) motivo="el webhook rechazo la clave (HTTP $codigo). GROK_WEBHOOK_SENDER_KEY debe ser el sender key del panel de la routine, SIN el prefijo 'Bearer '" ;;
+              404)     motivo="el webhook no existe (HTTP 404). La routine pudo borrarse o rehacerse; su URL cambia con ella, asi que hay que reponer GROK_WEBHOOK_URL desde el panel" ;;
+              *)       motivo="respuesta inesperada del webhook (HTTP $codigo)" ;;
+            esac
+            # Una routine DESACTIVADA contesta 400 con `is disabled` en el cuerpo. La URL y la
+            # clave estan bien, asi que reponer los secretos no lo arregla: hay que volver a
+            # activarla en el panel de automations de Cursor. Del 2026-09-16 al -30 esto se
+            # leyo como «respuesta inesperada» y se busco en la clave y en el cuerpo del aviso.
+            if [ "$codigo" = "400" ] && grep -qi 'is disabled' "$RUNNER_TEMP/aviso-respuesta.txt" 2>/dev/null; then
+              motivo="la routine esta DESACTIVADA (HTTP 400, «is disabled»). La URL y la clave estan bien: hay que reactivarla en el panel de automations de Cursor, no reponer los secretos"
+            fi
+            [ -n "$motivo" ] || echo "::notice title=Aviso entregado::La routine recibio el aviso (HTTP $codigo): $ASUNTO."
+          fi
+          if [ -n "$motivo" ] && [ -s "$RUNNER_TEMP/aviso-respuesta.txt" ]; then
+            echo "Respuesta del webhook:"; head -c 500 "$RUNNER_TEMP/aviso-respuesta.txt"; echo
+          fi
+        fi
+
+        if [ -z "$motivo" ]; then
+          echo "entregado-por=webhook" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # ---------- Canal de respaldo: un issue en el propio repo ----------
+        echo "::warning title=El canal principal no pudo entregar::$motivo — se avisa por el respaldo."
+
+        if [ "${RESPALDO:-true}" != "true" ]; then
+          echo "::error title=El canal de avisos esta caido::$motivo. Este aviso corre SIN respaldo a proposito: su rojo es la señal."
+          exit 1
+        fi
+
+        if [ -z "${GH_TOKEN:-}" ]; then
+          echo "::error title=Sin ningun canal::$motivo, y no hay token para el respaldo. NADIE se ha enterado de que $ASUNTO."
+          exit 1
+        fi
+
+        cuerpo=$(printf '%s\n' \
+          "**$ASUNTO**" \
+          "" \
+          "$TEXTO" \
+          "" \
+          "---" \
+          "Esto llega por el canal de RESPALDO: el webhook de la routine no pudo entregarlo." \
+          "Motivo: $motivo" \
+          "Run: $RUN_URL" \
+          "" \
+          "Mientras el canal principal siga asi, los avisos del CI se acumulan en este issue." \
+          "Cerrarlo sin reponer la credencial solo hace que el proximo abra otro.")
+
+        # UN issue por CAIDA DEL CANAL, no uno por run ni uno por aviso. Si no, un canal muerto
+        # genera un issue por cada push —37 en dia y medio, medido— y el respaldo se ahoga en su
+        # propio ruido: exactamente el final del canal que vino a sustituir.
+        #
+        # Por eso el titulo es FIJO y describe la incidencia, no el asunto del aviso. Ponerle el
+        # asunto lo fijaria al del PRIMER aviso que llegue —casi siempre el mas trivial, porque
+        # los pushes a `2.1` son los mas frecuentes—, y a partir de ahi «hay tests en rojo» y
+        # «hoy no hay cobertura de UI» quedarian de comentarios bajo un titulo que dice «push
+        # directo a 2.1». El titulo es lo unico que se ve en la lista de issues.
+        set +e
+        encontrado=$(gh issue list --repo "$REPO" --label "$ETIQUETA" --state open --limit 1 \
+          --json number --jq '.[0].number // empty' 2>"$RUNNER_TEMP/aviso-gh-list.txt")
+        rc_list=$?
+        set -e
+        if [ "$rc_list" -ne 0 ]; then
+          # Una lista vacia por ERROR se lee igual que «no hay ninguno». Distinguirlas importa:
+          # aqui el fallo abierto duplica issues en vez de ocultarlos, asi que se sigue —pero
+          # se dice, porque si esto se repite el respaldo empieza a hacer ruido.
+          echo "::warning title=No se pudo buscar el issue de respaldo::gh salio con $rc_list; se intentara crear uno nuevo."
+          head -c 300 "$RUNNER_TEMP/aviso-gh-list.txt" || true
+          encontrado=""
+        fi
+
+        if [ -n "$encontrado" ]; then
+          if gh issue comment "$encontrado" --repo "$REPO" --body "$cuerpo" >/dev/null; then
+            echo "::error title=Aviso por respaldo (issue #$encontrado)::$ASUNTO. El canal principal esta caido: $motivo"
+            echo "entregado-por=issue" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "::error title=Sin ningun canal::No se pudo comentar en el issue #$encontrado. NADIE se ha enterado de que $ASUNTO."
+          exit 1
+        fi
+
+        # `--force` deja el paso idempotente: si la etiqueta ya existe, no es un error.
+        gh label create "$ETIQUETA" --repo "$REPO" --color B60205 \
+          --description "Avisos del CI que el webhook de la routine no pudo entregar" --force >/dev/null 2>&1 || true
+
+        titulo="[CI] El canal de avisos no entrega — los avisos se acumulan aqui"
+        if url=$(gh issue create --repo "$REPO" --title "$titulo" --label "$ETIQUETA" --body "$cuerpo"); then
+          echo "::error title=Aviso por respaldo ($url)::$ASUNTO. El canal principal esta caido: $motivo"
+          echo "entregado-por=issue" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # El diagnostico no acusa a una sola causa: en un `pull_request` desde un FORK el
+        # `GITHUB_TOKEN` es de solo lectura pase lo que pase, asi que el `permissions:` del
+        # workflow esta bien puesto y aun asi esto falla. Decir solo «¿le falta issues: write?»
+        # mandaria a mirar justo donde no esta el problema.
+        echo "::error title=Sin ningun canal::$motivo, y el respaldo tampoco pudo escribir el issue. Causas: falta 'issues: write' en el workflow, o es un PR desde un fork (ahi el token es de solo lectura y los secrets no llegan). NADIE se ha enterado de que $ASUNTO."
+        exit 1

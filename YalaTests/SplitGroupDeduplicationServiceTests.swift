@@ -11,6 +11,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct SplitGroupDeduplicationServiceTests {
 
     // R8: builds @Model directly without ModelContext.insert — properties and

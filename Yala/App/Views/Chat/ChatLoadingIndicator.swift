@@ -30,7 +30,7 @@ struct ChatLoadingIndicator: View {
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.md)
             .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .clipShape(ChatBubbleShape())
 
             Spacer()
         }

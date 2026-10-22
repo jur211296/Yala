@@ -53,6 +53,11 @@ final class FavoritePayment {
     /// Display order for manual reordering - CloudKit: default required
     var displayOrder: Int = 0
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. Opcional sin default (gotcha de UUID colapsado — ver
+    /// `TransactionItem.syncID`). Poblado por `SyncIdentityService`.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     init(
         name: String,
         transactionType: String = "expense",

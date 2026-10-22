@@ -171,6 +171,27 @@ final class NewTransactionViewModel {
         return currencyCode
     }
 
+    /// La divisa en la que está el IMPORTE que el formulario enseña y guarda.
+    ///
+    /// **Al editar sin cambiar de cuenta es la de la transacción, no la de la cuenta.** Una fila
+    /// desemparejada —50 USD dentro de una cuenta en soles, que dejaba un cambio de divisa de cuenta
+    /// o el chat antiguo— se pintaba «S/ 50» y se guardaba como 50 PEN: el número se quedaba y la
+    /// divisa cambiaba, sin convertir (ticket `saving-a-mismatched-transaction-relabels-it-without-converting`).
+    /// Ahora se pinta, se guarda y se convierte a la preferida en la divisa en la que está. Si la
+    /// persona elige otra cuenta, o crea un movimiento, manda la cuenta, como siempre: mover una fila
+    /// de cuenta es otro problema (`bulk-update-account-leaves-converted-amount-stale`).
+    ///
+    /// Las transferencias no entran: cada pata vive en su cuenta y su divisa la fija la cuenta.
+    var amountCurrencyCode: String {
+        if !isTransfer,
+           let editing = editingTransaction,
+           let account = selectedAccount,
+           editing.account?.persistentModelID == account.persistentModelID {
+            return normalizeCurrencyCode(editing.currencyCode)
+        }
+        return effectiveCurrencyCode
+    }
+
     // MARK: - Context Setup
 
     func setContext(_ context: ModelContext) {
@@ -564,10 +585,6 @@ final class NewTransactionViewModel {
                 let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
 
-                if count == 1 {
-                    TelemetryService.track(.firstTransaction, parameters: ["origen": "manual"])
-                }
-
                 // Check if we should prompt for App Store review
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
                     RouterEntryGate.shared.submit(.requestAppStoreReview)
@@ -577,16 +594,12 @@ final class NewTransactionViewModel {
                 if !FeatureGateService.shared.isProUser,
                    ProUpsellService.shared.shouldShowMilestone(transactionCount: count),
                    let milestone = ProUpsellService.shared.nextMilestone(for: count) {
+                    // El one-shot lo quema MilestoneUpgradeSheet.onAppear: quemarlo
+                    // aquí (antes de presentar) perdía el milestone si el sheet
+                    // quedaba tapado. Dedup en cola por id "milestone:n".
                     RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
-                    ProUpsellService.shared.markMilestoneShown(milestone)
                 }
             }
-
-            // Analytics
-            TelemetryService.track(.transactionSaved, parameters: [
-                "type": transactionType.rawValue,
-                "isNew": String(isNewTransaction),
-            ])
 
             isSaving = false
             return result
@@ -609,14 +622,20 @@ final class NewTransactionViewModel {
 
         let finalAmount = transactionType.isNegative ? -amount : amount
         let preferredCode = CurrencyDefaults.currentPreferred
+        // Se lee ANTES de tocar `editingTransaction`: es la divisa en la que la pantalla enseñaba el
+        // importe, y es la que se guarda.
+        let stampedCurrency = amountCurrencyCode
 
-        let amountInPreferred = CurrencyConverter.shared.convert(
+        // `convertChecked`: el flujo principal de la app PERSISTE este número. `convert` tira la
+        // calidad de la tasa, así que una conversión aproximada nacía sellada como definitiva.
+        let outcome = CurrencyConverter.shared.convertChecked(
             Decimal(finalAmount),
-            from: account.currencyCode,
+            from: stampedCurrency,
             to: preferredCode,
             on: transactionDate,
             context: context
         )
+        let amountInPreferred = outcome.amount
 
         let effectiveRate: Double
         if abs(finalAmount) > 0.0001 {
@@ -643,7 +662,7 @@ final class NewTransactionViewModel {
             transaction = existing
             transaction.date = transactionDate
             transaction.amount = finalAmount
-            transaction.currencyCode = account.currencyCode
+            transaction.currencyCode = stampedCurrency
             transaction.note = note.isEmpty ? nil : note
             transaction.category = subcategory.safeCategory
             transaction.subcategory = subcategory
@@ -653,13 +672,14 @@ final class NewTransactionViewModel {
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
+            transaction.isExchangeRateProvisional = !outcome.quality.isExact
             // Save need override if different from subcategory's need
             transaction.needOverride = selectedNeed?.rawValue
         } else {
             transaction = TransactionItem(
                 date: transactionDate,
                 amount: finalAmount,
-                currencyCode: account.currencyCode,
+                currencyCode: stampedCurrency,
                 note: note.isEmpty ? nil : note,
                 category: subcategory.category,
                 subcategory: subcategory,
@@ -667,7 +687,8 @@ final class NewTransactionViewModel {
                 tags: selectedTags,
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
-                preferredCurrencyCode: preferredCode
+                preferredCurrencyCode: preferredCode,
+                isExchangeRateProvisional: !outcome.quality.isExact
             )
             // Save need override for new transactions
             transaction.needOverride = selectedNeed?.rawValue
@@ -693,26 +714,31 @@ final class NewTransactionViewModel {
 
         // --- OUTFLOW (Source) ---
         let outAmount = -amount
-        let outAmountInPreferred = CurrencyConverter.shared.convert(
+        let outOutcome = CurrencyConverter.shared.convertChecked(
             Decimal(outAmount),
             from: source.currencyCode,
             to: preferredCode,
             on: transactionDate,
             context: context
         )
+        let outAmountInPreferred = outOutcome.amount
         let outRate =
             abs(outAmount) > 0.0001
             ? (outAmountInPreferred as NSDecimalNumber).doubleValue / outAmount : 1.0
 
         // --- INFLOW (Dest) ---
         let inAmount = needsExchangeRate ? destinationAmount : amount
-        let inAmountInPreferred = CurrencyConverter.shared.convert(
+        // Cada pata lleva SU calidad, no la peor de las dos: son dos transacciones distintas, con
+        // divisas distintas, y cada una se repara por su cuenta. Colapsarlas marcaría como
+        // aproximada una pata cuya tasa sí era exacta.
+        let inOutcome = CurrencyConverter.shared.convertChecked(
             Decimal(inAmount),
             from: dest.currencyCode,
             to: preferredCode,
             on: transactionDate,
             context: context
         )
+        let inAmountInPreferred = inOutcome.amount
         let inRate =
             abs(inAmount) > 0.0001
             ? (inAmountInPreferred as NSDecimalNumber).doubleValue / inAmount : 1.0
@@ -738,6 +764,7 @@ final class NewTransactionViewModel {
             outTransaction.amountInPreferredCurrency =
                 (outAmountInPreferred as NSDecimalNumber).doubleValue
             outTransaction.preferredCurrencyCode = preferredCode
+            outTransaction.isExchangeRateProvisional = !outOutcome.quality.isExact
             outTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 
             // Update In (Ingresos/Transferencia entre cuentas)
@@ -753,6 +780,7 @@ final class NewTransactionViewModel {
             inTransaction.amountInPreferredCurrency =
                 (inAmountInPreferred as NSDecimalNumber).doubleValue
             inTransaction.preferredCurrencyCode = preferredCode
+            inTransaction.isExchangeRateProvisional = !inOutcome.quality.isExact
             inTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 
         } else {
@@ -768,7 +796,8 @@ final class NewTransactionViewModel {
                 tags: selectedTags,
                 exchangeRate: abs(outRate),
                 amountInPreferredCurrency: (outAmountInPreferred as NSDecimalNumber).doubleValue,
-                preferredCurrencyCode: preferredCode
+                preferredCurrencyCode: preferredCode,
+                isExchangeRateProvisional: !outOutcome.quality.isExact
             )
             outTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 
@@ -784,7 +813,8 @@ final class NewTransactionViewModel {
                 tags: selectedTags,
                 exchangeRate: abs(inRate),
                 amountInPreferredCurrency: (inAmountInPreferred as NSDecimalNumber).doubleValue,
-                preferredCurrencyCode: preferredCode
+                preferredCurrencyCode: preferredCode,
+                isExchangeRateProvisional: !inOutcome.quality.isExact
             )
             inTransaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
 

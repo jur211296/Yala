@@ -17,11 +17,12 @@ struct RecordsStandaloneView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
-
-    /// Disponibilidad de Grupos (gate beta temporal v2.0.1) — gatea la opción "Grupo" del FAB.
-    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
+    /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta).
+    /// Decide si tocar un registro lo abre en la columna de detalle o en la hoja de siempre.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - ViewModels
 
@@ -37,6 +38,9 @@ struct RecordsStandaloneView: View {
     @State private var pendingReload = false
     @Environment(\.scenePhase) private var scenePhase
     @State private var isInBackground = false
+    /// Qué columna enseña el split cuando está plegado (ventana compacta). `.detail` solo mientras hay
+    /// un registro abierto en columna: al estrecharse la ventana, el registro sigue a la vista, empujado.
+    @State private var compactColumn: NavigationSplitViewColumn = .sidebar
 
     // MARK: - FAB State
 
@@ -98,6 +102,21 @@ struct RecordsStandaloneView: View {
                 recalculateData: recalculateData
             ))
             .appliesPendingRemoteChanges(sessionState)
+            // Menú contextual de las filas y ⌫: aquí y no en la lista, que en el iPad puede estar apartada.
+            .modifier(RecordRowActionsPresenter(viewModel: recordsViewModel))
+            .focusedSceneValue(\.recordCommands, recordCommands)
+            .modifier(RecordsDetailColumnObservers(
+                recordsViewModel: recordsViewModel,
+                compactColumn: $compactColumn,
+                horizontalSizeClass: horizontalSizeClass,
+                allTransactions: dataViewModel.allTransactions
+            ))
+            // Una ventana abierta con «Abrir en una ventana nueva» desde un registro aterriza con él abierto.
+            .modifier(RecordsPendingRecordObserver(
+                recordsViewModel: recordsViewModel,
+                horizontalSizeClass: horizontalSizeClass,
+                allTransactions: dataViewModel.allTransactions
+            ))
             .onAppear {
                 dataViewModel.setContext(modelContext)
                 performRecalculation()
@@ -106,16 +125,8 @@ struct RecordsStandaloneView: View {
                 recalculateTask?.cancel()
                 recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir de la vista
             }
-            .onChange(of: recordsViewModel.duplicateModeActive) { _, isActive in
+            .onChange(of: recordsViewModel.duplicateModeActive) { _, _ in
                 recalculateData()
-                if isActive {
-                    TelemetryService.track(.recordsDuplicateModeActivated, parameters: [
-                        "byAmount": String(recordsViewModel.duplicateCriteria.amount),
-                        "byNote": String(recordsViewModel.duplicateCriteria.note),
-                        "bySubcategory": String(recordsViewModel.duplicateCriteria.subcategory),
-                        "byDate": String(recordsViewModel.duplicateCriteria.date),
-                    ])
-                }
             }
             .onChange(of: recordsViewModel.duplicateCriteria) { _, _ in
                 recalculateData()
@@ -147,8 +158,70 @@ struct RecordsStandaloneView: View {
 
     // MARK: - Main Content
 
+    /// El registro abierto en columna, resuelto contra lo cargado (nunca `model(for:)`, que fabrica un
+    /// objeto aunque ya no exista).
+    private var openRecord: TransactionItem? {
+        guard let id = recordsViewModel.openRecordID else { return nil }
+        return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+    }
+
+    /// ⌘E, ⌫ y ↑↓ (iPad con teclado): solo con Registros delante, la ventana ancha y fuera del modo selección. Ahí el
+    /// registro se abre en la columna de detalle; en compacta es una hoja y no hay «registro abierto» al que apuntar.
+    private var recordCommands: RecordCommandActions? {
+        guard navigation.selectedMainTab == .records,
+              horizontalSizeClass == .regular,
+              !recordsViewModel.isSelectionMode
+        else { return nil }
+        let record = openRecord
+        let viewModel = recordsViewModel
+        let navigation = navigation
+        return RecordCommandActions(
+            hasOpenRecord: record != nil,
+            canDeleteOpenRecord: record.map { RecordContextActionLogic.actions(.init(record: $0)).canDelete } ?? false,
+            editOpenRecord: {
+                guard let record, RootCommandPerformer.keyboardMayAct(navigation) else { return }
+                viewModel.editOpenRecord(record)
+            },
+            deleteOpenRecord: {
+                guard let record, RootCommandPerformer.keyboardMayAct(navigation),
+                      RecordContextActionLogic.actions(.init(record: record)).canDelete
+                else { return }
+                viewModel.requestDelete(record)
+            },
+            move: { direction in
+                guard RootCommandPerformer.keyboardMayAct(navigation) else { return }
+                viewModel.openNeighbor(direction)
+            }
+        )
+    }
+
+    /// Lista y detalle (`ListDetailSplit`): en ventana ancha a la vez; en compacta se pliega solo a la
+    /// pila de siempre (ADR «Yala se adapta por espacio, no por dispositivo»).
     private var mainContent: some View {
-        NavigationStack {
+        ListDetailSplit(preferredCompactColumn: $compactColumn) {
+            listColumn
+        } detail: {
+            detailColumn
+        }
+    }
+
+    @ViewBuilder
+    private var detailColumn: some View {
+        if let record = openRecord {
+            TransactionDetailSheet(transaction: record, presentation: .column) {
+                recordsViewModel.editOpenRecord(record)
+            }
+            .announcesShownInDetailColumn()
+            .id(record.persistentModelID)
+        } else {
+            ContentUnavailableView(L10n.Records.detailPlaceholder, systemImage: ConfigurableTab.records.iconName)
+                .yalaScreenBackground(.panel)
+                .accessibilityIdentifier("records_detail_placeholder")
+                .marksEmptyDetailColumn()
+        }
+    }
+
+    private var listColumn: some View {
             RecordsTabView(
                 viewModel: recordsViewModel,
                 accounts: dataViewModel.accounts,
@@ -174,7 +247,6 @@ struct RecordsStandaloneView: View {
                                     isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                                     chatConsentAccepted: appPreferences.aiChatConsentAccepted,
                                     chatFABVisible: appPreferences.chatFABVisible,
-                                    showGroupOption: groupsBetaUnlocked,
                                     onVoiceTap: { showVoiceRecording = true },
                                     onImageTap: { showImageSelection = true },
                                     onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -215,7 +287,6 @@ struct RecordsStandaloneView: View {
                 }
             }
             .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
-        }
     }
 
     // MARK: - Normal Mode Toolbar
@@ -351,7 +422,9 @@ struct RecordsStandaloneView: View {
             transactions: dataViewModel.allTransactions,
             accounts: dataViewModel.accounts,
             categories: dataViewModel.categories,
-            tags: dataViewModel.tags
+            tags: dataViewModel.tags,
+            context: modelContext,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
     }
 
@@ -416,9 +489,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
             .sheet(isPresented: $showUpgradeForImage) {
                 UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
-            .sheet(isPresented: $showChatSheet) {
-                ChatSheetView()
-            }
+            // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
+            .yalaAIChat(isPresented: $showChatSheet)
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
@@ -441,10 +513,13 @@ private struct RecordsStandaloneSheets: ViewModifier {
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
-                    NewTransactionView(transactionToEdit: transaction)
+                    NewTransactionView(
+                        transactionToEdit: transaction,
+                        startsAsDuplicate: recordsViewModel.editorStartsAsDuplicate)
                         .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
+                            recordsViewModel.editorStartsAsDuplicate = false
                             reloadAndRecalculate()
                         }
                 }
@@ -496,14 +571,103 @@ private struct RecordsStandaloneSheets: ViewModifier {
 
 // MARK: - Observers Modifiers
 
+/// La columna de detalle (ventana ancha): qué abre un toque, qué se ve con el split plegado y cuándo se cierra lo
+/// abierto. Repartido en dos modificadores cortos, como los demás observadores de esta vista: el compilador de
+/// Xcode 26.6 (CI) no tipa a tiempo una cadena de cinco `onChange` con cierres (medido dos veces el 2026-09-29).
+private struct RecordsDetailColumnObservers: ViewModifier {
+    let recordsViewModel: RecordsViewModel
+    @Binding var compactColumn: NavigationSplitViewColumn
+    let horizontalSizeClass: UserInterfaceSizeClass?
+    let allTransactions: [TransactionItem]
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { syncOpensInColumn(horizontalSizeClass) }
+            .onChange(of: horizontalSizeClass) { _, newClass in syncOpensInColumn(newClass) }
+            .modifier(RecordsOpenRecordObservers(
+                recordsViewModel: recordsViewModel,
+                compactColumn: $compactColumn,
+                horizontalSizeClass: horizontalSizeClass,
+                allTransactions: allTransactions))
+    }
+
+    private func syncOpensInColumn(_ sizeClass: UserInterfaceSizeClass?) {
+        recordsViewModel.opensDetailInColumn = sizeClass == .regular
+    }
+}
+
+private struct RecordsOpenRecordObservers: ViewModifier {
+    let recordsViewModel: RecordsViewModel
+    @Binding var compactColumn: NavigationSplitViewColumn
+    let horizontalSizeClass: UserInterfaceSizeClass?
+    let allTransactions: [TransactionItem]
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: recordsViewModel.openRecordID) { _, newID in followOpenRecord(newID) }
+            .onChange(of: compactColumn) { _, newColumn in closeOnBack(newColumn) }
+            .onChange(of: allTransactions) { closeIfTheRecordIsGone() }
+    }
+
+    /// Con un registro abierto, el split plegado lo enseña empujado; sin él, la lista.
+    private func followOpenRecord(_ id: PersistentIdentifier?) {
+        compactColumn = id == nil ? .sidebar : .detail
+    }
+
+    /// Atrás en el split plegado: el registro se cierra. En ancho el split no toca esta columna, así que solo la
+    /// mueve el gesto del usuario.
+    private func closeOnBack(_ column: NavigationSplitViewColumn) {
+        guard column == .sidebar, recordsViewModel.openRecordID != nil, horizontalSizeClass != .regular else { return }
+        recordsViewModel.openRecordID = nil
+    }
+
+    /// Registro abierto que ya no existe (borrado desde el editor u otro dispositivo): la columna vuelve al vacío
+    /// en vez de sostener un objeto muerto.
+    private func closeIfTheRecordIsGone() {
+        guard let id = recordsViewModel.openRecordID else { return }
+        guard !allTransactions.contains(where: { $0.persistentModelID == id }) else { return }
+        #if DEBUG
+        print("RecordsStandaloneView: el registro abierto ya no está, se cierra la columna")
+        #endif
+        recordsViewModel.openRecordID = nil
+    }
+}
+
+/// El registro que la ventana trae pedido (`SceneNavigation.pendingRecordID`, fase 4 del carril adaptativo): se abre
+/// en cuanto lo cargado lo contiene, por el MISMO camino que un toque en su fila (columna en ancha, hoja en compacta).
+/// Si lo cargado ya no lo contiene, se olvida: lo borraron entre el gesto y la ventana nueva.
+private struct RecordsPendingRecordObserver: ViewModifier {
+    let recordsViewModel: RecordsViewModel
+    let horizontalSizeClass: UserInterfaceSizeClass?
+    let allTransactions: [TransactionItem]
+    @Environment(SceneNavigation.self) private var navigation
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: navigation.pendingRecordID, initial: true) { openPendingRecord() }
+            .onChange(of: allTransactions) { openPendingRecord() }
+    }
+
+    private func openPendingRecord() {
+        guard let id = navigation.pendingRecordID, !allTransactions.isEmpty else { return }
+        navigation.pendingRecordID = nil
+        guard let record = allTransactions.first(where: { $0.persistentModelID == id }) else { return }
+        // El tamaño se fija aquí y no se espera al `onAppear` de la columna: en el primer montaje los dos corren en la
+        // misma pasada y el orden no está garantizado.
+        recordsViewModel.opensDetailInColumn = horizontalSizeClass == .regular
+        recordsViewModel.showRecordDetail(record)
+    }
+}
+
 /// Session state navigation observer
 private struct RecordsNavObserver: ViewModifier {
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     let recalculateData: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: sessionState.selectedMainTab) { _, newTab in
+            .onChange(of: navigation.selectedMainTab) { _, newTab in
                 if newTab == .records { recalculateData() }
             }
     }
@@ -629,5 +793,6 @@ private struct RecordsStandaloneObservers: ViewModifier {
 
 #Preview {
     RecordsStandaloneView()
+        .environment(SceneNavigation())
         .environment(SessionState.shared)
 }

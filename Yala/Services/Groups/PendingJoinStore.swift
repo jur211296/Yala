@@ -1,0 +1,299 @@
+//
+//  PendingJoinStore.swift
+//  Yala
+//
+//  Persiste el "join intent": acepté el CKShare de la zona X y mi SplitMember
+//  debe nacer y exportarse. Es estado de SYNC, no de UI — por eso es un store
+//  SEPARADO de `PendingInviteStore` (aquel se limpia al PRESENTAR el invite;
+//  este solo se limpia cuando el member existe y quedó encolado, o al expirar).
+//
+//  Motivo (bug 2026-07-11): `acceptShare` solo creaba el member si el
+//  `SplitGroup` local ya existía — pero la zona compartida tarda ≥60s en bajar
+//  (ventana export-only) y no había reconciliador posterior: el member jamás
+//  nacía y el owner nunca recibía la solicitud. El intent persistente permite a
+//  `GroupJoinReconciler` reintentarlo en accept/boot/foreground.
+//
+//  Persistencia: JSON-encoded `[String: PendingJoinEntry]` (keyed por zoneName)
+//  en UserDefaults. Multi-entry: dos accepts en sucesión son legítimos y el
+//  segundo no debe borrar el intent no-reconciliado del primero. Cap 8 entries
+//  (evict de la más vieja), TTL 7 días por entry (24h sería el mismo agujero
+//  con delay). Patrón espejo de `PendingInviteStore`.
+//
+
+import Foundation
+
+/// Datos mínimos para reconciliar la unión a un grupo cuando su zona por fin
+/// materializa localmente. `displayName` es PII: se persiste local (igual que
+/// `AppPreferences.userName`) pero JAMÁS se loguea.
+struct PendingJoinEntry: Codable, Equatable {
+    let zoneName: String
+    /// `metadata.share.recordID.zoneID.ownerName` — diagnóstico y contraste con
+    /// el `cloudKitZoneOwnerName` del grupo al reconciliar.
+    let zoneOwnerName: String
+    /// Nombre tecleado por el invitado en el onboarding; nil hasta
+    /// `performSilentSetup`. El reconciliador lo aplica solo si el member recién
+    /// nace o su displayName es el default (no pisa renames manuales).
+    var displayName: String?
+    /// Moneda detectada por REGIÓN en `performSilentSetup` cuando el grupo aún
+    /// no había llegado (detectCurrencyFromGroup() == nil). Al reconciliar, si
+    /// la pref actual sigue siendo esta, se re-aplica la moneda del grupo.
+    var regionFallbackCurrency: String?
+    let createdAt: Date
+    /// C3 (G4-invites): `group_id` backend de un join por TOKEN. Para una entry backend
+    /// `zoneName == backendGroupID` (el group_id ES el zone name preservado — mismo string,
+    /// D7/§3) → reusa el keying y el tracker sin fork. `nil` en entries CKShare.
+    var backendGroupID: String?
+    /// C3: token hex del invite backend (`create_group_invite`). Presencia ⇒ join backend
+    /// (`isBackendJoin`). `nil` en entries CKShare. Opcional Codable back-compat
+    /// (decodeIfPresent sintetizado): JSON viejo sin estos campos decodifica a `nil`.
+    var inviteToken: String?
+    /// G6-2 (RE-JOIN de grupo migrado): recordName legacy de CloudKit del device — se envía como
+    /// `legacyMemberKey` al `join_group` RPC para que el server rebindee la membresía CloudKit-era en vez de
+    /// crear una nueva. Lo captura `GroupBackendInviteEntryHandler.legacyMemberKeyForRejoin` al persistir el
+    /// intent (device con member local del grupo). `nil` en un device fresco / join normal. Opcional Codable
+    /// back-compat (decodeIfPresent sintetizado): JSON viejo sin este campo decodifica a `nil`.
+    var legacyMemberKey: String?
+
+    /// Marca del grupo que VIAJA en el propio enlace (params `n`/`i`/`c`/`m`): nombre, icono y color con
+    /// los que la web ya recibió al invitado. `GroupInviteOnboardingView` la pinta.
+    ///
+    /// **Por qué vive aquí y no en el payload del intent.** El caso dominante es el ARRANQUE EN FRÍO —el
+    /// invitado llega desde la web con la app cerrada—, y ahí no hay intent de router que transporte
+    /// nada: `AppBootstrapper.enterBackendInvite` persiste y RETORNA, y quien completa el flujo es el
+    /// reconciler en el boot siguiente. Colgar la marca del intent la habría cableado solo para el tap
+    /// caliente, que es la minoría. `persistIntent` es el choke point de los dos caminos ⇒ la marca entra
+    /// por un solo sitio y el drain la lee de aquí.
+    ///
+    /// Opcional Codable back-compat (decodeIfPresent sintetizado): un JSON persistido por la versión
+    /// anterior decodifica a `nil` y la vista cae a su visual genérico, exactamente como hacía antes.
+    var branded: InviteLinkService.BrandedMetadata?
+
+    /// Cuándo la persona CONFIRMÓ esta invitación — el tap del CTA «Unirme al grupo» de
+    /// `GroupInviteOnboardingView`, o cualquier otra acción deliberada suya sobre este join (el retry del
+    /// banner, el re-join del detalle de un grupo migrado). Lo sella `GroupBackendInviteEntryHandler.drive`
+    /// cuando el paso viene con `source == .userAction`, que es el único origen que solo puede producir una
+    /// persona tocando algo.
+    ///
+    /// **Es la señal que decide si la hoja del invitado se presenta, y sustituye a `hasCompletedOnboarding`
+    /// en ese papel (2026-09-05).** Aquella era un PROXY: valía para el invitado fresco —la hoja marcaba su
+    /// alta al terminar, así que «ya está dado de alta» equivalía a «ya pasó por aquí»— y era falsa para
+    /// quien ya tenía cuenta, a quien el alta previa hacía parecer confirmado sin haber visto nunca la
+    /// hoja: se unía al grupo solo, sin elegir con qué nombre lo verían ni confirmar nada. La pregunta real
+    /// no es «¿está dado de alta?» sino «¿ya dijo que sí a ESTA invitación?», y eso es lo que hay aquí.
+    ///
+    /// Vive en el intent y no en memoria a propósito: el caso dominante es el arranque en frío (el invitado
+    /// llega desde la web con la app cerrada) y quien completa el flujo es el reconciler en el boot
+    /// siguiente. Y muere con el intent —que se limpia cuando el member materializa—, así que un enlace
+    /// nuevo del mismo grupo vuelve a pedir confirmación, que es lo correcto: es otra petición.
+    ///
+    /// Opcional Codable back-compat (decodeIfPresent sintetizado): un JSON persistido por la versión
+    /// anterior decodifica a `nil` ⇒ sin confirmar ⇒ se presenta la hoja. El default seguro es el que pide
+    /// confirmación, nunca el que se une solo.
+    var inviteConfirmedAt: Date?
+
+    /// Cuándo empezó el alta de ESTA invitación sobre un store sin datos de nadie: lo apunta el CTA de la hoja
+    /// (`GroupInviteOnboardingView.performSilentSetup`) ANTES de sembrar las categorías, solo si el detector del Welcome
+    /// no ve nada y no hay espejo (`GroupInviteNeutralGateLogic.marksSignUpOnCleanStore`). Lo lee la puerta del
+    /// invitado: lo que hay en el store desde entonces lo puso esta alta, no otra persona (card t2q8, 2026-10-20).
+    ///
+    /// Vive en el intent por lo mismo que `inviteConfirmedAt`: muere con él (member materializado, TTL, frontera de
+    /// persona por `PendingJoinStore.clearAll`) y un enlace con otro token vuelve a empezar sin él. Opcional Codable
+    /// back-compat: un JSON anterior decodifica a `nil`, que es el lado que no deja pasar nada nuevo.
+    var signUpOnCleanStoreAt: Date?
+
+    /// `true` si esta entry es un join backend por token (contrato C3). El discriminador
+    /// backend↔CloudKit del reconciler tiene PRIORIDAD sobre el flag (R5).
+    var isBackendJoin: Bool { inviteToken != nil }
+
+    /// ¿La persona ya confirmó esta invitación? Ver `inviteConfirmedAt`.
+    var isInviteConfirmed: Bool { inviteConfirmedAt != nil }
+
+    /// ¿El alta de esta invitación empezó aquí sobre un store limpio? Ver `signUpOnCleanStoreAt`.
+    var signUpStartedOnCleanStore: Bool { signUpOnCleanStoreAt != nil }
+
+    init(
+        zoneName: String,
+        zoneOwnerName: String,
+        displayName: String? = nil,
+        regionFallbackCurrency: String? = nil,
+        createdAt: Date = .now,
+        backendGroupID: String? = nil,
+        inviteToken: String? = nil,
+        legacyMemberKey: String? = nil,
+        branded: InviteLinkService.BrandedMetadata? = nil,
+        inviteConfirmedAt: Date? = nil,
+        signUpOnCleanStoreAt: Date? = nil
+    ) {
+        self.zoneName = zoneName
+        self.zoneOwnerName = zoneOwnerName
+        self.displayName = displayName
+        self.regionFallbackCurrency = regionFallbackCurrency
+        self.createdAt = createdAt
+        self.backendGroupID = backendGroupID
+        self.inviteToken = inviteToken
+        self.legacyMemberKey = legacyMemberKey
+        self.branded = branded
+        self.inviteConfirmedAt = inviteConfirmedAt
+        self.signUpOnCleanStoreAt = signUpOnCleanStoreAt
+    }
+}
+
+@MainActor
+enum PendingJoinStore {
+    static let userDefaultsKey = "yala.groups.pendingJoins"
+
+    /// TTL por entry. 7 días: el escenario objetivo es "el invitado vuelve a
+    /// abrir la app días después y la zona recién materializa".
+    static let ttl: TimeInterval = 7 * 24 * 60 * 60
+
+    /// Cap de entries simultáneas; al superarlo se purga la más vieja.
+    static let maxEntries = 8
+
+    /// UserDefaults storage. `nonisolated(unsafe)` para permitir inyección en tests.
+    nonisolated(unsafe) static var defaults: UserDefaults = .standard
+
+    // MARK: - API
+
+    /// Upsert por zoneName. Si ya hay intent para esa zona, lo reemplaza
+    /// (conservar el más nuevo re-arma el TTL — correcto: el usuario re-aceptó).
+    static func save(_ entry: PendingJoinEntry) {
+        var entries = load()
+        entries[entry.zoneName] = entry
+        if entries.count > maxEntries {
+            // Evict de las más viejas hasta volver al cap.
+            let sorted = entries.values.sorted { $0.createdAt < $1.createdAt }
+            for stale in sorted.prefix(entries.count - maxEntries) {
+                entries.removeValue(forKey: stale.zoneName)
+            }
+        }
+        persist(entries)
+    }
+
+    /// Entries vigentes (purga las expiradas al leer, con telemetría por cada una).
+    /// `now` inyectable para tests.
+    static func all(now: Date = .now) -> [PendingJoinEntry] {
+        var entries = load()
+        let expired = entries.values.filter { now.timeIntervalSince($0.createdAt) >= ttl }
+        if !expired.isEmpty {
+            for _ in expired { MetricsService.canary(.groupJoinIntentExpired) }
+            for entry in expired { entries.removeValue(forKey: entry.zoneName) }
+            persist(entries)
+        }
+        return entries.values.sorted { $0.createdAt < $1.createdAt }
+    }
+
+    /// La entry vigente para una zona, o nil si no hay / expiró.
+    static func entry(zoneName: String, now: Date = .now) -> PendingJoinEntry? {
+        all(now: now).first { $0.zoneName == zoneName }
+    }
+
+    /// Propaga el nombre tecleado en el onboarding a todas las entries vigentes
+    /// (el invitado fresh solo tiene una; el nombre es global, no por grupo).
+    static func updateDisplayName(_ name: String, now: Date = .now) {
+        var entries = load()
+        var changed = false
+        for (key, var entry) in entries where now.timeIntervalSince(entry.createdAt) < ttl {
+            entry.displayName = name
+            entries[key] = entry
+            changed = true
+        }
+        if changed { persist(entries) }
+    }
+
+    /// Sella la confirmación de UNA zona: la persona dijo «unirme» a ESTA invitación. Idempotente —
+    /// re-confirmar conserva el primer instante, que es cuando de verdad lo dijo.
+    ///
+    /// Por zona, y no como `updateDisplayName` (que propaga a todas las entries vigentes porque el nombre
+    /// del perfil es global): confirmar es un acto sobre UN grupo. Con dos invitaciones vivas, decir que sí
+    /// a una no puede colar a la otra sin que nadie la vea — que es exactamente el defecto que esta señal
+    /// existe para cerrar.
+    static func markInviteConfirmed(zoneName: String, at date: Date = .now) {
+        var entries = load()
+        guard var entry = entries[zoneName], entry.inviteConfirmedAt == nil else { return }
+        entry.inviteConfirmedAt = date
+        entries[zoneName] = entry
+        persist(entries)
+    }
+
+    /// Apunta que el alta de esta invitación empieza sobre un store limpio (ver `PendingJoinEntry.signUpOnCleanStoreAt`).
+    /// Idempotente: conserva la primera fecha. Sin entry no hace nada.
+    static func markSignUpStartedOnCleanStore(zoneName: String, at date: Date = .now) {
+        var entries = load()
+        guard var entry = entries[zoneName], entry.signUpOnCleanStoreAt == nil else { return }
+        entry.signUpOnCleanStoreAt = date
+        entries[zoneName] = entry
+        persist(entries)
+    }
+
+    /// Registra la moneda fallback detectada por región (solo si la entry existe).
+    static func updateRegionFallbackCurrency(_ code: String, zoneName: String) {
+        var entries = load()
+        guard var entry = entries[zoneName] else { return }
+        entry.regionFallbackCurrency = code
+        entries[zoneName] = entry
+        persist(entries)
+    }
+
+    /// Limpia el intent de una zona. Llamado SOLO cuando el member quedó
+    /// asegurado y encolado (reconcile OK), en leaveGroup/deleteGroupData de esa
+    /// zona, o por TTL. NUNCA al presentar UI.
+    static func clear(zoneName: String) {
+        var entries = load()
+        guard entries.removeValue(forKey: zoneName) != nil else { return }
+        persist(entries)
+    }
+
+    /// Wipe total: sign-out / `AppRouter.resetAll()`.
+    static func clearAll() {
+        defaults.removeObject(forKey: userDefaultsKey)
+    }
+
+    /// C-3: revoca la credencial CloudKit-era de RE-JOIN (`legacyMemberKey`) del intent de una zona SIN
+    /// tocar el `inviteToken`. Se llama al retener las filas del canal backend en un cambio de identidad
+    /// de iCloud (D1): ese `legacyMemberKey` es el recordName del Apple ID que se FUE y el RPC `join_group`
+    /// lo usa para rebindear la membresía CloudKit-era. Conservar el token es deliberado — un join en
+    /// vuelo se completa igual, entrando como member NUEVO en vez de heredar la membresía anterior.
+    /// Devuelve 1 si había algo que revocar (para el breadcrumb), 0 si no. Idempotente.
+    @discardableResult
+    static func revokeLegacyMemberKey(zoneName: String) -> Int {
+        var entries = load()
+        guard var entry = entries[zoneName], entry.legacyMemberKey != nil else { return 0 }
+        entry.legacyMemberKey = nil
+        entries[zoneName] = entry
+        persist(entries)
+        return 1
+    }
+
+    // MARK: - Persistencia
+
+    private static func load() -> [String: PendingJoinEntry] {
+        guard let data = defaults.data(forKey: userDefaultsKey) else { return [:] }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        do {
+            return try decoder.decode([String: PendingJoinEntry].self, from: data)
+        } catch {
+            #if DEBUG
+            print("PendingJoinStore: Error decoding entries: \(error)")
+            #endif
+            return [:]
+        }
+    }
+
+    private static func persist(_ entries: [String: PendingJoinEntry]) {
+        if entries.isEmpty {
+            defaults.removeObject(forKey: userDefaultsKey)
+            return
+        }
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        do {
+            let data = try encoder.encode(entries)
+            defaults.set(data, forKey: userDefaultsKey)
+        } catch {
+            #if DEBUG
+            print("PendingJoinStore: Error encoding entries: \(error)")
+            #endif
+        }
+    }
+}

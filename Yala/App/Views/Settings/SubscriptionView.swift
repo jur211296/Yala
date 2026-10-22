@@ -47,9 +47,8 @@ struct SubscriptionView: View {
         .task {
             await store.loadProducts()
             await store.updateSubscriptionStatus()
-            TelemetryService.trackOnce(.paywallViewed, key: "paywall", parameters: TelemetryService.upsellParameters(source: source))
         }
-        .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
+        .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {
             Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(store.errorMessage ?? "")
@@ -60,10 +59,10 @@ struct SubscriptionView: View {
             }
         }
         .onChange(of: store.didJustSubscribe) { _, didSubscribe in
-            if didSubscribe {
+            if didSubscribe && store.isProUser {
                 showSuccessView = true
-                store.didJustSubscribe = false
             }
+            store.didJustSubscribe = false
         }
         .fullScreenCover(isPresented: $showSuccessView, onDismiss: {
             ProTourManager.shared.triggerIfEligible()
@@ -136,72 +135,76 @@ struct SubscriptionView: View {
     // MARK: - Hero Section
 
     private var heroSection: some View {
-        ZStack {
-            // Gradient background
-            LinearGradient(
-                colors: [
-                    Color.electricIndigo,
-                    Color.electricIndigo.opacity(0.85),
-                    Color.electricIndigo.opacity(0.6),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+        // Content
+        VStack(spacing: DS.Spacing.lg) {
+            Spacer()
+                .frame(height: 60) // Safe area compensation
 
-            // Subtle pattern overlay
-            Circle()
-                .fill(DS.Colors.backgroundFaint)
-                .frame(width: 300, height: 300)
-                .offset(x: 120, y: -60)
+            // Spark icon with glow
+            ZStack {
+                // Glow
+                YalaSpark(size: .large, animated: false)
+                    .scaleEffect(3.5)
+                    .blur(radius: 20)
+                    .opacity(animateHero ? 0.6 : 0.3)
 
-            Circle()
-                .fill(Color.white.opacity(0.03))  // Even fainter than DS.Opacity.faint
-                .frame(width: 200, height: 200)
-                .offset(x: -100, y: 40)
-
-            // Content
-            VStack(spacing: DS.Spacing.lg) {
-                Spacer()
-                    .frame(height: 60) // Safe area compensation
-
-                // Spark icon with glow
-                ZStack {
-                    // Glow
-                    YalaSpark(size: .large, animated: false)
-                        .scaleEffect(3.5)
-                        .blur(radius: 20)
-                        .opacity(animateHero ? 0.6 : 0.3)
-
-                    YalaSpark(size: .large, animated: true)
-                        .scaleEffect(3.0)
-                        .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4) // DS-OK: brand decorative
-                }
-                .scaleEffect(animateHero ? 1.0 : 0.8)
-                .onAppear {
-                    dsWithAnimation(reduceMotion) {
-                        animateHero = true
-                    }
-                }
-
-                // Title
-                Text(L10n.Subscription.paywallTitle)
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .shadow(color: Color.black.opacity(0.2), radius: 4, y: 2)
-
-                // Subtitle
-                Text(L10n.Subscription.paywallSubtitle)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .multilineTextAlignment(.center)
-
-                Spacer()
-                    .frame(height: DS.Spacing.lg)
+                YalaSpark(size: .large, animated: true)
+                    .scaleEffect(3.0)
+                    .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4) // DS-OK: brand decorative
             }
-            .padding(.horizontal, DS.Spacing.xxl)
+            .scaleEffect(animateHero ? 1.0 : 0.8)
+            .onAppear {
+                dsWithAnimation(reduceMotion) {
+                    animateHero = true
+                }
+            }
+
+            // Title
+            Text(L10n.Subscription.paywallTitle)
+                .font(DS.Typography.largeTitle)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .shadow(color: Color.black.opacity(0.2), radius: 4, y: 2)
+
+            // Subtitle
+            Text(L10n.Subscription.paywallSubtitle)
+                .font(DS.Typography.body)
+                .foregroundStyle(.white.opacity(0.85))
+                .multilineTextAlignment(.center)
+
+            Spacer()
+                .frame(height: DS.Spacing.lg)
         }
-        .frame(height: 320)
+        .padding(.horizontal, DS.Spacing.xxl)
+        // Alto MÍNIMO, no fijo: con el texto en tamaños de accesibilidad el título y el subtítulo no caben en 320 pt
+        // y se cortaban («Desbloqu…»); ahora la cabecera crece con ellos (medido en un iPhone SE el 2026-09-28).
+        // A tamaño normal cabe y pinta lo mismo: el contenido va centrado en 320 pt sobre el mismo fondo.
+        .frame(maxWidth: .infinity, minHeight: 320)
+        .background {
+            ZStack {
+                // Gradient background
+                LinearGradient(
+                    colors: [
+                        Color.electricIndigo,
+                        Color.electricIndigo.opacity(0.85),
+                        Color.electricIndigo.opacity(0.6),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                // Subtle pattern overlay
+                Circle()
+                    .fill(DS.Colors.backgroundFaint)
+                    .frame(width: 300, height: 300)
+                    .offset(x: 120, y: -60)
+
+                Circle()
+                    .fill(Color.white.opacity(0.03))  // Even fainter than DS.Opacity.faint
+                    .frame(width: 200, height: 200)
+                    .offset(x: -100, y: 40)
+            }
+        }
     }
 
     // MARK: - Active Subscription Content

@@ -426,7 +426,7 @@ struct SaveAsFavoriteSheet: View {
             }
         }
 
-        .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+        .yalaSheetDetents([.medium, .large])
     }
 
     // MARK: - Save

@@ -103,6 +103,20 @@ struct CashFlowWidget: View {
         }
     }
 
+    /// La marca «≈» del KPI del header, que sigue a `kpiValue`.
+    ///
+    /// No puede ser una señal única del período por la misma razón que en el hero de Tendencias:
+    /// `kpiValue` devuelve uno de tres números según `displayMode`, y con
+    /// `summary.amountsAreApproximate` a secas un gasto mal convertido le pondría «≈» al total de
+    /// INGRESOS, donde no hubo esa conversión.
+    private var kpiValueIsApproximate: Bool {
+        switch displayMode {
+        case .income:            return summary.incomeAmountsAreApproximate
+        case .expense:           return summary.expenseAmountsAreApproximate
+        case .balance, .none:    return summary.amountsAreApproximate
+        }
+    }
+
     /// Header label. `customTitle` preserves call sites that need account/
     /// currency-specific labels (e.g. Statistics CashFlow). In the Panel the
     /// title is always "Flujo de efectivo" regardless of `displayMode`.
@@ -351,7 +365,9 @@ struct CashFlowWidget: View {
                         value: summary.netFlow,
                         currencyCode: summary.currencyCode,
                         font: DS.Typography.headline,
-                        forceSign: true
+                        forceSign: true,
+                        // Agrega los dos lados, así que su marca es la del neto.
+                        isEstimate: summary.amountsAreApproximate
                     )
 
                     if variationDisplay.showsSmallVariation && previousAmount != nil {
@@ -387,6 +403,7 @@ struct CashFlowWidget: View {
                     ratio: maxVal > 0 ? (summary.totalIncome / maxVal) : 0,
                     color: .incomeGraph,
                     currencyCode: summary.currencyCode,
+                    isEstimate: summary.incomeAmountsAreApproximate,
                     dimmed: isIncomeDimmed
                 )
             }
@@ -396,6 +413,7 @@ struct CashFlowWidget: View {
                 ratio: maxVal > 0 ? (summary.totalExpense / maxVal) : 0,
                 color: .expenseGraph,
                 currencyCode: summary.currencyCode,
+                isEstimate: summary.expenseAmountsAreApproximate,
                 dimmed: isExpenseDimmed
             )
         }
@@ -429,7 +447,8 @@ struct CashFlowWidget: View {
                                 value: kpiValue,
                                 currencyCode: summary.currencyCode,
                                 font: DS.Typography.headline,
-                                forceSign: displayMode == .balance || displayMode == .none
+                                forceSign: displayMode == .balance || displayMode == .none,
+                                isEstimate: kpiValueIsApproximate
                             )
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousAmount {
@@ -437,6 +456,12 @@ struct CashFlowWidget: View {
                                     Text(L10n.Common.vs)
                                         .font(DS.Typography.caption)
                                         .foregroundStyle(.thSecondaryText)
+                                    // SIN marca a propósito: `previousAmount` es el número del
+                                    // período ANTERIOR y lo calcula el callsite aparte. La señal que
+                                    // viaja en `summary` describe el período ACTUAL, así que
+                                    // reusarla aquí marcaría un número que no describe. Marcarlo de
+                                    // verdad pide que el callsite traiga también la señal del
+                                    // período previo: `fx-previous-period-amounts-unmarked`.
                                     AmountText(
                                         value: prevAmount,
                                         currencyCode: summary.currencyCode,
@@ -666,8 +691,19 @@ struct CashFlowWidget: View {
                 }  // Close Chart
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.Accessibility.cashFlowChart)
+                // El `isEstimate` va también aquí: son los mismos dos totales que las barras pintan
+                // con «≈», y dejar la marca solo en el glifo la esconde de quien no puede verlo.
                 .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
-                    L10n.Accessibility.cashFlowSummary(income: appPreferences.currency(summary.totalIncome, currencyCode: summary.currencyCode), expense: appPreferences.currency(summary.totalExpense, currencyCode: summary.currencyCode)))
+                    L10n.Accessibility.cashFlowSummary(
+                        income: appPreferences.currency(
+                            summary.totalIncome, currencyCode: summary.currencyCode,
+                            isEstimate: summary.incomeAmountsAreApproximate
+                        ),
+                        expense: appPreferences.currency(
+                            summary.totalExpense, currencyCode: summary.currencyCode,
+                            isEstimate: summary.expenseAmountsAreApproximate
+                        )
+                    ))
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {
@@ -723,6 +759,12 @@ struct CashFlowWidget: View {
                             }),
                             let xPos = proxy.position(forX: selectedData.date)
                         {
+                            // Los importes de este tooltip van SIN marca a propósito. Son el
+                            // contenido de UN bucket (un día, una semana, un mes) y las tres señales
+                            // del summary miden el PERÍODO entero: aplicarlas aquí le pondría «≈» a
+                            // un día cuyas conversiones pudieron ser todas exactas. Marcarlos de
+                            // verdad pide señal por bucket en `CashFlowData`, que hoy no existe:
+                            // `fx-per-bucket-approximate-signal-missing`.
                             VStack(spacing: DS.Spacing.xs) {
                                 Text(formatTooltipDate(selectedData.date, grouping: grouping))
                                     .font(DS.Typography.captionSmall)
@@ -834,7 +876,8 @@ struct CashFlowWidget: View {
                                 AmountText(
                                     value: summary.totalIncome,
                                     currencyCode: summary.currencyCode,
-                                    font: DS.Typography.body, secondaryFont: DS.Typography.caption
+                                    font: DS.Typography.body, secondaryFont: DS.Typography.caption,
+                                    isEstimate: summary.incomeAmountsAreApproximate
                                 )
                             }
                             // Bar
@@ -865,7 +908,8 @@ struct CashFlowWidget: View {
                             AmountText(
                                 value: summary.totalExpense,
                                 currencyCode: summary.currencyCode,
-                                font: DS.Typography.body, secondaryFont: DS.Typography.caption
+                                font: DS.Typography.body, secondaryFont: DS.Typography.caption,
+                                isEstimate: summary.expenseAmountsAreApproximate
                             )
                         }
                         // Bar

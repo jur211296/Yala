@@ -16,7 +16,7 @@ import Testing
 
 @testable import Yala
 
-@Suite("F15 — A0-Bridge integration (pure logic)")
+@Suite("F15 — A0-Bridge integration (pure logic)", .serialized)
 struct A0BridgeIntegrationTests {
 
     // MARK: - Naming consistency cross-fases

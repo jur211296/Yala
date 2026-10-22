@@ -98,7 +98,7 @@ struct ExchangeRatesSheet: View {
             Spacer()
 
             if let rate = rate {
-                Text(String(format: "%.4f %@", rate, preferredInfo.code))
+                Text("\(ExchangeRateDisplayFormatter.string(rate)) \(preferredInfo.code)")
                     .font(DS.Typography.body.monospacedDigit())
                     .foregroundStyle(.primary)
             } else {

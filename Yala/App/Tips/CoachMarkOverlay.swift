@@ -235,12 +235,27 @@ struct CoachMarkOverlay: View {
         .onChange(of: currentIndex) { _, _ in
             handleStepTransition(initial: false)
         }
+        // Red: si el overlay se desmonta con una transición en vuelo, ningún
+        // Task pendiente debe poder dejar el tap-blocker armado al remontar.
+        .onDisappear {
+            transitionGeneration += 1
+            isTransitioning = false
+        }
     }
 
     // MARK: - Step Transitions
 
     private func handleStepTransition(initial: Bool) {
-        guard let step = currentStep else { return }
+        guard let step = currentStep else {
+            // Fin del tour (currentIndex fuera de steps) con una transición en
+            // vuelo: sin este reset, `isTransitioning` quedaba pegado y la rama
+            // del tap-blocker invisible (opacity 0.001, hit-testeable) seguía
+            // montada tragándose TODOS los taps — la misma clase de trampa que
+            // el bug "toolbar muerta" del InboxAlertModal (TestFlight 2.0.5).
+            transitionGeneration += 1
+            isTransitioning = false
+            return
+        }
         isTransitioning = true
         transitionGeneration += 1
         let gen = transitionGeneration

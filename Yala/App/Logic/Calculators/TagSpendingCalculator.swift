@@ -13,7 +13,8 @@ struct TagSpendingCalculator {
     /// - Parameters:
     ///   - transactions: List of transactions (already filtered by account/category if needed)
     ///   - interval: Date interval for filtering
-    ///   - currencyCode: Target currency code (for display, uses amountInPreferredCurrency)
+    ///   - currencyCode: la divisa principal en que se suma. Cada importe se resuelve con
+    ///     `CashFlowCalculator.resolvedAmount` (reconvertido si la fila se guardó en otra divisa).
     ///   - transactionNatures: Filter by transaction nature (nil = expense only for backwards compatibility)
     ///   - allTags: Required catalog of Tag objects (from `@Query<Tag>` or service).
     ///     CSV-mirror SSOT: resuelve UUIDs del CSV mirror → Tag objects sin tocar la M2M lazy.
@@ -23,7 +24,9 @@ struct TagSpendingCalculator {
         interval: DateInterval,
         currencyCode: String,
         transactionNatures: Set<TransactionNature>? = nil,
-        allTags: [Tag]
+        allTags: [Tag],
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [TagSpendingSummary] {
         // Determine which natures to include (default: expense only)
         let naturesToInclude = transactionNatures ?? [.expense]
@@ -31,7 +34,9 @@ struct TagSpendingCalculator {
         let tagsByID = Tag.byIDLookup(allTags)
 
         // 1. Filter Transactions (within interval, has category, matching natures, has tags).
+        //    Patas de préstamo derivadas del bridge se excluyen (no son gasto ni ingreso propio).
         let filteredTransactions = transactions.filter { transaction in
+            guard !adjustment.isSuppressed(transaction) else { return false }
             guard let category = transaction.category else { return false }
             guard transaction.balanceAdjustmentType == nil else { return false }
             let nature: TransactionNature = category.isIncome ? .income : .expense
@@ -41,12 +46,15 @@ struct TagSpendingCalculator {
             return interval.contains(transaction.date)
         }
 
-        // 2. Group by Tag UUID and Sum Amounts.
+        // 2. Group by Tag UUID and Sum Amounts. `adjustment` proyecta un gasto de grupo Caso A
+        //    a "mi parte" (neto), en vez del total que pagué.
         var tagTotals: [UUID: Double] = [:]
         var tagMap: [UUID: Tag] = [:]
 
         for transaction in filteredTransactions {
-            let absAmount = abs(transaction.amountInPreferredCurrency)
+            let absAmount = abs(CashFlowCalculator.resolvedAmount(
+                transaction, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
             let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
             for tagID in txTagUUIDs {
                 tagTotals[tagID, default: 0] += absAmount

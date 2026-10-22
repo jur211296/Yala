@@ -19,20 +19,106 @@ enum DevSeedProfile: String {
     /// (saltando el accept de CKShare, imposible en sim) y deudor neto. Combinable con
     /// `-uitest-group-invite` para el modo solo-grupos. Ver `DevSeedGroups.createAsInvitee`.
     case gruposInvitado = "grupos-invitado"
+    /// Como `.grupos` (mismo dataset, yo owner) pero con las liquidaciones confirmadas que dejan al
+    /// usuario en CERO en todos sus grupos y monedas: grupos VIVOS y SIN deuda. Es el único perfil que
+    /// ejercita el batch D10 "También salir de mis grupos" de la hoja de Vaciar por su condición REAL
+    /// (`hasGroups && !hasOutstandingDebt`), sin los seams `-uitest-groups-batch-*` que la cortocircuitan.
+    /// Ver `DevSeedGroups.createSettled`.
+    case gruposSaldado = "grupos-saldado"
+
+    /// Grupo del canal backend con el member propio SIN `isCurrentUser`, que es como llega de
+    /// verdad: `GroupsSyncClient.applyMember` nunca escribe ese flag y `refreshCurrentUserFlags`
+    /// solo corre en el arranque. Los otros perfiles lo siembran a mano, así que ninguno podía
+    /// ejercitar la resolución de identidad — la app te reconoce por `cloudKitUserRecordID`, que
+    /// `-uitest-icloud-identity` siembra con el mismo literal.
+    case gruposSinFlag = "grupos-sin-flag"
+
+    /// Grupo del canal backend donde **YO** soy el miembro `pendingApproval` — el estado del invitado
+    /// que se unió por enlace y aún espera al admin. Ningún otro perfil lo reproduce: `gruposSinFlag`
+    /// deja pendiente a OTRA persona (Carla) y a mí me hace admin activo, así que sirve para las
+    /// acciones de administración pero no para la puerta del grupo, que es justo la del revés.
+    ///
+    /// Igual que su hermano, la identidad viaja por `cloudKitUserRecordID` (`-uitest-icloud-identity`
+    /// siembra el mismo literal) y el flag `isCurrentUser` se deja APAGADO: es como llega de verdad
+    /// por el pull, y encenderlo devolvería la ceguera que `5ca4dd47` arregló.
+    case gruposPendiente = "grupos-pendiente"
+    /// SOLO-GRUPOS PURO (escenario 5a legado): siembra únicamente grupos, SIN nada de vida
+    /// personal (cuentas, transacciones, presupuestos, tags…). Representa fielmente al usuario
+    /// de una sesión solo-grupos. Pensado para combinar con `-uitest-group-invite` en
+    /// device-QA (p.ej. verificar la salida "Salir de Yala" y el export de grupos de D6, que en
+    /// solo-grupos gatea por `hasExportableGroups`, no por transacciones). Usa el dataset owner
+    /// rico de `DevSeedGroups.create` (2 grupos multi-moneda); para la perspectiva invitado/deudor
+    /// combina `.gruposInvitado` con el flag.
+    case soloGrupos = "solo-grupos"
+    /// **El teléfono tal como lo deja el aviso tardío al conservar los grupos**: los grupos de `.soloGrupos` y NADA
+    /// personal, tampoco las categorías propias que el seed necesita para construirse (se retiran al final, como las
+    /// retira ese borrado). Con `-uitest-late-notice-kept-groups` monta el estado del ticket
+    /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`; sin él, es el control del handover real:
+    /// el Welcome solo ve grupos, así que su alert sale por ellos y no por las categorías.
+    case soloGruposTrasAviso = "solo-grupos-tras-aviso"
+    /// Fixture AISLADO para el AC (c) de `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo`:
+    /// una TX personal de cuenta REAL cuyo `splitExpenseID` no resuelve, en una zona
+    /// asentada SIN canal backend (para que el editor la trate como puntero muerto).
+    /// No arranca el generador aleatorio. Ver `DevSeedTransactions.createDeadPointerFixture`.
+    case deadPointer = "dead-pointer"
+    /// Usuario recién llegado: categorías y cuentas, y **ningún registro** (tampoco saldos iniciales, que son
+    /// `TransactionItem`). Es el único estado en el que guardar un gasto arma «¿era de prueba?»
+    /// (`SetupChecklistManager.markFirstCreation` lo ofrece solo si lo guardado es lo único de su tipo). Ver
+    /// `FirstExpensePracticeAlertUITests`.
+    case sinRegistros = "sin-registros"
+    /// Capturas de la ficha de la App Store en es-MX: tres grupos con nombres de México, montos en MXN y
+    /// saldos abiertos, sin vida personal (la captura es de Grupos y una cuenta en PEN delataría el seed).
+    /// Ver `DevSeedGroups.createFichaMX`.
+    case fichaMX = "ficha-mx"
+    /// La ficha es-MX completa: la vida personal de `.realista` (un año) pasada a MXN, más los tres grupos de
+    /// `.fichaMX`. Una sola persona para todas las capturas, así que las cifras cuadran entre pantallas. Ver
+    /// `relabelPersonalDataToMXN`.
+    case fichaMXVida = "ficha-mx-vida"
+    /// Capturas y vídeo de la ficha de la App Store en el idioma de la app: la vida personal de `.realista` en la divisa
+    /// preferida (`-defaultCurrencyCode`) y los grupos de la ficha. Las cifras que citan los textos salen con el reloj
+    /// en el 13-oct-2026 (lo pone el molde de `ficha-app-store/`). Ver `DevSeedFicha` y `DevSeedGroups.createFicha`.
+    case ficha
+    /// Eliminar una cuenta con movimientos: «Efectivo QA» (dos gastos en soles), «Banco QA» (soles) y «Dólares QA»
+    /// (vacía). Sin nada más, para que el diálogo de eliminar enseñe cifras exactas. Ver `DevSeedAccountRemoval`.
+    case cuentaConMovimientos = "cuenta-con-movimientos"
+    /// El estado que dejaba eliminar una cuenta antes de la 2.1: el mismo corpus de `.cuentaConMovimientos` con
+    /// «Efectivo QA» eliminada a pelo, así que sus dos gastos se quedan sin cuenta (`.nullify`). Ver
+    /// `DevSeedAccountRemoval.createOrphaned`.
+    case movimientosSinCuenta = "movimientos-sin-cuenta"
+    /// Un gasto de grupo en la Bandeja cuyo grupo no está en este teléfono, como lo deja «Sumarlos a mis datos» al
+    /// volver a iCloud. Ver `DevSeedGroupRowsWithoutGroup.createForeignGroupDraft`.
+    case gastoDeGrupoSinSuGrupo = "gasto-de-grupo-sin-su-grupo"
+    /// `.movimientosSinCuenta` más la pata real de una cena de grupo pagada desde «Efectivo QA». Ver
+    /// `DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount`.
+    case pataDeGrupoSinCuenta = "pata-de-grupo-sin-cuenta"
 
     /// Días de historial de transacciones a generar (escala el volumen).
-    /// `minimal`/`grupos`/`gruposInvitado` (~1 semana) son rápidos para XCUITests.
+    /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
+    /// (~1 semana) son rápidos para XCUITests.
     /// `realista`/`pesado` para escenarios ricos / performance (arranque más lento, riesgo watchdog).
     var daysBack: Int {
         switch self {
-        case .minimal, .grupos, .gruposInvitado: return 7
-        case .realista: return 730
+        case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
+             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta: return 7
+        case .fichaMXVida: return 365
+        case .realista, .ficha: return 730
         case .pesado: return 3650
         }
     }
 
     /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
-    var seedsGroups: Bool { self == .grupos || self == .gruposInvitado }
+    var seedsGroups: Bool {
+        self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
+            || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
+            || self == .fichaMX || self == .fichaMXVida || self == .ficha
+    }
+
+    /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
+    /// `.soloGrupos` no — sólo grupos. `.deadPointer` tampoco: va por su fixture aislado.
+    var seedsPersonalData: Bool {
+        self != .soloGrupos && self != .deadPointer && self != .soloGruposTrasAviso && self != .fichaMX
+    }
 }
 
 @MainActor @Observable
@@ -50,6 +136,63 @@ final class DevSeedService {
         guard !isSeeding else { return }
         isSeeding = true
         progress = 0
+
+        // Fixture aislado: no arranca el generador aleatorio (contaminaría la lista que Mini
+        // tiene que abrir). Gana el perfil; `-uitest-seed-desync` sigue siendo excluyente
+        // más arriba, en `applyUITestSeed`.
+        if profile == .deadPointer {
+            seedDeadPointerFixtures(in: context)
+            return
+        }
+        if profile == .gastoDeGrupoSinSuGrupo {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            DevSeedGroupRowsWithoutGroup.createForeignGroupDraft(in: context)
+            do { try context.save() } catch {
+                print("DevSeedService: gasto-de-grupo-sin-su-grupo save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
+        if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
+            // simulador el proveedor de tasas no contesta.
+            var rng = SeededRandom(seed: 42)
+            let end = Date.now
+            let start = Calendar.current.date(byAdding: .day, value: -7, to: end) ?? end
+            DevSeedExchangeRates.create(startDate: start, endDate: end, rng: &rng, in: context)
+            if profile == .movimientosSinCuenta {
+                DevSeedAccountRemoval.createOrphaned(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .pataDeGrupoSinCuenta {
+                DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount(
+                    subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else {
+                DevSeedAccountRemoval.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            }
+            do { try context.save() } catch {
+                print("DevSeedService: cuenta-con-movimientos save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
+        if profile == .sinRegistros {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            _ = DevSeedAccounts.create(in: context)
+            do { try context.save() } catch {
+                print("DevSeedService: sin-registros save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
 
         let calendar = Calendar.current
         let endDate = Date.now
@@ -72,83 +215,117 @@ final class DevSeedService {
             return
         }
 
-        // Step 2: Create accounts
-        updateStep(L10n.DevSeed.stepAccounts, progress: 0.05)
-        let accounts = DevSeedAccounts.create(in: context)
+        // Steps 2-9.5: vida personal (cuentas, tags, rates, presupuestos, pagos, transacciones,
+        // saldos iniciales, drafts). Se OMITEN en `.soloGrupos` (escenario 5a puro: sólo grupos).
+        if profile.seedsPersonalData {
+            // Step 2: Create accounts
+            updateStep(L10n.DevSeed.stepAccounts, progress: 0.05)
+            let accounts = DevSeedAccounts.create(in: context)
 
-        // Step 3: Create tags
-        updateStep(L10n.DevSeed.stepTags, progress: 0.08)
-        let tags = DevSeedTags.create(in: context)
+            // Step 3: Create tags
+            updateStep(L10n.DevSeed.stepTags, progress: 0.08)
+            let tags = DevSeedTags.create(in: context)
 
-        // Step 4: Create exchange rates
-        updateStep(L10n.DevSeed.stepExchangeRates, progress: 0.10)
-        DevSeedExchangeRates.create(
-            startDate: startDate, endDate: endDate, rng: &rng, in: context
-        )
+            // Step 4: Create exchange rates
+            updateStep(L10n.DevSeed.stepExchangeRates, progress: 0.10)
+            DevSeedExchangeRates.create(
+                startDate: startDate, endDate: endDate, rng: &rng, in: context
+            )
 
-        // Step 5: Create budgets
-        updateStep(L10n.DevSeed.stepBudgets, progress: 0.15)
-        DevSeedBudgets.create(
-            account: accounts.cuentaPrincipal,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
+            // Step 5: Create budgets
+            updateStep(L10n.DevSeed.stepBudgets, progress: 0.15)
+            DevSeedBudgets.create(
+                account: accounts.cuentaPrincipal,
+                subcategoryLookup: subcategoryLookup,
+                in: context
+            )
 
-        // Step 6: Create scheduled payments
-        updateStep(L10n.DevSeed.stepScheduledPayments, progress: 0.18)
-        let spResult = DevSeedScheduledPayments.create(
-            account: accounts.cuentaPrincipal,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
+            // Step 6: Create scheduled payments
+            updateStep(L10n.DevSeed.stepScheduledPayments, progress: 0.18)
+            let spResult = DevSeedScheduledPayments.create(
+                account: accounts.cuentaPrincipal,
+                subcategoryLookup: subcategoryLookup,
+                today: UITestHooks.scheduledSeedToday ?? .now,
+                includeEndOfMonthPayment: profile == .minimal,
+                in: context
+            )
 
-        // Step 7: Flush before massive insert
-        updateStep(L10n.DevSeed.stepSavingBase, progress: 0.20)
-        do { try context.save() } catch {
-            print("DevSeedService: Pre-transaction save error: \(error)")
+            // Step 7: Flush before massive insert
+            updateStep(L10n.DevSeed.stepSavingBase, progress: 0.20)
+            do { try context.save() } catch {
+                print("DevSeedService: Pre-transaction save error: \(error)")
+            }
+
+            // Step 8: Create transactions
+            updateStep(L10n.DevSeed.stepTransactions, progress: 0.22)
+            await DevSeedTransactions.create(
+                startDate: startDate,
+                endDate: endDate,
+                accounts: accounts,
+                tags: tags,
+                scheduledPayments: spResult.payments,
+                subcategoryLookup: subcategoryLookup,
+                rng: &rng,
+                progressUpdate: { [weak self] txProgress in
+                    // Map transaction progress (0-1) to overall progress (0.22-0.95)
+                    let overall = 0.22 + txProgress * 0.73
+                    self?.progress = overall
+                },
+                in: context
+            )
+
+            // Step 9: Create initial balances
+            updateStep(L10n.DevSeed.stepInitialBalances, progress: 0.96)
+            DevSeedTransactions.createInitialBalances(
+                startDate: startDate,
+                accounts: accounts,
+                subcategoryLookup: subcategoryLookup,
+                in: context
+            )
+
+            // Step 9.5: Inbox drafts (2 pending completos) — Inbox nunca vacío en dev/uitest.
+            DevSeedDrafts.create(
+                account: accounts.cuentaPrincipal,
+                subcategoryLookup: subcategoryLookup,
+                in: context
+            )
         }
 
-        // Step 8: Create transactions
-        updateStep(L10n.DevSeed.stepTransactions, progress: 0.22)
-        await DevSeedTransactions.create(
-            startDate: startDate,
-            endDate: endDate,
-            accounts: accounts,
-            tags: tags,
-            scheduledPayments: spResult.payments,
-            subcategoryLookup: subcategoryLookup,
-            rng: &rng,
-            progressUpdate: { [weak self] txProgress in
-                // Map transaction progress (0-1) to overall progress (0.22-0.95)
-                let overall = 0.22 + txProgress * 0.73
-                self?.progress = overall
-            },
-            in: context
-        )
+        // Step 9.9: la ficha es-MX quiere pesos. Va ANTES de los grupos: sus gastos ya nacen en MXN y no
+        // se deben escalar otra vez.
+        if profile == .fichaMXVida {
+            relabelPersonalDataToMXN(in: context)
+        }
+        // La ficha de la App Store en la divisa preferida (dólares en inglés, reales en portugués de Brasil). También
+        // antes de los grupos, que ya nacen en esa divisa.
+        if profile == .ficha {
+            DevSeedFicha.adaptPersonalData(in: context, mainCurrency: CurrencyDefaults.currentPreferred)
+        }
 
-        // Step 9: Create initial balances
-        updateStep(L10n.DevSeed.stepInitialBalances, progress: 0.96)
-        DevSeedTransactions.createInitialBalances(
-            startDate: startDate,
-            accounts: accounts,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
-
-        // Step 9.5: Inbox drafts (2 pending completos) — Inbox nunca vacío en dev/uitest.
-        DevSeedDrafts.create(
-            account: accounts.cuentaPrincipal,
-            subcategoryLookup: subcategoryLookup,
-            in: context
-        )
-
-        // Step 10: Grupos (perfiles .grupos / .gruposInvitado) — grupo local para QA del tab Grupos
+        // Step 10: Grupos (perfiles .grupos / .gruposInvitado / .gruposSaldado / .soloGrupos) — grupo local
+        // para QA del tab Grupos
         if profile.seedsGroups {
             updateStep("Grupos de prueba", progress: 0.97)
-            if profile == .gruposInvitado {
-                DevSeedGroups.createAsInvitee(in: context)
-            } else {
-                DevSeedGroups.create(in: context)
+            switch profile {
+            case .gruposInvitado: DevSeedGroups.createAsInvitee(in: context)
+            case .gruposSinFlag:  DevSeedGroups.createAsBackendJoiner(in: context)
+            case .gruposPendiente: DevSeedGroups.createAsPendingMember(in: context)
+            case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
+            case .fichaMX, .fichaMXVida: DevSeedGroups.createFichaMX(in: context)
+            case .ficha:          DevSeedGroups.createFicha(in: context, mainCurrency: CurrencyDefaults.currentPreferred)
+            default:              DevSeedGroups.create(in: context)
+            }
+        }
+
+        // Step 10-bis: lo que el aviso tardío se lleva. Sin las categorías propias el Welcome solo ve grupos, que es lo
+        // que tiene que distinguir con la marca y sin ella.
+        if profile == .soloGruposTrasAviso {
+            do {
+                for category in try context.fetch(FetchDescriptor<Category>(predicate: #Predicate { !$0.isSystem })) {
+                    context.delete(category)
+                }
+            } catch {
+                print("DevSeedService: Error removing user categories for solo-grupos-tras-aviso: \(error)")
             }
         }
 
@@ -168,6 +345,172 @@ final class DevSeedService {
         updateStep(L10n.DevSeed.stepDone, progress: 1.0)
         try? await Task.sleep(for: .milliseconds(500))
         isSeeding = false
+    }
+
+    // MARK: - Ficha es-MX (vida personal en MXN)
+
+    /// Pesos por sol para `.fichaMXVida`: con el dólar a 3.70 soles y a 18.50 pesos, 5 pesos por sol.
+    static let mxnPerPEN = 5.0
+
+    /// Pasa a MXN lo que el generador personal escribe en PEN: cuentas, registros, presupuestos, pagos
+    /// planificados, borradores y la fila de tipos de cambio. Multiplica por `mxnPerPEN` en vez de reescribir el
+    /// generador, así que las proporciones de `.realista` se conservan y solo cambia la divisa.
+    private func relabelPersonalDataToMXN(in context: ModelContext) {
+        let factor = Self.mxnPerPEN
+        do {
+            try context.save()
+            for account in try context.fetch(FetchDescriptor<Account>()) where account.currencyCode == "PEN" {
+                account.currencyCode = "MXN"
+            }
+            for tx in try context.fetch(FetchDescriptor<TransactionItem>()) {
+                if tx.currencyCode == "PEN" {
+                    tx.amount *= factor
+                    tx.currencyCode = "MXN"
+                } else if tx.preferredCurrencyCode == "PEN" {
+                    // Registro en USD: su tipo era soles por dólar y pasa a pesos por dólar.
+                    tx.exchangeRate *= factor
+                }
+                if tx.preferredCurrencyCode == "PEN" {
+                    tx.amountInPreferredCurrency *= factor
+                    tx.preferredCurrencyCode = "MXN"
+                }
+            }
+            for budget in try context.fetch(FetchDescriptor<Budget>()) where budget.currencyCode == "PEN" {
+                budget.limitAmount *= factor
+                budget.currencyCode = "MXN"
+            }
+            for payment in try context.fetch(FetchDescriptor<ScheduledPayment>()) where payment.currencyCode == "PEN" {
+                payment.amount *= factor
+                payment.currencyCode = "MXN"
+            }
+            for draft in try context.fetch(FetchDescriptor<InboxDraft>()) {
+                if let amount = draft.amount { draft.amount = amount * factor }
+                if draft.cachedCurrencyCode == "PEN" { draft.cachedCurrencyCode = "MXN" }
+            }
+            for entry in try context.fetch(FetchDescriptor<ExchangeRate>()) {
+                var rates = entry.decodedRates()
+                guard let pen = rates["PEN"] else { continue }
+                rates["MXN"] = (pen * factor * 100).rounded() / 100
+                entry.rates = try DevSeedExchangeRates.encodeScale8StringFaceBlob(rates)
+            }
+            try context.save()
+        } catch {
+            print("DevSeedService: ficha-mx-vida relabel error: \(error)")
+        }
+    }
+
+    // MARK: - Desync Fixtures (XCUI clasificación income/expense)
+
+    /// Seed AISLADO para `IncomeExpenseClassificationUITests` (`-uitest-seed-desync`):
+    /// NO arranca el seed aleatorio de `seed(...)` (contaminaría los totales), solo crea
+    /// categorías + una cuenta + las 4 TX "desincronizadas" de `createDesyncFixtures`.
+    /// `currencyCode` = moneda de display (para que income/expense usen el valor crudo).
+    func seedDesyncFixtures(in context: ModelContext, currencyCode: String) async {
+        guard !isSeeding else { return }
+        isSeeding = true
+        defer { isSeeding = false }
+
+        seedCategoriesIfNeeded(in: context)
+        let subcategoryLookup = buildSubcategoryLookup(in: context)
+        guard !subcategoryLookup.isEmpty else {
+            print("DevSeedService: No subcategories — cannot seed desync fixtures")
+            return
+        }
+
+        let accounts = DevSeedAccounts.create(in: context)
+        DevSeedTransactions.createDesyncFixtures(
+            account: accounts.cuentaPrincipal,
+            subcategoryLookup: subcategoryLookup,
+            currencyCode: currencyCode,
+            in: context
+        )
+
+        do { try context.save() } catch {
+            print("DevSeedService: Desync fixtures save error: \(error)")
+        }
+        UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+        hasSeeded = true
+        SessionState.shared.incrementDataVersion()
+    }
+
+    // MARK: - Cuenta en divisa ausente de la fila (familia FX)
+
+    /// Siembra la cuenta de `-uitest-seed-foreign-account <ISO>`.
+    ///
+    /// **Aditivo, no excluyente**, al revés que los otros dos fixtures de este servicio: los suyos
+    /// se aíslan porque el seed aleatorio contaminaría sus totales, y aquí es al contrario — el
+    /// corpus del perfil ES el denominador contra el que la parte aproximada tiene que pesar el 5 %
+    /// de `ApproximateMarkThreshold`. A solas también funciona (siembra las categorías que falten),
+    /// pero entonces no hay fila de tasas y la conversión degrada por otro escalón.
+    ///
+    /// No toca `devSeedDataExecuted` ni `hasSeeded`: no es un seed completo, y marcarlo haría creer
+    /// al arranque siguiente que ya hay corpus.
+    func seedForeignCurrencyAccount(currencyCode: String, in context: ModelContext) {
+        seedCategoriesIfNeeded(in: context)
+        let subcategoryLookup = buildSubcategoryLookup(in: context)
+        DevSeedForeignCurrencyAccount.create(
+            currencyCode: currencyCode,
+            subcategoryLookup: subcategoryLookup,
+            in: context
+        )
+        SessionState.shared.incrementDataVersion()
+    }
+
+    // MARK: - Fila envenenada por el chat viejo (barrido fxOneToOneRepairSweep)
+
+    /// Siembra la fila de `-uitest-seed-chat-sealed-rate <ISO>`.
+    ///
+    /// Aditivo y con las mismas reglas que `seedForeignCurrencyAccount`: no toca
+    /// `devSeedDataExecuted` ni `hasSeeded`. El propio fixture es idempotente, porque el veredicto
+    /// del ticket necesita un segundo arranque y ése vuelve a pasar por aquí.
+    func seedChatSealedRateRow(currencyCode: String, in context: ModelContext) {
+        seedCategoriesIfNeeded(in: context)
+        let subcategoryLookup = buildSubcategoryLookup(in: context)
+        DevSeedChatSealedRate.create(
+            currencyCode: currencyCode,
+            subcategoryLookup: subcategoryLookup,
+            in: context
+        )
+        SessionState.shared.incrementDataVersion()
+    }
+
+    // MARK: - Patas de bridge con coberturas de tasa distintas (familia FX)
+
+    /// Siembra el gasto de grupo de `-uitest-seed-group-bridge-fx <ISO>`.
+    func seedGroupBridgeFXLegs(currencyCode: String, in context: ModelContext) {
+        seedCategoriesIfNeeded(in: context)
+        let subcategoryLookup = buildSubcategoryLookup(in: context)
+        DevSeedGroupBridgeFXLegs.create(
+            currencyCode: currencyCode,
+            subcategoryLookup: subcategoryLookup,
+            in: context
+        )
+        SessionState.shared.incrementDataVersion()
+    }
+
+    // MARK: - Dead-pointer fixture (AC-c fantasma)
+
+    /// Seed AISLADO para `-uitest-seed dead-pointer`: categorías + una cuenta + UNA TX
+    /// personal cuyo puntero de grupo no resuelve. Mini abre esa fila y afirma
+    /// `new_transaction_delete_action` / `new_transaction_duplicate_action` habilitados.
+    private func seedDeadPointerFixtures(in context: ModelContext) {
+        defer { isSeeding = false }
+
+        seedCategoriesIfNeeded(in: context)
+        let accounts = DevSeedAccounts.create(in: context)
+        DevSeedTransactions.createDeadPointerFixture(
+            account: accounts.cuentaPrincipal,
+            currencyCode: accounts.cuentaPrincipal.currencyCode,
+            in: context
+        )
+
+        do { try context.save() } catch {
+            print("DevSeedService: Dead pointer fixture save error: \(error)")
+        }
+        UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+        hasSeeded = true
+        SessionState.shared.incrementDataVersion()
+        updateStep(L10n.DevSeed.stepDone, progress: 1.0)
     }
 
     // MARK: - Reset
@@ -199,7 +542,10 @@ final class DevSeedService {
 
         // Clear flags
         UserDefaults.standard.removeObject(forKey: "devSeedDataExecuted")
-        UserDefaults.standard.removeObject(forKey: "seedCategoriesExecuted")
+        // El centinela del store de ESTE proceso (`CategorySeedSentinel` lo namespacea: bajo
+        // `-uitest` el store es otro y la key también). Borrar el literal de producción aquí
+        // dejaría el centinela uitest puesto y el re-seed de abajo no crearía categorías.
+        UserDefaults.standard.removeObject(forKey: CategorySeedSentinel.currentKey)
         hasSeeded = false
 
         updateStep(L10n.DevSeed.stepReloading, progress: 0.10)

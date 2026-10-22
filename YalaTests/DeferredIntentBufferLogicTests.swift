@@ -15,18 +15,50 @@ struct DeferredIntentBufferLogicTests {
         if case .navigate(let key) = s { #expect(key == "statistics") } else { Issue.record("wrong case") }
     }
 
-    @Test func serialize_sharedImage_returnsNil_byDesign() {
-        // .presentSharedImage is re-emitted at every cold launch from
-        // SharedContainerService — persistence would create stale entries we
-        // can't re-resolve. Buffer rejects it on purpose.
-        let url = URL(fileURLWithPath: "/tmp/foo.jpg")
+    /// Hasta el 2026-10-10 devolvía `nil` «a propósito» y el aplazamiento perdía la foto compartida en silencio
+    /// (ticket share-image-reading-does-not-always-start). Ahora guarda la RUTA del fichero de `PendingImages/`.
+    @Test func serialize_sharedImage_keepsTheFilePath() {
+        let url = URL(fileURLWithPath: "/tmp/PendingImages/foo.jpg")
+        #expect(DeferredIntentBufferLogic.serialize(.presentSharedImage(url)) == .presentSharedImage(path: url.path))
+        #expect(DeferredIntentBufferLogic.canSerialize(.presentSharedImage(url)))
+    }
+
+    @Test func serialize_sharedImage_nonFileURL_returnsNil() {
+        let url = URL(string: "https://example.com/foo.jpg")!
         #expect(DeferredIntentBufferLogic.serialize(.presentSharedImage(url)) == nil)
     }
 
-    @Test func serialize_navigateGroupDetail_returnsNil_byDesign() {
-        // routerKey for .groupDetail returns the bare string "groupDetail" —
-        // groupID would be lost on round-trip. Refuse to serialize.
-        #expect(DeferredIntentBufferLogic.serialize(.navigate(.groupDetail(groupID: "abc"))) == nil)
+    @Test func deserialize_sharedImage_withTheFileStillThere_rebuildsTheIntent() {
+        let intent = DeferredIntentBufferLogic.deserialize(.presentSharedImage(path: "/tmp/PendingImages/foo.jpg"),
+                                                           fileExists: { _ in true })
+        #expect(intent == .presentSharedImage(URL(fileURLWithPath: "/tmp/PendingImages/foo.jpg")))
+        #expect(intent?.id == "sharedImage:foo.jpg")
+    }
+
+    /// La hoja ya leyó la foto (y la borró) o la purga de 24 h se la llevó: no hay nada que presentar.
+    @Test func deserialize_sharedImage_withTheFileGone_returnsNil() {
+        #expect(DeferredIntentBufferLogic.deserialize(.presentSharedImage(path: "/tmp/PendingImages/foo.jpg"),
+                                                      fileExists: { _ in false }) == nil)
+    }
+
+    @Test func roundTrip_sharedImage_throughJSON() {
+        // ISO-8601 guarda segundos enteros: la fecha va truncada, como en el round-trip de groupDetail.
+        let createdAt = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        let entry = DeferredEntry(payload: .presentSharedImage(path: "/tmp/PendingImages/foo.jpg"), createdAt: createdAt)
+        let data = DeferredIntentBufferLogic.encode([entry])
+        #expect(DeferredIntentBufferLogic.decode(data) == [entry])
+    }
+
+    @Test func serialize_navigateGroupDetail_preservesGroupID() {
+        // groupDetail routes through the dedicated case so a group deep link
+        // (yala://groups/<id>) survives a pre-bootstrap defer in cold launch
+        // instead of being dropped. Regression: Bugs/qa_cold-launch-groupdetail-deeplink-no-routing.
+        let s = DeferredIntentBufferLogic.serialize(.navigate(.groupDetail(groupID: "abc")))
+        if case .navigateGroupDetail(let groupID) = s {
+            #expect(groupID == "abc")
+        } else {
+            Issue.record("expected .navigateGroupDetail, got \(String(describing: s))")
+        }
     }
 
     @Test func serialize_showInboxAlert_preservesCounters() {
@@ -40,14 +72,18 @@ struct DeferredIntentBufferLogicTests {
     }
 
     @Test func serialize_nonSerializable_returnsNil() {
-        // .presentNewTransaction is fire-and-forget — no payload to persist meaningfully.
-        // (Decision: only intents with stable proxy survive defer.)
-        #expect(DeferredIntentBufferLogic.serialize(.presentNewTransaction) == nil)
+        // Only intents with stable proxy survive defer. `.presentNewTransaction` lo fue hasta el 2026-10-11 («sin payload
+        // que persistir»); desde entonces se aparca al pasar a segundo plano para que el toque del widget no se pierda
+        // (`WidgetAndSiriEntriesBackgroundTests`).
+        #expect(DeferredIntentBufferLogic.serialize(.presentUpgradeSheet(.voice)) == nil)
         #expect(DeferredIntentBufferLogic.serialize(.iCloudMismatch) == nil)
     }
 
     @Test func canSerialize_consistentWithSerialize() {
         #expect(DeferredIntentBufferLogic.canSerialize(.navigate(.inbox)))
+        // groupDetail is now serializable → the RouterEntryGate "DROP non-serializable"
+        // canary must no longer fire for a group deep link.
+        #expect(DeferredIntentBufferLogic.canSerialize(.navigate(.groupDetail(groupID: "g1"))))
         #expect(!DeferredIntentBufferLogic.canSerialize(.presentTrialOffer))
     }
 
@@ -123,5 +159,26 @@ struct DeferredIntentBufferLogicTests {
         } else {
             Issue.record("wrong case")
         }
+    }
+
+    @Test func deserialize_navigateGroupDetail_roundtrips() {
+        let s: SerializableIntent = .navigateGroupDetail(groupID: "grp-42")
+        let intent = DeferredIntentBufferLogic.deserialize(s)
+        if case .navigate(let dest) = intent {
+            #expect(dest == .groupDetail(groupID: "grp-42"))
+        } else {
+            Issue.record("wrong case")
+        }
+    }
+
+    @Test func roundTrip_navigateGroupDetail_throughJSON() {
+        // The deferred buffer persists as JSON in UserDefaults — verify the new
+        // case survives the encode/decode path too, not just the enum mapping.
+        let createdAt = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        let entry = DeferredEntry(payload: .navigateGroupDetail(groupID: "grp-7"), createdAt: createdAt)
+        let data = DeferredIntentBufferLogic.encode([entry])
+        #expect(data != nil)
+        let decoded = DeferredIntentBufferLogic.decode(data)
+        #expect(decoded == [entry])
     }
 }

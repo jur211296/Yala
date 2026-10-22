@@ -22,7 +22,9 @@ struct ScheduledPaymentNotificationTrackerTests {
     private func cleanupTrackerKeys() {
         let defaults = UserDefaults.standard
         let allKeys = defaults.dictionaryRepresentation().keys
-        for key in allKeys where key.hasPrefix("scheduledPaymentNotif_") {
+        for key in allKeys
+        where key.hasPrefix(ScheduledPaymentNotificationTracker.keyPrefix)
+            || key.hasPrefix(ScheduledPaymentNotificationTracker.creditCardKeyPrefix) {
             defaults.removeObject(forKey: key)
         }
     }
@@ -125,6 +127,50 @@ struct ScheduledPaymentNotificationTrackerTests {
         #expect(tracker.hasNotifiedForDate(paymentID: paymentID, date: today, type: .overdue) == true)
     }
 
+    // MARK: - Credit card dedup (llaveado por Account.shortcutID)
+
+    @Test func creditCard_markThenHasNotified() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let accountID = UUID()
+        let today = Self.testNow
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: accountID, date: today) == false)
+        tracker.markNotifiedCreditCard(accountID: accountID, date: today)
+        #expect(tracker.hasNotifiedCreditCard(accountID: accountID, date: today) == true)
+        cleanupTrackerKeys()
+    }
+
+    /// Regresión (2026-07-21): la key se llaveaba por `account.name`, así que dos tarjetas
+    /// homónimas con el mismo día de pago compartían entrada y solo UNA notificaba.
+    /// Con `shortcutID` cada cuenta lleva su propio marcador.
+    @Test func creditCard_sameNameDifferentAccounts_notCrossContaminated() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let visaA = UUID()
+        let visaB = UUID()
+        let today = Self.testNow
+
+        tracker.markNotifiedCreditCard(accountID: visaA, date: today)
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: visaA, date: today) == true)
+        #expect(tracker.hasNotifiedCreditCard(accountID: visaB, date: today) == false)
+        cleanupTrackerKeys()
+    }
+
+    @Test func creditCard_differentDate_notCrossContaminated() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let accountID = UUID()
+        let today = Self.testNow
+        let nextMonth = calendar.date(byAdding: .month, value: 1, to: today)!
+
+        tracker.markNotifiedCreditCard(accountID: accountID, date: today)
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: accountID, date: nextMonth) == false)
+        cleanupTrackerKeys()
+    }
+
     // MARK: - cleanupOldEntries
 
     /// Fecha fija para tests determinísticos: 2026-04-15 12:00 UTC.
@@ -192,6 +238,164 @@ struct ScheduledPaymentNotificationTrackerTests {
         cleanupTrackerKeys()
     }
 
+    /// Regresión (2026-07-21): el cleanup filtraba SOLO por `scheduledPaymentNotif_`, así
+    /// que las keys de tarjeta crecían sin límite en `UserDefaults` (una por cuenta y día
+    /// de pago avisado, para siempre).
+    @Test func cleanupOldEntries_creditCard_removesOldKeepsRecent() {
+        cleanupTrackerKeys()
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let staleAccount = UUID()
+        let recentAccount = UUID()
+        let oldDate = calendar.date(byAdding: .day, value: -45, to: Self.testNow)!
+        let recentDate = calendar.date(byAdding: .day, value: -5, to: Self.testNow)!
+
+        tracker.markNotifiedCreditCard(accountID: staleAccount, date: oldDate)
+        tracker.markNotifiedCreditCard(accountID: recentAccount, date: recentDate)
+
+        tracker.cleanupOldEntries(now: Self.testNow)
+
+        #expect(tracker.hasNotifiedCreditCard(accountID: staleAccount, date: oldDate) == false)
+        #expect(tracker.hasNotifiedCreditCard(accountID: recentAccount, date: recentDate) == true)
+        cleanupTrackerKeys()
+    }
+
+    /// Las keys del formato legacy (`creditCardNotif_<nombre>_YYYYMMDD`) también caducan:
+    /// la fecha se lee por el ÚLTIMO componente, así que un nombre con "_" —que desplazaba
+    /// los índices— ya no deja la key huérfana para siempre.
+    @Test func cleanupOldEntries_creditCard_removesLegacyNameKeyedEntries() {
+        cleanupTrackerKeys()
+        let defaults = UserDefaults.standard
+        let tracker = ScheduledPaymentNotificationTracker.shared
+        let oldDate = calendar.date(byAdding: .day, value: -45, to: Self.testNow)!
+        let recentDate = calendar.date(byAdding: .day, value: -5, to: Self.testNow)!
+        let oldStamp = ScheduledPaymentNotificationTracker.dateKeyString(from: oldDate)
+        let recentStamp = ScheduledPaymentNotificationTracker.dateKeyString(from: recentDate)
+
+        let staleSimpleName = "creditCardNotif_Visa_\(oldStamp)"
+        let staleNameWithUnderscore = "creditCardNotif_Mi_Visa_Oro_\(oldStamp)"
+        let recentLegacy = "creditCardNotif_Amex_\(recentStamp)"
+        for key in [staleSimpleName, staleNameWithUnderscore, recentLegacy] {
+            defaults.set(true, forKey: key)
+        }
+
+        tracker.cleanupOldEntries(now: Self.testNow)
+
+        #expect(defaults.object(forKey: staleSimpleName) == nil)
+        #expect(defaults.object(forKey: staleNameWithUnderscore) == nil)
+        #expect(defaults.object(forKey: recentLegacy) != nil)
+        cleanupTrackerKeys()
+    }
+
+    // MARK: - Summary marks (canal agendado D1)
+
+    @Test func summaryMark_roundTrip() {
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260722"))
+        tracker.markSummaryScheduled(dayKey: "20260722")
+        #expect(tracker.hasSummaryScheduled(dayKey: "20260722"))
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260723"), "las marcas son por día")
+    }
+
+    @Test func reconcile_marksScheduled_clearsFailed_clearsFutureOutOfPlan_preservesTodayAndPast() {
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+
+        // Estado previo: marca de hoy (summary ya disparada — su pending NO fue retirado),
+        // de ayer, y una futura.
+        tracker.markSummaryScheduled(dayKey: "20260721")
+        tracker.markSummaryScheduled(dayKey: today)
+        tracker.markSummaryScheduled(dayKey: "20260725")
+
+        // Nuevo plan intentado: 23 (agendado OK), 24 (add FALLÓ); el 25 salió del plan.
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: ["20260723"],
+            attemptedDayKeys: ["20260723", "20260724"],
+            removedPendingDayKeys: ["20260725"],
+            todayKey: today
+        )
+
+        #expect(tracker.hasSummaryScheduled(dayKey: "20260723"), "agendado OK se marca")
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260724"),
+                "intentado con add fallido queda SIN marca — marca huérfana = supresión sin summary")
+        #expect(!tracker.hasSummaryScheduled(dayKey: "20260725"), "futura fuera del plan se limpia")
+        #expect(tracker.hasSummaryScheduled(dayKey: today),
+                "la marca de HOY con summary ya disparada se conserva — limpiarla duplicaría el banner")
+        #expect(tracker.hasSummaryScheduled(dayKey: "20260721"), "el pasado no se toca (lo caduca cleanup)")
+    }
+
+    @Test func reconcile_failedToday_clearsTodayMark() {
+        // Excepción deliberada a "hoy no se toca": si HOY estaba en el plan y su add falló,
+        // la marca debe caer para que la oportunista cubra el día.
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+        tracker.markSummaryScheduled(dayKey: today)
+
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: [], attemptedDayKeys: [today], removedPendingDayKeys: [], todayKey: today
+        )
+
+        #expect(!tracker.hasSummaryScheduled(dayKey: today))
+    }
+
+    @Test func reconcile_todayPendingRemovedWithoutFiring_clearsTodayMark() {
+        // Segunda excepción (review adversarial): el pending de HOY se retiró SIN disparar
+        // (toggle OFF antes de la hora, hora movida hacia atrás) y no se re-agendó — la
+        // marca miente ("hubo summary") y silenciaría el día entero.
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+        tracker.markSummaryScheduled(dayKey: today)
+
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: [], attemptedDayKeys: [], removedPendingDayKeys: [today], todayKey: today
+        )
+
+        #expect(!tracker.hasSummaryScheduled(dayKey: today),
+                "cancelada sin disparar y sin re-agendar: el fallback oportunista recupera el día")
+    }
+
+    @Test func reconcile_todayPendingRemovedButRescheduled_keepsTodayMark() {
+        // Cambio de hora ANTES del disparo: el pending viejo se retira pero hoy se re-agenda
+        // a la hora nueva — la marca debe quedar (refrescada), sin doble banner.
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let today = "20260722"
+        tracker.markSummaryScheduled(dayKey: today)
+
+        tracker.reconcileSummaryMarks(
+            scheduledDayKeys: [today], attemptedDayKeys: [today], removedPendingDayKeys: [today], todayKey: today
+        )
+
+        #expect(tracker.hasSummaryScheduled(dayKey: today))
+    }
+
+    @Test func summaryMark_storesSchedulingInstant() {
+        // La marca guarda el INSTANTE de agendado: la oportunista solo suprime pagos que
+        // existían entonces (uno creado después no estuvo en el conteo de la summary).
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        let instant = Date(timeIntervalSince1970: 1_784_000_000)
+        tracker.markSummaryScheduled(dayKey: "20260722", at: instant)
+        #expect(tracker.summaryScheduledDate(dayKey: "20260722") == instant)
+        #expect(tracker.summaryScheduledDate(dayKey: "20260723") == nil)
+    }
+
+    @Test func cleanupOldEntries_expiresSummaryKeys_keepsRecent() {
+        let tracker = ScheduledPaymentNotificationTracker(defaults: makeIsolatedDefaults())
+        // testNow de la suite: las keys viejas (>30d) caducan, las recientes no.
+        let staleKey = ScheduledPaymentNotificationTracker.dateKeyString(
+            from: calendar.date(byAdding: .day, value: -45, to: Self.testNow)!
+        )
+        let recentKey = ScheduledPaymentNotificationTracker.dateKeyString(
+            from: calendar.date(byAdding: .day, value: -5, to: Self.testNow)!
+        )
+        tracker.markSummaryScheduled(dayKey: staleKey)
+        tracker.markSummaryScheduled(dayKey: recentKey)
+
+        tracker.cleanupOldEntries(now: Self.testNow)
+
+        #expect(!tracker.hasSummaryScheduled(dayKey: staleKey),
+                "el guard histórico >=4 componentes habría dejado las summary acumulándose para siempre")
+        #expect(tracker.hasSummaryScheduled(dayKey: recentKey))
+    }
+
     // MARK: - NotificationType rawValues
 
     @Test func notificationType_rawValues_correct() {
@@ -216,6 +420,11 @@ Tests generated:
 11. test cleanupOldEntries_keepsRecentEntries - Cleanup preserves recent entries (5 days old)
 12. test cleanupOldEntries_keeps29DayOldEntry - Safely within 30-day window
 13. test cleanupOldEntries_removes31DayOldEntry - Just past the 30-day window
+15. test creditCard_markThenHasNotified - Dedup de la notif de tarjeta (por Account.shortcutID)
+16. test creditCard_sameNameDifferentAccounts_notCrossContaminated - Cuentas homónimas aisladas
+17. test creditCard_differentDate_notCrossContaminated - Fechas aisladas
+18. test cleanupOldEntries_creditCard_removesOldKeepsRecent - El cleanup 30d cubre el prefijo de tarjeta
+19. test cleanupOldEntries_creditCard_removesLegacyNameKeyedEntries - Y también el formato legacy por nombre
 14. test notificationType_rawValues_correct - Enum raw values match expected strings
 
 Cases NOT covered (require more context):

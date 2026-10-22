@@ -48,12 +48,171 @@ struct InboxView: View {
     // Archived account alert
     @State private var showArchivedAccountAlert = false
 
+    // Group conversion flow (draft personal de gasto → SplitExpense de grupo). Approach A: el
+    // edit sheet cierra y notifica; InboxView rutea. Un solo sheet activo a la vez (delays).
+    @State private var pendingConversion: PendingConversion?
+    @State private var conversionPicker: ConversionPickerData?
+    @State private var conversionContext: ConversionContext?
+
     private var filteredDrafts: [InboxDraft] {
         viewModel.filteredDrafts(for: selectedFilter)
     }
 
     private var groupedDrafts: [(date: Date, drafts: [InboxDraft])] {
         viewModel.groupedDrafts(for: selectedFilter)
+    }
+
+    // MARK: - Group Scheduled Expense (F4)
+
+    /// Carga el contexto (grupo + miembros + plantilla) para abrir el form de grupo prellenado
+    /// desde un draft `.groupScheduledExpense`. Retorna nil si el grupo o el pago no están
+    /// disponibles (borrados o sync pendiente) → el caller degrada al editor de draft personal.
+    private func loadGroupScheduledContext(for draft: InboxDraft) -> (group: SplitGroup, members: [SplitMember], lookup: [String: String], template: GroupExpensePrefillTemplate)? {
+        guard let zone = draft.splitGroupZoneID,
+              let paymentIDString = draft.sourceScheduledPaymentID,
+              let paymentUUID = UUID(uuidString: paymentIDString) else { return nil }
+
+        let group: SplitGroup
+        do {
+            var d = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone })
+            d.fetchLimit = 1
+            guard let found = try modelContext.fetch(d).first else { return nil }
+            group = found
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching group for scheduled expense: \(error)")
+            #endif
+            return nil
+        }
+
+        let payment: ScheduledPayment
+        do {
+            var d = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
+            d.fetchLimit = 1
+            guard let found = try modelContext.fetch(d).first else { return nil }
+            payment = found
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching payment for scheduled expense: \(error)")
+            #endif
+            return nil
+        }
+
+        let members: [SplitMember]
+        do {
+            members = try GroupService.shared.fetchMembers(for: group, context: modelContext)
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching members for scheduled expense: \(error)")
+            #endif
+            return nil
+        }
+        guard !members.isEmpty else { return nil }
+        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.resolvedDisplayName) }, uniquingKeysWith: { first, _ in first })
+
+        // `effectiveDate` y no `date`: éste es opcional y su fallback (`createdAt`) es el que el resto
+        // del Inbox ya usa para mostrar y ordenar. Por qué la del draft y no la del pago: en la lógica.
+        let template = GroupScheduledExpenseTemplateLogic.buildTemplate(
+            payment: payment, draftDate: draft.effectiveDate
+        )
+        return (group, members, lookup, template)
+    }
+
+    private func finalizeGroupScheduledExpense(draft: InboxDraft, expenseID: String) {
+        // Poda la fila del Inbox ANTES de que el service borre el @Model (crash iOS 27, misma
+        // clase que la conversión; ver InboxRowPruneCoordinator). El service solo borra ESTE
+        // draft (sin hermanos) y aún lo lee (date/sourceScheduledPaymentID) antes del delete, así
+        // que podar el array ahora es seguro. Se poda aquí — no vía el coordinador en el service —
+        // porque este finalizer tiene el VM a mano y el service vive fuera del subsistema Inbox.
+        viewModel.removeDraft(draft)
+        ScheduledPaymentDraftService.handleGroupScheduledExpenseApproved(
+            draft: draft, expenseID: expenseID, context: modelContext
+        )
+        shouldDismissAfterApproval = true
+    }
+
+    // MARK: - Convert Draft to Group Expense
+
+    private struct PendingConversion {
+        let draft: InboxDraft
+        let groups: [SplitGroup]
+    }
+    private struct ConversionPickerData: Identifiable {
+        let id = UUID()
+        let draft: InboxDraft
+        let groups: [SplitGroup]
+        let memberCounts: [UUID: Int]
+    }
+    private struct ConversionContext: Identifiable {
+        let id = UUID()
+        let draft: InboxDraft
+        let group: SplitGroup
+        let members: [SplitMember]
+        let lookup: [String: String]
+        let template: GroupExpensePrefillTemplate
+    }
+
+    /// Arranca el flujo tras cerrarse el edit sheet: 1 grupo → form directo; >1 → picker.
+    /// Delay para no apilar sobre la transición de cierre del edit sheet (patrón existente).
+    private func startConversionFlow(_ pending: PendingConversion) {
+        Task {
+            do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+            if pending.groups.count == 1 {
+                conversionContext = buildConversionContext(draft: pending.draft, group: pending.groups[0])
+            } else {
+                var counts: [UUID: Int] = [:]
+                for group in pending.groups {
+                    do {
+                        counts[group.id] = try GroupService.shared.fetchMembers(for: group, context: modelContext)
+                            .filter(\.isActive).count
+                    } catch {
+                        #if DEBUG
+                        print("InboxView: error counting members for conversion picker: \(error)")
+                        #endif
+                        counts[group.id] = 0
+                    }
+                }
+                conversionPicker = ConversionPickerData(draft: pending.draft, groups: pending.groups, memberCounts: counts)
+            }
+        }
+    }
+
+    /// Construye el contexto (miembros + lookup + plantilla) para abrir el form de grupo
+    /// prellenado desde un draft personal. nil si el grupo no tiene miembros activos.
+    private func buildConversionContext(draft: InboxDraft, group: SplitGroup) -> ConversionContext? {
+        let members: [SplitMember]
+        do {
+            members = try GroupService.shared.fetchMembers(for: group, context: modelContext)
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching members for conversion: \(error)")
+            #endif
+            return nil
+        }
+        let activeMembers = members.filter(\.isActive)
+        guard !activeMembers.isEmpty else { return nil }
+        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.resolvedDisplayName) }, uniquingKeysWith: { first, _ in first })
+        let template = DraftToGroupExpenseTemplateLogic.buildTemplate(
+            amount: draft.amount ?? 0,
+            cachedCurrencyCode: draft.cachedCurrencyCode,
+            note: draft.note,
+            activeMemberIDs: activeMembers.map { $0.id },
+            groupCurrencyCode: group.currencyCode,
+            accountPrefill: draft.account,
+            // `effectiveDate`: `date` es opcional y su fallback (`createdAt`) es el que el resto
+            // del Inbox usa para mostrar y ordenar.
+            date: draft.effectiveDate,
+            subcategory: draft.subcategory
+        )
+        return ConversionContext(draft: draft, group: group, members: members, lookup: lookup, template: template)
+    }
+
+    /// Cierra el ciclo tras crear el SplitExpense desde un draft personal: borra el draft.
+    /// (No usa el expenseID — a diferencia del scheduled, no hay pago recurrente que vincular.)
+    private func finalizeConvertedDraft(draft: InboxDraft) {
+        // El service poda la fila del Inbox antes de borrar el @Model (crash iOS 27, ver
+        // InboxRowPruneCoordinator).
+        draftService.handleDraftConvertedToGroupExpense(draft, context: modelContext)
     }
 
     var body: some View {
@@ -128,6 +287,7 @@ struct InboxView: View {
                         YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             dismiss()
                         }
+                        .accessibilityIdentifier("inbox_close")
                     }
                     if !filteredDrafts.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
@@ -178,8 +338,41 @@ struct InboxView: View {
                         }
                     }
                 case .groupSettlement:
-                    GroupSettlementDraftFinalizationSheet(draft: draft) {
-                        shouldDismissAfterApproval = true
+                    // El aviso de importe cambiado de una liquidación ya aprobada tiene su hoja: ajustar o dejarla.
+                    if draft.isSettlementAmountChangeNotice {
+                        GroupSettlementAmountChangeSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
+                    } else {
+                        GroupSettlementDraftFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
+                    }
+                case .groupScheduledExpense:
+                    // F4: abre el form de gasto de grupo prellenado desde el pago planificado.
+                    if let ctx = loadGroupScheduledContext(for: draft) {
+                        GroupExpenseFormView(
+                            group: ctx.group,
+                            members: ctx.members,
+                            memberNameLookup: ctx.lookup,
+                            groupChip: .readOnly,
+                            initialTemplate: ctx.template,
+                            onSave: { shouldDismissAfterApproval = true },
+                            onExpenseCreated: { expenseID in
+                                finalizeGroupScheduledExpense(draft: draft, expenseID: expenseID)
+                            },
+                            presentsSuccessScreen: false
+                        )
+                    } else {
+                        // Grupo/pago no disponible (borrado o sync pendiente): degradar al editor
+                        // de draft personal — mi parte ya está en el draft; aprobarlo cierra el
+                        // ciclo vía el path genérico (handleDraftApproved).
+                        InboxDraftEditSheet(
+                            draft: draft,
+                            onApproved: { shouldDismissAfterApproval = true },
+                            onApproveNext: { _ in },
+                            onEditTransaction: { _ in }
+                        )
                     }
                 default:
                     InboxDraftEditSheet(
@@ -197,13 +390,26 @@ struct InboxView: View {
                                 } catch { return }
                                 selectedTransaction = transaction
                             }
+                        },
+                        onConvertToGroupExpense: { convertDraft, groups in
+                            // El sheet ya hizo saveDraft() + dismiss(); onChange arranca el flujo.
+                            pendingConversion = PendingConversion(draft: convertDraft, groups: groups)
                         }
                     )
                 }
             }
             .onChange(of: selectedDraft) { oldValue, newValue in
+                guard oldValue != nil, newValue == nil else { return }
+                // Prioridad: conversión a grupo sobre "abrir siguiente draft". Son mutuamente
+                // excluyentes en la práctica (convertir no setea pendingNextDraftID), pero explícito.
+                if let pending = pendingConversion {
+                    pendingConversion = nil
+                    pendingNextDraftID = nil
+                    startConversionFlow(pending)
+                    return
+                }
                 // When sheet closes and we have a pending next draft, open it
-                if oldValue != nil && newValue == nil, let nextID = pendingNextDraftID {
+                if let nextID = pendingNextDraftID {
                     pendingNextDraftID = nil
                     // Find the draft by ID and open it
                     if let nextDraft = viewModel.findPendingDraft(by: nextID) {
@@ -214,6 +420,37 @@ struct InboxView: View {
             .sheet(item: $selectedTransaction, onDismiss: { viewModel.loadData() }) { transaction in
                 NewTransactionView(transactionToEdit: transaction)
                     .presentationDetents([.large])
+            }
+            .sheet(item: $conversionPicker, onDismiss: { viewModel.loadData() }) { data in
+                // >1 grupo elegible: elegir cuál antes de abrir el form prellenado.
+                GroupPickerSheet(
+                    groups: data.groups,
+                    selectedGroupID: data.groups.first?.id ?? UUID(),
+                    memberCount: { data.memberCounts[$0.id] ?? 0 }
+                ) { picked in
+                    let draft = data.draft
+                    conversionPicker = nil
+                    // Cerrar el picker y abrir el form con delay (evita apilar sheets).
+                    Task {
+                        do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+                        conversionContext = buildConversionContext(draft: draft, group: picked)
+                    }
+                }
+                .yalaSheetDetents([.medium, .large])
+            }
+            .sheet(item: $conversionContext, onDismiss: { viewModel.loadData() }) { ctx in
+                GroupExpenseFormView(
+                    group: ctx.group,
+                    members: ctx.members,
+                    memberNameLookup: ctx.lookup,
+                    groupChip: .readOnly,
+                    initialTemplate: ctx.template,
+                    onSave: {},
+                    onExpenseCreated: { _ in
+                        finalizeConvertedDraft(draft: ctx.draft)
+                    },
+                    presentsSuccessScreen: false
+                )
             }
             .sheet(isPresented: $showBulkActions, onDismiss: { viewModel.loadData() }) {
                 InboxBulkActionsSheet(
@@ -492,16 +729,32 @@ struct InboxView: View {
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
-        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)) {
+        // «Quitar de aquí» no va con deslizamiento completo: no tiene «deshacer», y un gesto largo accidental lo escondería.
+        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)
+                      && !viewModel.canHideHere(draft)) {
             if !isSelectionMode {
-                if selectedFilter == .pending {
-                    // Pending: Delete + Reject
+                if selectedFilter == .pending && viewModel.canHideHere(draft) {
+                    // Gasto de grupo sin su grupo en este teléfono: no se rechaza ni se borra (viajaría al otro
+                    // dispositivo); se quita de la Bandeja solo aquí (`InboxGroupDraftsHiddenHere`).
                     Button {
-                        deleteDraftPermanently(draft)
+                        hideDraftHere(draft)
                     } label: {
-                        Label(L10n.Inbox.delete, systemImage: "trash")
+                        Label(L10n.Inbox.hideHere, systemImage: "eye.slash")
                     }
-                    .tint(DS.Semantic.errorForeground)
+                    .tint(DS.Semantic.warningForeground)
+                    .accessibilityHint(L10n.Inbox.hideHereHint)
+                    .accessibilityIdentifier("inbox_hide_here")
+                } else if selectedFilter == .pending {
+                    // Pending: Delete + Reject. El aviso de importe cambiado no se borra (`DraftService.deleteDraft`):
+                    // rechazarlo es «dejarla como está».
+                    if !draft.isSettlementAmountChangeNotice {
+                        Button {
+                            deleteDraftPermanently(draft)
+                        } label: {
+                            Label(L10n.Inbox.delete, systemImage: "trash")
+                        }
+                        .tint(DS.Semantic.errorForeground)
+                    }
 
                     Button {
                         rejectDraft(draft)
@@ -509,7 +762,8 @@ struct InboxView: View {
                         Label(L10n.Inbox.reject, systemImage: "xmark.circle")
                     }
                     .tint(DS.Semantic.warningForeground)
-                } else if draft.status == .rejected {
+                    .accessibilityIdentifier("inbox_swipe_reject")
+                } else if draft.status == .rejected && !draft.isSettlementAmountChangeNotice {
                     // Archived (rejected only): Delete
                     Button {
                         deleteDraftPermanently(draft)
@@ -521,8 +775,8 @@ struct InboxView: View {
                 // Approved drafts in archived: no swipe actions
             }
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending) {
-            if !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending {
+        .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter == .pending) {
+            if !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter == .pending {
                 Button {
                     approveDraft(draft)
                 } label: {
@@ -568,6 +822,18 @@ struct InboxView: View {
     private func rejectDraft(_ draft: InboxDraft) {
         removeDraftWithAnimation(draft, hapticStyle: .light) { service, d in
             try service.rejectDraft(d)
+        }
+    }
+
+    /// Quita el gasto de grupo de la Bandeja SOLO en este teléfono. No toca la fila: nada viaja al otro dispositivo.
+    private func hideDraftHere(_ draft: InboxDraft) {
+        guard InboxGroupDraftsHiddenHere.hide(draft, context: modelContext) else {
+            viewModel.loadData()
+            return
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        dsWithAnimation(reduceMotion) {
+            viewModel.removeDraft(draft)
         }
     }
 
@@ -626,6 +892,12 @@ struct InboxView: View {
     }
 
     private func approveDraft(_ draft: InboxDraft) {
+        // Gasto planificado de grupo: no se aprueba inline (crearía una TX personal por el path
+        // genérico). Abre el form dedicado que crea el SplitExpense de grupo.
+        if draft.requiresApprovalForm {
+            selectedDraft = draft
+            return
+        }
         guard let account = draft.account,
               let amount = draft.amount,
               let subcategory = draft.subcategory else { return }

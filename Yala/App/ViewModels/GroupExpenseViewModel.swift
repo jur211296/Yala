@@ -43,7 +43,7 @@ final class GroupExpenseViewModel {
     var splitType: SplitType = .equal
 
     /// M6: Cuenta personal real para Caso A `.full/.completed`. `nil` cuando user aún no eligió,
-    /// está en modo `.groupInvite`, o no es Caso A. El form la resuelve via `AccountSelectorSheet`.
+    /// está en una sesión solo-grupos, o no es Caso A. El form la resuelve via `AccountSelectorSheet`.
     var selectedAccount: Account?
 
     // Per-participant state
@@ -151,8 +151,12 @@ final class GroupExpenseViewModel {
     // MARK: - M6 computed
 
     /// MemberID del current user en este grupo. `nil` si no está como miembro (caso edge raro).
+    ///
+    /// Identidad RESUELTA, no el flag pelado: el `SplitMember` del recién llegado por enlace baja del
+    /// pull con `isCurrentUser` APAGADO hasta el arranque siguiente, y con el flag a pelo `isCaseA`
+    /// salía `false` aunque el gasto lo pagara él ⇒ el formulario no le ofrecía elegir su cuenta real.
     var currentUserMemberID: String? {
-        members.first(where: { $0.isCurrentUser })?.id.uuidString
+        GroupExpenseService.resolveCurrentUserMember(from: members)?.id.uuidString
     }
 
     /// Form puede abrirse: current user resuelto como miembro del grupo.
@@ -165,14 +169,14 @@ final class GroupExpenseViewModel {
         return paidByMemberID == myID && !paidByMemberID.isEmpty
     }
 
-    /// User en modo `.groupInvite` no tiene cuentas reales — bridge fallback a M5 puro.
-    /// Default: lee `SessionState.shared`. Tests inyectan via `isGroupInviteOverride`.
-    var isGroupInviteMode: Bool {
-        isGroupInviteOverride ?? (SessionState.shared.onboardingMode == .groupInvite)
+    /// Una sesión solo-grupos no tiene cuentas reales — bridge fallback a M5 puro.
+    /// Default: lee `SessionState.shared`. Tests inyectan via `isGroupsOnlyOverride`.
+    var isGroupsOnlySession: Bool {
+        isGroupsOnlyOverride ?? !SessionState.shared.hasPrivateSession
     }
 
     /// Override solo para tests (pure-logic sin singletons). Producción: nil → lee SessionState.
-    var isGroupInviteOverride: Bool?
+    var isGroupsOnlyOverride: Bool?
 
     /// Override para tests. Producción: nil → lee resolver con context+prefs reales.
     var effectiveBridgeEnabledOverride: Bool?
@@ -189,7 +193,7 @@ final class GroupExpenseViewModel {
     /// el bridge effective está ON. Si OFF, el form NO pide cuenta (alert post-save F2c
     /// ofrece opt-in para crear draft Inbox).
     var isAccountRequired: Bool {
-        isCaseA && !isGroupInviteMode && effectiveBridgeEnabled
+        isCaseA && !isGroupsOnlySession && effectiveBridgeEnabled
     }
 
     /// Cuenta seleccionada compatible con la moneda actual del gasto.
@@ -267,7 +271,15 @@ final class GroupExpenseViewModel {
         self.currencyCode = group.currencyCode
         self.splitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
         self.selectableMemberIDs = Set(members.filter(\.isActive).map { $0.id.uuidString })
-        self.paidByMemberID = members.first(where: { $0.isCurrentUser && $0.isActive })?.id.uuidString ?? ""
+        // Prefill de «Pagado por». Con el flag pelado abría EN BLANCO para quien se acaba de unir
+        // (`isCurrentUser` aún sin encender) — el caso más común es justo que pague él.
+        //
+        // Se resuelve SOBRE LOS ACTIVOS, no se resuelve y luego se filtra: son cosas distintas cuando
+        // hay dos filas mías y la más antigua está inactiva. El original (`first { flag && isActive }`)
+        // buscaba una que cumpliera LAS DOS; resolver primero devolvería la inactiva y el prefill
+        // saldría vacío — exactamente el síntoma que este arreglo viene a quitar.
+        self.paidByMemberID = GroupExpenseService
+            .resolveCurrentUserMember(from: members.filter(\.isActive))?.id.uuidString ?? ""
         self.selectedMemberIDs = selectableMemberIDs
     }
 
@@ -318,6 +330,10 @@ final class GroupExpenseViewModel {
                     accountForCurrentUser: accountToPass
                 )
                 lastCreatedExpenseID = created.id.uuidString
+                // Vincular el VM al gasto recién creado: el "Editar" de la pantalla de éxito
+                // vuelve a este mismo form y el siguiente save debe actualizar, no crear otro
+                // (espejo de editingTransaction = tx en NewTransactionViewModel).
+                editingExpense = created
             }
             isSaving = false
             return true
@@ -328,6 +344,44 @@ final class GroupExpenseViewModel {
             saveError = error.localizedDescription
             isSaving = false
             return false
+        }
+    }
+
+    /// Prellena el form para CREAR un gasto desde una plantilla (no edición). Usado al aprobar
+    /// un pago planificado de grupo. El pagador permanece = current user (Caso A, fijado en init).
+    /// Reconciliación stale: solo se incluyen participantes que siguen siendo miembros activos.
+    func applyTemplate(_ template: GroupExpensePrefillTemplate) {
+        amountString = AmountInputHelper.formatWithGrouping(template.totalAmount)
+        currencyCode = template.currencyCode
+        expenseDescription = template.description
+        splitType = template.splitType
+        // La fecha del origen. `date` nace en `.now` (el caso «gasto nuevo»), así que sin esta
+        // línea un borrador de hace tres días se convertía en un gasto de grupo fechado HOY —
+        // la plantilla traía monto, descripción y reparto, y perdía justo la fecha.
+        date = template.date
+
+        let activeIDs = Set(activeSheetMembers.map { $0.id.uuidString })
+        selectedMemberIDs = Set(template.participantIDs.map { $0.uuidString }).intersection(activeIDs)
+
+        exactAmounts = [:]; percentages = [:]; sharesCounts = [:]
+        for (uuid, value) in template.values {
+            let id = uuid.uuidString
+            guard activeIDs.contains(id) else { continue }
+            switch template.splitType {
+            case .exact: exactAmounts[id] = AmountInputHelper.formatWithGrouping(value)
+            case .percentage: percentages[id] = String(format: "%.1f", value)
+            case .shares: sharesCounts[id] = String(Int(value.rounded()))
+            case .equal: break
+            }
+        }
+
+        if let account = template.accountPrefill {
+            selectedAccount = account
+        }
+        // La categoría del origen. Sin ella el gasto nacía sin clasificar y el puente dejaba otro borrador
+        // del mismo gasto en la Bandeja pidiéndola (`shared-scheduled-expense-shows-twice-in-inbox`).
+        if let subcategory = template.subcategory {
+            selectedSubcategory = subcategory
         }
     }
 
@@ -380,7 +434,7 @@ final class GroupExpenseViewModel {
     /// Fetch TX cuenta real existente (`splitExpenseID == X && account.isSystemAccount == false`)
     /// y popula `selectedAccount`. Solo aplica si Caso A `.full/.completed`.
     private func resolveSelectedAccountForCaseA(expense: SplitExpense) {
-        guard isCaseA, !isGroupInviteMode, let ctx = modelContext else { return }
+        guard isCaseA, !isGroupsOnlySession, let ctx = modelContext else { return }
         let expenseIDStr = expense.id.uuidString
         let descriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { tx in

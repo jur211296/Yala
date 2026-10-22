@@ -3,11 +3,13 @@
 //  YalaUITests
 //
 //  Cobertura XCUITest del área `smart-refinement-fab-stats` (escenarios 21.4-21.6):
-//  el FAB de refinamiento con IA (sparkles, "fab_chat") que aparece SOLO en la tab
-//  Registros de Estadísticas. El test verifica su visibilidad condicional (presente
-//  en Registros, ausente en Insights) — NO lo toca, porque abrir el chat dispara
-//  red/LLM o el flujo de consentimiento (no determinista). Lanza en Pro para evitar
-//  el estado bloqueado. Seed `minimal`.
+//  el FAB de refinamiento con IA (sparkles, "fab_chat"). Hasta el 2026-10-03 aparecía SOLO
+//  en la tab Registros de Estadísticas; desde la decisión de alinear Estadísticas con el Panel
+//  (ticket `distribution-subviews-miss-the-new-panel-hero`) va en las cuatro pestañas, así que
+//  el segundo caso afirma ahora que está también fuera de Registros. NO lo toca, porque abrir
+//  el chat dispara red/LLM o el flujo de consentimiento (no determinista). Lanza en Pro para
+//  evitar el estado bloqueado. Seed `minimal`. El recorrido entero —las cuatro pestañas y las
+//  subvistas de Distribución— vive en `StatisticsHeroLikePanelUITests`.
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
@@ -45,24 +47,23 @@ final class SmartRefinementFabUITests: XCTestCase {
         )
     }
 
-    /// El FAB de refinamiento solo está en Registros, no en la tab Insights (default).
-    func test_smartRefinementFabHiddenOutsideRecords() {
+    /// Desde el 2026-10-03 el FAB no es exclusivo de Registros: también está en Insights (la tab por defecto), y
+    /// sigue al volver a Registros.
+    func test_smartRefinementFabAlsoOutsideRecords() {
         let app = XCUIApplication()
         app.launchForUITest(pro: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        // Insights (tab default de Estadísticas): el FAB de chat no debe estar.
         app.tabBars.buttons.element(boundBy: 1).tap()
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "stats_tab_insights").firstMatch.waitForExistence(timeout: 10),
             "La tab Insights no montó."
         )
-        XCTAssertFalse(
-            app.buttons["fab_chat"].exists,
-            "El FAB de refinamiento no debería aparecer en la tab Insights."
+        XCTAssertTrue(
+            app.buttons["fab_chat"].waitForExistence(timeout: 5),
+            "El FAB de Yala IA tiene que estar también en Insights, como en el Panel."
         )
 
-        // Registros: ahora sí debe aparecer.
         openStatsRecords(app)
         XCTAssertTrue(
             app.buttons["fab_chat"].waitForExistence(timeout: 5),

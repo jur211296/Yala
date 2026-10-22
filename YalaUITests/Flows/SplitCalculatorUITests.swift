@@ -22,7 +22,7 @@ final class SplitCalculatorUITests: XCTestCase {
     /// Abre el form de gasto con monto 100, lanza la calculadora y aplica el preset
     /// 50% (modo porcentaje por defecto). Deja el sheet abierto con el resultado.
     private func openSplitWith50Percent(_ app: XCUIApplication) {
-        app.buttons["fab_new_transaction"].tap()
+        app.revealPanelFAB().tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
         manual.tap()

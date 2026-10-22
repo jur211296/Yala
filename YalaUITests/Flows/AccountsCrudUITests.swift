@@ -65,4 +65,43 @@ final class AccountsCrudUITests: XCTestCase {
             "La cuenta creada no apareció en la lista."
         )
     }
+
+    /// Archivar enciende «Excluir de las estadísticas» y lo dice debajo; volver a incluirla a mano
+    /// apaga el aviso y deja la cuenta archivada. Ticket `archived-accounts-still-count-in-the-panel-total`.
+    func test_archivingAccount_turnsOnExcludeAndShowsNotice() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        app.openProfile()
+        app.openSettingsSection("profile_accounts")
+
+        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'accounts_row_'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "El seed no dejó ninguna cuenta en la lista.")
+        row.tap()
+
+        let archive = app.switches["account_archive_toggle"]
+        let exclude = app.switches["account_exclude_stats_toggle"]
+        XCTAssertTrue(archive.waitForExistence(timeout: 5), "No apareció el toggle de archivar.")
+        var swipes = 0
+        while !archive.isHittable && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(archive.waitForHittable(timeout: 3), "El toggle de archivar no quedó a la vista.")
+        XCTAssertEqual(exclude.value as? String, "0", "El seed debía dejar la cuenta incluida.")
+        XCTAssertFalse(app.staticTexts["account_archive_excluded_notice"].exists)
+
+        archive.switches.firstMatch.tap()
+
+        let notice = app.staticTexts["account_archive_excluded_notice"]
+        XCTAssertTrue(notice.waitForExistence(timeout: 5), "Archivar no avisó de la exclusión.")
+        XCTAssertEqual(exclude.value as? String, "1", "Archivar no encendió «Excluir de las estadísticas».")
+
+        // El toggle sigue siendo del usuario: re-incluirla a mano retira el aviso y no desarchiva.
+        exclude.switches.firstMatch.tap()
+        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: notice)
+        wait(for: [gone], timeout: 5)
+        XCTAssertEqual(archive.value as? String, "1", "Re-incluir la cuenta la desarchivó.")
+    }
 }

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
@@ -150,6 +151,59 @@ struct SetupChecklistManagerTests {
         let manager = freshManager()
         manager.autoDetect(transactionCount: 3, budgetCount: 1, scheduledCount: 2)
         #expect(manager.completedCount == 3)
+    }
+
+    // MARK: - Primera creación («¿era de prueba?»)
+
+    /// La decisión pura: lo recién guardado es lo único de su tipo. Los vecinos de cada borde
+    /// van juntos (2-1 y 2-2) porque una transferencia crea dos registros de golpe.
+    @Test(arguments: [
+        (total: 0, saved: 1, only: true),
+        (total: 1, saved: 1, only: true),
+        (total: 2, saved: 1, only: false),
+        (total: 2, saved: 2, only: true),
+        (total: 3, saved: 2, only: false),
+        (total: 40, saved: 1, only: false),
+    ])
+    func isOnlyOneOfItsKind(_ c: (total: Int, saved: Int, only: Bool)) {
+        #expect(SetupChecklistManager.isOnlyOneOfItsKind(totalOfKind: c.total, justSaved: c.saved) == c.only)
+    }
+
+    /// El bug medido el 2026-10-06: con historial en el store y la marca del paso SIN poner
+    /// —`autoDetect` corrió antes de que llegaran los datos—, guardar un registro más ofrecía
+    /// borrarlo «como prueba», y esa alerta cerraba el formulario antes de la pantalla de éxito.
+    @MainActor @Test func markFirstCreation_withHistory_marksTheStepWithoutOfferingCleanup() throws {
+        let manager = freshManager()
+        manager.pendingPracticeCleanup = nil
+        let context = try makeTestContext()
+        let saved = makeTestAccount(context: context, name: "Guardado")
+
+        manager.markFirstCreation(
+            .firstExpense,
+            totalOfKind: 12,
+            practiceItem: PracticeCleanupItem(stepID: .firstExpense, itemName: "x", persistentID: saved.persistentModelID)
+        )
+
+        #expect(manager.stepCompleted[.firstExpense] == true)
+        #expect(manager.pendingPracticeCleanup == nil)
+    }
+
+    /// El caso para el que existe el aviso: es de verdad el primero, así que se ofrece.
+    @MainActor @Test func markFirstCreation_genuinelyFirst_offersCleanup() throws {
+        let manager = freshManager()
+        manager.pendingPracticeCleanup = nil
+        let context = try makeTestContext()
+        let saved = makeTestAccount(context: context, name: "Guardado")
+
+        manager.markFirstCreation(
+            .firstBudget,
+            totalOfKind: 1,
+            practiceItem: PracticeCleanupItem(stepID: .firstBudget, itemName: "x", persistentID: saved.persistentModelID)
+        )
+
+        #expect(manager.stepCompleted[.firstBudget] == true)
+        #expect(manager.pendingPracticeCleanup?.persistentID == saved.persistentModelID)
+        manager.pendingPracticeCleanup = nil
     }
 
     // MARK: - Collapse / Re-expand
@@ -309,5 +363,34 @@ struct SetupChecklistManagerTests {
         // After completing exploreSettings, next pending skips to tryVoiceInput
         manager.markCompleted(.exploreSettings)
         #expect(manager.currentStep?.id == .tryVoiceInput)
+    }
+
+    // MARK: - Re-entrada (ticket `reentry-counts-as-fresh-install`, pieza 2)
+
+    /// El hueco que el ticket pedía medir: **`autoDetect` NO repara el checklist de quien vuelve.**
+    /// Con TODOS sus datos ya bajados (transacciones, presupuestos y pagos programados), auto-detecta
+    /// 3 de los 7 pasos; los otros cuatro son gestos sin rastro en SwiftData. Por eso el arreglo de la
+    /// pieza 2 tuvo que ser no marcar la instalación como nueva (`EntryOnboardingEffects`) en vez de
+    /// confiar en la auto-detección.
+    @MainActor @Test func autoDetect_doesNotRepairChecklistForReturningUser() {
+        let manager = freshManager()
+        manager.autoDetect(transactionCount: 900, budgetCount: 12, scheduledCount: 30)
+
+        #expect(manager.completedCount == 3)
+        #expect(manager.totalCount == 7)
+        #expect(manager.isAllComplete == false)
+        // Y lo que de verdad ve el usuario que vuelve: la card, pidiéndole que explore los ajustes.
+        #expect(manager.shouldShow == true)
+        #expect(manager.currentStep?.id == .exploreSettings)
+    }
+
+    /// La consecuencia del fix: sin el marcador de instalación nueva —que la re-entrada ya no
+    /// escribe— la card no se muestra, que es el mismo trato que recibe quien actualizó desde una
+    /// versión anterior al checklist.
+    @MainActor @Test func shouldShow_isFalse_withoutNewInstallMarker() {
+        let manager = freshManager()
+        UserDefaults.standard.removeObject(forKey: "setup.isNewInstall")
+        #expect(manager.shouldShow == false)
+        manager.markAsNewInstall()   // repone el estado que el resto del suite asume
     }
 }

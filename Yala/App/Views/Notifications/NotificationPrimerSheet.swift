@@ -67,8 +67,8 @@ struct NotificationPrimerSheet: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.xl)
         }
-        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
-        .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+        .yalaScreenBackground(.partialSheet)
+        .yalaSheetDetents([.medium])
     }
 
     // MARK: - Components
@@ -102,8 +102,29 @@ struct NotificationPrimerSheet: View {
                     }
                     try modelContext.save()
                     await NotificationService.shared.rescheduleAllNotifications(items: items)
-                    // Enable budget alerts global toggle so BudgetAlertService activates
-                    UserDefaults.standard.set(true, forKey: "budgetAlertsEnabled")
+                    // Enable budget alerts global toggle so BudgetAlertService activates.
+                    // Va por `PreferenceSyncService` y no por `UserDefaults.standard.set`: la key es
+                    // `synced: true` y esto es un punto de INTENCIÓN del usuario, así que tiene que
+                    // llegar a sus otros devices. Escribir en crudo llegaba a iCloud de rebote —
+                    // `AppPreferences.loadFromDefaults` re-persistía lo que releía— y ese puente
+                    // accidental se cerró (ver el docblock de `loadFromDefaults`). El service hace
+                    // el `local.set` por dentro, así que `BudgetAlertService` lee lo mismo que antes.
+                    PreferenceSyncService.shared.set(
+                        bool: true, forKey: AppPreferences.Keys.budgetAlertsEnabled)
+                    // Y el recordatorio de deudas de Grupos, por la MISMA vía y por el mismo motivo.
+                    //
+                    // Decisión de Jürgen (2026-09-08), ticket
+                    // `groups-settlement-reminder-discoverability`: nació con el default `false`
+                    // copiado de `budgetAlertsEnabled` —correcto: es el único aviso que habla del
+                    // dinero que le debes a otra persona, y encenderlo sin pedirlo convertiría una
+                    // actualización en un cobro sorpresa— pero **se copió el default sin copiar el
+                    // encendido**, y ese encendido es justo lo que hace inocuo al default. Resultado:
+                    // un feature construido, correcto y pinneado que no recibía prácticamente nadie.
+                    //
+                    // Aquí el usuario está diciendo «sí, avísame»; el consentimiento sigue siendo
+                    // real porque el toggle queda visible y apagable en Ajustes.
+                    PreferenceSyncService.shared.set(
+                        bool: true, forKey: AppPreferences.Keys.groupSettlementRemindersEnabled)
                 } catch {
                     #if DEBUG
                     print("NotificationPrimerSheet: Error activating notifications: \(error)")

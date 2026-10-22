@@ -9,7 +9,14 @@
 import Foundation
 
 /// A debt between two members in a specific currency.
-struct Debt: Equatable, Sendable, Identifiable {
+///
+/// `nonisolated` (2026-09-07): un value type `Sendable` de cuatro campos no necesita actor, y sin la
+/// anotación el default del target (`SWIFT_DEFAULT_ACTOR_ISOLATION=MainActor`) aísla también su `id`
+/// computado — con lo que la lógica pura que lo usa como clave de dedup
+/// (`SettlementReminderLogic`, `nonisolated`) no puede leerlo: warning hoy, error en Swift 6. La
+/// alternativa era duplicar el formato de `id` en el consumidor, que es peor: dos fuentes de verdad
+/// para la misma clave, y el desajuste sería silencioso.
+nonisolated struct Debt: Equatable, Sendable, Identifiable {
     var id: String { "\(fromMemberID)-\(toMemberID)-\(currencyCode)" }
     let fromMemberID: String
     let toMemberID: String

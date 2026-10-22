@@ -59,9 +59,11 @@ enum GroupBalanceService {
         let activeExpenses = uniqueExpenses.filter { !$0.isSettled }
         let confirmedSettlements = settlements.filter { $0.isConfirmed }
 
-        // Build member lookup: memberID → displayName
+        // Build member lookup: memberID → displayName. `resolvedDisplayName` (H1 review G5-D1): un
+        // member anonimizado por eliminar-cuenta (`__deleted_user__`, status removed) sigue en los
+        // balances si tenía saldo — sin el mapeo, la pestaña Balances mostraría el sentinel crudo.
         let memberNames = Dictionary(
-            members.map { ($0.id.uuidString, $0.displayName) },
+            members.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
 

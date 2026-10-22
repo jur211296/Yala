@@ -149,10 +149,6 @@ struct GroupsGlobalSettingsView: View {
                 // effective sí depende del global).
                 BridgeModeResolver.shared.invalidateCache()
                 let hasBridged = hasBridgedTransactions()
-                TelemetryService.track(.bridgeGlobalToggled, parameters: [
-                    "enabled": String(newValue),
-                    "hadBridgedTx": String(hasBridged)
-                ])
                 if hasBridged {
                     if newValue {
                         showActivationSheet = true

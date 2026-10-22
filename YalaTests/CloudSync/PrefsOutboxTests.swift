@@ -1,0 +1,363 @@
+//
+//  PrefsOutboxTests.swift
+//  YalaTests / CloudSync
+//
+//  Cola durable de prefs (I13): enqueue sobrescribe por key, durabilidad round-trip del archivo, HLC
+//  monótono entre enqueues, owner-scoping (M1) y purga total (teardown). `directoryURL` inyectable (temp).
+//
+
+import Foundation
+import Testing
+
+@testable import Yala
+
+@Suite("PrefsOutbox · I13")
+struct PrefsOutboxTests {
+
+    private func freshDir() -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PrefsOutbox-\(UUID().uuidString)", isDirectory: true)
+        return dir
+    }
+    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+
+    // MARK: - Enqueue + durabilidad
+
+    @Test func enqueue_persistsAndReadsBack() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"))
+        try outbox.enqueue(key: "colorfulIcons", userID: "u1", value: .bool(true))
+        try outbox.enqueue(key: "decimalPlaces", userID: "u1", value: .int(0))
+
+        // Instancia FRESCA sobre el mismo dir → durabilidad real (no estado en memoria).
+        let reopened = PrefsOutbox(directoryURL: dir)
+        let entries = Dictionary(uniqueKeysWithValues: reopened.entries(forUserID: "u1").map { ($0.key, $0.entry) })
+        #expect(entries.count == 3)
+        #expect(entries["userName"]?.value == "Ana")
+        #expect(entries["colorfulIcons"]?.value == "true")
+        #expect(entries["decimalPlaces"]?.value == "0")
+        #expect(entries["userName"]?.kind == "string")
+        #expect(entries["colorfulIcons"]?.kind == "bool")
+        #expect(entries["decimalPlaces"]?.kind == "int")
+    }
+
+    /// M2 (review I13): la monotonicidad SOBREVIVE el relanzamiento con reloj físico REGRESIVO (aquí 60 s; más allá de
+    /// los 5 min de deriva lo cubre `hlc_regressionBeyondDrift_…`) — el `lastIssuedHLC` persistido es el que la garantiza (si se
+    /// perdiera, un HLC nuevo con physical menor perdería el LWW contra el propio pasado del device).
+    @Test func hlc_monotonic_acrossReopen_withRegressiveClock() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let base = Date(timeIntervalSince1970: 2_000_000)
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("v1"), now: base)
+        let first = outbox.entries(forUserID: "u1").first?.entry.hlc
+        #expect(first != nil)
+
+        // Instancia FRESCA (relanzamiento) con `now` 60s ANTERIOR.
+        let reopened = PrefsOutbox(directoryURL: dir)
+        try reopened.enqueue(key: "userName", userID: "u1", value: .string("v2"),
+                             now: base.addingTimeInterval(-60))
+        let second = reopened.entries(forUserID: "u1").first?.entry.hlc
+        #expect(second != nil)
+        #expect(second! > first!)   // orden lexicográfico del wire == orden causal
+    }
+
+    /// Complemento M2: una regresión MÁS ALLÁ del drift tolerado (5 min) tampoco emite un HLC stale ni rompe la
+    /// monotonicidad, y además **encola**. Hasta `personal-clock-rollback-wedges-the-drain-forever` el reloj rechazaba
+    /// (`clockFailed`), el llamador lo descartaba y ese cambio no subía nunca: el `lastIssuedHLC` solo baja si la hora real
+    /// lo alcanza. Ahora estampa con `sendLocal`: por encima del último emitido, con la hora que sea.
+    @Test func hlc_regressionBeyondDrift_stillEnqueues_aboveTheLastIssued() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let base = Date(timeIntervalSince1970: 2_000_000)
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("v1"), now: base)
+        let first = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first?.entry.hlc))
+
+        let reopened = PrefsOutbox(directoryURL: dir)
+        try reopened.enqueue(key: "userName", userID: "u1", value: .string("v2"),
+                             now: base.addingTimeInterval(-600))  // 10 min > drift 5 min
+        let entry = try #require(reopened.entries(forUserID: "u1").first?.entry)
+        #expect(entry.value == "v2", "el cambio llega al outbox")
+        #expect(try HLC.parse(entry.hlc) > first, "por encima del último emitido: no pierde contra su propio pasado")
+    }
+
+    /// El reloj persistido un día por delante, sin tocarlo: cada cambio de después se encola, ordenado tras el anterior.
+    @Test func hlc_clockAheadByADay_everyLaterChangeEnqueues_inOrder() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let base = Date(timeIntervalSince1970: 2_000_000)
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("adelantada"),
+                           now: base.addingTimeInterval(86_400))
+        var last = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first?.entry.hlc))
+
+        for (i, key) in ["userName", "decimalPlaces", "userName"].enumerated() {
+            let value: PrefValue = key == "decimalPlaces" ? .int(i) : .string("v\(i)")
+            try PrefsOutbox(directoryURL: dir).enqueue(key: key, userID: "u1", value: value,
+                                                       now: base.addingTimeInterval(Double(i * 60)))
+            let hlc = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first { $0.key == key }?.entry.hlc))
+            #expect(hlc > last)
+            last = hlc
+        }
+        #expect(outbox.entries(forUserID: "u1").first { $0.key == "userName" }?.entry.value == "v2")
+    }
+
+    /// El HLC sale del `now` inyectado, no de la hora del reloj de pared: en el régimen normal (sin reloj persistido por
+    /// delante) su milisegundo es el de `now`. Sin eso, los tests de esta suite con fechas fijas no medirían lo que dicen.
+    @Test func hlc_isStampedWithTheInjectedNow() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let now = Date(timeIntervalSince1970: 1_000)
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"), now: now)
+        let hlc = try HLC.parse(try #require(outbox.entries(forUserID: "u1").first?.entry.hlc))
+        #expect(hlc.physicalMs == CanonicalTime.physicalMillis(from: now))
+    }
+
+    /// Lo único que aún hace fallar el estampado, un año fuera de 0001–9999, sigue saliendo `clockFailed` y no toca el
+    /// fichero: la entrada previa y el último HLC emitido quedan como estaban.
+    @Test func hlc_yearOutOfRange_throwsClockFailed_andLeavesTheFileIntact() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("v1"), now: Date(timeIntervalSince1970: 1_000))
+        let before = try #require(outbox.entries(forUserID: "u1").first?.entry)
+
+        #expect {
+            try outbox.enqueue(key: "userName", userID: "u1", value: .string("v2"),
+                               now: Date(timeIntervalSince1970: 3e11))  // año ~11476
+        } throws: { error in
+            if case PrefsOutboxError.clockFailed = error { return true }
+            return false
+        }
+        let after = try #require(outbox.entries(forUserID: "u1").first?.entry)
+        #expect(after.value == "v1")
+        #expect(after.hlc == before.hlc)
+    }
+
+    @Test func enqueue_overwritesByKey() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"),
+                           now: Date(timeIntervalSince1970: 1_000))
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Bea"),
+                           now: Date(timeIntervalSince1970: 2_000))
+
+        let entries = outbox.entries(forUserID: "u1")
+        #expect(entries.count == 1)  // sobrescribe, no acumula
+        #expect(entries.first?.entry.value == "Bea")
+    }
+
+    // MARK: - HLC monótono
+
+    @Test func enqueue_hlcMonotonicAcrossEnqueues() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+
+        // Mismo `now` en dos enqueues → el counter debe avanzar (HLC estrictamente creciente).
+        let now = Date(timeIntervalSince1970: 5_000)
+        try outbox.enqueue(key: "a", userID: "u1", value: .string("1"), now: now)
+        try outbox.enqueue(key: "b", userID: "u1", value: .string("2"), now: now)
+        try outbox.enqueue(key: "c", userID: "u1", value: .string("3"), now: now)
+
+        let byKey = Dictionary(uniqueKeysWithValues: outbox.entries(forUserID: "u1").map { ($0.key, $0.entry.hlc) })
+        let ha = try HLC.parse(#require(byKey["a"]))
+        let hb = try HLC.parse(#require(byKey["b"]))
+        let hc = try HLC.parse(#require(byKey["c"]))
+        #expect(ha < hb)
+        #expect(hb < hc)
+        // Mismo nodeID en las tres (nodeID persistido/estable).
+        #expect(ha.nodeID == hb.nodeID)
+        #expect(hb.nodeID == hc.nodeID)
+    }
+
+    @Test func nodeID_stableAcrossReopens() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        try PrefsOutbox(directoryURL: dir).enqueue(key: "a", userID: "u1", value: .string("1"),
+                                                    now: Date(timeIntervalSince1970: 1_000))
+        let n1 = try HLC.parse(#require(PrefsOutbox(directoryURL: dir).entries(forUserID: "u1").first?.entry.hlc)).nodeID
+
+        // Nuevo enqueue tras reabrir → mismo nodeID (persistido en el archivo).
+        try PrefsOutbox(directoryURL: dir).enqueue(key: "b", userID: "u1", value: .string("2"),
+                                                    now: Date(timeIntervalSince1970: 2_000))
+        let byKey = Dictionary(uniqueKeysWithValues:
+            PrefsOutbox(directoryURL: dir).entries(forUserID: "u1").map { ($0.key, $0.entry.hlc) })
+        let n2 = try HLC.parse(#require(byKey["b"])).nodeID
+        #expect(n1 == n2)
+    }
+
+    // MARK: - Owner-scoping (M1)
+
+    @Test func entriesForUser_filtersByOwner() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"))
+        try outbox.enqueue(key: "voiceLanguage", userID: "u2", value: .string("en"))
+
+        #expect(outbox.entries(forUserID: "u1").map(\.key) == ["userName"])
+        #expect(outbox.entries(forUserID: "u2").map(\.key) == ["voiceLanguage"])
+        #expect(outbox.entries(forUserID: "u3").isEmpty)
+    }
+
+    // MARK: - removeEntries (purga tras push)
+
+    /// Control del de abajo: la entry que no cambió desde la lectura del push se purga, y la que no se subió se queda.
+    @Test func removeEntries_purgesGivenKeys() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "a", userID: "u1", value: .string("1"))
+        try outbox.enqueue(key: "b", userID: "u1", value: .string("2"))
+        let read = try outbox.syncSnapshot(forUserID: "u1").entries
+        let pushedA = try #require(read.first { $0.key == "a" }).entry.hlc
+
+        try outbox.removeEntries(pushed: ["a": pushedA])
+        #expect(outbox.entries(forUserID: "u1").map(\.key) == ["b"])
+    }
+
+    /// El cambio hecho DURANTE el push no se purga (ticket `prefs-push-purge-drops-a-change-made-during-the-upload`): el
+    /// `enqueue` cae entre la lectura del ciclo y la purga, reencola la misma key con un HLC nuevo, y la purga del HLC
+    /// que se subió la deja en paz. Antes se purgaba por key y ese segundo valor no subía nunca.
+    @Test func removeEntries_keepsAnEntryReenqueuedAfterThePushRead() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Uno"), now: t0)
+        let read = try outbox.syncSnapshot(forUserID: "u1").entries
+        let pushed = try #require(read.first { $0.key == "userName" }).entry
+
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Dos"), now: t0.addingTimeInterval(1))
+        try outbox.removeEntries(pushed: ["userName": pushed.hlc])
+
+        let left = PrefsOutbox(directoryURL: dir).entries(forUserID: "u1")
+        #expect(left.map(\.key) == ["userName"])
+        #expect(left.first?.entry.value == "Dos")
+        #expect(left.first?.entry.hlc != pushed.hlc)
+
+        // Igualdad exacta, no «≤»: un HLC subido MAYOR que el guardado (el guardado sería más viejo, p.ej. un reloj que se
+        // reinició) tampoco purga — no es la escritura que viajó.
+        try outbox.removeEntries(pushed: ["userName": "9999-12-31T23:59:59.999Z-ffff-ffffffffffffffff"])
+        #expect(PrefsOutbox(directoryURL: dir).entries(forUserID: "u1").first?.entry.value == "Dos")
+    }
+
+    // MARK: - Cursor del pull
+
+    @Test func pullCursor_defaultsZero_andPersists() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        #expect(outbox.pullCursor == 0)
+
+        try outbox.setPullCursor(42)
+        #expect(outbox.pullCursor == 42)
+        // Persistente + no borra entries.
+        try outbox.enqueue(key: "a", userID: "u1", value: .string("1"))
+        #expect(PrefsOutbox(directoryURL: dir).pullCursor == 42)
+        #expect(PrefsOutbox(directoryURL: dir).entries(forUserID: "u1").count == 1)
+    }
+
+    // MARK: - purgeAll (teardown M1)
+
+    @Test func purgeAll_removesEverything() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "a", userID: "u1", value: .string("1"))
+        try outbox.enqueue(key: "b", userID: "u2", value: .string("2"))
+        try outbox.setPullCursor(9)
+
+        outbox.purgeAll()
+
+        #expect(outbox.entries(forUserID: "u1").isEmpty)
+        #expect(outbox.entries(forUserID: "u2").isEmpty)
+        #expect(outbox.pullCursor == 0)  // archivo borrado → cursor vuelve a 0
+    }
+
+    // MARK: - Lectura que falla ≠ corrupción (ticket prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it)
+
+    private func fileURL(_ dir: URL) -> URL { dir.appendingPathComponent(PrefsOutbox.fileName) }
+
+    /// Deja el archivo sin permiso de lectura: `Data(contentsOf:)` falla de verdad, y la escritura atómica —que
+    /// renombra en el DIRECTORIO— sigue pudiendo. Es el montaje en el que el `catch` único de antes sobrescribía.
+    private func makeUnreadable(_ dir: URL) throws {
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: fileURL(dir).path)
+        // La premisa del montaje, medida y no supuesta: si el host lee sin permisos, el test no prueba nada.
+        #expect(throws: (any Error).self) { _ = try Data(contentsOf: fileURL(dir)) }
+    }
+    private func makeReadable(_ dir: URL) throws {
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: fileURL(dir).path)
+    }
+    private func isReadFailed(_ error: any Error) -> Bool {
+        if case PrefsOutboxError.readFailed = error { return true }
+        return false
+    }
+
+    /// El fallo de LECTURA no reemplaza el archivo: `enqueue` y `setPullCursor` lanzan `.readFailed` sin escribir, y
+    /// cuando el archivo vuelve a leerse las pendientes, el cursor, el `nodeID` y el reloj siguen byte a byte.
+    @Test func unreadableFile_neitherEnqueueNorCursorWritesAFreshStateOverIt() throws {
+        let dir = freshDir(); defer { try? makeReadable(dir); cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"), now: Date(timeIntervalSince1970: 1_000))
+        try outbox.enqueue(key: "colorfulIcons", userID: "u1", value: .bool(true), now: Date(timeIntervalSince1970: 1_001))
+        try outbox.setPullCursor(42)
+        let before = try Data(contentsOf: fileURL(dir))
+
+        try makeUnreadable(dir)
+        do {
+            try outbox.enqueue(key: "decimalPlaces", userID: "u1", value: .int(0), now: Date(timeIntervalSince1970: 1_002))
+            Issue.record("enqueue sobre un archivo ilegible no lanzó")
+        } catch { #expect(isReadFailed(error)) }
+        do {
+            try outbox.setPullCursor(99)
+            Issue.record("setPullCursor sobre un archivo ilegible no lanzó")
+        } catch { #expect(isReadFailed(error)) }
+        do {
+            _ = try outbox.syncSnapshot(forUserID: "u1")
+            Issue.record("syncSnapshot sobre un archivo ilegible no lanzó")
+        } catch { #expect(isReadFailed(error)) }
+
+        try makeReadable(dir)
+        #expect(try Data(contentsOf: fileURL(dir)) == before)  // nodeID, reloj, cursor y pendientes: intactos
+        let snapshot = try outbox.syncSnapshot(forUserID: "u1")
+        #expect(snapshot.entries.map(\.key) == ["userName", "colorfulIcons"])
+        #expect(snapshot.pullCursor == 42)
+
+        // Control positivo: con el archivo legible, el mismo `enqueue` sí encola.
+        try outbox.enqueue(key: "decimalPlaces", userID: "u1", value: .int(0), now: Date(timeIntervalSince1970: 1_002))
+        #expect(outbox.entries(forUserID: "u1").count == 3)
+    }
+
+    /// La CORRUPCIÓN conserva el trato de siempre: el `enqueue` empieza un estado nuevo (lo viejo no se puede leer) y
+    /// el cursor vuelve a 0; `syncSnapshot` la lee vacía sin lanzar y `removeEntries` lanza `.corrupt` sin escribir.
+    @Test func corruptFile_keepsTheFreshStateTreatment() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try outbox.enqueue(key: "userName", userID: "u1", value: .string("Ana"))
+        try outbox.setPullCursor(42)
+        let garbage = Data("{ esto no es el outbox".utf8)
+        try garbage.write(to: fileURL(dir))
+
+        let snapshot = try outbox.syncSnapshot(forUserID: "u1")
+        #expect(snapshot.entries.isEmpty)
+        #expect(snapshot.pullCursor == 0)
+        do {
+            try outbox.removeEntries(pushed: ["userName": "cualquiera"])
+            Issue.record("removeEntries sobre un archivo corrupto no lanzó")
+        } catch {
+            if case PrefsOutboxError.corrupt = error {} else { Issue.record("error inesperado: \(error)") }
+        }
+        #expect(try Data(contentsOf: fileURL(dir)) == garbage)  // ni `syncSnapshot` ni `removeEntries` escriben
+
+        try outbox.enqueue(key: "colorfulIcons", userID: "u1", value: .bool(true))
+        #expect(outbox.entries(forUserID: "u1").map(\.key) == ["colorfulIcons"])
+        #expect(outbox.pullCursor == 0)
+    }
+
+    /// Lo mismo por `setPullCursor`, el otro escritor que parte de `loadOrCreateState`: corrupto → estado nuevo.
+    @Test func corruptFile_setPullCursorStartsAFreshState() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let outbox = PrefsOutbox(directoryURL: dir)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try Data("[]".utf8).write(to: fileURL(dir))
+
+        try outbox.setPullCursor(7)
+        #expect(outbox.pullCursor == 7)
+        #expect(outbox.entries(forUserID: "u1").isEmpty)
+    }
+}

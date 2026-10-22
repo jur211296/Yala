@@ -236,91 +236,13 @@ struct GroupTransactionBridgeSoftDeleteTests {
         #expect(GroupTransactionBridge.shouldBridgeExpense(groupIsHidden: false) == true)
     }
 
-    // MARK: - shouldTriggerRemovedSelfCleanup (pure-logic observer)
-
-    @Test func shouldTriggerRemovedSelfCleanup_activeCurrentToRemoved_returnsTrue() {
-        let result = SoftDeleteObserverLogic.shouldTriggerRemovedSelfCleanup(
-            wasActiveAndCurrentUser: true,
-            newStatus: .removed
-        )
-        #expect(result == true)
-    }
-
-    @Test func shouldTriggerRemovedSelfCleanup_activeNotCurrentToRemoved_returnsFalse() {
-        let result = SoftDeleteObserverLogic.shouldTriggerRemovedSelfCleanup(
-            wasActiveAndCurrentUser: false,
-            newStatus: .removed
-        )
-        #expect(result == false, "Admin removiendo OTRO miembro no debe disparar cleanup local")
-    }
-
-    @Test func shouldTriggerRemovedSelfCleanup_inactiveCurrentToRemoved_returnsFalse() {
-        // Edge case: current user ya .left local + admin remoto lo marca .removed.
-        let result = SoftDeleteObserverLogic.shouldTriggerRemovedSelfCleanup(
-            wasActiveAndCurrentUser: false, // wasActive=false
-            newStatus: .removed
-        )
-        #expect(result == false)
-    }
-
-    @Test func shouldTriggerRemovedSelfCleanup_activeCurrentToLeft_returnsFalse() {
-        // .left es local-only (leaveGroup hace cleanup ahí mismo, no via observer).
-        let result = SoftDeleteObserverLogic.shouldTriggerRemovedSelfCleanup(
-            wasActiveAndCurrentUser: true,
-            newStatus: .left
-        )
-        #expect(result == false)
-    }
-
-    @Test func shouldTriggerRemovedSelfCleanup_activeCurrentToActive_returnsFalse() {
-        // No flip — update benigno (e.g. displayName change).
-        let result = SoftDeleteObserverLogic.shouldTriggerRemovedSelfCleanup(
-            wasActiveAndCurrentUser: true,
-            newStatus: .active
-        )
-        #expect(result == false)
-    }
-
-    // MARK: - PendingLeaveShareTracker (persistencia + idempotency + JSON round-trip)
-
-    @Test @MainActor func pendingLeaveShareTracker_addRemoveAndPersist() {
-        let isolatedDefaults = makeIsolatedDefaults(prefix: "fu02.tracker")
-        let originalDefaults = PendingLeaveShareTracker.defaults
-        PendingLeaveShareTracker.defaults = isolatedDefaults
-        defer { PendingLeaveShareTracker.defaults = originalDefaults }
-
-        let entry1 = PendingLeaveShareEntry(zoneName: "SplitGroup-aaa", zoneOwnerName: "ownerA")
-        let entry2 = PendingLeaveShareEntry(zoneName: "SplitGroup-bbb", zoneOwnerName: "ownerB")
-
-        // Inicial vacío.
-        #expect(PendingLeaveShareTracker.all().isEmpty)
-
-        // Add idempotente.
-        PendingLeaveShareTracker.add(entry1)
-        #expect(PendingLeaveShareTracker.all() == [entry1])
-        PendingLeaveShareTracker.add(entry1)
-        #expect(PendingLeaveShareTracker.all().count == 1, "Add duplicado debe ser idempotente")
-
-        // Add segundo entry.
-        PendingLeaveShareTracker.add(entry2)
-        #expect(PendingLeaveShareTracker.all() == [entry1, entry2])
-
-        // JSON round-trip: tras un nuevo `all()`, ambos entries deben preservar zoneName + ownerName.
-        let reloaded = PendingLeaveShareTracker.all()
-        #expect(reloaded.contains(entry1))
-        #expect(reloaded.contains(entry2))
-
-        // Remove no-op si no existía.
-        let phantom = PendingLeaveShareEntry(zoneName: "ghost", zoneOwnerName: "ghostOwner")
-        PendingLeaveShareTracker.remove(phantom)
-        #expect(PendingLeaveShareTracker.all().count == 2)
-
-        // Remove existing.
-        PendingLeaveShareTracker.remove(entry1)
-        #expect(PendingLeaveShareTracker.all() == [entry2])
-
-        // Clear.
-        PendingLeaveShareTracker.clear()
-        #expect(PendingLeaveShareTracker.all().isEmpty)
-    }
+    // MARK: - shouldTriggerRemovedSelfCleanup · PendingLeaveShareTracker — RETIRADOS en la Fase 3
+    //
+    // Los 5 casos del observer probaban `SoftDeleteObserverLogic`, cuyo único consumidor de producción era
+    // `SplitSyncManager.applyMember` (ver la re-medición de A1, hallazgo S6: huérfano total). Los 4 del
+    // tracker probaban `PendingLeaveShareTracker`, el retry persistente de `leaveShare`. Los dos sujetos
+    // se borraron con el transporte.
+    //
+    // Lo que sobrevive de este fichero —`classifyForSoftDelete`, `computeFreezePlan`, `shouldBridgeExpense`—
+    // es del bridge personal, que es de los DOS canales y no se toca.
 }

@@ -1,0 +1,2282 @@
+{
+ "task": "voice.transcribe + text.parse",
+ "today": "2026-10-07",
+ "criterion": "Por clip: WER (CER en ja y zh) contra la mejor de sus referencias (ref, refAlt o el texto dicho en palabras, tts) tras normalizar; importes presentes en cifras; comercio presente. Por nota: la transcripción pasa por la lectura de la app (TranscriptionParserService.parseMultiple, gpt-4.1-mini, temperatura 0.1) y acierta si salen EXACTAMENTE los movimientos esperados (núcleo: importe con signo y fecha; estricto: además divisa y comercio en la nota).",
+ "keywordsNote": "merchants = comercios del contexto del usuario para keywords/keyterm: incluyen los de las notas 1-4 de cada variante y NO los de las notas 5-6, para medir también el comercio que el usuario aún no tiene en su memoria.",
+ "locales": {
+  "es-PE": {
+   "lang": "es",
+   "lproj": [
+    "es-419",
+    "es"
+   ],
+   "currency": "PEN",
+   "name": "español (Perú)",
+   "merchants": [
+    "Plaza Vea",
+    "Wong",
+    "Rappi",
+    "Metro",
+    "Inkafarma",
+    "Mifarma",
+    "Starbucks",
+    "Oechsle",
+    "Yape",
+    "Plin"
+   ]
+  },
+  "es-AR": {
+   "lang": "es",
+   "lproj": [
+    "es-AR",
+    "es-419",
+    "es"
+   ],
+   "currency": "ARS",
+   "name": "español (Argentina)",
+   "merchants": [
+    "Coto",
+    "YPF",
+    "PedidosYa",
+    "Mercado Pago",
+    "Día",
+    "Jumbo",
+    "Farmacity",
+    "Rappi",
+    "Shell",
+    "Disco"
+   ]
+  },
+  "es-ES": {
+   "lang": "es",
+   "lproj": [
+    "es-ES",
+    "es"
+   ],
+   "currency": "EUR",
+   "name": "español (España)",
+   "merchants": [
+    "Mercadona",
+    "Burger King",
+    "El Corte Inglés",
+    "Carrefour",
+    "Dia",
+    "Zara",
+    "Glovo",
+    "Cepsa",
+    "Alcampo",
+    "Bizum"
+   ]
+  },
+  "en-US": {
+   "lang": "en",
+   "lproj": [
+    "en"
+   ],
+   "currency": "USD",
+   "name": "English (US)",
+   "merchants": [
+    "Trader Joe's",
+    "Uber",
+    "Starbucks",
+    "DoorDash",
+    "Walmart",
+    "Target",
+    "Whole Foods",
+    "Chipotle",
+    "Amazon",
+    "Venmo"
+   ]
+  },
+  "en-GB": {
+   "lang": "en",
+   "lproj": [
+    "en-GB",
+    "en"
+   ],
+   "currency": "GBP",
+   "name": "English (UK)",
+   "merchants": [
+    "Tesco",
+    "Pret",
+    "Marks & Spencer",
+    "Asda",
+    "Greggs",
+    "Waitrose",
+    "Costa",
+    "Uber",
+    "Amazon",
+    "Morrisons"
+   ]
+  },
+  "pt-BR": {
+   "lang": "pt",
+   "lproj": [
+    "pt-BR",
+    "pt"
+   ],
+   "currency": "BRL",
+   "name": "português (Brasil)",
+   "merchants": [
+    "Pão de Açúcar",
+    "Uber",
+    "iFood",
+    "Carrefour",
+    "Assaí",
+    "Drogasil",
+    "Mercado Livre",
+    "Rappi",
+    "Nubank",
+    "Magalu"
+   ]
+  },
+  "pt-PT": {
+   "lang": "pt",
+   "lproj": [
+    "pt-PT",
+    "pt"
+   ],
+   "currency": "EUR",
+   "name": "português (Portugal)",
+   "merchants": [
+    "Continente",
+    "Pingo Doce",
+    "Worten",
+    "Auchan",
+    "Fnac",
+    "Uber",
+    "Bolt",
+    "Glovo",
+    "Zara",
+    "Mercadona"
+   ]
+  },
+  "fr-FR": {
+   "lang": "fr",
+   "lproj": [
+    "fr"
+   ],
+   "currency": "EUR",
+   "name": "français",
+   "merchants": [
+    "Carrefour",
+    "Monoprix",
+    "Uber Eats",
+    "Leclerc",
+    "Auchan",
+    "Franprix",
+    "Fnac",
+    "Picard",
+    "SNCF",
+    "Deliveroo"
+   ]
+  },
+  "de-DE": {
+   "lang": "de",
+   "lproj": [
+    "de"
+   ],
+   "currency": "EUR",
+   "name": "Deutsch",
+   "merchants": [
+    "Rewe",
+    "Lidl",
+    "Lieferando",
+    "Edeka",
+    "Penny",
+    "Netto",
+    "Rossmann",
+    "Kaufland",
+    "DB",
+    "MediaMarkt"
+   ]
+  },
+  "it-IT": {
+   "lang": "it",
+   "lproj": [
+    "it"
+   ],
+   "currency": "EUR",
+   "name": "italiano",
+   "merchants": [
+    "Esselunga",
+    "Coop",
+    "Glovo",
+    "Conad",
+    "Carrefour",
+    "Lidl",
+    "Deliveroo",
+    "Trenitalia",
+    "Unieuro",
+    "Satispay"
+   ]
+  },
+  "nl-NL": {
+   "lang": "nl",
+   "lproj": [
+    "nl"
+   ],
+   "currency": "EUR",
+   "name": "Nederlands",
+   "merchants": [
+    "Albert Heijn",
+    "Jumbo",
+    "Thuisbezorgd",
+    "Lidl",
+    "Aldi",
+    "Action",
+    "Bol.com",
+    "NS",
+    "Tikkie",
+    "Etos"
+   ]
+  },
+  "pl-PL": {
+   "lang": "pl",
+   "lproj": [
+    "pl"
+   ],
+   "currency": "PLN",
+   "name": "polski",
+   "merchants": [
+    "Biedronka",
+    "Żabka",
+    "Uber",
+    "Pyszne.pl",
+    "Allegro",
+    "Kaufland",
+    "Auchan",
+    "Carrefour",
+    "BLIK",
+    "Netto"
+   ]
+  },
+  "ja-JP": {
+   "lang": "ja",
+   "lproj": [
+    "ja"
+   ],
+   "currency": "JPY",
+   "name": "日本語",
+   "merchants": [
+    "ローソン",
+    "セブンイレブン",
+    "出前館",
+    "ウーバーイーツ",
+    "イオン",
+    "ドトール",
+    "スターバックス",
+    "マクドナルド",
+    "楽天",
+    "PayPay"
+   ]
+  },
+  "zh-Hans": {
+   "lang": "zh",
+   "lproj": [
+    "zh-Hans"
+   ],
+   "currency": "CNY",
+   "name": "中文（简体）",
+   "merchants": [
+    "美团",
+    "全家",
+    "淘宝",
+    "饿了么",
+    "京东",
+    "拼多多",
+    "瑞幸",
+    "滴滴",
+    "支付宝",
+    "微信"
+   ]
+  }
+ },
+ "notes": [
+  {
+   "id": "es-PE-01",
+   "locale": "es-PE",
+   "when": "ayer",
+   "tts": "Ayer gasté veinticinco con cincuenta soles en Plaza Vea.",
+   "ref": "Ayer gasté 25,50 soles en Plaza Vea.",
+   "refAlt": [
+    "Ayer gasté 25 con 50 soles en Plaza Vea."
+   ],
+   "transactions": [
+    {
+     "amount": -25.5,
+     "date": "2026-10-06",
+     "currency": "PEN",
+     "merchant": "Plaza Vea",
+     "spoken": "veinticinco con cincuenta"
+    }
+   ]
+  },
+  {
+   "id": "es-PE-02",
+   "locale": "es-PE",
+   "when": null,
+   "tts": "Pagué ciento ochenta soles en Wong y doce soles de taxi.",
+   "ref": "Pagué 180 soles en Wong y 12 soles de taxi.",
+   "transactions": [
+    {
+     "amount": -180,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PEN",
+     "merchant": "Wong",
+     "spoken": "ciento ochenta"
+    },
+    {
+     "amount": -12,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PEN",
+     "spoken": "doce"
+    }
+   ]
+  },
+  {
+   "id": "es-PE-03",
+   "locale": "es-PE",
+   "when": "lunes",
+   "tts": "El lunes pedí por Rappi un pollo a la brasa de cuarenta y dos soles.",
+   "ref": "El lunes pedí por Rappi un pollo a la brasa de 42 soles.",
+   "transactions": [
+    {
+     "amount": -42,
+     "date": "2026-10-05",
+     "currency": "PEN",
+     "merchant": "Rappi",
+     "spoken": "cuarenta y dos"
+    }
+   ]
+  },
+  {
+   "id": "es-PE-04",
+   "locale": "es-PE",
+   "when": null,
+   "tts": "Me pagaron mil doscientos cincuenta soles de la chamba.",
+   "ref": "Me pagaron 1250 soles de la chamba.",
+   "transactions": [
+    {
+     "amount": 1250,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PEN",
+     "spoken": "mil doscientos cincuenta"
+    }
+   ]
+  },
+  {
+   "id": "es-PE-05",
+   "locale": "es-PE",
+   "when": null,
+   "tts": "Compré en Tottus por sesenta y siete con noventa y le yapeé quince soles a mi pata.",
+   "ref": "Compré en Tottus por 67,90 y le yapeé 15 soles a mi pata.",
+   "refAlt": [
+    "Compré en Tottus por 67 con 90 y le yapeé 15 soles a mi pata."
+   ],
+   "transactions": [
+    {
+     "amount": -67.9,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": null,
+     "currencyAlt": [
+      "PEN"
+     ],
+     "merchant": "Tottus",
+     "spoken": "sesenta y siete con noventa"
+    },
+    {
+     "amount": -15,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PEN",
+     "spoken": "quince"
+    }
+   ]
+  },
+  {
+   "id": "es-PE-06",
+   "locale": "es-PE",
+   "when": "anteayer",
+   "tts": "Anteayer cargué gasolina en Primax por ciento veinte soles.",
+   "ref": "Anteayer cargué gasolina en Primax por 120 soles.",
+   "transactions": [
+    {
+     "amount": -120,
+     "date": "2026-10-05",
+     "currency": "PEN",
+     "merchant": "Primax",
+     "spoken": "ciento veinte"
+    }
+   ]
+  },
+  {
+   "id": "es-AR-01",
+   "locale": "es-AR",
+   "when": "ayer",
+   "tts": "Ayer gasté tres mil quinientos pesos en Coto.",
+   "ref": "Ayer gasté 3500 pesos en Coto.",
+   "transactions": [
+    {
+     "amount": -3500,
+     "date": "2026-10-06",
+     "currency": "ARS",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "Coto",
+     "spoken": "tres mil quinientos"
+    }
+   ]
+  },
+  {
+   "id": "es-AR-02",
+   "locale": "es-AR",
+   "when": null,
+   "tts": "Cargué nafta en YPF por doce mil pesos y gasté ochocientos en un café.",
+   "ref": "Cargué nafta en YPF por 12000 pesos y gasté 800 en un café.",
+   "transactions": [
+    {
+     "amount": -12000,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "ARS",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "YPF",
+     "spoken": "doce mil"
+    },
+    {
+     "amount": -800,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": null,
+     "currencyAlt": [
+      "ARS"
+     ],
+     "spoken": "ochocientos"
+    }
+   ]
+  },
+  {
+   "id": "es-AR-03",
+   "locale": "es-AR",
+   "when": "sabado",
+   "tts": "El sábado pedí por PedidosYa una pizza de nueve mil doscientos pesos.",
+   "ref": "El sábado pedí por PedidosYa una pizza de 9200 pesos.",
+   "transactions": [
+    {
+     "amount": -9200,
+     "date": "2026-10-03",
+     "currency": "ARS",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "PedidosYa",
+     "merchantAlt": [
+      "Pedidos Ya"
+     ],
+     "spoken": "nueve mil doscientos"
+    }
+   ]
+  },
+  {
+   "id": "es-AR-04",
+   "locale": "es-AR",
+   "when": null,
+   "tts": "Me transfirieron cuarenta y cinco mil pesos por Mercado Pago.",
+   "ref": "Me transfirieron 45000 pesos por Mercado Pago.",
+   "transactions": [
+    {
+     "amount": 45000,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "ARS",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "Mercado Pago",
+     "merchantAlt": [
+      "MercadoPago"
+     ],
+     "spoken": "cuarenta y cinco mil"
+    }
+   ]
+  },
+  {
+   "id": "es-AR-05",
+   "locale": "es-AR",
+   "when": null,
+   "tts": "Compré en Carrefour por quince mil setecientos cincuenta pesos.",
+   "ref": "Compré en Carrefour por 15750 pesos.",
+   "transactions": [
+    {
+     "amount": -15750,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "ARS",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "Carrefour",
+     "spoken": "quince mil setecientos cincuenta"
+    }
+   ]
+  },
+  {
+   "id": "es-AR-06",
+   "locale": "es-AR",
+   "when": "anteayer",
+   "tts": "Anteayer cargué la SUBE con dos mil pesos.",
+   "ref": "Anteayer cargué la SUBE con 2000 pesos.",
+   "transactions": [
+    {
+     "amount": -2000,
+     "date": "2026-10-05",
+     "currency": "ARS",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "SUBE",
+     "spoken": "dos mil"
+    }
+   ]
+  },
+  {
+   "id": "es-ES-01",
+   "locale": "es-ES",
+   "when": "ayer",
+   "tts": "Ayer gasté treinta y dos euros con cuarenta en Mercadona.",
+   "ref": "Ayer gasté 32 euros con 40 en Mercadona.",
+   "refAlt": [
+    "Ayer gasté 32,40 euros en Mercadona.",
+    "Ayer gasté 32,40 € en Mercadona."
+   ],
+   "transactions": [
+    {
+     "amount": -32.4,
+     "date": "2026-10-06",
+     "currency": "EUR",
+     "merchant": "Mercadona",
+     "spoken": "treinta y dos euros con cuarenta"
+    }
+   ]
+  },
+  {
+   "id": "es-ES-02",
+   "locale": "es-ES",
+   "when": null,
+   "tts": "He pagado doce euros en el Burger King y cuatro cincuenta del metro.",
+   "ref": "He pagado 12 euros en el Burger King y 4,50 del metro.",
+   "transactions": [
+    {
+     "amount": -12,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Burger King",
+     "spoken": "doce"
+    },
+    {
+     "amount": -4.5,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": null,
+     "currencyAlt": [
+      "EUR"
+     ],
+     "spoken": "cuatro cincuenta"
+    }
+   ]
+  },
+  {
+   "id": "es-ES-03",
+   "locale": "es-ES",
+   "when": "lunes",
+   "tts": "El lunes me compré unas zapatillas en El Corte Inglés por ochenta y nueve euros.",
+   "ref": "El lunes me compré unas zapatillas en El Corte Inglés por 89 euros.",
+   "transactions": [
+    {
+     "amount": -89,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "El Corte Inglés",
+     "merchantAlt": [
+      "Corte Inglés"
+     ],
+     "spoken": "ochenta y nueve"
+    }
+   ]
+  },
+  {
+   "id": "es-ES-04",
+   "locale": "es-ES",
+   "when": null,
+   "tts": "Me han ingresado la nómina, mil ochocientos euros.",
+   "ref": "Me han ingresado la nómina, 1800 euros.",
+   "transactions": [
+    {
+     "amount": 1800,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "mil ochocientos"
+    }
+   ]
+  },
+  {
+   "id": "es-ES-05",
+   "locale": "es-ES",
+   "when": null,
+   "tts": "Pagué cincuenta y seis veinte en el Lidl y nueve euros en la farmacia.",
+   "ref": "Pagué 56,20 en el Lidl y 9 euros en la farmacia.",
+   "transactions": [
+    {
+     "amount": -56.2,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": null,
+     "currencyAlt": [
+      "EUR"
+     ],
+     "merchant": "Lidl",
+     "spoken": "cincuenta y seis veinte"
+    },
+    {
+     "amount": -9,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "nueve"
+    }
+   ]
+  },
+  {
+   "id": "es-ES-06",
+   "locale": "es-ES",
+   "when": "anteayer",
+   "tts": "Anteayer llené el depósito en Repsol por sesenta y cinco euros.",
+   "ref": "Anteayer llené el depósito en Repsol por 65 euros.",
+   "transactions": [
+    {
+     "amount": -65,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Repsol",
+     "spoken": "sesenta y cinco"
+    }
+   ]
+  },
+  {
+   "id": "en-US-01",
+   "locale": "en-US",
+   "when": "ayer",
+   "tts": "Yesterday I spent forty-two fifty at Trader Joe's.",
+   "ref": "Yesterday I spent 42.50 at Trader Joe's.",
+   "refAlt": [
+    "Yesterday I spent $42.50 at Trader Joe's."
+   ],
+   "transactions": [
+    {
+     "amount": -42.5,
+     "date": "2026-10-06",
+     "currency": null,
+     "currencyAlt": [
+      "USD"
+     ],
+     "merchant": "Trader Joe's",
+     "merchantAlt": [
+      "Trader Joes"
+     ],
+     "spoken": "forty-two fifty"
+    }
+   ]
+  },
+  {
+   "id": "en-US-02",
+   "locale": "en-US",
+   "when": null,
+   "tts": "I paid eighteen dollars for an Uber and six bucks at Starbucks.",
+   "ref": "I paid 18 dollars for an Uber and 6 bucks at Starbucks.",
+   "refAlt": [
+    "I paid $18 for an Uber and 6 bucks at Starbucks."
+   ],
+   "transactions": [
+    {
+     "amount": -18,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "USD",
+     "merchant": "Uber",
+     "spoken": "eighteen"
+    },
+    {
+     "amount": -6,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "USD",
+     "merchant": "Starbucks",
+     "spoken": "six"
+    }
+   ]
+  },
+  {
+   "id": "en-US-03",
+   "locale": "en-US",
+   "when": "lunes",
+   "tts": "On Monday I ordered DoorDash for thirty-one twenty.",
+   "ref": "On Monday I ordered DoorDash for 31.20.",
+   "refAlt": [
+    "On Monday I ordered DoorDash for $31.20."
+   ],
+   "transactions": [
+    {
+     "amount": -31.2,
+     "date": "2026-10-05",
+     "currency": null,
+     "currencyAlt": [
+      "USD"
+     ],
+     "merchant": "DoorDash",
+     "merchantAlt": [
+      "Door Dash"
+     ],
+     "spoken": "thirty-one twenty"
+    }
+   ]
+  },
+  {
+   "id": "en-US-04",
+   "locale": "en-US",
+   "when": null,
+   "tts": "I got paid two thousand four hundred dollars from work.",
+   "ref": "I got paid 2,400 dollars from work.",
+   "refAlt": [
+    "I got paid $2,400 from work."
+   ],
+   "transactions": [
+    {
+     "amount": 2400,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "USD",
+     "spoken": "two thousand four hundred"
+    }
+   ]
+  },
+  {
+   "id": "en-US-05",
+   "locale": "en-US",
+   "when": null,
+   "tts": "Spent one hundred twelve dollars at Costco and fifteen at CVS.",
+   "ref": "Spent 112 dollars at Costco and 15 at CVS.",
+   "refAlt": [
+    "Spent $112 at Costco and $15 at CVS.",
+    "Spent $112 at Costco and 15 at CVS."
+   ],
+   "transactions": [
+    {
+     "amount": -112,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "USD",
+     "merchant": "Costco",
+     "spoken": "one hundred twelve"
+    },
+    {
+     "amount": -15,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "USD",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "CVS",
+     "spoken": "fifteen"
+    }
+   ]
+  },
+  {
+   "id": "en-US-06",
+   "locale": "en-US",
+   "when": "anteayer",
+   "tts": "The day before yesterday I filled up at Shell for fifty-five dollars.",
+   "ref": "The day before yesterday I filled up at Shell for 55 dollars.",
+   "refAlt": [
+    "The day before yesterday I filled up at Shell for $55."
+   ],
+   "transactions": [
+    {
+     "amount": -55,
+     "date": "2026-10-05",
+     "currency": "USD",
+     "merchant": "Shell",
+     "spoken": "fifty-five"
+    }
+   ]
+  },
+  {
+   "id": "en-GB-01",
+   "locale": "en-GB",
+   "when": "ayer",
+   "tts": "Yesterday I spent twenty-three pounds forty at Tesco.",
+   "ref": "Yesterday I spent 23 pounds 40 at Tesco.",
+   "refAlt": [
+    "Yesterday I spent £23.40 at Tesco."
+   ],
+   "transactions": [
+    {
+     "amount": -23.4,
+     "date": "2026-10-06",
+     "currency": "GBP",
+     "merchant": "Tesco",
+     "spoken": "twenty-three pounds forty"
+    }
+   ]
+  },
+  {
+   "id": "en-GB-02",
+   "locale": "en-GB",
+   "when": null,
+   "tts": "Paid twelve quid at Pret and three pounds fifty on the bus.",
+   "ref": "Paid 12 quid at Pret and 3 pounds 50 on the bus.",
+   "refAlt": [
+    "Paid 12 quid at Pret and £3.50 on the bus.",
+    "Paid £12 at Pret and £3.50 on the bus."
+   ],
+   "transactions": [
+    {
+     "amount": -12,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "GBP",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "Pret",
+     "merchantAlt": [
+      "Pret a Manger"
+     ],
+     "spoken": "twelve"
+    },
+    {
+     "amount": -3.5,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "GBP",
+     "spoken": "three pounds fifty"
+    }
+   ]
+  },
+  {
+   "id": "en-GB-03",
+   "locale": "en-GB",
+   "when": "lunes",
+   "tts": "On Monday I bought a jumper at Marks and Spencer for forty-five pounds.",
+   "ref": "On Monday I bought a jumper at Marks and Spencer for 45 pounds.",
+   "refAlt": [
+    "On Monday I bought a jumper at Marks & Spencer for £45.",
+    "On Monday I bought a jumper at Marks and Spencer for £45."
+   ],
+   "transactions": [
+    {
+     "amount": -45,
+     "date": "2026-10-05",
+     "currency": "GBP",
+     "merchant": "Marks and Spencer",
+     "merchantAlt": [
+      "Marks & Spencer",
+      "M&S",
+      "Marks"
+     ],
+     "spoken": "forty-five"
+    }
+   ]
+  },
+  {
+   "id": "en-GB-04",
+   "locale": "en-GB",
+   "when": null,
+   "tts": "My salary came in, one thousand nine hundred and fifty pounds.",
+   "ref": "My salary came in, 1,950 pounds.",
+   "refAlt": [
+    "My salary came in, £1,950."
+   ],
+   "transactions": [
+    {
+     "amount": 1950,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "GBP",
+     "spoken": "one thousand nine hundred and fifty"
+    }
+   ]
+  },
+  {
+   "id": "en-GB-05",
+   "locale": "en-GB",
+   "when": null,
+   "tts": "Spent sixty-seven pounds eighty at Sainsbury's and nine at Boots.",
+   "ref": "Spent 67 pounds 80 at Sainsbury's and 9 at Boots.",
+   "refAlt": [
+    "Spent £67.80 at Sainsbury's and £9 at Boots.",
+    "Spent £67.80 at Sainsbury's and 9 at Boots."
+   ],
+   "transactions": [
+    {
+     "amount": -67.8,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "GBP",
+     "merchant": "Sainsbury's",
+     "merchantAlt": [
+      "Sainsburys"
+     ],
+     "spoken": "sixty-seven pounds eighty"
+    },
+    {
+     "amount": -9,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "GBP",
+     "currencyAlt": [
+      null
+     ],
+     "merchant": "Boots",
+     "spoken": "nine"
+    }
+   ]
+  },
+  {
+   "id": "en-GB-06",
+   "locale": "en-GB",
+   "when": "anteayer",
+   "tts": "The day before yesterday I paid Deliveroo twenty-eight pounds.",
+   "ref": "The day before yesterday I paid Deliveroo 28 pounds.",
+   "refAlt": [
+    "The day before yesterday I paid Deliveroo £28."
+   ],
+   "transactions": [
+    {
+     "amount": -28,
+     "date": "2026-10-05",
+     "currency": "GBP",
+     "merchant": "Deliveroo",
+     "spoken": "twenty-eight"
+    }
+   ]
+  },
+  {
+   "id": "pt-BR-01",
+   "locale": "pt-BR",
+   "when": "ayer",
+   "tts": "Ontem gastei quarenta e cinco e noventa no Pão de Açúcar.",
+   "ref": "Ontem gastei 45,90 no Pão de Açúcar.",
+   "refAlt": [
+    "Ontem gastei R$ 45,90 no Pão de Açúcar.",
+    "Ontem gastei 45 e 90 no Pão de Açúcar."
+   ],
+   "transactions": [
+    {
+     "amount": -45.9,
+     "date": "2026-10-06",
+     "currency": null,
+     "currencyAlt": [
+      "BRL"
+     ],
+     "merchant": "Pão de Açúcar",
+     "merchantAlt": [
+      "Pao de Acucar"
+     ],
+     "spoken": "quarenta e cinco e noventa"
+    }
+   ]
+  },
+  {
+   "id": "pt-BR-02",
+   "locale": "pt-BR",
+   "when": null,
+   "tts": "Paguei vinte e dois reais no Uber e oito reais na padaria.",
+   "ref": "Paguei 22 reais no Uber e 8 reais na padaria.",
+   "refAlt": [
+    "Paguei R$ 22 no Uber e R$ 8 na padaria."
+   ],
+   "transactions": [
+    {
+     "amount": -22,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "BRL",
+     "merchant": "Uber",
+     "spoken": "vinte e dois"
+    },
+    {
+     "amount": -8,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "BRL",
+     "spoken": "oito"
+    }
+   ]
+  },
+  {
+   "id": "pt-BR-03",
+   "locale": "pt-BR",
+   "when": "lunes",
+   "tts": "Na segunda pedi um açaí no iFood por trinta e quatro reais.",
+   "ref": "Na segunda pedi um açaí no iFood por 34 reais.",
+   "refAlt": [
+    "Na segunda pedi um açaí no iFood por R$ 34."
+   ],
+   "transactions": [
+    {
+     "amount": -34,
+     "date": "2026-10-05",
+     "currency": "BRL",
+     "merchant": "iFood",
+     "merchantAlt": [
+      "i Food"
+     ],
+     "spoken": "trinta e quatro"
+    }
+   ]
+  },
+  {
+   "id": "pt-BR-04",
+   "locale": "pt-BR",
+   "when": null,
+   "tts": "Recebi meu salário, três mil e duzentos reais.",
+   "ref": "Recebi meu salário, 3200 reais.",
+   "refAlt": [
+    "Recebi meu salário, R$ 3.200."
+   ],
+   "transactions": [
+    {
+     "amount": 3200,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "BRL",
+     "spoken": "três mil e duzentos"
+    }
+   ]
+  },
+  {
+   "id": "pt-BR-05",
+   "locale": "pt-BR",
+   "when": null,
+   "tts": "Gastei cento e quinze reais nas Americanas e mandei sessenta de Pix pro encanador.",
+   "ref": "Gastei 115 reais nas Americanas e mandei 60 de Pix pro encanador.",
+   "refAlt": [
+    "Gastei R$ 115 nas Americanas e mandei R$ 60 de Pix pro encanador."
+   ],
+   "transactions": [
+    {
+     "amount": -115,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "BRL",
+     "merchant": "Americanas",
+     "spoken": "cento e quinze"
+    },
+    {
+     "amount": -60,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": null,
+     "currencyAlt": [
+      "BRL"
+     ],
+     "spoken": "sessenta"
+    }
+   ]
+  },
+  {
+   "id": "pt-BR-06",
+   "locale": "pt-BR",
+   "when": "anteayer",
+   "tts": "Anteontem abasteci no posto Ipiranga por duzentos reais.",
+   "ref": "Anteontem abasteci no posto Ipiranga por 200 reais.",
+   "refAlt": [
+    "Anteontem abasteci no posto Ipiranga por R$ 200."
+   ],
+   "transactions": [
+    {
+     "amount": -200,
+     "date": "2026-10-05",
+     "currency": "BRL",
+     "merchant": "Ipiranga",
+     "spoken": "duzentos"
+    }
+   ]
+  },
+  {
+   "id": "pt-PT-01",
+   "locale": "pt-PT",
+   "when": "ayer",
+   "tts": "Ontem gastei vinte e oito euros e trinta no Continente.",
+   "ref": "Ontem gastei 28 euros e 30 no Continente.",
+   "refAlt": [
+    "Ontem gastei 28,30 euros no Continente.",
+    "Ontem gastei 28,30 € no Continente."
+   ],
+   "transactions": [
+    {
+     "amount": -28.3,
+     "date": "2026-10-06",
+     "currency": "EUR",
+     "merchant": "Continente",
+     "spoken": "vinte e oito euros e trinta"
+    }
+   ]
+  },
+  {
+   "id": "pt-PT-02",
+   "locale": "pt-PT",
+   "when": null,
+   "tts": "Paguei quinze euros no Pingo Doce e um euro e vinte pelo café.",
+   "ref": "Paguei 15 euros no Pingo Doce e 1 euro e 20 pelo café.",
+   "refAlt": [
+    "Paguei 15 euros no Pingo Doce e 1,20 euros pelo café.",
+    "Paguei 15 € no Pingo Doce e 1,20 € pelo café."
+   ],
+   "transactions": [
+    {
+     "amount": -15,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Pingo Doce",
+     "spoken": "quinze"
+    },
+    {
+     "amount": -1.2,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "um euro e vinte"
+    }
+   ]
+  },
+  {
+   "id": "pt-PT-03",
+   "locale": "pt-PT",
+   "when": "lunes",
+   "tts": "Na segunda-feira comprei uns auscultadores na Worten por trinta e seis euros.",
+   "ref": "Na segunda-feira comprei uns auscultadores na Worten por 36 euros.",
+   "transactions": [
+    {
+     "amount": -36,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Worten",
+     "spoken": "trinta e seis"
+    }
+   ]
+  },
+  {
+   "id": "pt-PT-04",
+   "locale": "pt-PT",
+   "when": null,
+   "tts": "Recebi o ordenado, mil e cem euros.",
+   "ref": "Recebi o ordenado, 1100 euros.",
+   "transactions": [
+    {
+     "amount": 1100,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "mil e cem"
+    }
+   ]
+  },
+  {
+   "id": "pt-PT-05",
+   "locale": "pt-PT",
+   "when": null,
+   "tts": "Gastei quarenta e dois euros no Lidl e mandei nove por MB Way à minha irmã.",
+   "ref": "Gastei 42 euros no Lidl e mandei 9 por MB Way à minha irmã.",
+   "transactions": [
+    {
+     "amount": -42,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Lidl",
+     "spoken": "quarenta e dois"
+    },
+    {
+     "amount": -9,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": null,
+     "currencyAlt": [
+      "EUR"
+     ],
+     "spoken": "nove"
+    }
+   ]
+  },
+  {
+   "id": "pt-PT-06",
+   "locale": "pt-PT",
+   "when": "anteayer",
+   "tts": "Anteontem abasteci na Galp por cinquenta e cinco euros.",
+   "ref": "Anteontem abasteci na Galp por 55 euros.",
+   "transactions": [
+    {
+     "amount": -55,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Galp",
+     "spoken": "cinquenta e cinco"
+    }
+   ]
+  },
+  {
+   "id": "fr-FR-01",
+   "locale": "fr-FR",
+   "when": "ayer",
+   "tts": "Hier, j'ai dépensé trente-quatre euros cinquante chez Carrefour.",
+   "ref": "Hier, j'ai dépensé 34 euros 50 chez Carrefour.",
+   "refAlt": [
+    "Hier, j'ai dépensé 34,50 euros chez Carrefour.",
+    "Hier, j'ai dépensé 34,50 € chez Carrefour."
+   ],
+   "transactions": [
+    {
+     "amount": -34.5,
+     "date": "2026-10-06",
+     "currency": "EUR",
+     "merchant": "Carrefour",
+     "spoken": "trente-quatre euros cinquante"
+    }
+   ]
+  },
+  {
+   "id": "fr-FR-02",
+   "locale": "fr-FR",
+   "when": null,
+   "tts": "J'ai payé quatorze euros chez Monoprix et deux euros quinze pour le métro.",
+   "ref": "J'ai payé 14 euros chez Monoprix et 2 euros 15 pour le métro.",
+   "refAlt": [
+    "J'ai payé 14 euros chez Monoprix et 2,15 euros pour le métro.",
+    "J'ai payé 14 € chez Monoprix et 2,15 € pour le métro."
+   ],
+   "transactions": [
+    {
+     "amount": -14,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Monoprix",
+     "spoken": "quatorze"
+    },
+    {
+     "amount": -2.15,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "deux euros quinze"
+    }
+   ]
+  },
+  {
+   "id": "fr-FR-03",
+   "locale": "fr-FR",
+   "when": "lunes",
+   "tts": "Lundi, j'ai commandé sur Uber Eats pour vingt-sept euros.",
+   "ref": "Lundi, j'ai commandé sur Uber Eats pour 27 euros.",
+   "refAlt": [
+    "Lundi, j'ai commandé sur Uber Eats pour 27 €."
+   ],
+   "transactions": [
+    {
+     "amount": -27,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Uber Eats",
+     "merchantAlt": [
+      "UberEats"
+     ],
+     "spoken": "vingt-sept"
+    }
+   ]
+  },
+  {
+   "id": "fr-FR-04",
+   "locale": "fr-FR",
+   "when": null,
+   "tts": "J'ai reçu mon salaire, deux mille cent euros.",
+   "ref": "J'ai reçu mon salaire, 2100 euros.",
+   "refAlt": [
+    "J'ai reçu mon salaire, 2 100 €."
+   ],
+   "transactions": [
+    {
+     "amount": 2100,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "deux mille cent"
+    }
+   ]
+  },
+  {
+   "id": "fr-FR-05",
+   "locale": "fr-FR",
+   "when": null,
+   "tts": "J'ai acheté des baskets chez Decathlon à soixante-neuf euros quatre-vingt-dix-neuf.",
+   "ref": "J'ai acheté des baskets chez Decathlon à 69 euros 99.",
+   "refAlt": [
+    "J'ai acheté des baskets chez Decathlon à 69,99 euros.",
+    "J'ai acheté des baskets chez Decathlon à 69,99 €."
+   ],
+   "transactions": [
+    {
+     "amount": -69.99,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Decathlon",
+     "merchantAlt": [
+      "Décathlon"
+     ],
+     "spoken": "soixante-neuf euros quatre-vingt-dix-neuf"
+    }
+   ]
+  },
+  {
+   "id": "fr-FR-06",
+   "locale": "fr-FR",
+   "when": "anteayer",
+   "tts": "Avant-hier, j'ai fait le plein chez TotalEnergies pour soixante-dix euros.",
+   "ref": "Avant-hier, j'ai fait le plein chez TotalEnergies pour 70 euros.",
+   "refAlt": [
+    "Avant-hier, j'ai fait le plein chez TotalEnergies pour 70 €."
+   ],
+   "transactions": [
+    {
+     "amount": -70,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "TotalEnergies",
+     "merchantAlt": [
+      "Total Energies",
+      "Total"
+     ],
+     "spoken": "soixante-dix"
+    }
+   ]
+  },
+  {
+   "id": "de-DE-01",
+   "locale": "de-DE",
+   "when": "ayer",
+   "tts": "Gestern habe ich bei Rewe dreiundvierzig Euro zwanzig ausgegeben.",
+   "ref": "Gestern habe ich bei Rewe 43 Euro 20 ausgegeben.",
+   "refAlt": [
+    "Gestern habe ich bei Rewe 43,20 Euro ausgegeben.",
+    "Gestern habe ich bei Rewe 43,20 € ausgegeben."
+   ],
+   "transactions": [
+    {
+     "amount": -43.2,
+     "date": "2026-10-06",
+     "currency": "EUR",
+     "merchant": "Rewe",
+     "spoken": "dreiundvierzig Euro zwanzig"
+    }
+   ]
+  },
+  {
+   "id": "de-DE-02",
+   "locale": "de-DE",
+   "when": null,
+   "tts": "Ich habe bei Lidl siebzehn Euro bezahlt und drei Euro für den Bus.",
+   "ref": "Ich habe bei Lidl 17 Euro bezahlt und 3 Euro für den Bus.",
+   "transactions": [
+    {
+     "amount": -17,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Lidl",
+     "spoken": "siebzehn"
+    },
+    {
+     "amount": -3,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "drei"
+    }
+   ]
+  },
+  {
+   "id": "de-DE-03",
+   "locale": "de-DE",
+   "when": "lunes",
+   "tts": "Am Montag habe ich bei Lieferando für fünfundzwanzig Euro bestellt.",
+   "ref": "Am Montag habe ich bei Lieferando für 25 Euro bestellt.",
+   "transactions": [
+    {
+     "amount": -25,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Lieferando",
+     "spoken": "fünfundzwanzig"
+    }
+   ]
+  },
+  {
+   "id": "de-DE-04",
+   "locale": "de-DE",
+   "when": null,
+   "tts": "Mein Gehalt ist da, zweitausendvierhundert Euro.",
+   "ref": "Mein Gehalt ist da, 2400 Euro.",
+   "refAlt": [
+    "Mein Gehalt ist da, 2.400 €."
+   ],
+   "transactions": [
+    {
+     "amount": 2400,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "zweitausendvierhundert"
+    }
+   ]
+  },
+  {
+   "id": "de-DE-05",
+   "locale": "de-DE",
+   "when": null,
+   "tts": "Bei dm habe ich zwölf Euro neunzig ausgegeben und bei Aldi achtundfünfzig Euro.",
+   "ref": "Bei dm habe ich 12 Euro 90 ausgegeben und bei Aldi 58 Euro.",
+   "refAlt": [
+    "Bei dm habe ich 12,90 Euro ausgegeben und bei Aldi 58 Euro."
+   ],
+   "transactions": [
+    {
+     "amount": -12.9,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "dm",
+     "spoken": "zwölf Euro neunzig"
+    },
+    {
+     "amount": -58,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Aldi",
+     "spoken": "achtundfünfzig"
+    }
+   ]
+  },
+  {
+   "id": "de-DE-06",
+   "locale": "de-DE",
+   "when": "anteayer",
+   "tts": "Vorgestern habe ich bei Aral für sechzig Euro getankt.",
+   "ref": "Vorgestern habe ich bei Aral für 60 Euro getankt.",
+   "transactions": [
+    {
+     "amount": -60,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Aral",
+     "spoken": "sechzig"
+    }
+   ]
+  },
+  {
+   "id": "it-IT-01",
+   "locale": "it-IT",
+   "when": "ayer",
+   "tts": "Ieri ho speso ventisei euro e quaranta all'Esselunga.",
+   "ref": "Ieri ho speso 26 euro e 40 all'Esselunga.",
+   "refAlt": [
+    "Ieri ho speso 26,40 euro all'Esselunga.",
+    "Ieri ho speso 26,40 € all'Esselunga."
+   ],
+   "transactions": [
+    {
+     "amount": -26.4,
+     "date": "2026-10-06",
+     "currency": "EUR",
+     "merchant": "Esselunga",
+     "spoken": "ventisei euro e quaranta"
+    }
+   ]
+  },
+  {
+   "id": "it-IT-02",
+   "locale": "it-IT",
+   "when": null,
+   "tts": "Ho pagato dodici euro alla Coop e un euro e cinquanta per il caffè.",
+   "ref": "Ho pagato 12 euro alla Coop e 1 euro e 50 per il caffè.",
+   "refAlt": [
+    "Ho pagato 12 euro alla Coop e 1,50 euro per il caffè."
+   ],
+   "transactions": [
+    {
+     "amount": -12,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Coop",
+     "spoken": "dodici"
+    },
+    {
+     "amount": -1.5,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "un euro e cinquanta"
+    }
+   ]
+  },
+  {
+   "id": "it-IT-03",
+   "locale": "it-IT",
+   "when": "lunes",
+   "tts": "Lunedì ho ordinato una pizza su Glovo per diciotto euro.",
+   "ref": "Lunedì ho ordinato una pizza su Glovo per 18 euro.",
+   "transactions": [
+    {
+     "amount": -18,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Glovo",
+     "spoken": "diciotto"
+    }
+   ]
+  },
+  {
+   "id": "it-IT-04",
+   "locale": "it-IT",
+   "when": null,
+   "tts": "Mi è arrivato lo stipendio, milleottocento euro.",
+   "ref": "Mi è arrivato lo stipendio, 1800 euro.",
+   "refAlt": [
+    "Mi è arrivato lo stipendio, 1.800 €."
+   ],
+   "transactions": [
+    {
+     "amount": 1800,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "milleottocento"
+    }
+   ]
+  },
+  {
+   "id": "it-IT-05",
+   "locale": "it-IT",
+   "when": null,
+   "tts": "Ho speso settantacinque euro da Zara e nove euro in farmacia.",
+   "ref": "Ho speso 75 euro da Zara e 9 euro in farmacia.",
+   "transactions": [
+    {
+     "amount": -75,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Zara",
+     "spoken": "settantacinque"
+    },
+    {
+     "amount": -9,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "nove"
+    }
+   ]
+  },
+  {
+   "id": "it-IT-06",
+   "locale": "it-IT",
+   "when": "anteayer",
+   "tts": "L'altro ieri ho fatto benzina all'Eni per cinquanta euro.",
+   "ref": "L'altro ieri ho fatto benzina all'Eni per 50 euro.",
+   "transactions": [
+    {
+     "amount": -50,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Eni",
+     "spoken": "cinquanta"
+    }
+   ]
+  },
+  {
+   "id": "nl-NL-01",
+   "locale": "nl-NL",
+   "when": "ayer",
+   "tts": "Gisteren heb ik negentien euro vijftig uitgegeven bij Albert Heijn.",
+   "ref": "Gisteren heb ik 19 euro 50 uitgegeven bij Albert Heijn.",
+   "refAlt": [
+    "Gisteren heb ik 19,50 euro uitgegeven bij Albert Heijn.",
+    "Gisteren heb ik €19,50 uitgegeven bij Albert Heijn."
+   ],
+   "transactions": [
+    {
+     "amount": -19.5,
+     "date": "2026-10-06",
+     "currency": "EUR",
+     "merchant": "Albert Heijn",
+     "merchantAlt": [
+      "AH"
+     ],
+     "spoken": "negentien euro vijftig"
+    }
+   ]
+  },
+  {
+   "id": "nl-NL-02",
+   "locale": "nl-NL",
+   "when": null,
+   "tts": "Ik heb elf euro betaald bij de Jumbo en vier euro voor de trein.",
+   "ref": "Ik heb 11 euro betaald bij de Jumbo en 4 euro voor de trein.",
+   "transactions": [
+    {
+     "amount": -11,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Jumbo",
+     "spoken": "elf"
+    },
+    {
+     "amount": -4,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "vier"
+    }
+   ]
+  },
+  {
+   "id": "nl-NL-03",
+   "locale": "nl-NL",
+   "when": "lunes",
+   "tts": "Maandag heb ik bij Thuisbezorgd voor drieëntwintig euro besteld.",
+   "ref": "Maandag heb ik bij Thuisbezorgd voor 23 euro besteld.",
+   "transactions": [
+    {
+     "amount": -23,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Thuisbezorgd",
+     "spoken": "drieëntwintig"
+    }
+   ]
+  },
+  {
+   "id": "nl-NL-04",
+   "locale": "nl-NL",
+   "when": null,
+   "tts": "Mijn salaris is binnen, tweeduizend tweehonderd euro.",
+   "ref": "Mijn salaris is binnen, 2200 euro.",
+   "refAlt": [
+    "Mijn salaris is binnen, €2.200."
+   ],
+   "transactions": [
+    {
+     "amount": 2200,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "spoken": "tweeduizend tweehonderd"
+    }
+   ]
+  },
+  {
+   "id": "nl-NL-05",
+   "locale": "nl-NL",
+   "when": null,
+   "tts": "Ik heb vierendertig euro uitgegeven bij de HEMA en acht euro bij de Kruidvat.",
+   "ref": "Ik heb 34 euro uitgegeven bij de HEMA en 8 euro bij de Kruidvat.",
+   "transactions": [
+    {
+     "amount": -34,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "HEMA",
+     "spoken": "vierendertig"
+    },
+    {
+     "amount": -8,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "EUR",
+     "merchant": "Kruidvat",
+     "spoken": "acht"
+    }
+   ]
+  },
+  {
+   "id": "nl-NL-06",
+   "locale": "nl-NL",
+   "when": "anteayer",
+   "tts": "Eergisteren heb ik bij Shell voor vijfenzestig euro getankt.",
+   "ref": "Eergisteren heb ik bij Shell voor 65 euro getankt.",
+   "transactions": [
+    {
+     "amount": -65,
+     "date": "2026-10-05",
+     "currency": "EUR",
+     "merchant": "Shell",
+     "spoken": "vijfenzestig"
+    }
+   ]
+  },
+  {
+   "id": "pl-PL-01",
+   "locale": "pl-PL",
+   "when": "ayer",
+   "tts": "Wczoraj wydałem osiemdziesiąt cztery złote w Biedronce.",
+   "ref": "Wczoraj wydałem 84 złote w Biedronce.",
+   "refAlt": [
+    "Wczoraj wydałem 84 zł w Biedronce."
+   ],
+   "transactions": [
+    {
+     "amount": -84,
+     "date": "2026-10-06",
+     "currency": "PLN",
+     "merchant": "Biedronka",
+     "merchantAlt": [
+      "Biedronce",
+      "Biedronki"
+     ],
+     "spoken": "osiemdziesiąt cztery"
+    }
+   ]
+  },
+  {
+   "id": "pl-PL-02",
+   "locale": "pl-PL",
+   "when": null,
+   "tts": "Zapłaciłem dwadzieścia dziewięć pięćdziesiąt w Żabce i dwanaście złotych za Ubera.",
+   "ref": "Zapłaciłem 29,50 w Żabce i 12 złotych za Ubera.",
+   "refAlt": [
+    "Zapłaciłem 29,50 zł w Żabce i 12 zł za Ubera."
+   ],
+   "transactions": [
+    {
+     "amount": -29.5,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": null,
+     "currencyAlt": [
+      "PLN"
+     ],
+     "merchant": "Żabka",
+     "merchantAlt": [
+      "Żabce",
+      "Zabka",
+      "Zabce"
+     ],
+     "spoken": "dwadzieścia dziewięć pięćdziesiąt"
+    },
+    {
+     "amount": -12,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PLN",
+     "merchant": "Uber",
+     "merchantAlt": [
+      "Ubera"
+     ],
+     "spoken": "dwanaście"
+    }
+   ]
+  },
+  {
+   "id": "pl-PL-03",
+   "locale": "pl-PL",
+   "when": "lunes",
+   "tts": "W poniedziałek zamówiłem jedzenie przez Pyszne za sześćdziesiąt pięć złotych.",
+   "ref": "W poniedziałek zamówiłem jedzenie przez Pyszne za 65 złotych.",
+   "refAlt": [
+    "W poniedziałek zamówiłem jedzenie przez Pyszne za 65 zł."
+   ],
+   "transactions": [
+    {
+     "amount": -65,
+     "date": "2026-10-05",
+     "currency": "PLN",
+     "merchant": "Pyszne",
+     "merchantAlt": [
+      "Pyszne.pl"
+     ],
+     "spoken": "sześćdziesiąt pięć"
+    }
+   ]
+  },
+  {
+   "id": "pl-PL-04",
+   "locale": "pl-PL",
+   "when": null,
+   "tts": "Dostałem wypłatę, sześć tysięcy dwieście złotych.",
+   "ref": "Dostałem wypłatę, 6200 złotych.",
+   "refAlt": [
+    "Dostałem wypłatę, 6200 zł."
+   ],
+   "transactions": [
+    {
+     "amount": 6200,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PLN",
+     "spoken": "sześć tysięcy dwieście"
+    }
+   ]
+  },
+  {
+   "id": "pl-PL-05",
+   "locale": "pl-PL",
+   "when": null,
+   "tts": "Wydałem sto czterdzieści złotych w Lidlu i dziewięć złotych w Rossmannie.",
+   "ref": "Wydałem 140 złotych w Lidlu i 9 złotych w Rossmannie.",
+   "refAlt": [
+    "Wydałem 140 zł w Lidlu i 9 zł w Rossmannie."
+   ],
+   "transactions": [
+    {
+     "amount": -140,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PLN",
+     "merchant": "Lidl",
+     "merchantAlt": [
+      "Lidlu"
+     ],
+     "spoken": "sto czterdzieści"
+    },
+    {
+     "amount": -9,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "PLN",
+     "merchant": "Rossmann",
+     "merchantAlt": [
+      "Rossmannie",
+      "Rossmanie"
+     ],
+     "spoken": "dziewięć"
+    }
+   ]
+  },
+  {
+   "id": "pl-PL-06",
+   "locale": "pl-PL",
+   "when": "anteayer",
+   "tts": "Przedwczoraj zatankowałem na Orlenie za dwieście dwadzieścia złotych.",
+   "ref": "Przedwczoraj zatankowałem na Orlenie za 220 złotych.",
+   "refAlt": [
+    "Przedwczoraj zatankowałem na Orlenie za 220 zł."
+   ],
+   "transactions": [
+    {
+     "amount": -220,
+     "date": "2026-10-05",
+     "currency": "PLN",
+     "merchant": "Orlen",
+     "merchantAlt": [
+      "Orlenie"
+     ],
+     "spoken": "dwieście dwadzieścia"
+    }
+   ]
+  },
+  {
+   "id": "ja-JP-01",
+   "locale": "ja-JP",
+   "when": "ayer",
+   "tts": "昨日ローソンで八百六十円使いました。",
+   "ref": "昨日ローソンで860円使いました。",
+   "transactions": [
+    {
+     "amount": -860,
+     "date": "2026-10-06",
+     "currency": "JPY",
+     "merchant": "ローソン",
+     "merchantAlt": [
+      "Lawson"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ja-JP-02",
+   "locale": "ja-JP",
+   "when": null,
+   "tts": "セブンイレブンで五百四十円、タクシーで二千百円払いました。",
+   "ref": "セブンイレブンで540円、タクシーで2100円払いました。",
+   "transactions": [
+    {
+     "amount": -540,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "JPY",
+     "merchant": "セブンイレブン",
+     "merchantAlt": [
+      "セブン-イレブン",
+      "7-Eleven",
+      "セブン"
+     ]
+    },
+    {
+     "amount": -2100,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "JPY"
+    }
+   ]
+  },
+  {
+   "id": "ja-JP-03",
+   "locale": "ja-JP",
+   "when": "lunes",
+   "tts": "月曜日に出前館で千八百円の注文をしました。",
+   "ref": "月曜日に出前館で1800円の注文をしました。",
+   "transactions": [
+    {
+     "amount": -1800,
+     "date": "2026-10-05",
+     "currency": "JPY",
+     "merchant": "出前館"
+    }
+   ]
+  },
+  {
+   "id": "ja-JP-04",
+   "locale": "ja-JP",
+   "when": null,
+   "tts": "給料が二十八万円振り込まれました。",
+   "ref": "給料が28万円振り込まれました。",
+   "refAlt": [
+    "給料が280000円振り込まれました。"
+   ],
+   "transactions": [
+    {
+     "amount": 280000,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "JPY"
+    }
+   ]
+  },
+  {
+   "id": "ja-JP-05",
+   "locale": "ja-JP",
+   "when": null,
+   "tts": "ユニクロで三千九百九十円のシャツを買いました。",
+   "ref": "ユニクロで3990円のシャツを買いました。",
+   "transactions": [
+    {
+     "amount": -3990,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "JPY",
+     "merchant": "ユニクロ",
+     "merchantAlt": [
+      "UNIQLO"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ja-JP-06",
+   "locale": "ja-JP",
+   "when": "anteayer",
+   "tts": "おととい、ファミリーマートで千二百円使いました。",
+   "ref": "おととい、ファミリーマートで1200円使いました。",
+   "refAlt": [
+    "一昨日、ファミリーマートで1200円使いました。"
+   ],
+   "transactions": [
+    {
+     "amount": -1200,
+     "date": "2026-10-05",
+     "currency": "JPY",
+     "merchant": "ファミリーマート",
+     "merchantAlt": [
+      "ファミマ",
+      "FamilyMart"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "zh-Hans-01",
+   "locale": "zh-Hans",
+   "when": "ayer",
+   "tts": "昨天在美团点外卖花了三十二点八元。",
+   "ref": "昨天在美团点外卖花了32.8元。",
+   "transactions": [
+    {
+     "amount": -32.8,
+     "date": "2026-10-06",
+     "currency": "CNY",
+     "merchant": "美团",
+     "merchantAlt": [
+      "Meituan"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "zh-Hans-02",
+   "locale": "zh-Hans",
+   "when": null,
+   "tts": "在全家便利店付了十五元，打车花了二十八元。",
+   "ref": "在全家便利店付了15元，打车花了28元。",
+   "transactions": [
+    {
+     "amount": -15,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "CNY",
+     "merchant": "全家",
+     "merchantAlt": [
+      "FamilyMart"
+     ]
+    },
+    {
+     "amount": -28,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "CNY"
+    }
+   ]
+  },
+  {
+   "id": "zh-Hans-03",
+   "locale": "zh-Hans",
+   "when": "lunes",
+   "tts": "星期一在淘宝买了一件衣服，一百九十九元。",
+   "ref": "星期一在淘宝买了一件衣服，199元。",
+   "transactions": [
+    {
+     "amount": -199,
+     "date": "2026-10-05",
+     "currency": "CNY",
+     "merchant": "淘宝",
+     "merchantAlt": [
+      "Taobao"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "zh-Hans-04",
+   "locale": "zh-Hans",
+   "when": null,
+   "tts": "这个月工资到账了，八千五百元。",
+   "ref": "这个月工资到账了，8500元。",
+   "transactions": [
+    {
+     "amount": 8500,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "CNY"
+    }
+   ]
+  },
+  {
+   "id": "zh-Hans-05",
+   "locale": "zh-Hans",
+   "when": null,
+   "tts": "在盒马买菜花了一百二十六元，在星巴克花了三十八元。",
+   "ref": "在盒马买菜花了126元，在星巴克花了38元。",
+   "transactions": [
+    {
+     "amount": -126,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "CNY",
+     "merchant": "盒马",
+     "merchantAlt": [
+      "Hema",
+      "河马"
+     ]
+    },
+    {
+     "amount": -38,
+     "date": "2026-10-07",
+     "dateAlt": [
+      null
+     ],
+     "currency": "CNY",
+     "merchant": "星巴克",
+     "merchantAlt": [
+      "Starbucks"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "zh-Hans-06",
+   "locale": "zh-Hans",
+   "when": "anteayer",
+   "tts": "前天在中国石化加油花了三百元。",
+   "ref": "前天在中国石化加油花了300元。",
+   "transactions": [
+    {
+     "amount": -300,
+     "date": "2026-10-05",
+     "currency": "CNY",
+     "merchant": "中国石化",
+     "merchantAlt": [
+      "Sinopec"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,170 @@
+name: Vigilante de la nocturna
+
+# QUÉ VIGILA: que la suite completa de UI corra una vez al día sobre la rama por defecto.
+#
+# POR QUÉ EXISTE: la nocturna (`qa.yml`, por `schedule`) falla en silencio. Si su ventana se
+# pierde, no hay rojo, ni aviso, ni run: no hay NADA, y una ausencia no se nota. Este workflow
+# lo dice — y, ya puestos, lo arregla: si a la nocturna de hoy se le pasó el plazo, la lanza él.
+#
+# LA LÓGICA VIVE EN `qa/scripts/ci-vigilante-nocturna.sh`, con su banco
+# (`ci-vigilante-nocturna-test.sh`, en el job `coverage-index` de `qa.yml`). Allí está escrito
+# por qué decide como decide. En corto, lo que se midió el 2026-10-06:
+#
+#   · El `schedule` de `qa.yml` SÍ corre: 29 de 29 días desde el 2026-09-08, pero entre 3,9 y
+#     8,9 h después de su cron.
+#   · El vigilante anterior lanzó 22 nocturnas en ese tiempo y LAS 22 SOBRABAN: siempre había
+#     una corrida de UI en las 26 h previas. La API de runs filtrada por evento devuelve
+#     subconjuntos distintos llamada a llamada, y él hacía una sola lectura en cada push.
+#
+# Ahora pregunta «¿ha nacido la corrida de HOY?», con «hoy» anclado al cron de `qa.yml`; lee de
+# dos fuentes en varias rondas; y no actúa nunca antes de un plazo de 12 h desde el cron.
+#
+# DOS RELOJES, porque fallan de forma distinta:
+#
+#   · `schedule` — puesto DESPUÉS del plazo (20:17 UTC con el cron de hoy de qa.yml), para que
+#     cuando despierte ya pueda decidir algo. Llega con horas de retraso, como el de la
+#     nocturna; mientras nazca antes de las 08:17 UTC del día siguiente, mira el día correcto.
+#     Son dos por redundancia: cuestan segundos de Linux.
+#   · `push` a `2.1` — no depende del cron. Antes del plazo cada push lee una vez y no hace
+#     nada; después, el primero que llegue lanza si falta. Es la red si el cron muere.
+#
+# SI MUEVES EL CRON DE `qa.yml`: el vigilante lo lee solo y corre su «día» con él, pero sus
+# propios crons de aquí abajo están puestos a mano tras el plazo. Muévelos también.
+#
+# LA UI EN TANDAS (2026-10-09) NO LE CAMBIA NADA: las tandas son jobs del MISMO run de `qa.yml`,
+# y el vigilante cuenta runs (`schedule`/`workflow_dispatch`), no jobs. Si algún día las tandas se
+# reparten en noches o crons distintos, esto sí deja de valer: un run diario ya no sería la suite
+# entera.
+
+on:
+  schedule:
+    - cron: '47 20 * * *'
+    - cron: '47 23 * * *'
+  push:
+    branches: ["2.1"]
+  workflow_dispatch:
+    inputs:
+      ahora:
+        description: 'ENSAYO: decide como si fuera esta hora (AAAA-MM-DDTHH:MM:SSZ). Con esto NUNCA se lanza nada; sirve para recorrer cada camino de la decisión.'
+        required: false
+        default: ''
+      forzar:
+        description: 'si = lanza la nocturna aunque ya haya corrido, para verificar el disparo de punta a punta. No envía aviso.'
+        required: false
+        default: 'no'
+        type: choice
+        options: ['no', 'si']
+
+# Serializa. Sin esto, dos pushes casi simultáneos abren dos vigilantes que leen «no hay
+# corrida» a la vez y lanzan DOS nocturnas (cada una, desde el 2026-10-09, cuatro `macos-26` durante
+# ~1,3 h: el job `tests` y las tres tandas del job `ui`). Ojo, medido el 2026-10-06: GitHub
+# deja UN solo run pendiente por grupo y cancela el pendiente anterior cuando llega otro (con
+# cuatro dispatches seguidos, el 2.º y el 3.º salieron «cancelled»). Aquí no hace daño —todos
+# deciden lo mismo y decide el último—, pero al probar, lánzalos de uno en uno.
+concurrency:
+  group: nocturna-vigilante
+  cancel-in-progress: false
+
+permissions:
+  # Leer los runs y poder disparar `qa.yml`.
+  actions: write
+  # Para el checkout que trae el script, `qa.yml` (de donde sale el cron) y `.github/actions/avisar`.
+  contents: read
+  # El canal de respaldo de `avisar` escribe un issue cuando el webhook no responde.
+  issues: write
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      # Primero y sin condición: la entrega del aviso lleva `always()` y necesita la action local
+      # en el workspace aunque un paso anterior haya fallado.
+      - uses: actions/checkout@v4
+
+      - name: ¿Ha nacido la corrida de UI de hoy?
+        id: decidir
+        env:
+          # Por `env:` y no interpolados con `${{ }}` dentro del `run:`: son texto libre de quien
+          # lanza el dispatch, y dentro de comillas dobles de bash se ejecutaría.
+          AHORA: ${{ github.event.inputs.ahora }}
+          FORZAR: ${{ github.event.inputs.forzar || 'no' }}
+        run: bash qa/scripts/ci-vigilante-nocturna.sh decidir
+
+      - name: Lanzar la nocturna y comprobar que nace
+        id: lanzar
+        if: ${{ steps.decidir.outputs.decision == 'lanzar' && steps.decidir.outputs.ensayo != 'si' }}
+        env:
+          RAMA: ${{ steps.decidir.outputs.rama }}
+        run: bash qa/scripts/ci-vigilante-nocturna.sh lanzar
+
+      - name: Componer el aviso
+        id: componer
+        # Avisa cuando lanza de verdad (no en un lanzamiento forzado, que es una prueba) y cuando
+        # el vigilante no ha podido ni decidir: callar en ese caso sería fallar abierto.
+        if: >-
+          ${{ always() && (
+            (steps.decidir.outputs.decision == 'lanzar' && steps.decidir.outputs.motivo != 'forzada')
+            || steps.decidir.outcome == 'failure') }}
+        env:
+          RAMA: ${{ steps.decidir.outputs.rama }}
+          MOTIVO: ${{ steps.decidir.outputs.motivo }}
+          DESDE: ${{ steps.decidir.outputs.desde }}
+          LIMITE: ${{ steps.decidir.outputs.limite }}
+          ENSAYO: ${{ steps.decidir.outputs.ensayo }}
+          DECIDIR: ${{ steps.decidir.outcome }}
+          NACIO: ${{ steps.lanzar.outputs.nacio }}
+          NUEVO_RUN: ${{ steps.lanzar.outputs.run_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          if [ "$DECIDIR" = failure ]; then
+            asunto="el vigilante de la nocturna no ha podido decidir"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO: el vigilante falló antes de saber si la suite de UI de hoy corrió." \
+              "No se ha lanzado nada. Lo más probable: el cron de qa.yml cambió de forma o la API no responde." )
+          else
+            if [ "$MOTIVO" = sin_lectura ]; then
+              que="no he podido leer los runs de qa.yml, así que no sé si la nocturna de hoy corrió"
+            else
+              que="la nocturna de hoy (día desde $DESDE) no había nacido al vencer el plazo ($LIMITE)"
+            fi
+            if [ "$ENSAYO" = si ]; then
+              asunto="[ensayo] el vigilante habría lanzado la nocturna"
+              resultado="Es un ENSAYO: no se ha lanzado nada."
+            elif [ "${NACIO:-no}" = si ]; then
+              asunto="la nocturna no había corrido y se ha lanzado sola"
+              [ "$MOTIVO" = sin_lectura ] && asunto="no he podido comprobar la nocturna y la he lanzado por si acaso"
+              resultado="La he lanzado y el run existe: $NUEVO_RUN"
+            else
+              asunto="la nocturna no ha corrido y NO se ha podido lanzar"
+              resultado="El lanzamiento no ha creado ningún run: hoy NO hay cobertura de UI. Si el dispatch falla con el GITHUB_TOKEN, esto necesita un token propio."
+            fi
+            detalle=$(printf '%s\n' "CI de $REPO ($RAMA): $que." "" "$resultado" \
+              "" "Si se repite varios días, el schedule de Actions no está sirviendo la nocturna.")
+          fi
+
+          # Un texto de varias líneas necesita delimitador; sin él, `$GITHUB_OUTPUT` se queda
+          # con la primera línea y el aviso viaja decapitado.
+          texto=$(printf '%s\n' "$detalle" "" "Log completo: $RUN_URL")
+          printf '%s\n' "$asunto" "$texto" | sed 's/^/  /'
+          {
+            echo "asunto=$asunto"
+            echo "texto<<FIN_DEL_AVISO"
+            printf '%s\n' "$texto"
+            echo "FIN_DEL_AVISO"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Enviar al webhook, y al respaldo si no responde
+        if: ${{ always() && steps.componer.outcome == 'success' && steps.decidir.outputs.ensayo != 'si' }}
+        uses: ./.github/actions/avisar
+        with:
+          webhook-url: ${{ secrets.GROK_WEBHOOK_URL }}
+          sender-key: ${{ secrets.GROK_WEBHOOK_SENDER_KEY }}
+          github-token: ${{ github.token }}
+          asunto: ${{ steps.componer.outputs.asunto }}
+          texto: ${{ steps.componer.outputs.texto }}

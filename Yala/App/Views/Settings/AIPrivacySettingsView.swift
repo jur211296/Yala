@@ -28,38 +28,26 @@ struct AIPrivacySettingsView: View {
     @State private var showRevokeInsightsDialog = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.lg) {
-                    SectionBox(title: L10n.AIPrivacy.title) {
-                        VStack(spacing: DS.Spacing.none) {
-                            toggleRow(title: L10n.AIPrivacy.processingRow, isOn: $dataToggle)
-                            SubsectionDivider()
-                            toggleRow(title: L10n.AIPrivacy.chatRow, isOn: $chatToggle)
-                            SubsectionDivider()
-                            toggleRow(title: L10n.AIPrivacy.insightsRow, isOn: $insightsToggle)
-                        }
-                    }
+        YalaSettingsList {
+            YalaSettingsSection(L10n.AIPrivacy.title) {
+                YalaSettingsToggleRow(L10n.AIPrivacy.processingRow, isOn: $dataToggle)
+                YalaSettingsToggleRow(L10n.AIPrivacy.chatRow, isOn: $chatToggle)
+                YalaSettingsToggleRow(L10n.AIPrivacy.insightsRow, isOn: $insightsToggle)
+            } footer: {
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    Text(L10n.AIPrivacy.footerHint)
 
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        Text(L10n.AIPrivacy.footerHint)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-
-                        Button {
-                            openURL(AppConstants.privacyURL)
-                        } label: {
-                            Text(L10n.AIPrivacy.policyLink)
-                                .font(DS.Typography.caption.weight(.medium))
-                                .foregroundStyle(.tint)
-                        }
-                        .buttonStyle(.plain)
+                    Button {
+                        openURL(AppConstants.privacyURL)
+                    } label: {
+                        Text(L10n.AIPrivacy.policyLink)
+                            .font(DS.Typography.caption.weight(.medium))
+                            .foregroundStyle(.tint)
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.lg)
             }
+        }
         .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.AIPrivacy.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -154,20 +142,5 @@ struct AIPrivacySettingsView: View {
         } message: {
             Text(L10n.AIPrivacy.revokeConfirmMessage)
         }
-    }
-
-    private func toggleRow(title: String, isOn: Binding<Bool>) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Text(title)
-                .font(DS.Typography.body)
-                .foregroundStyle(.primary)
-
-            Spacer()
-
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.FormRow.paddingV)
     }
 }

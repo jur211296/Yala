@@ -5,52 +5,93 @@
       "headers": [
         { "key": "Content-Type", "value": "application/json" }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" }
+      ]
+    },
+    {
+      "source": "/_astro/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+      ]
     }
   ],
   "redirects": [
     {
       "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "yala-pe.com"
-        }
-      ],
+      "has": [{ "type": "host", "value": "yala-pe.com" }],
       "destination": "https://yala-app.pe/:path*",
       "permanent": true
     },
     {
       "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.yala-pe.com"
-        }
-      ],
+      "has": [{ "type": "host", "value": "www.yala-pe.com" }],
       "destination": "https://yala-app.pe/:path*",
       "permanent": true
     },
     {
       "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "yala-app.com.pe"
-        }
-      ],
+      "has": [{ "type": "host", "value": "yala-app.com.pe" }],
       "destination": "https://yala-app.pe/:path*",
       "permanent": true
     },
     {
       "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.yala-app.com.pe"
-        }
-      ],
+      "has": [{ "type": "host", "value": "www.yala-app.com.pe" }],
       "destination": "https://yala-app.pe/:path*",
       "permanent": true
+    },
+    {
+      "source": "/privacy_content",
+      "destination": "/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "accept-language", "value": "^en(?:-[A-Za-z]+)?(?:[,;].*)?$" }],
+      "missing": [{ "type": "cookie", "key": "lang" }],
+      "destination": "/en/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "accept-language", "value": "^de(?:-[A-Za-z]+)?(?:[,;].*)?$" }],
+      "missing": [{ "type": "cookie", "key": "lang" }],
+      "destination": "/de/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "accept-language", "value": "^fr(?:-[A-Za-z]+)?(?:[,;].*)?$" }],
+      "missing": [{ "type": "cookie", "key": "lang" }],
+      "destination": "/fr/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "accept-language", "value": "^it(?:-[A-Za-z]+)?(?:[,;].*)?$" }],
+      "missing": [{ "type": "cookie", "key": "lang" }],
+      "destination": "/it/",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "accept-language", "value": "^pt(?:-[A-Za-z]+)?(?:[,;].*)?$" }],
+      "missing": [{ "type": "cookie", "key": "lang" }],
+      "destination": "/pt/",
+      "permanent": false
     }
   ]
 }

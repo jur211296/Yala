@@ -26,6 +26,9 @@ struct PanelTrendData: Equatable {
     /// educativa multi-currency en el sheet "Tu saldo hoy". Nil cuando no
     /// hay liveAnchor.
     var trendLiveAnchorBreakdown: [String: Decimal]? = nil
+    /// `true` si el saldo vivo se armó con alguna tasa que no era la de hoy. Lo pinta la hoja
+    /// «¿Cuánto tienes hoy?», que existe precisamente porque el saldo es multimoneda.
+    var trendLiveAnchorIsApproximate: Bool = false
 }
 
 struct PanelCategoriesData: Equatable {
@@ -152,6 +155,34 @@ struct PanelHeroPeriodData: Equatable {
     var income: Double = 0
     var expense: Double = 0
     var available: Double { max(0, income - expense) }
+    /// Gasto del período anterior COMPARABLE (MTD-alineado), mismo scope que
+    /// `expense`. Alimenta el chip "vs período anterior" del hero en modo Solo
+    /// Gastos. `nil` cuando no hay previo acotado (`.allTime`) — el chip se
+    /// oculta. Modo normal no lo muestra (la rama de vista lo ignora).
+    var periodPrevExpense: Double? = nil
+    /// Variación % del gasto del período vs el período anterior comparable.
+    /// `nil` si no hay previo (`periodPrevExpense` nil) o el previo es 0
+    /// (`calculateVariation` devuelve nil) → el chip no se renderiza.
+    var spentVariation: Double? {
+        periodPrevExpense.flatMap {
+            PreviousPeriodHelper.calculateVariation(currentAmount: expense, previousAmount: $0)
+        }
+    }
+    /// Encienden la marca «≈» del número grande del Panel. Vienen del bucket de período de
+    /// `HeroBucketsCalculator`, o sea del flag `isExchangeRateProvisional` de las transacciones
+    /// sumadas: el importe se muestra igual, pero deja de presentarse como exacto.
+    ///
+    /// Separadas por lado porque el hero pinta `expense` en modo Solo Gastos y `available` —que sí
+    /// agrega los dos— en el normal.
+    var incomeApproximate: Bool = false
+    var expenseApproximate: Bool = false
+    /// Para `available`, que resta un lado del otro.
+    ///
+    /// **Ya no es `income || expense`** (2026-09-08): con umbrales por lado ese OR se apagaba
+    /// justo en el caso peligroso — dos lados grandes, cada uno por debajo del 5 %, y un
+    /// «Disponible» pequeño con una incertidumbre mayor que él mismo. Lo calcula
+    /// `HeroBucketsCalculator` contra el número que se pinta.
+    var amountsAreApproximate: Bool = false
 }
 
 @MainActor
@@ -214,6 +245,18 @@ final class PanelViewModel {
     /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D
     private(set) var isInBackground = false
 
+    /// «¿Está la app activa?» para el freno del recálculo. Costura de test: el `applicationState` del
+    /// host de unit tests no es fiable (molde de `RecalculationDebouncer`). Producción no la toca.
+    @ObservationIgnored
+    var isApplicationActive: @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }
+
+    #if DEBUG
+    /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
+    /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
+    @ObservationIgnored
+    private(set) var debugCalculationRuns = 0
+    #endif
+
     // MARK: - Loaded Data
 
     private(set) var accounts: [Account] = []
@@ -224,6 +267,16 @@ final class PanelViewModel {
     private(set) var budgets: [Budget] = []
     private(set) var scheduledPayments: [ScheduledPayment] = []
     private(set) var pendingDrafts: [InboxDraft] = []
+    /// Cuántos movimientos se quedaron sin cuenta (`OrphanedRecordsService.orphanCount`). Lo pinta el aviso del Panel.
+    private(set) var orphanedRecordCount = 0
+
+    /// Proyección de "mi parte" (neto) de los gastos de grupo BRIDGEADOS para la capa de
+    /// stats. Se reconstruye en `loadData()` desde `transactions` — el set MÁS AMPLIO (con
+    /// AMBAS hermanas del bridge) y único punto donde `transactions` cambia — así queda en
+    /// sync para TODOS los paths de cálculo (contexto de widgets y Hero, que leen ese mismo
+    /// set). `.none` = identidad (comportamiento previo). Lo consumen las calculadoras de
+    /// gasto/ingreso vía su parámetro `adjustment:`.
+    private(set) var statsAdjustment: GroupBridgeStatsAdjustment = .none
 
     // MARK: - State
 
@@ -266,6 +319,29 @@ final class PanelViewModel {
 
     // MARK: - Filter Properties (SSOT: Read/Write from SessionState)
 
+    /// Filtro de cuentas del Panel. Es un **conjunto** y hay que tratarlo como
+    /// tal: `SessionState` es global y sus escritores admiten varias cuentas
+    /// (Registros → Filtros, y `applyBudgetFilters`). Todo cálculo del Panel lee
+    /// de aquí.
+    var selectedAccountIDs: Set<PersistentIdentifier> {
+        get { SessionState.shared.selectedAccountIDs }
+        set { SessionState.shared.selectedAccountIDs = newValue }
+    }
+
+    /// Conveniencia para las **escrituras** que son de una cuenta por diseño:
+    /// el tap del carrusel en modo incluir (elegir ésta reemplaza el filtro) y
+    /// limpiar el filtro entero con `= nil` —el setter hace `removeAll()`, así
+    /// que la X del chip borra las N, no solo una—.
+    ///
+    /// **No la uses para leer ni para calcular.** `.first` de un `Set` no es
+    /// estable, y con dos cuentas filtradas devuelve una arbitraria: ése era
+    /// exactamente el bug por el que el Panel y Distribución mostraban saldos
+    /// distintos. Para filtrar, `selectedAccountIDs`.
+    ///
+    /// Queda una lectura viva en `PanelSheetsModifier` (prefill del formulario
+    /// de transacción), y **no es legítima**: precarga una cuenta arbitraria, y
+    /// en modo excluir precarga justo la que el usuario acaba de excluir. Ticket:
+    /// `panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo`.
     var selectedAccountID: PersistentIdentifier? {
         get { SessionState.shared.selectedAccountIDs.first }
         set {
@@ -392,6 +468,18 @@ final class PanelViewModel {
             #endif
         }
 
+        // Reconstruir la proyección de netos de grupo desde el set MÁS AMPLIO (`transactions`,
+        // con AMBAS hermanas del bridge). `transactions` solo cambia aquí → `statsAdjustment`
+        // queda siempre fresco ANTES de cualquier cálculo de widget (contexto y Hero).
+        statsAdjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
+
+        // Movimientos sin cuenta (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`): se recuentan en CADA
+        // recarga, no una vez, para que el aviso enseñe también los que llegan tarde por sync tras eliminar su cuenta
+        // (card `tablero-eliminar-una-cuenta-todavia-puede-dejar-mjzx`). Se recuenta aunque `transactions` no cambie:
+        // mover uno le cambia la cuenta en sitio, y el array sigue siendo el mismo.
+        let orphans = OrphanedRecordsService.orphanCount(in: transactions, context: context)
+        if orphans != orphanedRecordCount { orphanedRecordCount = orphans }
+
         var budgetsDesc = FetchDescriptor<Budget>(
             predicate: #Predicate<Budget> { $0.isActive },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
@@ -424,7 +512,8 @@ final class PanelViewModel {
         )
         draftsDesc.fetchLimit = 100
         do {
-            let fetched = try context.fetch(draftsDesc)
+            // Sin los gastos de grupo quitados de la Bandeja en este teléfono: el contador del Panel es el de la Bandeja.
+            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(draftsDesc), context: context)
             if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG
@@ -452,6 +541,17 @@ final class PanelViewModel {
     /// `trendChart.currentBalance` solo se actualiza si el widget está visible).
     var panelTotalBalance: Double = 0
 
+    /// Si el saldo total del panorama se compuso con alguna tasa que no era la de hoy. Este número
+    /// es el caso más puro de conversión en vivo —agrupa saldos por divisa nativa y los pasa al TC
+    /// ACTUAL, sin ningún monto guardado en el que apoyarse—, así que su señal viene entera del
+    /// converter.
+    var panelTotalBalanceIsApproximate: Bool = false
+
+    /// Ganancia/pérdida cambiaria del saldo que el Panel está enseñando, o `nil` si el usuario no
+    /// tiene dinero en divisa extranjera. Sale del MISMO `Breakdown` que `panelTotalBalance`, así
+    /// que la card explica exactamente el número de arriba y no otro parecido.
+    var fxPnLSummary: FXPnLLogic.Summary?
+
     var trendChart = PanelTrendData()
     var categoriesWidget = PanelCategoriesData()
     var subcategoriesWidget = PanelSubcategoriesData()
@@ -466,12 +566,6 @@ final class PanelViewModel {
     var weekdayWidget = PanelWeekdayData()
     var periodComparisonWidget = PanelPeriodComparisonData()
     var tagsWidget = PanelTagsData()
-
-    /// Reemplaza el rule-based `subtext` del hero cuando es Pro + consent y
-    /// hay cache hit o la API respondió. Nil ⇒ el view usa fallback
-    /// rule-based inmediato (también determina la visibilidad del badge
-    /// "Pro" en `PanelHeroSection`, derivado de `!= nil`).
-    var heroAISubtitle: String? = nil
 
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
@@ -502,6 +596,7 @@ final class PanelViewModel {
     var processedYDomain: ClosedRange<Double> { trendChart.processedYDomain }
     var trendLiveAnchor: BarPoint? { trendChart.trendLiveAnchor }
     var trendLiveAnchorBreakdown: [String: Decimal]? { trendChart.trendLiveAnchorBreakdown }
+    var trendLiveAnchorIsApproximate: Bool { trendChart.trendLiveAnchorIsApproximate }
     var currentInterval: DateInterval { trendChart.currentInterval }
     var currentPeriod: DetailPeriod { trendChart.currentPeriod }
     var trendTotalIncome: Double { trendChart.trendTotalIncome }
@@ -688,7 +783,7 @@ final class PanelViewModel {
                 config.isVisible = true
                 return config
             }
-            return WidgetConfig(id: UUID(), type: type, isVisible: true, size: .medium)
+            return WidgetConfig(id: UUID(), type: type, isVisible: true, size: PanelDefaults.size(for: type))
         }
     }
 
@@ -751,7 +846,7 @@ final class PanelViewModel {
     func isWidgetVisible(_ type: WidgetType) -> Bool {
         guard let prefs = appPreferences else { return true }
         let section = type.panelSection
-        if prefs.panelSectionsHidden.contains(section.rawValue) { return false }
+        if prefs.resolvedSectionsHidden.contains(section.rawValue) { return false }
         let hidden = draftHidden[section] ?? prefs.hidden(for: section)
         return !hidden.contains(type.rawValue)
     }
@@ -765,10 +860,15 @@ final class PanelViewModel {
     // MARK: - Widget Size (P20-11)
 
     /// Current `.medium` / `.large` size for a widget type.
-    /// Falls back to `.medium` when the widget isn't yet stored (first launch
-    /// pre-injection, or widget type introduced after last save).
+    /// Cae al tamaño de `PanelDefaults` cuando el widget aún no está guardado
+    /// (primer arranque antes de la inyección, o tipo añadido después del último
+    /// guardado).
+    ///
+    /// Antes caía a `.medium` fijo, que para `trend` **no es un tamaño legal**
+    /// (`supportedSizes == [.small, .large]`): el picker recibía un valor imposible
+    /// y no seleccionaba ninguna opción. `PanelDefaults.size(for:)` sanea.
     func widgetSize(_ type: WidgetType) -> WidgetSize {
-        widgetConfigs.first(where: { $0.type == type })?.size ?? .medium
+        widgetConfigs.first(where: { $0.type == type })?.size ?? PanelDefaults.size(for: type)
     }
 
     /// Updates the `.medium` / `.large` size for a widget type. Persists via
@@ -786,6 +886,13 @@ final class PanelViewModel {
     /// al tamaño más pequeño disponible que no sea small.
     func setWidgetSize(_ type: WidgetType, size: WidgetSize) {
         guard type.supportsSize else { return }
+        // Fija los predeterminados antes de tocar el almacén de tamaños. Sin esto, un
+        // cambio de tamaño durante la ventana pre-siembra crea el blob legacy
+        // `panel_widget_configs_v1`, y su sola PRESENCIA desvía a
+        // `PanelPreferencesMigration` por la rama de ACTUALIZACIÓN — que bucketiza ese
+        // blob y no escribe `panelSectionsHidden` jamás. El usuario nuevo se quedaba
+        // sin el curado de secciones por haber tocado un selector de tamaño.
+        appPreferences?.materializePanelDefaultsIfNeeded()
         guard let idx = widgetConfigs.firstIndex(where: { $0.type == type }) else { return }
         guard widgetConfigs[idx].size != size else { return }
         var updated = widgetConfigs
@@ -881,16 +988,50 @@ final class PanelViewModel {
         scheduleSectionWrite(for: kind)
     }
 
-    /// Clears section's Order + Hidden so `activeWidgets(in:)` falls back to
-    /// `WidgetType.defaultWidgets(in:)`. Cancels any pending debounce, clears draft,
-    /// and writes synchronously — the user expects "Restablecer" to take effect now.
+    /// Restablece una sección a los predeterminados curados de `PanelDefaults`:
+    /// orden, widgets ocultos y tamaños. Cancela el guardado pendiente, limpia el
+    /// borrador y escribe de forma síncrona — el usuario espera que «Restablecer»
+    /// surta efecto ya.
+    ///
+    /// Hasta ahora escribía `[]` en las dos listas, lo que hacía caer el render al
+    /// auto-sanado de `buildOrderedRawWidgets` y **encendía todos** los widgets de la
+    /// sección. Coincidía con los predeterminados solo mientras estos fueron «casi
+    /// todo visible»; con el curado de cuatro widgets, ese botón los deshacía.
+    ///
+    /// Punto de entrada único: lo usan tanto el botón del sheet de preferencias de
+    /// sección como el «Restablecer widgets de X» del sheet de configuración, que
+    /// antes duplicaba el cuerpo sin cancelar el debounce ni limpiar el borrador.
     func resetSectionPreferences(_ kind: PanelSectionKind) {
         pendingSectionWrites[kind]?.cancel()
         pendingSectionWrites[kind] = nil
         draftOrder[kind] = nil
         draftHidden[kind] = nil
-        appPreferences?.setOrder([], for: kind)
-        appPreferences?.setHidden([], for: kind)
+        appPreferences?.applyDefaults(for: kind)
+        applyDefaultSizes(in: kind)
+    }
+
+    /// Devuelve los widgets de una sección a su tamaño de `PanelDefaults`.
+    ///
+    /// Un solo `save()` para toda la sección. Salta el pair-sync de Planificación a
+    /// propósito: los tamaños curados ya cumplen su invariante («ambos pequeños o
+    /// ninguno»), y dejarlo actuar dispararía escrituras cruzadas mientras el array
+    /// se está reescribiendo entero.
+    private func applyDefaultSizes(in kind: PanelSectionKind) {
+        let types = Set(WidgetType.defaultWidgets(in: kind))
+        guard !types.isEmpty else { return }
+
+        var updated = widgetConfigs
+        var changed = false
+        for index in updated.indices where types.contains(updated[index].type) {
+            let target = PanelDefaults.size(for: updated[index].type)
+            guard updated[index].size != target else { continue }
+            updated[index].size = target
+            changed = true
+        }
+
+        guard changed else { return }
+        widgetConfigs = updated
+        widgetConfig.save()
     }
 
     /// Flushes all pending debounced writes synchronously. Called from sheet
@@ -966,26 +1107,34 @@ final class PanelViewModel {
         }
     }
 
-    /// Calcula el balance mostrado: total de todas las cuentas o de la cuenta
-    /// seleccionada (vivo, TC actual sobre saldo nativo). En el total respeta
-    /// `includeGroupsInPanelTotal`: con el toggle OFF excluye las cuentas sistema
-    /// de grupos del agregado. Con una cuenta seleccionada el toggle no aplica.
+    /// Calcula el balance mostrado: total de todas las cuentas o de **las
+    /// cuentas filtradas** (vivo, TC actual sobre saldo nativo). En el total
+    /// respeta `includeGroupsInPanelTotal`: con el toggle OFF excluye las cuentas
+    /// sistema de grupos del agregado. Con un filtro de cuentas activo —una o
+    /// varias— el toggle no aplica.
+    /// Devuelve el desglose y no un `Double` a secas para que el llamador pueda además saber si
+    /// alguna divisa se convirtió con una tasa que no era la de hoy — el número grande del
+    /// panorama lleva «≈» cuando así es.
     func displayedBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String
-    ) -> Double {
+    ) -> LiveBalanceCalculator.Breakdown {
         let includeGroups = appPreferences?.includeGroupsInPanelTotal ?? true
         let effectiveAccounts = PanelTotalAccountsLogic.accountsForTotal(
             accounts,
             includeGroups: includeGroups,
-            hasSelectedAccount: self.selectedAccountID != nil
+            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(
+                selectedAccountIDs: self.selectedAccountIDs,
+                isExcludeMode: self.isExcludeMode
+            )
         )
-        return LiveBalanceCalculator.liveBalance(
+        return LiveBalanceCalculator.liveBalanceBreakdown(
             accounts: effectiveAccounts,
             transactions: transactions,
             preferredCurrencyCode: defaultCurrencyCode,
-            selectedAccountID: self.selectedAccountID
+            selectedAccountIDs: self.selectedAccountIDs,
+            isExcludeMode: self.isExcludeMode
         )
     }
 
@@ -1040,10 +1189,10 @@ final class PanelViewModel {
 
     /// Navigates to a Statistics detail tab. Visibility (and the
     /// temporaryTab + delay dance for tabs hidden in "More") is handled by
-    /// `SessionState.selectMainTab(_:)`.
-    func navigateToStatistics(_ detailTab: DetailViewTab) {
-        sessionState?.selectedDetailTab = detailTab
-        sessionState?.selectMainTab(.statistics)
+    /// `SceneNavigation.selectMainTab(_:)`. Recibe la navegación de la ventana del Panel que lo pide.
+    func navigateToStatistics(_ detailTab: DetailViewTab, in navigation: SceneNavigation) {
+        navigation.selectedDetailTab = detailTab
+        navigation.selectMainTab(.statistics)
     }
 
     /// Whether voice input can be used (requires active accounts and visible subcategories).
@@ -1136,6 +1285,7 @@ final class PanelViewModel {
         var newTrendFinalBalance = trendFinalBalance
         var newTrendLiveAnchor: BarPoint? = nil
         var newTrendLiveAnchorBreakdown: [String: Decimal]? = nil
+        var newTrendLiveAnchorIsApproximate = false
         if trendVisible {
             // For balance, use all transactions (no date filter) to calculate running balance
             let transactionsForTrend = trendType == .balance
@@ -1146,7 +1296,10 @@ final class PanelViewModel {
                 interval: calcContext.effectiveInterval,
                 accounts: calcContext.eligibleAccounts,
                 transactions: calcContext.balanceTransactions,
-                preferredCurrencyCode: calcContext.defaultCurrencyCode
+                preferredCurrencyCode: calcContext.defaultCurrencyCode,
+                // El mismo converter que la curva: la cifra y su último punto salen de la misma regla
+                // (`panel-balance-chart-contradicts-its-own-figure`).
+                converter: calcContext.converter
             )
             let result = TrendDataProcessor.processTrendData(
                 transactions: transactionsForTrend,
@@ -1156,7 +1309,9 @@ final class PanelViewModel {
                 grouping: calcContext.trendGrouping,
                 interval: calcContext.effectiveInterval,
                 currencyCode: calcContext.defaultCurrencyCode,
-                liveBalanceOverride: liveBalanceOverride
+                adjustment: statsAdjustment,
+                liveBalanceOverride: liveBalanceOverride,
+                converter: calcContext.converter
             )
             newTrendPoints = (result.points, result.rawPoints, result.yDomain)
             newTrendTotalIncome = result.totalIncome
@@ -1164,6 +1319,7 @@ final class PanelViewModel {
             newTrendFinalBalance = result.finalBalance
             newTrendLiveAnchor = result.liveAnchor
             newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
+            newTrendLiveAnchorIsApproximate = result.liveAnchorIsApproximate
         }
 
         // Categories — Distribución
@@ -1224,15 +1380,23 @@ final class PanelViewModel {
         // @Observable notifications into ~6 struct-level comparisons.
         enforceTrendLock(sessionState: sessionState)
 
-        let newBalance = displayedBalanceInDefaultCurrency(
+        let newBreakdown = displayedBalanceInDefaultCurrency(
             accounts: accounts,
             transactions: transactions,
             defaultCurrencyCode: defaultCurrencyCode
         )
+        let newBalance = (newBreakdown.convertedTotal as NSDecimalNumber).doubleValue
         // El saldo total del panorama debe reflejar cambios (toggle de grupos,
         // cuentas, TC) aunque el widget de Tendencias esté oculto — `trendChart`
         // de abajo solo se reasigna cuando `trendVisible`.
         if self.panelTotalBalance != newBalance { self.panelTotalBalance = newBalance }
+        if self.panelTotalBalanceIsApproximate != newBreakdown.amountsAreApproximate {
+            self.panelTotalBalanceIsApproximate = newBreakdown.amountsAreApproximate
+        }
+        // Recorre las MISMAS cuentas que acaba de sumar el saldo (`eligibleAccountIDs` viaja en
+        // el breakdown), así que la card explica el número de arriba y no otro parecido.
+        let newFXPnL = FXPnLLogic.summary(transactions: transactions, breakdown: newBreakdown)
+        if self.fxPnLSummary != newFXPnL { self.fxPnLSummary = newFXPnL }
 
         if trendVisible, let trendPoints = newTrendPoints {
             let newTrend = PanelTrendData(
@@ -1248,7 +1412,8 @@ final class PanelViewModel {
                 dataTrendType: self.trendType,
                 currentBalance: newBalance,
                 trendLiveAnchor: newTrendLiveAnchor,
-                trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown
+                trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown,
+                trendLiveAnchorIsApproximate: newTrendLiveAnchorIsApproximate
             )
             if newTrend != trendChart { trendChart = newTrend }
         }
@@ -1314,13 +1479,16 @@ final class PanelViewModel {
 
     /// Compute eligible accounts and their IDs (archived accounts still count)
     private func computeEligibleAccounts(from accounts: [Account]) -> (accounts: [Account], ids: Set<PersistentIdentifier>) {
+        // Espeja `StatisticsViewModel.computeEligibleAccounts`: el filtro es un
+        // conjunto y las dos pantallas tienen que resolverlo igual, o sus
+        // números vuelven a divergir.
         let eligible = accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
-            guard let selectedID = selectedAccountID else { return true }
+            if selectedAccountIDs.isEmpty { return true }
             if isExcludeMode {
-                return account.persistentModelID != selectedID
+                return !selectedAccountIDs.contains(account.persistentModelID)
             } else {
-                return account.persistentModelID == selectedID
+                return selectedAccountIDs.contains(account.persistentModelID)
             }
         }
         return (eligible, Set(eligible.map { $0.persistentModelID }))
@@ -1332,12 +1500,21 @@ final class PanelViewModel {
         eligibleAccountIDs: Set<PersistentIdentifier>,
         effectiveInterval: DateInterval
     ) -> [TransactionItem] {
+        // Toggle "incluir gastos de grupo en stats" (default ON) — cuando está OFF, los pies de
+        // categoría/subcategoría excluyen las TX bridgeadas de grupo (pata real + virtual).
+        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let calendar = Calendar.current
         return transactions.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
             if !effectiveInterval.contains(transaction.date) { return false }
             guard transaction.balanceAdjustmentType == nil else { return false }
+
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            ) else { return false }
 
             // Focused Date Filter
             if let focus = focusedDate {
@@ -1483,6 +1660,12 @@ final class PanelViewModel {
     ) -> PanelCalculationContext {
         let calendar = Calendar.current
 
+        // Toggle "incluir gastos de grupo en stats" (default ON). OFF excluye las TX bridgeadas
+        // de los sets de GASTO/INGRESO (`filtered` → cashflow/trend/weekday/tags/need/records;
+        // `transactionsWithoutDateFilter` → comparación de período). NO se aplica a
+        // `balanceTransactions` (el saldo refleja montos reales).
+        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+
         let (newTrendGrouping, newCashFlowGrouping, newNeedGrouping) = determineGroupings()
         let (eligibleAccounts, eligibleAccountIDs) = computeEligibleAccounts(from: accounts)
 
@@ -1497,6 +1680,12 @@ final class PanelViewModel {
                 if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
             }
 
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            ) else { return false }
+
             return FilterService.matchesCriteria(transaction, criteria: fullCriteria)
         }
 
@@ -1507,6 +1696,11 @@ final class PanelViewModel {
             guard transaction.balanceAdjustmentType == nil else { return false }
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            ) else { return false }
             return FilterService.matchesCriteria(transaction, criteria: comparisonCriteria)
         }
 
@@ -1600,6 +1794,61 @@ final class PanelViewModel {
         )
     }
 
+    /// Fechas de las TX del período ACTUAL (dentro de `interval`) que la calculadora
+    /// del widget realmente cuenta — referencia MTD para truncar el previo
+    /// (`DateAlignmentHelper.alignedPreviousItems`, p20-15 fase 2). Excluye ajustes
+    /// de saldo/transferencias (`balanceAdjustmentType == nil && category != nil`) y
+    /// filtra por `natures` con la MISMA semántica que las calculadoras
+    /// (`naturesToInclude = natures ?? [.expense]`). Importa: si el corte se derivara
+    /// de un set más amplio que lo que la calculadora suma (p.ej. incluir un INGRESO
+    /// tardío cuando el widget es gasto-only), el previo quedaría bajo-truncado y
+    /// reintroduciría el sesgo parcial-vs-completo (cazado en /code-review). Cash flow
+    /// pasa `[.income, .expense]`; los widgets de gasto pasan su `naturesFilter`
+    /// (nil → gasto). Residual conocido: para Tags no se filtra "tiene tag", así que
+    /// un gasto SIN etiqueta más tardío que el último gasto etiquetado puede correr
+    /// el corte 1+ días (borde estrecho, conservador).
+    private func currentPeriodDates(
+        _ txs: [TransactionItem],
+        in interval: DateInterval,
+        natures: Set<TransactionNature>?
+    ) -> [Date] {
+        let include = natures ?? [.expense]
+        return txs.filter { tx in
+            guard tx.balanceAdjustmentType == nil, let category = tx.category,
+                  interval.contains(tx.date) else { return false }
+            let nature: TransactionNature = category.isIncome ? .income : .expense
+            return include.contains(nature)
+        }
+        .map(\.date)
+    }
+
+    /// Transacciones del período ANTERIOR (dentro de `previousInterval`) truncadas al
+    /// mismo span de días que los datos del período ACTUAL (p20-15 fase 2). El
+    /// corte se deriva de `currentSource` filtrado por `natures`, que deben coincidir
+    /// con lo que la calculadora del widget cuenta. Recorta en los períodos EN CURSO
+    /// que el gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` admite
+    /// (`.thisMonth`, `.thisWeek`, `.thisYear`); no-op en el resto.
+    /// Centraliza el pre-filtro del previo (antes duplicado en los 5 widgets) para no
+    /// re-driftar el criterio de qué TX entran al período anterior.
+    private func alignedPreviousTransactions(
+        previousInterval: DateInterval,
+        currentSource: [TransactionItem],
+        natures: Set<TransactionNature>?,
+        context: PanelCalculationContext
+    ) -> [TransactionItem] {
+        let previous = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+        return DateAlignmentHelper.alignedPreviousItems(
+            previous,
+            currentDates: currentPeriodDates(currentSource, in: context.effectiveInterval, natures: natures),
+            currentInterval: context.effectiveInterval,
+            previousInterval: previousInterval,
+            period: context.period,
+            comparisonMode: .month
+        ) { $0.date }
+    }
+
     /// Calculate top spending categories with period comparison
     /// Uses needFilteredTransactions (not fullyFiltered) so that subcategory selection
     /// only dims categories visually, rather than filtering out other categories' data
@@ -1619,6 +1868,7 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1634,16 +1884,22 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Filter transactions for previous period (using date-independent filter)
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
+        // El corte usa `naturesFilter` (mismo que la calculadora) para no correrse con ingresos.
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.needFilteredTransactions,
+            natures: naturesFilter,
+            context: context
+        )
 
         let previousData = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: previousTransactions,
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1688,6 +1944,7 @@ final class PanelViewModel {
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1703,10 +1960,15 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Filter transactions for previous period (using date-independent filter)
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
+        // El corte usa `naturesFilter` (mismo que la calculadora) para no correrse con ingresos.
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.needFilteredTransactions,
+            natures: naturesFilter,
+            context: context
+        )
 
         let previousData = TopSubcategoriesCalculator.calculateTopSubcategories(
             transactions: previousTransactions,
@@ -1714,6 +1976,7 @@ final class PanelViewModel {
             currencyCode: context.defaultCurrencyCode,
             categoryFilter: effectiveCategoryFilter,
             transactionNatures: naturesFilter,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1745,6 +2008,7 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1758,14 +2022,21 @@ final class PanelViewModel {
             mode: .month,
             customRange: nil
         )
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
+        // Cash flow cuenta ingreso+gasto → el corte incluye ambos (a diferencia de los widgets de gasto).
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.expenseFilteredTransactions,
+            natures: [.income, .expense],
+            context: context
+        )
         let previousSummary = CashFlowCalculator.calculateCashFlow(
             transactions: previousTransactions,
             interval: previousInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
         let previousNet: Double? = (previousSummary.totalIncome == 0 && previousSummary.totalExpense == 0)
@@ -1809,6 +2080,7 @@ final class PanelViewModel {
             grouping: context.needGrouping,
             interval: context.effectiveInterval,
             preferredCurrency: preferredCurrency,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -1824,16 +2096,22 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Filter transactions for previous period
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
+        // NeedTrendHelper cuenta solo gasto (excluye ingresos) → corte gasto-only.
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.needWidgetTransactions,
+            natures: [.expense],
+            context: context
+        )
 
         let previousPoints = NeedTrendHelper.calculateTrend(
             transactions: previousTransactions,
             grouping: context.needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
+            adjustment: statsAdjustment,
             converter: context.converter
         )
 
@@ -2191,56 +2469,15 @@ final class PanelViewModel {
         )
     }
 
-    /// Get date interval for a budget period
-    private func getBudgetDateInterval(budget: Budget) -> DateInterval {
-        let calendar = userConfiguredCalendar()
-
-        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
-            let start = calendar.startOfMonth(for: Date.now)
-            let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-            return DateInterval(start: start, end: end)
-        }
-
-        switch periodType {
-        case .weekly:
-            let weekStart = calendar.startOfWeek(for: Date.now)
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
-
-        case .monthly:
-            let monthStart = calendar.startOfMonth(for: Date.now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-
-        case .yearly:
-            let year = calendar.component(.year, from: Date.now)
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
-
-        case .unique:
-            guard let start = budget.startDate, let end = budget.endDate else {
-                let monthStart = calendar.startOfMonth(for: Date.now)
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                return DateInterval(start: monthStart, end: monthEnd)
-            }
-            return DateInterval(start: start, end: end)
-        }
+    /// Periodo EN CURSO del presupuesto. Cierra en su último segundo (`BudgetPeriodInterval`):
+    /// con el `end` en la medianoche siguiente, un gasto de ese instante contaba en los dos periodos.
+    func getBudgetDateInterval(budget: Budget) -> DateInterval {
+        BudgetPeriodInterval.current(for: budget, now: Date.now, calendar: userConfiguredCalendar())
     }
 
-    /// Calculate days remaining in budget period
-    private func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
-        let calendar = userConfiguredCalendar()
-        let today = Date.now
-
-        if today > interval.end {
-            return -1  // Period has ended
-        }
-
-        guard interval.contains(today) else { return 0 }
-
-        let components = calendar.dateComponents([.day], from: today, to: interval.end)
-        return max(0, components.day ?? 0)
+    /// Días que le quedan al presupuesto, contando hoy: -1 si ya acabó, 0 si aún no empieza.
+    func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
+        BudgetPeriodInterval.summaryDaysRemaining(now: Date.now, in: interval, calendar: userConfiguredCalendar())
     }
 
     /// Determine budget status
@@ -2316,12 +2553,24 @@ final class PanelViewModel {
         scheduleRecalculation(reload: true)
     }
 
+    /// Han llegado tasas nuevas a disco (`.yalaExchangeRatesUpdated`, que el Panel recibe en
+    /// `PanelDataObservers`). Persistir tasas no toca ninguna fila, así que basta recalcular: el saldo
+    /// vivo, su marca «≈» y la card de resultado cambiario vuelven a convertir con la caché del converter
+    /// ya invalidada por el receptor del arranque, que corre al postear —el recálculo llega 150 ms
+    /// después—. El widget de tipo de cambio solo se rehace con su marca: sin ella seguiría enseñando la
+    /// tasa de antes. Sin esto, el Panel se quedaba con la tasa vieja y el «≈» encendido hasta que el
+    /// usuario tocara algo (ticket `panel-no-recalcula-al-llegar-tasas-nuevas`).
+    func exchangeRatesDidUpdate() {
+        SessionState.shared.needsExchangeRateWidgetRefresh = true
+        recalculateData()
+    }
+
     /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
     /// if a subsequent calculate-only call arrives within the debounce window.
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard UIApplication.shared.applicationState == .active else { return }
+        guard isApplicationActive() else { return }
         if reload { pendingReload = true }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
@@ -2339,6 +2588,10 @@ final class PanelViewModel {
     /// Runs all widget calculations from cached data (no SwiftData fetch).
     private func performCalculation() {
         guard let sessionState, let context = modelContext else { return }
+        #if DEBUG
+        debugCalculationRuns += 1
+        print("PanelViewModel: performCalculation #\(debugCalculationRuns)")
+        #endif
         calculateTrendData(
             accounts: accounts,
             transactions: transactions,
@@ -2423,6 +2676,7 @@ final class PanelViewModel {
             transactions: context.filteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
             converter: currencyConverter
         )
         let newData = PanelWeekdayData(weekdaySpending: spending)
@@ -2441,7 +2695,9 @@ final class PanelViewModel {
             transactions: context.filteredTransactions,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: statsAdjustment,
+            converter: context.converter
         )
 
         guard context.period != .allTime else {
@@ -2455,14 +2711,23 @@ final class PanelViewModel {
             mode: .month,
             customRange: nil
         )
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado al punto equivalente del actual; quién entra lo decide el
+        // gate `DateAlignmentHelper.aggregatePreviousNeedsAlignment` (p20-15 fase 2).
+        // TagSpendingCalculator cuenta solo gasto etiquetado → corte gasto-only
+        // (residual documentado: no filtra "tiene tag").
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.filteredTransactions,
+            natures: [.expense],
+            context: context
+        )
         let previousData = TagSpendingCalculator.calculateTopSpending(
             transactions: previousTransactions,
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: statsAdjustment,
+            converter: context.converter
         )
 
         let previousTotal = previousData.reduce(0) { $0 + $1.amount }
@@ -2522,7 +2787,8 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             accounts: context.eligibleAccounts,
             transactions: context.balanceTransactions,
-            preferredCurrencyCode: context.defaultCurrencyCode
+            preferredCurrencyCode: context.defaultCurrencyCode,
+            converter: context.converter
         )
 
         let currentResult = TrendDataProcessor.processTrendData(
@@ -2533,7 +2799,9 @@ final class PanelViewModel {
             grouping: .day,
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
-            liveBalanceOverride: liveBalanceOverride
+            adjustment: statsAdjustment,
+            liveBalanceOverride: liveBalanceOverride,
+            converter: context.converter
         )
 
         let previousResult = TrendDataProcessor.processTrendData(
@@ -2543,7 +2811,9 @@ final class PanelViewModel {
             period: context.period,
             grouping: .day,
             interval: previousInterval,
-            currencyCode: context.defaultCurrencyCode
+            currencyCode: context.defaultCurrencyCode,
+            adjustment: statsAdjustment,
+            converter: context.converter
         )
 
         let allValues = currentResult.points.map(\.value) + previousResult.points.map(\.value)
@@ -2556,9 +2826,17 @@ final class PanelViewModel {
         }
 
         let currentTotal = currentResult.points.last?.value ?? 0
-        let previousTotal: Double? = previousResult.points.isEmpty
-            ? nil
-            : (previousResult.points.last?.value ?? 0)
+        // Total del período anterior ALINEADO al día equivalente del último día
+        // con datos del actual (MTD-vs-MTD, p20-15): == último punto VISIBLE de la
+        // curva anterior, no el fin del período anterior COMPLETO.
+        let previousTotal: Double? = DateAlignmentHelper.alignedPreviousTotal(
+            previousPoints: previousResult.points,
+            currentPoints: currentResult.points,
+            currentInterval: context.effectiveInterval,
+            previousInterval: previousInterval,
+            period: context.period,
+            comparisonMode: mode
+        )
 
         let newData = PanelPeriodComparisonData(
             currentPoints: currentResult.points,
@@ -2591,7 +2869,8 @@ final class PanelViewModel {
             period: selectedPeriod,
             customRange: customDateRange,
             preferredCurrencyCode: defaultCurrencyCode,
-            includeBridgedGroupTx: includeBridgedGroupTx
+            includeBridgedGroupTx: includeBridgedGroupTx,
+            adjustment: statsAdjustment
         )
         let newData = PanelHealthData(score: newScore)
         if newData != healthWidget { healthWidget = newData }
@@ -2604,9 +2883,9 @@ final class PanelViewModel {
     ///  - single O(n) pass over `transactions` restricted to the current
     ///    calendar month,
     ///  - zero new fetches (all models are already loaded),
-    ///  - uses `TransactionItem.amountInPreferredCurrency` — the snapshot
-    ///    conversion already persisted on each transaction, so there is no
-    ///    live call to `CurrencyConverter` here.
+    ///  - resuelve cada importe con `CashFlowCalculator.resolvedAmount`: el
+    ///    monto guardado si se guardó en la divisa principal vigente, y una
+    ///    conversión con la tasa de su fecha si se guardó en otra.
     /// Only budgets with `periodType == "monthly"` feed the total; mixing
     /// weekly/yearly would distort the ratio. Pro-rating other periodicities
     /// is a future refinement tracked in the epic.
@@ -2620,7 +2899,13 @@ final class PanelViewModel {
         // Mes anterior natural — independiente del selectedPeriod del Panel,
         // el Hero siempre compara contra el mes calendario anterior.
         let prevStart = Calendar.current.date(byAdding: .month, value: -1, to: monthInterval.start) ?? monthInterval.start
-        let prevInterval = DateInterval(start: prevStart, end: monthInterval.start)
+        // -1s por la misma razon que las ramas de `PreviousPeriodHelper`: `DateInterval` es
+        // CERRADO y `monthInterval.start` caeria en los dos periodos. Hoy no se nota porque
+        // `HeroBucketsCalculator` usa if/else-if mutuamente excluyente para estos dos
+        // buckets, pero esa proteccion vive en el CONSUMIDOR: si alguien los separa, el
+        // doble conteo aparece aqui sin tocar esta linea.
+        let prevEnd = Calendar.current.date(byAdding: .second, value: -1, to: monthInterval.start) ?? monthInterval.start
+        let prevInterval = DateInterval(start: prevStart, end: prevEnd)
 
         // Todos los montos numéricos del Hero (pills del mes, trend "vs mes
         // anterior", card "Disponible · Período") respetan `eligibleAccountIDs`,
@@ -2628,15 +2913,45 @@ final class PanelViewModel {
         // finos (categoría, subcategoría, need, focused date) NO aplican al
         // Hero por decisión de producto. El estado del calculator y la IA
         // reaccionan naturalmente a estos inputs — su lógica no se modifica.
+        // Ventana previa comparable (MTD-alineada) para el chip "vs período
+        // anterior" del hero en Solo Gastos. Se computa siempre (barato) para
+        // que el chip esté listo al instante si el usuario togglea el modo; la
+        // rama de vista es la que gatea el display. `nil` en `.allTime`.
+        let periodPrevInterval = HeroBucketsCalculator.periodPreviousInterval(
+            period: selectedPeriod,
+            currentInterval: periodInterval,
+            customRange: customDateRange
+        )
+
+        // El Hero se alimenta de `transactions` directo (no del contexto de widgets), así que
+        // honra el toggle "incluir gastos de grupo en stats" aquí: los buckets del Hero son
+        // ingreso/gasto (NO saldo). Toggle ON (default) = identidad; OFF = excluye bridgeados.
+        let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let heroTransactions = transactions.filter { tx in
+            BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: tx.splitExpenseID,
+                splitSettlementID: tx.splitSettlementID,
+                includeGroupsToggle: includeGroupTxs
+            )
+        }
+
         let buckets = HeroBucketsCalculator.calculate(
-            transactions: transactions,
+            transactions: heroTransactions,
             monthInterval: monthInterval,
             prevInterval: prevInterval,
             periodInterval: periodInterval,
-            eligibleAccountIDs: eligibleAccountIDs
+            periodPrevInterval: periodPrevInterval,
+            eligibleAccountIDs: eligibleAccountIDs,
+            currencyCode: defaultCurrencyCode,
+            adjustment: statsAdjustment,
+            converter: currencyConverter
         )
 
-        let newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)
+        var newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)
+        newPeriod.periodPrevExpense = periodPrevInterval == nil ? nil : buckets.periodPrevExpense
+        newPeriod.incomeApproximate = buckets.periodIncomeApproximate
+        newPeriod.expenseApproximate = buckets.periodExpenseApproximate
+        newPeriod.amountsAreApproximate = buckets.periodNetApproximate
         if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
 
         let totalMonthlyBudget = budgets
@@ -2649,184 +2964,7 @@ final class PanelViewModel {
             totalMonthlyBudget: totalMonthlyBudget
         )
         let wrapped = PanelHeroData(data: newData)
-        let dataChanged = wrapped != heroWidget
-        if dataChanged { heroWidget = wrapped }
-
-        lastHeroTrendContext = TrendContext(
-            prevExpense: buckets.prevExpense,
-            prevHasAnyTx: buckets.prevHasAnyTx,
-            totalMonthlyBudget: totalMonthlyBudget,
-            monthInterval: monthInterval
-        )
-
-        // Re-generar IA cuando cambien los montos. Limpiar el cache aquí
-        // garantiza que el mensaje cite los montos actuales aunque el cambio
-        // sea menor que el bucket del hash (p.ej. una tx de <100 del bucket).
-        // El guard `dataChanged` evita spam de telemetría cuando
-        // performCalculation corre múltiples veces sin cambios reales.
-        if dataChanged {
-            HeroMessageCache.clear()
-            generateHeroAIIfEligible(data: newData)
-        }
-    }
-
-    // MARK: - Hero IA
-
-    /// Snapshot de los agregados del mes anterior + budget que necesita
-    /// `generateHeroAIIfEligible`. Recalculado en cada `calculateHeroWidget`
-    /// para que `retriggerHeroAI` (invocado por observadores de consent/Pro)
-    /// no tenga que re-iterar `transactions`.
-    private struct TrendContext {
-        let prevExpense: Double
-        let prevHasAnyTx: Bool
-        let totalMonthlyBudget: Double
-        let monthInterval: DateInterval
-    }
-
-    private var lastHeroTrendContext: TrendContext?
-
-    /// Cache-key único de telemetría; `trackOnce` dedupea por sesión.
-    private static let heroTelemetryKey = "panelHero"
-
-    /// Task en vuelo — permite cancelar la anterior si llega otro trigger
-    /// (evita last-writer-wins stale cuando Pro/consent togglean en rápido).
-    private var heroAITask: Task<Void, Never>?
-
-    /// Reintenta la generación del mensaje IA usando el último `heroWidget`
-    /// computado. Lo llaman los observers de `PanelView` cuando cambia
-    /// consent o estado Pro.
-    func retriggerHeroAI() {
-        guard let data = heroWidget.data else { return }
-        generateHeroAIIfEligible(data: data)
-    }
-
-    /// Genera el mensaje IA si el usuario es Pro + tiene consent + feature activa.
-    /// Free, Pro sin consent, o Pro con feature apagada quedan en rule-based
-    /// silencioso (`heroAISubtitle = nil`).
-    private func generateHeroAIIfEligible(data: HeroMonthData) {
-        guard FeatureGateService.shared.canAccess(.smartInsightsAI),
-              appPreferences?.aiInsightsConsentAccepted == true,
-              let trend = lastHeroTrendContext else {
-            heroAITask?.cancel()
-            heroAITask = nil
-            heroAISubtitle = nil
-            return
-        }
-
-        let ctx = buildHeroContext(data: data, trend: trend)
-
-        if let cached = HeroMessageCache.read(),
-           cached.hash == HeroMessageCache.contextHash(ctx) {
-            heroAISubtitle = cached.text
-            TelemetryService.trackOnce(.panelHeroAICacheHit, key: Self.heroTelemetryKey)
-            return
-        }
-
-        heroAITask?.cancel()
-        heroAITask = Task { [weak self] in
-            guard let self else { return }
-            do {
-                let text = try await InsightsLLMService.shared.generateHeroMessage(context: ctx)
-                guard !Task.isCancelled else { return }
-                self.heroAISubtitle = text
-                TelemetryService.track(.panelHeroAIGenerated)
-            } catch {
-                guard !Task.isCancelled else { return }
-                self.heroAISubtitle = nil
-            }
-        }
-    }
-
-    /// Construye el `HeroContext` a partir de los agregados ya calculados en
-    /// `calculateHeroWidget`. Cero fetches y cero iteraciones extra.
-    private func buildHeroContext(data: HeroMonthData, trend: TrendContext) -> HeroContext {
-        let spendingTrend: HeroSpendingTrend?
-        if !trend.prevHasAnyTx || trend.prevExpense <= 0 {
-            spendingTrend = nil
-        } else {
-            let ratio = data.expense / trend.prevExpense
-            if ratio > 1.05 { spendingTrend = .up }
-            else if ratio < 0.95 { spendingTrend = .down }
-            else { spendingTrend = .flat }
-        }
-
-        let percentBudget: Double? = trend.totalMonthlyBudget > 0
-            ? data.expense / trend.totalMonthlyBudget
-            : nil
-
-        let rawName = appPreferences?.userName ?? ""
-        let userName: String? = rawName.isEmpty ? nil : rawName
-
-        let currencyCode = defaultCurrencyCode
-
-        let formattedIncome = snapshotCurrency(data.income, code: currencyCode)
-        let formattedExpense = snapshotCurrency(data.expense, code: currencyCode)
-        let formattedAvailable = snapshotCurrency(data.available, code: currencyCode)
-
-        // Datos del mes anterior — solo cuando hay data real (prevHasAnyTx).
-        // Delta firmado: positivo gasta más, negativo gasta menos.
-        let previousExpense: Double? = trend.prevHasAnyTx ? trend.prevExpense : nil
-        let formattedPreviousExpense: String? = previousExpense.map { snapshotCurrency($0, code: currencyCode) }
-        let expenseDelta: Double? = previousExpense.map { data.expense - $0 }
-        let formattedExpenseDelta: String? = expenseDelta.map { snapshotCurrency(abs($0), code: currencyCode) }
-
-        // Enriquecimiento contextual — reusa computes ya realizados por los
-        // widgets de Distribución/Tendencias (zero overhead). Si el user
-        // oculta esos widgets los campos llegan nil y el prompt se adapta.
-        let topCat = topSpendingCategories.first
-        let topCategory: String? = topCat?.category.name
-        let formattedTopCategoryAmount: String? = topCat.map { snapshotCurrency($0.amount, code: currencyCode) }
-        // Reusa el helper canónico de variación (`PreviousPeriodHelper`) que el
-        // resto del Panel usa para chips/headers — evita divergencia semántica.
-        let topCategoryDeltaPercent: Double? = topCat?.variation
-
-        let topDay = weekdayWidget.weekdaySpending.max(by: { $0.average < $1.average })
-        let topWeekday: String? = topDay?.weekdayLongName
-        let formattedTopWeekdayAmount: String? = topDay.map { snapshotCurrency($0.average, code: currencyCode) }
-
-        let monthProgress = Double(data.daysElapsed) / Double(max(data.daysTotal, 1))
-
-        return HeroContext(
-            state: data.state,
-            financialScore: healthWidget.score.flatMap(\.total),
-            percentBudgetUsed: percentBudget,
-            spendingTrend: spendingTrend,
-            monthName: Self.monthNameFormatter.string(from: trend.monthInterval.start).localizedCapitalized,
-            userName: userName,
-            daysRemaining: data.daysRemaining,
-            daysElapsed: data.daysElapsed,
-            locale: AppLocale.current.identifier,
-            income: data.income,
-            expense: data.expense,
-            available: data.available,
-            formattedIncome: formattedIncome,
-            formattedExpense: formattedExpense,
-            formattedAvailable: formattedAvailable,
-            previousExpense: previousExpense,
-            formattedPreviousExpense: formattedPreviousExpense,
-            expenseDelta: expenseDelta,
-            formattedExpenseDelta: formattedExpenseDelta,
-            topCategory: topCategory,
-            formattedTopCategoryAmount: formattedTopCategoryAmount,
-            topCategoryDeltaPercent: topCategoryDeltaPercent,
-            topWeekday: topWeekday,
-            formattedTopWeekdayAmount: formattedTopWeekdayAmount,
-            monthProgress: monthProgress
-        )
-    }
-
-    private static let monthNameFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLocale.current
-        f.dateFormat = "MMMM"
-        return f
-    }()
-
-    /// Snapshot del payload IA — no reactivo. Usa `appPreferences.currency` cuando está
-    /// inyectado; en bootstrap (nil) cae al estático para preservar paridad de output.
-    private func snapshotCurrency(_ value: Double, code: String) -> String {
-        if let appPreferences { return appPreferences.currency(value, currencyCode: code) }
-        return YalaFormatterStatic.currency(value: value, currencyCode: code)
+        if wrapped != heroWidget { heroWidget = wrapped }
     }
 
     /// Pre-computes total account balances (not period-dependent).
@@ -2840,23 +2978,16 @@ final class PanelViewModel {
         if newBalances != accountBalances { accountBalances = newBalances }
     }
 
-    /// Pre-computes period-specific expenses per account (expenses-only mode).
+    /// Pre-computes period-specific expenses per account (expenses-only mode). La regla es `AccountSpendingLogic`, la
+    /// misma de la vista de cuenta: una devolución resta.
     /// Called from performCalculation() — recalculates on period/filter changes.
     private func calculateAccountPeriodExpenses() {
-        let interval = panelDateInterval
-        var newExpenses: [PersistentIdentifier: Double] = [:]
-        for account in accounts {
-            newExpenses[account.persistentModelID] = 0
-        }
-        for transaction in transactions {
-            guard let account = transaction.account else { continue }
-            let accountID = account.persistentModelID
-            guard newExpenses[accountID] != nil else { continue }
-            guard interval.contains(transaction.date) else { continue }
-            guard transaction.balanceAdjustmentType == nil else { continue }
-            guard transaction.category?.isIncome == false else { continue }
-            newExpenses[accountID] = (newExpenses[accountID] ?? 0) + abs(transaction.amount)
-        }
+        let newExpenses = AccountSpendingLogic.spentByAccount(
+            transactions,
+            accounts: accounts.map(\.persistentModelID),
+            in: panelDateInterval,
+            key: \.persistentModelID
+        )
         if newExpenses != accountPeriodExpenses { accountPeriodExpenses = newExpenses }
     }
 

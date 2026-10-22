@@ -68,10 +68,11 @@ enum PreviousPeriodHelper {
     static func previousInterval(
         for period: DetailPeriod,
         mode: ComparisonMode,
-        customRange: DateInterval? = nil
+        customRange: DateInterval? = nil,
+        now: Date = .now
     ) -> DateInterval {
         let calendar = Calendar.current
-        let currentInterval = period.dateInterval(customRange: customRange)
+        let currentInterval = period.dateInterval(customRange: customRange, now: now)
 
         switch mode {
         case .month:
@@ -88,7 +89,17 @@ enum PreviousPeriodHelper {
         calendar: Calendar
     ) -> DateInterval {
         switch period {
-        case .thisWeek, .last7Days:
+        case .thisWeek:
+            // Semana calendario anterior completa (lun→lun). El recorte MTD
+            // (lun→hoy vs lun→mismo weekday) lo hace DateAlignmentHelper.
+            // No es una ventana trailing: esa vaciaba el «vs» al alinear por weekday.
+            let startOfPreviousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentInterval.start) ?? currentInterval.start
+            // DateInterval + FilterService.contains: sin -1s, una TX a medianoche
+            // del primer día de esta semana cae en ambos periodos.
+            let endOfPreviousWeek = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
+            return DateInterval(start: startOfPreviousWeek, end: endOfPreviousWeek)
+
+        case .last7Days:
             // Go back 7 days
             let duration = currentInterval.duration
             let previousStart = currentInterval.start.addingTimeInterval(-duration)
@@ -98,12 +109,18 @@ enum PreviousPeriodHelper {
         case .thisMonth:
             // Previous month
             let startOfPreviousMonth = calendar.date(byAdding: .month, value: -1, to: currentInterval.start) ?? currentInterval.start
-            return DateInterval(start: startOfPreviousMonth, end: currentInterval.start)
+            // `DateInterval` es CERRADO: sin el -1s, `currentInterval.start` cae en el
+            // periodo actual Y en el previo, y una TX del dia 1 a medianoche (lo que
+            // dejan el DatePicker de solo-fecha y los pagos programados) se cuenta dos
+            // veces. Era la UNICA de las cinco ramas de este switch sin el ajuste.
+            let endOfPreviousMonth = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
+            return DateInterval(start: startOfPreviousMonth, end: endOfPreviousMonth)
 
         case .lastMonth:
-            // Two months ago
-            let startOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -2, to: currentInterval.end) ?? currentInterval.end
-            let endOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -1, to: currentInterval.end) ?? currentInterval.end
+            // Two months ago — anclado en currentInterval.start (medianoche exacta,
+            // no afectado por el -1s del fix de boundary) en vez de .end.
+            let startOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -1, to: currentInterval.start) ?? currentInterval.start
+            let endOfTwoMonthsAgo = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
             return DateInterval(start: startOfTwoMonthsAgo, end: endOfTwoMonthsAgo)
 
         case .last30Days:
@@ -136,7 +153,15 @@ enum PreviousPeriodHelper {
         calendar: Calendar
     ) -> DateInterval {
         let previousYearStart = calendar.date(byAdding: .year, value: -1, to: currentInterval.start) ?? currentInterval.start
-        let previousYearEnd = calendar.date(byAdding: .year, value: -1, to: currentInterval.end) ?? currentInterval.end
+        let shiftedEnd = calendar.date(byAdding: .year, value: -1, to: currentInterval.end) ?? currentInterval.end
+        // Los periodos EN CURSO cierran en `endOfToday` (medianoche = inicio de manana,
+        // exclusivo de facto); desplazado un ano, el 31-dic ese instante coincide con
+        // `currentInterval.start` y la TX del 1-ene se cuenta en los dos lados. Se le
+        // resta 1s SOLO en ese caso: los periodos CERRADOS ya cierran en 23:59:59 y
+        // restarles otro segundo les quitaria un instante real (medido: los 730 dias).
+        let previousYearEnd = calendar.startOfDay(for: shiftedEnd) == shiftedEnd
+            ? (calendar.date(byAdding: .second, value: -1, to: shiftedEnd) ?? shiftedEnd)
+            : shiftedEnd
         return DateInterval(start: previousYearStart, end: previousYearEnd)
     }
 

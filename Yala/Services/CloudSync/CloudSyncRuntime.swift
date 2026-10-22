@@ -1,0 +1,1021 @@
+//
+//  CloudSyncRuntime.swift
+//  Yala
+//
+//  Orquestador (dueño del ciclo de vida) del motor Modo Nube (incremento I9). El motor —captura,
+//  push, pull/apply, Merkle— estaba COMPLETO y verificado E2E componente-a-componente; lo que faltaba
+//  era QUIÉN decide cuándo drenar/subir/pullear/verificar, con backoff y las redes de arranque
+//  (rehydrate del espejo, guard de cuarentena recreada, drenaje del upgrade path) y de teardown (M1).
+//  Este archivo es ese dueño.
+//
+//  TODO DARK: con `CloudSyncFlags.syncRuntimeEnabled == false` (default de PRODUCCIÓN HOY) `start()` es
+//  un no-op TOTAL — cero red, cero cadencia, cero mutación de store. El provider de sesión de producción
+//  (`NoopCloudSessionProvider`) además NO tiene sesión → aunque el flag se encendiera, `start()` cae en
+//  `idle(signedOut)` sin tocar nada (el despertar real por sign-in es I7c).
+//
+//  INVARIANTES CRÍTICOS (violarlos = bug grave):
+//   - Anti-laundering (D-2/F-1/F-8): el apply de deltas remotos entra SOLO por `pullAndApplyOnce` (que
+//     drena SÍNCRONO antes de cada página); el drenaje de cuarentena replica la disciplina (drain
+//     síncrono inmediatamente antes, sin `await` entre medio).
+//   - `.accountUnavailable` (403) / attest terminal → stop SIN reintentos (S6). `.sessionExpired` →
+//     stop hasta re-firmar, re-evaluable en `handleBecameActive`.
+//   - Remediación Merkle: UNA por sesión de proceso, jamás loop.
+//   - Anti-solape: a lo sumo un ciclo en vuelo; `handleBecameActive` durante un ciclo no reentra
+//     (coalescing "one in-flight, one queued", como el drain).
+//
+//  `@MainActor final class`: muta `ModelContext`/`@Model` (regla inviolable) y coordina el motor
+//  `@MainActor`. Instancia ÚNICA owned por AppBootstrapper (NO singleton global); `shared` se asigna en
+//  el wiring para el acceso desde `handleBecameActive`.
+//
+
+import Foundation
+import SwiftData
+
+// MARK: - Notification (fan-out post-apply, §i.4)
+
+extension Notification.Name {
+    /// Se postea tras un ciclo del runtime con `pagesApplied > 0` (llegaron cambios remotos). El wiring
+    /// DARK de AppBootstrapper lo cablea a `SessionState.markRemoteChangePending()` para refrescar la UI.
+    static let cloudSyncAppliedRemoteChanges = Notification.Name("cloudSyncAppliedRemoteChanges")
+}
+
+// MARK: - Seam de sesión (I7c)
+
+/// Proveedor de la sesión de sync (JWT de Supabase + attest + identidad). Seam que I7c implementará de
+/// verdad; en I9 el único implementador de producción es `NoopCloudSessionProvider` (sin sesión). El
+/// contrato del error de `attestToken()` es `AppAttestError` (el runtime lo clasifica con
+/// `AttestSyncGate`); no se inventa un tipo nuevo (regla del review).
+@MainActor
+protocol CloudSyncSessionProviding: AnyObject {
+    /// El `sub` de la sesión (owner-scoping del espejo + gate de arranque). `nil` = sin sesión.
+    var currentUserID: String? { get }
+    /// JWT de Supabase para las llamadas al gateway. `nil` = no hay token: sin sesión, o la renovación no volvió (sin
+    /// red). Los dos casos los separa `canRenewSession`.
+    func accessToken() async -> String?
+    /// ¿Conserva el SDK la sesión guardada? `false` solo cuando la borró (un rechazo terminal del servidor de auth). Lo
+    /// consumen `SessionExpiryPolicy` (pendientes + no-renovable → «inicia sesión») y, desde el 2026-09-16, los clientes del
+    /// canal personal y `BornCloudSignUpService` para leer un token que no llega como pasajero y no como sesión caducada.
+    var canRenewSession: Bool { get }
+    /// Token de sesión de App Attest. `nil` = attest no requerido / no disponible (DARK). Lanza
+    /// `AppAttestError` cuando la adquisición falla (el runtime clasifica transient/terminal).
+    func attestToken() async throws -> String?
+    /// Acción de claim resuelta por el flujo de auth (I7c). `nil` = sin claim (Noop → proceed). El gate
+    /// de arranque solo deja arrancar el sync para las acciones proceed-like.
+    var claimAction: AccountClaimDecision.AuthAction? { get }
+}
+
+extension CloudSyncSessionProviding {
+    var claimAction: AccountClaimDecision.AuthAction? { nil }
+}
+
+/// Implementación DARK de producción: SIN sesión. `start()` con este provider cae en `idle(signedOut)`
+/// sin tocar red ni store. I7c lo reemplaza por el provider real que despierta con el sign-in.
+@MainActor
+final class NoopCloudSessionProvider: CloudSyncSessionProviding {
+    var currentUserID: String? { nil }
+    func accessToken() async -> String? { nil }
+    var canRenewSession: Bool { false }
+    func attestToken() async throws -> String? { nil }
+}
+
+// MARK: - CloudSyncRuntime
+
+@MainActor
+final class CloudSyncRuntime {
+
+    /// Instancia asignada por el wiring de AppBootstrapper (para `handleBecameActive` desde el bootstrapper).
+    /// NO es un singleton global auto-creado — se asigna explícitamente en `startShared`.
+    static private(set) var shared: CloudSyncRuntime?
+
+    /// **R4 · seam del swap de persona in-process.** Suelta la instancia entera (y con ella su `context`,
+    /// su engine y su cadencia). Va SIEMPRE después de `teardownGuestSession()`: el teardown corta la
+    /// generación y para el loop, esto suelta la referencia — hacerlo al revés dejaría un ciclo en vuelo
+    /// escribiendo sobre el store que se está a punto de borrar.
+    ///
+    /// La repone `startShared(context:)` en el re-bootstrap, con el `mainContext` del container nuevo.
+    static func releaseSharedForSwap() {
+        shared = nil
+    }
+
+    // MARK: Estado del ciclo de vida
+
+    enum RuntimeState: Equatable {
+        /// Aún no arrancó (o teardown lo devolvió aquí por falta de sesión).
+        case idle
+        /// Arrancó pero no hay sesión (I7c la despierta al firmar).
+        case idleSignedOut
+        /// Cadencia activa.
+        case running
+        /// Detenido hasta re-firmar (401 / sesión no renovable). Re-evaluable en `handleBecameActive`.
+        case stoppedUntilSignIn
+        /// Detenido hasta relanzar (403 / attest terminal). Pegado A PROPÓSITO (sin loop).
+        case stoppedUntilRelaunch
+    }
+
+    private(set) var state: RuntimeState = .idle
+
+    // MARK: Dependencias inyectadas
+
+    private let engine: CloudSyncEngine
+    private let pushClient: SyncPushClient
+    private let pullClient: SyncPullClient
+    private let merkleClient: SyncMerkleClient
+    private let mirror: SyncOutboxMirror?
+    private let coordinator: SyncQuiescenceCoordinator
+    private let session: CloudSyncSessionProviding
+    private let onRemoteChangesApplied: (() -> Void)?
+
+    /// I13 (prefs sync): transporte + cola durable de preferencias. `nil` = paso de prefs deshabilitado
+    /// (tests del runtime que no lo ejercitan). El merge del pull lo aplica `PreferenceSyncService.shared`.
+    private let prefsClient: PrefsSyncClient?
+    private let prefsOutbox: PrefsOutbox?
+
+    /// El contexto sobre el que opera (el `mainContext` compartido en prod). Se fija en `start()`.
+    private var context: ModelContext?
+
+    /// B2 (paso 5.6): runner del ciclo de GRUPOS en piggyback. Default = el singleton del canal
+    /// (`syncCycleOnceCoalesced` — re-entrante ante el loop propio de Grupos si ambos corrieran por una
+    /// carrera de arranque). Inyectable SOLO para tests (contar invocaciones sin tocar el singleton).
+    var groupsSyncCycleRunner: @MainActor (ModelContext) async -> Void = { context in
+        await GroupsSyncClient.shared.syncCycleOnceCoalesced(context: context)
+    }
+
+    // MARK: Estado interno de cadencia / anti-solape
+
+    private var isCycling = false
+    private var pendingCycle = false
+    /// `private(set)` y no `private` solo para LEERLO (ticket `cloud-sync-status-says-all-synced-with-changes-still-pending`):
+    /// la tarjeta «Sincronización» lo usa para saber si el último ciclo completó (`SyncStatusSectionLogic.engineIsHealthy`).
+    private(set) var consecutiveTransients = 0
+    private var cadenceTask: Task<Void, Never>?
+
+    /// SERIO-2 (teardown M1 vs ciclo en vuelo): `Task.cancel()` es COOPERATIVO y `performCycle` no
+    /// chequea cancelación en sus awaits — un push suspendido terminaría y APLICARÍA resultados (purga
+    /// de outbox/espejo) bajo una sesión que ya no existe. Este contador de época lo corta: cada
+    /// teardown lo incrementa; `performCycle` captura la época al entrar y la re-verifica tras CADA
+    /// `await` — si cambió, aborta SIN aplicar resultados ni tocar el store.
+    private var sessionEpoch = 0
+
+    // MARK: Estado de Merkle
+
+    private var completedPullsSinceMerkle = 0
+    private var lastMerkleAt: Date?
+    /// Throttle anti-loop: máximo UNA remediación Merkle por sesión de proceso (E-bis).
+    private var didRemediateMerkleThisSession = false
+
+    // MARK: Estado de attest (retry budget → terminal)
+
+    private var attestRetryCount = 0
+
+    /// **¿Paró el último ciclo en la puerta del attest con un fallo que habla del attest?** Testigo por ciclo, molde
+    /// `GroupsSyncClient.lastCycleHitAttestRequired`: `performCycle` lo baja al entrar, así que un fallo de un ciclo
+    /// anterior no puede convertir el corte de red de éste en «este teléfono no puede sincronizar».
+    private var lastCycleStoppedAtAttestGate = false
+
+    /// **¿Paró el último ciclo sin que la subida llegara al servidor?** Testigo por ciclo, molde
+    /// `GroupsSyncClient.lastCycleFailedUpload`: `performCycle` lo baja al entrar. Lo encienden dos sitios: el push que
+    /// devuelve `.transient` habiendo chocado con el servidor (`SyncPushClient.lastPushFailedAtServer`), y la puerta de attest
+    /// que devuelve `.transient` — el ciclo paró antes de subir porque no consiguió el pase del servidor, y esperar unos
+    /// segundos no lo cura (va con backoff). Ni el `fetch` del outbox, ni una fila que no se deja convertir, ni el pull.
+    /// Un push `.completed` también lo copia del cliente: la subida pudo quedar a medias (un trozo que falló, un rechazo
+    /// `upstream_*`) y es el pull de detrás el que puede parar el ciclo (review adversarial del 2026-09-25).
+    ///
+    /// **La puerta de attest lo enciende con cualquier error, también uno de este teléfono** (un `DCError` de DeviceCheck),
+    /// y es a propósito: es la decisión de Grupos, que marca igual el 401 del attest por debajo de las 24 h. Para quien lo
+    /// oye, «no llegaron a la nube, inténtalo en un rato» es literal, y «espera unos segundos» no lo sería: la puerta va
+    /// con backoff. Con la racha terminal manda `.attestUnavailable`, que `classify` mira antes.
+    private var lastCycleFailedUpload = false
+
+    /// **¿Dejó el drain del último ciclo cambios locales fuera del outbox?** Testigo por ciclo, el tercero del molde:
+    /// `performCycle` lo baja al entrar y lo enciende el drain del paso 1 si no terminó (`drainOnce` devuelve `false`: un
+    /// `save` del outbox o del cursor que falla, un reloj por unidad o un testigo del relevo que no se deja leer) **o si
+    /// terminó con la traducción cortada** (`CloudSyncEngine.lastDrainCutTranslation`, que devuelve `true` a propósito). Lo lee
+    /// el push-all del cierre en la nube para no prometer «espera unos segundos» a un drain que no termina en ninguna vuelta
+    /// (ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`). El drain interno del pull
+    /// no cuenta: corre después, y si el del paso 1 terminó, lo que quede lo captura la vuelta siguiente.
+    private var lastCycleCaptureUnfinished = false
+
+    /// Cuando `true`, `liveOutboxRows(_:)` LANZA. Mismo molde y mismo porqué que sus dos gemelos de la
+    /// migración. SOLO tests.
+    var _testThrowOnOutboxFetch = false
+
+    /// ¿Paró el ciclo que acaba de correr porque este teléfono ya no consigue App Attest? Es la señal que el push-all previo
+    /// a cerrar sesión necesita para ofrecer exportar y salir perdiendo los cambios PERSONALES
+    /// (`CloudSignOutFlowLogic.BlockReason.personalAttestUnavailable`, ticket
+    /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`). Molde
+    /// `GroupsSyncClient.stoppedByUnavailableAttest(for:)`.
+    ///
+    /// **Tres condiciones, y ninguna sobra.** El outcome: la puerta devuelve `.transient` mientras reintenta y
+    /// `.accountUnavailable` cuando `AttestSyncGate` la da por terminal; un `.coalesced` describe un ciclo ajeno. El testigo,
+    /// porque una racha terminal no dice por qué falló ESTE ciclo: sin red o con un 5xx, el aviso de la pérdida mentiría. Y
+    /// la racha del teléfono (`GroupsAttestStreakStore.isTerminal`), porque un fallo de hace un rato es lo pasajero de siempre.
+    ///
+    /// **El 401 `yala_attest_required` del gateway NO es testigo** (2026-09-16, ticket
+    /// `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`): llega después de que la puerta consiguiera el
+    /// token, así que no habla del teléfono sino del reloj, del build o del servidor, y ofrecer perder los cambios por él
+    /// sería perder lo que un hotfix subiría.
+    func stoppedByUnavailableAttest(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        (outcome == .transient || outcome == .accountUnavailable)
+            && lastCycleStoppedAtAttestGate
+            && GroupsAttestStreakStore.isTerminal()
+    }
+
+    /// ¿Paró el ciclo que acaba de correr porque la SUBIDA no llegó al servidor? Es la señal que el push-all previo a cerrar
+    /// sesión en la nube necesita para decir «no llegaron a la nube, inténtalo en un rato» en vez de «un momento más» o, como
+    /// hasta el 2026-09-25, «revisa tu conexión» (`CloudSignOutFlowLogic.BlockReason.personalUploadRetryLater`, ticket
+    /// `cloud-signout-collapses-the-personal-push-all-reason-into-permanent`). Molde
+    /// `GroupsSyncClient.stoppedByFailedUpload(for:)`: solo cuenta con `.transient`, porque un `.coalesced` describe un ciclo
+    /// ajeno y el resto de outcomes ya dicen su causa.
+    func stoppedByFailedUpload(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .transient && lastCycleFailedUpload
+    }
+
+    /// ¿Dejó el ciclo que acaba de correr cambios locales sin capturar porque su drain no terminó? Es la señal que el push-all
+    /// previo a cerrar sesión en la nube necesita para separar el drain atascado —que esperar no cura— del cambio escrito
+    /// DESPUÉS de un drain sano, que la vuelta siguiente captura (`CloudSignOutFlowLogic.personalVerdictAfterProbe`). Cuenta con
+    /// cualquier outcome menos `.coalesced`, que describe un ciclo ajeno: el drain corre al entrar y su resultado no depende de
+    /// cómo acabó el resto del ciclo.
+    func stoppedWithUnfinishedCapture(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome != .coalesced && lastCycleCaptureUnfinished
+    }
+
+    // MARK: Init
+
+    init(
+        engine: CloudSyncEngine,
+        pushClient: SyncPushClient,
+        pullClient: SyncPullClient,
+        merkleClient: SyncMerkleClient,
+        mirror: SyncOutboxMirror?,
+        coordinator: SyncQuiescenceCoordinator,
+        session: CloudSyncSessionProviding,
+        onRemoteChangesApplied: (() -> Void)?,
+        prefsClient: PrefsSyncClient? = nil,
+        prefsOutbox: PrefsOutbox? = nil
+    ) {
+        self.engine = engine
+        self.pushClient = pushClient
+        self.pullClient = pullClient
+        self.merkleClient = merkleClient
+        self.mirror = mirror
+        self.coordinator = coordinator
+        self.session = session
+        self.onRemoteChangesApplied = onRemoteChangesApplied
+        self.prefsClient = prefsClient
+        self.prefsOutbox = prefsOutbox
+    }
+
+    /// Lo que el cierre de sesión pregunta con el candado del dominio cerrado: ¿quedan ediciones personales que el motor no
+    /// capturó? Solo lectura (`CloudSyncEngine.hasUncapturedPersonalChanges`); `nil` = no se pudo saber.
+    func hasUncapturedPersonalChanges(context: ModelContext) -> Bool? {
+        engine.hasUncapturedPersonalChanges(context: context)
+    }
+
+    /// Las mismas ediciones, una clave por cambio (`CloudSyncEngine.uncapturedPersonalChangeKeys`): lo que el aviso del cierre
+    /// en la nube cuenta y deja aceptar perder cuando el drain no las captura nunca. `nil` = no se pudo leer.
+    func uncapturedPersonalChangeKeys(context: ModelContext) -> Set<String>? {
+        engine.uncapturedPersonalChangeKeys(context: context)
+    }
+
+    // MARK: - Emisión de IdentityRemap (DIFERIDOS #29, §b.4)
+
+    /// El motor de captura, expuesto SOLO para que `CategoryDeduplicationService.repairCollapsedIdentityUUIDs`
+    /// (App layer, static) emita el IdentityRemap en la MISMA transacción de su save (§b.4 crítica #6) reusando
+    /// el reloj HLC + el espejo App Group ya montados por el runtime. NO se expone para otros usos: el ciclo de
+    /// vida del motor lo gobierna el runtime. Alcanzable solo vía `shared` (⇒ runtime vivo, gate estructural).
+    var identityRemapEmitter: CloudSyncEngine { engine }
+
+    // MARK: - Gate puro de arranque (AccountClaimDecision, §f.1)
+
+    /// Solo las acciones proceed-like arrancan el sync (el flujo de claim UI completo es I7c/I14):
+    /// seed/migración/returning-user proceden; follower (`waitForLeader`) y provider-mismatch NO. Puro.
+    static func shouldStartSync(after action: AccountClaimDecision.AuthAction) -> Bool {
+        switch action {
+        case .seedBornCloud, .proceedMigration, .routeReturningUser:
+            return true
+        case .waitForLeader, .showProviderMismatch:
+            return false
+        }
+    }
+
+    /// P0: ¿puede correr el runtime del DOMINIO? Solo en `.cloud` y con la fase de migración ESTABLE
+    /// (`done`/`notStarted`). Consultado por `start()` y por `handleBecameActive` (re-arranques). En
+    /// `.icloud` (todo device de producción HOY) o en una fase transicional → `false`.
+    ///
+    /// M1 — GUARD DE MOUNT-MISMATCH (crítico, /review-plan): en la VENTANA DE ENTRADA de la sesión
+    /// secundaria (descriptor persistido, relaunch pendiente) el proceso vivo tiene montado el store
+    /// del DUEÑO mirror-ON, pero el getter efectivo ya deriva `.cloud`, la sesión SIWA de la invitada
+    /// está viva y su claim registrado — sin este guard, cualquier re-arranque (startShared desde
+    /// handleBecameActive, startRuntimeIfStable) drenaría la History del DUEÑO y pushearía sus filas
+    /// a la cuenta entrante. Choke point único: TODOS los paths de arranque pasan por aquí.
+    ///
+    /// A3 (D-A7) — GUARD DE MOUNT-MISMATCH DEL STORE PERSONAL: el gemelo del anterior para el store del
+    /// DUEÑO, y hasta hoy NO existía. El par persistido dice qué modo QUIERE el device; el testigo
+    /// (`SwiftDataConfiguration.personalStoreMountedDecision`) dice qué montó ESTE proceso, y escribir el par
+    /// en caliente no remonta nada. Ver `MigrationRuntimeGate.isPersonalMountMismatch` para el porqué
+    /// completo.
+    static func canRunDomain() -> Bool {
+        guard CloudSyncFlags.storageMode == .cloud else { return false }
+        // Un journal que no se deja leer no arranca el motor (`canRun(read:)`, ticket
+        // `an-unreadable-migration-journal-reads-as-never-started`): hasta ese ticket se leía `notStarted`, estable.
+        let read = MigrationPhaseStore.shared.currentPhaseRead
+        let phaseLabel: String
+        switch read {
+        case .phase(let phase): phaseLabel = "\(phase)"
+        case .unreadable: phaseLabel = "unreadable"
+        }
+        // C-1: `.cloud` + mirror-off SIN armar = el mirror de CloudKit sigue montado. Es legítimo mientras el
+        // cutover o la reversa están en vuelo (fases NO estables, ya bloqueadas por el término de fase), y es
+        // el estado PROHIBIDO en una fase estable: ahí significaría motor + mirror sobre el mismo store.
+        // Único origen conocido: escritura parcial del par (kill entre las dos keys del adopt) o un cierre de
+        // reversa a medias. No lo curamos aquí — el journal lo auto-cura por su efecto pendiente; aquí solo
+        // NO arrancamos, y dejamos rastro para saber que ocurrió.
+        let cloudWithMirrorOn = StorageModePersistence.isCloudWithMirrorOn()
+        // Solo con una fase LEÍDA y estable: sin journal no se sabe si el par a medias es el legítimo de un cutover.
+        if cloudWithMirrorOn, case .phase(let phase) = read, MigrationRuntimeGate.isDomainStablePhase(phase) {
+            CloudSyncBreadcrumb.storageModePairViolation(phase: phaseLabel)
+            if !pairViolationCanaryFired {
+                pairViolationCanaryFired = true
+                MetricsService.cloudStorageModePairViolation()
+            }
+        }
+        // A3 (D-A7): el par puede estar COMPLETO y aun así este proceso tener el mirror montado — es el caso
+        // del born-cloud entre la escritura del par y el relanzamiento, y también la ventana del adopt. El
+        // testigo se captura al construir el container y NO cambia en caliente, así que aquí solo NO
+        // arrancamos: lo cura el relanzamiento, que es el contrato de la pantalla terminal.
+        let personalMountMismatch = MigrationRuntimeGate.isPersonalMountMismatch(
+            persistedMode: CloudSyncFlags.storageMode,
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision)
+        if personalMountMismatch {
+            CloudSyncBreadcrumb.runtimeBlockedByPersonalMountMismatch(phase: phaseLabel)
+        }
+        return MigrationRuntimeGate.canRun(read: read,
+                                           cloudWithMirrorOn: cloudWithMirrorOn,
+                                           personalMountMismatch: personalMountMismatch)
+    }
+
+    /// C-1: dedup del canario del par de storage — `canRunDomain()` se consulta en cada `becameActive`, así
+    /// que sin esto spamearía. El breadcrumb local sí suena cada vez (es barato y secuencia el diagnóstico).
+    nonisolated(unsafe) private static var pairViolationCanaryFired = false
+
+    // MARK: - Wiring de producción (DARK)
+
+    /// Construye (perezosamente) e inicia la instancia `shared`. No-op si el flag está apagado. Con el
+    /// `NoopCloudSessionProvider` (sin sesión) `start()` cae en `idle(signedOut)` sin tocar nada.
+    static func startShared(context: ModelContext) async {
+        guard CloudSyncFlags.syncRuntimeEnabled else { return }
+        let runtime = shared ?? makeDefault()
+        shared = runtime
+        // P4: idempotente — si la instancia ya está corriendo su cadencia, no re-arrancar (el paso 14.7
+        // del boot y el coordinator de migración P4 pueden ambos llamar aquí; el segundo debe ser no-op).
+        if runtime.state == .running { return }
+        await runtime.start(context: context)
+    }
+
+    /// Fábrica de producción: motor + clients con providers de la sesión + espejo App Group. Con
+    /// `CloudBackendConfig.isConfigured` usa el `LiveCloudSessionProvider` (sesión real de I7c); si no,
+    /// conserva el `NoopCloudSessionProvider` de I9. Desde D-R1 paso 1 producción compone el VIVO — lo
+    /// que impide que haga nada es el guard de `storageMode` de `start()` (todo el parque es `.icloud`)
+    /// y, sin sign-in, `currentUserID == nil` → `idleSignedOut`.
+    private static func makeDefault() -> CloudSyncRuntime {
+        // `session` capturado FUERTE por los providers (viven en los clients → runtime). Sin ciclo de
+        // vuelta al runtime. Evita el doble-opcional del optional-chaining.
+        let session: CloudSyncSessionProviding = CloudBackendConfig.isConfigured
+            ? LiveCloudSessionProvider()
+            : NoopCloudSessionProvider()
+        let token: () async -> String? = { await session.accessToken() }
+        let attest: () async -> String? = { try? await session.attestToken() }
+        // Sin token, el SDK dice si es caducada o pasajero (ticket
+        // `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Del MISMO proveedor que el preflight de
+        // `SessionExpiryPolicy` en `performCycle`: los dos tienen que contestar lo mismo.
+        let canRenew: @MainActor () -> Bool = { session.canRenewSession }
+        let engine = CloudSyncEngine()
+        let push = SyncPushClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
+        let pull = SyncPullClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
+        let merkle = SyncMerkleClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew)
+        return CloudSyncRuntime(
+            engine: engine,
+            pushClient: push,
+            pullClient: pull,
+            merkleClient: merkle,
+            mirror: SyncOutboxMirror(),
+            coordinator: .shared,
+            session: session,
+            // Fan-out cableado por el observer DARK de AppBootstrapper vía `.cloudSyncAppliedRemoteChanges`
+            // (el runtime SIEMPRE postea la Notification además de este closure opcional).
+            onRemoteChangesApplied: nil,
+            // I13: prefs sync (transporte + cola durable App Group). Mismos providers de sesión/attest.
+            prefsClient: PrefsSyncClient(tokenProvider: token, attestProvider: attest, canRenewSession: canRenew),
+            prefsOutbox: PrefsOutbox()
+        )
+    }
+
+    // MARK: - Arranque
+
+    /// Secuencia de arranque (≈ el "startEngines" del motor). DOBLE red además del call-site: el guard
+    /// del flag. Sin sesión → `idle(signedOut)`. Gate de claim (Noop → proceed). Inyecta espejo +
+    /// identidad + gate de reconcilers en el motor, corre las redes de arranque (guard de recreación →
+    /// rehydrate → drain síncrono → drenaje de cuarentena → reconcilers de arranque) y arranca la cadencia.
+    func start(context: ModelContext) async {
+        guard CloudSyncFlags.syncRuntimeEnabled else { return }
+        self.context = context
+
+        // P0: DOBLE guard del DOMINIO (además del de flag). El corpus NUNCA sube en `.icloud` (espeja el
+        // S1 de prefs, ahora para todo el ciclo) y el runtime NO compite con un cutover/reversa/adopt en
+        // vuelo (en `.cloud` con fase transicional quien conduce es el `MigrationRunner`; el coordinator
+        // de boot re-arranca el runtime al quedar la fase estable).
+        guard Self.canRunDomain() else {
+            state = .idle
+            CloudSyncBreadcrumb.runtimeIdle(reason: "domain-gate")
+            return
+        }
+
+        guard let userID = session.currentUserID else {
+            state = .idleSignedOut
+            CloudSyncBreadcrumb.runtimeIdle(reason: "signed-out")
+            return
+        }
+        // P6 (AJUSTE review #1, guard de IDENTIDAD): en `.cloud`, un `currentUserID` SIN registro de claim
+        // deja el runtime `.idle` — todo camino legítimo a `.cloud` estampa el claim-store (migración o
+        // adopt); un Apple ID DISTINTO en un device migrado (reinstalación borra `storageMode` → vuelve
+        // `.icloud`, pero un user-switch sin reinstalar no) NO debe pushear el corpus del dueño a otra
+        // cuenta. `claimAction == nil` en `.cloud` = identidad no-claimeada.
+        if CloudSyncFlags.storageMode == .cloud, session.claimAction == nil {
+            state = .idle
+            CloudSyncBreadcrumb.runtimeBlockedByUnclaimedIdentity()
+            return
+        }
+        if let action = session.claimAction, !Self.shouldStartSync(after: action) {
+            state = .idle
+            CloudSyncBreadcrumb.runtimeIdle(reason: "claim-not-proceed")
+            return
+        }
+
+        // Inyectar deps de runtime en el motor. SERIO-1: el gate de reconcilers usa la señal DEDICADA
+        // a saves del propio motor (`isQuiescentForEngineSaves`), NO `isImportQuiescent` — esa queda
+        // `false` durante toda la ventana markApplyBegan/Ended que envuelve al pull (donde corren los
+        // reconcilers) → en `.cloud` sería deferral perpetuo.
+        engine.outboxMirror = mirror
+        engine.currentUserID = userID
+        engine.reconcilerQuiescenceGate = { [coordinator] in coordinator.isQuiescentForEngineSaves }
+
+        // Redes de arranque (orden importa): guard de recreación → rehydrate → drain síncrono → drenaje
+        // de cuarentena (F-8 exige el drain síncrono inmediatamente antes) → reconcilers de arranque.
+        engine.recoverIfQuarantineRecreated(context: context)
+        engine.rehydrateOutboxFromMirror(userID: userID, context: context)
+        // Tras el remonte de un ADOPT, las identidades que el espejo cambió entre su reconcile y el remonte vuelven a las que
+        // el backend conoce ANTES del primer drain y del primer pull (ticket
+        // `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`). Sin la marca del adopt no hace nada.
+        engine.restoreAdoptedRelayIdentitiesIfPinned(context: context)
+        // Un drain que no terminó hizo rollback: una edición local sin capturar no está en el outbox y el guard D-1
+        // del drenaje de cuarentena no la vería (F-8). La cuarentena es durable: espera al próximo arranque (ticket
+        // `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`).
+        if engine.drainOnce(context: context) {
+            engine.drainQuarantineOnce(context: context)
+        }
+        engine.runStartupReconcilersIfQuiescent(context: context)
+
+        CloudSyncBreadcrumb.runtimeStarted()
+        // Cadencia: el loop corre el PRIMER ciclo inmediatamente en su primera vuelta (no se corre un
+        // ciclo aparte para no duplicarlo). El loop NO se testea — se testean `syncCycle` + policy puros.
+        startCadenceLoop()
+    }
+
+    // MARK: - Foreground
+
+    /// Al volver a foreground: dispara un ciclo inmediato si la cadencia está viva; en `stoppedUntilSignIn`
+    /// re-evalúa la sesión y DESPIERTA si el usuario re-firmó; `stoppedUntilRelaunch` queda pegado (S6).
+    func handleBecameActive() {
+        guard CloudSyncFlags.syncRuntimeEnabled else { return }
+        // P0: re-verifica el gate del dominio antes de re-arrancar la cadencia (un cutover/reversa pudo
+        // haber empezado mientras la app estaba en background — no competir con el runner).
+        guard Self.canRunDomain() else { return }
+        switch state {
+        case .stoppedUntilRelaunch, .idle, .idleSignedOut:
+            // Relaunch pegado (403/attest terminal); idle sin sesión → el arranque/sign-in (I7c) lo mueve.
+            return
+        case .stoppedUntilSignIn:
+            // El usuario pudo re-firmar: si ahora hay sesión, re-arranca la cadencia (el ciclo re-evalúa
+            // `SessionExpiryPolicy` con el `canRenewSession` actual y sube lo pendiente).
+            //
+            // **Y la sesión tiene que ser la del DUEÑO del motor** (2026-09-25, ticket
+            // `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Este camino no pasa por el gate de
+            // identidad de `start()`: firmar con otra cuenta por cualquier puerta —«Nuevo grupo» incluida— y volver a
+            // primer plano reanudaba la cadencia con el outbox del dueño y el JWT de la cuenta que entró.
+            guard session.currentUserID != nil, !sessionBelongsToAnotherAccount else { return }
+            startCadenceLoop()
+        case .running:
+            // Cancela el sleep actual y corre un ciclo ya (re-arrancar el loop = ciclo inmediato).
+            startCadenceLoop()
+        }
+    }
+
+    // MARK: - Dueño del motor y parada anticipada
+
+    /// El `sub` con el que el motor arrancó (`start()`), o `nil` si no arrancó o un teardown lo limpió. Es el ancla con la
+    /// que la puerta de «Dónde viven tus datos» comprueba que quien vuelve a entrar es la misma cuenta
+    /// (`CloudMigrationController.signInToResumeSync`).
+    var ownerUserID: String? { engine.currentUserID }
+
+    /// ¿Hay sesión y es de OTRA cuenta que la del dueño del motor? Sin dueño no hay nada que comparar (el trato de antes de
+    /// este término). **Sin sesión, `false` a propósito**: eso no es otra cuenta sino ninguna, y ya lo contestan el preflight
+    /// de `SessionExpiryPolicy` y el pull, con su canario (`cloudSyncBlockedByExpiredSession`). Si este término lo cubriera,
+    /// cortaría el ciclo antes que ellos y se llevaría la métrica.
+    ///
+    /// Lo consultan `handleBecameActive` para reanudar desde `.stoppedUntilSignIn` y el propio ciclo antes de tocar la red
+    /// (`performCycle`), que es la red de verdad: `syncCycle` lo llaman también el cierre de sesión y la puerta, y ninguno
+    /// pasa por el gate de identidad de `start()`.
+    ///
+    /// **Sin dueño en memoria** —el motor arrancó sin sesión tras relanzar y nunca fijó el suyo— el ancla en la nube es el sello
+    /// del claim, el mismo gate de identidad de `start()`: una sesión sin sello no es la de este teléfono. Sin él, tras un
+    /// relanzamiento la guarda desaparecía y el cierre de sesión subía el outbox del dueño con el JWT de una cuenta que entró
+    /// por «Nuevo grupo» (review del 2026-09-25).
+    private var sessionBelongsToAnotherAccount: Bool {
+        guard let current = session.currentUserID else { return false }
+        guard let owner = engine.currentUserID else {
+            return CloudSyncFlags.storageMode == .cloud && session.claimAction == nil
+        }
+        return current != owner
+    }
+
+    /// **¿No queda sesión del dueño con la que subir el outbox personal?** El SDK la borró (`canRenewSession == false`: la
+    /// renovación falló de verdad —cuenta borrada, sesión revocada o caducada—), o la abierta es de otra cuenta
+    /// (`sessionBelongsToAnotherAccount`). Lo pregunta el paso 1 del cierre en la nube antes de ofrecer perder los cambios
+    /// personales por la sesión (ticket `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): un 401 del
+    /// gateway con la sesión guardada y renovable también se lee como sesión caducada, y ahí volver a entrar —o un arreglo del
+    /// servidor— los sube.
+    var ownersSessionIsGone: Bool { !session.canRenewSession || sessionBelongsToAnotherAccount }
+
+    /// Para la cadencia hasta volver a entrar. Lo llama el cierre de sesión en la nube cuando bloquea por sesión caducada
+    /// (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`): su veredicto es el que el próximo ciclo
+    /// de la cadencia daría —el JWT es el mismo para `/sync` y `/groups`—, pero la cadencia puede tardar un minuto en
+    /// chocar con él, y hasta entonces «Dónde viven tus datos» decía «Todo sincronizado» sin su «Iniciar sesión».
+    ///
+    /// **Solo desde `.running`.** `.stoppedUntilRelaunch` es un veredicto más fuerte y no se rebaja, y en `.idle` /
+    /// `.idleSignedOut` el motor no arrancó, así que no hay dueño con el que atar la firma. Lo que la reanuda es lo de
+    /// siempre: `handleBecameActive` con sesión del dueño.
+    func stopUntilSignIn() {
+        guard state == .running else { return }
+        cadenceTask?.cancel()
+        cadenceTask = nil
+        state = .stoppedUntilSignIn
+        CloudSyncBreadcrumb.runtimeStopped(reason: "session-expired-at-sign-out")
+    }
+
+    // MARK: - Teardown de sesión invitada (M1)
+
+    /// Red M1(a): al cerrar la sesión invitada en un device compartido, purga TODO el espejo App Group
+    /// (contiene montos), limpia la identidad del motor y detiene la cadencia. El call-site real
+    /// (sign-out invitado) llega con I7c; aquí el hook + su test.
+    ///
+    /// SERIO-2: además de cancelar el loop (cooperativo), INCREMENTA `sessionEpoch` → un `performCycle`
+    /// suspendido en un `await` (p.ej. un push en vuelo) detecta el cambio de época al reanudar y aborta
+    /// SIN aplicar resultados (no purga outbox/espejo, no aplica deltas, no confirma nada post-teardown).
+    ///
+    /// CONTRATO (TODO I7c): este hook NO borra las filas `SyncOutbox`/`SyncQuarantine` ni el cursor del
+    /// store sync-meta — podrían pertenecer al owner LEGÍTIMO del device (el store es compartido y
+    /// `liveOutboxRows` NO filtra por userID hoy). La purga selectiva/total del estado de sync del store
+    /// en el sign-out es responsabilidad del flujo de I7c, que sabe QUIÉN cierra sesión y qué identidad
+    /// tienen las filas. Aquí solo se purga el ESPEJO App Group (M1(a), la superficie con montos que
+    /// cruza usuarios) y se detiene el motor.
+    func teardownGuestSession() {
+        sessionEpoch += 1  // aborta el ciclo en vuelo en su próximo re-chequeo post-await
+        mirror?.purgeAll()
+        prefsOutbox?.purgeAll()  // I13/M1: el outbox de prefs contiene VALORES → no puede cruzar owners
+        engine.currentUserID = nil
+        cadenceTask?.cancel()
+        cadenceTask = nil
+        state = .idleSignedOut
+        CloudSyncBreadcrumb.runtimeTeardown()
+    }
+
+    // MARK: - Cadencia (loop; NO testeado — pragmático)
+
+    private func startCadenceLoop() {
+        cadenceTask?.cancel()
+        state = .running
+        cadenceTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                let outcome = await self.performCycleCoalesced()
+                if Task.isCancelled { return }
+                switch outcome {
+                case .transient:
+                    self.consecutiveTransients += 1
+                case .completed, .sessionExpired, .accountUnavailable:
+                    self.consecutiveTransients = 0
+                case .coalesced:
+                    break  // sin señal de red — NO toca el contador (fix MENOR del review)
+                }
+                let action = SyncCadencePolicy.nextAction(
+                    outcome: outcome, consecutiveTransients: self.consecutiveTransients
+                )
+                switch action {
+                case .scheduleNext(let delay), .backoff(let delay):
+                    do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+                case .stopUntilSignIn:
+                    self.state = .stoppedUntilSignIn
+                    CloudSyncBreadcrumb.runtimeStopped(reason: "session-expired")
+                    return
+                case .stopUntilRelaunch:
+                    self.state = .stoppedUntilRelaunch
+                    CloudSyncBreadcrumb.runtimeStopped(reason: "account-unavailable")
+                    return
+                }
+            }
+        }
+    }
+
+    // MARK: - Ciclo (testeable)
+
+    /// Entrada testeable: fija el contexto y corre UN ciclo coalescido. Devuelve el outcome normalizado
+    /// para la política de cadencia.
+    @discardableResult
+    func syncCycle(context: ModelContext) async -> SyncCadencePolicy.CadenceOutcome {
+        self.context = context
+        return await performCycleCoalesced()
+    }
+
+    /// Anti-solape "one in-flight, one queued" (patrón del drain, pero async): si ya hay un ciclo en
+    /// vuelo, marca uno pendiente (a lo sumo uno) y retorna `.coalesced`; el ciclo en vuelo lo ejecuta
+    /// al terminar. `.coalesced` (no `.transient`) para NO contaminar `consecutiveTransients` con
+    /// ráfagas de `handleBecameActive` (fix MENOR del review — un backoff espurio sin fallo real).
+    @discardableResult
+    private func performCycleCoalesced() async -> SyncCadencePolicy.CadenceOutcome {
+        if isCycling {
+            pendingCycle = true
+            return .coalesced
+        }
+        isCycling = true
+        defer { isCycling = false }
+        var last: SyncCadencePolicy.CadenceOutcome = .coalesced
+        repeat {
+            pendingCycle = false
+            last = await performCycle()
+        } while pendingCycle
+        return last
+    }
+
+    /// UN ciclo: drain → attest gate → SessionExpiry gate + push (partición poison #26) → pull/apply
+    /// (reconcilers gateados) → fan-out si aplicó → Merkle si toca → purga de history (doble-DARK).
+    /// Devuelve el outcome de cadencia.
+    ///
+    /// SERIO-2: captura `sessionEpoch` al entrar y lo re-verifica tras CADA `await`. Un teardown
+    /// (`teardownGuestSession`) durante una suspensión aborta el ciclo con `.coalesced` (resultado sin
+    /// señal de cadencia — el loop ya está cancelado) SIN aplicar resultados ni tocar el store.
+    private func performCycle() async -> SyncCadencePolicy.CadenceOutcome {
+        // El testigo del attest es de ESTE ciclo (ver `lastCycleStoppedAtAttestGate`), también si sale sin contexto.
+        lastCycleStoppedAtAttestGate = false
+        lastCycleFailedUpload = false
+        lastCycleCaptureUnfinished = false
+        guard let context else { return .transient }
+        let epoch = sessionEpoch
+
+        // 1) Drain SÍNCRONO al entrar (captura escrituras locales pendientes antes de tocar la red). Si no termina —o termina
+        //    con la traducción cortada—, el testigo lo apunta: el ciclo sigue igual, pero lo que se quedó en el History no
+        //    está en el outbox que el resto del ciclo sube (ver `lastCycleCaptureUnfinished`).
+        let drainCompleted = engine.drainOnce(context: context)
+        lastCycleCaptureUnfinished = !drainCompleted || engine.lastDrainCutTranslation
+
+        // 1.5) **La sesión tiene que ser la del dueño del motor** (2026-09-25, ticket
+        //      `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). El outbox no lleva dueño y el servidor
+        //      firma con el `sub` del JWT: con otra cuenta, el push subía el corpus de una persona a la cuenta de otra y el
+        //      pull bajaba el de la otra a este store. Se lee como sesión caducada —hace falta volver a entrar, con la
+        //      cuenta buena—, que es lo que para la cadencia y enciende la puerta. Va tras el drain, que solo captura
+        //      escrituras locales, y antes de todo lo que toca la red (el ciclo de Grupos del paso 5.6 incluido).
+        guard !sessionBelongsToAnotherAccount else {
+            CloudSyncBreadcrumb.runtimeStopped(reason: "session-not-owner")
+            return .sessionExpired
+        }
+
+        // 2) Gate de attest (seam I7b): terminal → stop; transient → backoff; ok → seguir.
+        switch await resolveAttest() {
+        case .ok:
+            break
+        case .transient:
+            // Sin el pase del servidor no se sube nada, y el backoff no se cura en segundos (ver `lastCycleFailedUpload`).
+            lastCycleFailedUpload = true
+            return .transient
+        case .terminal:
+            MetricsService.cloudSyncBlockedByAttestUnavailable(platform: "ios")
+            CloudSyncBreadcrumb.runtimeStopped(reason: "attest-terminal")
+            return .accountUnavailable  // stopUntilRelaunch (sin loop)
+        }
+        guard epoch == sessionEpoch else { return .coalesced }  // SERIO-2: teardown durante el attest
+
+        // 3) Push de filas vivas (partición poison ANTES; dead-letter poison + canario; el resto sube).
+        //    Un outbox que no se deja leer corta el ciclo como `.transient` en vez de seguir al pull: `[]` no es
+        //    «no hay nada que subir» (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). El backoff
+        //    de la cadencia ya sabe reintentar, y es lo único honesto que se puede hacer sin saber qué hay.
+        let liveRows: [SyncOutbox]
+        do {
+            liveRows = try liveOutboxRows(context)
+        } catch {
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "runtime-cycle")
+            return .transient
+        }
+        if !liveRows.isEmpty {
+            let (buildable, poison) = pushClient.partitionBuildable(liveRows)
+            if !poison.isEmpty { deadLetterPoison(poison, context: context) }
+
+            // Gate de sesión expirada (pendientes + no-renovable → estado accionable, sin loop).
+            // CONTRATO I7c (nota del review): el provider real DEBE devolver `canRenewSession == true`
+            // siempre que el access token esté VIGENTE (aunque el refresh token esté en duda) — si lo
+            // reporta false con token vigente, este preflight bloquea pushes que habrían tenido éxito.
+            if case .blockedNeedsSignIn(let pending) = SessionExpiryPolicy.decide(
+                pending: buildable.count, canRenewSession: session.canRenewSession
+            ) {
+                MetricsService.cloudSyncBlockedByExpiredSession(pending: pending)
+                CloudSyncBreadcrumb.runtimeStopped(reason: "session-expiry-preflight")
+                return .sessionExpired
+            }
+
+            if !buildable.isEmpty {
+                let pushOutcome = await pushClient.push(buildable)
+                // SERIO-2: teardown durante el push suspendido → NO aplicar resultados (no purgar
+                // outbox/espejo bajo una sesión que ya no existe).
+                guard epoch == sessionEpoch else { return .coalesced }
+                switch pushOutcome {
+                case .completed(let results):
+                    await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
+                    guard epoch == sessionEpoch else { return .coalesced }  // teardown durante applyResults
+                    // Un `.completed` también puede traer la subida a medias: un trozo que falló tras otro confirmado, o
+                    // un rechazo `upstream_*`. El ciclo sigue al pull, y si ése falla, el testigo es lo que dice que lo
+                    // pendiente no llegó (review adversarial del 2026-09-25, dos lentes).
+                    lastCycleFailedUpload = pushClient.lastPushFailedAtServer
+                case .sessionExpired:
+                    return .sessionExpired
+                case .accountUnavailable:
+                    return .accountUnavailable
+                case .transient:
+                    // Solo si chocó con el servidor: una fila que no se deja convertir es de este teléfono.
+                    lastCycleFailedUpload = pushClient.lastPushFailedAtServer
+                    return .transient
+                }
+            }
+        }
+
+        // 4) Pull + apply (reconcilers gateados por el gate ya instalado). El batch se envuelve en
+        //    markApplyBegan/Ended para que `isPersonalApplyQuiescent` refleje el apply en vuelo (consumido
+        //    por el wrapper de arranque en `.cloud`; el gate de reconcilers usa la señal dedicada
+        //    `isQuiescentForEngineSaves`, que NO ve esta ventana — SERIO-1). El drain interno de
+        //    `pullAndApplyOnce` mantiene F-1.
+        coordinator.markApplyBegan()
+        let pullOutcome = await engine.pullAndApplyOnce(using: pullClient, context: context)
+        coordinator.markApplyEnded()
+        guard epoch == sessionEpoch else { return .coalesced }  // SERIO-2: teardown durante el pull
+
+        let pagesApplied: Int
+        switch pullOutcome {
+        case .completed(let n): pagesApplied = n
+        case .transient(let n): pagesApplied = n
+        case .busy: pagesApplied = 0
+        case .sessionExpired: return .sessionExpired
+        case .accountUnavailable: return .accountUnavailable
+        }
+
+        // 5) Fan-out post-apply (§i.4): solo si llegó algo remoto.
+        if pagesApplied > 0 { fanOutRemoteChangesApplied() }
+
+        // 5.5) Prefs sync (I13): push del outbox de prefs + pull/merge, MISMA cadencia que el dominio
+        //      (latencia ≈60s foreground — decisión v1, paridad con la latencia de dominio). Piggyback
+        //      tras el push/pull de dominio. Aborta limpio si un teardown cambió la época.
+        await syncPrefsOnce(epoch: epoch)
+        guard epoch == sessionEpoch else { return .coalesced }
+
+        // 5.6) Grupos piggyback (B2 [R3]): con el canal de Grupos encendido, su ciclo corre AQUÍ (misma
+        //      cadencia que el dominio) y `GroupsSyncClient.startIfEligible` se ABSTIENE de su loop propio
+        //      (guard espejo: syncRuntimeEnabled && canRunDomain()) — un solo loop cadenciado, sin dos
+        //      fetchHistory del mismo container sin coordinación. Flag OFF (SIEMPRE en producción esta
+        //      fase) = byte-idéntico: ni await ni llamada.
+        //      El resultado del ciclo de Grupos NO
+        //      contamina la cadencia personal (canal aparte con su propio dead-letter/backoff interno; el
+        //      outcome se descarta a propósito).
+        if CloudSyncFlags.groupsBackendEnabled {
+            await groupsSyncCycleRunner(context)
+            guard epoch == sessionEpoch else { return .coalesced }  // teardown durante el ciclo de Grupos
+        }
+
+        // 6) Primer pull completado + contador de Merkle (solo avanza en ciclos `.completed`) + purga
+        //    de history (DOBLE-DARK: syncRuntimeEnabled gatea todo el runtime Y historyPurgeEnabled
+        //    gatea la purga — se togglea SOLO tras el veredicto del spike device S2, ver CloudSyncFlags).
+        if case .completed = pullOutcome {
+            if !coordinator.hasCompletedFirstPull { coordinator.markFirstPullCompleted() }
+            completedPullsSinceMerkle += 1
+            if SyncCadencePolicy.shouldRunMerkle(
+                completedPullsSinceMerkle: completedPullsSinceMerkle,
+                lastMerkleAt: lastMerkleAt, now: .now
+            ) {
+                await runMerkleVerification(context: context, now: .now)
+                guard epoch == sessionEpoch else { return .coalesced }  // SERIO-2: teardown durante Merkle
+            }
+            if CloudSyncFlags.historyPurgeEnabled {
+                _ = engine.purgeHistoryOnce(context: context)
+            }
+        }
+
+        switch pullOutcome {
+        case .completed: return .completed
+        case .transient, .busy: return .transient
+        case .sessionExpired, .accountUnavailable: return .transient  // ya retornados arriba; defensivo
+        }
+    }
+
+    // MARK: - Merkle (verificación + remediación E-bis)
+
+    /// Verifica integridad y, si `.diverged`, REMEDIA una sola vez por sesión (reset cursor + re-pull).
+    /// Testeable directamente. `now` inyectado. Devuelve el veredicto para asserts.
+    /// SERIO-2: un teardown durante el fetch del snapshot aborta ANTES de la remediación (que muta el
+    /// cursor y aplica deltas).
+    @discardableResult
+    func runMerkleVerification(context: ModelContext, now: Date = .now) async -> MerkleVerdict {
+        let epoch = sessionEpoch
+        let verdict = await engine.verifyIntegrity(using: merkleClient, context: context)
+        guard epoch == sessionEpoch else { return verdict }
+        lastMerkleAt = now
+        completedPullsSinceMerkle = 0
+        if case .diverged = verdict, !didRemediateMerkleThisSession {
+            didRemediateMerkleThisSession = true
+            engine.resetServerSeqCursor(context: context)
+            _ = await engine.pullAndApplyOnce(using: pullClient, context: context)
+            CloudSyncBreadcrumb.merkleRemediated()
+        }
+        return verdict
+    }
+
+    // MARK: - Prefs sync (I13)
+
+    /// UN ciclo de sync de preferencias: push del outbox (owner-scoped) → purga de las aplicadas; luego
+    /// pull por cursor → merge vía `PreferenceSyncService` (semánticas NO-LWW client-side) → avance del
+    /// cursor (persistido en el propio archivo del outbox, NO en `SyncCursor`). No-op si el paso está
+    /// deshabilitado (deps nil) o no hay sesión. Cero silencios: los fallos de I/O del outbox se loguean.
+    ///
+    /// SERIO-2: re-verifica `sessionEpoch` tras cada `await` — un teardown durante un push/pull suspendido
+    /// aborta SIN purgar el outbox ni avanzar el cursor (no se toca estado bajo una sesión que ya no existe).
+    private func syncPrefsOnce(epoch: Int) async {
+        // S1 (review I13): gate DURO por storageMode — espeja el de `set()`/`bootstrap()`. Sin él, un
+        // device `.icloud` con syncRuntimeEnabled=true (ventana de SPIKES de device) pullearía prefs del
+        // backend mientras las escrituras van a iKV = split-brain (y los markers de test de staging
+        // pisarían prefs reales del user de spike). El sync de prefs solo existe en `.cloud`.
+        guard CloudSyncFlags.storageMode == .cloud else { return }
+        guard let prefsClient, let prefsOutbox, let userID = session.currentUserID else { return }
+
+        // UNA lectura del outbox para las dos mitades, y si no se deja leer este ciclo no hace NADA: con `[]` se saltaba
+        // el push y con el cursor a 0 bajaba todas las prefs, cuyo merge (gana el remoto) revertía en pantalla los
+        // cambios que esperaban en el archivo; luego `setPullCursor` escribía un estado vacío encima (ticket
+        // `prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it`). El ciclo siguiente lo reintenta.
+        let snapshot: PrefsOutbox.SyncSnapshot
+        do {
+            snapshot = try prefsOutbox.syncSnapshot(forUserID: userID)
+        } catch {
+            CloudSyncBreadcrumb.prefsOutboxUnreadable(step: "sync-cycle")
+            #if DEBUG
+            print("CloudSyncRuntime.syncPrefsOnce: el outbox de prefs no se deja leer — ciclo de prefs aplazado: \(error)")
+            #endif
+            return
+        }
+
+        // Push: subir las entries del owner actual (owner-scoping M1).
+        let entries = snapshot.entries
+        if !entries.isEmpty {
+            let wire = entries.map { WirePref(key: $0.key, value: $0.entry.value, hlc: $0.entry.hlc) }
+            let outcome = await prefsClient.push(wire)
+            guard epoch == sessionEpoch else { return }
+            if case .completed(let results) = outcome {
+                // `applied`/`noop` (LWW resuelto server-side) → purgar del outbox. `reason` != nil (upstream
+                // transitorio) NO llega como `applied`/`noop` → la entry queda y se reintenta.
+                // Se purga con el HLC que VIAJÓ, no por key: un `set()` durante el `await` de arriba reencola la misma
+                // key con un HLC nuevo, y ésa tiene que quedarse (ticket `prefs-push-purge-drops-a-change-made-during-the-upload`).
+                // El HLC sale del wire enviado: la respuesta no lo trae, y una key que no se envió no purga nada.
+                let sentHLC = Dictionary(wire.map { ($0.key, $0.hlc) }, uniquingKeysWith: { first, _ in first })
+                var done: [String: String] = [:]
+                for result in results where result.reason == nil {
+                    if let hlc = sentHLC[result.key] { done[result.key] = hlc }
+                }
+                do { try prefsOutbox.removeEntries(pushed: done) } catch {
+                    #if DEBUG
+                    print("CloudSyncRuntime.syncPrefsOnce: removeEntries falló: \(error)")
+                    #endif
+                }
+            }
+        }
+
+        // Pull: bajar desde el cursor y mergear. El push no mueve el cursor: el de la lectura de arriba sigue valiendo.
+        let since = snapshot.pullCursor
+        let pullOutcome = await prefsClient.pull(since: since)
+        guard epoch == sessionEpoch else { return }
+        if case .page(let page) = pullOutcome {
+            PreferenceSyncService.shared.applyPulledPrefs(page.prefs)
+            // Cursor y reloj en UNA escritura: el reloj integra lo que bajó para que el cambio siguiente de este teléfono
+            // sobre una preferencia ya vista gane en el servidor (`PrefsOutbox.recordPull`). Sin nada que cambiar no escribe.
+            do {
+                let rejected = try prefsOutbox.recordPull(
+                    newCursor: page.maxServerSeq > since ? page.maxServerSeq : nil,
+                    pulledHLCs: page.prefs.map(\.hlc)
+                )
+                // Una línea por página, no por preferencia.
+                if let first = rejected.first {
+                    CloudSyncBreadcrumb.clockReceiveRejected(reason: "prefs x\(rejected.count) \(first)")
+                }
+            } catch {
+                #if DEBUG
+                print("CloudSyncRuntime.syncPrefsOnce: recordPull falló: \(error)")
+                #endif
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    /// Filas de outbox VIVAS (dead-letters excluidos — nunca suben).
+    ///
+    /// **LANZA desde el 2026-09-22**, la tercera del mismo nombre y del mismo arreglo (ticket
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). Aquí el daño dura un ciclo en vez de una
+    /// migración, pero es el mismo: con `[]` el motor se saltaba el push y seguía al pull como si el outbox
+    /// estuviera limpio, y la cadencia recibía el veredicto del pull — «todo bien» sobre una avería.
+    private func liveOutboxRows(_ context: ModelContext) throws -> [SyncOutbox] {
+        // El seam va DENTRO del `do`, no antes: así el camino de error que recorre un test es el `catch` REAL
+        // del fetch. Puesto fuera, un mutante que reintrodujera `return []` ahí seguiría verde.
+        do {
+            if _testThrowOnOutboxFetch { throw MigrationExecutorError.outboxUnreadable }
+            return try context.fetch(FetchDescriptor<SyncOutbox>())
+                .filter { $0.rejectedReason == nil }
+        } catch {
+            #if DEBUG
+            print("CloudSyncRuntime.liveOutboxRows: fetch falló: \(error)")
+            #endif
+            throw MigrationExecutorError.outboxUnreadable
+        }
+    }
+
+    /// Dead-letterea las filas poison (#26): `rejectedReason` + `rejectedAt` bajo `outboxSaveAuthor`
+    /// (echo-suppression) + canario `cloudSyncMutationRejected`. El espejo NO se borra (coherente con los
+    /// dead-letters de I8e — la fila queda para el panel DEBUG).
+    private func deadLetterPoison(_ poison: [SyncPushClient.PoisonRow], context: ModelContext) {
+        do {
+            try engine.saveWithAuthor(context, CloudSyncEngine.outboxSaveAuthor) {
+                for p in poison {
+                    p.row.rejectedReason = p.reason
+                    p.row.rejectedAt = .now
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncRuntime.deadLetterPoison: save falló: \(error)")
+            #endif
+            return
+        }
+        for p in poison { MetricsService.cloudSyncMutationRejected(reason: p.reason) }
+    }
+
+    /// Fan-out: closure inyectado + Notification (AppBootstrapper lo cablea a la UI en el paso DARK).
+    private func fanOutRemoteChangesApplied() {
+        onRemoteChangesApplied?()
+        NotificationCenter.default.post(name: .cloudSyncAppliedRemoteChanges, object: nil)
+    }
+
+    // MARK: - Attest (seam I7b, AttestSyncGate)
+
+    private enum AttestResolution { case ok, transient, terminal }
+
+    /// Intenta adquirir el token de attest de la sesión; clasifica el fallo con `AttestSyncGate` (retry
+    /// budget → terminal). Con el Noop provider retorna `nil` sin lanzar → `.ok` (DARK: attest opcional).
+    ///
+    /// **Y alimenta la racha del teléfono** (2026-09-15, ticket
+    /// `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`): un token conseguido la acaba, y un fallo que
+    /// habla del attest suma un rechazo y deja el testigo de este ciclo (`noteAttestFailure`). Es lo único que dice algo del
+    /// TELÉFONO: el 401 `yala_attest_required` que el gateway pueda devolver después ya no lo dice, porque el token se
+    /// consiguió aquí, y por eso los clientes lo leen pasajero sin tocar la racha (2026-09-16).
+    private func resolveAttest() async -> AttestResolution {
+        do {
+            _ = try await session.attestToken()
+            attestRetryCount = 0
+            GroupsAttestStreakStore.recordAcceptance()
+            return .ok
+        } catch let error as AppAttestError {
+            noteAttestFailure(error)
+            switch AttestSyncGate.classify(error: error, retryCount: attestRetryCount) {
+            case .transient:
+                attestRetryCount += 1
+                return .transient
+            case .terminal:
+                return .terminal
+            }
+        } catch {
+            // Un error que no es `AppAttestError`. El contrato lo excluye, pero un `DCError` de DeviceCheck llega por aquí
+            // (`AppAttestClient` no lo envuelve): transient conservador, y cuenta en la racha si habla del attest.
+            noteAttestFailure(error)
+            attestRetryCount += 1
+            return .transient
+        }
+    }
+
+    /// Un fallo de la puerta que habla del attest (`AttestSyncGate.countsTowardAttestStreak`) suma un rechazo a la racha del
+    /// teléfono —como mucho uno por hora, lo decide `GroupsAttestVerdictLogic`— y deja el testigo de ESTE ciclo. Uno de red
+    /// o del servidor no hace ninguna de las dos cosas: estar sin conexión no acerca el veredicto.
+    private func noteAttestFailure(_ error: any Error) {
+        guard AttestSyncGate.countsTowardAttestStreak(error) else { return }
+        lastCycleStoppedAtAttestGate = true
+        GroupsAttestStreakStore.recordRejection()
+    }
+}

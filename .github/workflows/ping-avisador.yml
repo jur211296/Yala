@@ -1,0 +1,100 @@
+name: Ping del avisador
+
+# ---------------------------------------------------------------------------------
+# POR QUE EXISTE  (2026-09-09)
+#
+# El avisador de rojos de `qa.yml` solo se ejecuta cuando hay algo que avisar, asi que
+# su camino —secreto, URL, routine viva al otro lado— NO se ejercita en un dia normal.
+# El 2026-09-08 la routine se rehizo y la credencial dejo de valer; el fallo se descubrio
+# en el primer incendio, que es el peor momento posible: el run que traia el rojo real es
+# el mismo que se comio el aviso.
+#
+# Este workflow ejercita el camino ENTERO sin esperar a que algo se rompa. Si el canal esta
+# vivo, sale en verde en 20 segundos; si no, sale en ROJO con su propio nombre.
+#
+# ESTE ES EL UNICO AVISO DEL REPO QUE CORRE **SIN RESPALDO**, y es deliberado. Los demas,
+# cuando el webhook no responde, dejan el aviso en un issue y siguen en verde: lo que
+# entregan importa mas que el canal por el que salga. Aqui es al reves — el trabajo de este
+# workflow ES detectar que el canal se cayo. Con respaldo saldria en VERDE justo el unico
+# dia que importa, y ademas dejaria un comentario diario «no requiere ninguna accion» en el
+# issue donde se estan acumulando los avisos de verdad. Un vigilante que se rescata a si
+# mismo no vigila nada.
+#
+# QUE APORTA, SI EL CAMINO YA SE RECORRE SOLO. Se recorre: `avisar-grok-push-principal.yml`
+# usa los mismos secretos y el mismo endpoint en cada push a `2.1` —medido el 2026-09-09
+# sobre 100 runs, unos 30 avisos al dia—. Pero eso depende de que HAYA pushes, y su rojo es
+# un check mas entre los muchos de un push. Lo que añade esto son dos cosas que aquello no
+# da: una cadencia garantizada aunque nadie toque el repo, y un check cuyo NOMBRE dice que
+# lo roto es el canal de avisos y no otra cosa. El coste es un 3 % mas de trafico por el
+# mismo webhook.
+#
+# EL CRON NO ES UN RELOJ FIABLE, y aqui da igual. El 2026-09-08 el cron de Actions
+# disparo con 4 h 35 min de retraso. Para «ejercitar el canal» eso no importa —importa
+# que corra, no cuando—, pero no conviertas esto en el reloj de nada.
+# ---------------------------------------------------------------------------------
+
+on:
+  schedule:
+    # 15:52 UTC = 10:52 en Lima. Ni en punto (los cron en punto son los mas congestionados
+    # de GitHub) ni a la misma hora que `qa.yml` (08:17) o el vigilante (11:43).
+    - cron: '52 15 * * *'
+  workflow_dispatch:
+    inputs:
+      simular_canal_caido:
+        description: "Ejercita el canal de RESPALDO: apunta a una URL muerta a proposito y comprueba que el aviso acaba en un issue. No toca el webhook real."
+        type: boolean
+        default: false
+  # El propio avisador se prueba al tocarlo, desde la rama en que se toca. Es la unica
+  # forma de verificar un cambio del canal ANTES de mergearlo: `workflow_dispatch` solo
+  # se puede lanzar desde la rama por defecto, asi que en una rama de encargo no sirve.
+  push:
+    paths:
+      - '.github/workflows/ping-avisador.yml'
+      - '.github/actions/avisar/action.yml'
+
+permissions:
+  contents: read
+  # Para el canal de respaldo. El repo tiene el permiso por defecto de Actions en `read`,
+  # asi que sin esta linea el respaldo no puede escribir el issue y el aviso se pierde.
+  issues: write
+
+jobs:
+  ping:
+    name: El canal de avisos, ¿esta vivo?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Hace falta para poder usar la action local `.github/actions/avisar`.
+      - uses: actions/checkout@v4
+
+      - name: Ejercitar el camino entero
+        uses: ./.github/actions/avisar
+        with:
+          # Con `simular_canal_caido` la URL se sustituye por una que no existe: el POST
+          # falla de verdad y el respaldo tiene que recoger el aviso. Es el control
+          # positivo del respaldo — sin el, «el respaldo funciona» es una suposicion.
+          webhook-url: ${{ inputs.simular_canal_caido && 'https://ping-del-avisador.invalid/canal-caido-a-proposito' || secrets.GROK_WEBHOOK_URL }}
+          sender-key: ${{ secrets.GROK_WEBHOOK_SENDER_KEY }}
+          # Sin respaldo en el ping normal (ver arriba); con el, y en su propia etiqueta, en el
+          # simulacro — que es lo que lo hace un control positivo utilizable: ejercita el issue
+          # de verdad sin dejar abierto uno que luego se coma los avisos reales bajo un titulo
+          # que dice «no es una incidencia».
+          respaldo: ${{ inputs.simular_canal_caido && 'true' || 'false' }}
+          etiqueta: ${{ inputs.simular_canal_caido && 'aviso-ci-simulacro' || 'aviso-ci' }}
+          github-token: ${{ github.token }}
+          asunto: >-
+            ${{ inputs.simular_canal_caido
+                && 'PRUEBA del canal de respaldo (no es una incidencia)'
+                || 'ping del avisador del CI' }}
+          texto: |
+            Ping diario del avisador del CI de ${{ github.repository }}. NO requiere ninguna accion.
+
+            Existe para que el camino del aviso —secreto, URL y routine— se ejercite todos los dias
+            y no se descubra roto en el primer incendio, que es como se descubrio el 2026-09-08.
+
+            Si este mensaje deja de llegar varios dias seguidos, el canal esta caido aunque nada
+            haya salido en rojo: mira los runs de «Ping del avisador» y los issues con la etiqueta
+            `aviso-ci`.
+
+            Rama: ${{ github.ref_name }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

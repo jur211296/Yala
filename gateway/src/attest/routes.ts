@@ -7,7 +7,18 @@ import { AttestError, verifyAttestation } from "./verifyAttestation";
 import { verifyAssertion } from "./verifyAssertion";
 import { issueSessionToken, type Tier } from "./session";
 import { verifyStoreKitJWS } from "../storekit/verifyStoreKitJWS";
-import { type AttestKeyRow, getAttestKey, insertAttestKey, isProActive, publicKeyBytes, updateCounter, updateEntitlement } from "../db";
+import {
+  type AttestKeyRow,
+  getAccountEntitlement,
+  getAttestKey,
+  insertAttestKey,
+  isAccountProActive,
+  isProActive,
+  publicKeyBytes,
+  updateCounter,
+  updateEntitlement,
+} from "../db";
+import { verifyUserToken } from "../sync/userauth";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -27,17 +38,28 @@ async function readBody(c: Ctx): Promise<Record<string, unknown> | null> {
   }
 }
 
-/** Verifica el JWS de StoreKit (si llega), actualiza el cache de entitlement y devuelve el tier. */
+/**
+ * Verifica el JWS de StoreKit (si llega), actualiza el cache de entitlement y devuelve el tier.
+ *
+ * C-8: el tier ya no sale SOLO del device. Si el cliente adjunta el JWT de su cuenta de nube, el
+ * derecho de esa CUENTA también cuenta — si no, el device donde C-8 devuelve Pro (otro Apple ID,
+ * misma cuenta de Yala) tendría el chat y los insights desbloqueados en la UI y recibiría 403
+ * `yala_pro_required` del proxy. El JWT es opcional y su ausencia deja el comportamiento anterior
+ * intacto; un JWT inválido se ignora en silencio (no es una ruta de auth, es un dato de más).
+ */
 async function applyEntitlement(
   env: Env,
   keyId: string,
   storeKitJWS: string | null,
   cached: AttestKeyRow | null,
+  userJWT: string | null = null,
 ): Promise<Tier> {
   // Solo-staging: trata a cualquier device atestado como Pro (para QA sin suscripción real).
   // Defensa en profundidad: además del flag, exige entorno no-prod (`allowsDevBypass`), así un
   // copy-paste del flag al bloque de prod NO regala Pro a todos.
   if (env.TRUST_ATTESTED_AS_PRO === "true" && allowsDevBypass(env)) return "pro";
+
+  let deviceTier: Tier = "free";
   if (storeKitJWS) {
     const ent = await verifyStoreKitJWS(env, storeKitJWS);
     await updateEntitlement(
@@ -45,9 +67,25 @@ async function applyEntitlement(
       keyId,
       ent ? { product: ent.productId, expiresAtMs: ent.expiresAtMs, originalTransactionId: ent.originalTransactionId } : null,
     );
-    return ent && ent.expiresAtMs > Date.now() ? "pro" : "free";
+    deviceTier = ent && ent.expiresAtMs > Date.now() ? "pro" : "free";
+  } else {
+    deviceTier = cached && isProActive(cached) ? "pro" : "free";
   }
-  return cached && isProActive(cached) ? "pro" : "free";
+  if (deviceTier === "pro") return "pro";
+
+  return (await accountTier(env, userJWT)) ?? "free";
+}
+
+/** Tier derivado de la CUENTA de nube (C-8). `null` = sin JWT usable / sin derecho. */
+async function accountTier(env: Env, userJWT: string | null): Promise<Tier | null> {
+  if (!userJWT) return null;
+  const user = await verifyUserToken(env, userJWT);
+  if (!user) {
+    console.log("[attest] userJWT inválido — tier solo por device");
+    return null;
+  }
+  const row = await getAccountEntitlement(env, user.sub);
+  return isAccountProActive(row) ? "pro" : null;
 }
 
 export async function handleChallenge(c: Ctx): Promise<Response> {
@@ -62,6 +100,7 @@ export async function handleRegister(c: Ctx): Promise<Response> {
   const attestation = str(body.attestation);
   const challenge = str(body.challenge);
   const storeKitJWS = str(body.storeKitJWS);
+  const userJWT = str(body.userJWT);
   if (!keyId || !attestation || !challenge) return jsonError("yala_bad_request", "faltan campos requeridos", 400);
 
   if (!(await verifyChallenge(c.env, challenge))) {
@@ -80,7 +119,7 @@ export async function handleRegister(c: Ctx): Promise<Response> {
     return jsonError("yala_attest_invalid", e instanceof AttestError ? e.message : "attestation inválida", 401);
   }
 
-  const tier = await applyEntitlement(c.env, keyId, storeKitJWS, null);
+  const tier = await applyEntitlement(c.env, keyId, storeKitJWS, null, userJWT);
   const { token, expMs } = await issueSessionToken(c.env, { keyId, tier });
   return c.json({ sessionToken: token, expMs, tier });
 }
@@ -92,6 +131,7 @@ export async function handleAssert(c: Ctx): Promise<Response> {
   const assertion = str(body.assertion);
   const challenge = str(body.challenge);
   const storeKitJWS = str(body.storeKitJWS);
+  const userJWT = str(body.userJWT);
   if (!keyId || !assertion || !challenge) return jsonError("yala_bad_request", "faltan campos requeridos", 400);
 
   if (!(await verifyChallenge(c.env, challenge))) {
@@ -117,7 +157,7 @@ export async function handleAssert(c: Ctx): Promise<Response> {
     return jsonError("yala_attest_invalid", e instanceof AttestError ? e.message : "assertion inválida", 401);
   }
 
-  const tier = await applyEntitlement(c.env, keyId, storeKitJWS, row);
+  const tier = await applyEntitlement(c.env, keyId, storeKitJWS, row, userJWT);
   const { token, expMs } = await issueSessionToken(c.env, { keyId, tier });
   return c.json({ sessionToken: token, expMs, tier });
 }

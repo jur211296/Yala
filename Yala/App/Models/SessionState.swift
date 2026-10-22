@@ -72,6 +72,12 @@ enum DeepLinkDestination: Equatable, Hashable {
     case groupDetail(groupID: String)  // Grupo especifico
 }
 
+/// Lo que un atajo de teclado pide abrir sobre el Panel (ver `SceneNavigation.pendingKeyboardPanelRequest`).
+enum KeyboardPanelRequest: Equatable {
+    case yalaAI
+    case settings
+}
+
 /// Global session state to manage synchronization between views
 @MainActor
 @Observable
@@ -123,9 +129,14 @@ class SessionState {
 
     // MARK: - Financial Mindset
 
+    /// El enfoque de quien no ha elegido ninguno. Con nombre porque lo usan dos sitios: el valor inicial de abajo y
+    /// el reset de las altas solo-grupos (`GroupsOnlySignUpPreferenceReset`), que tiene que devolver la copia en
+    /// memoria a este mismo valor.
+    static let defaultFinancialMindset = "cashFlow"
+
     /// User's financial mindset chosen during onboarding: "cashFlow" (Día a día) or "patrimonial" (Control total).
     /// Affects educational UI (balance calculator variants, tips) but NOT features or calculations.
-    var financialMindset: String = UserDefaults.standard.string(forKey: AppPreferences.Keys.financialMindset) ?? "cashFlow" {
+    var financialMindset: String = UserDefaults.standard.string(forKey: AppPreferences.Keys.financialMindset) ?? SessionState.defaultFinancialMindset {
         didSet {
             guard oldValue != financialMindset else { return }
             UserDefaults.standard.set(financialMindset, forKey: AppPreferences.Keys.financialMindset)
@@ -136,6 +147,16 @@ class SessionState {
 
     /// When true, hides income/transfer UI throughout the app. Data is NOT deleted, only hidden.
     /// Uses stored property (NOT computed) so @Observable tracks changes.
+    ///
+    /// ESTE ESPEJO NO PUBLICA A `PreferenceSyncService`, Y NO ES UN OLVIDO. La key es `synced: true`
+    /// (`AppPreferences.Keys.expensesOnlyMode`), pero a este `didSet` llegan asignaciones que NO son
+    /// intención del usuario: el merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset
+    /// de `-uitest-reset` (`AppBootstrapper.applyUITestHooksEarly`). Publicar aquí devolvería el eco
+    /// —en `.cloud`, re-encolando con HLC fresco un valor recién bajado del backend— y haría que un
+    /// XCUITest encolara preferencias, cosa que el repo prohíbe a propósito.
+    /// ⇒ **publica quien DECIDE**: `PersonalizationSettingsView` (toggle de Ajustes) y
+    /// `OnboardingView`. Un punto de intención nuevo tiene que hacer lo mismo; hasta 2026-08-05
+    /// llegaba a iCloud de rebote por `AppPreferences.loadFromDefaults`, que ya no re-persiste.
     var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode) {
         didSet {
             // No-op guard avoids spurious UserDefaults writes (which materialize the key
@@ -369,25 +390,71 @@ class SessionState {
         clearFilters()
         globalFilters.dateInterval = selectedPeriod.dateInterval()
 
-        // Reset navigation to initial state (important after data wipe)
-        // Mode-aware: groupInvite users default to .groups tab
-        selectedMainTab = isGroupInviteMode ? .groups : .panel
-        selectedDetailTab = .insights
-        selectedPlanningTab = .budgets
-    }
-
-    // MARK: - Onboarding Mode
-
-    /// Current onboarding mode — determines tab layout, bridge behavior, and UI gating.
-    /// Persisted in UserDefaults, synced via PreferenceSyncService with never-downgrade rule.
-    var onboardingMode: OnboardingMode = OnboardingMode.current() {
-        didSet {
-            OnboardingMode.setCurrent(onboardingMode)
+        // Reset navigation to initial state (important after data wipe), en TODAS las ventanas: el borrado es del
+        // teléfono. Sin vida personal en este teléfono, la shell arranca en Grupos.
+        let landingTab: AppTab = isGroupsFocusedShell ? .groups : .panel
+        for navigation in SceneRegistry.shared.allNavigations {
+            navigation.selectedMainTab = landingTab
+            navigation.selectedDetailTab = .insights
+            navigation.selectedPlanningTab = .budgets
         }
     }
 
-    /// Convenience: true when user arrived via group invitation and hasn't activated full mode
-    var isGroupInviteMode: Bool { onboardingMode == .groupInvite }
+    // MARK: - El eje 1 · ¿hay sesión privada en este teléfono?
+
+    /// **El espejo OBSERVABLE del eje 1** (`PrivateSessionMark`), y el embudo de sus escrituras.
+    ///
+    /// La marca persistida es la verdad; esto es lo que permite que una vista SwiftUI REACCIONE cuando
+    /// el eje cambia en caliente —activar Yala completo, terminar el onboarding personal— sin que cada
+    /// pantalla tenga que hacer un point-read que nadie observa. Mismo molde que tenía el flag de
+    /// onboarding al que este eje sustituyó, y por el mismo motivo.
+    ///
+    /// **Asignar aquí ESCRIBE la marca**: los ocho sitios donde el modelo dice que la sesión privada
+    /// nace o deja de existir asignan a esta propiedad, y el `didSet` persiste. No hay dos gestos.
+    var hasPrivateSession: Bool = PrivateSessionMark.hasPrivateSession() {
+        didSet {
+            // El widget no ve esta marca: se la publica el embudo, también cuando el espejo solo se re-lee
+            // (`refreshPrivateSessionMirror`), porque lo que el widget enseña depende del valor, no de quién lo escribió.
+            WidgetDataCache.publishSessionShell(hasPrivateSession: hasPrivateSession)
+            guard !isRefreshingPrivateSessionMirror else { return }
+            PrivateSessionMark.set(hasPrivateSession)
+        }
+    }
+
+    /// Re-lee la marca y pone el espejo al día **sin persistir nada**.
+    ///
+    /// **Por qué hace falta, y es un hallazgo de la review del 2026-09-13:** esta propiedad se
+    /// inicializa UNA vez, en el init del singleton, que ocurre en el prólogo de `YalaApp` — antes de
+    /// que los hooks pre-mount corran. Y la marca tiene tres MUERTES que no pasan por aquí
+    /// (`PrivateSessionMark.clear`): el boot-wipe de todo cierre de sesión, su gemelo del swap
+    /// in-session, y el relevo de humano de «Empiezo de cero». Sin este gesto, el espejo se queda con el
+    /// valor de la persona ANTERIOR durante todo el proceso, y la app queda con dos fuentes que se
+    /// contradicen: la shell diciendo «solo grupos» y las quince lecturas conservadoras diciendo «hay
+    /// sesión privada». En el relevo de humano eso neutraliza el sello que se acaba de escribir.
+    ///
+    /// **No puede hacerse asignando**, y por eso existe la bandera: el `didSet` es el único escritor de
+    /// la marca, así que una asignación volvería a persistir justo lo que se acaba de borrar y la
+    /// AUSENCIA —que es lo que hace estricto a `confirmedPrivateSession`— no existiría nunca.
+    func refreshPrivateSessionMirror() {
+        let persistido = PrivateSessionMark.hasPrivateSession()
+        guard persistido != hasPrivateSession else { return }
+        isRefreshingPrivateSessionMirror = true
+        hasPrivateSession = persistido
+        isRefreshingPrivateSessionMirror = false
+    }
+
+    @ObservationIgnored private var isRefreshingPrivateSessionMirror = false
+
+    // MARK: - Shell
+
+    /// Modo EFECTIVO de la shell (tab bar + visibilidad de secciones personales), derivado del eje 1:
+    /// sin vida personal en este teléfono, la app es solo Grupos.
+    var effectiveShellMode: ShellMode {
+        ShellModeLogic.effective(hasPrivateSession: hasPrivateSession)
+    }
+
+    /// Conveniencia: `effectiveShellMode == .groupsFocused`.
+    var isGroupsFocusedShell: Bool { effectiveShellMode == .groupsFocused }
 
     // MARK: - Subscription State
 
@@ -415,13 +482,6 @@ class SessionState {
     /// True when user entered via a group notification deep link (reset on next evaluate cycle)
     var enteredViaGroupNotification: Bool = false
 
-    /// Mirrors PanelShell `sheets.showInbox` so the RouterEntryGate can drop
-    /// incoming `.showInboxAlert` while the Inbox sheet is already presenting.
-    /// Without this, the original bug (notif arrives → fullScreenCover queued
-    /// behind the open sheet → surfaces "tardío") could resurrect via a fresh
-    /// `.showInboxAlert` raised AFTER the sheet opened.
-    var isInboxSheetVisible: Bool = false
-
     /// Version counter for formatting settings (rounded amounts, etc.)
     /// Increment this to force views to re-render with new formatting
     var formattingVersion: Int = 0
@@ -436,16 +496,33 @@ class SessionState {
         dataVersion += 1
     }
 
+    /// Peticiones de asentamiento tras un borrado DELIBERADO hecho fuera de `ContentView` —hoy, «Vaciar datos»—. Lo
+    /// observa `ContentView`, que re-mide sus señales y absorbe la caída de `hasPersonalData` que provoca el borrado
+    /// (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`). Sin esto, esa caída arrancaba la gracia del aviso
+    /// «tus datos fueron eliminados de iCloud» como si viniera de otro dispositivo.
+    private(set) var deliberateWipeSettleRequests: Int = 0
+
+    /// **Se llama en la MISMA vuelta del main actor que el borrado, sin ningún `await` entre medias**: así el render
+    /// que procesa el store ya vaciado procesa también esta petición, y ninguna re-medida ajena —un bump de
+    /// `dataVersion` en ese mismo render— baja la señal antes de que la absorción esté armada.
+    func requestDeliberateWipeSettle() {
+        deliberateWipeSettleRequests &+= 1
+    }
+
     /// Mark that remote data arrived — views will pick this up on onAppear
     func markRemoteChangePending() {
         hasPendingRemoteChanges = true
     }
 
-    /// Apply pending remote changes (call from onAppear or handleBecameActive)
-    func applyPendingChangesIfNeeded() {
-        guard hasPendingRemoteChanges else { return }
+    /// Apply pending remote changes (call from onAppear or handleBecameActive).
+    /// Returns `true` si había cambios pendientes y se aplicaron (usado por el re-fire de
+    /// intents background para cortar temprano en cuanto el merge aterriza).
+    @discardableResult
+    func applyPendingChangesIfNeeded() -> Bool {
+        guard hasPendingRemoteChanges else { return false }
         hasPendingRemoteChanges = false
         incrementDataVersion()
+        return true
     }
 
     // MARK: - Router-migrated state
@@ -466,28 +543,22 @@ class SessionState {
     /// Whether the splash screen has been dismissed (gate for router readiness).
     var isSplashDismissed: Bool = false
 
-    /// Pending group ID for deep link navigation to specific group.
-    /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
-    var pendingGroupID: String?
+    // MARK: - Bootstrap State
 
-    /// Set por el FAB del Panel ("Grupo") para abrir el composer "Nuevo gasto" al
-    /// llegar al tab Grupos. Consumido por GroupsContainerView cuando haya un grupo
-    /// elegible (espeja el patrón de `pendingGroupID`).
-    var pendingNewGroupExpense: Bool = false
-
-    /// URL of a shared image captured from the Share Extension. Not a flag —
-    /// it's the payload that ImageSelectionView consumes once opened. The
-    /// .presentSharedImage router intent sets this alongside the sheet.
-    var pendingSharedImageURL: URL?
-
-    /// Prefill payload del chat para abrir NewTransactionView con datos pre-llenados.
-    /// El `.presentNewTransactionFromChatDraft(...)` router intent setea este payload
-    /// junto con `showNewTransactionFromChat = true`.
-    var pendingChatDraftPrefill: ChatDraftPrefill?
-
-    /// Flag transient que el PanelShell observa para presentar NewTransactionView
-    /// con prefill desde chat. La vista lo limpia tras consumir el payload.
-    var showNewTransactionFromChat: Bool = false
+    /// `true` cuando `AppBootstrapper.bootstrap(container:)` ha RETORNADO — el arranque
+    /// asentó. Blocker de la matriz de readiness (`bootstrapPending`), hermano de
+    /// `isSplashDismissed`: el splash se va por su propio reloj (duración mínima +
+    /// `isInitialCheckDone`), que NO espera al bootstrap, así que sin esto queda una
+    /// ventana en la que el shell drena intents y monta covers con el arranque en curso.
+    /// Un `fullScreenCover` montado en esa ventana se queda PEGADO: el usuario lo descarta,
+    /// UIKit no completa el desmontaje y la app deja de responder a los taps (la «toolbar
+    /// muerta» de TestFlight 2.0.5; medido en iOS 27.0 el 2026-07-28 — ~1 de cada 3
+    /// arranques, 10 taps ignorados a lo largo de ~40 s).
+    ///
+    /// Lo libera un `defer` de `bootstrap()`, no una asignación al final: así un `return`
+    /// temprano futuro (o una cancelación) no deja el shell bloqueado para siempre.
+    /// El host de unit tests, que se salta el bootstrap, lo libera en `YalaApp`.
+    var isBootstrapSettled: Bool = false
 
     /// Broadcast: cuando NewTransactionView persiste una transacción que vino de un
     /// chat draft, setea esta tupla para que el ChatAssistantViewModel observe y
@@ -523,112 +594,18 @@ class SessionState {
     }
 
     // MARK: - Navigation State
-
-    /// Currently selected main tab (Panel, Statistics, etc.)
-    var selectedMainTab: AppTab = .panel {
-        didSet {
-            // Clear temporary tab when navigating to a permanent tab
-            if selectedMainTab != temporaryTab?.appTab && selectedMainTab != .more {
-                temporaryTab = nil
-            }
-        }
-    }
-
-    /// Temporary tab shown from "More" - cleared when navigating to another tab
-    var temporaryTab: ConfigurableTab?
-
-    /// Currently selected detail tab within Statistics (Trends, Categories, Records)
-    var selectedDetailTab: DetailViewTab = .insights
-
-    /// Currently selected tab within Planning (Budgets, Scheduled Payments)
-    var selectedPlanningTab: PlanningTab = .budgets
-
-    /// Currently selected tab within Reports (Comparativa, Flujo de caja).
-    /// Global SSOT so the dashboard "Más" can deep-link into a report sub-tab.
-    var selectedReportTab: ReportTab = .comparativa
-
-    /// Pending Task that finalizes a deferred main tab selection (when the
-    /// destination tab is hidden in "More" and we need to mount it via
-    /// `temporaryTab` first). Cancelled if a new selection comes in while a
-    /// previous one is still waiting for the runloop tick — prevents the
-    /// `didSet` of a concurrent mutation from clearing `temporaryTab` before
-    /// the deferred selection lands.
-    private var pendingTabSelectionTask: Task<Void, Never>?
-
-    /// Single entry point to change `selectedMainTab` safely. Centralizes the
-    /// "mount-then-select" rule required by iOS 18+ TabView when the target
-    /// tab is hidden in "More": adding it via `temporaryTab` and waiting one
-    /// runloop tick (50 ms) before assigning `selectedMainTab`. If the tab is
-    /// already visible, assigns directly with no latency.
-    ///
-    /// Honors GC-08 invariant: in `groupInvite` mode, only `.groups`, `.more`
-    /// and `.search` are reachable; other tabs are silently rejected.
-    func selectMainTab(_ tab: AppTab) {
-        if isGroupInviteMode {
-            let allowed: Set<AppTab> = [.groups, .more, .search]
-            guard allowed.contains(tab) else { return }
-        }
-
-        let stored = TabBarConfiguration.loadFromStandardDefaults()
-        let config = TabBarConfiguration.forMode(onboardingMode, stored: stored)
-        let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
-
-        pendingTabSelectionTask?.cancel()
-        if decision.requiresDelay, let temp = decision.temporaryTab {
-            temporaryTab = temp
-            pendingTabSelectionTask = Task {
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !Task.isCancelled else { return }
-                selectedMainTab = decision.selectedTab
-            }
-        } else {
-            selectedMainTab = decision.selectedTab
-        }
-    }
-
-    /// Navigate to a specific detail view from any tab
-    func navigateToDetail(_ tab: DetailViewTab) {
-        selectedDetailTab = tab
-        selectMainTab(.statistics)
-    }
-
-    /// Navigate to Scheduled Payments in Planning
-    func navigateToScheduledPayments() {
-        selectedPlanningTab = .scheduledPayments
-        selectMainTab(.planning)
-    }
-
-    /// Navigate to Budgets in Planning
-    func navigateToBudgets() {
-        selectedPlanningTab = .budgets
-        selectMainTab(.planning)
-    }
-
-    /// Navigate to a specific Reports sub-tab (Comparativa / Flujo de caja).
-    func navigateToReport(_ tab: ReportTab) {
-        selectedReportTab = tab
-        selectMainTab(.reports)
-    }
+    //
+    // La navegación (pestañas, destinos pendientes, lo que tapa la ventana) vive desde la fase 4 del carril
+    // adaptativo en `SceneNavigation`, una por ventana. Aquí solo queda lo que no guarda estado.
 
     /// Navigate to the standalone Records tab (`RecordsStandaloneView`). When
     /// the tab isn't enabled in the configurable tab bar, we use the same
     /// deep-link trick as `AppBootstrapper.setOrDeferDeepLink(.recordsStandalone)`:
     /// set `temporaryTab = .records` so it renders, then switch to it on the
-    /// next runloop so SwiftUI picks up the change in the right order.
+    /// next runloop so SwiftUI picks up the change in the right order. Va por el router, que lo sella a la
+    /// ventana que está delante.
     func navigateToRecordsStandalone() {
         RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
-    }
-
-    /// Navigate to Groups tab
-    func navigateToGroups() {
-        selectMainTab(.groups)
-    }
-
-    /// Atajo desde el FAB del Panel: navega al tab Grupos y pide abrir el composer
-    /// "Nuevo gasto" al montar (GroupsContainerView observa `pendingNewGroupExpense`).
-    func navigateToGroupsAndComposeExpense() {
-        pendingNewGroupExpense = true
-        selectMainTab(.groups)
     }
 
     /// Toggle budget filters - if same budget is tapped again, clear filters.

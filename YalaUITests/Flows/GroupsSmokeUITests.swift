@@ -26,27 +26,6 @@ final class GroupsSmokeUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Navega al tab Grupos (oculto en "Más"): tab "Más" (4º del tab bar, tras
-    /// panel/statistics/planning) → card Grupos del dashboard de "Más".
-    private func openGroups(_ app: XCUIApplication) {
-        let moreTab = app.tabBars.buttons.element(boundBy: 3)
-        XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
-        moreTab.tap()
-
-        // La card Grupos vive en la sección "Más herramientas" (la última del
-        // dashboard de "Más", tras Estadísticas/Planificación/Reportes), dentro
-        // de un LazyVGrid: no se instancia hasta scrollearla a la vista. Bajamos
-        // hasta que aparezca antes de tapearla.
-        let groupsRow = app.buttons["more_card_groups"]
-        var scrollAttempts = 0
-        while !groupsRow.exists && scrollAttempts < 8 {
-            app.swipeUp()
-            scrollAttempts += 1
-        }
-        XCTAssertTrue(groupsRow.waitForExistence(timeout: 5), "No apareció la card Grupos en Más.")
-        groupsRow.tap()
-    }
-
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(pro: true, seed: "grupos")
@@ -54,10 +33,37 @@ final class GroupsSmokeUITests: XCTestCase {
         return app
     }
 
+    /// Aterriza DIRECTO en el tab Grupos vía `-uitest-deeplink groups`, sin pasar por el dashboard
+    /// de "Más".
+    ///
+    /// Antes se navegaba por UI: tab "Más" → scroll → card `more_card_groups`. Eso **no es
+    /// alcanzable de forma determinista en iOS 27.0** y costó media tarde de diagnóstico: la card
+    /// vive en un `LazyVGrid` que no materializa la celda hasta scrollearla, y en 27.0 ningún swipe
+    /// sintético la revela. Medido el 2026-07-29 con el mismo binario: **8/8 verde en iOS 26.4 con
+    /// UN solo swipe · 1/8 en 27.0**, con 93 swipes sobre el elemento Aplicación y 81 sobre el
+    /// `scrollView` —las dos vías— sin que la celda aparezca nunca. No es flake (los fallos se
+    /// agrupaban entre 27,7 y 28,0 s), no es el orden de las suites (falla igual aislada) ni el
+    /// disco (mismo patrón con 22 GB y con 66 GB libres). Detalle en la Lista Negra de
+    /// TESTING-STRATEGY.md.
+    ///
+    /// Estos tests verifican las PANTALLAS de Grupos, no cómo se llega a ellas, así que el deeplink
+    /// prueba exactamente lo suyo y deja de depender de un scroll que el runtime no honra. La
+    /// navegación "Más → Grupos" queda como cobertura NO determinista, declarada en
+    /// `qa/coverage-index.json` — el mismo trato que ya reciben `groups-bridge-personal` y
+    /// `groups-pending-approval-reconnect` (ver la cabecera de este fichero).
+    ///
+    /// El tab Grupos sí monta bien en 27.0: `test_groupExpenseFromPanelFAB`, que llega por el FAB
+    /// del Panel, es el único de los ocho que pasaba antes de este cambio.
+    private func launchOnGroups() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        return app
+    }
+
     /// groups-crud-balances-settlements: la lista de grupos monta con el grupo del seed.
     func test_groupsContainerMountsWithSeededGroup() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "group_card").firstMatch.waitForExistence(timeout: 10),
@@ -65,11 +71,26 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
+    /// Variante de `launchOnGroups()` con sesión de nube FINGIDA y consent de Grupos ya aceptado.
+    ///
+    /// Con `groupsBackendEnabled` ON —lo que ocurre en TODO XCUITest bajo `Yala Dev`— abrir el form de
+    /// crear grupo exige AMBAS cosas: `GroupCreateRoutingLogic.route` rutea a sign-in sin sesión, y al
+    /// consent con sesión pero sin consent. En los dos casos el form no llega a montarse, que es lo que
+    /// puso este test en rojo tras el flip `5490544d`. Ninguno de los dos args crea backend real: el
+    /// guardado seguiría muriendo en el guard del JWT, y este test no guarda — solo abre el formulario.
+    /// El helper es aparte para que los otros siete casos conserven sus launch args byte-idénticos.
+    private func launchOnGroupsWithSession() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups",
+                            cloudSession: true, groupsConsent: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        return app
+    }
+
     /// groups-form: el FAB despliega el menú y "Nuevo grupo" abre el formulario de crear grupo.
     /// (Con ≥1 grupo elegible el FAB es expandible; el seed `grupos` cumple esa condición.)
     func test_groupFormOpens() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroupsWithSession()
 
         let fab = app.buttons["groups_fab_new"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
@@ -85,11 +106,59 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
+    /// groups-form: con «Moneda única para deudas» activado, tocar la fila de divisa abre el
+    /// selector de moneda.
+    ///
+    /// **Este test es el pin de un bug de PRODUCTO, no un smoke de montaje.** El label del botón
+    /// de la fila es un `HStack` con `Spacer()` y sin fondo relleno; mientras el
+    /// `.contentShape(Rectangle())` vivió en el `Button` en vez de dentro del label, el hueco
+    /// central de la fila no era tocable y **solo respondían los glifos de los extremos**. XCUITest
+    /// sintetiza el tap en el centro del frame de accesibilidad, que cae exacto en ese hueco ⇒
+    /// `.tap()` sobre la fila es el mutante natural del fix: devolver el `contentShape` al `Button`
+    /// deja este test en rojo y ninguno de los otros siete se entera. Medido el 2026-08-07 en
+    /// iPhone 17 Pro / iOS 26.5 (dos taps sobre la MISMA fila y la MISMA `y`: sobre el glifo abre,
+    /// al centro no corre ni la acción). No es flake — es determinista, y a un dedo humano que
+    /// apunte al medio de la fila le pasaba igual.
+    func test_groupFormCurrencyRowOpensSelector() {
+        let app = launchOnGroupsWithSession()
+
+        let fab = app.buttons["groups_fab_new"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
+        fab.tap()
+
+        let newGroup = app.buttons["groups_fab_new_group"]
+        XCTAssertTrue(newGroup.waitForExistence(timeout: 5), "No apareció la opción 'Nuevo grupo' del FAB.")
+        newGroup.tap()
+
+        XCTAssertTrue(
+            app.textFields["group_form_name_input"].waitForExistence(timeout: 5),
+            "GroupFormView no montó (group_form_name_input)."
+        )
+
+        // La fila de divisa solo existe con el toggle ON.
+        let toggle = app.switches["group_form_single_currency_toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No apareció el toggle de moneda única.")
+        toggle.tap()
+
+        let currencyRow = app.buttons["group_form_currency_row"]
+        XCTAssertTrue(
+            currencyRow.waitForExistence(timeout: 5),
+            "El toggle no reveló la fila de divisa (group_form_currency_row)."
+        )
+        currencyRow.tap()
+
+        // El selector monta con su sección de recomendadas, donde USD está SIEMPRE (regional +
+        // USD/EUR/GBP) y sin necesidad de scroll.
+        XCTAssertTrue(
+            app.buttons["currency_selector_row_USD"].waitForExistence(timeout: 5),
+            "El tap al CENTRO de la fila de divisa no abrió CurrencySelectorView — el hueco del Spacer volvió a quedar muerto."
+        )
+    }
+
     /// groups-expense-form: desde el tab, FAB → "Nuevo gasto" abre el composer con el chip de
     /// grupo editable (2 grupos en el seed) y el cambio de grupo desde el selector.
     func test_groupExpenseFromTabFAB() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let fab = app.buttons["groups_fab_new"]
         XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
@@ -136,16 +205,14 @@ final class GroupsSmokeUITests: XCTestCase {
     }
 
     /// groups-expense-form: desde el FAB del PANEL, la opción "Grupo" navega al tab Grupos y
-    /// abre el composer "Nuevo gasto" allí (integración Panel → Grupos). El gate beta se
-    /// desbloquea en uitest (la opción aparece) y el seed `grupos` siembra cuentas personales
-    /// (FAB del Panel habilitado) + 2 grupos elegibles.
+    /// abre el composer "Nuevo gasto" allí (integración Panel → Grupos). La opción ya no está
+    /// gateada por nada (el código beta se retiró en 2.1) y el seed `grupos` siembra cuentas
+    /// personales (FAB del Panel habilitado) + 2 grupos elegibles.
     func test_groupExpenseFromPanelFAB() {
         let app = launch()
 
         // Arranca en el tab Panel (default). El FAB del Panel despliega su menú de opciones.
-        let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB del Panel.")
-        fab.tap()
+        app.revealPanelFAB().tap()
 
         let groupOption = app.buttons["panel_fab_group"]
         XCTAssertTrue(groupOption.waitForExistence(timeout: 5), "No apareció la opción 'Grupo' del FAB del Panel.")
@@ -160,8 +227,7 @@ final class GroupsSmokeUITests: XCTestCase {
 
     /// groups-expense-form: grupo → detalle → FAB nuevo gasto → formulario de gasto.
     func test_groupExpenseFormOpens() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
@@ -181,8 +247,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// read-only (detent medium) — NO el editor; el botón Editar lo reemplaza por
     /// el editor en large. Cubre el flujo de dos fases (commit 233544fa).
     func test_groupExpenseDetailThenEdit() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
@@ -201,12 +266,80 @@ final class GroupsSmokeUITests: XCTestCase {
             "El detalle read-only no debería exponer el campo editable de monto."
         )
 
-        // Fase 2: Editar baja el detalle y sube el editor (large) con el campo de monto.
+        // Propuesta B: «Tu parte» en una frase y el reparto con cada persona. En el seed, Ana
+        // pagó «Mercado» (S/ 120) a partes iguales entre tres → le debes a Ana.
+        XCTAssertTrue(
+            app.staticTexts["Le debes a Ana"].waitForExistence(timeout: 5),
+            "El detalle no dijo lo que te toca («Le debes a Ana»)."
+        )
+        let breakdown = app.descendants(matching: .any).matching(identifier: "group_expense_detail_breakdown").firstMatch
+        XCTAssertTrue(breakdown.exists, "El detalle no mostró el reparto.")
+        XCTAssertTrue(breakdown.staticTexts["Beto"].exists, "El reparto no listó a Beto, que no pagó.")
+
+        // Fase 2: Editar baja el detalle y sube el editor (large) con el campo de monto, y con
+        // pagador y reparto en el propio formulario (sin hojas aparte), plegados.
         editButton.tap()
         XCTAssertTrue(
             app.textFields["group_expense_amount"].waitForExistence(timeout: 5),
             "El editor no montó tras tocar Editar en el detalle."
         )
+        let payerRow = app.buttons["group_expense_paidby_row"]
+        XCTAssertTrue(payerRow.label.contains("Ana"), "Plegada, la fila «Pagado por» no dijo que pagó Ana: \(payerRow.label)")
+
+        // Abrir «Reparto» lo despliega ahí mismo; abrir «Pagado por» lo vuelve a plegar (uno a la vez).
+        app.buttons["group_expense_split_row"].tap()
+        let splitCard = app.descendants(matching: .any).matching(identifier: "group_expense_split_card").firstMatch
+        XCTAssertTrue(splitCard.waitForExistence(timeout: 5), "Abrir «Reparto» no mostró el reparto en línea.")
+        payerRow.tap()
+        XCTAssertTrue(
+            app.buttons["group_expense_payer_Ana"].waitForExistence(timeout: 5),
+            "Abrir «Pagado por» no mostró los avatares."
+        )
+        XCTAssertTrue(app.buttons["group_expense_payer_Ana"].isSelected, "El editor no marcó a Ana como quien pagó.")
+        let folded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: splitCard)
+        XCTAssertEqual(XCTWaiter().wait(for: [folded], timeout: 5), .completed,
+                       "Abrir «Pagado por» debería plegar «Reparto» (una fila abierta a la vez).")
+    }
+
+    /// groups-expense-form: si pagaste tú, la cuenta de la que salió se pide a la vista bajo la
+    /// frase (Guardar apagado). Elegir a otra persona como pagadora la retira y habilita Guardar. Seed: «Hotel Miraflores» (Viaje a Lima) lo pagaste tú y no tiene
+    /// movimiento personal enlazado, así que no hay cuenta que recuperar.
+    func test_groupExpenseAccountRowFollowsThePayer() {
+        let app = launchOnGroups()
+
+        let lima = app.buttons.matching(identifier: "group_card")
+            .matching(NSPredicate(format: "label BEGINSWITH 'Viaje a Lima'")).firstMatch
+        XCTAssertTrue(lima.waitForExistence(timeout: 10), "No apareció la tarjeta de «Viaje a Lima».")
+        lima.tap()
+
+        let expenseRow = app.buttons["group_expense_row_Hotel Miraflores"]
+        XCTAssertTrue(expenseRow.waitForExistence(timeout: 10), "No apareció «Hotel Miraflores».")
+        expenseRow.tap()
+
+        let editButton = app.buttons["group_expense_detail_edit"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No montó el detalle del gasto.")
+        editButton.tap()
+
+        let accountRow = app.buttons["group_expense_account_row"]
+        XCTAssertTrue(accountRow.waitForExistence(timeout: 5), "Pagaste tú y no apareció la fila de cuenta.")
+        let save = app.buttons["group_expense_save"]
+        XCTAssertFalse(save.isEnabled, "Sin cuenta, Guardar debería quedar apagado.")
+
+        // Grupo de 2: una sola pastilla con la frase entera; tocarla abre las opciones rápidas,
+        // y elegir que pagó Caro cambia el pagador sin pasar por el reparto completo.
+        let pill = app.buttons["group_expense_quick_options"]
+        XCTAssertTrue(pill.exists, "En un grupo de 2 debería verse la pastilla «Pagado por … y dividido …».")
+        pill.tap()
+        let caroPaid = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Pagó Caro · partes iguales")).firstMatch
+        XCTAssertTrue(caroPaid.waitForExistence(timeout: 5), "Las opciones rápidas no ofrecieron «Pagó Caro · partes iguales».")
+        caroPaid.tap()
+
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: accountRow)
+        XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 5), .completed,
+                       "Con Caro como pagadora, la fila de cuenta debería desaparecer.")
+        let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: save)
+        XCTAssertEqual(XCTWaiter().wait(for: [enabled], timeout: 5), .completed,
+                       "Con Caro como pagadora, Guardar debería habilitarse.")
     }
 
     /// groups-expense-form: editar un gasto del feed → botón papelera del toolbar →
@@ -217,8 +350,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// "Mercado" es un gasto de ESTE mes (sección superior, visible sin scroll) y su
     /// descripción es única en el seed → identifier de fila estable.
     func test_groupExpenseDeleteFromFormToolbar() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
@@ -258,8 +390,7 @@ final class GroupsSmokeUITests: XCTestCase {
     /// groups-bridge-settings-optout: el botón de ajustes globales abre la vista
     /// con el toggle del bridge.
     func test_groupsGlobalSettingsOpens() {
-        let app = launch()
-        openGroups(app)
+        let app = launchOnGroups()
 
         let gear = app.buttons["groups_global_settings_button"]
         XCTAssertTrue(gear.waitForExistence(timeout: 10), "No apareció el botón de ajustes globales de grupos.")
@@ -268,6 +399,50 @@ final class GroupsSmokeUITests: XCTestCase {
         XCTAssertTrue(
             app.switches["groups_bridge_toggle"].waitForExistence(timeout: 5),
             "GroupsGlobalSettingsView no montó (groups_bridge_toggle)."
+        )
+    }
+
+    /// groups-crud-balances-settlements: el resumen compartible («cierre del viaje») se ofrece en
+    /// Ajustes del grupo y su sheet llega a producir la imagen.
+    ///
+    /// Es el primer XCUITest que entra en `GroupSettingsView`: hasta ahora esa pantalla no tenía ni
+    /// un `accessibilityIdentifier` y su engranaje solo se podía targetear por el label localizado,
+    /// que está prohibido. Aterriza por deeplink y navega card → engranaje, sin scroll de
+    /// `LazyVGrid` de por medio.
+    ///
+    /// La aserción fuerte es `group_summary_preview`: ese id lo lleva la `Image(uiImage:)`, así que
+    /// solo existe si `ImageRenderer` devolvió algo — es la prueba de que la imagen se generó de
+    /// verdad, no solo de que el sheet montó. El seed `grupos` trae 3 gastos, que es lo que hace
+    /// aparecer la sección.
+    func test_groupShareableSummaryOpensAndRendersImage() {
+        let app = launchOnGroups()
+
+        let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 20), "No apareció la tarjeta del grupo sembrado.")
+        // `exists` no implica alcanzable: sin esto el tap puede perderse en {-1,-1}.
+        XCTAssertTrue(card.waitForHittable(timeout: 10), "La tarjeta del grupo no es alcanzable.")
+        card.tap()
+
+        let gear = app.buttons["group_settings_button"]
+        XCTAssertTrue(gear.waitForExistence(timeout: 20), "No se abrió el detalle del grupo (group_settings_button).")
+        XCTAssertTrue(gear.waitForHittable(timeout: 10), "El engranaje de ajustes no es alcanzable.")
+        gear.tap()
+
+        let shareRow = app.buttons["group_settings_share_summary_button"]
+        XCTAssertTrue(
+            shareRow.waitForExistence(timeout: 10),
+            "GroupSettingsView no ofreció «Compartir resumen» con un grupo que tiene gastos."
+        )
+        XCTAssertTrue(shareRow.waitForHittable(timeout: 10), "La fila del resumen no es alcanzable.")
+        shareRow.tap()
+
+        XCTAssertTrue(
+            app.images["group_summary_preview"].waitForExistence(timeout: 15),
+            "El sheet del resumen no llegó a renderizar la imagen (group_summary_preview)."
+        )
+        XCTAssertTrue(
+            app.buttons["group_summary_share_button"].waitForExistence(timeout: 5),
+            "El sheet del resumen no ofreció el botón de compartir."
         )
     }
 }

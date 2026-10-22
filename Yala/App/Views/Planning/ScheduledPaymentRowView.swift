@@ -105,7 +105,22 @@ struct ScheduledPaymentRowView: View {
                     .foregroundStyle(summary.dueStatus == .past ? Color.hotPink : .secondary)
             }
 
-            if let accountName = summary.payment.account?.name {
+            if summary.payment.isGroupPayment {
+                // Gasto compartido (F6): chip de grupo en lugar de la cuenta (la cuenta es prefill).
+                Text("•")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary.opacity(0.5))
+
+                Image(systemName: "person.2.fill")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(Color.hotPink)
+                    .accessibilityHidden(true)
+
+                Text(L10n.Scheduled.GroupExpense.sharedBadge)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(Color.hotPink)
+                    .lineLimit(1)
+            } else if let accountName = summary.payment.account?.name {
                 Text("•")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary.opacity(0.5))

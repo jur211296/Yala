@@ -1,8 +1,67 @@
 name: QA
 
 on:
+  # El push solo vigila las ramas que sobreviven. Sin el filtro, una rama de ticket
+  # disparaba DOS runs del mismo commit —uno por `push` y otro por `pull_request`— y cada
+  # uno encola el runner de simulador. Medido el 2026-09-01 sobre un mismo commit: 97,4 min
+  # (push) + 102,4 min (pull_request). El commit que se mergea lo vuelve a cubrir el push
+  # sobre `2.1`, así que no se pierde cobertura: se deja de pagarla dos veces.
   push:
+    branches: ["2.1", "1.0"]
   pull_request:
+  # La suite de UI entera NO corre en el PR: corre aqui, una vez al dia sobre `2.1`
+  # (decision del owner, 2026-09-06). El PR tiene que dar senal dentro de una sesion de
+  # trabajo y no la daba — medido sobre 39 runs con la suite ejecutada (2026-09-06/07):
+  # el job entero tardaba 89 min de mediana y el paso de UI se llevaba 67 de ellos, asi
+  # que el check no cerraba nunca a tiempo y el patron real era mergear sin esperarlo.
+  # Sin el paso de UI el PR baja a ~22 min. La cobertura no se pierde, se mueve: el gate
+  # local ya corre los XCUITest de las areas tocadas antes de cada commit (paso 3 de
+  # `/gate`, cruzando el diff contra los `codeGlobs` de `qa/coverage-index.json`), y esto
+  # cubre la suite COMPLETA a diario.
+  #
+  # `schedule` corre sobre la rama por defecto del repositorio y no se puede elegir otra;
+  # aqui la rama por defecto ES `2.1` (comprobado el 2026-09-07 con
+  # `gh api repos/jur211296/Yala --jq .default_branch`), que es justo lo que se queria. Si
+  # algun dia se cambia la rama por defecto, esta corrida se muda con ella sin avisar.
+  #
+  # El minuto 17 no es decorativo: los cron en punto son los mas congestionados de GitHub
+  # y es cuando mas se retrasa el disparo. 08:17 UTC = 03:17 en Lima (UTC-5 todo el ano,
+  # Peru no cambia la hora). Pero GitHub NO lo sirve a esa hora: medido del 2026-09-08 al
+  # 2026-10-06, la nocturna nacio los 29 dias, entre 3,9 y 8,9 h tarde (07:10-12:10 en Lima).
+  #
+  # `nocturna-vigilante.yml` LEE ESTA LINEA: el «dia» que vigila empieza a esta hora, y le da
+  # 12 h de plazo antes de lanzarla el. Tiene que haber un solo cron y ser diario a hora fija;
+  # si no, el vigilante falla y avisa. Si lo mueves, mueve tambien los crons del vigilante.
+  #
+  # UN APAGADO SILENCIOSO QUE CONVIENE CONOCER: en un repositorio PUBLICO —y este lo es,
+  # comprobado el 2026-09-07— GitHub deshabilita solo los workflows programados cuando el
+  # repo pasa **60 dias sin actividad**. Con la cadencia de hoy no va a ocurrir, pero si
+  # algun dia esta corrida deja de aparecer sin que nadie la haya tocado, mirar ahi antes
+  # que en el YAML: se reactiva desde Actions, o con `gh workflow enable qa.yml`.
+  schedule:
+    - cron: '17 8 * * *'
+  # Para poder lanzar la nocturna a mano sin esperar a la noche — que es como se verifica
+  # que funciona. Un dispatch manual corre EXACTAMENTE lo mismo que la nocturna, UI
+  # incluida: si lo que quieres es repetir el CI normal de un commit, `gh run rerun`
+  # conserva el evento original y no se traga la hora larga de UI.
+  workflow_dispatch:
+
+# Un push nuevo a un PR CANCELA el run anterior de ese mismo PR (2026-09-30, ADR-053 de casa).
+# Medido en 30 días: 145 de 239 ramas de PR tuvieron más de un run, y cada uno ocupaba un
+# `macos-26` ~27 min para probar un commit que ya nadie iba a mergear.
+#
+# SOLO `pull_request`. Todo lo demás —push a `2.1`, la nocturna, un `workflow_dispatch`— cae en
+# un grupo por `run_id`, que es único: nunca comparte grupo con nadie y nunca se cancela. Es a
+# propósito. El push a `2.1` es la red del CI después del merge, y la nocturna es la única corrida
+# de la suite de UI; cancelar cualquiera de las dos perdería cobertura sin que nadie lo viera.
+# (`nocturna-vigilante.yml` cuenta runs de `schedule` y `workflow_dispatch` sin mirar su
+# conclusión: como esos no se cancelan nunca, su cuenta no cambia.)
+#
+# Un run cancelado así NO avisa: el job `aviso` va con `!cancelled()`, que da `false` cuando se
+# cancela el RUN entero. Si hay algo que avisar, lo avisa el run del push nuevo.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('qa-pr-{0}', github.event.pull_request.number) || format('qa-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Barato y rápido: valida el SSOT de cobertura + el ratchet anti-drift.
@@ -13,34 +72,352 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validar coverage-index (ratchet anti-drift)
         run: python3 qa/validate-coverage.py
+      - name: Aislamiento de tests (makeTestContext( ⇒ .serialized)
+        run: bash qa/check-test-isolation.sh
+      # El candado que impide que un commit diga que lo escribió una IA vive en
+      # `.githooks/commit-msg` (ADR-013; aquí es propio porque `core.hooksPath` local
+      # sustituye al global, no se suma). Un candado sin banco de pruebas se relaja sin
+      # que nadie lo note, así que sus 17 casos corren en cada push. La comparación con
+      # el hook global se salta sola aquí: en el runner no hay ~/.claude.
+      - name: Candado anti-atribución (.githooks/commit-msg)
+        run: bash qa/scripts/commit-msg-test.sh
+      # La cola del simulador (`sim-lock.sh`) y su centinela (`sim-libre.sh`). Mismo
+      # argumento que el candado de arriba, y aquí pesa más: un lock roto NO da error — deja
+      # correr dos sesiones a la vez y el daño sale tres horas después disfrazado de test en
+      # rojo. El banco no toca ningún simulador ni compila nada: usa un `xcodebuild` de
+      # mentira y, para sus casos, un lockfile propio bajo TMPDIR. Lo que sí pide es el turno
+      # REAL mientras dura, porque esos procesos se llaman `xcodebuild` y el centinela de otra
+      # sesión los vería; aquí el lock está siempre libre y no cuesta nada.
+      - name: Cola del simulador (sim-lock.sh + sim-libre.sh)
+        run: bash qa/scripts/sim-lock-test.sh
+      # El paso «Simulador del runner» del job `tests` solo se ejerce de verdad cuando
+      # CoreSimulator falla (8 de los 33 rojos de QA entre el 2026-08-18 y el 2026-10-02). Su banco simula esos
+      # casos con un `xcrun` falso, sin tocar ningún simulador.
+      - name: Simulador del runner (ci-simulador.sh)
+        run: bash qa/scripts/ci-simulador-test.sh
+      # El paso pure-logic del job `tests` repite SOLO sus rojos con este script. Lo que decide
+      # si un rojo se da por rescatado, y que un `.xcresult` raro nunca acabe repitiendo la suite
+      # entera, solo se ejerce cuando algo falla; su banco lo simula con `xcodebuild` y `xcrun`
+      # falsos.
+      - name: Reintento de rojos (ci-reintentar-rojos.sh)
+        run: bash qa/scripts/ci-reintentar-rojos-test.sh
+      # Los unit del job `tests` BLOQUEAN desde el 2026-10-10: su rojo pone `tests` en rojo y el
+      # auto-merge no mergea. Volver a ponerles `continue-on-error` no da ningun error —el CI
+      # sigue verde, que es justo el fallo—, asi que este banco lo vigila sobre el propio qa.yml.
+      - name: Los unit bloquean (ci-unit-bloqueante-test.sh)
+        run: bash qa/scripts/ci-unit-bloqueante-test.sh
+      # El vigilante de la nocturna decide con una API que omite runs (medido el 2026-10-06: 22 de
+      # 22 lanzamientos suyos sobraban). Lo que decide si lanza solo se ejerce el dia que algo va
+      # mal; su banco lo simula con un `gh` falso que miente a proposito.
+      - name: Vigilante de la nocturna (ci-vigilante-nocturna.sh)
+        run: bash qa/scripts/ci-vigilante-nocturna-test.sh
+      # El reparto de la suite de UI en tandas (job `ui`). Si se rompe, no da error: deja una suite
+      # sin correr ninguna noche, que es justo el fallo que el reparto vino a quitar. Su banco
+      # comprueba sobre el árbol real que entre las tandas corren todas, una vez cada una.
+      - name: Reparto de la UI en tandas (ci-ui-tandas.sh)
+        run: bash qa/scripts/ci-ui-tandas-test.sh
+      # Versión y build de la app y de sus extensiones salen de MARKETING_VERSION y
+      # CURRENT_PROJECT_VERSION. El widget llevó su build fijo en 3 de mayo a octubre y nada
+      # falló hasta App Store Connect. El banco corre el script sobre el árbol y sobre siete
+      # regresiones que debe cazar.
+      - name: Versiones de los targets embebidos (versiones-embebidas.py)
+        run: bash qa/scripts/versiones-embebidas-test.sh
+
+  # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
+  # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
+  # rompa el MCP se ve en el mismo PR. Los e2e contra staging (`npm run test:e2e`) necesitan las
+  # contraseñas de los usuarios de prueba y NO corren aquí.
+  mcp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  # Suite del gateway (`gateway/`, el Worker de Cloudflare): typecheck y vitest, sin red. Hasta el
+  # 2026-10-08 no la corría nadie: `gateway/*` salta la suite iOS (job `changes`) y nada la
+  # sustituía. Ahí viven los guards que paran un deploy destructivo —`MIN_SUPPORTED_BUILD` en
+  # `wrangler.forceupdate.test.ts` y los percents de producción en `config.test.ts`—, el 401 que lee
+  # el cliente iOS (`groups.attest401.test.ts`) y el fan-out de avisos (`push.fanout.unit.test.ts`).
+  #
+  # Corre en CADA push, como `mcp`, y no solo cuando el diff toca `gateway/`: cuesta un minuto de
+  # Ubuntu, y un check filtrado por ruta no se puede exigir en el ruleset (en los PR que no tocan
+  # `gateway/` se quedaría pendiente para siempre).
+  #
+  # Los goldens contra staging (`account.goldens`, `groups.goldens`, `push.fanout`, `sync.goldens`)
+  # salen `skipped`: aquí no hay ninguna credencial de staging y `test/staging.ts` los salta cuando
+  # faltan TODAS. Medido el 2026-10-08: 449 verdes y 84 skipped en ~2 s.
+  #
+  # `deploy:production` (en `gateway/package.json`) sigue sin correr esta suite antes de desplegar:
+  # este job la corre en el PR, no en la Mac que despliega.
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: gateway
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: gateway/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  # Decide si el job `tests` (macos-26, ~1,5 h de reloj) tiene algo que probar. Un
+  # cambio de solo docs/tickets no puede romper el build ni la suite y hasta ahora
+  # encolaba el runner de simulador igual: el PR #41 (3 ficheros .md) esperó 1 h 45 min.
+  # El gate duro sigue siendo `coverage-index`, que corre siempre y no depende de esto.
+  #
+  # DENY-BY-DEFAULT: `run_tests=false` solo sale si TODOS los ficheros del diff caen en
+  # el allowlist inerte de abajo. Todo lo demás corre — incluidos los casos en que NO
+  # sabemos qué cambió: diff vacío, lista truncada por el tope de la API, push sin base
+  # (rama nueva o historial reescrito), evento inesperado o fallo de red. Fail closed:
+  # 1,5 h de más sale más barato que un verde que no probó nada.
+  #
+  # El allowlist se MIDIÓ contra el árbol (2026-08-28): ninguna de esas rutas aparece en
+  # `Yala.xcodeproj/project.pbxproj` ni en las fuentes de los targets, así que no son
+  # input de xcodebuild. Al añadir una ruta nueva, repetir la comprobación, no asumirla.
+  # Repetida el 2026-09-01 al añadir `gateway/` y `qa/cloud/`:
+  #   grep -c "gateway"        Yala.xcodeproj/project.pbxproj  → 0
+  #   grep -cE "path = qa|qa/" Yala.xcodeproj/project.pbxproj  → 0
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run_tests: ${{ steps.decide.outputs.run_tests }}
+    steps:
+      - name: ¿El diff toca app, tests, proyecto o CI?
+        id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PUSH_BASE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          # Única salida posible cuando no hay certeza. Cualquier error no capturado
+          # tumba el step, y el `if:` de `tests` también lee eso como "corre".
+          run_suite() {
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Suite de simulador::CORRE — $1"
+            exit 0
+          }
+
+          case "$GITHUB_EVENT_NAME" in
+            pull_request)
+              changed=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[].filename') \
+                || run_suite "la API de ficheros del PR no respondió"
+              cap=3000
+              ;;
+            push)
+              if [ -z "$PUSH_BASE" ] || [ "$PUSH_BASE" = "0000000000000000000000000000000000000000" ]; then
+                run_suite "push sin commit base (rama nueva o historial reescrito)"
+              fi
+              # `compare A...B` ancla en el merge-base, así que un merge commit en 2.1
+              # rinde todo lo que introduce el merge, no solo el segundo padre.
+              changed=$(gh api "repos/$GITHUB_REPOSITORY/compare/$PUSH_BASE...$GITHUB_SHA" --jq '.files[]?.filename') \
+                || run_suite "la API compare no respondió"
+              cap=300
+              ;;
+            *)
+              run_suite "evento $GITHUB_EVENT_NAME sin lista de ficheros fiable"
+              ;;
+          esac
+
+          [ -n "$changed" ] || run_suite "el diff llegó vacío"
+          echo "Ficheros del diff (primeros 50):"
+          printf '%s\n' "$changed" | awk 'NR <= 50 { print "  " $0 }'
+
+          total=0
+          culprit=""
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            total=$((total + 1))
+            case "$file" in
+              docs/*|tickets/*|marketing/*|Web/*|.claude/*) ;;
+              README.md|CLAUDE.md|LICENSE|LICENSE.md|LICENSE.txt) ;;
+              # `gateway/` es el Worker de Cloudflare (TypeScript, su suite con vitest corre
+              # en el job `gateway`) y `qa/cloud/` son scripts contra staging: ninguno entra en el build
+              # de iOS. ACOTADO a `qa/cloud/` a proposito — `qa/scripts/` y
+              # `qa/validate-coverage.*` SI deciden como se verifica el proyecto, asi que
+              # siguen disparando la suite. Meter `qa/*` entero seria el error.
+              gateway/*|qa/cloud/*) ;;
+              # `mcp/` es el Worker del conector de Claude (TypeScript, su suite corre en el
+              # job `mcp`). Medido el 2026-09-26: 0 apariciones en el project.pbxproj ni en las
+              # fuentes de los targets.
+              mcp/*) ;;
+              *) culprit="$file"; break ;;
+            esac
+          done <<< "$changed"
+
+          [ -z "$culprit" ] || run_suite "toca $culprit"
+          # La API corta la lista de ficheros en `cap`; si la tocamos, el diff real
+          # puede llevar código que no llegamos a ver.
+          [ "$total" -lt "$cap" ] || run_suite "la API cortó la lista en $cap ficheros"
+
+          echo "run_tests=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Suite de simulador::SE SALTA — el diff es solo docs/tickets/marketing (ficheros: $total)"
 
   # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
   # iPhone 17 Pro. Build UNA vez + test-without-building.
   #
-  # ESTRATEGIA (2026-06-04 — TODO advisory; gate duro = coverage-index):
-  #  (1) HOST CLOUDKIT CRASH (ARREGLADO, b25fc8c2): el host Yala.app arrancaba con CloudKit
-  #      en sims SIN cuenta iCloud (CI) → NSCloudKitMirroringDelegate loop → proceso inestable.
-  #      Fix: YALA_TEST_MODE + cloudKitDatabase .none + gate bootstrap/sync. Eliminó la cascada.
-  #  (2) SwiftData IN-MEMORY EXC_BREAKPOINT (flaky en CI, NO resuelto): crash silencioso al
-  #      instanciar/insertar @Model in-memory. NO se limita a las 7 clases que crean un
-  #      ModelContext — TAMBIÉN tumba tests pure-logic que instancian @Model SIN contexto
-  #      (Sankey/Insights/NewTransactionVM crean TransactionItem/Budget/Category). ALEATORIO por
-  #      run: 26957612252 (f1575df7) pasó pure-logic limpio; 26963873224 (264e25f8, con pure-logic
-  #      bloqueante) CRASHEÓ (cascade: NewTransactionVM/CurrencyDefaults víctimas in-flight,
-  #      "TEST EXECUTE FAILED" sin ✘). -retry-tests-on-failure NO converge.
-  #  (3) "Aislamiento de singletons" (hipótesis 2026-06-03) DESCARTADA: el run per-suite-a-solas
-  #      probó que los fallos reproducibles del subset eran DETERMINISTAS = 7 tests STALE vs
-  #      cambios INTENCIONALES de producto (regla Insights eliminada, Sankey tap-filter, seed
-  #      Panel diferido, iCloud env). Arreglados en f1575df7 (subset verde local + en el run CI
-  #      que no crasheó). El bloqueo NO lo impide el aislamiento sino el crash flaky (2).
-  # Por (2) — flaky crash que ALCANZA al subset pure-logic — los 3 pasos siguen ADVISORY. El
-  # intento de pure-logic BLOQUEANTE (264e25f8) se revirtió tras el crash de 26963873224. Gate
-  # duro = coverage-index. Detalle en TESTING-STRATEGY.md.
-  # TODO(@jur, 2026-07-15): resolver el EXC_BREAKPOINT SwiftData in-memory (repro mínima / bug
-  # iOS 26.x sim / container compartido) — prerequisito para CUALQUIER paso de test bloqueante.
+  # LOS UNIT BLOQUEAN (2026-10-10, ticket `ci-warns-but-does-not-block`). Un unit en rojo pone
+  # este job en rojo, y `tests` es check requerido del ruleset de `2.1`: el auto-merge (ADR-054 de
+  # casa) ya no mergea con un unit en rojo. La UI sigue advisory y solo nocturna (job `ui`).
+  #
+  # Hasta ese dia los dos pasos de unit llevaban `continue-on-error: true` por el EXC_BREAKPOINT de
+  # SwiftData in-memory (crash flaky medido en junio, run 26963873224). Lo medido al promoverlos,
+  # sobre los 300 runs de este workflow del 30-sep al 10-oct:
+  #   · Ningun crash de proceso: 0 de los 73 logs del job revisados traen `Restarting after
+  #     unexpected exit`, la linea con la que xcodebuild relanza tras un crash (medida con la
+  #     sonda de `ci-reintentar-rojos.sh`). Encaja con el reuso de `ModelContainer` por fichero
+  #     (`makeTestContext()`, 2026-07-04), aunque eso es inferencia, no medida.
+  #   · TODOS los rojos de unit fueron deterministas y reales, y el advisory los dejo entrar:
+  #     `PrivateSessionMarkTests` en 2.1 (3-oct, 7 runs), `UploadOrderTests` en 2.1 (7-oct, 2 runs)
+  #     y `WidgetDataServiceIntervalTests` en un PR (6-oct).
+  # Lo flaky que queda —`SpikeR3ContainerReleaseTests` (ticket
+  # `spike-r3-eje-4b-flaky-en-suite-completa`) o un crash suelto, que solo tumba el caso en curso—
+  # lo cubre el reintento acotado de `ci-reintentar-rojos.sh`: repite SOLO los rojos, hasta 3
+  # vueltas, y no toca nada en un PR verde. Su banco, y el de que esto siga bloqueando
+  # (`ci-unit-bloqueante-test.sh`), corren en `coverage-index`.
   tests:
+    needs: changes
+    # Fail closed también aquí: si `changes` peta, su output llega vacío y '' != 'false',
+    # así que la suite corre igual. Solo un 'false' explícito la salta.
+    if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
     runs-on: macos-26
+    # ------------------------------------------------------------------------------
+    # TOPES DE TIEMPO (2026-09-07; tabla rehecha el 2026-10-09). Sin `timeout-minutes` GitHub aplica su default de
+    # **360 minutos**, y este job no tenia ninguno: ni aqui ni a nivel de workflow. El
+    # problema que eso creaba no era el gasto sino el DIAGNOSTICO — un cuelgue real era
+    # indistinguible de una corrida lenta, y nadie se enteraba hasta las seis horas.
+    #
+    # Los numeros salen de medir, no de estimar: tiempos por PASO leidos de la API de Actions.
+    # La tabla de 2026-09-07 (39 runs) daba la UI en 67 min de mediana y 76 de maximo; el
+    # 2026-10-09 ya no era verdad. Lo de hoy, medido sobre las nocturnas del 5 al 8-oct y los
+    # 8 ultimos PR verdes (8/9-oct):
+    #
+    #   paso / conjunto              medido          tope
+    #   Build for testing            13,3-15,7         25
+    #   Unit pure-logic              12,3-15,8         30
+    #   Unit context-based            2,6-3,8          10
+    #   JOB `tests` en un PR         27-43 (mediana 32) 45
+    #   JOB `tests` en la nocturna   36 (sin UI)       60
+    #   UI, suite entera en serie    ~141 (estimado)    —   ← ya no corre asi; ver job `ui`
+    #
+    # LA UI SALIO DE ESTE JOB el 2026-10-09 (ticket nightly-ui-suite-hits-its-110-minute-cap-every-
+    # night). En serie ya no cabia: del 2 al 8-oct el paso agoto sus 110 min las siete noches, solo
+    # corrian 65 de las 85 suites —siempre las mismas, por orden alfabetico— y el job iba a 146,7
+    # de 150, asi que un rojo de unit con reintentos lo cancelaba entero (2 y 7-oct). Ahora corre
+    # en el job `ui`, partida en tandas paralelas; sus topes y cifras estan alli. Este job queda
+    # igual en la nocturna que en un PR, y su tope de nocturna baja de 150 a 60.
+    #
+    # Los topes de JOB son ~1,5x el maximo observado; los de PASO, ~1,4-1,8x. Se ha
+    # tirado hacia lo holgado a proposito: el coste de un tope generoso es una hora de
+    # runner, y el de uno ceñido es cortar corridas sanas — que es como se acaba
+    # quitando el tope y volviendo al punto de partida.
+    #
+    # POR QUE TAMBIEN EN CADA PASO, y no solo en el job. Los dos topes cortan, pero NO
+    # producen el mismo desenlace, y la diferencia esta en el codigo del runner
+    # (`StepsRunner.RunStepAsync` + `ExecutionContext.ApplyContinueOnError`, verificado el
+    # 2026-09-07 contra `actions/runner` en `main`):
+    #
+    #   · Tope de PASO agotado ⇒ el paso queda `Failed`, con `outcome: failure`. Desde que
+    #     los unit bloquean (2026-10-10) eso pone el job en rojo, pero el job sigue VIVO: el
+    #     paso context-based corre igual (`!cancelled()`) y el aviso lee el `outcome` y lo
+    #     cuenta. (`continue-on-error`, que ya solo lleva la UI, lo pintaria de `Succeeded`.)
+    #   · Tope de JOB agotado ⇒ es una CANCELACION, no un fallo. `ApplyContinueOnError`
+    #     abre con `if (Result != TaskResult.Failed) return;`, asi que **no rescata una
+    #     cancelacion**: el paso en curso muere cancelado y el job entero se va con el.
+    #
+    # Los pasos con `if: always()` SI corren en ese segundo caso —el servidor re-evalua
+    # las condiciones de los pasos pendientes y solo cancela los que dan `false`—, pero
+    # contra una ventana de 5 minutos y con el job ya perdido. (Esto ultimo se comprobo
+    # justo porque la primera version de este comentario afirmaba lo contrario: que el
+    # aviso no llegaria. Era una inferencia, y la fuente la desmiente.)
+    #
+    # ⇒ los topes de PASO son el corte bueno: dicen QUE se colgo y dejan el job vivo para
+    # contarlo. El del JOB es la red de debajo, para lo que se cuelgue fuera de estos
+    # cuatro pasos, y su desenlace es mas tosco a proposito.
+    #
+    # `timeout-minutes` admite una expresion (comprobado con actionlint 1.7.12, que
+    # rechaza el texto plano con «expecting a single ${{...}} expression or float number
+    # literal»), y es lo que deja tener UN solo job en vez de dos casi identicos.
+    # El PR se queda en 45 a proposito (es el gate; no se toca). La nocturna corre lo mismo pero
+    # le cuesta mas porque nace en horas punta del runner: 36 min medidos, y 60 deja 24 de margen
+    # para un rojo de unit con sus reintentos (~5,5 min el 7-oct).
+    timeout-minutes: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 60 || 45 }}
+    # Los tests de intervalos construyen sus expectativas con un calendario fijado a
+    # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
+    # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
+    # dos mitades coinciden y salen verdes; bajo otra zona no coinciden y salen CUATRO rojos
+    # DETERMINISTAS —no flaky—. Llevaban asi desde el 2026-08-17.
+    #
+    # `TEST_RUNNER_` es el prefijo que `xcodebuild` retira al propagar la variable al proceso
+    # de test, asi que el proceso recibe `TZ=America/Lima`. Medido el 2026-09-03 en la Mac del
+    # owner con el mecanismo EXACTO de aqui —la variable en el ENTORNO del proceso xcodebuild,
+    # que es como la entrega el `env:` de Actions, no en la linea de comandos—: con `UTC`,
+    # `✘ Test run with 10 tests in 1 suite failed ... with 10 issues`; con `America/Lima`,
+    # `✔ Test run with 10 tests in 1 suite passed`. Mismo binario, misma maquina, solo cambia
+    # la variable. El conteo `10 tests` es el control de que la suite corrio y no cero tests.
+    #
+    # Sustituye a `sudo systemsetup -settimezone`, que estuvo aqui del 2026-09-02 al -09-03 y
+    # se retiro por NO FIABLE: aplico la zona en 3 de 9 runs medidos, con la misma imagen de
+    # runner y el mismo sudo. El `### Error:-99` de `InternetServices.m` que imprimia NO era la
+    # causa —sale identico en los runs que SI aplicaron— y la causa ultima quedo sin cerrar.
+    # Como el paso no era `continue-on-error`, cada fallo tumbaba el job entero y dejaba el CI
+    # ejecutando CERO tests: cuatro commits de codigo entraron en 2.1 sin una sola corrida.
+    # Va a nivel de JOB, no de paso, para que un paso de test nuevo lo herede — olvidarse de
+    # aplicarlo es exactamente el modo de fallo que este bloque arregla.
+    # Lo que el job del aviso necesita para leer que paso de verdad. `outcome` guarda lo
+    # que devolvio el comando; `conclusion` es el que `continue-on-error` pinta de verde (en
+    # los unit ya coinciden: desde el 2026-10-10 no llevan `continue-on-error`).
+    outputs:
+      unit_pure: ${{ steps.unit_pure.outcome }}
+      # Los tests que siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
+      unit_pure_rojos: ${{ steps.unit_pure.outputs.rojos }}
+      unit_context: ${{ steps.unit_context.outcome }}
+      unit_context_rojos: ${{ steps.unit_context.outputs.rojos }}
+      ui_tocaba: ${{ steps.contexto.outputs.ui_tocaba }}
+    env:
+      TEST_RUNNER_TZ: America/Lima
+      # Unica fuente de «esta corrida lleva UI» para el JOB `aviso` de mas abajo, que la lee
+      # para no confundir «saltado a proposito» con «no llego a correr» — dos cosas que en
+      # `needs.<job>.outputs` llegan IGUAL: vacias.
+      # La condicion aparece TRES veces en el fichero: aqui, en `timeout-minutes` de este job
+      # (se evalua antes de que exista `env`) y en el `if:` del job `ui` (un `if:` de job no
+      # ve el `env` de otro job). Si cambia una, cambian las tres.
+      UI_TOCABA: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     steps:
+      # `UI_TOCABA` sale por un paso, y no como `outputs: ui_tocaba: ${{ env.UI_TOCABA }}`,
+      # porque el output de un paso es el camino sin ambiguedad: `steps.<id>.outputs` esta
+      # disponible en `jobs.<id>.outputs` sin discusion. Lo medido con actionlint 1.7.12 es
+      # que `env` SI se rechaza en `jobs.<id>.env` («context "env" is not allowed here») y
+      # NO se queja en `jobs.<id>.outputs` — que no es lo mismo que saber que funciona en
+      # ejecucion, y aqui un vacio haria que el aviso gritara «la suite no corrio» en cada
+      # PR. Una linea de mas cuesta menos que averiguarlo en produccion.
+      #
+      # Lo que evita: que la condicion de UI_TOCABA se escriba una CUARTA vez en el fichero.
+      - name: Exponer si a la UI le tocaba correr
+        id: contexto
+        run: echo "ui_tocaba=$UI_TOCABA" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
       - name: Seleccionar Xcode (latest-stable 26.x)
         uses: maxim-lobanov/setup-xcode@v1
@@ -51,27 +428,74 @@ jobs:
       # son agentic, fuera de CI).
       - name: Crear Secrets.xcconfig (placeholder para CI)
         run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # EL SIMULADOR SE PIDE, NO SE SUPONE (2026-10-02). Hasta aqui los cuatro `xcodebuild`
+      # pedian `name=iPhone 17 Pro` y confiaban en que el runner ya lo tuviera listo. Casi
+      # siempre lo tiene, pero 8 corridas (la primera el 2026-08-18, la ultima la 37034199942)
+      # murieron en «Build for testing» con exit 70 y `Unable to find a device matching…`,
+      # listando SOLO los placeholders: cero simuladores, no un nombre distinto. La imagen
+      # (macos-26-arm64 20260907.0351) y el Xcode (26.6) eran los MISMOS que en la corrida
+      # verde de 35 minutos antes: el runner no perdio el device, CoreSimulator aun no lo
+      # habia cargado cuando `xcodebuild` pregunto.
+      #
+      # Este paso lo pregunta el, con reintentos (detalle en el propio script): busca un
+      # iPhone 17 Pro disponible, lo crea por tipo + runtime si falta —como `ci-sombra.yml`—
+      # y si CoreSimulator no devuelve nada lo reinicia y vuelve a mirar. Si a la tercera
+      # vuelta sigue sin runtime iOS, descarga la plataforma una vez: los logs de las caidas
+      # no distinguen «CoreSimulator tarda» de «la imagen vino sin runtime». Los `xcodebuild`
+      # reciben el UDID, que ademas quita la ambiguedad si el nombre existe en dos runtimes.
+      #
+      # `build-for-testing` NO pasa a `generic/platform=iOS Simulator` (lo proponian los
+      # tickets): sin device activo, `ONLY_ACTIVE_ARCH = YES` no tiene arquitectura activa a
+      # la que ceñirse y Xcode compila todas las de `ARCHS` — comportamiento documentado, no
+      # medido en este runner —, y es el paso mas largo del job. El UDID ya lo resuelve.
+      #
+      # Tope de 25: el camino normal tarda segundos; la holgura es para la descarga.
+      - name: Simulador del runner
+        id: sim
+        timeout-minutes: 25
+        run: bash qa/scripts/ci-simulador.sh
       - name: Build for testing
+        id: build
+        timeout-minutes: 25
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
             -quiet
-      # YalaTests SALVO las 7 clases que crean un ModelContext (paso advisory aparte). ADVISORY:
-      # los 7 tests stale ya están arreglados (f1575df7) y el subset es determinista en lo
-      # reproducible, PERO el EXC_BREAKPOINT flaky de SwiftData in-memory ALCANZA al subset
-      # pure-logic (crashea ~1 de N runs — 26963873224 lo probó: cascade NewTransactionVM/
-      # CurrencyDefaults). Bloquear aquí = rojos aleatorios. -retry no converge. Volver a
-      # bloqueante exige resolver ese crash primero (TESTING-STRATEGY.md).
-      - name: Unit tests (YalaTests pure-logic) — advisory (flaky crash SwiftData in-memory; ver Lista Negra)
-        continue-on-error: true
+      # YalaTests SALVO las 7 clases que crean un ModelContext (van en el paso siguiente).
+      # BLOQUEANTE desde el 2026-10-10: sin `continue-on-error`, un rojo que siga rojo tras sus
+      # reintentos pone `tests` en rojo y el auto-merge no mergea (ver «LOS UNIT BLOQUEAN» arriba
+      # del job).
+      #
+      # SIN `-retry-tests-on-failure` (2026-10-06). Con Swift Testing —YalaTests lo es entero—
+      # ese flag no repite el test rojo: repite la SUITE ENTERA hasta 3 veces. Un solo rojo
+      # llevaba este paso de ~13 a 27-30 min (26 889 tests = 3 × 8 963) y el tope de 45 min del
+      # JOB lo cancelaba (10-03, 10-05 y 10-06).
+      # `ci-reintentar-rojos.sh` corre la selección UNA vez y repite solo los casos rojos que
+      # nombra el `.xcresult`, hasta 3 vueltas como antes; si no puede leerlos, no repite nada.
+      # Los nombres de los que siguen en rojo salen en `outputs.rojos` y el aviso los cita.
+      # Ticket: ci-one-red-in-pure-logic-triples-the-step-and-the-job-ceiling-cancels-it.
+      #
+      # `-collect-test-diagnostics never`: medido en la Mini (Xcode 27), cada corrida con un
+      # rojo lanza un `simctl diagnose --timeout=600` y gasta 10 min en él — también una
+      # repetición de 4 tests que corren en 0,03 s. En los logs del runner (Xcode 26) no sale,
+      # pero si una imagen lo trae, tres vueltas volverían a rozar el tope. Nadie sube esos
+      # diagnósticos: el `.xcresult` y el log bastan.
+      - name: Unit tests (YalaTests pure-logic)
+        id: unit_pure
+        timeout-minutes: 30
         run: |
-          xcodebuild test-without-building \
+          bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 -- \
+            test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
+            --- \
             -only-testing:YalaTests \
             -skip-testing:YalaTests/BudgetFilterRegressionTests \
             -skip-testing:YalaTests/CategoryDeduplicationServiceTests \
@@ -79,41 +503,367 @@ jobs:
             -skip-testing:YalaTests/CurrencyConverterCacheTests \
             -skip-testing:YalaTests/ICloudAccountSummaryTests \
             -skip-testing:YalaTests/InitialBalanceServiceTests \
-            -skip-testing:YalaTests/UserSegmentServiceTests \
-            -derivedDataPath .ddp \
-            -parallel-testing-enabled NO \
-            -retry-tests-on-failure \
-            -quiet
-      # ADVISORY: las 7 clases context-based (crean ModelContext in-memory). Corren para
-      # visibilidad (cuando pasan confirman no-regresión); no bloquean por el insert-trap
-      # flaky de SwiftData en el runner de CI. Plan de migración en TESTING-STRATEGY.md.
-      - name: Unit tests (YalaTests context-based) — advisory (SwiftData insert-trap flaky; ver Lista Negra)
-        continue-on-error: true
+            -skip-testing:YalaTests/UserSegmentServiceTests
+      # Las 7 clases context-based (crean ModelContext in-memory). BLOQUEANTE desde el 2026-10-10,
+      # como pure-logic y con el mismo reintento acotado: hasta entonces usaba
+      # `-retry-tests-on-failure`, que con Swift Testing repite la seleccion entera.
+      #
+      # Corre aunque pure-logic haya salido en rojo (`!cancelled()`), pero no si el build no
+      # salio: sin el no hay nada que probar. Lo primero hace falta para el aviso: un `skipped`
+      # aqui se leeria como «la suite no llego a correr» en vez de como el rojo de pure-logic que
+      # es. Y solo cuesta minutos en corridas que ya estan en rojo.
+      - name: Unit tests (YalaTests context-based)
+        id: unit_context
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        timeout-minutes: 10
         run: |
-          xcodebuild test-without-building \
+          bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
+            --dir "$RUNNER_TEMP/reintentar-rojos-context" -- \
+            test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
+            --- \
             -only-testing:YalaTests/BudgetFilterRegressionTests \
             -only-testing:YalaTests/CategoryDeduplicationServiceTests \
             -only-testing:YalaTests/ChatAssistantViewModelTests \
             -only-testing:YalaTests/CurrencyConverterCacheTests \
             -only-testing:YalaTests/ICloudAccountSummaryTests \
             -only-testing:YalaTests/InitialBalanceServiceTests \
-            -only-testing:YalaTests/UserSegmentServiceTests \
-            -derivedDataPath .ddp \
-            -parallel-testing-enabled NO \
-            -retry-tests-on-failure \
-            -quiet
-      - name: UI tests (YalaUITests) — advisory (flaky en runner frío, ver Lista Negra)
-        continue-on-error: true
+            -only-testing:YalaTests/UserSegmentServiceTests
+
+  # --------------------------------------------------------------------------------
+  # SUITE DE UI, SOLO EN LA NOCTURNA, PARTIDA EN TANDAS PARALELAS  (2026-10-09)
+  #
+  # Solo nocturna desde el 2026-09-06 (decision del owner): en un PR este job queda `skipped` a
+  # proposito. Lo que cubre el hueco en el PR es el gate local, que corre los XCUITest de las
+  # areas TOCADAS antes de cada commit; aqui se corre la suite COMPLETA cada noche. Sigue siendo
+  # advisory (`continue-on-error`): a diferencia de los unit, que bloquean desde el 2026-10-10,
+  # un rojo de UI no pone en rojo el run. Lo cuenta el aviso.
+  #
+  # POR QUE EN TANDAS. Hasta el 2026-10-09 era un paso del job `tests`, en serie detras de build
+  # y unit. Medido en la nocturna 37802106095 (8-oct): 36 min antes de la UI; la UI llego a los
+  # 110 de su tope con 65 de las 85 suites cerradas (192 de 250 casos, ~0,56 min por caso, solo 2
+  # reintentos: lentitud, no reintentos ni cuelgue). La suite entera habria pedido ~141 min y el
+  # job ~177. Descartado:
+  #   · subir topes: un job de ~3 h en serie que vuelve a quedarse corto en cuanto crezca la suite;
+  #   · dos noches alternas: cada suite correria cada 48 h, y lo pedido es cada 24;
+  #   · quitar el reintento: 2 reintentos medidos, no es lo que gasta el tiempo.
+  #
+  # COMO SE REPARTE. `qa/scripts/ci-ui-tandas.sh` lee el arbol de `YalaUITests/` y reparte las
+  # suites por numero de `func test`; una suite nueva entra sola, sin tocar este fichero. La
+  # ULTIMA tanda corre el target entero menos lo de las otras, asi que ninguna suite se queda
+  # fuera aunque el descubrimiento no la vea (detalle en el script; banco en `coverage-index`).
+  # Cada tanda va en su `macos-26` con su propio build: compartir el build por artefacto costaria
+  # subir y bajar `.ddp`, y el build son ~15 min en paralelo con las otras tandas.
+  #
+  # CUANTAS TANDAS. Las decide la matriz, y SOLO la matriz: el script recibe
+  # `strategy.job-index` y `strategy.job-total`, asi que no hay un segundo numero que pueda
+  # quedarse desfasado y dejar una tanda sin lanzar. Al cambiarlas, lo unico que hay que tocar a
+  # mano son las salidas `ui_N` de abajo y su lectura en el job `aviso`.
+  #
+  # TOPES. Paso de UI 110 y job 150. Antes de la UI cada tanda gasta ~20 min (simulador hasta 3,
+  # build hasta 16), asi que aunque el paso agote sus 110 el job conserva ~20 min: el corte lo da
+  # siempre el tope del PASO, que deja el job vivo para contarlo (ver «POR QUE TAMBIEN EN CADA
+  # PASO» en el job `tests`).
+  #
+  # POR QUE TRES Y NO DOS. Con dos se midio (dispatch 37906397439, 2026-10-09): las 85 suites
+  # arrancaron y cerraron, y cada paso de UI tardo 83,3 min — bajo los 110, pero con 1,3x de
+  # holgura y no las 1,4-1,8x que pide esta tabla. Y la suite crece deprisa: 149 casos el
+  # 11-sep, 250 el 9-oct; a ese ritmo dos tandas tocan el tope en semanas. La suite entera
+  # sumo 158 min ese dia; repartida en tres, con los mismos tiempos por suite, la tanda mas
+  # larga queda en ~61 min de UI (+~4 de arranque del runner de tests). Tres `macos-26` mas a la
+  # vez durante ~1,3 h por noche, del mismo tipo y gratis en un repo publico; no es un runner de
+  # pago.
+  #
+  # MEDIDO CON TRES (dispatch 37917143838, 2026-10-09; las 85 suites arrancaron y cerraron):
+  #
+  #   tanda   suites   paso de UI   job    tope paso / job
+  #     1       28        48,1      60,3      110 / 150
+  #     2       28        69,4      85,1      110 / 150
+  #     3       29        57,2      71,2      110 / 150
+  #
+  # La 2 pesa mas porque el reparto cuenta casos, no minutos: le cayeron `ImageEntryReviewUITests`
+  # (9 min, con tres rojos que repiten tres veces cada uno) y `SessionExitsPerCellUITests` (8). Aun
+  # asi va a 1,6x de su tope. Si un dia una tanda pasa de ~80 min de UI, la
+  # salida es una cuarta tanda (matriz + `ui_4`), no subir el tope.
+  ui:
+    name: UI tests (tanda ${{ matrix.tanda }})
+    # Sin `needs`: arranca a la vez que `tests`. Tercera aparicion de la condicion de UI_TOCABA
+    # (ver el `env:` del job `tests`).
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: macos-26
+    timeout-minutes: 150
+    strategy:
+      # Una tanda que falla no puede cancelar a las otras: perderiamos su parte de la suite.
+      fail-fast: false
+      matrix:
+        tanda: [1, 2, 3]
+    env:
+      TEST_RUNNER_TZ: America/Lima
+    # Una salida por tanda, con nombre fijo. En una matriz, si dos patas escriben la MISMA salida
+    # gana la ultima en acabar; por eso cada pata escribe solo la suya. Si una llega vacia al
+    # aviso, el aviso lo lee como «no llego a correr» (falla cerrado).
+    outputs:
+      ui_1: ${{ steps.salida.outputs.ui_1 }}
+      ui_2: ${{ steps.salida.outputs.ui_2 }}
+      ui_3: ${{ steps.salida.outputs.ui_3 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seleccionar Xcode (latest-stable 26.x)
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Crear Secrets.xcconfig (placeholder para CI)
+        run: cp Secrets.xcconfig.template Secrets.xcconfig
+      # Mismo paso y mismo porque que en el job `tests`.
+      - name: Simulador del runner
+        id: sim
+        timeout-minutes: 25
+        run: bash qa/scripts/ci-simulador.sh
+      - name: Build for testing
+        timeout-minutes: 25
         run: |
+          xcodebuild build-for-testing \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -quiet
+      - name: UI tests (YalaUITests, tanda ${{ matrix.tanda }}) — advisory (flaky en runner frío, ver Lista Negra)
+        id: ui
+        continue-on-error: true
+        timeout-minutes: 110
+        env:
+          JOB_INDEX: ${{ strategy.job-index }}
+          JOB_TOTAL: ${{ strategy.job-total }}
+        run: |
+          set -euo pipefail
+          # Si el reparto falla, el paso falla aqui y el aviso lo cuenta: nunca arranca
+          # `xcodebuild` sin lista, que correria el target entero en cada tanda.
+          args=$(bash qa/scripts/ci-ui-tandas.sh "$((JOB_INDEX + 1))" "$JOB_TOTAL")
+          # Un argumento por linea y sin espacios (nombres de clase): el troceo es el buscado.
+          # shellcheck disable=SC2086
           xcodebuild test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-            -only-testing:YalaUITests \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            $args \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
-            -retry-tests-on-failure \
-            -quiet
+            -retry-tests-on-failure
+      - name: Resultado de la tanda
+        id: salida
+        if: ${{ always() }}
+        env:
+          RESULTADO: ${{ steps.ui.outcome }}
+        run: echo "ui_${{ matrix.tanda }}=$RESULTADO" >> "$GITHUB_OUTPUT"
+
+  # --------------------------------------------------------------------------------
+  # EL AVISO, EN SU PROPIO CHECK  (2026-09-09, decision del owner)
+  #
+  # POR QUE EXISTE EL AVISO. Nacio cuando los tres pasos de test llevaban `continue-on-error`
+  # y GitHub los pintaba de `success` aunque `xcodebuild` saliera con 65. Medido el 2026-09-02:
+  # el CI llevaba SEMANAS en verde con ocho tests en rojo, y el mas viejo databa del 17 de
+  # agosto. La red funcionaba; estaba amordazada. Se lee `outcome`, no `conclusion`.
+  #
+  # Desde el 2026-10-10 los unit BLOQUEAN (ver «LOS UNIT BLOQUEAN» sobre el job `tests`): su
+  # rojo ya pone `tests` en rojo y frena el auto-merge, y el aviso lo dice asi. Sigue haciendo
+  # falta por dos cosas: la UI, que sigue advisory, y un push a `2.1` en rojo, que ya entro y
+  # no tiene PR que lo frene — alguien tiene que enterarse.
+  #
+  # POR QUE SALIO DEL JOB `tests`. Cuando el aviso vivia ahi dentro, su `exit 1` tumbaba
+  # el job entero, y entonces un `tests: fail` mezclaba dos señales opuestas: «los tests
+  # fallaron» y «los tests fueron bien pero el canal de avisos esta roto». Medido el
+  # 2026-09-09 sobre las 40 ultimas corridas: los TRES rojos de `qa.yml` eran del
+  # avisador, y dos tapaban señal real —la nocturna con la suite de UI en rojo, y un
+  # `Build for testing` roto en `2.1`—. Quien mira un rojo asi puede concluir «es el
+  # avisador otra vez» y mergear encima de un test que si fallaba, que es exactamente lo
+  # que este mecanismo existe para impedir. Separado, cada check dice UNA cosa.
+  #
+  # Y ya no hace falta romper para no callar: si el webhook no responde, la accion deja
+  # el aviso escrito en un issue del repo (etiqueta `aviso-ci`). Solo cuando no queda
+  # ningun canal se pone en rojo — ahi si, porque entonces nadie se ha enterado.
+  aviso:
+    name: ¿Se ha enterado alguien de los rojos de test?
+    # Espera tambien al job `ui`. En un PR `ui` sale `skipped` al instante, asi que no retrasa
+    # nada; en la nocturna el aviso sale cuando acaban todas las tandas.
+    needs: [tests, ui]
+    # `!cancelled()` y NO `always()`, y la diferencia importa mucho: `always()` corre tambien
+    # cuando el RUN ENTERO se cancela. Y el run entero se cancela de dos formas: a mano —con un
+    # job de hasta 90 min en `macos-26`, cancelar al ver un typo es lo normal— y, desde el
+    # 2026-09-30, solo, cuando un push nuevo a un PR sustituye al anterior (`concurrency`, arriba
+    # del todo). Con `always()`, cada una de esas veces `tests` acaba en `cancelled`, sus outputs
+    # llegan vacios, y esto entregaba a Grok «la suite NO llego a correr — el job murio antes de
+    # los tests». No murio: lo cancelaste tu, o lo sustituyo un push mas nuevo.
+    #
+    # `!cancelled()` mira si se cancelo el RUN, no si se cancelo `tests`. Asi que sigue
+    # cubriendo el caso que si hay que avisar: el tope del job `tests` agotado, que es una
+    # cancelacion DE ESE JOB con el run vivo. Ahi los outputs tambien llegan vacios y se leen
+    # abajo como «no llego a correr», que es lo que se quiere. Es ademas el mismo operador que
+    # ya usa el `if:` del job `tests`.
+    #
+    # Se excluye `skipped` a proposito: si `changes` decidio que el diff es solo docs, no
+    # hay suite de la que informar y un aviso ahi seria ruido en cada PR de documentacion
+    # — y un canal que grita cuando no pasa nada se acaba silenciando, que es el mismo
+    # final que el canal mudo, por el otro extremo.
+    if: ${{ !cancelled() && needs.tests.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # El canal de respaldo escribe un issue. El permiso por defecto de Actions en este
+      # repo es `read`, asi que sin esta linea el respaldo no puede entregar nada.
+      issues: write
+    steps:
+      # Hace falta para poder usar la action local `.github/actions/avisar`.
+      - uses: actions/checkout@v4
+
+      - name: ¿Hay algo que avisar?
+        id: componer
+        env:
+          R_UNIT_PURE: ${{ needs.tests.outputs.unit_pure }}
+          R_UNIT_PURE_ROJOS: ${{ needs.tests.outputs.unit_pure_rojos }}
+          R_UNIT_CONTEXT: ${{ needs.tests.outputs.unit_context }}
+          R_UNIT_CONTEXT_ROJOS: ${{ needs.tests.outputs.unit_context_rojos }}
+          R_UI_1: ${{ needs.ui.outputs.ui_1 }}
+          R_UI_2: ${{ needs.ui.outputs.ui_2 }}
+          R_UI_3: ${{ needs.ui.outputs.ui_3 }}
+          UI_TOCABA: ${{ needs.tests.outputs.ui_tocaba }}
+          RESULTADO_JOB: ${{ needs.tests.result }}
+          RESULTADO_UI: ${{ needs.ui.result }}
+          REPO: ${{ github.repository }}
+          RAMA: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          # Los unit BLOQUEAN (su rojo pone `tests` en rojo); la UI no. Se cuentan por separado
+          # porque el aviso dice cosas distintas: «esto frena el merge» frente a «esto no lo frena».
+          fallidos=""
+          unit_rojo=""
+          # Los dos pasos de unit dicen QUÉ tests siguen en rojo tras repetirlos solos
+          # (`ci-reintentar-rojos.sh`). Sin nombres —el tope del paso cortó antes de publicarlos—
+          # queda la línea sin detalle.
+          if [ "$R_UNIT_PURE" = "failure" ]; then
+            unit_rojo="si"
+            if [ -n "${R_UNIT_PURE_ROJOS:-}" ]; then
+              fallidos="$fallidos\n- Unit tests (pure-logic): $R_UNIT_PURE_ROJOS"
+            else
+              fallidos="$fallidos\n- Unit tests (pure-logic)"
+            fi
+          fi
+          if [ "$R_UNIT_CONTEXT" = "failure" ]; then
+            unit_rojo="si"
+            if [ -n "${R_UNIT_CONTEXT_ROJOS:-}" ]; then
+              fallidos="$fallidos\n- Unit tests (context-based): $R_UNIT_CONTEXT_ROJOS"
+            else
+              fallidos="$fallidos\n- Unit tests (context-based)"
+            fi
+          fi
+          [ "$R_UI_1" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 1)"
+          [ "$R_UI_2" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 2)"
+          [ "$R_UI_3" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 3)"
+
+          # Un paso advisory que no llego a EJECUTARSE deja `outcome` en `skipped`, no en
+          # `failure`: el job murio en un paso ANTERIOR (setup, Secrets, build) y GitHub salto
+          # los tres. Sin esta rama el aviso anunciaba "Suite en verde" sobre un run que ejecuto
+          # CERO tests — el MISMO error de lectura que este bloque vino a arreglar, un escalon
+          # mas arriba: comprobar el resultado de los tests sin comprobar antes que llegaran a
+          # correr. Medido el 2026-09-03: seis runs seguidos en 2.1 asi, y el aviso callado.
+          #
+          # Desde que el aviso es un job aparte hay una tercera forma de no correr: que el job
+          # `tests` fuera CANCELADO (tope de job agotado). Ahi sus outputs llegan VACIOS, que
+          # tampoco es `success` ni `failure`, asi que cae en la misma rama. Es lo que se quiere.
+          #
+          # OJO (2026-09-07): desde que la UI corre SOLO en la nocturna, `skipped` significa
+          # DOS cosas distintas y opuestas — "se salto a proposito" (todo bien) y "no llego a
+          # correr" (nada bien). Distinguirlas exige mirar si a la UI le TOCABA correr, no su
+          # `outcome`. Sin esto el aviso gritaria "la suite NO llego a correr" en CADA PR.
+          sin_correr=""
+          for r in "$R_UNIT_PURE" "$R_UNIT_CONTEXT"; do
+            case "$r" in
+              success|failure) ;;
+              *) sin_correr="si" ;;
+            esac
+          done
+          # La UI corre en tandas (job `ui`): cada una tiene que haber dejado su resultado. Una
+          # salida vacia es una tanda que no corrio o cuyo resultado no llego, y no se da por buena.
+          if [ "$UI_TOCABA" = "true" ]; then
+            for r in "$R_UI_1" "$R_UI_2" "$R_UI_3"; do
+              case "$r" in
+                success|failure) ;;
+                *) sin_correr="si" ;;
+              esac
+            done
+          fi
+
+          if [ -n "$sin_correr" ]; then
+            asunto="la suite NO llego a correr"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO ($RAMA): el job murio antes de los tests y la suite NO llego a correr." \
+              "" \
+              "Los pasos de test quedaron sin ejecutar (pure-logic: '$R_UNIT_PURE', context-based:" \
+              "'$R_UNIT_CONTEXT', UI: tandas '$R_UI_1' / '$R_UI_2' / '$R_UI_3' — a la UI le tocaba correr:" \
+              "'$UI_TOCABA'; el job \`tests\` acabo en '$RESULTADO_JOB', el \`ui\` en '$RESULTADO_UI')." \
+              "Un valor vacio significa que el job (o esa tanda) fue CANCELADO y no llego a dejar" \
+              "resultado — casi siempre, su tope de tiempo." \
+              "Esto NO es un verde: es un run que no probo nada." \
+              "La causa esta en un paso ANTERIOR del job — mira el log.")
+          elif [ -n "$unit_rojo" ]; then
+            asunto="hay unit tests en rojo"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO ($RAMA): hay unit tests en ROJO tras repetirlos, y el check \`tests\` esta en rojo." \
+              "" \
+              "Los unit bloquean: si es un PR, el auto-merge NO lo mergea hasta que se arreglen." \
+              "Si es un push a 2.1, ya entro: la rama esta en rojo." \
+              "" \
+              "Pasos en rojo:$(printf '%b' "$fallidos")")
+          elif [ -n "$fallidos" ]; then
+            asunto="hay tests de UI en rojo"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO ($RAMA): hay tandas de UI en ROJO que el run marca como verde." \
+              "" \
+              "La UI es advisory a proposito (continue-on-error), asi que el run NO se pone en rojo." \
+              "Este aviso existe para que el rojo no pase inadvertido." \
+              "" \
+              "Pasos en rojo:$(printf '%b' "$fallidos")")
+          else
+            if [ "$UI_TOCABA" = "true" ]; then
+              echo "::notice title=Suite en verde::Los unit y todas las tandas de UI corrieron y ninguno fallo."
+            else
+              echo "::notice title=Suite en verde::Los dos pasos de unit corrieron y ninguno fallo. La UI corre en la nocturna."
+            fi
+            echo "hay_aviso=no" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          texto=$(printf '%s\n' \
+            "$detalle" \
+            "" \
+            "HEAD: $SHA" \
+            "Log completo: $RUN_URL")
+
+          # Un texto de varias lineas necesita delimitador; sin el, `$GITHUB_OUTPUT` se
+          # queda con la primera linea y el aviso viaja decapitado.
+          {
+            echo "hay_aviso=si"
+            echo "asunto=$asunto"
+            echo "texto<<FIN_DEL_AVISO"
+            printf '%s\n' "$texto"
+            echo "FIN_DEL_AVISO"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Entregar el aviso
+        if: ${{ steps.componer.outputs.hay_aviso == 'si' }}
+        uses: ./.github/actions/avisar
+        with:
+          webhook-url: ${{ secrets.GROK_WEBHOOK_URL }}
+          sender-key: ${{ secrets.GROK_WEBHOOK_SENDER_KEY }}
+          github-token: ${{ github.token }}
+          asunto: ${{ steps.componer.outputs.asunto }}
+          texto: ${{ steps.componer.outputs.texto }}

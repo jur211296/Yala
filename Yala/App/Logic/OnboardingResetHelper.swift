@@ -27,20 +27,35 @@ enum OnboardingResetHelper {
         "defaultCurrencyCode",
     ]
 
-    /// Limpia las prefs residuales tanto en `UserDefaults.standard` como en
+    /// Limpia las prefs residuales tanto en el dominio local de ESTA sesión como en
     /// `NSUbiquitousKeyValueStore.default`. Llamar SOLO desde el callback
     /// del Welcome Chooser cuando el user elige rama A ("Soy nuevo") —
     /// señal explícita de "empezar de cero".
     static func clearResidualPreferencesForFreshStart() {
+        // **Hasta el 2026-09-12 esto iba al CAJÓN de la sesión, no al dominio del dueño** (2026-09-07);
+        // hoy hay un solo dominio. La mitad iKV de abajo ya
+        // estaba protegida y su comentario nombra el motivo; ésta se quedó en `.standard` crudo, así que
+        // el barrido era mitad guardado y mitad abierto. En sesión secundaria la visita que elige
+        // «empezar de cero» entra SIEMPRE por aquí —`hasExistingData` mide el store de la INVITADA, que
+        // nace vacío, y esa es justo la rama que borra— y le dejaba al dueño su nombre y su divisa en
+        // blanco. Y sin cura: la reposición del arranque siguiente sale de `readRemoteIKV`, que devuelve
+        // `nil` cuando la key no está en el iKV, o sea para un dueño SIN iCloud — que es exactamente el
+        // público de la rama «privacidad total».
+        //
+        // El dominio local es `.standard` para todo el mundo desde el 2026-09-12, cuando se retiró la
+        // puerta por sesión. Antes resolvía a `.standard` salvo con una visita dentro, así que para el
+        // usuario de siempre esto nunca cambió nada.
         let local = UserDefaults.standard
-        let iKV = NSUbiquitousKeyValueStore.default
+        // La PUERTA, no el store crudo: en sesión secundaria el iCloud KV es el del DUEÑO, y este
+        // barrido le dejaría su nombre y su divisa en blanco en todos sus dispositivos.
+        let iKV = OwnerKeyValueStore.shared
 
         for key in safeKeysToClear {
             local.removeObject(forKey: key)
             // Escribir "" al KV-Store en lugar de removeObject: el guard
             // `!remote.isEmpty` de applyRemoteValues filtra valores vacíos,
             // así que otros devices del Apple ID NO pierden sus prefs.
-            iKV.set("", forKey: key)
+            iKV.setString("", forKey: key)
         }
         iKV.synchronize()
     }

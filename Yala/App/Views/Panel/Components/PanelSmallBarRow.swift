@@ -19,6 +19,10 @@ struct PanelSmallBarRow: View {
 
     @Environment(AppPreferences.self) private var appPreferences
 
+    /// Antepone «≈» al importe cuando el total que la fila muestra salió de alguna tasa que no era
+    /// la de su día. Default `false`: el llamador que no sabe nada de divisas no cambia.
+    var isEstimate: Bool = false
+
     /// When true, the row is rendered at 40% opacity. Callers drive this with
     /// their selection/filter state.
     var dimmed: Bool = false
@@ -38,7 +42,8 @@ struct PanelSmallBarRow: View {
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.amount,
-                    tint: .primary
+                    tint: .primary,
+                    isEstimate: isEstimate
                 )
             }
             GeometryReader { geo in

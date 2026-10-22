@@ -17,9 +17,13 @@ struct DetailContainerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    /// Size class de la ventana: en ancha el chip Registros abre el registro en un panel al lado de la lista.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     // MARK: - ViewModels
 
@@ -40,16 +44,13 @@ struct DetailContainerView: View {
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
     @State private var isInBackground = false
-    /// Gate para `calculateFinancialScore`: el score depende solo de
-    /// dataVersion + mes en curso, no de filtros/periodo. Evita los 2 fetches
-    /// de SwiftData (`loadPaidAmounts`) en cada cambio de chip.
-    @State private var lastScoreSignature: Int = 0
+    /// La pasada de cálculo de las cuatro pestañas (y la firma de la Salud Financiera, que vive con ella).
+    @State private var recalculation = StatisticsRecalculation()
+    /// Ancho del chip Registros: decide si lista y registro abierto caben lado a lado.
+    @State private var recordsWidth: CGFloat = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
     @Environment(AppPreferences.self) private var appPreferences
-
-    /// Disponibilidad de Grupos (gate beta temporal v2.0.1) — gatea la opción "Grupo" del FAB.
-    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
 
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
@@ -150,6 +151,8 @@ struct DetailContainerView: View {
                 )
             )
             .appliesPendingRemoteChanges(sessionState)
+            // Menú contextual de las filas de Registros: confirmación de borrado y selector de categoría.
+            .modifier(RecordRowActionsPresenter(viewModel: recordsViewModel))
             .onAppear {
                 dataViewModel.setContext(modelContext)
                 performRecalculation()
@@ -172,20 +175,19 @@ struct DetailContainerView: View {
                 }
             }
             .task {
-                if selectedTab != sessionState.selectedDetailTab {
-                    selectedTab = sessionState.selectedDetailTab
+                if selectedTab != navigation.selectedDetailTab {
+                    selectedTab = navigation.selectedDetailTab
                 }
             }
-            .onChange(of: sessionState.selectedDetailTab) { _, newValue in
+            .onChange(of: navigation.selectedDetailTab) { _, newValue in
                 if selectedTab != newValue { selectedTab = newValue }
             }
             .onChange(of: selectedTab) { _, newTab in
-                TelemetryService.track(.statsTabViewed, parameters: ["tab": newTab.rawValue])
                 if newTab != .records {
                     recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
                 }
-                if sessionState.selectedDetailTab != newTab {
-                    sessionState.selectedDetailTab = newTab
+                if navigation.selectedDetailTab != newTab {
+                    navigation.selectedDetailTab = newTab
                 }
                 // .categories también consume insightData.periodSummary (gate >=5 tx
                 // del Distribution Insight Card) — disparar recalculation también ahí.
@@ -193,7 +195,7 @@ struct DetailContainerView: View {
                     scheduleRecalculation(reload: false)
                 }
             }
-            .onChange(of: sessionState.selectedMainTab) { _, newTab in
+            .onChange(of: navigation.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
                     recalculateData()
@@ -230,6 +232,11 @@ struct DetailContainerView: View {
                 case .image: showImageSelection = true
                 }
             }
+            .modifier(StatsRecordsPaneObservers(
+                recordsViewModel: recordsViewModel,
+                horizontalSizeClass: horizontalSizeClass,
+                recordsTabIsShown: selectedTab == .records,
+                allTransactions: dataViewModel.allTransactions))
     }
 
     // MARK: - Main Content
@@ -244,12 +251,14 @@ struct DetailContainerView: View {
 
                 tabContent
             }
-            .safeAreaInset(edge: .top) {
+            .navigationChipsInset {
                 navigationChipsBar
-                    .padding(.vertical, DS.Spacing.sm)
             }
 
-            if selectedTab == .records && !recordsViewModel.isSelectionMode {
+            // Yala IA y «+» en las cuatro pestañas, no solo en Registros: en el Panel «Nuevo registro» está siempre a
+            // mano (la fila del hero o, al bajar, estos mismos flotantes), y Estadísticas lleva ya su hero
+            // (`HeroHeader`). Decisión del 2026-10-03, ticket `distribution-subviews-miss-the-new-panel-hero`.
+            if !recordsViewModel.isSelectionMode && !recordPaneCoversList {
                 VStack {
                     Spacer()
                     HStack {
@@ -261,7 +270,6 @@ struct DetailContainerView: View {
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                             chatConsentAccepted: appPreferences.aiChatConsentAccepted,
                             chatFABVisible: appPreferences.chatFABVisible,
-                            showGroupOption: groupsBetaUnlocked,
                             onVoiceTap: { showVoiceRecording = true },
                             onImageTap: { showImageSelection = true },
                             onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -282,10 +290,15 @@ struct DetailContainerView: View {
                         )
                     }
                 }
+                // Con el registro abierto al lado, los flotantes van sobre la lista, como en la página Registros.
+                .frame(width: recordsListWidth)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
                 selectionActionBar
+                    .frame(width: recordsListWidth)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .yalaScreenBackground()
@@ -341,12 +354,57 @@ struct DetailContainerView: View {
                 allSubcategories: dataViewModel.allSubcategories,
                 tags: dataViewModel.tags,
                 allTransactions: dataViewModel.allTransactions,
+                dataGeneration: dataViewModel.dataGeneration,
                 viewModel: trendsViewModel,
                 insightsViewModel: insightsViewModel,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
             .accessibilityIdentifier("stats_tab_categories")
         case .records:
+            recordsContent
+        }
+    }
+
+    // MARK: - Registros: lista y registro abierto
+
+    /// Ventana ancha: tocar un registro lo abre en un panel, no en hoja (`RecordsViewModel.opensDetailInColumn`,
+    /// el molde de la página Registros). Sin `NavigationSplitView`: este chip vive dentro de la pila de Estadísticas.
+    private var recordsOpensInPane: Bool { horizontalSizeClass == .regular }
+
+    /// Anchos de la lista, los de `ListDetailSplit`: más ancha con texto de accesibilidad.
+    private var recordsListWidths: DS.Adaptive.ListColumnWidths {
+        DS.Adaptive.listColumnWidths(isAccessibilityText: dynamicTypeSize.isAccessibilitySize)
+    }
+
+    /// Lista y panel caben lado a lado: dos anchos de iPhone, la misma regla que `ListDetailSplit`.
+    private var recordsSideBySide: Bool {
+        recordsOpensInPane && recordsWidth >= 2 * recordsListWidths.min
+    }
+
+    /// Sin sitio para los dos, el registro abierto tapa la lista; su X la devuelve.
+    private var recordPaneCoversList: Bool {
+        selectedTab == .records && recordsOpensInPane && !recordsSideBySide && openPaneRecord != nil
+    }
+
+    /// Ancho de la lista cuando va al lado del panel; `nil` (todo) si no.
+    private var recordsListWidth: CGFloat? {
+        selectedTab == .records && recordsSideBySide ? recordsListWidths.ideal : nil
+    }
+
+    /// El registro abierto, resuelto contra lo cargado (nunca `model(for:)`, que fabrica un objeto aunque ya no
+    /// exista).
+    private var openPaneRecord: TransactionItem? {
+        guard let id = recordsViewModel.openRecordID else { return nil }
+        return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+    }
+
+    /// Los mismos hijos en todos los tamaños —la lista siempre la primera— para que redimensionar no la
+    /// reconstruya: lado a lado un `HStack`; sin sitio, un `ZStack` donde el panel tapa la lista; en compacta, la
+    /// lista sola (la hoja de siempre).
+    private var recordsContent: some View {
+        let sideBySide = recordsSideBySide
+        let layout = sideBySide ? AnyLayout(HStackLayout(spacing: DS.Spacing.none)) : AnyLayout(ZStackLayout())
+        return layout {
             RecordsTabView(
                 viewModel: recordsViewModel,
                 accounts: dataViewModel.accounts,
@@ -357,7 +415,33 @@ struct DetailContainerView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
+            .frame(width: sideBySide ? recordsListWidths.ideal : nil)
+            .overlay(alignment: .trailing) {
+                if sideBySide { Divider() }
+            }
             .accessibilityIdentifier("stats_tab_records")
+
+            if recordsOpensInPane, sideBySide || openPaneRecord != nil {
+                recordPane
+            }
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { recordsWidth = $0 }
+    }
+
+    @ViewBuilder
+    private var recordPane: some View {
+        if let record = openPaneRecord {
+            TransactionDetailSheet(
+                transaction: record,
+                presentation: .pane,
+                onEdit: { recordsViewModel.editOpenRecord(record) },
+                onClose: { recordsViewModel.openRecordID = nil }
+            )
+            .id(record.persistentModelID)
+        } else {
+            ContentUnavailableView(L10n.Records.detailPlaceholder, systemImage: ConfigurableTab.records.iconName)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityIdentifier("stats_records_detail_placeholder")
         }
     }
 
@@ -562,92 +646,25 @@ struct DetailContainerView: View {
 
     /// Runs all calculations from cached ViewModel data (no SwiftData fetch).
     private func performCalculation() {
-        recordsViewModel.applyFilters(
-            transactions: dataViewModel.allTransactions,
-            accounts: dataViewModel.accounts,
-            categories: dataViewModel.categories,
-            tags: dataViewModel.tags
-        )
-        trendsViewModel.calculateTrendData(
-            accounts: dataViewModel.accounts,
-            transactions: dataViewModel.allTransactions,
-            allTags: dataViewModel.tags,
-            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
-        )
-        // Distribution Insight Card también requiere insightData.periodSummary
-        // para el gate >=5 tx — calcular cuando estamos en cualquiera de las 2 tabs.
-        if selectedTab == .insights || selectedTab == .categories {
-            calculateInsightsData()
-        }
-    }
-
-    private func calculateInsightsData() {
-        guard selectedTab == .insights || selectedTab == .categories else { return }
-        insightsViewModel.calculateInsightsData(
-            transactions: dataViewModel.allTransactions,
-            accounts: dataViewModel.accounts,
-            categories: dataViewModel.categories,
-            budgets: dataViewModel.budgets,
-            scheduledPayments: dataViewModel.scheduledPayments,
-            period: sessionState.selectedPeriod,
-            criteria: trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags),
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            customRange: sessionState.customDateRange,
-            comparisonMode: sessionState.comparisonMode
-        )
-
-        // Salud Financiera period-aware. El score depende de dataVersion +
-        // período seleccionado (interval). Cambios de filtros (cuenta/categoría/
-        // etiqueta) NO afectan al score — solo el dataset y el interval lo hacen.
-        // El gate evita re-fetches SwiftData de `loadPaidAmounts` en cada cambio
-        // de chip de filtro.
-        let scoreInterval = trendsViewModel.detailPeriod.dateInterval(
-            customRange: trendsViewModel.customDateRange
-        )
-        var scoreHasher = Hasher()
-        scoreHasher.combine(sessionState.dataVersion)
-        scoreHasher.combine(scoreInterval.start)
-        scoreHasher.combine(scoreInterval.end)
-        // El toggle de grupos altera el dataset del score (incluye/excluye TX
-        // bridgeadas) — sin esto, cambiarlo no invalidaría el gate y "Salud
-        // Financiera" quedaría stale hasta cambiar de período.
-        scoreHasher.combine(appPreferences.includeGroupTransactionsInStats)
-        let scoreSignature = scoreHasher.finalize()
-        if scoreSignature != lastScoreSignature {
-            lastScoreSignature = scoreSignature
-            let activePayments = dataViewModel.scheduledPayments.filter(\.isActive)
-            let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
-                for: activePayments,
-                interval: scoreInterval,
-                context: modelContext
-            )
-            insightsViewModel.calculateFinancialScore(
+        recalculation.run(
+            StatisticsRecalculation.Inputs(
                 transactions: dataViewModel.allTransactions,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags,
                 budgets: dataViewModel.budgets,
                 scheduledPayments: dataViewModel.scheduledPayments,
-                accounts: dataViewModel.accounts,
-                paidAmounts: paidAmounts,
-                period: trendsViewModel.detailPeriod,
-                customRange: trendsViewModel.customDateRange,
-                preferredCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
-            )
-        }
-
-        // Reset AI state on context change (button must be pressed again)
-        insightsViewModel.resetAIState()
-
-        // Store context for on-demand AI generation via button
-        let criteria = trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags)
-        insightsViewModel.storeGenerationContext(
-            period: sessionState.selectedPeriod,
-            filterHash: criteria.hashValue,
-            txnCount: dataViewModel.allTransactions.count,
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            comparisonMode: sessionState.comparisonMode,
-            criteria: criteria,
-            accounts: dataViewModel.accounts,
-            categories: dataViewModel.categories,
-            tags: dataViewModel.tags
+                period: sessionState.selectedPeriod,
+                customRange: sessionState.customDateRange,
+                comparisonMode: sessionState.comparisonMode,
+                currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                dataVersion: sessionState.dataVersion,
+                includeGroupTransactionsInStats: appPreferences.includeGroupTransactionsInStats
+            ),
+            records: recordsViewModel,
+            trends: trendsViewModel,
+            insights: insightsViewModel,
+            context: modelContext
         )
     }
 
@@ -674,6 +691,7 @@ struct DetailContainerView: View {
     NavigationStack {
         DetailContainerView()
     }
+    .environment(SceneNavigation())
     .previewAppPreferences()
 }
 
@@ -725,9 +743,8 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $showUpgradeForImage) {
                 UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
-            .sheet(isPresented: $showChatSheet) {
-                ChatSheetView()
-            }
+            // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
+            .yalaAIChat(isPresented: $showChatSheet, insideNavigationStack: true)
             .yalaAIOnboardingSheet(
                 isPresented: $showYalaAIOnboarding,
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
@@ -750,10 +767,13 @@ private struct DetailContainerSheets: ViewModifier {
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
-                    NewTransactionView(transactionToEdit: transaction)
+                    NewTransactionView(
+                        transactionToEdit: transaction,
+                        startsAsDuplicate: recordsViewModel.editorStartsAsDuplicate)
                         .presentationDetents([.large])
                         .onDisappear {
                             recordsViewModel.editingTransaction = nil
+                            recordsViewModel.editorStartsAsDuplicate = false
                             reloadAndRecalculate()
                         }
                 }
@@ -826,17 +846,9 @@ private struct DetailContainerObservers: ViewModifier {
             ))
             // isAggregatedView is local to StatisticsViewModel (not a SessionState proxy)
             .onChange(of: trendsViewModel.isAggregatedView) { _, _ in recalculateData() }
-            // "Identificar duplicados": recompute al togglear modo/criterios + telemetría al activar.
-            .onChange(of: recordsViewModel.duplicateModeActive) { _, isActive in
+            // "Identificar duplicados": recompute al togglear modo/criterios.
+            .onChange(of: recordsViewModel.duplicateModeActive) { _, _ in
                 recalculateData()
-                if isActive {
-                    TelemetryService.track(.recordsDuplicateModeActivated, parameters: [
-                        "byAmount": String(recordsViewModel.duplicateCriteria.amount),
-                        "byNote": String(recordsViewModel.duplicateCriteria.note),
-                        "bySubcategory": String(recordsViewModel.duplicateCriteria.subcategory),
-                        "byDate": String(recordsViewModel.duplicateCriteria.date),
-                    ])
-                }
             }
             .onChange(of: recordsViewModel.duplicateCriteria) { _, _ in
                 recalculateData()
@@ -891,5 +903,45 @@ private struct SessionStateObservers: ViewModifier {
             .onChange(of: sessionState.isExcludeMode) { recalculateData() }
             .onChange(of: sessionState.selectedTrendMetric) { recalculateData() }
             .onChange(of: sessionState.customDateRange) { recalculateData() }
+    }
+}
+
+/// El panel del registro abierto en Estadísticas › Registros (ventana ancha): qué abre un toque, qué pasa al
+/// estrechar con uno abierto y cuándo se cierra. En un modificador aparte por lo mismo que los otros observadores de
+/// esta vista: el compilador de CI no tipa a tiempo una cadena larga de `onChange` con cierres.
+private struct StatsRecordsPaneObservers: ViewModifier {
+    let recordsViewModel: RecordsViewModel
+    let horizontalSizeClass: UserInterfaceSizeClass?
+    /// El chip Registros está a la vista. Con otro chip delante, estrechar cierra lo abierto sin sacar una hoja
+    /// encima del Resumen o de Tendencias.
+    let recordsTabIsShown: Bool
+    let allTransactions: [TransactionItem]
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: horizontalSizeClass, initial: true) { _, newClass in sizeClassChanged(newClass) }
+            .onChange(of: allTransactions) { closeIfTheRecordIsGone() }
+    }
+
+    /// En ancha el toque abre el panel; en compacta, la hoja. Si la ventana se estrecha con un registro abierto en
+    /// el panel, pasa a la hoja: el mismo registro sigue a la vista.
+    private func sizeClassChanged(_ newClass: UserInterfaceSizeClass?) {
+        recordsViewModel.opensDetailInColumn = newClass == .regular
+        guard newClass != .regular, let id = recordsViewModel.openRecordID else { return }
+        recordsViewModel.openRecordID = nil
+        guard recordsTabIsShown,
+              let record = allTransactions.first(where: { $0.persistentModelID == id }) else { return }
+        recordsViewModel.editingTransaction = record
+        recordsViewModel.showTransactionDetail = true
+    }
+
+    /// Registro abierto que ya no existe (borrado desde el editor u otro dispositivo): el panel vuelve al vacío.
+    private func closeIfTheRecordIsGone() {
+        guard let id = recordsViewModel.openRecordID else { return }
+        guard !allTransactions.contains(where: { $0.persistentModelID == id }) else { return }
+        #if DEBUG
+        print("DetailContainerView: el registro abierto ya no está, se cierra el panel")
+        #endif
+        recordsViewModel.openRecordID = nil
     }
 }

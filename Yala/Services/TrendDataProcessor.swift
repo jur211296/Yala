@@ -43,6 +43,10 @@ struct TrendDataProcessor {
         /// Desglose por moneda nativa del saldo vivo (`liveAnchor`). Habilita
         /// UX educativa multi-currency. Nil cuando `liveAnchor` es nil.
         let liveAnchorNativeBalances: [String: Decimal]?
+        /// `true` si el saldo vivo se armó con alguna tasa que no era la de hoy. Viaja pegado al
+        /// desglose porque lo pinta la misma pantalla: la hoja «¿Cuánto tienes hoy?». `false`
+        /// cuando no hay anchor — sin número que marcar no hay marca.
+        let liveAnchorIsApproximate: Bool
     }
 
     // MARK: - Main Processing Entry Point
@@ -65,7 +69,9 @@ struct TrendDataProcessor {
         grouping: TrendGrouping,
         interval: DateInterval,
         currencyCode: String,
-        liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
 
@@ -79,17 +85,29 @@ struct TrendDataProcessor {
         var maxDate: Date?
 
         for transaction in intervalTransactions {
-            let amount = transaction.amountInPreferredCurrency
+            // Excluir patas de préstamo derivadas del bridge de los totales income/expense
+            // (la pata real, misma fecha, conserva el rango de la curva).
+            guard !adjustment.isSuppressed(transaction) else { continue }
 
             // Exclude balance adjustments from income/expense totals
             // (they should only affect balance, not income/expense stats)
             let isBalanceAdjustment = transaction.balanceAdjustmentType != nil
 
             if !isBalanceAdjustment {
-                if amount > 0 {
+                // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto), y
+                // `resolvedAmount` lo lleva a `currencyCode` aunque la fila se guardara en otra
+                // divisa principal: es la regla del hero del Panel, que comparte pantalla con este
+                // total (`stats-aggregators-sum-stored-amounts-from-other-preferred-currencies`).
+                let amount = CashFlowCalculator.resolvedAmount(
+                    transaction, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value
+                // La categoría decide el bucket; acumulación signed (paridad con
+                // CashFlowCalculator): un monto de signo contrario a su categoría
+                // reduce el bucket (reembolso), no suma magnitud.
+                if TransactionClassificationLogic.isIncome(transaction) {
                     totalIncome += amount
                 } else {
-                    totalExpense += abs(amount)
+                    totalExpense -= amount
                 }
             }
 
@@ -111,7 +129,8 @@ struct TrendDataProcessor {
                 totalExpense: 0,
                 finalBalance: 0,
                 liveAnchor: nil,
-                liveAnchorNativeBalances: nil
+                liveAnchorNativeBalances: nil,
+                liveAnchorIsApproximate: false
             )
         }
 
@@ -134,7 +153,8 @@ struct TrendDataProcessor {
                 totalExpense: totalExpense,
                 finalBalance: 0,
                 liveAnchor: nil,
-                liveAnchorNativeBalances: nil
+                liveAnchorNativeBalances: nil,
+                liveAnchorIsApproximate: false
             )
         }
 
@@ -162,32 +182,50 @@ struct TrendDataProcessor {
             fillBalanceBuckets(
                 &buckets,
                 transactions: transactions,
-                accounts: accounts,
                 interval: effectiveInterval,  // Use the matched interval
                 grouping: grouping,
-                calendar: calendar
+                calendar: calendar,
+                currencyCode: currencyCode,
+                // El último punto vale el saldo al CIERRE del periodo mostrado (o de hoy), no al de su
+                // último movimiento: un mes cerrado vale lo que tenías el último día, a la tasa de ese día.
+                valuationCap: min(interval.end, Date.now),
+                converter: converter
             )
 
         case .income:
+            // Clasificación por categoría (paridad con el total y CashFlow); la
+            // curva acumula signed → un ingreso de monto negativo la baja.
             fillCumulativeBuckets(
                 &buckets,
                 transactions: transactions.filter {
-                    $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil
+                    TransactionClassificationLogic.isIncome($0) && $0.balanceAdjustmentType == nil
+                        && !adjustment.isSuppressed($0)
                 },
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { $0.amountInPreferredCurrency }
+                valueTransform: {
+                    CashFlowCalculator.resolvedAmount(
+                        $0, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                    ).value
+                }
             )
 
         case .expense:
+            // Signed: un gasto (monto negativo) sube la curva; un reembolso
+            // (monto positivo en categoría de gasto) la baja.
             fillCumulativeBuckets(
                 &buckets,
                 transactions: transactions.filter {
-                    $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil
+                    !TransactionClassificationLogic.isIncome($0) && $0.balanceAdjustmentType == nil
+                        && !adjustment.isSuppressed($0)
                 },
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { abs($0.amountInPreferredCurrency) }
+                valueTransform: {
+                    -CashFlowCalculator.resolvedAmount(
+                        $0, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                    ).value
+                }
             )
         }
 
@@ -225,13 +263,18 @@ struct TrendDataProcessor {
         //      fecha por microsegundos e invalida toda la struct observable).
         let liveAnchor: PanelViewModel.BarPoint?
         let liveAnchorNativeBalances: [String: Decimal]?
+        let liveAnchorIsApproximate: Bool
         if let info = liveBalanceOverride, metric == .balance, !rawPoints.isEmpty {
             let anchorDate = calendar.startOfDay(for: Date.now)
             liveAnchor = PanelViewModel.BarPoint(date: anchorDate, value: info.value)
             liveAnchorNativeBalances = info.nativeBalances
+            liveAnchorIsApproximate = info.amountsAreApproximate
         } else {
             liveAnchor = nil
             liveAnchorNativeBalances = nil
+            // Sin anchor no hay número vivo que marcar. Los tres van juntos en el mismo `if` para
+            // que no pueda quedar una marca huérfana de su valor.
+            liveAnchorIsApproximate = false
         }
 
         let finalBalance = liveAnchor?.value ?? rawPoints.last?.value ?? 0
@@ -254,7 +297,8 @@ struct TrendDataProcessor {
             totalExpense: totalExpense,
             finalBalance: finalBalance,
             liveAnchor: liveAnchor,
-            liveAnchorNativeBalances: liveAnchorNativeBalances
+            liveAnchorNativeBalances: liveAnchorNativeBalances,
+            liveAnchorIsApproximate: liveAnchorIsApproximate
         )
     }
 
@@ -266,21 +310,29 @@ struct TrendDataProcessor {
         min(range.lowerBound, value)...max(range.upperBound, value)
     }
 
-    /// Fill balance buckets with running balance calculation
+    /// Fill balance buckets with running balance calculation.
+    ///
+    /// Cada punto es el saldo NATIVO acumulado hasta el cierre de su bucket, valorado con el tipo de cambio de ese
+    /// cierre; el de hoy, con la regla del saldo vivo (`BalanceValuation`). Así el último punto de una curva que llega
+    /// a hoy ES la cifra del saldo, y el de un periodo cerrado, lo que valía el saldo ese día. Hasta el 2026-10-16
+    /// sumaba cada fila al tipo de su fecha, y con una cuenta en dólares la curva acababa lejos de la cifra
+    /// (ticket `panel-balance-chart-contradicts-its-own-figure`).
     private static func fillBalanceBuckets(
         _ buckets: inout [Date: Double],
         transactions: [TransactionItem],
-        accounts: [Account],
         interval: DateInterval,
         grouping: TrendGrouping,
-        calendar: Calendar
+        calendar: Calendar,
+        currencyCode: String,
+        valuationCap: Date,
+        converter: CurrencyConverting
     ) {
         // Start with 0 - initial balance is now a transaction
-        var runningBalance = 0.0
+        var native: [String: Decimal] = [:]
 
         // Add transactions before interval
         for transaction in transactions where transaction.date < interval.start {
-            runningBalance += transaction.amountInPreferredCurrency
+            LiveBalanceCalculator.addNative(transaction, to: &native)
         }
 
         // Group transactions by bucket date
@@ -290,15 +342,28 @@ struct TrendDataProcessor {
             grouping.dateKey(for: transaction.date, calendar: calendar)
         }
 
-        // Fill buckets with cumulative balance
         let sortedDates = buckets.keys.sorted()
-        for date in sortedDates {
+        var closings = sortedDates.map {
+            BalanceValuation.closingInstant(bucketStart: $0, grouping: grouping, cap: valuationCap, calendar: calendar)
+        }
+        // El último bucket acaba en el último movimiento, pero el saldo no cambia hasta el cierre: se valora al cierre.
+        if let last = closings.indices.last { closings[last] = max(closings[last], valuationCap) }
+        let valuation = BalanceValuation(
+            currencies: Set(transactions.map(\.currencyCode)),
+            to: currencyCode,
+            closingDates: closings,
+            converter: converter,
+            calendar: calendar
+        )
+
+        // Fill buckets with cumulative balance
+        for (index, date) in sortedDates.enumerated() {
             if let txns = transactionsByBucket[date] {
                 for txn in txns {
-                    runningBalance += txn.amountInPreferredCurrency
+                    LiveBalanceCalculator.addNative(txn, to: &native)
                 }
             }
-            buckets[date] = runningBalance
+            buckets[date] = valuation.doubleValue(native, at: closings[index])
         }
     }
 

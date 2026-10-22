@@ -3,14 +3,21 @@
 //  YalaTests
 //
 //  Tests for VisionDraftFactory pure logic methods:
-//  mapImageTypeToSource, parseDate, buildNote.
+//  mapImageTypeToSource, parseDate, buildNote — y la coherencia entre el signo del monto (que en
+//  visión ES el tipo: el prompt pide gastos NEGATIVOS) y la naturaleza de la subcategoría que le
+//  pone la memoria de comercios.
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
 
+/// `.serialized` porque los casos de naturaleza usan `makeTestContext()`, que REUSA el container por
+/// `#fileID`: dos tests del mismo fichero en paralelo se pisan el store. Lo exige
+/// `qa/check-test-isolation.sh` y lo comprueba el CI.
+@Suite(.serialized)
 struct VisionDraftFactoryTests {
 
     // MARK: - mapImageTypeToSource
@@ -90,6 +97,12 @@ struct VisionDraftFactoryTests {
         #expect(result == "Walmart - Groceries")
     }
 
+    /// La nota del draft pasa por `VisionNoteCleaner`: el reporte del 2026-10-10 salía con la plantilla del banco.
+    @Test @MainActor func buildNote_dropsBankTemplate() {
+        let result = VisionDraftFactory.buildNote(merchant: "GROK XAI", note: "Consumo con tarjeta de crédito BCP")
+        #expect(result == "Grok (xAI)")
+    }
+
     @Test @MainActor func buildNote_merchantOnly_returnsMerchant() {
         let result = VisionDraftFactory.buildNote(merchant: "Starbucks", note: nil)
         #expect(result == "Starbucks")
@@ -118,5 +131,119 @@ struct VisionDraftFactoryTests {
     @Test @MainActor func buildNote_bothEmpty_returnsEmpty() {
         let result = VisionDraftFactory.buildNote(merchant: "", note: "")
         #expect(result == "")
+    }
+
+    // MARK: - Naturaleza de la subcategoría recordada
+
+    private func visionResponse(amount: Double?, merchant: String) -> VisionResponse {
+        VisionResponse(
+            imageType: "receipt",
+            transactions: [
+                VisionTransaction(amount: amount, date: nil, merchant: merchant, note: nil, currency: "PEN")
+            ],
+            confidence: VisionConfidence(overall: 0.9, imageType: 0.9)
+        )
+    }
+
+    @MainActor
+    private func seedMerchantMemory(
+        context: ModelContext,
+        merchant: String,
+        subcategory: Subcategory
+    ) {
+        context.insert(
+            MerchantMemory(
+                merchantCanonical: MerchantCanonicalizer.canonicalize(merchant),
+                subcategory: subcategory,
+                countApproved: 5,
+                countCorrected: 0,
+                lastApprovedAt: Date.now,
+                aliases: [merchant]
+            )
+        )
+    }
+
+    /// Un ticket de gasto (monto negativo) sobre un comercio que la memoria tiene aprendido en
+    /// INGRESOS no se queda con esa subcategoría. Si se quedara, el draft se aprueba desde la Bandeja
+    /// con un swipe —sin pasar por la hoja de edición, que es lo único que reconcilia el par— y la
+    /// fila entra con el signo contrario a su categoría.
+    @Test @MainActor func createDraft_rememberedIncomeSubcategory_expenseAmount_leavesItEmpty() throws {
+        let context = try makeTestContext()
+        let incomeSub = makeTestSubcategory(
+            context: context,
+            name: "Reintegros",
+            category: makeTestCategory(context: context, name: "Ingresos", isIncome: true)
+        )
+        seedMerchantMemory(context: context, merchant: "Reintegro Nómina", subcategory: incomeSub)
+
+        let drafts = VisionDraftFactory.makeDrafts(
+            from: visionResponse(amount: -80, merchant: "Reintegro Nómina"),
+            rawText: nil,
+            context: context
+        )
+
+        #expect(drafts.count == 1)
+        #expect(drafts.first?.subcategory == nil)
+        #expect(drafts.first?.needsUserInput.contains("subcategory") == true)
+    }
+
+    /// Control positivo: el mismo comercio con un monto POSITIVO —un abono— sí se queda con la
+    /// subcategoría de ingreso recordada.
+    @Test @MainActor func createDraft_rememberedIncomeSubcategory_incomeAmount_keepsIt() throws {
+        let context = try makeTestContext()
+        let incomeSub = makeTestSubcategory(
+            context: context,
+            name: "Reintegros",
+            category: makeTestCategory(context: context, name: "Ingresos", isIncome: true)
+        )
+        seedMerchantMemory(context: context, merchant: "Reintegro Nómina", subcategory: incomeSub)
+
+        let drafts = VisionDraftFactory.makeDrafts(
+            from: visionResponse(amount: 80, merchant: "Reintegro Nómina"),
+            rawText: nil,
+            context: context
+        )
+
+        #expect(drafts.first?.subcategory === incomeSub)
+    }
+
+    /// El caso común —ticket de gasto, comercio aprendido en gastos— sigue rellenando.
+    @Test @MainActor func createDraft_rememberedExpenseSubcategory_expenseAmount_keepsIt() throws {
+        let context = try makeTestContext()
+        let expenseSub = makeTestSubcategory(
+            context: context,
+            name: "Supermercado",
+            category: makeTestCategory(context: context, name: "Comida", isIncome: false)
+        )
+        seedMerchantMemory(context: context, merchant: "Wong", subcategory: expenseSub)
+
+        let drafts = VisionDraftFactory.makeDrafts(
+            from: visionResponse(amount: -45.5, merchant: "Wong"),
+            rawText: nil,
+            context: context
+        )
+
+        #expect(drafts.first?.subcategory === expenseSub)
+    }
+
+    /// Sin monto no hay signo del que leer el tipo: se asume GASTO, igual que hace la hoja de edición
+    /// del Inbox al prefijar un draft sin monto. Aquí eso significa que una subcategoría de ingreso
+    /// recordada no se planta a ciegas.
+    @Test @MainActor func createDraft_noAmount_treatsItAsExpense() throws {
+        let context = try makeTestContext()
+        let incomeSub = makeTestSubcategory(
+            context: context,
+            name: "Reintegros",
+            category: makeTestCategory(context: context, name: "Ingresos", isIncome: true)
+        )
+        seedMerchantMemory(context: context, merchant: "Reintegro Nómina", subcategory: incomeSub)
+
+        let drafts = VisionDraftFactory.makeDrafts(
+            from: visionResponse(amount: nil, merchant: "Reintegro Nómina"),
+            rawText: nil,
+            context: context
+        )
+
+        #expect(drafts.first?.subcategory == nil)
     }
 }

@@ -1,0 +1,84 @@
+---
+id: groups-loop-restart-docs-cite-a-retired-mount-guard
+status: backlog
+priority: low
+area: "groups, sync"
+created: 2026-09-15
+updated: 2026-10-08
+source: "medición al cerrar `groups-channel-seal-has-no-reachable-producer`"
+---
+
+# Los comentarios del re-arranque del canal de Grupos prometen un guard que ya no existe
+
+## El problema, en lenguaje de código
+
+Dos comentarios dicen que `GroupsLoopRestartLogic.shouldStart` incluye el guard «D8» de mount-mismatch
+(`secondaryActive && !secondaryMounted`), y que por eso es seguro llamar `GroupsSyncClient.startIfEligible`
+a mitad de sesión. Ese guard salió de la tabla el 2026-09-13 con la sesión de visita: la función ya no
+tiene esos parámetros.
+
+## Lo medido (2026-09-15, rama `encargo/2026-09-15-groups-channel-seal-has-no-reachable-producer`)
+
+- `Yala/App/Logic/GroupsLoopRestartLogic.swift:6-8`, la cabecera del fichero: «INCLUDING the D8
+  mount-mismatch guard that makes MID-SESSION calls safe».
+- `Yala/Services/CloudSync/Groups/GroupsSyncClient.swift`, el docblock de `startIfEligible`: la
+  enumeración «SSOT de flag/sesión/single-instance/D8» y el párrafo «D8 (H-2026-07-18-4): AHORA es SEGURO
+  llamarlo MID-SESSION … `shouldStart` incorpora el guard de mount-mismatch».
+- `Yala/App/Views/Shared/GroupsBackendInviteModifier.swift:162`, en el re-arranque post-sign-in: «D8-safe
+  por el guard de mount-mismatch». Lo encontró la lente de corrección de esa misma sesión.
+- `git show 783a4ec9b -- Yala/App/Logic/GroupsLoopRestartLogic.swift` (`feat(sesiones): la shell deriva
+  del eje 1 y se retira la sesión de visita`) borra los parámetros `secondaryActive` y
+  `secondaryMounted` y la línea `if secondaryActive && !secondaryMounted { return false }`.
+
+## Por qué importa aunque hoy no rompa nada
+
+Sin sesión de visita no queda la ventana que ese guard cerraba, así que lo probable es que el re-arranque a
+mitad de sesión siga siendo seguro, pero por otro motivo. **Eso no está medido.** Quien lea esos
+comentarios dará por hecho un guard que no existe: es la misma trampa que tenía el sello del canal, un
+mecanismo que parecía cubrir un caso y no lo cubría.
+
+## Un tercero, medido el 2026-09-16 al despertar el loop
+
+Dos comentarios del mismo par de ficheros llaman al canal **DARK «en producción hoy»**, y no lo está:
+`CloudSyncFlags.groupsBackendCompiledDefault` es `true` desde D-R1 paso 2 (2026-07-30) y el flag remoto solo
+puede MATAR, así que el getter compuesto vale `true` salvo kill-switch. Quien lea esas líneas dará por hecho
+que nada de este loop corre para nadie.
+
+- `Yala/App/Logic/GroupsLoopRestartLogic.swift:25`: «Con el flag OFF (producción hoy) SIEMPRE `false` →
+  byte-identidad DARK».
+- `YalaTests/CloudSync/GroupsLoopRestartLogicTests.swift:22`: el mismo «(producción hoy)» en el docblock de
+  `flagOff_neverStarts`.
+
+Va aquí porque se arregla en la misma pasada, y porque el caso gemelo del despertar
+(`flagOff_neverWakes`, escrito el 2026-09-16) ya nació sin esa frase: si se toca uno sin el otro, el fichero
+se queda diciendo las dos cosas.
+
+## Y un desajuste más pequeño del mismo loop
+
+El docblock de `GroupsSyncBreadcrumb.groupsLoopStopped` enumera los motivos de parada
+(`session-check-failed` / `session-expired` / `account-unavailable` / `cancelled`) y le falta
+`channel-disabled`, que `GroupsSyncClient.runLoop` emite cuando para el kill del canal. Es anterior al
+retiro del sello. Va aquí porque se arregla en la misma pasada de comentarios.
+
+## Lo que hay que hacer
+
+1. Medir si queda alguna ventana de mount-mismatch alcanzable desde `startIfEligible`. Sin medir, las
+   candidatas a mirar primero son dos identidades sobre el store del dueño (quien entra por un grupo en
+   ese teléfono) y el swap de persona sin relanzar.
+2. Reescribir los comentarios con lo medido: el porqué nuevo de la seguridad, o el hueco con su ticket.
+
+No es una decisión de producto: es documentación que miente sobre una garantía.
+
+## Relación con otros tickets
+
+- `groups-channel-seal-has-no-reachable-producer`: la sesión que lo encontró, al editar el mismo docblock.
+  Esa sesión solo quitó «stop» de la enumeración y dejó «D8» como estaba.
+- `shell-derives-from-two-session-axes`: el PR que retiró la sesión de visita.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Siguen los cinco comentarios: `GroupsLoopRestartLogic.swift:6-7` (guard D8) y `:25` («producción hoy»), el docblock de `GroupsSyncClient.startIfEligible` (líneas 398 y 403, «D8… AHORA es SEGURO»), `GroupsBackendInviteModifier.swift:165` («D8-safe») y `GroupsLoopRestartLogicTests.swift:22`.
+- El docblock de `GroupsSyncBreadcrumb.groupsLoopStopped` sigue sin `channel-disabled`, que `GroupsSyncClient` emite (línea 503).
+- Sigue sin medir lo que da prioridad al ticket: si queda alguna ventana de mount-mismatch alcanzable desde `startIfEligible`. Por eso se queda en `low` y no en `very-low`.
+
+Triage 2026-10-08: abierto · low → low · los comentarios siguen prometiendo un guard que se borró en 783a4ec9b, y la seguridad del re-arranque a mitad de sesión sigue sin medir.

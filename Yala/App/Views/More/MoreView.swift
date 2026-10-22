@@ -49,16 +49,17 @@ enum MoreSectionKind: String, CaseIterable, Identifiable {
 struct MoreView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @State private var showProfile = false
     @State private var showEditor = false
-    /// Gate beta de Grupos (validación v2.0.1, TEMPORAL). Si no está desbloqueado,
-    /// la card "Grupos" muestra el alert intro en lugar de navegar.
-    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
-    @State private var showBetaIntro = false
-    @State private var showBetaCode = false
 
-    /// GC-08: en modo groupInvite solo Grupos es accesible; el dashboard se oculta.
-    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+    /// GC-08: sin sesión privada en este teléfono solo Grupos es accesible; el dashboard personal se
+    /// oculta y se muestra el CTA «Activar Yala completo». Reactivo por el espejo observable del eje.
+    private var isGroupsFocusedShell: Bool {
+        ShellModeLogic.effective(
+            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
+    }
 
     private let gridColumns = [
         GridItem(.flexible(), spacing: DS.Spacing.md),
@@ -69,11 +70,23 @@ struct MoreView: View {
         MoreSectionKind.ordered(from: appPreferences.moreSectionOrder)
     }
 
+    /// Mismo criterio que `ProfileView.effectiveColorfulIcons`: el toggle de
+    /// Ajustes manda salvo que el tema fuerce monocromo (solo Minimalista).
+    private var effectiveColorfulIcons: Bool {
+        theme.forcesMonochromeIcons ? false : appPreferences.colorfulIcons
+    }
+
+    /// Color del badge de icono: el color propio del item si "Iconos coloridos"
+    /// está activo, o `.primary` si está apagado (o el tema fuerza monocromo).
+    private func iconColor(_ colorful: Color) -> Color {
+        effectiveColorfulIcons ? colorful : .primary
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
-                        if isGroupInviteMode {
+                        if isGroupsFocusedShell {
                             activateFullYalaButton
                         } else {
                             dashboardContent
@@ -86,7 +99,7 @@ struct MoreView: View {
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.panel)
             .toolbar {
-                if !isGroupInviteMode {
+                if !isGroupsFocusedShell {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             showEditor = true
@@ -97,6 +110,11 @@ struct MoreView: View {
                         .accessibilityIdentifier("more_editor_button")
                     }
                 }
+                // Mismo control de perfil que el Panel: el perfil queda a mano desde Más
+                // sin tener que buscar su tarjeta en Herramientas.
+                ProfileToolbarItem {
+                    showProfile = true
+                }
             }
         }
         .sheet(isPresented: $showProfile) {
@@ -105,18 +123,6 @@ struct MoreView: View {
         }
         .sheet(isPresented: $showEditor) {
             MoreEditorSheet()
-        }
-        .alert(L10n.Groups.Beta.title, isPresented: $showBetaIntro) {
-            Button(L10n.Groups.Beta.haveCode) {
-                // Difiere al próximo runloop: encadenar alerts en la misma acción es frágil.
-                Task { @MainActor in showBetaCode = true }
-            }
-            Button(L10n.Action.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.Groups.Beta.message)
-        }
-        .betaCodeEntry(isPresented: $showBetaCode) {
-            RouterEntryGate.shared.submit(.navigate(.groups))
         }
     }
 
@@ -137,7 +143,7 @@ struct MoreView: View {
             RouterEntryGate.shared.submit(.navigate(.panel))
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                AccentIconBadge(systemName: ConfigurableTab.panel.iconName, font: DS.Typography.headline)
+                AccentIconBadge(systemName: ConfigurableTab.panel.iconName, font: DS.Typography.headline, tint: iconColor(.electricIndigo))
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Tab.panel)
@@ -187,6 +193,7 @@ struct MoreView: View {
                         subtitle: item.subtitle,
                         identifier: "more_card_\(item.id)",
                         badge: item.badge,
+                        iconColor: item.iconColor,
                         action: item.action
                     )
                 }
@@ -198,47 +205,49 @@ struct MoreView: View {
         switch kind {
         case .statistics:
             return [
-                NavItem(id: "insights", icon: DetailViewTab.insights.icon, title: DetailViewTab.insights.title, subtitle: L10n.More.Subtitle.insights) {
-                    SessionState.shared.navigateToDetail(.insights)
+                NavItem(id: "insights", icon: DetailViewTab.insights.icon, title: DetailViewTab.insights.title, subtitle: L10n.More.Subtitle.insights, iconColor: iconColor(.blue)) {
+                    navigation.navigateToDetail(.insights)
                 },
-                NavItem(id: "trends", icon: DetailViewTab.trends.icon, title: DetailViewTab.trends.title, subtitle: L10n.More.Subtitle.trends) {
-                    SessionState.shared.navigateToDetail(.trends)
+                NavItem(id: "trends", icon: DetailViewTab.trends.icon, title: DetailViewTab.trends.title, subtitle: L10n.More.Subtitle.trends, iconColor: iconColor(.green)) {
+                    navigation.navigateToDetail(.trends)
                 },
-                NavItem(id: "categories", icon: DetailViewTab.categories.icon, title: DetailViewTab.categories.title, subtitle: L10n.More.Subtitle.distribution) {
-                    SessionState.shared.navigateToDetail(.categories)
+                NavItem(id: "categories", icon: DetailViewTab.categories.icon, title: DetailViewTab.categories.title, subtitle: L10n.More.Subtitle.distribution, iconColor: iconColor(.orange)) {
+                    navigation.navigateToDetail(.categories)
                 },
             ]
         case .planning:
             return [
-                NavItem(id: "budgets", icon: PlanningTab.budgets.icon, title: PlanningTab.budgets.displayName, subtitle: L10n.More.Subtitle.budgets) {
-                    SessionState.shared.navigateToBudgets()
+                NavItem(id: "budgets", icon: PlanningTab.budgets.icon, title: PlanningTab.budgets.displayName, subtitle: L10n.More.Subtitle.budgets, iconColor: iconColor(.purple)) {
+                    navigation.navigateToBudgets()
                 },
-                NavItem(id: "scheduledPayments", icon: PlanningTab.scheduledPayments.icon, title: PlanningTab.scheduledPayments.displayName, subtitle: L10n.More.Subtitle.scheduledPayments) {
-                    SessionState.shared.navigateToScheduledPayments()
+                NavItem(id: "scheduledPayments", icon: PlanningTab.scheduledPayments.icon, title: PlanningTab.scheduledPayments.displayName, subtitle: L10n.More.Subtitle.scheduledPayments, iconColor: iconColor(.mint)) {
+                    navigation.navigateToScheduledPayments()
                 },
             ]
         case .reports:
-            return [
-                NavItem(id: "comparativa", icon: ReportTab.comparativa.icon, title: ReportTab.comparativa.title, subtitle: L10n.More.Subtitle.comparative) {
-                    SessionState.shared.navigateToReport(.comparativa)
-                },
-                NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow) {
-                    SessionState.shared.navigateToReport(.flujoDeCaja)
+            var reports: [NavItem] = [
+                NavItem(id: "comparativa", icon: ReportTab.comparativa.icon, title: ReportTab.comparativa.title, subtitle: L10n.More.Subtitle.comparative, iconColor: iconColor(.brown)) {
+                    navigation.navigateToReport(.comparativa)
                 },
             ]
+            // En Solo Gastos, Flujo de Caja se oculta (SSOT compartido con el chip de Reportes).
+            if ReportTab.visibleTabs(expensesOnly: SessionState.shared.isExpensesOnlyMode).contains(.flujoDeCaja) {
+                reports.append(
+                    NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow, iconColor: iconColor(.cyan)) {
+                        navigation.navigateToReport(.flujoDeCaja)
+                    }
+                )
+            }
+            return reports
         case .tools:
             return [
-                NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records) {
+                NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records, iconColor: iconColor(.yellow)) {
                     RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
                 },
-                NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, badge: "Beta") {
-                    if groupsBetaUnlocked {
-                        RouterEntryGate.shared.submit(.navigate(.groups))
-                    } else {
-                        showBetaIntro = true
-                    }
+                NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, iconColor: iconColor(.hotPink)) {
+                    RouterEntryGate.shared.submit(.navigate(.groups))
                 },
-                NavItem(id: "profile", icon: "person.crop.circle.fill", title: L10n.Profile.title, subtitle: L10n.More.Subtitle.profile) {
+                NavItem(id: "profile", icon: "person.crop.circle.fill", title: L10n.Profile.title, subtitle: L10n.More.Subtitle.profile, iconColor: iconColor(.gray)) {
                     showProfile = true
                 },
             ]
@@ -296,5 +305,6 @@ private struct NavItem: Identifiable {
     let title: String
     let subtitle: String
     var badge: String? = nil
+    var iconColor: Color? = nil
     let action: () -> Void
 }

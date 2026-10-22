@@ -115,19 +115,10 @@
 
 // MARK: - Panel Hero (PP2-01)
 
-// Chip — greets by name; the golden emoji lives in the SF Symbol icon
-"panel.hero.chip.monthStart %@ %@" = "Hoi %1$@ — %2$@ is begonnen";
-"panel.hero.chip.default %@" = "Hoi %@";
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "De maand begint, stap voor stap.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Je zit lekker op schema deze maand, ga zo door.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Je maand loopt — alles in orde.";
-"panel.hero.kpi.tight %@ %@ %d" = "Krappe maand maar haalbaar, stap voor stap.";
-"panel.hero.kpi.overBudget %@ %@" = "Morgen beginnen we opnieuw, alles komt goed.";
 
-"panel.hero.upsellCTA" = "Personaliseer je bericht met AI";
 "panel.hero.availableLabel" = "Beschikbaar";
 
 // MARK: - Trend Widget
@@ -499,7 +490,7 @@
 "settings.defaultCurrency" = "Standaardvaluta";
 "settings.currentIcon" = "Huidig icoon";
 "settings.resetAllData" = "Reset al je gegevens";
-"settings.deleteAllData" = "Alle gegevens verwijderen";
+"settings.deleteAllData" = "Mijn gegevens wissen";
 
 // MARK: - Common
 
@@ -513,7 +504,7 @@
 "common.loading" = "Laden...";
 "common.error" = "Fout";
 "common.success" = "Gelukt";
-"common.dataPrivacy" = "Je gegevens verlaten je apparaat nooit";
+"common.dataPrivacy" = "Waar je gegevens staan";
 "common.active" = "Actief";
 "common.hidden" = "Verborgen";
 "common.inactive" = "Inactief";
@@ -749,10 +740,27 @@
 "panel.liveAnchorEducation.todayQuestion" = "Je saldo vandaag";
 "panel.liveAnchorEducation.whyQuestion" = "Waarom dit bedrag?";
 "panel.liveAnchorEducation.breakdownToggle" = "Per valuta bekijken";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ vandaag";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "%@ vandaag";
 "panel.liveAnchorEducation.coachTitle" = "Je saldo beweegt vanzelf";
 "panel.liveAnchorEducation.coachMessage" = "Wanneer je geld in andere valuta's hebt, verandert de waarde dag voor dag. Tik om te zien wat er gebeurt.";
 "panel.liveAnchorEducation.dotA11yLabel" = "Saldo van vandaag tegen de huidige wisselkoers. Tik voor details.";
+
+/* FX P&L card — ganancia/pérdida por tipo de cambio */
+"panel.fxPnL.titleGain" = "Wisselkoerswinst";
+"panel.fxPnL.titleLoss" = "Wisselkoersverlies";
+"panel.fxPnL.sentenceHoldingUpFormat" = "Je %1$@ zijn vandaag %2$@ meer waard dan toen ze op je rekening kwamen.";
+"panel.fxPnL.sentenceHoldingDownFormat" = "Je %1$@ zijn vandaag %2$@ minder waard dan toen ze op je rekening kwamen.";
+"panel.fxPnL.sentenceDebtUpFormat" = "Je schuld in %1$@ kost vandaag %2$@ meer dan toen je hem aanging.";
+"panel.fxPnL.sentenceDebtDownFormat" = "Je schuld in %1$@ kost vandaag %2$@ minder dan toen je hem aanging.";
+"panel.fxPnL.openDetail" = "Bekijk de uitsplitsing per valuta";
+"panel.fxPnL.sheetTitle" = "Effect van de wisselkoers";
+"panel.fxPnL.totalLabel" = "In totaal";
+"panel.fxPnL.sheetIntroFormat" = "We vergelijken wat je geld in andere valuta's vandaag waard is in %@ met wat het waard was toen het op je rekeningen kwam. Het verschil is wat de wisselkoers je gaf of afnam, zonder dat je iets deed.";
+"panel.fxPnL.rowRatesFormat" = "Binnengekomen op %1$@ · vandaag op %2$@";
+"panel.fxPnL.rowValueTodayFormat" = "= %@";
+"panel.fxPnL.averageNote" = "De instapkoers is een gemiddelde van al je bewegingen in die valuta, niet die van elke aankoop apart.";
+"panel.fxPnL.estimatedRateNote" = "Een omrekening gebruikte een koers die niet die van vandaag was, dus deze cijfers zijn bij benadering.";
+
 "widget.today" = "Vandaag";
 
 // Widget Preferences
@@ -1084,7 +1092,6 @@
 "insights.analyzingData" = "Je gegevens worden geanalyseerd...";
 "insights.activateAITitle" = "Slim overzicht beschikbaar";
 "insights.activateAIBody" = "Schakel het in en pas aan via Profiel > AI-functies.";
-"insights.activateAIDisclaimer" = "Alleen samengevatte gegevens worden naar OpenAI gestuurd (totalen, percentages, trends). Je individuele transacties en persoonlijke gegevens worden nooit gedeeld.";
 "insights.activate" = "Activeren";
 "insights.goToSettings" = "Naar instellingen";
 "insights.notInterested" = "Niet geïnteresseerd";
@@ -1125,25 +1132,6 @@
 "support.messagePlaceholder" = "Vertel het ons in detail...";
 "support.send" = "Versturen";
 
-// Biometric
-"biometric.title" = "Biometrische beveiliging";
-"biometric.description" = "Bescherm je financiële gegevens met biometrische authenticatie of je toegangscode.";
-"biometric.enableLock" = "Vergrendeling inschakelen";
-"biometric.lockAfter" = "Vergrendelen na";
-"biometric.timeout.immediate" = "10 seconden";
-"biometric.timeout.oneMinute" = "1 minuut";
-"biometric.timeout.fiveMinutes" = "5 minuten";
-"biometric.timeout.fifteenMinutes" = "15 minuten";
-"biometric.authReason" = "Ontgrendel Yala om bij je financiën te komen";
-"biometric.enableReason" = "Bevestig je identiteit om de vergrendeling in te schakelen";
-"biometric.authFailed" = "Authenticatie mislukt";
-"biometric.authFailedMessage" = "We konden je identiteit niet bevestigen. Probeer het opnieuw.";
-"biometric.locked" = "Yala is vergrendeld";
-"biometric.unlockPrompt" = "Tik op de knop om te ontgrendelen";
-"biometric.unlock" = "Ontgrendelen";
-"biometric.passcode" = "Toegangscode";
-"biometric.enableLockHint" = "Je wordt bij elk opstarten van de app gevraagd je identiteit te bevestigen.";
-"biometric.lockAfterHint" = "Kies hoelang de app op de achtergrond mag staan voordat hij vergrendelt.";
 
 "profile.edit" = "Profiel bewerken";
 "profile.importSuccess" = "Import voltooid";
@@ -1159,8 +1147,8 @@
 "profile.allowedChars" = "Alleen letters, cijfers en underscores";
 "profile.aliasAvailable" = "Alias beschikbaar";
 "profile.aliasHelper" = "3-20 tekens. Alleen letters, cijfers en underscores.";
-"profile.privacyTitle" = "Je gegevens verlaten je apparaat nooit";
-"profile.privacyDesc" = "Yala bewaart je persoonlijke gegevens alleen op je apparaat. AI-functies (spraak, afbeeldingen en inzichten) zijn optioneel en verwerken alleen samengevatte gegevens — je individuele transacties of persoonlijke informatie worden nooit gedeeld.";
+"profile.privacyTitle" = "Waar je gegevens staan";
+"profile.privacyDesc" = "Met je account in je privé-iCloud worden je gegevens op je apparaat en in je iCloud bewaard. Met je account in de cloud worden ze op de servers van Yala bewaard. Wat je in een groep invoert, samen met je alias, wordt op de servers van Yala bewaard zodat de groep het ziet. AI-functies (spraak, afbeeldingen en inzichten) zijn optioneel: wat je ernaar stuurt, gaat via onze server naar OpenAI, dat het verwerkt.";
 "profile.aliasFutureNote" = "Let op: validatie van unieke aliassen komt beschikbaar zodra de functie gedeelde uitgaven actief is.";
 "profile.proMember" = "PRO-lid";
 "profile.choosePhoto" = "Kies foto";
@@ -1199,17 +1187,14 @@
 "settings.sunday" = "Zondag";
 "settings.monday" = "Maandag";
 "settings.resetDataDescription" = "Met deze actie verwijder je permanent je rekeningen, transacties, budgetten, wisselkoersen, categorieën en alle andere gegevens van je Yala-profiel. Na het verwijderen keert de app terug naar de begininstelling.";
-"settings.deleteDataConfirmation" = "Al je gegevens verwijderen?";
-"settings.deleteDataWarning" = "Deze actie is onomkeerbaar. Al je rekeningen, transacties, budgetten, wisselkoersen en categorieën worden verwijderd. Daarna keert Yala terug naar de begininstelling en kun je je gegevens niet meer terughalen.";
-"settings.wipeICloudWarning" = "Hiermee verwijder je ook je iCloud-gegevens. Andere gesynchroniseerde apparaten verliezen deze gegevens.";
-"settings.wipeGroupsExclusionNote" = "Dit omvat niet je groepen. Om ze te verlaten: ga naar Groepen, vereffen openstaande saldi en verlaat elke groep.";
+"settings.deleteDataConfirmation" = "Je gegevens wissen?";
 "settings.delete" = "Verwijderen";
 "settings.cancel" = "Annuleren";
 "settings.iconOriginal" = "Origineel";
 "settings.iconDark" = "Donker";
 "settings.iconLight" = "Licht";
 "settings.iconNeon" = "Neon";
-"settings.deleteAllDataAction" = "Definitief verwijderen";
+"settings.deleteAllDataAction" = "Definitief wissen";
 "settings.deletingData" = "Gegevens worden verwijderd...";
 "settings.appIconTitle" = "App-icoon";
 "settings.iconNotSupported" = "Dit apparaat ondersteunt geen alternatieve iconen.";
@@ -1421,7 +1406,6 @@
 "subcategory.unassigned" = "Niet-toegewezen";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transacties worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
 
-"account.deleteBalanceError" = "Je kunt deze rekening niet verwijderen omdat het saldo niet nul is. Pas het saldo aan naar 0 voordat je hem verwijdert.";
 "account.type.general" = "Algemeen";
 "account.type.cash" = "Contant";
 "account.type.current" = "Betaalrekening";
@@ -1696,7 +1680,6 @@
 "accessibility.skipSync" = "Wachten overslaan en doorgaan met instelling";
 "accessibility.tabLimitReached" = "Maximum aantal tabbladen bereikt";
 "accessibility.noTransactionsToExport" = "Geen transacties om te exporteren";
-"accessibility.accountCard %@ %@" = "Rekening %@, saldo %@";
 "accessibility.editAccount" = "Rekening bewerken";
 "accessibility.pageIndicator %d %d" = "Pagina %1$d van %2$d";
 "accessibility.accountRow %@ %@" = "Rekening %@, valuta %@";
@@ -1844,10 +1827,9 @@
 "onboarding.usageMode.fullControl.desc" = "Je telt alles mee in je saldo — rekeningen, kaarten en wat heen en weer gaat met andere mensen. Het getal dat je ziet is wat echt van jou is.";
 "onboarding.privacyTitle" = "Klaar om te starten";
 "onboarding.privacySubtitle" = "Je kunt nu beginnen met Yala";
-"onboarding.privacyLocal" = "Je financiële gegevens blijven op je apparaat";
+"onboarding.privacyLocal" = "Je financiële gegevens worden in je account bewaard";
 "onboarding.privacyNoTracking" = "Geen tracking of advertenties";
-"onboarding.privacyIcloud" = "Alleen jij hebt toegang tot je gegevens";
-"onboarding.privacyNoSharing" = "AI-functies delen of bewaren geen gevoelige gegevens";
+"onboarding.privacyIcloud" = "Je opent je gegevens met je account";
 "onboarding.categoriesDefault" = "Standaardcategorieën";
 "onboarding.categoriesCustom" = "Aangepaste categorieën";
 "onboarding.privacyTutorialsHint" = "Ontdek de tutorials en tips van Yala";
@@ -1873,10 +1855,11 @@
 "onboarding.balanceManualOption" = "Ik ken mijn saldo";
 "onboarding.balanceManualHint" = "Je voert het zelf in";
 "onboarding.balanceGuidedIncompleteHint" = "Je hebt de berekening niet afgerond. Tik om verder te gaan.";
-"onboarding.privacyLocalShort" = "Gegevens op je apparaat";
+"onboarding.privacyLocalShort" = "Gegevens in je account";
 "onboarding.privacyNoTrackingShort" = "Geen tracking of advertenties";
-"onboarding.privacyIcloudShort" = "Alleen jij hebt toegang";
-"onboarding.privacyNoSharingShort" = "Veilige AI";
+"onboarding.privacyIcloudShort" = "Toegang met je account";
+"onboarding.privacyAIShort" = "AI via onze server";
+"onboarding.privacyAIDetail" = "Jij bepaalt of je het gebruikt";
 "onboarding.accountBalanceGuideTitle" = "Hoe bereken ik mijn saldo?";
 "onboarding.accountBalanceGuideIntro" = "Je beginsaldo vertelt Yala met hoeveel geld je begint. Het hoeft niet tot op de cent te kloppen — een ruwe schatting is prima. Hier lees je hoe je erover kunt nadenken, afhankelijk van het type rekening dat je hebt gekozen.";
 "onboarding.accountBalanceGuideGeneral" = "Als je een algemene rekening gebruikt om al je betaalmiddelen in één valuta te bundelen, weerspiegelt je saldo hoeveel geld je beschikbaar hebt.\n\nTel alles op: betaalrekeningen, spaarrekeningen, contant geld. Heb je openstaande creditcardkosten, dan kun je die aftrekken voor een nauwkeuriger beeld — of later elke kaart als aparte rekening bijhouden.\n\nDat eindgetal is je beginsaldo.";
@@ -1993,9 +1976,7 @@
 "bulkEdit.availableTags" = "Beschikbaar om toe te voegen";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "Systeem";
-"voiceLanguage.spanish" = "Spaans";
-"voiceLanguage.english" = "Engels";
+"voiceLanguage.appLanguage" = "Taal van de app";
 
 // MARK: - Voice Input
 "voice.title" = "Spraaknotitie";
@@ -2173,8 +2154,6 @@
 "tips.filters.detail" = "Gebruik filters om alleen te zien wat ertoe doet: per categorie, label, rekening of periode. Vergelijk maand voor maand om veranderingen te ontdekken.";
 "tips.export.title" = "Exporteer je gegevens";
 "tips.export.detail" = "Download je uitgaven in CSV of Excel via Instellingen > Exporteren. Handig voor analyses in een spreadsheet of als backup.";
-"tips.faceID.title" = "Beveilig met Face ID";
-"tips.faceID.detail" = "Schakel de biometrische vergrendeling in via Instellingen > Beveiliging. Je kunt kiezen of hij activeert bij verlaten van de app of na een ingestelde tijd.";
 "tips.siri.title" = "Noteer uitgaven met je stem";
 "tips.siri.detail" = "Zeg: \"Noteer een uitgave in Yala\" en dicteer dan de details";
 "tips.siri.close" = "Siri-suggestie sluiten";
@@ -2223,12 +2202,10 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Spraakinvoer";
 "tipkit.pro.voiceInput.message" = "Je kunt nu je uitgaven dicteren. Spreek en Yala boekt ze voor je.";
-"tipkit.pro.imageInput.title" = "Afbeeldingsinvoer";
+"tipkit.pro.imageInput.title" = "Invoer met foto of bestand";
 "tipkit.pro.imageInput.message" = "Voeg een foto toe van een bon of factuur en Yala haalt er één of meer transacties uit.";
 "tipkit.pro.smartInsights.title" = "Slimme inzichten";
 "tipkit.pro.smartInsights.message" = "Zet dit aan en Yala genereert AI-gestuurde observaties over je financiën.";
-"tipkit.pro.exportExtended.title" = "Onbeperkt exporteren";
-"tipkit.pro.exportExtended.message" = "Exporteer je gegevens per heel jaar, hele geschiedenis of een eigen periode.";
 "tipkit.pro.premiumIcons.title" = "Exclusieve iconen";
 "tipkit.pro.premiumIcons.message" = "Kies uit premium-iconen om je app te personaliseren.";
 "tipkit.pro.proThemes.title" = "Premium-thema's";
@@ -2286,10 +2263,10 @@
 "shortcut.voiceEntry.opening" = "Spraakinvoer wordt geopend...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Boeken via afbeelding";
-"shortcut.imageEntry.description" = "Opent de afbeeldingskiezer om uitgaven uit foto's te boeken";
-"shortcut.imageEntry.shortTitle" = "Boeken via afbeelding";
-"shortcut.imageEntry.opening" = "Afbeeldingsinvoer wordt geopend...";
+"shortcut.imageEntry.title" = "Boeken met foto of bestand";
+"shortcut.imageEntry.description" = "Boek uitgaven vanaf een foto of een bestand, zoals een pdf";
+"shortcut.imageEntry.shortTitle" = "Foto of bestand";
+"shortcut.imageEntry.opening" = "Invoer met foto of bestand wordt geopend...";
 
 // MARK: - Apple Pay Intent
 
@@ -2336,10 +2313,10 @@
 "control.voiceEntry.intentTitle" = "Spraakinvoer openen";
 "control.voiceEntry.intentDescription" = "Opent Yala in opnamemodus";
 
-"control.imageEntry.label" = "Afbeeldingsinvoer";
-"control.imageEntry.displayName" = "Afbeeldingsinvoer";
-"control.imageEntry.description" = "Boeken met een afbeelding of foto";
-"control.imageEntry.intentTitle" = "Afbeeldingsinvoer openen";
+"control.imageEntry.label" = "Foto of bestand";
+"control.imageEntry.displayName" = "Foto of bestand";
+"control.imageEntry.description" = "Boek met een foto of bestand";
+"control.imageEntry.intentTitle" = "Invoer met foto of bestand openen";
 "control.imageEntry.intentDescription" = "Opent Yala in cameramodus om te boeken";
 
 // MARK: - Notifications
@@ -2396,13 +2373,16 @@
 
 // Groups
 "notifications.groups.name" = "Groepen";
+"notifications.groups.remoteActivity" = "Nieuws in je groepen";
+"notifications.groups.remotePendingRequest" = "👋 Iemand wil lid worden van een van je groepen";
+"notifications.groups.remoteMembershipUpdate" = "Er is nieuws over je groepslidmaatschap";
 "notifications.groups.hint" = "Meldingen wanneer andere leden uitgaven toevoegen of jou betalen";
-"notifications.groups.newExpense" = "%@ heeft een uitgave van %@ toegevoegd: %@";
-"notifications.groups.newExpenseNoDesc" = "%@ heeft een uitgave van %@ toegevoegd";
-"notifications.groups.modifiedExpense" = "%@ heeft '%@' gewijzigd";
-"notifications.groups.settlement" = "%@ heeft jou %@ betaald";
-"notifications.groups.newMember" = "%@ is lid geworden van de groep";
-"notifications.groups.multipleChanges" = "%d nieuwe wijzigingen";
+"notifications.groups.newExpense" = "🧾 %1$@ heeft '%2$@' toegevoegd — jouw deel: %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ heeft een uitgave toegevoegd — jouw deel: %2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ heeft '%2$@' bijgewerkt — jouw deel: %3$@";
+"notifications.groups.settlement" = "💸 %@ heeft jou %@ betaald!";
+"notifications.groups.newMember" = "🙌 %@ is lid geworden van de groep";
+"notifications.groups.multipleChanges" = "📋 %d nieuwe updates";
 "notifications.groups.fallbackGroup" = "Groep";
 "notifications.groups.fallbackMember" = "Iemand";
 
@@ -2508,12 +2488,11 @@
 "featureGate.accounts" = "Rekeningen";
 "featureGate.budgets" = "Budgetten";
 "featureGate.voiceInput" = "Spraakinvoer";
-"featureGate.imageInput" = "Afbeeldingsinvoer";
+"featureGate.imageInput" = "Foto- of bestandsinvoer";
 "featureGate.premiumIcons" = "Premium-iconen";
 "featureGate.proThemes" = "Pro-thema's";
 "featureGate.smartInsightsAI" = "Slimme AI-inzichten";
 "featureGate.cashFlowAdvanced" = "Geavanceerde kasstroom";
-"featureGate.exportExtendedPeriods" = "Uitgebreide exportperiodes";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limiet bereikt";
@@ -2872,7 +2851,7 @@
 "siriShortcuts.all.title" = "Andere shortcuts";
 "siriShortcuts.shortcut.quick" = "Snel boeken";
 "siriShortcuts.shortcut.voice" = "Spraakinvoer";
-"siriShortcuts.shortcut.image" = "Afbeeldingsinvoer";
+"siriShortcuts.shortcut.image" = "Vastleggen met foto of bestand";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "Automatisering";
 "siriShortcuts.desc.quick" = "Opent het boekformulier met één tik.";
@@ -2882,7 +2861,7 @@
 "siriShortcuts.desc.automation" = "Maak automatische boekingen via systeemshortcuts.";
 "siriShortcuts.phrase.quick" = "Boeken in Yala";
 "siriShortcuts.phrase.voice" = "Boeken met spraak in Yala";
-"siriShortcuts.phrase.image" = "Boeken met afbeelding in Yala";
+"siriShortcuts.phrase.image" = "Boeken met foto of bestand in Yala";
 "siriShortcuts.phrase.applePay" = "Apple Pay boeken in Yala";
 "siriShortcuts.phrase.automation" = "Boeken via automatisering in Yala";
 "siriShortcuts.faq.title" = "Veelgestelde vragen";
@@ -2909,7 +2888,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Deze functie uitschakelen?";
 "aiPrivacy.revokeConfirmMessage" = "We stoppen met het verwerken van je AI-gegevens voor deze functie. Je kunt het altijd weer aanzetten.";
 "aiPrivacy.revokeConfirmAction" = "Uitschakelen";
-"aiPrivacy.footerHint" = "Je gegevens worden alleen verwerkt wanneer je Inzichten, Assistent of spraak/afbeeldingsinvoer gebruikt. We delen je persoonlijke informatie nooit.";
+"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je Inzichten, Assistent of spraak- en afbeeldingsinvoer gebruikt, en gaan via onze server naar OpenAI. We verkopen ze niet en gebruiken ze niet voor advertenties.";
 "aiPrivacy.policyLink" = "Privacybeleid";
 
 // MARK: - AI Consent
@@ -3260,6 +3239,56 @@
 "devseed.stepDeleting" = "Gegevens worden verwijderd...";
 "devseed.stepReloading" = "Gegevens opnieuw laden...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "Reis naar Lissabon";
+"devseed.ficha.groupWeekend" = "Weekend in Porto";
+"devseed.ficha.memberYou" = "Jij";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "Verblijf";
+"devseed.ficha.expenseTour" = "Stadswandeling";
+"devseed.ficha.expenseGroupDinner" = "Groepsdiner";
+"devseed.ficha.expenseAirportTaxi" = "Taxi luchthaven";
+"devseed.ficha.expenseLocalMeal" = "Visdiner";
+"devseed.ficha.expenseMuseum" = "Museumtickets";
+"devseed.ficha.expenseTransport" = "Vervoer";
+"devseed.ficha.expenseGroceries" = "Boodschappen";
+"devseed.ficha.expenseSouvenirs" = "Souvenirs";
+"devseed.ficha.expenseWeekendStay" = "Hotel in Porto";
+"devseed.ficha.expenseWeekendMeal" = "Wijnproeverij";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "Reis %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "45 uitgegeven aan een taxi naar het vliegveld en 120,50 aan boodschappen";
+"uitestDemo.chat.draftNoteTaxi" = "Taxi naar het vliegveld";
+"uitestDemo.chat.draftNoteGroceries" = "Boodschappen";
+"uitestDemo.chat.suggestionSplit" = "Hoe zijn mijn uitgaven aan Wonen en Persoonlijk verdeeld?";
+"uitestDemo.chat.suggestionMonth" = "Hoeveel heb ik deze maand uitgegeven aan restaurants en bezorging?";
+"uitestDemo.chat.suggestionBudget" = "Was mijn budget voor uit eten genoeg?";
+"uitestDemo.chat.pizzaNote" = "Pizza";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "Lunch 25 met de kaart";
+"uitestDemo.voice.lunchNote" = "Lunch";
+"uitestDemo.voice.twoTranscript" = "Taxi 12 en koffie 8 met de kaart";
+"uitestDemo.voice.taxiNote" = "Taxi";
+"uitestDemo.voice.coffeeNote" = "Koffie";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "Bistro De Blauwe Deur";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "Taxi";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "Pagina %ld";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "Aan de slag";
@@ -3416,7 +3445,6 @@
 "chat.unavailable" = "Yala AI is op dit moment niet beschikbaar. Probeer het over een paar minuten opnieuw.";
 "chat.retry" = "Opnieuw proberen";
 "chat.noVoiceDetected" = "Ik heb geen audio gedetecteerd. Probeer opnieuw.";
-"chat.contextMemory" = "Yala AI onthoudt %d berichten";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "Uitgave";
@@ -3439,7 +3467,6 @@
 "chat.draft.selectAccount" = "Selecteer rekening";
 "chat.draft.selectSubcategory" = "Selecteer subcategorie";
 "chat.draft.saveButton" = "Opslaan";
-"chat.draft.editButton" = "Bewerken";
 "chat.draft.failedSavingLine" = "Opslaan lukte niet.";
 "chat.draft.retryButton" = "Opnieuw proberen";
 "chat.draft.noAccountsBlocking" = "Maak vanuit je profiel een rekening aan voordat je kunt boeken.";
@@ -3452,7 +3479,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financiële assistent";
-"aiConsent.chatMessage" = "Om je vragen te beantwoorden stuurt deze functie een samenvatting van je financiële situatie naar OpenAI: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen.\n\nDe gegevens worden alleen gebruikt om het antwoord te genereren. OpenAI gebruikt ze niet om zijn modellen te trainen.";
+"aiConsent.chatMessage" = "Om je vragen te beantwoorden stuurt deze functie een samenvatting van je financiële situatie van de afgelopen 13 maanden naar OpenAI: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen.\n\nDe gegevens worden alleen gebruikt om het antwoord te genereren. OpenAI gebruikt ze niet om zijn modellen te trainen.";
 "aiConsent.inlineHintChat" = "Je financiële samenvatting wordt door OpenAI verwerkt om te antwoorden. Deze wordt niet permanent bewaard.";
 "aiConsent.inlineHintMultiple" = "Meerdere AI-functies gebruiken OpenAI om je gegevens te verwerken. Ze worden niet permanent bewaard.";
 
@@ -3514,7 +3541,6 @@
 "groups.bridge.errorTransactionUpdate" = "De wijziging is niet doorgevoerd in je persoonlijke registratie. We proberen het opnieuw.";
 "groups.bridge.errorDelete" = "Kon de persoonlijke registratie van de uitgave niet verwijderen.";
 "groups.bridge.errorNoAccounts" = "Je hebt nog geen rekeningen ingesteld. Maak er eerst een aan.";
-"groups.sync.errorAcceptShare" = "We konden niet aan de groep deelnemen. Probeer het opnieuw.";
 "groups.sync.errorMemberSetup" = "Je bent toegetreden, maar er was een probleem met je identiteit in de groep. Open de app opnieuw.";
 
 // Groups — Reconnect (GC-08)
@@ -3522,7 +3548,7 @@
 "groups.reconnect.subtitle" = "Je bent uitgenodigd voor een gedeelde groep";
 "groups.reconnect.fallbackGroupName" = "deze groep";
 "groups.reconnect.archived.title" = "%@ is gearchiveerd";
-"groups.reconnect.archived.body" = "De beheerder heeft de groep gearchiveerd en accepteert geen wijzigingen meer.";
+"groups.reconnect.archived.body" = "De beheerder heeft de groep gearchiveerd en accepteert geen nieuwe leden meer.";
 "groups.reconnect.archived.cta" = "Begrepen";
 "groups.reconnect.alreadyMember.title" = "Je bent al lid van %@";
 "groups.reconnect.alreadyMember.body" = "We brengen je naar de groep.";
@@ -4113,23 +4139,23 @@
 "groups.member.rejectConfirm" = "Het verzoek van %@ afwijzen? Diegene kan opnieuw toegang vragen met een andere link.";
 "groups.member.pendingRequestsSection" = "Openstaande verzoeken";
 "groups.invite.waitingApproval.title" = "Verzoek verstuurd";
-"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. We laten het je weten zodra het zover is.";
+"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. Ondertussen zie je de groep in je lijst, maar je kunt hem nog niet openen. Open Yala straks nog eens om te zien of het gelukt is.";
 "groups.invite.waitingApproval.banner" = "Wacht op goedkeuring van de beheerder";
 "groups.invite.rejected.title" = "Verzoek afgewezen";
 "groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";
 "groups.notifications.newPendingRequest" = "👋 %@ wil meedoen aan %@";
-"groups.notifications.newPendingRequestBody" = "Goedkeuren of afwijzen in Yala.";
+"groups.notifications.newPendingRequestBody" = "Je kunt goedkeuren of afwijzen in Yala.";
 "groups.errors.pendingApproval" = "Dat kan nog niet — de beheerder moet eerst je verzoek goedkeuren.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
-"welcome.chooser.title" = "Hoi! Hoe ben je bij Yala terechtgekomen?";
-"welcome.chooser.subtitle" = "Vertel het ons zodat we je ervaring kunnen aanpassen.";
-"welcome.chooser.optionNew.title" = "Ik ben nieuw";
+"welcome.chooser.title" = "Hoi! Wat wil je doen in Yala?";
+"welcome.chooser.subtitle" = "Kies je startpunt, daarna gaan we samen verder.";
+"welcome.chooser.optionNew.title" = "Dit is mijn eerste keer in Yala";
 "welcome.chooser.optionNew.body" = "Begin met mij vanaf nul. Ik help je stap voor stap alles in te stellen.";
 "welcome.chooser.optionExisting.title" = "Ik heb al een account";
-"welcome.chooser.optionExisting.body" = "Ik heb Yala opnieuw geïnstalleerd en wil mijn gegevens uit iCloud terugzetten.";
-"welcome.chooser.optionInvite.title" = "Ik ben uitgenodigd voor een groep";
-"welcome.chooser.optionInvite.body" = "Ik heb een uitnodigingslink en wil meedoen.";
+"welcome.chooser.optionExisting.body" = "Ik heb Yala eerder gebruikt en wil mijn gegevens terug, uit iCloud of uit mijn account.";
+"welcome.chooser.optionInvite.title" = "Ik kom voor een groep";
+"welcome.chooser.optionInvite.body" = "Ik wil kosten delen met vrienden: een groep maken of aan een groep meedoen.";
 
 "welcome.restore.searching" = "Je gegevens zoeken in iCloud…";
 "welcome.restore.searchingTip" = "Dit kan een paar seconden duren.";
@@ -4171,9 +4197,8 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "Jouw persoonlijke financiën,";
 "welcome.hero.titleAccent" = "moeiteloos.";
-"welcome.hero.subtitle" = "Jij legt vast. Yala doet de rest.";
 "welcome.hero.cta" = "Beginnen";
-"welcome.hero.trust" = "100% privé · Jouw info blijft bij jou";
+"welcome.hero.trust" = "Geen tracking of advertenties";
 
 "welcome.hero.cards.capture.title" = "Foto van bonnen";
 "welcome.hero.cards.capture.body" = "Richt op de bon. Yala leest 'm.";
@@ -4184,23 +4209,15 @@
 "welcome.hero.cards.budgets.title" = "Budgetten en doelen";
 "welcome.hero.cards.budgets.body" = "Stel grenzen. Houd ze aan.";
 "welcome.hero.cards.multiAndCurrencies.title" = "Rekeningen en valuta's";
-"welcome.hero.cards.multiAndCurrencies.body" = "Kaarten, contant, 48+ valuta's.";
+"welcome.hero.cards.multiAndCurrencies.body" = "Kaarten, contant, 50+ valuta's.";
 "welcome.hero.cards.import.title" = "Importeer je geschiedenis";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Klaar.";
 "welcome.hero.cards.icloud.title" = "Privé iCloud";
-"welcome.hero.cards.icloud.body" = "Jouw data, in jouw iCloud. Geen servers.";
+"welcome.hero.cards.icloud.body" = "Jouw data, in jouw iCloud.";
 "welcome.hero.cards.more.title" = "En nog veel meer";
 "welcome.hero.cards.more.body" = "Laten we het samen ontdekken.";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.detectedData.title" = "Welkom terug! We hebben je account gevonden";
-"welcome.detectedData.message" = "Je hebt gegevens in je iCloud. Op dit apparaat laden?";
-"welcome.detectedData.loadMyData" = "Mijn gegevens laden";
-"welcome.detectedData.startFresh" = "Opnieuw beginnen";
-"welcome.offerRestore.title" = "We hebben je account gevonden";
-"welcome.offerRestore.message" = "Je hebt gegevens in iCloud. Laden voordat je lid wordt van de groep?";
-"welcome.offerRestore.loadData" = "Mijn gegevens laden";
-"welcome.offerRestore.startFresh" = "Opnieuw beginnen";
 
 
 // MARK: FreshStart (segunda barrera)
@@ -4220,12 +4237,12 @@
 "yalaAI.onboarding.progressLabel" = "Stap %1$d van %2$d";
 "yalaAI.onboarding.step1.title" = "Maak kennis met Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Je rechterhand voor je financiën.";
-"yalaAI.onboarding.step1.demoScenario1User" = "€12 uitgegeven aan lunch.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Klaar! Ik heb je lunch van €12 vastgelegd.";
+"yalaAI.onboarding.step1.demoScenario1User" = "%@ uitgegeven aan lunch.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Klaar! Ik heb je lunch van %@ vastgelegd.";
 "yalaAI.onboarding.step1.demoScenario2User" = "Hoeveel aan koffie deze maand?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "Je zit op €35 aan koffie deze maand ☕ — 12% minder dan in april, maar €6 boven je gewone gemiddelde.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Je zit op %1$@ aan koffie deze maand ☕, 12%% minder dan in april, maar %2$@ boven je gewone gemiddelde.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Een tip?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Je bezorging is 20% gestegen vs vorige maand. Terug naar je normale ritme: €60 besparing per maand — bijna €720 per jaar.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Je bezorging is 20%% gestegen vs vorige maand. Terug naar je normale ritme: %1$@ besparing per maand, dus %2$@ per jaar.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Voorbeeldchat met Yala AI die een uitgave vastlegt";
 "yalaAI.onboarding.step2.title" = "Dit kun je doen";
@@ -4251,11 +4268,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Helpt je elke maand meer opzij te zetten.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Waarschuwt bij elke afwijking, zodat je niets ontgaat.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Je inkomsten dekken de uitgaven van deze maand. Goed ritme.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "10% minder restaurants: €30 besparing per maand.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "10%% minder restaurants: %@ besparing per maand.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Let op: je gaat sneller dan vorige maand met bezorging.";
 "yalaAI.onboarding.step5.title" = "Helemaal klaar!";
 "yalaAI.onboarding.step5.subtitle" = "Vertel Yala wanneer je maar wilt wat je nodig hebt.";
-"yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van €5 vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van %@ vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
 "yalaAI.onboarding.step5.cta" = "Beginnen met chatten";
 
 // MARK: - Stats Records polish
@@ -4313,6 +4330,19 @@
 "stats.trends.insight.stableExpense" = "Je uitgaven blijven stabiel.";
 "stats.trends.insight.stableIncome" = "Je inkomen blijft stabiel.";
 "stats.trends.insight.stableBalance" = "Je saldo blijft stabiel.";
+"stats.trends.insight.sustainedUpExpense %@" = "Je uitgaven stijgen al %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "Je uitgaven dalen al %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Je inkomen groeit al %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Je inkomen daalt al %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Je saldo groeit al %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Je saldo daalt al %@.";
+"stats.trends.insight.durationWeeks %d" = "%d weken";
+"stats.trends.insight.durationMonths %d" = "%d maanden";
+"stats.trends.insight.durationYears %d" = "%d jaar";
+"stats.trends.insight.cashFlowSurplus %d" = "Je inkomen dekte %d%% van je uitgaven: je sloot positief af.";
+"stats.trends.insight.cashFlowDeficit %d" = "Je inkomen dekte %d%% van je uitgaven: je gaf meer uit dan er binnenkwam.";
+"stats.trends.insight.cashFlowNoIncome" = "Deze periode heb je uitgaven geregistreerd, maar geen inkomen.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Je duurste dag is %@: je geeft gemiddeld %@ uit.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Periode-vergelijking";
@@ -4353,9 +4383,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "Wanneer je een uitgave betaalt, leggen we die automatisch ook vast op je persoonlijke rekening — zodat je saldo altijd de werkelijkheid weerspiegelt.";
 "groups.onboarding.step3.title" = "Jouw privacy staat voorop";
 "groups.onboarding.step3.subtitle" = "Je deelt alleen het noodzakelijke, niets meer.";
-"groups.onboarding.step3.point1" = "Elk lid heeft een iCloud-account nodig.";
+"groups.onboarding.step3.point1" = "Elk lid heeft een eigen Yala-account nodig.";
 "groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
 "groups.onboarding.step3.cta" = "Naar groepen";
+"groups.onboarding.step3.signInCTA" = "Aanmelden";
 
 "groups.onboarding.step3.bridgeAwareness" = "Je kunt dit gedrag wijzigen in Groepsinstellingen.";
 
@@ -4420,7 +4451,6 @@
 "settings.resetDataDescriptionGroupsOnly" = "Deze actie zet je Yala-profiel en voorkeuren terug naar de begintoestand. Je groepen worden niet verwijderd: beheer ze via het tabblad Groepen.";
 
 /* Delete-data confirmation warning — groups-only mode */
-"settings.deleteDataWarningGroupsOnly" = "Deze actie is onomkeerbaar. Je Yala-profiel en voorkeuren worden teruggezet.";
 
 /* Apple Pay automation: failure notification title */
 "shortcut.notification.errorTitle" = "Betaling niet geboekt";
@@ -4442,6 +4472,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Afrekening van groep %@. Wijs alleen een rekening toe; het bedrag en de datum worden door de groep beheerd.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "Deze betaling staat al in je rekeningen. Je kunt dit concept verwijderen.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Rekening en subcategorie toewijzen";
@@ -4452,11 +4483,19 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Deze gedeelde uitgave bestaat niet meer in de groep.";
 "whatsNew.v20.groups.title" = "Groepen (Bèta)";
-"whatsNew.v20.groups.description" = "Maak groepen om uitgaven te delen en Yala rekent uit wie wie wat verschuldigd is. En geen zorgen: alles gaat via je privé-iCloud, nooit via onze servers.";
+"whatsNew.v20.groups.description" = "Maak groepen om uitgaven te delen en Yala rekent uit wie wie wat verschuldigd is.";
 "whatsNew.v20.ai.title" = "Maak kennis met Yala AI";
 "whatsNew.v20.ai.description" = "Je financiële assistent met kunstmatige intelligentie. Stel vragen over je geld, laat hem je uitgaven vastleggen en krijg heldere inzichten over je maand. Als een vriend die verstand heeft van geld, op slechts één bericht afstand.";
 "whatsNew.v20.redesign.title" = "Een compleet nieuw uiterlijk";
 "whatsNew.v20.redesign.description" = "We hebben Yala van top tot teen opnieuw ontworpen: nieuwe widgets, duidelijkere overzichten in elke sectie en de nieuwe Liquid Glass-afwerking van iOS in de hele app. Daarnaast hebben we veel bugs opgelost zodat alles soepeler aanvoelt.";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "Groepen";
+"whatsNew.v21.groups.description" = "Deel uitgaven met wie je maar wilt. Nodig uit met een link, houd samen bij en Yala rekent uit wie wie wat verschuldigd is. Zonder rekenwerk en zonder ongemak.";
+"whatsNew.v21.logging.title" = "Bijhouden was nog nooit zo makkelijk";
+"whatsNew.v21.logging.description" = "Praat ertegen, maak een foto of typ zoals aan een vriend. Yala begrijpt wat je hebt uitgegeven en legt het voor je vast, zodat je je geldzaken in een paar seconden bijhoudt.";
+"whatsNew.v21.data.title" = "Jouw gegevens, jouw regels";
+"whatsNew.v21.data.description" = "Jij kiest waar je gegevens staan: in je privé-iCloud of in de Yala-cloud, zodat je ze op al je apparaten hebt. Plus een vernieuwd Start-scherm en Yala op volledig scherm op je iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4500,24 +4539,6 @@
 "groups.errors.inviteFailed" = "Kan de uitnodigingslink niet aanmaken. Controleer je verbinding en probeer het opnieuw.";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "Kan de actie niet voltooien. Probeer het opnieuw.";
-/* Beta gate (Groups): screen/alert title */
-"groups.beta.gate.title" = "Bètafunctie";
-
-/* Beta gate (Groups): explanation message */
-"groups.beta.gate.message" = "Deze functie is in bèta en alleen beschikbaar voor bepaalde gebruikers";
-
-/* Beta gate (Groups): button to enter the beta code */
-"groups.beta.gate.haveCode" = "Ik heb een bètacode";
-
-/* Beta gate (Groups): code entry alert title */
-"groups.beta.gate.codePrompt" = "Voer je bètacode in";
-
-/* Beta gate (Groups): code field placeholder */
-"groups.beta.gate.placeholder" = "Code";
-
-/* Beta gate (Groups): wrong code error */
-"groups.beta.gate.wrongCode" = "Onjuiste code";
-
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "Iedereen";
 
@@ -4624,3 +4645,2116 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "Voer het bedrag van de uitgave in voordat je het onder de leden verdeelt.";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "Geplande groepsuitgave";
+"scheduled.groupExpense.toggle" = "Is het een gedeelde uitgave?";
+"scheduled.groupExpense.toggleHelper" = "We leggen het vast in je groep en tellen alleen jouw deel.";
+"scheduled.groupExpense.sectionTitle" = "Gedeelde uitgave";
+"scheduled.groupExpense.groupRow" = "Groep";
+"scheduled.groupExpense.currencyRow" = "Valuta";
+"scheduled.groupExpense.divisionRow" = "Verdeling";
+"scheduled.groupExpense.splitSummary" = "Tussen %d · %@ · Jouw deel %@";
+"scheduled.groupExpense.totalHint" = "Totaal van de rekening";
+"scheduled.groupExpense.sharedBadge" = "Gedeeld";
+
+
+/* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
+"inbox.convertToShared" = "Omzetten naar gedeelde uitgave";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Beveiligen met Face ID";
+"faceIDGuide.title" = "Beveilig Yala met Face ID";
+"faceIDGuide.subtitle" = "Gebruik de iOS-vergrendeling zodat alleen jij de app opent";
+"faceIDGuide.step1Title" = "Houd het Yala-icoon ingedrukt";
+"faceIDGuide.step1Detail" = "Op je beginscherm";
+"faceIDGuide.step2Title" = "Tik op Face ID vereisen";
+"faceIDGuide.step2Detail" = "In het menu dat verschijnt";
+"faceIDGuide.step3Title" = "Bevestig met je gezicht";
+"faceIDGuide.step3Detail" = "Klaar, je app is beveiligd";
+
+/* Success screen title after creating a group expense */
+"groups.expense.success.titleCreated" = "Uitgave toegevoegd!";
+
+/* Success screen title after editing a group expense */
+"groups.expense.success.titleUpdated" = "Uitgave bijgewerkt!";
+
+/* Detail row label: the group the expense belongs to */
+"groups.expense.success.group" = "Groep";
+
+/* Detail row label: how the expense was split */
+"groups.expense.success.splitLabel" = "Verdeling";
+
+/* Section header listing participants and their share */
+"groups.expense.success.participants" = "Deelnemers";
+
+/* Button: create another group expense */
+"groups.expense.success.addAnother" = "Nog een toevoegen";
+
+/* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
+"storage.title" = "Waar je gegevens staan";
+"storage.waitingForLeader" = "Een ander apparaat van jou activeert de cloud voor dit account. Wacht tot het klaar is.";
+"storage.status.icloudTitle" = "Privé-iCloud";
+"storage.status.icloudBody" = "Je gegevens blijven op je apparaat en synchroniseren via je privé-iCloud. Niemand anders kan ze lezen — ook wij niet.";
+"storage.status.cloudTitle" = "Je cloud-account";
+"storage.status.cloudBody" = "Je gegevens worden opgeslagen in je Yala-account en gesynchroniseerd op al je apparaten.";
+"storage.migrate.title" = "Overstappen naar de cloud";
+"storage.migrate.body" = "Maak een account met Apple of Google en gebruik je gegevens op elk apparaat, ook zonder iCloud.";
+"storage.migrate.button" = "Cloud inschakelen";
+"storage.migrate.previewButton" = "Zien wat er zou overgaan";
+"storage.migrate.previewResult" = "%1$d transacties · %2$d categorieën · %3$d rekeningen · %4$d budgetten";
+"storage.adopt.title" = "Cloud inschakelen op dit apparaat";
+"storage.adopt.body" = "Dit account heeft je gegevens al in de cloud. Laten we het inschakelen op dit apparaat.";
+"storage.adopt.button" = "Inschakelen op dit apparaat";
+"storage.revert.title" = "Terug naar iCloud";
+"storage.revert.body" = "Ga terug naar de privémodus. Je gegevens staan dan op je apparaat en in je iCloud, zonder iets te verliezen.";
+"storage.revert.button" = "Terug naar iCloud";
+"storage.revert.ineligible" = "Je kunt nu niet terug naar iCloud vanaf dit apparaat.";
+"storage.sync.title" = "Synchronisatie";
+"storage.sync.upToDate" = "Alles gesynchroniseerd";
+"storage.sync.needsSignIn" = "Meld je aan om %d wijzigingen te uploaden";
+"storage.sync.signInButton" = "Aanmelden";
+"storage.progress.migrating" = "Cloud wordt ingeschakeld…";
+"storage.progress.reverting" = "Terug naar iCloud…";
+"storage.progress.resume" = "Hervatten";
+"storage.progress.retry" = "Opnieuw proberen";
+"storage.relaunch.title" = "Bijna klaar — herstart Yala";
+"storage.relaunch.body" = "Sluit Yala volledig af (veeg hem weg in de app-kiezer) en open hem opnieuw om te voltooien.";
+"storage.failed.migration" = "We konden de cloud niet inschakelen. Je gegevens staan veilig op je apparaat — je kunt het opnieuw proberen.";
+"storage.failed.reverse" = "We konden de terugkeer naar iCloud niet voltooien. Je gegevens zijn veilig — je kunt het opnieuw proberen.";
+"storage.confirm.migrateTitle" = "Cloud inschakelen?";
+"storage.confirm.migrateBody" = "Je gegevens gaan naar je Yala-account. Het is omkeerbaar, maar het is een grote verandering.";
+"storage.confirm.migrateContinue" = "Doorgaan";
+"storage.confirm.migrate2Title" = "Weet je het zeker?";
+"storage.confirm.migrate2Body" = "De cloud wordt ingeschakeld voor dit apparaat.";
+"storage.confirm.migrate2Confirm" = "Ja, cloud inschakelen";
+"storage.confirm.revertTitle" = "Terug naar iCloud?";
+"storage.confirm.revertBody" = "Je gegevens komen op je apparaat en in je iCloud te staan. Je verliest niets.";
+"storage.confirm.revertContinue" = "Doorgaan";
+"storage.confirm.revert2Title" = "Weet je het zeker?";
+"storage.confirm.revert2Body" = "De cloud wordt uitgeschakeld voor dit apparaat.";
+"storage.confirm.revert2Confirm" = "Ja, terug naar iCloud";
+"storage.errors.title" = "Er ging iets mis";
+"storage.errors.generic" = "Er ging iets niet goed. Probeer het opnieuw.";
+"storage.errors.adoptOtherAccount" = "Dit is niet het account dat je op dit apparaat aan het inschakelen was. Probeer het opnieuw met hetzelfde account.";
+"storage.errors.adoptICloudNotSettled" = "We konden de cloud niet inschakelen: iCloud zet nog gegevens over naar dit apparaat. Probeer het over een paar minuten opnieuw.";
+"storage.errors.signIn" = "We konden je niet aanmelden. Probeer het opnieuw.";
+"storage.consent.title" = "Je gegevens in de Yala-cloud";
+"storage.consent.pointServers" = "Je gegevens worden opgeslagen op de servers van Yala en ons team kan ze inzien om je ondersteuning en slimme functies te bieden. We gebruiken geen eind-tot-eindversleuteling.";
+"storage.consent.pointPhotos" = "De foto’s van je bonnetjes blijven alleen op dit apparaat: ze worden niet in de cloud bewaard en niet op andere apparaten getoond. Wil je ze bewaren, sla ze dan op voordat je van telefoon wisselt.";
+"storage.consent.pointAccess" = "In ruil daarvoor gebruik je je gegevens op elk apparaat met alleen je Apple- of Google-login, zonder afhankelijk te zijn van iCloud. Zolang je die login behoudt: er is geen herstel via e-mail of Yala-wachtwoord, dus als je de toegang tot dat account verliest, exporteer dan eerst je gegevens (Instellingen → Gegevens exporteren).";
+"storage.consent.footer" = "Je kunt op elk moment terug naar de privémodus, zonder iets te verliezen.";
+"storage.consent.accept" = "Ik begrijp het en wil de cloud inschakelen";
+"storage.consent.privacyLink" = "Bekijk het privacybeleid";
+
+/* Invite onboarding: spinner title while zone/member sync */
+"groups.invite.joining.title" = "Verbinden met je groep…";
+
+/* Invite onboarding: spinner body */
+"groups.invite.joining.body" = "We maken alles klaar zodat je uitgaven kunt delen. Dit kan even duren.";
+
+/* Invite onboarding: soft-timeout state title */
+"groups.invite.slow.title" = "Dit duurt iets langer dan normaal";
+
+/* Invite onboarding: soft-timeout body, honest copy */
+"groups.invite.slow.body" = "We verbinden je groep op de achtergrond. Je kunt Yala intussen gewoon gebruiken: de groep verschijnt in het tabblad Groepen zodra hij klaar is.";
+
+/* Invite onboarding: exit CTA from soft-timeout state */
+"groups.invite.slow.continueButton" = "Door naar de app";
+
+/* Invite onboarding: join failure title */
+"groups.invite.error.title" = "We konden je niet aan de groep toevoegen";
+
+/* Invite onboarding: join failure body */
+"groups.invite.error.body" = "Controleer je internetverbinding en probeer het opnieuw.";
+
+/* Invite onboarding: secondary exit from failure state */
+"groups.invite.error.exitButton" = "Nu afsluiten";
+
+/* Groups tab banner while join intent syncs in background */
+"groups.invite.syncBanner" = "Verbinden met je groep…";
+
+/* Groups tab banner when join intent TTL expired */
+"groups.invite.expired.banner" = "We konden geen verbinding maken met de groep. Vraag de beheerder om een nieuwe link.";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "Uitloggen";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "Uitloggen op dit apparaat?";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "Uitloggen";
+
+/* Sign out dialog message when in cloud storage mode */
+
+/* Sign out dialog message when in private iCloud mode */
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "Uitloggen is niet gelukt";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Controleer je verbinding en probeer het opnieuw.";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.title" = "Welkom terug!";
+"welcome.existing.subtitle" = "Log in met je Yala-account of haal je gegevens terug uit iCloud.";
+"welcome.existing.firstTimeQuestion" = "Voor het eerst in Yala?";
+"welcome.existing.firstTimeAction" = "Begin hier";
+"welcome.form.or" = "of";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "Herstellen vanuit iCloud";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "Je gegevens die met iCloud zijn bewaard komen terug op dit apparaat.";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "Inloggen met Apple";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "Je Yala-account in de cloud, vanaf elk apparaat.";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "Log in op je account";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "Gebruik dezelfde Apple ID waarmee je je cloudaccount hebt gemaakt.";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "Je account wordt gecontroleerd…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "Verbinden met je account…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "Dit kan een paar minuten duren. Houd Yala open.";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "We konden geen account vinden";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "Er is nog geen Yala-cloudaccount voor de inlog die je gebruikte.";
+"welcome.cloud.notFoundCta" = "Account aanmaken";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "Dit apparaat bevat gegevens van een ander account";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "Om die gegevens te beschermen kunnen we hier geen ander account koppelen. De eigenaar kan altijd weer inloggen.";
+
+"welcome.cloud.blockedRestoreHint" = "En als ze van jou zijn? Als je net een iCloud-herstel bent gestart, wacht dan tot het klaar is en meld je opnieuw aan.";
+
+"welcome.cloud.blockedBack" = "Terug";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "Er ging iets mis";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "We konden je account niet verifiëren. Controleer je verbinding en probeer het opnieuw.";
+
+/* Retry button */
+"welcome.cloud.retry" = "Opnieuw proberen";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "Je account wordt op een ander apparaat ingesteld";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "Je kunt hier wachten of doorgaan naar de app; we blijven het proberen.";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "Doorgaan naar de app";
+
+/* Chip shown while the secondary (guest) session pulls its account data after relaunch */
+"welcome.cloud.hydrationBanner" = "Je gegevens worden gedownload…";
+"welcome.cloud.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in de cloud hebt. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account met ‘Ik heb al een account’.";
+"welcome.cloud.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je gaat terug naar het begin. Je kunt altijd opnieuw inloggen op je account met ‘Ik heb al een account’.";
+
+/* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
+"groups.icloud.gate.title" = "Groepen heeft iCloud nodig";
+
+/* Body of the Groups-needs-iCloud gate; [tu nombre] refers to the user's name row at the top of iOS Settings */
+"groups.icloud.gate.message" = "Je groepen worden gedeeld en gesynchroniseerd met je iCloud-account. Log in via Instellingen → [je naam] → iCloud en kom hier terug.";
+
+/* CTA of the Groups-needs-iCloud gate; opens the app's Settings page (cannot deep-link to iCloud directly) */
+"groups.icloud.gate.openSettings" = "Open Instellingen";
+
+/* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
+"storage.relaunch.bodyAutoExit" = "Ga naar het beginscherm en open Yala opnieuw — dan is alles klaar.";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "Groepen in de cloud";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "Groepen zijn van nature gedeeld: ze leven in de cloud van Yala zodat iedereen dezelfde uitgaven ziet, altijd actueel.";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "Met de groep wordt alleen het minimale gedeeld: je alias en de uitgaven van de groep. Andere leden zien je e-mail niet.";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "Je persoonlijke financiën verhuizen niet: ze blijven waar jij hebt gekozen, privé zoals altijd.";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "De groepsgegevens reizen en worden beschermd opgeslagen, en je kunt een groep verlaten wanneer je wilt.";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "Accepteren en doorgaan";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "Verbind je account";
+
+/* G4 sign-in body */
+"groups.signin.body" = "Om lid te worden van de groep heb je een Yala-account nodig. Log in met Apple of Google en ga verder met je uitnodiging.";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "Dit wordt jouw Yala-account: als je ooit je persoonlijke gegevens naar de cloud verplaatst, gebruik je ditzelfde account.";
+
+/* G4 sign-in error */
+"groups.signin.error" = "Hmm, we konden je account niet verbinden. Probeer het opnieuw.";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "Verwijderde gebruiker";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "Mijn account verwijderen";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Je Yala-account verwijderen?";
+/* G5-D1b: primer diálogo, modo nube */
+/* G5-D1b: primer diálogo, modo solo-grupos */
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "Doorgaan";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "Dit is definitief";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "Er is geen weg terug: je account en je gegevens worden volledig verwijderd.";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "Mijn account verwijderen";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "We konden je account niet verwijderen";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "Er ging iets mis en het verwijderen is niet voltooid. Je gegevens zijn nog intact. Probeer het zo opnieuw.";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "Opnieuw proberen";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "Mijn groepen opnemen";
+"export.includeGroups.description" = "Voegt een apart bestand toe met de uitgaven, betalingen en jouw saldo van elke groep.";
+"export.groups.header.group" = "Groep";
+"export.groups.header.type" = "Type";
+"export.groups.header.date" = "Datum";
+"export.groups.header.description" = "Omschrijving";
+"export.groups.header.from" = "Van";
+"export.groups.header.to" = "Naar";
+"export.groups.header.paidBy" = "Betaald door";
+"export.groups.header.amount" = "Bedrag";
+"export.groups.header.myShare" = "Mijn aandeel";
+"export.groups.header.currency" = "Valuta";
+"export.groups.type.expense" = "Uitgave";
+"export.groups.type.settlement" = "Betaling";
+"export.groups.type.balance" = "Mijn saldo";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "Je persoonlijke bestand is geëxporteerd, maar we konden je groepen deze keer niet meenemen. Probeer het later opnieuw.";
+
+/* G6-3: freeze error surfaced when writing to a migrated group */
+"groups.errors.movedToBackend" = "Deze groep is verplaatst naar de Yala-cloud. Meld je opnieuw aan om hem te blijven gebruiken.";
+
+/* G6-3: card chip for a migrated frozen group */
+"groups.card.movedChip" = "Verplaatst";
+
+/* G6-3: detail banner title for a migrated group */
+"groups.migrated.bannerTitle" = "Deze groep is verplaatst naar de Yala-cloud";
+
+/* G6-3: detail banner body for a migrated group */
+"groups.migrated.bannerBody" = "Meld je opnieuw aan om uitgaven te blijven bekijken en bewerken.";
+
+/* G6-3: re-join CTA button on a migrated group */
+"groups.migrated.rejoinCTA" = "Opnieuw aanmelden";
+
+/* G6-3: settings row to delete the frozen CloudKit copy */
+
+/* G6-3: hint under the delete-copy row */
+
+
+
+
+/* G6-3: progress banner while the owner's groups migrate to backend */
+"groups.migrated.migratingBanner" = "Je groepen worden verplaatst naar de Yala-cloud…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Doorgaan met Google";
+"auth.googleButtonSignUp" = "Registreren met Google";
+"auth.googleButtonSignIn" = "Inloggen met Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Inloggen met Google";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Je Yala-account in de cloud, als je het met je Google-account hebt gemaakt.";
+"welcome.existing.usedOnThisDeviceNote" = "Die je op deze iPhone hebt gebruikt";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Gebruik hetzelfde Google-account waarmee je je cloudaccount hebt gemaakt.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Log in met dezelfde methode als waarmee je je account hebt gemaakt — je Yala-account is eraan gekoppeld.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "Dat account gebruikt een andere methode";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "Het Yala-account van deze Apple ID is gemaakt met %@.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "Het Yala-account van deze Apple ID is met een andere inlogmethode gemaakt.";
+
+/* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
+"welcome.cloud.beaconOrigin" = "Met deze Apple ID is al een Yala-account gemaakt met %@.";
+
+/* Paso 6: same origin line when the beacon does not know the sign-in method */
+"welcome.cloud.beaconOriginGeneric" = "Met deze Apple ID is al een Yala-account gemaakt.";
+
+/* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
+"welcome.cloud.createAnother" = "Nog een account aanmaken";
+
+/* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
+"storage.progress.waitingImport" = "Wachten tot iCloud klaar is met synchroniseren…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "Kies hoe je wilt inloggen";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "Om je gegevens in de cloud te bewaren heb je een Yala-account nodig. Log in met Apple of Google.";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "Je Yala-account is gekoppeld aan de gekozen methode — gebruik die telkens wanneer je opnieuw inlogt.";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
+"groups.empty.signedOut.title" = "Je groepen staan in je account";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: mensaje */
+"groups.empty.signedOut.message" = "Meld je aan om de groepen te zien die je deelt.";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
+"groups.empty.signedOut.action" = "Aanmelden";
+
+/* H-2026-07-18-6 — caption while the sign-out saves pending changes */
+"settings.signOutWorking" = "Je openstaande wijzigingen worden opgeslagen…";
+
+/* H-2026-07-18-6 — transient sign-out block alert title */
+"settings.signOutPendingTitle" = "Nog even geduld";
+
+/* H-2026-07-18-6 — transient sign-out block alert message */
+"settings.signOutPendingMessage" = "We zijn nog bezig met het opslaan van enkele wijzigingen. Wacht een paar seconden en probeer het opnieuw.";
+
+/* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
+"storage.relaunch.bodyAutoExitGroupsOnly" = "Je bent afgemeld bij groepen. Ga naar het beginscherm en open Yala opnieuw; je persoonlijke gegevens blijven op dit apparaat.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "Zeker weten? Dit is definitief.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Slaat een kopie op als CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Wist je gegevens. Je account en je groepen blijven behouden.";
+
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "Wil je alleen je gegevens wissen en je account houden? Gebruik ‘Mijn gegevens wissen’.";
+
+
+
+
+
+/* D6: confirmation dialog message for 'Salir de Yala' */
+
+/* D6: header title of the group-only export screen */
+"export.groupsOnlyTitle" = "Exporteer je groepen";
+
+/* D6: description under the group-only export header */
+"export.groupsOnlyDescription" = "Slaat een CSV-bestand op met de uitgaven, betalingen en je saldo voor elke groep.";
+
+/* D6: alert title when there are no active groups to export */
+"export.groupsOnlyEmptyTitle" = "Geen groepen om te exporteren";
+
+/* D6: alert message when there are no active groups to export */
+"export.groupsOnlyEmpty" = "Er zijn op dit moment geen actieve groepen om te exporteren.";
+
+/* D6: a11y hint when Export row is disabled in group-only mode */
+"accessibility.noGroupsToExport" = "Geen groepen om te exporteren";
+
+
+
+
+/* D2 (3.3.3): mensaje del dialogo de 'Salir de Yala' en el split solo-grupos backend */
+
+/* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
+"groups.empty.signedOut.reentryBanner" = "Je bent uitgelogd bij groepen. Meld je aan wanneer je ze weer wilt zien.";
+
+/* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
+"settings.deleteAccountDebtWarning" = "Je hebt openstaande saldi in je groepen. Voor de andere leden blijven die staan als schuld van “Verwijderde gebruiker”. Als je wilt, kun je ze eerst vereffenen via het tabblad Groepen.";
+
+/* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
+"settings.deleteAccountViewGroups" = "Mijn groepen bekijken";
+
+/* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
+"settings.deleteAccountFrozenICloudNote" = "Je oude iCloud-kopie (van vóór de cloud) blijft onaangeroerd: als je Yala opnieuw opent, zie je die als een nieuwe installatie.";
+
+/* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
+"settings.deleteAccountLegacyFootprintNote" = "In oude groepen (iCloud) kan je naam zichtbaar blijven voor hun leden.";
+
+/* D4 hoja de alcance: etiqueta fila dispositivo */
+"settings.scopeDeviceLabel" = "Op dit apparaat";
+
+/* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
+"settings.scopeICloudLabel" = "In iCloud";
+
+/* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
+"settings.scopeCloudAccountLabel" = "In je Yala-account";
+
+/* D4 hoja de alcance: etiqueta fila grupos */
+"settings.scopeGroupsLabel" = "In je groepen";
+
+/* D4: detalle fila cuando algo no se ve afectado */
+"settings.scopeUntouchedShort" = "Blijven onaangeroerd";
+
+/* D4: fila grupos al cerrar sesión de grupos */
+"settings.scopeForgetGroups" = "Dit apparaat vergeet je groepen (ze blijven in je account)";
+
+/* D4: fila cuando lo personal en iCloud no se toca */
+"settings.scopePersonalInICloud" = "Je persoonlijke gegevens blijven in iCloud";
+
+/* D4 Vaciar: fila dispositivo */
+"settings.wipeScopeDevice" = "Je rekeningen, boekingen en budgetten worden verwijderd";
+
+/* D4 Vaciar (solo grupos 5a): fila dispositivo */
+"settings.wipeScopeDeviceGroupsOnly" = "Je profiel en voorkeuren worden teruggezet";
+
+
+/* D4 Vaciar: fila cuenta de Yala (modo nube) */
+"settings.wipeScopeCloudAccount" = "Worden ook uit je account verwijderd; je andere apparaten raken ze kwijt bij het synchroniseren";
+
+/* D4 Vaciar: fila grupos */
+"settings.wipeScopeGroups" = "Blijven onaangeroerd — alles blijft hetzelfde";
+
+/* D4 Vaciar: nota de conservación */
+"settings.wipeScopeConservation" = "Je Pro-abonnement verandert niet.";
+
+/* D4 Vaciar (modo nube): residual multi-dispositivo (D9) */
+"settings.wipeScopeMultiDeviceResidual" = "Een apparaat zonder verbinding kan bij het synchroniseren recente wijzigingen terugbrengen.";
+
+/* D4 Eliminar cuenta (nube): fila dispositivo */
+"settings.deleteAccountScopeDeviceCloud" = "Je gegevens op dit apparaat worden verwijderd";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Je persoonlijke gegevens op dit apparaat blijven onaangeroerd";
+
+/* D4 Eliminar cuenta (nube): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudCloud" = "Je account en al je gegevens worden voorgoed verwijderd";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudGroupsOnly" = "Je account wordt verwijderd en je verlaat je groepen";
+
+/* D4 Eliminar cuenta: fila grupos */
+"settings.deleteAccountScopeGroups" = "Je blijft verschijnen als “Verwijderde gebruiker”";
+
+/* D4 Cerrar sesión (privado): fila dispositivo */
+"settings.signOutScopeDevicePrivate" = "Worden van dit apparaat verwijderd; eerst uploaden we ze nog naar iCloud";
+
+/* D4 Cerrar sesión (privado): fila iCloud */
+"settings.signOutScopeCloudPrivate" = "Je gegevens blijven in iCloud";
+
+/* D4 Cerrar sesión (nube): fila dispositivo */
+"settings.signOutScopeDeviceCloud" = "Je keert terug naar het startscherm alsof het net geïnstalleerd is";
+
+/* D4 Cerrar sesión (nube): fila cuenta de Yala */
+"settings.signOutScopeCloudCloud" = "Je gegevens blijven veilig; we uploaden eerst de openstaande wijzigingen";
+
+
+
+
+
+
+/* D4 Cerrar sesión (privado): nota de conservación */
+"settings.signOutScopeConservationPrivate" = "Kies ‘Herstellen vanuit iCloud’ als je Yala weer opent om ze terug te halen.";
+
+/* D4 Cerrar sesión (nube): nota de conservación */
+"settings.signOutScopeConservationCloud" = "Je kunt altijd weer inloggen en alles terughalen.";
+
+/* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
+"settings.signOutScopeConservationGroups" = "Meld je opnieuw aan wanneer je wilt om je groepen te zien.";
+"settings.signOutScopeDeviceNoCopy" = "Worden definitief van dit apparaat verwijderd";
+"settings.signOutScopeCloudNoCopy" = "iCloud staat op dit apparaat niet aan: er is nergens een kopie";
+"settings.signOutNoCopyWarning" = "Als je uitlogt, ben je deze gegevens voorgoed kwijt.";
+"settings.signOutNoCopyConfirmTitle" = "Je gegevens voorgoed verwijderen?";
+"settings.signOutNoCopyConfirmMessage" = "Er is geen kopie in iCloud of ergens anders. Dit kan niet ongedaan worden gemaakt.";
+"settings.signOutNoCopyConfirmAction" = "Uitloggen en verwijderen";
+"settings.signOutScopeConservationPrivateWithGroups" = "Om terug te komen, kies je ‘Herstellen vanuit iCloud’ en log je met je account weer in bij Groepen.";
+"settings.signOutExportPendingTitle" = "Nog niet alles staat in iCloud";
+"settings.signOutExportPendingMessage" = "Wijzigingen op dit apparaat die iCloud nog niet hebben bereikt: %d. Als je nu uitlogt, gaan ze verloren.";
+"settings.signOutExportPendingMessageUnknown" = "We konden niet bevestigen dat je laatste wijzigingen iCloud hebben bereikt. Als je nu uitlogt, kunnen ze verloren gaan.";
+"settings.signOutExportDiscardButton" = "Toch uitloggen";
+
+
+
+
+
+
+/* Vaciar v2: botón para exportar los datos antes de vaciarlos (red de seguridad) */
+"settings.wipeExportBeforeButton" = "Eerst exporteren";
+
+/* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
+"settings.wipeExportBeforeCloudCaption" = "In de cloudmodus kan dit je enige kopie zijn";
+
+/* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
+"settings.wipeScopeGroupsDebt" = "Je groepen blijven behouden, maar je hebt openstaande saldi. Je kunt ze vereffenen via het tabblad Groepen.";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "Ook mijn groepen verlaten";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "Mijn groepen verlaten";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "Je groepen worden verlaten…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "Je hebt je groepen verlaten.";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "Je hebt sommige groepen verlaten.";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "Verlaten";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "Overgedragen";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "Jouw beslissing nodig";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "Deze groepen hebben je aandacht nodig: ze kunnen niet automatisch worden verlaten.";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "Je bent de beheerder en er zijn andere leden.";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "Je hebt openstaande saldi.";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "Kan niet worden voltooid. Probeer het opnieuw.";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "Klaar";
+
+
+
+
+
+
+
+
+/* Fila que abre la pantalla Tu cuenta de Yala (§3.3.5) */
+"settings.yalaAccountRowTitle" = "Je Yala-account";
+
+/* Subtítulo de la fila Tu cuenta de Yala */
+"settings.yalaAccountRowSubtitle" = "Je aanmeldmethode en accountopties";
+
+/* Título de la pantalla Tu cuenta de Yala */
+"settings.yalaAccountTitle" = "Je Yala-account";
+
+/* Método de entrada: Apple */
+"settings.yalaAccountMethodApple" = "Je bent aangemeld met Apple.";
+
+/* Método de entrada: Google */
+"settings.yalaAccountMethodGoogle" = "Je bent aangemeld met Google.";
+
+/* Método de entrada genérico (sin proveedor conocido) */
+"settings.yalaAccountMethodUnknown" = "Je hebt een Yala-account.";
+
+/* Nota de vínculo Apple/Google (H4) */
+"settings.yalaAccountLinkingNote" = "Als je hetzelfde e-mailadres gebruikt, openen Apple en Google hetzelfde account.";
+
+/* Título de la sección donde viven los datos */
+"settings.yalaAccountDataLocationTitle" = "Waar je gegevens staan";
+
+/* Datos en modo nube */
+"settings.yalaAccountDataLocationCloud" = "In je Yala-account, in de cloud.";
+
+/* Datos en solo-grupos (5b) */
+"settings.yalaAccountDataLocationGroupsOnly" = "Op dit apparaat en in je persoonlijke iCloud. Je account gebruik je alleen voor Groepen.";
+"settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "Je account bewaart alleen je groepen; op dit apparaat staan geen persoonlijke gegevens.";
+
+/* Alcance del desenlace Cerrar sesión */
+"settings.yalaAccountSignOutScope" = "Je account blijft bestaan; je komt terug wanneer je wilt.";
+
+/* Desenlace Volver a iCloud (la Reversa) */
+"settings.yalaAccountReturnICloud" = "Terug naar iCloud";
+
+/* Alcance del desenlace Volver a iCloud */
+"settings.yalaAccountReturnICloudScope" = "Je gegevens gaan terug naar je persoonlijke iCloud; je account wordt gepauzeerd.";
+
+/* Alcance del desenlace Eliminar mi cuenta */
+"settings.yalaAccountDeleteScope" = "Alles wordt verwijderd, voorgoed.";
+
+/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
+"storage.revert.desenlaceNote" = "Zo ontkoppel je je account van dit apparaat: het wordt gepauzeerd voor als je terugkomt.";
+
+/* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
+"settings.accountSubsectionTitle" = "Je account";
+
+/* Subtitulo de Donde viven tus datos, modo iCloud */
+"settings.dataLocationSubtitleICloud" = "Privé-iCloud";
+
+/* Subtitulo de Donde viven tus datos, modo nube */
+"settings.dataLocationSubtitleCloud" = "Je cloud-account";
+
+/* D10 batch: stop button (D3) */
+"settings.batchLeaveStop" = "Stoppen";
+
+/* D10 batch: result headline when user stopped (D3) */
+"settings.batchLeaveStopped" = "Je hebt het stopgezet.";
+
+/* D10 batch: stat label for groups not processed after stop (D3) */
+"settings.batchLeaveStatSkipped" = "Niet verwerkt";
+
+/* D10 batch: body explaining how to relaunch after stop (D3) */
+"settings.batchLeaveStoppedBody" = "Je kunt het altijd hervatten via ‘Mijn gegevens wissen’.";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "Afrekening";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ heeft %2$@ betaald";
+
+/* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
+"groups.bridge.editPartialBannerCaseB" = "Deze uitgave komt uit de groep. Je kunt categorie en tags bewerken. De rest synchroniseert met de groep.";
+
+/* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
+"panel.health.bills.sheet.explanation.expensesOnly" = "Laat zien of je saldo de openstaande betalingen voor deze periode dekt.";
+
+/* Force-update (min-version) blocking screen */
+"appUpdate.force.title" = "Werk bij om door te gaan";
+"appUpdate.force.message" = "Deze versie van Yala wordt niet meer ondersteund. Werk bij om de app te blijven gebruiken.";
+"appUpdate.force.updateButton" = "Nu bijwerken";
+
+/* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
+"storage.migrate.accountReuseNote" = "Je gebruikt je huidige Yala-account (%@) — zo staan je gegevens en je groepen in hetzelfde account.";
+
+/* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
+"storage.migrate.accountReuseNoteGeneric" = "Je gebruikt je huidige Yala-account — zo staan je gegevens en je groepen in hetzelfde account.";
+
+/* Storage migrate card, after the identity check refused the live account: it already has personal finances */
+"storage.migrate.refusedPersonalData" = "Je huidige Yala-account heeft al persoonlijke financiën en kan die van dit apparaat niet ontvangen. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
+
+/* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
+"storage.migrate.refusedOtherGroups" = "Je groepen gebruiken een ander account, en op dit apparaat kan maar één cloudaccount staan. Log in met het account van je groepen om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’.";
+
+/* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
+"storage.migrate.refusedReturned" = "Je huidige Yala-account is teruggegaan naar iCloud, en met dit account terug naar de cloud gaan kan nog niet.";
+
+/* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
+"storage.migrate.refusedFreshStart" = "Je huidige Yala-account is misschien van iemand anders: het was al ingelogd toen hier opnieuw werd begonnen. Ontkoppel het in ‘Groepen’ en tik opnieuw op ‘Cloud inschakelen’ om je eigen account te kiezen.";
+"storage.migrate.refusedOtherDevice" = "Een ander apparaat van je zet je gegevens in dit account. Rond het inschakelen daar af of probeer het op dat apparaat opnieuw als het is gestopt.";
+
+/* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
+"storage.adopt.otherAccountNote" = "Deze cloudkopie hoort bij een ander Yala-account (%@). Log uit en log in met dat account om verder te gaan.";
+
+/* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
+"storage.adopt.otherAccountNoteGeneric" = "Deze cloudkopie hoort bij een ander Yala-account. Log uit en log in met dat account om verder te gaan.";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "We konden het inschakelen van de cloud niet afronden: iCloud heeft geen ruimte meer. Je gegevens staan volledig op dit apparaat. Maak ruimte vrij in iCloud en probeer het opnieuw.";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "We konden het inschakelen van de cloud niet afronden: iCloud is niet ingeschakeld op dit apparaat. Je gegevens blijven hier volledig staan. Schakel iCloud in via Instellingen en probeer het opnieuw.";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "We konden het inschakelen van de cloud niet afronden: iCloud heeft de laatste stap niet bevestigd. Je gegevens staan volledig op dit apparaat — probeer het opnieuw zodra je een goede verbinding hebt.";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "Wachten op bevestiging van iCloud…";
+/* C-10: card chip when the frozen group cannot be rejoined by this build */
+"groups.card.movedUpdateChip" = "App bijwerken";
+
+/* C-10: card chip when the groups backend channel is paused */
+"groups.card.movedPausedChip" = "Gepauzeerd";
+
+/* C-10: detail banner body when this build cannot rejoin */
+"groups.migrated.updateBody" = "Werk Yala bij om je opnieuw aan te melden. Ondertussen kun je de uitgaven wel bekijken, maar niet bewerken.";
+
+/* C-10: detail banner body when the channel is paused */
+"groups.migrated.pausedBody" = "We zijn deze groep nog naar de Yala-cloud aan het verplaatsen. Probeer het straks opnieuw; je verliest niets.";
+
+/* C-10: read-only staleness note under the migrated banner */
+"groups.migrated.readOnlyNote" = "Je ziet de kopie van het moment waarop de groep werd verplaatst, dus die is misschien niet meer helemaal actueel.";
+
+/* C-10: non-terminal sign-in failure message */
+"groups.signin.retryLater" = "Hmm, we konden je account nu niet verbinden. Je groep staat er nog en je verliest niets — probeer het later opnieuw.";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "Afrekening verwijderen";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "Deze afrekening verwijderen?";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "De saldi die hiermee vereffend zijn, staan weer open. En als er een transactie op je rekeningen is aangemaakt, wordt die ook verwijderd.";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "De afrekening kon niet worden verwijderd. Probeer het opnieuw.";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "We konden deze uitnodiging nu niet openen. We hebben je verzoek opgeslagen — probeer het over een moment opnieuw.";
+
+/* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
+   privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
+"welcome.new.subtitle" = "Kies waar je je gegevens wilt bewaren.";
+"welcome.new.privateTitle" = "Je account in je privé-iCloud";
+"welcome.new.privateBody" = "Je gegevens blijven op de Apple-apparaten van je Apple ID en synchroniseren via je privé-iCloud. Niemand anders kan ze lezen, wij ook niet.";
+"welcome.new.cloudTitle" = "Je account in de cloud";
+"welcome.new.cloudBody" = "Je gegevens staan op onze servers, net als bij de meeste van je apps. Ons team kan ze inzien om je te helpen en nieuwe functies te maken.";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "Maak je Yala-account";
+"welcome.bornCloud.subtitle" = "Daarmee open je Yala op elk apparaat.";
+"welcome.bornCloud.providerNote" = "Je Yala-account blijft gekoppeld aan de methode die je kiest.";
+"welcome.bornCloud.creating" = "Je account wordt aangemaakt…";
+
+/* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
+"welcome.mirrorRelaunch.title" = "Nog één stap: open Yala opnieuw";
+
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "Je uitnodiging wordt geopend…";
+
+/* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
+"welcome.mirrorRelaunch.body" = "Om je gegevens goed te beschermen moet Yala opnieuw starten. Ga naar het beginscherm en kom terug — daarna gaan we verder waar je gebleven was.";
+
+/* Welcome · alta born-cloud completada sin relanzamiento (R2) */
+"welcome.bornCloud.readyTitle" = "Je account is klaar!";
+
+/* Welcome · cuerpo del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyBody" = "Je kunt beginnen. Alles wat je vastlegt, wordt in je account bewaard.";
+
+/* Welcome · CTA del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyCta" = "Beginnen";
+
+/* Title of the two-paths groups screen in the Welcome flow */
+"welcome.groups.title" = "Hoe wil je met je groep beginnen?";
+
+/* Subtitle of the two-paths groups screen in the Welcome flow */
+"welcome.groups.subtitle" = "Beide routes brengen je op dezelfde plek.";
+
+/* Card title: the user organizes a new group */
+"welcome.groups.createTitle" = "Mijn eerste groep maken";
+
+/* Card body: the user creates the group and invites others */
+"welcome.groups.createBody" = "Jij nodigt uit. Noteer wat iedereen betaalt en Yala houdt de rekening bij.";
+
+/* Card title: the user already received an invitation link */
+"welcome.groups.joinTitle" = "Ik heb een uitnodiging";
+
+/* Card body: paste the invitation link to join */
+"welcome.groups.joinBody" = "Plak de link die je hebt gekregen en je doet mee.";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "We controleren of alles klaar is…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "We kunnen nu geen groepen voor je openen";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "Het ligt aan ons en het duurt niet lang. Probeer het zo nog eens — er is niets opgeslagen.";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "Terug";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "Hoe heet je?";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "Dit is de naam die de anderen in de groep zien.";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "Mijn groep maken";
+
+/* C2 · empty state cuando aún no vio el educativo */
+"groups.empty.needsEducational.title" = "Hoe werken groepen?";
+"groups.empty.needsEducational.message" = "In een minuut: wat je kunt doen en waar elke uitgave wordt bewaard.";
+"groups.empty.needsEducational.action" = "Bekijk hoe het werkt";
+
+/* C2 · empty state de quien NUNCA tuvo cuenta (no «vuelve a la tuya») */
+"groups.empty.createAccount.title" = "Maak je Yala-account";
+"groups.empty.createAccount.message" = "De uitgaven van een groep staan in jouw account, zodat iedereen hetzelfde ziet, altijd bijgewerkt.";
+"groups.empty.createAccount.action" = "Account aanmaken";
+
+/* C2 · empty state con sesión viva y sin consent */
+"groups.empty.needsConsent.title" = "Nog één stap";
+"groups.empty.needsConsent.message" = "We vertellen je wat er in de Yala-cloud wordt bewaard, en jij beslist.";
+"groups.empty.needsConsent.action" = "Doorgaan";
+
+/* C2 · el hecho sustantivo, antes de pedir identidad */
+"groups.onboarding.step3.point0" = "Uitgaven die je in een groep noteert, worden bewaard op de servers van Yala, zodat iedereen ze bijgewerkt ziet.";
+
+/* C2 · variante del CTA para quien nunca tuvo cuenta */
+"groups.onboarding.step3.createAccountCTA" = "Account aanmaken";
+
+/* Title of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedTitle" = "We konden je gegevens niet wissen";
+
+/* Body of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedMessage" = "Je gegevens staan er nog, dus we zijn gestopt. Sluit Yala en open de app opnieuw; gebeurt het weer, laat het ons weten.";
+"groups.freshStartPending.title" = "Er moeten nog groepswijzigingen worden geüpload";
+"groups.freshStartPending.lead" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt (%d), en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.leadUnknown" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.lossSessionExpired" = "Ze kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan staat niet meer op deze telefoon. Als je niet opnieuw inlogt met dat account, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossPermanent" = "Het account dat ze heeft gemaakt kan ze niet meer uploaden, en opnieuw proberen lost dat niet op. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossAttest" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus ze kunnen niet worden geüpload. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossAction" = "Opnieuw beginnen en ze verliezen";
+"groups.freshStartPending.lossConfirmTitle" = "Deze wijzigingen verliezen?";
+"groups.freshStartPending.lossConfirmBody" = "Groepswijzigingen die verloren gaan: %d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van deze telefoon gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmAction" = "Ze verliezen en opnieuw beginnen";
+
+/* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
+"subscription.restoreEmptyTitle" = "Geen abonnement";
+
+/* Cuerpo del aviso cuando Restaurar no encuentra una suscripción */
+"subscription.restoreEmpty" = "We hebben Yala Pro niet gevonden op dit Apple-account. Als je net hebt gekocht, wacht even en probeer het opnieuw.";
+
+/* Apple confirmó la compra pero el derecho Pro no quedó activo */
+"subscription.purchaseNotActivated" = "De betaling is bevestigd, maar Yala Pro is nog niet actief. Probeer Aankopen herstellen.";
+
+/* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
+"panel.aiPill" = "AI";
+
+/* Share-link button: group predates the backend channel — permanent, no link is possible */
+"groups.errors.inviteLegacyGroup" = "Deze groep komt uit een oudere versie van Yala en ondersteunt geen uitnodigingslinks. Maak een nieuwe groep om via een link uit te nodigen.";
+
+/* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
+"groups.errors.inviteChannelOff" = "We kunnen nu geen uitnodigingslinks maken. Probeer het straks opnieuw.";
+
+/* Adopt/sign-up blocked: HTTP 403 on account claim — the account exists but the backend refuses access */
+"welcome.cloud.accountBlockedTitle" = "Je account is niet beschikbaar";
+/* Body for the blocked-account screen; explicitly rules out a network problem */
+"welcome.cloud.accountBlockedBody" = "Het ligt niet aan je verbinding: we kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we kijken er samen naar.";
+
+/* Sign-out blocked alert, guest session: stay in the app and retry later */
+"settings.signOutWaitButton" = "Wachten";
+
+/* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
+"settings.signOutExitAnywayButton" = "Toch weggaan";
+
+/* Leave group rejected: the server says the current user owns the group */
+"groups.errors.ownerCannotLeave" = "Deze groep is van jou, dus je kunt hem niet verlaten: iemand moet de leiding houden. Heb je hem niet meer nodig, dan kun je hem verwijderen.";
+/* Leave group failed for a transient/kill-switch reason: retry later, not the user's fault */
+"groups.errors.leaveUnavailable" = "We konden je vertrek uit de groep niet afronden. Probeer het zo meteen nog eens.";
+/* Groups RPC rejected because the session token expired or is missing */
+"groups.errors.sessionExpired" = "Je sessie is verlopen. Log opnieuw in en probeer het nog eens.";
+/* Botón: el dueño cede el grupo y sale */
+"groups.settings.transferAndLeave" = "Overdragen en verlaten";
+/* Hint bajo el botón Transferir y salir */
+"groups.settings.transferAndLeaveHint" = "De groep blijft actief met de saldi. Jij bent dan geen lid meer.";
+/* Confirmación con el nombre de quien hereda el grupo */
+"groups.settings.transferAndLeaveConfirm" = "%@ neemt de groep over en jij verlaat hem. Openstaande saldi blijven zoals ze zijn.";
+/* Confirmación cuando no se pudo resolver el nombre de quien hereda */
+"groups.settings.transferAndLeaveConfirmUnknownHeir" = "De groep gaat naar iemand anders en jij verlaat hem. Openstaande saldi blijven zoals ze zijn.";
+/* Hint del borrado bloqueado cuando SÍ se puede transferir */
+"groups.settings.deleteGroupDisabledHintTransfer" = "Er zijn openstaande saldi in de groep. Wil je weg? Draag de groep over en verlaat hem.";
+/* El último miembro elegible salió durante la confirmación */
+"groups.errors.transferNoHeir" = "Er is niemand meer aan wie je de groep kunt overdragen.";
+/* Aviso al transferir cuando el usuario tiene saldo propio */
+"groups.settings.transferAndLeaveDebtWarning" = "Let op: je vertrekt met een openstaand saldo. De ander blijft die schuld zien.";
+/* Variante del rechazo por ser dueño cuando SÍ hay a quién transferir */
+"groups.errors.ownerCannotLeaveCanTransfer" = "Deze groep is van jou, dus je kunt er niet zomaar uit — iemand moet de leiding overnemen. Je kunt hem overdragen en dan vertrekken.";
+/* Título del aviso al tocar la tarjeta de un grupo en el que sigo pendiente de aprobación */
+"groups.card.pendingNotice.title" = "Wacht op goedkeuring";
+
+/* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
+"groups.card.pendingNotice.body" = "De groepsbeheerder heeft je verzoek nog niet goedgekeurd. Zodra dat gebeurt, kun je de groep openen en de uitgaven bekijken. Kom straks nog eens terug.";
+
+/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
+"stats.hero.captionAccountsBalance" = "Rekeningsaldo";
+
+/* Stats hero caption: the figure is income minus expenses for the period (flow) */
+"stats.hero.captionNetPeriod" = "Netto in de periode";
+
+/* Stats hero caption: the figure is only the income side for the period */
+"stats.hero.captionIncomePeriod" = "Inkomsten in de periode";
+
+/* Stats hero caption: the figure is only the expense side for the period */
+"stats.hero.captionExpensePeriod" = "Uitgaven in de periode";
+
+/* Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side */
+"stats.hero.captionTotalPeriod" = "Totaal in de periode";
+
+/* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
+"welcome.restore.cloudPausedTitle" = "De cloud van Yala is gepauzeerd";
+
+/* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
+"welcome.restore.cloudPausedBody" = "Je gegevens staan nog steeds veilig in je Yala-account. De synchronisatie is nu gepauzeerd. Probeer het later opnieuw.";
+
+/* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
+"notifications.groups.settlementReminder" = "👋 Kleine herinnering: je bent %2$@ nog %1$@ schuldig. Wanneer het uitkomt, reken het samen af.";
+
+/* Push: same gentle reminder when the user owes several people in one group (no args). */
+"notifications.groups.settlementReminderMultiple" = "👋 Kleine herinnering: je hebt nog openstaande bedragen met meerdere mensen. Wanneer het uitkomt, reken het samen af.";
+
+/* Settings toggle title: gentle reminders for idle group debts. */
+"notifications.settlementReminders.title" = "Herinneringen voor schulden";
+
+/* Settings toggle hint under notifications.settlementReminders.title. */
+"notifications.settlementReminders.hint" = "Een vriendelijk seintje als een groepsschuld wekenlang stil blijft staan";
+
+/* Shareable group summary: section title in group settings AND nav title of the sheet. */
+"groups.shareableSummary.title" = "Groepsoverzicht";
+
+/* Shareable group summary: primary action. NOT the invite link (createShareLink) - this shares a picture of how the accounts ended up. */
+"groups.shareableSummary.action" = "Overzicht delen";
+
+/* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
+"groups.shareableSummary.hint" = "Een afbeelding met de totalen van de groep en de minste betalingen om alles te vereffenen. Bevat de hele geschiedenis.";
+
+/* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
+"groups.shareableSummary.totalSpent" = "Totaal uitgegeven";
+
+/* Shareable group summary: heading of the per-member table. */
+"groups.shareableSummary.whoPaid" = "Wie betaalde wat";
+
+/* Shareable group summary: column header - what this member put in. Keep it SHORT, it is a narrow column in a fixed-width image. */
+"groups.shareableSummary.paidLabel" = "Betaald";
+
+/* Shareable group summary: column header - this member's share of the expenses. Keep it SHORT, narrow column. */
+"groups.shareableSummary.owedLabel" = "Eigen deel";
+
+/* Shareable group summary: heading of the minimum list of transfers needed to settle. */
+"groups.shareableSummary.settleUp" = "Te vereffenen";
+
+/* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
+"groups.shareableSummary.allSettled" = "Alles vereffend!";
+
+/* Shareable group summary: fallback when a member id does not match any member (removed member, half-synced data). */
+"groups.shareableSummary.unknownMember" = "Geen naam";
+
+/* Shareable group summary: footer of the exported image. Soft branding, never an ad. */
+"groups.shareableSummary.footer" = "Gemaakt met Yala";
+
+/* Shareable group summary: shown when ImageRenderer returns nil. Never blame the user. */
+"groups.shareableSummary.renderFailed" = "We konden de afbeelding niet maken. Probeer het opnieuw.";
+
+/* G14: título de la sección/tarjeta del presupuesto de grupo */
+"groups.budget.title" = "Groepsbudget";
+
+/* G14: %@ = código de moneda del grupo */
+"groups.budget.hint" = "Een uitgavenlimiet voor de hele groep, in %@.";
+
+/* G14: el grupo no tiene límite fijado */
+"groups.budget.none" = "Geen budget";
+
+/* G14: acción para fijar el límite */
+"groups.budget.set" = "Budget instellen";
+
+/* G14: acción para borrar el límite */
+"groups.budget.remove" = "Budget verwijderen";
+
+/* G14: el server exige is_group_admin */
+"groups.budget.adminOnly" = "Alleen een beheerder kan dit wijzigen.";
+
+/* G14: %1 = gastado, %2 = tope; ambos ya formateados */
+"groups.budget.spentOfLimit" = "%1$@ van %2$@";
+
+/* G14: %@ = importe restante formateado */
+"groups.budget.remaining" = "Nog %@";
+
+/* G14: %@ = importe excedido formateado */
+"groups.budget.exceededBy" = "%@ over het budget";
+
+/* G14: nota del ≈ */
+"groups.budget.convertedNote" = "Inclusief uitgaven in andere valuta, omgerekend tegen de koers van vandaag.";
+
+/* G14: %@ = nombre del grupo */
+"groups.budget.alertTitle" = "Budget van %@";
+
+/* G14: aviso al cruzar 50 */
+"groups.budget.alertBody50" = "De groep heeft de helft van het budget uitgegeven.";
+
+/* G14: aviso al cruzar 75 */
+"groups.budget.alertBody75" = "De groep heeft driekwart van het budget uitgegeven.";
+
+/* G14: aviso al cruzar 90 */
+"groups.budget.alertBody90" = "De groep is het budget bijna kwijt.";
+
+/* G14: aviso al cruzar 100 */
+"groups.budget.alertBody100" = "De groep heeft het budget bereikt.";
+
+/* G14: el texto tecleado no era un importe valido */
+"groups.budget.invalidAmount" = "Voer een bedrag groter dan nul in.";
+
+/* G14: confirmacion de quitar el presupuesto */
+"groups.budget.removeConfirm" = "Groepsbudget verwijderen? Het verdwijnt voor iedereen.";
+
+/* Shown instead of the settlement reminders hint when the Groups notification master is off, so the toggle cannot deliver anything. */
+"notifications.settlementReminders.hintGroupsOff" = "Zet eerst Groepen-meldingen aan om ze te ontvangen";
+
+/* Delete-blocked hint for a group owner with debt and no heir: points at Archive, which already works with debt. */
+"groups.settings.deleteGroupDisabledHintArchive" = "Er staan nog saldi open in deze groep. Archiveer hem om hem uit je lijst te halen: de schulden blijven bestaan.";
+
+/* Account currency locked because history is owned elsewhere */
+"account.currencyChange.blockedTitle" = "De valuta kan niet worden gewijzigd";
+
+/* %@ = comma-separated list of reasons */
+"account.currencyChange.blockedMessage" = "Deze rekening bevat boekingen waarvan de bedragen elders in de app worden beheerd: %@. De valuta hier wijzigen zou ze uit de pas laten lopen.";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonTransfer" = "overboekingen tussen rekeningen";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupExpense" = "groepsuitgaven";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupSettlement" = "groepsafrekeningen";
+
+/* %1 old currency, %2 new currency */
+"account.currencyChange.confirmMessage" = "Ze zijn vastgelegd in %1$@ en gaan naar %2$@ met de wisselkoers van de datum van elke boeking. Dit kan niet ongedaan worden gemaakt.";
+
+/* Confirm button */
+"account.currencyChange.confirmAction" = "Omrekenen";
+
+/* Progress overlay title */
+"account.currencyChange.progressTitle" = "Boekingen omrekenen";
+
+/* Progress overlay subtitle */
+"account.currencyChange.progressSubtitle" = "Wisselkoers van elke datum toepassen";
+
+/* Rates could not be fetched */
+"account.currencyChange.ratesUnavailableTitle" = "Omrekenen niet gelukt";
+
+/* Body of the rates-unavailable alert */
+"account.currencyChange.ratesUnavailableMessage" = "Voor sommige datums van deze rekening ontbreken wisselkoersen. Er is niets gewijzigd — controleer je verbinding en probeer het opnieuw.";
+
+/* Bloque [I]: bloqueo al asociar una cuenta que ya lleva finanzas personales */
+"groups.accountIsComplete.title" = "Dat account heeft al het volledige Yala";
+
+/* Bloque [I]: por qué se bloquea */
+"groups.accountIsComplete.body" = "In dat account staan al iemands financiën in de cloud. Het alleen voor je groepen gebruiken zou twee accounts samenvoegen, en dat kan hier niet.";
+
+/* Bloque [I]: CTA para firmar con otra cuenta */
+"groups.accountIsComplete.useAnotherAccount" = "Ander account gebruiken";
+
+/* Bloque [I]: la otra salida del ADR */
+"groups.accountIsComplete.settingsHint" = "Wil je dat dat account je financiën bijhoudt? Dat kies je in Instellingen, bij ‘Waar je gegevens leven’.";
+
+/* Private branch iCloud gate: spinner while probing CloudKit */
+"welcome.privateICloud.checking" = "We kijken wat er in je iCloud staat…";
+
+/* Private branch iCloud gate: spinner while deleting the iCloud corpus */
+"welcome.privateICloud.wiping" = "We verwijderen wat in iCloud stond…";
+
+/* Private branch iCloud gate: title when previous data is found in iCloud */
+"welcome.privateICloud.foundTitle" = "Je hebt al gegevens in je iCloud";
+
+/* Private branch iCloud gate: body explaining the two ways out */
+"welcome.privateICloud.foundBody" = "Je hebt ze met hetzelfde Apple Account bewaard. Je kunt ze terughalen of opnieuw beginnen — maar opnieuw beginnen verwijdert ze ook uit iCloud, niet alleen van deze telefoon, en dat kun je niet terugdraaien.";
+
+/* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
+"welcome.privateICloud.foundSince" = "sinds %@";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap */
+"welcome.privateICloud.foundAtLeast" = "meer dan %d records";
+
+/* Private branch iCloud gate: primary button, restore from iCloud */
+"welcome.privateICloud.restoreAction" = "Mijn gegevens terughalen";
+
+/* Private branch iCloud gate: destructive button, delete the iCloud data */
+"welcome.privateICloud.wipeAction" = "Opnieuw beginnen";
+
+/* Private branch iCloud gate: body of the second confirmation before deleting */
+"welcome.privateICloud.wipeConfirmBody" = "Je records, rekeningen en budgetten verdwijnen uit iCloud. Er blijft geen kopie over en we kunnen ze daarna niet terughalen.";
+
+/* Private branch iCloud gate: safe button on the second confirmation */
+"welcome.privateICloud.wipeConfirmKeep" = "Toch maar niet";
+
+/* Private branch iCloud gate: title when deleting the iCloud corpus failed */
+"welcome.privateICloud.wipeFailedTitle" = "We konden niet alles verwijderen";
+
+/* Private branch iCloud gate: body when deleting failed */
+"welcome.privateICloud.wipeFailedBody" = "Je gegevens staan nog ongewijzigd in iCloud. Controleer je verbinding en probeer het opnieuw.";
+
+/* Private branch iCloud gate: title when the device has no iCloud account */
+"welcome.privateICloud.noAccountTitle" = "We konden je iCloud niet controleren";
+
+/* Private branch iCloud gate: body when there is no iCloud account */
+"welcome.privateICloud.noAccountBody" = "Op deze telefoon staat iCloud uit, dus we weten niet of je eerder iets hebt bewaard. Je kunt doorgaan: voorlopig blijven je gegevens hier, en als je iCloud aanzet laten we het weten voordat er iets samenkomt.";
+
+/* Private branch iCloud gate: continue button when there is no iCloud account */
+"welcome.privateICloud.noAccountCta" = "Zo doorgaan";
+
+/* Private branch iCloud gate: title when the CloudKit probe failed */
+"welcome.privateICloud.errorTitle" = "We konden iCloud niet bereiken";
+
+/* Private branch iCloud gate: body when the CloudKit probe failed */
+"welcome.privateICloud.errorBody" = "Misschien ligt het aan je verbinding. Probeer het opnieuw voordat je verdergaat — dan duiken er geen oude gegevens onaangekondigd op.";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "iCloud deed er te lang over om te reageren";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "We konden je iCloud niet helemaal nakijken. Probeer het opnieuw voordat je verdergaat — dan duiken er geen oude gegevens onaangekondigd op.";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "We konden je iCloud niet helemaal nakijken, dus hebben we niets verwijderd: alles is nog zoals het was. Probeer het opnieuw, of ga terug en beslis wanneer je wilt.";
+
+/* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
+"welcome.privateICloud.lateTitle" = "We hebben gegevens van je in iCloud gevonden";
+
+/* Late mirror notice: body with the counts of the previous corpus */
+"welcome.privateICloud.lateBody" = "Toen je iCloud aanzette, doken gegevens op die je eerder met dit Apple Account hebt bewaard: %@. Die komen samen met wat je nu hebt. Je kunt het zo laten, of opnieuw beginnen en ze uit iCloud verwijderen.";
+
+/* Late mirror notice: safe button, both corpora coexist */
+"welcome.privateICloud.lateKeep" = "Zo laten";
+
+/* Private branch iCloud gate: counts line fragment for user categories */
+"welcome.privateICloud.foundCategories" = "%d categorieën";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
+"welcome.privateICloud.foundUnknownAmount" = "veel bewaarde gegevens";
+
+/* Private branch iCloud gate: secondary button on the wipe-failed screen, gives up the deletion */
+"welcome.privateICloud.wipeFailedBack" = "Laat maar even";
+
+/* Paso 8 · «Activar Yala completo» pregunta dónde viven los datos personales */
+"groups.fullActivation.chooserTitle" = "Waar bewaren we je financiën?";
+"groups.fullActivation.chooserSubtitle" = "Je groepen blijven zoals ze zijn. Kies waar je persoonlijke gegevens komen te staan.";
+"groups.fullActivation.cloudBody" = "We gebruiken hetzelfde account dat je al voor je groepen gebruikt, geen nieuw. Je gegevens staan op onze servers en ons team kan ze inzien om je te helpen.";
+"groups.fullActivation.historyTitle" = "Zullen we je groepsuitgaven meenemen?";
+"groups.fullActivation.historyBody" = "Je groepsuitgaven kunnen ook verschijnen in Start, in Boekingen en in Statistieken.";
+"groups.fullActivation.historyShow" = "Ja, toon ze";
+"groups.fullActivation.historyKeepInGroups" = "Nee, laat ze in Groepen";
+"groups.fullActivation.historyFootnote" = "Dit geldt ook voor de uitgaven die je later toevoegt. Je kunt dit altijd wijzigen in Groepsinstellingen.";
+"groups.fullActivation.promoting" = "Je account wordt geactiveerd…";
+"groups.fullActivation.failedTitle" = "We konden je account niet activeren";
+"groups.fullActivation.failedBody" = "Controleer je verbinding en probeer het opnieuw. Er is nog niets veranderd.";
+"groups.fullActivation.unavailableBody" = "Je account is op dit moment niet beschikbaar. Er is nog niets veranderd.";
+"groups.fullActivation.blockedPersonalDataTitle" = "Je account heeft al persoonlijke financiën";
+"groups.fullActivation.blockedPersonalDataBody" = "Dit account bevat al persoonlijke gegevens, waarschijnlijk van een ander apparaat. Log uit en log opnieuw in met dit account om ze hier te gebruiken. Er is niets veranderd.";
+"groups.fullActivation.blockedBusyTitle" = "Een ander apparaat verplaatst je gegevens";
+"groups.fullActivation.blockedBusyBody" = "Wacht tot het klaar is en probeer het over een paar minuten opnieuw. Er is niets veranderd.";
+"groups.fullActivation.blockedSessionTitle" = "Je sessie is verlopen";
+"groups.fullActivation.blockedSessionBody" = "Log opnieuw in bij Groepen en activeer volledige Yala nog een keer. Er is niets veranderd.";
+"groups.fullActivation.reinstallTitle" = "Installeer Yala eerst opnieuw";
+"groups.fullActivation.reinstallBody" = "Je bent op dit apparaat met Groepen begonnen in een oudere versie van Yala. Verwijder de app en installeer hem opnieuw om te kiezen waar we je financiën bewaren: je groepen blijven in je account en je iCloud-gegevens blijven onaangeroerd.";
+
+/* Vuelta al neutro: progreso mientras se espera al export y se prepara el borrado */
+"welcome.groups.neutralWorking" = "We uploaden je laatste wijzigingen naar iCloud en maken deze telefoon klaar voor je groep…";
+
+/* Vuelta al neutro sin copia: titulo del segundo gesto */
+"welcome.groups.neutralNoBackupTitle" = "We hebben geen kopie in iCloud gevonden";
+
+/* Vuelta al neutro sin copia: cuerpo del segundo gesto */
+"welcome.groups.neutralNoBackupBody" = "Om je groep te starten, moet deze telefoon leeg zijn. Wat hier is opgeslagen staat niet in iCloud, dus als je doorgaat gaat het verloren.";
+
+/* Vuelta al neutro sin copia: boton destructivo del segundo gesto */
+"welcome.groups.neutralNoBackupCta" = "Doorgaan en wissen";
+
+/* Vuelta al neutro: la espera del export se agoto */
+"welcome.groups.neutralStalledTitle" = "Sommige wijzigingen staan nog niet in iCloud";
+
+/* Vuelta al neutro: cuantos cambios quedan sin subir (%d = numero) */
+"welcome.groups.neutralStalledBody" = "Wijzigingen van dit apparaat die nog niet in iCloud staan: %d. Als je nu doorgaat, gaan ze verloren.";
+
+/* Vuelta al neutro: la espera se agoto sin poder contar */
+"welcome.groups.neutralStalledBodyUnknown" = "We konden niet bevestigen dat je laatste wijzigingen in iCloud staan. Als je nu doorgaat, kunnen ze verloren gaan.";
+
+/* Vuelta al neutro: salida de emergencia tras la espera agotada */
+"welcome.groups.neutralStalledContinue" = "Toch doorgaan";
+
+/* Vuelta al neutro: seguir esperando al export */
+"welcome.groups.neutralStalledWait" = "Wachten";
+
+/* Vuelta al neutro bloqueada: outbox de grupos de una sesion caducada */
+"welcome.groups.neutralBlockedTitle" = "Er moeten nog groepswijzigingen worden geüpload";
+
+/* Vuelta al neutro bloqueada: como desbloquearlo */
+"welcome.groups.neutralBlockedBody" = "Op deze telefoon staan groepswijzigingen die de server nog niet hebben bereikt. Log opnieuw in met dat account zodat ze worden geüpload, daarna kun je hier je groep starten.";
+
+/* Vuelta al neutro imposible en esta celda: titulo */
+"welcome.groups.neutralUnavailableTitle" = "We kunnen deze telefoon nu niet klaarmaken";
+
+/* Vuelta al neutro imposible en esta celda: cuerpo */
+"welcome.groups.neutralUnavailableBody" = "Op deze telefoon staat een sessie open die je eerst via Instellingen moet afsluiten voordat je hier een groep start. Ga terug: er is niets aangeraakt.";
+
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "We kunnen nog niet bevestigen dat de overstap van je gegevens tussen iCloud en de cloud is afgerond, en als we deze telefoon nu klaarmaken, kan verloren gaan wat nog geüpload moet worden. Ga terug: er is niets aangeraakt.";
+
+/* Título de la sección Grupos dentro de «Dónde viven tus datos» */
+"storage.groups.title" = "Groepen";
+
+/* Cuerpo cuando no hay cuenta de grupos asociada */
+"storage.groups.noAccountBody" = "Je groepen staan in een Yala-account, los van de gegevens op deze iPhone.";
+
+/* Botón para asociar una cuenta de grupos */
+"storage.groups.associateButton" = "Een account voor groepen koppelen";
+
+/* Cuerpo cuando hay cuenta asociada pero no se sabe su nombre */
+"storage.groups.associatedUnnamedBody" = "Je groepen gebruiken een Yala-account.";
+
+/* Cuerpo en un segundo dispositivo, sin nombre de cuenta */
+"storage.groups.needsSignInUnnamedBody" = "Je groepen staan in je Yala-account. Meld je aan om ze op deze iPhone te zien.";
+
+/* Botón para entrar con la cuenta de grupos ya asociada */
+"storage.groups.signInButton" = "Aanmelden met dat account";
+
+/* Botón para desasociar la cuenta de grupos */
+"storage.groups.detachButton" = "Ontkoppelen";
+
+/* Cuerpo cuando los datos personales ya viven en la cuenta de Yala */
+"storage.groups.sameAccountBody" = "Je groepen gebruiken ditzelfde account.";
+
+/* Título de la confirmación de desasociar */
+"storage.groups.detachTitle" = "Account voor groepen ontkoppelen?";
+
+/* Botón: conservar en el Panel los gastos de grupo */
+"storage.groups.detachKeep" = "Uitgaven bewaren die ik heb betaald";
+
+/* Botón: quitar del Panel los gastos de grupo */
+"storage.groups.detachRemove" = "Alles uit Start verwijderen";
+
+/* Progreso mientras se desasocia */
+"storage.groups.detachWorking" = "Wordt ontkoppeld…";
+
+/* Progreso mientras se suben los cambios de grupos */
+"storage.groups.detachWaiting" = "Je openstaande wijzigingen worden opgeslagen…";
+
+/* Cuerpo con el nombre de la cuenta de grupos asociada */
+"storage.groups.associatedBody" = "Je groepen gebruiken %@.";
+
+/* Cuerpo en un segundo dispositivo, con el nombre de la cuenta */
+"storage.groups.needsSignInBody" = "Je groepen staan in het account %@. Meld je aan om ze op deze iPhone te zien.";
+
+/* Mensaje de la confirmación de desasociar */
+"storage.groups.detachBody" = "Je groepen verdwijnen van deze iPhone en blijven in je account: koppel je het opnieuw, dan staan ze er weer. De posten van wat jij tegoed hebt of schuldig bent verdwijnen in beide gevallen; je kiest alleen wat er gebeurt met de uitgaven die jij hebt betaald.";
+
+/* Título del aviso cuando el desasociar se bloquea */
+"storage.groups.detachBlockedTitle" = "Ontkoppelen is niet gelukt";
+
+/* Aviso: bloqueo temporal al desasociar */
+"storage.groups.detachBlockedTransient" = "Een paar wijzigingen uit je groepen zijn nog niet geüpload. Probeer het zo meteen opnieuw.";
+
+/* Aviso: bloqueo permanente al desasociar */
+"storage.groups.detachBlockedPermanent" = "Een paar wijzigingen uit je groepen zijn nog niet geüpload en we konden geen verbinding maken. Controleer je verbinding en probeer het opnieuw.";
+
+/* Aviso: sesión caducada al desasociar */
+"storage.groups.detachBlockedSession" = "Je sessie voor groepen is verlopen. Log opnieuw in en probeer het nog eens.";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Je sessie voor groepen is verlopen en sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Log opnieuw in, sluit Yala en open hem weer (blijft het gebeuren, werk hem dan bij) en probeer het nog eens.";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw om ze voor te bereiden (blijft het gebeuren, werk hem dan bij).";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Sommige groepswijzigingen op deze telefoon zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Bovendien konden sommige groepswijzigingen niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van dat account worden alleen geüpload als je daarmee inlogt.";
+
+/* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
+"welcome.groups.inviteNeutralTitle" = "Voor je meedoet, wordt deze telefoon leeggemaakt";
+
+/* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
+"welcome.groups.inviteNeutralBody" = "Hier staan gegevens opgeslagen die synchroniseren met een iCloud. Zodat jouw groepsuitgaven daar niet terechtkomen, verwijderen we ze van deze telefoon: de kopie in iCloud blijft ongemoeid. Yala start opnieuw op en je gaat verder met je uitnodiging.";
+
+/* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
+"welcome.groups.inviteNeutralBodyNoBackup" = "Hier staan gegevens opgeslagen en we konden geen kopie in iCloud vinden. Zodat jouw groepsuitgaven er niet mee vermengd raken, moeten ze van deze telefoon verwijderd worden, en ze zijn niet terug te halen. Yala start opnieuw op en je gaat verder met je uitnodiging.";
+
+/* Puerta del invitado: CTA destructivo que arranca la vuelta al neutro */
+"welcome.groups.inviteNeutralCta" = "Doorgaan en verwijderen";
+
+/* Aviso: el borrado local de los grupos falló al desasociar */
+"storage.groups.detachPurgeFailedTitle" = "Ontkoppelen is niet gelukt";
+
+/* Aviso: cuerpo del fallo del borrado al desasociar */
+"storage.groups.detachPurgeFailedBody" = "Je groepen staan nog op deze iPhone en het account is niet ontkoppeld. Je keuze voor de posten in het Paneel is al doorgevoerd en we hebben je bij dat account afgemeld. Probeer het opnieuw om het af te ronden.";
+
+/* Aviso: el desasociar abortó porque no se pudo leer el puente */
+"storage.groups.detachBlockedBridge" = "We konden de posten van je groepen op deze iPhone niet controleren. Er is niets ontkoppeld. Probeer het opnieuw.";
+"storage.groups.detachBlockedSessionNotClosed" = "We konden je groepsaccount op deze iPhone niet afmelden. Er is niets ontkoppeld. Probeer het opnieuw.";
+
+/* Botón cuando quedó un desasociar a medias */
+"storage.groups.detachFinishButton" = "Ontkoppelen afronden";
+
+/* Cuerpo de la sección cuando quedó un desasociar a medias */
+"storage.groups.detachPendingBody" = "Het bleef halverwege steken: je groepen staan nog op deze iPhone en je bent al afgemeld bij dat account.";
+
+/* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
+"storage.groups.detachBusy" = "Je bent je nu aan het afmelden. Rond dat eerst af en probeer het opnieuw.";
+
+/* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
+"groups.errors.channelPaused" = "Het ligt aan ons: groepen staan even op pauze. Je wijzigingen blijven op deze telefoon en er gaat niets verloren; probeer het straks opnieuw.";
+
+/* Private gate: the phone already holds data from a previous stage */
+"welcome.privateICloud.foundDeviceTitle" = "Op deze telefoon staan al gegevens";
+
+/* Private gate: body of the on-device data notice */
+"welcome.privateICloud.foundDeviceBody" = "Op deze telefoon staan al gegevens van eerder: wat tot nu toe in Yala werd bijgehouden. Als je opnieuw begint, wordt dat van deze telefoon gehaald zodat jouw Yala schoon start.";
+
+/* Private gate: second confirmation for the on-device wipe */
+"welcome.privateICloud.wipeDeviceConfirmBody" = "Alles op deze telefoon wordt gewist: uitgaven, rekeningen, budgetten, categorieën en je groepen. Op de telefoon blijft geen kopie achter.";
+
+/* Private gate: progress while wiping the on-device corpus */
+"welcome.privateICloud.wipingDevice" = "We verwijderen wat op deze telefoon stond…";
+
+/* Private gate: the on-device wipe failed */
+"welcome.privateICloud.wipeDeviceFailedBody" = "We konden het niet afmaken. Een deel van je gegevens is misschien al weg en de rest staat er nog. Probeer het opnieuw; lukt het weer niet, sluit Yala af en open hem opnieuw.";
+
+/* Private gate: keep what the phone already has and go back to the chooser */
+"welcome.privateICloud.foundDeviceKeep" = "Laten zoals het is";
+
+/* Private gate: retry a failed wipe (not a re-search) */
+"welcome.privateICloud.wipeRetry" = "Opnieuw proberen";
+
+/* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
+"groups.errors.uploadRetryLater" = "Je laatste groepswijzigingen zijn niet op de server aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
+
+/* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
+"groups.errors.captureUnfinished" = "Sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Ze blijven op deze telefoon staan en er gaat niets verloren. Sluit Yala en open hem opnieuw; blijft het gebeuren, werk hem dan bij.";
+
+/* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
+"icloud.appleIDChanged.title" = "Je bent van iCloud-account gewisseld";
+
+/* Alert body: que pasa con los datos al cambiar de Apple ID */
+"icloud.appleIDChanged.message" = "De Yala-gegevens op deze telefoon horen bij het vorige iCloud-account en blijven daar bewaard. Om Yala op deze telefoon te blijven gebruiken, moeten ze hier weg. Wat dat account niet heeft bereikt, kan niet meer worden geüpload.";
+
+/* Alert button: confirma el cierre de la sesion privada y el borrado local */
+"icloud.appleIDChanged.confirm" = "Uitloggen en verwijderen";
+
+/* Alert button: pospone el cierre hasta el proximo arranque */
+"icloud.appleIDChanged.later" = "Niet nu";
+
+/* Gate de «Empezar desde cero» sin respuesta de iCloud: no se declara un borrado que no ocurrio */
+"welcome.privateICloud.discardUnverifiedBody" = "We konden geen verbinding maken om je iCloud na te kijken, dus hebben we niets verwijderd: alles is nog zoals het was. Probeer het opnieuw, of ga terug en beslis wanneer je wilt.";
+
+/* Salida del gate de «Empezar desde cero» cuando iCloud no contesto: vuelve a Restaurar */
+"welcome.privateICloud.discardUnverifiedBack" = "Terug";
+
+/* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Op deze telefoon staat iCloud uit, dus we konden niet zien of je eerder iets hebt bewaard en we hebben niets verwijderd. Zet het aan in Instellingen en probeer het opnieuw, of ga terug en beslis wanneer je wilt.";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "Worden uit iCloud verwijderd, dus ze verdwijnen ook van je andere apparaten die je persoonlijke gegevens daar bewaren";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "Deze telefoon kan je groepen niet synchroniseren";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Groepswijzigingen die niet zijn aangekomen: %d. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige groepswijzigingen zijn niet aangekomen. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "Uitloggen en ze verliezen";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus je groepswijzigingen kunnen niet worden geüpload.";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "Deze telefoon kan je groepen niet synchroniseren, dus we konden je vertrek uit de groep niet afronden.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Groepswijzigingen die niet zijn aangekomen: %d. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige groepswijzigingen zijn niet aangekomen. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "Doorgaan en ze verliezen";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "Niet nu";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "Deze telefoon kan je gegevens niet synchroniseren";
+"settings.signOutAttestMessage" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Voordat je beslist, kun je je transacties naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestMessageUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige wijzigingen zijn niet in je account in de cloud aangekomen. Voordat je beslist, kun je je transacties naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestExportButton" = "Mijn transacties exporteren";
+"settings.signOutAttestLossButton" = "Uitloggen en ze verliezen";
+"settings.signOutAttestBlocked" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus je wijzigingen kunnen niet naar je account in de cloud worden geüpload.";
+"settings.signOutAttestExportEmpty" = "Je hebt geen transacties om te exporteren.";
+"settings.signOutAttestExportFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier wijzigt, bereikt de groep niet — gebruik zolang een andere telefoon.";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier invoert, wordt op deze telefoon bewaard, maar bereikt je cloudaccount niet — gebruik zolang een andere telefoon.";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "Je gegevens worden naar iCloud geüpload. Je kunt Yala blijven gebruiken.";
+"storage.progress.reversePending" = "Nog te uploaden: %d";
+"storage.progress.reverseICloudFull" = "iCloud heeft geen ruimte voor je gegevens. Als het uploaden binnen een paar minuten niet opschiet, blijf je in de cloud en kun je het opnieuw proberen zodra je ruimte hebt vrijgemaakt.";
+"storage.progress.reverseICloudUnavailable" = "iCloud is niet beschikbaar op dit apparaat. Als het uploaden binnen een paar minuten niet opschiet, blijf je in de cloud en kun je het opnieuw proberen.";
+"storage.progress.cancelReverse" = "Annuleren en in de cloud blijven";
+"storage.confirm.cancelReverseTitle" = "Terugkeer naar iCloud annuleren?";
+"storage.confirm.cancelReverseBody" = "Je gegevens blijven in de Yala-cloud en op dit apparaat. Yala vraagt je daarna om de app af te sluiten en opnieuw te openen.";
+"storage.confirm.cancelReverseConfirm" = "Ja, in de cloud blijven";
+"storage.confirm.cancelReverseKeep" = "Blijven wachten";
+"storage.reverseAbort.relaunchTitle" = "Je gegevens staan nog in de cloud";
+"storage.reverseAbort.relaunchBody" = "Sluit Yala volledig af (veeg hem weg in de app-kiezer) en open hem opnieuw om de cloud te blijven gebruiken.";
+"storage.reverseAbort.icloudFull" = "We konden de terugkeer naar iCloud niet afronden: iCloud had geen ruimte meer. Maak ruimte vrij en probeer het opnieuw.";
+"storage.reverseAbort.icloudUnavailable" = "We konden de terugkeer naar iCloud niet afronden: iCloud was niet beschikbaar op dit apparaat. Controleer je iCloud-account in Instellingen en probeer het opnieuw.";
+"storage.reverseAbort.stalled" = "We konden de terugkeer naar iCloud niet afronden: iCloud heeft niet al je gegevens ontvangen. Controleer of iCloud op dit apparaat aanstaat en probeer het opnieuw met een goede verbinding. Laat Yala open tijdens het uploaden.";
+"storage.reverseAbort.claimRetryLater" = "We konden de terugkeer naar iCloud niet starten: je gegevens werden nog naar de cloud overgezet. Probeer het over een tijdje opnieuw.";
+"storage.reverseAbort.claimRefused" = "We konden de terugkeer naar iCloud niet starten: je account stond dat niet toe. Die poging heeft niets veranderd. Mail ons op %@ en we kijken er samen naar.";
+"storage.reverseAbort.otherDeviceReverting" = "We konden de terugkeer naar iCloud niet starten: een ander apparaat van je was al bezig met de terugkeer naar iCloud. Zodra dat klaar is, kun je het op dit apparaat doen.";
+"storage.progress.reverseICloudMaybeOff" = "Als iCloud niet is ingeschakeld op dit apparaat, kunnen je gegevens iCloud niet bereiken. Schakel het in via Instellingen of annuleer om in de cloud te blijven.";
+/* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
+"storage.progress.reverseLocalFailure" = "Dit apparaat kon je gegevens niet klaarzetten voor het uploaden naar iCloud. Als dit niet binnen een paar minuten is opgelost, blijf je in de cloud en kun je het opnieuw proberen.";
+"storage.reverseAbort.localFailure" = "We konden de terugkeer naar iCloud niet voltooien: dit apparaat kon je gegevens niet klaarzetten voor het uploaden. Je blijft in de cloud — probeer het over een tijdje opnieuw.";
+"storage.errors.reversePendingExit" = "Terug naar iCloud kan nog niet: je cloud moet eerst helemaal opnieuw geactiveerd worden. Probeer het zo opnieuw.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "We konden je account niet controleren. Probeer het zo meteen opnieuw. Er is niets veranderd.";
+"storage.migrateBlock.personalDataTitle" = "Dit account heeft al persoonlijke financiën";
+"storage.migrateBlock.personalDataBody" = "Er is niets veranderd. Gebruik een ander account om je gegevens naar de cloud te brengen. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Er is niets veranderd. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
+"storage.migrateBlock.otherGroupsTitle" = "Je gebruikt al een ander account voor je groepen";
+"storage.migrateBlock.otherGroupsBody" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al een ander. Log in met het account van je groepen om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Er is niets veranderd. Op dit apparaat kan maar één cloudaccount staan, en je groepen gebruiken al %@. Log in met dat account om je gegevens naar de cloud te brengen, of ontkoppel het eerst in ‘Groepen’ als je liever een ander gebruikt.";
+"storage.migrateBlock.returnedTitle" = "Dit account is teruggegaan naar iCloud";
+"storage.migrateBlock.returnedBody" = "Met dit account terug naar de cloud gaan kan nog niet. Er is niets veranderd.";
+"storage.migrateBlock.useAnotherAccount" = "Ander account gebruiken";
+"storage.migrateBlock.appleSameAccountNote" = "Met Apple gebruikt Yala altijd het account van dit apparaat. Kies Google om een ander account te gebruiken.";
+"storage.migrateBlock.freshStartSessionTitle" = "Dit account is misschien van iemand anders";
+"storage.migrateBlock.freshStartSessionBody" = "Er is niets veranderd. Je groepen gebruiken een account dat al op dit apparaat was ingelogd, en omdat hier opnieuw is begonnen, is het misschien van iemand anders. Ontkoppel het in ‘Groepen’ en tik opnieuw op ‘Cloud inschakelen’ om je gegevens naar de cloud te brengen: dan kun je je eigen account kiezen.";
+"storage.migrateBlock.otherDeviceTitle" = "Een ander apparaat van je zet je gegevens in de cloud";
+"storage.migrateBlock.otherDeviceBody" = "Er is niets veranderd. Rond het inschakelen af op dat apparaat of probeer het daar opnieuw als het is gestopt. Daarna kun je de cloud hier inschakelen.";
+
+/* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedTitle" = "We konden je gegevens niet controleren";
+
+/* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedBody" = "We konden geen verbinding maken om te controleren of je gegevens hebt opgeslagen. Probeer het zo meteen opnieuw.";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "Je sessie is verlopen. Meld je opnieuw aan om terug te gaan naar iCloud.";
+"storage.progress.adoptSessionExpired" = "Je cloudsessie is niet meer geldig. Annuleer het inschakelen en meld je opnieuw aan met je account.";
+"storage.progress.adoptAccountUnavailable" = "We kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we zoeken het samen uit.";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "Je bent met een ander account aangemeld. Meld je aan met het account waarmee je terug naar iCloud bent gegaan.";
+"storage.errors.syncSignInOtherAccount" = "Je hebt je met een ander account aangemeld, dus we hebben je niet aangemeld gelaten. Meld je aan met het account waarmee je Yala op deze telefoon gebruikt.";
+
+/* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
+"welcome.restore.importIncompleteTitle" = "We halen je gegevens nog op";
+
+/* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
+"welcome.restore.importIncompleteBody" = "iCloud stuurt je geschiedenis nog door. Met veel transacties of een trage verbinding kan dat een paar minuten duren. Zoek zo meteen opnieuw.";
+
+/* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
+"storage.reverseAbort.preMountRefused" = "We konden de terugkeer naar iCloud niet voltooien: je cloudaccount stond het niet toe. Je gegevens staan nog in de Yala-cloud. Mail ons op %@ en we zoeken het samen uit.";
+
+/* Salida de la vuelta antes de montar el espejo: venció el techo largo */
+"storage.reverseAbort.preMountStalled" = "We konden de terugkeer naar iCloud niet voltooien: er zat geen voortgang meer in. Je gegevens staan nog in de Yala-cloud en je kunt het opnieuw proberen wanneer je wilt.";
+
+/* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
+"storage.confirm.cancelReverseBeforeMountBody" = "Je gegevens blijven in de Yala-cloud en op dit apparaat. Je kunt het opnieuw proberen wanneer je wilt.";
+
+/* Diálogo de cancelar: seguir, antes de montar el espejo */
+"storage.confirm.cancelReverseKeepBeforeMount" = "Doorgaan met terugkeren naar iCloud";
+
+/* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
+"storage.reverseAbort.preMountOtherDevice" = "We konden de terugkeer naar iCloud niet voltooien: een ander apparaat van je heeft het overgenomen. Zodra dat klaar is, kun je het op dit apparaat doen.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "We konden de cloud niet inschakelen: het uploaden van je gegevens komt al dagen niet vooruit. Je gegevens staan veilig op je apparaat — probeer het later opnieuw.";
+/* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
+"storage.failed.snapshotMixedCauses" = "We konden de cloud niet inschakelen: het uploaden van je gegevens liep vast op iets dat wachten niet zou oplossen. Je gegevens staan veilig op je apparaat — probeer het opnieuw.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "We konden de cloud niet inschakelen: je sessie is verlopen terwijl we je gegevens uploadden. Je gegevens staan veilig op je apparaat — probeer het opnieuw en log nog een keer in.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "We konden de cloud niet inschakelen: je cloudaccount stond het niet toe. Je gegevens staan veilig op je apparaat. Mail ons op %@ en we zoeken het samen uit.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "We konden de cloud niet inschakelen: dit apparaat kon je gegevens niet klaarzetten voor het uploaden. Je gegevens staan hier nog, ongewijzigd — probeer het over een tijdje opnieuw.";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "We konden de cloud niet inschakelen: het inschakelen komt al dagen niet vooruit. Je gegevens staan veilig op je apparaat — probeer het later opnieuw.";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "We konden de cloud niet inschakelen: je sessie is verlopen voordat we klaar waren. Je gegevens staan veilig op je apparaat — probeer het opnieuw en log nog een keer in.";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "We konden de cloud op dit apparaat niet inschakelen: een ander apparaat met je account heeft het overgenomen. Je gegevens staan hier nog, ongewijzigd.";
+"storage.failed.adoptStalled" = "We konden je niet aanmelden bij je cloudaccount: het inschakelen komt al dagen niet verder. Dit apparaat heeft niets veranderd aan wat je in de cloud hebt — probeer het later opnieuw.";
+"storage.failed.adoptSessionExpired" = "We konden je niet aanmelden bij je cloudaccount: je sessie is verlopen. Dit apparaat heeft niets veranderd aan wat je in de cloud hebt — probeer het opnieuw en meld je nog een keer aan met je account.";
+"storage.failed.adoptAccountUnavailable" = "We konden je niet aanmelden bij je cloudaccount: we kunnen je nu geen toegang geven tot dit account. Mail ons op %@ en we zoeken het samen uit.";
+"storage.failed.adoptEffectLocalFailure" = "We konden je niet aanmelden bij je cloudaccount: dit apparaat kon je gegevens niet lezen om ze samen te voegen met die van je account. Wat je op dit apparaat hebt, staat er nog — probeer het over een tijdje opnieuw.";
+"storage.failed.adoptEffectStalled" = "We konden je niet aanmelden bij je cloudaccount: het inschakelen kan al dagen niet worden afgerond. Wat je op dit apparaat hebt, staat er nog — probeer het later opnieuw.";
+"storage.failed.adoptEffectLineageUnproven" = "We konden je niet aanmelden bij je cloudaccount: dit apparaat heeft gegevens die dat account niet heeft, en we konden niet bevestigen dat ze ervan afkomstig zijn, dus we hebben ze niet samengevoegd. Wat je op dit apparaat hebt, staat er nog. Als je de gegevens van deze iCloud vanaf een ander apparaat naar de cloud hebt overgezet, controleer dan of je je aanmeldt met datzelfde account en wacht tot iCloud ze heeft binnengehaald voordat je het opnieuw probeert.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Inschakelen annuleren";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Inschakelen van de cloud annuleren?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "Je gegevens blijven op dit apparaat, net als voorheen. Wat al geüpload is, blijft in je cloudaccount. Je kunt het opnieuw proberen wanneer je wilt.";
+"storage.confirm.cancelAdoptBody" = "Dit apparaat heeft niets veranderd aan wat je in de cloud hebt. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
+"storage.confirm.cancelAdoptEffectBody" = "Wat je op dit apparaat hebt, staat er nog, net als voorheen. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
+"storage.waiting.stopWaiting" = "Stoppen met wachten";
+"storage.confirm.stopWaitingTitle" = "Stoppen met wachten?";
+"storage.confirm.stopWaitingBody" = "Je andere apparaat blijft de cloud inschakelen. Dit apparaat stopt met wachten zonder iets te veranderen aan wat je in de cloud hebt. Je kunt de cloud hier altijd opnieuw inschakelen op dit apparaat.";
+"storage.confirm.stopWaitingConfirm" = "Ja, stoppen met wachten";
+"storage.confirm.stopWaitingKeep" = "Blijven wachten";
+"storage.progress.followerSessionExpired" = "Je cloudsessie is niet meer geldig. Stop met wachten en meld je opnieuw aan met je account.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Ja, annuleren";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Doorgaan met inschakelen";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "We konden niet controleren hoe het met je gegevens staat. Voorlopig kun je ze niet naar de cloud verplaatsen of terugzetten naar iCloud. We blijven het proberen; lukt het niet, sluit Yala dan af en open hem opnieuw.";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "Meld je aan om je wijzigingen te uploaden";
+"storage.sync.waitingForConnectionUncounted" = "Wijzigingen wachten op verbinding";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "We konden je gegevens niet tellen. Probeer het zo meteen opnieuw.";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "We konden de cloud niet inschakelen: dat account heeft al gegevens in de cloud, en de gegevens op dit apparaat komen daar niet mee overeen, dus we hebben ze niet samengevoegd. Wat je op dit apparaat hebt, staat er nog. Controleer of je je aanmeldt met het juiste account. Als het van jou is en dit apparaat dezelfde iCloud gebruikt, wacht dan tot iCloud je gegevens heeft binnengehaald en probeer het opnieuw.";
+"storage.failed.stepLeaderRowsNotArrived" = "We konden de cloud niet inschakelen: een ander apparaat van je heeft al een deel van je gegevens geüpload, en iCloud heeft ze nog niet allemaal naar dit apparaat gebracht, dus we hebben niets geüpload om dubbele gegevens te voorkomen. Wat je op dit apparaat hebt, staat er nog. Open Yala met een verbinding op dat andere apparaat, wacht tot iCloud je gegevens naar dit apparaat heeft gebracht en probeer het opnieuw.";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. We konden niet controleren hoe ver de overstap van je gegevens naar de cloud is, dus we kunnen ze nu niet uploaden. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
+"settings.signOutCaptureUnfinished" = "Sommige van je laatste wijzigingen konden niet worden voorbereid om naar de cloud te uploaden. Ze blijven op deze telefoon staan en er gaat niets verloren. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd omdat de overstap van je gegevens tussen de cloud en iCloud niet is afgerond. Open ‘Waar je gegevens staan’, hier in Profiel, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd tot je Yala opnieuw opent. Sluit hem volledig af (veeg hem weg in de app-kiezer), open hem opnieuw en probeer het nog eens.";
+
+/* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
+"settings.signOutUploadRetryLater" = "Je laatste wijzigingen zijn niet in de cloud aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
+"settings.signOutCloudSessionExpired" = "Je sessie is verlopen en sommige wijzigingen zijn nog niet naar de cloud geüpload. Er gaat niets verloren: open ‘Waar je gegevens staan’, hier in Profiel, tik op ‘Aanmelden’ en probeer het daarna opnieuw.";
+"settings.signOutSessionSurvived" = "Je bent nog ingelogd op deze iPhone, dus er is niets verwijderd. Probeer het opnieuw.";
+"settings.signOutMigrationInFlight" = "De overstap van je gegevens tussen iCloud en de cloud is nog niet afgerond, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Open ‘Waar je gegevens staan’, in Profiel, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
+"settings.signOutMigrationUnreadable" = "We konden niet controleren hoe ver de overstap van je gegevens tussen iCloud en de cloud is, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "Het verwijderen is maar half gelukt";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "We hebben al verwijderd wat in iCloud stond, maar op deze telefoon konden we het niet afmaken: alles of een deel van wat je had kan hier nog staan. Je kunt houden wat er nog is, of het alsnog verwijderen en opnieuw beginnen.";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "Verwijderen afmaken";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "Wat er nog op deze telefoon staat wordt verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie over.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Sommige groepswijzigingen op deze telefoon zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Er gaat niets verloren: ze blijven hier bewaard tot je met dat account inlogt.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Nog niet geüploade groepswijzigingen: %d. Sommige zijn op deze telefoon met een ander account gemaakt en worden alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op deze telefoon met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Je sessie is verlopen. Nog niet geüploade groepswijzigingen: %d. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Je sessie is verlopen en sommige groepswijzigingen zijn nog niet geüpload. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Nog niet geüploade groepswijzigingen: %d. Sommige zijn op deze telefoon met een ander account gemaakt en worden alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op deze telefoon met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "Ze kunnen alleen worden geüpload door in te loggen met het account dat elk ervan heeft gemaakt, en de sessie op deze telefoon is van een ander account. Als dat niet gaat gebeuren, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Sommige zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Ben je dat niet van plan, dan kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.titleNeutral" = "Er moeten nog groepswijzigingen worden geüpload";
+"groups.freshStartPending.leadNeutral" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt (%d), en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.leadNeutralUnknown" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
+"groups.freshStartPending.leadSplit" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen. Van jou: %1$d. Gemaakt met een ander account: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Je account kan die van jou niet meer uploaden, en opnieuw proberen lost dat niet op.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Die van jou kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan op deze telefoon is niet meer geldig.";
+"groups.freshStartPending.splitAnotherAccount" = "Die gemaakt met een ander account kunnen alleen worden geüpload door in te loggen met het account dat elk ervan heeft gemaakt; wachten of opnieuw proberen uploadt ze niet.";
+"groups.freshStartPending.splitLossTail" = "Je kunt opnieuw beginnen en ze allemaal verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Als die van jou worden geüpload, kun je opnieuw beginnen en alleen die gemaakt met een ander account verliezen.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Groepswijzigingen die verloren gaan — van jou: %1$d; gemaakt met een ander account: %2$d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Groepswijzigingen die verloren gaan: %d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van deze telefoon gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Je sessie is verlopen. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je transacties eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Je sessie is verlopen en sommige wijzigingen zijn niet in je account in de cloud aangekomen. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je transacties eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "Kies een boeking om die hier te zien";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "Kies een budget of betaling om die hier te zien";
+"groups.detailPlaceholder" = "Kies een groep om die hier te zien";
+"settings.detailPlaceholder" = "Kies een instelling om die hier te zien";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "We hebben niets aangeraakt en je uitnodiging is nog opgeslagen. Probeer het zo opnieuw; gebeurt er niets, sluit Yala dan helemaal (veeg de app weg uit de appkiezer) en open hem opnieuw.";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "Open Yala opnieuw om mee te doen";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "Je cloudaccount wordt verder ingesteld zodra je Yala opnieuw opent. Sluit de app helemaal (veeg hem weg uit de appkiezer) en open hem opnieuw: je uitnodiging is nog opgeslagen en je gaat daar verder.";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "Log eerst in met het account van deze telefoon";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "Op deze telefoon staan de gegevens van een cloudaccount dat niet is ingelogd, en je groepsuitgaven zouden daarin terechtkomen. Is het van jou, log er dan mee in via ‘Ik heb al een account’ en ga verder met je uitnodiging. Zo niet, doe dan mee vanaf je eigen telefoon.";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "We konden deze telefoon niet klaarmaken";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "Bij het opnieuw openen van Yala kon wat op deze telefoon is opgeslagen niet worden gewist, dus hij is niet klaar voor je groep. We proberen het niet zelf opnieuw: ga terug en probeer het later nog eens als je wilt.";
+
+/* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
+"icloud.appleIDChanged.groupsLine" = "Ook de groepen op deze telefoon worden verwijderd.";
+
+/* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
+/* Keyboard menu (iPad, hold Cmd): go to a section */
+"keyboard.menu.go" = "Ga naar";
+/* Keyboard menu (iPad, hold Cmd): actions on the open record */
+"keyboard.menu.record" = "Boeking";
+/* Keyboard command Cmd-Shift-N: new shared expense in a group */
+"keyboard.newGroupExpense" = "Nieuwe groepsuitgave";
+/* Keyboard command Up arrow: open the previous record in the list */
+"keyboard.previousRecord" = "Vorige boeking";
+/* Keyboard command Down arrow: open the next record in the list */
+"keyboard.nextRecord" = "Volgende boeking";
+/* Context menu on a record row: pick another category for it */
+"records.contextMenu.changeCategory" = "Categorie wijzigen";
+/* Context menu on an account card in the Panel: show only this account */
+"panel.accounts.filterByAccount" = "Filteren op deze rekening";
+/* Context menu on a group card: open the group */
+"groups.contextMenu.open" = "Groep openen";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "Openen in nieuw venster";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala wacht in een ander venster";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "Er is iets te beantwoorden in het andere Yala-venster. Als je daar klaar bent, komt dit venster vanzelf terug.";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "Naar dat venster";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "Groepen staan nu even op pauze; dat ligt aan ons. Zodra ze terug zijn, kun je hier verder.";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "Stap %1$d van %2$d";
+"stepGuide.markDone" = "Gedaan";
+"stepGuide.stuck" = "Ik kom er niet uit";
+"stepGuide.whatYouWillSee" = "Dit zie je";
+"stepGuide.phaseDone" = "Klaar";
+"stepGuide.phaseActive" = "Huidige stap";
+"stepGuide.phaseUpcoming" = "Nog te doen";
+"tutorials.applePay.openShortcuts" = "Open Opdrachten";
+"tutorials.applePay.guarantee" = "Elke betaling komt binnen als concept: er wordt niets geboekt tot je het goedkeurt.";
+"tutorials.applePay.pendingDrafts" = "Apple Pay-betalingen in je inbox: %d";
+"faceIDGuide.guarantee" = "Yala ziet je gezicht nooit: dat controleert iOS.";
+"faceIDGuide.previewAction" = "Face ID vereisen";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Saldo";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "Te betalen";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Uitgegeven · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "In";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Uit";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Waar het heen ging";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Laatste transacties";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Saldo van %@ in %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Geen transacties in deze periode";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Na archiveren telt deze rekening niet meer mee in je totalen en statistieken, en worden haar transacties verborgen in Boekingen. Wil je dat ze blijft meetellen, zet dan „Uitsluiten van statistieken” uit.";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "Details";
+"chat.draft.detailsTitle" = "Voorgestelde boeking";
+"chat.draft.openFullForm" = "Openen in het volledige formulier";
+"chat.draft.missingSubcategory" = "Subcategorie ontbreekt";
+"chat.draft.missingAccount" = "Rekening ontbreekt";
+"chat.draft.missingAmount" = "Bedrag ontbreekt";
+"chat.draft.addTag" = "Label";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Probeer: ‘25 uitgegeven aan lunch met mijn pas’";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Kijk je tekst na voordat je hem verstuurt.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ opgenomen";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Opname verwijderen";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "Je boeking wordt begrepen…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "Je boeking wordt voorbereid…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "Opnieuw opnemen";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "Dit heb ik begrepen";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "%d boekingen begrepen";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "%d opslaan";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "Als je sluit zonder op te slaan, vind je het in je inbox.";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "Geen verbinding";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala kan de microfoon niet gebruiken";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "Ik heb je niet gehoord";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "De opname was leeg of te kort. Probeer opnieuw.";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "Ik heb geen bedrag gehoord";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "Zeg ook hoeveel het was, bijvoorbeeld ‘25’.";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "Dat lukte deze keer niet";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "Er ging iets mis bij het verwerken van je stem. Probeer het zo opnieuw.";
+"voice.failure.trialUsedUp.title" = "Je proefspraaknotities zijn op";
+"voice.failure.trialUsedUp.message" = "Met Yala Pro leg je je uitgaven onbeperkt met je stem vast.";
+"ai.trial.seePro" = "Bekijk Yala Pro";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "Vastleggen met foto of bestand";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "Een bon, een bankscreenshot of een pdf. Ik haal er het bedrag, de winkel en de datum uit.";
+/* Image entry source: take a photo */
+"image.entry.camera" = "Camera";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "Foto’s";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "Bestand";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "Tot 10 foto’s tegelijk uit Foto’s";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "Je foto wordt gelezen…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "Je foto’s worden gelezen…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "Bedrag zoeken";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "Foto %1$d van %2$d";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "Dit heb ik gelezen";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "%d boekingen gelezen";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1 foto kon niet worden gelezen";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d foto’s konden niet worden gelezen";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "Andere foto";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "Lezen stoppen";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "Ik vond geen bedrag";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "Probeer een foto dichter bij het totaal, of een andere afbeelding.";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "Ik kon deze afbeelding niet openen";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala kan de camera niet gebruiken";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "Sta het toe in Instellingen om je bonnen te fotograferen.";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "Deze keer kon ik hem niet lezen";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "De foto is in orde: het lezen mislukte. Probeer het zo opnieuw.";
+"image.entry.failure.trialUsedUp.title" = "Je proeffoto’s zijn op";
+"image.entry.failure.trialUsedUp.message" = "Met Yala Pro leg je je bonnetjes onbeperkt met een foto vast.";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "Jij";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "Verdeling";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "Betaalde %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "In je financiën";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "en verdeeld";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "jou";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "Een verwijdering is niet klaar";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "Je wilde opnieuw beginnen en je iCloud-gegevens verwijderen, en dat is nog niet klaar. Als je de cloud inschakelt, wordt het geannuleerd en kan wat niet is verwijderd in je Yala-account terechtkomen. Als je wacht, verandert er niets en blijft het verwijderen openstaan.";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "Cloud inschakelen zonder te verwijderen";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "Niet nu";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "Een verwijdering is niet afgerond";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "Je wilde opnieuw beginnen en je iCloud-gegevens verwijderen, maar dat was nog niet klaar toen je gegevens naar de cloud gingen, en het gebeurt nu niet meer. Een deel van wat je wilde verwijderen kan nog in iCloud staan of naar je Yala-account zijn gegaan.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Bedrag gewijzigd";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "De betaling van %1$@ in ‘%2$@’ is gewijzigd: het was %3$@ en is nu %4$@. In %5$@ staat %6$@ geregistreerd.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Je betaling aan %1$@ in ‘%2$@’ is gewijzigd: het was %3$@ en is nu %4$@. In %5$@ staat %6$@ geregistreerd.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Deze afrekening in ‘%1$@’ is gewijzigd: het was %2$@ en is nu %3$@. In %4$@ staat %5$@ geregistreerd.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Aanpassen naar %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Laat op %@ staan";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ geregistreerd in %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Deze melding kan niet meer worden toegepast: de transactie is gewijzigd of staat niet meer in je rekeningen.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "Ik kon dit bestand niet openen";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "Het is misschien leeg of beschadigd. Probeer een andere foto of pdf van het bonnetje.";
+
+/* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
+"account.currencyChange.confirmTitleNoHistory" = "Valuta wijzigen naar %@?";
+
+/* Account currency change confirmation: pending inbox drafts converted with their own date's rate. %1$d = count, %2$@ = new currency code */
+"account.currencyChange.draftsLine" = "Openstaande concepten in de inbox: %1$d. Ze gaan naar %2$@ met de wisselkoers van hun datum.";
+
+/* Account currency change confirmation: header before the list of scheduled payments and favorites converted at today's rate. %@ = new currency code */
+"account.currencyChange.plansHeader" = "Geplande betalingen en favorieten die naar %@ gaan met de wisselkoers van vandaag:";
+
+/* Account currency change confirmation: one scheduled payment or favorite. %1$@ = its name, %2$@ = amount before, %3$@ = amount after */
+"account.currencyChange.planItem" = "• %1$@: %2$@ → %3$@";
+
+/* Account currency change confirmation: how many more scheduled payments or favorites are converted beyond the ones listed. %d = count */
+"account.currencyChange.plansMore" = "en nog %d";
+
+/* Account currency change confirmation: closing sentence when there are no movements to convert */
+"account.currencyChange.cannotUndo" = "Dit kan niet ongedaan worden gemaakt.";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "Deze pdf heeft een wachtwoord";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "Vul het in om het bestand te openen. Het wordt alleen op dit apparaat gebruikt: het wordt niet bewaard of verstuurd.";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "Wachtwoord van de pdf";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "Open";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "Onjuist wachtwoord. Controleer het en probeer het opnieuw.";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1 pagina is niet gelezen: er worden er tot %d tegelijk gelezen. Upload haar in een andere pdf om haar te lezen.";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$d pagina’s zijn niet gelezen: er worden er tot %2$d tegelijk gelezen. Upload ze in een andere pdf om ze te lezen.";
+
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "1 foto is niet gelezen: er worden er tot %d tegelijk gelezen. Deel hem apart om hem te lezen.";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "%1$d foto’s zijn niet gelezen: er worden er tot %2$d tegelijk gelezen. Deel ze apart om ze te lezen.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "Je proeffoto’s zijn op: 1 is niet gelezen.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "Je proeffoto’s zijn op: %d zijn niet gelezen.";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "Pagina %1$d van %2$d";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "1 dag over";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "Je hebt een verbinding nodig om de AI-analyse te maken.";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "Je hebt je AI-analyses voor vandaag opgebruikt. Kom morgen terug.";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "Je hebt meerdere analyses kort na elkaar aangevraagd. Wacht even en probeer het opnieuw.";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "We konden je Yala Pro niet bevestigen. Probeer het zo opnieuw.";
+
+/* Private gate: reading the data already on this phone failed */
+"welcome.privateICloud.deviceUnreadableTitle" = "We konden deze telefoon niet controleren";
+
+/* Private gate: body when the phone's data could not be read */
+"welcome.privateICloud.deviceUnreadableBody" = "Er ging iets mis bij het bekijken van wat er al op deze telefoon staat, dus we weten niet of er gegevens op staan. Er is niets aangepast. Probeer het zo opnieuw.";
+
+/* Private gate: secondary button that goes back to the choice */
+"welcome.privateICloud.deviceUnreadableBack" = "Terug";
+
+/* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
+"welcome.bornCloud.readyExistingAccountTitle" = "Je had al een account en je bent er nu in ingelogd.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "„%@” verwijderen";
+"account.removal.intro" = "Kies voordat je hem verwijdert wat er met de inhoud moet gebeuren.";
+"account.removal.countRecords" = "Transacties";
+"account.removal.countScheduled" = "Geplande betalingen";
+"account.removal.countFavorites" = "Favoriete betalingen";
+"account.removal.countDrafts" = "Wachtend in de inbox";
+"account.removal.choiceHeader" = "Wat doen we ermee";
+"account.removal.moveTitle" = "Naar een andere rekening verplaatsen";
+"account.removal.moveSubtitle" = "Aanbevolen. Je geschiedenis en je saldo blijven behouden.";
+"account.removal.noDestination" = "Je hebt geen andere rekening om naartoe te verplaatsen.";
+"account.removal.deleteTitle" = "De transacties verwijderen";
+"account.removal.deleteSubtitle" = "Ze worden definitief verwijderd, samen met de rekening.";
+"account.removal.deleteBlockedGroups" = "Er staan transacties van je groepen in: die kunnen alleen worden verplaatst.";
+"account.removal.destinationHeader" = "Verplaatsen naar";
+"account.removal.destinationBlockedCurrency" = "Niet beschikbaar: er staan overboekingen of groepstransacties in die niet naar deze valuta kunnen worden omgerekend.";
+"account.removal.convertNote" = "Wat in een andere valuta staat, gaat naar %@: transacties tegen de wisselkoers van hun datum, geplande en favoriete betalingen tegen die van vandaag.";
+"account.removal.collapsedNote" = "Overboekingen tussen „%1$@” en „%2$@” worden verwijderd: binnen één rekening verplaatsen ze geen geld.";
+"account.removal.partnersNote" = "Overboekingen met andere rekeningen blijven op die rekeningen staan als gewone transacties.";
+"account.removal.plansNote" = "Geplande betalingen, favorieten en wachtende items in de inbox blijven zonder rekening: je kiest er een als je ze gebruikt.";
+"account.removal.moveAction" = "Verplaatsen en rekening verwijderen";
+"account.removal.deleteAction" = "Transacties en rekening verwijderen";
+"account.removal.confirmDeleteTitle" = "De transacties verwijderen?";
+"account.removal.confirmDeleteCount" = "Te verwijderen transacties";
+"account.removal.confirmDeleteMessage" = "Ze worden definitief verwijderd en dit kan niet ongedaan worden gemaakt. De rekening wordt ook verwijderd.";
+"account.removal.confirmDeleteAction" = "Ja, alles verwijderen";
+"account.removal.working" = "Rekening verwijderen…";
+"account.removal.failedTitle" = "De rekening is niet verwijderd";
+"account.removal.failedUnreadable" = "We konden de inhoud van deze rekening niet lezen. Er is niets gewijzigd.";
+"account.removal.failedChanged" = "Er is intussen iets aan de rekening veranderd. Controleer het en probeer het opnieuw.";
+"account.removal.failedRates" = "We konden de wisselkoersen voor het omrekenen niet ophalen. Er is niets verplaatst: probeer het opnieuw met een verbinding.";
+"account.removal.noAllowedDestination" = "Je andere rekeningen zijn in een andere valuta, en deze heeft overboekingen of groepsitems die niet kunnen worden omgerekend.";
+"account.removal.countBudgets" = "Budgetten";
+"account.removal.budgetsMovedNote" = "Budgetten die deze rekening volgden, volgen voortaan „%@”.";
+"account.removal.budgetsOnlyNote" = "Sommige budgetten volgden alleen deze rekening: zonder haar volgen ze al je rekeningen.";
+"orphanedRecords.title" = "Transacties zonder rekening";
+"orphanedRecords.bannerMessage" = "Ze zijn hun rekening kwijtgeraakt toen een rekening werd verwijderd en tellen niet mee in je saldo of je uitgaven.";
+"orphanedRecords.bannerAction" = "Rekening kiezen";
+"orphanedRecords.intro" = "Deze transacties zijn hun rekening kwijtgeraakt toen een rekening werd verwijderd. Zolang ze er geen hebben, tellen ze niet mee in je saldo of je uitgaven. Kies naar welke rekening je ze verplaatst.";
+"orphanedRecords.listHeader" = "Welke het zijn";
+"orphanedRecords.moreNote" = "En nog %d.";
+"orphanedRecords.noDestination" = "Maak een rekening aan om ze te kunnen verplaatsen.";
+"orphanedRecords.keptCurrencyNote" = "Overboekingen in een andere valuta gaan mee zoals ze zijn, zonder omrekening, zodat hun tegenboeking blijft kloppen.";
+"orphanedRecords.convertNote" = "Wat in een andere valuta staat, gaat naar %@ tegen de wisselkoers van de datum.";
+"orphanedRecords.collapsedNote" = "Overboekingen die binnen ‘%@’ zouden belanden, worden verwijderd: binnen dezelfde rekening verplaatsen ze geen geld.";
+"orphanedRecords.moveAction" = "Verplaatsen naar ‘%@’";
+"orphanedRecords.moveActionGeneric" = "Verplaatsen";
+"orphanedRecords.working" = "Verplaatsen…";
+"orphanedRecords.failedTitle" = "Niet verplaatst";
+"orphanedRecords.failedUnreadable" = "We konden de transacties niet lezen. Er is niets gewijzigd.";
+"orphanedRecords.failedChanged" = "Er is intussen iets veranderd. Controleer het en probeer het opnieuw.";
+"orphanedRecords.untitled" = "Geen omschrijving";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud is niet beschikbaar op dit apparaat";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala bewaart je gegevens in je iCloud en kan ze nu niet lezen. Zodra iCloud weer beschikbaar is, verschijnt wat daar staat weer. Je kunt dit controleren in Instellingen, bij iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Je iCloud wordt gecontroleerd…";
+"storage.revert.prior.title" = "Je iCloud heeft al Yala-gegevens";
+"storage.revert.prior.body" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan: %@. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.bodyNoCount" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.groupRecords" = "%d groepsrecords";
+"storage.revert.prior.groupsNote" = "Groepsrecords kunnen zonder hun groep binnenkomen.";
+"storage.revert.prior.merge" = "Toevoegen aan mijn gegevens";
+"storage.revert.prior.discard" = "Zonder beginnen";
+"storage.revert.prior.discardConfirmTitle" = "Uit je iCloud verwijderen?";
+"storage.revert.prior.discardConfirmBody" = "Ze worden verwijderd uit je iCloud en van de apparaten die die met deze Apple ID gebruiken. Er blijft geen kopie en we kunnen ze niet terughalen. Daarna begint de terugkeer naar iCloud.";
+"storage.revert.prior.discardConfirm" = "Verwijderen en terug naar iCloud";
+"storage.revert.prior.checkFailedTitle" = "We konden je iCloud niet controleren";
+"storage.revert.prior.checkFailedBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. Misschien ligt het aan je verbinding: probeer het opnieuw.";
+"storage.revert.prior.wipeFailed" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Controleer je verbinding en probeer het opnieuw.";
+"storage.revert.prior.wipeStopped" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Wat al verwijderd is, blijft verwijderd: probeer het opnieuw en we gaan verder met de rest.";
+"storage.revert.prior.wiping" = "Oude gegevens worden verwijderd… %d tot nu toe";
+"storage.revert.prior.noAccountTitle" = "Log in bij iCloud op deze iPhone";
+"storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en deze iPhone is niet ingelogd bij iCloud. Log in via Instellingen op de iPhone en probeer het opnieuw.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Hier verwijderen";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Verwijdert het alleen op deze telefoon. Als de groep binnenkomt, verschijnt het weer.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Groepsuitgaven in een andere valuta gaan ongewijzigd mee, zonder omrekening: het bedrag bepaalt de groep.";

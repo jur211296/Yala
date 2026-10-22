@@ -1,0 +1,117 @@
+{
+  "task": "insights.deviation",
+  "criterion": "Comentario de una oración sobre las líneas del plan que se pasaron. Pasa si: (1) la app lo lee (`{\"comment\": …}`); (2) hay comentario (`null` solo vale con `allowNull`); (3) ≤ 180 caracteres visibles (prompt: 150; el estricto va aparte); (4) en el idioma de la app del usuario (OJO: el prompt de la app no lo manda); (5) ningún número sin respaldo en los datos; (6) la divisa nunca va detrás del número. Datos inventados: promedios mensuales de previsto, real y exceso, ordenados por exceso como en la app.",
+  "cases": [
+    {
+      "id": "d01-es-PE-two-lines",
+      "locale": "es-PE",
+      "input": { "currency": "PEN", "deviations": [
+        { "name": "Delivery", "planned": 180, "actual": 312.4, "excess": 132.4 },
+        { "name": "Taxi", "planned": 120, "actual": 168.5, "excess": 48.5 }
+      ] }
+    },
+    {
+      "id": "d02-es-ES-one-big",
+      "locale": "es-ES",
+      "input": { "currency": "EUR", "deviations": [{ "name": "Restaurantes", "planned": 200, "actual": 410, "excess": 210 }] }
+    },
+    {
+      "id": "d03-es-AR-three-lines",
+      "locale": "es-AR",
+      "input": { "currency": "ARS", "deviations": [
+        { "name": "Salidas", "planned": 200000, "actual": 290000, "excess": 90000 },
+        { "name": "Delivery", "planned": 150000, "actual": 210000, "excess": 60000 },
+        { "name": "Nafta", "planned": 120000, "actual": 148000, "excess": 28000 }
+      ] }
+    },
+    {
+      "id": "d04-en-tiny",
+      "locale": "en",
+      "allowNull": true,
+      "note": "Exceso mínimo (4,20): un comentario vale y `null` también.",
+      "input": { "currency": "USD", "deviations": [{ "name": "Coffee", "planned": 60, "actual": 64.2, "excess": 4.2 }] }
+    },
+    {
+      "id": "d05-en-GB-three-lines",
+      "locale": "en-GB",
+      "input": { "currency": "GBP", "deviations": [
+        { "name": "Eating Out", "planned": 150, "actual": 238.6, "excess": 88.6 },
+        { "name": "Groceries", "planned": 380, "actual": 412.3, "excess": 32.3 },
+        { "name": "Transport", "planned": 120, "actual": 131.5, "excess": 11.5 }
+      ] }
+    },
+    {
+      "id": "d06-pt-BR-three-lines",
+      "locale": "pt-BR",
+      "input": { "currency": "BRL", "deviations": [
+        { "name": "Lazer", "planned": 500, "actual": 760, "excess": 260 },
+        { "name": "Delivery", "planned": 300, "actual": 520, "excess": 220 },
+        { "name": "Uber", "planned": 250, "actual": 310, "excess": 60 }
+      ] }
+    },
+    {
+      "id": "d07-pt-PT-one",
+      "locale": "pt-PT",
+      "input": { "currency": "EUR", "deviations": [{ "name": "Supermercado", "planned": 320, "actual": 380, "excess": 60 }] }
+    },
+    {
+      "id": "d08-fr-big-and-tiny",
+      "locale": "fr",
+      "input": { "currency": "EUR", "deviations": [
+        { "name": "Sorties", "planned": 200, "actual": 380, "excess": 180 },
+        { "name": "Courses", "planned": 450, "actual": 455, "excess": 5 }
+      ] }
+    },
+    {
+      "id": "d09-de-five-lines",
+      "locale": "de",
+      "input": { "currency": "EUR", "deviations": [
+        { "name": "Restaurants", "planned": 250, "actual": 520, "excess": 270 },
+        { "name": "Kleidung", "planned": 100, "actual": 240, "excess": 140 },
+        { "name": "Tanken", "planned": 150, "actual": 178, "excess": 28 },
+        { "name": "Streaming", "planned": 30, "actual": 49.97, "excess": 19.97 },
+        { "name": "Drogerie", "planned": 60, "actual": 71.5, "excess": 11.5 }
+      ] }
+    },
+    {
+      "id": "d10-it-two-lines",
+      "locale": "it",
+      "input": { "currency": "EUR", "deviations": [
+        { "name": "Bar", "planned": 80, "actual": 135.5, "excess": 55.5 },
+        { "name": "Benzina", "planned": 120, "actual": 160, "excess": 40 }
+      ] }
+    },
+    {
+      "id": "d11-nl-one",
+      "locale": "nl",
+      "input": { "currency": "EUR", "deviations": [{ "name": "Boodschappen", "planned": 550, "actual": 612.8, "excess": 62.8 }] }
+    },
+    {
+      "id": "d12-pl-three-lines",
+      "locale": "pl",
+      "input": { "currency": "PLN", "deviations": [
+        { "name": "Restauracje", "planned": 400, "actual": 612.9, "excess": 212.9 },
+        { "name": "Rozrywka", "planned": 300, "actual": 480, "excess": 180 },
+        { "name": "Paliwo", "planned": 450, "actual": 520, "excess": 70 }
+      ] }
+    },
+    {
+      "id": "d13-ja-three-lines",
+      "locale": "ja",
+      "input": { "currency": "JPY", "deviations": [
+        { "name": "交際費", "planned": 20000, "actual": 28700, "excess": 8700 },
+        { "name": "外食", "planned": 25000, "actual": 32600, "excess": 7600 },
+        { "name": "タクシー", "planned": 3000, "actual": 6800, "excess": 3800 }
+      ] }
+    },
+    {
+      "id": "d14-zh-three-lines",
+      "locale": "zh-Hans",
+      "input": { "currency": "CNY", "deviations": [
+        { "name": "外卖", "planned": 900, "actual": 1430, "excess": 530 },
+        { "name": "打车", "planned": 300, "actual": 420, "excess": 120 },
+        { "name": "咖啡", "planned": 200, "actual": 260, "excess": 60 }
+      ] }
+    }
+  ]
+}

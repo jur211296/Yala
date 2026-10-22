@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Eliminar %d registro?</string>
+			<string>Excluir %d registro?</string>
 			<key>other</key>
-			<string>Eliminar %d registros?</string>
+			<string>Excluir %d registros?</string>
 		</dict>
 	</dict>
 	<key>filters.subcategoriesSelectedCount</key>
@@ -432,6 +432,54 @@
 			<string>%d membro</string>
 			<key>other</key>
 			<string>%d membros</string>
+		</dict>
+	</dict>
+	<key>notifications.scheduledPayments.summaryBody</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Você tem %d pagamento agendado para hoje 📅</string>
+			<key>other</key>
+			<string>Você tem %d pagamentos agendados para hoje 📅</string>
+		</dict>
+	</dict>
+	<key>account.currencyChange.confirmTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Converter %d lançamento?</string>
+			<key>other</key>
+			<string>Converter %d lançamentos?</string>
+		</dict>
+	</dict>
+	<key>storage.sync.waitingForConnection</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d alteração aguardando conexão</string>
+			<key>other</key>
+			<string>%d alterações aguardando conexão</string>
 		</dict>
 	</dict>
 </dict>

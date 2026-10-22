@@ -283,6 +283,106 @@ struct iCloudSyncServiceTests {
         }
     }
 
+    // MARK: - El sello con fecha de la actividad de import
+    //
+    // `leaving-and-reentering-restore-renews-the-hard-cap`, 2026-09-21. `hasObservedImportActivity` es
+    // un latch monótono: dice si hubo descarga alguna vez, no si la hay. El sello con fecha es lo que
+    // permite preguntar lo segundo, y lo lee el re-ancla de la ventana de sesión del restore.
+
+    /// **Los tres tipos de `.importEvent` sellan, y ésa es la mitad que se olvida.** El latch se
+    /// enciende en la cabecera del `case`, antes de mirar el error, así que el sello tiene que
+    /// describir exactamente esa población: si solo sellara el import con éxito, un restore con la red
+    /// floja —errores retriables con CloudKit trayendo filas detrás, o sea el caso NORMAL— parecería
+    /// una descarga muerta a los 60 s.
+    @MainActor @Test func importActivityStamp_isWrittenByEveryImportEvent() {
+        for (etiqueta, error, fin) in [
+            ("en curso", CKError?.none, Date?.none),
+            ("completado", CKError?.none, Date?.some(.now)),
+            ("con error retriable", CKError?.some(CKError(.networkUnavailable)), Date?.some(.now))
+        ] {
+            let service = freshService()
+            #expect(service.lastImportActivityAt == nil, "el reset deja el sello limpio")
+
+            let visto = Date(timeIntervalSince1970: 1_760_000_000)
+            service.apply(eventType: .importEvent, error: error, endDate: fin, observedAt: visto)
+
+            #expect(service.lastImportActivityAt == visto, """
+                Un `.importEvent` \(etiqueta) no dejó sello. El latch `hasObservedImportActivity` sí se \
+                enciende para los tres, así que el sello describiría otra población: el re-ancla de la \
+                ventana de sesión leería como descarga muerta un import que está bajando filas.
+                """)
+            #expect(service.hasObservedImportActivity, "y el latch sigue encendiéndose igual")
+        }
+    }
+
+    /// **El sello es el instante de OBSERVACIÓN, no el `endDate` del evento, y además es monótono.**
+    /// Un import largo que cierra con una fecha de hace cinco minutos acaba de dar señal de vida
+    /// AHORA; anotarlo con su `endDate` lo leería como una descarga muerta. Y un evento fuera de orden
+    /// nunca puede retrasar el sello.
+    @MainActor @Test func importActivityStamp_usesObservationInstant_andNeverGoesBack() {
+        let service = freshService()
+        let ahora = Date(timeIntervalSince1970: 1_760_000_000)
+        let hace5min = ahora.addingTimeInterval(-300)
+
+        service.apply(eventType: .importEvent, error: nil, endDate: hace5min, observedAt: ahora)
+        #expect(service.lastImportActivityAt == ahora, """
+            El sello se tomó del `endDate` del evento. Las fechas del evento describen el import; el \
+            sello describe qué sabe este proceso y cuándo lo supo, que es la pregunta del testigo.
+            """)
+
+        service.apply(eventType: .importEvent, error: nil, endDate: nil,
+                      observedAt: ahora.addingTimeInterval(-60))
+        #expect(service.lastImportActivityAt == ahora, """
+            Un evento observado antes retrasó el sello. El testigo tiene que ser monótono: si no, un \
+            evento fuera de orden apaga una descarga viva.
+            """)
+    }
+
+    /// Un evento que NO es de import ni SELLA ni BORRA, y las dos mitades hacen falta. La segunda la
+    /// cazó una lente de la review: afirmar solo que no escribe se cumple partiendo de `nil`, así que
+    /// un `lastImportActivityAt = nil` colado en la rama del export pasaba los tres tests — y en
+    /// producción los exports son constantes, o sea que apagaría el testigo todo el rato.
+    @MainActor @Test func importActivityStamp_isNeitherWrittenNorErasedByOtherEvents() {
+        let service = freshService()
+        service.apply(eventType: .exportEvent, error: nil, endDate: .now)
+        service.apply(eventType: .setup, error: nil, endDate: .now)
+        #expect(service.lastImportActivityAt == nil, """
+            Un export o un setup dejaron sello de actividad de IMPORT. Con eso, un teléfono que solo \
+            sube datos se leería como si estuviera bajando el corpus de alguien.
+            """)
+
+        let visto = Date(timeIntervalSince1970: 1_760_000_000)
+        service.apply(eventType: .importEvent, error: nil, endDate: nil, observedAt: visto)
+        service.apply(eventType: .exportEvent, error: nil, endDate: .now)
+        service.apply(eventType: .exportEvent, error: CKError(.networkUnavailable), endDate: .now)
+        service.apply(eventType: .setup, error: nil, endDate: .now)
+        #expect(service.lastImportActivityAt == visto, """
+            Un evento ajeno BORRÓ el sello de la descarga. Los exports son constantes en un arranque \
+            normal, así que con eso el testigo del re-ancla se apaga en cualquier restore real y quien \
+            vuelve a Restaurar hereda un reloj que no describe su descarga.
+            """)
+    }
+
+    /// **Otra cuenta de iCloud, otra descarga.** El sello lo lee el re-ancla de la ventana de sesión
+    /// del restore, que abre un guard de FRONTERA DE CUENTA: con la descarga de la cuenta anterior
+    /// recién sellada, entrar a Restaurar dentro de su frescura re-anclaría la ventana apoyándose en
+    /// un import que ya no es de esta cuenta. Lo midió una lente de la review.
+    @MainActor @Test func importActivityStamp_isClearedWhenTheICloudAccountChanges() {
+        let service = freshService()
+        service.apply(eventType: .importEvent, error: nil, endDate: nil,
+                      observedAt: Date(timeIntervalSince1970: 1_760_000_000))
+        #expect(service.lastImportActivityAt != nil, "control: la descarga de la cuenta anterior selló")
+
+        NotificationCenter.default.post(
+            name: .NSUbiquityIdentityDidChange, object: nil)
+
+        #expect(service.lastImportActivityAt == nil, """
+            El sello de actividad de import sobrevivió al cambio de cuenta de iCloud. El testigo del \
+            re-ancla pasa a afirmar una descarga que ya no es de esta cuenta, y lo que abre es \
+            justamente la frontera de cuenta que `CrossAccountEntryGuardLogic` vigila.
+            """)
+    }
+
     /// Regresión: el bridge personal (y `retryPendingBridges`) se gatea por `isImporting`, NO por
     /// `isSyncing`. Solo un IMPORT a medio aplicar crashea el save del grafo personal; un export no.
     /// Si `isImporting` se "simplificara" a aliasear `isSyncing`, el bridge se bloquearía durante los
@@ -330,5 +430,229 @@ struct iCloudSyncServiceTests {
 
         let result = await service.forceFetchAndWait(timeout: 0.3)
         #expect(result == false)
+    }
+
+    // MARK: - forceFetchAndWait · la cancelación (`force-fetch-and-wait-ignores-cancellation`)
+    //
+    // **Estos casos llevan tope PROPIO, no el del SUT, y eso lo decidió un mutante.** La primera versión
+    // se apoyaba en el `timeout:` que se le pasa a la espera: si el arreglo regresaba, la espera se
+    // resolvería por su tope y el caso fallaría por duración. **Falso para el modo de fallo que más
+    // importa**: si `arm(...)` deja de cobrar el valor que `resolve(_:)` guardó, la caja queda
+    // `didResolve == true` con la continuation dentro, así que ni el tope ni la notificación vuelven a
+    // resolverla — la espera NO TERMINA NUNCA y el caso CUELGA en vez de ponerse rojo, que es un rojo
+    // mal leído (AC nº4 del ticket). Medido con el mutante M2 el 2026-09-21.
+    //
+    // ⇒ la espera corre en un `Task` suelto que deja su resultado en una caja, y el caso sondea esa caja
+    // con su propio tope. Sin valor al tope, FALLA.
+
+    /// Caja de resultado para las esperas con tope propio.
+    private actor ResultBox {
+        private var value: Bool?
+        func set(_ v: Bool) { if value == nil { value = v } }
+        func get() -> Bool? { value }
+    }
+
+    /// Corre `op` con un tope propio de `topeSegundos`. Devuelve `nil` si no terminó a tiempo — un caso
+    /// que cuelga no es un rojo, y por eso el tope no puede vivir dentro del SUT.
+    private func conTope(_ topeSegundos: Double,
+                         _ op: @escaping @Sendable () async -> Bool) async -> (valor: Bool?, segundos: TimeInterval) {
+        let caja = ResultBox()
+        let inicio = Date.now
+        let trabajo = Task { await caja.set(await op()) }
+        while await caja.get() == nil, Date.now.timeIntervalSince(inicio) < topeSegundos {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        let valor = await caja.get()
+        if valor == nil { trabajo.cancel() }   // que no siga vivo en las suites siguientes
+        return (valor, Date.now.timeIntervalSince(inicio))
+    }
+
+    /// El `Task` llega a la espera YA cancelado. Es el caso que ejercita la carrera de verdad: el
+    /// `onCancel` de `withTaskCancellationHandler` corre ANTES de que `withCheckedContinuation` haya
+    /// instalado nada, así que la resolución tiene que quedarse guardada y cobrarse al instalar.
+    @MainActor @Test func forceFetchAndWait_returnsFalseWhenAlreadyCancelled() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        let medida = await conTope(1.5) { @MainActor in
+            // El `cancel()` llega mientras el `Task` duerme, así que la espera arranca ya cancelada.
+            let espera = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(30))
+                return await service.forceFetchAndWait(timeout: 10)
+            }
+            espera.cancel()
+            return await espera.value
+        }
+
+        #expect(medida.valor == false, """
+            La espera arrancó con el `Task` ya cancelado y no resolvió en \(medida.segundos) s \
+            (`nil` = no resolvió NUNCA). O `withTaskCancellationHandler` dejó de envolverla, o \
+            `arm(...)` dejó de cobrar el valor pendiente que `resolve(_:)` guardó antes de que \
+            existiera la continuation — y ese segundo caso deja la espera colgada para siempre, \
+            no solo lenta.
+            """)
+    }
+
+    /// Cancelar a media espera la corta. Es el caso del usuario: sale de la pantalla que esperaba a
+    /// iCloud, y hasta el 2026-09-21 la espera seguía viva hasta 15 s (arranque) o 90 s (restore).
+    @MainActor @Test func forceFetchAndWait_returnsFalsePromptlyWhenCancelledMidFlight() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        let medida = await conTope(1.5) { @MainActor in
+            let espera = Task { @MainActor in await service.forceFetchAndWait(timeout: 10) }
+            try? await Task.sleep(for: .milliseconds(100))
+            espera.cancel()
+            return await espera.value
+        }
+
+        #expect(medida.valor == false, """
+            Cancelar la espera no la cortó: seguía viva a los \(medida.segundos) s con un tope \
+            interno de 10. El `Task` abandonado retiene el observer de `NotificationCenter` y su \
+            `Task` de sleep hasta agotar ese tope, con la pantalla ya cerrada.
+            """)
+    }
+
+    /// La espera de dos pasos hereda la cancelación por su paso 1. Es lo que consumen `RestoreProgressView`
+    /// (90 s), los dos borrados de `ContentView` (30 s) y la convergencia del bridge de Grupos (30 s).
+    @MainActor @Test func waitForImportQuiescence_returnsFalsePromptlyWhenCancelled() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        let medida = await conTope(1.5) { @MainActor in
+            let espera = Task { @MainActor in await service.waitForImportQuiescence(timeout: 10) }
+            try? await Task.sleep(for: .milliseconds(100))
+            espera.cancel()
+            return await espera.value
+        }
+
+        #expect(medida.valor == false, """
+            La espera de quiescencia seguía viva a los \(medida.segundos) s tras cancelarla. Su \
+            paso 1 es `forceFetchAndWait`: si no corta, la pantalla de restaurar sigue contando \
+            filas noventa segundos después de que la persona se haya ido.
+            """)
+    }
+
+    // MARK: - Paso 9 · el ancla del export y la prueba de «no hay cuenta»
+
+    // Las anclas de estos tests van en el PASADO (2023): una del futuro se descarta por diseño
+    // (`PrivateSignOutExportGateLogic.usableAnchor`), y con 2027 los tests medirían el descarte, no el ancla.
+
+    @MainActor @Test func exportSuccess_recordsItsStartAsTheAnchor() {
+        let service = freshService()
+        #expect(service.confirmedExportStart == nil, "el ancla de otro test no puede colarse")
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        service.apply(eventType: .exportEvent, error: nil, endDate: start.addingTimeInterval(5), startDate: start)
+        #expect(service.confirmedExportStart == start, "el ancla es el INICIO, no el fin")
+    }
+
+    /// Un evento fuera de orden no puede ADELANTAR el ancla hacia atrás… ni un inicio más viejo retrasarla:
+    /// el `max` cierra las dos direcciones.
+    @MainActor @Test func anchor_isMonotonic() {
+        let service = freshService()
+        let later = Date(timeIntervalSince1970: 1_700_000_100)
+        let earlier = Date(timeIntervalSince1970: 1_700_000_000)
+        service.apply(eventType: .exportEvent, error: nil, endDate: later.addingTimeInterval(1), startDate: later)
+        service.apply(eventType: .exportEvent, error: nil, endDate: earlier.addingTimeInterval(1), startDate: earlier)
+        #expect(service.confirmedExportStart == later)
+    }
+
+    @MainActor @Test func anchor_ignoresFailures_inFlightEvents_andImports() {
+        let service = freshService()
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil, startDate: start)
+        service.apply(eventType: .exportEvent, error: nil, endDate: nil, startDate: start)   // en curso
+        service.apply(eventType: .importEvent, error: nil, endDate: start.addingTimeInterval(1), startDate: start)
+        #expect(service.confirmedExportStart == nil, "solo un EXPORT que TERMINÓ bien confirma nada")
+    }
+
+    @MainActor @Test func anchor_isNotMovedWithoutAStartDate() {
+        let service = freshService()
+        service.apply(eventType: .exportEvent, error: nil, endDate: .now)
+        #expect(service.confirmedExportStart == nil, "sin inicio no hay ancla: el fin daría por subido lo que no")
+    }
+
+    /// Un export que TERMINÓ sin éxito con un error que no es de CloudKit llegaba con `error == nil` (el
+    /// filtro `as? CKError`) y caía en la rama de éxito: el ancla avanzaba sobre un export que no subió nada
+    /// y el cierre privado borraba lo que no estaba en iCloud. `succeeded` lo corta (review del paso 9).
+    @MainActor @Test func failedExportWithForeignError_neverConfirms_norClearsNotAuthenticated() {
+        let service = freshService()
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        service.apply(eventType: .exportEvent, error: ckError(.notAuthenticated), endDate: nil)
+        #expect(service.mirrorReportedNotAuthenticated)
+        service.apply(eventType: .exportEvent, error: nil, endDate: start.addingTimeInterval(1),
+                      startDate: start, succeeded: false)
+        #expect(service.confirmedExportStart == nil, "un export fallido no confirma nada")
+        #expect(service.mirrorReportedNotAuthenticated, "ni borra la prueba de que no hay cuenta")
+        // Control: el mismo evento, con éxito, sí confirma y sí la borra.
+        service.apply(eventType: .exportEvent, error: nil, endDate: start.addingTimeInterval(1),
+                      startDate: start, succeeded: true)
+        #expect(service.confirmedExportStart == start)
+        #expect(!service.mirrorReportedNotAuthenticated)
+    }
+
+    /// El reloj retrocedió con la app cerrada: el ancla guardada queda en el futuro. Se lee como ausente, y el
+    /// export siguiente la reemplaza en vez de quedarse detrás de ella para siempre (el `max` la protegía).
+    @MainActor @Test func futureAnchor_readsAsAbsent_andTheNextExportReplacesIt() {
+        let service = freshService()
+        // Segundos enteros: el ancla viaja como `timeIntervalSince1970` en un Double, y una fecha con
+        // fracción no vuelve idéntica del `UserDefaults` (el `==` fallaría por el último bit, no por el ancla).
+        let now = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
+        service.exportAnchorDefaults.set(now.addingTimeInterval(86_400).timeIntervalSince1970,
+                                         forKey: iCloudSyncService.confirmedExportStartKey)
+        #expect(service.confirmedExportStart == nil)
+        let start = now.addingTimeInterval(-10)
+        service.apply(eventType: .exportEvent, error: nil, endDate: now, startDate: start)
+        #expect(service.confirmedExportStart == start)
+    }
+
+    /// Si CloudKit dice que no hay cuenta, lo confirmado antes no prueba nada de la cuenta que venga.
+    @MainActor @Test func notAuthenticated_invalidatesTheAnchor() {
+        let service = freshService()
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        service.apply(eventType: .exportEvent, error: nil, endDate: start.addingTimeInterval(1), startDate: start)
+        #expect(service.confirmedExportStart == start)
+        service.apply(eventType: .importEvent, error: ckError(.notAuthenticated), endDate: nil)
+        #expect(service.confirmedExportStart == nil)
+    }
+
+    @MainActor @Test func notAuthenticated_isRemembered_untilAnyEventSucceeds() {
+        let service = freshService()
+        #expect(!service.mirrorReportedNotAuthenticated)
+        service.apply(eventType: .exportEvent, error: ckError(.notAuthenticated), endDate: nil)
+        #expect(service.mirrorReportedNotAuthenticated)
+        service.apply(eventType: .setup, error: ckError(.networkUnavailable), endDate: nil)
+        #expect(service.mirrorReportedNotAuthenticated, "un fallo que no es de cuenta no lo apaga")
+        service.apply(eventType: .importEvent, error: nil, endDate: .now)
+        #expect(!service.mirrorReportedNotAuthenticated)
+    }
+
+    /// `lastExportErrorAt` es lo que deja a la espera de «Volver a iCloud» distinguir un error VIGENTE de uno ya
+    /// resuelto (ticket `reverse-upload-has-no-ceiling-and-no-exit`): `lastExportError` no se limpia con un éxito,
+    /// y eso NO se cambia aquí. Tres cosas: la fecha es la del evento que falló (fin, o inicio si no trae fin), un
+    /// éxito posterior deja el latch pero con una fecha de éxito POSTERIOR a la del error, y el reset la limpia.
+    @MainActor @Test func exportFailure_stampsTheErrorDate_andALaterSuccessOutdatesIt() {
+        let service = freshService()
+        let failedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let succeededAt = failedAt.addingTimeInterval(60)
+
+        service.apply(eventType: .exportEvent, error: ckError(.quotaExceeded), endDate: failedAt)
+        #expect(service.lastExportErrorAt == failedAt)
+
+        let startedAt = failedAt.addingTimeInterval(30)
+        service.apply(eventType: .exportEvent, error: ckError(.quotaExceeded), endDate: nil, startDate: startedAt)
+        #expect(service.lastExportErrorAt == startedAt, "sin fin, la fecha es el inicio del evento que falló")
+
+        service.apply(eventType: .exportEvent, error: nil, endDate: succeededAt)
+        #expect(service.lastExportError?.code == .quotaExceeded, "el latch sigue puesto: no se cambia aquí")
+        #expect(service.lastSuccessfulExportDate == succeededAt)
+        if let errorAt = service.lastExportErrorAt, let successAt = service.lastSuccessfulExportDate {
+            #expect(successAt > errorAt, "el éxito es posterior: el error ya no es vigente")
+        } else {
+            Issue.record("faltan las fechas del error o del éxito")
+        }
+
+        service._testReset()
+        #expect(service.lastExportErrorAt == nil)
     }
 }

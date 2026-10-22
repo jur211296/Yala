@@ -33,7 +33,10 @@ enum SharedContainerService {
         }
     }
 
-    /// Returns all pending image URLs
+    /// Returns all pending image URLs, ordenadas por fecha de creación DESCENDENTE
+    /// (más reciente primero). `contentsOfDirectory` no garantiza orden, así que sin este
+    /// sort `.first` elegiría una imagen arbitraria cuando hay 2+ pendientes — la
+    /// recuperación debe presentar la ÚLTIMA compartida.
     static func pendingImageURLs() -> [URL] {
         guard let url = pendingImagesURL else { return [] }
         do {
@@ -42,12 +45,37 @@ enum SharedContainerService {
                 includingPropertiesForKeys: [.creationDateKey],
                 options: .skipsHiddenFiles
             )
-            return contents.filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+            // `.pdf`: un PDF soltado en el iPad se guarda tal cual y la hoja lo trocea (`ReceiptDropHandler`).
+            let images = contents.filter { ["jpg", "png", "pdf"].contains($0.pathExtension.lowercased()) }
+            let dated = images.map { imageURL -> (url: URL, date: Date) in
+                let date = (try? imageURL.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+                return (imageURL, date)
+            }
+            return orderByCreationDescending(dated)
         } catch {
             #if DEBUG
             print("SharedContainerService: Error listing pending images: \(error)")
             #endif
             return []
+        }
+    }
+
+    /// Pure-logic testeable del orden de `pendingImageURLs`: más reciente primero.
+    static func orderByCreationDescending(_ items: [(url: URL, date: Date)]) -> [URL] {
+        items.sorted { $0.date > $1.date }.map(\.url)
+    }
+
+    /// Las fotos de la tanda de `url` que siguen en `PendingImages/`, en su orden (`SharedImageBatch`). Un fichero sin
+    /// tanda —un recibo soltado en el iPad, o lo guardado por una extensión anterior— es una tanda de uno.
+    static func pendingImageBatch(containing url: URL) -> [URL] {
+        SharedImageBatch.batch(containing: url, among: pendingImageURLs())
+    }
+
+    /// Retira la tanda entera de `url`. La usa la puerta Pro: si quedara alguna, la recuperación del arranque volvería a
+    /// enseñar el aviso por ella.
+    static func removePendingImageBatch(containing url: URL) {
+        for member in pendingImageBatch(containing: url) where FileManager.default.fileExists(atPath: member.path) {
+            removePendingImage(at: member)
         }
     }
 

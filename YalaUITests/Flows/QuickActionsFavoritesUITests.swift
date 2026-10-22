@@ -24,7 +24,7 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.buttons["fab_new_transaction"].tap()
+        app.revealPanelFAB().tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
         manual.tap()
@@ -53,7 +53,7 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.buttons["fab_new_transaction"].tap()
+        app.revealPanelFAB().tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del FAB (fab_manual).")
         manual.tap()
@@ -64,23 +64,16 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         amountField.tap()
         amountField.typeText("75")
 
-        // Cuenta — primera fila del selector (sin acoplar al nombre del seed).
-        app.buttons["new_transaction_account_chip"].tap()
-        let firstAccount = app.buttons
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "account_selector_row_"))
-            .firstMatch
-        XCTAssertTrue(firstAccount.waitForExistence(timeout: 5), "No se montó AccountSelectorSheet con filas.")
-        firstAccount.tap()
+        // Cuenta — primera fila del selector (sin acoplar al nombre del seed). El helper espera a que
+        // el teclado termine de entrar: en iOS 27.0 el toque inmediato se perdía.
+        app.chooseFirstSelectorRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
 
         // Subcategoría — ídem.
-        let subcatChip = app.buttons["new_transaction_subcategory_chip"]
-        XCTAssertTrue(subcatChip.waitForExistence(timeout: 5), "No volvió al formulario tras elegir cuenta.")
-        subcatChip.tap()
-        let firstSubcat = app.buttons
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "subcategory_selector_row_"))
-            .firstMatch
-        XCTAssertTrue(firstSubcat.waitForExistence(timeout: 5), "No se montó SubcategorySelectorSheet con filas.")
-        firstSubcat.tap()
+        XCTAssertTrue(
+            app.buttons["new_transaction_subcategory_chip"].waitForExistence(timeout: 5),
+            "No volvió al formulario tras elegir cuenta."
+        )
+        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
 
         // Guardar como favorito vía el quick action.
         let favoriteAction = app.buttons["new_transaction_favorite_action"]
@@ -105,10 +98,14 @@ final class QuickActionsFavoritesUITests: XCTestCase {
         XCTAssertTrue(saveTransaction.isEnabled, "new_transaction_save deshabilitado (monto/cuenta/subcategoría).")
         saveTransaction.tap()
 
-        XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 10),
-            "Tras guardar no se volvió al Panel."
-        )
+        // Guardar deja la pantalla de éxito DENTRO del mismo sheet — hay que cerrarla
+        // para volver al Panel de verdad. Sin esto el Panel «existe» en el árbol pero
+        // está tapado, y el tap del avatar de Perfil se pierde en `{-1, -1}`.
+        app.dismissTransactionSuccess()
+
+        let fab = app.buttons["fab_new_transaction"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "Tras guardar no se volvió al Panel.")
+        XCTAssertTrue(fab.waitForHittable(timeout: 5), "El Panel sigue tapado — el sheet de la transacción no se desmontó.")
 
         // Verificar persistencia del favorito en Perfil → Favoritos.
         app.openProfile()

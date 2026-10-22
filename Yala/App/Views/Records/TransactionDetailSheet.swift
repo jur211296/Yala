@@ -32,44 +32,129 @@ struct TransactionDetailSheet: View {
 
     let transaction: TransactionItem
 
+    /// Dónde vive el detalle: hoja (iPhone, ventana estrecha), columna de detalle de Registros en una ventana
+    /// ancha, o panel de Estadísticas › Registros en una ventana ancha. En columna no hay X —la columna no se
+    /// cierra— ni detents, y Editar abre el editor directo.
+    ///
+    /// `pane`: como la columna, pero sin pila propia ni barra que tomar prestada. El chip Registros vive dentro de la
+    /// pila de Estadísticas: meter ahí `.toolbar` o el título inline cambiaría la barra de Estadísticas (su título
+    /// grande pasaría a inline y Editar se sumaría a sus botones). Así que lleva su propia cabecera, con X —cuando no
+    /// caben lista y detalle, el panel tapa la lista y la X es la vuelta— y Editar.
+    enum Presentation { case sheet, column, pane }
+    var presentation: Presentation = .sheet
+
     /// Botón Editar. El padre marca pendingEditAfterDetail y cierra este sheet;
     /// al cerrarse presenta NewTransactionView (reemplazo de sheet nativo).
     let onEdit: () -> Void
+
+    /// Cerrar el panel (`pane`): el padre vacía lo abierto. En hoja cierra `dismiss()` y en columna no hay X.
+    var onClose: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
 
     @State private var transferPartnerAccount: Account?
 
-    /// Detent fijo: medium (iPhone) / large (iPad). Sin `selection` — ya no hay
+    /// Detent fijo: medium en ventana compacta / large en ventana ancha. Sin `selection` — ya no hay
     /// drag-to-edit que dispare cambios de modo.
     private var detent: PresentationDetent {
-        TransactionDetailSheetLogic.initialDetent(usesLargeSheets: DS.Adaptive.usesLargeSheets)
+        TransactionDetailSheetLogic.initialDetent(usesLargeSheets: usesLargeSheets)
             .presentationDetent
     }
 
     var body: some View {
-        detailContent
-            .presentationDetents([detent])
-            .presentationDragIndicator(.hidden)
+        switch presentation {
+        case .sheet:
+            detailContent
+                .presentationDetents([detent])
+                .presentationDragIndicator(.hidden)
+        case .column:
+            columnContent
+        case .pane:
+            paneContent
+        }
     }
 
     // MARK: - Detail content
 
+    private var scrollContent: some View {
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                compactHero
+                detailsCard
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.top, DS.Spacing.md)
+            .padding(.bottom, DS.Spacing.xl)
+            .frame(maxWidth: DS.Adaptive.readableWidth)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+    }
+
+    private var editButton: some View {
+        Button(L10n.Action.edit) {
+            onEdit()
+        }
+        .fontWeight(.semibold)
+        .foregroundStyle(Color.primary)
+        .accessibilityIdentifier("transaction_detail_edit")
+    }
+
+    /// Columna de detalle de Registros: ya está dentro de la pila de su columna, así que no abre otra.
+    private var columnContent: some View {
+        scrollContent
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    editButton
+                }
+            }
+            .yalaScreenBackground(.panel)
+            .accessibilityIdentifier("transaction_detail_column")
+            .task(id: transaction.persistentModelID) { resolveTransferPartner() }
+    }
+
+    /// Panel de Estadísticas › Registros: cabecera propia en vez de la barra de la pantalla (ver `Presentation`).
+    private var paneContent: some View {
+        VStack(spacing: DS.Spacing.none) {
+            HStack {
+                Button {
+                    onClose?()
+                } label: {
+                    Image(systemName: "xmark")
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.primary)
+                }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .accessibilityLabel(L10n.Action.close)
+                .accessibilityIdentifier("transaction_detail_close")
+
+                Spacer()
+
+                editButton
+                    .buttonStyle(.glass)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+
+            scrollContent
+        }
+        .yalaScreenBackground(.panel)
+        // `.contain` ANTES del id: un id suelto en el contenedor pisa los de sus botones (X y Editar).
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("transaction_detail_pane")
+        .task(id: transaction.persistentModelID) { resolveTransferPartner() }
+    }
+
     private var detailContent: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    compactHero
-                    detailsCard
-                }
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.top, DS.Spacing.md)
-                .padding(.bottom, DS.Spacing.xl)
-            }
-            .scrollBounceBehavior(.basedOnSize)
+            scrollContent
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -79,15 +164,10 @@ struct TransactionDetailSheet: View {
                     .accessibilityIdentifier("transaction_detail_close")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.edit) {
-                        onEdit()
-                    }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
-                    .accessibilityIdentifier("transaction_detail_edit")
+                    editButton
                 }
             }
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+            .yalaScreenBackground(.partialSheet)
         }
         .accessibilityIdentifier("transaction_detail_sheet")
         .task { resolveTransferPartner() }
@@ -247,7 +327,7 @@ struct TransactionDetailSheet: View {
     // MARK: - Rows (neutras: íconos/labels secondary, values primary)
 
     private var typeRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: transactionType.iconName)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -257,9 +337,7 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.type)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             Text(transactionType.displayName)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
@@ -269,7 +347,7 @@ struct TransactionDetailSheet: View {
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -279,13 +357,11 @@ struct TransactionDetailSheet: View {
             Text(label)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             Text(value)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -311,7 +387,7 @@ struct TransactionDetailSheet: View {
     }
 
     private func accountRow(icon: String, label: String, account: Account) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -321,9 +397,7 @@ struct TransactionDetailSheet: View {
             Text(label)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(Color(hex: account.colorHex))
@@ -364,7 +438,7 @@ struct TransactionDetailSheet: View {
     }
 
     private var categoryRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "tag")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -374,10 +448,8 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.category)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+        } trailing: {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
                 if let subcatName = transaction.subcategory?.name {
                     Text(subcatName)
                         .font(DS.Typography.label)
@@ -399,7 +471,7 @@ struct TransactionDetailSheet: View {
     }
 
     private var tagsRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "number")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -409,9 +481,7 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.tags)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             // Chips réplica de RecordRowView.tagsRow (límite 3 + "+N") — fill
             // de color propio del tag (contenido del usuario, sólido y legible).
             HStack(spacing: DS.Spacing.xs) {
@@ -441,7 +511,7 @@ struct TransactionDetailSheet: View {
     /// Monto convertido a la moneda preferida con la tasa snapshot persistida
     /// (sin recalcular — formato del exchangeRateChip del form).
     private var conversionRow: some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
@@ -451,17 +521,15 @@ struct TransactionDetailSheet: View {
             Text(L10n.Transaction.exchangeRate)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+        } trailing: {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
                 Text(
                     "≈ \(appPreferences.currency(transaction.amountInPreferredCurrency, currencyCode: transaction.preferredCurrencyCode, forceFullPrecision: true))"
                 )
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
 
-                Text(L10n.Transaction.exchangeRateShort(String(format: "%.4f", transaction.exchangeRate)))
+                Text(L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(transaction.exchangeRate)))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }

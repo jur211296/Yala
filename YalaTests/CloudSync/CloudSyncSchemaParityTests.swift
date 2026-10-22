@@ -1,0 +1,656 @@
+//
+//  CloudSyncSchemaParityTests.swift
+//  YalaTests / CloudSync
+//
+//  Paridad de schema del subsistema de identidad de sync (Modo Nube, I2). Ancla invariantes que,
+//  si se rompen en silencio, corromperían la migración/rebind:
+//
+//  (a) El entity name de `SyncIdentity` es el literal "SyncIdentity" — S-A1: renombrar la CLASE es
+//      el ÚNICO gatillo que recrea la tabla VACÍA (pierde las filas testigo). Este literal lo delata.
+//  (b) El set EXACTO de propiedades de `SyncIdentity` (molde de CloudKitGroupsSchemaParityTests).
+//  (c) Membresía de stores: el store PERSONAL NO contiene `SyncIdentity`; el store SYNC-META SÍ, y
+//      es `cloudKitDatabase: .none` (nunca se espeja a CloudKit).
+//  (d) Las 6 entidades sincronizables llevan la propiedad `syncID`.
+//
+
+import Foundation
+import SwiftData
+import Testing
+
+@testable import Yala
+
+@Suite("CloudSync · schema parity")
+struct CloudSyncSchemaParityTests {
+
+    private func entity(_ type: any PersistentModel.Type) -> Schema.Entity? {
+        // `Schema([type])` expande e incluye las entidades RELACIONADas (via @Relationship), así que
+        // `.entities.first` no es el tipo pedido → hay que casar por nombre (= nombre simple de clase).
+        let name = String(describing: type)
+        return Schema([type]).entities.first { $0.name == name }
+    }
+
+    private func propertyNames(_ type: any PersistentModel.Type) -> Set<String> {
+        Set((entity(type)?.properties ?? []).map(\.name))
+    }
+
+    private func entityNames(_ schema: Schema) -> Set<String> {
+        Set(schema.entities.map(\.name))
+    }
+
+    // MARK: - (a) Entity name anclado
+
+    @Test func syncIdentity_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncIdentity.self)?.name == "SyncIdentity")
+    }
+
+    // MARK: - (b) Set EXACTO de propiedades
+
+    @Test func syncIdentity_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "syncID",
+            "entityType",
+            "localAnchor",
+            "ckRecordName",
+            "ckZoneName",
+            "ckOwnerName",
+            "createdAt",
+            "lastReboundAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncIdentity.self) == expected)
+    }
+
+    // MARK: - (b·I3) Set EXACTO de propiedades de SyncOutbox / SyncCursor
+
+    @Test func syncOutbox_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncOutbox.self)?.name == "SyncOutbox")
+    }
+
+    @Test func syncOutbox_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "syncID",
+            "entityType",
+            "opRaw",
+            "hlc",
+            "clientMutationID",
+            "fieldsJSON",
+            "fieldHlcsJSON",
+            "author",
+            "tombstoneReason",
+            "createdAt",
+            "rejectedReason",
+            "rejectedAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncOutbox.self) == expected)
+    }
+
+    @Test func syncOutbox_schemaVersion_isFour_afterDeadLetter() {
+        // I4 añadió `tombstoneReason` (v2); I8c añadió `fieldHlcsJSON` (v3); I8e añadió el dead-letter
+        // (`rejectedReason`/`rejectedAt`, additive) → bump del testigo A1 a 4.
+        #expect(CloudSyncSchemaVersions.syncOutbox == 4)
+    }
+
+    @Test func syncCursor_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncCursor.self)?.name == "SyncCursor")
+    }
+
+    @Test func syncCursor_hasExactPropertySet() {
+        // I8f-1 añadió `serverSeqCursor` (cursor del pull) + `clockLatestHLC` (reloj durable, D-3);
+        // I9 añadió `quarantinePendingCount` (testigo lockstep de la cuarentena); HALLAZGO 2 (corrida
+        // device reversa 2026-07-11) añadió `lastDrainedTxAt` (ancla comparable cross-mount del guard del
+        // token), todos additive. `SyncCursor` vive en el store sync-meta `.none` → sin deploy CloudKit.
+        let expected: Set<String> = [
+            "historyTokenData",
+            "serverSeqCursor",
+            "clockLatestHLC",
+            "quarantinePendingCount",
+            "lastDrainedTxAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncCursor.self) == expected)
+    }
+
+    @Test func syncCursor_schemaVersion_isTwo_afterQuarantineWitness() {
+        // I9 añadió `quarantinePendingCount` (additive) → bump del testigo A1 a 2.
+        #expect(CloudSyncSchemaVersions.syncCursor == 2)
+    }
+
+    // MARK: - (b·I8f) SyncQuarantine
+
+    @Test func syncQuarantine_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncQuarantine.self)?.name == "SyncQuarantine")
+    }
+
+    @Test func syncQuarantine_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "serverSeq",
+            "entityType",
+            "syncID",
+            "rawDelta",
+            "hlc",
+            "createdAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncQuarantine.self) == expected)
+    }
+
+    // MARK: - (b·I8f/F-2) SyncDanglingRef
+
+    @Test func syncDanglingRef_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncDanglingRef.self)?.name == "SyncDanglingRef")
+    }
+
+    @Test func syncDanglingRef_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "entityTable",
+            "rowSyncID",
+            "column",
+            "targetUUID",
+            "createdAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncDanglingRef.self) == expected)
+    }
+
+    // MARK: - (b·I8f-2) SyncUnitClock
+
+    @Test func syncUnitClock_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncUnitClock.self)?.name == "SyncUnitClock")
+    }
+
+    @Test func syncUnitClock_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "syncID",
+            "entityTable",
+            "unitHlcsJSON",
+            "updatedAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncUnitClock.self) == expected)
+    }
+
+    // MARK: - (b·I10-wiring) MigrationState
+
+    @Test func migrationState_entityName_isAnchoredLiteral() {
+        #expect(entity(MigrationState.self)?.name == "MigrationState")
+    }
+
+    @Test func migrationState_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "phaseData",
+            "pendingEffectsData",
+            "snapshotCursorJSON",
+            "verifyMismatchRetries",
+            "verifyNetworkRetries",
+            "leaderDeviceID",
+            "serverSeqCut",
+            "reverseOriginRaw",
+            "markerWrittenSince",
+            "cutoverICloudVerdictRaw",
+            "reverseUploadLowestPending",
+            "reverseUploadProgressAt",
+            "reverseUploadCauseRaw",
+            "reverseUploadCauseAt",
+            "reverseUploadCauseAccruedSeconds",
+            "reverseUploadDefinitiveAt",
+            "reverseUploadDefinitiveAccruedSeconds",
+            "reverseAbortReasonRaw",
+            "reverseOriginPendingEffectsData",
+            "forwardClaimIntentRaw",
+            "reversePreMountProgressAt",
+            "reversePreMountPhaseRaw",
+            "reversePreMountCauseRaw",
+            "reversePreMountCauseAt",
+            "reversePreMountCauseAccruedSeconds",
+            "reversePreMountDefinitiveAt",
+            "reversePreMountDefinitiveAccruedSeconds",
+            "snapshotStallProgressAt",
+            "snapshotStallCauseRaw",
+            "snapshotStallCauseAt",
+            "snapshotStallCauseAccruedSeconds",
+            "snapshotStallDefinitiveAt",
+            "snapshotStallDefinitiveAccruedSeconds",
+            "snapshotExitReasonRaw",
+            "forwardStepStallProgressAt",
+            "forwardStepStallCauseRaw",
+            "forwardStepStallCauseAt",
+            "forwardStepStallCauseAccruedSeconds",
+            "forwardStepExitReasonRaw",
+            "adoptClaimExitRaw",
+            "adoptClaimAccountHash",
+            "forwardLineageUnverified",
+            "adoptEffectStallProgressAt",
+            "adoptEffectStallDefinitiveAt",
+            "adoptEffectStallDefinitiveAccruedSeconds",
+            "startedAt",
+            "updatedAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(MigrationState.self) == expected)
+    }
+
+    @Test func migrationState_schemaVersion_isSixteen() {
+        // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`; a 3 en C-1 con
+        // `markerWrittenSince` (reloj del tope del paso 4) + `cutoverICloudVerdictRaw` (veredicto del canal
+        // iCloud), ambos ADITIVOS y opcionales → una fila escrita por un build v2 sigue abriéndose. A 4 con los
+        // tres del techo de `reverseUpload` (`reverseUploadLowestPending`, `reverseUploadProgressAt`,
+        // `reverseAbortReasonRaw`), también opcionales: una fila v3 se abre con los tres a `nil`. A 5 con
+        // `reverseOriginPendingEffectsData` (los pendientes del origen que la vuelta reemplaza), opcional: una fila v4
+        // clavada en `reverseClaimLeader` se abre sin nada que reponer. A 6 con `forwardClaimIntentRaw` (la intención del
+        // claim de la ida), opcional: una fila v5 con el claim aparcado se abre sin intención y adopta como siempre.
+        // A 7 con el par del techo de las fases previas al montaje (`reversePreMountProgressAt`,
+        // `reversePreMountPhaseRaw`), opcionales: una fila v6 parada en una de esas cuatro fases se abre sin reloj, y
+        // la primera observación lo sella — o sea, el presupuesto le empieza a contar desde que este build la mira, no
+        // desde que se paró (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`).
+        // A 8 con los TRES del RELOJ POR CAUSA de ese mismo techo (`reversePreMountCauseRaw`,
+        // `reversePreMountCauseAt`, `reversePreMountCauseAccruedSeconds`), opcionales: una fila v7 parada en una de
+        // esas cuatro fases se abre sin nada acumulado, y la primera observación con motivo lo empieza — o sea, el
+        // techo corto le cuenta desde que este build la mira, no desde que se paró (ticket
+        // `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`).
+        // A 9 con los CINCO del techo de `uploadingSnapshot` (los cuatro `snapshotStall*` de sus dos relojes y
+        // `snapshotExitReasonRaw`), opcionales: una fila v8 parada en la subida se abre sin reloj, y la primera
+        // observación lo sella — el presupuesto le cuenta desde que este build la mira (ticket
+        // `snapshot-upload-has-no-ceiling-and-no-way-out`).
+        // A 10 con los CINCO del techo de los tres pasos sin cifra que baje (los cuatro `forwardStepStall*` y
+        // `forwardStepExitReasonRaw`), opcionales: una fila v9 parada al 22, 35 u 80 % se abre sin reloj, y la primera
+        // observación lo sella (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
+        // A 11 con `adoptClaimExitRaw` y `adoptClaimAccountHash` (la salida del claim de un adopt y su cuenta), opcionales: una fila v10 se abre sin marca y la
+        // pantalla ofrece lo de siempre (ticket `adopt-claim-stays-parked-with-no-ceiling`).
+        // A 12 con el par del reloj de «cualquier motivo definitivo» del techo previo al montaje
+        // (`reversePreMountDefinitiveAt`, `reversePreMountDefinitiveAccruedSeconds`), opcionales: una fila v11 parada
+        // en una de esas cuatro fases se abre sin nada acumulado, y el reloj empieza con la primera observación con
+        // motivo (ticket `alternating-definitive-causes-never-reach-the-short-ceiling`).
+        // A 13 con el mismo par en la subida del snapshot (`snapshotStallDefinitiveAt`,
+        // `snapshotStallDefinitiveAccruedSeconds`), opcionales: una fila v12 parada en la subida se abre sin nada
+        // acumulado, y el reloj empieza con la primera observación con motivo (ticket
+        // `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`).
+        // A 14 con los TRES del techo del efecto del adopt (`adoptEffectStall*`), opcionales: una fila v13 con el adopt
+        // pendiente se abre sin reloj, y el primer fallo lo sella — el presupuesto le cuenta desde que este build la mira
+        // (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+        // A 15 con los CINCO de los dos relojes que le faltaban al techo de `reverseUpload` (los tres de causa y los dos
+        // de «cualquier motivo definitivo»), opcionales: una fila v14 a mitad de espera se abre sin nada acumulado, y el
+        // techo corto le cuenta desde la primera observación de este build con un motivo definitivo (ticket
+        // `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`).
+        // A 16 con `forwardLineageUnverified` (la identidad comprueba el linaje antes de subir), opcional: una fila v15
+        // parada en la identidad se abre con `nil`, que COMPRUEBA — falla cerrado (ticket
+        // `migration-takeover-uploads-without-a-lineage-check`).
+        #expect(CloudSyncSchemaVersions.migrationState == 16)
+    }
+
+    /// **Los SIETE campos del techo de `reverseUpload` se limpian juntos** (`clearReverseUploadCeiling()`), con la
+    /// familia derivada del SCHEMA por su prefijo: un octavo campo `reverseUpload*` rompe la igualdad y obliga a pasar por
+    /// aquí. El motivo de la salida (`reverseAbortReasonRaw`) queda FUERA a propósito: es el desenlace y sobrevive a la
+    /// vuelta al origen, que es donde la persona lo lee.
+    @Test func migrationState_clearReverseUploadCeiling_clearsTheWholeFamily_andNotTheExitReason() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("reverseUpload") })
+        let known: Set<String> = [
+            "reverseUploadLowestPending",
+            "reverseUploadProgressAt",
+            "reverseUploadCauseRaw",
+            "reverseUploadCauseAt",
+            "reverseUploadCauseAccruedSeconds",
+            "reverseUploadDefinitiveAt",
+            "reverseUploadDefinitiveAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearReverseUploadCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            reverseUploadLowestPending: 7, reverseUploadProgressAt: .now, reverseUploadCauseRaw: "icloudFull",
+            reverseUploadCauseAt: .now, reverseUploadCauseAccruedSeconds: 42, reverseUploadDefinitiveAt: .now,
+            reverseUploadDefinitiveAccruedSeconds: 42, reverseAbortReasonRaw: "icloudFull")
+        state.clearReverseUploadCeiling()
+        #expect(state.reverseUploadLowestPending == nil)
+        #expect(state.reverseUploadProgressAt == nil)
+        #expect(state.reverseUploadCauseRaw == nil)
+        #expect(state.reverseUploadCauseAt == nil)
+        #expect(state.reverseUploadCauseAccruedSeconds == nil)
+        #expect(state.reverseUploadDefinitiveAt == nil)
+        #expect(state.reverseUploadDefinitiveAccruedSeconds == nil)
+        #expect(state.reverseAbortReasonRaw == "icloudFull", "el motivo de la salida no es parte del reloj")
+    }
+
+    /// **Los TRES campos de los relojes del techo del efecto del adopt se limpian juntos**
+    /// (`clearAdoptEffectStallCeiling()`), con la familia derivada del SCHEMA por su prefijo. La marca de la salida
+    /// (`adoptClaimExitRaw`) queda FUERA a propósito: es el desenlace y sobrevive a `failedRollback` y a «Reintentar».
+    @Test func migrationState_clearAdoptEffectStallCeiling_clearsTheWholeFamily_andNotTheExit() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("adoptEffectStall") })
+        let known: Set<String> = [
+            "adoptEffectStallProgressAt",
+            "adoptEffectStallDefinitiveAt",
+            "adoptEffectStallDefinitiveAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearAdoptEffectStallCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            adoptClaimExitRaw: "effectLocalFailure", adoptEffectStallProgressAt: .now, adoptEffectStallDefinitiveAt: .now,
+            adoptEffectStallDefinitiveAccruedSeconds: 42)
+        state.clearAdoptEffectStallCeiling()
+        #expect(state.adoptEffectStallProgressAt == nil)
+        #expect(state.adoptEffectStallDefinitiveAt == nil)
+        #expect(state.adoptEffectStallDefinitiveAccruedSeconds == nil)
+        #expect(state.adoptClaimExitRaw == "effectLocalFailure", "la marca de la salida no es parte del reloj")
+    }
+
+    /// **Los CUATRO campos de los relojes del techo de los tres pasos se limpian juntos**
+    /// (`clearForwardStepStallCeiling()`), con la familia derivada del SCHEMA por su prefijo. El motivo de la salida
+    /// (`forwardStepExitReasonRaw`) queda FUERA a propósito: es el desenlace y sobrevive a `failedRollback`.
+    @Test func migrationState_clearForwardStepStallCeiling_clearsTheWholeFamily_andNotTheExitReason() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("forwardStepStall") })
+        let known: Set<String> = [
+            "forwardStepStallProgressAt",
+            "forwardStepStallCauseRaw",
+            "forwardStepStallCauseAt",
+            "forwardStepStallCauseAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearForwardStepStallCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            forwardStepStallProgressAt: .now, forwardStepStallCauseRaw: "localFailure", forwardStepStallCauseAt: .now,
+            forwardStepStallCauseAccruedSeconds: 42, forwardStepExitReasonRaw: "stalled")
+        state.clearForwardStepStallCeiling()
+        #expect(state.forwardStepStallProgressAt == nil)
+        #expect(state.forwardStepStallCauseRaw == nil)
+        #expect(state.forwardStepStallCauseAt == nil)
+        #expect(state.forwardStepStallCauseAccruedSeconds == nil)
+        #expect(state.forwardStepExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
+    }
+
+    /// **Los SEIS campos de los relojes del techo de la subida se limpian juntos** (`clearSnapshotStallCeiling()`),
+    /// con la familia derivada del SCHEMA por su prefijo, como la de arriba: un séptimo campo `snapshotStall*` rompe
+    /// la igualdad y obliga a pasar por aquí. El motivo de la salida (`snapshotExitReasonRaw`) queda FUERA a propósito:
+    /// es el desenlace, sobrevive a `failedRollback`, y el helper no puede tocarlo.
+    @Test func migrationState_clearSnapshotStallCeiling_clearsTheWholeFamily_andNotTheExitReason() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("snapshotStall") })
+        let known: Set<String> = [
+            "snapshotStallProgressAt",
+            "snapshotStallCauseRaw",
+            "snapshotStallCauseAt",
+            "snapshotStallCauseAccruedSeconds",
+            "snapshotStallDefinitiveAt",
+            "snapshotStallDefinitiveAccruedSeconds",
+        ]
+        #expect(family == known, "campo nuevo en la familia: añádelo a `clearSnapshotStallCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            snapshotStallProgressAt: .now, snapshotStallCauseRaw: "localFailure", snapshotStallCauseAt: .now,
+            snapshotStallCauseAccruedSeconds: 42, snapshotStallDefinitiveAt: .now,
+            snapshotStallDefinitiveAccruedSeconds: 42, snapshotExitReasonRaw: "stalled")
+        state.clearSnapshotStallCeiling()
+        #expect(state.snapshotStallProgressAt == nil)
+        #expect(state.snapshotStallCauseRaw == nil)
+        #expect(state.snapshotStallCauseAt == nil)
+        #expect(state.snapshotStallCauseAccruedSeconds == nil)
+        #expect(state.snapshotStallDefinitiveAt == nil)
+        #expect(state.snapshotStallDefinitiveAccruedSeconds == nil)
+        #expect(state.snapshotExitReasonRaw == "stalled", "el motivo de la salida no es parte del reloj")
+    }
+
+    /// **Los SIETE campos del techo previo al montaje se limpian juntos**, y `clearReversePreMountCeiling()` es lo
+    /// que lo garantiza en los seis sitios que lo hacen.
+    ///
+    /// **La primera versión de este caso enumeraba los campos a mano y prometía cazar un campo NUEVO que se
+    /// olvidara en el helper. No podía**: una lista literal comparada consigo misma deja verde un sexto campo. Lo
+    /// cazó una lente de la review. Ahora la lista se deriva del SCHEMA —todo lo que empiece por `reversePreMount`
+    /// pertenece a esta familia— y se compara con la que el caso conoce: un campo nuevo rompe esa igualdad y
+    /// obliga a pasar por aquí, que es donde se ve si el helper lo limpia.
+    @Test func migrationState_clearReversePreMountCeiling_clearsTheWholeFamily() {
+        let family = Set(propertyNames(MigrationState.self).filter { $0.hasPrefix("reversePreMount") })
+        let known: Set<String> = [
+            "reversePreMountProgressAt",
+            "reversePreMountPhaseRaw",
+            "reversePreMountCauseRaw",
+            "reversePreMountCauseAt",
+            "reversePreMountCauseAccruedSeconds",
+            "reversePreMountDefinitiveAt",
+            "reversePreMountDefinitiveAccruedSeconds",
+        ]
+        #expect(family == known,
+                "campo nuevo en la familia: añádelo a `clearReversePreMountCeiling()` y a esta lista")
+
+        let state = MigrationState(
+            reversePreMountProgressAt: .now, reversePreMountPhaseRaw: "verify",
+            reversePreMountCauseRaw: "localFailure", reversePreMountCauseAt: .now,
+            reversePreMountCauseAccruedSeconds: 42,
+            reversePreMountDefinitiveAt: .now, reversePreMountDefinitiveAccruedSeconds: 42)
+        state.clearReversePreMountCeiling()
+        #expect(state.reversePreMountProgressAt == nil)
+        #expect(state.reversePreMountPhaseRaw == nil)
+        #expect(state.reversePreMountCauseRaw == nil)
+        #expect(state.reversePreMountCauseAt == nil)
+        #expect(state.reversePreMountCauseAccruedSeconds == nil)
+        #expect(state.reversePreMountDefinitiveAt == nil)
+        #expect(state.reversePreMountDefinitiveAccruedSeconds == nil)
+    }
+
+    // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)
+
+    @Test func groupSyncOutbox_entityName_isAnchoredLiteral() {
+        #expect(entity(GroupSyncOutbox.self)?.name == "GroupSyncOutbox")
+    }
+
+    @Test func groupSyncOutbox_hasExactPropertySet() {
+        // Molde de `SyncOutbox` + `groupID` (el `group_id` del wire de Grupos, §A).
+        let expected: Set<String> = [
+            "syncID",
+            "groupID",
+            "entityType",
+            "opRaw",
+            "hlc",
+            "clientMutationID",
+            "fieldsJSON",
+            "fieldHlcsJSON",
+            "tombstoneReason",
+            "author",
+            "createdAt",
+            "rejectedReason",
+            "rejectedAt",
+            "schemaVersion",
+            // De quién es el cambio (`groups-outbox-rows-without-a-live-session-have-no-exit`): el push solo sube los de
+            // la sesión viva. Opcional: una fila de un build anterior lo lee `nil`.
+            "ownerUserID",
+        ]
+        #expect(propertyNames(GroupSyncOutbox.self) == expected)
+    }
+
+    /// 2 desde el 2026-09-28 (`groups-outbox-rows-without-a-live-session-have-no-exit`): la fila nace con su dueño decidido,
+    /// y solo a las de versión 1 se les busca después.
+    @Test func groupSyncOutbox_schemaVersion_isTwo() {
+        #expect(CloudSyncSchemaVersions.groupSyncOutbox == 2)
+        #expect(CloudSyncSchemaVersions.groupSyncOutboxBeforeOwners == 1)
+    }
+
+    @Test func groupSyncCursor_entityName_isAnchoredLiteral() {
+        #expect(entity(GroupSyncCursor.self)?.name == "GroupSyncCursor")
+    }
+
+    @Test func groupSyncCursor_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "historyTokenData",
+            // Procedencia del ancla: el token de History es POR-STORE y anclarlo en el store personal
+            // dejaba al canal ciego al suyo (ver `GroupsDrainHistoryStoreAnchorTests`). `nil` en las filas
+            // de un build anterior ⇒ el drain descarta ese ancla y re-escanea.
+            "historyTokenStoreID",
+            "lastDrainedTxAt",
+            "clockLatestHLC",
+            "groupCursorsJSON",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(GroupSyncCursor.self) == expected)
+    }
+
+    @Test func groupSyncCursor_schemaVersion_isOne() {
+        #expect(CloudSyncSchemaVersions.groupSyncCursor == 1)
+    }
+
+    // MARK: - (c) Membresía de stores
+
+    @Test func personalStore_doesNotContain_syncMetaEntities() {
+        let personal = entityNames(SwiftDataConfiguration.personalSchema)
+        #expect(!personal.contains("SyncIdentity"))
+        #expect(!personal.contains("SyncOutbox"))
+        #expect(!personal.contains("SyncCursor"))
+        #expect(!personal.contains("SyncQuarantine"))
+        #expect(!personal.contains("SyncDanglingRef"))
+        #expect(!personal.contains("SyncUnitClock"))
+        #expect(!personal.contains("MigrationState"))
+    }
+
+    @Test func syncMetaStore_containsExactly_syncMetaEntities_andIsCloudKitNone() {
+        // G2 añadió el canal de Grupos → backend: `GroupSyncOutbox` + `GroupSyncCursor` (cola + cursor,
+        // store `.none`, sin deploy CloudKit).
+        let expected: Set<String> = ["SyncIdentity", "SyncOutbox", "SyncCursor", "SyncQuarantine",
+                                     "SyncDanglingRef", "SyncUnitClock", "MigrationState",
+                                     "GroupSyncOutbox", "GroupSyncCursor"]
+        #expect(entityNames(SwiftDataConfiguration.syncMetaSchema) == expected)
+
+        let config = SwiftDataConfiguration.syncMetaConfiguration
+        // El config sync-meta usa el schema sync-meta…
+        #expect(config.schema.flatMap { entityNames($0) } == expected)
+        // …y NUNCA CloudKit (`.none`). CloudKitDatabase no es Equatable → comparamos su descripción.
+        #expect(String(describing: config.cloudKitDatabase).lowercased().contains("none"))
+    }
+
+    // MARK: - (b·I10-wiring w6) CloudMigrationMarker (store personal espejado, NO backend)
+
+    @Test func cloudMigrationMarker_entityName_isAnchoredLiteral() {
+        #expect(entity(CloudMigrationMarker.self)?.name == "CloudMigrationMarker")
+    }
+
+    @Test func cloudMigrationMarker_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "accountHash",
+            "migratedAtStamp",
+            "serverSeqCut",
+            "writerDeviceID",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(CloudMigrationMarker.self) == expected)
+    }
+
+    @Test func cloudMigrationMarker_isInPersonalSchema_notSyncMeta() {
+        // Vive en el store PERSONAL (el mirror lo exporta como CD_CloudMigrationMarker), NUNCA en sync-meta.
+        #expect(entityNames(SwiftDataConfiguration.personalSchema).contains("CloudMigrationMarker"))
+        #expect(!entityNames(SwiftDataConfiguration.syncMetaSchema).contains("CloudMigrationMarker"))
+    }
+
+    @Test func cloudMigrationMarker_schemaVersion_isOne() {
+        #expect(CloudSyncSchemaVersions.cloudMigrationMarker == 1)
+    }
+
+    // MARK: - (e·I3) Anti-drift: la lista anti-fuga del motor == entity names sincronizables del personal
+
+    @Test func engine_personalEntityNames_matchPersonalSchema() {
+        // `CloudMigrationMarker` (I10-wiring w6) vive en el store personal y lo espeja el mirror
+        // (CD_CloudMigrationMarker), pero NO se sincroniza al backend Modo Nube (su equivalente
+        // server-side es `profiles.migrated_at`) → se EXCLUYE de la lista anti-fuga del motor. Es la
+        // ÚNICA divergencia intencional entre `personalEntityNames` y el schema personal.
+        let personalSynced = entityNames(SwiftDataConfiguration.personalSchema)
+            .subtracting(["CloudMigrationMarker"])
+        #expect(CloudSyncEngine.personalEntityNames == personalSynced)
+    }
+
+    /// El conjunto que decide la PROCEDENCIA DE STORE del ancla del high-water es OTRO, y tiene que ser el
+    /// `personalSchema` COMPLETO — `CloudMigrationMarker` incluido. La distinción no es cosmética: un
+    /// detector de store construido sobre `personalEntityNames` dejaría sin ancla una transacción que SÍ es
+    /// del store bueno (la del marcador del cutover), y el drain caería al full-rescan sin necesidad. Y la
+    /// DISYUNCIÓN con los otros dos stores es lo que hace correcto `isPersonalStoreTransaction`: si algún día
+    /// un entity name viviera en dos schemas, el detector devolvería `true` para una transacción ajena y el
+    /// ancla volvería a caer en el store equivocado (el punto fijo de `PersonalDrainHistoryStoreAnchorTests`).
+    @Test func engine_personalStoreEntityNames_matchPersonalSchema_disjointFromOthers() {
+        let personal = entityNames(SwiftDataConfiguration.personalSchema)
+        #expect(CloudSyncEngine.personalStoreEntityNames == personal)
+        #expect(CloudSyncEngine.personalStoreEntityNames.contains("CloudMigrationMarker"))
+        #expect(CloudSyncEngine.personalEntityNames.isSubset(of: CloudSyncEngine.personalStoreEntityNames))
+        #expect(CloudSyncEngine.personalStoreEntityNames
+            .isDisjoint(with: entityNames(SwiftDataConfiguration.groupsSchema)))
+        #expect(CloudSyncEngine.personalStoreEntityNames
+            .isDisjoint(with: entityNames(SwiftDataConfiguration.syncMetaSchema)))
+    }
+
+    // MARK: - (d) Identidad de sync por entidad
+
+    /// Las 6 originales llevan el `syncID` sintético.
+    @Test func syntheticSyncableEntities_haveSyncIDProperty() {
+        let syncable: [any PersistentModel.Type] = [
+            TransactionItem.self,
+            InboxDraft.self,
+            Category.self,
+            FavoritePayment.self,
+            MerchantMemory.self,
+            ExchangeRate.self,
+        ]
+        for type in syncable {
+            #expect(propertyNames(type).contains("syncID"), "\(type) debe tener la propiedad syncID")
+        }
+    }
+
+    /// Las cableadas en I12 usan su UUID EXISTENTE como identidad de sync (Account/Subcategory =
+    /// `shortcutID`; el resto = `id`). El campo debe existir en el schema para que el tombstone
+    /// (`.preserveValueOnDeletion`) y el fetch por identidad lo resuelvan.
+    @Test func wiredIdentityEntities_haveIdentityProperty() {
+        // (tipo, campo de identidad)
+        let wired: [(any PersistentModel.Type, String)] = [
+            (Budget.self, "id"),
+            (ScheduledPayment.self, "id"),
+            // Commit B: las 8 restantes.
+            (Account.self, "shortcutID"),
+            (Subcategory.self, "shortcutID"),
+            (Tag.self, "id"),
+            (NotificationItem.self, "id"),
+            (CashFlowPlan.self, "id"),
+            (CashFlowLine.self, "id"),
+            (CashFlowOverride.self, "id"),
+            (GroupBridgePreference.self, "id"),
+        ]
+        for (type, field) in wired {
+            #expect(propertyNames(type).contains(field),
+                    "\(type) debe tener la propiedad de identidad \(field)")
+        }
+    }
+
+    /// `.preserveValueOnDeletion` en la identidad de las cableadas en I12 no es introspectable vía
+    /// `Schema.Entity`; se valida con un tombstone REAL: borrar la fila y comprobar que el history
+    /// tombstone conserva el `id`. Store ON-DISK propio en dir temporal (patrón SyncApplyEngineTests)
+    /// — NO usa `makeTestContext()` (helper in-memory), así que la regla `.serialized` (≥2
+    /// makeTestContext por proceso) NO aplica a esta suite; es el único test con container aquí.
+    @MainActor
+    @Test func wiredIdentity_isPreservedInTombstone_budget() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SchemaParity-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let personalCfg = ModelConfiguration(
+            "SP-Personal", schema: SwiftDataConfiguration.personalSchema,
+            url: dir.appendingPathComponent("personal.sqlite"), cloudKitDatabase: .none)
+        let groupsCfg = ModelConfiguration(
+            "SP-Groups", schema: SwiftDataConfiguration.groupsSchema,
+            url: dir.appendingPathComponent("groups.sqlite"), cloudKitDatabase: .none)
+        let syncMetaCfg = ModelConfiguration(
+            "SP-SyncMeta", schema: SwiftDataConfiguration.syncMetaSchema,
+            url: dir.appendingPathComponent("syncmeta.sqlite"), cloudKitDatabase: .none)
+        let container = try ModelContainer(for: SwiftDataConfiguration.schema,
+                                           configurations: personalCfg, groupsCfg, syncMetaCfg)
+        let context = ModelContext(container)
+
+        let budget = Budget(currencyCode: "USD", limitAmount: 100)
+        let budgetID = budget.id
+        context.insert(budget)
+        try context.save()
+        context.delete(budget)
+        try context.save()
+
+        // El history tombstone del delete debe conservar `id` (= `.preserveValueOnDeletion`).
+        let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+        var preservedIDs: [UUID] = []
+        for tx in txns {
+            for change in tx.changes {
+                guard case .delete(let del) = change,
+                      let typed = del as? DefaultHistoryDelete<Budget> else { continue }
+                if let id = typed.tombstone[\.id] as? UUID { preservedIDs.append(id) }
+            }
+        }
+        #expect(preservedIDs.contains(budgetID),
+                "el tombstone de Budget debe conservar `id` (@Attribute(.preserveValueOnDeletion))")
+    }
+}

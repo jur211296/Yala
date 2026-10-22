@@ -24,6 +24,24 @@ extension Notification.Name {
     static let iCloudMismatchDetected = Notification.Name("iCloudMismatchDetected")
 }
 
+// MARK: - Comportamiento de sync de prefs
+
+/// Resolver PURO del comportamiento de las keys sincronizadas: a dónde va una preferencia según
+/// dónde vivan los datos de esta sesión.
+nonisolated enum PrefsSyncBehavior: Equatable {
+    /// `.icloud`: dual-write local+iKV, apply desde iKV (comportamiento de HOY).
+    case icloudKeyValue
+    /// `.cloud`: local + outbox durable — el backend es la fuente (I13).
+    case cloudOutbox
+
+    static func resolve(storageMode: StorageMode) -> PrefsSyncBehavior {
+        switch storageMode {
+        case .icloud: return .icloudKeyValue
+        case .cloud: return .cloudOutbox
+        }
+    }
+}
+
 @MainActor
 final class PreferenceSyncService {
 
@@ -32,49 +50,11 @@ final class PreferenceSyncService {
     static let shared = PreferenceSyncService()
 
     // MARK: - Synced Keys
-
-    /// Keys that sync to iCloud via NSUbiquitousKeyValueStore
-    private enum SyncKey: String, CaseIterable {
-        case defaultCurrencyCode
-        case userName
-        case defaultPeriod
-        case secondaryCurrencies
-        case budgetAlertsEnabled
-        case expensesOnlyMode
-        case userProfileIcon
-        case colorfulIcons
-        case firstWeekday
-        case decimalPlaces
-        case currencyDisplayFormat
-        case showVariations
-        case averageLineMode
-        case voiceLanguage
-        case autoFocusField
-        case accountsSortOrderNames
-        case insightsTone
-        case insightsFocus
-        case financialMindset
-        case onboardingMode
-        // Panel 2.0 — per-section order/hidden + reserved sectionsHidden (P20-02)
-        case panelTendenciasOrder
-        case panelTendenciasHidden
-        case panelDistribucionOrder
-        case panelDistribucionHidden
-        case panelPlanificacionOrder
-        case panelPlanificacionHidden
-        case panelSectionsHidden
-        case panelSectionsOrder
-        // P20-11 — Cuentas collapse state (synced so state follows across devices)
-        case panelAccountsCollapsed
-        // M2 (localización) — override de idioma elegido por el usuario, sincronizado cross-device
-        case appLanguageOverride
-        // A0-Bridge: 3 toggles existing (synced=true desde inicio pero faltaba el enum case)
-        case includeGroupTransactionsInFeed
-        case includeGroupsInPanelTotal
-        case includeGroupTransactionsInStats
-        // Bridge opt-out global per-user (synced=true). Cross-device sync de la decisión.
-        case bridgeGroupExpensesToPersonalAccounts
-    }
+    //
+    // La taxonomía de las 37 keys sincronizadas (familias de merge + señales + tipos) vive en el helper
+    // pure-logic `PrefSyncKey` (SSOT único, `PreferenceMergeLogic.swift`), consumido por AMBAS ramas
+    // (`.icloud` iKV y `.cloud` backend). El merge se decide en `PreferenceMergeLogic.decide` (byte-idéntico
+    // a la lógica que vivía inline aquí) y el bloque POST-PASS compartido es `applyMergeOutcome`.
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
     private enum WipeKey {
@@ -87,9 +67,29 @@ final class PreferenceSyncService {
     /// Key for notification userInfo
     static let onboardingAlreadyDoneKey = "onboardingAlreadyDone"
 
-    private let iKV = NSUbiquitousKeyValueStore.default
-    private let local = UserDefaults.standard
+    private let iKV: OwnerKeyValueWriting = OwnerKeyValueStore.shared
+    /// M1: resuelto POR LLAMADA y jamás capturado. Este servicio es un singleton construido en el
+    /// bootstrap, mucho antes de que la visita confirme su entrada; con un `let` se quedaría con el
+    /// dominio del dueño para toda la vida del proceso, y en la ventana entre `activate` y el
+    /// relanzamiento se escribe el consentimiento RGPD de la invitada.
+    private var local: UserDefaults { UserDefaults.standard }
     private var isObserverRegistered = false
+
+    // MARK: - Modo Nube (I13) — cola durable de prefs para la rama `.cloud`
+
+    /// Cola durable App Group de las prefs salientes (`.cloud`). `nil` = App Group no disponible. Lazy:
+    /// solo se resuelve al primer uso. DARK: `CloudSyncFlags.storageMode` es SIEMPRE `.icloud` hoy, así
+    /// que la rama que la usa no corre en producción.
+    private lazy var prefsOutbox: PrefsOutbox? = PrefsOutbox()
+
+    /// El `sub` de la sesión Nube actual (owner-scoping M1 del outbox). Inyectable para tests; por
+    /// defecto la sesión viva de `CloudAuthService`. Solo se consulta en la rama `.cloud`.
+    var cloudUserIDProvider: () -> String? = { CloudAuthService.shared.currentUserID }
+
+    /// Comportamiento resuelto de las 37 keys (ver `PrefsSyncBehavior`).
+    private var behavior: PrefsSyncBehavior {
+        PrefsSyncBehavior.resolve(storageMode: CloudSyncFlags.storageMode)
+    }
 
     private init() {}
 
@@ -108,10 +108,24 @@ final class PreferenceSyncService {
     /// Pulls remote values into UserDefaults and starts observing changes.
     /// Safe to call multiple times (e.g. pull-to-refresh) — observer registered only once.
     func bootstrap() {
-        iKV.synchronize()
-        applyRemoteValues()
+        switch behavior {
+        case .icloudKeyValue:
+            iKV.synchronize()
+            applyRemoteValues()
+        case .cloudOutbox:
+            // La fuente de las 37 keys es el BACKEND vía `CloudSyncRuntime` (pull + merge en su ciclo);
+            // NO se lee iKV aquí. Las señales wipe/onboarding (WipeKeys) SÍ siguen en iKV en ambos modos
+            // v1 (su reemplazo por el summary del backend es I14/§k.4 — documentado).
+            //
+            // CUTOVER S8 (§g.4) — DIFERIDOS #30 CERRADO (I10-wiring w8): el drenaje único iKV→outbox
+            // corre vía `drainiKVToOutboxOnceIfNeeded()`, disparado desde `MigrationPhaseStore.configure`
+            // (que conoce la fase journaleada — el gate LÍDER-only) y redundantemente aquí (por si el
+            // configure corrió ANTES de que la sesión nube tuviera userID). Idempotente por sentinel.
+            drainiKVToOutboxOnceIfNeeded()
+        }
 
         // Offline catch-up: process any wipe/onboarding signals that arrived while app was closed
+        // (WipeKeys viven en iKV en AMBOS modos v1).
         checkForRemoteWipeSignal()
 
         guard !isObserverRegistered else { return }
@@ -119,29 +133,154 @@ final class PreferenceSyncService {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(iCloudDidChange(_:)),
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: iKV
+            name: OwnerKeyValueStore.didChangeExternallyNotification,
+            // El EMISOR real, no la puerta: `object:` filtra por identidad, así que registrar aquí el
+            // wrapper daría un observer que no dispara jamás y las prefs de otro dispositivo dejarían
+            // de aplicarse en silencio.
+            object: OwnerKeyValueStore.notificationSource
         )
     }
 
-    // MARK: - Write (dual-write: local + iKV)
+    // MARK: - Write (rama por storageMode: `.icloud` dual-write local+iKV · `.cloud` local + outbox)
+    //
+    // Los call-sites NO cambian (contrato §k.7/#18): la rama vive 100% dentro del service. `local.set`
+    // corre SIEMPRE (fuente de lectura local en ambos modos). `appLanguageOverride` NO pasa por aquí
+    // (lo escribe `LanguageManager.overrideLanguage` directo a iKV → su migración a `.cloud` es DIFERIDA,
+    // fuera de I13; DARK, sin efecto hoy).
 
     func set(string value: String, forKey key: String) {
         local.set(value, forKey: key)
-        iKV.set(value, forKey: key)
-        iKV.synchronize()
+        switch behavior {
+        case .icloudKeyValue:
+            iKV.setString(value, forKey: key)
+            iKV.synchronize()
+        case .cloudOutbox:
+            enqueuePref(key: key, value: .string(value))
+        }
     }
 
     func set(bool value: Bool, forKey key: String) {
         local.set(value, forKey: key)
-        iKV.set(value, forKey: key)
-        iKV.synchronize()
+        switch behavior {
+        case .icloudKeyValue:
+            iKV.setBool(value, forKey: key)
+            iKV.synchronize()
+        case .cloudOutbox:
+            enqueuePref(key: key, value: .bool(value))
+        }
     }
 
     func set(int value: Int, forKey key: String) {
         local.set(value, forKey: key)
-        iKV.set(value, forKey: key)
-        iKV.synchronize()
+        switch behavior {
+        case .icloudKeyValue:
+            iKV.setInt(value, forKey: key)
+            iKV.synchronize()
+        case .cloudOutbox:
+            enqueuePref(key: key, value: .int(value))
+        }
+    }
+
+    /// Elimina una pref (G5-B — limpieza del consent de grupos en el sign-out solo-grupos). Cubre las
+    /// dos ramas de `PrefsSyncBehavior` para que el borrado no reviva:
+    ///  - `.icloudKeyValue`: `removeObject` local + iKV + `synchronize()` — CR-2: sin limpiar el iKV,
+    ///    `applyRemoteValues()` del próximo boot RESUCITARÍA el consent (el iKV es la fuente en `.icloud`).
+    ///  - `.cloudOutbox`: `removeObject` local + encola el valor CLEARED al outbox. El wire de prefs no
+    ///    tiene tombstone; las únicas keys que se borran hoy son `intPresence` (consent), donde `0` ≡
+    ///    ausencia (`isAccepted` es `> 0`) → encolar `.int(0)` limpia la fuente backend de forma honesta.
+    func remove(forKey key: String) {
+        local.removeObject(forKey: key)
+        switch behavior {
+        case .icloudKeyValue:
+            iKV.removeObject(forKey: key)
+            iKV.synchronize()
+        case .cloudOutbox:
+            enqueuePref(key: key, value: .int(0))
+        }
+    }
+
+    /// Encola una pref en el outbox durable (`.cloud`). El HLC se estampa en el outbox (verdad temporal).
+    /// Latencia de subida = cadencia del `CloudSyncRuntime` (≈60s foreground) — decisión v1 (paridad con
+    /// la latencia de dominio; NO se hace un push inmediato fuera de diseño).
+    private func enqueuePref(key: String, value: PrefValue) {
+        guard let prefsOutbox else {
+            #if DEBUG
+            print("PreferenceSyncService: prefs outbox unavailable — cannot enqueue \(key)")
+            #endif
+            return
+        }
+        guard let userID = cloudUserIDProvider() else {
+            #if DEBUG
+            print("PreferenceSyncService: no cloud userID — cannot owner-scope pref \(key)")
+            #endif
+            return
+        }
+        do {
+            try prefsOutbox.enqueue(key: key, userID: userID, value: value)
+        } catch {
+            // Con el archivo ilegible el outbox no escribe nada: lo pendiente se conserva y este cambio no se encola.
+            if case PrefsOutboxError.readFailed = error {
+                CloudSyncBreadcrumb.prefsOutboxUnreadable(step: "enqueue")
+            }
+            #if DEBUG
+            print("PreferenceSyncService: enqueue pref \(key) failed: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Drenaje único iKV → outbox (CUTOVER S8, DIFERIDOS #30 — I10-wiring w8)
+
+    /// SSOT del prefijo en `PrefsCutoverDrain.sentinelPrefix` (#37: la reversa y el sign-out wipe lo
+    /// retiran por prefijo — un literal duplicado aquí divergiría en silencio).
+    private static let ikvDrainSentinelPrefix = PrefsCutoverDrain.sentinelPrefix
+
+    /// Drena UNA VEZ por userID el estado iKV → outbox de prefs, SOLO en el device LÍDER de la
+    /// migración en su ventana post-relaunch (gate por fase journaleada — ver `PrefsCutoverDrain`, que
+    /// documenta POR QUÉ un adoptador/follower NO drena: su iKV puede ser más viejo que el backend y el
+    /// HLC fresco del enqueue lo haría ganar). Belt: salta keys con entry ya pendiente en el outbox
+    /// (un write local post-relaunch es más nuevo que la réplica iKV). El sentinel se estampa SOLO si
+    /// el drenaje completó sin fallos de I/O — un fallo parcial reintenta al próximo boot (LWW absorbe
+    /// el re-enqueue). Callers: `MigrationPhaseStore.configure` (orden garantizado post-journal) +
+    /// `bootstrap()` rama `.cloud` (redundante benigno).
+    func drainiKVToOutboxOnceIfNeeded(sentinelDefaults: UserDefaults = .standard) {
+        // Behavior y no storageMode a secas: en SECUNDARIA el modo efectivo es `.cloud`, pero el iKV
+        // presente es el del DUEÑO — drenarlo al outbox de la invitada subiría SUS valores a la
+        // cuenta de ella. Solo el `.cloud` real (sin descriptor) drena.
+        guard behavior == .cloudOutbox else { return }
+        // Con la LECTURA: un journal que no se deja leer no drena (el centinela no se estampa, reintenta al arrancar).
+        guard PrefsCutoverDrain.isLeaderPostRelaunchPhase(MigrationPhaseStore.shared.currentPhaseRead) else { return }
+        guard let userID = cloudUserIDProvider() else { return }
+        let sentinelKey = Self.ikvDrainSentinelPrefix + userID
+        guard !sentinelDefaults.bool(forKey: sentinelKey) else { return }
+        guard let prefsOutbox else {
+            #if DEBUG
+            print("PreferenceSyncService: drain iKV — outbox no disponible (App Group)")
+            #endif
+            return
+        }
+
+        let present = Set(PrefSyncKey.allCases.filter { readRemoteIKV($0) != nil }.map(\.rawValue))
+        let pending = Set(prefsOutbox.entries(forUserID: userID).map(\.key))
+        let planned = PrefsCutoverDrain.plan(
+            allKeys: PrefSyncKey.allCases.map(\.rawValue),
+            presentInIKV: present, pendingInOutbox: pending)
+
+        var failures = 0
+        for raw in planned {
+            guard let key = PrefSyncKey(rawValue: raw), let value = readRemoteIKV(key) else { continue }
+            do {
+                try prefsOutbox.enqueue(key: raw, userID: userID, value: value)
+            } catch {
+                failures += 1
+                #if DEBUG
+                print("PreferenceSyncService: drain iKV — enqueue \(raw) falló: \(error)")
+                #endif
+            }
+        }
+        if failures == 0 {
+            sentinelDefaults.set(true, forKey: sentinelKey)
+        }
+        CloudSyncBreadcrumb.prefsCutoverDrained(count: planned.count - failures, failures: failures)
     }
 
     // MARK: - Apply Detected Defaults (Risk 1 — "data found" with no currency)
@@ -149,11 +288,11 @@ final class PreferenceSyncService {
     /// Sets sensible defaults when iCloud data arrives but no preferences exist.
     /// Guards on nil currency — only runs once.
     func applyDetectedDefaultsIfNeeded() {
-        guard local.string(forKey: SyncKey.defaultCurrencyCode.rawValue) == nil else { return }
+        guard local.string(forKey: PrefSyncKey.defaultCurrencyCode.rawValue) == nil else { return }
 
         let currency = CurrencyDefaults.detectCurrencyFromRegion()
-        set(string: currency.rawValue, forKey: SyncKey.defaultCurrencyCode.rawValue)
-        set(string: DetailPeriod.thisMonth.rawValue, forKey: SyncKey.defaultPeriod.rawValue)
+        set(string: currency.rawValue, forKey: PrefSyncKey.defaultCurrencyCode.rawValue)
+        set(string: DetailPeriod.thisMonth.rawValue, forKey: PrefSyncKey.defaultPeriod.rawValue)
 
         // Push to SessionState (already alive as singleton)
         SessionState.shared.selectedPeriod = .thisMonth
@@ -163,88 +302,140 @@ final class PreferenceSyncService {
         #endif
     }
 
-    // MARK: - Remote → Local merge
+    // MARK: - Remote → Local merge (`.icloud`: iKV → local + SessionState)
 
-    /// Merges iKV values into UserDefaults and pushes to SessionState.
+    /// Merges iKV values into UserDefaults and pushes to SessionState. Byte-idéntico al comportamiento
+    /// previo: la decisión per-key vive en `PreferenceMergeLogic.decide` (oráculo-primero) y el bloque
+    /// POST-PASS compartido es `applyMergeOutcome`.
     private func applyRemoteValues() {
         var formattingChanged = false
         var weekdayChanged = false
+        for key in PrefSyncKey.allCases {
+            applyMergeDecision(
+                for: key, remote: readRemoteIKV(key),
+                formattingChanged: &formattingChanged, weekdayChanged: &weekdayChanged
+            )
+        }
+        applyMergeOutcome(formattingChanged: formattingChanged, weekdayChanged: weekdayChanged)
+    }
 
-        for key in SyncKey.allCases {
-            let k = key.rawValue
+    // MARK: - Remote → Local merge (`.cloud`: backend pull → local + SessionState)
 
-            switch key {
-            case .defaultCurrencyCode, .userName, .defaultPeriod, .secondaryCurrencies,
-                 .userProfileIcon, .currencyDisplayFormat, .voiceLanguage, .autoFocusField,
-                 .accountsSortOrderNames, .insightsTone, .insightsFocus, .financialMindset:
-                if let remote = iKV.string(forKey: k), !remote.isEmpty {
-                    if local.string(forKey: k) != remote {
-                        local.set(remote, forKey: k)
-                        if key == .currencyDisplayFormat { formattingChanged = true }
-                    }
-                }
+    /// Aplica las prefs bajadas del backend (`/prefs/pull`). Reusa `PreferenceMergeLogic` + el POST-PASS
+    /// compartido → las semánticas NO-LWW (rank, vacío-válido) se resuelven client-side igual que en iKV.
+    /// Lo invoca `CloudSyncRuntime` tras el pull. Una key desconocida se ignora (forward-compat).
+    func applyPulledPrefs(_ prefs: [PulledPref]) {
+        guard !prefs.isEmpty else { return }
+        var formattingChanged = false
+        var weekdayChanged = false
+        for pref in prefs {
+            guard let key = PrefSyncKey(rawValue: pref.key) else { continue }
+            let remote: PrefValue? = pref.value.map { PrefValueCodec.decode($0, as: key.kind) }
+            applyMergeDecision(
+                for: key, remote: remote,
+                formattingChanged: &formattingChanged, weekdayChanged: &weekdayChanged
+            )
+        }
+        applyMergeOutcome(formattingChanged: formattingChanged, weekdayChanged: weekdayChanged)
+    }
 
-            case .appLanguageOverride:
+    // MARK: - Per-key apply (compartido por ambas ramas)
+
+    /// Aplica la decisión de merge de UNA key a su destino local (UserDefaults standard, o el App Group
+    /// suite para `appLanguageOverride`) y acumula las señales de side-effect.
+    private func applyMergeDecision(
+        for key: PrefSyncKey, remote: PrefValue?,
+        formattingChanged: inout Bool, weekdayChanged: inout Bool
+    ) {
+        let k = key.rawValue
+        let isLanguage = (key == .appLanguageOverride)
+        let localValue: PrefValue? = isLanguage ? readLanguageSuite() : readLocal(key)
+
+        let decision = PreferenceMergeLogic.decide(key: key, remote: remote, local: localValue)
+
+        switch decision.write {
+        case .skip:
+            break
+        case .set(let value):
+            if isLanguage {
                 // Storage es App Group suite (compartido con widgets), NO standard.
-                let suite = LanguageManager.sharedDefaults
-                if iKV.object(forKey: k) != nil {
-                    let remote = iKV.string(forKey: k) ?? ""
-                    let current = suite.string(forKey: k) ?? ""
-                    if current != remote {
-                        if remote.isEmpty {
-                            suite.removeObject(forKey: k)
-                        } else {
-                            suite.set(remote, forKey: k)
-                        }
-                        // Notificar cambio de idioma en caliente para que la UI re-renderice
-                        NotificationCenter.default.post(name: .languageDidChange, object: nil)
-                    }
-                }
-
-            case .panelTendenciasOrder, .panelTendenciasHidden,
-                 .panelDistribucionOrder, .panelDistribucionHidden,
-                 .panelPlanificacionOrder, .panelPlanificacionHidden,
-                 .panelSectionsHidden, .panelSectionsOrder:
-                // Empty strings are a valid state (user hid every widget in a section).
-                if iKV.object(forKey: k) != nil {
-                    let remote = iKV.string(forKey: k) ?? ""
-                    if local.string(forKey: k) != remote {
-                        local.set(remote, forKey: k)
-                    }
-                }
-
-            case .onboardingMode:
-                // Never-downgrade merge: remote only wins if its rank is higher
-                if let remoteRaw = iKV.string(forKey: k), !remoteRaw.isEmpty,
-                   let remoteMode = OnboardingMode(rawValue: remoteRaw) {
-                    let localMode = OnboardingMode.current()
-                    if remoteMode.rank > localMode.rank {
-                        local.set(remoteRaw, forKey: k)
-                    }
-                }
-
-            case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations,
-                 .panelAccountsCollapsed,
-                 .includeGroupTransactionsInFeed, .includeGroupsInPanelTotal,
-                 .includeGroupTransactionsInStats, .bridgeGroupExpensesToPersonalAccounts:
-                if iKV.object(forKey: k) != nil {
-                    local.set(iKV.bool(forKey: k), forKey: k)
-                }
-
-            case .firstWeekday, .decimalPlaces, .averageLineMode:
-                if iKV.object(forKey: k) != nil {
-                    let remote = Int(iKV.longLong(forKey: k))
-                    if local.integer(forKey: k) != remote {
-                        local.set(remote, forKey: k)
-                        if key == .decimalPlaces { formattingChanged = true }
-                        if key == .firstWeekday { weekdayChanged = true }
-                    }
-                }
+                LanguageManager.sharedDefaults.set(value.stringValue ?? "", forKey: k)
+            } else {
+                writeLocal(key, value)
             }
+        case .remove:
+            // Solo `appLanguageOverride` con remoto vacío → quitar el override.
+            LanguageManager.sharedDefaults.removeObject(forKey: k)
         }
 
+        if let signal = decision.signal {
+            switch signal {
+            case .formatting: formattingChanged = true
+            case .weekday: weekdayChanged = true
+            case .language: NotificationCenter.default.post(name: .languageDidChange, object: nil)
+            }
+        }
+    }
+
+    /// Lee el value remoto de iKV para `key`, normalizado por presencia (nil = key ausente).
+    private func readRemoteIKV(_ key: PrefSyncKey) -> PrefValue? {
+        Self.readRemote(key, from: iKV)
+    }
+
+    /// Lee el value local actual (UserDefaults standard) para `key`. Ints devuelven `.int(0)` cuando la
+    /// key está ausente (paridad con `UserDefaults.integer` y con el diff-check previo).
+    private func readLocal(_ key: PrefSyncKey) -> PrefValue? {
+        Self.readLocal(key, from: local)
+    }
+
+    /// Los dos lectores de arriba, sin el singleton: los mismos que usa el merge, para que un test pueda afirmar
+    /// qué haría `applyRemoteValues` con un store y un dominio suyos (`PrivateBirthKeyValueHandoverTests`).
+    static func readRemote(_ key: PrefSyncKey, from store: OwnerKeyValueWriting) -> PrefValue? {
+        let k = key.rawValue
+        guard store.object(forKey: k) != nil else { return nil }
+        switch key.kind {
+        case .string: return .string(store.string(forKey: k) ?? "")
+        case .bool: return .bool(store.bool(forKey: k))
+        case .int: return .int(Int(store.longLong(forKey: k)))
+        }
+    }
+
+    static func readLocal(_ key: PrefSyncKey, from local: UserDefaults) -> PrefValue? {
+        let k = key.rawValue
+        switch key.kind {
+        case .string:
+            return local.string(forKey: k).map { .string($0) }
+        case .bool:
+            return local.object(forKey: k) != nil ? .bool(local.bool(forKey: k)) : nil
+        case .int:
+            return .int(local.integer(forKey: k))
+        }
+    }
+
+    /// Lee el value actual del override de idioma desde el App Group suite (destino de esa key).
+    private func readLanguageSuite() -> PrefValue? {
+        let k = PrefSyncKey.appLanguageOverride.rawValue
+        let suite = LanguageManager.sharedDefaults
+        return suite.object(forKey: k) != nil ? .string(suite.string(forKey: k) ?? "") : nil
+    }
+
+    /// Escribe un `PrefValue` en UserDefaults standard para `key`.
+    private func writeLocal(_ key: PrefSyncKey, _ value: PrefValue) {
+        let k = key.rawValue
+        switch value {
+        case .string(let s): local.set(s, forKey: k)
+        case .bool(let b): local.set(b, forKey: k)
+        case .int(let i): local.set(i, forKey: k)
+        }
+    }
+
+    // MARK: - POST-PASS compartido (SessionState + formattingVersion + firstWeekday App Group)
+
+    /// Empuja el estado post-merge a `SessionState` y ejecuta los side-effects agregados. Compartido por
+    /// AMBAS ramas (`applyRemoteValues` y `applyPulledPrefs`) — byte-idéntico al bloque previo.
+    private func applyMergeOutcome(formattingChanged: Bool, weekdayChanged: Bool) {
         // Push to SessionState (critical: init() already ran with possibly empty values)
-        if let rawPeriod = local.string(forKey: SyncKey.defaultPeriod.rawValue),
+        if let rawPeriod = local.string(forKey: PrefSyncKey.defaultPeriod.rawValue),
            let period = DetailPeriod(rawValue: rawPeriod) {
             SessionState.shared.selectedPeriod = period
         }
@@ -253,17 +444,14 @@ final class PreferenceSyncService {
         // Guard against assigning when the key is absent: Swift's didSet fires even
         // when the value doesn't change, which would write the default `false` to
         // UserDefaults and contaminate fresh-install detection in OnboardingView.
-        if local.object(forKey: SyncKey.expensesOnlyMode.rawValue) != nil {
-            SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
+        if local.object(forKey: PrefSyncKey.expensesOnlyMode.rawValue) != nil {
+            SessionState.shared.isExpensesOnlyMode = local.bool(forKey: PrefSyncKey.expensesOnlyMode.rawValue)
         }
 
         // financialMindset (educational UI only)
-        if let mindset = local.string(forKey: SyncKey.financialMindset.rawValue), !mindset.isEmpty {
+        if let mindset = local.string(forKey: PrefSyncKey.financialMindset.rawValue), !mindset.isEmpty {
             SessionState.shared.financialMindset = mindset
         }
-
-        // onboardingMode (never-downgrade already applied above)
-        SessionState.shared.onboardingMode = OnboardingMode.current()
 
         // Trigger UI refresh when formatting preferences change remotely
         if formattingChanged {
@@ -273,7 +461,7 @@ final class PreferenceSyncService {
         // Sync firstWeekday to App Group for widgets
         if weekdayChanged {
             if let defaults = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
-                defaults.set(local.integer(forKey: SyncKey.firstWeekday.rawValue), forKey: "firstWeekday")
+                defaults.set(local.integer(forKey: PrefSyncKey.firstWeekday.rawValue), forKey: "firstWeekday")
             }
             WidgetCenter.shared.reloadAllTimelines()
         }
@@ -282,9 +470,12 @@ final class PreferenceSyncService {
     // MARK: - Cross-Device Wipe Signaling
 
     /// Called by DataWipeService BEFORE deleting data — signals other devices that a wipe occurred.
-    func signalWipeInitiated() {
-        let timestamp = Date.now.timeIntervalSince1970
-        iKV.set(timestamp, forKey: WipeKey.remoteWipe)
+    ///
+    /// `date` es la hora de la señal: «Vaciar datos» escribe antes, con esa misma hora, el reparto de lo que repone
+    /// (`GroupsRemoteWipeDivision`), y este `synchronize` sube los dos cambios juntos.
+    func signalWipeInitiated(at date: Date = .now) {
+        let timestamp = date.timeIntervalSince1970
+        iKV.setDouble(timestamp, forKey: WipeKey.remoteWipe)
         iKV.synchronize()
 
         // Save locally so THIS device doesn't react to its own signal
@@ -298,7 +489,7 @@ final class PreferenceSyncService {
     /// Called after onboarding completes — signals other devices that onboarding is done.
     func signalOnboardingCompleted() {
         let timestamp = Date.now.timeIntervalSince1970
-        iKV.set(timestamp, forKey: WipeKey.remoteOnboarding)
+        iKV.setDouble(timestamp, forKey: WipeKey.remoteOnboarding)
         iKV.synchronize()
 
         // Save locally to avoid redundant processing
@@ -330,14 +521,24 @@ final class PreferenceSyncService {
             // readiness gate would park it across the onboarding session and
             // process it post-onboarding, wiping the user's fresh data.
             let hasCompletedOnboarding = local.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            // El eje de SESIÓN, evaluado aquí y no solo en el drenaje: este es el punto donde la señal
+            // se DETECTA, y el `submit` de abajo es lo único que la hace viajar. Una sesión en la nube
+            // (E) o solo-grupos (F) ni siquiera pone el intent en la cola. La marca de arriba
+            // (`WipeKey.localWipe`) ya salió incondicionalmente, así que la señal queda procesada.
+            let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+                confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(local),
+                storageMode: CloudSyncFlags.storageMode)
             let decision = RemoteWipeSignalDecider.decide(
                 hasCompletedOnboarding: hasCompletedOnboarding,
                 isWipingData: SessionState.shared.isWipingData,
-                hasRemoteWipeTimestamp: remoteWipe > 0
+                hasRemoteWipeTimestamp: remoteWipe > 0,
+                sessionObeysWipeSignal: sessionObeysWipeSignal
             )
 
             #if DEBUG
-            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess))")
+            // `sessionObeys` va en el log porque desde el eje de sesión un `shouldProcess=false` ya no
+            // dice por qué: puede ser una instalación sin estado local o una sesión que no obedece.
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess), sessionObeys=\(sessionObeysWipeSignal))")
             #endif
 
             // Mid-onboarding silencing: mark BOTH timestamps so neither Caso A nor B
@@ -379,8 +580,15 @@ final class PreferenceSyncService {
 
     @objc private func iCloudDidChange(_ notification: Notification) {
         Task { @MainActor in
-            self.applyRemoteValues()
-            self.checkForRemoteWipeSignal()
+            // En `.cloud` las 37 keys NO vienen de iKV (el backend es la fuente) → solo se procesan las
+            // señales wipe/onboarding, que SÍ viven en iKV en ambos modos v1. En `.icloud`, ambos.
+            switch self.behavior {
+            case .icloudKeyValue:
+                self.applyRemoteValues()
+                self.checkForRemoteWipeSignal()
+            case .cloudOutbox:
+                self.checkForRemoteWipeSignal()
+            }
 
             #if DEBUG
             print("PreferenceSyncService: Applied remote iKV changes")

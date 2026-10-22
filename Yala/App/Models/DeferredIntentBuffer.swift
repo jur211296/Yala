@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Persists RouterIntents that arrive when the app cannot present yet
-//  (pre-bootstrap, biometric lock, mid-onboarding). Drained by
+//  (pre-bootstrap, mid-onboarding). Drained by
 //  RouterEntryGate on the next ready window. UserDefaults JSON storage with
 //  TTL 24h.
 //

@@ -17,7 +17,7 @@ import Testing
 @testable import Yala
 
 @MainActor
-@Suite("Budget Filter — CloudKit lazy hydration regression")
+@Suite("Budget Filter — CloudKit lazy hydration regression", .serialized)
 struct BudgetFilterRegressionTests {
 
     /// Caso 1: un Budget con CSV mirror poblado pero M2M `subcategories` vacía
@@ -199,7 +199,10 @@ struct BudgetFilterRegressionTests {
             name: "Optional Only",
             limitAmount: 500
         )
-        budget.natures = "optional"
+        // `natures` almacena el rawValue del enum (español: "opcional"), igual que
+        // BudgetEditorViewModel (`selectedNeeds.map { $0.rawValue }`). Usar el literal
+        // inglés "optional" NO parsea a `SubcategoryNeed` → el filtro quedaba vacío.
+        budget.natures = SubcategoryNeed.optional.rawValue
         try context.save()
 
         let interval = DateInterval(start: now.addingTimeInterval(-3600), end: now.addingTimeInterval(3600))

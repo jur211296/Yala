@@ -23,9 +23,7 @@ final class ProConversionUpsellsUITests: XCTestCase {
 
     /// Abre el menú del FAB (voz / imagen / manual) desde el Panel (tab default).
     private func openFABMenu(_ app: XCUIApplication) {
-        let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB principal (fab_new_transaction).")
-        fab.tap()
+        app.revealPanelFAB().tap()
     }
 
     /// Usuario free → tocar la entrada por voz (feature Pro) dispara el upsell.

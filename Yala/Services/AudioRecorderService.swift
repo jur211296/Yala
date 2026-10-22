@@ -52,6 +52,8 @@ final class AudioRecorderService: NSObject {
 
     private(set) var state: RecordingState = .idle
     private(set) var recordingDuration: TimeInterval = 0
+    /// Nivel de la voz mientras se graba, de 0 (silencio) a 1. Lo pinta el panel de dictado del chat.
+    private(set) var audioLevel: Double = 0
 
     private var audioRecorder: AVAudioRecorder?
     private var recordingURL: URL?
@@ -105,6 +107,24 @@ final class AudioRecorderService: NSObject {
         try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
         try audioSession.setActive(true)
 
+        // Si la grabación no llega a arrancar, la sesión ya activa interrumpió la música de otra app: se suelta
+        // avisando, o esa música no vuelve.
+        do {
+            try beginRecording()
+        } catch {
+            cleanup()
+            releaseAudioSession()
+            throw error
+        }
+
+        state = .recording
+        recordingDuration = 0
+
+        // Start duration timer
+        startDurationTimer()
+    }
+
+    private func beginRecording() throws {
         // Create temporary file URL for recording
         let tempDir = FileManager.default.temporaryDirectory
         let fileName = "voice_recording_\(UUID().uuidString).m4a"
@@ -124,16 +144,11 @@ final class AudioRecorderService: NSObject {
 
         audioRecorder = try AVAudioRecorder(url: url, settings: settings)
         audioRecorder?.delegate = self
+        audioRecorder?.isMeteringEnabled = true
 
         guard audioRecorder?.record() == true else {
             throw RecordingError.failedToStartRecording
         }
-
-        state = .recording
-        recordingDuration = 0
-
-        // Start duration timer
-        startDurationTimer()
     }
 
     func stopRecording() async throws -> Data {
@@ -150,14 +165,7 @@ final class AudioRecorderService: NSObject {
 
         state = .processing
 
-        // Deactivate audio session
-        do {
-            try AVAudioSession.sharedInstance().setActive(false)
-        } catch {
-            #if DEBUG
-            print("AudioRecorderService: Error deactivating audio session: \(error)")
-            #endif
-        }
+        releaseAudioSession()
 
         // Check minimum duration
         guard duration >= minimumRecordingDuration else {
@@ -188,8 +196,43 @@ final class AudioRecorderService: NSObject {
     func cancelRecording() {
         durationTimer?.invalidate()
         durationTimer = nil
+        let wasRecording = audioRecorder != nil
         audioRecorder?.stop()
         cleanup()
+
+        // Descartar desde el chat también suelta el micro, como `stopRecording`.
+        guard Self.releasesSessionOnCancel(wasRecording: wasRecording) else { return }
+        releaseAudioSession()
+    }
+
+    // MARK: - Audio session
+
+    /// Con qué se suelta la sesión de audio. `.notifyOthersOnDeactivation` es lo que le dice a la app que sonaba antes
+    /// (la música) que puede retomar: `.playAndRecord` la interrumpe al grabar y, sin el aviso, no vuelve sola.
+    nonisolated static let deactivationOptions: AVAudioSession.SetActiveOptions = [.notifyOthersOnDeactivation]
+
+    /// ¿Suelta la sesión un «Cancelar»? Solo si había una grabación: sin ella, esta app no activó nada y desactivar
+    /// la sesión compartida tocaría el audio de otro.
+    nonisolated static func releasesSessionOnCancel(wasRecording: Bool) -> Bool {
+        wasRecording
+    }
+
+    /// El único sitio que desactiva la sesión de audio: terminar, cancelar y una grabación que no llega a arrancar.
+    private func releaseAudioSession() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: Self.deactivationOptions)
+        } catch {
+            #if DEBUG
+            print("AudioRecorderService: Error deactivating audio session: \(error)")
+            #endif
+        }
+    }
+
+    /// Pasa la potencia media del micro (dBFS, de -160 a 0) a 0…1. Por debajo de -50 dB es silencio de sala.
+    nonisolated static func normalizedLevel(decibels: Float) -> Double {
+        let floor: Float = -50
+        guard decibels > floor else { return 0 }
+        return Double(min(1, (decibels - floor) / -floor))
     }
 
     private func startDurationTimer() {
@@ -197,6 +240,10 @@ final class AudioRecorderService: NSObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.recordingDuration = self.audioRecorder?.currentTime ?? 0
+                if let recorder = self.audioRecorder {
+                    recorder.updateMeters()
+                    self.audioLevel = Self.normalizedLevel(decibels: recorder.averagePower(forChannel: 0))
+                }
             }
         }
     }
@@ -217,6 +264,7 @@ final class AudioRecorderService: NSObject {
         recordingURL = nil
         state = .idle
         recordingDuration = 0
+        audioLevel = 0
     }
 }
 

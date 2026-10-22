@@ -41,6 +41,8 @@ enum AnomalyDetectionCalculator {
     ///     to expenses).
     ///   - interval: the period being evaluated.
     ///   - currencyCode: preferred currency for amounts.
+    ///   - adjustment: proyección de gastos de grupo bridgeados → "mi parte" (neto). Netea la pata
+    ///     REAL Caso A a `myShare` y suprime las patas de préstamo derivadas. `.none` = sin cambios.
     ///   - converter: currency converter to normalize TX into preferred currency.
     ///   - thresholdMultiplier: amount must exceed `avg * thresholdMultiplier`
     ///     to be flagged. Default 2.0.
@@ -50,21 +52,28 @@ enum AnomalyDetectionCalculator {
         periodTransactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting,
         thresholdMultiplier: Double = 2.0,
         limit: Int = 10
     ) -> [AnomalyEntry] {
         let calendar = Calendar.current
         let baselineStart = calendar.date(byAdding: .day, value: -90, to: interval.start) ?? interval.start
-        let baselineInterval = DateInterval(start: baselineStart, end: interval.start)
+        // `DateInterval` es CERRADO: con `end: interval.start` la TX del primer dia del
+        // periodo analizado entraba en su PROPIA linea base y apagaba su deteccion como
+        // anomalia. Instancia a mano del mismo patron que `PreviousPeriodHelper` arregla
+        // en sus ramas.
+        let baselineEnd = calendar.date(byAdding: .second, value: -1, to: interval.start) ?? interval.start
+        let baselineInterval = DateInterval(start: baselineStart, end: baselineEnd)
         let baselineTx = allTransactions.filter {
             baselineInterval.contains($0.date) && $0.category?.isIncome == false
         }
 
         var catTotals: [String: (total: Double, count: Int)] = [:]
         for tx in baselineTx {
+            if adjustment.isSuppressed(tx) { continue }
             let catName = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             guard amount.isFinite else { continue }
             let existing = catTotals[catName] ?? (total: 0, count: 0)
             catTotals[catName] = (total: existing.total + amount, count: existing.count + 1)
@@ -83,8 +92,9 @@ enum AnomalyDetectionCalculator {
 
         var anomalies: [Hit] = []
         for tx in periodTransactions {
+            if adjustment.isSuppressed(tx) { continue }
             let catName = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             guard amount.isFinite, let avg = catAvg[catName], avg > 0 else { continue }
             let deviation = (amount - avg) / avg * 100
             if amount > avg * thresholdMultiplier {
@@ -117,9 +127,21 @@ enum AnomalyDetectionCalculator {
     private static func convertAmount(
         _ tx: TransactionItem,
         currencyCode: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        adjustment: GroupBridgeStatsAdjustment
     ) -> Double {
-        tx.chatAmount(in: currencyCode, converter: converter)
+        // Pata REAL Caso A: el neto proyectado (`-myShare`) difiere del monto crudo → usar esa
+        // magnitud, resuelta con la regla de Estadísticas (`CashFlowCalculator.resolvedAmount`): si
+        // la fila se guardó con otra divisa principal, el neto guardado está en esa escala y se
+        // reconvierte desde el nativo. Resto: `chatAmount` con conversión de moneda intacta.
+        // Se pregunta al ajuste, no se comparan valores: con "mi parte" = 0 y la pata guardada a 0 los
+        // dos coinciden, la fila caía en `chatAmount` y éste reconvertía el gasto ENTERO.
+        if adjustment.isAdjusted(tx) {
+            return abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
+        }
+        return tx.chatAmount(in: currencyCode, converter: converter)
     }
 
     private static func safeMerchant(_ tx: TransactionItem) -> String? {

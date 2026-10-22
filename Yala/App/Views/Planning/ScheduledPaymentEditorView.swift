@@ -89,6 +89,26 @@ struct ScheduledPaymentEditorView: View {
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
 
+    // MARK: - Group Shared Expense State (F3)
+    /// Toggle "¿Es un gasto compartido?". Al ON, el pago genera un gasto de grupo (no una TX personal).
+    @State private var isGroupExpense: Bool = false
+    @State private var availableGroups: [SplitGroup] = []
+    @State private var selectedGroup: SplitGroup?
+    @State private var groupMembers: [SplitMember] = []
+    /// VM transitorio del gasto de grupo — SOLO alimenta `GroupSplitSelectorView`.
+    /// NUNCA se le llama `save()` aquí (crearía un SplitExpense prematuro).
+    @State private var splitExpenseVM: GroupExpenseViewModel?
+    @State private var splitCurrency: CurrencyCode = .usd
+    /// Config de división extraída del VM al cerrar el sheet — alimenta resumen + guardado.
+    @State private var splitConfigType: SplitType = .equal
+    @State private var splitParticipantIDs: [UUID] = []
+    @State private var splitValues: [UUID: Double] = [:]
+    @State private var splitMyShare: Double = 0
+    @State private var splitConfigured: Bool = false
+    @State private var showGroupPicker = false
+    @State private var showSplitCurrencyPicker = false
+    @State private var showSplitSheet = false
+
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -118,46 +138,51 @@ struct ScheduledPaymentEditorView: View {
                 .navigationTitle(editorTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { editorToolbar }
-                .sheet(isPresented: $showCategoriesSheet) {
-                    SubcategorySelectorSheet(
-                        selectedSubcategory: $selectedSubcategory,
-                        transactionType: transactionType == "income" ? .income : .expense
-                    )
+                .modifier(EditorSheets(
+                    showCategoriesSheet: $showCategoriesSheet,
+                    selectedSubcategory: $selectedSubcategory,
+                    transactionType: transactionType,
+                    showGroupPicker: $showGroupPicker,
+                    availableGroups: availableGroups,
+                    selectedGroupID: selectedGroup?.id ?? UUID(),
+                    memberCount: { activeMemberCount(for: $0) },
+                    onSelectGroup: { selectGroup($0) },
+                    showSplitCurrencyPicker: $showSplitCurrencyPicker,
+                    splitCurrency: $splitCurrency,
+                    showSplitSheet: $showSplitSheet,
+                    splitExpenseVM: splitExpenseVM,
+                    onSplitSheetDismiss: { extractSplitConfigFromVM() }
+                ))
+                .onChange(of: splitCurrency) { _, newCode in
+                    applySplitCurrency(newCode)
                 }
                 .onAppear { handleOnAppear() }
-                .onChange(of: isRecurring) { _, _ in dismissEditorKeyboard(); updatePreviewDates() }
-                .onChange(of: recurrenceType) { _, _ in dismissEditorKeyboard(); updatePreviewDates() }
-                .onChange(of: recurrenceInterval) { _, _ in updatePreviewDates() }
-                .onChange(of: paymentDate) { _, _ in updatePreviewDates() }
-                .onChange(of: dayOfMonth) { _, _ in updatePreviewDates() }
-                .onChange(of: selectedWeekdays) { _, _ in updatePreviewDates() }
-                .onChange(of: yearlyMonth) { _, _ in updatePreviewDates() }
-                .onChange(of: yearlyDay) { _, _ in updatePreviewDates() }
-                .onChange(of: hasEndDate) { _, _ in updatePreviewDates() }
-                .onChange(of: endDate) { _, _ in updatePreviewDates() }
+                .modifier(RecurrencePreviewObservers(
+                    isRecurring: isRecurring,
+                    recurrenceType: recurrenceType,
+                    recurrenceInterval: recurrenceInterval,
+                    paymentDate: paymentDate,
+                    dayOfMonth: dayOfMonth,
+                    selectedWeekdays: selectedWeekdays,
+                    yearlyMonth: yearlyMonth,
+                    yearlyDay: yearlyDay,
+                    hasEndDate: hasEndDate,
+                    endDate: endDate,
+                    onDismissKeyboard: { dismissEditorKeyboard() },
+                    onUpdatePreview: { updatePreviewDates() }
+                ))
                 .onChange(of: isSubscription) { _, new in paymentCategory = new ? .subscription : .recurring }
                 .onChange(of: showCategoriesSheet) { _, isPresenting in
                     if isPresenting { dismissEditorKeyboard() }
                 }
-                .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
-                    Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
-                    Button(NSLocalizedString("action.delete", comment: ""), role: .destructive) {
-                        deletePayment()
-                    }
-                } message: {
-                    Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
-                }
-                .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
-                .alert(
-                    L10n.Common.error,
-                    isPresented: $showSaveError,
-                    actions: {
-                        Button(L10n.Common.understood, role: .cancel) { viewModel.dismissSaveError() }
-                    },
-                    message: {
-                        Text(L10n.Common.saveError)
-                    }
-                )
+                .modifier(EditorAlerts(
+                    deleteAlertTitle: deleteAlertTitle,
+                    showDeleteConfirmation: $showDeleteConfirmation,
+                    onConfirmDelete: { deletePayment() },
+                    saveErrorFlag: viewModel.showSaveError,
+                    showSaveError: $showSaveError,
+                    onDismissSaveError: { viewModel.dismissSaveError() }
+                ))
         }
     }
 
@@ -220,6 +245,9 @@ struct ScheduledPaymentEditorView: View {
 
             basicInfoSection
             togglesSection
+            if isGroupExpense {
+                groupExpenseConfigSection
+            }
             classificationSection
             recurrenceSection
             if isRecurring {
@@ -238,8 +266,8 @@ struct ScheduledPaymentEditorView: View {
     private var basicInfoSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.basic.info", comment: "")) {
             VStack(spacing: DS.Spacing.none) {
-                // Transaction Type (Income/Expense)
-                if !sessionState.isExpensesOnlyMode {
+                // Transaction Type (Income/Expense) — oculto en gasto compartido (siempre gasto)
+                if !sessionState.isExpensesOnlyMode && !isGroupExpense {
                     Picker("", selection: $transactionType) {
                         Text(NSLocalizedString("transaction.type.expense", comment: "")).tag("expense")
                         Text(NSLocalizedString("transaction.type.income", comment: "")).tag("income")
@@ -271,7 +299,11 @@ struct ScheduledPaymentEditorView: View {
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        if let account = selectedAccount {
+                        if isGroupExpense {
+                            Text("\(L10n.Scheduled.GroupExpense.totalHint) · \(splitCurrency.rawValue)")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                        } else if let account = selectedAccount {
                             Text(account.currencyCode)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
@@ -280,7 +312,6 @@ struct ScheduledPaymentEditorView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityIdentifier("scheduled_amount_field")
                             .foregroundStyle(transactionType == "income" ? Color.electricIndigo : .primary)
                             .focused($isAmountFieldFocused)
@@ -362,6 +393,34 @@ struct ScheduledPaymentEditorView: View {
 
                 SubsectionDivider()
 
+                // Group Shared Expense Toggle (F3) — entre Activo y Suscripción
+                Toggle(isOn: $isGroupExpense) {
+                    HStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "person.2")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                            Text(L10n.Scheduled.GroupExpense.toggle)
+                            if isGroupExpense {
+                                Text(L10n.Scheduled.GroupExpense.toggleHelper)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .padding()
+                .accessibilityIdentifier("scheduled_group_expense_toggle")
+                .onChange(of: isGroupExpense) { _, on in
+                    if on {
+                        transactionType = "expense"   // gasto compartido = siempre gasto
+                        loadAvailableGroups()
+                    }
+                }
+
+                SubsectionDivider()
+
                 // Subscription Toggle
                 Toggle(isOn: $isSubscription) {
                     HStack(spacing: DS.Spacing.md) {
@@ -378,6 +437,119 @@ struct ScheduledPaymentEditorView: View {
         }
     }
 
+    // MARK: - Group Shared Expense Config Section (F3)
+
+    /// Filas de configuración del gasto compartido (Grupo → Moneda → División).
+    /// Visible solo cuando `isGroupExpense`. Reusa GroupPickerSheet / CurrencyPickerSheet /
+    /// GroupSplitSelectorView sin modificarlas.
+    private var groupExpenseConfigSection: some View {
+        SectionBox(title: L10n.Scheduled.GroupExpense.sectionTitle) {
+            VStack(spacing: DS.Spacing.none) {
+                groupRow
+                SubsectionDivider()
+                splitCurrencyRow
+                SubsectionDivider()
+                splitDivisionRow
+            }
+        }
+    }
+
+    private var groupRow: some View {
+        Button {
+            loadAvailableGroups()
+            showGroupPicker = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "person.2.fill")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                Text(L10n.Scheduled.GroupExpense.groupRow)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if let group = selectedGroup {
+                    Text(group.name)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    Text(NSLocalizedString("common.select", comment: ""))
+                        .foregroundStyle(Color.hotPink.opacity(0.8))
+                }
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.indicator)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_group_row")
+    }
+
+    private var splitCurrencyRow: some View {
+        Button {
+            showSplitCurrencyPicker = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "coloncurrencysign.circle")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                Text(L10n.Scheduled.GroupExpense.currencyRow)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Text(splitCurrency.rawValue)
+                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.indicator)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(selectedGroup == nil)
+        .accessibilityIdentifier("scheduled_split_currency_row")
+    }
+
+    private var splitDivisionRow: some View {
+        Button {
+            openSplitSheet()
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "chart.pie.fill")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                Text(L10n.Scheduled.GroupExpense.divisionRow)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if splitConfigured {
+                    Text(splitSummaryText)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.trailing)
+                } else {
+                    Text(NSLocalizedString("common.select", comment: ""))
+                        .foregroundStyle(Color.hotPink.opacity(0.8))
+                }
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.indicator)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(selectedGroup == nil)
+        .accessibilityIdentifier("scheduled_split_division_row")
+    }
+
+    /// Resumen "Entre N · {modo} · Tu parte S/X" para la fila División.
+    private var splitSummaryText: String {
+        let count = splitParticipantIDs.count
+        let mode = splitConfigType.shortName
+        let share = appPreferences.currency(splitMyShare, currencyCode: splitCurrency.rawValue)
+        return L10n.Scheduled.GroupExpense.splitSummary(count, mode, share)
+    }
+
     // MARK: - Classification Section
 
     private var classificationSection: some View {
@@ -391,17 +563,24 @@ struct ScheduledPaymentEditorView: View {
                 // Subcategory selector
                 subcategoryRow
 
-                SubsectionDivider()
-
-                // Tags
-                tagsContent
+                // Tags — ocultas en gasto compartido (los gastos de grupo no manejan etiquetas)
+                if !isGroupExpense {
+                    SubsectionDivider()
+                    tagsContent
+                }
             }
         }
     }
 
+    /// Cuentas disponibles para el picker. En gasto compartido, filtradas a la moneda elegida.
+    private var accountOptions: [Account] {
+        guard isGroupExpense else { return viewModel.activeAccounts }
+        return viewModel.activeAccounts.filter { $0.currencyCode == splitCurrency.rawValue }
+    }
+
     private var accountRow: some View {
         Menu {
-            ForEach(viewModel.activeAccounts) { account in
+            ForEach(accountOptions) { account in
                 Button {
                     selectedAccount = account
                 } label: {
@@ -438,7 +617,7 @@ struct ScheduledPaymentEditorView: View {
                         .foregroundStyle(Color.hotPink.opacity(0.8))
                 }
 
-                if !viewModel.activeAccounts.isEmpty {
+                if !accountOptions.isEmpty {
                     Image(systemName: "chevron.up.chevron.down")
                         .font(DS.Typography.indicator)
                         .foregroundStyle(.tertiary)
@@ -448,9 +627,9 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityHint(viewModel.activeAccounts.isEmpty ? L10n.Accessibility.createAccountFirst : "")
+        .accessibilityHint(accountOptions.isEmpty ? L10n.Accessibility.createAccountFirst : "")
         .accessibilityIdentifier("scheduled_account_menu")
-        .disabled(viewModel.activeAccounts.isEmpty)
+        .disabled(accountOptions.isEmpty)
     }
 
     private var subcategoryRow: some View {
@@ -571,6 +750,15 @@ struct ScheduledPaymentEditorView: View {
                     Text(NSLocalizedString("scheduled.recurrence.recurring", comment: "")).tag(true)
                 }
                 .pickerStyle(.segmented)
+                // Sin este id el control es INALCANZABLE desde automatización: un `Picker`
+                // segmentado no aparece como elemento tapeable en el árbol de accesibilidad (sale
+                // como texto), y targetear por el rótulo está prohibido porque está localizado.
+                // Bloqueó el QA de las notificaciones de pagos el 2026-08-14: para que el pago
+                // venza HOY hay que elegir "Una sola vez" —el default es repetición mensual con
+                // `dayOfMonth = 1`, o sea que el primer vencimiento cae el día 1 del mes que
+                // viene—, y sin poder tocarlo el escenario entero se queda sin montar.
+                // Los dos segmentos se alcanzan por índice sobre este id (0 = una sola vez).
+                .accessibilityIdentifier("scheduled_recurrence_picker")
                 .padding()
 
                 SubsectionDivider()
@@ -753,6 +941,9 @@ struct ScheduledPaymentEditorView: View {
                 }
             }
             .pickerStyle(.menu)
+            // Hermano del id del selector de recurrencia: es la otra vía para que un pago
+            // recurrente venza HOY (poner aquí el día de hoy) y tampoco era alcanzable.
+            .accessibilityIdentifier("scheduled_day_of_month_picker")
         }
         .padding()
     }
@@ -1019,14 +1210,165 @@ struct ScheduledPaymentEditorView: View {
         .padding(.top, DS.Spacing.lg)
     }
 
+    // MARK: - Group Shared Expense Helpers (F3)
+
+    /// Carga los grupos disponibles (no archivados ni ocultos) para el picker.
+    private func loadAvailableGroups() {
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { !$0.isArchived && !$0.isHiddenForAll },
+            sortBy: [SortDescriptor(\.name)]
+        )
+        do {
+            availableGroups = try modelContext.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentEditor: error fetching groups: \(error)")
+            #endif
+            availableGroups = []
+        }
+    }
+
+    /// Conteo de miembros activos de un grupo (subtítulo del picker).
+    private func activeMemberCount(for group: SplitGroup) -> Int {
+        let zone = group.cloudKitZoneID
+        let descriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zone && $0.status == "active" }
+        )
+        do {
+            return try modelContext.fetchCount(descriptor)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentEditor: error counting active members: \(error)")
+            #endif
+            return 0
+        }
+    }
+
+    private func selectGroup(_ group: SplitGroup) {
+        selectedGroup = group
+        loadGroupMembers(for: group)
+        resetSplitConfig()
+        // Setear splitCurrency puede disparar `.onChange` → applySplitCurrency (idempotente).
+        splitCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .usd
+        buildTransientVM()
+        // Cuenta prefill incompatible con la moneda del grupo → limpiar.
+        if let account = selectedAccount, account.currencyCode != splitCurrency.rawValue {
+            selectedAccount = nil
+        }
+    }
+
+    private func loadGroupMembers(for group: SplitGroup) {
+        do {
+            groupMembers = try GroupService.shared.fetchMembers(for: group, context: modelContext)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentEditor: error fetching members: \(error)")
+            #endif
+            groupMembers = []
+        }
+    }
+
+    /// Instancia el VM transitorio que alimenta `GroupSplitSelectorView`. SOLO captura config
+    /// — nunca se le llama `save()`.
+    private func buildTransientVM() {
+        guard let group = selectedGroup else { splitExpenseVM = nil; return }
+        let lookup = Dictionary(
+            groupMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let vm = GroupExpenseViewModel(group: group, members: groupMembers, memberNameLookup: lookup)
+        vm.setContext(modelContext)
+        vm.currencyCode = splitCurrency.rawValue
+        vm.amountString = amount   // el campo del editor = total de la factura
+        splitExpenseVM = vm
+    }
+
+    private func openSplitSheet() {
+        guard selectedGroup != nil else { return }
+        if splitExpenseVM == nil { buildTransientVM() }
+        splitExpenseVM?.amountString = amount
+        splitExpenseVM?.currencyCode = splitCurrency.rawValue
+        if splitConfigured { applyStoredConfigToVM() }
+        showSplitSheet = true
+    }
+
+    private func applySplitCurrency(_ code: CurrencyCode) {
+        guard isGroupExpense, selectedGroup != nil else { return }
+        // Ya sincronizado (p.ej. onChange disparado por selectGroup) → no-op.
+        if splitExpenseVM?.currencyCode == code.rawValue { return }
+        resetSplitConfig()
+        buildTransientVM()
+        if let account = selectedAccount, account.currencyCode != code.rawValue {
+            selectedAccount = nil
+        }
+    }
+
+    /// Lee la config elegida del VM al cerrar el sheet → @State (resumen + guardado).
+    /// Guarda el valor CRUDO por modo (%/monto/partes) para reconstruir la división.
+    private func extractSplitConfigFromVM() {
+        guard let vm = splitExpenseVM else { return }
+        vm.purgeEmptyParticipants()   // quien no recibió valor no participa (modos ≠ equal)
+        splitConfigType = vm.splitType
+        splitParticipantIDs = vm.selectedMemberIDs.compactMap { UUID(uuidString: $0) }
+
+        var values: [UUID: Double] = [:]
+        for id in vm.selectedMemberIDs {
+            guard let uuid = UUID(uuidString: id) else { continue }
+            switch vm.splitType {
+            case .equal: break
+            case .exact: values[uuid] = AmountInputHelper.parseDecimal(vm.exactAmounts[id] ?? "")
+            case .percentage: values[uuid] = AmountInputHelper.parseDecimal(vm.percentages[id] ?? "")
+            case .shares: values[uuid] = AmountInputHelper.parseDecimal(vm.sharesCounts[id] ?? "")
+            }
+        }
+        splitValues = values
+
+        // Mi parte = monto efectivo del current user (lo que se guarda en `amount`).
+        if let myID = vm.currentUserMemberID {
+            splitMyShare = vm.effectiveAmountsByID[myID] ?? 0
+        } else {
+            splitMyShare = 0
+        }
+        splitConfigured = !splitParticipantIDs.isEmpty && vm.isSharesBalanced && vm.currentUserMemberID != nil
+    }
+
+    /// Aplica la config guardada al VM (al reabrir el sheet en edición).
+    private func applyStoredConfigToVM() {
+        guard let vm = splitExpenseVM else { return }
+        vm.splitType = splitConfigType
+        vm.selectedMemberIDs = Set(splitParticipantIDs.map { $0.uuidString })
+        vm.exactAmounts = [:]; vm.percentages = [:]; vm.sharesCounts = [:]
+        for (uuid, value) in splitValues {
+            let id = uuid.uuidString
+            switch splitConfigType {
+            case .exact: vm.exactAmounts[id] = AmountInputHelper.formatWithGrouping(value)
+            case .percentage: vm.percentages[id] = String(format: "%.1f", value)
+            case .shares: vm.sharesCounts[id] = String(Int(value.rounded()))
+            case .equal: break
+            }
+        }
+    }
+
+    private func resetSplitConfig() {
+        splitConfigured = false
+        splitParticipantIDs = []
+        splitValues = [:]
+        splitMyShare = 0
+        splitConfigType = .equal
+    }
+
     // MARK: - Validation
 
     private var canSave: Bool {
-        !name.isEmpty &&
-        !amount.isEmpty &&
-        AmountInputHelper.parseDecimal(amount) > 0 &&
-        selectedAccount != nil &&
-        selectedSubcategory != nil
+        guard !name.isEmpty,
+              !amount.isEmpty,
+              AmountInputHelper.parseDecimal(amount) > 0 else { return false }
+        if isGroupExpense {
+            // Gasto compartido: exige grupo + división válida. Cuenta y subcategoría son prefill
+            // opcional (el bridge/form las resuelve al aprobar).
+            return selectedGroup != nil && splitConfigured && !splitParticipantIDs.isEmpty
+        }
+        return selectedAccount != nil && selectedSubcategory != nil
     }
 
     // MARK: - Data Management
@@ -1101,6 +1443,30 @@ struct ScheduledPaymentEditorView: View {
         isActive = payment.isActive
         isVariableAmount = payment.isVariableAmount
         selectedNeed = payment.needOverride.flatMap { SubcategoryNeed(rawValue: $0) }
+
+        // Group shared expense (F3): reconstruir estado desde el payment.
+        if payment.isGroupPayment {
+            isGroupExpense = true
+            splitCurrency = CurrencyCode(rawValue: payment.currencyCode) ?? .usd
+            // El campo Monto muestra el TOTAL de la factura (no mi parte).
+            if let total = payment.splitTotalAmount {
+                amount = AmountInputHelper.formatWithGrouping(total)
+            }
+            splitConfigType = SplitType(rawValue: payment.splitType ?? "equal") ?? .equal
+            splitParticipantIDs = payment.resolvedParticipantIDs()
+            splitValues = payment.resolvedSplitValues()
+            splitMyShare = payment.amount   // amount ya es mi parte
+            splitConfigured = !splitParticipantIDs.isEmpty
+            if let zone = payment.groupZoneID {
+                loadAvailableGroups()
+                selectedGroup = availableGroups.first(where: { $0.cloudKitZoneID == zone })
+                if let group = selectedGroup {
+                    loadGroupMembers(for: group)
+                    buildTransientVM()
+                    applyStoredConfigToVM()
+                }
+            }
+        }
     }
 
     private func savePayment() {
@@ -1109,17 +1475,24 @@ struct ScheduledPaymentEditorView: View {
 
         let effectiveEndDate = hasEndDate ? endDate : nil
 
+        // Gasto compartido: `amount` guardado = MI PARTE (splitMyShare); el total va a
+        // splitTotalAmount. Moneda = la elegida para el gasto de grupo. Etiquetas no aplican.
+        let amountToSave = isGroupExpense ? splitMyShare : amountValue
+        let currencyToSave = isGroupExpense
+            ? splitCurrency.rawValue
+            : (selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue)
+
         let savedID = viewModel.savePayment(
             existing: payment,
             name: name,
-            amount: amountValue,
+            amount: amountToSave,
             note: note,
-            currencyCode: selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue,
+            currencyCode: currencyToSave,
             transactionType: transactionType,
             paymentCategory: paymentCategory,
             account: selectedAccount,
             subcategory: selectedSubcategory,
-            selectedTags: selectedTags,
+            selectedTags: isGroupExpense ? [] : selectedTags,
             isRecurring: isRecurring,
             recurrenceType: recurrenceType,
             recurrenceInterval: recurrenceInterval,
@@ -1133,7 +1506,12 @@ struct ScheduledPaymentEditorView: View {
             notifyDaysBefore: notifyDaysBefore,
             isActive: isActive,
             needOverride: selectedNeed?.rawValue,
-            isVariableAmount: isVariableAmount
+            isVariableAmount: isVariableAmount,
+            splitTotalAmount: isGroupExpense ? amountValue : nil,
+            groupZoneID: isGroupExpense ? selectedGroup?.cloudKitZoneID : nil,
+            splitType: isGroupExpense ? splitConfigType.rawValue : nil,
+            splitParticipantIDs: isGroupExpense ? splitParticipantIDs : [],
+            splitValues: isGroupExpense ? splitValues : [:]
         )
 
         if let id = savedID {
@@ -1143,8 +1521,12 @@ struct ScheduledPaymentEditorView: View {
                 let descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id })
                 do {
                     if let persistentID = try modelContext.fetch(descriptor).first?.persistentModelID {
-                        SetupChecklistManager.shared.markCompleted(
+                        // «¿Era de prueba?» solo si es el ÚNICO pago planificado (ver
+                        // `markFirstCreation`). Mismo criterio que `autoDetect` desde el Panel: todos.
+                        let total = try modelContext.fetchCount(FetchDescriptor<ScheduledPayment>())
+                        SetupChecklistManager.shared.markFirstCreation(
                             .scheduledPayment,
+                            totalOfKind: total,
                             practiceItem: PracticeCleanupItem(
                                 stepID: .scheduledPayment,
                                 itemName: name,
@@ -1179,6 +1561,129 @@ struct ScheduledPaymentEditorView: View {
         if viewModel.deletePayment(payment) {
             dismiss()
             onDelete?()
+        }
+    }
+}
+
+// MARK: - Body Decomposition (ViewModifiers)
+//
+// El `body` de este editor era una única cadena de ~24 modificadores (4 sheets + 14 onChange +
+// 2 alerts) que excedía el límite del solver de Swift ("unable to type-check this expression in
+// reasonable time"). Se agrupan en `ViewModifier`s privados para que cada `body(content:)` se
+// type-checkee por separado. Sin cambios de comportamiento: mismos efectos, mismo orden.
+
+private extension ScheduledPaymentEditorView {
+
+    /// Los `.onChange` de recurrencia que sólo recalculan el preview de fechas.
+    /// `dismissEditorKeyboard()` se dispara únicamente en `isRecurring`/`recurrenceType`
+    /// (igual que el original); el resto sólo actualiza el preview.
+    struct RecurrencePreviewObservers: ViewModifier {
+        let isRecurring: Bool
+        let recurrenceType: RecurrenceType
+        let recurrenceInterval: Int
+        let paymentDate: Date
+        let dayOfMonth: Int
+        let selectedWeekdays: Set<Int>
+        let yearlyMonth: Int
+        let yearlyDay: Int
+        let hasEndDate: Bool
+        let endDate: Date?
+        let onDismissKeyboard: () -> Void
+        let onUpdatePreview: () -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: isRecurring) { _, _ in onDismissKeyboard(); onUpdatePreview() }
+                .onChange(of: recurrenceType) { _, _ in onDismissKeyboard(); onUpdatePreview() }
+                .onChange(of: recurrenceInterval) { _, _ in onUpdatePreview() }
+                .onChange(of: paymentDate) { _, _ in onUpdatePreview() }
+                .onChange(of: dayOfMonth) { _, _ in onUpdatePreview() }
+                .onChange(of: selectedWeekdays) { _, _ in onUpdatePreview() }
+                .onChange(of: yearlyMonth) { _, _ in onUpdatePreview() }
+                .onChange(of: yearlyDay) { _, _ in onUpdatePreview() }
+                .onChange(of: hasEndDate) { _, _ in onUpdatePreview() }
+                .onChange(of: endDate) { _, _ in onUpdatePreview() }
+        }
+    }
+
+    /// Los 4 `.sheet` del editor: categorías, selector de grupo, moneda del split y división.
+    struct EditorSheets: ViewModifier {
+        @Binding var showCategoriesSheet: Bool
+        @Binding var selectedSubcategory: Subcategory?
+        let transactionType: String
+
+        @Binding var showGroupPicker: Bool
+        let availableGroups: [SplitGroup]
+        let selectedGroupID: UUID
+        let memberCount: (SplitGroup) -> Int
+        let onSelectGroup: (SplitGroup) -> Void
+
+        @Binding var showSplitCurrencyPicker: Bool
+        @Binding var splitCurrency: CurrencyCode
+
+        @Binding var showSplitSheet: Bool
+        let splitExpenseVM: GroupExpenseViewModel?
+        let onSplitSheetDismiss: () -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .sheet(isPresented: $showCategoriesSheet) {
+                    SubcategorySelectorSheet(
+                        selectedSubcategory: $selectedSubcategory,
+                        transactionType: transactionType == "income" ? .income : .expense
+                    )
+                }
+                .sheet(isPresented: $showGroupPicker) {
+                    GroupPickerSheet(
+                        groups: availableGroups,
+                        selectedGroupID: selectedGroupID,
+                        memberCount: { memberCount($0) },
+                        onSelect: { group in onSelectGroup(group) }
+                    )
+                }
+                .sheet(isPresented: $showSplitCurrencyPicker) {
+                    CurrencyPickerSheet(selectedCurrency: $splitCurrency)
+                }
+                .sheet(isPresented: $showSplitSheet, onDismiss: { onSplitSheetDismiss() }) {
+                    if let vm = splitExpenseVM {
+                        GroupSplitSelectorView(viewModel: vm)
+                    }
+                }
+        }
+    }
+
+    /// Las 2 `.alert` del editor (confirmación de borrado y error al guardar) junto con el
+    /// `.onChange` que dispara el alert de error — contiguos para preservar el orden original.
+    struct EditorAlerts: ViewModifier {
+        let deleteAlertTitle: String
+        @Binding var showDeleteConfirmation: Bool
+        let onConfirmDelete: () -> Void
+
+        let saveErrorFlag: Bool
+        @Binding var showSaveError: Bool
+        let onDismissSaveError: () -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
+                    Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
+                    Button(NSLocalizedString("action.delete", comment: ""), role: .destructive) {
+                        onConfirmDelete()
+                    }
+                } message: {
+                    Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
+                }
+                .onChange(of: saveErrorFlag) { _, new in if new { showSaveError = true } }
+                .alert(
+                    L10n.Common.error,
+                    isPresented: $showSaveError,
+                    actions: {
+                        Button(L10n.Common.understood, role: .cancel) { onDismissSaveError() }
+                    },
+                    message: {
+                        Text(L10n.Common.saveError)
+                    }
+                )
         }
     }
 }

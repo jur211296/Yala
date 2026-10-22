@@ -32,7 +32,6 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
 
                     Image(systemName: "calendar")
                         .font(.system(size: scaledIconSize, weight: .medium))
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(.thAccent)
                         .accessibilityHidden(true)
                 }
@@ -147,7 +146,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
-        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+        .yalaScreenBackground(.partialSheet)
         .onAppear {
             generatePeriods()
         }

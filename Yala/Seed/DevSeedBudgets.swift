@@ -15,7 +15,8 @@ struct DevSeedBudgets {
     static func create(
         account: Account,
         subcategoryLookup: [String: Subcategory],
-        in context: ModelContext
+        in context: ModelContext,
+        publicMaterial: Bool = UITestHooks.marketingSeed
     ) {
         let budgetDefs: [(name: String, limit: Double, categoryName: String)] = [
             (L10n.DevSeed.budgetEatingOut, 1800, L10n.Category.food),
@@ -23,7 +24,9 @@ struct DevSeedBudgets {
             (L10n.DevSeed.budgetFriendsOutings, 1200, L10n.Category.entertainment),
             (L10n.DevSeed.budgetPersonalCare, 800, L10n.Category.personal),
             (L10n.DevSeed.budgetHomeEssentials, 3200, L10n.Category.housing),
-            (L10n.DevSeed.budgetPet, 500, L10n.Category.pets),
+            // Con `-uitest-seed-marketing` (`publicMaterial`) sin el nombre de una mascota real: es material público.
+            (publicMaterial ? DevSeedGroups.FichaCasa.textos(for: AppLocale.current).budgetPet : L10n.DevSeed.budgetPet,
+             500, L10n.Category.pets),
         ]
 
         // Group subcategories by category name

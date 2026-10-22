@@ -1,0 +1,48 @@
+---
+id: a-local-read-failure-in-the-migration-apply-reads-as-network
+status: backlog
+priority: low
+area: "modo-nube, migración"
+created: 2026-09-22
+updated: 2026-10-08
+source: "review adversarial de `apply-overwrites-a-pending-local-write-without-its-guards` (2026-09-22), lente de atomicidad — hallazgo 1"
+---
+
+# Si el teléfono no puede leer su propia base al mover los datos, la pantalla dice que falta conexión
+
+## El problema, en lenguaje de usuario
+
+Mientras los datos pasan a la nube (o vuelven a iCloud), si el teléfono no consigue leer su propia base, la app
+lo trata como un corte de red: gasta los reintentos de red y acaba diciendo que no hay conexión, cuando el
+problema está en el teléfono.
+
+## Por qué pasa (leído el 2026-09-22; no ejecutado)
+
+`PullApplyOutcome` no tiene caso para un fallo LOCAL. Desde `apply-overwrites-…` una lectura ilegible de
+cuarentena, de una tabla de entidad o de `SyncIdentity` sale de `applyPage` como `false` ⇒ `.transient`, igual
+que un save fallido (que ya caía en el mismo saco). En la migración, `MigrationWorkExecutor` (verify de la ida
+`:594-603` aprox., drain de la vuelta `:1095-1104`) lo mapea a `.networkTimeout`/`.transient`.
+`verify-reads-a-failed-local-fetch-as-an-empty-outbox` ya trata el caso hermano (outbox) como
+`.blocked(.localFailure)`.
+
+**Nota 2026-09-23 (`dangling-ref-repair-is-lost-when-its-row-cannot-be-read`):** el saco creció. Desde ese ticket
+también lanzan dentro de `applyPage` —y acaban en el mismo `.transient` ⇒ `.networkTimeout`— la lectura del destino
+de una ref singular, la del registro `SyncDanglingRef` (en cada columna ref, también con `null`) y las de las tablas
+M2M (`Tag`, `Account`, `Subcategory`). El caso local a distinguir es el mismo.
+
+## Qué habría que decidir
+
+- Un case `.localFailure` en `PullApplyOutcome` y su mapeo a `.blocked(.localFailure)` en la migración, o dejarlo
+  como `.transient` en el runtime normal (backoff) y distinguirlo solo en la migración.
+
+## Criterios de aceptación
+
+- [ ] Una lectura local ilegible durante la migración no gasta el presupuesto de red ni muestra «sin conexión».
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `PullApplyOutcome` (`SyncApplyEngine.swift`) sigue sin caso local: su doc comment cita este ticket y mete la lectura local ilegible en `.transient`.
+- En la ida, `MigrationWorkExecutor.verify` mapea `.busy, .transient` del pull a `.networkTimeout` salvo cuando la avería es la del pin de identidades (`relayIdentityPinUnreadable`); el resto de lecturas locales del apply siguen saliendo como red.
+- En la vuelta, `reverseDrainAll` mapea `.busy, .transient` del pull a `.transient` sin distinguir.
+
+Triage 2026-10-08: abierto · low → low · `PullApplyOutcome` sigue sin caso local y `verify`/`reverseDrainAll` lo leen como red; avería local rara, reintenta y no pierde datos.

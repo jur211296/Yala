@@ -2,11 +2,13 @@
 //  AppUpdateService.swift
 //  Yala
 //
-//  Consulta iTunes Lookup API para detectar si hay una versión nueva
-//  disponible en el App Store. Cache de 24h, fail silently.
+//  Consulta iTunes Lookup API para detectar si hay una versión nueva disponible en el App Store.
+//  Cache de 24h, fail silently. La lógica pura (comparación, gate de cache, URL) vive en
+//  `AppUpdateDecisionLogic` (testeable sin red/UserDefaults/Bundle).
 //
 
 import Foundation
+import os
 
 // MARK: - iTunes Lookup Response
 
@@ -41,33 +43,48 @@ final class AppUpdateService {
 
     // MARK: - Private
 
-    private let session: URLSession
+    private let session: SyncHTTPSession
+    private let defaults: UserDefaults
+    private let now: () -> Date
     private static let productionBundleID = "com.jurgenschmidt.yala"
-    private static let cacheDuration: TimeInterval = 24 * 60 * 60
+    private static let cacheDuration: TimeInterval = AppUpdateDecisionLogic.defaultCacheDuration
 
     private static let lastCheckedKey = "appUpdate.lastChecked"
     private static let latestVersionKey = "appUpdate.latestVersion"
+    // Se persiste para rehidratar `appStoreURL` en cold-launch-desde-cache (antes solo-memoria →
+    // el botón del banner abría nada hasta un lookup fresco). Limpiado por DataWipeService.
+    private static let trackIdKey = "appUpdate.trackId"
 
     // MARK: - Init
 
-    private init(session: URLSession = .shared) {
+    /// `defaults`/`session`/`now` inyectables (regla del repo: nunca `.standard`/`.shared`/`Date()`
+    /// directos en tests). `SyncHTTPSession` es el protocolo de red del repo (`URLSession` conforma).
+    init(
+        session: SyncHTTPSession = URLSession.shared,
+        defaults: UserDefaults = .standard,
+        now: @escaping () -> Date = { .now }
+    ) {
         self.session = session
+        self.defaults = defaults
+        self.now = now
         loadCachedState()
     }
 
     // MARK: - Public Methods
 
-    func checkForUpdate() async {
-        let defaults = UserDefaults.standard
-
-        // Check cache — skip if checked within 24h (init already loaded cached state)
-        if let lastChecked = defaults.object(forKey: Self.lastCheckedKey) as? Date,
-           Date.now.timeIntervalSince(lastChecked) < Self.cacheDuration {
+    /// `regionCode` inyectable para test determinista; en producción = storefront del device.
+    func checkForUpdate(regionCode: String? = Locale.current.region?.identifier) async {
+        // Gate de cache — salta si se chequeó dentro de la ventana (init ya cargó el estado cacheado).
+        let lastChecked = defaults.object(forKey: Self.lastCheckedKey) as? Date
+        guard AppUpdateDecisionLogic.shouldCheckNetwork(
+            lastChecked: lastChecked, now: now(), cacheDuration: Self.cacheDuration
+        ) else {
             return
         }
 
-        // Build URL
-        guard let url = URL(string: "https://itunes.apple.com/lookup?bundleId=\(Self.productionBundleID)&country=us") else {
+        guard let url = AppUpdateDecisionLogic.makeLookupURL(
+            bundleID: Self.productionBundleID, regionCode: regionCode
+        ) else {
             return
         }
 
@@ -75,15 +92,18 @@ final class AppUpdateService {
         request.httpMethod = "GET"
         request.timeoutInterval = 10
 
+        let storefront = (regionCode ?? "us").lowercased()
+
         do {
             let (data, response) = try await session.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse,
                   (200...299).contains(httpResponse.statusCode) else {
-                #if DEBUG
                 let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+                #if DEBUG
                 print("AppUpdateService: Non-2xx response: \(code)")
                 #endif
+                AppUpdateBreadcrumb.failed(reason: "status_\(code)")
                 return
             }
 
@@ -92,21 +112,31 @@ final class AppUpdateService {
             guard decoded.resultCount > 0,
                   let result = decoded.results.first else {
                 isUpdateAvailable = false
+                AppUpdateBreadcrumb.checked(
+                    storefront: storefront, latest: "none",
+                    current: Self.currentVersion, updateAvailable: false
+                )
                 return
             }
 
-            // Cache result
+            // Cache result (versión + trackId para rehidratar la URL en el próximo cold launch)
             defaults.set(result.version, forKey: Self.latestVersionKey)
-            defaults.set(Date.now, forKey: Self.lastCheckedKey)
+            defaults.set(result.trackId, forKey: Self.trackIdKey)
+            defaults.set(now(), forKey: Self.lastCheckedKey)
 
             latestVersion = result.version
-            appStoreURL = URL(string: "https://apps.apple.com/app/id\(result.trackId)")
+            appStoreURL = Self.appStoreURL(trackId: result.trackId)
 
             updateAvailability()
+            AppUpdateBreadcrumb.checked(
+                storefront: storefront, latest: result.version,
+                current: Self.currentVersion, updateAvailable: isUpdateAvailable
+            )
         } catch {
             #if DEBUG
             print("AppUpdateService: Error checking for update: \(error)")
             #endif
+            AppUpdateBreadcrumb.failed(reason: String(describing: type(of: error)))
         }
     }
 
@@ -129,8 +159,10 @@ final class AppUpdateService {
     // MARK: - Private
 
     private func loadCachedState() {
-        let defaults = UserDefaults.standard
         latestVersion = defaults.string(forKey: Self.latestVersionKey)
+        if let trackId = Self.cachedTrackId(defaults) {
+            appStoreURL = Self.appStoreURL(trackId: trackId)
+        }
         updateAvailability()
     }
 
@@ -139,23 +171,47 @@ final class AppUpdateService {
             isUpdateAvailable = false
             return
         }
-        let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
-        isUpdateAvailable = Self.compareVersions(current: current, latest: latest) == .orderedAscending
+        isUpdateAvailable = AppUpdateDecisionLogic.isUpdateAvailable(
+            current: Self.currentVersion, latest: latest
+        )
     }
 
-    /// Compares two semantic version strings by numeric components.
-    /// Returns .orderedAscending if current < latest (update available).
-    static func compareVersions(current: String, latest: String) -> ComparisonResult {
-        let currentParts = current.split(separator: ".").compactMap { Int($0) }
-        let latestParts = latest.split(separator: ".").compactMap { Int($0) }
+    /// Versión instalada. Cadena vacía si `CFBundleShortVersionString` faltara → fail-closed en
+    /// `AppUpdateDecisionLogic.isUpdateAvailable` (no molestar con versión desconocida; gap #5).
+    private static var currentVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    }
 
-        let maxCount = max(currentParts.count, latestParts.count)
-        for i in 0..<maxCount {
-            let c = i < currentParts.count ? currentParts[i] : 0
-            let l = i < latestParts.count ? latestParts[i] : 0
-            if c < l { return .orderedAscending }
-            if c > l { return .orderedDescending }
-        }
-        return .orderedSame
+    private static func cachedTrackId(_ defaults: UserDefaults) -> Int? {
+        let value = defaults.integer(forKey: trackIdKey)
+        return value > 0 ? value : nil
+    }
+
+    private static func appStoreURL(trackId: Int) -> URL? {
+        URL(string: "https://apps.apple.com/app/id\(trackId)")
+    }
+
+    /// Forwarder retro-compatible; la lógica vive en `AppUpdateDecisionLogic.compare`.
+    static func compareVersions(current: String, latest: String) -> ComparisonResult {
+        AppUpdateDecisionLogic.compare(current: current, latest: latest)
+    }
+}
+
+// MARK: - Breadcrumb (Console.app, fuera de #if DEBUG, sin PII)
+
+/// Rastros del chequeo de actualización, observables en release/TestFlight (molde
+/// `RemoteConfigBreadcrumb`): los `print` DEBUG existentes son invisibles en prod. Sin PII —
+/// storefront (región), versiones semver y el tipo del error son públicos y seguros.
+nonisolated enum AppUpdateBreadcrumb {
+    private static let logger = Logger(subsystem: "com.yala", category: "AppUpdate")
+
+    static func checked(storefront: String, latest: String, current: String, updateAvailable: Bool) {
+        logger.notice(
+            "AppUpdate checked storefront=\(storefront, privacy: .public) latest=\(latest, privacy: .public) current=\(current, privacy: .public) updateAvailable=\(updateAvailable, privacy: .public)"
+        )
+    }
+
+    static func failed(reason: String) {
+        logger.notice("AppUpdate failed reason=\(reason, privacy: .public)")
     }
 }

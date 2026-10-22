@@ -38,7 +38,6 @@ struct BudgetChartsPeriodSelector: View {
 
                     Image(systemName: periodIcon)
                         .font(.system(size: scaledIconSize, weight: .medium))
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .foregroundStyle(.thAccent)
                         .accessibilityHidden(true)
                 }
@@ -174,7 +173,7 @@ struct BudgetChartsPeriodSelector: View {
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
-        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+        .yalaScreenBackground(.partialSheet)
         .onAppear {
             generatePeriods()
         }

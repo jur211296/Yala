@@ -218,7 +218,9 @@ final class BudgetsViewModel {
 
         // Load transactions (filtered by earliest budget date to avoid loading all history)
         let earliestDate = allBudgets.compactMap { budget -> Date? in
-            if let start = budget.startDate { return start }
+            // Desde el inicio del DÍA: el único cuenta días enteros (`BudgetPeriodInterval.unique`) y su
+            // fecha guardada puede llevar hora; desde la hora se perderían los gastos de esa mañana.
+            if let start = budget.startDate { return Calendar.current.startOfDay(for: start) }
             return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
         }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
         let capturedDate = earliestDate
@@ -289,12 +291,17 @@ final class BudgetsViewModel {
         defaultCurrencyCode: String
     ) {
         // Use budgets as-is (already filtered by BudgetsListView)
+        // Neteo del bridge de grupos construido UNA vez del set amplio recibido.
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: transactions, context: $0)
+        } ?? .none
         // Calculate summary for each budget
         let summaries = budgets.compactMap { budget -> BudgetSummary? in
             let spent = getBudgetSpending(
                 budget: budget,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: defaultCurrencyCode,
+                adjustment: adjustment
             )
             let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
             let daysRemaining = getDaysRemaining(budget: budget)
@@ -335,10 +342,14 @@ final class BudgetsViewModel {
 
     /// Build a fresh BudgetSummary for a single budget (used by BudgetDetailView).
     func buildSummary(for budget: Budget, defaultCurrencyCode: String) -> BudgetSummary {
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
         let spent = getBudgetSpending(
             budget: budget,
             transactions: allTransactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: adjustment
         )
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getDaysRemaining(budget: budget)
@@ -373,40 +384,67 @@ final class BudgetsViewModel {
 
         let calendar = userConfiguredCalendar()
         var results: [(label: String, spent: Double, limit: Double)] = []
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
 
         for offset in (1 - periods)...0 {
             let interval: DateInterval
             let label: String
 
+            guard let historyInterval = Self.historyInterval(
+                periodType: periodType,
+                offset: offset,
+                selectedWeek: selectedWeek,
+                selectedMonth: selectedMonth,
+                selectedYear: selectedYear,
+                calendar: calendar
+            ) else { continue }
+            interval = historyInterval
+
             switch periodType {
             case .weekly:
-                guard let weekStart = calendar.date(byAdding: .weekOfYear, value: offset, to: selectedWeek) else { continue }
-                let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-                interval = DateInterval(start: weekStart, end: weekEnd)
-                label = Self.weekDateFormatter.string(from: weekStart)
-
+                label = Self.weekDateFormatter.string(from: interval.start)
             case .monthly:
-                guard let monthStart = calendar.date(byAdding: .month, value: offset, to: selectedMonth) else { continue }
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                interval = DateInterval(start: monthStart, end: monthEnd)
-                label = Self.monthLabelFormatter.string(from: monthStart)
-
+                label = Self.monthLabelFormatter.string(from: interval.start)
             case .yearly:
-                let year = selectedYear + offset
-                guard let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
-                      let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { continue }
-                interval = DateInterval(start: yearStart, end: yearEnd)
-                label = "\(year)"
-
+                label = "\(selectedYear + offset)"
             case .unique:
                 continue
             }
 
-            let spent = Self.calculateSpending(budget: budget, transactions: allTransactions, interval: interval)
+            let spent = Self.calculateSpending(budget: budget, transactions: allTransactions, interval: interval, adjustment: adjustment)
             results.append((label: label, spent: spent, limit: budget.limitAmount))
         }
 
         return results
+    }
+
+    /// Periodo `offset` (0 = el elegido, −1 = el anterior…) del historial de un presupuesto recurrente.
+    /// Cierra en el último segundo del periodo: un gasto del día 1 a las 00:00 cuenta solo en su barra.
+    static func historyInterval(
+        periodType: BudgetPeriodType,
+        offset: Int,
+        selectedWeek: Date,
+        selectedMonth: Date,
+        selectedYear: Int,
+        calendar: Calendar
+    ) -> DateInterval? {
+        switch periodType {
+        case .weekly:
+            guard let weekStart = calendar.date(byAdding: .weekOfYear, value: offset, to: selectedWeek) else { return nil }
+            return BudgetPeriodInterval.week(startingAt: weekStart, calendar: calendar)
+        case .monthly:
+            guard let monthStart = calendar.date(byAdding: .month, value: offset, to: selectedMonth) else { return nil }
+            return BudgetPeriodInterval.month(startingAt: monthStart, calendar: calendar)
+        case .yearly:
+            let year = selectedYear + offset
+            guard let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
+                  let nextYearStart = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { return nil }
+            return BudgetPeriodInterval.closing(start: yearStart, nextStart: nextYearStart, calendar: calendar)
+        case .unique:
+            return nil
+        }
     }
 
     /// Returns daily cumulative spending for the current budget period (for area chart).
@@ -422,14 +460,17 @@ final class BudgetsViewModel {
 
         guard interval.start <= endDate else { return [] }
 
-        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
+        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval, adjustment: adjustment)
         guard !filtered.isEmpty else { return [] }
 
         // Group by day
         var dailyAmounts: [Date: Double] = [:]
         for tx in filtered {
             let day = calendar.startOfDay(for: tx.date)
-            let amount = Self.budgetAmount(of: tx, in: budget.currencyCode)
+            let amount = Self.budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment)
             dailyAmounts[day, default: 0] += abs(amount)
         }
 
@@ -462,7 +503,10 @@ final class BudgetsViewModel {
         subcategories: [(name: String, icon: String, color: String, amount: Double, parentCategoryName: String)],
         parentCategories: [(name: String, icon: String, color: String, amount: Double)]
     ) {
-        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
+        let adjustment = modelContext.map {
+            GroupBridgeStatsAdjustment.build(from: allTransactions, context: $0)
+        } ?? .none
+        let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval, adjustment: adjustment)
         guard !filtered.isEmpty else { return ([], []) }
 
         var subBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double, parentCategoryName: String)] = [:]
@@ -470,7 +514,7 @@ final class BudgetsViewModel {
 
         for tx in filtered {
             guard let sub = tx.subcategory else { continue }
-            let absAmount = abs(Self.budgetAmount(of: tx, in: budget.currencyCode))
+            let absAmount = abs(Self.budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment))
             let cat = sub.safeCategory
 
             // Subcategory grouping
@@ -507,10 +551,11 @@ final class BudgetsViewModel {
     func getBudgetSpending(
         budget: Budget,
         transactions: [TransactionItem],
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> Double {
         let interval = getBudgetDateInterval(budget: budget)
-        return Self.calculateSpending(budget: budget, transactions: transactions, interval: interval)
+        return Self.calculateSpending(budget: budget, transactions: transactions, interval: interval, adjustment: adjustment)
     }
 
     /// Filters transactions by budget criteria (accounts, subcategories, tags, natures, expenses only).
@@ -521,9 +566,14 @@ final class BudgetsViewModel {
     static func filterTransactions(
         _ transactions: [TransactionItem],
         forBudget budget: Budget,
-        in interval: DateInterval
+        in interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) -> [TransactionItem] {
         var filtered = transactions.filter { interval.contains($0.date) }
+
+        // Excluir patas de préstamo derivadas del bridge de grupos (ingreso fantasma):
+        // el neto de mi parte lo porta la pata REAL vía `budgetAmount` + adjustment.
+        filtered = filtered.filter { !adjustment.isSuppressed($0) }
 
         // Telemetry: si el budget "luce sin filtros" pero NO es default (tiene name + limitAmount),
         // dispara una vez por sesión para detectar budgets con filtros aparentemente vacíos.
@@ -537,14 +587,10 @@ final class BudgetsViewModel {
                 !(budget.subcategories ?? []).isEmpty
                 || !(budget.accounts ?? []).isEmpty
                 || !(budget.tags ?? []).isEmpty
-            TelemetryService.trackOnce(
+            MetricsService.canaryOnce(
                 .budgetFiltersAppearEmpty,
                 key: budget.id.uuidString,
-                parameters: [
-                    "budgetID": budget.id.uuidString,
-                    "periodType": budget.periodType,
-                    "hadM2MNotEmpty": String(hadM2MNotEmpty),
-                ]
+                detail: "\(budget.periodType)|hadM2M=\(hadM2MNotEmpty)"
             )
         }
 
@@ -596,12 +642,13 @@ final class BudgetsViewModel {
         budget: Budget,
         transactions: [TransactionItem],
         interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting? = nil
     ) -> Double {
-        let filtered = filterTransactions(transactions, forBudget: budget, in: interval)
+        let filtered = filterTransactions(transactions, forBudget: budget, in: interval, adjustment: adjustment)
 
         return filtered.reduce(0.0) { sum, tx in
-            sum + abs(budgetAmount(of: tx, in: budget.currencyCode, converter: converter))
+            sum + abs(budgetAmount(of: tx, in: budget.currencyCode, adjustment: adjustment, converter: converter))
         }
     }
 
@@ -616,14 +663,17 @@ final class BudgetsViewModel {
     static func budgetAmount(
         of tx: TransactionItem,
         in budgetCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting? = nil
     ) -> Double {
+        // Monto nativo YA neteado a `-myShare` para la pata real Caso A (identidad en el resto).
+        let native = adjustment.amount(tx)
         if tx.currencyCode == budgetCurrencyCode {
-            return tx.amount
+            return native
         }
         let resolvedConverter = converter ?? CurrencyConverter.shared
         let converted = resolvedConverter.convertWithLatestRate(
-            Decimal(tx.amount),
+            Decimal(native),
             from: tx.currencyCode,
             to: budgetCurrencyCode
         )
@@ -662,17 +712,8 @@ final class BudgetsViewModel {
         let calendar = userConfiguredCalendar()
         let today = Date.now
 
-        // If the period has ended (today is after the period), return -1 to indicate "Past"
-        if today > interval.end {
-            return -1
-        }
-
-        // If today is not in the budget period yet, return 0
-        guard interval.contains(today) else { return 0 }
-
-        // Calculate days from today to end of period
-        let components = calendar.dateComponents([.day], from: today, to: interval.end)
-        return max(0, components.day ?? 0)
+        // -1 = periodo terminado («Finalizado»), 0 = aún no empieza; en curso, hoy cuenta.
+        return BudgetPeriodInterval.summaryDaysRemaining(now: today, in: interval, calendar: calendar)
     }
 
     // MARK: - Period Date Interval
@@ -681,41 +722,32 @@ final class BudgetsViewModel {
     func getBudgetDateInterval(budget: Budget) -> DateInterval {
         let calendar = userConfiguredCalendar()
 
+        // Todos cierran en el último segundo del periodo (`BudgetPeriodInterval`): con el `end` en la
+        // medianoche siguiente, un gasto de ese instante contaba también en este periodo.
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             // Fallback to selected month if invalid
-            let start = selectedMonth
-            let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-            return DateInterval(start: start, end: end)
+            return BudgetPeriodInterval.month(startingAt: selectedMonth, calendar: calendar)
         }
 
         switch periodType {
         case .weekly:
             // Use selected week for this budget's period
-            let weekStart = selectedWeek
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
+            return BudgetPeriodInterval.week(startingAt: selectedWeek, calendar: calendar)
 
         case .monthly:
             // Use selected month for this budget's period
-            let monthStart = selectedMonth
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
+            return BudgetPeriodInterval.month(startingAt: selectedMonth, calendar: calendar)
 
         case .yearly:
             // Use selected year for this budget's period
-            let year = selectedYear
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
+            return BudgetPeriodInterval.year(selectedYear, calendar: calendar, fallbackStart: Date.now)
 
         case .unique:
             guard let start = budget.startDate, let end = budget.endDate else {
                 // Fallback to selected month if dates are missing
-                let start = selectedMonth
-                let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-                return DateInterval(start: start, end: end)
+                return BudgetPeriodInterval.month(startingAt: selectedMonth, calendar: calendar)
             }
-            return DateInterval(start: start, end: end)
+            return BudgetPeriodInterval.unique(start: start, end: end, calendar: calendar)
         }
     }
 

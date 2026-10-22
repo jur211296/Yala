@@ -79,6 +79,9 @@ struct BalanceEntry: TimelineEntry {
     let trendData: [WidgetTrendPoint]
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    /// Marca «≈» del saldo. Al final y con default: placeholders y previews traen cifras
+    /// inventadas y exactas.
+    var balanceIsApproximate: Bool = false
 
     static var placeholder: BalanceEntry {
         BalanceEntry(
@@ -135,7 +138,8 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
             currencyDisplayFormat: displayFormat,
             trendData: trendData,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            balanceIsApproximate: WidgetDataService.getBalanceIsApproximate(for: period)
         )
     }
 }
@@ -176,7 +180,8 @@ struct SmallBalanceView: View {
                 currencyCode: entry.currencyCode,
                 displayFormat: entry.currencyDisplayFormat,
                 color: .primary,
-                size: .large
+                size: .large,
+                isEstimate: entry.balanceIsApproximate
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -268,7 +273,8 @@ struct MediumBalanceView: View {
                     currencyCode: entry.currencyCode,
                     displayFormat: entry.currencyDisplayFormat,
                     color: .primary,
-                    size: .small
+                    size: .small,
+                    isEstimate: entry.balanceIsApproximate
                 )
             }
 
@@ -361,6 +367,7 @@ struct BalanceWidget: Widget {
             provider: BalanceWidgetProvider()
         ) { entry in
             BalanceWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.balance")

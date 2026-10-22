@@ -178,7 +178,11 @@ struct SubcategoryRow: View {
 
                 Spacer()
 
-                // Amount
+                // Amount — SIN marca «≈» a propósito: es un SUBCONJUNTO del gasto del período
+                // y su calculador (`buildTopCategories`) no acumula la calidad de las conversiones
+                // que lo forman. Heredar la señal del total diría que ESTA categoría es dudosa sin
+                // haberlo medido, y la incertidumbre puede estar entera en otra.
+                // Ticket: `fx-category-totals-unmarked`.
                 WidgetAmountText(
                     value: subcategory.amount,
                     currencyCode: currencyCode,
@@ -231,6 +235,7 @@ struct TopSubcategoriesWidget: Widget {
             provider: TopSubcategoriesWidgetProvider()
         ) { entry in
             TopSubcategoriesWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.topSubcategories")

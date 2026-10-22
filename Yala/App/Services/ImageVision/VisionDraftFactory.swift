@@ -74,9 +74,19 @@ import SwiftData
             DraftBuilder.findAccount(byCurrency: $0, context: context)
         }
 
-        // Subcategory inference via MerchantMemory (delegated to DraftBuilder)
+        // Naturaleza de la transacción. Aquí no hay un `isExpense` que el parser haya resuelto: el
+        // prompt de visión pide el monto YA FIRMADO («expenses are NEGATIVE, income is POSITIVE»,
+        // `ImageVisionService`), así que el signo del monto ES el tipo. Sin monto no hay signo del que
+        // leerlo, y se asume gasto — el mismo default que aplica la hoja de edición del Inbox al
+        // prefijar un draft sin monto (`InboxDraftEditSheet.prefillFromDraft`), que es donde acaba
+        // este draft.
+        let isExpense = transaction.amount.map { $0 < 0 } ?? true
+
+        // Subcategory inference via MerchantMemory (delegated to DraftBuilder). Descarta lo que
+        // contradiga el tipo: la memoria de comercios no mira naturaleza (ver `matchesNature`).
         let matchedSubcategory: Subcategory? = DraftBuilder.suggestSubcategory(
             merchant: note,
+            isExpense: isExpense,
             context: context
         )
 
@@ -139,8 +149,10 @@ import SwiftData
         return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date)
     }
 
+    /// La nota del draft: el comercio limpio y, si aporta, un dato útil. Nunca la plantilla del banco
+    /// («Consumo con tarjeta de crédito BCP»), números de operación ni la tarjeta enmascarada: lo quita
+    /// `VisionNoteCleaner`, también de las respuestas que el prompt nuevo no evite.
     static func buildNote(merchant: String?, note: String?) -> String {
-        let parts = [merchant, note].compactMap { $0 }.filter { !$0.isEmpty }
-        return parts.joined(separator: " - ")
+        VisionNoteCleaner.note(merchant: merchant, note: note)
     }
 }

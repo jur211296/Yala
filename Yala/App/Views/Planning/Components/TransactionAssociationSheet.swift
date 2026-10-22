@@ -61,7 +61,7 @@ struct TransactionAssociationSheet: View {
                 }
             }
         }
-        .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]), selection: $selectedDetent)
+        .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Empty State

@@ -2,7 +2,6 @@ node_modules/
 dist/
 # Carpetas de trabajo de capturas — NO usar "Screenshots/" a secas:
 # el match de Vercel es case-insensitive y se comía public/images/screenshots/ (las del sitio).
-ReferenceAssets/
 Web/Screenshots/
 .vercel/output/
 .astro/

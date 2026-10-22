@@ -115,19 +115,10 @@
 
 // MARK: - Panel Hero (PP2-01)
 
-// Chip — greets by name; the golden emoji lives in the SF Symbol icon
-"panel.hero.chip.monthStart %@ %@" = "你好,%1$@ — %2$@ 开始了";
-"panel.hero.chip.default %@" = "你好,%@";
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "新的月份开始了,一步一步来。";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "本月节奏不错,继续保持。";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "你的月份正在运转 — 一切井然有序。";
-"panel.hero.kpi.tight %@ %@ %d" = "本月有点紧但可控,一步一步来。";
-"panel.hero.kpi.overBudget %@ %@" = "明天重新开始,一切井然有序。";
 
-"panel.hero.upsellCTA" = "用 AI 个性化你的消息";
 "panel.hero.availableLabel" = "可用";
 
 // MARK: - Trend Widget
@@ -499,7 +490,7 @@
 "settings.defaultCurrency" = "默认货币";
 "settings.currentIcon" = "当前图标";
 "settings.resetAllData" = "重置你所有的数据";
-"settings.deleteAllData" = "删除全部数据";
+"settings.deleteAllData" = "清空我的数据";
 
 // MARK: - Common
 
@@ -513,7 +504,7 @@
 "common.loading" = "加载中...";
 "common.error" = "错误";
 "common.success" = "成功";
-"common.dataPrivacy" = "你的数据永远不会离开你的设备";
+"common.dataPrivacy" = "你的数据存放在哪里";
 "common.active" = "活跃";
 "common.hidden" = "已隐藏";
 "common.inactive" = "未活跃";
@@ -749,10 +740,27 @@
 "panel.liveAnchorEducation.todayQuestion" = "你今天的余额";
 "panel.liveAnchorEducation.whyQuestion" = "为什么是这个数？";
 "panel.liveAnchorEducation.breakdownToggle" = "按货币查看";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "今天约 %@";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "今天 %@";
 "panel.liveAnchorEducation.coachTitle" = "你的余额会自己变动";
 "panel.liveAnchorEducation.coachMessage" = "当你有其他货币的钱时,它的价值每天都会变化。点一下我,看看是怎么回事。";
 "panel.liveAnchorEducation.dotA11yLabel" = "按当前汇率计算的今日余额。点击查看详情。";
+
+/* FX P&L card — ganancia/pérdida por tipo de cambio */
+"panel.fxPnL.titleGain" = "汇率带来的收益";
+"panel.fxPnL.titleLoss" = "汇率带来的损失";
+"panel.fxPnL.sentenceHoldingUpFormat" = "你的%1$@今天比入账时多值%2$@。";
+"panel.fxPnL.sentenceHoldingDownFormat" = "你的%1$@今天比入账时少值%2$@。";
+"panel.fxPnL.sentenceDebtUpFormat" = "你以%1$@计的负债今天比借入时多花%2$@。";
+"panel.fxPnL.sentenceDebtDownFormat" = "你以%1$@计的负债今天比借入时少花%2$@。";
+"panel.fxPnL.openDetail" = "查看各币种明细";
+"panel.fxPnL.sheetTitle" = "汇率的影响";
+"panel.fxPnL.totalLabel" = "合计";
+"panel.fxPnL.sheetIntroFormat" = "我们把你持有的外币按今天的%@价值，与它们入账时的价值作比较。差额就是汇率在你什么都没做的情况下，给你带来或拿走的金额。";
+"panel.fxPnL.rowRatesFormat" = "入账 %1$@ · 今日 %2$@";
+"panel.fxPnL.rowValueTodayFormat" = "= %@";
+"panel.fxPnL.averageNote" = "入账汇率是你在该币种所有交易的平均值，而不是每一笔购买各自的汇率。";
+"panel.fxPnL.estimatedRateNote" = "某次换算使用的不是今天的汇率，因此这些数字为近似值。";
+
 "widget.today" = "今天";
 
 // Widget Preferences
@@ -1084,7 +1092,6 @@
 "insights.analyzingData" = "正在分析你的数据...";
 "insights.activateAITitle" = "智能概览可用";
 "insights.activateAIBody" = "在「个人资料 > AI 功能」中启用并自定义。";
-"insights.activateAIDisclaimer" = "只有汇总数据(总计、百分比、趋势)会发送到 OpenAI。你的单笔交易和个人数据从不会被共享。";
 "insights.activate" = "启用";
 "insights.goToSettings" = "前往设置";
 "insights.notInterested" = "不感兴趣";
@@ -1125,25 +1132,6 @@
 "support.messagePlaceholder" = "详细告诉我们...";
 "support.send" = "发送";
 
-// Biometric
-"biometric.title" = "生物识别安全";
-"biometric.description" = "用生物识别认证或设备密码保护你的财务信息。";
-"biometric.enableLock" = "启用锁定";
-"biometric.lockAfter" = "锁定时机";
-"biometric.timeout.immediate" = "10 秒";
-"biometric.timeout.oneMinute" = "1 分钟";
-"biometric.timeout.fiveMinutes" = "5 分钟";
-"biometric.timeout.fifteenMinutes" = "15 分钟";
-"biometric.authReason" = "解锁 Yala 以访问你的财务";
-"biometric.enableReason" = "验证你的身份以启用锁定";
-"biometric.authFailed" = "认证失败";
-"biometric.authFailedMessage" = "无法验证你的身份。请重试。";
-"biometric.locked" = "Yala 已锁定";
-"biometric.unlockPrompt" = "点击按钮解锁";
-"biometric.unlock" = "解锁";
-"biometric.passcode" = "密码";
-"biometric.enableLockHint" = "你每次打开应用时都会被要求验证身份。";
-"biometric.lockAfterHint" = "选择应用在后台多久之后锁定。";
 
 "profile.edit" = "编辑个人资料";
 "profile.importSuccess" = "导入完成";
@@ -1159,8 +1147,8 @@
 "profile.allowedChars" = "只能包含字母、数字和下划线";
 "profile.aliasAvailable" = "别名可用";
 "profile.aliasHelper" = "3-20 个字符。只能包含字母、数字和下划线。";
-"profile.privacyTitle" = "你的数据永远不会离开你的设备";
-"profile.privacyDesc" = "Yala 仅在你的设备上存储个人数据。AI 功能(语音、图片和洞察)是可选的,只处理汇总数据 — 永远不会处理你的单笔交易或个人信息。";
+"profile.privacyTitle" = "你的数据存放在哪里";
+"profile.privacyDesc" = "使用私人 iCloud 账户时，你的数据保存在你的设备和你的 iCloud 中。使用云端账户时，数据保存在 Yala 的服务器上。你在群组中记录的内容会连同你的昵称保存在 Yala 的服务器上，以便群组成员查看。AI 功能(语音、图片和洞察)是可选的：你发送的内容会经由我们的服务器传到 OpenAI 进行处理。";
 "profile.aliasFutureNote" = "注意:别名唯一性验证将在共享支出功能上线时可用。";
 "profile.proMember" = "PRO 会员";
 "profile.choosePhoto" = "选择照片";
@@ -1199,17 +1187,14 @@
 "settings.sunday" = "星期日";
 "settings.monday" = "星期一";
 "settings.resetDataDescription" = "此操作将永久删除你的账户、交易、预算、汇率、类别以及与你 Yala 资料相关的任何其他数据。删除后,应用将回到类似初始设置的状态。";
-"settings.deleteDataConfirmation" = "删除你所有的数据?";
-"settings.deleteDataWarning" = "此操作不可逆。你的全部账户、交易、预算、汇率和类别都将被删除。之后 Yala 会重置到类似初始设置的状态,你无法恢复数据。";
-"settings.wipeICloudWarning" = "这也会删除你的 iCloud 数据。其他已同步设备将丢失这些数据。";
-"settings.wipeGroupsExclusionNote" = "这不会影响你的群组。要退出群组：进入「群组」，结算未结款项，逐一退出。";
+"settings.deleteDataConfirmation" = "清空你的数据？";
 "settings.delete" = "删除";
 "settings.cancel" = "取消";
 "settings.iconOriginal" = "原版";
 "settings.iconDark" = "深色";
 "settings.iconLight" = "浅色";
 "settings.iconNeon" = "霓虹";
-"settings.deleteAllDataAction" = "确认删除";
+"settings.deleteAllDataAction" = "永久清空";
 "settings.deletingData" = "正在删除数据...";
 "settings.appIconTitle" = "应用图标";
 "settings.iconNotSupported" = "此设备不支持替代图标。";
@@ -1421,7 +1406,6 @@
 "subcategory.unassigned" = "未分配";
 "subcategory.deleteTransactionsConfirmMessage" = "%d 笔交易将被永久删除。此操作无法撤销。";
 
-"account.deleteBalanceError" = "无法删除此账户,因为它的余额不为零。请将余额调为 0 后再删除。";
 "account.type.general" = "通用";
 "account.type.cash" = "现金";
 "account.type.current" = "活期账户";
@@ -1696,7 +1680,6 @@
 "accessibility.skipSync" = "跳过等待并继续设置";
 "accessibility.tabLimitReached" = "已达标签上限";
 "accessibility.noTransactionsToExport" = "没有可导出的交易";
-"accessibility.accountCard %@ %@" = "账户 %@,余额 %@";
 "accessibility.editAccount" = "编辑账户";
 "accessibility.pageIndicator %d %d" = "第 %1$d 页 / 共 %2$d 页";
 "accessibility.accountRow %@ %@" = "账户 %@,货币 %@";
@@ -1844,10 +1827,9 @@
 "onboarding.usageMode.fullControl.desc" = "你把所有都计入余额 — 账户、卡片以及与他人之间的往来。你看到的数字是真正属于你的。";
 "onboarding.privacyTitle" = "全部就绪";
 "onboarding.privacySubtitle" = "你已准备好开始使用 Yala";
-"onboarding.privacyLocal" = "你的财务数据保留在你的设备上";
+"onboarding.privacyLocal" = "你的财务数据保存在你的账户中";
 "onboarding.privacyNoTracking" = "无跟踪、无广告";
-"onboarding.privacyIcloud" = "只有你能访问你的数据";
-"onboarding.privacyNoSharing" = "AI 功能不分享或存储敏感数据";
+"onboarding.privacyIcloud" = "你用自己的账户访问你的数据";
 "onboarding.categoriesDefault" = "默认类别";
 "onboarding.categoriesCustom" = "自定义类别";
 "onboarding.privacyTutorialsHint" = "探索 Yala 的教程和技巧";
@@ -1873,10 +1855,11 @@
 "onboarding.balanceManualOption" = "我知道我的余额";
 "onboarding.balanceManualHint" = "你自己输入";
 "onboarding.balanceGuidedIncompleteHint" = "你还没完成计算。点击继续。";
-"onboarding.privacyLocalShort" = "数据保存在你的设备";
+"onboarding.privacyLocalShort" = "数据保存在你的账户中";
 "onboarding.privacyNoTrackingShort" = "无跟踪、无广告";
-"onboarding.privacyIcloudShort" = "只有你可以访问";
-"onboarding.privacyNoSharingShort" = "安全 AI";
+"onboarding.privacyIcloudShort" = "用你的账户访问";
+"onboarding.privacyAIShort" = "AI 经由我们的服务器";
+"onboarding.privacyAIDetail" = "是否使用由你决定";
 "onboarding.accountBalanceGuideTitle" = "我怎么算我的余额?";
 "onboarding.accountBalanceGuideIntro" = "初始余额告诉 Yala 你从多少开始。不需要精确到分 — 粗略估计就行。下面是按你所选账户类型的思考方式。";
 "onboarding.accountBalanceGuideGeneral" = "如果你用一个通用账户来汇总同一货币的所有付款方式,你的余额反映你有多少可用的钱。\n\n要计算它,把所有相加:活期账户、储蓄、现金。如果有未付的信用卡费用,可以减去以更精确 — 或者之后把每张卡作为单独账户跟踪。\n\n最终的数字就是你的初始余额。";
@@ -1993,9 +1976,7 @@
 "bulkEdit.availableTags" = "可添加";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "系统";
-"voiceLanguage.spanish" = "西班牙语";
-"voiceLanguage.english" = "英语";
+"voiceLanguage.appLanguage" = "应用语言";
 
 // MARK: - Voice Input
 "voice.title" = "语音备注";
@@ -2173,8 +2154,6 @@
 "tips.filters.detail" = "用筛选只看你关心的:按类别、标签、账户或时段。逐月对比发现变化。";
 "tips.export.title" = "导出你的数据";
 "tips.export.detail" = "在「设置 > 导出」中下载 CSV 或 Excel 格式的支出。适合电子表格分析或留存。";
-"tips.faceID.title" = "用 Face ID 保护";
-"tips.faceID.detail" = "在「设置 > 安全」中启用生物识别锁定。可以选择离开应用时或一段时间后激活。";
 "tips.siri.title" = "用语音备注支出";
 "tips.siri.detail" = "说:「在 Yala 备注一笔支出」,然后口述详情";
 "tips.siri.close" = "关闭 Siri 建议";
@@ -2223,12 +2202,10 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "语音输入";
 "tipkit.pro.voiceInput.message" = "现在你可以口述支出了。直接说,Yala 会替你记录。";
-"tipkit.pro.imageInput.title" = "图片输入";
+"tipkit.pro.imageInput.title" = "照片或文件输入";
 "tipkit.pro.imageInput.message" = "附上任意收据或发票的照片,Yala 会为你提取一笔或多笔交易。";
 "tipkit.pro.smartInsights.title" = "智能洞察";
 "tipkit.pro.smartInsights.message" = "打开它,Yala 会用 AI 生成关于你财务的观察。";
-"tipkit.pro.exportExtended.title" = "无限导出";
-"tipkit.pro.exportExtended.message" = "按完整年份、全部历史或自定义范围导出你的数据。";
 "tipkit.pro.premiumIcons.title" = "专属图标";
 "tipkit.pro.premiumIcons.message" = "从高级图标中选一个,个性化你的应用。";
 "tipkit.pro.proThemes.title" = "高级主题";
@@ -2286,10 +2263,10 @@
 "shortcut.voiceEntry.opening" = "正在打开语音记录...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "图片记录";
-"shortcut.imageEntry.description" = "打开图片选择器以从照片记录支出";
-"shortcut.imageEntry.shortTitle" = "图片记录";
-"shortcut.imageEntry.opening" = "正在打开图片记录...";
+"shortcut.imageEntry.title" = "照片或文件记录";
+"shortcut.imageEntry.description" = "从照片或文件（如 PDF）记录支出";
+"shortcut.imageEntry.shortTitle" = "照片或文件";
+"shortcut.imageEntry.opening" = "正在打开照片或文件记录...";
 
 // MARK: - Apple Pay Intent
 
@@ -2336,10 +2313,10 @@
 "control.voiceEntry.intentTitle" = "打开语音记录";
 "control.voiceEntry.intentDescription" = "以语音录音模式打开 Yala";
 
-"control.imageEntry.label" = "图片记录";
-"control.imageEntry.displayName" = "图片记录";
-"control.imageEntry.description" = "用图片或照片记录";
-"control.imageEntry.intentTitle" = "打开图片记录";
+"control.imageEntry.label" = "照片或文件";
+"control.imageEntry.displayName" = "照片或文件";
+"control.imageEntry.description" = "用照片或文件记录";
+"control.imageEntry.intentTitle" = "打开照片或文件记录";
 "control.imageEntry.intentDescription" = "以相机模式打开 Yala 进行记录";
 
 // MARK: - Notifications
@@ -2396,13 +2373,16 @@
 
 // Groups
 "notifications.groups.name" = "群组";
+"notifications.groups.remoteActivity" = "你的群组有新动态";
+"notifications.groups.remotePendingRequest" = "👋 有人想加入你的群组";
+"notifications.groups.remoteMembershipUpdate" = "你的群组成员身份有新消息";
 "notifications.groups.hint" = "其他成员添加支出或向你付款时提醒";
-"notifications.groups.newExpense" = "%@ 添加了一笔 %@ 的支出:%@";
-"notifications.groups.newExpenseNoDesc" = "%@ 添加了一笔 %@ 的支出";
-"notifications.groups.modifiedExpense" = "%@ 修改了「%@」";
-"notifications.groups.settlement" = "%@ 给你付了 %@";
-"notifications.groups.newMember" = "%@ 加入了群组";
-"notifications.groups.multipleChanges" = "%d 个新变化";
+"notifications.groups.newExpense" = "🧾 %1$@ 添加了「%2$@」— 你需付 %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ 添加了一笔支出 — 你需付 %2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ 更新了「%2$@」— 你需付 %3$@";
+"notifications.groups.settlement" = "💸 %@ 给你付了 %@!";
+"notifications.groups.newMember" = "🙌 %@ 加入了群组";
+"notifications.groups.multipleChanges" = "📋 %d 条新动态";
 "notifications.groups.fallbackGroup" = "群组";
 "notifications.groups.fallbackMember" = "某人";
 
@@ -2508,12 +2488,11 @@
 "featureGate.accounts" = "账户";
 "featureGate.budgets" = "预算";
 "featureGate.voiceInput" = "语音输入";
-"featureGate.imageInput" = "图片输入";
+"featureGate.imageInput" = "照片或文件输入";
 "featureGate.premiumIcons" = "高级图标";
 "featureGate.proThemes" = "Pro 主题";
 "featureGate.smartInsightsAI" = "智能 AI 洞察";
 "featureGate.cashFlowAdvanced" = "高级现金流";
-"featureGate.exportExtendedPeriods" = "扩展导出时段";
 
 // Titles
 "featureGate.limitReachedTitle" = "已达上限";
@@ -2872,7 +2851,7 @@
 "siriShortcuts.all.title" = "其他快捷指令";
 "siriShortcuts.shortcut.quick" = "快速记录";
 "siriShortcuts.shortcut.voice" = "语音输入";
-"siriShortcuts.shortcut.image" = "图片输入";
+"siriShortcuts.shortcut.image" = "用照片或文件记账";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "自动化";
 "siriShortcuts.desc.quick" = "一键打开记录表单。";
@@ -2882,7 +2861,7 @@
 "siriShortcuts.desc.automation" = "用系统快捷指令创建自动记录。";
 "siriShortcuts.phrase.quick" = "在 Yala 中记录";
 "siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
-"siriShortcuts.phrase.image" = "用图片在 Yala 中记录";
+"siriShortcuts.phrase.image" = "用照片或文件在 Yala 中记录";
 "siriShortcuts.phrase.applePay" = "在 Yala 记录 Apple Pay";
 "siriShortcuts.phrase.automation" = "在 Yala 记录自动化";
 "siriShortcuts.faq.title" = "常见问题";
@@ -2909,7 +2888,7 @@
 "aiPrivacy.revokeConfirmTitle" = "禁用此功能?";
 "aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
 "aiPrivacy.revokeConfirmAction" = "禁用";
-"aiPrivacy.footerHint" = "你的数据仅在使用洞察、助理或语音/图片输入时被处理。我们绝不分享你的个人信息。";
+"aiPrivacy.footerHint" = "只有在你使用洞察、助理或语音/图片输入时，你的数据才会被发送，并经由我们的服务器传给 OpenAI。我们不会出售你的数据，也不会将其用于广告。";
 "aiPrivacy.policyLink" = "隐私政策";
 
 // MARK: - AI Consent
@@ -3260,6 +3239,56 @@
 "devseed.stepDeleting" = "正在删除数据...";
 "devseed.stepReloading" = "正在重新加载数据...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "里斯本之旅";
+"devseed.ficha.groupWeekend" = "波尔图周末";
+"devseed.ficha.memberYou" = "你";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "住宿";
+"devseed.ficha.expenseTour" = "导览游";
+"devseed.ficha.expenseGroupDinner" = "聚餐";
+"devseed.ficha.expenseAirportTaxi" = "机场出租车";
+"devseed.ficha.expenseLocalMeal" = "海鲜晚餐";
+"devseed.ficha.expenseMuseum" = "博物馆门票";
+"devseed.ficha.expenseTransport" = "交通";
+"devseed.ficha.expenseGroceries" = "买菜";
+"devseed.ficha.expenseSouvenirs" = "纪念品";
+"devseed.ficha.expenseWeekendStay" = "波尔图酒店";
+"devseed.ficha.expenseWeekendMeal" = "品酒";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "旅行 %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "打车去机场花了45，超市花了120.50";
+"uitestDemo.chat.draftNoteTaxi" = "去机场的出租车";
+"uitestDemo.chat.draftNoteGroceries" = "超市购物";
+"uitestDemo.chat.suggestionSplit" = "我在住房和个人上的支出是怎么分布的？";
+"uitestDemo.chat.suggestionMonth" = "这个月我在餐厅和外卖上花了多少？";
+"uitestDemo.chat.suggestionBudget" = "我的外出就餐预算够用吗？";
+"uitestDemo.chat.pizzaNote" = "披萨";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "午饭25，刷卡";
+"uitestDemo.voice.lunchNote" = "午饭";
+"uitestDemo.voice.twoTranscript" = "打车12，咖啡8，刷卡";
+"uitestDemo.voice.taxiNote" = "出租车";
+"uitestDemo.voice.coffeeNote" = "咖啡";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "蓝门小馆";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "出租车";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "第%ld页";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "入门";
@@ -3416,7 +3445,6 @@
 "chat.unavailable" = "Yala AI 现在不可用。请几分钟后重试。";
 "chat.retry" = "重试";
 "chat.noVoiceDetected" = "没有检测到声音。请重试。";
-"chat.contextMemory" = "Yala AI 记住 %d 条消息";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "支出";
@@ -3439,7 +3467,6 @@
 "chat.draft.selectAccount" = "选择账户";
 "chat.draft.selectSubcategory" = "选择子类别";
 "chat.draft.saveButton" = "保存";
-"chat.draft.editButton" = "编辑";
 "chat.draft.failedSavingLine" = "无法保存。";
 "chat.draft.retryButton" = "重试";
 "chat.draft.noAccountsBlocking" = "登记前请先在个人资料中创建一个账户。";
@@ -3452,7 +3479,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "财务助理";
-"aiConsent.chatMessage" = "为回答你的问题，此功能会向 OpenAI 发送你财务状况的摘要：你的账户余额和名称、按类别的总计、常用商家、预算和定期付款。\n\n这些数据仅用于生成回答。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.chatMessage" = "为回答你的问题，此功能会向 OpenAI 发送你最近 13 个月财务状况的摘要：你的账户余额和名称、按类别的总计、常用商家、预算和定期付款。\n\n这些数据仅用于生成回答。OpenAI 不会使用这些数据来训练其模型。";
 "aiConsent.inlineHintChat" = "你的财务摘要由 OpenAI 处理以作答，不会被永久存储。";
 "aiConsent.inlineHintMultiple" = "多项 AI 功能使用 OpenAI 处理你的数据,不会被永久存储。";
 
@@ -3514,7 +3541,6 @@
 "groups.bridge.errorTransactionUpdate" = "更改未反映到你的个人记录。我们会重试。";
 "groups.bridge.errorDelete" = "无法删除该支出的个人记录。";
 "groups.bridge.errorNoAccounts" = "你还没有设置账户。请先创建一个。";
-"groups.sync.errorAcceptShare" = "无法完成加入群组。请再试一次。";
 "groups.sync.errorMemberSetup" = "你已加入，但群组中的身份出现问题。请重新打开应用。";
 
 // Groups — Reconnect (GC-08)
@@ -3522,7 +3548,7 @@
 "groups.reconnect.subtitle" = "你被邀请加入一个共享群组";
 "groups.reconnect.fallbackGroupName" = "此群组";
 "groups.reconnect.archived.title" = "%@ 已归档";
-"groups.reconnect.archived.body" = "管理员已归档此群组，不再接受变更。";
+"groups.reconnect.archived.body" = "管理员已归档此群组，不再接受新成员。";
 "groups.reconnect.archived.cta" = "知道了";
 "groups.reconnect.alreadyMember.title" = "你已是 %@ 的成员";
 "groups.reconnect.alreadyMember.body" = "我们带你前往群组。";
@@ -4113,7 +4139,7 @@
 "groups.member.rejectConfirm" = "拒绝 %@ 的请求吗？对方可以使用其他链接重新申请加入。";
 "groups.member.pendingRequestsSection" = "待处理的请求";
 "groups.invite.waitingApproval.title" = "请求已发送";
-"groups.invite.waitingApproval.body" = "群组管理员需要批准你的加入请求。准备好后我们会通知你。";
+"groups.invite.waitingApproval.body" = "群组管理员批准后你才能参与。在此期间群组会显示在你的列表里，但还无法打开。过一会儿再打开 Yala，看看是否已经通过。";
 "groups.invite.waitingApproval.banner" = "等待管理员批准";
 "groups.invite.rejected.title" = "请求被拒绝";
 "groups.invite.rejected.body" = "管理员没有批准你的请求。如果你想再次尝试，可以请管理员发送新的链接。";
@@ -4122,14 +4148,14 @@
 "groups.errors.pendingApproval" = "暂时还不能执行此操作。管理员需要先批准你的请求。";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
-"welcome.chooser.title" = "你好！你是怎么找到 Yala 的？";
-"welcome.chooser.subtitle" = "告诉我们，我们会为你定制体验。";
-"welcome.chooser.optionNew.title" = "我是新用户";
+"welcome.chooser.title" = "你好！你想用 Yala 做什么？";
+"welcome.chooser.subtitle" = "选择你的起点，接下来我们一起走。";
+"welcome.chooser.optionNew.title" = "我第一次使用 Yala";
 "welcome.chooser.optionNew.body" = "和我从零开始吧。我会一步步帮你配置好一切。";
 "welcome.chooser.optionExisting.title" = "我已经有账户了";
-"welcome.chooser.optionExisting.body" = "我重新安装了 Yala，想从 iCloud 恢复我的数据。";
-"welcome.chooser.optionInvite.title" = "有人邀请我加入群组";
-"welcome.chooser.optionInvite.body" = "我有一个邀请链接，想要加入。";
+"welcome.chooser.optionExisting.body" = "我以前用过 Yala，想恢复我的数据，不管在 iCloud 还是在我的账户里。";
+"welcome.chooser.optionInvite.title" = "我是为群组而来";
+"welcome.chooser.optionInvite.body" = "我想和朋友分摊开销：创建群组或加入一个。";
 
 "welcome.restore.searching" = "正在 iCloud 中查找你的数据…";
 "welcome.restore.searchingTip" = "这可能需要几秒钟。";
@@ -4171,9 +4197,8 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "你的个人财务,";
 "welcome.hero.titleAccent" = "轻松搞定。";
-"welcome.hero.subtitle" = "你拍下来。Yala 全搞定。";
 "welcome.hero.cta" = "开始";
-"welcome.hero.trust" = "100% 私密 · 你的信息始终与你同在";
+"welcome.hero.trust" = "无跟踪、无广告";
 
 "welcome.hero.cards.capture.title" = "拍照即录";
 "welcome.hero.cards.capture.body" = "拍下来,Yala 自动识别。";
@@ -4184,23 +4209,15 @@
 "welcome.hero.cards.budgets.title" = "预算与目标";
 "welcome.hero.cards.budgets.body" = "设定上限,照做不误。";
 "welcome.hero.cards.multiAndCurrencies.title" = "多账户多币种";
-"welcome.hero.cards.multiAndCurrencies.body" = "银行卡、现金、48+ 种货币。";
+"welcome.hero.cards.multiAndCurrencies.body" = "银行卡、现金、50+ 种货币。";
 "welcome.hero.cards.import.title" = "导入你的历史";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel,一键搞定。";
 "welcome.hero.cards.icloud.title" = "私享 iCloud";
-"welcome.hero.cards.icloud.body" = "你的数据,在你的 iCloud。无服务器。";
+"welcome.hero.cards.icloud.body" = "你的数据,在你的 iCloud。";
 "welcome.hero.cards.more.title" = "还有更多";
 "welcome.hero.cards.more.body" = "我们一起来发现。";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.detectedData.title" = "欢迎回来!我们找到了你的账户";
-"welcome.detectedData.message" = "你的 iCloud 中有已保存的数据。要加载到此设备上吗？";
-"welcome.detectedData.loadMyData" = "加载我的数据";
-"welcome.detectedData.startFresh" = "从零开始";
-"welcome.offerRestore.title" = "我们找到了你的账户";
-"welcome.offerRestore.message" = "你的 iCloud 中有数据。加入群组前先加载吗？";
-"welcome.offerRestore.loadData" = "加载我的数据";
-"welcome.offerRestore.startFresh" = "从头开始";
 
 
 // MARK: FreshStart (segunda barrera)
@@ -4220,12 +4237,12 @@
 "yalaAI.onboarding.progressLabel" = "第 %1$d 步，共 %2$d 步";
 "yalaAI.onboarding.step1.title" = "向你介绍 Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "你的财务好帮手。";
-"yalaAI.onboarding.step1.demoScenario1User" = "午餐花了 12 元。";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "搞定！已记录你 12 元的午餐。";
+"yalaAI.onboarding.step1.demoScenario1User" = "午餐花了 %@。";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "搞定！已记录你 %@ 的午餐。";
 "yalaAI.onboarding.step1.demoScenario2User" = "本月咖啡花了多少？";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "本月咖啡花了 320 元 ☕ — 比 4 月少 12%，不过比你平时的平均高出 50 元。";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "本月咖啡花了 %1$@ ☕，比 4 月少 12%%，不过比你平时的平均高出 %2$@。";
 "yalaAI.onboarding.step1.demoScenario3User" = "有什么建议吗？";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 你的外卖比上月高出 20%。回到平时的节奏每月可省 600 元 — 一年差不多 7,200 元。";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 你的外卖比上月高出 20%%。回到平时的节奏每月可省 %1$@，一年就是 %2$@。";
 "yalaAI.onboarding.step1.demoAmountLabel" = "午餐";
 "yalaAI.onboarding.step1.a11yLabel" = "Yala AI 记录支出的聊天示例";
 "yalaAI.onboarding.step2.title" = "你可以这样做";
@@ -4251,11 +4268,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "帮你削减开支，每月多攒一些。";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "任何偏差都会提醒你，避免被动。";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "本月收入足以覆盖支出。节奏不错。";
-"yalaAI.onboarding.step4.focusSaverQuote" = "餐饮开支减少 10%，每月可省 80 元。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "餐饮开支减少 10%%，每月可省 %@。";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "注意：本月外卖花费比上月更快。";
 "yalaAI.onboarding.step5.title" = "全部就绪！";
 "yalaAI.onboarding.step5.subtitle" = "随时告诉 Yala 你需要什么。";
-"yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
+"yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 %@ 的咖啡\" 或 \"今天我花了多少？\"";
 "yalaAI.onboarding.step5.cta" = "开始聊天";
 
 // MARK: - Stats Records polish
@@ -4313,6 +4330,19 @@
 "stats.trends.insight.stableExpense" = "你的支出保持稳定。";
 "stats.trends.insight.stableIncome" = "你的收入保持稳定。";
 "stats.trends.insight.stableBalance" = "你的余额保持稳定。";
+"stats.trends.insight.sustainedUpExpense %@" = "你的支出已连续%@上升。";
+"stats.trends.insight.sustainedDownExpense %@" = "你的支出已连续%@下降。";
+"stats.trends.insight.sustainedUpIncome %@" = "你的收入已连续%@增长。";
+"stats.trends.insight.sustainedDownIncome %@" = "你的收入已连续%@下降。";
+"stats.trends.insight.sustainedUpBalance %@" = "你的余额已连续%@增长。";
+"stats.trends.insight.sustainedDownBalance %@" = "你的余额已连续%@下降。";
+"stats.trends.insight.durationWeeks %d" = "%d周";
+"stats.trends.insight.durationMonths %d" = "%d个月";
+"stats.trends.insight.durationYears %d" = "%d年";
+"stats.trends.insight.cashFlowSurplus %d" = "你的收入覆盖了支出的 %d%%：本期结余为正。";
+"stats.trends.insight.cashFlowDeficit %d" = "你的收入覆盖了支出的 %d%%：花出去的比进来的多。";
+"stats.trends.insight.cashFlowNoIncome" = "本期只记录了支出，没有收入。";
+"stats.trends.insight.weekdayPeak %@ %@" = "%@是你花费最多的一天，平均 %@。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期间对比";
@@ -4353,9 +4383,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "当你支付一笔支出时,我们也会自动将其记录到你的个人账户,让你的余额始终反映真实情况。";
 "groups.onboarding.step3.title" = "隐私优先";
 "groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
-"groups.onboarding.step3.point1" = "每位成员都需要一个 iCloud 账户。";
+"groups.onboarding.step3.point1" = "每位成员都需要一个 Yala 账户。";
 "groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
 "groups.onboarding.step3.cta" = "前往群组";
+"groups.onboarding.step3.signInCTA" = "登录";
 
 "groups.onboarding.step3.bridgeAwareness" = "你可以在群组设置中更改此行为。";
 
@@ -4420,7 +4451,6 @@
 "settings.resetDataDescriptionGroupsOnly" = "此操作会将你的 Yala 个人资料和偏好重置为初始状态。你的群组不会被删除:请在「群组」标签页中管理它们。";
 
 /* Delete-data confirmation warning — groups-only mode */
-"settings.deleteDataWarningGroupsOnly" = "此操作不可逆。你的 Yala 个人资料和偏好将被重置。";
 
 /* Apple Pay automation: failure notification title */
 "shortcut.notification.errorTitle" = "无法记录支付";
@@ -4442,6 +4472,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "群组「%@」的结算。只需指定一个账户；金额和日期由群组管理。";
+"inbox.groupSettlementDraft.alreadyRegistered" = "这笔付款已记录在你的账户中。你可以放弃此草稿。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "分配账户和子类别";
@@ -4452,11 +4483,19 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "此共享支出在群组中已不存在。";
 "whatsNew.v20.groups.title" = "群组（测试版）";
-"whatsNew.v20.groups.description" = "创建群组分摊支出，Yala 自动算出谁欠谁多少。请放心：所有数据只经过你的私人 iCloud，绝不经过我们的服务器。";
+"whatsNew.v20.groups.description" = "创建群组分摊支出，Yala 自动算出谁欠谁多少。";
 "whatsNew.v20.ai.title" = "认识 Yala AI";
 "whatsNew.v20.ai.description" = "你的 AI 财务助手。向它询问你的财务状况，让它帮你记账，获取清晰的本月分析。就像一位懂理财的朋友，一条消息即可触达。";
 "whatsNew.v20.redesign.title" = "全新设计";
 "whatsNew.v20.redesign.description" = "我们对 Yala 进行了彻底重新设计：全新小组件、每个板块更清晰的摘要，以及贯穿整个应用的 iOS 全新 Liquid Glass 质感。此外，我们还修复了大量问题，让一切更顺滑。";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "群组";
+"whatsNew.v21.groups.description" = "和任何人分摊支出。通过链接邀请，一起记账，Yala 自动算出谁欠谁多少。不用算账，也不尴尬。";
+"whatsNew.v21.logging.title" = "记账从未如此简单";
+"whatsNew.v21.logging.description" = "对它说话、拍张照片，或者像跟朋友聊天一样打字。Yala 能听懂你花了什么，并帮你记下来，管好账只需几秒。";
+"whatsNew.v21.data.title" = "你的数据，你做主";
+"whatsNew.v21.data.description" = "信息存在哪里由你决定：你的私人 iCloud，或 Yala 云端，让它在你的所有设备上随时可用。此外，还有全新的首页，以及在 iPad 上全屏使用 Yala。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4500,24 +4539,6 @@
 "groups.errors.inviteFailed" = "无法创建邀请链接。请检查你的网络连接后重试。";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "无法完成操作。请重试。";
-/* Beta gate (Groups): screen/alert title */
-"groups.beta.gate.title" = "Beta 功能";
-
-/* Beta gate (Groups): explanation message */
-"groups.beta.gate.message" = "此功能为 Beta 版，仅向部分用户开放";
-
-/* Beta gate (Groups): button to enter the beta code */
-"groups.beta.gate.haveCode" = "我有 Beta 代码";
-
-/* Beta gate (Groups): code entry alert title */
-"groups.beta.gate.codePrompt" = "请输入你的 Beta 代码";
-
-/* Beta gate (Groups): code field placeholder */
-"groups.beta.gate.placeholder" = "代码";
-
-/* Beta gate (Groups): wrong code error */
-"groups.beta.gate.wrongCode" = "代码不正确";
-
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "所有人";
 
@@ -4624,3 +4645,2116 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "在与成员分摊之前，请先输入支出金额。";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "计划的群组支出";
+"scheduled.groupExpense.toggle" = "是共享支出吗？";
+"scheduled.groupExpense.toggleHelper" = "我们会记入你的群组，只计算你的部分。";
+"scheduled.groupExpense.sectionTitle" = "共享支出";
+"scheduled.groupExpense.groupRow" = "群组";
+"scheduled.groupExpense.currencyRow" = "货币";
+"scheduled.groupExpense.divisionRow" = "分摊";
+"scheduled.groupExpense.splitSummary" = "%d 人 · %@ · 你的部分 %@";
+"scheduled.groupExpense.totalHint" = "账单总额";
+"scheduled.groupExpense.sharedBadge" = "共享";
+
+
+/* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
+"inbox.convertToShared" = "转为共享支出";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "用面容 ID 保护";
+"faceIDGuide.title" = "用面容 ID 保护 Yala";
+"faceIDGuide.subtitle" = "使用 iOS 锁定，只有你能打开应用";
+"faceIDGuide.step1Title" = "按住 Yala 图标";
+"faceIDGuide.step1Detail" = "在主屏幕上";
+"faceIDGuide.step2Title" = "点按要求面容 ID";
+"faceIDGuide.step2Detail" = "在出现的菜单中";
+"faceIDGuide.step3Title" = "用面容确认";
+"faceIDGuide.step3Detail" = "完成，你的应用已受保护";
+
+/* Success screen title after creating a group expense */
+"groups.expense.success.titleCreated" = "已添加支出！";
+
+/* Success screen title after editing a group expense */
+"groups.expense.success.titleUpdated" = "已更新支出！";
+
+/* Detail row label: the group the expense belongs to */
+"groups.expense.success.group" = "群组";
+
+/* Detail row label: how the expense was split */
+"groups.expense.success.splitLabel" = "分摊方式";
+
+/* Section header listing participants and their share */
+"groups.expense.success.participants" = "参与者";
+
+/* Button: create another group expense */
+"groups.expense.success.addAnother" = "再记一笔";
+
+/* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
+"storage.title" = "你的数据存放在哪里";
+"storage.waitingForLeader" = "您的另一台设备正在为此账户启用云端。请等待其完成。";
+"storage.status.icloudTitle" = "私有 iCloud";
+"storage.status.icloudBody" = "您的数据保存在设备上，通过私有 iCloud 同步。其他人无法读取，包括我们。";
+"storage.status.cloudTitle" = "您的云端账户";
+"storage.status.cloudBody" = "您的数据保存在 Yala 账户中，并在所有设备间同步。";
+"storage.migrate.title" = "迁移到云端";
+"storage.migrate.body" = "使用 Apple 或 Google 创建账户，即可在任何设备上访问数据，即使没有 iCloud。";
+"storage.migrate.button" = "启用云端";
+"storage.migrate.previewButton" = "查看将迁移的内容";
+"storage.migrate.previewResult" = "%1$d 笔交易 · %2$d 个分类 · %3$d 个账户 · %4$d 个预算";
+"storage.adopt.title" = "在此设备上启用云端";
+"storage.adopt.body" = "此账户的数据已在云端。我们将在此设备上启用它。";
+"storage.adopt.button" = "在此设备上启用";
+"storage.revert.title" = "返回 iCloud";
+"storage.revert.body" = "返回私密模式。您的数据将保存在设备和 iCloud 中，不会丢失任何内容。";
+"storage.revert.button" = "返回 iCloud";
+"storage.revert.ineligible" = "目前无法从此设备返回 iCloud。";
+"storage.sync.title" = "同步";
+"storage.sync.upToDate" = "已全部同步";
+"storage.sync.needsSignIn" = "登录以上传 %d 项更改";
+"storage.sync.signInButton" = "登录";
+"storage.progress.migrating" = "正在启用云端…";
+"storage.progress.reverting" = "正在返回 iCloud…";
+"storage.progress.resume" = "继续";
+"storage.progress.retry" = "重试";
+"storage.relaunch.title" = "就快好了 — 请重启 Yala";
+"storage.relaunch.body" = "彻底关闭 Yala（在应用切换器中划走），然后重新打开以完成。";
+"storage.failed.migration" = "无法启用云端。您的数据仍安全保存在设备上，可以重试。";
+"storage.failed.reverse" = "无法完成返回 iCloud。您的数据仍然安全，可以重试。";
+"storage.confirm.migrateTitle" = "启用云端？";
+"storage.confirm.migrateBody" = "您的数据将迁移到 Yala 账户。此操作可逆，但属于重大更改。";
+"storage.confirm.migrateContinue" = "继续";
+"storage.confirm.migrate2Title" = "确定吗？";
+"storage.confirm.migrate2Body" = "将在此设备上启用云端。";
+"storage.confirm.migrate2Confirm" = "是，启用云端";
+"storage.confirm.revertTitle" = "返回 iCloud？";
+"storage.confirm.revertBody" = "您的数据将保存在设备和 iCloud 中，不会丢失任何内容。";
+"storage.confirm.revertContinue" = "继续";
+"storage.confirm.revert2Title" = "确定吗？";
+"storage.confirm.revert2Body" = "将在此设备上停用云端。";
+"storage.confirm.revert2Confirm" = "是，返回 iCloud";
+"storage.errors.title" = "出了点问题";
+"storage.errors.generic" = "操作未成功。请重试。";
+"storage.errors.adoptOtherAccount" = "这不是您在此设备上正在启用的账户。请用同一个账户重试。";
+"storage.errors.adoptICloudNotSettled" = "无法开始启用云端：iCloud 仍在向此设备传输数据。请几分钟后再试。";
+"storage.errors.signIn" = "无法登录。请重试。";
+"storage.consent.title" = "您在 Yala 云端的数据";
+"storage.consent.pointServers" = "您的数据保存在 Yala 的服务器上，我们的团队可以查看这些数据，以便为您提供支持和智能功能。我们不使用端到端加密。";
+"storage.consent.pointPhotos" = "收据照片仅保留在此设备上：不会备份到云端，也不会在其他设备上显示。如需保留，请在更换手机前先保存。";
+"storage.consent.pointAccess" = "作为交换，您只需 Apple 或 Google 登录即可在任何设备上访问数据，无需依赖 iCloud。前提是您保留该登录方式：没有电子邮件或 Yala 密码找回，因此如果您失去该账户的访问权限，请先导出数据（设置 → 导出数据）。";
+"storage.consent.footer" = "您可以随时切换回私密模式，不会丢失任何内容。";
+"storage.consent.accept" = "我已了解并希望启用云端";
+"storage.consent.privacyLink" = "查看隐私政策";
+
+/* Invite onboarding: spinner title while zone/member sync */
+"groups.invite.joining.title" = "正在连接你的群组…";
+
+/* Invite onboarding: spinner body */
+"groups.invite.joining.body" = "我们正在准备一切，以便你分摊支出。这可能需要一点时间。";
+
+/* Invite onboarding: soft-timeout state title */
+"groups.invite.slow.title" = "比平时花的时间稍长";
+
+/* Invite onboarding: soft-timeout body, honest copy */
+"groups.invite.slow.body" = "我们正在后台继续连接你的群组。你可以先使用 Yala，群组准备好后会出现在“群组”标签页中。";
+
+/* Invite onboarding: exit CTA from soft-timeout state */
+"groups.invite.slow.continueButton" = "继续使用应用";
+
+/* Invite onboarding: join failure title */
+"groups.invite.error.title" = "无法将你加入群组";
+
+/* Invite onboarding: join failure body */
+"groups.invite.error.body" = "请检查网络连接后重试。";
+
+/* Invite onboarding: secondary exit from failure state */
+"groups.invite.error.exitButton" = "暂时退出";
+
+/* Groups tab banner while join intent syncs in background */
+"groups.invite.syncBanner" = "正在连接你的群组…";
+
+/* Groups tab banner when join intent TTL expired */
+"groups.invite.expired.banner" = "无法连接到群组。请向管理员索取新的邀请链接。";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "退出登录";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "要在此设备上退出登录吗？";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "退出登录";
+
+/* Sign out dialog message when in cloud storage mode */
+
+/* Sign out dialog message when in private iCloud mode */
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "无法退出登录";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。请检查网络连接后重试。";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.title" = "欢迎回来！";
+"welcome.existing.subtitle" = "使用你的 Yala 账户登录，或从 iCloud 找回数据。";
+"welcome.existing.firstTimeQuestion" = "第一次使用 Yala？";
+"welcome.existing.firstTimeAction" = "从这里开始";
+"welcome.form.or" = "或";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "从 iCloud 恢复";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "使用 iCloud 保存的数据将恢复到此设备。";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "通过 Apple 登录";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "云端的 Yala 账户，任何设备均可使用。";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "登录你的账户";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "请使用创建云端账户时的同一个 Apple ID。";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "正在核对你的账户…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "正在连接你的账户…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "这可能需要几分钟。请保持 Yala 处于打开状态。";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "未找到账户";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "你使用的登录方式还没有 Yala 云端账户。";
+"welcome.cloud.notFoundCta" = "创建账户";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "此设备上有另一个账户的数据";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "为保护这些数据，无法在此连接其他账户。数据所有者可以随时重新登录。";
+
+"welcome.cloud.blockedRestoreHint" = "如果这些数据是你的呢？如果你刚开始从 iCloud 恢复，请等它完成后再登录。";
+
+"welcome.cloud.blockedBack" = "返回";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "出了点问题";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "无法核对你的账户。请检查网络连接后重试。";
+
+/* Retry button */
+"welcome.cloud.retry" = "重试";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "你的账户正在另一台设备上完成设置";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "你可以在此等待，也可以继续使用应用；我们会继续尝试。";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "继续使用应用";
+
+/* Chip shown while the secondary (guest) session pulls its account data after relaunch */
+"welcome.cloud.hydrationBanner" = "正在下载你的数据…";
+"welcome.cloud.cancelAdoptBody" = "此设备没有更改您在云端的任何内容。您将回到起始页面。您可以随时通过「我已经有账户了」重新登录您的账户。";
+"welcome.cloud.cancelAdoptEffectBody" = "此设备上的内容仍像以前一样留在这里。您将回到起始页面。您可以随时通过「我已经有账户了」重新登录您的账户。";
+
+/* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
+"groups.icloud.gate.title" = "群组需要 iCloud";
+
+/* Body of the Groups-needs-iCloud gate; [tu nombre] refers to the user's name row at the top of iOS Settings */
+"groups.icloud.gate.message" = "你的群组通过 iCloud 账户共享和同步。请在“设置”→［你的姓名］→ iCloud 中登录，然后回到这里。";
+
+/* CTA of the Groups-needs-iCloud gate; opens the app's Settings page (cannot deep-link to iCloud directly) */
+"groups.icloud.gate.openSettings" = "打开设置";
+
+/* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
+"storage.relaunch.bodyAutoExit" = "返回主屏幕，然后重新打开 Yala——一切就绪。";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "云端群组";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "群组天生就是共享的：它们保存在 Yala 云端，让每个成员都能看到同样的最新支出。";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "与群组分享的只有最少的信息：你的昵称和群组的支出。其他成员看不到你的邮箱。";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "你的个人财务不会移动：它们留在你选择的地方，一如既往地私密。";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "群组数据在传输和存储时都受到保护，你随时可以退出群组。";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "接受并继续";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "关联你的账户";
+
+/* G4 sign-in body */
+"groups.signin.body" = "加入群组需要一个 Yala 账户。用 Apple 或 Google 登录，继续你的邀请吧。";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "这将是你的 Yala 账户：如果有一天你把个人数据迁移到云端，用的也是这个账户。";
+
+/* G4 sign-in error */
+"groups.signin.error" = "嗯，我们没能关联你的账户。请再试一次。";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "已删除的用户";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "删除我的账户";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "删除你的 Yala 账户？";
+/* G5-D1b: primer diálogo, modo nube */
+/* G5-D1b: primer diálogo, modo solo-grupos */
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "继续";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "此操作无法撤销";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "没有回头路：你的账户和数据将被彻底删除。";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "删除我的账户";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "无法删除你的账户";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "出了点问题，删除未能完成。你的数据仍然完好。请稍后再试。";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "重试";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "包含我的群组";
+"export.includeGroups.description" = "添加一个单独的文件，包含每个群组的支出、付款和你的余额。";
+"export.groups.header.group" = "群组";
+"export.groups.header.type" = "类型";
+"export.groups.header.date" = "日期";
+"export.groups.header.description" = "描述";
+"export.groups.header.from" = "付款方";
+"export.groups.header.to" = "收款方";
+"export.groups.header.paidBy" = "付款人";
+"export.groups.header.amount" = "金额";
+"export.groups.header.myShare" = "我的份额";
+"export.groups.header.currency" = "货币";
+"export.groups.type.expense" = "支出";
+"export.groups.type.settlement" = "付款";
+"export.groups.type.balance" = "我的余额";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "你的个人文件已成功导出，但这次未能包含你的群组。请稍后再试。";
+
+/* G6-3: freeze error surfaced when writing to a migrated group */
+"groups.errors.movedToBackend" = "该群组已迁移到 Yala 云端。请重新登录以继续使用。";
+
+/* G6-3: card chip for a migrated frozen group */
+"groups.card.movedChip" = "已迁移";
+
+/* G6-3: detail banner title for a migrated group */
+"groups.migrated.bannerTitle" = "该群组已迁移到 Yala 云端";
+
+/* G6-3: detail banner body for a migrated group */
+"groups.migrated.bannerBody" = "请重新登录以继续查看和编辑支出。";
+
+/* G6-3: re-join CTA button on a migrated group */
+"groups.migrated.rejoinCTA" = "重新登录";
+
+/* G6-3: settings row to delete the frozen CloudKit copy */
+
+/* G6-3: hint under the delete-copy row */
+
+
+
+
+/* G6-3: progress banner while the owner's groups migrate to backend */
+"groups.migrated.migratingBanner" = "正在将你的群组迁移到 Yala 云端…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "通过 Google 继续";
+"auth.googleButtonSignUp" = "使用 Google 创建账户";
+"auth.googleButtonSignIn" = "使用 Google 登录";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "使用 Google 登录";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "云端的 Yala 账户（如果你是用 Google 账号创建的）。";
+"welcome.existing.usedOnThisDeviceNote" = "你在这台 iPhone 上用过的方式";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "请使用创建云端账户时的同一个 Google 账号。";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "请用创建账户时的同一登录方式登录——你的 Yala 账户与该方式绑定。";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "该账户使用其他登录方式";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "此 Apple ID 的 Yala 账户是通过%@创建的。";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "此 Apple ID 的 Yala 账户是通过其他方式创建的。";
+
+/* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
+"welcome.cloud.beaconOrigin" = "此 Apple ID 曾通过%@创建过 Yala 账户。";
+
+/* Paso 6: same origin line when the beacon does not know the sign-in method */
+"welcome.cloud.beaconOriginGeneric" = "此 Apple ID 曾创建过 Yala 账户。";
+
+/* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
+"welcome.cloud.createAnother" = "创建另一个账户";
+
+/* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
+"storage.progress.waitingImport" = "正在等待iCloud完成同步…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "选择登录方式";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "要将数据保存到云端，你需要一个 Yala 账户。用 Apple 或 Google 登录。";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "你的 Yala 账户将与所选方式绑定——以后登录请始终使用该方式。";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
+"groups.empty.signedOut.title" = "你的群组在你的账户中";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: mensaje */
+"groups.empty.signedOut.message" = "登录后即可查看你共享的群组。";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
+"groups.empty.signedOut.action" = "登录";
+
+/* H-2026-07-18-6 — caption while the sign-out saves pending changes */
+"settings.signOutWorking" = "正在保存你的待处理更改…";
+
+/* H-2026-07-18-6 — transient sign-out block alert title */
+"settings.signOutPendingTitle" = "请再稍等片刻";
+
+/* H-2026-07-18-6 — transient sign-out block alert message */
+"settings.signOutPendingMessage" = "我们还在保存一些更改。请稍等几秒后再试一次。";
+
+/* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
+"storage.relaunch.bodyAutoExitGroupsOnly" = "已退出群组登录。返回主屏幕，然后重新打开 Yala；你的个人数据仍保留在此设备上。";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "确定吗？此操作不可撤销。";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "将副本保存为 CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "清除你的数据。你的账户和群组会保留。";
+
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "只想清空数据并保留账户？请使用「清空我的数据」。";
+
+
+
+
+
+/* D6: confirmation dialog message for 'Salir de Yala' */
+
+/* D6: header title of the group-only export screen */
+"export.groupsOnlyTitle" = "导出你的群组";
+
+/* D6: description under the group-only export header */
+"export.groupsOnlyDescription" = "将每个群组的支出、付款和你的余额保存为 CSV 文件。";
+
+/* D6: alert title when there are no active groups to export */
+"export.groupsOnlyEmptyTitle" = "没有可导出的群组";
+
+/* D6: alert message when there are no active groups to export */
+"export.groupsOnlyEmpty" = "目前没有可导出的活跃群组。";
+
+/* D6: a11y hint when Export row is disabled in group-only mode */
+"accessibility.noGroupsToExport" = "没有可导出的群组";
+
+
+
+
+/* D2 (3.3.3): mensaje del dialogo de 'Salir de Yala' en el split solo-grupos backend */
+
+/* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
+"groups.empty.signedOut.reentryBanner" = "你已退出群组登录。想再次查看时，随时登录即可。";
+
+/* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
+"settings.deleteAccountDebtWarning" = "你在群组中还有未结清的余额。对其他成员来说，这些余额会显示为“已删除的用户”的欠款。如果愿意，可以先在“群组”标签页中结清。";
+
+/* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
+"settings.deleteAccountViewGroups" = "查看我的群组";
+
+/* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
+"settings.deleteAccountFrozenICloudNote" = "你以前的 iCloud 数据（云端账户之前的）不受影响：如果你重新打开 Yala，看到的就像重新安装了一样。";
+
+/* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
+"settings.deleteAccountLegacyFootprintNote" = "在旧群组（iCloud）中，你的名字可能仍然对其他成员可见。";
+
+/* D4 hoja de alcance: etiqueta fila dispositivo */
+"settings.scopeDeviceLabel" = "在此设备上";
+
+/* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
+"settings.scopeICloudLabel" = "在 iCloud 中";
+
+/* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
+"settings.scopeCloudAccountLabel" = "在你的 Yala 账户中";
+
+/* D4 hoja de alcance: etiqueta fila grupos */
+"settings.scopeGroupsLabel" = "在你的群组中";
+
+/* D4: detalle fila cuando algo no se ve afectado */
+"settings.scopeUntouchedShort" = "不受影响";
+
+/* D4: fila grupos al cerrar sesión de grupos */
+"settings.scopeForgetGroups" = "此设备将忘记你的群组（群组仍保留在你的账户中）";
+
+/* D4: fila cuando lo personal en iCloud no se toca */
+"settings.scopePersonalInICloud" = "你的个人数据仍保留在 iCloud 中";
+
+/* D4 Vaciar: fila dispositivo */
+"settings.wipeScopeDevice" = "你的账户、交易和预算将被清除";
+
+/* D4 Vaciar (solo grupos 5a): fila dispositivo */
+"settings.wipeScopeDeviceGroupsOnly" = "你的个人资料和偏好设置将被重置";
+
+
+/* D4 Vaciar: fila cuenta de Yala (modo nube) */
+"settings.wipeScopeCloudAccount" = "同样会从你的账户中清除；你的其他设备同步后也会丢失这些数据";
+
+/* D4 Vaciar: fila grupos */
+"settings.wipeScopeGroups" = "不受影响 — 保持原样";
+
+/* D4 Vaciar: nota de conservación */
+"settings.wipeScopeConservation" = "你的 Pro 订阅不受影响。";
+
+/* D4 Vaciar (modo nube): residual multi-dispositivo (D9) */
+"settings.wipeScopeMultiDeviceResidual" = "离线的设备在重新同步时可能会带回近期的更改。";
+
+/* D4 Eliminar cuenta (nube): fila dispositivo */
+"settings.deleteAccountScopeDeviceCloud" = "此设备上的数据将被删除";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
+"settings.deleteAccountScopeDeviceGroupsOnly" = "此设备上的个人数据不受影响";
+
+/* D4 Eliminar cuenta (nube): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudCloud" = "你的账户和所有数据将被永久删除";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudGroupsOnly" = "你的账户将被删除，你也会退出所有群组";
+
+/* D4 Eliminar cuenta: fila grupos */
+"settings.deleteAccountScopeGroups" = "你仍会显示为“已删除的用户”";
+
+/* D4 Cerrar sesión (privado): fila dispositivo */
+"settings.signOutScopeDevicePrivate" = "将从此设备删除；删除前我们会先完成上传到 iCloud";
+
+/* D4 Cerrar sesión (privado): fila iCloud */
+"settings.signOutScopeCloudPrivate" = "你的数据仍保留在 iCloud 中";
+
+/* D4 Cerrar sesión (nube): fila dispositivo */
+"settings.signOutScopeDeviceCloud" = "你将回到开始屏幕，如同刚安装一样";
+
+/* D4 Cerrar sesión (nube): fila cuenta de Yala */
+"settings.signOutScopeCloudCloud" = "你的数据将安全保存；我们会先上传待同步的更改";
+
+
+
+
+
+
+/* D4 Cerrar sesión (privado): nota de conservación */
+"settings.signOutScopeConservationPrivate" = "如需找回，请在重新打开 Yala 时选择“从 iCloud 恢复”。";
+
+/* D4 Cerrar sesión (nube): nota de conservación */
+"settings.signOutScopeConservationCloud" = "你可以随时重新登录并恢复全部数据。";
+
+/* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
+"settings.signOutScopeConservationGroups" = "想查看你的群组时，随时重新登录即可。";
+"settings.signOutScopeDeviceNoCopy" = "将从此设备上永久删除";
+"settings.signOutScopeCloudNoCopy" = "此设备未开启 iCloud：任何地方都没有副本";
+"settings.signOutNoCopyWarning" = "如果退出登录，你将永久失去这些数据。";
+"settings.signOutNoCopyConfirmTitle" = "永久删除你的数据？";
+"settings.signOutNoCopyConfirmMessage" = "iCloud 和其他任何地方都没有副本。此操作无法撤销。";
+"settings.signOutNoCopyConfirmAction" = "退出登录并删除";
+"settings.signOutScopeConservationPrivateWithGroups" = "如需回来，请选择“从 iCloud 恢复”，然后用你的账户重新登录群组。";
+"settings.signOutExportPendingTitle" = "还有更改尚未上传到 iCloud";
+"settings.signOutExportPendingMessage" = "此设备上尚未上传到 iCloud 的更改：%d 项。现在退出登录，这些更改将会丢失。";
+"settings.signOutExportPendingMessageUnknown" = "无法确认你最近的更改已上传到 iCloud。现在退出登录，这些更改可能会丢失。";
+"settings.signOutExportDiscardButton" = "仍然退出登录";
+
+
+
+
+
+
+/* Vaciar v2: botón para exportar los datos antes de vaciarlos (red de seguridad) */
+"settings.wipeExportBeforeButton" = "先导出";
+
+/* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
+"settings.wipeExportBeforeCloudCaption" = "在云端模式下，这可能是你唯一的副本";
+
+/* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
+"settings.wipeScopeGroupsDebt" = "你的群组会保留，但你有未结清的余额。你可以在「群组」标签页结清。";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "同时离开我的群组";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "离开我的群组";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "正在离开你的群组…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "已离开你的群组。";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "已离开部分群组。";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "已离开";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "已转让";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "需要你的决定";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "这些群组需要手动处理：无法自动离开。";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "你是管理员，而且还有其他成员。";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "你有未结清的余额。";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "无法完成。请重试。";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "完成";
+
+
+
+
+
+
+
+
+/* Fila que abre la pantalla Tu cuenta de Yala (§3.3.5) */
+"settings.yalaAccountRowTitle" = "你的 Yala 账户";
+
+/* Subtítulo de la fila Tu cuenta de Yala */
+"settings.yalaAccountRowSubtitle" = "你的登录方式与账户选项";
+
+/* Título de la pantalla Tu cuenta de Yala */
+"settings.yalaAccountTitle" = "你的 Yala 账户";
+
+/* Método de entrada: Apple */
+"settings.yalaAccountMethodApple" = "你已通过 Apple 登录。";
+
+/* Método de entrada: Google */
+"settings.yalaAccountMethodGoogle" = "你已通过 Google 登录。";
+
+/* Método de entrada genérico (sin proveedor conocido) */
+"settings.yalaAccountMethodUnknown" = "你拥有一个 Yala 账户。";
+
+/* Nota de vínculo Apple/Google (H4) */
+"settings.yalaAccountLinkingNote" = "如果使用同一邮箱，Apple 和 Google 都会登录到同一个账户。";
+
+/* Título de la sección donde viven los datos */
+"settings.yalaAccountDataLocationTitle" = "你的数据存放在哪里";
+
+/* Datos en modo nube */
+"settings.yalaAccountDataLocationCloud" = "在你的 Yala 账户里，存于云端。";
+
+/* Datos en solo-grupos (5b) */
+"settings.yalaAccountDataLocationGroupsOnly" = "在此设备和你的私密 iCloud 中。你的账户仅用于群组。";
+"settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "你的账户只保存你的群组；此设备上没有个人数据。";
+
+/* Alcance del desenlace Cerrar sesión */
+"settings.yalaAccountSignOutScope" = "你的账户会保留；随时都能回来。";
+
+/* Desenlace Volver a iCloud (la Reversa) */
+"settings.yalaAccountReturnICloud" = "返回 iCloud";
+
+/* Alcance del desenlace Volver a iCloud */
+"settings.yalaAccountReturnICloudScope" = "你的数据会回到你的私密 iCloud；你的账户会暂停。";
+
+/* Alcance del desenlace Eliminar mi cuenta */
+"settings.yalaAccountDeleteScope" = "全部内容将被永久删除。";
+
+/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
+"storage.revert.desenlaceNote" = "这是把你的账户与此设备解绑的方式：账户会暂停，留待你回来。";
+
+/* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
+"settings.accountSubsectionTitle" = "你的账户";
+
+/* Subtitulo de Donde viven tus datos, modo iCloud */
+"settings.dataLocationSubtitleICloud" = "你的私密 iCloud";
+
+/* Subtitulo de Donde viven tus datos, modo nube */
+"settings.dataLocationSubtitleCloud" = "你的云端账户";
+
+/* D10 batch: stop button (D3) */
+"settings.batchLeaveStop" = "停止";
+
+/* D10 batch: result headline when user stopped (D3) */
+"settings.batchLeaveStopped" = "已停止离开群组。";
+
+/* D10 batch: stat label for groups not processed after stop (D3) */
+"settings.batchLeaveStatSkipped" = "未处理";
+
+/* D10 batch: body explaining how to relaunch after stop (D3) */
+"settings.batchLeaveStoppedBody" = "你可以随时在「清空我的数据」中继续。";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "结算";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ 付给了 %2$@";
+
+/* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
+"groups.bridge.editPartialBannerCaseB" = "这笔支出来自群组。你可以编辑分类和标签。其余内容与群组同步。";
+
+/* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
+"panel.health.bills.sheet.explanation.expensesOnly" = "显示你的余额是否能覆盖这个期间内的待付款项。";
+
+/* Force-update (min-version) blocking screen */
+"appUpdate.force.title" = "请更新以继续";
+"appUpdate.force.message" = "当前 Yala 版本已不再受支持。请更新以继续使用。";
+"appUpdate.force.updateButton" = "立即更新";
+
+/* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
+"storage.migrate.accountReuseNote" = "将继续使用你当前的 Yala 账户（%@），这样你的数据和群组都在同一个账户里。";
+
+/* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
+"storage.migrate.accountReuseNoteGeneric" = "将继续使用你当前的 Yala 账户，这样你的数据和群组都在同一个账户里。";
+
+/* Storage migrate card, after the identity check refused the live account: it already has personal finances */
+"storage.migrate.refusedPersonalData" = "你当前的 Yala 账户已有个人财务数据，无法接收此设备的数据。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+
+/* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
+"storage.migrate.refusedOtherGroups" = "你的群组使用的是另一个账户，而此设备只能有一个云端账户。要把你的数据移到云端，请用群组的账户登录，或先在“群组”中取消关联。";
+
+/* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
+"storage.migrate.refusedReturned" = "你当前的 Yala 账户已回到 iCloud，目前还无法用此账户回到云端。";
+
+/* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
+"storage.migrate.refusedFreshStart" = "你当前的 Yala 账户可能属于其他人：此设备从零开始时它就已登录。要选择你自己的账户，请先在“群组”中取消关联，再点一次“启用云端”。";
+"storage.migrate.refusedOtherDevice" = "你的另一台设备正在把你的数据移到此账户。请在那台设备上完成启用；如果已中断，请在那台设备上重试。";
+
+/* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
+"storage.adopt.otherAccountNote" = "这份云端副本属于另一个 Yala 账户（%@）。请退出登录，并使用该账户登录后继续。";
+
+/* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
+"storage.adopt.otherAccountNoteGeneric" = "这份云端副本属于另一个 Yala 账户。请退出登录，并使用该账户登录后继续。";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "无法完成云端启用：iCloud 存储空间已满。您的数据仍完整保存在这台设备上。请在 iCloud 中释放空间后重试。";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "无法完成云端启用：这台设备未开启 iCloud。您的数据仍完整保存在本机。请在设置中开启 iCloud 后重试。";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "无法完成云端启用：iCloud 未确认最后一步。您的数据仍完整保存在这台设备上，请在网络状况良好时重试。";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "正在等待 iCloud 确认…";
+/* C-10: card chip when the frozen group cannot be rejoined by this build */
+"groups.card.movedUpdateChip" = "更新应用";
+
+/* C-10: card chip when the groups backend channel is paused */
+"groups.card.movedPausedChip" = "已暂停";
+
+/* C-10: detail banner body when this build cannot rejoin */
+"groups.migrated.updateBody" = "更新 Yala 后就能重新登录。在那之前，你可以查看支出，但无法编辑。";
+
+/* C-10: detail banner body when the channel is paused */
+"groups.migrated.pausedBody" = "我们正在把这个群组迁移到 Yala 云端，就快好了。过一会儿再试试，不会丢失任何内容。";
+
+/* C-10: read-only staleness note under the migrated banner */
+"groups.migrated.readOnlyNote" = "你看到的是群组迁移时的副本，所以可能不是最新的。";
+
+/* C-10: non-terminal sign-in failure message */
+"groups.signin.retryLater" = "嗯，我们暂时没能关联你的账户。你的群组还在，不会丢失任何内容，稍后再试试吧。";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "删除结算";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "删除此结算？";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "它结清的余额将重新变为待处理。如果它在你的账户中创建了交易，该交易也会被删除。";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "无法删除结算。请重试。";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "暂时无法打开这个邀请。我们已保存你的请求，请稍后再试。";
+
+/* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
+   privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
+"welcome.new.subtitle" = "选择你想把数据存放在哪里。";
+"welcome.new.privateTitle" = "你的私人 iCloud 账户";
+"welcome.new.privateBody" = "数据保存在使用你 Apple ID 的 Apple 设备上，通过你的私人 iCloud 同步。其他人都读不到，我们也一样。";
+"welcome.new.cloudTitle" = "你的云端账户";
+"welcome.new.cloudBody" = "数据保存在我们的服务器上，和你大多数应用一样。我们的团队可以查看，用于为你提供支持和新功能。";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "创建你的 Yala 账户";
+"welcome.bornCloud.subtitle" = "有了它，你可以在任何设备上打开 Yala。";
+"welcome.bornCloud.providerNote" = "你的 Yala 账户将与所选的登录方式绑定。";
+"welcome.bornCloud.creating" = "正在创建你的账户…";
+
+/* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
+"welcome.mirrorRelaunch.title" = "还差一步：请重新打开 Yala";
+
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "正在打开你的邀请…";
+
+/* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
+"welcome.mirrorRelaunch.body" = "为了妥善保管你的数据，Yala 需要重新启动。请返回主屏幕，然后重新打开——回来后会从你离开的地方继续。";
+
+/* Welcome · alta born-cloud completada sin relanzamiento (R2) */
+"welcome.bornCloud.readyTitle" = "你的账户已就绪！";
+
+/* Welcome · cuerpo del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyBody" = "可以开始了。你记录的一切都会保存到你的账户。";
+
+/* Welcome · CTA del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyCta" = "开始";
+
+/* Title of the two-paths groups screen in the Welcome flow */
+"welcome.groups.title" = "你想怎样开始你的群组？";
+
+/* Subtitle of the two-paths groups screen in the Welcome flow */
+"welcome.groups.subtitle" = "两条路最终都到同一个地方。";
+
+/* Card title: the user organizes a new group */
+"welcome.groups.createTitle" = "创建我的第一个群组";
+
+/* Card body: the user creates the group and invites others */
+"welcome.groups.createBody" = "由你来邀请。记下每个人付了多少，Yala 帮你算账。";
+
+/* Card title: the user already received an invitation link */
+"welcome.groups.joinTitle" = "我收到了邀请";
+
+/* Card body: paste the invitation link to join */
+"welcome.groups.joinBody" = "粘贴收到的链接，就能加入群组。";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "正在确认一切就绪…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "现在还打不开群组";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "这是我们这边的问题，很快就好。稍后再试一次——什么都没有保存。";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "返回";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "你叫什么名字？";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "群组里的其他人会看到这个名字。";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "创建我的群组";
+
+/* C2 · empty state cuando aún no vio el educativo */
+"groups.empty.needsEducational.title" = "群组是怎么用的？";
+"groups.empty.needsEducational.message" = "一分钟讲清楚：你能做什么，以及每笔支出保存在哪里。";
+"groups.empty.needsEducational.action" = "看看怎么用";
+
+/* C2 · empty state de quien NUNCA tuvo cuenta (no «vuelve a la tuya») */
+"groups.empty.createAccount.title" = "创建你的 Yala 账户";
+"groups.empty.createAccount.message" = "群组的支出保存在你的账户里，让所有人看到同样的、最新的内容。";
+"groups.empty.createAccount.action" = "创建我的账户";
+
+/* C2 · empty state con sesión viva y sin consent */
+"groups.empty.needsConsent.title" = "最后一步";
+"groups.empty.needsConsent.message" = "我们会告诉你哪些内容会保存在 Yala 云端，由你决定。";
+"groups.empty.needsConsent.action" = "继续";
+
+/* C2 · el hecho sustantivo, antes de pedir identidad */
+"groups.onboarding.step3.point0" = "你记在群组里的支出会保存在 Yala 的服务器上，让所有人都能看到最新的内容。";
+
+/* C2 · variante del CTA para quien nunca tuvo cuenta */
+"groups.onboarding.step3.createAccountCTA" = "创建我的账户";
+
+/* Title of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedTitle" = "我们无法清除你的数据";
+
+/* Body of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedMessage" = "你的数据还在，所以我们没有继续。请关闭 Yala 再重新打开；如果还是这样，请联系我们。";
+"groups.freshStartPending.title" = "还有群组更改尚未上传";
+"groups.freshStartPending.lead" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器（%d 项），从头开始会把它们一起清除。";
+"groups.freshStartPending.leadUnknown" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器，从头开始会把它们一起清除。";
+"groups.freshStartPending.lossSessionExpired" = "这些更改只能用创建它们的账户上传，而该账户的会话已不在这台手机上。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossPermanent" = "创建这些更改的账户已无法上传它们，重试也解决不了。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossAttest" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以它们无法上传。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossAction" = "从头开始并丢失更改";
+"groups.freshStartPending.lossConfirmTitle" = "要丢失这些更改吗？";
+"groups.freshStartPending.lossConfirmBody" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "未到达服务器的群组更改会从这台手机上删除。群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmAction" = "丢失更改并从头开始";
+
+/* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
+"subscription.restoreEmptyTitle" = "未找到订阅";
+
+/* Cuerpo del aviso cuando Restaurar no encuentra una suscripción */
+"subscription.restoreEmpty" = "在此 Apple 账户上找不到 Yala Pro。如果刚购买，请稍等片刻再试。";
+
+/* Apple confirmó la compra pero el derecho Pro no quedó activo */
+"subscription.purchaseNotActivated" = "付款已确认，但 Yala Pro 尚未生效。请尝试恢复购买。";
+
+/* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
+"panel.aiPill" = "AI";
+
+/* Share-link button: group predates the backend channel — permanent, no link is possible */
+"groups.errors.inviteLegacyGroup" = "此群组来自旧版 Yala，不支持邀请链接。如需通过链接邀请，请创建新群组。";
+
+/* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
+"groups.errors.inviteChannelOff" = "目前无法创建邀请链接。请稍后再试。";
+
+/* Adopt/sign-up blocked: HTTP 403 on account claim — the account exists but the backend refuses access */
+"welcome.cloud.accountBlockedTitle" = "你的账户暂时无法使用";
+/* Body for the blocked-account screen; explicitly rules out a network problem */
+"welcome.cloud.accountBlockedBody" = "这不是网络问题：我们暂时无法让你访问这个账户。请写信到 %@，我们一起来看看。";
+
+/* Sign-out blocked alert, guest session: stay in the app and retry later */
+"settings.signOutWaitButton" = "等待";
+
+/* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
+"settings.signOutExitAnywayButton" = "仍要退出";
+
+/* Leave group rejected: the server says the current user owns the group */
+"groups.errors.ownerCannotLeave" = "这个群组是你的，所以你无法退出——总得有人负责。如果你不再需要它，可以将它删除。";
+/* Leave group failed for a transient/kill-switch reason: retry later, not the user's fault */
+"groups.errors.leaveUnavailable" = "未能完成退出群组。请稍后再试。";
+/* Groups RPC rejected because the session token expired or is missing */
+"groups.errors.sessionExpired" = "你的登录已过期。请重新登录后再试。";
+/* Botón: el dueño cede el grupo y sale */
+"groups.settings.transferAndLeave" = "转让并退出";
+/* Hint bajo el botón Transferir y salir */
+"groups.settings.transferAndLeaveHint" = "群组会保留余额继续存在，你将不再是成员。";
+/* Confirmación con el nombre de quien hereda el grupo */
+"groups.settings.transferAndLeaveConfirm" = "%@ 将接管这个群组，你随即退出。未结清的余额保持不变。";
+/* Confirmación cuando no se pudo resolver el nombre de quien hereda */
+"groups.settings.transferAndLeaveConfirmUnknownHeir" = "群组将转给其他人，你随即退出。未结清的余额保持不变。";
+/* Hint del borrado bloqueado cuando SÍ se puede transferir */
+"groups.settings.deleteGroupDisabledHintTransfer" = "群组里还有未结清的余额。如果你想离开，可以转让后退出。";
+/* El último miembro elegible salió durante la confirmación */
+"groups.errors.transferNoHeir" = "已经没有人可以接管这个群组了。";
+/* Aviso al transferir cuando el usuario tiene saldo propio */
+"groups.settings.transferAndLeaveDebtWarning" = "注意：你带着未结清的余额离开，对方仍会看到这笔欠款。";
+/* Variante del rechazo por ser dueño cuando SÍ hay a quién transferir */
+"groups.errors.ownerCannotLeaveCanTransfer" = "这个群组是你的，所以不能直接退出——需要有人接手。你可以转让后退出。";
+/* Título del aviso al tocar la tarjeta de un grupo en el que sigo pendiente de aprobación */
+"groups.card.pendingNotice.title" = "等待批准";
+
+/* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
+"groups.card.pendingNotice.body" = "群组管理员尚未批准你的申请。批准后，你就可以打开该群组并查看它的支出。请稍后再来看看。";
+
+/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
+"stats.hero.captionAccountsBalance" = "账户余额";
+
+/* Stats hero caption: the figure is income minus expenses for the period (flow) */
+"stats.hero.captionNetPeriod" = "期间净额";
+
+/* Stats hero caption: the figure is only the income side for the period */
+"stats.hero.captionIncomePeriod" = "期间收入";
+
+/* Stats hero caption: the figure is only the expense side for the period */
+"stats.hero.captionExpensePeriod" = "期间支出";
+
+/* Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side */
+"stats.hero.captionTotalPeriod" = "期间合计";
+
+/* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
+"welcome.restore.cloudPausedTitle" = "Yala 云同步已暂停";
+
+/* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
+"welcome.restore.cloudPausedBody" = "你的数据仍安全地保存在 Yala 账户中。同步暂时已暂停，请稍后再试。";
+
+/* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
+"notifications.groups.settlementReminder" = "👋 温馨提醒：你还欠 %2$@ %1$@。方便的时候结一下吧。";
+
+/* Push: same gentle reminder when the user owes several people in one group (no args). */
+"notifications.groups.settlementReminderMultiple" = "👋 温馨提醒：你和几位成员还有未结的账。方便的时候结一下吧。";
+
+/* Settings toggle title: gentle reminders for idle group debts. */
+"notifications.settlementReminders.title" = "欠款提醒";
+
+/* Settings toggle hint under notifications.settlementReminders.title. */
+"notifications.settlementReminders.hint" = "当群组欠款数周没有变化时，温和地提醒你";
+
+/* Shareable group summary: section title in group settings AND nav title of the sheet. */
+"groups.shareableSummary.title" = "群组摘要";
+
+/* Shareable group summary: primary action. NOT the invite link (createShareLink) - this shares a picture of how the accounts ended up. */
+"groups.shareableSummary.action" = "分享摘要";
+
+/* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
+"groups.shareableSummary.hint" = "一张图片，包含群组总额和结清所需的最少笔付款。涵盖全部记录。";
+
+/* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
+"groups.shareableSummary.totalSpent" = "总支出";
+
+/* Shareable group summary: heading of the per-member table. */
+"groups.shareableSummary.whoPaid" = "谁付了什么";
+
+/* Shareable group summary: column header - what this member put in. Keep it SHORT, it is a narrow column in a fixed-width image. */
+"groups.shareableSummary.paidLabel" = "已付";
+
+/* Shareable group summary: column header - this member's share of the expenses. Keep it SHORT, narrow column. */
+"groups.shareableSummary.owedLabel" = "应分摊";
+
+/* Shareable group summary: heading of the minimum list of transfers needed to settle. */
+"groups.shareableSummary.settleUp" = "待结清";
+
+/* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
+"groups.shareableSummary.allSettled" = "全部结清！";
+
+/* Shareable group summary: fallback when a member id does not match any member (removed member, half-synced data). */
+"groups.shareableSummary.unknownMember" = "未具名";
+
+/* Shareable group summary: footer of the exported image. Soft branding, never an ad. */
+"groups.shareableSummary.footer" = "由 Yala 生成";
+
+/* Shareable group summary: shown when ImageRenderer returns nil. Never blame the user. */
+"groups.shareableSummary.renderFailed" = "图片生成失败，请再试一次。";
+
+/* G14: título de la sección/tarjeta del presupuesto de grupo */
+"groups.budget.title" = "群组预算";
+
+/* G14: %@ = código de moneda del grupo */
+"groups.budget.hint" = "整个群组的支出上限，以 %@ 计。";
+
+/* G14: el grupo no tiene límite fijado */
+"groups.budget.none" = "未设预算";
+
+/* G14: acción para fijar el límite */
+"groups.budget.set" = "设置预算";
+
+/* G14: acción para borrar el límite */
+"groups.budget.remove" = "删除预算";
+
+/* G14: el server exige is_group_admin */
+"groups.budget.adminOnly" = "只有管理员可以更改。";
+
+/* G14: %1 = gastado, %2 = tope; ambos ya formateados */
+"groups.budget.spentOfLimit" = "%1$@ / %2$@";
+
+/* G14: %@ = importe restante formateado */
+"groups.budget.remaining" = "剩余 %@";
+
+/* G14: %@ = importe excedido formateado */
+"groups.budget.exceededBy" = "超出 %@";
+
+/* G14: nota del ≈ */
+"groups.budget.convertedNote" = "包含其他币种的支出，按今日汇率折算。";
+
+/* G14: %@ = nombre del grupo */
+"groups.budget.alertTitle" = "%@ 的预算";
+
+/* G14: aviso al cruzar 50 */
+"groups.budget.alertBody50" = "群组已用掉一半预算。";
+
+/* G14: aviso al cruzar 75 */
+"groups.budget.alertBody75" = "群组已用掉四分之三的预算。";
+
+/* G14: aviso al cruzar 90 */
+"groups.budget.alertBody90" = "群组的预算即将用完。";
+
+/* G14: aviso al cruzar 100 */
+"groups.budget.alertBody100" = "群组已达到预算上限。";
+
+/* G14: el texto tecleado no era un importe valido */
+"groups.budget.invalidAmount" = "请输入大于零的金额。";
+
+/* G14: confirmacion de quitar el presupuesto */
+"groups.budget.removeConfirm" = "删除群组预算？所有人都将不再看到它。";
+
+/* Shown instead of the settlement reminders hint when the Groups notification master is off, so the toggle cannot deliver anything. */
+"notifications.settlementReminders.hintGroupsOff" = "请先开启群组通知才能收到提醒";
+
+/* Delete-blocked hint for a group owner with debt and no heir: points at Archive, which already works with debt. */
+"groups.settings.deleteGroupDisabledHintArchive" = "该群组还有未结清的余额。若想从列表中移除，请将其归档：欠款会保留。";
+
+/* Account currency locked because history is owned elsewhere */
+"account.currencyChange.blockedTitle" = "无法更改币种";
+
+/* %@ = comma-separated list of reasons */
+"account.currencyChange.blockedMessage" = "此账户中有些记录的金额由应用的其他部分管理：%@。在此更改币种会导致金额对不上。";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonTransfer" = "账户间转账";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupExpense" = "群组支出";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupSettlement" = "群组结算";
+
+/* %1 old currency, %2 new currency */
+"account.currencyChange.confirmMessage" = "它们以 %1$@ 记录，将按各自日期的汇率换算为 %2$@。此操作无法撤销。";
+
+/* Confirm button */
+"account.currencyChange.confirmAction" = "换算";
+
+/* Progress overlay title */
+"account.currencyChange.progressTitle" = "正在换算记录";
+
+/* Progress overlay subtitle */
+"account.currencyChange.progressSubtitle" = "正在应用各日期的汇率";
+
+/* Rates could not be fetched */
+"account.currencyChange.ratesUnavailableTitle" = "无法换算";
+
+/* Body of the rates-unavailable alert */
+"account.currencyChange.ratesUnavailableMessage" = "此账户部分日期的汇率缺失。未做任何更改——请检查网络连接后重试。";
+
+/* Bloque [I]: bloqueo al asociar una cuenta que ya lleva finanzas personales */
+"groups.accountIsComplete.title" = "该账户已经在用完整版 Yala";
+
+/* Bloque [I]: por qué se bloquea */
+"groups.accountIsComplete.body" = "该账户的云端已经存着别人的财务数据。只用它来管理你的群组会把两个账户混成一个，所以这里不能这样做。";
+
+/* Bloque [I]: CTA para firmar con otra cuenta */
+"groups.accountIsComplete.useAnotherAccount" = "使用其他账户";
+
+/* Bloque [I]: la otra salida del ADR */
+"groups.accountIsComplete.settingsHint" = "想让这个账户管理你的财务？可以在“设置”的“你的数据存放在哪里”里选择。";
+
+/* Private branch iCloud gate: spinner while probing CloudKit */
+"welcome.privateICloud.checking" = "正在查看你的 iCloud…";
+
+/* Private branch iCloud gate: spinner while deleting the iCloud corpus */
+"welcome.privateICloud.wiping" = "正在删除 iCloud 里的数据…";
+
+/* Private branch iCloud gate: title when previous data is found in iCloud */
+"welcome.privateICloud.foundTitle" = "你的 iCloud 里已经有数据了";
+
+/* Private branch iCloud gate: body explaining the two ways out */
+"welcome.privateICloud.foundBody" = "这些是你用同一个 Apple 账户保存的。你可以把它们找回来，也可以从头开始——但从头开始会连 iCloud 里的一起删除，不只是这台手机，而且无法恢复。";
+
+/* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
+"welcome.privateICloud.foundSince" = "自 %@ 起";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap */
+"welcome.privateICloud.foundAtLeast" = "超过 %d 条记录";
+
+/* Private branch iCloud gate: primary button, restore from iCloud */
+"welcome.privateICloud.restoreAction" = "找回我的数据";
+
+/* Private branch iCloud gate: destructive button, delete the iCloud data */
+"welcome.privateICloud.wipeAction" = "从头开始";
+
+/* Private branch iCloud gate: body of the second confirmation before deleting */
+"welcome.privateICloud.wipeConfirmBody" = "你的记录、账户和预算会从 iCloud 中消失。不会留下副本，之后也无法恢复。";
+
+/* Private branch iCloud gate: safe button on the second confirmation */
+"welcome.privateICloud.wipeConfirmKeep" = "还是算了";
+
+/* Private branch iCloud gate: title when deleting the iCloud corpus failed */
+"welcome.privateICloud.wipeFailedTitle" = "我们没能全部删除";
+
+/* Private branch iCloud gate: body when deleting failed */
+"welcome.privateICloud.wipeFailedBody" = "你的数据还完好地留在 iCloud 里。检查一下网络，再试一次。";
+
+/* Private branch iCloud gate: title when the device has no iCloud account */
+"welcome.privateICloud.noAccountTitle" = "我们无法查看你的 iCloud";
+
+/* Private branch iCloud gate: body when there is no iCloud account */
+"welcome.privateICloud.noAccountBody" = "这台手机没有开启 iCloud，所以我们不知道你以前有没有保存过东西。你可以继续：现在你的数据只留在这里，等你开启 iCloud，我们会在合并之前先告诉你。";
+
+/* Private branch iCloud gate: continue button when there is no iCloud account */
+"welcome.privateICloud.noAccountCta" = "就这样继续";
+
+/* Private branch iCloud gate: title when the CloudKit probe failed */
+"welcome.privateICloud.errorTitle" = "我们连不上 iCloud";
+
+/* Private branch iCloud gate: body when the CloudKit probe failed */
+"welcome.privateICloud.errorBody" = "可能是网络问题。继续之前再试一次——这样旧数据就不会毫无预警地冒出来。";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "iCloud 响应时间太长";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "我们没能查完你的 iCloud。继续之前再试一次——这样旧数据就不会毫无预警地冒出来。";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "我们没能查完你的 iCloud，所以什么都没有删除：一切都保持原样。可以再试一次，或者返回，想好了再决定。";
+
+/* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
+"welcome.privateICloud.lateTitle" = "我们在 iCloud 里找到了你的数据";
+
+/* Late mirror notice: body with the counts of the previous corpus */
+"welcome.privateICloud.lateBody" = "开启 iCloud 后，出现了你之前用这个 Apple 账户保存的数据：%@。它们会和你现在的数据混在一起。你可以就这样保留，也可以从头开始并把它们从 iCloud 删除。";
+
+/* Late mirror notice: safe button, both corpora coexist */
+"welcome.privateICloud.lateKeep" = "就这样保留";
+
+/* Private branch iCloud gate: counts line fragment for user categories */
+"welcome.privateICloud.foundCategories" = "%d 个分类";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
+"welcome.privateICloud.foundUnknownAmount" = "大量已保存的数据";
+
+/* Private branch iCloud gate: secondary button on the wipe-failed screen, gives up the deletion */
+"welcome.privateICloud.wipeFailedBack" = "暂时先这样";
+
+/* Paso 8 · «Activar Yala completo» pregunta dónde viven los datos personales */
+"groups.fullActivation.chooserTitle" = "你的财务数据存放在哪里？";
+"groups.fullActivation.chooserSubtitle" = "你的群组保持不变。选择你的个人数据存放在哪里。";
+"groups.fullActivation.cloudBody" = "我们会使用你在群组中已经在用的同一个账户，而不是新建一个。数据保存在我们的服务器上，我们的团队可以查看，用于为你提供支持。";
+"groups.fullActivation.historyTitle" = "要带上你的群组支出吗？";
+"groups.fullActivation.historyBody" = "你的群组支出也可以显示在「首页」「记录」和「统计」中。";
+"groups.fullActivation.historyShow" = "是，显示";
+"groups.fullActivation.historyKeepInGroups" = "不，只留在群组中";
+"groups.fullActivation.historyFootnote" = "这也适用于之后记录的支出。你随时可以在群组设置中更改。";
+"groups.fullActivation.promoting" = "正在激活你的账户…";
+"groups.fullActivation.failedTitle" = "无法激活你的账户";
+"groups.fullActivation.failedBody" = "请检查网络连接后重试。目前还没有做任何更改。";
+"groups.fullActivation.unavailableBody" = "你的账户暂时不可用。目前还没有做任何更改。";
+"groups.fullActivation.blockedPersonalDataTitle" = "你的账户已有个人财务数据";
+"groups.fullActivation.blockedPersonalDataBody" = "此账户已保存个人数据，可能来自另一台设备。要在这里使用，请退出登录后再用此账户重新登录。未做任何更改。";
+"groups.fullActivation.blockedBusyTitle" = "另一台设备正在迁移你的数据";
+"groups.fullActivation.blockedBusyBody" = "请等它完成后，几分钟后再试。未做任何更改。";
+"groups.fullActivation.blockedSessionTitle" = "你的登录已过期";
+"groups.fullActivation.blockedSessionBody" = "请在群组中重新登录，然后再次激活完整 Yala。未做任何更改。";
+"groups.fullActivation.reinstallTitle" = "请先重新安装 Yala";
+"groups.fullActivation.reinstallBody" = "你在这台设备上是用旧版本的 Yala 开始使用群组的。要选择财务数据的存放位置，请删除此应用后重新安装：你的群组会保留在账户中，iCloud 数据也不会被改动。";
+
+/* Vuelta al neutro: progreso mientras se espera al export y se prepara el borrado */
+"welcome.groups.neutralWorking" = "我们正在把你最近的更改上传到 iCloud，并为你的群组准备这台手机…";
+
+/* Vuelta al neutro sin copia: titulo del segundo gesto */
+"welcome.groups.neutralNoBackupTitle" = "我们没有在 iCloud 中找到副本";
+
+/* Vuelta al neutro sin copia: cuerpo del segundo gesto */
+"welcome.groups.neutralNoBackupBody" = "要开始你的群组，这台手机需要清空。这里保存的内容不在 iCloud 中，如果继续就会丢失。";
+
+/* Vuelta al neutro sin copia: boton destructivo del segundo gesto */
+"welcome.groups.neutralNoBackupCta" = "继续并清除";
+
+/* Vuelta al neutro: la espera del export se agoto */
+"welcome.groups.neutralStalledTitle" = "还有一些更改尚未同步到 iCloud";
+
+/* Vuelta al neutro: cuantos cambios quedan sin subir (%d = numero) */
+"welcome.groups.neutralStalledBody" = "此设备上尚未同步到 iCloud 的更改：%d 项。如果现在继续，这些更改会丢失。";
+
+/* Vuelta al neutro: la espera se agoto sin poder contar */
+"welcome.groups.neutralStalledBodyUnknown" = "我们无法确认你最近的更改已同步到 iCloud。如果现在继续，可能会丢失。";
+
+/* Vuelta al neutro: salida de emergencia tras la espera agotada */
+"welcome.groups.neutralStalledContinue" = "仍要继续";
+
+/* Vuelta al neutro: seguir esperando al export */
+"welcome.groups.neutralStalledWait" = "等待";
+
+/* Vuelta al neutro bloqueada: outbox de grupos de una sesion caducada */
+"welcome.groups.neutralBlockedTitle" = "还有群组更改尚未上传";
+
+/* Vuelta al neutro bloqueada: como desbloquearlo */
+"welcome.groups.neutralBlockedBody" = "这台手机上有尚未上传到服务器的群组更改。请重新登录该账号让它们上传，之后就可以在这里创建群组了。";
+
+/* Vuelta al neutro imposible en esta celda: titulo */
+"welcome.groups.neutralUnavailableTitle" = "暂时无法准备这台手机";
+
+/* Vuelta al neutro imposible en esta celda: cuerpo */
+"welcome.groups.neutralUnavailableBody" = "这台手机上有一个未关闭的会话，需要先在“设置”中关闭，才能在这里创建群组。请返回：我们没有改动任何内容。";
+
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "我们还无法确认你的数据在 iCloud 与云端之间的迁移已经完成，现在设置这台手机可能会删除尚未上传的内容。请返回：我们没有改动任何内容。";
+
+/* Título de la sección Grupos dentro de «Dónde viven tus datos» */
+"storage.groups.title" = "群组";
+
+/* Cuerpo cuando no hay cuenta de grupos asociada */
+"storage.groups.noAccountBody" = "你的群组保存在 Yala 账户中，与这台 iPhone 上的数据分开。";
+
+/* Botón para asociar una cuenta de grupos */
+"storage.groups.associateButton" = "关联一个用于群组的账户";
+
+/* Cuerpo cuando hay cuenta asociada pero no se sabe su nombre */
+"storage.groups.associatedUnnamedBody" = "你的群组使用一个 Yala 账户。";
+
+/* Cuerpo en un segundo dispositivo, sin nombre de cuenta */
+"storage.groups.needsSignInUnnamedBody" = "你的群组在你的 Yala 账户中。登录后就能在这台 iPhone 上看到。";
+
+/* Botón para entrar con la cuenta de grupos ya asociada */
+"storage.groups.signInButton" = "用该账户登录";
+
+/* Botón para desasociar la cuenta de grupos */
+"storage.groups.detachButton" = "取消关联";
+
+/* Cuerpo cuando los datos personales ya viven en la cuenta de Yala */
+"storage.groups.sameAccountBody" = "你的群组用的就是这个账户。";
+
+/* Título de la confirmación de desasociar */
+"storage.groups.detachTitle" = "要取消关联群组账户吗？";
+
+/* Botón: conservar en el Panel los gastos de grupo */
+"storage.groups.detachKeep" = "保留我付的支出";
+
+/* Botón: quitar del Panel los gastos de grupo */
+"storage.groups.detachRemove" = "从「首页」移除全部";
+
+/* Progreso mientras se desasocia */
+"storage.groups.detachWorking" = "正在取消关联…";
+
+/* Progreso mientras se suben los cambios de grupos */
+"storage.groups.detachWaiting" = "正在保存你待处理的更改…";
+
+/* Cuerpo con el nombre de la cuenta de grupos asociada */
+"storage.groups.associatedBody" = "你的群组使用 %@。";
+
+/* Cuerpo en un segundo dispositivo, con el nombre de la cuenta */
+"storage.groups.needsSignInBody" = "你的群组在 %@ 中。登录后就能在这台 iPhone 上看到。";
+
+/* Mensaje de la confirmación de desasociar */
+"storage.groups.detachBody" = "你的群组会从这台 iPhone 上移除，但仍留在你的账户里：再次关联就会回来。别人欠你和你欠别人的账目两种情况下都会消失；你能选的是自己付的那些支出怎么处理。";
+
+/* Título del aviso cuando el desasociar se bloquea */
+"storage.groups.detachBlockedTitle" = "无法取消关联";
+
+/* Aviso: bloqueo temporal al desasociar */
+"storage.groups.detachBlockedTransient" = "你的群组还有更改尚未上传。请稍后再试。";
+
+/* Aviso: bloqueo permanente al desasociar */
+"storage.groups.detachBlockedPermanent" = "你的群组还有更改尚未上传，而且我们无法连接。请检查网络连接后重试。";
+
+/* Aviso: sesión caducada al desasociar */
+"storage.groups.detachBlockedSession" = "你的群组登录已过期。请重新登录后再试。";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "你的群组登录已过期，而且你最近的部分群组更改无法准备好上传。更改不会丢失。请重新登录，关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次。";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，而且你最近的部分群组更改无法准备好上传。更改不会丢失。要准备这些更改，请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala）。";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。此外，有些群组更改无法准备好上传。这些更改不会丢失。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；那个账户的更改只有用它登录后才会上传。";
+
+/* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
+"welcome.groups.inviteNeutralTitle" = "加入之前，这部手机会被清空";
+
+/* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
+"welcome.groups.inviteNeutralBody" = "这里保存着与某个 iCloud 同步的数据。为了让你的群组支出不会进到那里，我们会把它从这部手机上删除：iCloud 中的副本保持不变。Yala 会重新启动，然后你继续完成邀请。";
+
+/* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
+"welcome.groups.inviteNeutralBodyNoBackup" = "这里保存着数据，而且我们没有在 iCloud 中找到副本。为了让你的群组支出不与它们混在一起，必须把它从这部手机上删除，并且无法恢复。Yala 会重新启动，然后你继续完成邀请。";
+
+/* Puerta del invitado: CTA destructivo que arranca la vuelta al neutro */
+"welcome.groups.inviteNeutralCta" = "继续并删除";
+
+/* Aviso: el borrado local de los grupos falló al desasociar */
+"storage.groups.detachPurgeFailedTitle" = "无法取消关联";
+
+/* Aviso: cuerpo del fallo del borrado al desasociar */
+"storage.groups.detachPurgeFailedBody" = "你的群组还在这台 iPhone 上，账号也没有取消关联。你为面板记录所做的选择已经生效，并且我们已退出该账号。请再试一次以完成。";
+
+/* Aviso: el desasociar abortó porque no se pudo leer el puente */
+"storage.groups.detachBlockedBridge" = "我们无法检查这台 iPhone 上群组的记录。没有取消任何关联。请再试一次。";
+"storage.groups.detachBlockedSessionNotClosed" = "我们无法在这台 iPhone 上退出你的群组账户。没有取消任何关联。请再试一次。";
+
+/* Botón cuando quedó un desasociar a medias */
+"storage.groups.detachFinishButton" = "完成取消账号关联";
+
+/* Cuerpo de la sección cuando quedó un desasociar a medias */
+"storage.groups.detachPendingBody" = "中途停下了：你的群组还在这台 iPhone 上，而那个账号的登录已经退出。";
+
+/* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
+"storage.groups.detachBusy" = "你正在退出登录。请先完成，然后再试一次。";
+
+/* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
+"groups.errors.channelPaused" = "这是我们这边的问题：群组暂时停用了。你的更改还在这台手机上，不会丢失，过一会儿再试试。";
+
+/* Private gate: the phone already holds data from a previous stage */
+"welcome.privateICloud.foundDeviceTitle" = "这台手机里已经有数据了";
+
+/* Private gate: body of the on-device data notice */
+"welcome.privateICloud.foundDeviceBody" = "这台手机里已有之前的数据：也就是一直记在 Yala 里的内容。重新开始会把它们从这台手机上清掉，让你的 Yala 从头开始。";
+
+/* Private gate: second confirmation for the on-device wipe */
+"welcome.privateICloud.wipeDeviceConfirmBody" = "这台手机上的内容会被全部清掉：支出、账户、预算、分类，还有你的群组。手机上不会留下副本。";
+
+/* Private gate: progress while wiping the on-device corpus */
+"welcome.privateICloud.wipingDevice" = "正在删除这台手机里的数据…";
+
+/* Private gate: the on-device wipe failed */
+"welcome.privateICloud.wipeDeviceFailedBody" = "没能完成。你的一部分数据可能已经清掉了，其余的还在。再试一次；如果又失败，关掉 Yala 再重新打开。";
+
+/* Private gate: keep what the phone already has and go back to the chooser */
+"welcome.privateICloud.foundDeviceKeep" = "保持原样";
+
+/* Private gate: retry a failed wipe (not a re-search) */
+"welcome.privateICloud.wipeRetry" = "再试一次";
+
+/* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
+"groups.errors.uploadRetryLater" = "你最近的群组更改没有传到服务器。更改还在这台手机上，不会丢失，过一会儿再试试。";
+
+/* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
+"groups.errors.captureUnfinished" = "你最近的部分群组更改无法准备好上传。更改还在这台手机上，不会丢失。请关闭 Yala 后重新打开；如果仍然如此，请更新 Yala。";
+
+/* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
+"icloud.appleIDChanged.title" = "你更换了 iCloud 账户";
+
+/* Alert body: que pasa con los datos al cambiar de Apple ID */
+"icloud.appleIDChanged.message" = "这台手机上的 Yala 数据属于之前的 iCloud 账户，会继续保存在那里。要在这台手机上继续使用 Yala，需要把它们从这里移除。尚未上传到那个账户的内容将无法再上传。";
+
+/* Alert button: confirma el cierre de la sesion privada y el borrado local */
+"icloud.appleIDChanged.confirm" = "退出并移除";
+
+/* Alert button: pospone el cierre hasta el proximo arranque */
+"icloud.appleIDChanged.later" = "暂不";
+
+/* Gate de «Empezar desde cero» sin respuesta de iCloud: no se declara un borrado que no ocurrio */
+"welcome.privateICloud.discardUnverifiedBody" = "我们无法连接来查看你的 iCloud，所以什么都没有删除：一切都保持原样。可以再试一次，或者返回，想好了再决定。";
+
+/* Salida del gate de «Empezar desde cero» cuando iCloud no contesto: vuelve a Restaurar */
+"welcome.privateICloud.discardUnverifiedBack" = "返回";
+
+/* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "这台手机没有开启 iCloud，所以我们无法确认你以前有没有保存过东西，也什么都没有删除。可以在「设置」里开启后再试一次，或者返回，想好了再决定。";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "将从 iCloud 删除，因此也会从其他在此存放你个人数据的设备上消失";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "这台手机无法同步你的群组";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到服务器的群组更改：%d 项。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些群组更改没有传到服务器。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "退出登录并丢失更改";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以你的群组更改无法上传。";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "这台手机无法同步你的群组，所以未能完成退出群组。";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到服务器的群组更改：%d 项。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些群组更改没有传到服务器。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "继续并丢失更改";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "暂不";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "这台手机无法同步你的数据";
+"settings.signOutAttestMessage" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到你云端账户的更改：%d 项。做决定之前，你可以先把交易导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutAttestMessageUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些更改没有传到你的云端账户。做决定之前，你可以先把交易导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutAttestExportButton" = "导出我的交易";
+"settings.signOutAttestLossButton" = "退出登录并丢失更改";
+"settings.signOutAttestBlocked" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以你的更改无法上传到云端账户。";
+"settings.signOutAttestExportEmpty" = "你没有可以导出的交易。";
+"settings.signOutAttestExportFailed" = "无法生成文件，请重试。";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "它已经超过一天没能通过我们服务器要求的安全验证。你在这里的修改不会传到群组，暂时请换一台手机使用。";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "它已经超过一天没能通过我们服务器要求的安全验证。你在这里记的账会存在这台手机上，但不会同步到云端账户，暂时请换一台手机使用。";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "正在将您的数据上传到 iCloud。您可以继续使用 Yala。";
+"storage.progress.reversePending" = "待上传：%d";
+"storage.progress.reverseICloudFull" = "iCloud 没有足够空间存放您的数据。如果几分钟内上传没有进展，您将继续使用云端，释放空间后可以重试。";
+"storage.progress.reverseICloudUnavailable" = "这台设备上的 iCloud 不可用。如果几分钟内上传没有进展，您将继续使用云端，之后可以重试。";
+"storage.progress.cancelReverse" = "取消并继续使用云端";
+"storage.confirm.cancelReverseTitle" = "要取消返回 iCloud 吗？";
+"storage.confirm.cancelReverseBody" = "您的数据仍保存在 Yala 云端和这台设备上。之后 Yala 会提示您将其关闭并重新打开。";
+"storage.confirm.cancelReverseConfirm" = "是，继续使用云端";
+"storage.confirm.cancelReverseKeep" = "继续等待";
+"storage.reverseAbort.relaunchTitle" = "您的数据仍在云端";
+"storage.reverseAbort.relaunchBody" = "彻底关闭 Yala（在应用切换器中划走），然后重新打开以继续使用云端。";
+"storage.reverseAbort.icloudFull" = "无法完成返回 iCloud：当时 iCloud 空间已满。请释放空间后重试。";
+"storage.reverseAbort.icloudUnavailable" = "无法完成返回 iCloud：当时这台设备上的 iCloud 不可用。请在设置中检查您的 iCloud 账户后重试。";
+"storage.reverseAbort.stalled" = "无法完成返回 iCloud：iCloud 未收到您的全部数据。请确认这台设备已开启 iCloud，并在网络良好时重试，上传期间请保持 Yala 打开。";
+"storage.reverseAbort.claimRetryLater" = "无法开始返回 iCloud：当时您的数据仍在迁移到云端。请稍后重试。";
+"storage.reverseAbort.claimRefused" = "无法开始返回 iCloud：当时您的账户不允许此操作。那次尝试没有做任何更改。请写信到 %@，我们会和您一起查看。";
+"storage.reverseAbort.otherDeviceReverting" = "无法开始返回 iCloud：当时您的另一台设备正在返回 iCloud。完成后，您就可以在这台设备上操作。";
+"storage.progress.reverseICloudMaybeOff" = "如果这台设备未开启 iCloud，您的数据将无法上传到 iCloud。请在设置中开启，或取消以继续使用云端。";
+/* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
+"storage.progress.reverseLocalFailure" = "这台设备无法准备要上传到 iCloud 的数据。如果几分钟内仍未解决，您将继续使用云端，之后可以重试。";
+"storage.reverseAbort.localFailure" = "无法完成返回 iCloud：这台设备无法准备要上传的数据。您仍在云端，请稍后重试。";
+"storage.errors.reversePendingExit" = "暂时无法返回 iCloud：需要先完成云端的重新启用。请稍后重试。";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "无法验证你的账户。请稍后重试。未做任何更改。";
+"storage.migrateBlock.personalDataTitle" = "此账户已有个人财务数据";
+"storage.migrateBlock.personalDataBody" = "未做任何更改。要把你的数据移到云端，请使用其他账户。要在这里使用此账户的数据，请退出登录后用此账户登录。";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "未做任何更改。要在这里使用该账户的数据，请退出登录后用该账户登录。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
+"storage.migrateBlock.otherGroupsTitle" = "你的群组已在使用另一个账户";
+"storage.migrateBlock.otherGroupsBody" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用另一个账户。要把你的数据移到云端，请用群组的账户登录；如果想用其他账户，请先在“群组”中取消关联。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "未做任何更改。此设备只能有一个云端账户，而你的群组已在使用 %@。要把你的数据移到云端，请用该账户登录；如果想用其他账户，请先在“群组”中取消关联。";
+"storage.migrateBlock.returnedTitle" = "此账户已回到 iCloud";
+"storage.migrateBlock.returnedBody" = "目前还无法用此账户回到云端。未做任何更改。";
+"storage.migrateBlock.useAnotherAccount" = "使用其他账户";
+"storage.migrateBlock.appleSameAccountNote" = "使用 Apple 时，Yala 始终使用此设备上的账户。要使用其他账户，请选择 Google。";
+"storage.migrateBlock.freshStartSessionTitle" = "此账户可能属于其他人";
+"storage.migrateBlock.freshStartSessionBody" = "未做任何更改。你的群组使用的是此设备上原本已登录的账户，而此设备已从零开始，所以它可能属于其他人。要把你的数据移到云端，请先在“群组”中取消关联，再点一次“启用云端”，即可选择你自己的账户。";
+"storage.migrateBlock.otherDeviceTitle" = "你的另一台设备正在把你的数据移到云端";
+"storage.migrateBlock.otherDeviceBody" = "未做任何更改。请在那台设备上完成启用；如果已中断，请在那台设备上重试。完成后，你就可以在这里启用云端。";
+
+/* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedTitle" = "无法确认你的数据";
+
+/* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedBody" = "我们无法连接以确认你是否有已保存的数据。请稍后重试。";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "你的登录已过期。请重新登录以完成返回 iCloud。";
+"storage.progress.adoptSessionExpired" = "您的云端登录已失效。请取消启用，然后用您的账户重新登录。";
+"storage.progress.adoptAccountUnavailable" = "我们暂时无法让您访问这个账户。请发邮件到 %@，我们会和您一起查看。";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "你登录的是另一个账户。请使用开始返回 iCloud 时所用的账户登录。";
+"storage.errors.syncSignInOtherAccount" = "你登录的是另一个账户，因此我们没有保留该登录。请使用你在这台手机上使用 Yala 的账户登录。";
+
+/* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
+"welcome.restore.importIncompleteTitle" = "正在继续获取你的数据";
+
+/* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
+"welcome.restore.importIncompleteBody" = "iCloud 仍在发送你的历史记录。记录较多或网络较慢时，可能需要几分钟。请稍后再搜索一次。";
+
+/* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
+"storage.reverseAbort.preMountRefused" = "未能完成切回 iCloud：你的云端账户不允许。你的数据仍在 Yala 云端。请发邮件到 %@，我们会和你一起查看。";
+
+/* Salida de la vuelta antes de montar el espejo: venció el techo largo */
+"storage.reverseAbort.preMountStalled" = "未能完成切回 iCloud：过程停止推进。你的数据仍在 Yala 云端，随时可以重试。";
+
+/* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
+"storage.confirm.cancelReverseBeforeMountBody" = "你的数据仍保留在 Yala 云端和本设备上。随时可以重试。";
+
+/* Diálogo de cancelar: seguir, antes de montar el espejo */
+"storage.confirm.cancelReverseKeepBeforeMount" = "继续切回 iCloud";
+
+/* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
+"storage.reverseAbort.preMountOtherDevice" = "未能完成切回 iCloud：你的另一台设备接手了。等它完成后，你可以在这台设备上继续。";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "无法启用云端：数据上传已经好几天没有进展。您的数据仍安全保存在设备上，请稍后重试。";
+/* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
+"storage.failed.snapshotMixedCauses" = "无法启用云端：数据上传因一个等待也无法解决的问题而中断。您的数据仍安全保存在设备上，请重试。";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "无法启用云端：上传数据时您的登录已过期。您的数据仍安全保存在设备上，请重试并重新登录。";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "无法启用云端：您的云端账户不允许此操作。您的数据仍安全保存在设备上。请发邮件到 %@，我们会和您一起查看。";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "无法启用云端：这台设备无法准备要上传的数据。您的数据仍在这里，没有任何改动，请稍后重试。";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "无法启用云端：启用过程已经好几天没有进展。您的数据仍安全保存在设备上，请稍后重试。";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "无法启用云端：完成之前您的登录已过期。您的数据仍安全保存在设备上，请重试并重新登录。";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "无法在这台设备上启用云端：使用您账户的另一台设备接手了。您的数据仍在这里，没有任何改动。";
+"storage.failed.adoptStalled" = "无法登录您的云端账户：启用已经好几天没有进展。此设备没有更改您在云端的任何内容；请稍后重试。";
+"storage.failed.adoptSessionExpired" = "无法登录您的云端账户：您的登录已过期。此设备没有更改您在云端的任何内容；请重试并用您的账户重新登录。";
+"storage.failed.adoptAccountUnavailable" = "无法登录您的云端账户：我们暂时无法让您访问这个账户。请发邮件到 %@，我们会和您一起查看。";
+"storage.failed.adoptEffectLocalFailure" = "无法登录您的云端账户：此设备无法读取您的数据，因而无法与账户中的数据合并。此设备上的内容仍在这里；请稍后重试。";
+"storage.failed.adoptEffectStalled" = "无法登录您的云端账户：启用已经好几天都无法完成。此设备上的内容仍在这里；请稍后重试。";
+"storage.failed.adoptEffectLineageUnproven" = "无法登录您的云端账户：此设备上有该账户中没有的数据，且无法确认这些数据来自该账户，因此没有合并。此设备上的内容仍在这里。如果您曾在另一台设备上将此 iCloud 的数据迁移到云端，请确认使用的是同一个账户登录，并等待 iCloud 完成数据同步后再试。";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "取消启用";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "要取消启用云端吗？";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "您的数据会像以前一样保留在这台设备上。已上传的内容会保留在您的云端账户中。随时可以重试。";
+"storage.confirm.cancelAdoptBody" = "此设备没有更改您在云端的任何内容。您可以随时从这里在此设备上重新启用云端。";
+"storage.confirm.cancelAdoptEffectBody" = "此设备上的内容仍像以前一样留在这里。您可以随时从这里在此设备上重新启用云端。";
+"storage.waiting.stopWaiting" = "停止等待";
+"storage.confirm.stopWaitingTitle" = "停止等待？";
+"storage.confirm.stopWaitingBody" = "您的另一台设备会继续启用云端。此设备停止等待，不会更改您在云端的任何内容。您可以随时从这里在此设备上重新启用云端。";
+"storage.confirm.stopWaitingConfirm" = "是，停止等待";
+"storage.confirm.stopWaitingKeep" = "继续等待";
+"storage.progress.followerSessionExpired" = "您的云端登录已失效。请停止等待，然后用您的账户重新登录。";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "是，取消";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "继续启用云端";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "无法确认你的数据目前的状态。暂时无法将数据迁移到云端，也无法切回 iCloud。我们会继续尝试；如果一直这样，请关闭 Yala 后重新打开。";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "登录以上传你的更改";
+"storage.sync.waitingForConnectionUncounted" = "更改正在等待连接";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "无法统计你的数据。请稍后重试。";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "无法开启云端：该账户在云端已有数据，而此设备上的数据与之不符，因此没有合并。此设备上的内容仍在这里。请确认您登录的是正确的账户。如果这是您的账户，且此设备使用同一个 iCloud，请等待 iCloud 完成数据同步后再试。";
+"storage.failed.stepLeaderRowsNotArrived" = "无法开启云端：您的另一台设备已经上传了部分数据，但这些数据还没有全部通过 iCloud 同步到此设备，为避免重复，我们没有上传任何内容。此设备上的内容仍在这里。请在联网状态下打开那台设备上的 Yala，等待 iCloud 将数据同步到此设备后再试。";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。我们无法确认你的数据迁移到云端的进度，所以暂时无法上传这些更改。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
+"settings.signOutCaptureUnfinished" = "你最近的部分更改无法准备好上传到云端。更改还在这台手机上，不会丢失。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。由于你的数据在云端与 iCloud 之间的迁移尚未完成，同步已暂停。请打开本页“个人资料”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。在你重新打开 Yala 之前，同步会保持暂停。请彻底关闭 Yala（在应用切换器中划走），重新打开后再试一次。";
+
+/* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
+"settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台手机上，不会丢失，过一会儿再试试。";
+"settings.signOutCloudSessionExpired" = "你的登录已过期，还有更改尚未上传到云端。这些更改不会丢失：请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”，然后再试一次。";
+"settings.signOutSessionSurvived" = "你在这台 iPhone 上仍处于登录状态，因此没有删除任何内容。请再试一次。";
+"settings.signOutMigrationInFlight" = "你的数据在 iCloud 与云端之间的迁移尚未完成，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请打开“个人资料”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
+"settings.signOutMigrationUnreadable" = "我们无法确认你的数据在 iCloud 与云端之间的迁移进度，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "删除只完成了一半";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "iCloud 里的数据已经删除了，但这台手机上的没能删完：这里可能还留着你原来的全部或部分数据。你可以保留剩下的数据，也可以继续删完、从头开始。";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "继续删完";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "这台手机上剩下的数据会被删除，包括之后新建的内容，然后你将从头开始。不会留下任何副本。";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。这些更改不会丢失：在你用那个账户登录之前，它们会一直保存在这里。";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "尚未上传的群组更改：%d 项。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "你的登录已过期。尚未上传的群组更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "你的登录已过期，还有尚未上传的群组更改。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "尚未上传的群组更改：%d 项。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "这些更改只有用创建它们的那个账户登录才能上传，而这台手机上打开的会话属于另一个账户。如果做不到，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "其中一些是用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果你不打算这样做，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.titleNeutral" = "还有群组更改尚未上传";
+"groups.freshStartPending.leadNeutral" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器（%d 项），从头开始会把它们一起清除。";
+"groups.freshStartPending.leadNeutralUnknown" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器，从头开始会把它们一起清除。";
+"groups.freshStartPending.leadSplit" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器，从头开始会把它们一起清除。你的：%1$d 项。用其他账户创建的：%2$d 项。";
+"groups.freshStartPending.splitOwnPermanent" = "你的账户已无法上传你的更改，重试也解决不了。";
+"groups.freshStartPending.splitOwnSessionExpired" = "你的更改只能用创建它们的账户上传，而它在这台手机上的会话已失效。";
+"groups.freshStartPending.splitAnotherAccount" = "用其他账户创建的更改，只有用创建它们的那个账户登录才能上传；等待或重试都不会上传它们。";
+"groups.freshStartPending.splitLossTail" = "你可以从头开始并丢失全部更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.splitAfterOwnUpload" = "如果你的更改能上传，你就可以从头开始，只丢失用其他账户创建的更改。";
+"groups.freshStartPending.lossConfirmBodySplit" = "将丢失的群组更改——你的：%1$d 项；用其他账户创建的：%2$d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "未到达服务器的群组更改会从这台手机上删除。群组里的人都不会看到，也无法恢复。";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "你的登录已过期。没有传到你云端账户的更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把交易导出到文件。现在退出登录，这些更改会丢失。";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "你的登录已过期，而且有些更改没有传到你的云端账户。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把交易导出到文件。现在退出登录，这些更改会丢失。";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "选择一条记录，在这里查看";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "选择一项预算或付款，在这里查看";
+"groups.detailPlaceholder" = "选择一个群组，在这里查看";
+"settings.detailPlaceholder" = "选择一项设置，在这里查看";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "我们没有改动任何内容，你的邀请仍然保存着。请稍后再试；如果没有进展，请彻底关闭 Yala（在 App 切换器中将其划走）并重新打开。";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "重新打开 Yala 以加入";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "重新打开 Yala 后，你的云端账户就会完成设置。请彻底关闭它（在 App 切换器中将其划走）并重新打开：你的邀请仍然保存着，你可以从那里继续。";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "请先用这部手机上的账户登录";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "这部手机上有一个未登录的云端账户的数据，你的群组支出会记到那个账户里。如果这是你的账户，请通过“我已经有账户了”登录，然后继续你的邀请。如果不是，请用你自己的手机加入。";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "无法准备这台手机";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "重新打开 Yala 时，未能清除这台手机上保存的内容，所以它还没有为你的群组准备好。我们不会自动重试：请返回，如果愿意，稍后再试一次。";
+
+/* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
+"icloud.appleIDChanged.groupsLine" = "这台手机上的群组也会被移除。";
+
+/* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
+/* Keyboard menu (iPad, hold Cmd): go to a section */
+"keyboard.menu.go" = "前往";
+/* Keyboard menu (iPad, hold Cmd): actions on the open record */
+"keyboard.menu.record" = "记录";
+/* Keyboard command Cmd-Shift-N: new shared expense in a group */
+"keyboard.newGroupExpense" = "新建群组支出";
+/* Keyboard command Up arrow: open the previous record in the list */
+"keyboard.previousRecord" = "上一条记录";
+/* Keyboard command Down arrow: open the next record in the list */
+"keyboard.nextRecord" = "下一条记录";
+/* Context menu on a record row: pick another category for it */
+"records.contextMenu.changeCategory" = "更改类别";
+/* Context menu on an account card in the Panel: show only this account */
+"panel.accounts.filterByAccount" = "按此账户筛选";
+/* Context menu on a group card: open the group */
+"groups.contextMenu.open" = "打开群组";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "在新窗口中打开";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala 正在另一个窗口中等你";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "另一个 Yala 窗口中有需要回答的内容。在那里完成后，此窗口会自动恢复。";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "前往该窗口";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "由于我们这边的问题，群组目前暂停中。恢复后，你可以从这里继续。";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "第 %1$d 步，共 %2$d 步";
+"stepGuide.markDone" = "已完成";
+"stepGuide.stuck" = "遇到问题";
+"stepGuide.whatYouWillSee" = "你将看到";
+"stepGuide.phaseDone" = "已完成";
+"stepGuide.phaseActive" = "当前步骤";
+"stepGuide.phaseUpcoming" = "待完成";
+"tutorials.applePay.openShortcuts" = "打开「快捷指令」";
+"tutorials.applePay.guarantee" = "每笔付款都会以草稿形式到达：你批准之前不会记录任何内容。";
+"tutorials.applePay.pendingDrafts" = "收件箱中的 Apple Pay 付款：%d";
+"faceIDGuide.guarantee" = "Yala 永远看不到你的面容，由 iOS 负责验证。";
+"faceIDGuide.previewAction" = "要求面容 ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "余额";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "待还款";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "支出 · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "流入";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "流出";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "钱花在哪儿";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "最近记录";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "%@ 在 %@ 的余额";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "此期间没有记录";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "归档后，此账户将不再计入你的总额和统计，其交易也会在“记录”中隐藏。如需继续计入，请关闭“从统计中排除”。";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "详情";
+"chat.draft.detailsTitle" = "建议的条目";
+"chat.draft.openFullForm" = "在完整表单中打开";
+"chat.draft.missingSubcategory" = "缺少子类别";
+"chat.draft.missingAccount" = "缺少账户";
+"chat.draft.missingAmount" = "缺少金额";
+"chat.draft.addTag" = "标签";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "试试说：“午饭刷卡花了 25”";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "发送前请检查你的文字。";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "已录制 %@";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "放弃录音";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "正在理解你的记录…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "正在准备你的记录…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "重新录音";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "我听到的是";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "我听到了 %d 条记录";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "保存 %d 条";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "如果不保存就关闭，可以在收件箱里找到它。";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "没有网络连接";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala 无法使用麦克风";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "没听清你说的话";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "录音为空或太短。请重试。";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "没听到金额";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "请同时说出金额，例如“25”。";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "这次没能听懂";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "处理你的语音时出了点问题。请稍后重试。";
+"voice.failure.trialUsedUp.title" = "你已用完试用语音记录";
+"voice.failure.trialUsedUp.message" = "升级 Yala Pro，即可无限次用语音记录支出。";
+"ai.trial.seePro" = "查看 Yala Pro";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "用照片或文件记账";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "收据、银行截图或 PDF 都可以。我会读出金额、商家和日期。";
+/* Image entry source: take a photo */
+"image.entry.camera" = "相机";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "照片";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "文件";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "从照片一次最多选 10 张";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "正在读取你的照片…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "正在读取你的照片…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "正在查找金额";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "第 %1$d 张，共 %2$d 张";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "我读到的内容";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "读到 %d 条记录";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "有 1 张照片无法读取";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "有 %d 张照片无法读取";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "换一张照片";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "停止读取";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "没有找到金额";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "试试离总额更近的照片，或换一张图片。";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "无法打开这张图片";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala 无法使用相机";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "请在设置中允许访问，以便拍摄你的收据。";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "这次没能读取";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "照片没有问题：读取失败了。请稍后再试。";
+"image.entry.failure.trialUsedUp.title" = "你已用完试用照片识别";
+"image.entry.failure.trialUsedUp.message" = "升级 Yala Pro，即可无限次拍照记录收据。";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "你";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "分摊";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "支付了 %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "你的个人财务";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "，分摊方式";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "你";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "有一项删除尚未完成";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "你曾要求从头开始并删除 iCloud 中的数据，但删除尚未完成。如果启用云端，删除将被取消，未删除的数据可能会进入你的 Yala 账户。如果你等待，一切不变，删除仍处于待完成状态。";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "启用云端但不删除";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "暂不";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "一项删除未完成";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "你曾要求从头开始并删除 iCloud 中的数据，但在你的数据转入云端前删除没有完成，之后也不会再进行。部分你想删除的数据可能仍在 iCloud 中，或已转入你的 Yala 账户。";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "金额已更改";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "「%2$@」中 %1$@ 的付款已更改：原为 %3$@，现为 %4$@。%5$@ 中记录的是 %6$@。";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "「%2$@」中你付给 %1$@ 的款项已更改：原为 %3$@，现为 %4$@。%5$@ 中记录的是 %6$@。";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」中的这笔结算已更改：原为 %2$@，现为 %3$@。%4$@ 中记录的是 %5$@。";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "调整为 %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "保持 %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%1$@ 中记录为 %2$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "此提醒已无法应用：该交易已更改或不在你的账户中。";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "无法打开这个文件";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "它可能是空的或已损坏。试试这张收据的其他照片或 PDF。";
+
+/* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
+"account.currencyChange.confirmTitleNoHistory" = "将币种更改为 %@？";
+
+/* Account currency change confirmation: pending inbox drafts converted with their own date's rate. %1$d = count, %2$@ = new currency code */
+"account.currencyChange.draftsLine" = "收件箱中的待处理草稿：%1$d 条。将按各自日期的汇率换算为 %2$@。";
+
+/* Account currency change confirmation: header before the list of scheduled payments and favorites converted at today's rate. %@ = new currency code */
+"account.currencyChange.plansHeader" = "将按今日汇率换算为 %@ 的计划付款和收藏：";
+
+/* Account currency change confirmation: one scheduled payment or favorite. %1$@ = its name, %2$@ = amount before, %3$@ = amount after */
+"account.currencyChange.planItem" = "• %1$@：%2$@ → %3$@";
+
+/* Account currency change confirmation: how many more scheduled payments or favorites are converted beyond the ones listed. %d = count */
+"account.currencyChange.plansMore" = "另有 %d 项";
+
+/* Account currency change confirmation: closing sentence when there are no movements to convert */
+"account.currencyChange.cannotUndo" = "此操作无法撤销。";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "此 PDF 有密码";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "输入密码以打开文件。密码只在此设备上使用，不会保存或发送。";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "PDF 密码";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "打开";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "密码不正确。请检查后重试。";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "有 1 页未读取：每次最多读取 %d 页。如需读取，请放在另一个 PDF 中上传。";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "有 %1$d 页未读取：每次最多读取 %2$d 页。如需读取，请放在另一个 PDF 中上传。";
+
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "有 1 张照片未读取：每次最多读取 %d 张。如需读取，请单独分享。";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "有 %1$d 张照片未读取：每次最多读取 %2$d 张。如需读取，请单独分享。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "你已用完试用照片识别：有 1 张未读取。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "你已用完试用照片识别：有 %d 张未读取。";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "第 %1$d 页，共 %2$d 页";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "剩余 1 天";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "生成 AI 分析需要网络连接。";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "你今天的 AI 分析次数已用完，明天再来吧。";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "你连续请求了多次分析。请稍等片刻再试。";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "无法确认你的 Yala Pro。请稍后再试。";
+
+/* Private gate: reading the data already on this phone failed */
+"welcome.privateICloud.deviceUnreadableTitle" = "无法检查这部手机";
+
+/* Private gate: body when the phone's data could not be read */
+"welcome.privateICloud.deviceUnreadableBody" = "检查这部手机上已有内容时出了点问题，所以我们不知道上面是否有数据。我们没有做任何改动。请稍后再试。";
+
+/* Private gate: secondary button that goes back to the choice */
+"welcome.privateICloud.deviceUnreadableBack" = "返回";
+
+/* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
+"welcome.bornCloud.readyExistingAccountTitle" = "你之前已有账户，现已登录该账户。";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "删除“%@”";
+"account.removal.intro" = "删除前，请选择如何处理其中的内容。";
+"account.removal.countRecords" = "交易";
+"account.removal.countScheduled" = "计划付款";
+"account.removal.countFavorites" = "收藏付款";
+"account.removal.countDrafts" = "收件箱中待处理";
+"account.removal.choiceHeader" = "如何处理";
+"account.removal.moveTitle" = "移到另一个账户";
+"account.removal.moveSubtitle" = "推荐。你的历史记录和余额都会保留。";
+"account.removal.noDestination" = "你没有其他可以移入的账户。";
+"account.removal.deleteTitle" = "删除交易";
+"account.removal.deleteSubtitle" = "它们会连同账户一起被永久删除。";
+"account.removal.deleteBlockedGroups" = "其中包含你群组的交易：只能移动。";
+"account.removal.destinationHeader" = "移到";
+"account.removal.destinationBlockedCurrency" = "不可用：其中有无法换算为此币种的转账或群组交易。";
+"account.removal.convertNote" = "其他币种的内容将换算为%@：交易按各自日期的汇率，计划付款和收藏付款按今天的汇率。";
+"account.removal.collapsedNote" = "“%1$@”与“%2$@”之间的转账将被移除：在同一个账户内它们不会移动资金。";
+"account.removal.partnersNote" = "与其他账户之间的转账会作为普通交易留在那些账户中。";
+"account.removal.plansNote" = "计划付款、收藏和收件箱中待处理的项目将没有账户：使用时再选择账户。";
+"account.removal.moveAction" = "移动并删除账户";
+"account.removal.deleteAction" = "删除交易和账户";
+"account.removal.confirmDeleteTitle" = "删除这些交易？";
+"account.removal.confirmDeleteCount" = "将删除的交易";
+"account.removal.confirmDeleteMessage" = "它们会被永久删除且无法撤销。账户也会被删除。";
+"account.removal.confirmDeleteAction" = "是，全部删除";
+"account.removal.working" = "正在删除账户…";
+"account.removal.failedTitle" = "账户未删除";
+"account.removal.failedUnreadable" = "无法读取此账户中的内容。未做任何更改。";
+"account.removal.failedChanged" = "在此期间账户发生了变化。请检查后重试。";
+"account.removal.failedRates" = "无法获取用于换算的汇率。未移动任何内容：请联网后重试。";
+"account.removal.noAllowedDestination" = "你的其他账户是另一种币种，而此账户中有无法换算的转账或群组项目。";
+"account.removal.countBudgets" = "预算";
+"account.removal.budgetsMovedNote" = "原本跟踪此账户的预算将改为跟踪“%@”。";
+"account.removal.budgetsOnlyNote" = "有些预算只跟踪此账户：删除后，它们将跟踪你的所有账户。";
+"orphanedRecords.title" = "没有账户的交易";
+"orphanedRecords.bannerMessage" = "删除某个账户时它们失去了账户，因此不计入你的余额和支出。";
+"orphanedRecords.bannerAction" = "选择账户";
+"orphanedRecords.intro" = "删除某个账户时，这些交易失去了账户。在有账户之前，它们不计入你的余额和支出。请选择要移入的账户。";
+"orphanedRecords.listHeader" = "具体是哪些";
+"orphanedRecords.moreNote" = "还有 %d 笔。";
+"orphanedRecords.noDestination" = "先创建一个账户才能移动它们。";
+"orphanedRecords.keptCurrencyNote" = "其他货币的转账按原样移动、不换算，这样另一端仍然对得上。";
+"orphanedRecords.convertNote" = "其他货币的交易会按其日期的汇率换算为 %@。";
+"orphanedRecords.collapsedNote" = "会落在「%@」内部的转账会被移除：在同一账户内转账不会移动资金。";
+"orphanedRecords.moveAction" = "移到「%@」";
+"orphanedRecords.moveActionGeneric" = "移动";
+"orphanedRecords.working" = "正在移动…";
+"orphanedRecords.failedTitle" = "未能移动";
+"orphanedRecords.failedUnreadable" = "无法读取这些交易。未做任何更改。";
+"orphanedRecords.failedChanged" = "这期间有内容发生了变化。请检查后重试。";
+"orphanedRecords.untitled" = "无描述";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "此设备上的 iCloud 不可用";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala 将你的数据保存在你的 iCloud 中,目前无法读取。iCloud 恢复可用后,其中的内容会重新显示。你可以在「设置」中的 iCloud 里查看。";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "正在检查你的 iCloud…";
+"storage.revert.prior.title" = "你的 iCloud 里已经有 Yala 数据";
+"storage.revert.prior.body" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据：%@。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.bodyNoCount" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.groupRecords" = "%d 条群组记录";
+"storage.revert.prior.groupsNote" = "群组记录可能会在没有所属群组的情况下出现。";
+"storage.revert.prior.merge" = "合并到我的数据";
+"storage.revert.prior.discard" = "不带它们开始";
+"storage.revert.prior.discardConfirmTitle" = "要从你的 iCloud 中删除吗？";
+"storage.revert.prior.discardConfirmBody" = "它们会从你的 iCloud 以及使用此 Apple ID 的设备上删除。不会保留副本，我们也无法恢复。之后会开始返回 iCloud。";
+"storage.revert.prior.discardConfirm" = "删除并返回 iCloud";
+"storage.revert.prior.checkFailedTitle" = "无法检查你的 iCloud";
+"storage.revert.prior.checkFailedBody" = "返回之前，我们会检查你的 iCloud 里是否已有 Yala 数据，以免在不告诉你的情况下混在一起。可能是网络问题：请再试一次。";
+"storage.revert.prior.wipeFailed" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。请检查网络后再试一次。";
+"storage.revert.prior.wipeStopped" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。已删除的数据不会恢复：再试一次，我们会继续删除剩下的部分。";
+"storage.revert.prior.wiping" = "正在删除以前的数据…已删除 %d 条";
+"storage.revert.prior.noAccountTitle" = "请在这部 iPhone 上登录 iCloud";
+"storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这部 iPhone 没有登录 iCloud。请在 iPhone 的“设置”中登录后再试一次。";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "在此移除";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "仅在这部手机上移除。如果它的群组到达，会重新显示。";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "其他货币的群组支出按原样移动，不做换算：金额由群组决定。";

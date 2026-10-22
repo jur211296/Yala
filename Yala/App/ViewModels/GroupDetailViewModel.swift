@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import UIKit
 
 @MainActor
 @Observable
@@ -17,6 +18,12 @@ final class GroupDetailViewModel {
     private var modelContext: ModelContext?
     let group: SplitGroup
 
+    // MARK: - Recalculation State (debounce — espejo de PanelViewModel)
+
+    /// El freno compartido de Grupos: coalesce ráfagas de `onChange(dataVersion)` del sync remoto en
+    /// un solo recálculo. Inyectable para que el coalescing se pruebe sin `applicationState`.
+    @ObservationIgnored private let debouncer: RecalculationDebouncer
+
     // MARK: - Data
 
     private(set) var members: [SplitMember] = []
@@ -25,6 +32,21 @@ final class GroupDetailViewModel {
     private(set) var settlements: [SplitSettlement] = []
     private(set) var balances: [MemberBalance] = []
     private(set) var debts: [Debt] = []
+
+    /// Progreso del presupuesto del grupo (G14), o `nil` si el grupo no tiene uno. Se recalcula en
+    /// `recalculate()` como todo lo derivado, y no en la vista: `GroupBudgetLogic` deduplica y convierte
+    /// divisas, y hacerlo en cada `body` lo repetiría en cada scroll.
+    private(set) var budgetProgress: GroupBudgetProgress?
+
+    /// `true` tras el primer `fetchData()` con éxito. Mientras es `false` el detalle muestra un
+    /// skeleton en vez de contenido a medio poblar (espejo de `GroupsViewModel.hasLoadedOnce`).
+    private(set) var isReady: Bool = false
+
+    /// Sube una vez por cada recálculo CON FRENO que llega a publicar (sync remoto, vuelta a primer
+    /// plano); no sube con el `loadData()` directo de los gestos locales. Los Ajustes del grupo cuelgan
+    /// de aquí y no de `dataVersion`: una ráfaga de N cambios remotos les cuesta un recálculo, no N, y
+    /// leen los datos del VM cuando ya están recargados. Un recálculo cancelado no la sube.
+    private(set) var coalescedReloadRevision: Int = 0
 
     /// Drives `isEstimate` del `AmountText` para prefijar "≈" solo cuando hubo conversión
     /// real (al menos un balance/debt original tenía currency ≠ `group.currencyCode`).
@@ -40,6 +62,13 @@ final class GroupDetailViewModel {
     /// Permite renderizar icono+color de la subcat per-user en el feed.
     private(set) var txBridgeMap: [String: TransactionItem] = [:]
 
+    /// `[nombre normalizado de subcategoría: (icono, colorHex)]` de las subcategorías locales.
+    /// Fallback self-contained para el icono del feed cuando NO hay bridge personal (device fresco
+    /// / re-onboardeado, no-participante, sesión solo-grupos): casa `SplitExpense.subcategoryName` —
+    /// el nombre localizado del creador que viaja en el record — contra las subcategorías locales.
+    /// SSOT compartida vía `GroupExpenseIconResolver.buildNameLookup`.
+    private(set) var subcategoryNameLookup: [String: (iconName: String, colorHex: String)] = [:]
+
     /// expense.id → mi share. Filtrado por currentMemberID en loadData (no soy miembro → vacío).
     private(set) var mySharesByExpense: [UUID: SplitShare] = [:]
 
@@ -53,8 +82,16 @@ final class GroupDetailViewModel {
         return GroupBalanceService.computeGroupHeaderBalance(debts: debts, currentMemberID: currentMemberID)
     }
 
+    /// Identidad RESUELTA (flag → `sub` del canal backend → identidad iCloud), no el flag pelado.
+    ///
+    /// `GroupsSyncClient.applyMember` NUNCA enciende `isCurrentUser`, y el único call-site de
+    /// producción de `refreshCurrentUserFlags` está en el ARRANQUE (`AppBootstrapper:526`). Quien se
+    /// une por el canal backend en sesión viva no tenía identidad local hasta reiniciar la app: de
+    /// aquí cuelgan los dos banners de estado de `GroupDetailView` (:136 y :138), así que el
+    /// rechazado se quedaba sin cartel y —porque `discardRejectedGroup` solo se llama desde ese
+    /// banner— sin salida.
     var currentUserMember: SplitMember? {
-        members.first { $0.isCurrentUser }
+        GroupExpenseService.resolveCurrentUserMember(from: members)
     }
 
     var activeMembers: [SplitMember] {
@@ -62,7 +99,10 @@ final class GroupDetailViewModel {
     }
 
     var canCurrentUserParticipate: Bool {
-        currentUserMember?.isActive == true
+        // G6-3 (C4): grupo migrado y CONGELADO → sin escrituras (oculta FAB/editar/borrar/liquidar/confirmar
+        // de un golpe — la UX primaria del freeze; el guard service-level es la RED).
+        if group.isMigratedFrozen { return false }
+        return currentUserMember?.isActive == true
     }
 
     var isCurrentUserAdmin: Bool {
@@ -91,8 +131,9 @@ final class GroupDetailViewModel {
 
     // MARK: - Init
 
-    init(group: SplitGroup) {
+    init(group: SplitGroup, debouncer: RecalculationDebouncer? = nil) {
         self.group = group
+        self.debouncer = debouncer ?? RecalculationDebouncer(label: "GroupDetailViewModel")
     }
 
     // MARK: - Context
@@ -102,58 +143,144 @@ final class GroupDetailViewModel {
         loadData()
     }
 
+    /// Fuerza un fetch remoto y recarga (refresh acotado, no bump global de dataVersion).
+    /// Usado por pull-to-refresh (`force: true`) y entrada al detalle (`force: false`) — así los
+    /// gastos de otros miembros aún no sincronizados aparecen al abrir el grupo.
+    /// Fase 3: queda un solo canal. `syncNowFromUI` está self-gateado (no-op sin sesión de nube o con el
+    /// kill remoto puesto) y descarta su `Bool` — residuo declarado en la re-medición de A1 (§S5.1), fuera
+    /// del alcance de este commit.
+    func refreshFromCloud(force: Bool) async {
+        _ = force
+        await GroupsSyncClient.shared.syncNowFromUI()
+        loadData()
+    }
+
+    // MARK: - Debounced Recalculation (sync remoto)
+
+    /// Recálculo debounced (150ms) — usado por el sync remoto (`onChange(dataVersion)` / vuelta a
+    /// foreground). Coalesce ráfagas de cambios de CloudKit. Las acciones LOCALES del usuario
+    /// (delete/confirm/reject/removeOpeningBalance) siguen usando `loadData()` directo (instantáneo).
+    func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
+    func cancelRecalculation() {
+        debouncer.cancel()
+    }
+
+    /// Estado de background — suprime el recálculo mientras la app no está activa.
+    func setBackground(_ value: Bool) {
+        debouncer.setBackground(value)
+    }
+
+    /// Debounce compartido (150ms, `RecalculationDebouncer`): un reload pedido dentro de la ventana no
+    /// se pierde, y la espera la suprimen el segundo plano y la app inactiva.
+    ///
+    /// Al publicar sube `coalescedReloadRevision`: es la señal de la que cuelgan los Ajustes del grupo,
+    /// que así recalculan una vez por ráfaga y sobre los datos ya recargados.
+    private func scheduleRecalculation(reload: Bool) {
+        debouncer.schedule(reload: reload) { [weak self] shouldReload in
+            guard let self else { return }
+            if shouldReload {
+                fetchData()
+            }
+            recalculate()
+            coalescedReloadRevision &+= 1
+        }
+    }
+
     // MARK: - Data Loading
 
+    /// Path síncrono instantáneo: fetch + recálculo en una pasada. Usado por los callers locales
+    /// (setContext, delete/confirm/reject/removeOpeningBalance) que esperan feedback inmediato.
+    /// El sync remoto (onChange dataVersion) usa `reloadAndRecalculate`.
     func loadData() {
+        fetchData()
+        recalculate()
+    }
+
+    /// Fase de FETCH pura (SwiftData): members/nameLookup/expenses/shares/settlements + bridge maps.
+    /// NO calcula balances/debts.
+    private func fetchData() {
         guard let context = modelContext else { return }
+        // Con contexto presente, tras el INTENTO marcamos listo (mostrar contenido/estado, no un
+        // skeleton eterno si un fetch falla) — espeja el diseño temprano de `hasLoadedOnce` en
+        // GroupsViewModel. Sin contexto (carrera de bootstrap) NO se marca → sigue el skeleton.
+        defer { isReady = true }
 
         do {
-            members = try GroupService.shared.fetchMembers(for: group)
+            // Fetch atómico: a locales primero, asignar solo si TODOS tuvieron éxito. Un fallo a
+            // medias no deja `members` nuevo con `expenses` viejo (estado mixto que `recalculate`
+            // computaría como balances inconsistentes); las propiedades conservan su valor previo.
+            let fetchedMembers = try GroupService.shared.fetchMembers(for: group)
+            let fetchedExpenses = try GroupExpenseService.shared.fetchExpenses(for: group)
+            let fetchedShares = try GroupExpenseService.shared.fetchAllShares(for: group)
+            let fetchedSettlements = try GroupExpenseService.shared.fetchSettlements(for: group)
+
+            members = fetchedMembers
             memberNameLookup = Dictionary(
-                members.map { ($0.id.uuidString, $0.displayName) },
+                fetchedMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
                 uniquingKeysWith: { first, _ in first }
             )
-            expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
-            shares = try GroupExpenseService.shared.fetchAllShares(for: group)
-            settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
-
-            let rawBalances = GroupBalanceService.calculateBalances(
-                expenses: expenses,
-                shares: shares,
-                members: members,
-                settlements: settlements
-            )
-
-            let rawDebts = GroupBalanceService.calculateDebts(
-                expenses: expenses,
-                shares: shares,
-                settlements: settlements,
-                simplifyDebts: group.simplifyDebts
-            )
-
-            if group.showDebtsInSingleCurrency {
-                let target = group.currencyCode
-                balancesWereConverted = rawBalances.contains { $0.currencyCode != target }
-                debtsWereConverted = rawDebts.contains { $0.currencyCode != target }
-                balances = balancesWereConverted
-                    ? GroupBalanceService.consolidatedBalances(from: rawBalances, targetCurrency: target)
-                    : rawBalances
-                debts = debtsWereConverted
-                    ? GroupBalanceService.consolidatedDebts(from: rawDebts, targetCurrency: target)
-                    : rawDebts
-            } else {
-                balances = rawBalances
-                debts = rawDebts
-                if balancesWereConverted { balancesWereConverted = false }
-                if debtsWereConverted { debtsWereConverted = false }
-            }
+            expenses = fetchedExpenses
+            shares = fetchedShares
+            settlements = fetchedSettlements
 
             rebuildBridgeMaps(context: context)
         } catch {
             #if DEBUG
-            print("GroupDetailViewModel: Error loading data: \(error)")
+            print("GroupDetailViewModel: Error fetching data: \(error)")
             #endif
         }
+    }
+
+    /// Fase de CÁLCULO pura: balances + debts + consolidación single-currency sobre los arrays ya
+    /// cacheados por `fetchData()` (sin fetch nuevo). Equality guards para no churnear `@Observable`.
+    private func recalculate() {
+        guard modelContext != nil else { return }
+
+        let rawBalances = GroupBalanceService.calculateBalances(
+            expenses: expenses,
+            shares: shares,
+            members: members,
+            settlements: settlements
+        )
+
+        let rawDebts = GroupBalanceService.calculateDebts(
+            expenses: expenses,
+            shares: shares,
+            settlements: settlements,
+            simplifyDebts: group.simplifyDebts
+        )
+
+        let newBalances: [MemberBalance]
+        let newDebts: [Debt]
+        if group.showDebtsInSingleCurrency {
+            let target = group.currencyCode
+            balancesWereConverted = rawBalances.contains { $0.currencyCode != target }
+            debtsWereConverted = rawDebts.contains { $0.currencyCode != target }
+            newBalances = balancesWereConverted
+                ? GroupBalanceService.consolidatedBalances(from: rawBalances, targetCurrency: target)
+                : rawBalances
+            newDebts = debtsWereConverted
+                ? GroupBalanceService.consolidatedDebts(from: rawDebts, targetCurrency: target)
+                : rawDebts
+        } else {
+            newBalances = rawBalances
+            newDebts = rawDebts
+            if balancesWereConverted { balancesWereConverted = false }
+            if debtsWereConverted { debtsWereConverted = false }
+        }
+
+        if newBalances != balances { balances = newBalances }
+        if newDebts != debts { debts = newDebts }
+
+        // Presupuesto del grupo (G14). Va aquí y no en la vista porque `progress` deduplica y convierte
+        // divisas; recalcularlo en cada `body` lo repetiría en cada scroll. Guard de igualdad como el
+        // resto: sin él, un recálculo que no cambia nada seguiría invalidando la vista.
+        let newBudget = GroupBudgetLogic.progress(group: group, expenses: expenses)
+        if newBudget != budgetProgress { budgetProgress = newBudget }
     }
 
     /// Prefetch TX bridge personal por `splitExpenseID` filtrado a la zona del grupo +
@@ -178,6 +305,17 @@ final class GroupDetailViewModel {
             print("GroupDetailViewModel: fetch de TX bridgeadas falló: \(error)")
             #endif
             txBridgeMap = [:]
+        }
+
+        // Lookup nombre→icono/color: fallback self-contained del feed cuando no hay bridge.
+        do {
+            let subs = try context.fetch(FetchDescriptor<Subcategory>())
+            subcategoryNameLookup = GroupExpenseIconResolver.buildNameLookup(from: subs)
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: fetch de subcategorías falló: \(error)")
+            #endif
+            subcategoryNameLookup = [:]
         }
 
         // mySharesByExpense: filter shares to current user only.
@@ -258,7 +396,6 @@ final class GroupDetailViewModel {
     func confirmSettlement(_ settlement: SplitSettlement) {
         do {
             try GroupExpenseService.shared.confirmSettlement(settlement, in: group)
-            TelemetryService.track(.groupSettlementConfirmed)
             DS.Haptic.success()
             loadData()
         } catch {
@@ -272,7 +409,6 @@ final class GroupDetailViewModel {
     func rejectSettlement(_ settlement: SplitSettlement) {
         do {
             try GroupExpenseService.shared.deleteSettlement(settlement, in: group)
-            TelemetryService.track(.groupSettlementRejected)
             DS.Haptic.warning()
             loadData()
         } catch {
@@ -280,6 +416,26 @@ final class GroupDetailViewModel {
             print("GroupDetailViewModel: Error rejecting settlement: \(error)")
             #endif
             surfaceActionError(L10n.Groups.Errors.actionFailed)
+        }
+    }
+
+    /// Elimina una liquidación YA CONFIRMADA. Hermano deliberado de `rejectSettlement`: hoy comparten
+    /// mecánica (`deleteSettlement` no tiene guard sobre `isConfirmed`), pero «rechazar» niega una
+    /// pendiente y «eliminar» deshace un hecho consumado. Si mañana una notifica y la otra no, la
+    /// separación ya está hecha — por eso no delega.
+    ///
+    /// El servicio ya limpia lo que cuelga de la liquidación: `unbridgeSettlement` borra el movimiento
+    /// personal bridgeado y `enqueueDeletion` propaga la baja a los otros devices.
+    func deleteConfirmedSettlement(_ settlement: SplitSettlement) {
+        do {
+            try GroupExpenseService.shared.deleteSettlement(settlement, in: group)
+            DS.Haptic.warning()
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error deleting confirmed settlement: \(error)")
+            #endif
+            surfaceActionError(L10n.Groups.Settlement.deleteFailed)
         }
     }
 
@@ -312,33 +468,53 @@ final class GroupDetailViewModel {
         if shareURL != nil { return }
         isCreatingShare = true
         do {
-            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-            if let ckURL {
-                shareURL = buildBrandedInviteURL(from: ckURL)
+            // Fase 3: el `else` era el CKShare y ya no existe canal que lo sirva. El guard se conserva
+            // ENTERO —flag + zona backend— y su rama negativa informa: un grupo legacy no se puede invitar
+            // por ninguna vía, y dejar el botón mudo sería el apagón silencioso que la re-medición marca
+            // como peor modo de fallo (§S5.2).
+            if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
+                // C4: grupo backend → invite por TOKEN RPC. El link vuelve YA branded (buildBackendInviteURL) →
+                // se asigna directo. El cache in-VM
+                // (`shareURL != nil`, arriba) SE CONSERVA para backend: evita mintear un token nuevo por re-tap
+                // en la misma sesión de la vista (tokens múltiples son válidos igual). Nota A1: no emitir links
+                // backend hasta que la base instalada tenga el parser — el flag lo cubre por construcción.
+                shareURL = try await GroupBackendInviteService(
+                    membership: GroupBackendMembershipService(
+                        client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
+                ).createInviteLink(for: group, inviterName: currentInviterName, members: activeMembers)
+            } else {
+                // Copy POR CAUSA (`GroupInviteLinkCreationLogic`): este `else` cubre dos bloqueos de
+                // naturaleza opuesta y hasta hoy los dos decían «revisa tu conexión». Idéntico en
+                // `GroupMembersView.createShareLink`, la otra superficie que acuña enlace.
+                let message = switch GroupInviteLinkCreationLogic.blocker(
+                    backendEnabled: CloudSyncFlags.groupsBackendEnabled,
+                    isBackendGroup: group.isBackendGroup
+                ) {
+                case .legacyGroup: L10n.Groups.Errors.inviteLegacyGroup
+                case .channelOff: L10n.Groups.Errors.inviteChannelOff
+                // No alcanzable: este `else` es la negación exacta del guard que la logic evalúa.
+                // El copy de red es el fallback correcto si algún día dejan de ser el mismo predicado.
+                case nil: L10n.Groups.Errors.inviteFailed
+                }
+                surfaceActionError(message)
+                isCreatingShare = false
+                return
             }
         } catch {
             #if DEBUG
             print("GroupDetailViewModel: Error creating share: \(error)")
             #endif
-            // SplitZoneError carries localized copy (e.g. "sync preparing"); any other error
-            // (raw CKError — network/quota) maps to the branded inviteFailed copy instead of
-            // leaking a technical system string into the alert.
-            let message = (error as? SplitZoneError)?.errorDescription ?? L10n.Groups.Errors.inviteFailed
-            surfaceActionError(message)
+            surfaceActionError(L10n.Groups.Errors.inviteFailed)
         }
         isCreatingShare = false
     }
 
-    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
+    /// Nombre del invitador para el link (perfil o `defaultName`). Compartido por el CKShare y el token backend.
+    private var currentInviterName: String {
         let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
-        return InviteLinkService.buildInviteURL(
-            shareURL: ckURL,
-            group: group,
-            members: activeMembers,
-            inviterName: inviterName
-        ) ?? ckURL
+        return name.isEmpty ? L10n.Profile.defaultName : name
     }
+
 }
 
 // MARK: - Sheet Enum

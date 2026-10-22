@@ -24,6 +24,22 @@ struct WidgetTransaction: Codable {
     let subcategoryName: String?
     let isIncome: Bool
     let amountInPreferredCurrency: Double
+    /// `true` si el monto convertido se selló con una tasa que no era la de su día.
+    ///
+    /// **Opcional a propósito, y no es estilo: es lo único que evita apagar los widgets.** Este
+    /// snapshot se decodifica con `JSONDecoder().decode(WidgetDataSnapshot.self, …)`, struct
+    /// entera y sin versionado; una clave nueva NO opcional que falte en el payload escrito por la
+    /// versión anterior lanza `keyNotFound`, `loadSnapshot()` devuelve nil y **todos** los widgets
+    /// de la pantalla de inicio se quedan en cero hasta que el usuario abra la app. Mismo motivo
+    /// que `periodBalance`, que ya lo es.
+    ///
+    /// **Y este fichero no lo cubre ningún test de decodificación**, porque `YalaTests` no compila
+    /// `YalaWidgets`: lo único que impide quitarle el `?` es el source-scan de
+    /// `ApproximateMarkSecondarySurfacesWiringTests`, que exige el texto `let <campo>: Bool?` para
+    /// éste y para los cuatro de `WidgetPeriodSummary`. Es más débil que un test de comportamiento
+    /// y se elige a conciencia; sin él, «limpiar» este `?` deja la suite entera en verde y apaga los
+    /// widgets del parque que aún no ha reescrito su snapshot.
+    let isExchangeRateProvisional: Bool?
 }
 
 /// Lightweight budget data for widgets
@@ -119,6 +135,16 @@ struct WidgetPeriodSummary: Codable {
     /// Historical balance at the END of the period (sum of all transactions up to period end)
     /// Optional for backwards compatibility with old cache format
     let periodBalance: Double?
+
+    /// Las marcas «≈» de los cuatro números, una por número, tal como las escribió
+    /// `WidgetDataCache`. **Opcionales por compatibilidad del payload**, igual que `periodBalance`
+    /// — un snapshot de la versión anterior no trae estas claves y el decoder es la struct entera.
+    /// Se leen con `?? false`: ausente significa «esta versión no lo sabía», y el lado seguro ahí
+    /// es no marcar un número que quizá era exacto.
+    let incomeIsApproximate: Bool?
+    let expenseIsApproximate: Bool?
+    let netCashFlowIsApproximate: Bool?
+    let periodBalanceIsApproximate: Bool?
 }
 
 /// Complete widget data snapshot
@@ -159,6 +185,15 @@ struct WidgetDataSnapshot: Codable {
 enum WidgetDataService {
 
     private static let cacheKey = "widget_data_cache"
+
+    /// Espejo de `WidgetDataCache.groupsOnlySessionKey` (target de la app): la escribe la app cuando la sesión de este
+    /// teléfono es solo grupos. Va fuera del snapshot para no tocar su decode. Ausente ⇒ `false`.
+    static let groupsOnlySessionKey = "widget_groupsOnlySession"
+
+    /// ¿Esta sesión es solo grupos? Entonces no hay finanzas personales que pintar y el widget invita a activarlas.
+    static var isGroupsOnlySession: Bool {
+        sharedDefaults?.bool(forKey: groupsOnlySessionKey) ?? false
+    }
 
     /// App Group identifier read from Info.plist
     private static var appGroupIdentifier: String {
@@ -205,6 +240,13 @@ enum WidgetDataService {
 
     /// Loads the cached widget data snapshot
     /// Returns nil if no data is available or data is corrupted
+    ///
+    /// **Hasta el 2026-09-13 este snapshot llevaba un SELLO de identidad de sesión**, y lo que lo hacía
+    /// funcionar no era la limpieza sino el sello: la caché vive en el App Group, que sobrevive a casi
+    /// todo, así que la única defensa que no dependía de que un borrado llegara a correr era que el
+    /// snapshot dijera de quién era. Se retiró con la sesión de visita —el único caso de dos humanos en un
+    /// teléfono— y la lección queda en `.claude/rules/swiftdata-cloudkit.md`: si algún día vuelve a haber
+    /// dos identidades sobre esta caché, la defensa es el sello, no la purga.
     static func loadSnapshot() -> WidgetDataSnapshot? {
         guard let defaults = sharedDefaults else {
             #if DEBUG
@@ -221,8 +263,7 @@ enum WidgetDataService {
         }
 
         do {
-            let snapshot = try JSONDecoder().decode(WidgetDataSnapshot.self, from: data)
-            return snapshot
+            return try JSONDecoder().decode(WidgetDataSnapshot.self, from: data)
         } catch {
             #if DEBUG
             print("WidgetDataService: Error decoding snapshot: \(error)")
@@ -252,6 +293,23 @@ enum WidgetDataService {
         // Fallback to current total balance for current periods
         // (old cache format or current periods)
         return snapshot.totalBalance
+    }
+
+    /// La marca «≈» del número que devuelve `getBalance(for:)`.
+    ///
+    /// Hermano y no un cambio de firma: `getBalance` tiene callsites que solo quieren el número.
+    /// Sigue **exactamente** las mismas dos ramas, y por eso no pueden divergir: si el saldo salió
+    /// del `periodBalance` precalculado, la marca es la que se guardó con él; si salió del fallback
+    /// a `totalBalance` —cache de formato viejo, o período en curso— no hay señal que leer y
+    /// devuelve `false`, que aquí significa «esta versión no lo sabía», no «es exacto».
+    static func getBalanceIsApproximate(for period: WidgetPeriod) -> Bool {
+        guard let snapshot = loadSnapshot() else { return false }
+        if let summaries = snapshot.periodSummaries,
+           let summary = summaries[period.rawValue],
+           summary.periodBalance != nil {
+            return summary.periodBalanceIsApproximate ?? false
+        }
+        return false
     }
 
     /// Returns the preferred currency code, or "USD" if no data
@@ -400,17 +458,47 @@ enum WidgetDataService {
         return buildPeriodSummary(from: filtered)
     }
 
+    /// Réplica del `ApproximateMarkThreshold` de la app para el camino de emergencia.
+    ///
+    /// **Se replica porque no se puede importar**: el target `YalaWidgetsExtension` solo compila
+    /// tres ficheros de `Yala/` por membership exception y ese helper no está entre ellos. Añadirlo
+    /// al target por un `if` de dos líneas es peor negocio que replicarlo con un test de paridad
+    /// que los compare (`WidgetApproximateThresholdParityTests`).
+    ///
+    /// Contrato idéntico al original: magnitudes sumadas, suelo de ruido a los dos lados, umbral
+    /// inclusivo con tolerancia relativa.
+    private static func marksApproximate(approximate: Double, total: Double) -> Bool {
+        let noiseFloor = 0.01
+        let fraction = 0.05
+        let approximateMagnitude = abs(approximate)
+        guard approximateMagnitude > noiseFloor else { return false }
+        let totalMagnitude = abs(total)
+        guard totalMagnitude > noiseFloor else { return true }
+        return approximateMagnitude >= fraction * totalMagnitude * (1 - 1e-9)
+    }
+
     /// Builds a period summary from filtered transactions
     private static func buildPeriodSummary(from transactions: [WidgetTransaction]) -> WidgetPeriodSummary {
         var totalIncome: Double = 0
         var totalExpense: Double = 0
+        // Magnitudes de la parte aproximada, por lado. Este camino de emergencia recalcula los
+        // totales desde las filas crudas: sin acumular esto, los declararía exactos sin saberlo,
+        // que es exactamente el bug que este campo viene a cerrar.
+        var incomeApproximateMagnitude: Double = 0
+        var expenseApproximateMagnitude: Double = 0
 
+        // `amountInPreferredCurrency` llega YA resuelto en la divisa principal vigente: la app lo
+        // escribe así (`WidgetDataCache.widgetTransaction`), porque la fila no viaja con la divisa
+        // en que se guardó y este camino no podría reconvertirla.
         for tx in transactions {
             let amount = abs(tx.amountInPreferredCurrency)
+            let isApproximate = tx.isExchangeRateProvisional ?? false
             if tx.isIncome {
                 totalIncome += amount
+                if isApproximate { incomeApproximateMagnitude += amount }
             } else {
                 totalExpense += amount
+                if isApproximate { expenseApproximateMagnitude += amount }
             }
         }
 
@@ -432,7 +520,21 @@ enum WidgetDataService {
             topCategories: topCategories,
             topSubcategories: topSubcategories,
             cashFlowPoints: cashFlowPoints,
-            periodBalance: nil  // Fallback calculation doesn't have access to all transactions
+            periodBalance: nil,  // Fallback calculation doesn't have access to all transactions
+            // `ApproximateMarkThreshold` no está en la membership del target del widget, así que
+            // el umbral se replica aquí. Es el mismo 5 % y el mismo suelo, y hay un test que los
+            // compara: si la app cambia el suyo y este no, se pone rojo.
+            incomeIsApproximate: marksApproximate(
+                approximate: incomeApproximateMagnitude, total: totalIncome
+            ),
+            expenseIsApproximate: marksApproximate(
+                approximate: expenseApproximateMagnitude, total: totalExpense
+            ),
+            netCashFlowIsApproximate: marksApproximate(
+                approximate: incomeApproximateMagnitude + expenseApproximateMagnitude,
+                total: netCashFlow
+            ),
+            periodBalanceIsApproximate: nil  // sin `periodBalance` no hay número que marcar
         )
     }
 
@@ -635,7 +737,8 @@ enum WidgetPeriod: String, CaseIterable, Codable {
             let startOfThisMonth = calendar.date(
                 from: calendar.dateComponents([.year, .month], from: now)) ?? startOfToday
             let startOfLastMonth = calendar.date(byAdding: .month, value: -1, to: startOfThisMonth) ?? startOfToday
-            return DateInterval(start: startOfLastMonth, end: startOfThisMonth)
+            let endOfLastMonth = calendar.date(byAdding: .second, value: -1, to: startOfThisMonth) ?? startOfThisMonth
+            return DateInterval(start: startOfLastMonth, end: endOfLastMonth)
 
         case .thisYear:
             let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
@@ -644,7 +747,8 @@ enum WidgetPeriod: String, CaseIterable, Codable {
         case .lastYear:
             let startOfThisYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
             let startOfLastYear = calendar.date(byAdding: .year, value: -1, to: startOfThisYear) ?? startOfToday
-            return DateInterval(start: startOfLastYear, end: startOfThisYear)
+            let endOfLastYear = calendar.date(byAdding: .second, value: -1, to: startOfThisYear) ?? startOfThisYear
+            return DateInterval(start: startOfLastYear, end: endOfLastYear)
 
         case .allTime:
             let start = calendar.date(byAdding: .year, value: -10, to: now) ?? startOfToday

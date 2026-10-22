@@ -205,7 +205,8 @@ struct CashFlowCellDetailSheet: View {
                     value: lr.plannedAmount,
                     currencyCode: currencyCode,
                     font: DS.Typography.body.monospacedDigit(),
-                    tint: .secondary
+                    tint: .secondary,
+                    isEstimate: lr.isPlannedApproximate
                 )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -287,7 +288,7 @@ struct CashFlowCellDetailSheet: View {
 
                     Divider()
 
-                    detailRow(label: L10n.CashFlowPlan.plan, value: lr.plannedAmount)
+                    detailRow(label: L10n.CashFlowPlan.plan, value: lr.plannedAmount, isEstimate: lr.isPlannedApproximate)
                     detailRow(label: lr.isIncome ? L10n.CashFlowPlan.realIncome : L10n.CashFlowPlan.real, value: real)
                     detailRow(label: L10n.CashFlowPlan.difference, value: diff, color: isGood ? Color.electricIndigo : Color.hotPink)
                 }
@@ -344,7 +345,8 @@ struct CashFlowCellDetailSheet: View {
                     AmountText(
                         value: lr.plannedAmount,
                         currencyCode: currencyCode,
-                        font: DS.Typography.title.weight(.bold).monospacedDigit()
+                        font: DS.Typography.title.weight(.bold).monospacedDigit(),
+                        isEstimate: lr.isPlannedApproximate
                     )
                 }
 
@@ -601,7 +603,7 @@ struct CashFlowCellDetailSheet: View {
 
     // MARK: - Helpers
 
-    private func detailRow(label: String, value: Double, color: Color? = nil) -> some View {
+    private func detailRow(label: String, value: Double, color: Color? = nil, isEstimate: Bool = false) -> some View {
         HStack {
             Text(label)
                 .font(DS.Typography.caption)
@@ -611,7 +613,8 @@ struct CashFlowCellDetailSheet: View {
                 value: value,
                 currencyCode: currencyCode,
                 font: DS.Typography.amountSmall.weight(.semibold).monospacedDigit(),
-                tint: color.map { .color($0) } ?? .primary
+                tint: color.map { .color($0) } ?? .primary,
+                isEstimate: isEstimate
             )
         }
     }

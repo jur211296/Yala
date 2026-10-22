@@ -89,7 +89,7 @@ struct MemberPickerView: View {
                 .fill(Color(hex: groupColorHex).opacity(0.2))
                 .frame(width: avatarSize, height: avatarSize)
 
-            Text(String(member.displayName.prefix(1)).uppercased())
+            Text(String(member.resolvedDisplayName.prefix(1)).uppercased())
                 .font(DS.Typography.label)
                 .foregroundStyle(Color(hex: groupColorHex))
         }
@@ -97,7 +97,7 @@ struct MemberPickerView: View {
 
     private func memberName(_ member: SplitMember) -> some View {
         HStack(spacing: DS.Spacing.xs) {
-            Text(member.displayName)
+            Text(member.resolvedDisplayName)
                 .font(DS.Typography.body)
                 .foregroundStyle(member.isActive ? .primary : .secondary)
 

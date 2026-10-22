@@ -15,6 +15,21 @@ struct PanelDataObservers: ViewModifier {
         content
             .modifier(PanelDataCountObservers(viewModel: viewModel, sessionState: sessionState))
             .modifier(PanelDataFilterObservers(viewModel: viewModel, sessionState: sessionState))
+            .modifier(PanelExchangeRateObserver(viewModel: viewModel))
+    }
+}
+
+/// Tasas nuevas en disco → el Panel recalcula. Sin esto el saldo seguía convertido a la tasa vieja y el
+/// «≈» encendido hasta el siguiente toque (ticket `panel-no-recalcula-al-llegar-tasas-nuevas`). Va en su
+/// propio modificador: los otros dos ya llevan seis cada uno y el compilador del CI tipa peor.
+struct PanelExchangeRateObserver: ViewModifier {
+    let viewModel: PanelViewModel
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: .yalaExchangeRatesUpdated)) { _ in
+                viewModel.exchangeRatesDidUpdate()
+            }
     }
 }
 

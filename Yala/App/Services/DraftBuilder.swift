@@ -8,7 +8,8 @@
 //
 //  API granular para que cada caller arme su propio modelo final:
 //  - findAccount(byCurrency:context:)         — match por divisa, exacto o nil.
-//  - suggestSubcategory(merchant:context:)    — vía MerchantMemoryService.
+//  - suggestSubcategory(merchant:isExpense:context:) — vía MerchantMemoryService,
+//                                                descartando lo que contradiga el tipo.
 //  - computeNeedsUserInput(...)               — campos críticos sin inferencia.
 //  - build(parsed:defaultCurrency:context:)   — compone los anteriores en un
 //                                                ChatTransactionDraft (caller chat).
@@ -56,21 +57,59 @@ struct DraftBuilder {
         return findAccount(byCurrency: currencyCode, in: accounts)
     }
 
+    // MARK: - matchesNature
+
+    /// `true` si la naturaleza de la subcategoría concuerda con el tipo del borrador.
+    ///
+    /// **Cuando el tipo y la categoría discrepan manda el tipo (`isExpense`), y la subcategoría se
+    /// descarta** (decisión del ticket `chat-draft-sign-can-contradict-its-subcategory`). No es una
+    /// preferencia nueva: es lo que ya hacían los otros cuatro puntos del borrador del chat, medidos
+    /// el 2026-09-08 en este árbol —el selector de la card filtra por `draft.isExpense` (desde el 2026-10-04,
+    /// `SubcategorySelectorSheet` con `transactionType` vía `ChatDraftFieldSheet`), `ChatAssistantViewModel.updateDraft`
+    /// rechaza contra él la subcategoría que el usuario elige a mano, `matchSubcategoryByHint` filtra
+    /// por él, y `saveDraft` firma el monto con él—. El único que no lo respetaba era el fallback por
+    /// comercio, y su sugerencia es lo MENOS parecido a una intención: no sale de lo que el usuario
+    /// acaba de dictar, sino del recuerdo estadístico de otros dictados con ese mismo comercio.
+    ///
+    /// Ojo con lo que decide `safeCategory` en el borde: una subcategoría **sin** categoría —relación
+    /// `nil`, que CloudKit puede entregar mientras el record va en vuelo— devuelve un placeholder con
+    /// `isIncome: false`, así que cuenta como de gasto. Se mantiene ese criterio a propósito: es el
+    /// que ya aplican el menú del card y `updateDraft`, y hacer aquí una excepción los desalinearía.
+    static func matchesNature(_ subcategory: Subcategory, isExpense: Bool) -> Bool {
+        subcategory.safeCategory.isIncome != isExpense
+    }
+
     // MARK: - suggestSubcategory
 
     /// Consulta `MerchantMemoryService` con el `merchant` (nota cruda) y devuelve
-    /// la subcategoría sugerida o `nil` si no hay datos suficientes.
-    static func suggestSubcategory(merchant: String, context: ModelContext) -> Subcategory? {
+    /// la subcategoría sugerida, o `nil` si no hay datos suficientes **o si la que
+    /// recuerda contradice el tipo del borrador** (ver `matchesNature`).
+    ///
+    /// `MerchantMemoryService` guarda `merchant → subcategoría` y no sabe nada de naturaleza, de modo
+    /// que un comercio aprendido sobre ingresos puede devolver una subcategoría de ingreso para un
+    /// texto que el parser resolvió como gasto —«por defecto asume gasto», dice su prompt—. Al
+    /// descartarla, el borrador nace sin subcategoría y `computeNeedsUserInput` lo marca: el card pide
+    /// elegirla y bloquea Guardar. Es el mismo estado que cuando no hay memoria de ese comercio, que
+    /// es el caso común.
+    ///
+    /// Sin este filtro la combinación cruzada se persistía —monto firmado por `isExpense` y
+    /// `category` tomada de la subcategoría— y `TransactionClassificationLogic` la lee como un
+    /// reembolso: **resta** del bucket de ingresos en Registros y Estadísticas mientras el widget de
+    /// inicio, que solo mira el signo, la suma.
+    static func suggestSubcategory(merchant: String, isExpense: Bool, context: ModelContext) -> Subcategory? {
         let trimmed = merchant.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
 
         let service = MerchantMemoryService(modelContext: context)
+        let remembered: Subcategory
         switch service.suggest(for: trimmed) {
         case .suggest(let sub), .autoAssign(let sub):
-            return sub
+            remembered = sub
         case .none:
             return nil
         }
+
+        return matchesNature(remembered, isExpense: isExpense) ? remembered : nil
     }
 
     // MARK: - matchSubcategoryByHint
@@ -89,10 +128,7 @@ struct DraftBuilder {
         let normalizedHint = normalizeForMatching(hint)
         guard !normalizedHint.isEmpty else { return nil }
 
-        let filtered = subcategories.filter { sub in
-            let category = sub.safeCategory
-            return isExpense ? !category.isIncome : category.isIncome
-        }
+        let filtered = subcategories.filter { matchesNature($0, isExpense: isExpense) }
 
         // 1. Exact match
         let exactMatches = filtered.filter { normalizeForMatching($0.name) == normalizedHint }
@@ -193,7 +229,11 @@ struct DraftBuilder {
             subcategory = matchSubcategoryByHint(hint: hint, isExpense: parsed.isExpense, context: context)
         }
         if subcategory == nil {
-            subcategory = suggestSubcategory(merchant: parsed.note, context: context)
+            subcategory = suggestSubcategory(
+                merchant: parsed.note,
+                isExpense: parsed.isExpense,
+                context: context
+            )
         }
 
         let tagIDs = matchTags(hints: parsed.tagHints, context: context)

@@ -26,6 +26,9 @@ struct GroupsViewModelTests {
         #expect(vm.selectedGroup == nil)
         #expect(vm.searchText.isEmpty)
         #expect(vm.showArchived == false)
+        // Regresión Problema 1: arranca false para que el tab muestre spinner (no el empty state
+        // incorrecto) hasta la primera carga con éxito. Si se inicializa true, el bug reaparece.
+        #expect(vm.hasLoadedOnce == false)
     }
 
     @Test func computedGroups_emptyWhenNoData() {
@@ -97,5 +100,8 @@ struct GroupsViewModelTests {
         vm.loadData()
 
         #expect(vm.groups.isEmpty)
+        // Sin poder cargar, hasLoadedOnce sigue false → la vista mantiene el spinner en vez de
+        // mostrar el empty state incorrecto (Problema 1: carrera de arranque en Solo Grupos).
+        #expect(vm.hasLoadedOnce == false)
     }
 }

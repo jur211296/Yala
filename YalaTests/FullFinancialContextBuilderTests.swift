@@ -208,19 +208,41 @@ struct FullFinancialContextBuilderTests {
 
     // MARK: - Period comparison
 
-    @MainActor @Test func periodComparison_currentVsLastMonth() {
+    @MainActor @Test func periodComparison_currentVsLastMonth() throws {
+        // `now` fijo a mitad de mes: la variación compara con el mes pasado HASTA EL MISMO DÍA
+        // (`ChatContextPanelParityAndMonthToDateTests`), y con `Date.now` el día 1 dejaba fuera el
+        // gasto del día 2 del mes pasado.
+        let cal = Calendar.current
+        let now = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 12)))
+        let thisMonth = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: 2, hour: 12)))
+        let lastMonth = try #require(cal.date(from: DateComponents(year: 2026, month: 9, day: 2, hour: 12)))
         let food = makeCategory(name: "Food")
         let txs = [
-            makeTx(amount: -200, date: currentMonthDate(), category: food),
-            makeTx(amount: -150, date: lastMonthDate(), category: food)
+            makeTx(amount: -200, date: thisMonth, category: food),
+            makeTx(amount: -150, date: lastMonth, category: food)
         ]
 
-        let result = buildContext(transactions: txs)
+        let result = buildContext(transactions: txs, now: now)
 
         #expect(result.periods.currentMonth.expense == 200.0)
         #expect(result.periods.lastMonth.expense == 150.0)
-        let variation = result.categories.first?.variationPercentVsLastMonth ?? 0
+        let variation = result.categories.first?.variationPercentVsLastMonthToDate ?? 0
         #expect(abs(variation - 33.33) < 0.5)
+    }
+
+    @MainActor @Test func periodComparison_transactionExactlyAtMonthBoundary_notDoubleCounted() {
+        // Reproduce el bug: una tx a medianoche exacta del día 1 del mes actual
+        // no debe contarse en AMBOS periods.currentMonth Y periods.lastMonth.
+        let cal = Calendar.current
+        let now = Date.now
+        let monthStart = cal.dateInterval(of: .month, for: now)?.start ?? now
+        let food = makeCategory(name: "Food")
+        let tx = makeTx(amount: -100, date: monthStart, category: food)
+
+        let result = buildContext(transactions: [tx], now: now)
+
+        #expect(result.periods.currentMonth.expense == 100.0)
+        #expect(result.periods.lastMonth.expense == 0.0)
     }
 
     // MARK: - Top tx by subcategory
@@ -241,6 +263,35 @@ struct FullFinancialContextBuilderTests {
         #expect(entry?.transactions.count == 3)
         #expect(entry?.transactions.first?.amount == 120)
         #expect(entry?.transactions.last?.amount == 30)
+    }
+
+    /// Ticket `chat-top-transactions-per-subcategory-rank-by-native-amount`. Divisa principal PEN. Diez
+    /// cenas de S/ 150 y una de 100 USD (≈ S/ 370, ya convertida al guardarse). Por el importe NATIVO la
+    /// de dólares (100) era la undécima y se quedaba fuera; por el importe que se manda va la primera.
+    @MainActor @Test func topTxBySubcategory_mixedNativeCurrencies_ranksByConvertedAmount() {
+        let food = makeCategory(name: "Food")
+        let restaurants = makeSubcategory(name: "Restaurants", category: food)
+        var txs = (1...10).map { i in
+            makeTx(
+                amount: -150, date: currentMonthDate(offset: 1), currencyCode: "PEN",
+                category: food, subcategory: restaurants, note: "Cena \(i)",
+                amountInPreferredCurrency: -150, preferredCurrencyCode: "PEN"
+            )
+        }
+        txs.append(makeTx(
+            amount: -100, date: currentMonthDate(offset: 2), currencyCode: "USD",
+            category: food, subcategory: restaurants, note: "Cena en dólares",
+            amountInPreferredCurrency: -370, preferredCurrencyCode: "PEN"
+        ))
+
+        let result = buildContext(transactions: txs, currencyCode: "PEN")
+
+        let entry = result.topTxBySubcategory.first { $0.subcategoryName == "Restaurants" }
+        #expect(entry?.transactions.count == 10)
+        #expect(entry?.transactions.first?.amount == 370, """
+            La de dólares es la mayor en soles. Ordenando por el nativo (100 < 150) quedaba fuera del top 10.
+            """)
+        #expect(entry?.transactions.first?.merchant == MerchantCanonicalizer.canonicalize("Cena en dólares"))
     }
 
     // MARK: - Anomalies gating

@@ -76,8 +76,18 @@ struct TrendGroupingTests {
 
 struct CurrencyDefaultsTests {
 
-    @Test func defaultCode_isPEN() {
-        #expect(CurrencyDefaults.defaultCode == "PEN")
+    // Región inyectada → deterministas, sin depender de la región del simulador
+    // (antes `defaultCode_isPEN` asumía el sim en Perú y fallaba en un sim US).
+    @Test func detectCurrency_PE_isPEN() {
+        #expect(CurrencyDefaults.detectCurrencyFromRegion(regionCode: "PE") == .pen)
+    }
+
+    @Test func detectCurrency_US_isUSD() {
+        #expect(CurrencyDefaults.detectCurrencyFromRegion(regionCode: "US") == .usd)
+    }
+
+    @Test func detectCurrency_unknownRegion_fallsBackToUSD() {
+        #expect(CurrencyDefaults.detectCurrencyFromRegion(regionCode: "ZZ") == .usd)
     }
 
     @Test func preferredCurrencyKey_isExpectedKey() {

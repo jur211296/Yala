@@ -66,7 +66,19 @@ final class iCloudSyncService {
     private(set) var lastSuccessfulExportDate: Date?
     private(set) var lastSuccessfulImportDate: Date?
     private(set) var lastExportError: CKError?
+    /// Cuándo se vio `lastExportError`: la fecha del evento de export que falló (`endDate`, o `startDate` si no
+    /// trae fin). `lastExportError` no se limpia con un export con éxito (`icloud-export-error-latch-never-clears`),
+    /// así que quien necesite saber si el error SIGUE vigente compara esta fecha con `lastSuccessfulExportDate`.
+    /// Lo hace la espera de «Volver a iCloud» (`ReverseUploadBlockerLogic`); los demás lectores siguen igual.
+    /// `nil` = sin error, o un evento sin fechas.
+    private(set) var lastExportErrorAt: Date?
     private(set) var lastImportError: CKError?
+    /// Cuándo se vio `lastImportError`. Espejo exacto de `lastExportErrorAt` y por el mismo motivo:
+    /// `lastImportError` **no se limpia con un import con éxito**, así que sin fecha no se puede saber
+    /// si la palabra de CloudKit sigue vigente. Lo usa el desenlace de «Restaurar desde iCloud»
+    /// (`RestoreImportSettlement`), que necesita distinguir un import que TARDA de uno que FALLA:
+    /// `hasObservedImportActivity` los enciende a los dos. `nil` = sin error, o un evento sin fechas.
+    private(set) var lastImportErrorAt: Date?
     /// Consecutive failed sync cycles (setup/import/export) with no success in
     /// between. Resets on ANY successful event. Gates whether a *transient*
     /// error surfaces the banner, and feeds `.stalled` detection.
@@ -81,16 +93,84 @@ final class iCloudSyncService {
     /// Distingue "hay un import en marcha/ocurrido → SÍ hay data remota" de "store vacío → ningún import
     /// llega nunca". El gate del sync de grupos lo usa para promover con seguridad un store vacío tras una
     /// ventana de gracia, sin arriesgar un `save()` sobre un grafo a medio importar (ver
-    /// `SplitSyncStartGate.resolveWaitByQuiescence`). Un store vacío nunca dispara `.importEvent`, así que
+    /// `BootSaveGateLogic.resolveWaitByQuiescence`). Un store vacío nunca dispara `.importEvent`, así que
     /// este flag se queda `false` para él; un restore con datos lo pone `true` apenas arranca el import.
     private(set) var hasObservedImportActivity: Bool = false
+
+    /// **CUÁNDO vio este proceso la última señal de descarga**: el instante en que se OBSERVÓ un
+    /// `.importEvent`, con o sin error. Es el hermano con fecha de `hasObservedImportActivity`, y existe
+    /// porque aquél es un latch monótono: una vez encendido afirma «hay descarga» para siempre, incluso
+    /// veinte minutos después de que el import terminara. Quien necesite saber si la descarga sigue
+    /// VIGENTE —no si la hubo alguna vez— compara esta fecha con el ahora
+    /// (`ICloudRestoreInProgressLogic.hasLiveImportActivity`, el testigo del re-ancla de la ventana de
+    /// sesión). Mismo patrón que `lastExportErrorAt` y `lastImportErrorAt` sobre sus latches.
+    ///
+    /// **Es el instante de OBSERVACIÓN y no el `endDate`/`startDate` del evento, a propósito.** Las
+    /// fechas del evento describen el import; ésta describe qué sabe este proceso y cuándo lo supo, que
+    /// es la pregunta del testigo. Un import largo que cierra con un `endDate` de hace cinco minutos
+    /// acaba de dar señal de vida AHORA, y anotarlo con su `endDate` lo leería como descarga muerta.
+    /// Además sube siempre, así que un evento fuera de orden nunca retrasa el sello.
+    ///
+    /// `nil` = ningún `.importEvent` en este proceso. En memoria como el resto de la familia: si el
+    /// proceso muere, el testigo muere con él.
+    private(set) var lastImportActivityAt: Date?
+
+    /// **Paso 9 · el espejo contestó que no hay cuenta.** Un evento con `CKError.notAuthenticated` lo pone a
+    /// `true`; cualquier evento con éxito lo apaga. Es la prueba de CloudKit —no la del token de iCloud
+    /// Drive— de que no hay copia a la que subir, y la usa el cierre privado para avisar de que no la hay
+    /// (`PrivateSignOutExportGateLogic.copyChannel`). `status == .noAccount` NO sirve para esto: también lo
+    /// pone `checkAccountStatus()` por el token, que con Drive apagado miente.
+    private(set) var mirrorReportedNotAuthenticated: Bool = false
+
+    /// **Paso 9 · el ANCLA del export: el INICIO del último export con éxito**, persistido. Todo cambio local
+    /// confirmado antes de ese instante viajó en él; lo posterior puede no haberlo hecho. Es lo que el cierre
+    /// privado compara contra el historial para saber si puede borrar (`PersonalExportPendingCounter`).
+    ///
+    /// Persistido y no en memoria porque el cierre puede llegar en un proceso donde el espejo aún no ha
+    /// exportado nada; y bajo `cloudSync.*` porque ese prefijo lo excluye a propósito el barrido de
+    /// preferencias de «Vaciar datos» y del boot-wipe. Sobrevive al borrado del store y es correcto que lo
+    /// haga: las escrituras del store nuevo son todas posteriores, así que cuentan como pendientes hasta que
+    /// un export las confirme. `nil` = nunca se vio un export con éxito (entonces cuenta todo lo local).
+    var confirmedExportStart: Date? {
+        Self.readConfirmedExportStart(exportAnchorDefaults)
+    }
+
+    nonisolated static let confirmedExportStartKey = "cloudSync.confirmedExportStartedAt"
+
+    /// Dominio del ancla. `.standard` en producción; `_testReset()` lo cambia por uno aislado para que ningún
+    /// test escriba en el `UserDefaults` del simulador.
+    @ObservationIgnored var exportAnchorDefaults: UserDefaults = .standard
+
+    /// El ancla que sirve ahora: una guardada en el FUTURO se lee como ausente
+    /// (`PrivateSignOutExportGateLogic.usableAnchor`: el reloj retrocedió con la app cerrada).
+    nonisolated static func readConfirmedExportStart(_ defaults: UserDefaults, now: Date = .now) -> Date? {
+        guard defaults.object(forKey: confirmedExportStartKey) != nil else { return nil }
+        let stored = Date(timeIntervalSince1970: defaults.double(forKey: confirmedExportStartKey))
+        return PrivateSignOutExportGateLogic.usableAnchor(stored, now: now)
+    }
+
+    /// MONÓTONO: un evento viejo que llegue tarde nunca retrasa el ancla. Retrasarla solo haría contar de
+    /// más (lado seguro), pero adelantarla con un evento fuera de orden sería el lado peligroso, y el `max`
+    /// cierra las dos direcciones. Un ancla del futuro se lee como ausente, así que el export siguiente la
+    /// reemplaza en vez de quedarse por detrás de ella para siempre.
+    nonisolated static func recordConfirmedExportStart(_ start: Date, _ defaults: UserDefaults, now: Date = .now) {
+        if let current = readConfirmedExportStart(defaults, now: now), current >= start { return }
+        defaults.set(start.timeIntervalSince1970, forKey: confirmedExportStartKey)
+    }
+
+    /// Se invalida cuando el ancla deja de probar lo que prueba: cambia la cuenta de iCloud, cambia el reloj,
+    /// o CloudKit dice que no hay cuenta. No se borra en el boot-wipe del cierre, y es a propósito: las
+    /// escrituras del store nuevo son todas posteriores, así que cuentan como pendientes igual.
+    nonisolated static func clearConfirmedExportStart(_ defaults: UserDefaults) {
+        defaults.removeObject(forKey: confirmedExportStartKey)
+    }
 
     /// ¿es seguro hacer `save()` del store personal AHORA? Verdadero solo si NO hay un import
     /// en curso y pasó la ventana de quietud desde el último import (quiescencia). Un `save()`
     /// sobre el coordinator del store personal mientras NSPersistentCloudKitContainer importa
     /// dispara el `_assertionFailure` interno de SwiftData (SIGTRAP). Adaptador runtime sobre
     /// `SubcategoryDedupGate.decide` (la lógica pura testeada); mismo gate que usan
-    /// `retryPendingBridges` y `SplitSyncManager.processPendingRemoteChanges`.
+    /// `retryPendingBridges` y el apply del pull de Grupos.
     var isImportQuiescent: Bool {
         SubcategoryDedupGate.decide(
             now: .now,
@@ -106,11 +186,6 @@ final class iCloudSyncService {
         if let forced = _testForceAccountAvailable { return forced }
         #endif
         return SwiftDataConfiguration.isICloudAvailable()
-    }
-
-    /// Split group sync status (from CKSyncEngine) — preserved from 2.0.
-    var splitSyncStatus: SplitSyncManager.SyncStatus {
-        SplitSyncManager.shared.syncStatus
     }
 
     /// Assigns a new status only if it differs from the current one. Prevents
@@ -150,6 +225,13 @@ final class iCloudSyncService {
             self,
             selector: #selector(accountDidChange),
             name: .NSUbiquityIdentityDidChange,
+            object: nil
+        )
+        // Paso 9 · el ancla del export compara relojes de pared: si el reloj cambia, deja de probar nada.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(systemClockDidChange),
+            name: .NSSystemClockDidChange,
             object: nil
         )
         checkAccountStatus()
@@ -195,7 +277,25 @@ final class iCloudSyncService {
     }
 
     @objc private func accountDidChange() {
+        // Paso 9 · otra cuenta de iCloud, otra historia de exports: lo confirmado para la anterior no dice
+        // nada de la nueva. Borrarla es el lado seguro (el cierre privado pasa a «no se puede confirmar»).
+        Self.clearConfirmedExportStart(exportAnchorDefaults)
+        // Y el sello de actividad de import, por la misma razón y en una frontera que pesa más: lo lee el
+        // re-ancla de la ventana de sesión del restore, que abre un guard de FRONTERA DE CUENTA. Con la
+        // descarga de la cuenta anterior recién sellada, entrar a Restaurar dentro de su frescura
+        // re-anclaría la ventana apoyándose en un import que ya no es de esta cuenta — justo la frontera
+        // que el guard vigila (lo midió una lente de la review, 2026-09-21).
+        //
+        // `hasObservedImportActivity` NO se limpia aquí y es a propósito: tiene otros consumidores
+        // —`BootSaveGateLogic`, el gate del sync de grupos— que preguntan por el store de ESTE proceso y
+        // no por la cuenta, y cambiarles el suelo desde aquí es otro ticket
+        // (`import-activity-latch-survives-an-icloud-account-change`).
+        lastImportActivityAt = nil
         checkAccountStatus()
+    }
+
+    @objc private func systemClockDidChange() {
+        Self.clearConfirmedExportStart(exportAnchorDefaults)
     }
 
     // MARK: - Event Handling
@@ -232,18 +332,36 @@ final class iCloudSyncService {
         print("iCloudSync: event received — type=\(rawType) \(errorDesc) \(endDesc)")
         #endif
 
-        apply(eventType: rawType, error: event.error as? CKError, endDate: event.endDate)
+        apply(eventType: rawType, error: event.error as? CKError, endDate: event.endDate,
+              startDate: event.startDate, succeeded: event.succeeded)
     }
 
     /// Testable core. Flat parameters — tests call this directly without
     /// constructing NSPersistentCloudKitContainer.Event (which has private init).
-    func apply(eventType: RawEventType, error: CKError?, endDate: Date?) {
+    ///
+    /// `startDate` (paso 9) solo se usa en el export con éxito: es el ANCLA del cierre privado. `nil` en los
+    /// llamadores sintéticos (`forceSync`, tests), que nunca lo fijan — y sin inicio no hay ancla que mover.
+    ///
+    /// `succeeded` (paso 9) es `Event.succeeded`, y hace falta porque `error` llega filtrado a `CKError`: un
+    /// evento que TERMINÓ con un error de otro dominio (los `NSCocoaErrorDomain` 1344xx del espejo) llegaba
+    /// con `error == nil` y fecha de fin, y caía en la rama de éxito. El ancla avanzaba sobre un export que no
+    /// subió nada, y el cierre privado borraba lo que no estaba en iCloud (review adversarial del paso 9).
+    /// Solo gobierna las dos piezas del paso 9 —el ancla y `mirrorReportedNotAuthenticated`—; el resto del
+    /// estado sigue como estaba (ticket `icloud-sync-status-treats-non-ck-failures-as-success`).
+    ///
+    /// `observedAt` es CUÁNDO llega este evento a este proceso, y sella `lastImportActivityAt`. Tiene
+    /// default `.now` porque en producción siempre es el ahora —el observer corre al recibirlo— y
+    /// existe como parámetro para que un test pueda situar una descarga en el pasado sin dormir.
+    func apply(eventType: RawEventType, error: CKError?, endDate: Date?, startDate: Date? = nil,
+               succeeded: Bool = true, observedAt: Date = .now) {
         // Cualquier evento del container significa que el observer está vivo y
         // gobernará el status → el watchdog de force-sync ya no hace falta.
         pendingForceSyncReset?.cancel()
         // Not-authenticated overrides everything → no account.
         if let error, error.code == .notAuthenticated {
             pendingFailedTransition?.cancel()
+            mirrorReportedNotAuthenticated = true
+            Self.clearConfirmedExportStart(exportAnchorDefaults)
             setStatus(.noAccount)
             return
         }
@@ -255,6 +373,7 @@ final class iCloudSyncService {
                 surfaceOrSuppress(error)
             } else if let endDate {
                 consecutiveFailures = 0
+                if succeeded { mirrorReportedNotAuthenticated = false }
                 setStatus(.success(endDate))
             } else {
                 setStatus(.syncing(kind: .setup))
@@ -264,13 +383,20 @@ final class iCloudSyncService {
             // Cualquier importEvent (en curso, completado o con error) implica que hay data remota que
             // importar → marca actividad de import para el gate de grupos (un store vacío nunca llega aquí).
             hasObservedImportActivity = true
+            // Y CUÁNDO la vimos, que es lo que distingue «hay descarga» de «la hubo alguna vez». Va en la
+            // misma cabecera y no dentro de una rama: el latch de arriba lo enciende cualquier evento —en
+            // curso, terminal o con error— y el sello tiene que describir exactamente esa población, o los
+            // dos dejan de hablar del mismo mundo. Monótono por construcción (`observedAt` es el ahora).
+            lastImportActivityAt = lastImportActivityAt.map { max($0, observedAt) } ?? observedAt
             if let error {
                 lastImportError = error
+                lastImportErrorAt = endDate ?? startDate
                 consecutiveFailures += 1
                 surfaceOrSuppress(error)
             } else if let endDate {
                 lastSuccessfulImportDate = endDate
                 consecutiveFailures = 0
+                if succeeded { mirrorReportedNotAuthenticated = false }
                 pendingFailedTransition?.cancel()
                 promoteToIdleOrStalled()
                 if !hasCompletedFirstImport {
@@ -294,21 +420,24 @@ final class iCloudSyncService {
         case .exportEvent:
             if let error {
                 lastExportError = error
+                lastExportErrorAt = endDate ?? startDate
                 consecutiveFailures += 1
                 surfaceOrSuppress(error)
-                TelemetryService.track(.cloudkitExportFailed, parameters: [
-                    "code": String(error.code.rawValue),
-                    "retriable": String(isRetriable(error)),
-                ])
+                MetricsService.canary(.cloudkitExportFailed, detail: "code=\(error.code.rawValue)|retriable=\(isRetriable(error))")
             } else if let endDate {
                 let duration = lastSuccessfulExportDate.map { endDate.timeIntervalSince($0) } ?? 0
                 lastSuccessfulExportDate = endDate
                 consecutiveFailures = 0
+                // Paso 9: solo un export que TERMINÓ BIEN confirma algo (ver `succeeded` en la firma).
+                if succeeded {
+                    mirrorReportedNotAuthenticated = false
+                    if let startDate {
+                        Self.recordConfirmedExportStart(startDate, exportAnchorDefaults)
+                    }
+                }
                 pendingFailedTransition?.cancel()
                 promoteToIdleOrStalled()
-                TelemetryService.track(.cloudkitExportSucceeded, parameters: [
-                    "duration_bucket": durationBucket(duration),
-                ])
+                MetricsService.canary(.cloudkitExportSucceeded, detail: durationBucket(duration))
             } else {
                 setStatus(.syncing(kind: .exporting))
             }
@@ -411,9 +540,7 @@ final class iCloudSyncService {
                 lastError: lastExportError?.code
             ))
             if !wasAlreadyStalled {
-                TelemetryService.track(.cloudkitStalledDetected, parameters: [
-                    "days_bucket": daysBucket(days),
-                ])
+                MetricsService.canary(.cloudkitStalledDetected, detail: daysBucket(days))
             }
         } else {
             setStatus(.idle)
@@ -448,36 +575,46 @@ final class iCloudSyncService {
 
     /// Espera hasta que CloudKit complete su primer importEvent (o ya esté completo) hasta `timeout`.
     /// - Parameter timeout: Máximo de segundos a esperar antes de devolver `false`.
-    /// - Returns: `true` si el fetch terminó OK; `false` si timeout o iCloud no disponible.
+    /// - Returns: `true` si el fetch terminó OK; `false` si se agotó el tope, si la espera se CANCELÓ
+    ///   o si iCloud no está disponible.
     ///
     /// Observa `Notification.Name.iCloudFirstImportCompleted` que se postea una vez
-    /// tras el primer `importEvent` exitoso (ver `apply` línea ~227). Single-resume
-    /// guard via `NSLock` + flag para garantizar que el continuation se invoca solo una vez.
+    /// tras el primer `importEvent` exitoso (ver `apply` línea ~227).
+    ///
+    /// **Observa cancelación desde el 2026-09-21** (`force-fetch-and-wait-ignores-cancellation`). Antes
+    /// solo la resolvían la notificación y su propio tope, así que un `Task` cancelado —la persona sale
+    /// de la pantalla que esperaba— seguía clavado aquí hasta agotar los 15 s del arranque o los 90 s
+    /// del restore, reteniendo el observer y un `Task` de sleep. Ahora son **tres** las vías que compiten
+    /// por resolver la misma continuation, y un doble `resume` es un CRASH y no un test rojo: de ahí
+    /// `ForceFetchWaitBox`, que garantiza una sola resolución y suelta lo que las otras dos dejaron vivo.
+    ///
+    /// **Y el `Task` del tope se CANCELA al resolver.** Hasta hoy sobrevivía al desenlace feliz: la
+    /// notificación llegaba a los 2 s y el sleep de 15 (o 90) seguía durmiendo hasta agotarse. Ese
+    /// también era trabajo fantasma, solo que no lo veía nadie.
     func forceFetchAndWait(timeout: TimeInterval = 15) async -> Bool {
         guard isAccountAvailable else { return false }
         if hasCompletedFirstImport { return true }
 
-        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-            let lock = NSLock()
-            nonisolated(unsafe) var didResume = false
-            nonisolated(unsafe) var observer: NSObjectProtocol?
+        // Sin `if Task.isCancelled { return false }` de entrada A PROPÓSITO: `withTaskCancellationHandler`
+        // ya corre `onCancel` de inmediato cuando el `Task` llega cancelado, así que ese término sería un
+        // cinturón sin rama propia — ningún mutante podría matarlo, y un término que ningún test puede
+        // matar es un término que sobra. Lo prueba `forceFetchAndWait_returnsFalseWhenAlreadyCancelled`.
+        let box = ForceFetchWaitBox()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                let observer = NotificationCenter.default.addObserver(
+                    forName: .iCloudFirstImportCompleted, object: nil, queue: .main
+                ) { _ in box.resolve(true) }
 
-            func resumeOnce(_ value: Bool) {
-                lock.lock(); defer { lock.unlock() }
-                guard !didResume else { return }
-                didResume = true
-                if let observer { NotificationCenter.default.removeObserver(observer) }
-                continuation.resume(returning: value)
+                let timeoutTask = Task {
+                    try? await Task.sleep(for: .seconds(timeout))
+                    box.resolve(false)
+                }
+
+                box.arm(continuation: continuation, observer: observer, timeoutTask: timeoutTask)
             }
-
-            observer = NotificationCenter.default.addObserver(
-                forName: .iCloudFirstImportCompleted, object: nil, queue: .main
-            ) { _ in resumeOnce(true) }
-
-            Task {
-                try? await Task.sleep(for: .seconds(timeout))
-                resumeOnce(false)
-            }
+        } onCancel: {
+            box.resolve(false)
         }
     }
 
@@ -485,10 +622,18 @@ final class iCloudSyncService {
     /// (`hasCompletedFirstImport`), luego la ventana de quiescencia
     /// (`isImportQuiescent`). NO basta la quiescencia sola — es `true` ANTES del
     /// primer import y devolvería datos vacíos. Espejo de
-    /// `SplitSyncStartGate.resolveWaitByQuiescence`.
+    /// `BootSaveGateLogic.resolveWaitByQuiescence`.
     /// - Parameter timeout: tope total (primer import + quietud).
     /// - Returns: `true` si quedó quiescente; `false` si se agotó el timeout
     ///   (el caller procede con los datos parciales que haya).
+    ///
+    /// - Note: **Este método comparte el mismo defecto de "store vacío" que resolvió H-2026-07-18-8 en
+    ///   `awaitPersonalImportForBootSave` — FUERA DE SCOPE de H-8.** Exige `hasCompletedFirstImport`
+    ///   (paso 1) antes de considerar la quiescencia; un store que NADA importa (fresh-start wipe cuyos
+    ///   datos ya están todos en el server) nunca dispara `.importEvent` → `forceFetchAndWait` agota el
+    ///   tope → devuelve `false`. Lo usa el flujo de restore (`RestoreProgressView`); si en el futuro lo
+    ///   consumen migraciones `.cloud`/empty-store, aplicar el escape empty-store de `BootSaveGateLogic`
+    ///   (gracia + `!hasObservedImportActivity` + quiescente) aquí también.
     func waitForImportQuiescence(timeout: TimeInterval = 90) async -> Bool {
         guard isAccountAvailable else { return false }
         let deadline = Date.now.addingTimeInterval(timeout)
@@ -574,6 +719,26 @@ final class iCloudSyncService {
     /// `forceFetchAndWait` before its post-account logic. `nil` = use the real check.
     var _testForceAccountAvailable: Bool?
 
+    /// Simula "cuenta iCloud disponible + primer import ya asentado" para UI testing en
+    /// simulador (launch arg `-uitest-fake-icloud`, aplicado desde `AppBootstrapper`).
+    /// Fuerza `isAccountAvailable` Y marca el primer import completado: sin esto último,
+    /// `awaitPersonalImportForBootSave` esperaría el hard-cap (`safeToBootSave()` nunca
+    /// sería `true` porque `hasCompletedFirstImport` no se pone solo sin CloudKit real).
+    /// NO habilita CloudKit real (el store uitest es local, `.none`). Producción nunca lo llama.
+    func _uiTestSimulateAvailableAccount() {
+        _testForceAccountAvailable = true
+        hasCompletedFirstImport = true
+    }
+
+    /// Sitúa el último import exitoso en un instante concreto. Lo necesita el gate de quiescencia
+    /// (`SubcategoryDedupGate.decide`, que devuelve `waitQuiescence` mientras no hayan pasado 8 s desde el
+    /// último import): sin este seam no hay forma determinista de ejercitar la rama en la que el bridge se
+    /// DIFIERE — y esa rama es justo donde el intent durable tiene que quedar armado, porque el reintento
+    /// vive en un `Task` con `sleep` en memoria que un kill de la app se lleva.
+    func _testSetLastSuccessfulImportDate(_ date: Date?) {
+        lastSuccessfulImportDate = date
+    }
+
     /// Reset state between tests. Not exposed in release.
     func _testReset() {
         pendingFailedTransition?.cancel()
@@ -584,12 +749,20 @@ final class iCloudSyncService {
         lastSuccessfulExportDate = nil
         lastSuccessfulImportDate = nil
         lastExportError = nil
+        lastExportErrorAt = nil
         lastImportError = nil
+        lastImportErrorAt = nil
         consecutiveFailures = 0
         hasCompletedFirstImport = false
         hasObservedImportActivity = false
+        lastImportActivityAt = nil
         _testIgnoreExternalEvents = true
         _testForceAccountAvailable = nil
+        mirrorReportedNotAuthenticated = false
+        // Ancla aislada por test: el singleton escribiría en el `UserDefaults` del simulador.
+        if let isolated = UserDefaults(suiteName: "test.icloudsync.\(UUID().uuidString)") {
+            exportAnchorDefaults = isolated
+        }
     }
 
     /// Await the pending failed-transition Task so tests can assert post-debounce
@@ -654,8 +827,47 @@ struct ICloudAccountSummary: Equatable {
     let primaryCurrencyCode: String?
     let categoriesCount: Int
 
+    /// ¿Hay algo que restaurar **de iCloud**? **Cuatro cifras desde el 2026-09-21**
+    /// (`restore-treats-budgets-and-groups-as-no-data`): entran los presupuestos, que faltaban.
+    ///
+    /// El hueco que cierra: `budgetsCount` lo transporta este mismo struct y
+    /// `RestoreProgressView.liveCounts` lo pinta subiendo en vivo, así que la pantalla enseñaba llegar
+    /// unos presupuestos que la siguiente negaba. CloudKit entrega por lotes y sin orden garantizado,
+    /// de modo que «bajó `CD_Budget` y todavía no `CD_Subcategory`» es un estado real y observable.
+    ///
+    /// **`groupsCount` NO entra, y la decisión está medida — no es un olvido ni una asimetría que
+    /// convenga «alinear».** El ticket pedía incluirlo y la medición lo refutó por tres sitios:
+    ///
+    ///  1. **Los grupos no vienen de iCloud.** `SplitGroup` vive en `groupsSchema`, cuyo store monta
+    ///     `cloudKitDatabase: .none`, y sus filas llegan por el backend de Yala. Este predicado
+    ///     contesta «¿trajo algo el espejo?», y un conteo que el espejo no puede mover solo puede
+    ///     mentir.
+    ///  2. **Contarlo TAPA cuatro estados legítimos.** `WelcomeRestoreView` decide con un
+    ///     `if hasAnyData` que cortocircuita antes de mirar el veredicto del import, así que con un
+    ///     solo grupo local `.importIncomplete` («tus datos siguen llegando», que es el ticket
+    ///     `restore-says-no-data-when-the-icloud-import-never-settled`), `.cloudPaused`,
+    ///     `.cloudUnverified` y `.notFound` dejarían de alcanzarse. En `FullModeActivationView`, que
+    ///     monta esa misma pantalla y a la que **solo se llega desde una sesión solo-grupos**, serían
+    ///     inalcanzables POR CONSTRUCCIÓN — y el docblock de su «Empezar desde cero» dice
+    ///     explícitamente que cuenta con que ese `.notFound` ocurra.
+    ///  3. **La protección que motivaba incluirlo YA EXISTE.** El argumento era que `.notFound` ofrece
+    ///     «Empezar desde cero» de botón primario y ese camino purga el dominio de Grupos. Cierto, pero
+    ///     no borra sin avisar: pasa por la puerta del paso 4, cuyo `deviceHasData` sale de
+    ///     `ContentView.checkHasExistingData()`, que **sí cuenta `SplitGroup`** ⇒ quien solo tiene
+    ///     grupos cae en `.foundDeviceData` y recibe el aviso con doble confirmación.
+    ///
+    /// ⇒ **son dos preguntas distintas y cada una tiene su predicado**: «¿hay algo que restaurar de
+    /// iCloud?» es ésta; «¿hay datos que perder en este teléfono?» es `checkHasExistingData()`.
+    /// Colapsarlas es lo que produce el error en las dos direcciones.
+    ///
+    /// **Ni presupuestos ni grupos los crea la app por su cuenta** —en producción un `Budget` nace de
+    /// `BudgetEditorViewModel`, de `OnboardingView.createOnboardingBudget()` (si la persona lo pide al
+    /// final del onboarding), del backfill de migración o del apply de Modo Nube (hoy DARK); los seeds
+    /// que crean presupuestos son `#if DEBUG`—, así que el término nuevo no enciende esto en una
+    /// instalación recién hecha. Los de sistema que sí existen (cuentas y subcategorías del bridge) ya
+    /// los descuenta el constructor de abajo.
     var hasAnyData: Bool {
-        accountsCount > 0 || transactionsCount > 0 || categoriesCount > 0
+        accountsCount > 0 || transactionsCount > 0 || categoriesCount > 0 || budgetsCount > 0
     }
 
     /// El user puede saltar el onboarding completo si tiene nombre + cuentas + categorías.
@@ -702,5 +914,80 @@ extension ModelContext {
             primaryCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
             categoriesCount: categories
         )
+    }
+}
+
+// MARK: - La resolución única de `forceFetchAndWait`
+
+/// Una sola resolución para la espera del primer import, entre las TRES vías que compiten por ella: la
+/// notificación de CloudKit, el tope y la cancelación del `Task` que espera.
+///
+/// **Existe porque un doble `resume` de una `CheckedContinuation` es un CRASH**, no un test rojo, y
+/// porque la carrera que lo produce no es teórica: `withTaskCancellationHandler` ejecuta su `onCancel`
+/// **antes** de `operation` cuando el `Task` ya venía cancelado, o sea antes de que
+/// `withCheckedContinuation` haya instalado nada. Por eso `resolve(_:)` guarda el valor pendiente
+/// cuando todavía no hay continuation, y `arm(...)` lo cobra en cuanto la hay — el modo de fallo de no
+/// hacerlo es el contrario y peor: una espera que no resuelve NUNCA.
+///
+/// Y se queda con lo que hay que **soltar** al resolver: el observer de `NotificationCenter` y el
+/// `Task` del tope. Cancelar el segundo es lo que impide que un desenlace feliz a los 2 s deje un sleep
+/// de 90 s durmiendo detrás.
+///
+/// **`nonisolated` explícito y `@unchecked Sendable`**: el proyecto compila con
+/// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, así que sin la anotación esta clase nace aislada al
+/// MainActor y el `onCancel` —que es un closure `@Sendable` nonisolated— la llamaría desde fuera. El
+/// `NSLock` es quien serializa el estado; el actor no pinta nada aquí.
+/// **No es `private`, y eso es una decisión medida.** Sus tres pasos —retirar el observer, cancelar el
+/// `Task` del tope y resolver una sola vez— son invisibles desde `forceFetchAndWait`: un mutante que
+/// quitase el `guard` de resolución única SOBREVIVÍA a la suite entera (medido el 2026-09-21), porque el
+/// doble `resume` lo tapa el `continuation = nil` de la línea de al lado. Con la caja alcanzable, esos
+/// pasos tienen red de COMPORTAMIENTO (`ForceFetchWaitBoxTests`) en vez de un source-scan.
+nonisolated final class ForceFetchWaitBox: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+    private var observer: NSObjectProtocol?
+    private var timeoutTask: Task<Void, Never>?
+    private var didResolve = false
+    /// El valor con el que resolver en cuanto exista continuation. Solo se llena si alguien resolvió
+    /// ANTES de que la hubiera — en la práctica, el `onCancel` de un `Task` que llegó ya cancelado.
+    private var pendingValue: Bool?
+
+    /// Entrega la continuation y lo que hay que soltar con ella. Si ya se resolvió antes de existir,
+    /// resuelve aquí mismo y suelta en el acto.
+    func arm(continuation: CheckedContinuation<Bool, Never>,
+             observer: NSObjectProtocol,
+             timeoutTask: Task<Void, Never>) {
+        lock.lock()
+        if let pendingValue {
+            lock.unlock()
+            NotificationCenter.default.removeObserver(observer)
+            timeoutTask.cancel()
+            continuation.resume(returning: pendingValue)
+            return
+        }
+        self.continuation = continuation
+        self.observer = observer
+        self.timeoutTask = timeoutTask
+        lock.unlock()
+    }
+
+    /// Resuelve la espera con `value`, una sola vez, y suelta observer y `Task` del tope.
+    func resolve(_ value: Bool) {
+        lock.lock()
+        guard !didResolve else { lock.unlock(); return }
+        didResolve = true
+        let continuation = self.continuation
+        let observer = self.observer
+        let timeoutTask = self.timeoutTask
+        self.continuation = nil
+        self.observer = nil
+        self.timeoutTask = nil
+        if continuation == nil { pendingValue = value }
+        lock.unlock()
+
+        if let observer { NotificationCenter.default.removeObserver(observer) }
+        timeoutTask?.cancel()
+        continuation?.resume(returning: value)
     }
 }

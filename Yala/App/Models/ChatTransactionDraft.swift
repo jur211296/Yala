@@ -84,4 +84,44 @@ struct ChatTransactionDraft: Identifiable, Codable, Equatable {
         self.savedTransactionID = try c.decodeIfPresent(PersistentIdentifier.self, forKey: .savedTransactionID)
         self.needsUserInput = try c.decodeIfPresent([String].self, forKey: .needsUserInput) ?? []
     }
+
+    // MARK: - Divisa efectiva
+
+    /// La divisa con la que el borrador se va a GUARDAR: la de la cuenta elegida, y solo mientras no
+    /// hay cuenta, la que dictó el usuario.
+    ///
+    /// **`currencyCode` ya es este valor en un borrador vivo**, porque el ViewModel lo sincroniza al
+    /// elegir cuenta (`updateDraft`) y lo congela al guardar (`saveDraft`). Este método es la
+    /// autoridad de esa sincronización, no un segundo camino: quien tenga delante una `Account`
+    /// resuelta debe llamarlo; quien solo tenga el borrador puede leer `currencyCode` directamente.
+    /// Lo que NO debe hacer nadie es resolver la cuenta por su cuenta para deducir la divisa — se
+    /// intentó en la tarjeta y volvió el bug, porque su `@Query` filtra `!isArchived` y `saveDraft`
+    /// resuelve con `context.model(for:)`, que no filtra.
+    ///
+    /// De dónde viene el valor dictado: `parsed.currencyHint`, que el prompt del LLM pide
+    /// explícitamente como `"USD" | "EUR" | "PEN" | null`. Sirve para ELEGIR cuenta —`DraftBuilder`
+    /// llama a `findAccount(byCurrency:)`— pero no para estampar la transacción, porque ese match
+    /// devuelve cuenta solo si hay **exactamente una** viva en esa divisa (`0 ó 2+ → nil`). Cuando
+    /// devuelve `nil` el borrador nace sin cuenta, la tarjeta se la pide al usuario y el menú le
+    /// ofrece todas las cuentas **sin filtrar por divisa** (filtra archivadas, no divisas). O sea que
+    /// el desemparejamiento no era un caso de laboratorio: era la salida natural de que ese match
+    /// fallara — por divisa sin cuenta, y también por tener DOS cuentas en la divisa dictada, donde
+    /// las divisas ni siquiera difieren.
+    ///
+    /// Manda la cuenta, y no es una regla nueva: es la que **ya aplica el formulario a este mismo
+    /// borrador** (`NewTransactionViewModel.prefill(fromChatDraft:)` hace
+    /// `currencyCode = account.currencyCode` cuando el ID resuelve). La incoherencia estaba dentro de
+    /// la propia tarjeta: pulsar «Editar» aplicaba esta regla y pulsar «Guardar» la contraria. Aguas
+    /// abajo el resto del sistema ya la asumía — las otras rutas de creación estampan
+    /// `account.currencyCode`, e `InboxDraft` (el borrador de Voz/Siri/Vision) ni siquiera tiene
+    /// campo de divisa: usa el hint para elegir cuenta y lo descarta.
+    ///
+    /// Ojo al usarlo: el valor viaja a las CUATRO columnas del grupo de coherencia `money`. Quien
+    /// estampe `currencyCode` con esto tiene que convertir desde esto mismo (`convertChecked(from:)`)
+    /// o la fila queda diciendo una divisa y convertida desde otra. Y eso no lo cazan las columnas
+    /// entre sí —quedan aritméticamente coherentes—, sino el reparador: `recalculatePreferredCurrency`
+    /// reconvierte desde `currencyCode` en `date`, así que reescribiría otro número al pasar por ella.
+    func effectiveCurrencyCode(account: Account?) -> String {
+        account?.currencyCode ?? currencyCode
+    }
 }

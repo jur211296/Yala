@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Pure-logic del sheet de detalle de transacción (Records): detent inicial
-//  (medium iPhone / large iPad) y clasificación visual de la TX. Sin
+//  (medium en ventana compacta / large en ventana ancha) y clasificación visual de la TX. Sin
 //  SwiftUI/L10n para tests sin UI ni ModelContext (evita flake R8 documentado
 //  en CLAUDE.md → makeTestContext). El mapeo Detent → PresentationDetent vive
 //  en TransactionDetailSheet.swift.
@@ -24,8 +24,8 @@ enum TransactionDetailSheetLogic {
         case transfer
     }
 
-    /// Detent fijo del sheet de detalle: iPad/Mac fuerzan large
-    /// (DS.Adaptive.usesLargeSheets); iPhone usa medium (quick look). La edición
+    /// Detent fijo del sheet de detalle: una ventana ancha o Mac fuerzan large
+    /// (`\.usesLargeSheets`); una compacta usa medium (quick look). La edición
     /// nunca cambia el detent — abre como sheet aparte (decisión owner).
     static func initialDetent(usesLargeSheets: Bool) -> Detent {
         usesLargeSheets ? .large : .medium

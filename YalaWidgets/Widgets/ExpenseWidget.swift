@@ -32,6 +32,9 @@ struct ExpenseEntry: TimelineEntry {
     let trendData: [WidgetTrendPoint]
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    /// Marca «≈» del gasto. Al final y con default: placeholders y previews traen cifras
+    /// inventadas y exactas.
+    var expenseIsApproximate: Bool = false
 
     static var placeholder: ExpenseEntry {
         ExpenseEntry(
@@ -96,7 +99,8 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
             currencyDisplayFormat: displayFormat,
             trendData: expenseTrendData,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            expenseIsApproximate: summary?.expenseIsApproximate ?? false
         )
     }
 }
@@ -137,7 +141,8 @@ struct SmallExpenseView: View {
                 currencyCode: entry.currencyCode,
                 displayFormat: entry.currencyDisplayFormat,
                 color: WidgetColors.expense,
-                size: .large
+                size: .large,
+                isEstimate: entry.expenseIsApproximate
             )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -229,7 +234,8 @@ struct MediumExpenseView: View {
                     currencyCode: entry.currencyCode,
                     displayFormat: entry.currencyDisplayFormat,
                     color: WidgetColors.expense,
-                    size: .small
+                    size: .small,
+                    isEstimate: entry.expenseIsApproximate
                 )
             }
 
@@ -322,6 +328,7 @@ struct ExpenseWidget: Widget {
             provider: ExpenseWidgetProvider()
         ) { entry in
             ExpenseWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.expense")

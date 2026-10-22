@@ -1,0 +1,130 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Yala · captura App Store</title>
+<link rel="stylesheet" href="lamina.css">
+<script>
+// lamina.html?lang=en&set=iphone&n=1&f=69&cap=<carpeta de las capturas del simulador>
+//   lang → textos/<lang>.js (TXT y OBJ de Lola) · f=69 → lienzo 1320×2868 · f=65 → 1320×2856 (se escala a 1284×2778
+//   al exportar) · f=ipad → 2064×2752 · cap → URL de la carpeta con s-*.png / i-*.png (por defecto ../capturas/).
+const Q = new URLSearchParams(location.search);
+const LANG = Q.get("lang") || "es";
+document.write(`<script src="../textos/${LANG}.js"><\/script>`);
+</script>
+<script src="sets.js"></script>
+</head><body>
+<div id="raiz"></div>
+<script>
+const TX = (window.YALA_TEXTOS || {})[LANG];
+if (!TX) throw new Error(`Faltan los textos de «${LANG}» (textos/${LANG}.js)`);
+document.documentElement.lang = TX.idioma;
+const SETS = construirSets(TX, LANG);
+const SET = SETS[Q.get("set") || "iphone"];
+const N = +(Q.get("n") || 1);
+const F = Q.get("f") || "69";
+const CAP = (Q.get("cap") || "../capturas/").replace(/\/?$/, "/");
+const W = F === "ipad" ? 2064 : 1320, H = F === "ipad" ? 2752 : F === "65" ? 2856 : 2868;
+document.body.style.width = W + "px"; document.body.style.height = H + "px";
+
+const px = v => typeof v === "number" ? v + "px" : v;
+const css = o => Object.entries(o || {}).map(([k, v]) => `${k}:${px(v)}`).join(";");
+const pos = e => css(Object.assign({}, e.pos, e.estilo));
+
+function telefono(e) {
+  const w = e.w;
+  const botones = [["left", 15.5, 2.6], ["left", 22.5, 4.8], ["left", 29, 4.8], ["right", 24, 8.2]]
+    .map(([lado, top, h]) => `<i class="boton" style="${lado}:-${w * 0.009}px;top:${top}%;height:${h}%"></i>`).join("");
+  return `<div class="escena" style="${pos(e)}">
+    <div class="phone" style="--w:${w}px;transform:${e.t || "none"}">
+      <div class="sombra"></div><div class="grosor"></div>${botones}<div class="cuerpo"></div>
+      <div class="pantalla"><img src="${CAP}${e.img}" style="object-position:${e.foco || "top"}"><div class="isla"></div></div>
+      ${(e.encima || []).map(pieza).join("")}
+    </div></div>`;
+}
+
+function tableta(e) {
+  // iPad Pro 13" en vertical, plano: marco fino de un solo tono, sin reflejo. --w es el ancho de pantalla.
+  return `<div class="escena" style="${pos(e)}">
+    <div class="tablet" style="--w:${e.w}px;transform:${e.t || "none"}">
+      <div class="sombra"></div><div class="grosor"></div><div class="cuerpo"></div>
+      <div class="pantalla"><img src="${CAP}${e.img}" style="object-position:${e.foco || "top"}"></div>
+      ${(e.encima || []).map(pieza).join("")}
+    </div></div>`;
+}
+
+// El comprobante de la transferencia: genérico, sin marca de ninguna billetera ni banco. Todo sale de OBJ, y el monto
+// ya trae su símbolo («$35.00», «R$ 35,00», «S/ 35.00»).
+const PAGO = m => `
+  <div class="ok">✓</div>
+  <div class="tit">${m.tit}</div>
+  <div class="monto">${m.monto}</div>
+  <div class="a">${m.a}</div>
+  <hr>
+  <table>${m.filas.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}</table>`;
+
+function texto(e) {
+  const p = e.pill ?? 40, tit = e.tit ?? 124, sub = e.sub ?? 50;
+  return `<div class="texto"${e.acento ? ` data-acento="${e.acento}"` : ""} style="${pos(e)}">
+    ${e.pillTxt ? `<span class="pill" style="font-size:${p}px;padding:${p * .42}px ${p * .9}px">${e.pillTxt}</span>` : ""}
+    <h1 class="titular" style="font-size:${tit}px;margin-top:${e.gap ?? 40}px">${e.titular}</h1>
+    ${e.subTxt ? `<p class="sub" style="font-size:${sub}px;margin-top:${e.subgap ?? 30}px;${e.subw ? "max-width:" + e.subw + "px" : ""}">${e.subTxt}</p>` : ""}
+  </div>`;
+}
+
+// La boleta de OBJ["02_foto"].boleta: cabecera, líneas pequeñas, ítems, totales con su símbolo, total y pie.
+const BOLETA = b => `
+  ${b.cab.map(l => `<div class="cab" style="font-size:1.25em">${l}</div>`).join("")}
+  ${b.peq.map((l, i) => `<div class="peq"${i === 0 ? ' style="margin-top:.4em"' : ""}>${l}</div>`).join("")}
+  <hr style="margin:.8em 0">
+  <table>${b.items.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}</table>
+  <hr style="margin:.8em 0">
+  <table>
+    ${b.totales.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}
+    <tr class="tot" style="font-size:1.25em"><td>${b.total[0]}</td><td>${b.total[1]}</td></tr>
+  </table>
+  <hr style="margin:.8em 0">
+  <div class="peq">${b.pie}</div>`;
+
+function pieza(e) {
+  const ac = e.acento ? ` data-acento="${e.acento}"` : "";
+  switch (e.k) {
+    case "phone": return telefono(e);
+    case "tablet": return tableta(e);
+    case "pago": return `<div class="pago" style="${pos(e)}">${PAGO(e.m)}</div>`;
+    case "texto": return texto(e);
+    case "barra": case "disco":
+      return `<div class="${e.k}"${ac} style="${pos(e)};${e.c ? "--c:" + e.c : ""}"></div>`;
+    case "traza":
+      return `<svg class="traza" width="${e.w}" height="${e.h}" style="${pos(e)}"><path d="${e.d}" fill="none" stroke="${e.c}" stroke-width="${e.grueso}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    case "chip": return `<div class="chip"${ac} style="${pos(e)}">${e.html}</div>`;
+    case "burbuja": return `<div class="burbuja ${e.cola === false ? "" : "cola"}" style="${pos(e)};${e.c ? "--c:" + e.c : ""}">${e.html}</div>`;
+    case "cifra": return `<div class="cifra"${ac} style="${pos(e)}">${e.html}</div>`;
+    case "boleta": return `<div class="boleta" style="${pos(e)}">${BOLETA(e.b)}</div>`;
+    case "onda": {
+      const barras = e.alturas.map(h => `<i style="width:${e.ancho}px;height:${h}px;margin-right:${e.hueco}px"></i>`).join("");
+      return `<div class="onda"${ac} style="${pos(e)}">${barras}</div>`;
+    }
+    case "tarjeta": {
+      const s = e.escala || 1;
+      return `<div class="tarjeta"${ac} style="${pos(e)};padding:${34 * s}px ${40 * s}px;display:flex;align-items:center;gap:${28 * s}px">
+        ${e.ico ? `<div class="ico" style="width:${84 * s}px;height:${84 * s}px;background:${e.icoC || "var(--acento)"};font-size:${40 * s}px">${e.ico}</div>` : ""}
+        <div style="flex:1;min-width:0"><div class="t1" style="font-size:${40 * s}px">${e.t1}</div>${e.t2 ? `<div class="t2" style="font-size:${30 * s}px">${e.t2}</div>` : ""}</div>
+        ${e.monto ? `<div class="monto" style="font-size:${44 * s}px">${e.monto}</div>` : ""}
+      </div>`;
+    }
+    case "html": return `<div style="position:absolute;${pos(e)}">${e.html}</div>`;
+  }
+  return "";
+}
+
+// Estrellas de cuatro puntas, las de los posts, pero planas: color sólido, sin drop-shadow ni glow.
+// [x, y, tamaño, color, giro]. Cada lámina puede traer las suyas (estrellas: [...]); si no, toma las del set.
+const TRAZO = "M50 0 C54 36 64 46 100 50 C64 54 54 64 50 100 C46 64 36 54 0 50 C36 46 46 36 50 0 Z";
+const COLOR = {rosa: "#FF2D78", azul: "#6164EB", teal: "#3BD6F0", violeta: "#8B5CF6"};
+const estrella = ([x, y, s, c, r]) =>
+  `<svg class="estrella" viewBox="0 0 100 100" style="left:${x}px;top:${y}px;width:${s}px;height:${s}px;transform:rotate(${r || 0}deg)"><path d="${TRAZO}" fill="${COLOR[c]}"/></svg>`;
+
+const L = SET.laminas[N - 1];
+const logo = `<img class="logo" src="../assets/logo.png" style="${css(L.logo || {left: 84, bottom: 84, width: 180})}">`;
+document.getElementById("raiz").innerHTML =
+  `<div class="lienzo" data-acento="${L.acento}" style="width:${W}px;height:${H}px;left:0">${(L.estrellas || SET.estrellas || []).map(estrella).join("")}${L.els.map(pieza).join("")}${L.sinLogo ? "" : logo}</div>`;
+</script>
+</body></html>

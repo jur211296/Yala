@@ -60,9 +60,6 @@ struct LimitReachedBanner: View {
         .padding(DS.Spacing.md)
         .background(DS.Semantic.warningBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        .onAppear {
-            TelemetryService.trackOnce(.proUpsellShown, key: "limitBanner_\(feature.rawValue)", parameters: TelemetryService.upsellParameters(source: "limitBanner"))
-        }
     }
 }
 

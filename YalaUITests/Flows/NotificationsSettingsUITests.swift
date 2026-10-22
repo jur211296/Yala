@@ -73,4 +73,58 @@ final class NotificationsSettingsUITests: XCTestCase {
             "El recordatorio creado no apareció en la lista."
         )
     }
+
+    /// Ticket `notification-dedup-deletes-all-custom-reminders-but-one`: la pantalla deja crear varios recordatorios
+    /// propios, y la limpieza de duplicados del arranque los borraba todos menos uno. Se crean tres, se relanza sobre el
+    /// mismo store (sin reset ni seed) y se cuentan otra vez.
+    func test_threeCustomReminders_surviveARelaunch() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        app.openProfile()
+        app.openSettingsSection("profile_notifications")
+
+        let names = ["QA Uno", "QA Dos", "QA Tres"]
+        for name in names {
+            createCustomReminder(app, name: name)
+        }
+        for name in names {
+            XCTAssertTrue(reminder(app, name).waitForExistence(timeout: 5), "La pantalla no dejó crear «\(name)».")
+        }
+
+        app.terminate()
+        app.launchForUITest(reset: false, seed: nil)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente en el segundo arranque.")
+        app.openProfile()
+        app.openSettingsSection("profile_notifications")
+        XCTAssertTrue(app.buttons["notifications_add"].waitForExistence(timeout: 5), "No se montó la pantalla de avisos.")
+
+        XCTAssertTrue(reminder(app, names[0]).waitForExistence(timeout: 5)
+                      || reminder(app, names[1]).exists || reminder(app, names[2]).exists,
+                      "Control: tras relanzar no queda ningún recordatorio propio; el store no sobrevivió al relanzamiento.")
+        let missing = names.filter { !reminder(app, $0).exists }
+        XCTAssertTrue(missing.isEmpty, "Al abrir la app se borraron recordatorios propios: \(missing)")
+    }
+
+    private func reminder(_ app: XCUIApplication, _ name: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+    }
+
+    private func createCustomReminder(_ app: XCUIApplication, name: String) {
+        let addButton = app.buttons["notifications_add"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció notifications_add.")
+        addButton.tap()
+        let nameField = app.textFields["notification_name_field"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5), "No apareció el editor (notification_name_field).")
+        nameField.tap()
+        nameField.typeText(name)
+        let textField = app.textFields["notification_text_field"]
+        XCTAssertTrue(textField.waitForExistence(timeout: 5), "No apareció notification_text_field.")
+        textField.tap()
+        textField.typeText("Texto de \(name)")
+        let saveButton = app.buttons["toolbar_save_button"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "No apareció toolbar_save_button.")
+        saveButton.tap()
+        XCTAssertTrue(nameField.waitForNonExistence(timeout: 5), "El editor no se cerró al guardar «\(name)».")
+    }
 }

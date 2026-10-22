@@ -431,8 +431,13 @@ private struct CategoryRow: View {
                             .frame(height: 6)
 
                         let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
+                        // Al 22 %: la barra conserva el tono de su categoría —y
+                        // con él la lectura de a quién pertenece— sin competir
+                        // con el icono, que es quien de verdad identifica. Medido
+                        // el 2026-09-02: las barras eran el 47 % de la superficie
+                        // de color saturado de la tarjeta, y los iconos el 35 %.
                         Capsule()
-                            .fill(Color(hex: summary.category.colorHex))
+                            .fill(Color(hex: summary.category.colorHex).opacity(0.22))
                             .frame(width: width, height: 6)
                     }
                     .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in

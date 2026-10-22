@@ -47,18 +47,36 @@ final class InboxViewModel {
 
     private(set) var allDrafts: [InboxDraft] = []
     private(set) var pendingDrafts: [InboxDraft] = []
+    /// Gastos de grupo pendientes sin su grupo en este teléfono: se les ofrece «Quitar de aquí»
+    /// (`InboxGroupDraftsHiddenHere`).
+    private(set) var hideableHereIDs: Set<PersistentIdentifier> = []
 
     // MARK: - Setup
 
     func setContext(_ context: ModelContext) {
         let isNewContext = self.modelContext !== context
         self.modelContext = context
+        // Puente síncrono para que la capa de servicio pode filas antes de borrar (crash iOS 27,
+        // ver InboxRowPruneCoordinator). weak: se libera solo al cerrarse el Inbox.
+        InboxRowPruneCoordinator.shared.viewModel = self
         if isNewContext { loadData() }
     }
 
     func loadData() {
         loadAllDrafts()
         loadPendingDrafts()
+        loadHideableHere()
+    }
+
+    /// Qué borradores pendientes se pueden quitar de la Bandeja solo aquí.
+    private func loadHideableHere() {
+        guard let context = modelContext else { return }
+        let ids = InboxGroupDraftsHiddenHere.hideableIDs(in: pendingDrafts, context: context)
+        if ids != hideableHereIDs { hideableHereIDs = ids }
+    }
+
+    func canHideHere(_ draft: InboxDraft) -> Bool {
+        hideableHereIDs.contains(draft.persistentModelID)
     }
 
     private func loadAllDrafts() {
@@ -70,7 +88,8 @@ final class InboxViewModel {
         descriptor.fetchLimit = 500
 
         do {
-            let fetched = try context.fetch(descriptor)
+            // Sin los gastos de grupo quitados de la Bandeja en este teléfono (`InboxGroupDraftsHiddenHere`).
+            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
             if fetched != allDrafts { allDrafts = fetched }
         } catch {
             #if DEBUG
@@ -89,7 +108,7 @@ final class InboxViewModel {
         descriptor.fetchLimit = 200
 
         do {
-            let fetched = try context.fetch(descriptor)
+            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
             if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG
@@ -105,11 +124,9 @@ final class InboxViewModel {
         case .pending:
             return allDrafts.filter { $0.status == .pending }
         case .archived:
-            // Only show archived drafts that have cached values (to avoid crashes from invalid relationships)
-            return allDrafts.filter {
-                ($0.status == .approved || $0.status == .rejected) &&
-                $0.cachedAccountName != nil
-            }
+            // Only show archived drafts that have cached values (to avoid crashes from invalid relationships),
+            // plus rejected settlement drafts, which never had an account (`InboxDraft.isShownInArchive`).
+            return allDrafts.filter(\.isShownInArchive)
         }
     }
 
@@ -133,7 +150,7 @@ final class InboxViewModel {
         case .pending:
             return allDrafts.count(where: { $0.status == .pending })
         case .archived:
-            return allDrafts.count(where: { ($0.status == .approved || $0.status == .rejected) && $0.cachedAccountName != nil })
+            return allDrafts.count(where: \.isShownInArchive)
         }
     }
 
@@ -149,8 +166,15 @@ final class InboxViewModel {
     }
 
     func removeDraft(_ draft: InboxDraft) {
-        allDrafts.removeAll { $0.persistentModelID == draft.persistentModelID }
-        pendingDrafts.removeAll { $0.persistentModelID == draft.persistentModelID }
+        removeDraft(id: draft.persistentModelID)
+    }
+
+    /// Poda una fila del array cacheado por su id persistente. Usado por el
+    /// `InboxRowPruneCoordinator` desde la capa de servicio para desmontar la fila ANTES de que
+    /// `context.delete` invalide el @Model (evita el SIGTRAP de SwiftData en iOS 27). Idempotente.
+    func removeDraft(id: PersistentIdentifier) {
+        allDrafts.removeAll { $0.persistentModelID == id }
+        pendingDrafts.removeAll { $0.persistentModelID == id }
     }
 
     var hasPendingDrafts: Bool {

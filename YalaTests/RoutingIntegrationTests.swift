@@ -70,6 +70,101 @@ struct RoutingIntegrationTests {
         #expect(router.contains { if case .presentInboxSheet = $0 { return true }; return false })
     }
 
+    // MARK: - Alerts de grupos serializados por readiness (matriz completa)
+
+    /// Dos alerts async del mismo nodo (inviteError + groupSyncError): con ambos
+    /// en la matriz de readiness, el primero presentado bloquea el drain y el
+    /// segundo ESPERA en cola en vez de setearse tapado y tragarse en silencio.
+    @MainActor @Test
+    func twoContentViewAlertIntents_serializeAcrossReadiness() {
+        let router = freshRouter()
+        router.enqueue(.showInviteError("invite falló"))
+        router.enqueue(.showGroupSyncError("sync falló"))
+
+        // Consumer listo → drena el primero (inviteError, prioridad más alta).
+        router.markReady(.contentView, in: nil)
+        let first = router.drainNext(for: .contentView, in: nil)
+        guard case .showInviteError = first else {
+            Issue.record("Esperaba showInviteError primero, drenó \(String(describing: first))")
+            return
+        }
+
+        // El alert está visible → la matriz (hasActiveInviteError) marca unready.
+        router.markUnready(.contentView, in: nil)
+        #expect(router.drainNext(for: .contentView, in: nil) == nil)
+        #expect(router.contains { if case .showGroupSyncError = $0 { return true }; return false })
+
+        // OK del primer alert → flag a nil → recompute → markReady → drena el segundo.
+        router.markReady(.contentView, in: nil)
+        let second = router.drainNext(for: .contentView, in: nil)
+        guard case .showGroupSyncError = second else {
+            Issue.record("Esperaba showGroupSyncError segundo, drenó \(String(describing: second))")
+            return
+        }
+    }
+
+    // MARK: - Clase D: intents retenidos (no consumidos) con el nodo tapado
+
+    /// El repro del bug TestFlight a nivel motor: `.presentInboxSheet` encolado
+    /// con el shell tapado (paywall) NO se consume — el consumidor hace peek y
+    /// el gate decide hold; al liberar el shell, drena y la Bandeja abre.
+    @MainActor @Test
+    func panelIntent_heldWhileGateClosed_persistsInQueue() {
+        let router = freshRouter()
+        router.enqueue(.presentInboxSheet)
+        router.markReady(.panel, in: nil)
+
+        // Gate cerrado (paywall del shell arriba): el consumidor no drena.
+        #expect(!RouterConsumerGateLogic.panelCanDrain(
+            selectedTab: .panel, chatSheetOpen: false,
+            shellBlocker: "proTrialOffer", mainTabModalVisible: false, panelModalVisible: false,
+            windowPresentationVisible: false
+        ))
+        #expect(router.peekNext(for: .panel, in: nil) != nil)
+        #expect(router.contains { if case .presentInboxSheet = $0 { return true }; return false })
+
+        // Paywall cierra → gate abierto → el intent retenido drena AHORA.
+        #expect(RouterConsumerGateLogic.panelCanDrain(
+            selectedTab: .panel, chatSheetOpen: false,
+            shellBlocker: nil, mainTabModalVisible: false, panelModalVisible: false,
+            windowPresentationVisible: false
+        ))
+        let drained = router.drainNext(for: .panel, in: nil)
+        guard case .presentInboxSheet = drained else {
+            Issue.record("Esperaba presentInboxSheet, drenó \(String(describing: drained))")
+            return
+        }
+        #expect(!router.contains { if case .presentInboxSheet = $0 { return true }; return false })
+    }
+
+    /// Peek-first de `.mainTab`: un intent modal en hold NO se remueve de la
+    /// cola (antes el drain ciego lo consumía y el one-shot se quemaba tapado).
+    @MainActor @Test
+    func mainTabModalIntent_peekFirst_doesNotConsumeOnHold() {
+        let router = freshRouter()
+        router.enqueue(.presentTrialExpired)
+        router.markReady(.mainTab, in: nil)
+
+        guard let next = router.peekNext(for: .mainTab, in: nil) else {
+            Issue.record("Cola vacía tras enqueue")
+            return
+        }
+        #expect(RouterConsumerGateLogic.mainTabDecision(
+            intent: next, shellBlocker: "whatsNew", ownModalVisible: false
+        ) == .hold)
+        // Peek no removió: el intent sobrevive al hold.
+        #expect(router.contains { if case .presentTrialExpired = $0 { return true }; return false })
+
+        #expect(RouterConsumerGateLogic.mainTabDecision(
+            intent: next, shellBlocker: nil, ownModalVisible: false
+        ) == .drain)
+        let drained = router.drainNext(for: .mainTab, in: nil)
+        guard case .presentTrialExpired = drained else {
+            Issue.record("Esperaba presentTrialExpired, drenó \(String(describing: drained))")
+            return
+        }
+    }
+
     // MARK: - Dueling monetization
 
     @MainActor @Test
@@ -149,8 +244,9 @@ struct RoutingIntegrationTests {
         let buffer = DeferredIntentBuffer(defaults: isolatedDefaults)
         buffer.clear()
 
-        // .presentNewTransaction is fire-and-forget — not serializable.
-        buffer.deferIntent(.presentNewTransaction)
+        // La oferta de prueba se re-decide sola: no tiene proxy. (Era `.presentNewTransaction` hasta el 2026-10-11, cuando
+        // pasó a aparcarse al ir a segundo plano — `WidgetAndSiriEntriesBackgroundTests`.)
+        buffer.deferIntent(.presentTrialOffer)
         #expect(buffer.isEmpty)
     }
 
@@ -159,17 +255,17 @@ struct RoutingIntegrationTests {
     @MainActor @Test
     func singleIntentDrain_pattern_stillIntact_afterRefactor() {
         let router = freshRouter()
-        router.markReady(.panel)
+        router.markReady(.panel, in: nil)
         router.enqueue(.presentInboxSheet)
 
-        let first = router.drainNext(for: .panel)
+        let first = router.drainNext(for: .panel, in: nil)
         #expect(first == .presentInboxSheet)
 
         // Handler enqueues another — drain pattern guarantees it queues for next tick.
         router.enqueue(.presentNewTransaction)
         #expect(router.queueSnapshot.count == 1)
 
-        let second = router.drainNext(for: .panel)
+        let second = router.drainNext(for: .panel, in: nil)
         #expect(second == .presentNewTransaction)
         #expect(router.queueSnapshot.isEmpty)
     }

@@ -102,6 +102,8 @@ final class MerchantMemoryService {
                 lastApprovedAt: Date.now,
                 aliases: [merchantRaw.trimmingCharacters(in: .whitespacesAndNewlines)]
             )
+            // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+            SyncIdentityService.captureIfEnabled(memory)
             modelContext.insert(memory)
         }
     }

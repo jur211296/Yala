@@ -30,6 +30,27 @@ final class SplitMember {
     var joinedAt: Date = Date.now
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
+    /// Auth `uid` del backend (canal Grupos → backend, incremento G3). **LOCAL-only del canal backend**:
+    /// lo escribe SOLO el apply del pull de `GroupsSyncClient` (proyección del `user_id` del wire) y JAMÁS
+    /// viaja en un CKRecord (el sync de Grupos vigente es CKSyncEngine y este campo no está en
+    /// `CKRecordTranslator`/`CKConstants` — no forma parte del schema del container de Grupos). Sirve para
+    /// derivar `isCurrentUser` contra `CloudAuthService.currentUserID` cuando el canal backend está
+    /// encendido (DARK hoy); `nil` en members legacy/CloudKit → el path por `cloudKitUserRecordID` sigue
+    /// siendo el fallback. Anonimización del server (`user_id` null) → este campo también se NULLea.
+    /// CloudKit-safe: opcional, default `nil`, sin `.unique`.
+    var userID: String?
+
+    /// `member_key` del canal Grupos → backend (incremento G3). **LOCAL-only del canal backend**: es la
+    /// clave de identidad server-side de la membresía (`sub` del auth para members nacidos en el backend;
+    /// el `recordName` viejo de CloudKit para members migrados G6-era). Lo escribe SOLO el apply del pull
+    /// de `GroupsSyncClient` (born-remote y adopción de una fila CloudKit preexistente) y el materializador
+    /// server-first de `GroupBackendMembershipService`. JAMÁS viaja en un CKRecord (no está en
+    /// `CKRecordTranslator`/`CKConstants` — no forma parte del schema del container de Grupos). Distinto de
+    /// `cloudKitUserRecordID`: el `sub` del backend NUNCA contamina el campo CloudKit (separación de canales).
+    /// `nil` en members legacy sin tocar por el backend → el path por `cloudKitUserRecordID` sigue vivo.
+    /// CloudKit-safe: opcional, default `nil`, sin `.unique`.
+    var memberKey: String?
+
     var memberStatus: SplitMemberStatus {
         get { SplitMemberStatus(rawValue: status) ?? .active }
         set { status = newValue.rawValue }
@@ -79,5 +100,21 @@ final class SplitMember {
         self.isGroupOwner = isGroupOwner
         self.isCurrentUser = isCurrentUser
         self.joinedAt = Date.now
+    }
+}
+
+// MARK: - Nombre a mostrar (sentinel de cuenta eliminada, G5-D1b)
+
+extension SplitMember {
+    /// Sentinel server-side de `groups_forget_user`: al eliminar su cuenta, el `display_name` del member se
+    /// anonimiza a este valor exacto. La UI lo mapea a un texto localizado (la capa de sync lo deja crudo —
+    /// ver `GroupsSyncClient`). NO usar para lógica de balances/identidad (esa va por IDs).
+    static let deletedUserSentinel = "__deleted_user__"
+
+    /// Nombre a MOSTRAR: mapea el sentinel de cuenta-eliminada a la key l10n; en cualquier otro caso devuelve
+    /// el `displayName` crudo. Usar en TODA superficie de UI que muestre nombres de member, INCLUIDOS los
+    /// diccionarios `id→displayName` (si no, el sentinel crudo se filtra por el lookup).
+    var resolvedDisplayName: String {
+        displayName == Self.deletedUserSentinel ? L10n.Groups.Member.deletedUser : displayName
     }
 }

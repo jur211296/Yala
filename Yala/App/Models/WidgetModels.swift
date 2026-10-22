@@ -103,25 +103,49 @@ struct WidgetConfig: Identifiable, Codable, Equatable {
 
     var isLocked: Bool = false
 
+    /// Configuración inicial de los 13 widgets, derivada de `PanelDefaults`.
+    ///
+    /// La visibilidad real vive en `AppPreferences.panel<Section>Hidden` (SSOT de
+    /// P20-03) y `activeWidgets(in:)` la impone; el `isVisible` de aquí solo se lee
+    /// en la rama de bootstrap de ese mismo método, en los frames anteriores a que
+    /// `PanelView.onAppear` inyecte las preferencias. Aun así se calcula bien —y en
+    /// el orden del curado— para que ese primer frame no enseñe un Panel distinto
+    /// del que aparece medio segundo después.
+    ///
+    /// El pin `defaultConfigs_cubreTodosLosWidgetTypes` garantiza que ningún
+    /// `WidgetType` se quede fuera al añadirlo al catálogo.
     static func defaultConfigs() -> [WidgetConfig] {
-        // Visibility real vive en `AppPreferences.panel<Section>Hidden`
-        // (P20-03 SSOT); los `isVisible` aquí son solo fallback silencioso
-        // durante bootstrap antes de inyectar AppPreferences.
-        return [
-            WidgetConfig(id: UUID(), type: .trend, isVisible: true, size: .small),
-            WidgetConfig(id: UUID(), type: .cashFlow, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .categoriesPie, isVisible: true, size: .small),
-            WidgetConfig(id: UUID(), type: .subcategoriesPie, isVisible: true, size: .small),
-            WidgetConfig(id: UUID(), type: .topSpending, isVisible: false, size: .medium),
-            WidgetConfig(id: UUID(), type: .topSubcategories, isVisible: false, size: .medium),
-            WidgetConfig(id: UUID(), type: .expensesByNeed, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .latestRecords, isVisible: true, size: .medium),
-            WidgetConfig(id: UUID(), type: .budgets, isVisible: true, size: .small),
-            WidgetConfig(id: UUID(), type: .scheduledPayments, isVisible: true, size: .small),
-            WidgetConfig(id: UUID(), type: .exchangeRate, isVisible: false, size: .medium),
-            WidgetConfig(id: UUID(), type: .weekdayBar, isVisible: true, size: .small),
-            WidgetConfig(id: UUID(), type: .tagsPie, isVisible: false, size: .small),
-        ]
+        let hiddenSections = Set(PanelDefaults.hiddenSections)
+        var configs: [WidgetConfig] = []
+
+        for kind in PanelSectionKind.allCases {
+            let sectionIsHidden = hiddenSections.contains(kind)
+
+            if let defaults = PanelDefaults.section(kind) {
+                let hiddenWidgets = Set(defaults.hidden)
+                for type in defaults.order {
+                    configs.append(WidgetConfig(
+                        id: UUID(),
+                        type: type,
+                        isVisible: !sectionIsHidden && !hiddenWidgets.contains(type),
+                        size: PanelDefaults.size(for: type)
+                    ))
+                }
+            } else {
+                // Secciones sin almacén por widget: su único widget (si lo tiene)
+                // depende solo de que la sección esté visible.
+                for type in WidgetType.defaultWidgets(in: kind) {
+                    configs.append(WidgetConfig(
+                        id: UUID(),
+                        type: type,
+                        isVisible: !sectionIsHidden,
+                        size: PanelDefaults.size(for: type)
+                    ))
+                }
+            }
+        }
+
+        return configs
     }
 }
 

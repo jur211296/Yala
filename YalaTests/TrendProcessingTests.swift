@@ -94,6 +94,37 @@ struct TrendProcessingTests {
         #expect(domain.upperBound > 100)  // 100 + buffer
     }
 
+    @Test("YDomain for Expense includes negative points (refund-dominant curve)")
+    func yDomainExpenseWithNegative() {
+        // La curva .expense signed puede ir negativa (reembolsos > gastos); el
+        // dominio debe incluir el punto negativo, no clamparlo al piso 0.
+        let points = [
+            BarPoint(date: Date(), value: 50),
+            BarPoint(date: Date(), value: -150),
+        ]
+
+        let domain = TrendProcessingHelper.calculateYDomain(for: points, isExpense: true)
+
+        #expect(domain.lowerBound <= -150)  // incluye el negativo (antes: clampado a 0)
+        #expect(domain.upperBound > 50)     // 50 + buffer
+    }
+
+    @Test("YDomain for Expense with all-negative points does not invert")
+    func yDomainExpenseAllNegative() {
+        // Período de solo reembolsos netos (todos los puntos negativos): el
+        // techo NO debe invertirse a positivo (bug de abs) y el piso cubre el min.
+        let points = [
+            BarPoint(date: Date(), value: -80),
+            BarPoint(date: Date(), value: -200),
+        ]
+
+        let domain = TrendProcessingHelper.calculateYDomain(for: points, isExpense: true)
+
+        #expect(domain.lowerBound <= -200)          // cubre el min real
+        #expect(domain.lowerBound < domain.upperBound)  // rango válido, no invertido
+        #expect(domain.upperBound < 1000)           // techo razonable (0+buffer), no ~+200 por abs
+    }
+
     @Test("YDomain for Balance handles negative values")
     func yDomainBalanceNegative() {
         // Given

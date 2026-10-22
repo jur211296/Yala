@@ -146,6 +146,38 @@ final class SetupChecklistManager {
         checkAllComplete()
     }
 
+    /// Marca un paso «crea tu primer X» tras guardar uno, y ofrece «¿era de prueba?» SOLO si lo
+    /// recién guardado es TODO lo que hay de su tipo en el store.
+    ///
+    /// La marca del paso no basta para saber que es el primero: `autoDetect` la pone desde el
+    /// `onAppear` del Panel con los recuentos que el Panel tenga cargados EN ESE INSTANTE, y si los
+    /// datos llegan después (iCloud restaurando, una importación, el seed de XCUITest) la marca se
+    /// queda sin poner con historial de sobra. El siguiente guardado se trataba entonces como «tu
+    /// primer gasto»: el aviso pedía borrar como prueba algo que no lo era, y su alerta cerraba el
+    /// formulario antes de la pantalla de éxito. Medido el 2026-10-06 en la QA programada (3 de 3
+    /// reintentos de `EdgeCasesUITests` y `QuickActionsFavoritesUITests`).
+    ///
+    /// - Parameters:
+    ///   - totalOfKind: cuántos elementos de ese tipo hay en el store, YA contando lo guardado.
+    ///   - justSaved: cuántos de ellos acaba de crear este guardado (2 en una transferencia).
+    func markFirstCreation(
+        _ step: SetupStepID,
+        totalOfKind: Int,
+        justSaved: Int = 1,
+        practiceItem: PracticeCleanupItem
+    ) {
+        if Self.isOnlyOneOfItsKind(totalOfKind: totalOfKind, justSaved: justSaved) {
+            markCompleted(step, practiceItem: practiceItem)
+        } else {
+            markCompleted(step)
+        }
+    }
+
+    /// Lo recién guardado es lo único de su tipo: no había nada antes.
+    nonisolated static func isOnlyOneOfItsKind(totalOfKind: Int, justSaved: Int) -> Bool {
+        totalOfKind <= justSaved
+    }
+
     /// Mark this as a new install (called during onboarding completion in v1.2+).
     /// Existing users who update won't have this flag set, so the checklist won't show for them.
     func markAsNewInstall() {

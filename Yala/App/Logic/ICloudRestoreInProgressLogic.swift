@@ -1,0 +1,348 @@
+//
+//  ICloudRestoreInProgressLogic.swift
+//  Yala
+//
+//  ¿Está ESTE proceso bajando el corpus del propio dueño AHORA MISMO?
+//
+//  Existe por un caso concreto: quien cambia de móvil o reinstala entra por «Restaurar desde iCloud»
+//  y, mientras sus datos bajan, toca «atrás» y entra por la card de su cuenta. Ahí
+//  `CrossAccountEntryGuardLogic` ve filas locales sin claim que las reclame —el claim vive en
+//  `UserDefaults` y muere con la reinstalación, que es justo la mitad del escenario— y le bloquea la
+//  entrada a su propia cuenta diciéndole que los datos son de otra.
+//
+//  LA SEÑAL ES ACOTADA A PROPÓSITO, y el porqué es lo que hay que entender antes de tocarla: un «hay
+//  un import en curso» genérico se enciende también cuando el mirror de CloudKit re-importa por su
+//  cuenta en cualquier arranque, y con ella encendida el guard dejaría adoptar sobre el corpus de otro
+//  humano — exactamente la puerta que el guard existe para cerrar.
+//
+//  ES UNA VENTANA, NO UN INTERRUPTOR, y esa distinción se pagó (fix del 2026-08-13, mismo día que la
+//  primera versión). La v1 tenía dos términos —«esta sesión pidió restaurar» Y «el import no ha
+//  asentado»— y el primero era un latch que no se apagaba nunca, así que TODA la ventana dependía del
+//  segundo. Pero `hasCompletedFirstImport` se enciende SOLO en la rama de import EXITOSO, y hay
+//  escenarios en los que no llega jamás (backup ausente, import que falla) ⇒ la señal se quedaba viva
+//  hasta que el usuario matara la app, y con ella el guard cross-cuenta DESARMADO: cualquiera podía
+//  firmar sobre el corpus de otro humano. El sesgo declarado («ante la duda, false») estaba invertido
+//  respecto al implementado, porque `!(A && B)` con `A` desconocido devuelve `true`, que es ABRIR.
+//
+//  ⇒ hoy la ventana se cierra por CINCO caminos, y son (3) y (4) los que la hacen fail-closed de
+//  verdad, porque no dependen de que corra ningún callback. Los otros tres son PRECISIÓN: cierran
+//  antes, y cuando no corren la cierran igual esos dos.
+//
+//   1. **Nunca se abrió** — nadie pidió restaurar en este proceso.
+//   2. **El flujo TERMINÓ y no dejó descarga detrás** (`noteRestoreFinished`) — precisión, no red: el
+//      usuario que toca «atrás» a mitad cancela ese `Task` y este camino no corre. **Esa frase fue una
+//      aspiración hasta el 2026-09-21**: `forceFetchAndWait` no observaba cancelación, así que el flujo
+//      abandonado despertaba al minuto y medio y SÍ apagaba. Hoy la espera se corta y el apagado va
+//      detrás del `guard !Task.isCancelled` de `RestoreProgressView`, que es lo que lo hace cierto.
+//      **Y ya no es «gane o pierda»** (mismo día,
+//      `restore-timeout-closes-the-session-window-with-the-import-still-running`): agotar el tope de
+//      90 s **con el import en marcha** no apaga nada, porque las filas siguen entrando y apagar ahí es
+//      el bug que esta lógica existe para cerrar. Lo que cierra ese caso es (3) o (4).
+//      **Abandonar NO es un quinto camino**: `noteRestoreAbandoned` suelta la titularidad y deja el
+//      reloj donde está, así que la ventana del abandonado sigue viva aquí hasta que la cierren (3) o
+//      (4). Lo único que cambia es que la entrada SIGUIENTE estrena reloj en vez de heredarlo.
+//   3. **El import ASENTÓ** — sus filas ya son corpus como cualquier otro.
+//   4. **La CADUCIDAD** — sin actividad de import pasada la gracia, y el tope duro pase lo que pase.
+//      **La gracia se cuenta una vez por PROCESO desde el 2026-09-22**
+//      (`restore-retry-reopens-the-session-window-every-90-seconds`): tiene su propia ancla, que un
+//      final sin imports no borra. Colgada del reloj de cada entrada, el ciclo «la espera se rinde a
+//      los 90 s → volver a buscar» compraba 60 s de ventana por cada 91 con un solo toque por vuelta.
+//      El tope duro sí se estrena entero en cada entrada: lo que no se renueva es la gracia.
+//   5. **La persona pidió DESCARTAR** (`noteRestoreDiscardRequested`, 2026-09-21) — acaba de declarar
+//      que no quiere ese import, así que la premisa «las filas siguen entrando y hay que protegerlas»
+//      deja de valer. Es el único cierre que además APARCA el reloj: lo que hay detrás del botón es una
+//      puerta que solo PREGUNTA, y si vuelve sin haber borrado nada, esa entrada hereda el reloj en vez
+//      de estrenar tope duro nuevo (`resumableParkedWindowStart`, abajo).
+//
+//  Y el latch sigue viviendo en memoria a propósito: si el proceso muere, la ventana muere con él.
+//
+//  Residual DECLARADO: quien espera a que el restore termine del todo y solo DESPUÉS toca «atrás»
+//  sigue viendo la pantalla de bloqueo. La señal está apagada y así tiene que ser — para él la salida
+//  es el copy de la pieza 2 (`welcome.cloud.blockedRestoreHint`), no un veredicto distinto.
+//
+
+import Foundation
+
+nonisolated enum ICloudRestoreInProgressLogic {
+
+    /// **El tope duro de la ventana, y es UNO para todo el subsistema.**
+    ///
+    /// Tres funciones de este fichero lo usan por defecto —`isRestoringNow`, `hasLiveImportActivity` y
+    /// `resumableParkedWindowStart`— y sus docblocks llevaban desde el 2026-09-21 afirmando «el mismo
+    /// `hardCap`» sobre **tres literales independientes**, que es una simetría que solo existía en la
+    /// prosa. Lo midió una lente de la review: bajar el de `isRestoringNow` a 300 y no tocar los otros
+    /// hace que un aparcado de 400 s se siga heredando **y nazca muerto** —ventana caducada con el
+    /// reloj puesto—, que es el bloqueo permanente del techo que la review tumbó, reintroducido sin
+    /// que se ponga rojo nada salvo el test cuyos números el propio cambio actualizaría.
+    ///
+    /// Con la constante, cambiar el tope los mueve a los tres o a ninguno.
+    static let sessionWindowHardCap: TimeInterval = 600
+
+    /// **¿El reloj de esta ventana agotó ya el tope duro?** El término (1) de `isRestoringNow`,
+    /// extraído para que lo pueda preguntar también quien decide si una entrada ESTRENA.
+    ///
+    /// **Y esa segunda lectura es la que cierra un callejón** (2026-09-21,
+    /// `restore-session-window-has-no-reachable-ceiling`): con la ventana caducada y su dueño todavía
+    /// en pantalla, `noteRestoreStarted` no entraba ni por el estreno (`restoreStartedAt != nil`) ni
+    /// por el re-ancla (`currentFlow != nil`), así que **los cinco botones de «volver a buscar» no
+    /// podían resucitarla** y el dueño legítimo se quedaba con el `.blockedForeignData` sobre sus
+    /// propios datos durante el resto del proceso. Era el mismo defecto que tumbó el techo de cadena,
+    /// entrando por la caducidad en vez de por un presupuesto.
+    ///
+    /// **Conceder ahí no extiende nada**: una ventana agotada ya no abre el guard, así que volver a
+    /// abrirla es estrenar, no renovar — y estrenar tras la caducidad es lo que cualquiera puede hacer
+    /// matando la app, que es el baseline declarado de esta señal.
+    ///
+    /// Un `elapsed` negativo (el reloj del sistema retrocedió) NO cuenta como agotado, exactamente
+    /// igual que en `isRestoringNow`: los dos leen el mismo término y tienen que contestar lo mismo.
+    static func windowHasExpired(
+        restoreStartedAt: Date,
+        now: Date,
+        hardCap: TimeInterval = sessionWindowHardCap
+    ) -> Bool {
+        now.timeIntervalSince(restoreStartedAt) >= hardCap
+    }
+
+    /// **El orden de este bloque se arregló el 2026-09-22.** Abría con un parámetro que la función no
+    /// tiene (`restoreRequestedThisSession`, rot de un rename viejo) y metía el `- Returns:` EN MEDIO,
+    /// así que los dos parámetros de abajo no se renderizaban como tales. Lo midió una lente de la
+    /// review al ver que el párrafo nuevo caía dentro del defecto.
+    ///
+    /// - Parameters:
+    ///   - restoreStartedAt: cuándo abrió el usuario el restore de iCloud en ESTE proceso, si la
+    ///     búsqueda llegó a arrancar (iCloud disponible y sin wipe reciente — los dos estados en que
+    ///     `WelcomeRestoreView` NO importa nada). `nil` = nadie lo pidió.
+    ///   - hasCompletedFirstImport: CloudKit cerró al menos un `importEvent`
+    ///     (`iCloudSyncService.hasCompletedFirstImport`).
+    ///   - isImportQuiescent: pasó la ventana de quietud desde el último import
+    ///     (`iCloudSyncService.isImportQuiescent`).
+    ///   - hasObservedImportActivity: `iCloudSyncService.hasObservedImportActivity` — ¿llegó ALGÚN
+    ///     `.importEvent`, con o sin error? Es lo que distingue «el import va lento» de «no hay
+    ///     absolutamente nada que importar», y un store vacío nunca lo enciende.
+    ///   - graceStartedAt: **desde cuándo se cuenta la GRACIA en este proceso**, que desde el
+    ///     2026-09-22 ya no es lo mismo que `restoreStartedAt`
+    ///     (`restore-retry-reopens-the-session-window-every-90-seconds`). Es el ancla que pone el
+    ///     PRIMER estreno de `ICloudRestoreSessionSignal` y que un final sin imports NO borra: con la
+    ///     gracia colgada del reloj de cada entrada, el ciclo «la espera se rinde a los 90 s → volver a
+    ///     buscar» compraba 60 s de ventana por cada 91, indefinidamente y con un toque por vuelta.
+    ///     `nil` ⇒ se cuenta desde `restoreStartedAt`, que es el comportamiento de siempre.
+    ///     **Se toma el MÁS VIEJO de los dos**, nunca el ancla a secas: es el sesgo fail-closed de esta
+    ///     señal —la gracia se agota antes, no después— y cubre el ancla que llegara por detrás del
+    ///     reloj si el del sistema corre hacia atrás.
+    ///   - now / graceForNoActivity / hardCap: la caducidad. Ver el bloque de abajo.
+    ///
+    /// - Returns: `true` SOLO si el corpus local de este device lo está trayendo el propio dueño
+    ///   ahora. Ante cualquier duda, `false` — y `false` significa «el guard decide como siempre».
+    static func isRestoringNow(
+        restoreStartedAt: Date?,
+        graceStartedAt: Date?,
+        hasCompletedFirstImport: Bool,
+        isImportQuiescent: Bool,
+        hasObservedImportActivity: Bool,
+        now: Date,
+        graceForNoActivity: TimeInterval = 60,
+        hardCap: TimeInterval = sessionWindowHardCap
+    ) -> Bool {
+        guard let restoreStartedAt else { return false }
+
+        // (1) TOPE DURO. La red que no depende de nada: ni de que un callback corra, ni de que
+        // CloudKit emita, ni de que la pantalla se desmonte por donde esperamos. Un import que lleva
+        // diez minutos sin asentar no es una restauración en curso, es un estado atascado.
+        // Va por `windowHasExpired` y no inline porque el ESTRENO pregunta lo mismo: dos copias del
+        // término harían que una entrada pudiera estrenar sobre una ventana que aquí sigue viva, o
+        // heredar una que aquí ya está muerta.
+        guard !windowHasExpired(restoreStartedAt: restoreStartedAt, now: now, hardCap: hardCap) else {
+            return false
+        }
+
+        // (2) EL IMPORT ASENTÓ ⇒ esas filas ya son corpus como cualquier otro.
+        // `hasCompletedFirstImport` solo NO basta y la asimetría es la misma que documenta
+        // `waitForImportQuiescence`: la quiescencia es `true` ANTES del primer import, así que
+        // preguntar solo por ella daría «ya terminó» cuando no ha empezado.
+        if hasCompletedFirstImport && isImportQuiescent { return false }
+
+        // (3) NO HAY NADA QUE IMPORTAR, y es la salida que faltaba. `hasCompletedFirstImport` se
+        // enciende SOLO en la rama de import exitoso (`iCloudSyncService.swift:265-272`, dentro del
+        // `else if let endDate`), así que con un backup ausente o un import que falla no llega nunca —
+        // y (2) por sí solo dejaba la ventana abierta hasta que el usuario matara la app.
+        // `hasObservedImportActivity` es la señal que lo distingue: la enciende CUALQUIER
+        // `.importEvent`, con o sin error, y un store que nada importa jamás la enciende.
+        // La gracia existe porque al principio también es `false`: apagar ahí devolvería el bloqueo al
+        // dueño legítimo que sí está restaurando y solo espera al primer evento.
+        //
+        // **Y se cuenta UNA VEZ POR PROCESO, no una por entrada** (2026-09-22,
+        // `restore-retry-reopens-the-session-window-every-90-seconds`). Colgada del reloj de cada
+        // entrada era el camino más barato que le quedaba al teléfono con el corpus de otra persona:
+        // la espera de 90 s se rinde sin un solo evento, `closesTheSessionWindow` apaga, y «volver a
+        // buscar» estrena otros 60 s de gracia — un toque cada 91 s, indefinidamente, sin pasar por
+        // ninguna puerta y sin que tuviera que bajar nada. El ancla de proceso la sobrevive: lo que
+        // no renueva un final sin imports es la GRACIA, no el tope duro, que sigue estrenándose
+        // entero para no recortarle la ventana al dueño legítimo que reintenta con razón.
+        //
+        // El recorte solo alcanza a quien no ha visto NI UN `.importEvent` en todo el proceso —el
+        // latch es monótono— y en cuanto llega uno este término deja de cerrar y la ventana se
+        // reabre sola, porque el getter se recalcula vivo.
+        let graceElapsed = now.timeIntervalSince(min(graceStartedAt ?? restoreStartedAt, restoreStartedAt))
+        if !hasObservedImportActivity && graceElapsed >= graceForNoActivity { return false }
+
+        return true
+    }
+
+    /// **¿El flujo que acaba de terminar deja alguna descarga detrás?** Es lo que decide si
+    /// `RestoreProgressView` apaga la ventana (`noteRestoreFinished`) o la deja viva.
+    ///
+    /// **El bug que cierra** (`restore-timeout-closes-the-session-window-with-the-import-still-running`,
+    /// 2026-09-21): el apagado era incondicional —«gane o pierda»—, así que agotar el tope de 90 s con
+    /// el import de CloudKit en marcha ponía `restoreStartedAt = nil` en el acto. La pantalla decía
+    /// «seguimos trayendo tus datos» —y era verdad— mientras la señal afirmaba lo contrario: quien
+    /// tocaba atrás y firmaba con su propia cuenta se encontraba con que sus datos eran «de otra
+    /// persona», con las filas entrando en ese mismo momento.
+    ///
+    /// **Vive AQUÍ y no como un derivado de `RestoreImportSettlement`, y esa es la corrección que trajo
+    /// la review.** El primer intento lo colgó de aquel enum (`self != .stillImporting`), que es el que
+    /// elige el COPY de la pantalla — y el copy agrupa en `.inconclusive` dos poblaciones que a esta
+    /// pregunta contestan distinto: la que no vio un solo import y la que vio uno con un ERROR VIGENTE.
+    /// La segunda tiene descarga viva la mayor parte de las veces: `iCloudSyncService.isRetriable` da
+    /// `true` a `.networkUnavailable`, `.requestRateLimited`, `.zoneBusy` y al `default`, y el testigo
+    /// se enciende en la cabecera del `case .importEvent`, antes del `if let error`. O sea que a un
+    /// restore grande con la red floja —el caso NORMAL— se le apagaba la ventana con CloudKit todavía
+    /// trayendo filas: el bug del ticket, sin arreglar, entrando por el copy.
+    ///
+    /// Los dos términos son los mismos que gobiernan la ventana aquí arriba, y no por casualidad: esto
+    /// es el complemento exacto de sus caminos (2) y (3).
+    ///
+    ///  · **`settled`** — el import ASENTÓ. Sus filas ya son corpus como cualquier otro (camino 2).
+    ///  · **`!hasObservedImportActivity`** — no llegó un solo `.importEvent` en todo el proceso, así que
+    ///    no hay nada bajando ni lo hubo (camino 3). Es la población del usuario realmente nuevo, y
+    ///    cerrarle la ventana en el acto es la PRECISIÓN que este apagado aporta sobre la caducidad:
+    ///    sin él viviría hasta la gracia con el guard de frontera de cuenta entornado — 60 s en la
+    ///    PRIMERA entrada del proceso, y lo que quede del presupuesto en las siguientes
+    ///    (`restore-retry-reopens-the-session-window-every-90-seconds`, 2026-09-22).
+    ///
+    /// **Lo que queda fuera a propósito**: el import que arrancó y no asentó, con o sin error. Su
+    /// ventana la cierran el asentamiento o la caducidad, igual que la de quien se va de la pantalla —
+    /// y el tope duro de 600 s la acota pase lo que pase. Es el mismo residuo que el camino (3) de
+    /// arriba ya acepta y documenta para el import que FALLA.
+    static func closesTheSessionWindow(settled: Bool, hasObservedImportActivity: Bool) -> Bool {
+        settled || !hasObservedImportActivity
+    }
+
+    // MARK: - El re-ancla de una ventana huérfana
+    //
+    // `leaving-and-reentering-restore-renews-the-hard-cap`, 2026-09-21. La pregunta que decide
+    // `ICloudRestoreSessionSignal.noteRestoreStarted` cuando entra un intento y la ventana está
+    // HUÉRFANA —viva, pero sin nadie que la vigile—: **¿hay una descarga que justifique estrenar reloj?**
+    //
+    // Hasta hoy la contestaba `iCloudSyncService.hasObservedImportActivity`, un latch MONÓTONO del
+    // proceso: una vez visto un `.importEvent` afirma «hay descarga» para siempre, así que cualquier
+    // salir-de-Restaurar-y-volver estrenaba 600 s nuevos con dos toques, apoyándose en un import que
+    // podía haber terminado veinte minutos antes.
+
+    /// **¿Sigue bajando algo AHORA?** — el testigo del re-ancla, y el reemplazo del latch monótono.
+    ///
+    /// Dos términos, y ninguno basta solo. Los dos están medidos contra `iCloudSyncService.apply`, y las
+    /// dos mediciones son lo que fija sus valores:
+    ///
+    ///  · **`isImportingNow` no es exclusivo del import, y por eso no puede ser el único término.**
+    ///    `status` es un escalar ÚNICO que comparten import, export y setup: lo enciende un solo sitio
+    ///    —el `.importEvent` sin `endDate`— y lo apagan trece, entre ellos el terminal de un export
+    ///    cualquiera y el `.idle` con que `surfaceOrSuppress` traga un error transitorio. Un export de
+    ///    diez segundos en el minuto 0 de una bajada de siete minutos deja `isImporting == false` los
+    ///    6 m 50 s restantes: el terminal del import que baja no vuelve a `.importing`, va a
+    ///    `promoteToIdleOrStalled`.
+    ///  · **Y la fecha sola tampoco, porque un import en curso puede pasar MINUTOS sin emitir.** En un
+    ///    corpus grande hay un evento al arrancar y otro al acabar. Sin el estado del espejo, el caso
+    ///    que ratificó `abandoned-restore-no-longer-clears-the-session-window-clock` —entrar,
+    ///    arrepentirse y volver siete minutos después con la descarga viva— llegaría con el sello
+    ///    caducado, heredaría un reloj de siete minutos y su tope duro caducaría a media bajada: el bug
+    ///    hermano, reabierto por el arreglo de éste.
+    ///
+    /// - Parameters:
+    ///   - isImportingNow: `iCloudSyncService.status.isImporting`. **Solo puede mentir en una
+    ///     dirección**: lo enciende únicamente un `.importEvent` real, así que no hay falso positivo —
+    ///     todo su error es el falso negativo del párrafo de arriba.
+    ///   - lastImportActivityAt: `iCloudSyncService.lastImportActivityAt` — cuándo se OBSERVÓ el último
+    ///     `.importEvent`, con o sin error. `nil` = ninguno en este proceso.
+    ///   - freshness: **600 s, el mismo `hardCap` de la ventana, y ese número no es una elección de
+    ///     gusto.** Es la simetría que lo hace defendible: si la última señal de descarga es más vieja
+    ///     que eso, la ventana que este re-ancla crearía ya habría caducado por su propio tope duro, así
+    ///     que el testigo deja de conceder exactamente cuando lo que concedería ya estaría muerto.
+    ///     **Los 60 s de la primera versión eran falsos y lo midió la review**: el error de import
+    ///     RETRIABLE —`networkUnavailable`, `requestRateLimited`, `zoneBusy`, o sea «un restore grande
+    ///     con la red floja», que este mismo fichero llama el caso NORMAL— deja el status en `.idle` y
+    ///     CloudKit reintenta con un backoff que pasa del minuto sin esfuerzo. Con 60 s esa población
+    ///     perdía el re-ancla, que es el daño del ticket hermano.
+    ///
+    /// Su modo de fallo es `false` —no re-anclar, o sea conservar el reloj viejo, o sea CERRAR ANTES—,
+    /// que es el sesgo de esta señal. Por eso un sello en el FUTURO (el reloj del sistema retrocedió con
+    /// la app abierta) no cuenta como fresco, igual que `PrivateSignOutExportGateLogic.usableAnchor`
+    /// descarta un ancla futura. **Y conviene decir que ese sesgo no es gratis**: para el guard, cerrar
+    /// antes es el lado seguro; para el hermano, cerrar antes ES el daño. Los dos tickets tiran de este
+    /// parámetro en direcciones opuestas y esta función elige la del guard a sabiendas.
+    static func hasLiveImportActivity(
+        isImportingNow: Bool,
+        lastImportActivityAt: Date?,
+        now: Date,
+        freshness: TimeInterval = sessionWindowHardCap
+    ) -> Bool {
+        if isImportingNow { return true }
+        guard let lastImportActivityAt else { return false }
+        let age = now.timeIntervalSince(lastImportActivityAt)
+        return age >= 0 && age < freshness
+    }
+
+    // MARK: - El reloj APARCADO de la puerta de descarte
+    //
+    // `restore-session-window-has-no-reachable-ceiling`, 2026-09-21. Cierra el recorrido de tres toques
+    // que tumbó el techo de cadena del ticket anterior: en `.found` o `.importIncomplete`, «Empezar
+    // desde cero» → confirmar → «Volver» → Restaurar estrenaba una ventana entera de 600 s **sin
+    // esperar nada y sin que la descarga tuviera que estar viva**, porque el descarte dejaba
+    // `restoreStartedAt == nil` y el estreno no pregunta por ningún testigo. Tres toques, y otra vez,
+    // y otra.
+    //
+    // **La puerta de descarte solo PREGUNTA: no ha borrado nada.** Así que volver de ella sin haber
+    // descartado no es una entrada nueva — es la misma sesión de restauración, con la misma descarga
+    // detrás. Lo que la distingue es este reloj: el descarte lo aparca al apagar la ventana y la
+    // vuelta lo rehidrata, de modo que el tope duro sigue contando desde donde contaba.
+
+    /// **El instante que debe heredar una entrada que llega con la ventana apagada**, o `nil` si le
+    /// toca estrenar reloj.
+    ///
+    /// Lo consulta `ICloudRestoreSessionSignal.noteRestoreStarted` en su rama de estreno, y su única
+    /// fuente es el reloj que aparcó el «Empezar desde cero» de la pantalla. Los dos rechazos son
+    /// mediciones, no cautela:
+    ///
+    ///  · **Un aparcado más viejo que el tope duro no se hereda, y esa es la mitad que impide reeditar
+    ///    el bloqueo permanente del techo tumbado.** Heredarlo daría una ventana ya caducada —
+    ///    `elapsed >= hardCap` en el primer `isRestoringNow`— o sea el `.blockedForeignData` sobre la
+    ///    propia cuenta del dueño legítimo, sin salida en el resto del proceso. Es la misma simetría
+    ///    con la que `hasLiveImportActivity` elige su frescura: el testigo deja de conceder justo
+    ///    cuando lo que concedería ya estaría muerto. ⇒ **agotado el tope, la entrada siguiente
+    ///    ESTRENA**, y ningún camino deja a nadie sin poder abrir ventana.
+    ///  · **Un aparcado en el FUTURO tampoco** (el reloj del sistema retrocedió con la app abierta), y
+    ///    aquí el sesgo es el contrario que en `hasLiveImportActivity` **porque el efecto es el
+    ///    contrario**: allí conservar el reloj viejo CIERRA antes, que es el lado seguro; heredar un
+    ///    instante futuro daría `elapsed` negativo, o sea una ventana que **no caduca nunca** hasta que
+    ///    el reloj avance. Estrenar `now` la deja acotada a sus 600 s como cualquier otra.
+    ///
+    /// - Parameters:
+    ///   - parkedStartedAt: `ICloudRestoreSessionSignal.parkedStartedAt` — el `restoreStartedAt` que
+    ///     tenía la ventana cuando la persona pidió empezar de cero. `nil` = no se pasó
+    ///     por la puerta de descarte, o el aparcado ya se consumió.
+    ///   - hardCap: **el mismo 600 s de `isRestoringNow`, y tiene que serlo**: este parámetro decide si
+    ///     la ventana heredada nacería viva, y quien lo contesta allí es ese tope. Dos números
+    ///     distintos harían que esta función concediera relojes que el guard declara muertos, o al
+    ///     revés.
+    ///
+    /// - Returns: el instante a heredar, o `nil` para estrenar en `now`.
+    static func resumableParkedWindowStart(
+        parkedStartedAt: Date?,
+        now: Date,
+        hardCap: TimeInterval = sessionWindowHardCap
+    ) -> Date? {
+        guard let parkedStartedAt else { return nil }
+        let age = now.timeIntervalSince(parkedStartedAt)
+        guard age >= 0 && age < hardCap else { return nil }
+        return parkedStartedAt
+    }
+}

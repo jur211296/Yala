@@ -21,9 +21,16 @@
 //    con guard oldValue != newValue para evitar loop con el observer externo.
 //  - Init carga TODAS las properties desde UserDefaults ANTES de registrar observers.
 //  - Observer de `UserDefaults.didChangeNotification` + `NSUbiquitousKeyValueStore` →
-//    `refreshFromDefaults()` diferencial (solo asigna si el valor cambió) evitando
+//    `loadFromDefaults()` diferencial (solo asigna si el valor cambió) evitando
 //    re-renders innecesarios cuando cambian keys ajenas.
+//  - **CARGAR NO ESCRIBE**: `loadFromDefaults()` levanta `isLoadingFromDefaults` y los tres
+//    `persist*` se vuelven no-op mientras dura. Sin eso, este objeto es un mirror que RELEE y
+//    RE-ESCRIBE lo leído — el porqué completo está en el docblock de `loadFromDefaults`.
 //  - Captura `[weak self]` en closures del observer + `deinit` remueve observers.
+//
+//  Este mirror NO es un mecanismo de sincronización, y conviene no confundirlo con uno: quien
+//  escriba una key `synced: true` por fuera (`UserDefaults.set` directo, otro mirror) tiene que
+//  publicar ÉL a `PreferenceSyncService` — ver `loadFromDefaults`.
 //
 //  Backwards compatibility: los callsites legacy con `@AppStorage` siguen funcionando
 //  porque leen/escriben a los mismos UserDefaults keys. Ambas rutas conviven sin migración
@@ -50,6 +57,16 @@ final class AppPreferences {
     // MARK: - Dependencies
 
     private let defaults: UserDefaults
+
+    /// Verdadero SOLO mientras corre `loadFromDefaults()`. Es lo que hace que cargar no escriba;
+    /// el porqué —y por qué un `guard oldValue != nuevo` no basta— está en su docblock.
+    ///
+    /// Su único riesgo es FUGARSE: si cubriera el `init` entero, las migraciones de `:826-855`
+    /// dejarían de persistir sus centinelas, correrían en cada arranque y todo quedaría en VERDE.
+    /// De ahí el `defer` y el call-site único, y de ahí que el pin lleve un caso dedicado a la
+    /// revocación de consent de `aiTogglesRemovedV2`.
+    @ObservationIgnored
+    private var isLoadingFromDefaults = false
 
     /// Observer tokens. Marcados `nonisolated(unsafe)` porque (1) se asignan solo durante
     /// `registerObservers()` en MainActor, (2) se leen solo en deinit (nonisolated por
@@ -137,9 +154,11 @@ final class AppPreferences {
     }
 
     /// Pipe-separated list of account names in sort order.
-    /// NOTE: pipe (`|`) chosen to match legacy `@AppStorage("accountsSortOrderNames")` callsites
-    /// and `PanelViewModel.ensureAccountsSortOrderConsistency`. Account names may legitimately
-    /// contain commas but never pipes, so this separator is collision-safe.
+    /// NOTE: el separador es `|` porque los nombres de cuenta pueden llevar comas legítimamente
+    /// («Ahorros, casa») y nunca pipes, así que es a prueba de colisiones. (Este docblock citaba
+    /// unos call-sites `@AppStorage("accountsSortOrderNames")` y un
+    /// `PanelViewModel.ensureAccountsSortOrderConsistency` que ya no existen: hoy todos los
+    /// consumidores van por esta property y el helper vive en `PanelView`.)
     var accountsSortOrderNames: [String] = [] {
         didSet {
             guard oldValue != accountsSortOrderNames else { return }
@@ -359,6 +378,22 @@ final class AppPreferences {
         }
     }
 
+    /// Recordatorio amable de liquidación pendiente: un nudge al DEUDOR cuando una deuda de grupo
+    /// lleva semanas sin moverse (`GroupSettlementReminderService`).
+    ///
+    /// **Default OFF a propósito.** Es el único aviso de la app que habla de dinero que le debes a
+    /// otra persona, y encenderlo sin pedirlo convertiría una actualización en un cobro sorpresa.
+    /// Se enciende desde Ajustes → Notificaciones, igual que `budgetAlertsEnabled`.
+    ///
+    /// Apagarlo NO apaga el resto de avisos de Grupos, que dependen del `NotificationItem` `.groups`.
+    /// La relación no es simétrica: el maestro de Grupos sí manda sobre este nudge.
+    var groupSettlementRemindersEnabled: Bool = false {
+        didSet {
+            guard oldValue != groupSettlementRemindersEnabled else { return }
+            persistBool(groupSettlementRemindersEnabled, forKey: Keys.groupSettlementRemindersEnabled, synced: true)
+        }
+    }
+
     // MARK: - UI Feature Flags
 
     var showSiriTip: Bool = true {
@@ -368,6 +403,18 @@ final class AppPreferences {
         }
     }
 
+    /// Estas dos son las que destaparon el LAVADO (2026-08-05): son las keys que el seam
+    /// `-uitest-skip-onboarding` pone en el dominio VOLÁTIL de `UserDefaults`
+    /// (`UITestEphemeralDefaults`), y seguían apareciendo en el plist del contenedor tras un launch
+    /// `-uitest` porque `loadFromDefaults` re-persistía lo que acababa de leer.
+    ///
+    /// Llevaron durante unas horas un segundo guard propio («si el store ya dice eso, no hay nada
+    /// que persistir»). Ya no lo llevan, y quitarlo es deliberado: el mecanismo general
+    /// (`isLoadingFromDefaults`) las cubre y es estrictamente más fuerte —cubre el `init` Y la
+    /// recarga por notificación, y las 70 properties, no dos—, y sobre todo **un guard local dejaba
+    /// al pin sin caer con el mutante**: borrar el mecanismo general habría dejado
+    /// `cargarPreferencias_noReescribeLoQueYaDiceElStore` en verde justo sobre las dos keys que
+    /// nombra. Un cinturón que oculta el fallo del mecanismo es peor que no llevarlo.
     var hasCompletedOnboarding: Bool = false {
         didSet {
             guard oldValue != hasCompletedOnboarding else { return }
@@ -378,6 +425,7 @@ final class AppPreferences {
     /// Welcome Chooser pre-onboarding (A4). Per-device (no synced) — cada device pregunta
     /// una vez al user. Se setea SOLO tras tap consciente en una de las 3 cards (no en
     /// dismissals programáticos por race con CKShare).
+    /// La otra mitad del seam de onboarding — ver `hasCompletedOnboarding`.
     var hasShownWelcomeChooser: Bool = false {
         didSet {
             guard oldValue != hasShownWelcomeChooser else { return }
@@ -586,7 +634,7 @@ final class AppPreferences {
     var moreSectionOrder: [String] = [] {
         didSet {
             guard oldValue != moreSectionOrder else { return }
-            persistString(moreSectionOrder.joined(separator: ","), forKey: Keys.moreSectionOrder, synced: true)
+            persistString(moreSectionOrder.joined(separator: ","), forKey: Keys.moreSectionOrder, synced: false)
         }
     }
 
@@ -614,7 +662,7 @@ final class AppPreferences {
     var sankeyLabelMode: SankeyLabelMode = .amount {
         didSet {
             guard oldValue != sankeyLabelMode else { return }
-            persistString(sankeyLabelMode.rawValue, forKey: Keys.sankeyLabelMode, synced: true)
+            persistString(sankeyLabelMode.rawValue, forKey: Keys.sankeyLabelMode, synced: false)
         }
     }
 
@@ -629,21 +677,21 @@ final class AppPreferences {
     var panelHeroKPIsOrder: [String] = [] {
         didSet {
             guard oldValue != panelHeroKPIsOrder else { return }
-            persistString(panelHeroKPIsOrder.joined(separator: ","), forKey: Keys.panelHeroKPIsOrder, synced: true)
+            persistString(panelHeroKPIsOrder.joined(separator: ","), forKey: Keys.panelHeroKPIsOrder, synced: false)
         }
     }
 
     var panelHeroKPIsHidden: [String] = [] {
         didSet {
             guard oldValue != panelHeroKPIsHidden else { return }
-            persistString(panelHeroKPIsHidden.joined(separator: ","), forKey: Keys.panelHeroKPIsHidden, synced: true)
+            persistString(panelHeroKPIsHidden.joined(separator: ","), forKey: Keys.panelHeroKPIsHidden, synced: false)
         }
     }
 
     var panelHeroKPIsCustomized: Bool = false {
         didSet {
             guard oldValue != panelHeroKPIsCustomized else { return }
-            persistBool(panelHeroKPIsCustomized, forKey: Keys.panelHeroKPIsCustomized, synced: true)
+            persistBool(panelHeroKPIsCustomized, forKey: Keys.panelHeroKPIsCustomized, synced: false)
         }
     }
 
@@ -653,7 +701,54 @@ final class AppPreferences {
     // Secciones sin claves persistidas (`health`, `latestRecords`, `tools`)
     // retornan `[]` en getters y son no-op en setters.
 
+    /// True mientras la siembra de predeterminados NO ha corrido en este dispositivo.
+    ///
+    /// El discriminador es el centinela, **nunca** «la lista está vacía»: una lista
+    /// vacía es un estado legítimo del usuario (ningún widget oculto en esa sección,
+    /// o ninguna sección oculta) y confundir ambas cosas le impondría el curado a
+    /// quien deliberadamente lo quiere todo a la vista.
+    private var isAwaitingDefaultsSeed: Bool {
+        guard !panelPrefsMigratedV2 else { return false }
+        return !hasAnyPanelPreference
+    }
+
+    /// True si hay CUALQUIER preferencia del Panel con contenido.
+    ///
+    /// Segundo término del guard, y no es redundante: entre el `init` y el hook
+    /// post-sync, `applyRemoteValues()` puede haber bajado ya la configuración real de
+    /// un usuario existente mientras el centinela sigue apagado. Sin esta condición,
+    /// la resolución en lectura le taparía su propio Panel con el curado — y peor: su
+    /// primera edición lo materializaría encima, pisándoselo en todos sus dispositivos.
+    ///
+    /// Nótese que esto NO reintroduce el discriminador «lista vacía»: quien ya pasó por
+    /// la siembra sale por el `guard` de arriba, así que un usuario que deliberadamente
+    /// no oculta nada sigue viéndolo todo.
+    private var hasAnyPanelPreference: Bool {
+        !panelTendenciasOrder.isEmpty || !panelTendenciasHidden.isEmpty
+            || !panelDistribucionOrder.isEmpty || !panelDistribucionHidden.isEmpty
+            || !panelPlanificacionOrder.isEmpty || !panelPlanificacionHidden.isEmpty
+            || !panelSectionsHidden.isEmpty || !panelSectionsOrder.isEmpty
+    }
+
+    /// Secciones ocultas, resueltas.
+    ///
+    /// La siembra puede tardar hasta 15 s en un arranque con iCloud (espera a que el
+    /// sync se asiente antes de decidir; ver `PanelPreferencesMigration`). Sin esto,
+    /// durante esa ventana «no hay preferencias» se renderizaba como «enséñalo todo»
+    /// y el Panel se encogía a la vista del usuario en cuanto la siembra aterrizaba.
+    /// Resolviendo también en LECTURA, el arranque es correcto desde el primer frame
+    /// en los cuatro caminos (instalación con y sin iCloud, borrado remoto y
+    /// restauración).
+    ///
+    /// Mismo patrón que `resolvedReorderableSections`, unas líneas más abajo.
+    var resolvedSectionsHidden: [String] {
+        isAwaitingDefaultsSeed ? PanelDefaults.hiddenSectionRawValues : panelSectionsHidden
+    }
+
     func order(for kind: PanelSectionKind) -> [String] {
+        if isAwaitingDefaultsSeed, let defaults = PanelDefaults.section(kind) {
+            return defaults.order.map(\.rawValue)
+        }
         switch kind {
         case .tendencias:    return panelTendenciasOrder
         case .distribucion:  return panelDistribucionOrder
@@ -663,6 +758,9 @@ final class AppPreferences {
     }
 
     func hidden(for kind: PanelSectionKind) -> [String] {
+        if isAwaitingDefaultsSeed, let defaults = PanelDefaults.section(kind) {
+            return defaults.hidden.map(\.rawValue)
+        }
         switch kind {
         case .tendencias:    return panelTendenciasHidden
         case .distribucion:  return panelDistribucionHidden
@@ -671,7 +769,24 @@ final class AppPreferences {
         }
     }
 
+    /// Fija los predeterminados en disco y da por terminada la fase «sin sembrar».
+    ///
+    /// Hace falta porque la resolución en lectura se apoya en el centinela: si el
+    /// usuario edita el Panel ANTES de que la siembra corra —posible en el arranque
+    /// con iCloud, que espera al sync—, su cambio se escribiría pero la lectura
+    /// seguiría devolviendo el curado y el interruptor volvería solo a su sitio. Al
+    /// materializar, lo que el usuario acaba de tocar pasa a ser la verdad.
+    ///
+    /// Enciende el centinela ANTES de sembrar, y no al revés: `setupDefaultsForNewUser`
+    /// escribe a través de `setOrder`/`setHidden`, que vuelven a llamar aquí.
+    func materializePanelDefaultsIfNeeded() {
+        guard isAwaitingDefaultsSeed else { return }
+        panelPrefsMigratedV2 = true
+        setupDefaultsForNewUser()
+    }
+
     func setOrder(_ value: [String], for kind: PanelSectionKind) {
+        materializePanelDefaultsIfNeeded()
         switch kind {
         case .tendencias:    panelTendenciasOrder    = value
         case .distribucion:  panelDistribucionOrder  = value
@@ -681,6 +796,7 @@ final class AppPreferences {
     }
 
     func setHidden(_ value: [String], for kind: PanelSectionKind) {
+        materializePanelDefaultsIfNeeded()
         switch kind {
         case .tendencias:    panelTendenciasHidden    = value
         case .distribucion:  panelDistribucionHidden  = value
@@ -706,6 +822,7 @@ final class AppPreferences {
     }
 
     func movePanelSection(from source: IndexSet, to destination: Int) {
+        materializePanelDefaultsIfNeeded()
         var updated = resolvedReorderableSections.map(\.rawValue)
         let original = updated
         updated.move(fromOffsets: source, toOffset: destination)
@@ -714,6 +831,10 @@ final class AppPreferences {
     }
 
     func resetPanelSectionsOrder() {
+        // Materializa igual que los demás escritores: `panelSectionsOrder` cuenta para
+        // `hasAnyPanelPreference`, así que tocarlo sin fijar antes los predeterminados
+        // apagaría la resolución en lectura y devolvería el Panel a «enséñalo todo».
+        materializePanelDefaultsIfNeeded()
         panelSectionsOrder = []
     }
 
@@ -736,52 +857,42 @@ final class AppPreferences {
         return hiddenCount >= total
     }
 
-    /// P20-11: opinionated first-launch defaults for Panel 2.0. Seeds the
-    /// per-section order/hidden preferences so an install fresh lands on a
-    /// "rich but not saturated" Panel.
+    /// Persiste los predeterminados de `PanelDefaults`: orden y ocultos por sección,
+    /// más las secciones que nacen ocultas.
     ///
-    /// Invoked by `PanelPreferencesMigration.runIfNeeded` when it detects
-    /// the install is truly fresh (no legacy `panel_widget_configs_v1` blob
-    /// AND `panelPrefsMigratedV2 == false`). Not called during upgrades —
-    /// those preserve whatever the user had.
+    /// La invoca `PanelPreferencesMigration.runIfNeeded` cuando detecta que la
+    /// instalación es fresca de verdad (sin blob legacy `panel_widget_configs_v1` y
+    /// con `panelPrefsMigratedV2 == false`). NO corre al actualizar: ahí se preserva
+    /// lo que el usuario tuviera.
     ///
-    /// Uses `WidgetType.rawValue` (Spanish identifiers like "tendencia_saldo")
-    /// — the persisted format the per-section lists serialize to.
+    /// **No es la fuente de verdad, solo su escritura.** La tabla vive en
+    /// `PanelDefaults` y se aplica también en LECTURA mientras el centinela está
+    /// apagado, así que el Panel es correcto aunque esta función aún no haya corrido.
+    /// Los tamaños van por otro almacén (`WidgetConfigManager`) y no se tocan aquí.
     func setupDefaultsForNewUser() {
-        // Tendencias: [trend | weekdayBar] paired small + cashFlow medium.
-        panelTendenciasOrder = [
-            WidgetType.trend.rawValue,
-            WidgetType.weekdayBar.rawValue,
-            WidgetType.cashFlow.rawValue,
-        ]
-        panelTendenciasHidden = []
+        for kind in PanelSectionKind.allCases {
+            guard let defaults = PanelDefaults.section(kind) else { continue }
+            setOrder(defaults.order.map(\.rawValue), for: kind)
+            setHidden(defaults.hidden.map(\.rawValue), for: kind)
+        }
+        panelSectionsHidden = PanelDefaults.hiddenSectionRawValues
+        panelSectionsOrder = PanelDefaults.sectionsOrder.map(\.rawValue)
+    }
 
-        // Distribución: [categoriesPie | subcategoriesPie] paired small +
-        // expensesByNeed medium. Top categorías/Top subcategorías/Etiquetas
-        // ocultos por default.
-        panelDistribucionOrder = [
-            WidgetType.categoriesPie.rawValue,
-            WidgetType.subcategoriesPie.rawValue,
-            WidgetType.expensesByNeed.rawValue,
-            WidgetType.topSpending.rawValue,
-            WidgetType.topSubcategories.rawValue,
-            WidgetType.tagsPie.rawValue,
-        ]
-        panelDistribucionHidden = [
-            WidgetType.topSpending.rawValue,
-            WidgetType.topSubcategories.rawValue,
-            WidgetType.tagsPie.rawValue,
-        ]
-
-        // Planificación: [scheduledPayments | budgets] paired small.
-        panelPlanificacionOrder = [
-            WidgetType.scheduledPayments.rawValue,
-            WidgetType.budgets.rawValue,
-        ]
-        panelPlanificacionHidden = []
-
-        // All sections visible by default.
-        panelSectionsHidden = []
+    /// Restablece los predeterminados de UNA sección: orden y ocultos vuelven a la
+    /// tabla curada.
+    ///
+    /// Antes de esto, «Restablecer» escribía `[]` en ambas listas y el render caía al
+    /// auto-sanado de `buildOrderedRawWidgets`, que **enciende todos** los widgets de
+    /// la sección. O sea: el botón hacía lo contrario de lo que promete su nombre, y
+    /// deshacía los predeterminados en vez de restaurarlos. Coincidía con el curado
+    /// por casualidad, mientras el curado fue «casi todo visible».
+    ///
+    /// No toca tamaños: viven en otro almacén y los restaura `PanelViewModel`.
+    func applyDefaults(for kind: PanelSectionKind) {
+        guard let defaults = PanelDefaults.section(kind) else { return }
+        setOrder(defaults.order.map(\.rawValue), for: kind)
+        setHidden(defaults.hidden.map(\.rawValue), for: kind)
     }
 
     // MARK: - Init
@@ -790,8 +901,14 @@ final class AppPreferences {
         self.defaults = defaults
 
         // Carga inicial ANTES de registrar observers (mitiga race con notificaciones
-        // tempranas durante bootstrap). Los `didSet` de cada property aplican el guard
-        // diferencial; no se re-persisten valores que no cambiaron del default hardcoded.
+        // tempranas durante bootstrap). No persiste nada: `loadFromDefaults` levanta
+        // `isLoadingFromDefaults` y los `persist*` se vuelven no-op mientras dura.
+        //
+        // Todo lo que viene DESPUÉS de esta línea sí persiste, y tiene que seguir haciéndolo: las
+        // tres migraciones de abajo escriben sus centinelas y revocan consents por asignación de
+        // property. Si alguien mueve el flag para cubrir el `init` entero, las migraciones dejan de
+        // grabar, corren en cada arranque y la suite no se entera — por eso el pin lleva un caso
+        // dedicado a la revocación de `aiTogglesRemovedV2`.
         loadFromDefaults()
 
         // Desacople consent/feature de AI Insights: usuarios con consent=true preexistente
@@ -863,15 +980,48 @@ final class AppPreferences {
 
     // MARK: - Load from Defaults (init + external change refresh)
 
-    /// Re-lee todas las properties desde `defaults` y asigna solo las que cambiaron.
+    /// Re-lee todas las properties desde `defaults` y asigna solo las que cambiaron. **No escribe.**
     ///
     /// Usado tanto en la carga inicial (`init`) como tras notificaciones externas
     /// (`UserDefaults.didChangeNotification` global, `NSUbiquitousKeyValueStore`).
-    /// El guard `oldValue != newValue` en cada `didSet` evita re-renders innecesarios
-    /// cuando la notificación se dispara por keys ajenas (TipKit, StoreKit) — y también
-    /// previene persist-loops cuando el valor viene de una escritura externa (iKV) y
-    /// no debe propagarse de vuelta.
+    ///
+    /// EL GUARD `oldValue != newValue` DE CADA `didSet` NO BASTA, y creer que sí es el error que
+    /// costó el bug: corta el bucle, pero **no el primer rebote**, que es justo el que escribe.
+    /// Asignar un valor que vino del store dispara el `didSet` siempre que difiera del **default
+    /// hardcoded** ⇒ toda preferencia tocada por el usuario se RE-PERSISTÍA al cargar. Dos daños,
+    /// los dos medidos el 2026-08-05 y ninguno visible desde la app:
+    ///
+    ///  1. **LAVADO.** El `didSet` no sabe de qué DOMINIO vino el valor. Uno del dominio de REGISTRO
+    ///     —volátil, muere con el proceso, el que usan los seams de `UITestEphemeralDefaults`— se
+    ///     copiaba al PERSISTENTE y se volvía permanente: es el bug de «tras un XCUITest, abrir Yala
+    ///     Dev a mano se salta onboarding». Para un valor que ya estaba en disco el mismo `set` es
+    ///     un no-op invisible, y por eso nadie lo vio en once meses.
+    ///  2. **TRÁFICO DE SYNC.** Las 37 `synced: true` llaman además a `PreferenceSyncService`. Medido
+    ///     contra el plist real del simulador: 6 keys re-empujaban a iKV en CADA lanzamiento (suelo,
+    ///     no caso típico), con un `iKV.synchronize()` por key. Y como el `init` de este objeto corre
+    ///     estructuralmente ANTES de `PreferenceSyncService.bootstrap()` (`AppBootstrapper:38` es
+    ///     property almacenada), esa ráfaga PISABA en iKV lo que otro device hubiera cambiado con la
+    ///     app cerrada. Eso no es coste: es corrección.
+    ///     El mismo circuito cerraba un ECO: `applyRemoteValues`/`applyPulledPrefs` escriben en
+    ///     `UserDefaults.standard` → notificación → esta carga → `didSet` → push. En `.icloud`
+    ///     devolvía a iKV lo que acababa de bajar; en `.cloud` lo re-encolaba al outbox con un **HLC
+    ///     FRESCO**, convirtiendo al receptor en autor LWW de un valor que no escribió.
+    ///
+    /// Lo que lo cierra es `isLoadingFromDefaults`: mientras dura esta función, los tres `persist*`
+    /// son no-op. **Cargar no escribe, venga el valor del dominio que venga.**
+    ///
+    /// CONSECUENCIA QUE HAY QUE CONOCER ANTES DE TOCAR ESTO: esta relectura era el ÚNICO puente por
+    /// el que un escritor directo de `UserDefaults` llegaba al canal de sync. Era un efecto
+    /// colateral y no un mecanismo —cubría por casualidad las keys que tienen mirror, y por eso
+    /// `financialMindset`, de forma idéntica y sin mirror, lleva sin sincronizar desde siempre—.
+    /// Los dos que dependían de él se pagaron en su punto de INTENCIÓN, como ya hacía
+    /// `OnboardingView`: `NotificationPrimerSheet` (`budgetAlertsEnabled`) y el toggle de
+    /// `PersonalizationSettingsView` (`expensesOnlyMode`). ⇒ **quien escriba una key `synced: true`
+    /// por fuera de aquí publica él a `PreferenceSyncService`; este mirror ya no lo hace por él.**
     private func loadFromDefaults() {
+        isLoadingFromDefaults = true
+        defer { isLoadingFromDefaults = false }
+
         // Currency & Format
         if let raw = defaults.string(forKey: Keys.defaultCurrencyCode), let code = CurrencyCode(rawValue: raw) {
             defaultCurrencyCode = code
@@ -911,7 +1061,12 @@ final class AppPreferences {
             if raw.contains("|") {
                 tagsSortOrderNames = raw.split(separator: "|").map(String.init)
             } else if !raw.isEmpty {
-                // Legacy comma-separated data — preserves order; next didSet re-serializa con "|".
+                // Legacy comma-separated data — preserves order. NO se re-serializa aquí: cargar no
+                // escribe (ver `loadFromDefaults`). El disco conserva el formato viejo hasta que el
+                // usuario reordene una etiqueta, y no le importa a nadie — esta rama es permanente e
+                // idempotente y ningún otro sitio lee la key en crudo. Antes sí se re-serializaba en
+                // esta misma carga, y eso CONGELABA una corrupción: un nombre con coma («Comida,
+                // casa») se partía en dos y se persistía ya partido, irreversible.
                 tagsSortOrderNames = raw.split(separator: ",").map(String.init)
             } else {
                 tagsSortOrderNames = []
@@ -959,6 +1114,9 @@ final class AppPreferences {
         // Budgets / Alerts
         budgetsHideInactive = defaults.bool(forKey: Keys.budgetsHideInactive)
         budgetAlertsEnabled = defaults.bool(forKey: Keys.budgetAlertsEnabled)
+        // Default `false` ⇒ lectura incondicional (el guard `object(forKey:) != nil` solo hace falta
+        // para las de default `true`, donde un store vacío devolvería `false` y las apagaría).
+        groupSettlementRemindersEnabled = defaults.bool(forKey: Keys.groupSettlementRemindersEnabled)
 
         // A0-Bridge: Group Visibility Toggles (default = true cuando key ausente)
         if defaults.object(forKey: Keys.includeGroupTransactionsInFeed) != nil {
@@ -1061,6 +1219,73 @@ final class AppPreferences {
         panelHeroKPIsCustomized = defaults.bool(forKey: Keys.panelHeroKPIsCustomized)
     }
 
+    // MARK: - Reset del espejo (alta solo-grupos)
+
+    /// Devuelve a su valor de fábrica las propiedades de las preferencias SINCRONIZADAS, y el centinela del Panel que
+    /// va con ellas. **No escribe**: corre bajo el mismo `isLoadingFromDefaults` que la carga.
+    ///
+    /// Existe porque `loadFromDefaults` relee por PRESENCIA: cuando una key desaparece, la propiedad se queda con el
+    /// valor que tenía. Lo usa `GroupsOnlySignUpPreferenceReset`, que retira en local las 36 del Apple ID al empezar
+    /// un alta solo-grupos; sin esto, quien entra por un grupo seguiría viendo el formato, el Panel o los avisos del
+    /// dueño hasta relanzar la app, y el Panel podría volver a materializarlos en disco.
+    ///
+    /// Los valores son los mismos que los de la declaración de cada propiedad, y
+    /// `GroupsOnlySignUpPreferenceResetTests` lo comprueba contra una instancia recién construida sobre un store vacío.
+    /// Si añades una propiedad `synced: true`, añádela aquí: ese test enumera `PrefSyncKey` y falla si falta.
+    func resetSyncedMirrorToFactoryDefaults() {
+        isLoadingFromDefaults = true
+        defer { isLoadingFromDefaults = false }
+
+        // Currency & Format
+        defaultCurrencyCode = .pen
+        secondaryCurrencies = []
+        currencyDisplayFormat = .symbol
+        decimalPlaces = 2
+
+        // Identity
+        userName = "Usuario"
+        userProfileIcon = ""
+        colorfulIcons = true
+
+        // Session / Period
+        defaultPeriod = .thisMonth
+        firstWeekday = .monday
+        accountsSortOrderNames = []
+
+        // Widget / Trend
+        showVariations = true
+        averageLineMode = 1
+
+        // Voice / AI
+        voiceLanguage = .system
+        insightsTone = .normal
+        insightsFocus = .balanced
+        autoFocusField = .none
+
+        // Budgets / Alerts / Grupos
+        budgetAlertsEnabled = false
+        groupSettlementRemindersEnabled = false
+        includeGroupTransactionsInFeed = true
+        includeGroupsInPanelTotal = true
+        includeGroupTransactionsInStats = true
+        bridgeGroupExpensesToPersonalAccounts = true
+
+        // UI
+        expensesOnlyMode = false
+
+        // Panel: las 8 sincronizadas, su centinela per-device y el colapso de Cuentas.
+        panelTendenciasOrder = []
+        panelTendenciasHidden = []
+        panelDistribucionOrder = []
+        panelDistribucionHidden = []
+        panelPlanificacionOrder = []
+        panelPlanificacionHidden = []
+        panelSectionsHidden = []
+        panelSectionsOrder = []
+        panelPrefsMigratedV2 = false
+        panelAccountsCollapsed = true
+    }
+
     /// Parses a comma-separated stored string into `[String]`. Returns `nil` when the
     /// key is absent (so callers can keep the hardcoded default) and `[]` when the
     /// stored value is an empty string (a valid state — e.g. user hid every entry).
@@ -1080,7 +1305,16 @@ final class AppPreferences {
 
     // MARK: - Persistence Helpers
 
+    // El `guard !isLoadingFromDefaults` va en LOS TRES y es el arreglo entero (ver
+    // `loadFromDefaults`). Va aquí arriba y no en los `didSet` a propósito: gatea de una sola vez
+    // la escritura local Y el push al canal, que es lo que permite pinnear las dos mitades contando
+    // escrituras sobre el `UserDefaults` inyectado — `PreferenceSyncService` es un singleton
+    // hardcodeado a `.standard` (`:78`) y no se puede espiar desde un test sin refactor.
+    // Si alguien separa el guard del push, ese proxy deja de valer: por eso el pin lleva además un
+    // source-scan con conteo 3.
+
     private func persistString(_ value: String, forKey key: String, synced: Bool) {
+        guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
         if synced {
             PreferenceSyncService.shared.set(string: value, forKey: key)
@@ -1088,6 +1322,7 @@ final class AppPreferences {
     }
 
     private func persistBool(_ value: Bool, forKey key: String, synced: Bool) {
+        guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
         if synced {
             PreferenceSyncService.shared.set(bool: value, forKey: key)
@@ -1095,6 +1330,7 @@ final class AppPreferences {
     }
 
     private func persistInt(_ value: Int, forKey key: String, synced: Bool) {
+        guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
         if synced {
             PreferenceSyncService.shared.set(int: value, forKey: key)
@@ -1105,7 +1341,7 @@ final class AppPreferences {
 
     /// Centraliza los raw string keys de UserDefaults. Mantiene compatibilidad con
     /// `@AppStorage` callsites legacy (mismo key → misma persistencia).
-    enum Keys {
+    nonisolated enum Keys {
         // Currency & Format
         static let defaultCurrencyCode = "defaultCurrencyCode"
         static let secondaryCurrencies = "secondaryCurrencies"
@@ -1160,6 +1396,9 @@ final class AppPreferences {
         // Bridge opt-out global per-user (synced cross-device).
         static let bridgeGroupExpensesToPersonalAccounts = "bridgeGroupExpensesToPersonalAccounts"
 
+        // Nudge de deuda parada (synced cross-device). Default false.
+        static let groupSettlementRemindersEnabled = "groupSettlementRemindersEnabled"
+
         // Per-device (no synced). Apaga SOLO el hook de dedup-en-oleadas de sync
         // (observeRemoteStoreChanges). El pase de arranque y el force-sync manual
         // siguen activos. Default OFF = hook activo.
@@ -1172,11 +1411,35 @@ final class AppPreferences {
         static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
         static let hasShownGroupsOnboarding = "hasShownGroupsOnboarding"
         static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
-        /// Gate TEMPORAL de código beta para el tab Grupos (validación v2.0.1).
-        /// Per-device, no sincronizado, NO se resetea en wipe. Leído vía @AppStorage
-        /// directo en las views del gate; escrito vía UserDefaults desde el código
-        /// correcto o desde `CKShareEntryHandler` (invitados). Remover al estabilizar.
+        /// ADOPCIÓN del dominio Grupos en ESTE dispositivo. Per-device, no sincronizada, NO se
+        /// resetea en el wipe normal (exclusión deliberada, ver abajo) pero SÍ en el handover.
+        ///
+        /// Nació en la 2.0.1 como gate del código beta «1050» y **conserva ese string a
+        /// propósito**: la validación beta se retiró en 2.1 (Grupos abierto para todos) y
+        /// renombrar la key obligaría a migrar el parque sin ganar nada. Lo que quedó vivo es la
+        /// otra mitad —la que decide si el bridge escribe en un dispositivo SELLADO
+        /// (`GroupsDomainAdoptionLogic.isBridgeAllowed`)— y por eso la key sigue teniendo dueño.
+        ///
+        /// La escriben los actos de adopción deliberados: entrar al tab Grupos
+        /// (`GroupsDomainAdoptionMarker`), aceptar una invitación
+        /// (`GroupBackendInviteEntryHandler` / `AppBootstrapper.persistBackendInviteIntent`) y el
+        /// alta solo-grupos del onboarding. Leída por `GroupTransactionBridge`.
         static let groupsBetaUnlocked = "groupsBetaUnlocked"
+        /// SELLO del handover de dispositivo: lo escribe `DataWipeService.wipeLocalGroupsDomain`
+        /// cuando alguien elige «empiezo de cero» en el Welcome. Marca que el dominio Grupos que
+        /// este dispositivo pueda volver a descargar de iCloud (mismo Apple ID, otro humano) NO es
+        /// del usuario actual mientras él no lo adopte con un acto deliberado.
+        ///
+        /// Es un sello y no un gate general A PROPÓSITO
+        /// (`GroupsDomainAdoptionLogic.isBridgeAllowed`): bloquear el bridge por AUSENCIA de
+        /// `groupsBetaUnlocked` habría afectado a todo usuario que nunca abrió Grupos, con un
+        /// falso negativo silencioso. Con el sello, el único dispositivo cuyo comportamiento
+        /// cambia es el que declaró el relevo.
+        ///
+        /// No se borra nunca: el predicado lo NEUTRALIZA en cuanto el usuario ADOPTA Grupos
+        /// (entrar al tab, invitación aceptada u onboarding «Solo Grupos»), así que no hace falta
+        /// cablear su limpieza en cada uno de esos sitios. Excluido del barrido del wipe normal.
+        static let groupsDomainSealedForFreshStart = "groupsDomainSealedForFreshStart"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
         static let financialMindset = "financialMindset"
@@ -1207,6 +1470,21 @@ final class AppPreferences {
         static let panelSectionsOrder = "panelSectionsOrder"
         static let moreSectionOrder = "moreSectionOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
+
+        /// Todo lo que define «lo que ve un usuario nuevo» en el Panel: el centinela
+        /// de siembra y las ocho claves que escribe.
+        ///
+        /// Lo consume el bloque de limpieza de `-uitest-reset`. Sin borrarlo, el
+        /// centinela —que es monotónico— sobrevive entre corridas y la siembra no
+        /// vuelve a ejecutarse: un XCUITest de los predeterminados mediría lo que dejó
+        /// la corrida anterior. Si se añade una clave del Panel, va también aquí.
+        static let panelDefaultsUITestResetKeys: [String] = [
+            panelPrefsMigratedV2,
+            panelTendenciasOrder, panelTendenciasHidden,
+            panelDistribucionOrder, panelDistribucionHidden,
+            panelPlanificacionOrder, panelPlanificacionHidden,
+            panelSectionsHidden, panelSectionsOrder,
+        ]
         /// Marca que la regen de UUIDs (Tag.id + Account/Subcategory.shortcutID) corrió.
         /// Se setea en el primer save exitoso independiente del race del backfill CSV.
         /// Evita que `regenerateAllUUIDs` blow away Tag.id cada launch si el CSV
@@ -1243,5 +1521,9 @@ final class AppPreferences {
         // en proceso separado del intent host). expensesOnlyMode ya declarada arriba.
         nonisolated static let isProUser = "isProUser"
         nonisolated static let lastUsedAccountID = "lastUsedAccountID"
+        /// Cola JSON (`[ApplePayPendingExpense]`) de gastos de Apple Pay que el intent encoló sin
+        /// tocar SwiftData; la app los materializa como `InboxDraft` al abrir (ver `ApplePayPendingStore`
+        /// / `ApplePayDraftService`). Acumula varios pagos hechos antes de abrir la app.
+        nonisolated static let pendingApplePayExpenses = "pendingApplePayExpenses"
     }
 }

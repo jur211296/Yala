@@ -2,7 +2,9 @@
 //  ExchangeRateServiceTests.swift
 //  YalaTests
 //
-//  Unit tests for ExchangeRateService utility logic (date grouping, protocol conformance).
+//  Unit tests for ExchangeRateService utility logic (date grouping, protocol conformance) and
+//  ExchangeRate.decodedRates() (tolerancia a las dos caras del blob — doubles nativos y strings
+//  escala-8 del canal nube; bug device 2026-07-18).
 //
 
 import Foundation
@@ -124,5 +126,49 @@ struct ExchangeRateServiceTests {
 
         ranges.append(DateInterval(start: rangeStart, end: rangeEnd))
         return ranges
+    }
+
+    // MARK: - ExchangeRate.decodedRates (tolerancia a las dos caras del blob)
+
+    private func makeRate(_ json: String) -> ExchangeRate {
+        ExchangeRate(dateKey: "2026-07-12", base: "USD", rates: Data(json.utf8))
+    }
+
+    @Test func decodedRates_nativeDoubles_decodes() {
+        let rate = makeRate(#"{"EUR":0.9,"PEN":3.75}"#)
+        #expect(rate.decodedRates() == ["EUR": 0.9, "PEN": 3.75])
+    }
+
+    @Test func decodedRates_stringScale8PostPull_decodes() {
+        // La cara post-pull del canal nube: el canon c1 proyecta números anidados como STRING escala-8
+        // y el apply re-serializa verbatim. El decode estricto pre-fix devolvía [:] (bug 2026-07-18:
+        // "Expected Double... Path: ILS" → se perdían TODAS las tasas de la fecha).
+        let rate = makeRate(#"{"ILS":"3.61230000","PEN":"3.75000000"}"#)
+        #expect(rate.decodedRates() == ["ILS": 3.6123, "PEN": 3.75])
+    }
+
+    @Test func decodedRates_mixedFaces_decodesBoth() {
+        // Blob mixto alcanzable: persistRate escribe doubles sobre una fila que llegó con strings.
+        let rate = makeRate(#"{"ILS":"3.61230000","EUR":0.9}"#)
+        #expect(rate.decodedRates() == ["ILS": 3.6123, "EUR": 0.9])
+    }
+
+    @Test func decodedRates_nonNumericValues_skipOnlyThatKey() {
+        // Un valor no numérico ya no tumba la fecha entera — se omite solo esa key.
+        let rate = makeRate(#"{"EUR":0.9,"BAD":"n/a","FLAG":true,"NIL":null,"NEST":{"x":1}}"#)
+        #expect(rate.decodedRates() == ["EUR": 0.9])
+    }
+
+    @Test func decodedRates_nonFiniteString_skipped() {
+        // `Double("Infinity")` parsea a .infinity — el guard isFinite la descarta (el canon jamás
+        // emite no-finitos; esto solo puede ser blob basura).
+        let rate = makeRate(#"{"EUR":0.9,"INF":"Infinity"}"#)
+        #expect(rate.decodedRates() == ["EUR": 0.9])
+    }
+
+    @Test func decodedRates_emptyOrMalformed_returnsEmpty() {
+        #expect(ExchangeRate(dateKey: "2026-07-12", base: "USD", rates: Data()).decodedRates() == [:])
+        #expect(makeRate("{not json").decodedRates() == [:])
+        #expect(makeRate(#"[1,2]"#).decodedRates() == [:])
     }
 }

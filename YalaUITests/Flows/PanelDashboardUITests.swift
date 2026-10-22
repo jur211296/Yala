@@ -47,9 +47,13 @@ final class PanelDashboardUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
+        // Prueba de "llegamos al dashboard". Desde 2026-09-02 ya no la da el FAB:
+        // con el Panel arriba del todo los flotantes están ocultos y las acciones
+        // viven en la fila del hero. `panel_action_new` es el elemento equivalente
+        // — y además SIEMPRE visible en ese estado, así que es mejor testigo.
         XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 10),
-            "No apareció el FAB del Panel — la app no llegó al dashboard."
+            app.buttons["panel_action_new"].waitForExistence(timeout: 10),
+            "No apareció la fila de acciones del Panel — la app no llegó al dashboard."
         )
 
         let configButton = app.buttons["panel_sections_config"]
@@ -103,5 +107,59 @@ final class PanelDashboardUITests: XCTestCase {
         let toggleAgain = app.switches["panel_section_toggle_planificacion"]
         XCTAssertTrue(toggleAgain.waitForExistence(timeout: 5), "No reapareció el toggle de Planificación al reabrir.")
         XCTAssertTrue(waitForSwitchValue(toggleAgain, equals: "0"), "La preferencia de ocultar Planificación no persistió.")
+    }
+
+    /// Predeterminados: un usuario recién instalado ve CUATRO secciones —Cuentas,
+    /// Tendencias, Planificación y Últimos registros— y no las otras tres.
+    ///
+    /// Se comprueba en el sheet de configuración porque es la única superficie con un
+    /// identificador para las siete (`panel_section_toggle_<kind>`); las secciones sin
+    /// widgets, como Cuentas, no publican `panel_section_<kind>` en el dashboard.
+    ///
+    /// Este test solo es honesto gracias al reset del centinela de siembra en
+    /// `applyUITestHooksEarly`: ese flag es monotónico y, sin limpiarlo, la corrida
+    /// medía lo que dejó la anterior y pasaba en verde sin ejercitar nada.
+    func test_freshInstallShowsFourSectionsByDefault() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        XCTAssertTrue(
+            app.buttons["panel_sections_config"].waitForExistence(timeout: 10),
+            "No apareció el botón de configuración de secciones."
+        )
+        app.buttons["panel_sections_config"].tap()
+
+        let visibles = ["accounts", "tendencias", "planificacion", "latestRecords"]
+        let ocultas = ["health", "distribucion", "tools"]
+
+        for kind in visibles + ocultas {
+            let toggle = app.switches["panel_section_toggle_\(kind)"]
+            XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No apareció el toggle de \(kind).")
+        }
+
+        for kind in visibles {
+            XCTAssertTrue(
+                waitForSwitchValue(app.switches["panel_section_toggle_\(kind)"], equals: "1"),
+                "\(kind) debería venir ENCENDIDA de fábrica."
+            )
+        }
+        for kind in ocultas {
+            XCTAssertTrue(
+                waitForSwitchValue(app.switches["panel_section_toggle_\(kind)"], equals: "0"),
+                "\(kind) debería venir APAGADA de fábrica."
+            )
+        }
+
+        // Y en el dashboard: Planificación se ve, Distribución no.
+        app.buttons["toolbar_save_button"].tap()
+        XCTAssertTrue(
+            element(app, "panel_section_planificacion").waitForExistence(timeout: 10),
+            "Planificación debería verse en el Panel de fábrica."
+        )
+        XCTAssertTrue(
+            element(app, "panel_section_distribucion").waitForNonExistence(timeout: 5),
+            "Distribución no debería verse en el Panel de fábrica."
+        )
     }
 }

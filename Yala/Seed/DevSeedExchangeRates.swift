@@ -11,6 +11,23 @@ import SwiftData
 
 struct DevSeedExchangeRates {
 
+    /// Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md
+    ///
+    /// Encodes the post-pull canonical face of `ExchangeRate.rates`: a JSON object whose
+    /// values are scale-8 DECIMAL STRINGS (e.g. `"3.61230000"`), not native Doubles.
+    /// Invoked from the existing Yala Dev uitest launch path (`-uitest -uitest-seed <profile>`)
+    /// via `DevSeedService` for any profile that seeds personal data. A seed that only writes
+    /// Doubles is a false green for Mini: `decodedRates()` would still succeed if the tolerant
+    /// decoder were reverted.
+    static func encodeScale8StringFaceBlob(_ rates: [String: Double]) throws -> Data {
+        var strings: [String: String] = [:]
+        strings.reserveCapacity(rates.count)
+        for (code, value) in rates {
+            strings[code] = String(format: "%.8f", value)
+        }
+        return try JSONSerialization.data(withJSONObject: strings, options: [.sortedKeys])
+    }
+
     @MainActor
     static func create(
         startDate: Date,
@@ -43,10 +60,11 @@ struct DevSeedExchangeRates {
             ]
 
             do {
-                let entry = try ExchangeRate(
+                let blob = try encodeScale8StringFaceBlob(rates)
+                let entry = ExchangeRate(
                     dateKey: dateKey,
                     base: "USD",
-                    ratesDictionary: rates,
+                    rates: blob,
                     timestamp: currentDate
                 )
                 context.insert(entry)

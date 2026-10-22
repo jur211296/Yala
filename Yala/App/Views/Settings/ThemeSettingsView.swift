@@ -15,7 +15,7 @@ struct ThemeSettingsView: View {
 
     private let featureGate = FeatureGateService.shared
 
-    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
 
     /// Called after theme changes to dismiss the entire profile sheet
     var onThemeChanged: (() -> Void)?
@@ -38,7 +38,6 @@ struct ThemeSettingsView: View {
                         Image(systemName: "paintpalette.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(.thAccent)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Profile.appearance)
@@ -54,7 +53,7 @@ struct ThemeSettingsView: View {
 
                     // Theme Grid
                     LazyVGrid(columns: columns, spacing: DS.Spacing.lg) {
-                        ForEach(GroupInviteVisibilityPolicy.selectableThemes(isGroupInvite: isGroupInviteMode)) { appTheme in
+                        ForEach(GroupsOnlyVisibilityPolicy.selectableThemes(isGroupsOnlyShell: isGroupsOnlyShell)) { appTheme in
                             themeCard(for: appTheme)
                         }
                     }
@@ -111,11 +110,9 @@ struct ThemeSettingsView: View {
             } else if appTheme == .translucent {
                 // Show variant picker for translucent theme
                 themeManager.userChoice = appTheme
-                TelemetryService.track(.themeChanged, parameters: ["tema": String(describing: appTheme)])
                 showTranslucentVariantPicker = true
             } else {
                 themeManager.userChoice = appTheme
-                TelemetryService.track(.themeChanged, parameters: ["tema": String(describing: appTheme)])
                 // Dismiss theme view + parent profile sheet
                 Task {
                     try? await Task.sleep(for: .milliseconds(300))

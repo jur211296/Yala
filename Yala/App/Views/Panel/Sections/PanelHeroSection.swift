@@ -17,6 +17,7 @@ import SwiftUI
 struct PanelHeroSection: View {
     @Bindable var viewModel: PanelViewModel
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Binding var showCustomPeriodPicker: Bool
 
     var body: some View {
@@ -32,10 +33,10 @@ struct PanelHeroSection: View {
             )
             .contentShape(Rectangle())
             .onTapGesture {
-                sessionState.navigateToDetail(.insights)
+                navigation.navigateToDetail(.insights)
             }
             .accessibilityAction(named: L10n.Accessibility.viewDetails) {
-                sessionState.navigateToDetail(.insights)
+                navigation.navigateToDetail(.insights)
             }
         }
     }

@@ -1,0 +1,579 @@
+//
+//  CloudAccountClient.swift
+//  Yala
+//
+//  Cliente del gate de identidad del Modo Nube (§f.1): `POST /account/claim` (reserva ATÓMICA de la
+//  cuenta) + `GET /account/exists` (hint barato de encaminamiento). Corre INMEDIATAMENTE tras un
+//  `signInWithIdToken` exitoso y ANTES de cualquier `save()` de onboarding — REGLA C4 (el consumidor
+//  UI real es I14; aquí lo ejercita el panel DEBUG).
+//
+//  WIRE REAL (anclado a `gateway/src/sync/account.ts` + `gateway/test/account.goldens.test.ts`):
+//   - Request:  `POST /account/claim`  body `{ "device_id": <string>, "provider": <string> }`.
+//   - Response: `200 { "state": "created" | "existing_stable" | "claiming_in_progress", "profile"?: {…} }`.
+//   - Auth: SOLO el JWT de usuario (`Authorization: Bearer <supabase jwt>`) en claim, exists, migration,
+//     siwa/exchange y entitlement, que NO exigen App Attest (preceden al `/attest/bind` — el device aún no vinculó
+//     su keyId). **Las dos excepciones SÍ lo exigen**: `/account/delete` y `/account/siwa/revoke`
+//     (`requireUserAndAttest`, ver `deleteAccount`), y ahí un 401 `yala_attest_required` es attest ausente, no
+//     sesión muerta.
+//   - Errores: envelope OpenAI-compatible `{ "error": { message, type, param, code } }` con status
+//     (401 JWT ausente/inválido, 400 body inválido, 502 upstream). El panel los muestra EN CLARO.
+//
+//  Cero silencios: la red se traduce a un `ClaimOutcome` estructurado (estilo `PushOutcome`); NUNCA
+//  lanza por red. Sin PII en logs (jamás el JWT ni el body de perfil).
+//
+
+import Foundation
+
+/// Resultado ESTRUCTURADO de `POST /account/claim`. `detail` en los casos de error lleva `status + body`
+/// del Worker (para el panel DEBUG) — nunca el JWT.
+enum ClaimOutcome: Equatable {
+    /// 200 OK con un `state` válido → decodificado a `ClaimState`.
+    case success(AccountClaimDecision.ClaimState)
+    /// 401: JWT ausente/inválido/expirado → re-firmar.
+    case sessionExpired(detail: String)
+    /// 403: autenticado pero prohibido (cuenta suspendida) — defensivo (`/account/*` no lo emite hoy).
+    case accountUnavailable(detail: String)
+    /// 5xx / red caída / respuesta no decodificable / status inesperado → reintentar.
+    case transient(detail: String)
+}
+
+/// Resultado de `GET /account/exists`.
+///
+/// `kind` es OPCIONAL y su ausencia es información, no un error: un gateway anterior a g15_01 —o uno
+/// que no pudo leer la columna— responde `{ "exists": true }` a secas, y eso tiene que seguir siendo
+/// un 200 bueno. El que lo consuma trata la ausencia como `groupsOnly` (`AccountKindLogic.resolve`) y
+/// se corrige en el refresco siguiente.
+///
+/// `migrationInProgress` (2026-10-09, ticket `settings-migrate-blocks-a-second-device-before-its-marker`): la cuenta tiene
+/// una ida en curso (`profiles.migration_in_progress`). Ausente en la respuesta —un gateway anterior— es `false`, que deja la
+/// puerta de «Migrar» con su aviso de siempre.
+enum ExistsOutcome: Equatable {
+    case exists(Bool, kind: AccountKind?, migrationInProgress: Bool = false)
+    case sessionExpired(detail: String)
+    case transient(detail: String)
+}
+
+/// Resultado ESTRUCTURADO de `POST /account/delete` (G5-D1 — borrado GDPR del corpus personal). Solo
+/// interesa éxito/no-éxito: los counts por tabla del RPC NO se consumen client-side (la cuenta muere).
+/// NUNCA lanza — traduce todo a este enum (estilo `ClaimOutcome`).
+enum DeleteOutcome: Equatable {
+    /// 200 OK → el HARD DELETE server-side se aplicó.
+    case success
+    /// 401. Con `yala_attest_invalid` el gateway no acepta el JWT (caducado según su reloj o mal firmado) → re-firmar. Con
+    /// `yala_attest_required` el JWT vale y falta el token de App Attest, que volver a entrar NO arregla
+    /// (`GatewayErrorEnvelope.isAttestRequired`). Este enum no los separa porque su único consumidor,
+    /// `AccountDeletionService.deleteAccount`, trata este caso y `.transient` igual: «Intenta de nuevo en un momento» (leído
+    /// en el código el 2026-09-16, ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
+    case sessionExpired(detail: String)
+    /// 5xx / red caída / 400 yala_* / respuesta no-HTTP → reintentable (los teardowns son idempotentes).
+    case transient(detail: String)
+}
+
+/// Resultado ESTRUCTURADO de `POST /account/siwa/exchange` (B1, 5.1.1(v)). El `refreshToken` es el de
+/// APPLE (no el de Supabase) — el Worker es stateless y lo devuelve para custodia en el Keychain del
+/// cliente. NUNCA lanza; el token JAMÁS aparece en `detail` (los errores traen solo el envelope del Worker).
+enum SiwaExchangeOutcome: Equatable {
+    /// 200 `{ refresh_token }` → custodiar el PAR (token, appleUserID) en el Keychain.
+    case success(refreshToken: String)
+    /// 401: JWT ausente/inválido/expirado.
+    case sessionExpired(detail: String)
+    /// 5xx / 503 no-configurado / 400 shape / red caída / respuesta no decodificable → best-effort, sin token.
+    case transient(detail: String)
+}
+
+/// Resultado ESTRUCTURADO de `POST /account/siwa/revoke` (B1, 5.1.1(v)). Best-effort por contrato: el
+/// borrado de cuenta JAMÁS se bloquea por un fallo aquí.
+enum SiwaRevokeOutcome: Equatable {
+    /// 200 `{ revoked: true }` → limpiar el PAR del Keychain.
+    case success
+    case sessionExpired(detail: String)
+    case transient(detail: String)
+}
+
+/// Resultado ESTRUCTURADO de `POST /account/migration` (I10-wiring w6, cutover §g.4). `ok:true` → `.ok`;
+/// `ok:false` con `reason=='other_leader'` → `.otherLeader` (el líder fue usurpado — el runner corta
+/// retomable y converge a follower); cualquier otro `ok:false` → `.rejected(reason)`.
+enum MigrationProgressOutcome: Equatable {
+    /// 200 `{ok:true}` → el avance se aplicó (idempotente).
+    case ok
+    /// 200 `{ok:false, reason:'other_leader'}` → otro device lidera → cortar retomable → follower.
+    case otherLeader
+    /// 200 `{ok:false, reason:…}` distinto (no_profile / not_in_progress / bad_action) → stop retomable.
+    case rejected(reason: String)
+    /// 401: JWT ausente/inválido/expirado → re-firmar.
+    case sessionExpired(detail: String)
+    /// 5xx / red caída / respuesta no decodificable / status inesperado → reintentar.
+    case transient(detail: String)
+}
+
+/// Resultado ESTRUCTURADO de `GET`/`POST /account/entitlement` (C-8 — el derecho Pro por CUENTA).
+/// NUNCA lanza. Ojo con la semántica de los no-éxitos: `transient` significa «no se pudo saber»,
+/// NO «no tiene Pro» — degradar a Free ante un fallo de red le quitaría Pro a un pagador offline.
+enum EntitlementOutcome: Equatable {
+    /// 200: estado de la cuenta. `expiresAt == nil` (o pasado) = sin derecho vigente.
+    case success(product: String?, expiresAt: Date?)
+    /// 401: JWT ausente/inválido/expirado → re-firmar.
+    case sessionExpired(detail: String)
+    /// 409: la suscripción declaró OTRA cuenta de Yala (`appAccountToken`). TERMINAL — no reintentar.
+    case ownerMismatch(detail: String)
+    /// 5xx / red caída / respuesta no decodificable / status inesperado → reintentar más tarde.
+    case transient(detail: String)
+}
+
+@MainActor
+final class CloudAccountClient {
+
+    private let baseURL: URL
+    private let urlSession: SyncHTTPSession
+    private let attestProvider: @MainActor () async -> String?
+
+    /// - Parameters:
+    ///   - baseURL: gateway (default `ProxyConfig.baseURL`, per-scheme).
+    ///   - urlSession: inyectable para tests (reusa `SyncHTTPSession` del push client).
+    ///   - attestProvider: token de sesión de App Attest. **Este cliente es el ÚNICO cuyo default
+    ///     `{ nil }` es correcto en producción**, porque es el único que habla con rutas de las DOS
+    ///     clases; el criterio es la guard del handler en el gateway, no el cliente:
+    ///
+    ///       · `requireUser` (NO exige attest) → `claim` · `exists` · `migrationProgress` ·
+    ///         `siwaExchange` · `entitlement`/`bindEntitlement`. Son flujos PRE-SESIÓN o adyacentes al
+    ///         sign-in, anteriores al `/attest/bind`: cablear attest ahí puede romper el alta.
+    ///         Handlers: `sync/account.ts:68,132,256`, `sync/siwa.ts:100`, `sync/entitlement.ts:54,123`.
+    ///       · `requireUserAndAttest` (SÍ exige, 401 bajo `enforce`) → `deleteAccount` (G5-D1,
+    ///         `sync/account.ts:213`) y `siwaRevoke` (B1, `sync/siwa.ts:167`): mismo flujo destructivo,
+    ///         molde `/groups/rpc`. Sus DOS call-sites inyectan `AttestSessionProvider.live`.
+    ///
+    ///     ⚠️ Al añadir un método nuevo a esta clase, mira la guard de SU handler antes de decidir. Los
+    ///     clientes de Grupos/push no tienen esta ambigüedad: TODAS sus rutas exigen attest, y su default
+    ///     `{ nil }` es solo para tests (lo pinnea `AttestWiringTests`).
+    init(
+        baseURL: URL = ProxyConfig.baseURL,
+        urlSession: SyncHTTPSession = URLSession.shared,
+        attestProvider: @escaping @MainActor () async -> String? = { nil }
+    ) {
+        self.baseURL = baseURL
+        self.urlSession = urlSession
+        self.attestProvider = attestProvider
+    }
+
+    // MARK: - Decoder puro (testeable sin red)
+
+    /// Mapea el `state` del wire (§f.1) a `AccountClaimDecision.ClaimState`. `nil` = string desconocido.
+    static func decodeState(_ raw: String) -> AccountClaimDecision.ClaimState? {
+        switch raw {
+        case "created": return .created
+        case "existing_stable": return .existingStable
+        case "claiming_in_progress": return .claimingInProgress
+        default: return nil
+        }
+    }
+
+    private struct ClaimResponse: Decodable {
+        let state: String?
+        /// ADITIVO (Google Sign-In sesión 2): perfil devuelto en `existing_stable`. Solo se
+        /// consume `provider` (red post-claim sub-first — breadcrumb, jamás alerta). `ClaimOutcome`
+        /// NO cambia de shape.
+        let profile: ClaimProfile?
+        /// ADITIVO (g16_03, ticket `migration-takeover-uploads-without-a-lineage-check`): en toda respuesta `created`, si la
+        /// cuenta ya recibió alguna escritura personal (hay fila en `sync_seq_counters`). **Opcional** por lo mismo que `kind`
+        /// en `/account/exists`: un servidor sin g16_03 contesta sin el campo, y eso no puede tumbar el decode.
+        let hasPersonalWrites: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case state, profile
+            case hasPersonalWrites = "has_personal_writes"
+        }
+    }
+
+    private struct ClaimProfile: Decodable {
+        let provider: String?
+    }
+
+    private struct ExistsResponse: Decodable {
+        let exists: Bool
+        /// ADITIVO (g15_01). **Tiene que ser opcional**: el decode de `exists` es un `try?`, así que
+        /// declararlo obligatorio convertiría CUALQUIER respuesta sin el campo en `.transient` — o
+        /// sea, un callejón con «reintentar» en el sign-in de todo cliente anterior al despliegue del
+        /// gateway. Y `String` en vez de `AccountKind`: un valor futuro que este build no conozca
+        /// tampoco debe tumbar el decode.
+        let kind: String?
+        /// ADITIVO (2026-10-09). Opcional por lo mismo que `kind`: un gateway anterior no lo manda. Y un valor que no sea
+        /// booleano se lee como AUSENTE en vez de tumbar el decode entero: el `try?` de `exists` lo convertiría en
+        /// `.transient`, y un campo que solo elige el texto de un aviso no puede dejar sin sign-in a nadie.
+        let migrationInProgress: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case exists, kind
+            case migrationInProgress = "migration_in_progress"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            exists = try container.decode(Bool.self, forKey: .exists)
+            kind = try container.decodeIfPresent(String.self, forKey: .kind)
+            do {
+                migrationInProgress = try container.decodeIfPresent(Bool.self, forKey: .migrationInProgress)
+            } catch {
+                #if DEBUG
+                print("CloudAccountClient: migration_in_progress fuera del dominio, se lee como ausente: \(error)")
+                #endif
+                migrationInProgress = nil
+            }
+        }
+    }
+
+    private struct MigrationResponse: Decodable {
+        let ok: Bool?
+        let reason: String?
+    }
+
+    // MARK: - POST /account/claim
+
+    /// Reserva atómica de la cuenta. `provider` = "apple" para Sign in with Apple. `migration=true`
+    /// arma la reserva de LÍDER (`migration_in_progress` + heartbeat) ATÓMICAMENTE en el INSERT del RPC
+    /// (§g.1) — SOLO la rama de migración lo pasa; born-cloud/exists usan `false` (default). NO envía
+    /// header de attest (el gate de cuenta no lo exige). NUNCA lanza — traduce todo a `ClaimOutcome`.
+    func claim(jwt: String, deviceID: String, provider: String, migration: Bool = false) async -> ClaimOutcome {
+        await claimReportingPersonalWrites(jwt: jwt, deviceID: deviceID, provider: provider, migration: migration).outcome
+    }
+
+    /// El mismo `POST /account/claim`, con la pista de g16_03 al lado: `personalWrites` es `has_personal_writes` de un
+    /// `created` —la cuenta ya recibió alguna escritura personal—, y `nil` si la respuesta no lo trae (un servidor sin
+    /// g16_03, o un desenlace que no es `created`). Lo usa la migración para saber si un `created` puede caer sobre datos
+    /// de otro dispositivo —el relevo de un líder callado— y hay que comprobar el linaje antes de subir (ticket
+    /// `migration-takeover-uploads-without-a-lineage-check`). Va aparte para no cambiar la forma de `ClaimOutcome`, que
+    /// comparten born-cloud y la migración. `/account/claim` es `requireUser`: sin attest, como `claim`.
+    func claimReportingPersonalWrites(
+        jwt: String, deviceID: String, provider: String, migration: Bool = false
+    ) async -> (outcome: ClaimOutcome, personalWrites: Bool?) {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/claim"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(
+                withJSONObject: ["device_id": deviceID, "provider": provider, "migration": migration]
+            )
+        } catch {
+            return (.transient(detail: "encode failed"), nil)
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return (.transient(detail: "network: \(error.localizedDescription)"), nil)
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return (.transient(detail: "non-HTTP response"), nil)
+        }
+
+        switch http.statusCode {
+        case 200:
+            guard
+                let decoded = try? JSONDecoder().decode(ClaimResponse.self, from: data),
+                let rawState = decoded.state,
+                let state = Self.decodeState(rawState)
+            else {
+                return (.transient(detail: "HTTP 200 undecodable: \(Self.bodyString(data))"), nil)
+            }
+            // Red post-claim SUB-FIRST (sesión 2, H4): post-claim el sub es EL MISMO por
+            // construcción (claim JWT-scoped) ⇒ un `profile.provider` distinto es identity-linking
+            // LEGÍTIMO de GoTrue — solo breadcrumb (sin PII), JAMÁS alerta ni canario.
+            if let profileProvider = decoded.profile?.provider,
+               ProviderMismatchLogic.postClaimLinkedDifferentProvider(
+                   profileProvider: profileProvider, sessionProvider: provider) {
+                CloudSyncBreadcrumb.claimProfileProviderDiffers(profileProvider: profileProvider)
+            }
+            return (.success(state), state == .created ? decoded.hasPersonalWrites : nil)
+        case 401:
+            return (.sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))"), nil)
+        case 403:
+            return (.accountUnavailable(detail: "HTTP 403: \(Self.bodyString(data))"), nil)
+        default:
+            return (.transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))"), nil)
+        }
+    }
+
+    // MARK: - GET /account/exists
+
+    /// Hint de encaminamiento barato (§f.1) — NO la garantía anti-doble-siembra (esa la da `claim`).
+    func exists(jwt: String) async -> ExistsOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/exists"))
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            guard let decoded = try? JSONDecoder().decode(ExistsResponse.self, from: data) else {
+                return .transient(detail: "HTTP 200 undecodable")
+            }
+            // Un `kind` que este build no conozca se lee como AUSENTE, no como error: se prefiere el
+            // fail-safe a `groupsOnly` antes que dar por buena una etiqueta que nadie sabe interpretar.
+            return .exists(decoded.exists, kind: decoded.kind.flatMap(AccountKind.init(rawValue:)),
+                           migrationInProgress: decoded.migrationInProgress ?? false)
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    // MARK: - POST /account/migration
+
+    /// Avance de la migración (§g.4) y de la REVERSA (§h, I11-3). `action` = `"cutover"` (estampa
+    /// `migrated_at`) / `"complete"` (`migration_in_progress=false`) / `"reverse_claim"` /
+    /// `"reverse_freeze"` / `"reverse_complete"` / `"reverse_abort"`. Guards líder/lease SERVER-side
+    /// (toda la semántica vive en el RPC `migration_progress`; este cliente es genérico en el action).
+    /// NUNCA lanza — traduce a `MigrationProgressOutcome`. `other_leader` = este device fue usurpado
+    /// (lease-takeover).
+    func migrationProgress(jwt: String, deviceID: String, action: String) async -> MigrationProgressOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/migration"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(
+                withJSONObject: ["device_id": deviceID, "action": action]
+            )
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            guard let decoded = try? JSONDecoder().decode(MigrationResponse.self, from: data),
+                  let ok = decoded.ok else {
+                return .transient(detail: "HTTP 200 undecodable: \(Self.bodyString(data))")
+            }
+            if ok { return .ok }
+            let reason = decoded.reason ?? "unknown"
+            return reason == "other_leader" ? .otherLeader : .rejected(reason: reason)
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    // MARK: - POST /account/delete (G5-D1)
+
+    /// `POST /account/delete` — HARD DELETE del corpus personal server-side (`delete_personal_account`,
+    /// GDPR). ASIMETRÍA DELIBERADA con el resto de `/account/*`: esta ruta EXIGE App Attest
+    /// (`requireUserAndAttest`, molde de `/groups/rpc`) por ser la operación más destructiva del canal —
+    /// de ahí el header `X-Yala-Attest-Session` que los hermanos (claim/exists/migration) NO envían. Body
+    /// vacío (`{}`; el RPC no toma args, usa `auth.uid()`). NUNCA lanza — traduce a `DeleteOutcome`.
+    func deleteAccount(jwt: String) async -> DeleteOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/delete"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        if let attest = await attestProvider(), !attest.isEmpty {
+            request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+        }
+        request.httpBody = Data("{}".utf8)
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            return .success
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            // 400 yala_* (auth.uid null defensivo) / 502 upstream / cualquier otro → reintentable.
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    // MARK: - POST /account/siwa/exchange (B1)
+
+    /// Canje del `authorization_code` de Apple → refresh token de Apple, vía el Worker (que firma el
+    /// `client_secret` con la .p8 — jamás client-side). SIN attest (como claim/exists/migration: el
+    /// sign-in PRECEDE al `/attest/bind`). Corre best-effort en el hook post-sign-in — NUNCA lanza.
+    /// El refresh token devuelto no se loguea (solo viaja al Keychain).
+    func siwaExchange(jwt: String, authorizationCode: String) async -> SiwaExchangeOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/siwa/exchange"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(
+                withJSONObject: ["authorization_code": authorizationCode]
+            )
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            guard
+                let decoded = try? JSONDecoder().decode(SiwaExchangeResponse.self, from: data),
+                let token = decoded.refresh_token, !token.isEmpty
+            else {
+                // NO volcar el body de un 200 (portaría el token si el shape cambió): solo el hecho.
+                return .transient(detail: "HTTP 200 undecodable (body omitido — puede portar token)")
+            }
+            return .success(refreshToken: token)
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            // 503 yala_siwa_not_configured / 400 shape / 502 upstream Apple → best-effort, sin token.
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    private struct SiwaExchangeResponse: Decodable {
+        let refresh_token: String?
+    }
+
+    // MARK: - POST /account/siwa/revoke (B1)
+
+    /// Revocación 5.1.1(v) del refresh token de Apple — paso 4a del borrado de cuenta. CON attest
+    /// (`requireUserAndAttest`, coherencia con `/account/delete`: mismo flujo destructivo), de ahí el
+    /// header `X-Yala-Attest-Session` vía el `attestProvider` del init. NUNCA lanza.
+    func siwaRevoke(jwt: String, refreshToken: String) async -> SiwaRevokeOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/siwa/revoke"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        if let attest = await attestProvider(), !attest.isEmpty {
+            request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+        }
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": refreshToken])
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            return .success
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    // MARK: - /account/entitlement (C-8: el derecho Pro por CUENTA)
+
+    /// Consulta el entitlement vinculado a la cuenta. Sin attest (asimetría de `/account/*`).
+    /// NUNCA lanza. Un `.transient` JAMÁS debe interpretarse como "sin Pro": el caller conserva el
+    /// snapshot cacheado, que sigue siendo válido hasta su `expiresAt` firmado por Apple.
+    func entitlement(jwt: String) async -> EntitlementOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/entitlement"))
+        request.httpMethod = "GET"
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        return await performEntitlement(request)
+    }
+
+    /// Vincula la suscripción de este device a la cuenta. `storeKitJWS` es la transacción firmada por
+    /// Apple (`StoreKitManager.fetchActiveTransactionJWS`) — el gateway la verifica offline contra el
+    /// Root CA G3, así que el cliente no puede fabricar un derecho. El 409 (`ownerMismatch`) significa
+    /// que la compra declaró OTRA cuenta de Yala: es terminal, no se reintenta.
+    func bindEntitlement(jwt: String, storeKitJWS: String) async -> EntitlementOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/entitlement"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["storekit_jws": storeKitJWS])
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+        return await performEntitlement(request)
+    }
+
+    /// Ejecución + mapeo compartido por las dos rutas de entitlement.
+    private func performEntitlement(_ request: URLRequest) async -> EntitlementOutcome {
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            guard let decoded = try? JSONDecoder().decode(EntitlementResponse.self, from: data) else {
+                return .transient(detail: "HTTP 200 undecodable")
+            }
+            return .success(product: decoded.product,
+                            expiresAt: decoded.expires_at_ms.map { Date(timeIntervalSince1970: $0 / 1000) })
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        case 409:
+            return .ownerMismatch(detail: "HTTP 409: \(Self.bodyString(data))")
+        default:
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    private struct EntitlementResponse: Decodable {
+        let pro: Bool
+        let product: String?
+        /// Epoch ms (el wire habla en ms; el cliente trabaja con `Date`).
+        let expires_at_ms: Double?
+    }
+
+    // MARK: - Helpers
+
+    /// Cuerpo como string acotado para diagnóstico del panel (el body de error del Worker es el envelope
+    /// `{error:{type,message}}`, sin PII). Se recorta para no volcar payloads grandes.
+    private static func bodyString(_ data: Data) -> String {
+        let s = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+        return s.count > 300 ? String(s.prefix(300)) + "…" : s
+    }
+}

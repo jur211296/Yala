@@ -47,6 +47,7 @@ enum OnboardingStepPlan {
     /// Conjunto de pasos a saltar combinando el prefill de iCloud (rama B del
     /// Welcome Restore) con el modo de uso elegido por el usuario.
     /// `.purpose` y `.confirmation` nunca se saltan (tracking + resumen final).
+    ///
     static func skippedSteps(
         prefilledUserName: String?,
         prefilledAccountsCount: Int,
@@ -58,7 +59,7 @@ enum OnboardingStepPlan {
     ) -> Set<OnboardingStep> {
         var skip: Set<OnboardingStep> = []
 
-        // Skips por modo de uso (decisión binaria del usuario).
+        // Skips por modo de uso (elección única del usuario en `.purpose`).
         if expensesOnly {
             skip.formUnion([.accounts, .accountType, .balance])
         } else if dayToDay {

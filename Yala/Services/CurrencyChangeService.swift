@@ -55,14 +55,19 @@ final class CurrencyChangeService {
             }
 
             // Calculate new values
-            // Use CurrencyConverter to get exact historical conversion
-            let amountInPreferred = CurrencyConverter.shared.convert(
+            // `convertChecked` y no `convert`: este bucle reescribe el monto convertido de TODAS las
+            // transacciones ya persistidas, y `convert` devuelve `Decimal` a secas. Sin la calidad,
+            // una tasa arrastrada de otro día —o salida de la tabla estática— se guardaba dejando
+            // `isExchangeRateProvisional` intacto en su `false`: sellada como definitiva y fuera del
+            // alcance del reparador, cuyo `#Predicate` solo busca `== true`.
+            let outcome = CurrencyConverter.shared.convertChecked(
                 Decimal(transaction.amount),
                 from: transaction.currencyCode,
                 to: newCurrencyCode,
                 on: transaction.date,
                 context: context
             )
+            let amountInPreferred = outcome.amount
 
             // Derive new rate
             let amountDouble = transaction.amount
@@ -78,6 +83,13 @@ final class CurrencyChangeService {
                 (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.exchangeRate = abs(effectiveRate)
             transaction.preferredCurrencyCode = newCurrencyCode
+            // El flag describe la calidad del número que hay AHORA, no un historial — por eso se
+            // decide incondicionalmente, igual que en `recalculatePreferredCurrency`. Subirlo cuando
+            // la tasa no fue exacta devuelve la transacción a la cola del reparador; bajarlo cuando
+            // sí lo fue es correcto, porque el monto acaba de reescribirse con la tasa buena. La
+            // asimetría importa: el bug era que una TX exacta en la divisa vieja se quedaba en
+            // `false` tras reconvertirse con una tasa aproximada a la nueva.
+            transaction.isExchangeRateProvisional = !outcome.quality.isExact
         }
 
         // Save changes

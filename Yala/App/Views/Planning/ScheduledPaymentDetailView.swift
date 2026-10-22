@@ -158,7 +158,10 @@ struct ScheduledPaymentDetailView: View {
 
                 Text(formatAmount(payment.amount, isEstimate: payment.isVariableAmount))
                     .font(DS.Typography.largeTitle)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    // Crece con el texto del sistema y, si un importe largo no cabe en el ancho, se encoge en
+                    // vez de cortarse. Sustituye al tope en AX1, que lo dejaba pequeño a propósito.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(payment.transactionType == "income" ? Color.electricIndigo : .primary)
 
                 if payment.isVariableAmount {
@@ -537,7 +540,9 @@ struct ScheduledPaymentDetailView: View {
 
     private static let fullDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "EEEE, d MMMM yyyy"
+        // Plantilla, no formato fijo: «Thursday, October 15, 2026» en EE. UU. y «quinta-feira, 15 de outubro de
+        // 2026» en Brasil. El formato fijo «EEEE, d MMMM yyyy» se comía el «de» y el orden de cada idioma.
+        f.setLocalizedDateFormatFromTemplate("EEEEdMMMMyyyy")
         return f
     }()
 

@@ -26,10 +26,7 @@ struct TagCatalogProvider: ViewModifier {
                 // Telemetry signal — only when count changes (proxy for catalog rebuild).
                 // Edits to individual Tags also rebuild but are not tracked here to
                 // keep telemetry volume low.
-                TelemetryService.track(
-                    .tagCatalogRebuilt,
-                    parameters: ["tagCount": "\(allTags.count)"]
-                )
+                MetricsService.canary(.tagCatalogRebuilt, value: Double(allTags.count))
             }
     }
 }

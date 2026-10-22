@@ -1,6 +1,12 @@
 import UIKit
 import UniformTypeIdentifiers
 
+/// Guarda lo compartido en `PendingImages/` del App Group y abre Yala (`<scheme>://shared-image`), que lo lee.
+///
+/// Varias fotos a la vez (2026-10-11): Yala aparece hasta `SharedImageBatch.maxSharedImages` fotos
+/// (`Info.plist`), guarda las primeras `SharedImageBatch.maxImages` como una tanda y la app avisa de las que no entraron.
+/// La tanda va en el nombre de cada fichero (`SharedImageBatch.fileName`). Se escriben como `.part` y se renombran al
+/// final, para que la recuperación de la app no lea media tanda.
 class ShareViewController: UIViewController {
 
     /// App Group identifier from shared helper.
@@ -21,67 +27,79 @@ class ShareViewController: UIViewController {
             return
         }
 
-        var imageFound = false
+        let imageProviders = extensionItems
+            .flatMap { $0.attachments ?? [] }
+            .filter { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }
 
-        for item in extensionItems {
-            guard let attachments = item.attachments else { continue }
-
-            for provider in attachments {
-                if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                    imageFound = true
-                    loadImage(from: provider)
-                    return
-                }
-            }
+        guard !imageProviders.isEmpty else {
+            completeWithError()
+            return
         }
 
-        if !imageFound {
-            completeWithError()
+        let toLoad = Array(imageProviders.prefix(SharedImageBatch.maxImages))
+        loadImages(toLoad, loaded: []) { [weak self] loaded in
+            guard let self = self else { return }
+            guard !loaded.isEmpty else {
+                self.completeWithError()
+                return
+            }
+            self.saveBatchToSharedContainer(loaded, sharedCount: imageProviders.count)
         }
     }
 
-    private func loadImage(from provider: NSItemProvider) {
-        provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { [weak self] item, error in
+    /// Carga las fotos una a una, en el orden compartido. Una que no se pudo cargar se salta: se guardan las demás.
+    private func loadImages(
+        _ providers: [NSItemProvider],
+        loaded: [Data],
+        completion: @escaping ([Data]) -> Void
+    ) {
+        guard let provider = providers.first else {
+            completion(loaded)
+            return
+        }
+        let rest = Array(providers.dropFirst())
+        loadImageData(from: provider) { [weak self] data in
             guard let self = self else { return }
+            var next = loaded
+            if let data = data {
+                next.append(data)
+            }
+            self.loadImages(rest, loaded: next, completion: completion)
+        }
+    }
 
+    private func loadImageData(from provider: NSItemProvider, completion: @escaping (Data?) -> Void) {
+        provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { item, error in
             DispatchQueue.main.async {
                 if let error = error {
                     #if DEBUG
-                    print("Error loading image: \(error)")
+                    print("ShareViewController: Error loading image: \(error)")
                     #endif
-                    self.completeWithError()
+                    completion(nil)
                     return
                 }
 
-                var imageData: Data?
-
                 if let url = item as? URL {
                     do {
-                        imageData = try Data(contentsOf: url)
+                        completion(try Data(contentsOf: url))
                     } catch {
                         #if DEBUG
                         print("ShareViewController: Error reading image data: \(error)")
                         #endif
-                        self.completeWithError()
-                        return
+                        completion(nil)
                     }
                 } else if let image = item as? UIImage {
-                    imageData = image.jpegData(compressionQuality: 0.9)
+                    completion(image.jpegData(compressionQuality: 0.9))
                 } else if let data = item as? Data {
-                    imageData = data
+                    completion(data)
+                } else {
+                    completion(nil)
                 }
-
-                guard let data = imageData else {
-                    self.completeWithError()
-                    return
-                }
-
-                self.saveImageToSharedContainer(data)
             }
         }
     }
 
-    private func saveImageToSharedContainer(_ imageData: Data) {
+    private func saveBatchToSharedContainer(_ images: [Data], sharedCount: Int) {
         guard let containerURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: appGroupIdentifier
         ) else {
@@ -90,21 +108,43 @@ class ShareViewController: UIViewController {
         }
 
         let pendingImagesURL = containerURL.appendingPathComponent("PendingImages", isDirectory: true)
+        let batchID = SharedImageBatch.newBatchID()
+        var written: [(partial: URL, final: URL)] = []
 
         do {
             try FileManager.default.createDirectory(at: pendingImagesURL, withIntermediateDirectories: true)
 
-            let fileName = "\(UUID().uuidString).jpg"
-            let fileURL = pendingImagesURL.appendingPathComponent(fileName)
-
-            try imageData.write(to: fileURL)
+            for (index, data) in images.enumerated() {
+                let name = SharedImageBatch.fileName(batchID: batchID, index: index, sharedCount: sharedCount)
+                let finalURL = pendingImagesURL.appendingPathComponent(name)
+                let partialURL = pendingImagesURL.appendingPathComponent(name + SharedImageBatch.partialSuffix)
+                try data.write(to: partialURL)
+                written.append((partialURL, finalURL))
+            }
+            for file in written {
+                try FileManager.default.moveItem(at: file.partial, to: file.final)
+            }
 
             completeSuccessfully()
         } catch {
             #if DEBUG
-            print("Error saving image: \(error)")
+            print("ShareViewController: Error saving images: \(error)")
             #endif
+            removeLeftovers(written.map(\.partial))
             completeWithError()
+        }
+    }
+
+    /// Lo que quedó a medio escribir tras un fallo. Lo ya renombrado se queda: la app lo lee como una tanda más corta.
+    private func removeLeftovers(_ partials: [URL]) {
+        for url in partials where FileManager.default.fileExists(atPath: url.path) {
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch {
+                #if DEBUG
+                print("ShareViewController: Error removing partial file: \(error)")
+                #endif
+            }
         }
     }
 

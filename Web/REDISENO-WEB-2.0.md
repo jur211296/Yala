@@ -43,7 +43,7 @@ Trabajo commiteado en `2.0` (rama oficial); respaldo en `web/redesign-2.0`. Stac
 
 ## 2. Screenshots 2.0 integrados
 
-**Fuente:** `screenshots-appstore/` (el set 2.0 con Yala IA y Grupos dedicados), optimizados con `sips` → `Web/public/images/screenshots/v2/`. **Peso total 5.0 MB** (vs 22 MB del set 1.x — **−77%**), mayoría lazy-load. Idioma-aware: `es`→`-es`, resto→`-en`, con fallback a `es` donde `raw/en/` no existe.
+**Fuente:** `marketing/screenshots-appstore/` (el set 2.0 con Yala IA y Grupos dedicados), optimizados con `sips` → `Web/public/images/screenshots/v2/`. **Peso total 5.0 MB** (vs 22 MB del set 1.x — **−77%**), mayoría lazy-load. Idioma-aware: `es`→`-es`, resto→`-en`, con fallback a `es` donde `raw/en/` no existe.
 
 ### Mockups (en marcos CSS, ~860px, JPEG q88)
 | Ubicación | Imagen | Idiomas |

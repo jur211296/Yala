@@ -1,0 +1,521 @@
+[
+  {
+    "key": "ar-03-followup|anthropic:claude-haiku-4-5|none|0",
+    "case": "ar-03-followup",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Y el mes pasado?",
+    "expected": [
+      100304
+    ],
+    "answer": "El mes pasado gastaste **$100.304** en Delivery, así que este mes bajó **48% (unos $48.400 menos)**.",
+    "mine": "pass",
+    "why": "100.304 el mes pasado; bajó 48 % (unos 48.400): exacto."
+  },
+  {
+    "key": "br-02-budget|anthropic:claude-haiku-4-5|none|0",
+    "case": "br-02-budget",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "Quanto ainda tenho no orçamento de Lazer?",
+    "expected": [
+      241.78,
+      60.45,
+      158.22
+    ],
+    "answer": "Você ainda tem **R$241.78** disponível no orçamento de **Lazer**. Já gastou **R$158.22** dos **R$400** limite, o que representa **39.56%** de uso — bem tranquilo, com 7 dias restantes no mês! 🎉",
+    "mine": "pass",
+    "why": "Quedan 241,78 de 400; 158,22 gastado; 39,56 %; 7 días: exacto."
+  },
+  {
+    "key": "de-01-weekday|anthropic:claude-haiku-4-5|none|0",
+    "case": "de-01-weekday",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "An welchem Wochentag gebe ich am meisten aus?",
+    "expected": [
+      1212.43,
+      242.49,
+      242.49
+    ],
+    "answer": "Nach deinen Ausgabenmustern der letzten 30 Tage gibst du am meisten am **Donnerstag** aus: **€1.212,43** insgesamt. Das ist allerdings mit Vorsicht zu genießen — diese Summe basiert auf nur 7 Transaktionen in Donnerstagen des letzten Monats, könnte also von einzelnen größeren Ausgaben dominiert werden und nicht unbedingt ein echtes Muster widerspiegeln.",
+    "mine": "pass",
+    "why": "Jueves, 1.212,43, 7 movimientos: exacto (la cautela es razonable: el 1 de octubre, jueves, se pagó el alquiler)."
+  },
+  {
+    "key": "es-01-sub-vs-last|anthropic:claude-haiku-4-5|none|0",
+    "case": "es-01-sub-vs-last",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Cuánto llevo gastado en Restaurantes este mes y cómo va comparado con el mes pasado?",
+    "expected": [
+      28.71
+    ],
+    "answer": "En **Restaurantes** llevas **€28.71** este mes, **68% menos** que el mes pasado (**€90.33**). Solo tienes 1 gasto registrado hasta ahora (en VIPS el 5 de octubre), así que es un mes bastante más tranquilo en salidas a comer fuera.",
+    "mine": "pass",
+    "why": "28,71 vs 90,33, −68 %, un gasto en VIPS el 5 de octubre: exacto."
+  },
+  {
+    "key": "fr-01-top-category|anthropic:claude-haiku-4-5|none|0",
+    "case": "fr-01-top-category",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "Dans quelle catégorie ai-je le plus dépensé ce mois-ci ?",
+    "expected": [
+      1191.26
+    ],
+    "answer": "Tu as le plus dépensé en **Logement** avec **€1191.26** ce mois-ci, principalement à cause de ton loyer (**€1100**) et des services du logement comme l'électricité (**€91.26**). C'est ta plus grosse catégorie de dépenses, loin devant les autres.",
+    "mine": "pass",
+    "why": "Logement 1.191,26 = loyer 1.100 + services 91,26: exacto."
+  },
+  {
+    "key": "gb-02-upcoming|anthropic:claude-haiku-4-5|none|0",
+    "case": "gb-02-upcoming",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "What bills have I got coming up over the next month, and how much is that in total?",
+    "expected": [
+      1559.98
+    ],
+    "answer": "You've got **£1,559.98** in bills coming up over the next 30 days. Here's the breakdown:\n\n- **Rent**: £1,350 (due 2026-11-01)\n- **Council tax**: £156 (due 2026-11-01)\n- **PureGym**: £24.99 (due 2026-11-05)\n- **Netflix**: £10.99 (due 2026-11-09)\n- **Three** (phone): £18 (due 2026-11-12)\n\nThe big ones are rent and council tax hitting on November 1st. The subscriptions and gym are smaller but steady recurring charges.",
+    "mine": "pass",
+    "why": "Total 1.559,98 y la lista con fechas: exacto."
+  },
+  {
+    "key": "ja-03-nodata|anthropic:claude-haiku-4-5|none|0",
+    "case": "ja-03-nodata",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "去年の12月はいくら使った？",
+    "expected": [],
+    "answer": "申し訳ありませんが、去年の12月（2025年12月）のデータは手元にありません。現在のデータは2026年10月までしか保有していないので、過去のその時期の支出情報は確認できません。\n\n今月（10月）や先月（9月）などの最近のデータでしたら、詳しくお答えできますよ。何かお手伝いできることはありますか？",
+    "mine": "pass",
+    "why": "Dice que no tiene diciembre de 2025: correcto."
+  },
+  {
+    "key": "pe-01-budget|anthropic:claude-haiku-4-5|none|0",
+    "case": "pe-01-budget",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Cuánto me queda del presupuesto de Comida fuera?",
+    "expected": [
+      442.95,
+      68.15,
+      1092.95
+    ],
+    "answer": "Tu presupuesto de **Comida fuera** está **excedido**. Ya gastaste **S/1092.95** de tu límite de **S/650**, lo que significa que te pasaste por **S/442.95** (168% de uso).\n\nTe quedan **13 días** del mes, así que te recomendaría ser más cuidadoso con los gastos en restaurantes y delivery para no seguir ampliando el exceso.",
+    "mine": "pass",
+    "why": "Excedido, 1.092,95 de 650, 442,95 de más, 168 %, 13 días: exacto (el consejo no es un dato)."
+  },
+  {
+    "key": "pt-01-savings-last-month|anthropic:claude-haiku-4-5|none|0",
+    "case": "pt-01-savings-last-month",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "Quanto consegui poupar no mês passado?",
+    "expected": [
+      -230.09,
+      -15.34
+    ],
+    "answer": "No mês passado (setembro), tiveste um saldo negativo de **-€230.09**, o que significa que gastaste mais do que recebeste. Recebeste **€1500** de rendimento, mas despendeste **€1730.09**, resultando numa taxa de poupança de **-15.34%**. Portanto, não conseguiste poupar — pelo contrário, saíste do mês com um défice.",
+    "mine": "pass",
+    "why": "−230,09; 1.500 de ingreso, 1.730,09 de gasto, −15,34 %: exacto."
+  },
+  {
+    "key": "us-01-month-vs-last|anthropic:claude-haiku-4-5|none|0",
+    "case": "us-01-month-vs-last",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "Am I spending more this month than last month?",
+    "expected": [
+      2597.05,
+      3019.03
+    ],
+    "answer": "No, you're spending **less** this month. You've spent **$2,597.05** in October so far, compared to **$3,019.03** last month — that's **14% less**. Your biggest savings came from cutting back on Food (**27.96% down**) and Entertainment (**52.33% down**).",
+    "mine": "fail",
+    "why": "«Tu mayor ahorro vino de Comida y Ocio»: Ocio bajó 41,48; Compras (115,99), Personal (65) y Vivienda (48,09) bajaron más. Los % son ciertos, la afirmación no."
+  },
+  {
+    "key": "us-02-offtopic|anthropic:claude-haiku-4-5|none|0",
+    "case": "us-02-offtopic",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "Who won the 2022 World Cup?",
+    "expected": [],
+    "answer": "I can only help you with your personal finances—things like expenses, income, budgets, spending patterns, and that kind of stuff. \n\nGot any questions about your money? 💰",
+    "mine": "pass",
+    "why": "Redirige a finanzas: correcto."
+  },
+  {
+    "key": "zh-02-top-merchant|anthropic:claude-haiku-4-5|none|0",
+    "case": "zh-02-top-merchant",
+    "candidate": "anthropic:claude-haiku-4-5",
+    "effort": "none",
+    "rep": 0,
+    "question": "这个月我在哪家店花钱最多？",
+    "expected": [
+      4500,
+      527.06
+    ],
+    "answer": "根据你的数据，这个月在**房租**花钱最多，达到**¥4500**，这是你的房屋租赁费用。\n\n如果说的是日常消费商家，那就是**西贝**，你在那里花了**¥238.58**（2笔消费），其次是**永辉超市**的**¥237.53**和**京东**的**¥356.03**。",
+    "mine": "fail",
+    "why": "Dice que el comercio diario donde más gasta es 西贝 (238,58) y que le siguen 永辉 y 京东 (356,03): 中石化 (527,06) y 京东 están por encima de 西贝."
+  },
+  {
+    "key": "ar-03-followup|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "ar-03-followup",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Y el mes pasado?",
+    "expected": [
+      100304
+    ],
+    "answer": "El mes pasado gastaste **$100.304** en Delivery, lo que representa un **48,26% más** que los **$51.902** que llevás este mes.",
+    "mine": "fail",
+    "why": "«100.304 representa un 48,26 % más que 51.902»: al revés; el mes pasado fue un 93 % más. El 48,26 % es lo que bajó."
+  },
+  {
+    "key": "br-02-budget|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "br-02-budget",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "Quanto ainda tenho no orçamento de Lazer?",
+    "expected": [
+      241.78,
+      60.45,
+      158.22
+    ],
+    "answer": "Para o orçamento de **Lazer**, você gastou **R$158.22** de um limite de **R$400**, restando **R$241.78** para os próximos 7 dias. Está com **39.56%** de uso e o status continua **on_track**.",
+    "mine": "pass",
+    "why": "241,78 restante de 400, 158,22, 39,56 %, 7 días: exacto."
+  },
+  {
+    "key": "de-01-weekday|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "de-01-weekday",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "An welchem Wochentag gebe ich am meisten aus?",
+    "expected": [
+      1212.43,
+      242.49,
+      242.49
+    ],
+    "answer": "An Donnerstagen liegt dein Gesamtwert im letzten Monat mit **€1212.43** am höchsten, aufgeteilt auf 7 Transaktionen. Bitte beachte: Da sich das auf nur 7 Transaktionen in den letzten 30 Tagen verteilt, kann dieser Höchstwert durch einzelne Ausgaben beeinflusst sein und spiegelt möglicherweise keinen echten, regelmäßigen Wochentagstrend wider.",
+    "mine": "pass",
+    "why": "Jueves, 1.212,43, 7 movimientos: exacto."
+  },
+  {
+    "key": "es-01-sub-vs-last|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "es-01-sub-vs-last",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Cuánto llevo gastado en Restaurantes este mes y cómo va comparado con el mes pasado?",
+    "expected": [
+      28.71
+    ],
+    "answer": "En **Restaurantes** llevas **€28.71** este mes, un **68.2% menos** que el mes pasado (antes **€90.33**).",
+    "mine": "pass",
+    "why": "28,71, −68,2 % vs 90,33: exacto."
+  },
+  {
+    "key": "fr-01-top-category|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "fr-01-top-category",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "Dans quelle catégorie ai-je le plus dépensé ce mois-ci ?",
+    "expected": [
+      1191.26
+    ],
+    "answer": "Ce mois-ci, la catégorie où tu as le plus dépensé est **Logement** avec un total de **€1191.26**, ce qui représente une baisse de **4.6%** par rapport au mois dernier (avant €1248.67).",
+    "mine": "pass",
+    "why": "Logement 1.191,26, −4,6 % vs 1.248,67: exacto."
+  },
+  {
+    "key": "gb-02-upcoming|openai:gpt-4.1-mini|-|0",
+    "case": "gb-02-upcoming",
+    "candidate": "openai:gpt-4.1-mini",
+    "effort": null,
+    "rep": 0,
+    "question": "What bills have I got coming up over the next month, and how much is that in total?",
+    "expected": [
+      1559.98
+    ],
+    "answer": "You have the following bills pending in the next 30 days: Rent for **£1350**, Council tax for **£156**, PureGym subscription for **£24.99**, Netflix subscription for **£10.99**, and Three phone service for **£18**. The total amount due is approximately **£1559.98**.",
+    "mine": "pass",
+    "why": "La lista y el total 1.559,98: exacto («approximately» sobra, pero no es un error de dato)."
+  },
+  {
+    "key": "ja-03-nodata|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "ja-03-nodata",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "去年の12月はいくら使った？",
+    "expected": [],
+    "answer": "申し訳ないけど、去年の12月のデータは手元にないんだ。\n\n現在のデータや過去数ヶ月（先月や2ヶ月前など）の支出なら確認できるから、そっちについて何か気になることがあれば教えてね。",
+    "mine": "pass",
+    "why": "Dice que no tiene diciembre: correcto."
+  },
+  {
+    "key": "pe-01-budget|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "pe-01-budget",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Cuánto me queda del presupuesto de Comida fuera?",
+    "expected": [
+      442.95,
+      68.15,
+      1092.95
+    ],
+    "answer": "Has superado tu presupuesto de **Comida fuera** (**S/650**). Llevas gastados **S/1092.95** este mes, lo que representa un **168.15%** de uso cuando quedan 13 días del periodo.",
+    "mine": "pass",
+    "why": "Excedido: 1.092,95 de 650, 168,15 %, 13 días: responde que no queda nada."
+  },
+  {
+    "key": "pt-01-savings-last-month|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "pt-01-savings-last-month",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "Quanto consegui poupar no mês passado?",
+    "expected": [
+      -230.09,
+      -15.34
+    ],
+    "answer": "No mês passado tiveste um saldo negativo de **-€230.09** (com **€1500** de rendimentos e **€1730.09** de despesas), o que representa uma taxa de poupança de **-15.34%**.",
+    "mine": "pass",
+    "why": "−230,09, 1.500 / 1.730,09, −15,34 %: exacto."
+  },
+  {
+    "key": "us-01-month-vs-last|gemini:gemini-3.8-flash|low|0",
+    "case": "us-01-month-vs-last",
+    "candidate": "gemini:gemini-3.8-flash",
+    "effort": "low",
+    "rep": 0,
+    "question": "Am I spending more this month than last month?",
+    "expected": [
+      2597.05,
+      3019.03
+    ],
+    "answer": "So far this month, you have spent **$2597.05**, which is **13.98% less** than last month's total of **$3019.03**. However, keep in mind that there are still about 13 days left in October, so your spending could catch up. Your daily average is currently **$152.77**, compared to **$100.63** per day last month.",
+    "mine": "pass",
+    "why": "2.597,05, −13,98 % vs 3.019,03; 13 días; medias 152,77 y 100,63: exacto."
+  },
+  {
+    "key": "us-02-offtopic|gemini:gemini-3.5-flash-lite|low|0",
+    "case": "us-02-offtopic",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "low",
+    "rep": 0,
+    "question": "Who won the 2022 World Cup?",
+    "expected": [],
+    "answer": "I can only help you with your personal finances — like tracking your expenses, income, budgets, and accounts. Is there anything financial you'd like to check today?",
+    "mine": "pass",
+    "why": "Redirige a finanzas: correcto."
+  },
+  {
+    "key": "zh-02-top-merchant|gemini:gemini-3.5-flash-lite|none|0",
+    "case": "zh-02-top-merchant",
+    "candidate": "gemini:gemini-3.5-flash-lite",
+    "effort": "none",
+    "rep": 0,
+    "question": "这个月我在哪家店花钱最多？",
+    "expected": [
+      4500,
+      527.06
+    ],
+    "answer": "这个月你在**房租**花钱最多，总共支出 **¥4500**（仅有 1 笔交易）。其次是**中石化**，支出 **¥527.06**，比上个月的 **¥683.9** 下降了 **22.93%**。",
+    "mine": "pass",
+    "why": "Alquiler 4.500; después 中石化 527,06 (−22,93 % vs 683,9): exacto."
+  },
+  {
+    "key": "ar-03-followup|openai:gpt-5.4-nano|none|0",
+    "case": "ar-03-followup",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Y el mes pasado?",
+    "expected": [
+      100304
+    ],
+    "answer": "En Delivery gastaste **$100.304** el mes pasado.",
+    "mine": "pass",
+    "why": "100.304 el mes pasado: exacto."
+  },
+  {
+    "key": "br-02-budget|openai:gpt-5.4-nano|none|0",
+    "case": "br-02-budget",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "none",
+    "rep": 0,
+    "question": "Quanto ainda tenho no orçamento de Lazer?",
+    "expected": [
+      241.78,
+      60.45,
+      158.22
+    ],
+    "answer": "No orçamento **Lazer**, você já gastou **R$158,22** de um limite mensal de **R$400**, então ainda tem **R$241,78** sobrando (faltam **7** dias).",
+    "mine": "pass",
+    "why": "Quedan 241,78 de 400, 7 días: exacto."
+  },
+  {
+    "key": "de-01-weekday|openai:gpt-5.4-nano|none|0",
+    "case": "de-01-weekday",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "none",
+    "rep": 0,
+    "question": "An welchem Wochentag gebe ich am meisten aus?",
+    "expected": [
+      1212.43,
+      242.49,
+      242.49
+    ],
+    "answer": "Im letzten Monat gibst du am meisten am **Donnerstag** aus: **€1.212,43** bei **5** Tagen-Einträgen (Sample Size **7**). Danach kommt **Mittwoch** mit **€246,61** (Sample Size **5**) – und **Freitag** mit **€158,58** (Sample Size **6**).",
+    "mine": "fail",
+    "why": "Tras Donnerstag y Mittwoch pone Freitag (158,58) como tercero: Dienstag (196,09), Sonntag (172,43) y Samstag (171,9) gastaron más."
+  },
+  {
+    "key": "es-01-sub-vs-last|openai:gpt-5.4-nano|none|0",
+    "case": "es-01-sub-vs-last",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Cuánto llevo gastado en Restaurantes este mes y cómo va comparado con el mes pasado?",
+    "expected": [
+      28.71
+    ],
+    "answer": "En **Restaurantes** llevas gastado **€28.71** este mes (octubre 2026). Comparado con el mes pasado, **€90.33**, has gastado **€61.62 menos** (**68% menos**).",
+    "mine": "pass",
+    "why": "28,71 vs 90,33, 61,62 menos (−68 %): exacto."
+  },
+  {
+    "key": "fr-01-top-category|openai:gpt-5.4-nano|none|0",
+    "case": "fr-01-top-category",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "none",
+    "rep": 0,
+    "question": "Dans quelle catégorie ai-je le plus dépensé ce mois-ci ?",
+    "expected": [
+      1191.26
+    ],
+    "answer": "Ce mois-ci, la catégorie où tu as le plus dépensé est **Logement** avec **€1 191,26**. Juste derrière, tu as **Alimentation** avec **€380,98**, puis **Transport** avec **€130,80**.",
+    "mine": "pass",
+    "why": "Logement 1.191,26; luego Alimentation 380,98 y Transport 130,80: exacto."
+  },
+  {
+    "key": "gb-02-upcoming|openai:gpt-6-luna|none|0",
+    "case": "gb-02-upcoming",
+    "candidate": "openai:gpt-6-luna",
+    "effort": "none",
+    "rep": 0,
+    "question": "What bills have I got coming up over the next month, and how much is that in total?",
+    "expected": [
+      1559.98
+    ],
+    "answer": "You’ve got five bills due in the next 30 days: Rent (**£1,350**), Council tax (**£156**), PureGym (**£24.99**), Netflix (**£10.99**) and Three (**£18**). That comes to **£1,559.98** in total.",
+    "mine": "pass",
+    "why": "Cinco pagos y total 1.559,98: exacto."
+  },
+  {
+    "key": "ja-03-nodata|openai:gpt-5.4-nano|low|0",
+    "case": "ja-03-nodata",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "low",
+    "rep": 0,
+    "question": "去年の12月はいくら使った？",
+    "expected": [],
+    "answer": "ごめん、JSONのデータには「去年の12月」の支出総額が入ってないから、金額を特定できないよ。  \nもし「12月（対象年）」をもう一度指定してくれれば、その月の集計があるデータがあるか確認するね。",
+    "mine": "pass",
+    "why": "Dice que no tiene diciembre (la oferta de buscar «otro año» sobra, pero no afirma nada falso)."
+  },
+  {
+    "key": "pe-01-budget|openai:gpt-5.6-luna|none|0",
+    "case": "pe-01-budget",
+    "candidate": "openai:gpt-5.6-luna",
+    "effort": "none",
+    "rep": 0,
+    "question": "¿Cuánto me queda del presupuesto de Comida fuera?",
+    "expected": [
+      442.95,
+      68.15,
+      1092.95
+    ],
+    "answer": "El presupuesto de **Comida fuera** está excedido: has gastado **S/1092.95** de un límite de **S/650**, por lo que te faltan **S/442.95** para volver al límite.",
+    "mine": "pass",
+    "why": "Excedido, 1.092,95 de 650, 442,95 por encima (redacción rara, cifra correcta)."
+  },
+  {
+    "key": "pt-01-savings-last-month|openai:gpt-5.4-nano|none|0",
+    "case": "pt-01-savings-last-month",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "none",
+    "rep": 0,
+    "question": "Quanto consegui poupar no mês passado?",
+    "expected": [
+      -230.09,
+      -15.34
+    ],
+    "answer": "No mês passado (setembro 2026) o teu saldo foi **-€230.09**, com **€1500** de **rendimento** e **€1730.09** de **gastos** — ou seja, não conseguiste poupar; em vez disso, ficaste **€230.09** abaixo.",
+    "mine": "pass",
+    "why": "−230,09, 1.500 / 1.730,09: exacto."
+  },
+  {
+    "key": "us-01-month-vs-last|openai:gpt-5.6-luna|none|0",
+    "case": "us-01-month-vs-last",
+    "candidate": "openai:gpt-5.6-luna",
+    "effort": "none",
+    "rep": 0,
+    "question": "Am I spending more this month than last month?",
+    "expected": [
+      2597.05,
+      3019.03
+    ],
+    "answer": "Yes. You’ve spent **$2,597.05** this month, which is **$421.98 more** than last month’s **$3,019.03**?",
+    "mine": "fail",
+    "why": "«Yes… $421.98 more than last month»: gastó MENOS (2.597,05 frente a 3.019,03). Las cifras son reales, la conclusión es la contraria."
+  },
+  {
+    "key": "us-02-offtopic|openai:gpt-5.6-luna|low|0",
+    "case": "us-02-offtopic",
+    "candidate": "openai:gpt-5.6-luna",
+    "effort": "low",
+    "rep": 0,
+    "question": "Who won the 2022 World Cup?",
+    "expected": [],
+    "answer": "I can only help with your personal finances—expenses, income, budgets, patterns, and similar topics.",
+    "mine": "pass",
+    "why": "Redirige a finanzas: correcto."
+  },
+  {
+    "key": "zh-02-top-merchant|openai:gpt-5.4-nano|low|0",
+    "case": "zh-02-top-merchant",
+    "candidate": "openai:gpt-5.4-nano",
+    "effort": "low",
+    "rep": 0,
+    "question": "这个月我在哪家店花钱最多？",
+    "expected": [
+      4500,
+      527.06
+    ],
+    "answer": "这个月你在**房租**这家花的钱最多，总计**¥4500**（1 笔，和上个月相比**没变**）。  \n第二多的是**中石化**，花了**¥527.06**，比上个月少了**¥156.84**（从**¥683.9**降到**¥527.06**）。",
+    "mine": "pass",
+    "why": "Alquiler 4.500 (igual que el mes pasado); 中石化 527,06, 156,84 menos que 683,9: exacto."
+  }
+]

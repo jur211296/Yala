@@ -1,10 +1,27 @@
 import { Hono } from "hono";
 import type { Env } from "./env";
+import { handleConfig } from "./config";
+import { handleMetrics } from "./metrics";
 import { jsonError } from "./errors";
 import { handleAssert, handleChallenge, handleDevToken, handleRegister } from "./attest/routes";
-import { handleAudioTranscriptions, handleChatCompletions } from "./proxy/openai";
+import { handleAudioTranscriptions, handleChatCompletions } from "./ai/handler";
 import { handleRatesLive, handleRatesTimeframe } from "./proxy/rates";
 import { handleAppStoreWebhook } from "./proxy/webhook";
+import {
+  handleAttestBind,
+  handlePrefsPull,
+  handlePrefsPush,
+  handleSyncMerkle,
+  handleSyncPull,
+  handleSyncPush,
+} from "./sync/routes";
+import { handleAccountClaim, handleAccountDelete, handleAccountExists, handleAccountMigration } from "./sync/account";
+import { handleEntitlementBind, handleEntitlementGet } from "./sync/entitlement";
+import { handleSiwaExchange, handleSiwaRevoke } from "./sync/siwa";
+import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
+import { handleGroupsRpc } from "./groups/rpc";
+import { handleDebugPush } from "./push/routes";
+import { handlePushRegister, handlePushUnregister } from "./push/register";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -21,13 +38,26 @@ app.get("/healthz", (c) =>
   c.json({ ok: true, environment: c.env.ENVIRONMENT ?? "unknown", enforce: c.env.ENFORCE ?? "observe" }),
 );
 
+// --- Remote-config del cliente (DIFERIDOS #34): flags de rollout §j.1/§j.2, pública, sin bindings ---
+app.get("/config", handleConfig);
+
+// --- Telemetría propia mínima (2026-07-17, sustituye TelemetryDeck): ping/register/canary → Analytics Engine ---
+app.post("/metrics", handleMetrics);
+
 // --- App Attest (task #2) ---
 app.post("/v1/attest/challenge", handleChallenge);
 app.post("/v1/attest/register", handleRegister);
 app.post("/v1/attest/assert", handleAssert);
 app.post("/v1/attest/dev", handleDevToken); // bypass dev/test (solo staging + DEV_SHARED_SECRET)
 
-// --- Proxy OpenAI (task #5): chat + vision + transcripción ---
+// --- Push (spike G0 Grupos→backend): prueba de APNs desde el Worker — mismo gate que /v1/attest/dev ---
+app.post("/v1/debug/push", handleDebugPush);
+
+// --- Push APNs (G8-1): registro/desregistro del device token per-user (upsert/delete a push_tokens; RLS per-user) ---
+app.post("/push/register", handlePushRegister);
+app.post("/push/unregister", handlePushUnregister);
+
+// --- IA: chat + visión + transcripción. La tarea decide proveedor y modelo (src/ai/routes.ts) ---
 app.post("/v1/chat/completions", handleChatCompletions);
 app.post("/v1/audio/transcriptions", handleAudioTranscriptions);
 
@@ -38,7 +68,50 @@ app.get("/rates/timeframe", handleRatesTimeframe);
 // --- App Store Server Notifications V2 (task #5) ---
 app.post("/webhooks/appstore", handleAppStoreWebhook);
 
+// --- Modo Nube (I6): JWT del usuario (Supabase) + App Attest + PATCH por-unidad contra PostgREST ---
+app.post("/sync/push", handleSyncPush);
+app.get("/sync/pull", handleSyncPull);
+app.get("/sync/merkle", handleSyncMerkle); // 501 hasta I8 (codec canon c1)
+app.post("/attest/bind", handleAttestBind);
+app.post("/prefs/push", handlePrefsPush);
+app.get("/prefs/pull", handlePrefsPull);
+
+// --- Cuenta (I7a): gate de identidad §f.1 — corre tras el sign-in, ANTES de todo save() de onboarding ---
+app.post("/account/claim", handleAccountClaim); // reserva atómica; estado de 3 valores
+app.get("/account/exists", handleAccountExists); // hint de encaminamiento (no la garantía anti-doble-siembra)
+app.post("/account/migration", handleAccountMigration); // cutover/complete §g.4 + reverse_* §h + heartbeat I14-pre (guard líder)
+app.post("/account/delete", handleAccountDelete); // G5-D1: borrado GDPR del corpus personal (requireUserAndAttest — asimetría documentada)
+
+// --- Entitlement por CUENTA (C-8): el derecho Pro deja de vivir solo en el Apple ID del device.
+// El JWS firmado por Apple otorga el derecho; el JWT dice a qué cuenta se vincula (appAccountToken manda).
+app.post("/account/entitlement", handleEntitlementBind);
+app.get("/account/entitlement", handleEntitlementGet);
+
+// --- SIWA revoke 5.1.1(v) (B1, gate §12): canje del authorization_code EN el sign-in (requireUser — precede
+// al bind) + revoke del refresh_token al borrar la cuenta (requireUserAndAttest, molde /account/delete).
+// Worker STATELESS: el refresh token de Apple vive en el Keychain del CLIENTE. Sin SIWA_AUTH_KEY → 503.
+app.post("/account/siwa/exchange", handleSiwaExchange);
+app.post("/account/siwa/revoke", handleSiwaRevoke);
+
+// --- Grupos->backend (G2): canal de sync de grupos (apply_group_delta SECURITY INVOKER; RLS por membership) ---
+app.post("/groups/push", handleGroupsPush);
+app.get("/groups/pull", handleGroupsPull);
+app.get("/groups/merkle", handleGroupsMerkle);
+
+// --- Grupos->backend (G3): RPCs de membresía (allowlist de 9; params filtrados por fn; RLS arbitra) ---
+app.post("/groups/rpc/:fn", handleGroupsRpc);
+
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
+
+// Un throw sin capturar (D1 caída, binding ausente) salía como 500 en TEXTO PLANO: el SDK de
+// OpenAI del cliente no lo sabe decodificar, y el webhook de App Store Server Notifications —que
+// no controla el shape de lo que recibe— dejaba a Apple reintentando sobre un cuerpo opaco.
+// El 5xx se CONSERVA a propósito: es lo que hace que Apple reintente una revocación de reembolso
+// que no pudimos escribir. Lo que se arregla es el shape, no el status.
+app.onError((err, c) => {
+  console.log(`[unhandled] ${c.req.method} ${new URL(c.req.url).pathname}: ${err.message}`);
+  return jsonError("yala_unavailable", "Internal error", 500);
+});
 
 export default app;
 export { RateLimiter } from "./rate_limiter";

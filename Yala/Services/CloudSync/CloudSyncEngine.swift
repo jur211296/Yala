@@ -1,0 +1,4357 @@
+//
+//  CloudSyncEngine.swift
+//  Yala
+//
+//  Motor de CAPTURA del Modo Nube (nació en I3). Lee el SwiftData History del ModelContainer
+//  (write→drain) y traduce cada cambio de las 6 entidades sincronizables en una fila de `SyncOutbox`
+//  (upsert / tombstone) que el sender (I8) reenvía al backend. VIVO en producción desde el encendido
+//  (`syncRuntimeEnabled == true`): lo instancia `CloudSyncRuntime.startShared` (:275), y para quien
+//  siga en `.icloud` es el gate de dominio del runtime quien lo deja inerte, no este fichero.
+//  [El «DARK: nada de producción lo instancia» que vivió aquí fue cierto hasta I9/I14.]
+//
+//  Una instancia por proceso (NO un singleton global; el owner del ciclo de vida es `CloudSyncRuntime`).
+//  Patrón "one in-flight, one queued" (§a.4): `drainOnce` re-entrante coalescea a lo sumo una vuelta
+//  pendiente. Todo `@MainActor` (manipula `ModelContext` / `@Model`, regla inviolable del repo).
+//
+//  Reloj HLC EN-MEMORIA por instancia: se acuña un `NodeID` nuevo por instancia y el `HLCClock` parte
+//  fresco (`latest = nil`). La persistencia del reloj y `receive()` (integrar HLCs remotos) llegan en
+//  I8. Consecuencia CLAVE de resumibilidad: con reloj fresco, RE-procesar el mismo History en el
+//  mismo orden produce HLCs IDÉNTICOS (los timestamps de las transacciones y el orden son estables)
+//  → tras un kill (proceso reiniciado = instancia+reloj frescos), el re-drain reproduce las mismas
+//  filas y la deduplicación por (syncID, hlc, op) las absorbe sin duplicar.
+//
+//  I4: el tombstone lleva op + syncID preservado + `reason` clasificado 100% DRAIN-SIDE
+//  (`classifyTombstoneReason`, taxonomía §c.1: user | cascade | dedup | migration | wipe). La
+//  clasificación NO toca los ~30 call-sites de delete de producción (cero cambios en
+//  `EntityDeletionService` ni vistas). `dedup`/`wipe` se afinan en I9/I12 (comentario-guardia).
+//
+//  Frontera I3/I8: `fieldsJSON` es un STUB estructurado (JSON `{prop: descripción}` sin `syncID`);
+//  el espejo App Group `.atomic` previo al insert; el sender; el `serverSeqCursor` del pull; y el
+//  reconcile real del token expirado llegan en I8. Comentarios-guardia marcan cada punto de enganche.
+//
+
+import Foundation
+import OSLog
+import SwiftData
+
+// MARK: - Errores nombrados
+
+/// Errores del cursor de captura. Nombrados (nunca silenciados) para el path §d.6.
+nonisolated enum CloudSyncCursorError: Error, Equatable {
+    /// El token persistido no se pudo decodificar o el fetch por token falló (migración destructiva,
+    /// incompatibilidad de versión). DIFERIDOS #33: desde el cierre, ese caso re-escanea ACOTADO por
+    /// `lastDrainedTxAt` (`HistoryTokenFallbackLogic`) en vez del History completo; el full-rescan
+    /// queda solo para cursor sin ancla (pre-schema) o fetch acotado que también lanza.
+    case historyTokenExpired
+}
+
+// MARK: - Breadcrumb (Console.app, fuera de #if DEBUG, sin PII)
+
+/// Rastros de diagnóstico del motor de captura. Fuera de `#if DEBUG` a PROPÓSITO (espeja `SaveBreadcrumb`
+/// / `SplitSync*`): el comportamiento del pipeline solo se valida del todo en device/TestFlight. Sin PII
+/// (solo tipos de entidad, counts, seq — nunca valores de usuario).
+@MainActor
+enum CloudSyncBreadcrumb {
+    nonisolated private static let logger = Logger(subsystem: "com.yala", category: "CloudSync")
+
+    /// Una vuelta de drain terminó: número de secuencia + filas de outbox pendientes tras la vuelta.
+    static func drain(seq: Int, pending: Int) {
+        logger.notice("CloudSync drain seq=\(seq, privacy: .public) pending=\(pending, privacy: .public)")
+    }
+
+    /// La vuelta del drain ABORTÓ (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`): una
+    /// lectura que lanzó (History, outbox, reloj por unidad), el save del barrido, del outbox o del cursor, o un
+    /// token que no se codifica. Token sin mover: la vuelta siguiente re-traduce la misma ventana. Repetido en cada
+    /// vuelta = una tabla que nunca se deja leer, y los cambios locales sin subir. `errorType` es el tipo, sin el
+    /// mensaje (sin PII).
+    static func drainAborted(errorType: String) {
+        logger.notice("CloudSync drainAborted error=\(errorType, privacy: .public)")
+    }
+
+    /// Un delete llegó sin `syncID` preservado en el tombstone → no se pudo emitir el tombstone.
+    static func identityGap(entityType: String, reason: String) {
+        logger.notice("CloudSyncIdentityGap \(entityType, privacy: .public) reason=\(reason, privacy: .public)")
+    }
+
+    /// DIFERIDOS #33: el token del cursor está ROTO (in-decodificable o su fetch por token lanzó) pero hay
+    /// ancla (`lastDrainedTxAt`) → re-escaneo ACOTADO a la ventana `> ancla − slack` en vez del full-rescan
+    /// (el corpus por debajo del cutoff NO se re-emite). `window` = txs en la ventana (0 = History purgada
+    /// por debajo del ancla — el token roto persiste y se cura con el primer write nuevo). Sin PII.
+    static func historyTokenBrokenBoundedRescan(window: Int) {
+        logger.notice("CloudSync historyTokenBrokenBoundedRescan window=\(window, privacy: .public) — token roto; re-escaneo acotado por lastDrainedTxAt")
+    }
+
+    /// DIFERIDOS #33: el token está ROTO y el drain degradó a re-escaneo COMPLETO — `reason` distingue la
+    /// rama: `no-anchor` (cursor pre-schema sin `lastDrainedTxAt`, semántica (a) — comportamiento pre-fix
+    /// conservado) o `bounded-fetch-failed` (semántica (b): el fetch acotado por timestamp TAMBIÉN lanzó;
+    /// degradar preserva la convergencia — abortar sería stall = divergencia local-ahead). `txs` MIDE el
+    /// tamaño de la re-emisión (el hazard de #33 ocurriendo pese al fix): en producción cloud, `reason=
+    /// bounded-fetch-failed` con `txs` alto = canario. Sin PII (solo counts).
+    static func historyTokenBrokenFullRescan(reason: String, txs: Int) {
+        logger.notice("CloudSync historyTokenBrokenFullRescan reason=\(reason, privacy: .public) txs=\(txs, privacy: .public) — token roto; full-rescan degradado")
+    }
+
+    /// DIFERIDOS #33: tras un re-escaneo acotado con ventana NO vacía, el token se re-ancló a la última tx
+    /// del mount actual. Par de recuperación de `historyTokenBrokenBoundedRescan`. Sin PII.
+    static func historyTokenBrokenReanchored() {
+        logger.notice("CloudSync historyTokenBrokenReanchored — token re-anclado tras re-escaneo acotado")
+    }
+
+    /// HALLAZGO 2 (corrida device reversa 2026-07-11): el guard de validación por timestamp detectó que el
+    /// `historyTokenData` del cursor NO surfacea `missed` transacciones externas del mount actual (token
+    /// acuñado en un mount previo → no-comparable cross-mount, la MISMA clase que `fastForwardHistoryBaseline`
+    /// documenta). El drain re-procesa la unión y re-ancla el token. En producción cloud, `> 0` = canario de
+    /// esta clase de bug (fila que jamás llega al outbox → divergencia Merkle local-ahead). Sin PII (solo count).
+    static func historyTokenIncomparable(missed: Int) {
+        logger.notice("CloudSync historyTokenIncomparable missed=\(missed, privacy: .public) — token no-comparable cross-mount; re-procesando unión + re-anclando")
+    }
+
+    /// HALLAZGO 2: el guard re-ancló el `historyTokenData` a la última tx del mount actual tras un
+    /// `historyTokenIncomparable`. Par de recuperación del canario. Sin PII.
+    static func historyTokenRecovered() {
+        logger.notice("CloudSync historyTokenRecovered — token re-anclado al mount actual")
+    }
+
+    /// D4 (I12): un UPDATE de History mutó el keypath de IDENTIDAD de una entidad cuya identidad de sync
+    /// es su UUID persistido (p.ej. `Tag.id`/`Account.shortcutID` regenerado). El drain, ante ese UPDATE
+    /// identity-only, SIGUE haciendo SKIP (el sync_id es la PK, no una columna del mapa → `changedColumns`
+    /// vacío) — POR DISEÑO: el remap NO se emite desde el drain, sino desde `emitIdentityRemap` en la MISMA
+    /// transacción del reparador (`repairCollapsedIdentityUUIDs`), que además tombstonea el sync_id viejo y
+    /// re-emite las filas referenciantes. DIFERIDOS #29 (§b.4) cerró el gap; este canario pasó de "delator del
+    /// gap" a RED DE SEGURIDAD: si suena SIN el par `identityRemapEmitted` en la misma ventana, hay un sitio
+    /// de mutación de identidad NO cableado al remap (bug). Sin PII (solo el tipo de entidad).
+    static func identityMutationObserved(entity: String) {
+        logger.notice("CloudSyncIdentityMutation entity=\(entity, privacy: .public)")
+    }
+
+    /// DIFERIDOS #29 (§b.4): `emitIdentityRemap` encoló el trío {tombstone(oldID), upsert-FULL(newID),
+    /// re-emisión de referenciantes} para `count` re-keys de una entidad. Co-ocurre con `identityMutationObserved`
+    /// (el mismo save que regenera el id) → juntos = remap SANO; `identityMutationObserved` a solas = sitio de
+    /// mutación no cableado. Sin PII (solo el tipo de entidad y el conteo).
+    static func identityRemapEmitted(entity: String, count: Int) {
+        logger.notice("CloudSyncIdentityRemap emitted entity=\(entity, privacy: .public) count=\(count, privacy: .public)")
+    }
+
+    /// DIFERIDOS #29 (§5): en `storageMode == .cloud` el one-shot `migrateShortcutIDsAndRebuildCSVMirrors`
+    /// SALTÓ la regeneración masiva de UUIDs de identidad (`tags` presentes) — el applier asigna ids explícitos
+    /// del backend; el backstop repetible es `repairCollapsedIdentityUUIDs` (con emisión de remap). Sin PII.
+    static func identityRemapRegenSkippedInCloud(tags: Int) {
+        logger.notice("CloudSyncIdentityRemap regenSkippedInCloud tags=\(tags, privacy: .public) — one-shot regen saltado en .cloud (backstop repairCollapsedIdentityUUIDs)")
+    }
+
+    /// DIFERIDOS #29 (SERIO 1 del review) — RUIDOSO (error-level): el remap NO pudo emitirse (motor caído,
+    /// ClockDrift, migración/reversa en curso, etc.) → el reparador hizo ROLLBACK de la regeneración entera y
+    /// difirió al próximo run del dedup. Comitear la regeneración SIN su outbox sería divergencia PERPETUA (el
+    /// drain SKIPea updates identity-only — la premisa de #29), por eso se aborta. `reason` sin PII.
+    static func identityRemapAborted(reason: String) {
+        logger.error("CloudSyncIdentityRemap aborted reason=\(reason, privacy: .public) — rollback de la regeneración; se difiere al próximo run del dedup")
+    }
+
+    /// RED (I8c): el emisor produjo un grupo de coherencia incompleto tras la expansión. No debe ocurrir.
+    static func coherenceGroupPartial(entity: String, group: String) {
+        logger.notice("CloudSyncCoherenceGroupPartial \(entity, privacy: .public) group=\(group, privacy: .public)")
+    }
+
+    /// RED (I8c): el codec c1 rechazó los `fields` de una fila (número no-finito / fuera de rango / blob
+    /// malformado). La fila se DESCARTA (no se puede serializar canónicamente) — canario del codec.
+    static func encodeRejected(entity: String, reason: String) {
+        logger.notice("CloudSyncEncodeRejected \(entity, privacy: .public) reason=\(reason, privacy: .public)")
+    }
+
+    // MARK: Push (I8e) — sin PII (status HTTP, counts, motivos de transporte; nunca valores de usuario)
+
+    /// La sesión ya no sirve → `pending` deltas quedan sin subir hasta volver a entrar: el token no llegó y el SDK
+    /// BORRÓ la sesión guardada, o el backend devolvió un 401 que no es el de App Attest ausente.
+    static func pushBlockedNoSession(pending: Int) {
+        logger.notice("CloudSyncPush blocked=no-session pending=\(pending, privacy: .public)")
+    }
+
+    /// El token no llegó y el SDK CONSERVA la sesión: la renovación es una petición al servidor de auth que no volvió
+    /// (sin red, un 5xx). Pasajero, no sesión caducada (ticket `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`).
+    static func pushTokenUnavailable(pending: Int) {
+        logger.notice("CloudSyncPush transient token-unavailable session=kept pending=\(pending, privacy: .public)")
+    }
+
+    /// El gateway respondió 401 `yala_attest_required` a una ruta del canal personal: el JWT vale y lo que falta, o no
+    /// verifica, es el token de App Attest. Pasajero, y no suma a la racha del teléfono: desde el motor, la puerta ya consiguió
+    /// el token (la migración y el adopt suben sin ella). `edge` = `push`, `pull`, `prefs-push` o `prefs-pull`. Molde
+    /// `GroupsSyncBreadcrumb.groupsAttestRequired(edge:)`.
+    static func attestRequired(edge: String) {
+        logger.notice("CloudSync attestRequired edge=\(edge, privacy: .public)")
+    }
+
+    /// Un refresh del token de App Attest llevaba más de su techo en vuelo y se abandonó (`AppAttestClient.awaitRefresh`).
+    /// `stage` = el paso en el que estaba. Ticket `cloud-activation-stalls-without-uploading-until-relaunch`.
+    static func attestRefreshAbandoned(stage: String) {
+        logger.notice("CloudSync attestRefreshAbandoned stage=\(stage, privacy: .public)")
+    }
+
+    /// La migración, la vuelta o el adopt no consiguieron token de App Attest para una petición: sale sin la cabecera
+    /// (`CloudMigrationController.migrationAttestProvider`). `errorType` = el tipo del error, sin PII.
+    static func migrationAttestUnavailable(errorType: String) {
+        logger.notice("CloudSyncMigration attestUnavailable error=\(errorType, privacy: .public)")
+    }
+
+    /// El backend devolvió 403 → cuenta suspendida/deshabilitada (≠401).
+    static func pushAccountUnavailable() {
+        logger.notice("CloudSyncPush blocked=account-unavailable (403)")
+    }
+
+    /// El backend devolvió 409 `yala_account_reverting` → cuenta congelada por la reversa (§h.1): el
+    /// backend ya no es fuente de verdad. Stop (mismo trato que 403); los deltas quedan en el outbox.
+    static func pushAccountReverting() {
+        logger.notice("CloudSyncPush blocked=account-reverting (409)")
+    }
+
+    /// Fallo de transporte (red caída / timeout / respuesta no-HTTP / 200 no decodificable) → reintentar.
+    static func pushTransport(reason: String) {
+        logger.notice("CloudSyncPush transient transport reason=\(reason, privacy: .public)")
+    }
+
+    /// El Worker respondió con un status inesperado (5xx / 429 / 4xx) → reintentar.
+    static func pushHTTP(status: Int) {
+        logger.notice("CloudSyncPush transient http=\(status, privacy: .public)")
+    }
+
+    /// Una fila de outbox no pudo traducirse a delta (clase no cableada al wire). No debe ocurrir.
+    static func pushBuildFailed(reason: String) {
+        logger.notice("CloudSyncPush buildFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// Un `SyncDeltaResult` llegó sin `client_mutation_id` correlacionable → no se aplicó (ni purga ni
+    /// dead-letter). No debe ocurrir (el Worker siempre lo ecoa).
+    static func applyResultUnmatched(syncID: String) {
+        logger.notice("CloudSyncPush applyResult unmatched sync_id=\(syncID, privacy: .public)")
+    }
+
+    /// Un `rejected` con reason `upstream_*` = error de infraestructura TRANSITORIO del Worker (no un
+    /// rechazo definitivo del delta). La fila NO se dead-letterea ni dispara el canario; se reintenta.
+    static func pushTransientUpstream(syncID: String, reason: String) {
+        logger.notice("CloudSyncPush transientUpstream sync_id=\(syncID, privacy: .public) reason=\(reason, privacy: .public)")
+    }
+
+    // MARK: Pull (I8f-1) — sin PII (status HTTP, counts, seq; nunca valores de usuario)
+
+    /// Una página del pull llegó: número de deltas + high-water del `server_seq`.
+    static func pull(count: Int, maxSeq: Int64) {
+        logger.notice("CloudSyncPull page count=\(count, privacy: .public) maxSeq=\(maxSeq, privacy: .public)")
+    }
+
+    /// No hay sesión con la que bajar: el token no llegó y no hay sesión guardada, o el backend devolvió un 401 que no
+    /// es el de App Attest ausente. El Merkle lo emite también con cualquier token nulo o 401.
+    static func pullBlockedNoSession() {
+        logger.notice("CloudSyncPull blocked=no-session")
+    }
+
+    /// El token no llegó y el SDK CONSERVA la sesión: pasajero, no sesión caducada. Ver `pushTokenUnavailable(pending:)`.
+    static func pullTokenUnavailable() {
+        logger.notice("CloudSyncPull transient token-unavailable session=kept")
+    }
+
+    /// El backend devolvió 403 → cuenta suspendida/deshabilitada (≠401).
+    static func pullAccountUnavailable() {
+        logger.notice("CloudSyncPull blocked=account-unavailable (403)")
+    }
+
+    /// Fallo de transporte (red caída / timeout / no-HTTP / 200 no decodificable) → reintentar.
+    static func pullTransport(reason: String) {
+        logger.notice("CloudSyncPull transient transport reason=\(reason, privacy: .public)")
+    }
+
+    /// El Worker respondió con un status inesperado (5xx / 429 / 4xx) → reintentar.
+    static func pullHTTP(status: Int) {
+        logger.notice("CloudSyncPull transient http=\(status, privacy: .public)")
+    }
+
+    // MARK: Apply (I8f-1)
+
+    /// Un `_ref` remoto no resolvió a una fila local (destino aún no sincronizado / no cableado en v1).
+    /// NO es canario de incidente: con 6 entidades cableadas es esperable; el CSV mirror preserva los
+    /// UUIDs para auto-cura cuando el destino llegue.
+    static func applyDanglingRef(entity: String, column: String) {
+        logger.notice("CloudSyncApply danglingRef \(entity, privacy: .public).\(column, privacy: .public)")
+    }
+
+    /// Un delta remoto se cuarentenó (entity_type aún no materializable / identidad no resoluble).
+    static func applyQuarantined(entity: String, serverSeq: Int64) {
+        logger.notice("CloudSyncApply quarantined \(entity, privacy: .public) serverSeq=\(serverSeq, privacy: .public)")
+    }
+
+    /// Un upsert traía dinero o una tasa NO FINITOS (`columns`, sin valores) y fue a cuarentena en vez de al
+    /// `@Model` (ticket `wire-decoder-accepts-non-finite-money`). El cursor avanza; la fila se retira sola cuando
+    /// llega una versión posterior de esa fila.
+    static func applyNonFiniteQuarantined(entity: String, serverSeq: Int64, columns: [String]) {
+        logger.notice("CloudSyncApply nonFiniteMoney quarantined \(entity, privacy: .public) serverSeq=\(serverSeq, privacy: .public) columns=\(columns.joined(separator: ","), privacy: .public)")
+    }
+
+    /// Una versión posterior de una fila retiró sus deltas viejos de la cuarentena (`count`).
+    static func quarantineSuperseded(entity: String, count: Int) {
+        logger.notice("CloudSyncQuarantine superseded \(entity, privacy: .public) count=\(count, privacy: .public)")
+    }
+
+    /// F-3: el `save()` de una página del apply FALLÓ → rollback ejecutado, cursor NO avanzó, el ciclo
+    /// corta con `.transient`. Producción (fuera de #if DEBUG): un fallo repetido aquí = pull atascado.
+    static func applyPageFailed(reason: String) {
+        logger.notice("CloudSyncApply pageFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// El pase final de refs colgadas CONSERVÓ `count` danglers porque su fila o su destino no se dejaron leer (ticket
+    /// `dangling-ref-repair-is-lost-when-its-row-cannot-be-read`). No es un `pageFailed`: el pase guardó y el cursor no
+    /// está atascado; se reintentan en el próximo ciclo. Repetido en cada ciclo = una tabla que nunca se deja leer.
+    static func danglersUnreadable(count: Int) {
+        logger.notice("CloudSyncApply danglersUnreadable count=\(count, privacy: .public)")
+    }
+
+    /// F-6c: un HLC del pipeline del apply (wire u outbox) NO parsea — no debe ocurrir desde nuestro
+    /// server/drain. `site` nombra el punto exacto (sin PII). El caller toma la rama conservadora.
+    static func hlcUnparseable(site: String) {
+        logger.notice("CloudSyncApply hlcUnparseable site=\(site, privacy: .public)")
+    }
+
+    /// F-5: `clock.receive` RECHAZÓ un HLC remoto (drift >5min / counter overflow) → el reloj conserva
+    /// su `latest` previo y el apply continúa. Par del canario MetricsService
+    /// `cloudSyncClockReceiveRejected`.
+    static func clockReceiveRejected(reason: String) {
+        logger.notice("CloudSyncApply clockReceiveRejected reason=\(reason, privacy: .public)")
+    }
+
+    // MARK: Reconciliadores (I8f-2) — sin PII (ids de par/expense y counts; NUNCA montos)
+
+    /// El reconciler del transfer-pair REPARÓ el lado perdedor de un par divergente (LWW por
+    /// `SyncUnitClock['money']`).
+    static func reconcilerRepairedPair(pairID: String) {
+        logger.notice("CloudSyncReconciler repairedPair id=\(pairID, privacy: .public)")
+    }
+
+    /// El reconciler del split PODÓ `count` TXs virtuales negativas de un `splitExpenseID` con ambas
+    /// formas presentes (regla interina real-gana; ver CloudSyncReconciler).
+    static func reconcilerPrunedSplit(splitExpenseID: String, count: Int) {
+        logger.notice("CloudSyncReconciler prunedSplit id=\(splitExpenseID, privacy: .public) count=\(count, privacy: .public)")
+    }
+
+    /// Un par divergente NO se tocó por falta de señal (`SyncUnitClock['money']` ausente/no parseable
+    /// en algún lado, o empate exacto). Rama conservadora — nunca se adivina con un monto.
+    static func reconcilerNoSignal(pairID: String) {
+        logger.notice("CloudSyncReconciler noSignal id=\(pairID, privacy: .public)")
+    }
+
+    /// El pase de entidades de SISTEMA (política v1) colapsó `count` filas PERDEDORAS de una identidad lógica
+    /// duplicada cross-device a su ganador determinista-global (`account` = cuentas `Grupos [moneda]`;
+    /// `balanceAdjustment` = subcategoría de ajuste de saldo). Sin PII (kind + conteo).
+    static func systemEntityMerged(kind: String, count: Int) {
+        logger.notice("CloudSyncReconciler systemEntityMerged kind=\(kind, privacy: .public) count=\(count, privacy: .public)")
+    }
+
+    // MARK: Merkle (I8f-3) — sin PII (tablas, counts, motivos; nunca hashes de datos de usuario)
+
+    /// La verificación se SALTÓ por la precondición A-3 (outbox pendiente / pull incompleto / fetch).
+    /// NUNCA canario: la divergencia con trabajo en vuelo es ESPERADA.
+    static func merkleSkippedNotQuiescent(reason: String) {
+        logger.notice("CloudSyncMerkle skipped reason=\(reason, privacy: .public)")
+    }
+
+    /// El cómputo del árbol LOCAL no pudo leer el corpus (ticket
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). `stage` dice QUÉ lectura falló —`leaves:<tabla>` o
+    /// `dangling-overrides`— y es lo único que separa en la flota una avería de una tabla concreta de una del
+    /// store entero. Sin PII: nombres de tabla y nada más. **No es un canario**: es una avería del teléfono, no
+    /// una pérdida de integridad; el canario de divergencia es justo el que este rastro evita que se dispare en
+    /// falso.
+    static func merkleLocalReadFailed(stage: String) {
+        logger.notice("CloudSyncMerkle localReadFailed stage=\(stage, privacy: .public) — no se compara nada")
+    }
+
+    /// Una tabla con cuarentena local se EXCLUYE de la comparación (el cliente no la materializa —
+    /// compararla sería divergencia falsa; límite v1, regla 5).
+    static func merkleEntitySkippedQuarantined(entity: String) {
+        logger.notice("CloudSyncMerkle entitySkipped=quarantined \(entity, privacy: .public)")
+    }
+
+    /// El entityHash local ≠ remoto para `entity` (o `"root"`). Par del canario MetricsService
+    /// `cloudSyncMerkleDivergence`.
+    static func merkleDivergence(entity: String) {
+        logger.notice("CloudSyncMerkle divergence entity=\(entity, privacy: .public)")
+    }
+
+    /// Verificación completa sin divergencias (las `entities` tablas cableadas comparadas).
+    static func merkleConverged(entities: Int) {
+        logger.notice("CloudSyncMerkle converged entities=\(entities, privacy: .public)")
+    }
+
+    // MARK: Runtime (I9) — transiciones de estado del orquestador (sin PII)
+
+    /// El runtime arrancó su cadencia para la sesión actual.
+    static func runtimeStarted() {
+        logger.notice("CloudSyncRuntime started")
+    }
+
+    /// El runtime no arranca cadencia (sin sesión / gate de claim no proceed-like / gate del dominio).
+    /// `reason` sin PII.
+    static func runtimeIdle(reason: String) {
+        logger.notice("CloudSyncRuntime idle reason=\(reason, privacy: .public)")
+    }
+
+    /// CANARIO (I14, P6): en `.cloud` el `currentUserID` NO tiene registro de claim → el runtime queda
+    /// `.idle` (identidad no-claimeada: un Apple ID distinto en un device migrado no debe pushear el
+    /// corpus del dueño). En producción cloud >0 = user-switch cross-cuenta a vigilar. Sin PII.
+    static func runtimeBlockedByUnclaimedIdentity() {
+        logger.notice("CloudSyncRuntime idle reason=unclaimed-identity")
+    }
+
+    /// El runtime DETUVO la cadencia (401 sesión, 403 cuenta, attest terminal, transporte). `reason` sin PII.
+    static func runtimeStopped(reason: String) {
+        logger.notice("CloudSyncRuntime stopped reason=\(reason, privacy: .public)")
+    }
+
+    /// Teardown de sesión invitada (M1): espejo purgado + identidad limpiada + cadencia detenida.
+    static func runtimeTeardown() {
+        logger.notice("CloudSyncRuntime teardownGuestSession")
+    }
+
+    // MARK: Cierre de sesión (H4) — sin PII
+
+    /// El usuario inició el cierre de sesión. `path` = "private" | "private-with-groups" | "cloud-secure" |
+    /// "secondary" | "icloud-groups-session" | "account-delete-cloud" |
+    /// "account-delete-groups-only" (valores reales de los call-sites en `CloudSessionSignOut`).
+    static func signOutStarted(path: String) {
+        logger.notice("CloudSignOut started path=\(path, privacy: .public)")
+    }
+
+    /// El push-all previo al cierre en `.cloud` NO logró vaciar el outbox → cierre ABORTADO
+    /// (jamás se descartan pendientes). `pending` = filas vivas restantes.
+    static func signOutPushBlocked(pending: Int) {
+        logger.notice("CloudSignOut push blocked pending=\(pending, privacy: .public)")
+    }
+
+    /// El push-all del cierre en `.cloud` NO corrió el ciclo porque el candado del dominio estaba cerrado (journal
+    /// ilegible, fase transitoria, espejo montado). `pending` = filas vivas; `uncaptured` = ¿ediciones en el History sin capturar? (`yes` · `no` · `unknown`). Solo con `0` y `no` sigue el cierre.
+    static func signOutPushSkippedByDomainGate(pending: Int, uncaptured: String) {
+        logger.notice("CloudSignOut push skipped by domain gate pending=\(pending, privacy: .public) uncaptured=\(uncaptured, privacy: .public)")
+    }
+
+    /// **Por qué se BLOQUEÓ el cierre en la nube, y no solo cuántas filas quedaron** (2026-09-14). Lo emite
+    /// el paso 2 —el push-all de GRUPOS— con el motivo YA traducido, que es justo el que decide qué aviso
+    /// ve la persona: `upload-retry-later` (pasajero: red, 5xx, un cortafuegos) · `channel-paused` (el
+    /// kill-switch) · `permanent` (el resto). Sin esta línea, `pushBlocked pending=N` es idéntico para los
+    /// tres y en campo no hay forma de saber si a alguien se le enseñó «revisa tu conexión» sobre un fallo
+    /// que se cura esperando — que era el bug. Sin PII: solo el slug.
+    static func signOutGroupsBlocked(reason: String) {
+        logger.notice("CloudSignOut groupsBlocked reason=\(reason, privacy: .public)")
+    }
+
+    /// Paso 9 · cierre PRIVADO: la espera del export de iCloud se agotó con cambios sin confirmar y el
+    /// cierre se bloqueó con la salida avisada. `pending` = objetos locales sin subir; −1 = no se pudo
+    /// contar. Sin PII: solo el número. Sostenido en muchos dispositivos = el testigo del export falla
+    /// (el autor del espejo, el ancla) — mirar antes de culpar a la red.
+    static func signOutExportUnconfirmed(pending: Int?) {
+        logger.notice("CloudSignOut private export unconfirmed pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// El cierre de una sesión PRIVADA se paró porque el paso de los datos entre iCloud y la nube no estaba en reposo
+    /// (`migration-in-flight` · `migration-unreadable`). Ticket `private-sign-out-proceeds-with-a-migration-in-flight`.
+    /// Sin PII: solo el slug.
+    static func signOutBlockedByMigration(reason: String) {
+        logger.notice("CloudSignOut blocked by migration reason=\(reason, privacy: .public)")
+    }
+
+    /// Paso 9 · la celda cambió entre la hoja y la ejecución (una sesión que caducó con la hoja abierta): no
+    /// se ejecuta un borrado que nadie leyó. La vista lo comprueba antes; esto es el cinturón.
+    static func signOutCellChangedBeforeRunning() {
+        logger.notice("CloudSignOut skipped — the confirmed cell changed before running")
+    }
+
+    /// Paso 9 · la persona eligió «Cerrar sesión igualmente» tras el aviso: se borra sin confirmar el export.
+    static func signOutExportDiscarded() {
+        logger.notice("CloudSignOut private exit discarding unconfirmed changes")
+    }
+
+    /// Un cierre de sesión se bloqueó porque este teléfono lleva más de un día sin App Attest
+    /// (`BlockReason.attestUnavailable`) y ofrece salir perdiendo los cambios de grupos. `pending` = filas vivas del
+    /// outbox de Grupos; −1 = no se pudo contar. Sin PII: solo el número.
+    static func signOutGroupsAttestUnavailable(pending: Int?) {
+        logger.notice("CloudSignOut groups attest unavailable — loss exit offered pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// Un cierre se bloqueó en cambios de grupos que solo suben con una sesión que no está —la de su cuenta caducó, o la
+    /// abierta es de otra— y dejó ofrecida la salida que los pierde (ticket
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit`). `cause` = `noSession` | `otherAccount`.
+    static func signOutGroupsLossOffered(cause: String, pending: Int?) {
+        logger.notice("CloudSignOut groups loss exit offered cause=\(cause, privacy: .public) pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// La captura de grupos previa a una salida no terminó en ninguna de sus vueltas y el History guarda algo fuera del outbox
+    /// (ticket `groups-drain-that-always-aborts-takes-the-loss-exit-away`): el aviso contará esos cambios.
+    static func signOutGroupsCaptureStuck() {
+        logger.notice("CloudSignOut groups capture stuck")
+    }
+
+    /// La persona eligió «Cerrar sesión y perderlos»: el cierre se retoma con esa cifra como tope aceptado.
+    static func signOutGroupsLossAccepted(pending: Int?) {
+        logger.notice("CloudSignOut groups loss accepted pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// La persona eligió «Perderlos y empezar de cero» (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`):
+    /// el borrado vuelve a subir y, si sigue bloqueado por lo mismo, se lleva esa cifra y no más. −1 = sin cifra. Sin PII.
+    static func freshStartGroupsLossAccepted(pending: Int?) {
+        logger.notice("FreshStart groups loss accepted pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// El cierre siguió sin subir los cambios de grupos que la persona aceptó perder: mueren con el borrado del
+    /// arranque. Va aparte del anterior porque, entre el tap y aquí, el attest pudo volver y subirlos.
+    static func signOutGroupsDiscarded(pending: Int?) {
+        logger.notice("CloudSignOut groups discarded without uploading pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// El cierre en la NUBE se bloqueó en los cambios PERSONALES porque este teléfono lleva más de un día sin App Attest
+    /// (`BlockReason.personalAttestUnavailable`) y ofrece exportar los movimientos o salir perdiéndolos. `pending` = filas
+    /// vivas del outbox personal; −1 = no se pudo contar. Sin PII: solo el número.
+    static func signOutPersonalAttestUnavailable(pending: Int?) {
+        logger.notice("CloudSignOut personal attest unavailable — export and loss exit offered pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// El cierre en la NUBE se bloqueó en los cambios PERSONALES porque no hay sesión con la que subirlos —caducó, o la
+    /// abierta es de otra cuenta— y ofrece exportar los movimientos o salir perdiéndolos (ticket
+    /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`). `cause` = `noSession`. Sin PII.
+    static func signOutPersonalLossOffered(cause: String, pending: Int?) {
+        logger.notice("CloudSignOut personal loss exit offered cause=\(cause, privacy: .public) pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// Desde ese aviso se generó el archivo con todos los movimientos. `rows` = movimientos exportados. Sin PII.
+    static func signOutPersonalExported(rows: Int) {
+        logger.notice("CloudSignOut personal export before losing changes rows=\(rows, privacy: .public)")
+    }
+
+    /// La persona eligió «Cerrar sesión y perderlos» en el aviso de sus datos: el cierre se retoma con esas filas aceptadas.
+    static func signOutPersonalLossAccepted(pending: Int?) {
+        logger.notice("CloudSignOut personal loss accepted pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// El cierre siguió sin subir los cambios personales que la persona aceptó perder: mueren con el borrado del arranque.
+    /// Va aparte del anterior porque, entre el tap y aquí, el attest pudo volver y subirlos.
+    static func signOutPersonalDiscarded(pending: Int?) {
+        logger.notice("CloudSignOut personal changes discarded without uploading pending=\(pending ?? -1, privacy: .public)")
+    }
+
+    /// Paso 9 · cierre privado SIN copia en iCloud, confirmado con el segundo gesto: no hay espera que hacer.
+    static func signOutWithoutICloudCopy() {
+        logger.notice("CloudSignOut private without iCloud copy — confirmed, no export wait")
+    }
+
+    /// Camino `.cloud`: outbox vacío verificado + sesión cerrada + wipe ARMADO → esperando relaunch.
+    static func signOutWipeArmed() {
+        logger.notice("CloudSignOut wipe armed — awaiting relaunch")
+    }
+
+    /// BOOT: el wipe armado se ejecutó (archivos personal+sync-meta borrados, device `.icloud` fresh).
+    static func signOutWipeExecuted() {
+        logger.notice("CloudSignOut wipe executed at boot — device fresh")
+    }
+
+    /// §5.2.1: notificaciones locales de la cuenta saliente retiradas (pendientes + entregadas) junto
+    /// al wipe. Sus `NotificationItem` mueren con el archivo del store y nadie las cancelaría después
+    /// —el reconciler de boot solo REPROGRAMA y exige `activeItems` no vacío—, así que los requests
+    /// repetitivos sonarían indefinidamente con datos de la cuenta anterior. Sin PII (no lleva conteo:
+    /// obtenerlo exigiría un fetch async del `UNUserNotificationCenter` pre-mount).
+    static func signOutNotificationsCleared() {
+        logger.notice("CloudSignOut local notifications cleared — pending + delivered")
+    }
+
+    /// G5-B: cierre de sesión SOLO-GRUPOS — outbox de grupos drenado, canal en teardown, consent
+    /// limpiado, sesión cerrada + wipe del store de grupos ARMADO → esperando relaunch.
+    static func signOutGroupsOnlyWipeArmed() {
+        logger.notice("CloudSignOut groups-only wipe armed — awaiting relaunch (personal intact)")
+    }
+
+    /// BOOT (G5-B): el wipe solo-grupos armado se ejecutó (archivos del store de grupos borrados; el
+    /// personal, sync-meta, onboarding, prefs y storageMode NO se tocaron — device sigue en `.icloud`).
+    static func signOutGroupsOnlyWipeExecuted() {
+        logger.notice("CloudSignOut groups-only wipe executed at boot — groups store cleared, personal intact")
+    }
+
+    /// BOOT (G5-B): el wipe solo-grupos ABORTÓ (borrado del archivo base del store de grupos falló ≠
+    /// no-existe). El arm persiste → reintento en el próximo boot; el personal jamás corrió riesgo.
+    static func signOutGroupsOnlyWipeAborted(reason: String) {
+        logger.error("CloudSignOut groups-only wipe ABORTED reason=\(reason, privacy: .public)")
+    }
+
+    /// BOOT: el wipe armado ABORTÓ (borrado de archivo base falló ≠ no-existe). El arm
+    /// persiste → reintento en el próximo boot; el par storageMode/mirrorOffArmed queda
+    /// intacto (mount mirror-OFF, sin riesgo de replay hacia iCloud). >0 sostenido = disco/
+    /// permisos — investigar.
+    static func signOutWipeAborted(reason: String) {
+        logger.error("CloudSignOut wipe ABORTED reason=\(reason, privacy: .public)")
+    }
+
+    /// Fix carrera 2026-07-14: la red del cover terminal reintentó presentar (el intento
+    /// anterior no confirmó onAppear — p.ej. la sheet de Profile aún se cerraba).
+    /// `net` = "signout" | "secondaryEntry". attempt=1 ocasional es NORMAL (timing del dismiss).
+    static func relaunchNetRetried(net: String, attempt: Int) {
+        logger.notice("CloudSignOut relaunchNet retried net=\(net, privacy: .public) attempt=\(attempt, privacy: .public)")
+    }
+
+    /// Fix carrera 2026-07-14 — RUIDOSO (error-level): la red agotó el cap del ciclo sin
+    /// confirmar presentación (algo tapa el anchor perpetuamente). El blocker vivo de la
+    /// matriz sigue conteniendo el router y el exit-on-background es la red final.
+    /// Par MetricsService: `.relaunchNetExhausted` (canario de prod).
+    static func relaunchNetExhausted(net: String) {
+        logger.error("CloudSignOut relaunchNet EXHAUSTED net=\(net, privacy: .public) — cover terminal sin presentar tras el cap del ciclo")
+    }
+
+    /// Decisión owner UX 2026-07-14: la app fue a background con un relaunch terminal
+    /// pendiente → el proceso termina limpio (`exit(0)`); el próximo launch corre el
+    /// cleanup pre-mount. Último rastro del proceso — se emite ANTES del exit.
+    static func relaunchExitOnBackground() {
+        logger.notice("CloudSignOut relaunch exit-on-background — proceso terminado limpio; el próximo launch corre el cleanup")
+    }
+
+    // MARK: R4 · swap de persona in-process — sin PII
+
+    /// El swap ni se intentó: este proceso montó el store personal CON el mirror adjunto, y la Opción C
+    /// está acotada a transiciones en las que ninguno de los dos extremos lo tiene. No es un fallo — es el
+    /// guard de alcance haciendo su trabajo; el usuario ve la pantalla de relanzamiento de siempre.
+    static func swapSkippedMountHasMirror() {
+        logger.notice("CloudSignOut swap SKIPPED — el mount de este proceso lleva mirror adjunto; se conserva el relanzamiento")
+    }
+
+    /// **El canario del release verificado, y es la superficie de observación de todo este subsistema.**
+    /// El swap se abortó porque el container viejo no murió del todo: `container-alive` = alguien retiene
+    /// una referencia fuerte (una fila `@Model` basta); `descriptors-open:N` = el objeto murió pero la pila
+    /// de Core Data no soltó el archivo, que es EXACTAMENTE el estado que un `weak` sentinel a secas
+    /// declararía verificado. Un valor alto y sostenido en producción significa que el swap no rinde y que
+    /// todos los cierres de sesión están pagando el relanzamiento — no que haya datos en riesgo: el aborto
+    /// repone el container y el wipe de boot sigue armado.
+    static func swapReleaseAborted(reason: String) {
+        logger.error("CloudSignOut swap ABORTED reason=\(reason, privacy: .public) — release NO verificado; degrada al relanzamiento de boot")
+    }
+
+    /// El wipe se consumó pero el container nuevo no se pudo construir. No hay riesgo de datos: el disco
+    /// quedó consistente (store vacío, par `.icloud`, neutro armado) y la pantalla es el cover terminal, así
+    /// que el arranque siguiente monta neutro y aterriza en el Welcome. Un valor >0 en producción apunta al
+    /// mount, no al swap.
+    static func swapRemountFailed() {
+        logger.error("CloudSignOut swap remount FAILED — wipe consumado; el arranque siguiente monta neutro")
+    }
+
+    /// Swap consumado: store vaciado, container nuevo montado y jerarquía reconstruida sin relanzar.
+    /// **La retirada de la sesión de visita NO pudo borrar algún archivo `-Secondary`.** No escribe su
+    /// marca, así que el arranque siguiente lo reintenta entero; esta línea es el único rastro de que
+    /// hubo un intento fallido. >0 sostenido = disco o permisos, y el corpus de otra persona sigue en
+    /// este teléfono.
+    nonisolated static func secondarySessionRetirementIncomplete() {
+        logger.error("SecondarySessionRetirement INCOMPLETE — store file deletion failed, will retry next launch")
+    }
+
+    /// **La sesión de la persona anterior NO se pudo retirar**: el `SecItemDelete` del llavero de auth
+    /// falló. El arm sobrevive, así que el arranque siguiente lo reintenta; esta línea es el único
+    /// rastro. >0 sostenido = el llavero no se deja barrer y la sesión de otra persona sigue aquí.
+    nonisolated static func previousPersonSessionRetirementIncomplete() {
+        logger.error("CloudSessionRetirement INCOMPLETE — keychain purge failed, will retry next launch")
+    }
+
+    /// La sesión de quien usó antes este teléfono quedó retirada (relevo o primer arranque tras instalar).
+    nonisolated static func previousPersonSessionRetired() {
+        logger.notice("CloudSessionRetirement done — previous person cloud session retired")
+    }
+
+    static func swapCompleted() {
+        logger.notice("CloudSignOut swap COMPLETED — store vaciado y remontado en sesión; sin relanzamiento")
+    }
+
+    /// Paso 6 del rediseño de sesiones: [I] PROBÓ que la cuenta del faro de iCloud-KV ya no existe y lo
+    /// limpió (`CloudIdentityDiscovery`). Es irreversible y cross-device, así que va FUERA de `#if DEBUG`:
+    /// si algún día limpiara de más, esta línea sería el único rastro. `proof` = la prueba que lo disparó
+    /// (`BeaconOrphanLogic.Proof`), sin PII.
+    static func beaconOrphanCleared(proof: String) {
+        logger.notice("CloudBeacon orphan CLEARED proof=\(proof, privacy: .public)")
+    }
+
+    /// Guard de recreación (§d.5 A1): la tabla `SyncQuarantine` se recreó vacía (testigo>0, count==0) →
+    /// serverSeqCursor forzado a 0 (re-pull completo).
+    static func quarantineTableRecreated() {
+        logger.notice("CloudSyncQuarantine tableRecreated — forcing full re-pull (serverSeq=0)")
+    }
+
+    /// Drenaje del upgrade path: `count` filas de cuarentena se re-aplicaron (entidad recién cableada).
+    static func quarantineDrained(count: Int) {
+        logger.notice("CloudSyncQuarantine drained count=\(count, privacy: .public)")
+    }
+
+    /// Remediación Merkle (E-bis): tras `.diverged`, se reseteó el cursor + re-pull (una vez por sesión).
+    static func merkleRemediated() {
+        logger.notice("CloudSyncMerkle remediated — reset cursor + re-pull (once per session)")
+    }
+
+    /// Purga de History (§i.6, doble-DARK): `count` transacciones borradas por delante del corte seguro.
+    /// También lo emite el trigger del spike device S2 (`-spike-s2-purge-history`).
+    static func historyPurged(count: Int) {
+        logger.notice("CloudSync historyPurged count=\(count, privacy: .public)")
+    }
+
+    // MARK: Auth (I7c) — transiciones de la sesión real (sin PII: jamás token/email/sub)
+
+    /// Sign in with Apple → `signInWithIdToken` exitoso: sesión de Supabase creada.
+    static func authSignedIn() {
+        logger.notice("CloudSyncAuth signedIn")
+    }
+
+    /// El sign-in falló. `reason` sin PII (`apple-authorization` / `idtoken-exchange`).
+    static func authSignInFailed(reason: String) {
+        logger.notice("CloudSyncAuth signInFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// Sign-out local. `reason` sin PII (`user` / `credential-revoked`).
+    static func authSignedOut(reason: String) {
+        logger.notice("CloudSyncAuth signedOut reason=\(reason, privacy: .public)")
+    }
+
+    /// El sign-out del SDK lanzó. **No dice que la sesión siga**: el SDK la borra antes de la red, así que casi siempre es la
+    /// red. Lo que la sigue es `authSignOutLeftSession`.
+    static func authSignOutFailed() {
+        logger.notice("CloudSyncAuth signOutFailed")
+    }
+
+    /// Tras el sign-out la sesión SIGUE guardada: el llavero no la borró o un refresco en vuelo la repuso.
+    static func authSignOutLeftSession() {
+        logger.notice("CloudSyncAuth signOutLeftSession")
+    }
+
+    /// La credencial de Apple fue revocada (#23 mitigación cliente) → se cierra la sesión local.
+    static func authCredentialRevoked() {
+        logger.notice("CloudSyncAuth credentialRevoked — signing out locally")
+    }
+
+    /// No se pudo obtener un access token vigente (refresh falló / sin sesión) para una llamada de sync.
+    static func authAccessTokenUnavailable() {
+        logger.notice("CloudSyncAuth accessTokenUnavailable")
+    }
+
+    // MARK: SIWA revoke 5.1.1(v) (B1) — canje/custodia/revocación del refresh token de Apple (sin PII:
+    // JAMÁS el code/token — solo motivos)
+
+    /// El canje post-sign-in quedó custodiado (par token+appleUserID en el Keychain).
+    static func siwaExchangeStored() {
+        logger.notice("CloudSyncAuth siwaExchangeStored")
+    }
+
+    /// El canje falló (`no-code` / `no-jwt` / `exchange` / `keychain`) → este sign-in queda sin token
+    /// revocable (best-effort; re-sign-in lo cura). Par del canario MetricsService `siwaExchangeFailed`.
+    static func siwaExchangeFailed(reason: String) {
+        logger.notice("CloudSyncAuth siwaExchangeFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// Google Sign-In (sesión 1): el PAR (googleUserID, sub) NO se escribió tras un sign-in exitoso.
+    /// `reason` sin PII (`no-google-user-id` / `no-sub` / `keychain`) — AJUSTE #1 del plan: jamás un
+    /// par incompleto; sin par, el `disconnect()` de sesión 3 hace skip natural (población ~0).
+    static func googlePairCaptureSkipped(reason: String) {
+        logger.notice("CloudSyncAuth googlePairCaptureSkipped reason=\(reason, privacy: .public)")
+    }
+
+    /// El claim devolvió `profile.provider` DISTINTO del provider de la sesión que claimeó.
+    /// Por H4 (GoTrue linkea identidades con mismo email al MISMO sub) esto es identity-linking
+    /// LEGÍTIMO — observabilidad pura: JAMÁS alerta ni canario. Sin PII (solo el nombre del provider).
+    static func claimProfileProviderDiffers(profileProvider: String) {
+        logger.notice("CloudSyncAuth claimProfileProviderDiffers profileProvider=\(profileProvider, privacy: .public)")
+    }
+
+    /// Revoke saltado: no hay par custodiado (sesión previa al capture — población cero — o canje fallido).
+    static func siwaRevokeSkippedNoToken() {
+        logger.notice("CloudSyncAuth siwaRevokeSkippedNoToken")
+    }
+
+    /// Revoke saltado: el par pertenece a OTRO appleUserID (AJUSTE #1 — hazard cross-cuenta M1). Ni POST
+    /// ni limpieza: el par sigue siendo válido para su dueño.
+    static func siwaRevokeSkippedStaleToken() {
+        logger.notice("CloudSyncAuth siwaRevokeSkippedStaleToken")
+    }
+
+    /// Revocación 5.1.1(v) completada (Apple 200) + par limpiado del Keychain.
+    static func siwaRevoked() {
+        logger.notice("CloudSyncAuth siwaRevoked")
+    }
+
+    /// El revoke falló (`no-jwt` / `revoke` [timeout/red/502]) — best-effort: el borrado NO se bloquea;
+    /// el par NO se limpia (un retry del borrado lo reintenta). Par del canario `siwaRevokeFailed`.
+    static func siwaRevokeFailed(reason: String) {
+        logger.notice("CloudSyncAuth siwaRevokeFailed reason=\(reason, privacy: .public)")
+    }
+
+    // MARK: Google revoke (sesión 3 Google Sign-In — simetría 5.1.1(v); sin PII: JAMÁS googleUserID/sub
+    // en claro — solo motivos)
+
+    /// Revoke de Google saltado — estado LEGÍTIMO (sin canario, SIN limpiar el par). `reason`:
+    /// `no-pair` (sin par custodiado — cuenta que jamás firmó con Google, el caso masivo) /
+    /// `stale-pair` (par de OTRA cuenta Supabase — hazard cross-cuenta M1, match #1 del §0) /
+    /// `no-sdk-session` (sin sesión SDK restaurable, p.ej. post-reinstalación — grant vivo, token inerte) /
+    /// `stale-sdk-session` (la sesión del SDK es de OTRO humano que el par — match #2 del §0).
+    static func googleRevokeSkipped(reason: String) {
+        logger.notice("CloudSyncAuth googleRevokeSkipped reason=\(reason, privacy: .public)")
+    }
+
+    /// `disconnect()` completado (grant OAuth de Google revocado + SDK firmado out) + par limpiado.
+    static func googleDisconnected() {
+        logger.notice("CloudSyncAuth googleDisconnected")
+    }
+
+    /// El disconnect falló (`disconnect` [rechazo del SDK o timeout, colapsados]) — best-effort: el
+    /// borrado NO se bloquea; el par NO se limpia. Par del canario `googleRevokeFailed`.
+    static func googleRevokeFailed(reason: String) {
+        logger.notice("CloudSyncAuth googleRevokeFailed reason=\(reason, privacy: .public)")
+    }
+
+    // MARK: Migración (I10-wiring) — journal + orquestador (sin PII: solo fases, motivos, contadores)
+
+    /// Una transición se journaleó (fase + efectos pendientes). `phase` es el `MigrationPhase` (sin PII).
+    static func migrationJournaled(phase: String) {
+        logger.notice("CloudSyncMigration journaled phase=\(phase, privacy: .public)")
+    }
+
+    /// La máquina rechazó el par (fase, evento) → no-op, journal intacto. Delata un bug de secuenciación.
+    static func migrationInvalidTransition(from: String, event: String) {
+        logger.notice("CloudSyncMigration invalidTransition from=\(from, privacy: .public) event=\(event, privacy: .public)")
+    }
+
+    /// RUIDOSO a propósito (fuera de #if DEBUG, patrón SaveBreadcrumb): la fila del journal se lee pero algún blob
+    /// (fase o pendientes) NO decodifica en este build — en la práctica, un downgrade desde uno con un case nuevo. Desde
+    /// el ticket `an-undecodable-migration-phase-reads-as-never-started` es `.unreadable` y no `.notStarted`, y el runner
+    /// no conduce ni toca la fila. `reader`: `phase-store` (una línea por lectura, como `migrationJournalUnreadable`) o
+    /// `runner` (una por entrada). Sin PII.
+    static func migrationJournalUndecodable(reader: String) {
+        logger.notice("CloudSyncMigration journalUndecodable reader=\(reader, privacy: .public) — no se decide nada con la fase; el journal queda intacto")
+    }
+
+    /// El `fetch` de `MigrationState` lanzó (ticket `an-unreadable-migration-journal-reads-as-never-started`). `reader`
+    /// dice quién leía: `phase-store` (`MigrationPhaseStore`, lo que consultan el motor, los BGTasks, el remap y el
+    /// drenaje de preferencias; una línea por lectura, porque sus consumidores son discretos) o `controller`
+    /// (`CloudMigrationController`, la pantalla y el coordinador de arranque; una línea por TRANSICIÓN a ilegible, porque
+    /// la pantalla lee cada segundo). Hasta ese ticket este fallo se leía como `notStarted` y solo dejaba un `print` de
+    /// `#if DEBUG`. Sin PII.
+    static func migrationJournalUnreadable(reader: String) {
+        logger.notice("CloudSyncMigration journalUnreadable reader=\(reader, privacy: .public) — no se decide nada con la fase")
+    }
+
+    /// El `POST /account/claim` devolvió un outcome NO-success (sessionExpired/transient) → stop retomable; un `resume()`
+    /// re-claima idempotente. JAMÁS `fatalError`. Desde el 2026-09-22, con «Migrar a la nube» el stop pasa por el techo del
+    /// paso (`forwardStepStalled`, ticket `forward-migration-steps-have-no-ceiling-and-no-exit`) y puede terminar en
+    /// `failedRollback`; con un adopt sigue siendo sin evento. El rastro de la observación es `forwardStepStalled`.
+    static func migrationClaimNoSuccess(reason: String) {
+        logger.notice("CloudSyncMigration claimNoSuccess reason=\(reason, privacy: .public) — stop retomable (con «Migrar», bajo el techo del paso)")
+    }
+
+    /// «Migrar a la nube» y el claim contestó `existing_stable` → vuelve al inicio sin adoptar (`ForwardClaimIntent`).
+    static func migrationClaimRefusedExistingAccount() {
+        logger.notice("CloudSyncMigration claimRefused existing_stable con intención de migrar — notStarted, sin adopt")
+    }
+
+    /// Un adopt que abrió su sesión salió —techo, «Cancelar» o «Dejar de esperar»— y la sesión se cierra (ticket
+    /// `adopt-exit-keeps-the-session-it-opened`). El `signOut` deja además su propio `authSignedOut`.
+    static func adoptExitClosedSession() {
+        logger.notice("CloudSyncMigration adoptExit closedSession — la sesión que abrió el adopt")
+    }
+
+    /// «Migrar a la nube» se paró sin escribir nada. `reason` y `stage` (`gate` antes del claim, `claim` después) sin PII.
+    static func migrationIdentityBlocked(reason: String, stage: String) {
+        logger.notice("CloudSyncMigration identityBlocked reason=\(reason, privacy: .public) stage=\(stage, privacy: .public) — sin escrituras")
+    }
+
+    /// El claim devolvió 403 (cuenta suspendida) → stop retomable (breadcrumb dedicado, ≠401). Con «Migrar», bajo el techo
+    /// del paso: a los 15 min sale a `failedRollback` (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`).
+    static func migrationAccountUnavailable() {
+        logger.notice("CloudSyncMigration accountUnavailable (403) — stop retomable (con «Migrar», bajo el techo del paso)")
+    }
+
+    /// Un efecto declarativo lanzó al ejecutarse → queda journaled en `pendingEffectsData` + stop; un
+    /// `resume()` lo re-ejecuta. `effect` = raw value del `MigrationEffect` (sin PII).
+    static func migrationEffectFailed(effect: String, reason: String) {
+        logger.notice("CloudSyncMigration effectFailed effect=\(effect, privacy: .public) reason=\(reason, privacy: .public) — journaled, retomable")
+    }
+
+    /// El gate de quiescencia del import no se cumplió en el tope → el runner NO procede (retomable, sin
+    /// tocar el journal — ni un solo `save()`).
+    static func migrationQuiescenceTimeout() {
+        logger.notice("CloudSyncMigration quiescenceTimeout — no procede (retomable)")
+    }
+
+    /// #36 (H1): la pre-espera de quiescencia del resume arrancó (import no quiescente al boot/rekick) —
+    /// el controller pollea hasta 300s ANTES de tocar el runner; la card de Almacenamiento lo muestra.
+    static func migrationResumeAwaitingImport() {
+        logger.notice("CloudSyncMigration resumeAwaitingImport — pre-espera de quiescencia (tope 300s, estado visible)")
+    }
+
+    /// #36 (H1): la pre-espera venció el tope de 300s → el resume queda aparcado VISIBLE (card con
+    /// estado honesto + Retomar); lo reintentan el re-kick de foreground y el próximo boot.
+    static func migrationResumeDeferredAwaitingImport() {
+        logger.notice("CloudSyncMigration resumeDeferredAwaitingImport — tope 300s vencido, aparcado visible (foreground/boot reintentan)")
+    }
+
+    /// #36 (H1): el foreground re-kickeó una migración/reversa APARCADA (journal transicional o efectos
+    /// pendientes con el controller ocioso). `phase` = fase journaleada (sin PII).
+    static func migrationForegroundRekick(phase: String) {
+        logger.notice("CloudSyncMigration foregroundRekick phase=\(phase, privacy: .public) — re-kick del resume aparcado")
+    }
+
+    /// H-2026-07-17-5: el poll de la pantalla de adopt del Welcome detectó el drive APARCADO
+    /// (fase transicional con el controller ocioso N ticks) y re-condujo solo por el camino del
+    /// boot (`resumeIfNeeded`). `attempt` = intento auto (1…max) desde el último avance; sin PII.
+    static func welcomeAdoptAutoResume(attempt: Int, phase: String) {
+        logger.notice("CloudSyncMigration welcomeAdoptAutoResume attempt=\(attempt, privacy: .public) phase=\(phase, privacy: .public) — auto-resume del adopt aparcado en Welcome")
+    }
+
+    /// H-2026-07-17-5: los autos se agotaron sin avance → el botón Retomar manual queda visible
+    /// (canario: si aparece seguido, el auto-resume no basta — investigar la causa del park).
+    static func welcomeAdoptAutoResumeExhausted(phase: String) {
+        logger.notice("CloudSyncMigration welcomeAdoptAutoResumeExhausted phase=\(phase, privacy: .public) — autos agotados, Retomar manual visible")
+    }
+
+    /// w3: la captura de coordenadas CloudKit `(recordName, zoneName, ownerName)` terminó. Conteos
+    /// tri-estado (captured/exportPending/noMetadata/failed). Sin PII (solo counts). Filas sin captura NO
+    /// bloquean la fase (`assigningIdentity` es idempotente/re-ejecutable; una fila jamás exportada no
+    /// tiene record que borrar en la reversa — §b.5 born-cloud analogía).
+    static func migrationIdentityCaptured(captured: Int, exportPending: Int, noMetadata: Int, failed: Int) {
+        logger.notice("CloudSyncMigration identityCaptured captured=\(captured, privacy: .public) exportPending=\(exportPending, privacy: .public) noMetadata=\(noMetadata, privacy: .public) failed=\(failed, privacy: .public)")
+    }
+
+    /// w4: una página del snapshot quedó CONFIRMADA (todas sus filas + incrementales subidas y purgadas).
+    /// `table` = la tabla actual del cursor; `rows` = filas enqueuadas en la página. Sin PII.
+    static func migrationSnapshotPageConfirmed(table: String, rows: Int) {
+        logger.notice("CloudSyncMigration snapshotPageConfirmed table=\(table, privacy: .public) rows=\(rows, privacy: .public)")
+    }
+
+    /// El `fetch` de `SyncOutbox` lanzó (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`). `step`
+    /// dice QUIÉN lo pedía, y son DOCE: `verify`, `verify-after-push`, `reverse-drain`, `leader-reconcile`,
+    /// `adopt-orphan-reconcile`, `runtime-cycle`, `snapshot-page`, `snapshot-residual` y las cuatro relecturas del
+    /// uploader (`snapshot-page-poison`, `snapshot-page-after-push`, `snapshot-residual-poison`,
+    /// `snapshot-residual-after-push`). Se separan porque el desenlace de cada uno es distinto y en la flota el
+    /// `step` es lo único que los distingue. Sin PII.
+    ///
+    /// Hasta ese ticket este fallo no dejaba NADA: los tres helpers homónimos devolvían `[]` bajo un `print` de
+    /// `#if DEBUG`, así que en producción una base ilegible se leía como «no hay nada que subir» en silencio.
+    static func outboxFetchFailed(step: String) {
+        logger.notice("CloudSyncOutbox fetchFailed step=\(step, privacy: .public) — no se decide nada con el outbox")
+    }
+
+    /// Un inventario de la migración no pudo leer una de sus tablas (ticket
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`). Hasta ese ticket el `catch` saltaba la entidad bajo un
+    /// `print` de `#if DEBUG`, y el paso seguía como si la tabla estuviera vacía: el snapshot la daba por subida, el
+    /// adopt la contaba como «sin huérfanas» y la muestra de la vuelta como «nada pendiente». `step` dice qué
+    /// inventario (`snapshot`, `identity-capture`, `adopt-inventory`, `adopt-orphan-inputs`, `reverse-sample`,
+    /// `reverse-live-rows`) y `entity`, qué tabla. Sin PII.
+    static func migrationInventoryReadFailed(step: String, entity: String) {
+        logger.notice("CloudSyncMigration inventoryReadFailed step=\(step, privacy: .public) entity=\(entity, privacy: .public) — no se decide nada con ese inventario")
+    }
+
+    /// `SyncIdentityService.backfillIdentities` lanzó —un fetch o su `save()`— (ticket
+    /// `an-incomplete-inventory-reads-as-the-whole-corpus`). Hasta ese ticket se lo tragaba en silencio y la ida o el
+    /// adopt seguían con filas sin identidad. `errorType` = tipo del error (sin PII).
+    static func migrationIdentityBackfillFailed(errorType: String) {
+        logger.notice("CloudSyncMigration identityBackfillFailed errorType=\(errorType, privacy: .public) — la ida o el adopt no siguen")
+    }
+
+    /// w5/w6/w8: un efecto/paso de la migración aún NO está cableado (cutover/reconcile/rollback/adopt) →
+    /// el runner lo deja journaled (retomable). `step` = nombre del efecto/paso (sin PII).
+    static func migrationExecutorNotWired(step: String) {
+        logger.notice("CloudSyncMigration executorNotWired step=\(step, privacy: .public) — journaled, retomable")
+    }
+
+    /// w5: `verifyIntegrity` devolvió un `skipped` con un reason DESCONOCIDO (contrato futuro) → el mapping lo
+    /// manda a `.blocked(.unknownVerdict)`, o sea al techo CORTO (nunca crashea ni consume un retry de mismatch).
+    /// Canario.
+    ///
+    /// Este docblock decía `networkTimeout` hasta hoy, y eso dejó de ser verdad el 2026-09-22 con
+    /// `reverse-verify-network-bucket-hides-a-definitive-server-no`: «conservador» significaba esperar, y detrás
+    /// había 72 h.
+    static func migrationVerifyUnknownReason(reason: String) {
+        logger.notice("CloudSyncMigration verifyUnknownReason reason=\(reason, privacy: .public) — blocked(unknownVerdict), techo corto")
+    }
+
+    // MARK: Cutover (I10-wiring w6, §g.4)
+
+    /// w6 paso 1: `migration_progress('cutover')` confirmó `profiles.migrated_at` (guard líder OK).
+    static func migrationCutoverConfirmed() {
+        logger.notice("CloudSyncMigration cutoverConfirmed — profiles.migrated_at estampado (guard líder OK)")
+    }
+
+    /// w6 paso 1: el guard líder rechazó (`other_leader`) → este device fue USURPADO (lease-takeover). Decía «converge a
+    /// follower», y no había follower: la barra se quedaba al 80 %. Desde el 2026-09-22 es un motivo DEFINITIVO del techo
+    /// de `cutover(.pending)` (`ForwardStepBlocker.otherDevice`): a los 15 min sale a `failedRollback`.
+    static func migrationCutoverOtherLeader() {
+        logger.notice("CloudSyncMigration cutoverOtherLeader — usurpado, bajo el techo del paso (otherDevice)")
+    }
+
+    /// w6 paso 1: `migration_progress` devolvió otro `ok:false` (no_profile/not_in_progress/bad_action) o
+    /// transient/401 → stop retomable, bajo el techo de `cutover(.pending)` desde el 2026-09-22. `reason` sin PII.
+    static func migrationCutoverRejected(reason: String) {
+        logger.notice("CloudSyncMigration cutoverRejected reason=\(reason, privacy: .public) — stop retomable")
+    }
+
+    /// w6 paso 2: `storageMode=.cloud` persistido (`persistLocalMode`). El próximo relanzamiento montará el
+    /// store personal con el mirror OFF.
+    static func migrationLocalModePersisted() {
+        logger.notice("CloudSyncMigration localModePersisted — storageMode=.cloud (mirror OFF tras relaunch)")
+    }
+
+    /// w6 paso 3: marcador `CloudMigrationMarker` insertado + guardado (el mirror vivo lo exporta ASYNC).
+    static func migrationMarkerWritten(serverSeqCut: Int64) {
+        logger.notice("CloudSyncMigration markerWritten serverSeqCut=\(serverSeqCut, privacy: .public) — export ASYNC pendiente")
+    }
+
+    /// w6 paso 3→4: el gate de EXPORT del marcador cortó — el marcador aún NO llegó a CloudKit
+    /// (`ZCKRECORDNAME` NULL). Apagar el mirror ahora lo perdería → se espera al próximo resume/poll.
+    static func migrationMarkerExportPending() {
+        logger.notice("CloudSyncMigration markerExportPending — marcador sin exportar aún, mirror NO se apaga (retomable)")
+    }
+
+    // MARK: C-1 — canal iCloud del cutover
+
+    /// C-1: la precondición del canal iCloud abortó la ENTRADA al cutover (nada durable se tocó).
+    static func migrationICloudPreconditionFailed(reason: String) {
+        logger.error("CloudSyncMigration icloudPreconditionFailed reason=\(reason, privacy: .public) — cutover NO iniciado, device intacto")
+    }
+
+    /// C-1: waiver del gate de export — sin cuenta iCloud y sin huella CloudKit el marcador es
+    /// indeliverable Y prescindible, así que el paso 4 avanza sin exigir el export.
+    static func migrationMarkerExportWaived() {
+        logger.notice("CloudSyncMigration markerExportWaived — sin canal iCloud y sin huella CloudKit: marcador prescindible, cutover continúa")
+    }
+
+    /// C-1: observación del atasco del paso 4, con el reloj del tope. Se emite en CADA vuelta (no solo al
+    /// agotar el presupuesto) para que un atasco SISTÉMICO se vea en el dashboard antes de que nadie degrade.
+    static func migrationMarkerExportStalled(elapsedSeconds: Double, reason: String) {
+        logger.error("CloudSyncMigration markerExportStalled elapsed=\(Int(elapsedSeconds), privacy: .public)s reason=\(reason, privacy: .public)")
+    }
+
+    /// C-1: el presupuesto del paso 4 se agotó → abort LOCAL, el device vuelve a `.icloud`.
+    static func migrationCutoverAbortedToICloud() {
+        logger.error("CloudSyncMigration cutoverAborted — presupuesto del paso 4 agotado: device devuelto a .icloud, marcador borrado")
+    }
+
+    /// C-1: el par de storage está incompleto (`.cloud` + mirror-off sin armar) en una fase ESTABLE — el
+    /// motor NO arranca. Origen: escritura parcial del par o cierre de reversa a medias.
+    static func storageModePairViolation(phase: String) {
+        logger.error("CloudSyncRuntime storageModePairViolation phase=\(phase, privacy: .public) — .cloud con mirror ON en fase estable: motor BLOQUEADO")
+    }
+
+    /// A3 (D-A7): el modo efectivo dice nube pero ESTE proceso montó el store personal en `.icloud` — el
+    /// motor NO arranca hasta el relanzamiento. Estado ESPERADO y transitorio en el alta born-cloud (entre
+    /// la escritura del par y el relanzamiento asistido) y en la ventana del adopt; sostenido a lo largo de
+    /// varios arranques significaría que alguien escribe el par sin pedir el relanzamiento.
+    /// Sin canario de métrica a propósito: el camino normal lo emite, así que contarlo no distinguiría un
+    /// incidente de un alta sana.
+    static func runtimeBlockedByPersonalMountMismatch(phase: String) {
+        logger.notice("CloudSyncRuntime personalMountMismatch phase=\(phase, privacy: .public) — modo nube con el store personal montado en .icloud: motor BLOQUEADO hasta el relanzamiento")
+    }
+
+    /// w6 paso 4: flag `relaunchRequested` persistido. iOS no se auto-relanza — el relanzamiento asistido
+    /// con UI es I14; en DEBUG el panel indica MATAR Y RELANZAR. El proceso NO se mata solo.
+    static func migrationRelaunchRequested() {
+        logger.notice("CloudSyncMigration relaunchRequested — persiste flag; el proceso NO se mata solo (relaunch asistido = I14)")
+    }
+
+    /// w6/w8 (efecto de `done`): `migration_progress('complete')` OK. La capa de RED del líder (w8: drain
+    /// de History + push del residual) corrió ANTES de este complete; si rescató algo lo delata
+    /// `leaderOrphanReconciled` + su canario.
+    static func migrationReconcileDeferred() {
+        logger.notice("CloudSyncMigration cutoverComplete — complete OK (barrido de red del líder corrió antes)")
+    }
+
+    /// w8 (capa de RED del líder, §g.4 SERIO 1 v3): el barrido residual al entrar a `done` rescató writes
+    /// huérfanos de la ventana de cutover (drain de History + push). `count` > 0 = la ventana existió en la
+    /// práctica (el canario de telemetría acompaña). Sin PII (solo el conteo).
+    static func migrationLeaderOrphanReconciled(count: Int) {
+        logger.notice("CloudSyncMigration leaderOrphanReconciled count=\(count, privacy: .public) — la capa de red rescató writes de la ventana de cutover")
+    }
+
+    /// El efecto `.rollback` completó (pre-cutover el device ya estaba intacto — no-op observable; el
+    /// journal en `failedRollback` + los campos scoped limpiados por el runner son el estado final).
+    static func migrationRollbackCompleted() {
+        logger.notice("CloudSyncMigration rollbackCompleted — device intacto (el mirror nunca se apagó)")
+    }
+
+    /// Auto-cura del backfill (bug device 2026-07-10, residual A3 materializado): N filas VIVAS
+    /// compartían syncID (rebind viejo sobre anclas idénticas) y se re-acuñaron. >0 en un corpus real =
+    /// el residual A3 NO era tan raro como se asumió. Sin PII (solo el conteo).
+    static func identityCollisionHealed(count: Int) {
+        logger.notice("CloudSyncMigration identityCollisionHealed count=\(count, privacy: .public) — filas vivas con syncID compartido re-acuñadas")
+    }
+
+    /// El archivo del outbox de prefs existe y no se deja LEER (`PrefsOutboxError.readFailed`): no es corrupción, así que
+    /// nadie escribe encima y el paso se reintenta más tarde. `step` dice quién lo vio: `sync-cycle` (el ciclo de prefs
+    /// no hace push ni pull) o `enqueue` (el cambio de ese instante no se encola). No lo emiten los
+    /// `removeEntries`/`setPullCursor` del final del ciclo ni el drenaje iKV→outbox (solo cuenta `failures`), y ningún
+    /// test lo fija (el `Logger` no tiene sink). Sin PII.
+    static func prefsOutboxUnreadable(step: String) {
+        logger.notice("CloudSyncPrefs outboxUnreadable step=\(step, privacy: .public) — no se escribe encima")
+    }
+
+    /// w8 (DIFERIDOS #30 / §g.4 S8): el drenaje único iKV→outbox del cutover corrió en el device LÍDER.
+    /// `failures` > 0 = I/O del outbox falló para algunas keys → el sentinel NO se estampó y el próximo
+    /// boot reintenta (LWW absorbe el re-enqueue). Sin PII (solo conteos).
+    static func prefsCutoverDrained(count: Int, failures: Int) {
+        logger.notice("CloudSyncMigration prefsCutoverDrained count=\(count, privacy: .public) failures=\(failures, privacy: .public)")
+    }
+
+    /// #37 (H3): la reversa retiró los sentinels del drenaje iKV→outbox al persistir `.icloud`
+    /// (`.persistICloudMode`) — una RE-migración futura vuelve a drenar. Sin PII (solo el conteo).
+    static func reversePrefsDrainSentinelCleared(count: Int) {
+        logger.notice("CloudSyncReverse prefsDrainSentinelCleared count=\(count, privacy: .public) — re-migración futura re-drena iKV")
+    }
+
+    // MARK: Reversa (I11-2, §h nube→CloudKit) — sin PII (solo fases, conteos, motivos de transporte)
+
+    /// §h desatascador: `performReverseClaim` encontró OTRO device ya reverse-líder → el runner emite
+    /// `reverseOtherLeader(returnTo:)` y vuelve al origin (done/notStarted). v1 single-device.
+    static func reverseOtherLeader() {
+        logger.notice("CloudSyncReverse otherLeader — otro device es reverse-líder, vuelve al origin")
+    }
+
+    /// El servidor rechazó el claim de la reversa (`not_complete`, `migration_in_progress`, `no_profile`…) → vuelve al
+    /// origin con el porqué journaleado (ticket `reverse-claim-rejection-has-no-way-out-in-the-client`). `reason` es el
+    /// código del RPC: sin PII.
+    static func reverseClaimRejected(reason: String) {
+        logger.notice("CloudSyncReverse claimRejected reason=\(reason, privacy: .public) — vuelve al origin")
+    }
+
+    /// La vuelta a iCloud se paró en una fase ANTERIOR al montaje del espejo porque la sesión de la nube ya no vale
+    /// (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`). `phase` = `claim`/`drain`/`verify`/`freeze`:
+    /// sin PII. La fase sigue journaleada y retomable; lo que cambia es que la pantalla lo dice y ofrece volver a
+    /// entrar en vez de dejar la barra parada. Se emite en el FLANCO, no en cada re-kick de 30 s.
+    /// El sign-in que ofrece la tarjeta de la vuelta trajo OTRA cuenta y la vuelta NO se retomó (ticket
+    /// `reverse-before-mount-stays-stuck-with-an-expired-session`). Sin PII: ni el `sub` viejo ni el nuevo.
+    static func reverseSignInAccountMismatch() {
+        logger.notice("CloudSyncReverse signInAccountMismatch — otra cuenta, la vuelta NO se retoma")
+    }
+
+    /// El «Iniciar sesión» de la tarjeta de sincronización trajo OTRA cuenta que la del motor: esa sesión se cierra y nada se
+    /// reanuda (ticket `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Sin PII: ni el `sub` viejo ni el
+    /// nuevo.
+    static func syncSignInAccountMismatch() {
+        logger.notice("CloudSyncRuntime signInAccountMismatch — otra cuenta, la sesión se cierra y el sync NO se reanuda")
+    }
+
+    static func reverseBlockedByExpiredSession(phase: String) {
+        logger.notice(
+            "CloudSyncReverse blockedByExpiredSession phase=\(phase, privacy: .public) — pide volver a entrar")
+    }
+
+    /// §h.3 `deletingZombies`: el barrido tombstones-del-backend-vs-filas-vivas borró `count` filas vivas
+    /// que un re-import de CloudKit congelado había RESUCITADO (0 en el caso normal, token vigente → replay
+    /// del mirror cubre todo; load-bearing solo en el edge de token inválido). Sin PII (solo el conteo).
+    static func reverseZombiesSwept(count: Int) {
+        logger.notice("CloudSyncReverse zombiesSwept count=\(count, privacy: .public)")
+    }
+
+    /// §h.3 `rebindingUUIDs`: verificación (v1, sin deletes — el recordName≠UUID de dominio, S5) de las
+    /// identidades con `lastReboundAt` que aún portan una fila viva. `count` = rebinds verificados.
+    static func reverseRebindsVerified(count: Int) {
+        logger.notice("CloudSyncReverse rebindsVerified count=\(count, privacy: .public)")
+    }
+
+    /// §h.3 `dedupHealed`: AUTO-CURA (I11-4) de copias idénticas de Account/Tag. `count` = filas PERDEDORAS
+    /// fusionadas+borradas (0 = nada que curar, idempotente). Sin PII (solo el conteo).
+    static func reverseDuplicatesHealed(count: Int) {
+        logger.notice("CloudSyncReverse duplicatesHealed count=\(count, privacy: .public)")
+    }
+
+    /// §h `reverseUpload`: el muestreo CKIdentityCapture ve `count` filas aún sin drenar a CloudKit
+    /// (exportPending + noMetadata) → la reversa espera retomable. Diagnóstico para el panel si se atasca.
+    static func reverseUploadPending(count: Int) {
+        logger.notice("CloudSyncReverse uploadPending count=\(count, privacy: .public) — filas sin exportar aún, retomable")
+    }
+
+    /// El muestreo de la vuelta no pudo leer la metadata de CloudKit de NINGUNA fila (ticket
+    /// `reverse-upload-sample-reads-unreadable-rows-as-drained`): el SQLite no abre, faltan las tablas o columnas del
+    /// espejo, el mapa de entidades sale vacío, ningún identificador se resuelve o la consulta falla en todas. La
+    /// muestra es ilegible: ni cierra ni avanza. `reason` es un motivo fijo, `rows` cuántas filas se quedaron sin mirar.
+    static func reverseUploadSampleUnreadable(reason: String, rows: Int) {
+        logger.notice("CloudSyncReverse uploadSampleUnreadable reason=\(reason, privacy: .public) rows=\(rows, privacy: .public) — no se cierra la vuelta")
+    }
+
+    /// Filas del muestreo de la vuelta que salieron `failed` POR FILA (`no-zent`, `zone-fk-missing`…), agrupadas por
+    /// motivo. NO cuentan como pendientes: esto existe para medir en device cuáles aparecen antes de decidir si
+    /// deberían contar (ticket `reverse-upload-failed-rows-need-a-device-measurement`). Sin PII.
+    static func reverseUploadFailedRows(reasons: [String: Int]) {
+        let detail = reasons.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        logger.notice("CloudSyncReverse uploadFailedRows \(detail, privacy: .public) — fuera de la suma de pendientes")
+    }
+
+    /// Techo de `reverseUpload`: cada observación de la espera, con el reloj del último avance. `advanced` = la
+    /// cifra bajó de la más baja vista; `stalledSeconds` = tiempo SIN avanzar; `blocker` = por qué no drena, hasta
+    /// donde se sabe. Es lo que separa «va lento» de «no avanza» al leer un diagnóstico. `pending == -1` = la muestra no
+    /// pudo leer una tabla (`ReverseUploadStatus.unreadable`), que nunca cuenta como avance.
+    ///
+    /// **Los TRES relojes van en el rastro** (ticket `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`):
+    /// `definitive` es el que decide los 15 min y `cause` el que elige el texto de la salida. Con una sola cifra, una
+    /// salida no dejaba distinguir «tres horas con iCloud lleno» de «tres horas sin cuenta y un fallo al entrar», que es
+    /// justo lo que ese ticket vino a separar.
+    static func reverseUploadObserved(
+        pending: Int, stalledSeconds: Double, causeStalledSeconds: Double, definitiveStalledSeconds: Double,
+        advanced: Bool, blocker: String
+    ) {
+        logger.notice("CloudSyncReverse uploadObserved pending=\(pending, privacy: .public) stalledSeconds=\(Int(stalledSeconds), privacy: .public) cause=\(Int(causeStalledSeconds), privacy: .public)s definitive=\(Int(definitiveStalledSeconds), privacy: .public)s advanced=\(advanced, privacy: .public) blocker=\(blocker, privacy: .public)")
+    }
+
+    /// Techo de `reverseUpload`: la espera terminó SIN llegar a iCloud y la reversa vuelve al origen en modo nube.
+    /// `reason` = `ReverseAbortReason.rawValue` (`cancelled` si la persona lo pidió).
+    static func reverseUploadExited(reason: String) {
+        logger.notice("CloudSyncReverse uploadExited reason=\(reason, privacy: .public) — vuelta a la nube, mirror-off re-armado")
+    }
+
+    /// Salida de `reverseUpload`: el apagado del mirror quedó RE-ARMADO con `.cloud`. El proceso no se mata solo;
+    /// el siguiente arranque monta el store sin mirror.
+    static func reverseMirrorOffRearmed() {
+        logger.notice("CloudSyncReverse mirrorOffRearmed — .cloud + armado; relanzar para montar sin mirror")
+    }
+
+    /// §h efecto de cierre: `count` `CloudMigrationMarker` borrados del store personal (el mirror VIVO
+    /// exporta el delete). Idempotente (0 si ya no había marcador).
+    static func reverseMarkerDeleted(count: Int) {
+        logger.notice("CloudSyncReverse markerDeleted count=\(count, privacy: .public)")
+    }
+
+    /// §h efecto de cierre: el faro `cloudAccountLinked` se limpió del iCloud KV (device revirtió a iCloud).
+    static func reverseBeaconCleared() {
+        logger.notice("CloudSyncReverse beaconCleared")
+    }
+
+    /// D7 (§3.3.4.2): higiene post-borrado de cuenta — el faro iCloud-KV se limpió BEST-EFFORT tras el
+    /// GDPR delete (cierra el falso mismatch R9 de un sign-in posterior con otro provider). Sin PII.
+    static func accountDeletionBeaconCleared() {
+        logger.notice("CloudSyncAccountDeletion beaconCleared")
+    }
+
+    /// D7 (§3.3.4.2): higiene post-borrado — `count` `CloudMigrationMarker` locales borrados BEST-EFFORT.
+    /// En `.cloud` el mirror está OFF ⇒ NO se exporta a CloudKit (el file-wipe del boot borra el local; el
+    /// record CloudKit es residual documentado — R9 lee el FARO, ya limpiado arriba). Sin PII.
+    static func accountDeletionMarkerDeleted(count: Int) {
+        logger.notice("CloudSyncAccountDeletion markerDeleted count=\(count, privacy: .public)")
+    }
+
+    /// D7 (§3.3.4.2): la higiene del marcador lanzó — SWALLOWED (best-effort, jamás bloquea el cierre ni
+    /// el arm; invariante kill-safety (d)). El flujo sigue EXACTO como sin la higiene. Sin PII.
+    static func accountDeletionMarkerCleanupFailed() {
+        logger.error("CloudSyncAccountDeletion markerCleanupFailed — best-effort, flujo continúa")
+    }
+
+    /// §h efecto de cierre: `storageMode=.icloud` + `mirrorOffArmed=false` persistidos JUNTOS (invariante SERIO 1).
+    static func reverseModePersisted() {
+        logger.notice("CloudSyncReverse modePersisted — storageMode=.icloud + mirrorOffArmed=false (par)")
+    }
+
+    /// §h `mountMirrorAndRelaunch`: se DESARMÓ `mirrorOffArmed` (manteniendo `.cloud` → decisión iCloudMirror
+    /// al próximo launch) + se pidió relaunch asistido. iOS no se auto-relanza — el proceso NO se mata solo.
+    static func reverseRelaunchRequested() {
+        logger.notice("CloudSyncReverse relaunchRequested — mirror-off desarmado; el proceso NO se mata solo (relaunch asistido = I14)")
+    }
+
+    /// §h `deletingZombies`: no había fuente de `serverSeqCut` (ni marcador ni journal) → el barrido enumera
+    /// desde `since 0` (correcto, solo más caro). Canario de configuración, no de error.
+    static func reverseSeqCutFallbackZero() {
+        logger.notice("CloudSyncReverse seqCutFallbackZero — barrido desde since 0 (correcto, más caro)")
+    }
+
+    /// §h `reverseFreezeBackend` (I11-3): `reverse_freeze` OK — `profiles.reverse_frozen_at` estampado
+    /// (guard reverse-líder, idempotente). El backend dejó de ser fuente de verdad para este device.
+    static func reverseBackendFrozen() {
+        logger.notice("CloudSyncReverse backendFrozen — reverse_frozen_at estampado (guard líder OK)")
+    }
+
+    /// §h `reverseFreezeBackend` (I11-3): `reverse_freeze` NO aplicó (otherLeader/rejected/401/red) →
+    /// el runner corta retomable SIN evento. `reason` sin PII.
+    static func reverseFreezeRejected(reason: String) {
+        logger.notice("CloudSyncReverse freezeRejected reason=\(reason, privacy: .public) — corta retomable")
+    }
+
+    /// §h cuarteto de cierre (I11-3): `reverse_complete` OK — `reverse_in_progress=false` +
+    /// `reverted_at` estampado server-side (`migrated_at` INTACTO, §h.4). La reversa cerró en el backend.
+    static func reverseCompleteConfirmed() {
+        logger.notice("CloudSyncReverse completeConfirmed — rip=false + reverted_at estampado (migrated_at intacto)")
+    }
+
+    /// §h cuarteto de cierre (I11-3): `reverse_complete` NO aplicó → el efecto THROWEA y queda
+    /// journaled-pendiente retomable (patrón del complete de la ida). `reason` sin PII.
+    static func reverseCompleteRejected(reason: String) {
+        logger.notice("CloudSyncReverse completeRejected reason=\(reason, privacy: .public) — journaled, retomable")
+    }
+
+    /// §h `reverseRollback` (I11-3): `reverse_abort` OK — backend DES-congelado (`rip=false` +
+    /// `reverse_frozen_at=null`; `reverted_at` queda null). El estado local ya era terminal estable.
+    /// Una fase PREVIA al montaje del espejo lleva parada `stalledSeconds` sin cambiar de fase (ticket
+    /// `reverse-before-mount-has-no-way-to-abandon-the-return`). `blocker` es el motivo que no se arregla
+    /// esperando, si lo hay —y solo entonces entra el presupuesto corto—; `nil` = red o sesión.
+    ///
+    /// **Los TRES relojes van en el rastro**, y los dos últimos son lo que deja leer un techo que venció: `cause` es
+    /// lo que la fase lleva parada bajo ese mismo motivo (ticket
+    /// `reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last`), y `definitive` lo que lleva parada bajo
+    /// CUALQUIER motivo definitivo, que es contra el que se mide el corto desde
+    /// `alternating-definitive-causes-never-reach-the-short-ceiling`. Sin él, dos motivos turnándose dejaban en el log
+    /// `cause=30s` seguido de una salida, sin nada que dijera por qué salió. Con una sola cifra, una salida a las
+    /// tres horas no dejaba distinguir «tres horas de 403» de «tres horas sin cobertura y un fallo local al
+    /// final», que es exactamente lo que ese ticket vino a separar. Sin PII: los cuatro son códigos y números del
+    /// build.
+    static func reversePreMountStalled(
+        phase: String, stalledSeconds: Double, causeStalledSeconds: Double, definitiveStalledSeconds: Double,
+        blocker: String?
+    ) {
+        let seconds = Int(stalledSeconds)
+        let causeSeconds = Int(causeStalledSeconds)
+        let definitiveSeconds = Int(definitiveStalledSeconds)
+        logger.notice(
+            "CloudSyncReverse preMountStalled phase=\(phase, privacy: .public) stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s definitive=\(definitiveSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+    }
+
+    /// La vuelta salió de una fase previa al montaje y volvió a su origen en modo nube: por su techo o porque la
+    /// persona tocó «Cancelar y seguir en la nube».
+    static func reversePreMountExited(phase: String, reason: String) {
+        logger.notice(
+            "CloudSyncReverse preMountExited phase=\(phase, privacy: .public) reason=\(reason, privacy: .public) — vuelve al origen en modo nube")
+    }
+
+    /// La subida del snapshot de la ida no confirmó ninguna página en esta pasada (ticket
+    /// `snapshot-upload-has-no-ceiling-and-no-way-out`). `stalled` = reloj de AVANCE, `cause` = reloj de CAUSA (elige el
+    /// copy), `definitive` = reloj de «cualquier motivo definitivo», el que decide los 15 min desde
+    /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`. Sin él, dos motivos turnándose
+    /// dejaban en el log `cause=30s` seguido de una salida, sin nada que dijera por qué salió.
+    static func snapshotUploadStalled(
+        stalledSeconds: Double, causeStalledSeconds: Double, definitiveStalledSeconds: Double, blocker: String?
+    ) {
+        let seconds = Int(stalledSeconds)
+        let causeSeconds = Int(causeStalledSeconds)
+        let definitiveSeconds = Int(definitiveStalledSeconds)
+        logger.notice(
+            "CloudSyncMigration snapshotStalled stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s definitive=\(definitiveSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+    }
+
+    /// La subida del snapshot salió de su fase: por su techo (a `failedRollback`) o porque la persona canceló (a
+    /// `notStarted`, `reason=cancelled`).
+    static func snapshotUploadExited(reason: String) {
+        logger.notice(
+            "CloudSyncMigration snapshotExited reason=\(reason, privacy: .public) — el teléfono sigue intacto en iCloud")
+    }
+
+    /// Uno de los tres pasos de la ida sin cifra que baje (`claim`, `identity`, `cutoverPending`) no avanzó en esta pasada
+    /// (ticket `forward-migration-steps-have-no-ceiling-and-no-exit`). Los dos relojes del techo, en segundos.
+    static func forwardStepStalled(step: String, stalledSeconds: Double, causeStalledSeconds: Double, blocker: String?) {
+        let seconds = Int(stalledSeconds)
+        let causeSeconds = Int(causeStalledSeconds)
+        logger.notice(
+            "CloudSyncMigration forwardStepStalled step=\(step, privacy: .public) stalled=\(seconds, privacy: .public)s cause=\(causeSeconds, privacy: .public)s blocker=\(blocker ?? "-", privacy: .public)")
+    }
+
+    /// Uno de esos tres pasos salió: por su techo (a `failedRollback`) o porque la persona canceló (a `notStarted`,
+    /// `reason=cancelled`).
+    static func forwardStepExited(step: String, reason: String) {
+        logger.notice(
+            "CloudSyncMigration forwardStepExited step=\(step, privacy: .public) reason=\(reason, privacy: .public) — el teléfono sigue intacto en iCloud")
+    }
+
+    /// El `reverse_abort` best-effort de una salida previa al montaje no salió. La salida SIGUE EN PIE —está
+    /// journaleada— y no queda ningún efecto pendiente: la reserva del servidor se queda puesta hasta que caduque su
+    /// lease, y el re-claim de este mismo dispositivo es idempotente-ok.
+    static func reverseAbortBestEffortFailed(reason: String) {
+        logger.notice(
+            "CloudSyncReverse abortBestEffortFailed reason=\(reason, privacy: .public) — la salida sigue en pie")
+    }
+
+    static func reverseAborted() {
+        logger.notice("CloudSyncReverse aborted — backend des-congelado (rip=false, frozen_at=null)")
+    }
+
+    /// §h `reverseRollback` (I11-3) — RUIDOSO: el `reverse_abort` fue RECHAZADO (lease usurpado /
+    /// rejected) pero el efecto se COMPLETA igual (decisión I11-3: el estado local ya es terminal estable;
+    /// re-lanzar perpetuo repetiría el bug-class del rollback de la ida, device 2026-07-10). El backend
+    /// puede quedar `rip=true` — un `reverse_claim` posterior es idempotente-ok. `reason` sin PII.
+    static func reverseAbortRejectedButCompleted(reason: String) {
+        logger.error("CloudSyncReverse abortRejectedButCompleted reason=\(reason, privacy: .public) — efecto completado igual; el backend puede quedar rip=true")
+    }
+
+    /// §h residual (canario v1 SIN reparación): metadata CloudKit huérfana (record cuyo delete se perdió del
+    /// History por purga + token que no expiró) → zombie invisible localmente. HOY inalcanzable (la purga
+    /// jamás corrió en `.cloud`, flags DARK). El SCAN de side-table YA está cableado
+    /// (`CKIdentityCapture.scanOrphanMetadata`, read-only); la REPARACIÓN queda diferida al diseño
+    /// multi-device (¿re-subir tombstone? ¿delete CKRecord dirigido? — D4). Sin PII (solo el conteo).
+    static func reverseOrphanMetadata(count: Int) {
+        logger.notice("CloudSyncReverse orphanMetadata count=\(count, privacy: .public) — canario sin reparación v1 (scan cableado)")
+    }
+
+    // MARK: Heartbeat del lease (I14-pre, residual pendiente #3) — best-effort, sin PII
+
+    /// I14-pre: `migration_progress('heartbeat')` OK — `profiles.migration_updated_at` refrescado durante un
+    /// paso largo (upload/drain) → el lease de 60 min sigue vivo, el líder no queda usurpable a mitad.
+    static func migrationLeaseHeartbeat() {
+        logger.notice("CloudSyncMigration leaseHeartbeat — migration_updated_at refrescado (lease vivo)")
+    }
+
+    /// El latido NO aplicó (otherLeader/rejected). En la vuelta (`sendLeaseHeartbeatIfDue`) es best-effort y no corta el
+    /// paso; en la ida lo emite también la puerta del lease (`confirmMigrationLease`), y ahí `otherLeader` y
+    /// `not_in_progress` SÍ sacan al líder (su propio rastro: `migrationLeaseLost`). `reason` sin PII.
+    static func migrationLeaseHeartbeatRejected(reason: String) {
+        logger.notice("CloudSyncMigration leaseHeartbeatRejected reason=\(reason, privacy: .public)")
+    }
+
+    /// La puerta del lease de la ida no pudo confirmarlo y la pasada no sube (ticket
+    /// `displaced-migration-leader-keeps-uploading-after-a-takeover`). `reason` = el desenlace del latido, sin PII.
+    static func migrationLeaseUnconfirmed(reason: String) {
+        logger.notice("CloudSyncMigration leaseUnconfirmed reason=\(reason, privacy: .public) — la pasada no sube")
+    }
+
+    /// El push de la migración paró ANTES de un chunk porque su llamador dejó de poder confirmar el lease
+    /// (`SyncPushClient.push(_:continueWhile:)`). `sent` = deltas ya enviados; `pending` = del lote.
+    static func pushStoppedBeforeChunk(sent: Int, pending: Int) {
+        logger.notice("CloudSyncMigration pushStoppedBeforeChunk sent=\(sent, privacy: .public) pending=\(pending, privacy: .public) — la confirmación del lease ya no vale")
+    }
+
+    /// El líder de la ida perdió el lease (`other_leader`/`not_in_progress`) y SALE sin subir nada más. `step` = dónde se
+    /// vio (`upload` | `verify`).
+    static func migrationLeaseLost(step: String) {
+        logger.notice("CloudSyncMigration leaseLost step=\(step, privacy: .public) — otro dispositivo lidera, sale a failedRollback")
+    }
+
+    /// El líder volvió al reconcile de `done` sin el lease y averiguó quién lleva la migración (ticket
+    /// `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`). `outcome` = `finishedHere` |
+    /// `finishedElsewhere` | `otherLeads` | `retaken`. En ninguno sube nada sin el lease.
+    static func migrationPostCutoverLeaseResolved(outcome: String) {
+        logger.notice("CloudSyncMigration postCutoverLease outcome=\(outcome, privacy: .public)")
+    }
+
+    // MARK: Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK) — sin PII (solo conteos)
+
+    /// DIFERIDOS #30: el adopt de un device `.icloud`→`.cloud` rescató `count` filas huérfanas de la ventana
+    /// de cutover (identidad local ∉ backend → upload full-row). `identityAssigned` = filas sin syncID a las
+    /// que el backfill acuñó identidad fresca (todas caen a huérfanas). >0 = la ventana multi-device existió
+    /// en la práctica (esperado raro; el canario de telemetría acompaña). Sin PII (solo conteos).
+    static func adoptOrphanReconciled(count: Int, identityAssigned: Int) {
+        logger.notice("CloudSyncAdopt orphanReconciled count=\(count, privacy: .public) identityAssigned=\(identityAssigned, privacy: .public) — el adoptador rescató writes de la ventana de cutover")
+    }
+
+    /// El adopt tenía filas que subir y el store local no tiene ni el marcador de esa cuenta ni filas suyas: no sube nada (ticket
+    /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin PII: solo el conteo.
+    static func adoptReconcileLineageUnproven(pending: Int) {
+        logger.notice("CloudSyncAdopt reconcileLineageUnproven pending=\(pending, privacy: .public) — sin marcador de la cuenta ni filas suyas en local; upload bloqueado (linaje)")
+    }
+
+    /// El adopt corre con el espejo adjunto, sin nada local que pida linaje, y CloudKit dice que ese iCloud tiene filas que lo
+    /// pedirían, o las dijo y el primer import aún no terminó: espera a que el import las baje antes de decidir (ticket
+    /// `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`). `reason` = `found:<tipo de registro>` o
+    /// `importNotSettled`. Sin PII.
+    static func adoptReconcileAwaitingICloudCorpus(reason: String) {
+        logger.notice("CloudSyncAdopt reconcileAwaitingICloudCorpus reason=\(reason, privacy: .public) — el store no tiene aún el corpus de iCloud; el linaje se decide cuando llegue")
+    }
+
+    /// El adopt con el espejo adjunto y el store sin nada que pida linaje no pudo preguntarle a CloudKit qué hay en ese
+    /// iCloud: no entra sin saberlo, reintenta (mismo ticket). Sin PII: el motivo.
+    static func adoptReconcileICloudCorpusCheckFailed(reason: String) {
+        logger.notice("CloudSyncAdopt reconcileICloudCorpusCheckFailed reason=\(reason, privacy: .public) — sin respuesta de CloudKit; el adopt reintenta")
+    }
+
+    /// El adopt comparte filas con la cuenta pero a una tabla que sube le faltan filas vivas de la cuenta: las identidades
+    /// del líder no llegaron y subir podría duplicar (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
+    /// Sin PII: nombre de tabla y conteos.
+    static func adoptReconcileAccountRowsMissing(table: String, missing: Int, pending: Int) {
+        logger.notice("CloudSyncAdopt reconcileAccountRowsMissing table=\(table, privacy: .public) missing=\(missing, privacy: .public) pending=\(pending, privacy: .public) — sin marcador; faltan filas de la cuenta, upload bloqueado (linaje)")
+    }
+
+    /// El adopt entró sin marcador de la cuenta y con todas sus filas vivas aquí, y ESCRIBIÓ el suyo para los teléfonos que
+    /// lleguen después (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`). Escrito en local:
+    /// si llega a iCloud lo dice el canario `cloudAdoptMarkerRelayed` al terminar la espera. Solo conteos.
+    static func adoptMarkerRelayed(liveRows: Int) {
+        logger.notice("CloudSyncAdopt markerRelayed live=\(liveRows, privacy: .public) — sin marcador de la cuenta y cobertura total; marcador relevado escrito en local")
+    }
+
+    /// El adopt no relevó el marcador o no lo vio llegar a iCloud: `coverage` (falta alguna fila viva de la cuenta),
+    /// `unreadable`, `save`, `exportUnreadable` (no se dejó leer para esperarlo) o `exportUnconfirmed` (venció la espera). Sin PII.
+    static func adoptMarkerRelaySkipped(reason: String) {
+        logger.notice("CloudSyncAdopt markerRelaySkipped reason=\(reason, privacy: .public)")
+    }
+
+    /// El adopt probó el linaje sin marcador, por filas vivas de la cuenta que ya están en local (ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`): el líder pasó el cutover del servidor y aún no
+    /// exportó su marcador, o lo escribió sin sesión. Solo conteos, sin PII.
+    static func adoptReconcileLineageProvenBySharedRows(sharedRows: Int, pending: Int) {
+        logger.notice("CloudSyncAdopt reconcileLineageProvenBySharedRows shared=\(sharedRows, privacy: .public) pending=\(pending, privacy: .public) — sin marcador; linaje por filas compartidas")
+    }
+
+    /// La comprobación de linaje de la IDA (ticket `migration-takeover-uploads-without-a-lineage-check`): un claim `created`
+    /// sobre una cuenta que ya recibió datos personales —el relevo de un líder callado— cruza las filas vivas del backend con
+    /// el inventario local antes de subir. `verdict` = `proven` · `noLiveRows` · `unproven`. Sin PII: solo conteos.
+    static func forwardLineageChecked(verdict: String, liveRows: Int, sharedRows: Int) {
+        logger.notice("CloudSyncMigration forwardLineage verdict=\(verdict, privacy: .public) live=\(liveRows, privacy: .public) shared=\(sharedRows, privacy: .public)")
+    }
+
+    /// La prueba de cobertura casó filas locales sin identidad del backend con filas de la cuenta que aquí faltaban, por su
+    /// clave de linaje, y les dio esa identidad (ticket `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`):
+    /// son las del líder cuyas identidades no llegaron por iCloud. Solo el conteo, sin PII.
+    static func lineageRowsRebound(count: Int) {
+        logger.notice("CloudSyncMigration lineageRowsRebound count=\(count, privacy: .public) — filas del líder re-identificadas por su clave de linaje")
+    }
+
+    /// El espejo de iCloud había cambiado por debajo la identidad de `count` filas de `entity` que este teléfono ya había
+    /// identificado para la ida, y se les devolvió la suya (ticket
+    /// `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`). Lo provoca la exportación tardía de un líder
+    /// desplazado. Solo el tipo y el conteo, sin PII.
+    static func migrationRelayIdentityRestored(entity: String, count: Int) {
+        logger.notice("CloudSyncMigration relayIdentityRestored entity=\(entity, privacy: .public) count=\(count, privacy: .public) — identidades que el espejo cambió por debajo, devueltas a las de este teléfono")
+    }
+
+    /// No se pudieron leer los metadatos de CloudKit de las filas candidatas a esa restauración. `tolerated` = el reconcile
+    /// de `done`, que sigue sin restaurar; si no, el paso lo cuenta como avería local.
+    static func migrationRelayIdentityRecordsUnreadable(tolerated: Bool) {
+        logger.notice("CloudSyncMigration relayIdentityRecordsUnreadable tolerated=\(tolerated, privacy: .public)")
+    }
+
+    /// No se pudo guardar la restauración de identidades de arriba; se deshizo y el paso lo cuenta como avería local.
+    static func migrationRelayIdentityRestoreFailed(errorType: String) {
+        logger.notice("CloudSyncMigration relayIdentityRestoreFailed error=\(errorType, privacy: .public)")
+    }
+
+    /// Un borrado de una fila que el espejo había re-identificado salió del drain con la identidad que ESTE teléfono le
+    /// dio, la que el backend conoce, y no con la del líder (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`).
+    /// Solo el tipo, sin PII.
+    /// El drain no tradujo lo que el espejo importó, en la ventana del adopt, de filas que el backend ya conocía (ticket
+    /// `adopt-window-late-imports-overwrite-newer-cloud-edits`): el pull trae su versión.
+    static func adoptLateImportSkipped(entity: String, count: Int) {
+        logger.notice("CloudSyncMigration adoptLateImportSkipped entity=\(entity, privacy: .public) count=\(count, privacy: .public) — importado tarde por el espejo de filas que el backend ya conoce: manda el backend")
+    }
+
+    /// Altas que el drain que cierra la ventana del adopt SUBE con una identidad que el backend no conocía, en tablas que
+    /// piden linaje (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`). `detail` =
+    /// `<tipo>|<autor>|<camino>`, sin PII. Canario, no política: suben igual.
+    static func adoptLateImportUnproven(detail: String, count: Int) {
+        logger.notice("CloudSyncMigration adoptLateImportUnproven detail=\(detail, privacy: .public) count=\(count, privacy: .public) — altas sin linaje en la ventana del adopt: suben")
+    }
+
+    static func relayTombstoneTranslated(entity: String) {
+        logger.notice("CloudSyncMigration relayTombstoneTranslated entity=\(entity, privacy: .public) — tombstone con la identidad que el backend conoce")
+    }
+
+    /// No se pudo leer el testigo o la fila viva que decide esa traducción: el drain no consume la transacción y la
+    /// reintenta en la vuelta siguiente.
+    static func relayTombstoneReadFailed(errorType: String) {
+        logger.notice("CloudSyncMigration relayTombstoneReadFailed error=\(errorType, privacy: .public)")
+    }
+
+    /// El registro fila → identidad (`RelayIdentityLedger`) no se pudo leer, escribir o borrar en `step`
+    /// (`seed` | `drain` | `retire`). Sin él, el borrado sale como antes del ticket: sin traducir.
+    static func relayIdentityLedgerUnavailable(step: String, errorType: String) {
+        logger.notice("CloudSyncMigration relayIdentityLedgerUnavailable step=\(step, privacy: .public) error=\(errorType, privacy: .public)")
+    }
+
+    /// El relevo comparte filas con la cuenta pero a `table`, que tiene algo que subir, le faltan `missing` filas vivas del
+    /// backend: las identidades del líder callado no llegaron por iCloud y subir duplicaría (ticket
+    /// `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`). Solo conteos, sin PII.
+    static func forwardLineageAccountRowsMissing(table: String, missing: Int, sharedRows: Int) {
+        logger.notice("CloudSyncMigration forwardLineage verdict=accountRowsMissing table=\(table, privacy: .public) missing=\(missing, privacy: .public) shared=\(sharedRows, privacy: .public) — no se sube: faltan filas de la cuenta")
+    }
+
+    /// DIFERIDOS #30 (guard anti mass-upload): la enumeración del backend llegó VACÍA (verificada completa
+    /// contra merkle) teniendo el device huérfanas locales y/o filas sin identidad → NO se sube ni se muta
+    /// nada — el guard corre ANTES del backfill (un adopt legítimo `existing_stable` implica backend POBLADO;
+    /// backend realmente vacío = decisión de producto de I14, y el costo del falso positivo sería subir el
+    /// corpus entero). >0 = revisar sesión/pull. Sin PII (solo el conteo de filas descartadas).
+    static func adoptReconcileAbortedEmptyBackend(orphans: Int) {
+        logger.notice("CloudSyncAdopt reconcileAbortedEmptyBackend orphans=\(orphans, privacy: .public) — enumeración del backend vacía; upload abortado (anti mass-upload)")
+    }
+
+    /// DIFERIDOS #30 (SERIO 1 del review): la enumeración del backend resultó INCOMPLETA — el count de filas
+    /// VIVAS del Merkle (`/sync/merkle`) para una tabla es MAYOR que lo enumerado por el pull read-only
+    /// (página vacía prematura / paginación no-monótona con 200 OK). Sin esta verificación positiva, filas
+    /// no-enumeradas lucirían huérfanas y su re-upload con HLC fresco PISARÍA contenido más nuevo del
+    /// backend. → `.transient` retomable (sesgo a abortar, jamás a proceder). Sin PII (tabla + conteos).
+    static func adoptReconcileEnumerationIncomplete(table: String, expected: Int, got: Int) {
+        logger.notice("CloudSyncAdopt enumerationIncomplete table=\(table, privacy: .public) expected=\(expected, privacy: .public) got=\(got, privacy: .public) — merkle declara más vivas que lo enumerado; transient retomable")
+    }
+}
+
+// MARK: - CloudSyncEngine
+
+@MainActor
+final class CloudSyncEngine {
+
+    // MARK: Constantes de captura
+
+    /// Autor del CONTEXTO con el que el motor persiste sus propias filas de outbox. La captura DESCARTA
+    /// las transacciones de History con este autor → anti-auto-captura (echo suppression): cuando el
+    /// apply de cambios remotos (I8) escriba entidades personales bajo este autor, no se re-capturarán.
+    static let outboxSaveAuthor = "CloudSyncOutbox"
+
+    /// Los 16 entity names del store PERSONAL. La captura DESCARTA todo cambio cuyo entity name NO esté
+    /// aquí — anti-fuga de Grupos. El History token es por-CONTAINER (personal + grupos + sync-meta en
+    /// un solo ModelContainer), así que este filtro es PERMANENTE (no una optimización): sin él, los
+    /// cambios de los `Split*` (store de grupos) se colarían al backend personal.
+    ///
+    /// Las 16 tienen identidad de sync y se TRADUCEN a outbox (I12 cableó las 10 restantes sobre las
+    /// 6 originales de I3 — ver `SyncEntityType` y `EntityEmissionMap`). Anclado contra
+    /// `personalSchema` por `CloudSyncSchemaParityTests`.
+    static let personalEntityNames: Set<String> = [
+        "Category",
+        "Subcategory",
+        "Tag",
+        "Account",
+        "TransactionItem",
+        "Budget",
+        "ExchangeRate",
+        "FavoritePayment",
+        "ScheduledPayment",
+        "InboxDraft",
+        "MerchantMemory",
+        "NotificationItem",
+        "CashFlowPlan",
+        "CashFlowLine",
+        "CashFlowOverride",
+        "GroupBridgePreference",
+    ]
+
+    /// Los 17 entity names del STORE personal — `personalEntityNames` + `CloudMigrationMarker`. Sirve para
+    /// UNA cosa distinta de aquél: decidir si una transacción de History PERTENECE al store personal, que es
+    /// dónde puede anclarse el high-water del token. No es lo mismo que "se traduce a outbox": el marcador de
+    /// migración vive en el store personal (lo espeja CloudKit) pero NO se sincroniza al backend, así que
+    /// `personalEntityNames` lo excluye a propósito (`engine_personalEntityNames_matchPersonalSchema`) — y
+    /// usar ese conjunto como detector de store dejaría sin ancla una transacción que SÍ es del store bueno.
+    ///
+    /// Toda transacción del store personal cambia al menos una de estas 17 y ninguna de otro store lo hace
+    /// (es exactamente el `personalSchema`) — invariante pinneado por
+    /// `engine_personalStoreEntityNames_matchPersonalSchema_disjointFromOthers`.
+    static let personalStoreEntityNames: Set<String> =
+        personalEntityNames.union(["CloudMigrationMarker"])
+
+    // MARK: Clasificación del reason de tombstone (§c.1) — 100% DRAIN-SIDE
+
+    /// Entity names PADRE de una cascada MANUAL cuyos hijos syncables se borran en el MISMO `save()`
+    /// (= misma transacción de History). Si una transacción borra uno de estos, los tombstones de las
+    /// 6 entidades syncables producidos en ESA transacción se clasifican `cascade`.
+    ///
+    /// Inventario VERIFICADO contra `EntityDeletionService.swift` (2026-07-07):
+    ///   • `ScheduledPayment` — `deleteScheduledPayment` borra `InboxDraft` (línea 253) y
+    ///     `TransactionItem` (línea 274) y luego el pago (línea 285) en UN solo `save()`. Ambos hijos
+    ///     SON syncables → `cascade`. ÚNICO padre verificado.
+    /// EXCLUIDOS (no borran hijos syncables o no son deletes):
+    ///   • `deleteTag` (Tag NO es syncable; los TX/drafts/favoritos se ACTUALIZAN, no se borran → upsert).
+    ///   • `deleteCategory`/`deleteSubcategory`/`deleteAccount`/`deleteBudget` (los hijos de Account/
+    ///     Subcategory son `.nullify`, no deletes de syncables; el propio Category/Account/Subcategory
+    ///     borrado es el delete de nivel superior pedido por el usuario, no una cascada).
+    ///   • `SubcategoryTransferViewModel.deleteTransactions` (borra TX sin borrar un padre en el mismo
+    ///     save → bulk del usuario = `user`).
+    ///   • `CategoryDeduplicationService` (I9 → `dedup`) / `DataWipeService` (I12 → `wipe`): sin señal de
+    ///     call-site hoy → caen en `user`/`cascade`. Comentario-guardia: I9/I12 marcarán un author
+    ///     dedicado y esta clasificación se afinará entonces (el reason es metadata de auditoría — la
+    ///     clasificación conservadora NO compromete correctness: el backend mantiene `deleted=true` igual).
+    ///
+    /// I12 commit B: `CashFlowPlan` y `CashFlowLine` AHORA son syncables (identidad = `id`) y cascadean
+    /// deletes a syncables (`CashFlowPlan .cascade→ CashFlowLine .cascade→ CashFlowOverride`) → se añaden
+    /// como cascade-parents (mismo trato conservador que `ScheduledPayment`; audit-only, correctness-neutral).
+    static let cascadeParentEntityNames: Set<String> = [
+        "ScheduledPayment",
+        "CashFlowPlan",
+        "CashFlowLine",
+    ]
+
+    /// Authors cuyas transacciones se clasifican `migration`. Bucket por COMPLETITUD (§c.1): hoy solo
+    /// `outboxSaveAuthor` caería aquí, pero sus transacciones ya se DESCARTAN por echo-suppression
+    /// antes de clasificar → de facto inalcanzable. Reservado para el author dedicado de la migración
+    /// (I10). El delete-vs-cascade se decide DESPUÉS de este gate.
+    static let migrationAuthors: Set<String> = [
+        outboxSaveAuthor,
+    ]
+
+    // MARK: Estado
+
+    /// Reloj HLC en-memoria de esta instancia (fresco; persistencia + `receive()` en I8).
+    private var clock: HLCClock
+
+    /// Contador de vueltas de drain (para el breadcrumb).
+    private var drainSeq = 0
+
+    /// Número de gaps de identidad observados (delete sin syncID preservado). Expuesto para tests
+    /// (el logger no es asertable). Acumula a lo largo de la vida de la instancia.
+    private(set) var identityGapCount = 0
+
+    /// D4 (I12): nº de UPDATEs que mutaron el keypath de IDENTIDAD de una entidad con identidad = UUID
+    /// persistido (regeneración detectada; §b.4/DIFERIDOS #29). Expuesto para tests (el logger no es
+    /// asertable). Acumula a lo largo de la vida de la instancia.
+    private(set) var identityMutationObservedCount = 0
+
+    // MARK: Guard del token de History (HALLAZGO 2, corrida device reversa 2026-07-11)
+
+    /// El token del cursor ya se validó (o recuperó) contra el mount ACTUAL en esta sesión (instancia). Una
+    /// vez `true`, el guard de validación NO vuelve a correr (cero coste en steady-state). Empieza `false` en
+    /// cada instancia fresca (relaunch) → re-valida en el PRIMER drain de la sesión, que es cuando puede
+    /// detectarse un token acuñado en un mount previo. No se persiste (es estado de sesión).
+    /// `private(set)` para que los tests asserten la "no-validación única" (T5). Solo el motor lo escribe.
+    private(set) var historyTokenValidated = false
+
+    /// Slack fijo (segundos) del fetch por timestamp del guard: re-lee la frontera `[lastDrainedTxAt-60s, …]`
+    /// para no perder txs de la ventana del último drain. Opera sobre `cursor.lastDrainedTxAt` (dato
+    /// PERSISTIDO) — NUNCA sobre `Date()`/`Calendar.current`. La frontera re-leída la absorbe el dedup por
+    /// `(syncID,hlc,op)` + LWW HLC-idempotente en el backend (documentado en `recoverIfHistoryTokenIncomparable`).
+    /// SUPUESTO documentado (M1 del review adversarial): las txs del mount NUEVO llevan timestamps del
+    /// wall-clock del device ≥ `lastDrainedTxAt` (History es append-only y el drain estampa el ancla con la
+    /// última tx consumida) — una tx nueva >60s MÁS ANTIGUA que el ancla solo podría existir con un rewind
+    /// de reloj mayor al slack durante la ventana del remount; fuera del alcance de esta red (residual
+    /// aceptado, mismo orden de improbabilidad que N1 timestamp-exacto).
+    private static let historyTokenSlack: TimeInterval = 60
+
+    /// HALLAZGO 2: nº de veces que el guard detectó un token no-comparable cross-mount (par del breadcrumb
+    /// `historyTokenIncomparable`). Expuesto para tests (el logger no es asertable).
+    private(set) var historyTokenIncomparableCount = 0
+
+    /// HALLAZGO 2: nº de veces que el guard re-ancló el token al mount actual (par del breadcrumb
+    /// `historyTokenRecovered`). Expuesto para tests.
+    private(set) var historyTokenRecoveredCount = 0
+
+    /// DIFERIDOS #33: nº de re-escaneos ACOTADOS por token roto (par del breadcrumb
+    /// `historyTokenBrokenBoundedRescan`, incluye ventana vacía). Expuesto para tests.
+    private(set) var historyTokenBrokenBoundedCount = 0
+
+    /// DIFERIDOS #33: nº de full-rescans DEGRADADOS por token roto (par del breadcrumb
+    /// `historyTokenBrokenFullRescan` — reasons no-anchor / bounded-fetch-failed). Expuesto para tests.
+    private(set) var historyTokenBrokenFullRescanCount = 0
+
+    /// DIFERIDOS #33: nº de re-anclajes tras un re-escaneo acotado (par del breadcrumb
+    /// `historyTokenBrokenReanchored`). Expuesto para tests.
+    private(set) var historyTokenBrokenReanchoredCount = 0
+
+    // MARK: Espejo del outbox (A1, §d.5)
+
+    /// Espejo App Group del `SyncOutbox` (durabilidad ante lightweight migration). `nil` = mirroring
+    /// desactivado (I8d DARK / tests que no lo ejercitan). El wiring de producción —resolverlo del App
+    /// Group + inyectar `currentUserID`— llega en I9.
+    var outboxMirror: SyncOutboxMirror?
+
+    /// El `sub` de la sesión actual — sella cada entry del espejo (owner-scoping M1). Con `outboxMirror`
+    /// puesto pero `currentUserID` nil, NO se espeja (no se puede owner-scopear una entry sin identidad).
+    var currentUserID: String?
+
+    // MARK: Coalescing "one in-flight, one queued"
+
+    private var isDraining = false
+    private var pendingDrain = false
+
+    /// **¿Terminó la última vuelta del drain con la traducción CORTADA?** Es la mitad que el `Bool` de `drainOnce` no dice a
+    /// propósito: esa vuelta persiste lo que tradujo y devuelve `true`, pero lo que viene detrás del corte se queda solo en el
+    /// History. La lee `CloudSyncRuntime` para su testigo del ciclo (`stoppedWithUnfinishedCapture(for:)`, ticket
+    /// `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`): un corte que se repite en cada
+    /// vuelta deja el cierre en la nube atascado igual que un drain que aborta. `performDrain` la baja al entrar, así que
+    /// describe siempre la última vuelta que corrió de verdad.
+    private(set) var lastDrainCutTranslation = false
+
+    /// Expuesto para el guard D-2 de `pullAndApplyOnce` (extensión `SyncApplyEngine`): nunca aplicar
+    /// deltas remotos con un drain EN CURSO (History sin drenar → laundering en el re-drain).
+    var isDrainInProgress: Bool { isDraining }
+
+    /// I8f-3 (guard A-3 de la verificación Merkle): `true` solo si el ÚLTIMO `pullAndApplyOnce` terminó
+    /// `.completed` (cola agotada). Un pull incompleto → divergencia ESPERADA → el verificador se salta.
+    /// Lo escribe SOLO `pullAndApplyOnce` (internal para que los tests puedan simular el estado).
+    var lastPullCycleCompleted = false
+
+    // MARK: Gate de quiescencia de reconcilers (I9, §G)
+
+    /// Gate opcional para los saves de autor NORMAL de `runPostPullReconcilers` (REQUISITO I9 anotado en
+    /// `pullAndApplyOnce`). `nil` = comportamiento actual (corren siempre — tests intactos). Cuando el
+    /// runtime lo instala (`{ coordinator.isImportQuiescent }`), un ciclo con `pagesApplied > 0` pero
+    /// import NO quieto DIFIERE los reconcilers (`pendingReconcile = true`) en vez de saveear sobre un
+    /// grafo a medio importar → los reintenta al inicio de un ciclo futuro cuando el gate abra (no se
+    /// pierde el repair). `internal`: lo lee/escribe la extensión `SyncApplyEngine` (otro archivo).
+    var reconcilerQuiescenceGate: (() -> Bool)?
+
+    /// Bandera en memoria: hay un `runPostPullReconcilers` diferido por quiescencia esperando reintento.
+    /// La consume `pullAndApplyOnce` al inicio del pase de reconcilers. Un kill pierde esta bandera (los
+    /// reconcilers son idempotentes) → el AJUSTE review corre `runStartupReconcilersIfQuiescent` en el
+    /// arranque del runtime para cerrar ese hueco. `internal` (cross-file con `SyncApplyEngine`).
+    var pendingReconcile = false
+
+    // MARK: Seams de test
+
+    /// Cuando `true`, `drainOnce` NO avanza el token del cursor tras persistir el outbox — simula un
+    /// kill entre el save del outbox y el avance del token. SOLO para tests.
+    var _testSuppressTokenAdvance = false
+
+    /// Cuando `true`, `applyPage` LANZA al final del `saveWithAuthor` (tras las mutaciones, antes del
+    /// commit) → simula un crash: nada se persiste, el cursor NO avanza (D-5, atomicidad). SOLO tests.
+    var _testThrowOnApplySave = false
+
+    /// Cuando no es `nil`, esa lectura del apply LANZA como si la base no se dejara leer (ticket
+    /// `apply-overwrites-a-pending-local-write-without-its-guards`). SOLO tests.
+    var _testThrowOnApplyRead: ApplyGuardRead?
+
+    /// Cuando `true`, el save del outbox del drain LANZA tras insertar las filas y los relojes, antes del
+    /// commit (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`: el rollback). SOLO tests.
+    var _testThrowOnDrainOutboxSave = false
+
+    /// Cuando `true`, el save del CURSOR del drain (avance normal del token, paso 7) LANZA tras mutar el cursor,
+    /// con las filas del outbox ya en disco. SOLO tests.
+    var _testThrowOnDrainCursorSave = false
+
+    /// Hace que el estampado del HLC lance al traducir, como un año fuera de rango: es lo único que aún puede cortar la
+    /// traducción desde que el drain estampa con `sendLocal` (ticket `personal-clock-rollback-wedges-the-drain-forever`), y
+    /// en un iPhone no se alcanza. Para seguir fijando qué hace la vuelta cortada (no re-ancla por encima del corte). SOLO tests.
+    var _testThrowOnClockStamp = false
+
+    /// DIFERIDOS #33 (T13): cuando `true`, el fetch por TOKEN del drain lanza — simula el token
+    /// decodable cuyo `fetchHistory(predicate: token >)` revienta (migración destructiva). SOLO tests.
+    var _testThrowOnTokenHistoryFetch = false
+
+    /// DIFERIDOS #33 (T12): cuando `true`, el fetch ACOTADO por timestamp del fallback lanza — fuerza
+    /// la semántica (b) (degradación a full-rescan). SOLO tests.
+    var _testThrowOnBoundedHistoryFetch = false
+
+    /// DIFERIDOS #29 (SERIO 3): override de la fase de migración que consulta el guard de `emitIdentityRemap`
+    /// (default `nil` → `MigrationPhaseStore.shared.currentPhaseRead`, el SSOT real). SOLO para tests (simular una
+    /// migración/reversa EN CURSO sin journal real).
+    var _testMigrationPhaseOverride: MigrationPhase?
+
+    /// Dónde lee el drain el registro fila → identidad del relevo (`RelayIdentityLedger`, ticket
+    /// `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`). El mismo fichero que escribe el executor de la
+    /// migración: los dos motores (el suyo y el del runtime) tienen que traducir igual. Los tests lo apuntan a su directorio.
+    var relayIdentityLedgerURL: URL = RelayIdentityLedger.defaultURL
+
+    /// El registro leído en ESTA vuelta del drain: `nil` = aún no se leyó. Se lee perezoso, con el primer borrado de un tipo
+    /// de identidad acuñada, y un fichero ilegible se lee vacío (con rastro) para no repetir el intento en cada borrado.
+    private var drainRelayLedger: [String: UUID]?
+
+    /// El contexto de la vuelta del drain en curso, para las lecturas de la traducción del tombstone. Solo vive dentro de
+    /// `performDrain`.
+    private var drainContext: ModelContext?
+
+    /// Lo que el backend conocía al terminar el adopt (`RelayIdentityLedger.loadAdoptBackendKnown`), leído en ESTA vuelta del
+    /// drain: `nil` = aún no se leyó. Perezoso, con el primer cambio que lo necesite; ilegible se lee vacío, con rastro.
+    private var drainAdoptBackendKnown: Set<UUID>?
+    /// La lista de arriba existía y NO se dejó leer en esta vuelta. Con ella el canario de las altas sin linaje no cuenta: sin
+    /// la lista no sabe cuáles conocía el backend.
+    private var drainAdoptBackendKnownUnreadable = false
+
+    /// La ventana del adopt para el canario de las altas que el backend no conocía (ticket
+    /// `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`), leída una vez por vuelta: `nil` = aún no se
+    /// miró; `.some(nil)` = no hay ventana que contar; `.some(camino)` = sí, y por qué camino entró el adopt.
+    private var drainAdoptUnprovenRoute: String??
+    /// El ancla del cursor al EMPEZAR esta vuelta (`lastDrainedTxAt`): en el primer drain tras el remonte es la del paso 3 del
+    /// adopt. El canario no cuenta lo que no sea posterior: un re-anclaje del token relee un margen anterior, y ahí están las
+    /// huérfanas que el adopt ya subió con prueba de linaje.
+    private var drainAdoptWindowFloor: Date?
+
+    /// Los cambios de la transacción en curso que no se tradujeron por ser del backend, por tipo. Pasan a
+    /// `drainAdoptSkipped` solo cuando la transacción se consume: una cortada (el HLC no se pudo estampar) se re-lee entera.
+    private var drainTxAdoptSkipped: [String: Int] = [:]
+    private var drainAdoptSkipped: [String: Int] = [:]
+    /// Las altas de la transacción en curso que el canario de las altas sin linaje cuenta, por `<tipo>|<autor>|<camino>`. Con
+    /// el mismo ciclo que `drainTxAdoptSkipped`: pasan a `drainAdoptUnproven` solo si la transacción se consume.
+    private var drainTxAdoptUnproven: [String: Int] = [:]
+    private var drainAdoptUnproven: [String: Int] = [:]
+
+    // MARK: Init
+
+    init(nodeID: NodeID = NodeID.generate()) {
+        self.clock = HLCClock(nodeID: nodeID)
+    }
+
+    // MARK: - API pública (coalescing)
+
+    /// Ejecuta UNA vuelta de captura. Re-entrante: si ya hay una vuelta en curso, marca una pendiente
+    /// (a lo sumo una) y retorna; la vuelta en curso la ejecuta al terminar (§a.4). Bajo `@MainActor`
+    /// síncrono la re-entrada real no ocurre hoy, pero el patrón queda listo para el wiring de I9/I12.
+    ///
+    /// Devuelve si la vuelta TERMINÓ: `false` = abortó (rollback hecho, token sin mover) y hay cambios locales que
+    /// quizá no estén en el outbox (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`). Quien
+    /// lea el outbox para decidir algo —el guard D-1 de `applyPage`, «no queda nada que subir» de la migración—
+    /// no puede seguir con `false`: con el rollback, las filas de esta vuelta ya no están ni sucias en el contexto.
+    /// Una llamada re-entrante devuelve `false` (no drenó ella). `true` no cubre la traducción cortada
+    /// (`translationAborted`): esa vuelta persiste lo que tradujo y es la que ya existía. Desde
+    /// `personal-clock-rollback-wedges-the-drain-forever` la deriva del reloj ya no la corta (el drain estampa con
+    /// `HLCClock.sendLocal`); solo un año fuera de 0001–9999.
+    @discardableResult
+    func drainOnce(context: ModelContext) -> Bool {
+        guard !isDraining else {
+            pendingDrain = true
+            return false
+        }
+        isDraining = true
+        defer { isDraining = false }
+        var completed = false
+        repeat {
+            pendingDrain = false
+            completed = performDrain(context: context)
+        } while pendingDrain
+        return completed
+    }
+
+    // MARK: - Núcleo del drain
+
+    private func performDrain(context: ModelContext) -> Bool {
+        drainSeq += 1
+        lastDrainCutTranslation = false
+        drainContext = context
+        drainRelayLedger = nil
+        drainAdoptBackendKnown = nil
+        drainAdoptBackendKnownUnreadable = false
+        drainAdoptUnprovenRoute = nil
+        drainAdoptWindowFloor = nil
+        drainAdoptSkipped = [:]
+        drainAdoptUnproven = [:]
+        defer {
+            drainContext = nil
+            drainRelayLedger = nil
+            drainAdoptBackendKnown = nil
+            drainAdoptBackendKnownUnreadable = false
+            drainAdoptUnprovenRoute = nil
+            drainAdoptWindowFloor = nil
+            drainAdoptSkipped = [:]
+            drainAdoptUnproven = [:]
+        }
+        do {
+            // 1) Cursor + token persistido. D-3: cargar el reloj persistido (send parte del estado
+            //    durable — necesario para el lockstep de resumibilidad tras integrar remotos vía apply).
+            let cursor = try loadOrCreateCursor(context)
+            loadClock(from: cursor)
+            let tokenState = decodeToken(cursor.historyTokenData)
+            drainAdoptWindowFloor = cursor.lastDrainedTxAt
+
+            // 2) Barrido defensivo: asigna syncID a las filas vivas de los 6 tipos que aún no lo tengan
+            //    (SIN autor especial → la próxima vuelta captura ese cambio), y construye los índices
+            //    persistentID→modelo que usa la traducción. Save con autor por DEFECTO (no es outbox).
+            let lookups = try sweepAndBuildLookups(context)
+
+            // 3) History posterior al token — o, con token ROTO (in-decodificable / fetch que lanza),
+            //    el fallback ACOTADO por `lastDrainedTxAt` de DIFERIDOS #33 (rama decidida por
+            //    `HistoryTokenFallbackLogic`; ver doc-comment de `fetchHistoryResolvingToken`).
+            let fetchOutcome = try fetchHistoryResolvingToken(
+                tokenState, cursor: cursor, context: context)
+            let tokenTxns = fetchOutcome.txns
+
+            // 3-bis) HALLAZGO 2 — guard de validación del token por TIMESTAMP con revalidación continua.
+            //    Red redundante barata: si el token del cursor (acuñado en un mount previo) dejó de
+            //    surfacear txs nuevas del mount actual (no-comparabilidad cross-mount), re-procesa la
+            //    UNIÓN de ambos fetches y re-ancla. `guard.txns` = tokenTxns en steady-state; la unión al
+            //    recuperar. `guard.reanchor` != nil ⇒ recovery (se re-ancla SIEMPRE a la última tx de la
+            //    unión en el paso 7). Ver doc-comment de `recoverIfHistoryTokenIncomparable`.
+            //    DIFERIDOS #33: con token ROTO el guard se SALTA — "comparabilidad" de un token que ni
+            //    decodifica no significa nada, y su fetch por timestamp sería idéntico al que la rama
+            //    acotada acaba de hacer (doble fetch inútil); el re-anclaje lo trae `fetchOutcome`.
+            let tokenGuard: TokenGuardResult
+            if fetchOutcome.tokenWasBroken {
+                tokenGuard = TokenGuardResult(txns: tokenTxns)
+            } else {
+                tokenGuard = recoverIfHistoryTokenIncomparable(
+                    cursor: cursor, tokenTxns: tokenTxns, context: context)
+            }
+            if tokenGuard.validatedByCompare { historyTokenValidated = true }
+            let txns = tokenGuard.txns
+
+            // 4) Pre-siembra del dedup con las filas de outbox YA existentes (kill-replay: absorbe las
+            //    filas persistidas en un drain previo cuyo token no llegó a avanzar).
+            var seen = try existingOutboxKeys(context)
+
+            // 5) Traducción, transacción a transacción y en orden. `advancedToken` = high-water del STORE
+            //    PERSONAL consumido (nil = no se consumió nada de ese store esta vuelta). Dos criterios
+            //    INDEPENDIENTES, y el bucle de abajo explica por qué: las transacciones que escribió el
+            //    propio motor (`author == outboxSaveAuthor`: outbox + cursor + el apply del pull) no se
+            //    TRADUCEN —anti-auto-captura— pero sí avanzan el high-water si son del store personal; las
+            //    de OTRO store no avanzan nada (el token es POR-STORE). Convergencia: un drain ocioso re-lee
+            //    solo sus propios writes (0 filas) y, como el cursor vive en `syncMetaSchema`, escribirlo no
+            //    produce ninguna transacción del store personal → no hay nada nuevo que anclar la vuelta
+            //    siguiente. Si el estampado del HLC lanza, NO se consume esa transacción (el high-water se
+            //    queda antes de ella) → se reintenta al próximo drain. Desde que se estampa con `sendLocal` ni la
+            //    deriva ni el contador agotado lanzan; solo un año fuera de 0001–9999. `advancedTxAt` =
+            //    timestamp de esa última tx (HALLAZGO 2: ancla comparable cross-mount, persistida en 7).
+            var rows: [PendingOutboxRow] = []
+            var advancedToken: DefaultHistoryToken?
+            var advancedTxAt: Date?
+            // SERIO 1 del review adversarial #33: si la traducción ABORTA a mitad (el estampado del HLC lanza),
+            // NINGÚN re-anclaje (ni el del guard ni el de token roto) puede saltar por encima de las
+            // txs externas no consumidas — el paso 7 los suprime y cae al avance normal (`advancedToken`
+            // = última tx consumida, el punto de retry seguro de la traducción cortada).
+            var translationAborted = false
+            for tx in txns {
+                // Anti-auto-captura (echo suppression): los writes del propio motor NO se TRADUCEN — el
+                // apply de un pull no se re-emite al backend como si fuera una edición local. Ojo: esto
+                // decide QUÉ SE EMITE, no dónde se ancla el high-water (bloque de abajo).
+                if tx.author != Self.outboxSaveAuthor {
+                    // Clasificación del reason de tombstone: UNA vez por transacción (el reason depende del
+                    // CONJUNTO de deletes de la transacción, no del change individual). §c.1.
+                    let tombstoneReason = Self.classifyTombstoneReason(tx)
+                    var txRows: [PendingOutboxRow] = []
+                    drainTxAdoptSkipped = [:]
+                    drainTxAdoptUnproven = [:]
+                    do {
+                        for change in tx.changes {
+                            let entityName = change.changedPersistentIdentifier.entityName
+                            // Anti-fuga de Grupos: solo entidades del store personal.
+                            guard Self.personalEntityNames.contains(entityName) else { continue }
+                            try translate(change, entityName: entityName, tx: tx,
+                                          tombstoneReason: tombstoneReason,
+                                          lookups: lookups, rows: &txRows, seen: &seen)
+                        }
+                    } catch let failure as RelayTombstoneReadFailure {
+                        // No se pudo leer lo que decide el tombstone de una fila re-identificada: la vuelta ENTERA
+                        // aborta (`false`), no solo esta transacción. Quien lee el outbox después de un drain lo
+                        // trata como avería local; con `true` y el borrado sin capturar, el guard D-1 del pull
+                        // dejaba volver la fila (review del ticket).
+                        throw failure
+                    } catch {
+                        // El estampado del HLC lanzó: abortar en la FRONTERA de esta transacción. No consumimos
+                        // `tx` (advancedToken se queda antes de ella) ni sus filas parciales. Desde que se estampa con
+                        // `sendLocal` ni la deriva ni el contador agotado cortan aquí; solo un año fuera de 0001–9999.
+                        #if DEBUG
+                        print("CloudSyncEngine: el HLC no se pudo estampar al traducir tx \(tx.token): \(error)")
+                        #endif
+                        translationAborted = true
+                        break
+                    }
+                    rows.append(contentsOf: txRows)
+                    drainAdoptSkipped.merge(drainTxAdoptSkipped, uniquingKeysWith: +)
+                    drainAdoptUnproven.merge(drainTxAdoptUnproven, uniquingKeysWith: +)
+                }
+                // El high-water SOLO se mueve con transacciones del STORE PERSONAL, y SÍ se mueve con el
+                // ECO. Son dos razones DISTINTAS para no avanzar y confundirlas en una sola línea costó el
+                // defecto: «es mía, no la re-emitas» habla de TRADUCIR; «no es de mi store» habla de ANCLAR.
+                //
+                // Por qué avanzar con el eco: en un device que solo RECIBE, lo ÚNICO que escribe en su store
+                // personal es `SyncApplyEngine.applyPage`, que persiste bajo `outboxSaveAuthor` (:249) ⇒ con
+                // el eco descartado también aquí, `advancedToken` se quedaba nil, NINGUNA de las tres ramas
+                // de abajo escribía el cursor y el fetch re-barría una ventana que CRECÍA una transacción
+                // por página aplicada, indefinidamente y en silencio (medido 2026-08-02: `avanzo=false` en
+                // las 4 vueltas, token nunca escrito). En producción muerde menos que en Grupos porque casi
+                // cualquier actividad personal —y las escrituras del canal de Grupos, que para el personal
+                // son EXTERNAS— cortan la racha; no porque el defecto no esté.
+                //
+                // Por qué el guard de store es OBLIGATORIO aquí y no bastaba copiar el fix de Grupos: el
+                // bucle que temía el comentario original («cada avance escribiría el cursor → loop») en este
+                // canal EXISTE, medido el 2026-08-02. `DefaultHistoryToken` es POR-STORE, el cursor vive en
+                // `syncMetaSchema`, y sin acotar el ancla la ventana cross-store del bootstrap (full-rescan)
+                // deja como última transacción la del propio cursor ⇒ el ancla cae en `syncMeta` ⇒ escribir
+                // el cursor genera ahí una transacción NUEVA que el drain siguiente vuelve a ver ⇒ avanza ⇒
+                // escribe, sin fin (sonda de 5 vueltas, ventana de 1 tx en todas; el test pinea 3). Y el daño
+                // mayor no es el bucle: anclado en `syncMeta` el store PERSONAL queda OCULTO ⇒ punto fijo, el
+                // canal ciego a su propio store. Acotado al store personal el bucle desaparece por el mismo
+                // mecanismo que en Grupos: el cursor y el outbox viven en OTRO store, así que avanzar no
+                // produce ninguna transacción del store personal y la vuelta siguiente no tiene qué anclar.
+                // Las dos mitades están pinneadas en `PersonalDrainHistoryStoreAnchorTests`.
+                guard Self.isPersonalStoreTransaction(tx) else { continue }
+                // Transacción del store personal consumida (produzca filas o no — p.ej. anti-fuga,
+                // syncID-only, o un gap): avanza el high-water para no re-procesarla (evita recontar gaps).
+                advancedToken = tx.token
+                advancedTxAt = tx.timestamp
+            }
+
+            // 6) Persistir las filas del outbox (autor del motor → anti-auto-captura + no re-lectura).
+            //    A1 (§d.5): el espejo App Group `.atomic` va AQUÍ, ANTES del insert+save, en el MISMO
+            //    cuerpo síncrono sin `await` (regla Q3 del spike S-A1) — así autosave no puede invertir
+            //    el orden fila-durable-sin-espejo.
+            //    ROLLBACK (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`): si el save
+            //    del outbox o el del cursor (paso 7) lanzan, sus filas y el cursor se quedaban sucios en el
+            //    contexto y un autosave posterior los flusheaba bajo el autor por DEFECTO. Se deshacen aquí y
+            //    NO en el `catch` general: desde el barrido del paso 2 —que guarda todo lo pendiente— lo único
+            //    sucio en el contexto es de este drain, mientras que un rollback por un fallo del propio
+            //    barrido borraría ediciones del usuario sin guardar. El token no avanza (el paso 7 no llegó a
+            //    commitear) y el próximo drain re-traduce la misma ventana.
+            do {
+                if !rows.isEmpty {
+                    // (0) LEER los relojes ANTES de mutar nada: si no se dejan leer, el drain se corta aquí,
+                    //     sin espejo, sin filas y con el token donde estaba.
+                    let unitClocks = try prepareUnitClocks(for: rows, context: context)
+                    // (1) ESPEJO PRIMERO (best-effort, per-fila, síncrono): si falla, la History es backup
+                    //     redundante y el canario de divergencia lo delata → NO abortamos el drain. Requiere
+                    //     `outboxMirror` + `currentUserID` (nil en I8d DARK → no-op).
+                    writeMirror(rows: rows)
+                    // (2) insertar (3) save. I8f-2 (D-A): el `SyncUnitClock` se actualiza en el MISMO save
+                    //     que la fila de outbox (upsert = unidades emitidas → HLC acuñado; tombstone =
+                    //     borrar la fila de clock — higiene) → crash-atómico con la cola.
+                    do {
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            for row in rows { context.insert(row.makeModel()) }
+                            unitClocks.apply(context: context)
+                            if _testThrowOnDrainOutboxSave { throw DrainTestCrash.outboxSave }
+                        }
+                    } catch {
+                        // Estas filas no llegaron a disco: su espejo tampoco puede quedarse, o
+                        // `rehydrateOutboxFromMirror` (diff incondicional en cada arranque) las re-insertaría y
+                        // subiría. SOLO aquí: si lo que falla es el save del cursor, las filas ya están en disco.
+                        unwriteMirror(rows: rows)
+                        throw error
+                    }
+                }
+
+                // 7) Avanzar el token SOLO tras persistir el outbox (crash entre 6 y 7 → el re-drain re-crea
+                //    idempotente por el dedup). El save del cursor lleva `outboxSaveAuthor` → no se re-lee.
+                //    Suprimible en tests (kill). D-3: el reloj se PERSISTE en el MISMO save que avanza el token
+                //    (crash → ambos revierten juntos → replay determinista). HALLAZGO 2: `lastDrainedTxAt` se
+                //    persiste ATÓMICAMENTE con el token (misma transacción) → el ancla comparable cross-mount
+                //    nunca queda desincronizada del token.
+                //    SERIO 1 del review adversarial #33 (aplica a AMBOS re-anclajes — el gemelo del guard
+                //    tenía el mismo defecto latente): los reanchor apuntan a la última tx de la ventana/unión
+                //    CRUDA, calculada ANTES de traducir — con `translationAborted` (el estampado lanzó a mitad),
+                //    re-anclar saltaría las txs externas entre el break y el final SIN haberlas emitido →
+                //    quedarían con timestamp ≤ ancla nueva, invisibles para siempre (token-fetch, fallback Y
+                //    guard) = pérdida silenciosa. En abort se cae al avance normal (última tx CONSUMIDA — el
+                //    punto de retry de la traducción cortada); si nada se consumió, no se guarda nada y el
+                //    próximo drain reintenta entero.
+                if !_testSuppressTokenAdvance {
+                    if let reanchor = tokenGuard.reanchor, !translationAborted {
+                        // RECOVERY: el token era no-comparable cross-mount → re-anclar a la última tx de la
+                        //    UNIÓN **del store personal**, AUNQUE sea del motor (`author == outboxSaveAuthor`):
+                        //    para re-anclar basta un token del mount ACTUAL, y el filtro de emisión —que sí
+                        //    descarta el motor— es independiente del avance del cursor. Sin esto el token quedaría
+                        //    en el mount viejo. Lo que NO es independiente es el STORE: el ancla la acota
+                        //    `recoverIfHistoryTokenIncomparable` (el token es por-store; anclar en `syncMeta`
+                        //    reintroduce el punto fijo que este guard deshace) ⇒ mismo criterio que el paso 5.
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            cursor.historyTokenData = try encodeToken(reanchor.token)
+                            cursor.lastDrainedTxAt = reanchor.txAt
+                            cursor.clockLatestHLC = clock.latest?.description
+                        }
+                        historyTokenValidated = true
+                        historyTokenRecoveredCount += 1
+                        CloudSyncBreadcrumb.historyTokenRecovered()
+                    } else if let reanchor = fetchOutcome.brokenReanchor, !translationAborted {
+                        // DIFERIDOS #33: el token estaba ROTO y la rama acotada trajo ventana con ≥1 tx del
+                        //    store personal → re-anclar a la ÚLTIMA de ellas (motor incluido — misma
+                        //    justificación que el reanchor del guard: para sanar basta un token del mount
+                        //    actual; el filtro de emisión del paso 5 es independiente, el de STORE no —lo
+                        //    acota `executeBrokenTokenBranch`, porque ese fetch es por TIMESTAMP y por tanto
+                        //    cross-store). Precede a `advancedToken` a propósito: anclar más atrás dejaría
+                        //    transacciones por delante que cada drain re-leería. Atomicidad token+ancla+reloj
+                        //    idéntica a las otras dos ramas.
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            cursor.historyTokenData = try encodeToken(reanchor.token)
+                            cursor.lastDrainedTxAt = reanchor.txAt
+                            cursor.clockLatestHLC = clock.latest?.description
+                        }
+                        historyTokenValidated = true
+                        historyTokenBrokenReanchoredCount += 1
+                        CloudSyncBreadcrumb.historyTokenBrokenReanchored()
+                    } else if let advancedToken {
+                        //    Avance normal: SOLO si se consumió ≥1 transacción del STORE PERSONAL (eco incluido —
+                        //    ver el bloque del paso 5). Bundling seguro: todo estampado de esta vuelta ocurrió
+                        //    al traducir una tx externa, y toda tx traducida es de ese store (muro anti-fuga
+                        //    `personalEntityNames` ⊂ `personalStoreEntityNames`) ⇒ también fijó `advancedToken`.
+                        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                            cursor.historyTokenData = try encodeToken(advancedToken)
+                            cursor.lastDrainedTxAt = advancedTxAt
+                            cursor.clockLatestHLC = clock.latest?.description
+                            if _testThrowOnDrainCursorSave { throw DrainTestCrash.cursorSave }
+                        }
+                        // Outcome (b): consumir ≥1 tx externa re-ancla el token al mount actual → validado.
+                        historyTokenValidated = true
+                    }
+                }
+            } catch {
+                context.rollback()
+                throw error
+            }
+
+            // Count SOLO para el breadcrumb de diagnóstico. Sin `try?` que silencie (regla inviolable):
+            // do/catch con fallback a `rows.count` (nunca aborta el drain por un fallo de conteo).
+            let pending: Int
+            do {
+                pending = try context.fetchCount(FetchDescriptor<SyncOutbox>())
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine: fetchCount(SyncOutbox) para breadcrumb falló: \(error)")
+                #endif
+                pending = rows.count
+            }
+            CloudSyncBreadcrumb.drain(seq: drainSeq, pending: pending)
+            for (entity, count) in drainAdoptSkipped.sorted(by: { $0.key < $1.key }) {
+                CloudSyncBreadcrumb.adoptLateImportSkipped(entity: entity, count: count)
+                MetricsService.cloudAdoptLateImportSkipped(entity: entity, count: count)
+            }
+            for (detail, count) in drainAdoptUnproven.sorted(by: { $0.key < $1.key }) {
+                CloudSyncBreadcrumb.adoptLateImportUnproven(detail: detail, count: count)
+            }
+            for (detail, count) in Self.adoptUnprovenCanaryDetails(drainAdoptUnproven).sorted(by: { $0.key < $1.key }) {
+                MetricsService.cloudAdoptLateImportUnproven(detail: detail, count: count)
+            }
+            if !translationAborted { retireRelayIdentityLedgerIfFinished() }
+            lastDrainCutTranslation = translationAborted
+            return true
+        } catch {
+            CloudSyncBreadcrumb.drainAborted(errorType: String(describing: type(of: error)))
+            #if DEBUG
+            print("CloudSyncEngine: drain error: \(error)")
+            #endif
+            return false
+        }
+    }
+
+    // MARK: - Ediciones sin capturar (solo lectura)
+
+    /// **¿Hay ediciones del store PERSONAL en el History que ningún drain ha capturado?** Solo LEE: ni crea el cursor, ni
+    /// barre, ni guarda — es lo que el cierre de sesión puede preguntar con el candado del dominio cerrado, donde el drain no
+    /// puede correr porque guarda en el store principal (ticket `sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate`).
+    ///
+    /// Mismo criterio que la traducción del drain, en grueso: transacciones que el drain siguiente leería, del store
+    /// personal, que no escribió el propio motor y que tocan alguna de sus entidades. Es más ancho que lo que el drain
+    /// emitiría (un cambio que solo asigna `syncID` cuenta aquí), y es la dirección segura: su consumidor bloquea, no borra.
+    ///
+    /// **La ventana es la del paso 3 del drain** (`fetchHistoryResolvingToken`), con su misma tabla
+    /// (`HistoryTokenFallbackLogic`), pero sin su telemetría ni su re-anclaje: fetch por token; y con el token roto —no
+    /// decodifica, o su fetch lanza porque la purga se llevó su transacción—, el re-escaneo acotado por el ancla
+    /// (`lastDrainedTxAt` − slack). Hasta el 2026-09-26 un token roto era `nil` sin más, y la purga de cada ciclo lo
+    /// rompía: el cierre con motor que pregunta esto después del ciclo se habría quedado bloqueado siempre (ticket
+    /// `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`). Lo que la frontera del slack re-lee ya consumido
+    /// puede dar un «sí» de más, y solo dura hasta el siguiente drain, que re-ancla el token. **Y el paso 3-bis también**:
+    /// mientras ningún drain haya validado el token en este proceso (`historyTokenValidated`), suma lo posterior al ancla,
+    /// porque un token de otro mount excluye lo nuevo sin lanzar.
+    ///
+    /// `nil` = no se pudo saber (un fetch que lanza). Quien decida con esto lo trata como «sí».
+    func hasUncapturedPersonalChanges(context: ModelContext) -> Bool? {
+        do {
+            return try !uncapturedPersonalTransactions(context: context).isEmpty
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: Error leyendo el History sin capturar: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// **Los cambios del History que ningún drain ha capturado, uno por clave** — la misma ventana y el mismo filtro que
+    /// `hasUncapturedPersonalChanges`, contados. Es lo que el cierre en la nube enseña y deja aceptar perder cuando el drain
+    /// no termina en ninguna vuelta (ticket `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy`):
+    /// esos cambios no llegan nunca al outbox, así que contar solo sus filas dejaba fuera justo lo que se perdería.
+    ///
+    /// **La clave es POR CAMBIO, no por objeto** (`store|transacción|cambio`): una edición posterior al aviso es otra
+    /// transacción, así que no queda cubierta por lo aceptado y el aviso vuelve con la cifra nueva — el molde de las filas
+    /// del outbox (`clientMutationID`). Solo cuentan los cambios de entidades del store personal, como la sonda; un cambio
+    /// que solo asigna `syncID` cuenta igual, y la frontera del respaldo del token puede re-leer alguno ya consumido: las dos
+    /// cosas cuentan de más, que es la dirección segura (se enseña más de lo que se perdería, nunca menos).
+    ///
+    /// `nil` = no se pudo leer. Quien decida con esto lo trata como «no se pudo contar».
+    func uncapturedPersonalChangeKeys(context: ModelContext) -> Set<String>? {
+        do {
+            var keys = Set<String>()
+            for tx in try uncapturedPersonalTransactions(context: context) {
+                for (index, change) in tx.changes.enumerated()
+                where Self.personalEntityNames.contains(change.changedPersistentIdentifier.entityName) {
+                    keys.insert(Self.uncapturedChangeKey(tx: tx, change: change, index: index))
+                }
+            }
+            return keys
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: Error contando el History sin capturar: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// La clave estable de un cambio del History: el `changeIdentifier` de Core Data, que es único en su store y no cambia
+    /// entre lecturas. Si el tipo no fuera el de `DefaultHistory*` (`Int64`), cae a la posición dentro de su transacción,
+    /// que es igual de estable para una transacción ya escrita.
+    nonisolated static func uncapturedChangeKey(tx: DefaultHistoryTransaction, change: HistoryChange, index: Int) -> String {
+        let changeID: Int64?
+        switch change {
+        case .insert(let insert): changeID = insert.changeIdentifier as? Int64
+        case .update(let update): changeID = update.changeIdentifier as? Int64
+        case .delete(let delete): changeID = delete.changeIdentifier as? Int64
+        @unknown default: changeID = nil  // un tipo de cambio nuevo cae a la posición, igual de estable
+        }
+        let suffix = changeID.map { "c\($0)" } ?? "i\(index)"
+        return "\(tx.storeIdentifier)|\(tx.transactionIdentifier)|\(suffix)"
+    }
+
+    /// Las transacciones de la ventana del drain siguiente que la sonda cuenta como «sin capturar»: del store personal en
+    /// grueso, que no escribió el propio motor y que tocan alguna de sus entidades. LANZA si un fetch lanza.
+    private func uncapturedPersonalTransactions(context: ModelContext) throws -> [DefaultHistoryTransaction] {
+        do {
+            var cursorDescriptor = FetchDescriptor<SyncCursor>()
+            cursorDescriptor.fetchLimit = 1
+            let cursor = try context.fetch(cursorDescriptor).first
+            let anchor = cursor?.lastDrainedTxAt
+            let txns: [DefaultHistoryTransaction]
+            switch decodeToken(cursor?.historyTokenData) {
+            case .valid(let token):
+                do {
+                    let byToken = try context.fetchHistory(
+                        HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token }))
+                    // El paso 3-bis del drain (`recoverIfHistoryTokenIncomparable`): hasta que un drain valide el token en
+                    // este proceso, puede venir de otro mount y excluir en silencio lo nuevo. Mismo criterio que el guard:
+                    // solo sin validar y con ancla, y lo nuevo es lo POSTERIOR al ancla (lo consumido cae en o antes).
+                    if !historyTokenValidated, let anchor {
+                        txns = byToken + (try context.fetchHistory(
+                            HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > anchor })))
+                    } else {
+                        txns = byToken
+                    }
+                } catch {
+                    // El drain re-decide como token roto (`fetchHistoryResolvingToken`); la sonda, igual.
+                    txns = try uncapturedProbeBrokenWindow(anchor: anchor, context: context)
+                }
+            case .absent:
+                txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            case .broken:
+                txns = try uncapturedProbeBrokenWindow(anchor: anchor, context: context)
+            }
+            return txns.filter { tx in
+                tx.author != Self.outboxSaveAuthor
+                    && tx.changes.contains { Self.personalEntityNames.contains($0.changedPersistentIdentifier.entityName) }
+            }
+        }
+    }
+
+    /// La ventana del token roto para la sonda: la rama que `HistoryTokenFallbackLogic` decide para el drain, sin su
+    /// degradación (b) —si el fetch acotado lanza, la sonda no sabe y devuelve `nil` por el `catch` de su llamador—.
+    private func uncapturedProbeBrokenWindow(anchor: Date?, context: ModelContext) throws -> [DefaultHistoryTransaction] {
+        switch HistoryTokenFallbackLogic.decide(tokenState: .broken, lastDrainedTxAt: anchor, slack: Self.historyTokenSlack) {
+        case .boundedRescan(let cutoff):
+            return try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > cutoff }))
+        case .fullRescanNoAnchor, .fullRescanBootstrap, .tokenFetch:
+            return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+        }
+    }
+
+    // MARK: - Procedencia de store de una transacción de History
+
+    /// ¿Pertenece la transacción al store PERSONAL? Toda transacción de ese store cambia al menos una de sus
+    /// 17 entidades y NINGUNA transacción de otro store lo hace — `personalStoreEntityNames` es exactamente
+    /// el conjunto del `personalSchema`. Es la única forma de acotar el ancla: `storeIdentifier` NO es un
+    /// keypath soportado en el `#Predicate` de un `HistoryDescriptor` (medido en
+    /// `GroupsDrainHistoryStoreAnchorTests.storeIdentifier_isNotASupportedPredicateKeyPath`), así que el
+    /// fetch no se puede filtrar por store — sí se lee como propiedad al recorrer las transacciones.
+    static func isPersonalStoreTransaction(_ tx: DefaultHistoryTransaction) -> Bool {
+        tx.changes.contains { personalStoreEntityNames.contains($0.changedPersistentIdentifier.entityName) }
+    }
+
+    // MARK: - Guard de validación del token de History (HALLAZGO 2, corrida device reversa 2026-07-11)
+
+    /// Resultado del guard: qué transacciones procesa el drain esta vuelta y, si hubo recuperación, a qué
+    /// tx re-anclar el token.
+    private struct TokenGuardResult {
+        /// Transacciones a procesar: `tokenTxns` en steady-state; la UNIÓN de ambos fetches al recuperar.
+        var txns: [DefaultHistoryTransaction]
+        /// El guard comparó y el token surfacea BIEN las txs del mount actual → marcar validado de inmediato
+        /// (validación de solo-lectura, sin persistir). Falso en recovery (validar tras persistir el re-ancla).
+        var validatedByCompare = false
+        /// Recovery: la última tx de la unión a la que el drain debe RE-ANCLAR el token (+ su timestamp).
+        /// `nil` = no hubo recuperación. Al persistir con éxito, el caller marca validado + emite el par.
+        var reanchor: (token: DefaultHistoryToken, txAt: Date)?
+    }
+
+    /// Detecta y recupera un `historyTokenData` que dejó de surfacear transacciones nuevas del mount ACTUAL
+    /// (no-comparabilidad cross-mount de `DefaultHistoryToken`) usando los TIMESTAMPS de History (SÍ
+    /// comparables cross-mount) como red redundante. Root cause (corrida device 2026-07-11): la fila
+    /// `ExchangeRate` del boot post-cutover obtuvo syncID y tx de History, pero el token del cursor —acuñado
+    /// en el mount `.icloud` (mirror ON) previo al remontaje `.cloud` (mirror OFF) sobre el MISMO archivo—
+    /// hizo que el predicado `$0.token > staleToken` EXCLUYERA silenciosamente esa tx (una exclusión por
+    /// predicado NO lanza → cero breadcrumb → `pending=0` perpetuo → divergencia Merkle local-ahead
+    /// inconvergible → `reverseVerify mismatch ×3 → reverseFailedRollback`). Es la MISMA clase que
+    /// `fastForwardHistoryBaseline` (~50% no-comparable bajo carga), pero el predicado idéntico del drain
+    /// quedó sin blindar. Este guard es agnóstico al mecanismo: recupera CUALQUIER token que deje de
+    /// surfacear txs nuevas (el remount probado Y una eventual no-comparabilidad en relaunch normal).
+    ///
+    /// Corre SOLO mientras `!historyTokenValidated` (una vez validado/recuperado en la sesión, coste cero) y
+    /// SOLO con `historyTokenData != nil && lastDrainedTxAt != nil`. `lastDrainedTxAt == nil` (cursor
+    /// pre-schema) → SKIP (residual documentado: un token YA roto en un cursor pre-schema no se auto-cura
+    /// —nunca consume → nunca puebla el campo—; benigno: 0 devices `.cloud` en producción, flags DARK; el
+    /// flujo NUEVO puebla el campo antes del remount vía el `drainOnce` de `startParallelHistoryCapture`).
+    ///
+    /// **Outcomes:**
+    /// - Faltantes > 0 (txs externas de entidad personal en la ventana de timestamp AUSENTES del token-fetch)
+    ///   → token ROTO: breadcrumb `historyTokenIncomparable`, procesar la UNIÓN, re-anclar SIEMPRE a la
+    ///   última tx de la unión (paso 7) → `historyTokenRecovered` al persistir.
+    /// - Faltantes == 0 con timestamp-fetch NO vacío → el token compara bien → `validatedByCompare`.
+    /// - timestamp-fetch vacío (nada contra qué validar) → NO valida → revalida en el próximo drain (coste:
+    ///   un fetch acotado). También valida (b): si el camino normal consume ≥1 tx externa, el avance del
+    ///   paso 7 re-ancla al mount actual → validado.
+    ///
+    /// Frontera del slack (`historyTokenSlack`): re-lee la ventana `[lastDrainedTxAt-60s, …]` → txs ya
+    /// drenadas se re-emiten con HLC fresco (el reloj de la instancia ya avanzó), pero el dedup por
+    /// `(syncID,hlc,op)` no las absorbe → filas de outbox redundantes que el backend colapsa por LWW
+    /// HLC-idempotente (mismo syncID+contenido, converge). Coste aceptado (recovery es one-shot por sesión).
+    ///
+    /// **Candidatos DESCARTADOS:**
+    /// - *Reset token→nil en `persistLocalMode`/`persistICloudMode`*: full-rescan de una History que puede
+    ///   contener el corpus completo (purga doble-DARK) → re-emisión masiva; y no cubre el relaunch normal.
+    /// - *Re-anclar baseline en boot temprano (pre-paso-2)*: pierde la cola del mount viejo (ventana
+    ///   último-drain→kill) y crea una dependencia frágil del orden de bootstrap.
+    /// - *Timestamp como cursor PRIMARIO*: wall-clock no-monótono como mecanismo primario es peor que
+    ///   token + red redundante barata.
+    ///
+    /// Sin `Date()`/`Calendar.current`: el cutoff se deriva de `cursor.lastDrainedTxAt` (dato persistido).
+    private func recoverIfHistoryTokenIncomparable(
+        cursor: SyncCursor,
+        tokenTxns: [DefaultHistoryTransaction],
+        context: ModelContext
+    ) -> TokenGuardResult {
+        // Gate: solo hasta la primera validación de la sesión, y solo con ancla poblada (cursor pre-schema → skip).
+        guard !historyTokenValidated,
+              cursor.historyTokenData != nil,
+              let lastDrainedTxAt = cursor.lastDrainedTxAt else {
+            return TokenGuardResult(txns: tokenTxns)
+        }
+        // Fetch por timestamp con slack fijo — opera sobre dato PERSISTIDO (sin Date()/Calendar.current).
+        let cutoff = lastDrainedTxAt.addingTimeInterval(-Self.historyTokenSlack)
+        let timestampTxns: [DefaultHistoryTransaction]
+        do {
+            timestampTxns = try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > cutoff }))
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: guard token — fetch por timestamp falló: \(error)")
+            #endif
+            return TokenGuardResult(txns: tokenTxns)
+        }
+        // Nada en la ventana → nada contra qué validar → revalidar en el próximo drain.
+        guard !timestampTxns.isEmpty else { return TokenGuardResult(txns: tokenTxns) }
+
+        // Faltantes = txs NUEVAS del timestamp-fetch AUSENTES del token-fetch, que el drain NO filtraría
+        // igual (externas + con ≥1 change de entidad personal — espejo del filtro del paso 5). Ambos
+        // fetches son del MISMO mount → sus tokens son mutuamente comparables (identidad por token, 0c).
+        //
+        // AJUSTE de implementación (premisa del plan corregida): "ausente del token-fetch" a secas produce
+        // un FALSO POSITIVO en steady-state — la ÚLTIMA tx ya drenada (timestamp == `lastDrainedTxAt`) cae
+        // en la ventana de slack (`-60s`) pero el token VÁLIDO la excluye correctamente (`after(token)` no
+        // la incluye) → aparecería como "faltante" y dispararía recovery en CADA primer drain de sesión.
+        // El discriminante real de un token ROTO es una tx NUEVA (`timestamp > lastDrainedTxAt`) que el
+        // token no surfacea — la frontera ya drenada (`<= lastDrainedTxAt`) NO cuenta. El slack `-60s` solo
+        // ensancha el FETCH (completitud de la unión); la determinación de faltantes es estricta.
+        let tokenTokens = tokenTxns.map(\.token)
+        func tokenPresent(_ tx: DefaultHistoryTransaction) -> Bool {
+            tokenTokens.contains { $0 == tx.token }
+        }
+        let missing = timestampTxns.filter { tx in
+            guard tx.timestamp > lastDrainedTxAt else { return false }  // NUEVA, no la frontera ya drenada
+            guard tx.author != Self.outboxSaveAuthor else { return false }
+            guard tx.changes.contains(where: {
+                Self.personalEntityNames.contains($0.changedPersistentIdentifier.entityName)
+            }) else { return false }
+            return !tokenPresent(tx)
+        }
+        guard !missing.isEmpty else {
+            // El token surfacea bien las txs del mount actual → validado (solo-lectura).
+            return TokenGuardResult(txns: tokenTxns, validatedByCompare: true)
+        }
+
+        // Token ROTO. UNIÓN de ambos fetches (dedup por igualdad de token), ordenada por (timestamp, índice
+        // original) → determinista para el lockstep del replay SIN depender de `Comparable` sobre el token.
+        historyTokenIncomparableCount += 1
+        CloudSyncBreadcrumb.historyTokenIncomparable(missed: missing.count)
+        var union = tokenTxns
+        for tx in timestampTxns where !tokenPresent(tx) { union.append(tx) }
+        let orderedUnion = union.enumerated()
+            .sorted { a, b in
+                a.element.timestamp != b.element.timestamp
+                    ? a.element.timestamp < b.element.timestamp
+                    : a.offset < b.offset
+            }
+            .map(\.element)
+        // El re-ancla tiene que caer en el store PERSONAL, igual que el avance normal: `orderedUnion.last`
+        // pelado es la última por TIMESTAMP fuera cual fuera su store, y anclar en `syncMeta` (el cursor del
+        // propio motor, o el del canal de Grupos, que para éste es EXTERNO) reintroduce exactamente el punto
+        // fijo que este guard existe para deshacer — con el agravante de que aquí SÍ se re-ancla al motor a
+        // propósito, así que la última de la unión es a menudo una escritura de `syncMeta`. Sin transacción
+        // personal en la unión no se re-ancla: se cae al avance normal y el token roto persiste (residual (a)
+        // de `fetchHistoryResolvingToken`), que es la dirección SEGURA — coste de re-lectura, no pérdida.
+        guard let last = orderedUnion.last(where: { Self.isPersonalStoreTransaction($0) }) else {
+            return TokenGuardResult(txns: orderedUnion)
+        }
+        return TokenGuardResult(txns: orderedUnion, reanchor: (token: last.token, txAt: last.timestamp))
+    }
+
+    // MARK: - El tombstone de una fila que el espejo re-identificó (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`)
+
+    /// **La OTRA identidad que tuvo aquí una fila que el espejo de iCloud re-identificó por debajo y que ahora se borra.**
+    ///
+    /// El tombstone lleva la identidad que la fila tenía AL BORRARSE (`.preserveValueOnDeletion`). Si el espejo del relevo le
+    /// había puesto la del líder desplazado (#243) y nadie se la devolvió antes (`MigrationWorkExecutor.restoreRelayIdentities`
+    /// solo alcanza a las filas vivas), el borrado salía con una identidad que el backend no conoce: la fila seguía viva allí,
+    /// reaparecía en los otros teléfonos y el Merkle de la verificación no cuadraba.
+    ///
+    /// El drain emite el tombstone de la preservada SIEMPRE y, si esto devuelve otra, también el de esa. Las dos, y no una
+    /// traducción, porque desde un solo teléfono no se sabe cuál de las dos conoce el backend: en el relevo es la del registro;
+    /// en el líder desplazado, al que el espejo le trae la del relevo, es la preservada. `apply_delta` guarda como borrada una
+    /// identidad que no conoce (medido en producción el 2026-09-25), así que la que sobra no hace daño.
+    ///
+    /// Devuelve la otra solo si las cuatro cosas son ciertas:
+    ///  1. el registro (`RelayIdentityLedger`, sembrado en `assignIdentity`) dice que ESTA fila —por su `Z_PK`, que el cambio
+    ///     de identidad no toca— tenía otra identidad;
+    ///  2. la preservada NO tiene testigo aquí: ningún camino local cambia una identidad sin escribirlo (regla de #243);
+    ///  3. la del registro SÍ lo tiene, de su tipo y con coordenadas de CloudKit: es la condición de la restauración;
+    ///  4. ninguna fila viva la lleva: si otra la lleva, esa identidad no es de esta fila.
+    ///
+    /// Solo los seis tipos de identidad acuñada. LANZA `RelayTombstoneReadFailure` si el testigo o la fila no se dejan leer, y
+    /// la vuelta entera del drain aborta. Un registro ilegible, en cambio, no para nada: rastro y solo la preservada.
+    private func relayTombstoneIdentity(
+        for id: PersistentIdentifier, entityType: String, preserved: UUID
+    ) throws -> UUID? {
+        guard MigrationWorkExecutor.mintedIdentityTypes.contains(entityType), let context = drainContext else {
+            return nil
+        }
+        let ledger = drainRelayIdentityLedger()
+        guard !ledger.isEmpty, let key = RelayIdentityLedger.key(for: id), let prior = ledger[key], prior != preserved else {
+            return nil
+        }
+        do {
+            guard try EntityApplyMap.findSyncIdentity(bySyncID: preserved, context: context) == nil else { return nil }
+            guard let witness = try EntityApplyMap.findSyncIdentity(bySyncID: prior, context: context),
+                  witness.entityType == entityType,
+                  witness.ckRecordName != nil, witness.ckZoneName != nil, witness.ckOwnerName != nil else {
+                return nil
+            }
+            guard try !Self.liveRowCarries(prior, entityType: entityType, context: context) else { return nil }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: leer lo que decide el tombstone de una fila re-identificada falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayTombstoneReadFailed(errorType: String(describing: type(of: error)))
+            throw RelayTombstoneReadFailure()
+        }
+        // El rastro y el canario los deja quien emite (`translateChange`): el borrado puede no salir si es del espejo sobre
+        // una fila que el backend conoce (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`).
+        return prior
+    }
+
+    /// El registro de esta vuelta, leído una vez. Ilegible = vacío, con rastro.
+    private func drainRelayIdentityLedger() -> [String: UUID] {
+        if let drainRelayLedger { return drainRelayLedger }
+        let loaded: [String: UUID]
+        do {
+            loaded = try RelayIdentityLedger.load(from: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: el registro de identidades del relevo no se deja leer: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "drain", errorType: String(describing: type(of: error)))
+            loaded = [:]
+        }
+        drainRelayLedger = loaded
+        return loaded
+    }
+
+    /// ¿Lleva alguna fila viva de `entityType` esta identidad? Fetch CONCRETO por tipo (regla de `#Predicate`). LANZA si la
+    /// tabla no se deja leer.
+    private static func liveRowCarries(_ syncID: UUID, entityType: String, context: ModelContext) throws -> Bool {
+        switch entityType {
+        case SyncEntityType.transactionItem:
+            return try EntityApplyMap.findTransactionItem(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.inboxDraft:
+            return try EntityApplyMap.findInboxDraft(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.category:
+            return try EntityApplyMap.findCategory(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.favoritePayment:
+            return try EntityApplyMap.findFavoritePayment(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.merchantMemory:
+            return try EntityApplyMap.findMerchantMemory(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.exchangeRate:
+            return try EntityApplyMap.findExchangeRate(bySyncID: syncID, context: context) != nil
+        default:
+            // Un tipo que no sé leer: lo trato como «alguien la lleva», que deja solo la preservada.
+            return true
+        }
+    }
+
+    /// Borra el registro cuando la migración ya lo dio por terminado (`RelayIdentityLedger.markRetirable`, desde el cierre del
+    /// reconcile de `done`) y esta vuelta consumió todo el historial: con el espejo apagado no llega ninguna identidad más, y
+    /// lo que quedaba por traducir ya salió. Sin la marca no se toca, aunque la fase sea `done`: el runtime puede arrancar
+    /// con el reconcile aún pendiente, antes de que la restauración haya corrido (review del ticket). Un `stat` por drain.
+    ///
+    /// Decide la MARCA, no el fichero del registro: un adopt sin filas de identidad acuñada con testigo no escribe el registro,
+    /// pero sí la marca y lo que el backend conocía (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`), y eso
+    /// también se retira aquí.
+    private func retireRelayIdentityLedgerIfFinished() {
+        guard RelayIdentityLedger.isRetirable(relayIdentityLedgerURL) else { return }
+        do {
+            try RelayIdentityLedger.remove(at: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: no se pudo borrar el registro de identidades del relevo: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "retire", errorType: String(describing: type(of: error)))
+        }
+    }
+
+    // MARK: - La identidad que el espejo cambia en la ventana del ADOPT (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`)
+
+    /// **Devuelve a la identidad que dice el registro (`RelayIdentityLedger`) las filas vivas que el espejo re-identificó.**
+    ///
+    /// Es la restauración del adopt. La de la ida (`MigrationWorkExecutor.restoreRelayIdentities`) casa por las coordenadas
+    /// del record de CloudKit, y eso pide leer los metadatos del espejo de cada fila candidata. El adopt restaura también
+    /// tras el remonte, sin espejo, donde esa lectura no está medida. El registro no la necesita: el cambio de identidad del
+    /// espejo es un update del MISMO objeto, y el registro dice qué identidad le dio este teléfono a esa fila por su `Z_PK`.
+    ///
+    /// Se restaura una fila solo si todo esto es cierto, que son las condiciones del tombstone (`relayTombstoneIdentity`)
+    /// salvo las coordenadas:
+    ///  1. el registro tiene una identidad para su `Z_PK` y no es la que lleva ahora;
+    ///  2. la que lleva ahora NO tiene testigo aquí: ningún camino local cambia una identidad sin escribirlo (regla de #243),
+    ///     así que el cambio es del espejo;
+    ///  3. la del registro SÍ lo tiene, de su tipo: es una identidad que este teléfono dio;
+    ///  4. ninguna fila viva de su tipo la lleva, y ninguna otra fila la reclama;
+    ///  5. con `allowed`, está en ese conjunto. El reconcile del adopt pasa las que el backend conoce (vivas o borradas): en
+    ///     el líder desplazado que adopta, un registro viejo de su ida tendría SU identidad, que el backend no ha visto.
+    ///
+    /// Cambia solo el `syncID`, como la de la ida: el drain lo salta (la identidad no es columna). LANZA si una tabla, los
+    /// testigos o el guardado fallan, con lo suyo deshecho. Un registro que no se deja leer NO lanza: rastro y cero, como en
+    /// el drain (parar el adopt o el motor por esta red sería peor que el daño que cubre). Devuelve cuántas restauró.
+    @discardableResult
+    func restoreRelayIdentitiesFromLedger(context: ModelContext, onlyTo allowed: Set<UUID>? = nil) throws -> Int {
+        let ledger: [String: UUID]
+        do {
+            ledger = try RelayIdentityLedger.load(from: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: el registro de identidades no se deja leer para restaurar: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "restore", errorType: String(describing: type(of: error)))
+            return 0
+        }
+        guard !ledger.isEmpty else { return 0 }
+
+        var witnessTypes: [UUID: Set<String>] = [:]
+        for witness in try context.fetch(FetchDescriptor<SyncIdentity>()) {
+            witnessTypes[witness.syncID, default: []].insert(witness.entityType)
+        }
+        var live: [String: Set<UUID>] = [:]
+        var candidates: [LedgerRestoreCandidate] = []
+        func collect<M: PersistentModel & SyncIdentifiable>(_ type: M.Type, _ entityType: String) throws {
+            for model in try context.fetch(FetchDescriptor<M>()) {
+                guard let current = model.syncID else { continue }
+                live[entityType, default: []].insert(current)
+                guard witnessTypes[current] == nil, let key = RelayIdentityLedger.key(for: model.persistentModelID),
+                      let prior = ledger[key], prior != current else { continue }
+                candidates.append(LedgerRestoreCandidate(entityType: entityType, current: current, prior: prior,
+                                                         restore: { model.syncID = $0 }))
+            }
+        }
+        try collect(TransactionItem.self, SyncEntityType.transactionItem)
+        try collect(InboxDraft.self, SyncEntityType.inboxDraft)
+        try collect(Category.self, SyncEntityType.category)
+        try collect(FavoritePayment.self, SyncEntityType.favoritePayment)
+        try collect(MerchantMemory.self, SyncEntityType.merchantMemory)
+        try collect(ExchangeRate.self, SyncEntityType.exchangeRate)
+        guard !candidates.isEmpty else { return 0 }
+
+        let claims = Dictionary(grouping: candidates, by: \.prior).mapValues(\.count)
+        var undo: [() -> Void] = []
+        var restoredByEntity: [String: Int] = [:]
+        for candidate in candidates {
+            guard claims[candidate.prior] == 1,
+                  witnessTypes[candidate.prior]?.contains(candidate.entityType) == true,
+                  !(live[candidate.entityType] ?? []).contains(candidate.prior),
+                  allowed?.contains(candidate.prior) ?? true else { continue }
+            candidate.restore(candidate.prior)
+            undo.append { candidate.restore(candidate.current) }
+            restoredByEntity[candidate.entityType, default: 0] += 1
+        }
+        guard !undo.isEmpty else { return 0 }
+        do {
+            try context.save()
+        } catch {
+            // Deshace SOLO lo suyo: el contexto es compartido y un `rollback` tiraría ediciones ajenas.
+            for revert in undo.reversed() { revert() }
+            #if DEBUG
+            print("CloudSyncEngine: guardar las identidades restauradas por el registro falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.migrationRelayIdentityRestoreFailed(errorType: String(describing: type(of: error)))
+            throw error
+        }
+        for (entity, count) in restoredByEntity.sorted(by: { $0.key < $1.key }) {
+            CloudSyncBreadcrumb.migrationRelayIdentityRestored(entity: entity, count: count)
+            MetricsService.cloudRelayIdentityRestored(entity: entity, count: count)
+        }
+        return undo.count
+    }
+
+    private struct LedgerRestoreCandidate {
+        let entityType: String
+        let current: UUID
+        let prior: UUID
+        let restore: (UUID) -> Void
+    }
+
+    /// **El arranque del runtime tras el remonte de un adopt**: devuelve las identidades que el espejo cambió entre el
+    /// reconcile de huérfanas y el remonte, y marca el registro para que el drain siguiente lo retire.
+    ///
+    /// Solo con la marca del adopt (`RelayIdentityLedger.markAdoptPin`, la pone `runAdoptOrphanReconcile` al sembrar). La
+    /// ida no la tiene: su registro lo marca el reconcile de `done`, y eso no cambia. El runtime lo llama ANTES de su primer
+    /// drain y de su primer pull, sin `await` en medio: sin él, el drain traducía una edición de esa fila bajo la identidad
+    /// nueva (fila aparte en el backend) y el pull creaba un born-remote con la copia del backend (la misma fila dos veces).
+    /// Tras el remonte el espejo está apagado, así que una vez basta.
+    ///
+    /// Si la restauración lanza, la marca se queda y el siguiente arranque lo reintenta; el motor arranca igual, como en el
+    /// reconcile de `done` (parar la sincronización por esta red sería peor), y el registro, sin marca de retirada, sigue
+    /// traduciendo los borrados. Devuelve si la restauración terminó.
+    @discardableResult
+    func restoreAdoptedRelayIdentitiesIfPinned(context: ModelContext) -> Bool {
+        guard RelayIdentityLedger.isAdoptPinned(relayIdentityLedgerURL) else { return false }
+        do {
+            try restoreRelayIdentitiesFromLedger(context: context)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: restaurar las identidades del adopt al arrancar falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-restore", errorType: String(describing: type(of: error)))
+            return false
+        }
+        do {
+            try RelayIdentityLedger.markRetirable(relayIdentityLedgerURL)
+            try RelayIdentityLedger.clearAdoptPin(relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: marcar el registro del adopt como terminado falló: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "adopt-retire", errorType: String(describing: type(of: error)))
+        }
+        return true
+    }
+
+    // MARK: - Lo que el espejo importa tarde tras un adopt (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`)
+
+    /// **¿Es este cambio lo que el espejo trajo, en la ventana del adopt, de una fila que el backend ya conoce?** Entonces no se
+    /// traduce. `syncIDs` son las identidades con las que saldría: una, o las dos de un borrado re-identificado.
+    ///
+    /// La ventana va del paso 3 del adopt (`fastForwardHistoryBaseline`) al remonte sin espejo, y el drain que la lee es el
+    /// primero del runtime tras relanzar. Lo que el espejo importa ahí de una fila que el backend ya tiene es la versión que
+    /// estaba en iCloud —del líder, o de otro teléfono del mismo Apple ID que sigue en iCloud—, y traducida subía con un HLC
+    /// fresco: por LWW pisaba las ediciones que la nube había recibido después. El backend manda en esas filas: el primer pull
+    /// del runtime trae su versión (y un borrado que no sale, la fila de vuelta; si el backend la borró, el pull la borra).
+    ///
+    /// - `requiresMirrorAuthor == false` (altas): ningún camino local le da a una fila NUEVA una identidad que el backend ya
+    ///   tiene —el barrido y el backfill acuñan UUIDs frescos, y el alta que baja del pull la firma el motor—, así que un alta
+    ///   con identidad conocida es del espejo aunque la transacción no lleve su autor. Esa firma no está medida en device.
+    /// - `true` (cambios y borrados): solo con el autor del espejo (`PrivateSignOutExportGateLogic.mirrorAuthorPrefix`). Lo que
+    ///   el usuario edita o borra en este teléfono en la ventana sale como siempre.
+    ///
+    /// Lo que el backend conoce lo escribió el reconcile del adopt al lado del registro, y se retira con él tras el primer
+    /// drain completo después del remonte. Sin fichero no hay ventana: todo sale como antes. Un fichero ilegible, igual, con
+    /// rastro: parar el motor por esta red sería peor que el daño que cubre (la regla del registro).
+    private func skipsAdoptBackendKnownRow(_ syncIDs: [UUID], entityType: String, tx: DefaultHistoryTransaction,
+                                           requiresMirrorAuthor: Bool) -> Bool {
+        if requiresMirrorAuthor {
+            guard let author = tx.author, author.hasPrefix(PrivateSignOutExportGateLogic.mirrorAuthorPrefix) else { return false }
+        }
+        let known = drainAdoptBackendKnownIDs()
+        guard syncIDs.contains(where: known.contains) else { return false }
+        drainTxAdoptSkipped[entityType, default: 0] += 1
+        return true
+    }
+
+    /// Lo que el backend conocía en el adopt, leído una vez por vuelta. Sin fichero, vacío; ilegible, vacío con rastro.
+    private func drainAdoptBackendKnownIDs() -> Set<UUID> {
+        if let drainAdoptBackendKnown { return drainAdoptBackendKnown }
+        let loaded: Set<UUID>
+        do {
+            loaded = try RelayIdentityLedger.loadAdoptBackendKnown(for: relayIdentityLedgerURL)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: lo que el backend conocía en el adopt no se deja leer: \(error)")
+            #endif
+            CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "drain-backend-known",
+                                                               errorType: String(describing: type(of: error)))
+            loaded = []
+            drainAdoptBackendKnownUnreadable = true
+        }
+        drainAdoptBackendKnown = loaded
+        return loaded
+    }
+
+    // MARK: - Lo que el espejo trae tras el chequeo del adopt y el backend no conoce (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`)
+
+    /// **Canario, no política.** Cuenta las altas que este drain va a SUBIR en la ventana del adopt, en las tablas que piden
+    /// linaje, con una identidad que el backend no conocía en el adopt. Es lo que el ticket no pudo contar en la flota: lo que
+    /// el espejo bajó después de que el adopt le preguntara a iCloud sube sin prueba de linaje. No cambia lo que sale.
+    ///
+    /// - **La ventana es la que cierra este drain**: lo que el backend conocía (`….backend-known`) existe, se dejó leer, y la
+    ///   restauración del arranque ya marcó el registro para retirar (`RelayIdentityLedger.isRetirable`). Eso es el primer drain
+    ///   completo tras el remonte; si el primero se corta, el siguiente cuenta lo que quedó. Sin la marca —la restauración
+    ///   lanzó— no cuenta: el espejo ya está apagado y lo que llegara serían las altas normales de este teléfono, drain tras
+    ///   drain. Se pierde ese caso raro, con su propio rastro (`relayIdentityLedgerUnavailable(step: "adopt-restore")`).
+    /// - **Las tablas exentas no cuentan** (`MigrationWorkExecutor.adoptLineageExemptTables`, los tipos de cambio): la guarda
+    ///   del adopt tampoco les pide linaje.
+    /// - **Dos autores**: `mirror` (la firma del espejo: bajó de iCloud) y `local` (cualquier otro: lo creado aquí en la
+    ///   ventana). Que el espejo firme sus imports no está medido en device; si no firmara, lo importado caería en `local` y la
+    ///   serie `mirror` en cero mentiría. Con las dos se lee igual en ambos casos.
+    /// - **El camino** lo dejó el reconcile del adopt (`RelayIdentityLedger.loadAdoptRoute`): `none` y `noAccount` son el
+    ///   adopt que entró sin nada que probar, la población del ticket. Sin fichero o ilegible, `unknown`.
+    ///
+    /// - **Solo lo posterior al ancla con que empezó la vuelta** (`drainAdoptWindowFloor`, el paso 3 en el primer drain): un
+    ///   re-anclaje del token (`recoverIfHistoryTokenIncomparable`, o el de token roto) relee un margen anterior, y lo de ahí
+    ///   no llegó después del chequeo —son, por ejemplo, las huérfanas que el adopt ya subió con prueba—.
+    ///
+    /// Sin PII: el tipo de entidad, dos literales y un conteo. El rastro lleva el tipo; el canario lo agrupa
+    /// (`adoptUnprovenCanaryDetails`).
+    private func countAdoptUnprovenInsert(entityType: String, table: String, tx: DefaultHistoryTransaction) {
+        guard !MigrationWorkExecutor.adoptLineageExemptTables.contains(table) else { return }
+        if let floor = drainAdoptWindowFloor, tx.timestamp <= floor { return }
+        guard let route = drainAdoptUnprovenWindowRoute() else { return }
+        let author = (tx.author?.hasPrefix(PrivateSignOutExportGateLogic.mirrorAuthorPrefix) ?? false) ? "mirror" : "local"
+        drainTxAdoptUnproven["\(entityType)|\(author)|\(route)", default: 0] += 1
+    }
+
+    /// Lo que el canario `cloudAdoptLateImportUnproven` emite a partir de los conteos de la vuelta (`<tipo>|<autor>|<camino>`):
+    /// `<autor>|<camino>|<clase>`, con la clase `TransactionItem` (movimientos) u `other`. Agrupa porque la vuelta que lo
+    /// emite es justo la que puede traer un corpus entero: por tipo serían hasta 30 eventos de golpe y el spool de métricas
+    /// (50, tira el más viejo) se llevaría canarios ajenos pendientes. El tipo exacto queda en el rastro del dispositivo.
+    static func adoptUnprovenCanaryDetails(_ counts: [String: Int]) -> [String: Int] {
+        var grouped: [String: Int] = [:]
+        for (key, count) in counts {
+            let parts = key.split(separator: "|", omittingEmptySubsequences: false)
+            guard parts.count == 3 else { continue }
+            let kind = parts[0] == Substring(SyncEntityType.transactionItem) ? SyncEntityType.transactionItem : "other"
+            grouped["\(parts[1])|\(parts[2])|\(kind)", default: 0] += count
+        }
+        return grouped
+    }
+
+    /// El camino del adopt si esta vuelta cierra su ventana (ver `countAdoptUnprovenInsert`); `nil` si no hay nada que contar.
+    private func drainAdoptUnprovenWindowRoute() -> String? {
+        if let drainAdoptUnprovenRoute { return drainAdoptUnprovenRoute }
+        let route: String?
+        if RelayIdentityLedger.hasAdoptBackendKnown(for: relayIdentityLedgerURL),
+           RelayIdentityLedger.isRetirable(relayIdentityLedgerURL) {
+            // La lista se lee aquí por si ningún cambio la pidió antes; ilegible, no se cuenta.
+            _ = drainAdoptBackendKnownIDs()
+            if drainAdoptBackendKnownUnreadable {
+                route = nil
+            } else {
+                do {
+                    route = try RelayIdentityLedger.loadAdoptRoute(for: relayIdentityLedgerURL)?.rawValue ?? "unknown"
+                } catch {
+                    #if DEBUG
+                    print("CloudSyncEngine: el camino del adopt no se deja leer: \(error)")
+                    #endif
+                    CloudSyncBreadcrumb.relayIdentityLedgerUnavailable(step: "drain-adopt-route",
+                                                                       errorType: String(describing: type(of: error)))
+                    route = "unknown"
+                }
+            }
+        } else {
+            route = nil
+        }
+        drainAdoptUnprovenRoute = .some(route)
+        return route
+    }
+
+    // MARK: - Clasificación del reason de tombstone (§c.1, drain-side)
+
+    /// Deriva el `reason` de los tombstones de UNA transacción (§c.1). Precedencia: `migration` (author
+    /// del motor/migración) → `cascade` (la transacción borra un tipo padre de cascada conocida) →
+    /// `user` (default). `dedup`/`wipe` NO son clasificables hoy sin señal de call-site (I9/I12) → caen
+    /// en `user`/`cascade`. Es metadata de auditoría: una clasificación conservadora no compromete la
+    /// correctness (el backend mantiene `deleted=true` igual). Estático + puro → testeable en aislamiento
+    /// del ciclo del drain no es trivial (requiere `DefaultHistoryTransaction`), así que los goldens lo
+    /// ejercitan end-to-end vía el drain real.
+    private static func classifyTombstoneReason(_ tx: DefaultHistoryTransaction) -> SyncTombstoneReason {
+        // migration: author dedicado del motor/migración (bucket por completitud; ver `migrationAuthors`).
+        if let author = tx.author, migrationAuthors.contains(author) {
+            return .migration
+        }
+        // cascade: la transacción TAMBIÉN borra un tipo padre de cascada conocida.
+        for change in tx.changes {
+            guard case .delete = change else { continue }
+            if cascadeParentEntityNames.contains(change.changedPersistentIdentifier.entityName) {
+                return .cascade
+            }
+        }
+        return .user
+    }
+
+    // MARK: - Traducción de un cambio (dispatch por tipo concreto)
+
+    /// Índices persistentID→modelo de los tipos sincronizables cableados (construidos en el barrido).
+    private struct Lookups {
+        var transactionItem: [PersistentIdentifier: TransactionItem] = [:]
+        var inboxDraft: [PersistentIdentifier: InboxDraft] = [:]
+        var category: [PersistentIdentifier: Category] = [:]
+        var favoritePayment: [PersistentIdentifier: FavoritePayment] = [:]
+        var merchantMemory: [PersistentIdentifier: MerchantMemory] = [:]
+        var exchangeRate: [PersistentIdentifier: ExchangeRate] = [:]
+        // I12: identidad = UUID persistido (`id`), nunca nil → el barrido NO las acuña, solo indexa.
+        var budget: [PersistentIdentifier: Budget] = [:]
+        var scheduledPayment: [PersistentIdentifier: ScheduledPayment] = [:]
+        // I12 commit B: las 8 restantes (identidad = `shortcutID` en Account/Subcategory; `id` en el resto).
+        var account: [PersistentIdentifier: Account] = [:]
+        var subcategory: [PersistentIdentifier: Subcategory] = [:]
+        var tag: [PersistentIdentifier: Tag] = [:]
+        var notificationItem: [PersistentIdentifier: NotificationItem] = [:]
+        var cashFlowPlan: [PersistentIdentifier: CashFlowPlan] = [:]
+        var cashFlowLine: [PersistentIdentifier: CashFlowLine] = [:]
+        var cashFlowOverride: [PersistentIdentifier: CashFlowOverride] = [:]
+        var groupBridgePreference: [PersistentIdentifier: GroupBridgePreference] = [:]
+    }
+
+    /// Despacha el cambio al handler concreto por entity name. Los tipos personales aún NO cableados
+    /// caen al `default` y se ignoran (identidad de sync pendiente — incrementos futuros).
+    ///
+    /// D1: las 6 originales usan `syncID: UUID?` sintético (mismo accessor para live y tombstone; sin
+    /// canario de mutación de identidad — el `syncID` no se regenera). Las cableadas en I12 usan su UUID
+    /// EXISTENTE (`id`, NO-opcional): `liveSyncID` lo lee directo, `tombstoneSyncID` lo lee del atributo
+    /// real preservado, y `identityKeyPath` arma el canario D4 (regeneración de identidad detectable).
+    private func translate(
+        _ change: HistoryChange,
+        entityName: String,
+        tx: DefaultHistoryTransaction,
+        tombstoneReason: SyncTombstoneReason,
+        lookups: Lookups,
+        rows: inout [PendingOutboxRow],
+        seen: inout Set<String>
+    ) throws {
+        switch entityName {
+        case SyncEntityType.transactionItem:
+            try translateChange(change, type: TransactionItem.self, entityType: entityName,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.transactionItem,
+                                lookup: lookups.transactionItem, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.inboxDraft:
+            try translateChange(change, type: InboxDraft.self, entityType: entityName,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.inboxDraft,
+                                lookup: lookups.inboxDraft, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.category:
+            try translateChange(change, type: Category.self, entityType: entityName,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.category,
+                                lookup: lookups.category, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.favoritePayment:
+            try translateChange(change, type: FavoritePayment.self, entityType: entityName,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.favoritePayment,
+                                lookup: lookups.favoritePayment, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.merchantMemory:
+            try translateChange(change, type: MerchantMemory.self, entityType: entityName,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.merchantMemory,
+                                lookup: lookups.merchantMemory, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.exchangeRate:
+            try translateChange(change, type: ExchangeRate.self, entityType: entityName,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.exchangeRate,
+                                lookup: lookups.exchangeRate, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.budget:
+            try translateChange(change, type: Budget.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \Budget.id, emission: EntityEmissionMap.budget,
+                                lookup: lookups.budget, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.scheduledPayment:
+            try translateChange(change, type: ScheduledPayment.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \ScheduledPayment.id, emission: EntityEmissionMap.scheduledPayment,
+                                lookup: lookups.scheduledPayment, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.account:
+            try translateChange(change, type: Account.self, entityType: entityName,
+                                liveSyncID: { $0.shortcutID }, tombstoneSyncID: { $0.tombstone[\.shortcutID] as? UUID },
+                                identityKeyPath: \Account.shortcutID, emission: EntityEmissionMap.account,
+                                lookup: lookups.account, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.subcategory:
+            try translateChange(change, type: Subcategory.self, entityType: entityName,
+                                liveSyncID: { $0.shortcutID }, tombstoneSyncID: { $0.tombstone[\.shortcutID] as? UUID },
+                                identityKeyPath: \Subcategory.shortcutID, emission: EntityEmissionMap.subcategory,
+                                lookup: lookups.subcategory, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.tag:
+            try translateChange(change, type: Tag.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \Tag.id, emission: EntityEmissionMap.tag,
+                                lookup: lookups.tag, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.notificationItem:
+            try translateChange(change, type: NotificationItem.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \NotificationItem.id, emission: EntityEmissionMap.notificationItem,
+                                lookup: lookups.notificationItem, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.cashFlowPlan:
+            try translateChange(change, type: CashFlowPlan.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \CashFlowPlan.id, emission: EntityEmissionMap.cashFlowPlan,
+                                lookup: lookups.cashFlowPlan, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.cashFlowLine:
+            try translateChange(change, type: CashFlowLine.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \CashFlowLine.id, emission: EntityEmissionMap.cashFlowLine,
+                                lookup: lookups.cashFlowLine, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.cashFlowOverride:
+            try translateChange(change, type: CashFlowOverride.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \CashFlowOverride.id, emission: EntityEmissionMap.cashFlowOverride,
+                                lookup: lookups.cashFlowOverride, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.groupBridgePreference:
+            try translateChange(change, type: GroupBridgePreference.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \GroupBridgePreference.id, emission: EntityEmissionMap.groupBridgePreference,
+                                lookup: lookups.groupBridgePreference, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        default:
+            // Personal-pero-aún-sin-identidad (las restantes de los 16). No se traduce todavía.
+            return
+        }
+    }
+
+    /// Traduce UN cambio de un tipo concreto `T` a (a lo sumo) una fila de outbox. El payload de dominio
+    /// (`fields` + `field_hlcs`) lo produce `DeltaEmitter` (proyección `EntityEmissionMap` + codec c1).
+    ///
+    /// D1: la identidad de sync se lee vía dos accessors en lugar de un keypath único, para acoplar
+    /// `UUID?` (sintético) y `UUID` (existente): `liveSyncID` de la fila viva (insert/update) y
+    /// `tombstoneSyncID` del atributo preservado (delete). `identityKeyPath` (nil = identidad sintética
+    /// que no se regenera) arma el canario D4 en el path de UPDATE.
+    private func translateChange<T: PersistentModel>(
+        _ change: HistoryChange,
+        type: T.Type,
+        entityType: String,
+        liveSyncID: (T) -> UUID?,
+        tombstoneSyncID: (DefaultHistoryDelete<T>) -> UUID?,
+        identityKeyPath: PartialKeyPath<T>?,
+        emission: EntityEmission<T>,
+        lookup: [PersistentIdentifier: T],
+        tx: DefaultHistoryTransaction,
+        tombstoneReason: SyncTombstoneReason,
+        rows: inout [PendingOutboxRow],
+        seen: inout Set<String>
+    ) throws {
+        switch change {
+        case .insert(let insert):
+            // El entityName ya coincide; el `is` confirma el tipo concreto (defensivo).
+            guard insert is DefaultHistoryInsert<T> else { return }
+            guard let model = lookup[insert.changedPersistentIdentifier] else { return }  // borrada → skip
+            guard let syncID = liveSyncID(model) else { return }  // sin identidad → skip
+            // El alta de una fila que el backend ya conoce, en la ventana del adopt: la importó el espejo, venga firmada o no.
+            guard !skipsAdoptBackendKnownRow([syncID], entityType: entityType, tx: tx, requiresMirrorAuthor: false) else { return }
+            // INSERT = proyección COMPLETA de dominio (todas las columnas). Todas las unidades reciben
+            // el HLC de la transacción. Los grupos de coherencia viajan enteros por construcción.
+            let rowsBefore = rows.count
+            try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
+                             changedColumns: emission.columns, tx: tx, rows: &rows, seen: &seen)
+            // Solo lo que de verdad sube: el códec puede descartar la fila (con su rastro `encodeRejected`). Tras un kill
+            // entre el outbox y el cursor el re-drain NO la deduplica —medido: el HLC lleva el reloj físico y sale otro—,
+            // así que esa vuelta vuelve a añadirla y la cuenta, y la muerta no había emitido.
+            if rows.count > rowsBefore { countAdoptUnprovenInsert(entityType: entityType, table: emission.table, tx: tx) }
+
+        case .update(let update):
+            guard let typed = update as? DefaultHistoryUpdate<T> else { return }
+            guard let model = lookup[typed.changedPersistentIdentifier] else { return }
+            guard let syncID = liveSyncID(model) else { return }
+            // Canario D4 (RED DE SEGURIDAD tras DIFERIDOS #29): el UPDATE mutó el keypath de IDENTIDAD (solo
+            // entidades con identidad = UUID persistido). El drain lo SKIPea abajo por diseño (el remap lo emite
+            // `emitIdentityRemap` en la transacción del reparador). Este canario delata AHORA una mutación de
+            // identidad desde un sitio NO cableado al remap: sin el par `identityRemapEmitted` en la misma
+            // ventana → bug (fila nueva server-side + huérfana; §b.4).
+            if let identityKeyPath, typed.updatedAttributes.contains(identityKeyPath) {
+                identityMutationObservedCount += 1
+                CloudSyncBreadcrumb.identityMutationObserved(entity: entityType)
+            }
+            // Lo que el espejo le cambió a una fila que el backend ya conoce, en la ventana del adopt. Una edición de ESTE
+            // teléfono no lleva el autor del espejo y sale como siempre.
+            guard !skipsAdoptBackendKnownRow([syncID], entityType: entityType, tx: tx, requiresMirrorAuthor: true) else { return }
+            // PATCH parcial: mapea los keypaths cambiados a columnas Postgres. La identidad NO está en el
+            // mapa (es la PK) → si SOLO cambió la identidad el set queda vacío → SKIP. Los keypaths sin
+            // mapeo (relaciones no-columna, internos) se ignoran.
+            var changedColumns: Set<String> = []
+            for keyPath in typed.updatedAttributes {
+                if let columns = emission.columnKeyPaths[keyPath as PartialKeyPath<T>] {
+                    changedColumns.formUnion(columns)
+                }
+            }
+            guard !changedColumns.isEmpty else { return }
+            try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
+                             changedColumns: changedColumns, tx: tx, rows: &rows, seen: &seen)
+
+        case .delete(let delete):
+            guard let typed = delete as? DefaultHistoryDelete<T> else { return }
+            // Identidad preservada vía `.preserveValueOnDeletion` (spike S1/S4).
+            guard let preserved = tombstoneSyncID(typed) else {
+                recordIdentityGap(entityType: entityType, reason: "tombstoneSyncIDNil")
+                return
+            }
+            // Si el espejo le cambió la identidad por debajo antes de borrarse, la otra que tuvo AQUÍ
+            // (`relayTombstoneIdentity`). LANZA si no puede leer lo que lo decide: la vuelta entera aborta.
+            let alsoTombstoned = try relayTombstoneIdentity(
+                for: typed.changedPersistentIdentifier, entityType: entityType, preserved: preserved)
+            // Lo que el espejo borró de una fila que el backend conoce, en la ventana del adopt: el pull dice si sigue viva.
+            // Con las DOS identidades: re-identificada por el espejo, la preservada es la del líder y la que el backend conoce
+            // es la del registro (lo cazó la review).
+            guard !skipsAdoptBackendKnownRow([preserved] + (alsoTombstoned.map { [$0] } ?? []), entityType: entityType,
+                                             tx: tx, requiresMirrorAuthor: true) else {
+                return
+            }
+            if alsoTombstoned != nil {
+                CloudSyncBreadcrumb.relayTombstoneTranslated(entity: entityType)
+                MetricsService.cloudRelayTombstoneTranslated(entity: entityType)
+            }
+            // Tombstone (I4): op + syncID + `reason` clasificado drain-side (§c.1), sin payload de campos. Con una
+            // identidad re-identificada salen LAS DOS: el backend guarda como borrada la que no conoce
+            // (`apply_delta`, medido), así que la que sobra no hace daño, y la que falta dejaba la fila viva.
+            for syncID in [preserved] + (alsoTombstoned.map { [$0] } ?? []) {
+                try appendRow(op: .tombstone, syncID: syncID, entityType: entityType,
+                              tombstoneReason: tombstoneReason, tx: tx, rows: &rows, seen: &seen) { _ in
+                    ("{}", nil)  // tombstone: sin fields ni field_hlcs
+                }
+            }
+
+        @unknown default:
+            // `HistoryChange` puede ganar casos nuevos (Swift 6): ignorar defensivamente.
+            return
+        }
+    }
+
+    /// Emite una fila `upsert`: acuña el HLC, arma el delta (`DeltaEmitter`) y lo serializa por el codec
+    /// c1. Si el codec rechaza los `fields` (número no-finito / fuera de rango / blob malformado) la fila
+    /// se DESCARTA con canario (no puede viajar canónicamente) — no aborta el resto de la transacción.
+    private func appendUpsert<T: AnyObject>(
+        model: T,
+        emission: EntityEmission<T>,
+        syncID: UUID,
+        entityType: String,
+        changedColumns: Set<String>,
+        tx: DefaultHistoryTransaction,
+        rows: inout [PendingOutboxRow],
+        seen: inout Set<String>
+    ) throws {
+        try appendRow(op: .upsert, syncID: syncID, entityType: entityType,
+                      tombstoneReason: nil, tx: tx, rows: &rows, seen: &seen) { hlc in
+            let result = DeltaEmitter.emit(model: model, emission: emission,
+                                           changedColumns: changedColumns, hlc: hlc)
+            let fieldsJSON: String
+            do {
+                // `groupedColumns`: las columnas agrupadas de la entidad — una `.uuidArray` vacía DENTRO
+                // de un grupo se encodea `[]` explícito (DIFERIDOS #25 opción 1), no se omite.
+                fieldsJSON = try Canonc1Codec.encode(result.fields,
+                                                     groupedColumns: Set(emission.groupByColumn.keys))
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine: codec c1 rechazó \(entityType): \(error)")
+                #endif
+                CloudSyncBreadcrumb.encodeRejected(entity: entityType, reason: "\(error)")
+                return nil  // fila descartada (clock ya avanzó → lockstep preservado)
+            }
+            return (fieldsJSON, encodeFieldHlcs(result.fieldHlcs))
+        }
+    }
+
+    /// Acuña el HLC (ÚNICO punto del drain que avanza el reloj → advance determinista y en orden), deduplica
+    /// por (syncID, hlc, op) y encola una fila pendiente. `makePayload(hlc)` construye
+    /// `(fieldsJSON, fieldHlcsJSON)`; si devuelve `nil` la fila se descarta SIN deshacer el advance del
+    /// reloj (lockstep de resumibilidad intacto). El estampado solo lanza con un año fuera de 0001–9999 → se
+    /// propaga al llamador, que corta la traducción en la frontera de la transacción.
+    private func appendRow(
+        op: SyncOutboxOp,
+        syncID: UUID,
+        entityType: String,
+        tombstoneReason: SyncTombstoneReason?,
+        tx: DefaultHistoryTransaction,
+        rows: inout [PendingOutboxRow],
+        seen: inout Set<String>,
+        makePayload: (String) -> (fieldsJSON: String, fieldHlcsJSON: String?)?
+    ) throws {
+        // Advance del reloj: SIEMPRE tras pasar los guards estructurales y ANTES del dedup, de modo que
+        // dos instancias frescas procesando el mismo History avanzan el reloj en lockstep → HLCs
+        // idénticos (invariante de resumibilidad). El HLC queda FIJADO en la fila (§d.5).
+        // `sendLocal` y no `send`: con la hora del teléfono adelantada y devuelta, el reloj lógico persistido queda por
+        // delante de la fecha de la transacción, y la guarda de deriva de `send` cortaba en esta transacción en cada
+        // vuelta para siempre (`personal-clock-rollback-wedges-the-drain-forever`). Sigue siendo la fecha de la
+        // TRANSACCIÓN y no la de ahora: es lo que hace determinista el re-drain.
+        if _testThrowOnClockStamp { throw CanonicalTimeError.yearOutOfRange(0) }
+        let hlc = try clock.sendLocal(eventTime: tx.timestamp).description
+        let key = dedupKey(syncID: syncID, hlc: hlc, op: op)
+        guard !seen.contains(key) else { return }
+        seen.insert(key)
+        guard let payload = makePayload(hlc) else { return }  // codec rechazó → fila descartada
+        rows.append(PendingOutboxRow(
+            syncID: syncID,
+            entityType: entityType,
+            op: op,
+            hlc: hlc,
+            clientMutationID: UUID(),
+            fieldsJSON: payload.fieldsJSON,
+            fieldHlcsJSON: payload.fieldHlcsJSON,
+            author: tx.author ?? "",
+            // Solo los tombstones llevan reason (upsert → nil). Defensivo: aunque el llamador pasara un
+            // reason con op:upsert, se descarta (el reason es semántica exclusiva del tombstone).
+            tombstoneReason: op == .tombstone ? tombstoneReason?.rawValue : nil,
+            createdAt: .now
+        ))
+    }
+
+    private func recordIdentityGap(entityType: String, reason: String) {
+        identityGapCount += 1
+        CloudSyncBreadcrumb.identityGap(entityType: entityType, reason: reason)
+        // Canario MetricsService (no-op en tests: sin start() todo es no-op).
+        MetricsService.cloudSyncIdentityGapObserved(entityType: entityType)
+    }
+
+    // MARK: - Barrido defensivo + índices
+
+    private func sweepAndBuildLookups(_ context: ModelContext) throws -> Lookups {
+        var lookups = Lookups()
+        lookups.transactionItem = try sweepType(TransactionItem.self, context: context)
+        lookups.inboxDraft = try sweepType(InboxDraft.self, context: context)
+        lookups.category = try sweepType(Category.self, context: context)
+        lookups.favoritePayment = try sweepType(FavoritePayment.self, context: context)
+        lookups.merchantMemory = try sweepType(MerchantMemory.self, context: context)
+        lookups.exchangeRate = try sweepType(ExchangeRate.self, context: context)
+        // I12: identidad = UUID persistido (nunca nil) → solo indexar, NUNCA acuñar (regenerarla sería
+        // un incidente D4, no una asignación defensiva). Fetch CONCRETO por tipo.
+        lookups.budget = try indexType(Budget.self, context: context)
+        lookups.scheduledPayment = try indexType(ScheduledPayment.self, context: context)
+        // I12 commit B: las 8 restantes — identidad = UUID persistido (`shortcutID`/`id`) → solo indexar.
+        lookups.account = try indexType(Account.self, context: context)
+        lookups.subcategory = try indexType(Subcategory.self, context: context)
+        lookups.tag = try indexType(Tag.self, context: context)
+        lookups.notificationItem = try indexType(NotificationItem.self, context: context)
+        lookups.cashFlowPlan = try indexType(CashFlowPlan.self, context: context)
+        lookups.cashFlowLine = try indexType(CashFlowLine.self, context: context)
+        lookups.cashFlowOverride = try indexType(CashFlowOverride.self, context: context)
+        lookups.groupBridgePreference = try indexType(GroupBridgePreference.self, context: context)
+        if context.hasChanges {
+            // Autor por DEFECTO (no `outboxSaveAuthor`): el cambio de syncID DEBE quedar en el History
+            // para que la próxima vuelta lo procese (y lo salte por ser syncID-only), no ocultarse.
+            try context.save()
+        }
+        return lookups
+    }
+
+    /// Fetch CONCRETO por tipo (nunca genérico sobre keypath de protocolo — regla inviolable de
+    /// `#Predicate`; patrón `SyncIdentityService`). Asigna syncID a los nil y devuelve el índice.
+    private func sweepType<T: PersistentModel & SyncIdentifiable>(
+        _ type: T.Type, context: ModelContext
+    ) throws -> [PersistentIdentifier: T] {
+        let models = try context.fetch(FetchDescriptor<T>())
+        var map: [PersistentIdentifier: T] = [:]
+        for model in models {
+            if model.syncID == nil {
+                model.syncID = UUID()
+            }
+            map[model.persistentModelID] = model
+        }
+        return map
+    }
+
+    /// I12: barrido SIN acuñar para las entidades cuya identidad de sync es su UUID persistido (nunca
+    /// nil). Solo construye el índice persistentID→modelo (fetch CONCRETO por tipo). Regenerar ese UUID
+    /// es un incidente (canario D4), no una asignación defensiva → aquí jamás se toca.
+    private func indexType<T: PersistentModel>(
+        _ type: T.Type, context: ModelContext
+    ) throws -> [PersistentIdentifier: T] {
+        let models = try context.fetch(FetchDescriptor<T>())
+        var map: [PersistentIdentifier: T] = [:]
+        for model in models {
+            map[model.persistentModelID] = model
+        }
+        return map
+    }
+
+    // MARK: - Cursor / token
+
+    /// `internal` (no `private`): lo consume también `SyncApplyEngine` (extensión en otro archivo).
+    func loadOrCreateCursor(_ context: ModelContext) throws -> SyncCursor {
+        var descriptor = FetchDescriptor<SyncCursor>()
+        descriptor.fetchLimit = 1
+        if let existing = try context.fetch(descriptor).first {
+            return existing
+        }
+        let cursor = SyncCursor()
+        context.insert(cursor)
+        // Persistir de inmediato para no crear un segundo single-row si el drain no avanza el token.
+        // Autor del motor → esta creación NO se re-lee como history externa.
+        try saveWithAuthor(context, Self.outboxSaveAuthor) { }
+        return cursor
+    }
+
+    // MARK: - Reloj (D-3): carga/persistencia + receive de remotos (apply)
+
+    /// D-3: carga el `HLCClock` desde el estado durable del cursor (`clockLatestHLC`). Send y receive
+    /// parten de aquí → un crash revierte reloj y cursor juntos. `nil`/malformado → conserva el reloj
+    /// en memoria (fresco en el primer arranque). Preserva el `nodeID` de esta instancia.
+    func loadClock(from cursor: SyncCursor) {
+        guard let raw = cursor.clockLatestHLC else { return }
+        do {
+            let hlc = try HLC.parse(raw)
+            clock = HLCClock(nodeID: clock.nodeID, latest: hlc)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: loadClock parse falló para \(raw): \(error)")
+            #endif
+        }
+    }
+
+    /// D-3: integra un HLC remoto en el reloj (apply). No propaga el error (drift/overflow del remoto no
+    /// debe abortar el apply de una página): breadcrumb + canario y sigue — el reloj conserva su `latest`
+    /// previo. SEMÁNTICA INTENCIONAL (F-5): el guard de drift existe para NO envenenar el reloj local con
+    /// un remoto insano (>5min en el futuro); la pérdida de causalidad bajo skew extremo es un residual
+    /// DOCUMENTADO vigilado server-side por `cloudSyncSuspectClockWin` — aquí solo se hace visible.
+    /// Desde `qa/cloud/hlc01_cap_future_hlc.sql` el servidor guarda todo HLC acotado a `now() + 60 s`, así que un remoto
+    /// honrado ya no salta la guarda: integrarlo es lo que hace que la edición siguiente de este teléfono, tras VER la fila,
+    /// gane en el servidor en vez de perder en silencio y quedarse divergente (`HLCClock.observePulled`).
+    func receiveRemoteClock(_ remote: HLC, now: Date) {
+        switch clock.observePulled(remote, now: now) {
+        case .integrated:
+            break
+        case .alreadyAhead:
+            // La deriva es del reloj PROPIO (el teléfono tuvo la hora adelantada): el remoto no lo supera y no hay nada que
+            // integrar. Sin canario: con el reloj adelantado salía uno por fila bajada durante todo el adelanto
+            // (`personal-clock-ahead-wins-every-conflict-until-real-time-catches-up`).
+            break
+        case .rejected(let reason):
+            CloudSyncBreadcrumb.clockReceiveRejected(reason: reason)
+            MetricsService.cloudSyncClockReceiveRejected(reason: reason)
+            #if DEBUG
+            print("CloudSyncEngine: receiveRemoteClock falló para \(remote): \(reason)")
+            #endif
+        }
+    }
+
+    /// El `latest` del reloj como string c1 (para persistir en `clockLatestHLC`). `nil` = reloj fresco.
+    var clockLatestString: String? { clock.latest?.description }
+
+    /// §d.5 A1 (D-6): fuerza `serverSeqCursor = 0` (re-pull completo). Lo invocará el guard de
+    /// recuperación de I9 si `SyncQuarantine` se recreó por lightweight migration. Hook aquí + test.
+    func resetServerSeqCursor(context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            guard cursor.serverSeqCursor != 0 else { return }
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                cursor.serverSeqCursor = 0
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: resetServerSeqCursor falló: \(error)")
+            #endif
+        }
+    }
+
+    /// §d.5 A1 (guard de recreación de cuarentena, I9): al arrancar, si el testigo lockstep dice que
+    /// HABÍA filas de cuarentena (`quarantinePendingCount > 0`) pero la tabla `SyncQuarantine` está
+    /// VACÍA (`COUNT == 0`), una lightweight migration recreó la tabla → los deltas cuarentenados se
+    /// perdieron. Fuerza `serverSeqCursor = 0` (re-pull completo reconstruye lo perdido) + resetea el
+    /// testigo, ambos en UN save. No-op si el testigo y la tabla son coherentes. Lo invoca `start()` del
+    /// runtime ANTES del rehydrate/primer pull.
+    func recoverIfQuarantineRecreated(context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            guard cursor.quarantinePendingCount > 0 else { return }
+            let liveCount = try context.fetchCount(FetchDescriptor<SyncQuarantine>())
+            guard liveCount == 0 else { return }  // testigo y tabla coherentes → nada que recuperar
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                cursor.serverSeqCursor = 0
+                cursor.quarantinePendingCount = 0
+            }
+            CloudSyncBreadcrumb.quarantineTableRecreated()
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: recoverIfQuarantineRecreated falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Ejecuta `body` y hace `context.save()` bajo un `author` dado, restaurando el autor previo.
+    /// Centraliza el manejo de `context.author` para los saves internos del motor. `internal` (no
+    /// `private`): lo comparte `SyncApplyEngine`.
+    func saveWithAuthor(
+        _ context: ModelContext, _ author: String, _ body: () throws -> Void
+    ) throws {
+        let previous = context.author
+        context.author = author
+        defer { context.author = previous }
+        try body()
+        try context.save()
+    }
+
+    /// Resultado tri-estado del decode del token persistido (DIFERIDOS #33): distinguir `absent`
+    /// (bootstrap legítimo) de `broken` (la clase del hazard) es lo que permite acotar el fallback.
+    private enum TokenDecodeResult {
+        case absent
+        case valid(DefaultHistoryToken)
+        case broken
+
+        var logicState: HistoryTokenFallbackLogic.TokenState {
+            switch self {
+            case .absent: .absent
+            case .valid: .valid
+            case .broken: .broken
+            }
+        }
+    }
+
+    private func decodeToken(_ data: Data?) -> TokenDecodeResult {
+        guard let data else { return .absent }
+        do {
+            return .valid(try JSONDecoder().decode(DefaultHistoryToken.self, from: data))
+        } catch {
+            // Token in-decodificable (migración destructiva de schema) → DIFERIDOS #33: la rama la
+            // decide `HistoryTokenFallbackLogic` (acotado por ancla en vez del full-rescan de I3);
+            // el breadcrumb con nombre de rama lo emite `executeBrokenTokenBranch`.
+            #if DEBUG
+            print("CloudSyncEngine: decodeToken falló: \(error)")
+            #endif
+            return .broken
+        }
+    }
+
+    private func encodeToken(_ token: DefaultHistoryToken) throws -> Data {
+        try JSONEncoder().encode(token)
+    }
+
+    /// Resultado del paso 3 del drain: las transacciones a procesar + el estado del fallback de
+    /// token roto (DIFERIDOS #33) que el resto del drain consume (saltar el guard 3-bis; re-anclar
+    /// en el paso 7).
+    private struct HistoryFetchOutcome {
+        var txns: [DefaultHistoryTransaction]
+        /// El token estaba ROTO (in-decodificable o fetch por token que lanzó) → el guard del
+        /// Hallazgo 2 se salta (nada que validar) y, sin reanchor, el token roto persiste.
+        var tokenWasBroken = false
+        /// Rama acotada con ventana NO vacía: última tx de la ventana a la que el paso 7 re-ancla
+        /// el token (motor incluido — misma justificación que el reanchor del guard).
+        var brokenReanchor: (token: DefaultHistoryToken, txAt: Date)?
+    }
+
+    /// Paso 3 del drain (DIFERIDOS #33). Rama por `HistoryTokenFallbackLogic.decide`:
+    /// - token válido → fetch por token (normal); si LANZA (token incompatible tras migración
+    ///   destructiva) → re-decide con `.broken` — misma clase que in-decodificable.
+    /// - token ausente → escaneo completo LEGÍTIMO de bootstrap (comportamiento de siempre).
+    /// - token roto → `executeBrokenTokenBranch` (acotado por ancla / full-rescan medido).
+    private func fetchHistoryResolvingToken(
+        _ tokenState: TokenDecodeResult, cursor: SyncCursor, context: ModelContext
+    ) throws -> HistoryFetchOutcome {
+        let branch = HistoryTokenFallbackLogic.decide(
+            tokenState: tokenState.logicState,
+            lastDrainedTxAt: cursor.lastDrainedTxAt,
+            slack: Self.historyTokenSlack)
+        switch branch {
+        case .tokenFetch:
+            guard case .valid(let token) = tokenState else {
+                // Inalcanzable (`decide` solo devuelve .tokenFetch con .valid), defensivo.
+                return HistoryFetchOutcome(
+                    txns: try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()))
+            }
+            do {
+                if _testThrowOnTokenHistoryFetch { throw CloudSyncCursorError.historyTokenExpired }
+                return HistoryFetchOutcome(txns: try context.fetchHistory(
+                    HistoryDescriptor<DefaultHistoryTransaction>(
+                        predicate: #Predicate { $0.token > token })))
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine: fetch por token lanzó (\(error)) → fallback de token roto")
+                #endif
+                return try executeBrokenTokenBranch(
+                    HistoryTokenFallbackLogic.decide(
+                        tokenState: .broken,
+                        lastDrainedTxAt: cursor.lastDrainedTxAt,
+                        slack: Self.historyTokenSlack),
+                    context: context)
+            }
+        case .fullRescanBootstrap:
+            return HistoryFetchOutcome(
+                txns: try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()))
+        case .boundedRescan, .fullRescanNoAnchor:
+            return try executeBrokenTokenBranch(branch, context: context)
+        }
+    }
+
+    /// Ejecuta la rama de token ROTO (DIFERIDOS #33). Ver el doc-comment de la rama acotada en
+    /// `HistoryTokenFallbackLogic.Branch`; aquí las semánticas resueltas del cierre:
+    /// - **(acotada)** fetch por timestamp `> cutoff` (= ancla − slack): todo lo ≤ cutoff ya fue
+    ///   drenado (invariante del ancla) → NO se re-emite el corpus. La frontera del slack se re-lee y
+    ///   re-emite con HLC fresco → outbox redundante que el backend colapsa por LWW (coste acotado,
+    ///   mismo residual T3 del guard). Ventana NO vacía → `brokenReanchor` a su última tx (el paso 7
+    ///   persiste y emite el par `historyTokenBrokenReanchored`). Ventana VACÍA (History purgada por
+    ///   debajo del ancla) → sin reanchor: el token roto persiste y cada drain repite este fallback
+    ///   (un decode fallido + un fetch acotado vacío — barato) hasta que un write nuevo entre en la
+    ///   ventana y sane. Nota de orden: el reanchor usa `txns.last` en el ORDEN del fetch (orden de
+    ///   token/inserción, sin re-ordenar por timestamp como hace la unión del guard) — bajo reloj
+    ///   monótono coinciden; bajo rewind el `txAt` del re-ancla puede quedar por debajo del máximo
+    ///   visto, dirección SEGURA (ventana más ancha después → coste de re-lectura, no pérdida).
+    ///   **Residual REWIND (cita M1 del guard):** un ancla ADELANTADA al wall-clock
+    ///   (solo posible por rewind de reloj > slack durante la ventana del último drain) deja writes
+    ///   nuevos con `timestamp < cutoff` fuera de la ventana — con token roto este fallback es
+    ///   load-bearing (única fuente de captura) y esos writes del gap se pierden de la captura hasta
+    ///   que el wall-clock re-pase el cutoff (sana hacia adelante; el gap no se recupera). Misma
+    ///   improbabilidad que M1 y además exige el token roto SIMULTÁNEO; no se resuelve con wall-clock
+    ///   (`Date()`) — el guard lo descartó por diseño y se mantiene la coherencia.
+    /// - **(b — degradación)** el fetch acotado TAMBIÉN lanza → full-rescan MEDIDO en vez de abortar:
+    ///   abortar convertiría un fallo persistente del predicate-fetch en stall permanente del sync =
+    ///   divergencia local-ahead (la clase inconvergible del Hallazgo 2) = riesgo de pérdida de datos
+    ///   si el device muere; el daño del full-rescan es de COSTO y converge (LWW).
+    /// - **(a — sin ancla)** cursor pre-schema → full-rescan CONSERVADO (sin ancla no hay forma de
+    ///   acotar sin arriesgar pérdida de writes). Residual conservado: si la History no tiene NINGUNA
+    ///   tx externa, `advancedToken` queda nil → el token roto persiste → full-rescan repetido por
+    ///   drain (exactamente el comportamiento pre-#33; no se empeora ni se arregla).
+    private func executeBrokenTokenBranch(
+        _ branch: HistoryTokenFallbackLogic.Branch, context: ModelContext
+    ) throws -> HistoryFetchOutcome {
+        switch branch {
+        case .boundedRescan(let cutoff):
+            do {
+                if _testThrowOnBoundedHistoryFetch { throw CloudSyncCursorError.historyTokenExpired }
+                let txns = try context.fetchHistory(
+                    HistoryDescriptor<DefaultHistoryTransaction>(
+                        predicate: #Predicate { $0.timestamp > cutoff }))
+                historyTokenBrokenBoundedCount += 1
+                CloudSyncBreadcrumb.historyTokenBrokenBoundedRescan(window: txns.count)
+                // El re-ancla se acota al store PERSONAL por la misma razón que el del guard y que el avance
+                // normal: el fetch por TIMESTAMP es cross-store, así que su última transacción puede ser de
+                // `syncMeta` (el propio cursor) o del store de Grupos, y anclar ahí deja al canal ciego a su
+                // store PARA SIEMPRE — el token por-store no surfacea nada del personal desde un ancla ajena
+                // y sin verlo tampoco puede re-anclar en él. Ventana sin transacción personal ⇒ sin reanchor:
+                // el token roto persiste y este fallback se repite (barato) hasta que entre un write personal.
+                let reanchor = txns.last(where: { Self.isPersonalStoreTransaction($0) })
+                    .map { (token: $0.token, txAt: $0.timestamp) }
+                return HistoryFetchOutcome(
+                    txns: txns, tokenWasBroken: true, brokenReanchor: reanchor)
+            } catch {
+                // Semántica (b): degradar al full-rescan medido (ver doc-comment).
+                #if DEBUG
+                print("CloudSyncEngine: fetch acotado del fallback lanzó (\(error)) → full-rescan degradado")
+                #endif
+                let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+                historyTokenBrokenFullRescanCount += 1
+                CloudSyncBreadcrumb.historyTokenBrokenFullRescan(
+                    reason: "bounded-fetch-failed", txs: txns.count)
+                return HistoryFetchOutcome(txns: txns, tokenWasBroken: true)
+            }
+        case .fullRescanNoAnchor:
+            let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            historyTokenBrokenFullRescanCount += 1
+            CloudSyncBreadcrumb.historyTokenBrokenFullRescan(reason: "no-anchor", txs: txns.count)
+            return HistoryFetchOutcome(txns: txns, tokenWasBroken: true)
+        case .tokenFetch, .fullRescanBootstrap:
+            // Inalcanzable (solo se invoca con ramas de token roto), defensivo.
+            return HistoryFetchOutcome(
+                txns: try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()),
+                tokenWasBroken: true)
+        }
+    }
+
+    // MARK: - Dedup / encoding
+
+    private func existingOutboxKeys(_ context: ModelContext) throws -> Set<String> {
+        let existing = try context.fetch(FetchDescriptor<SyncOutbox>())
+        var keys: Set<String> = []
+        for row in existing {
+            guard let op = SyncOutboxOp(rawValue: row.opRaw) else { continue }
+            keys.insert(dedupKey(syncID: row.syncID, hlc: row.hlc, op: op))
+        }
+        return keys
+    }
+
+    private func dedupKey(syncID: UUID, hlc: String, op: SyncOutboxOp) -> String {
+        "\(syncID.uuidString)\u{1}\(hlc)\u{1}\(op.rawValue)"
+    }
+
+    /// Serializa el `field_hlcs` (mapa unidad-de-coherencia → HLC) como JSON plano `{unit:hlc}` con
+    /// claves ordenadas (determinista). Vacío → `"{}"` (no ocurre en upserts: siempre hay ≥1 unidad).
+    private func encodeFieldHlcs(_ fieldHlcs: [String: String]) -> String {
+        guard !fieldHlcs.isEmpty else { return "{}" }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        do {
+            let data = try encoder.encode(fieldHlcs)
+            return String(decoding: data, as: UTF8.self)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: encodeFieldHlcs error: \(error)")
+            #endif
+            return "{}"
+        }
+    }
+
+    // MARK: - SyncUnitClock (I8f-2, D-A) — hook del drain
+
+    /// Lee los `SyncUnitClock` que tocan las filas nuevas de outbox, ANTES de insertar nada: devuelve las
+    /// escrituras ya leídas, que el caller aplica DENTRO del save del outbox (él garantiza la atomicidad).
+    /// Upsert → merge MAX de las unidades emitidas (el `fieldHlcsJSON` de la fila ES la verdad de qué
+    /// unidades viajaron con qué HLC). Tombstone → borrar la fila de clock (higiene del review; si el
+    /// modelo resucita, drain/apply la re-pueblan).
+    ///
+    /// LANZA si una fila de reloj no se deja leer (ticket `drain-duplicates-the-unit-clock-when-its-row-
+    /// cannot-be-read`): leída como «no hay», el upsert insertaba un SEGUNDO reloj para el mismo `syncID` que
+    /// el reconciler de transferencias podía leer en lugar del bueno, y el tombstone dejaba el viejo vivo.
+    /// Se llama antes de la primera mutación, así que el fallo no deja nada a medias en el contexto.
+    private func prepareUnitClocks(for rows: [PendingOutboxRow], context: ModelContext) throws
+        -> SyncUnitClockStore.PreparedWrites {
+        var writes: [SyncUnitClockStore.Write] = []
+        for row in rows {
+            switch row.op {
+            case .tombstone:
+                writes.append(.delete(syncID: row.syncID))
+            case .upsert:
+                // `entityType` de la fila es NOMBRE DE CLASE; el clock coordina por TABLA (como el wire).
+                guard let table = EntityEmissionMap.table(forClass: row.entityType) else {
+                    #if DEBUG
+                    print("CloudSyncEngine.prepareUnitClocks: clase sin tabla \(row.entityType) — clock omitido")
+                    #endif
+                    continue
+                }
+                guard let json = row.fieldHlcsJSON else { continue }  // sin unidades (no ocurre en upserts)
+                writes.append(.upsert(syncID: row.syncID, entityTable: table,
+                                      unitHlcs: SyncUnitClockStore.decodeMap(json)))
+            }
+        }
+        return try SyncUnitClockStore.prepareWrites(writes, context: context)
+    }
+
+    // MARK: - Espejo del outbox (A1, §d.5)
+
+    /// Escribe el espejo `.atomic` de cada fila NUEVA de un drain, ANTES del insert+save (mismo cuerpo
+    /// síncrono). Best-effort: un fallo se loguea y NO aborta el drain (la History es backup redundante
+    /// y el canario de divergencia lo delata). No-op sin `outboxMirror` + `currentUserID` (I8d DARK).
+    private func writeMirror(rows: [PendingOutboxRow]) {
+        guard let mirror = outboxMirror, let userID = currentUserID else { return }
+        for row in rows {
+            do {
+                try mirror.write(row.mirrorEntry(userID: userID))
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine: espejo write falló para \(row.entityType): \(error)")
+                #endif
+            }
+        }
+    }
+
+    /// Deshace `writeMirror` para unas filas cuyo save falló (ticket `drain-duplicates-the-unit-clock-when-its-row-
+    /// cannot-be-read`). Mismo no-op sin `outboxMirror` + `currentUserID`; borrar una entry ausente no hace nada.
+    private func unwriteMirror(rows: [PendingOutboxRow]) {
+        guard let mirror = outboxMirror, currentUserID != nil else { return }
+        for row in rows { mirror.remove(syncID: row.syncID, hlc: row.hlc) }
+    }
+
+    /// Re-hidrata el outbox desde el espejo App Group tras una lightweight migration que recreó la tabla
+    /// (§d.5 A1). Se llama en `startEngines` ANTES del primer drain/pull (el wiring es I9); aquí solo el
+    /// método + tests.
+    ///
+    /// **DIFF INCONDICIONAL con owner-scoping DURO**: solo procesa `entriesForUser(userID)` (las de otra
+    /// identidad se IGNORAN — no se re-insertan ni se borran, red M1(b)); por cada entry cuyo
+    /// `(syncID,hlc,op)` NO tiene fila viva en `SyncOutbox` (fetch CONCRETO), re-inserta con
+    /// `author`/`clientMutationID`/`hlc`/`op` ORIGINALES. **SIN gate `count==0`** → cubre el vaciado
+    /// PARCIAL. Idempotente (guard "fila viva ya presente"). El SAVE va bajo `outboxSaveAuthor` → el drain
+    /// NO re-captura las filas re-insertadas (self-echo). Un archivo huérfano (crash entre purga y remove)
+    /// es benigno: se re-inserta, el drain lo re-sube, el backend deduplica por `client_mutation_id`.
+    /// Emite `cloudSyncOutboxMirrorRehydrated(n>0)` y `cloudSyncOutboxMirrorDivergence(delta≠0)`.
+    func rehydrateOutboxFromMirror(userID: String, context: ModelContext) {
+        guard let mirror = outboxMirror else { return }
+        let entries = mirror.entriesForUser(userID)
+
+        // Filas vivas actuales (fetch concreto) → keys de dedup + conteo para divergencia.
+        let liveKeys: Set<String>
+        let liveCount: Int
+        do {
+            let live = try context.fetch(FetchDescriptor<SyncOutbox>())
+            liveCount = live.count
+            liveKeys = try existingOutboxKeys(context)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: rehydrate fetch(SyncOutbox) falló: \(error)")
+            #endif
+            // Salir sin re-insertar es lo correcto —sin saber qué hay vivo, re-insertar duplicaría filas—, pero
+            // salir MUDO apagaba `cloudSyncOutboxMirrorDivergence`, el canario del fallo que ni el Merkle ve (ticket
+            // `an-incomplete-inventory-reads-as-the-whole-corpus`). El breadcrumb es del dispositivo; la métrica de flota
+            // sigue sin emitirse en esta rama. Lo reintenta el siguiente arranque.
+            CloudSyncBreadcrumb.outboxFetchFailed(step: "rehydrate-mirror")
+            return
+        }
+
+        // Divergencia = |espejo del userID| − |store| (medida ANTES de re-insertar). >0 = archivo huérfano
+        // o vaciado parcial → el modo de fallo que ni el Merkle ve.
+        let divergence = entries.count - liveCount
+        if divergence != 0 {
+            MetricsService.cloudSyncOutboxMirrorDivergence(delta: divergence)
+        }
+
+        // Seleccionar las entries faltantes (idempotente: guard "fila viva ya presente").
+        var missing: [OutboxMirrorEntry] = []
+        for entry in entries {
+            guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+            let key = dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op)
+            if !liveKeys.contains(key) { missing.append(entry) }
+        }
+        guard !missing.isEmpty else { return }
+
+        // Re-insertar bajo el autor del motor (echo-suppression) con los valores ORIGINALES.
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for entry in missing {
+                    guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+                    context.insert(SyncOutbox(
+                        syncID: entry.syncID,
+                        entityType: entry.entityType,
+                        op: op,
+                        hlc: entry.hlc,
+                        clientMutationID: entry.clientMutationID,
+                        fieldsJSON: entry.fieldsJSON,
+                        fieldHlcsJSON: entry.fieldHlcsJSON,
+                        author: entry.author,
+                        tombstoneReason: entry.tombstoneReason,
+                        createdAt: entry.createdAt
+                    ))
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: rehydrate save falló: \(error)")
+            #endif
+            return
+        }
+        MetricsService.cloudSyncOutboxMirrorRehydrated(count: missing.count)
+    }
+
+    /// HOOK I8e (2xx): purga la fila del outbox subida con éxito + borra su archivo espejo, y SOLO
+    /// ENTONCES el corte de `deleteHistory` puede avanzar sobre ella (invariante §d.5 —
+    /// `deleteHistorySafeCut`). En I8d el drain NO lo llama solo (no hay upload todavía); lo invocará el
+    /// cliente HTTP de I8e al recibir el 2xx. Idempotente (fila/archivo ya ausentes → no-op).
+    func confirmUploaded(syncID: UUID, hlc: String, context: ModelContext) {
+        do {
+            let rows = try context.fetch(FetchDescriptor<SyncOutbox>(
+                predicate: #Predicate { $0.syncID == syncID && $0.hlc == hlc }
+            ))
+            if !rows.isEmpty {
+                try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                    for row in rows { context.delete(row) }
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: confirmUploaded purge falló: \(error)")
+            #endif
+        }
+        // El espejo se borra DESPUÉS del purge de la fila (orden espeja el write: fila-primero al subir).
+        outboxMirror?.remove(syncID: syncID, hlc: hlc)
+    }
+
+    /// Corte SEGURO para `deleteHistory(before:)` (invariante §d.5): NUNCA por delante de la fila de
+    /// outbox sin-2xx más vieja. `drainedBoundary` = hasta dónde consumió el drain la History (nil = sin
+    /// restricción por ese lado). Retorna `min(drainedBoundary, createdAt de la fila outbox presente más
+    /// vieja)`; `nil` = ni fila sin-confirmar ni boundary → sin restricción. En I8d NO hay un
+    /// `deleteHistory` real todavía (I8e/I9 lo cablean): esto EXPRESA el invariante testeable —
+    /// `confirmUploaded` purga la fila, y solo entonces el corte avanza sobre ella.
+    ///
+    /// El suelo incluye TAMBIÉN el canal de GRUPOS, y es obligatorio: el History es POR-CONTAINER
+    /// (personal + grupos + sync-meta en un solo `ModelContainer`), pero este corte solo miraba el outbox
+    /// PERSONAL ⇒ podía BORRAR la transacción de una fila de Grupos antes de que el drain de ese canal
+    /// —que lee el mismo History con su PROPIA ancla, siempre por detrás— llegara a verla: la fila
+    /// quedaría local y jamás subiría al backend, una pérdida silenciosa.
+    ///
+    /// (Nació con el rescate de pull de C-4, borrado en `5010db6a` junto al uploader; el suelo NO se fue
+    /// con él porque no dependía del rescate — es correctness del canal de Grupos, que sobrevive, y vale
+    /// para CUALQUIER fila suya. Sus tests viven en `GroupsHistoryCutFloorTests`.)
+    ///
+    /// Las dos anclas del canal de Grupos:
+    ///  - `GroupSyncCursor.lastDrainedTxAt`: hasta dónde consumió el drain de Grupos (por debajo de eso
+    ///    ya está capturado; por delante, no).
+    ///  - la fila viva más vieja de `GroupSyncOutbox`: espejo exacto del invariante del outbox personal
+    ///    (su transacción de History es el backup del delta hasta el 2xx).
+    func deleteHistorySafeCut(drainedBoundary: Date?, context: ModelContext) throws -> Date? {
+        let floors: [Date] = try [
+            drainedBoundary,
+            oldestUnconfirmedOutboxDate(context),
+            groupDrainedBoundary(context),
+            oldestLiveGroupOutboxDate(context),
+        ].compactMap { $0 }
+        return floors.min()
+    }
+
+    /// `createdAt` de la fila de outbox presente (= sin-2xx) más vieja, o `nil` si el outbox está vacío.
+    private func oldestUnconfirmedOutboxDate(_ context: ModelContext) throws -> Date? {
+        var descriptor = FetchDescriptor<SyncOutbox>(sortBy: [SortDescriptor(\.createdAt, order: .forward)])
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.createdAt
+    }
+
+    /// [C-4 PIEZA 2] Ancla temporal del drain del canal de GRUPOS (`GroupSyncCursor.lastDrainedTxAt`).
+    /// `nil` = sin fila de cursor o cursor pre-consumo ⇒ ninguna restricción por ese lado (el drain de
+    /// Grupos aún no ha avanzado sobre nada, así que no hay nada suyo que proteger).
+    private func groupDrainedBoundary(_ context: ModelContext) throws -> Date? {
+        var descriptor = FetchDescriptor<GroupSyncCursor>()
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.lastDrainedTxAt
+    }
+
+    /// [C-4 PIEZA 2] `createdAt` de la fila VIVA más vieja del outbox de Grupos. «Viva» = sin
+    /// `rejectedReason`: una fila en dead-letter no va a subir nunca, así que retener su History por
+    /// ella dejaría el corte clavado para siempre — mismo criterio que `liveGroupOutboxCount`, del que
+    /// depende el paso 5 del uploader de la migración.
+    private func oldestLiveGroupOutboxDate(_ context: ModelContext) throws -> Date? {
+        var descriptor = FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.rejectedReason == nil },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)])
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.createdAt
+    }
+
+    /// Purga el SwiftData History por delante del corte SEGURO (I9 ampliado, §i.6 purga conservadora).
+    /// El corte lo calcula `deleteHistorySafeCut` — invariante §d.5: NUNCA por delante de la fila de
+    /// outbox sin-2xx más vieja (su transacción de History es el backup del delta hasta el 2xx; el espejo
+    /// App Group es la red redundante, no la primaria). Se llama SOLO tras un ciclo del runtime con pull
+    /// `.completed` y bajo DOBLE flag (`syncRuntimeEnabled` + `historyPurgeEnabled` — el riesgo device-only
+    /// del token del mirror de NSPersistentCloudKitContainer se resuelve en el spike S2).
+    ///
+    /// **La frontera del drain es lo que el drain CONSUMIÓ (`SyncCursor.lastDrainedTxAt`), no `now`** (ticket
+    /// `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending`, 2026-09-26). Hasta ese día se pasaba `now`
+    /// con la premisa de que «el drain ya consumió toda la history externa», y no era verdad en tres casos medidos:
+    /// un drain que aborta (`rollback()`: la edición queda solo en el History), una traducción cortada (no consume la
+    /// transacción a propósito, para reintentarla) y todo lo escrito DESPUÉS del último drain del ciclo — los
+    /// reconciliadores del pull, que guardan con autor normal para que «drenen en el próximo ciclo», y una edición
+    /// hecha durante la espera de red de las preferencias, de Grupos o del Merkle. La purga borraba esas
+    /// transacciones antes de que ningún drain las viera, y el cambio no subía nunca, sin aviso. Con el ancla:
+    ///  · la transacción del token (su `timestamp` ES el ancla) no se purga, así que el fetch por token no caduca;
+    ///  · **lo que el drain no consumió se mide por TOKEN, no por timestamp** (review adversarial del mismo día): el
+    ///    drain ordena por token y la purga borra por timestamp, así que con un reloj que retrocedió una edición sin
+    ///    consumir puede llevar un timestamp ANTERIOR al ancla. Su timestamp más viejo (`unconsumedFloor`) es un suelo
+    ///    más, y con el token ilegible no se purga: sin saber qué queda sin consumir no hay corte honesto;
+    ///  · sin ancla —el drain no ha consumido nada todavía— no se purga nada: no hay nada consumido que purgar.
+    ///
+    /// **Precio aceptado**: el ancla solo avanza con transacciones del store personal, así que el History de Grupos y de
+    /// sync-meta espera a la siguiente. En uso normal llega a diario (el tipo de cambio de cada día,
+    /// `ExchangeRateService.updateTodayIfNeeded`, es una fila personal), y lo que crece es ese día, no el corpus.
+    ///
+    /// - Returns: nº de transacciones purgadas; `nil` si no había corte, no había nada que purgar, o el
+    ///   fetch/delete falló (con log — un fallo NUNCA rompe el ciclo).
+    @discardableResult
+    func purgeHistoryOnce(context: ModelContext, now: Date = .now) -> Int? {
+        do {
+            var cursorDescriptor = FetchDescriptor<SyncCursor>()
+            cursorDescriptor.fetchLimit = 1
+            guard let cursor = try context.fetch(cursorDescriptor).first, let drained = cursor.lastDrainedTxAt else {
+                return nil  // el drain no ha consumido nada: nada que purgar
+            }
+            guard case .valid(let token) = decodeToken(cursor.historyTokenData) else {
+                return nil  // sin token legible no se sabe qué queda sin consumir
+            }
+            let unconsumedFloor = try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token })
+            ).filter { $0.author != Self.outboxSaveAuthor && Self.isPersonalStoreTransaction($0) }
+                .map(\.timestamp).min()
+            let boundary = [now, drained, unconsumedFloor].compactMap { $0 }.min() ?? drained
+            guard let cut = try deleteHistorySafeCut(drainedBoundary: boundary, context: context) else {
+                return nil  // sin restricción calculable → conservador: no purgar nada
+            }
+            // Contar ANTES de borrar (deleteHistory devuelve Void). Mismo predicate en fetch y delete.
+            let descriptor = HistoryDescriptor<DefaultHistoryTransaction>(
+                predicate: #Predicate { $0.timestamp < cut }
+            )
+            let count = try context.fetchHistory(descriptor).count
+            guard count > 0 else { return nil }
+            try context.deleteHistory(descriptor)
+            CloudSyncBreadcrumb.historyPurged(count: count)
+            return count
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: purgeHistoryOnce falló (el ciclo continúa): \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    // MARK: - Snapshot upload seam (I10-wiring w4)
+
+    /// Avanza el token del `SyncCursor` al ÚLTIMO de History SIN emitir (baseline del snapshot, §g).
+    /// Corre ANTES de enumerar el snapshot para CERRAR la ventana de escrituras concurrentes: todo write
+    /// posterior al baseline aparece en History y lo captura el drain normal como delta INCREMENTAL
+    /// (idempotente aunque el snapshot ya lo hubiera incluido: LWW por unidad converge). Save con el autor
+    /// del motor (anti-auto-captura, lockstep D-3 intacto: no se emite ninguna fila). No-op si no hay
+    /// History todavía. Un fallo se loguea (DEBUG) y NUNCA rompe la fase (el snapshot re-enumerará full-row).
+    func fastForwardHistoryBaseline(context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            // Anclar el baseline al último token de una transacción del STORE PERSONAL y NO-motor. Los dos
+            // filtros están por razones distintas y ninguno sustituye al otro:
+            //
+            //  • `author != outboxSaveAuthor` excluye las transacciones RECIÉN escritas por el propio motor
+            //    (creación del cursor / este mismo save). Anclar ahí resultó intermitentemente NO-comparable
+            //    con writes futuros del store personal (bug real cazado por test: `token > baseline` fallaba
+            //    ~50% → el drain se saltaba writes concurrentes post-baseline = pérdida silenciosa).
+            //
+            //  • `isPersonalStoreTransaction` es el que faltaba, y su ausencia estaba AUTORIZADA POR ESCRITO
+            //    por la versión previa de este comentario, que afirmaba que anclar en `syncMeta` (citando el
+            //    save de captura de `SyncIdentity`) era «SEGURO por la misma monotonía global de tokens […]
+            //    device-probado». **Eso está REFUTADO por medición (2026-08-03).** No hay monotonía global:
+            //    `DefaultHistoryToken` es POR-STORE y `fetchHistory($0.token > token)` OCULTA por completo
+            //    los demás stores del container (`historyToken_isPerStore_andHidesOtherStores`). Sondeados
+            //    los dos casos alcanzables aquí —la última no-motor siendo `GroupSyncCursor` (autor
+            //    `GroupsSyncOutbox`, que para este canal es EXTERNO, y con el rollout de Grupos al 100 % su
+            //    loop de cadencia lo escribe periódicamente ⇒ caso DOMINANTE) y siendo `SyncIdentity`, el
+            //    ejemplo que el comentario daba por bueno— el ancla caía en `syncMeta` y el write personal
+            //    posterior al baseline **no surfaceaba**: el baseline dejaba de cerrar la ventana. Y el daño
+            //    no se quedaba en «un write invisible»: lo rescataba `recoverIfHistoryTokenIncomparable`
+            //    re-procesando la UNIÓN, o sea RE-EMITIENDO filas PRE-baseline (2 en la sonda donde toca 1)
+            //    — exactamente lo que este método existe para evitar— más un canario
+            //    `historyTokenIncomparable` FALSO. En el call-site del adopt es peor por escala: el corpus
+            //    importado de CloudKit acaba de asentarse, así que buena parte cae dentro de la ventana de
+            //    slack del guard y se re-emite, que es el contrato (ii) de `runAdoptFlow` incumplido.
+            //    Nota: hasta el fix del ancla del drain (mismo día) esto se auto-curaba a medias, porque el
+            //    avance normal aceptaba cualquier transacción externa y re-anclaba en la vuelta siguiente;
+            //    acotado el drain a su store, ese rescate accidental desapareció y solo queda el guard.
+            //
+            // Sin transacción personal no-motor no hay ventana PERSONAL que cerrar → return (token queda
+            // como estaba). Es la misma semántica de antes para el caso born-cloud, y sigue siendo correcta:
+            // el corpus que este baseline suprime son writes del store personal, así que su ausencia en la
+            // History implica que no hay nada que suprimir.
+            guard let lastTx = txns.last(where: {
+                Self.isPersonalStoreTransaction($0) && $0.author != Self.outboxSaveAuthor
+            }) else { return }
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                cursor.historyTokenData = try encodeToken(lastTx.token)
+                // Estampar el ancla temporal JUNTO al token (S1 del review adversarial): un fast-forward
+                // deja a propósito txs jamás drenadas por debajo del token (el snapshot las cubre full-row);
+                // sin mover `lastDrainedTxAt`, el guard de validación del primer drain (re-migración sobre
+                // la misma instalación, token viejo semanas atrás) las vería TODAS como "faltantes" →
+                // recovery masiva del corpus + canario `historyTokenIncomparable` FALSO. Token y ancla
+                // deben avanzar SIEMPRE en el mismo save.
+                cursor.lastDrainedTxAt = lastTx.timestamp
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: fastForwardHistoryBaseline falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Encola una página de filas de snapshot (op `.upsert` full-row) reusando la disciplina PRIVADA del
+    /// drain (`PendingOutboxRow` + `prepareUnitClocks` + persistencia del reloj) sin duplicarla (seam w4).
+    ///
+    /// El motor acuña el HLC por fila (`clock.send`, ÚNICO punto de advance) y llama `input.makePayload(hlc)`
+    /// — que construye `(fieldsJSON, fieldHlcsJSON)` con ese HLC en `field_hlcs`; `nil` = el codec c1 rechazó
+    /// la fila (poison) → se SALTA y la página CONTINÚA (el builder ya emitió el canario; el mismatch
+    /// permanente que esto provoca en verify degradará a `failedRollback` tras los topes — CORRECTO por
+    /// diseño: jamás cutover con pérdida silenciosa de una fila).
+    ///
+    /// **INVARIANTE lockstep D-3**: el HLC consumido se persiste (`clockLatestHLC`) en el MISMO `save()` que
+    /// inserta las filas de la página. Autor del motor (echo-suppression). `SyncUnitClock` SÍ se escribe por
+    /// fila (los reconcilers lo necesitan; volumen aceptado). El dedup por `(syncID,hlc,op)` protege el
+    /// replay dentro de una misma corrida; un kill entre enqueue y confirm re-emite con HLC NUEVO al resumir
+    /// (el reloj persistido avanza) → el RPC lo resuelve por LWW (mismo contenido, converge) — H5: jamás
+    /// resumir por contador. Las filas de snapshot NO se espejan al App Group (decisión de /review-plan): son
+    /// RE-DERIVABLES (kill → el cursor no avanzó → la página se re-emite); el espejo A1 protege ediciones
+    /// pendientes no re-derivables. `confirmUploaded` sobre una fila sin entrada de espejo es no-op benigno
+    /// (`outboxMirror?.remove` sobre una key ausente no hace nada).
+    func enqueueSnapshotRows(_ inputs: [SnapshotRowInput], context: ModelContext, now: Date) throws {
+        guard !inputs.isEmpty else { return }
+        let cursor = try loadOrCreateCursor(context)
+        loadClock(from: cursor)
+        var seen = try existingOutboxKeys(context)
+        var rows: [PendingOutboxRow] = []
+        for input in inputs {
+            let hlc = try clock.send(now: now).description
+            let key = dedupKey(syncID: input.syncID, hlc: hlc, op: .upsert)
+            guard !seen.contains(key) else { continue }
+            seen.insert(key)
+            guard let payload = input.makePayload(hlc) else { continue }  // codec rechazó → skip (canario en el builder)
+            rows.append(PendingOutboxRow(
+                syncID: input.syncID, entityType: input.entityType, op: .upsert, hlc: hlc,
+                clientMutationID: UUID(), fieldsJSON: payload.fieldsJSON, fieldHlcsJSON: payload.fieldHlcsJSON,
+                author: Self.outboxSaveAuthor, tombstoneReason: nil, createdAt: now))
+        }
+        // Los relojes se LEEN antes de insertar (ticket `drain-duplicates-the-unit-clock-when-its-row-cannot-
+        // be-read`): si no se dejan leer, se lanza sin haber insertado nada — los llamadores no hacen rollback, y
+        // el suyo puede llevar ediciones del usuario sin guardar. (Lo que ya pasó antes sigue pasado: el cursor
+        // recién creado de `loadOrCreateCursor` está guardado y el reloj en memoria avanzó con `clock.send`.)
+        let unitClocks = try prepareUnitClocks(for: rows, context: context)
+        // Filas + SyncUnitClock + reloj en UN save (lockstep D-3). Aunque `rows` quede vacío (todo
+        // deduplicado), persistir el avance del reloj es benigno e idempotente.
+        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+            for row in rows { context.insert(row.makeModel()) }
+            unitClocks.apply(context: context)
+            cursor.clockLatestHLC = clock.latest?.description
+        }
+    }
+
+    /// Dead-letterea filas poison (#26) fuera del camino del runtime (que conserva su copia privada ya
+    /// probada). Consumido por el uploader del snapshot y el verify del executor (I10-wiring w4/w5, fix del
+    /// review adversarial del ciclo B): sin esto, una fila poison quedaría VIVA para siempre → el uploader
+    /// jamás confirma su página (migración ATASCADA en uploadingSnapshot, transient perpetuo) y el guard
+    /// `outbox-pending` de `verifyIntegrity` produce `newDeltaDetected` en LIVELOCK. Dead-letterearla la saca
+    /// de las filas vivas; el mismatch resultante degrada honesto a `failedRollback` por topes (jamás cutover
+    /// con pérdida silenciosa). Imposible hoy (16/16 cableadas ⇒ sin poison); protege el futuro.
+    func deadLetterPoison(_ poison: [SyncPushClient.PoisonRow], context: ModelContext, now: Date) {
+        guard !poison.isEmpty else { return }
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for p in poison {
+                    p.row.rejectedReason = p.reason
+                    p.row.rejectedAt = now
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.deadLetterPoison: save falló: \(error)")
+            #endif
+            return
+        }
+        for p in poison { MetricsService.cloudSyncMutationRejected(reason: p.reason) }
+    }
+}
+
+// MARK: - IdentityRemap (DIFERIDOS #29, §b.4)
+
+/// Descriptor de UN re-key de identidad: la entidad, su sync_id VIEJO y el NUEVO. UUID-only (el emisor
+/// resuelve el modelo VIVO desde el contexto por `newID`). `entityType` = `SyncEntityType.tag/account/subcategory`
+/// (las 3 identidades regenerables hoy — `Tag.id`/`Account.shortcutID`/`Subcategory.shortcutID`, vía
+/// `CategoryDeduplicationService.repairCollapsedIdentityUUIDs`). Si un futuro sitio regenerara otra identidad
+/// cableada (Budget/ScheduledPayment/CashFlow*/NotificationItem/GroupBridgePreference), DEBE pasar por
+/// `emitIdentityRemap` (añadir su rama de dispatch) — el canario D4 queda como red hasta entonces.
+struct IdentityRemapPair {
+    let entityType: String
+    let oldID: UUID
+    let newID: UUID
+}
+
+/// Errores del emisor de IdentityRemap. Nombrados (nunca silenciados): el reparador los convierte en
+/// ROLLBACK + breadcrumb `identityRemapAborted` + defer (SERIO 1 del review).
+nonisolated enum IdentityRemapError: Error, Equatable {
+    /// SERIO 3 (R4 del plan): una migración/reversa §g/§h está EN CURSO (fase transitoria journaleada) —
+    /// el journal/lease posee el outbox en esa ventana; inyectar filas de remap corrompería el snapshot/verify.
+    /// El reparador difiere al próximo run del dedup (fase estable).
+    case migrationInProgress
+}
+
+/// Resultado de `emitIdentityRemap`: el conteo + las filas pendientes de ESPEJO (opacas al llamador — el
+/// contenido es `fileprivate`). SERIO 2 del review: el espejo App Group NO se escribe en la emisión sino
+/// POST-save del llamador (`mirrorRemapRows`) — espejar antes del save envenenaba el App Group si el save
+/// fallaba (dominio revertido pero entries vivas → `rehydrateOutboxFromMirror` re-insertaría y pushearía un
+/// tombstone de un id VIVO + un upsert huérfano).
+struct IdentityRemapEmission {
+    /// nº de filas de outbox encoladas (0 = gate cerrado o nada que emitir).
+    let rowCount: Int
+    fileprivate let rows: [PendingOutboxRow]
+
+    fileprivate init(rowCount: Int, rows: [PendingOutboxRow]) {
+        self.rowCount = rowCount
+        self.rows = rows
+    }
+
+    /// Emisión vacía (gate cerrado / sin pares).
+    static var empty: IdentityRemapEmission { IdentityRemapEmission(rowCount: 0, rows: []) }
+}
+
+extension CloudSyncEngine {
+
+    /// SERIO 3 (R4 del plan): `true` si hay una migración/reversa §g/§h EN CURSO (fase TRANSITORIA journaleada)
+    /// → el remap NO debe emitirse (el journal/lease posee el outbox en esa ventana). Predicado CANÓNICO
+    /// reusado, NO inventado: la clasificación estable/transitoria EXHAUSTIVA de `BGTaskMigrationGate.decide`
+    /// (rol `.reader`, quiescencia irrelevante — las fases estables devuelven `.run` incondicional) sobre la
+    /// fase SSOT (`MigrationPhaseStore.shared.currentPhaseRead`, el mismo journal que consultan los BGTasks §i.9).
+    /// El reparador lo PRE-consulta antes de mutar dominio (así el defer no necesita rollback); `emitIdentityRemap`
+    /// lo re-verifica como defensa en profundidad.
+    var isIdentityRemapBlockedByMigration: Bool {
+        // Con la LECTURA: un journal que no se deja leer bloquea el remap (ticket
+        // `an-unreadable-migration-journal-reads-as-never-started`), porque no se sabe si el journal posee el outbox.
+        let read = _testMigrationPhaseOverride.map(JournaledPhaseRead.phase) ?? MigrationPhaseStore.shared.currentPhaseRead
+        return Self.identityRemapBlocked(by: read)
+    }
+
+    /// El predicado de arriba sobre una lectura dada. Lo usa también la reparación de identidades en `.icloud`
+    /// (`CategoryDeduplicationService.repairCollapsedIdentityUUIDs`), donde no hay motor: un journal en una fase transitoria
+    /// o ilegible bloquea.
+    nonisolated static func identityRemapBlocked(by read: JournaledPhaseRead) -> Bool {
+        BGTaskMigrationGate.decide(read: read, isImportQuiescent: false, role: .reader) != .run
+    }
+
+    /// La reparación de identidades en `.icloud` (sin motor): se difiere desde que la ida ASIGNA identidades. Antes —
+    /// `dryRun`, `consent`, `authenticating`, `claimingMigration`— no hay nada subido ni testigo escrito, y reparar ahí evita
+    /// que una colisión llegue a la subida como dos filas con el mismo sync_id (review adversarial del 2026-10-19). Ilegible
+    /// difiere.
+    nonisolated static func identityRepairDefersInICloud(by read: JournaledPhaseRead) -> Bool {
+        if case .phase(let phase) = read {
+            switch phase {
+            case .dryRun, .consent, .authenticating, .claimingMigration:
+                return false
+            default:
+                break
+            }
+        }
+        return identityRemapBlocked(by: read)
+    }
+
+    /// Emite el trío de identidad de §b.4 para cada `pair` regenerado, ENCOLÁNDOLO en `context` **SIN save** (el
+    /// llamador — `repairCollapsedIdentityUUIDs` — comitea dominio + outbox en UNA transacción de History, §b.4
+    /// crítica #6):
+    ///   a) `tombstone(oldID)` con reason `.remap` — **DEDUP por `oldID`**: un grupo colisionado (X→A, X→B, …)
+    ///      emite UN solo `tombstone(X)`;
+    ///   b) `upsert` FILA-COMPLETA (proyección INSERT = `emission.columns`) de la fila con `newID`;
+    ///   c) `upsert` FILA-COMPLETA de cada fila REFERENCIANTE — sus `*_ref`/`tag_refs` se derivan de la relación
+    ///      VIVA en la emisión → sin re-emitirlas divergen para SIEMPRE (misma clase que el bug FX del device run
+    ///      2026-07-11: la proyección cambia sin write → History no captura → jamás push). Enumeradas por TRAVESÍA
+    ///      de relaciones INVERSAS del modelo remapeado (dispatch CONCRETO por tipo, jamás `#Predicate` genérico).
+    ///      Cobertura por el manifest: `account_ref` en tx_items/scheduled/inbox/favorites; `subcategory_ref` en
+    ///      esos 4 + merchant_memory + cashflow_lines; `tag_refs` en tx_items/scheduled/inbox/favorites/budgets
+    ///      (los CSV de Budget account_ids/subcategory_ids y los tagIDs los rehace el reparador → drain posterior).
+    ///
+    /// + HLCs acuñados vía la MISMA `clock.send` (lockstep §d.5) + persistencia del reloj (`clockLatestHLC`) EN
+    ///   el contexto (lo comitea el save del llamador). La limpieza de los `SyncUnitClock` del `oldID` la hace
+    ///   `prepareUnitClocks` al insertar el tombstone (higiene; espeja el applier de un tombstone remoto).
+    ///
+    /// ESPEJO App Group **DIFERIDO** (SERIO 2 del review): esta función NO espeja — devuelve las filas en el
+    /// `IdentityRemapEmission` y el llamador invoca `mirrorRemapRows(_:)` DESPUÉS de su `try context.save()`
+    /// exitoso. Espejar antes del save envenenaba el App Group si el save fallaba (ver doc de la struct).
+    ///
+    /// El drain POSTERIOR verá el UPDATE identity-only → SKIP (D4) + re-emitirá los patches CSV del reparador
+    /// (redundante con (c), inofensivo: HLC distinto ⇒ el dedup `(syncID,hlc,op)` no los colisiona, backend LWW converge).
+    ///
+    /// GATES: (1) `storageMode == .cloud` (el motor solo sincroniza el store personal en `.cloud`; en `.icloud`
+    /// está DARK) → gate cerrado = no-op que devuelve `.empty`. (2) SERIO 3 (R4): fase de migración/reversa
+    /// TRANSITORIA journaleada → `throw IdentityRemapError.migrationInProgress` (el outbox pertenece al runner en
+    /// esa ventana). `now` inyectable para HLCs deterministas en tests.
+    ///
+    /// - Returns: la emisión (conteo + filas pendientes de espejo). `throws`: `IdentityRemapError`, errores del
+    ///   fetch o `ClockDriftError` — el reparador los convierte TODOS en rollback + defer (SERIO 1).
+    @discardableResult
+    func emitIdentityRemap(pairs: [IdentityRemapPair], in context: ModelContext, now: Date = .now) throws -> IdentityRemapEmission {
+        guard CloudSyncFlags.storageMode == .cloud else { return .empty }
+        guard !pairs.isEmpty else { return .empty }
+
+        // SERIO 3 (R4): JAMÁS inyectar filas al outbox con una migración/reversa §g/§h EN CURSO — el
+        // journal/lease posee el outbox en esa ventana (el snapshot/verify enumeran filas vivas; un remap
+        // concurrente les cambiaría el corpus debajo). El reparador PRE-consulta el mismo predicado
+        // (`isIdentityRemapBlockedByMigration`) ANTES de mutar dominio; este guard es la defensa en
+        // profundidad para cualquier llamador futuro.
+        guard !isIdentityRemapBlockedByMigration else {
+            throw IdentityRemapError.migrationInProgress
+        }
+
+        // Cursor SIN save: `loadOrCreateCursor` SALVA (bajo `outboxSaveAuthor`) al crear uno fresco — eso
+        // comitearía las mutaciones de dominio PENDIENTES del reparador bajo el autor del motor → el drain las
+        // descartaría por echo-suppression (los patches CSV JAMÁS se capturarían). Aquí solo fetch/insert EN
+        // MEMORIA; el `save()` del llamador (autor DEFAULT, §b.4) comitea cursor + dominio + outbox juntos.
+        // En prod el cursor ya existe (el drain de arranque lo creó); este insert es la red del edge sin-drain.
+        var cursorDescriptor = FetchDescriptor<SyncCursor>()
+        cursorDescriptor.fetchLimit = 1
+        let cursor: SyncCursor
+        if let existing = try context.fetch(cursorDescriptor).first {
+            cursor = existing
+        } else {
+            let fresh = SyncCursor()
+            context.insert(fresh)
+            cursor = fresh
+        }
+        loadClock(from: cursor)
+        var seen = try existingOutboxKeys(context)
+        var rows: [PendingOutboxRow] = []
+        var tombstonedOldIDs: Set<UUID> = []
+        var emittedUpsertSyncIDs: Set<UUID> = []
+        var perEntityCount: [String: Int] = [:]
+
+        // Fetch-all + match EN MEMORIA por `newID` (NUNCA un `#Predicate` sobre el id NUEVO: la reasignación del
+        // reparador está sin-save en memoria → un predicado SQL la fallaría; además es la regla inviolable de
+        // `#Predicate`). Solo los tipos presentes en `pairs` (fetch concreto por tipo).
+        let needTag = pairs.contains { $0.entityType == SyncEntityType.tag }
+        let needAccount = pairs.contains { $0.entityType == SyncEntityType.account }
+        let needSub = pairs.contains { $0.entityType == SyncEntityType.subcategory }
+        let tags = needTag ? try context.fetch(FetchDescriptor<Tag>()) : []
+        let accounts = needAccount ? try context.fetch(FetchDescriptor<Account>()) : []
+        let subcategories = needSub ? try context.fetch(FetchDescriptor<Subcategory>()) : []
+
+        for pair in pairs {
+            switch pair.entityType {
+            case SyncEntityType.tag:
+                guard let tag = tags.first(where: { $0.id == pair.newID }) else { continue }
+                try appendRemapTombstoneIfNeeded(oldID: pair.oldID, entityType: SyncEntityType.tag, now: now,
+                                                 tombstoned: &tombstonedOldIDs, seen: &seen, rows: &rows)
+                try appendRemapFullUpsert(model: tag, emission: EntityEmissionMap.tag, syncID: pair.newID,
+                                          entityType: SyncEntityType.tag, now: now,
+                                          emitted: &emittedUpsertSyncIDs, seen: &seen, rows: &rows)
+                try appendReferencing(tag.transactions, SyncEntityType.transactionItem, EntityEmissionMap.transactionItem, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.budgets, SyncEntityType.budget, EntityEmissionMap.budget, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                perEntityCount[SyncEntityType.tag, default: 0] += 1
+
+            case SyncEntityType.account:
+                guard let account = accounts.first(where: { $0.shortcutID == pair.newID }) else { continue }
+                try appendRemapTombstoneIfNeeded(oldID: pair.oldID, entityType: SyncEntityType.account, now: now,
+                                                 tombstoned: &tombstonedOldIDs, seen: &seen, rows: &rows)
+                try appendRemapFullUpsert(model: account, emission: EntityEmissionMap.account, syncID: pair.newID,
+                                          entityType: SyncEntityType.account, now: now,
+                                          emitted: &emittedUpsertSyncIDs, seen: &seen, rows: &rows)
+                try appendReferencing(account.transactions, SyncEntityType.transactionItem, EntityEmissionMap.transactionItem, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(account.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(account.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(account.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                perEntityCount[SyncEntityType.account, default: 0] += 1
+
+            case SyncEntityType.subcategory:
+                guard let sub = subcategories.first(where: { $0.shortcutID == pair.newID }) else { continue }
+                try appendRemapTombstoneIfNeeded(oldID: pair.oldID, entityType: SyncEntityType.subcategory, now: now,
+                                                 tombstoned: &tombstonedOldIDs, seen: &seen, rows: &rows)
+                try appendRemapFullUpsert(model: sub, emission: EntityEmissionMap.subcategory, syncID: pair.newID,
+                                          entityType: SyncEntityType.subcategory, now: now,
+                                          emitted: &emittedUpsertSyncIDs, seen: &seen, rows: &rows)
+                try appendReferencing(sub.transactions, SyncEntityType.transactionItem, EntityEmissionMap.transactionItem, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.merchantMemories, SyncEntityType.merchantMemory, EntityEmissionMap.merchantMemory, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.cashFlowLines, SyncEntityType.cashFlowLine, EntityEmissionMap.cashFlowLine, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                perEntityCount[SyncEntityType.subcategory, default: 0] += 1
+
+            default:
+                // entityType desconocido (no regenerable hoy) → no se emite (defensivo).
+                continue
+            }
+        }
+
+        guard !rows.isEmpty else { return .empty }
+
+        // Insertar + `SyncUnitClock`, SIN save (el llamador comitea en la MISMA transacción) y SIN espejo
+        // (SERIO 2: diferido a `mirrorRemapRows` post-save). El tombstone borra el `SyncUnitClock` del `oldID`
+        // (higiene — espeja el applier de un tombstone remoto). Los relojes se LEEN antes de insertar: si no
+        // se dejan leer, se lanza y el llamador hace rollback de lo que el reparador ya mutó.
+        let unitClocks = try prepareUnitClocks(for: rows, context: context)
+        for row in rows { context.insert(row.makeModel()) }
+        unitClocks.apply(context: context)
+        cursor.clockLatestHLC = clock.latest?.description
+
+        for (entity, count) in perEntityCount {
+            CloudSyncBreadcrumb.identityRemapEmitted(entity: entity, count: count)
+        }
+        return IdentityRemapEmission(rowCount: rows.count, rows: rows)
+    }
+
+    /// SERIO 2: escribe el espejo App Group de las filas de un remap — invocado por el reparador DESPUÉS de su
+    /// `try context.save()` exitoso (jamás antes: envenenaría el espejo si el save fallara). Best-effort, patrón
+    /// `writeMirror` del drain (un fallo se loguea y no aborta; no-op sin `outboxMirror`+`currentUserID`).
+    /// RESIDUAL ACEPTADO (inverso del envenenamiento, estrictamente mejor): un kill entre el save y este espejo
+    /// deja filas de outbox durables SIN entry en el espejo — solo importa si el store sync-meta se RECREA
+    /// (lightweight migration) antes del push (ventana epsilon²); el canario `cloudSyncOutboxMirrorDivergence`
+    /// lo delataría.
+    func mirrorRemapRows(_ emission: IdentityRemapEmission) {
+        writeMirror(rows: emission.rows)
+    }
+
+    /// Encola el `tombstone(oldID)` reason `.remap`, DEDUP por `oldID` (grupo colisionado ⇒ UN tombstone). Acuña
+    /// el HLC (advance del reloj) tras el dedup de `oldID` y ANTES del dedup `(syncID,hlc,op)` — espeja `appendRow`.
+    private func appendRemapTombstoneIfNeeded(
+        oldID: UUID, entityType: String, now: Date,
+        tombstoned: inout Set<UUID>, seen: inout Set<String>, rows: inout [PendingOutboxRow]
+    ) throws {
+        guard !tombstoned.contains(oldID) else { return }
+        tombstoned.insert(oldID)
+        let hlc = try clock.send(now: now).description
+        let key = dedupKey(syncID: oldID, hlc: hlc, op: .tombstone)
+        guard !seen.contains(key) else { return }
+        seen.insert(key)
+        rows.append(PendingOutboxRow(
+            syncID: oldID, entityType: entityType, op: .tombstone, hlc: hlc,
+            clientMutationID: UUID(), fieldsJSON: "{}", fieldHlcsJSON: nil,
+            author: "", tombstoneReason: SyncTombstoneReason.remap.rawValue, createdAt: now))
+    }
+
+    /// Encola un `upsert` FILA-COMPLETA (proyección INSERT = todas las columnas) de `model`. Dedup por `syncID`
+    /// (una fila referenciada por 2 remaps se re-emite UNA vez) ANTES del advance del reloj. Codec rechaza →
+    /// canario + fila descartada (clock ya avanzó → lockstep preservado, patrón `appendUpsert`).
+    private func appendRemapFullUpsert<M: AnyObject>(
+        model: M, emission: EntityEmission<M>, syncID: UUID, entityType: String, now: Date,
+        emitted: inout Set<UUID>, seen: inout Set<String>, rows: inout [PendingOutboxRow]
+    ) throws {
+        guard !emitted.contains(syncID) else { return }
+        emitted.insert(syncID)
+        let hlc = try clock.send(now: now).description
+        let key = dedupKey(syncID: syncID, hlc: hlc, op: .upsert)
+        guard !seen.contains(key) else { return }
+        seen.insert(key)
+        let result = DeltaEmitter.emit(model: model, emission: emission, changedColumns: emission.columns, hlc: hlc)
+        let fieldsJSON: String
+        do {
+            fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: Set(emission.groupByColumn.keys))
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.emitIdentityRemap: codec c1 rechazó \(entityType): \(error)")
+            #endif
+            CloudSyncBreadcrumb.encodeRejected(entity: entityType, reason: "\(error)")
+            return
+        }
+        rows.append(PendingOutboxRow(
+            syncID: syncID, entityType: entityType, op: .upsert, hlc: hlc,
+            clientMutationID: UUID(), fieldsJSON: fieldsJSON, fieldHlcsJSON: encodeFieldHlcs(result.fieldHlcs),
+            author: "", tombstoneReason: nil, createdAt: now))
+    }
+
+    /// Re-emite (upsert FULL) cada fila referenciante de un modelo remapeado, saltando las que aún NO tienen
+    /// identidad de sync (nunca subidas → no divergen). Travesía por relación INVERSA (dispatch concreto por tipo).
+    private func appendReferencing<M: PersistentModel>(
+        _ models: [M]?, _ entityType: String, _ emission: EntityEmission<M>,
+        _ syncID: (M) -> UUID?, _ now: Date,
+        _ emitted: inout Set<UUID>, _ seen: inout Set<String>, _ rows: inout [PendingOutboxRow]
+    ) throws {
+        guard let models else { return }
+        for model in models {
+            guard let sid = syncID(model) else { continue }
+            try appendRemapFullUpsert(model: model, emission: emission, syncID: sid, entityType: entityType,
+                                      now: now, emitted: &emitted, seen: &seen, rows: &rows)
+        }
+    }
+}
+
+// MARK: - SnapshotRowInput (seam w4)
+
+/// Insumo de UNA fila de snapshot para `CloudSyncEngine.enqueueSnapshotRows`. El motor acuña el HLC y llama
+/// `makePayload(hlc)` — que construye `(fieldsJSON, fieldHlcsJSON)` con ese HLC en `field_hlcs`; `nil` = el
+/// codec c1 rechazó la fila (poison) → el motor la SALTA (el builder ya emitió el canario). `entityType` =
+/// NOMBRE DE CLASE (`SyncEntityType.*`), como el resto del outbox. El closure captura `@Model`/emisión → se
+/// construye y consume SIEMPRE bajo el main actor (no cruza fronteras de actor).
+struct SnapshotRowInput {
+    let syncID: UUID
+    let entityType: String
+    let makePayload: (String) -> (fieldsJSON: String, fieldHlcsJSON: String?)?
+}
+
+/// Error de los seams `_testThrowOnDrainOutboxSave`/`_testThrowOnDrainCursorSave` (un save del drain que falla tras
+/// mutar). SOLO tests.
+private enum DrainTestCrash: Error { case outboxSave, cursorSave }
+
+// MARK: - PendingOutboxRow
+
+/// Fila de outbox acumulada en memoria durante un drain, materializada a `@Model` al persistir.
+/// Struct simple (no `@Model`) para separar la fase de traducción de la de inserción.
+///
+/// `clientMutationID` y `createdAt` se ACUÑAN al armar la fila (no en `SyncOutbox.init`) para que el
+/// `@Model` persistido Y su entry en el espejo App Group compartan EXACTAMENTE los mismos valores
+/// (idempotencia end-to-end + re-hidratación byte-idéntica, §d.5). La regeneración por drain no duplica:
+/// el dedup por `(syncID,hlc,op)` (pre-sembrado con las filas existentes) evita re-crear una fila viva,
+/// así que el `clientMutationID` original sobrevive a un kill-replay.
+private struct PendingOutboxRow {
+    let syncID: UUID
+    let entityType: String
+    let op: SyncOutboxOp
+    let hlc: String
+    let clientMutationID: UUID
+    let fieldsJSON: String
+    let fieldHlcsJSON: String?
+    let author: String
+    let tombstoneReason: String?
+    let createdAt: Date
+
+    @MainActor
+    func makeModel() -> SyncOutbox {
+        SyncOutbox(
+            syncID: syncID,
+            entityType: entityType,
+            op: op,
+            hlc: hlc,
+            clientMutationID: clientMutationID,
+            fieldsJSON: fieldsJSON,
+            fieldHlcsJSON: fieldHlcsJSON,
+            author: author,
+            tombstoneReason: tombstoneReason,
+            createdAt: createdAt
+        )
+    }
+
+    /// La entry del espejo App Group. `author` = el CONSTANTE del motor de recovery (`CloudSyncOutbox`),
+    /// NO el `author` de la transacción de origen (diagnóstico; la re-hidratación re-inserta bajo el
+    /// autor de echo-suppression). `userID` sella la entry para el owner-scoping M1.
+    func mirrorEntry(userID: String) -> OutboxMirrorEntry {
+        OutboxMirrorEntry(
+            userID: userID,
+            syncID: syncID,
+            entityType: entityType,
+            op: op.rawValue,
+            hlc: hlc,
+            clientMutationID: clientMutationID,
+            fieldsJSON: fieldsJSON,
+            fieldHlcsJSON: fieldHlcsJSON,
+            tombstoneReason: tombstoneReason,
+            author: SyncOutboxMirror.author,
+            createdAt: createdAt
+        )
+    }
+}
+
+/// No se pudo leer el testigo o la fila que deciden el tombstone de una fila re-identificada
+/// (`CloudSyncEngine.relayTombstoneIdentity`). Aborta la vuelta ENTERA del drain, no solo su transacción.
+nonisolated struct RelayTombstoneReadFailure: Error {}

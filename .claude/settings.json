@@ -10,7 +10,13 @@
       "Task",
       "WebFetch",
       "WebSearch",
-      "NotebookEdit"
+      "NotebookEdit",
+      "Bash(git push origin --delete:*)",
+      "Bash(git branch -d:*)",
+      "Bash(git branch -D:*)",
+      "Bash(git worktree remove:*)",
+      "Bash(git worktree prune)",
+      "Bash(tmutil deletelocalsnapshots:*)"
     ],
     "deny": [
       "Bash(rm -rf:*)",
@@ -20,6 +26,19 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-/Users/jur/Yala}\" && bash qa/scripts/disk-report.sh --guard 2>/dev/null || true",
+            "timeout": 10,
+            "statusMessage": "Comprobando espacio en disco..."
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Bash",
@@ -41,7 +60,7 @@
           },
           {
             "type": "command",
-            "command": "if git diff --cached --name-only | grep -qE '\\.swift$' && [ ! -f .claude/sessions/tests-passed ]; then echo 'BLOCKED: Ejecuta /test-smart antes de commitear archivos Swift' && exit 1; fi"
+            "command": "bash qa/scripts/precommit-gate.sh"
           }
         ]
       }
@@ -56,7 +75,7 @@
           },
           {
             "type": "command",
-            "command": "cd /Users/jur/Yala && git log @{u}..HEAD --oneline 2>/dev/null | grep -q . && git push origin HEAD 2>&1 || true",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-/Users/jur/Yala}\" && git log @{u}..HEAD --oneline 2>/dev/null | grep -q . && git push origin HEAD 2>&1 || true",
             "timeout": 30,
             "statusMessage": "Pushing unpushed commits..."
           }
@@ -70,5 +89,6 @@
   },
   "enabledPlugins": {
     "telegram@claude-plugins-official": true
-  }
+  },
+  "agent": "frank"
 }

@@ -34,8 +34,11 @@ final class StoreKitManager {
     /// Loading state for purchases
     private(set) var isPurchasing: Bool = false
 
-    /// Error message to display
+    /// Error / status message to display
     var errorMessage: String?
+
+    /// Title for the user-facing alert. `nil` → `L10n.Subscription.errorTitle`.
+    var alertTitle: String?
 
     // MARK: - Trial State
 
@@ -63,6 +66,8 @@ final class StoreKitManager {
     // MARK: - Downgrade Detection
 
     private let wasProUserKey = "yala.wasProUser"
+    private let lastVerifiedProductIDKey = "yala.lastVerifiedProProductID"
+    private let lastVerifiedExpirationKey = "yala.lastVerifiedProExpiresAt"
 
     /// Whether user was previously a Pro user (persisted)
     var wasProUser: Bool {
@@ -82,8 +87,10 @@ final class StoreKitManager {
 
     // MARK: - App Group
 
-    /// App Group identifier for sharing state with widgets
-    private let appGroupID = "group.com.yala.shared"
+    /// App Group identifier for sharing state with intents (QuickExpenseIntent Pro gate).
+    /// Debe ser el canónico entitled — un suite no-entitled crea un plist LOCAL al sandbox
+    /// que ningún lector ve (bug SiriNatural pro_required, roto desde b1e724a0).
+    private let appGroupID = SharedContainerService.appGroupIdentifier
 
     // MARK: - Private
 
@@ -100,6 +107,11 @@ final class StoreKitManager {
     /// Dev-only flag: when true, forces Pro tier regardless of StoreKit entitlements.
     /// Persisted to UserDefaults so it survives app restart. Only works with dev bundle.
     private(set) var devForceProTier: Bool = false
+
+    /// Estado Pro de `-uitest-pro`: EFÍMERO a propósito — vive solo en este proceso y NO se
+    /// persiste. `nil` = la app no corre bajo uitest y manda el camino normal (dev flags /
+    /// entitlements). Ver `applyUITestProTier(_:)` para el porqué de que no sea `devForceProTier`.
+    private(set) var uiTestForcedProTier: Bool?
     #endif
 
     // MARK: - Init
@@ -166,46 +178,68 @@ final class StoreKitManager {
         defer { isPurchasing = false }
 
         do {
-            let result = try await product.purchase()
+            let result = try await product.purchase(
+                options: Self.purchaseOptions(cloudUserID: CloudAuthService.shared.currentUserID))
 
             switch result {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
-                await transaction.finish()
                 #if DEBUG
                 devForceFreeTier = false
                 devForceProTier = false
                 UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
                 UserDefaults.standard.removeObject(forKey: Self.devForceProTierKey)
                 #endif
-                await updateSubscriptionStatus()
-                didJustSubscribe = true
-                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "success"])
-                var completionParams = TelemetryService.upsellParameters(source: "purchase")
-                completionParams["productId"] = product.id
-                completionParams["plan"] = product.id.localizedCaseInsensitiveContains("year") ? "anual" : "mensual"
-                TelemetryService.track(.purchaseCompleted, parameters: completionParams)
-                if isInTrial {
-                    TelemetryService.track(.trialStarted, parameters: completionParams)
+                // Aplicar la Transaction verificada ANTES de finish y ANTES de fiarse de
+                // currentEntitlements: en sandbox ese iterator puede llegar vacío y el usuario
+                // se quedaba Free con el sheet de éxito ya puesto (TF 2.1 b11).
+                await updateSubscriptionStatus(verifiedPurchase: transaction)
+                await transaction.finish()
+                didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+                if !didJustSubscribe {
+                    alertTitle = L10n.Subscription.errorTitle
+                    errorMessage = L10n.Subscription.purchaseNotActivated
                 }
+                // C-8: la compra acaba de nacer con su `appAccountToken`; vincularla a la cuenta
+                // cuanto antes (y no en el próximo foreground) pone el derecho en la cuenta desde el
+                // primer segundo. En BACKGROUND a propósito: esperarlo aquí retendría `isPurchasing`
+                // y retrasaría la celebración detrás de la red del gateway — con red mala, la compra
+                // parecería colgada justo después de que Apple la confirmó.
+                Task { @MainActor in await AccountEntitlementService.shared.sync(force: true) }
                 return true
 
             case .userCancelled:
-                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "cancelled"])
                 return false
 
             case .pending:
-                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "pending"])
                 return false
 
             @unknown default:
                 return false
             }
         } catch {
-            TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "error"])
             errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    // MARK: - Purchase options (C-8)
+
+    /// Opciones de compra. Emite `appAccountToken` = el `sub` de la cuenta de Yala cuando hay sesión
+    /// de nube viva, para que el derecho pueda VIAJAR con la cuenta y no solo con el Apple ID: Apple
+    /// firma ese UUID dentro de la transacción, así que el gateway puede atribuir la suscripción a su
+    /// dueño sin confiar en el cliente (`gateway/src/sync/entitlement.ts`).
+    ///
+    /// Sin sesión de nube NO se emite ningún token: inventar un UUID local crearía una identidad de
+    /// compra que no corresponde a ninguna cuenta y que después habría que reconciliar. Esas compras
+    /// se vinculan más tarde por JWT, en el primer `sync()` con sesión.
+    ///
+    /// Estático para poder testear la decisión sin tocar el estado del manager. `cloudUserID` se pasa
+    /// explícito (un default que leyera el singleton `@MainActor` se evaluaría en contexto
+    /// `nonisolated` — error en Swift 6).
+    static func purchaseOptions(cloudUserID: String?) -> Set<Product.PurchaseOption> {
+        guard let cloudUserID, let uuid = UUID(uuidString: cloudUserID) else { return [] }
+        return [.appAccountToken(uuid)]
     }
 
     // MARK: - Restore
@@ -215,16 +249,36 @@ final class StoreKitManager {
         do {
             try await AppStore.sync()
             await updateSubscriptionStatus()
+            switch ProSubscriptionActivationLogic.restoreOutcome(isProUser: isProUser) {
+            case .restoredPro:
+                didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+            case .noEntitlement:
+                alertTitle = L10n.Subscription.restoreEmptyTitle
+                errorMessage = L10n.Subscription.restoreEmpty
+            }
         } catch {
+            alertTitle = L10n.Subscription.errorTitle
             errorMessage = error.localizedDescription
         }
     }
 
     // MARK: - Subscription Status
 
-    /// Check current entitlements and update subscription state
-    func updateSubscriptionStatus() async {
+    /// Check current entitlements and update subscription state.
+    /// `verifiedPurchase` is the Transaction StoreKit just confirmed (compra o
+    /// `Transaction.updates`). Cuenta como derecho local aunque `currentEntitlements`
+    /// todavía no la liste.
+    func updateSubscriptionStatus(verifiedPurchase: StoreKit.Transaction? = nil) async {
         #if DEBUG
+        // El override de uitest gana ANTES que los dev flags: es lo que hace que
+        // `-uitest-pro` no necesite persistir nada. Sin esta rama, el `refreshSubscriptionStatus`
+        // del paso 3 del bootstrap caería al early-return `.dev` de abajo y pondría
+        // `isProUser = false`, deshaciendo el arg a mitad del arranque.
+        if let uiTestForcedProTier {
+            isProUser = uiTestForcedProTier
+            syncToAppGroup()
+            return
+        }
         // Cada rama DEV early-return DEBE syncear a App Group: el flag `isProUser`
         // queda consistente cross-process (intents, widgets). Sin esto, SiriNatural
         // en Yala Dev nunca pasa el gate Pro aunque "Simular Pro" esté ON.
@@ -239,22 +293,43 @@ final class StoreKitManager {
             return
         }
         // Dev build: default to Free — Configuration.storekit provides sandbox
-        // entitlements that would otherwise always grant Pro
+        // entitlements that would otherwise always grant Pro.
+        // C-8: si la QA de device encendió la resolución por cuenta, el derecho de la CUENTA sí
+        // cuenta aquí — sin esta rama, `debugAccountEntitlementEnabledKey` sería inalcanzable
+        // (Yala Dev es la ÚNICA build donde esa key se lee, y este early-return la cortocircuitaba).
         if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
+            if CloudSyncFlags.accountEntitlementEnabled {
+                isProUser = ProEntitlementLogic.isPro(
+                    localActive: false,
+                    snapshot: AccountEntitlementService.shared.cachedSnapshot,
+                    sessionUserID: CloudAuthService.shared.currentUserID,
+                    resolutionEnabled: true)
+                syncToAppGroup()
+                return
+            }
             isProUser = false
             syncToAppGroup()
             return
         }
         #endif
 
-        let previouslyInTrial = isInTrial
-
+        var entitlementFacts: [ProSubscriptionActivationLogic.TransactionFacts] = []
         var foundActive: StoreKit.Transaction?
+
+        if let verifiedPurchase {
+            let purchaseFacts = facts(from: verifiedPurchase)
+            entitlementFacts.append(purchaseFacts)
+            if ProSubscriptionActivationLogic.isActiveLocalEntitlement(purchaseFacts) {
+                foundActive = verifiedPurchase
+            }
+        }
 
         for await result in StoreKit.Transaction.currentEntitlements {
             do {
                 let transaction = try checkVerified(result)
-                if transaction.productType == .autoRenewable {
+                let txnFacts = facts(from: transaction)
+                entitlementFacts.append(txnFacts)
+                if ProSubscriptionActivationLogic.isActiveLocalEntitlement(txnFacts) {
                     foundActive = transaction
                 }
             } catch {
@@ -264,10 +339,29 @@ final class StoreKitManager {
             }
         }
 
-        activeSubscription = foundActive
-        let nowProUser = foundActive != nil
+        let nextVerified = ProSubscriptionActivationLogic.updatedLastVerified(
+            entitlements: entitlementFacts,
+            previous: loadLastVerified()
+        )
+        persistLastVerified(nextVerified)
 
-        // Detect trial via offer type
+        let localActive = ProSubscriptionActivationLogic.localActive(
+            entitlements: entitlementFacts,
+            lastVerified: nextVerified
+        )
+
+        activeSubscription = foundActive
+        // C-8: el derecho puede venir del Apple ID de este device (`localActive`) O de la cuenta de
+        // Yala. La combinación vive en `ProEntitlementLogic` — DARK mientras
+        // `accountEntitlementEnabled` sea false, donde esto es idénticamente `localActive`.
+        let nowProUser = ProEntitlementLogic.isPro(
+            localActive: localActive,
+            snapshot: AccountEntitlementService.shared.cachedSnapshot,
+            sessionUserID: CloudAuthService.shared.currentUserID,
+            resolutionEnabled: CloudSyncFlags.accountEntitlementEnabled)
+
+        // Trial y fecha de expiración siguen siendo del entitlement LOCAL: son datos de la
+        // suscripción de este Apple ID. Un Pro heredado de la cuenta no está "en trial" aquí.
         if let transaction = foundActive {
             isInTrial = transaction.offer?.type == .introductory
             trialEndDate = isInTrial ? transaction.expirationDate : nil
@@ -283,13 +377,12 @@ final class StoreKitManager {
 
         // Update Pro status
         isProUser = nowProUser
+        if SessionState.shared.isProUser != isProUser {
+            SessionState.shared.isProUser = isProUser
+        }
 
         if nowProUser && !wasAlreadyPro {
             UserDefaults.standard.set(true, forKey: "chatFABVisible")
-        }
-
-        if wasAlreadyPro && !nowProUser {
-            TelemetryService.track(.subscriptionEnded, parameters: ["era_trial": String(previouslyInTrial)])
         }
 
         // Track for downgrade detection
@@ -309,7 +402,7 @@ final class StoreKitManager {
             #endif
             return
         }
-        defaults.set(isProUser, forKey: "isProUser")
+        defaults.set(isProUser, forKey: AppPreferences.Keys.isProUser)
         defaults.synchronize()
     }
 
@@ -364,6 +457,45 @@ final class StoreKitManager {
 
     // MARK: - Private Helpers
 
+    private func facts(from transaction: StoreKit.Transaction) -> ProSubscriptionActivationLogic.TransactionFacts {
+        ProSubscriptionActivationLogic.TransactionFacts(
+            productID: transaction.productID,
+            productTypeIsAutoRenewable: transaction.productType == .autoRenewable,
+            revocationDate: transaction.revocationDate,
+            expirationDate: transaction.expirationDate
+        )
+    }
+
+    private func loadLastVerified() -> ProSubscriptionActivationLogic.LastVerifiedLocal? {
+        guard let productID = UserDefaults.standard.string(forKey: lastVerifiedProductIDKey) else {
+            return nil
+        }
+        let expiration: Date?
+        if let raw = UserDefaults.standard.object(forKey: lastVerifiedExpirationKey) as? TimeInterval {
+            expiration = Date(timeIntervalSince1970: raw)
+        } else {
+            expiration = nil
+        }
+        return ProSubscriptionActivationLogic.LastVerifiedLocal(
+            productID: productID,
+            expirationDate: expiration
+        )
+    }
+
+    private func persistLastVerified(_ last: ProSubscriptionActivationLogic.LastVerifiedLocal?) {
+        if let last {
+            UserDefaults.standard.set(last.productID, forKey: lastVerifiedProductIDKey)
+            if let expiration = last.expirationDate {
+                UserDefaults.standard.set(expiration.timeIntervalSince1970, forKey: lastVerifiedExpirationKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
+            }
+        } else {
+            UserDefaults.standard.removeObject(forKey: lastVerifiedProductIDKey)
+            UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
+        }
+    }
+
     private nonisolated func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified:
@@ -379,8 +511,8 @@ final class StoreKitManager {
                 guard let self else { return }
                 do {
                     let transaction = try self.checkVerified(result)
+                    await self.updateSubscriptionStatus(verifiedPurchase: transaction)
                     await transaction.finish()
-                    await self.updateSubscriptionStatus()
                 } catch {
                     #if DEBUG
                     print("StoreKitManager: Transaction update verification failed: \(error)")
@@ -413,6 +545,7 @@ final class StoreKitManager {
         trialEndDate = nil
         subscriptionExpirationDate = nil
         wasProUser = false
+        persistLastVerified(nil)
         didJustSubscribe = false
         devForceFreeTier = true
         devForceProTier = false
@@ -445,6 +578,47 @@ final class StoreKitManager {
         UserDefaults.standard.set(devForceProTier, forKey: Self.devForceProTierKey)
         syncToAppGroup()
         print("StoreKitManager: Dev Pro tier \(devForceProTier ? "ON" : "OFF") (persisted)")
+    }
+
+    /// Aplica el estado Pro de `-uitest-pro` **sin persistir absolutamente nada**, y borra el
+    /// rastro que el camino anterior dejaba. Lo llama SOLO `AppBootstrapper.applyUITestHooksEarly`.
+    ///
+    /// Antes esto era `toggleDevProTier()`, y ese atajo —reusar el toggle de "Simular Pro" del
+    /// Perfil— es lo que convertía un seam de QA en estado GLOBAL: el toggle persiste
+    /// `dev.forceProTier` en `UserDefaults.standard`, el `init` de arriba lo relee, y el host de
+    /// unit tests comparte bundle (`…yala.dev`) con el de los XCUITest ⇒ **correr los XCUITest y
+    /// después los unitarios dejaba `FeatureGateService.shared.isProUser == true` y ponía en rojo
+    /// a `ProUpsellServiceOneShotTests`, sin que nadie hubiera tocado nada de Pro.** El wipe de
+    /// SwiftData no limpia `UserDefaults`, y el bloque de `-uitest-reset` limpia al ARRANQUE de la
+    /// siguiente corrida uitest — lo cual no protege a un target que corre DESPUÉS.
+    ///
+    /// De ahí las dos mitades:
+    /// 1. **efímero** — `uiTestForcedProTier` vive en el proceso y muere con él;
+    /// 2. **purga** — se borran las cuatro keys que el toggle escribía. No es limpieza de cinturón:
+    ///    cura los simuladores YA contaminados (nada más las borraría) y garantiza que tras
+    ///    cualquier launch uitest el disco quede como si `-uitest-pro` no existiera. `wasProUser`
+    ///    importa más de lo que parece: sucia hace `justDowngraded == true` en el siguiente launch
+    ///    SIN el arg, y `checkForDowngrade` llega a `resetPremiumIconIfNeeded` (que cambia el icono
+    ///    del sistema) y a `resetProThemeIfNeeded`. `chatFABVisible` se borra en vez de escribirse a
+    ///    `true` porque `true` YA es su default en `AppPreferences` — mismo efecto, cero rastro.
+    ///
+    /// Sin guard de bundle `.dev`, al revés que el toggle: este método no es la preferencia de dev,
+    /// es el seam de test, y solo se alcanza bajo `-uitest` dentro de `#if DEBUG`.
+    func applyUITestProTier(_ forced: Bool) {
+        uiTestForcedProTier = forced
+        isProUser = forced
+
+        devForceProTier = false
+        devForceFreeTier = false
+        UserDefaults.standard.removeObject(forKey: Self.devForceProTierKey)
+        UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
+        UserDefaults.standard.removeObject(forKey: wasProUserKey)
+        UserDefaults.standard.removeObject(forKey: "chatFABVisible")
+
+        // El gate Pro de QuickExpenseIntent lee el App Group, no `isProUser` — sin esto los
+        // intents verían el estado del launch anterior (paridad con el toggle que sustituye).
+        syncToAppGroup()
+        print("StoreKitManager: uitest Pro tier \(forced ? "ON" : "OFF") (efímero, sin persistir)")
     }
     #endif
 }

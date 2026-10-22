@@ -37,7 +37,7 @@ final class InboxDraftEditViewModel {
         )
 
         do {
-            pendingDrafts = try context.fetch(descriptor)
+            pendingDrafts = InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
         } catch {
             #if DEBUG
             print("InboxDraftEditViewModel: Error loading pending drafts: \(error)")

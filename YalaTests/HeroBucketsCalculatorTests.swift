@@ -81,7 +81,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: []
+            eligibleAccountIDs: [],
+            currencyCode: "USD"
         )
 
         #expect(result.monthIncome == 0)
@@ -90,6 +91,7 @@ struct HeroBucketsCalculatorTests {
         #expect(result.prevHasAnyTx == false)
         #expect(result.periodIncome == 0)
         #expect(result.periodExpense == 0)
+        #expect(result.periodPrevExpense == 0)
     }
 
     // MARK: - Filtro de cuenta — núcleo del bug p20-12
@@ -122,7 +124,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: lastWeekInterval,
-            eligibleAccountIDs: [kept.persistentModelID]
+            eligibleAccountIDs: [kept.persistentModelID],
+            currencyCode: "USD"
         )
 
         // Mes (kept): 100 (food del 5) + 50 (food del 25) = 150 expense, 1000 income.
@@ -154,7 +157,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [a.persistentModelID, b.persistentModelID]
+            eligibleAccountIDs: [a.persistentModelID, b.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.monthIncome == 1500)
@@ -185,7 +189,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.monthIncome == result.periodIncome)
@@ -208,7 +213,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: lastWeekInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         // Mes incluye ambas (200), período solo la del 25 (120).
@@ -234,7 +240,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.monthExpense == 200)
@@ -251,7 +258,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: []
+            eligibleAccountIDs: [],
+            currencyCode: "USD"
         )
 
         #expect(result.monthExpense == 0)
@@ -274,7 +282,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.prevExpense == 500)
@@ -295,10 +304,165 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.prevExpense == 0)
         #expect(result.prevHasAnyTx == true)
+    }
+
+    // MARK: - Solo Gastos: gasto del período anterior comparable
+
+    /// Ventana previa del período (`.lastWeek`-1): suma SOLO gasto, mismo scope
+    /// que `periodExpense` (cuenta elegible, sin income, sin balance adjustment).
+    @Test func calculate_periodPrevExpense_sumsOnlyExpenseInPrevWindow() {
+        let kept = makeAccount(name: "Kept")
+        let excluded = makeAccount(name: "Excluded")
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+
+        // Período actual = última semana de abril (23-30).
+        // Ventana previa = la semana anterior (16-23).
+        let prevWeek = DateInterval(start: date(2026, 4, 16), end: date(2026, 4, 23))
+
+        let txs = [
+            // En la ventana previa: gasto 80 (kept) cuenta; income y balance-adj no.
+            makeTransaction(amount: -80, date: date(2026, 4, 18), account: kept, category: food),
+            makeTransaction(amount: 500, date: date(2026, 4, 19), account: kept, category: salary),
+            makeTransaction(amount: -999, date: date(2026, 4, 18), account: excluded, category: food),
+            makeTransaction(amount: -111, date: date(2026, 4, 18), account: kept, category: food, balanceAdjustmentType: "manual"),
+            // En el período actual (25): gasto 30 → periodExpense, NO periodPrev.
+            makeTransaction(amount: -30, date: date(2026, 4, 25), account: kept, category: food),
+        ]
+
+        let result = HeroBucketsCalculator.calculate(
+            transactions: txs,
+            monthInterval: aprilInterval,
+            prevInterval: marchInterval,
+            periodInterval: lastWeekInterval,
+            periodPrevInterval: prevWeek,
+            eligibleAccountIDs: [kept.persistentModelID],
+            currencyCode: "USD"
+        )
+
+        #expect(result.periodExpense == 30)
+        #expect(result.periodPrevExpense == 80)
+    }
+
+    /// Sin ventana previa pedida (`nil`) → `periodPrevExpense == 0` aunque haya
+    /// gasto en fechas pasadas.
+    @Test func calculate_periodPrevInterval_nil_periodPrevExpenseZero() {
+        let account = makeAccount()
+        let food = makeCategory(name: "Food")
+
+        let txs = [
+            makeTransaction(amount: -80, date: date(2026, 4, 18), account: account, category: food),
+        ]
+
+        let result = HeroBucketsCalculator.calculate(
+            transactions: txs,
+            monthInterval: aprilInterval,
+            prevInterval: marchInterval,
+            periodInterval: lastWeekInterval,
+            periodPrevInterval: nil,
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
+        )
+
+        #expect(result.periodPrevExpense == 0)
+    }
+
+    /// Borde compartido: `DateInterval` es CERRADO en ambos extremos. Si la ventana previa
+    /// cierra EXACTAMENTE en `periodInterval.start`, una TX fechada a medianoche de ese
+    /// instante NO debe doble-contarse: cuenta sólo en el período actual, nunca en el
+    /// previo. (Mutante: sin el guard `!periodInterval.contains`, `periodPrevExpense`
+    /// sería 500.)
+    ///
+    /// El intervalo se construye A MANO aquí, y por eso el test sigue vivo aunque desde el
+    /// 2026-09-02 `PreviousPeriodHelper` ya no produzca ese borde en ninguna rama: lo que
+    /// fija es el CONTRATO del calculator ante un previo que cierre en el instante
+    /// compartido, venga de donde venga.
+    @Test func calculate_periodPrevExpense_excludesSharedBoundaryTx() {
+        let account = makeAccount()
+        let food = makeCategory(name: "Food")
+
+        // marchInterval.end == aprilInterval.start == 1 abr 00:00 (instante compartido).
+        let boundaryTx = makeTransaction(amount: -500, date: date(2026, 4, 1), account: account, category: food)
+
+        let result = HeroBucketsCalculator.calculate(
+            transactions: [boundaryTx],
+            monthInterval: aprilInterval,
+            prevInterval: marchInterval,
+            periodInterval: aprilInterval,      // [1 abr, 1 may]
+            periodPrevInterval: marchInterval,  // [1 mar, 1 abr] — end == periodInterval.start
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
+        )
+
+        #expect(result.periodExpense == 500)
+        #expect(result.periodPrevExpense == 0)
+    }
+
+    // MARK: - periodPreviousInterval (glue MTD-alineada)
+
+    /// `.allTime` no tiene previo acotado → `nil` (sin comparación).
+    @Test func periodPreviousInterval_allTime_returnsNil() {
+        let now = date(2026, 4, 15)
+        let current = DetailPeriod.allTime.dateInterval(now: now)
+        let result = HeroBucketsCalculator.periodPreviousInterval(
+            period: .allTime, currentInterval: current, now: now
+        )
+        #expect(result == nil)
+    }
+
+    /// `.thisMonth` es asimétrico parcial-vs-completo (actual = MTD parcial;
+    /// previo = mes COMPLETO), así que el previo se trunca al día equivalente.
+    /// NO es el único caso: `.thisWeek` y `.thisYear` también pasan por el gate
+    /// (`DateAlignmentHelper.aggregatePreviousNeedsAlignment`) — ver el test de
+    /// `.thisWeek` justo debajo. Verifica que arranca en el inicio del mes previo
+    /// pero TERMINA antes del fin del mes previo completo.
+    @Test func periodPreviousInterval_thisMonth_truncatesToEquivalentDay() {
+        let now = date(2026, 4, 15)
+        let current = DetailPeriod.thisMonth.dateInterval(now: now)
+        let fullPrev = PreviousPeriodHelper.previousInterval(for: .thisMonth, mode: .month, now: now)
+
+        let result = HeroBucketsCalculator.periodPreviousInterval(
+            period: .thisMonth, currentInterval: current, now: now
+        )
+
+        #expect(result != nil)
+        #expect(result?.start == fullPrev.start)   // inicio del mes previo
+        #expect((result?.end ?? .distantFuture) < fullPrev.end)  // truncado (MTD)
+    }
+
+    /// `.thisWeek` TAMBIÉN es asimétrico parcial-vs-completo: el actual va del
+    /// inicio de semana a hoy (parcial) mientras `PreviousPeriodHelper` devuelve la
+    /// semana calendario anterior ENTERA, así que el previo se trunca al weekday
+    /// equivalente (WTD-vs-WTD). Lo invirtió `f6d4101d` (2026-08-17), que en el
+    /// mismo commit sacó `.thisWeek` de la rama trailing de `.last7Days` y lo metió
+    /// en el gate; antes de esa fecha el previo SÍ era una ventana trailing de igual
+    /// duración y alinear era no-op de verdad. Sin el truncado, un miércoles se
+    /// compararían 3 días contra 7 y el chip del hero mostraría un −57 % fantasma.
+    ///
+    /// La aserción que de verdad guarda la doctrina es la PARIDAD DE DURACIÓN: no
+    /// depende del `firstWeekday` de la máquina (`calendar` es `.current`) ni del
+    /// `now` elegido. Un `#expect(result != fullPrev)` no protegería de nada.
+    @Test func periodPreviousInterval_thisWeek_truncatesToEquivalentWeekday() {
+        let now = date(2026, 4, 15)
+        let current = DetailPeriod.thisWeek.dateInterval(now: now)
+        let fullPrev = PreviousPeriodHelper.previousInterval(for: .thisWeek, mode: .month, now: now)
+
+        let result = HeroBucketsCalculator.periodPreviousInterval(
+            period: .thisWeek, currentInterval: current, now: now
+        )
+
+        #expect(result != nil)
+        #expect(result?.start == fullPrev.start)                 // inicio de la semana previa
+        #expect((result?.end ?? .distantFuture) < fullPrev.end)  // truncado (WTD)
+        // El invariante: la ventana previa mide lo mismo que la actual. Tolerancia
+        // de 1 h por si el calendario del runner tiene horario de verano.
+        let deltaHoras = abs((result?.duration ?? 0) - current.duration) / 3600
+        #expect(deltaHoras <= 1)
     }
 }

@@ -7,15 +7,21 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct GroupsContainerView: View {
 
     // MARK: - Environment
 
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
+    /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta). Decide si el grupo
+    /// abierto va en la columna de detalle o empujado.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     // MARK: - State
 
@@ -27,28 +33,73 @@ struct GroupsContainerView: View {
     @State private var showPermissionDeniedAlert = false
     @State private var showNudgeBanner = false
     @State private var showGroupsOnboarding = false
+    // D2 (§3.3.3): banner one-shot de re-entrada tras "Cerrar sesión de grupos". Se arma con
+    // `GroupsSignOutBannerMarker` (in-session, sobrevive el relaunch), se lee en la primera aparición del
+    // tab (el `onAppear` no re-lee si ya está visible) y se quema en el `onAppear` del banner real.
+    @State private var showGroupsSignOutReentryBanner = false
     /// Drives el alert "¿Salir del grupo?" cuando un current user `.rejected`
     /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
+    /// Drives el aviso «tu solicitud está en revisión» cuando un current user `.pendingApproval`
+    /// toca su card (decisión owner 2026-09-06: la puerta se cierra en el cliente y en su lugar se
+    /// explica). Un solo modal global, como su vecino `rejectedGroupPendingLeave`.
+    ///
+    /// Es un `Bool` y no un `SplitGroup?` a propósito: el aviso no nombra al grupo —no le hace falta,
+    /// se acaba de tocar su tarjeta— así que no hay nada que transportar, y así el alert se ata con
+    /// `$showPendingApprovalNotice` en vez de un `Binding(get:set:)` en el body, que la regla de área
+    /// `swiftui-ds.md` prohíbe. El vecino sí lo usa; esto no lo arregla, pero no lo propaga.
+    @State private var showPendingApprovalNotice = false
+    /// G6-3 (C3): estado observable del uploader de migración (banner de progreso).
+    @State private var leaveErrorMessage: String?
     /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
     /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
     @State private var expenseComposerPayload: ExpenseComposerPayload?
+    /// El veredicto de App Attest de ESTE teléfono, y **solo el veredicto**. Es un `@State` porque
+    /// `GroupsAttestStreakStore.isTerminal()` lee `UserDefaults` —que no repinta ninguna vista— y además depende
+    /// del RELOJ: una racha de ayer se vuelve terminal sin que nadie escriba nada. Se recalcula en los CINCO
+    /// momentos de `refreshAttestTerminalNotice`, el último de los cuales es el propio store avisando del cambio.
+    ///
+    /// **Las otras tres condiciones del aviso NO están aquí, y esa es la mitad que arregla dos huecos** (review
+    /// adversarial, 2026-09-15): sesión, canal y consent se leen VIVOS en `showsAttestTerminalNotice`, igual que
+    /// hacen sus vecinas del empty state. Congeladas en un `@State`, iniciar sesión desde el CTA de la lista no
+    /// sacaba el aviso —ese sheet se cierra en sitio y no hay `onAppear`— y una sesión que el SDK borra en caliente
+    /// lo dejaba puesto, culpando al attest de lo que ya era una sesión caducada.
+    @State private var attestVerdictIsTerminal = false
+    /// C4: el canal de Grupos sigue apagado tras el `refreshIfDue(force: true)` de `requestCreateGroup`.
+    /// Antes de C4 este camino abría el form igual y acuñaba un grupo local irrecuperable.
+    @State private var showChannelOffAlert = false
 
     // MARK: - Body
 
+    /// Lista y detalle (`ListDetailSplit`): en ventana ancha, la lista de grupos y el grupo abierto a la vez; en
+    /// compacta se pliega solo a la pila de siempre (ADR «Yala se adapta por espacio, no por dispositivo»). El
+    /// `navigationDestination(item:)` de la columna de lista presenta en la de detalle; lo abierto vive en
+    /// `viewModel.selectedGroup`, fuera del split, así que redimensionar no lo pierde.
     var body: some View {
-        NavigationStack {
+        ListDetailSplit {
+            listColumn
+        } detail: {
+            ContentUnavailableView(L10n.Groups.detailPlaceholder, systemImage: ConfigurableTab.groups.iconName)
+                .yalaScreenBackground(.panel)
+                .accessibilityIdentifier("groups_detail_placeholder")
+                .marksEmptyDetailColumn()
+        }
+    }
+
+    private var listColumn: some View {
             ZStack {
-                if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
-                    YalaEmptyState.noGroups {
-                        viewModel.showCreateGroup = true
-                    }
+                if !viewModel.hasLoadedOnce {
+                    // Cold launch de "Solo Grupos": el tab puede montar antes de que el bootstrap
+                    // configure el contexto de GroupService. Mostramos spinner en vez del empty
+                    // state hasta la primera carga con éxito (el bootstrap dispara loadData al terminar).
+                    ProgressView()
+                        .accessibilityIdentifier("groups_loading_spinner")
+                } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
+                    emptyState(standardAccessibilityID: "groups_empty_state")
                 } else if viewModel.activeGroups.isEmpty {
                     // Only archived groups exist
                     VStack(spacing: DS.Spacing.xl) {
-                        YalaEmptyState.noGroups {
-                            viewModel.showCreateGroup = true
-                        }
+                        emptyState(standardAccessibilityID: nil)
                         archivedGroupsSection
                             .padding(.horizontal, DS.Spacing.lg)
                     }
@@ -81,14 +132,28 @@ struct GroupsContainerView: View {
                                 )
                             }
 
-                            // Group cards
-                            ForEach(viewModel.filteredGroups, id: \.id) { group in
-                                groupCardRow(group: group)
-                            }
+                            // LazyVStack sólo alrededor de las TARJETAS: con VStack, SwiftUI
+                            // construye la de todos los grupos aunque no quepan en pantalla, y las
+                            // rehace enteras en cada invalidación del body — una por tecla del
+                            // buscador, porque `searchText` vive en el propio ViewModel.
+                            //
+                            // El resumen y el nudge se quedan FUERA a propósito, no por descuido:
+                            // `GroupNudgeBanner` se auto-descarta con un `.task` de 10 s cuyo
+                            // `catch` de cancelación es un noop (GroupNudgeBanner.swift:82-89).
+                            // Dentro del contenedor perezoso, bajar por la lista antes de que
+                            // venza descarta la fila, cancela ese task y `recordDismissed(...,
+                            // autoDismissed: true)` no llega a correr: el aviso deja de retirarse
+                            // solo y puede reaparecer. Eager, su reloj sigue siendo un reloj.
+                            LazyVStack(spacing: DS.Spacing.lg) {
+                                // Group cards
+                                ForEach(viewModel.filteredGroups, id: \.id) { group in
+                                    groupCardRow(group: group)
+                                }
 
-                            // Archived groups
-                            if !viewModel.archivedGroups.isEmpty {
-                                archivedGroupsSection
+                                // Archived groups
+                                if !viewModel.archivedGroups.isEmpty {
+                                    archivedGroupsSection
+                                }
                             }
                         }
                         .padding(.top, DS.Spacing.sm)
@@ -104,13 +169,31 @@ struct GroupsContainerView: View {
                     // ZStack/NavigationStack): así su RefreshAction no se hereda por
                     // environment al detalle ni a los sheets — iOS 26 la captaba en el
                     // ScrollView horizontal de los chips del form de gasto (pull espurio).
-                    .refreshable { viewModel.loadData() }
+                    // Fuerza un fetch real de CloudKit (no solo relee local) — force salta el debounce.
+                    .refreshable {
+                        await viewModel.refreshFromCloud(force: true)
+                        // El pull es el gesto de «inténtalo otra vez»: el ciclo que acaba de correr pudo contar
+                        // otro rechazo del attest o, con un 200, borrar la racha entera.
+                        refreshAttestTerminalNotice()
+                    }
                 }
 
                 // FAB — new group
                 if !viewModel.activeGroups.isEmpty || !viewModel.archivedGroups.isEmpty {
                     newGroupFAB
                 }
+            }
+            .safeAreaInset(edge: .top) { joinIntentBanner }
+            .safeAreaInset(edge: .top) { groupsSignOutReentryBanner }
+            // El último `safeAreaInset` queda el MÁS ARRIBA, y ahí va: de los tres avisos del tab, este es el
+            // único que no caduca solo ni se descarta.
+            .safeAreaInset(edge: .top) { groupsAttestTerminalBanner }
+            // El QUINTO momento, y el único que no es un gesto de la persona: el propio store avisa cuando la racha
+            // cambia en disco. Sin él, el 401 que llega con este tab delante no se ve hasta salir y volver —medido
+            // el 2026-09-15 en el simulador, con la racha escrita un segundo después del arranque.
+            .onReceive(NotificationCenter.default.publisher(
+                for: GroupsAttestStreakStore.didChangeNotification)) { _ in
+                refreshAttestTerminalNotice()
             }
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
@@ -155,10 +238,21 @@ struct GroupsContainerView: View {
                     memberCount: { viewModel.memberCount(for: $0) },
                     onSave: { viewModel.loadData() }
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
             }
             .navigationDestination(item: $viewModel.selectedGroup) { group in
-                GroupDetailView(group: group)
+                // En ventana ancha el grupo va en la columna de detalle, junto a la lista y sin tapar la barra de
+                // navigación; en compacta, empujado como siempre.
+                GroupDetailView(
+                    group: group,
+                    presentation: horizontalSizeClass == .regular ? .column : .pushed,
+                    onCloseColumn: { viewModel.selectedGroup = nil })
+                .announcesShownInDetailColumn()
+                // En la columna de detalle SwiftUI REUTILIZA esta vista al cambiar de grupo, y el `@State` del
+                // detalle (su view model, la pestaña, `wasArchivedOnAppear`) solo se inicia la primera vez: el título
+                // pasaba al grupo nuevo y gastos, saldo y miembros seguían siendo del anterior (medido en el iPad el
+                // 2026-10-12). La identidad del grupo hace de cada grupo una vista nueva, como en Registros.
+                .id(group.persistentModelID)
             }
             .onChange(of: viewModel.selectedGroup) { _, newValue in
                 // Al volver del detalle (pop → nil) refrescamos la lista, igual que el
@@ -170,30 +264,87 @@ struct GroupsContainerView: View {
                 viewModel.setContext(modelContext)
                 evaluateNudge()
                 evaluateGroupsOnboarding()
+                // D2 (§3.3.3): lee el marker en la primera aparición del tab. NO re-lee si el banner ya
+                // está visible — el `onAppear` re-dispara en cada re-selección y el marker ya se quemó, lo
+                // que pisaría un banner aún visible. El banner real quema el marker en su propio `onAppear`;
+                // solo surge sobre el empty state H-7 (signInToView).
+                if !showGroupsSignOutReentryBanner {
+                    showGroupsSignOutReentryBanner = GroupsSignOutBannerMarker.isPending()
+                }
+                // C2 · el SEGUNDO armador del latch «tuvo sesión alguna vez», y no es un cinturón: es lo
+                // único que cubre al parque que YA tenía sesión antes de esta versión —para quien no habrá
+                // ningún evento de sign-in futuro— y a quien firmó por el camino de nube completo, que no
+                // pasa por el closure de `GroupsSignInView`. Sin él, todos ellos leerían «crea una cuenta»
+                // al cerrar sesión. Idempotente y monotónico: solo arma.
+                if CloudAuthService.shared.hasSession {
+                    GroupsSessionHistoryMarker.markSessionSeen()
+                }
+                // Arranca el canal si este proceso no lo arrancó: tras «Ya tengo una cuenta» con una cuenta
+                // solo-grupos la sesión nace con la app abierta, el arranque en frío fue sin sesión y nada más lo
+                // arranca hasta relanzar o volver a primer plano. Sin él, el pull de abajo no llega a la red (le
+                // falta el `context`) y la pestaña se queda en «Sin grupos» (QA guiado del 2026-10-19, D5). Con
+                // el loop vivo solo lo despierta; sin sesión o con el flag apagado no hace nada. Ni bajo `-uitest`
+                // ni con un cierre de sesión o un desasociar en curso (`GroupsLoopRestartLogic.tabStartsChannel`).
+                if GroupsLoopRestartLogic.tabStartsChannel(
+                    isUITesting: UITestHooks.isActive,
+                    exitInFlight: CloudSessionSignOut.shared.phase != .idle || CloudSessionSignOut.shared.isDetaching
+                ) {
+                    GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "groups-tab")
+                }
+                // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
+                // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
+                Task {
+                    await viewModel.refreshFromCloud(force: false)
+                    refreshAttestTerminalNotice()
+                }
+                refreshAttestTerminalNotice()
             }
             .groupsOnboardingSheet(
                 isPresented: $showGroupsOnboarding,
                 onPersistFlag: {
                     seedSystemGroupCategoriesIfNeeded(in: modelContext)
                     appPreferences.hasShownGroupsOnboarding = true
-                }
+                },
+                // A1 (D-A7): el CTA de sign-in del cierre reusa el MISMO camino que el del
+                // empty state — un solo productor de `.presentGroupsSignIn`.
+                onRequestSignIn: { requestGroupsSignIn() }
             )
             .onDisappear {
                 showNudgeBanner = false
+                viewModel.cancelRecalculation()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                switch newPhase {
+                case .background, .inactive:
+                    viewModel.setBackground(true)
+                case .active:
+                    guard UIApplication.shared.applicationState == .active else { return }
+                    viewModel.setBackground(false)
+                    viewModel.reloadAndRecalculate()
+                    // Volver de background es el salto de reloj que hace terminal a una racha de ayer.
+                    refreshAttestTerminalNotice()
+                @unknown default:
+                    break
+                }
             }
             .onChange(of: sessionState.dataVersion) {
-                viewModel.loadData()
+                // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
+                viewModel.reloadAndRecalculate()
             }
             .onChange(of: viewModel.activeGroups.count) { _, _ in
                 maybeShowGroupsNotificationPrompt()
             }
             // Deep link: open a specific group detail once the group list is available.
-            .onChange(of: sessionState.pendingGroupID, initial: true) { _, _ in
+            .onChange(of: navigation.pendingGroupID, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
             }
             // FAB del Panel ("Grupo"): abre el composer "Nuevo gasto" al llegar al tab.
-            .onChange(of: sessionState.pendingNewGroupExpense, initial: true) { _, _ in
+            .onChange(of: navigation.pendingNewGroupExpense, initial: true) { _, _ in
                 openExpenseComposerIfRequested()
+            }
+            // G3: último paso de la rama organizador del Welcome — el formulario de grupo, directo.
+            .onChange(of: navigation.pendingNewGroupForm, initial: true) { _, _ in
+                openGroupFormIfRequested()
             }
             .onChange(of: viewModel.groups.count, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
@@ -234,9 +385,16 @@ struct GroupsContainerView: View {
                                 try await GroupService.shared.leaveGroup(group)
                                 viewModel.loadData()
                             } catch {
+                                // H1 review G5-A: el leave backend es RPC server-first — un fallo
+                                // (sesión/red) deja el grupo local intacto y DEBE verse (cero silencios).
                                 #if DEBUG
                                 print("GroupsContainerView: leaveGroup failed: \(error)")
                                 #endif
+                                DS.Haptic.warning()
+                                // Mismo criterio que `GroupSettingsView`: el error crudo aquí era un
+                                // número de discriminante. El copy lo elige `GroupLeaveErrorLogic`.
+                                leaveErrorMessage = GroupLeaveErrorLogic.classify(
+                                    error, attestUnavailable: GroupsAttestStreakStore.isTerminal()).localizedMessage
                             }
                             rejectedGroupPendingLeave = nil
                         }
@@ -248,25 +406,149 @@ struct GroupsContainerView: View {
             } message: {
                 Text(L10n.Groups.Card.leaveGroupAlertBody)
             }
-        }
+            // La puerta del grupo para un miembro `.pendingApproval` (decisión owner 2026-09-06).
+            // Es un aviso, no una pregunta: no hay nada que confirmar ni acción que ofrecer —cancelar
+            // la propia solicitud no existe hoy, y el AC prohíbe prometer lo que la app no hace—, así
+            // que un solo botón de cierre.
+            .alert(
+                L10n.Groups.Card.PendingNotice.title,
+                isPresented: $showPendingApprovalNotice
+            ) {
+                Button(L10n.Common.understood, role: .cancel) {
+                    showPendingApprovalNotice = false
+                }
+            } message: {
+                Text(L10n.Groups.Card.PendingNotice.body)
+            }
+            .alert(
+                L10n.Common.error,
+                isPresented: Binding(
+                    get: { leaveErrorMessage != nil },
+                    set: { if !$0 { leaveErrorMessage = nil } }
+                )
+            ) {
+                Button(L10n.Common.ok) { leaveErrorMessage = nil }
+            } message: {
+                Text(leaveErrorMessage ?? "")
+            }
+            .alert(
+                L10n.Welcome.Groups.channelOffTitle,
+                isPresented: $showChannelOffAlert
+            ) {
+                Button(L10n.Common.ok) { showChannelOffAlert = false }
+            } message: {
+                Text(L10n.Welcome.Groups.channelOffBody)
+            }
     }
 
     // MARK: - Helpers
 
+    /// C2 · ¿ya se le contó a esta persona qué es un grupo? La MISMA señal para el educativo del tab y para
+    /// el empty state: si discreparan, el tab podría anunciar «ver cómo funciona» y no presentar nada.
+    private var hasSeenGroupsEducational: Bool {
+        GroupsOnboardingLogic.hasSeenAnyGroupsEducational(
+            hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
+            hasPrivateSession: sessionState.hasPrivateSession,
+            // Hasta el 2026-09-12, el CAJÓN de la sesión, y con el MISMO dominio que su gemelo de
+            // `ContentView` (el gate del
+            // organizador): si discreparan, el tab anunciaría «ver cómo funciona» y el tap no presentaría
+            // nada — la divergencia que este helper existe para impedir.
+            hasCompletedSetup: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        )
+    }
+
+    /// Empty state del tab. Decide (pure-logic) QUÉ le falta al usuario y lo dice, con la MISMA precedencia
+    /// que `GroupsGateLogic` usa para decidir qué le va a pedir el tap — lo anunciado y lo pedido no pueden
+    /// divergir. Con `groupsBackendEnabled` OFF SIEMPRE `.standard` ⇒ byte-idéntico al camino actual.
+    ///
+    /// `standardAccessibilityID` preserva la identidad de accesibilidad exacta por rama (total =
+    /// `groups_empty_state`, solo-archivados = ninguna); las cuatro variantes llevan la suya fija. **El id
+    /// va en el CONTENEDOR y pisa el del botón interior** (regla medida en `testing.md`): un XCUITest que
+    /// busque el id declarado en `YalaEmptyState` no lo encuentra en el árbol.
+    @ViewBuilder
+    private func emptyState(standardAccessibilityID: String?) -> some View {
+        switch GroupsEmptyStateLogic.decide(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSeenEducational: hasSeenGroupsEducational,
+            hadSessionEver: GroupsSessionHistoryMarker.hadSessionEver(),
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted,
+            hasAssociatedAccount: GroupsAccountAssociation.shared.hasAssociation
+        ) {
+        case .standard:
+            let base = YalaEmptyState.noGroups { Task { await requestCreateGroup() } }
+            if let standardAccessibilityID {
+                base.accessibilityIdentifier(standardAccessibilityID)
+            } else {
+                base
+            }
+        case .needsEducational:
+            YalaEmptyState.groupsNeedsEducational { showGroupsOnboarding = true }
+                .accessibilityIdentifier("groups_empty_state_educational")
+        case .signInToView:
+            YalaEmptyState.groupsSignedOut { requestGroupsSignIn() }
+                .accessibilityIdentifier("groups_empty_state_signin")
+        case .createAccount:
+            // Mismo intent que la re-entrada: `GroupsSignInView` es la pantalla que CREA la cuenta además
+            // de recuperarla. Lo que cambia es el copy, que es justo lo que estaba mal.
+            YalaEmptyState.groupsCreateAccount { requestGroupsSignIn() }
+                .accessibilityIdentifier("groups_empty_state_create_account")
+        case .needsConsent:
+            YalaEmptyState.groupsNeedsConsent { requestGroupsConsent() }
+                .accessibilityIdentifier("groups_empty_state_consent")
+        }
+    }
+
     private func groupCardRow(group: SplitGroup) -> some View {
-        GroupCardView(
+        let displayMode = GroupCardDisplayLogic.displayMode(
+            memberStatus: viewModel.currentMemberStatus(for: group),
+            migrationState: group.migrationState
+        )
+        return GroupCardView(
             group: group,
             memberCount: viewModel.memberCount(for: group),
             pendingCount: viewModel.pendingMemberCount(for: group),
             debts: viewModel.currentUserDebts(for: group),
-            displayMode: GroupCardDisplayLogic.displayMode(
-                memberStatus: viewModel.currentMemberStatus(for: group)
-            ),
+            displayMode: displayMode,
             action: { viewModel.openDetail(for: group) },
-            onRejectedTap: { rejectedGroupPendingLeave = group }
+            onRejectedTap: { rejectedGroupPendingLeave = group },
+            onPendingTap: { showPendingApprovalNotice = true }
         )
         .accessibilityIdentifier("group_card")
+        // Clic secundario en el iPad, pulsación larga en el iPhone: abrir y apuntar un gasto, por los caminos del
+        // toque y del FAB. «Abrir» solo donde el toque abre el detalle (no en una solicitud en revisión ni en una
+        // rechazada, que tienen su propia puerta); «Nuevo gasto» solo donde el composer deja apuntar.
+        .contextMenu {
+            if GroupContextActionLogic.offersOpen(displayMode) {
+                Button(L10n.Keyboard.openGroup, systemImage: "arrow.up.right.square") {
+                    viewModel.openDetail(for: group)
+                }
+                // Misma puerta que «Abrir»: la ventana nueva aterriza por `pendingGroupID`, que vuelve a pasar por
+                // la de aprobación pendiente.
+                OpenInNewWindowButton(route: .group(id: group.id.uuidString))
+            }
+            if let eligibles = expenseTargets(for: group) {
+                Button(L10n.Groups.Expense.newExpense, systemImage: "plus") {
+                    expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: group)
+                }
+            }
+        }
     }
+
+    /// Los grupos elegibles para el composer si `group` es uno de ellos; si no, `nil` (el menú no ofrece el gasto).
+    private func expenseTargets(for group: SplitGroup) -> [SplitGroup]? {
+        let eligibles = viewModel.eligibleGroupsForExpense()
+        return eligibles.contains(where: { $0.persistentModelID == group.persistentModelID }) ? eligibles : nil
+    }
+
+    // C-10: `handleMigratedRejoin(_:)` vivía aquí y se ELIMINÓ. Era la SEGUNDA entrada a la cadena de
+    // re-entrada al backend (la buena es `GroupDetailView.handleMigratedRejoin`, que ahora gatea por
+    // capacidad) y la ÚNICA de todo el flujo que no comprobaba el flag, a diferencia de sus vecinas de
+    // este mismo archivo (`groupsEmptyState`, `requestCreateGroup`). Con el canal apagado disparaba
+    // `GroupBackendInviteEntryHandler.handle`, que sin ningún guard escribía `groupsBetaUnlocked` de
+    // forma PERMANENTE, persistía un join intent que caducaba a los 7 días disparando su canario de
+    // expiración, emitía un canario falso de intent persistido, y acababa presentando un sign-in que
+    // fallaba siempre en `CloudAuthError.notConfigured`. El tap de la card ahora abre el detalle.
 
     private func evaluateNudge() {
         NudgeService.shared.evaluate()
@@ -280,12 +562,18 @@ struct GroupsContainerView: View {
     private func evaluateGroupsOnboarding() {
         #if DEBUG
         // F1c: en uitest no montar el onboarding informativo del tab (interceptaría taps).
-        if UITestHooks.isActive { return }
+        //
+        // **C2 · el seam que invierte este early-return, y por qué existe.** Sin él, el educativo —que C2
+        // convierte en el PRIMER escalón de las puertas de Grupos— nace sin ninguna red determinista: no hay
+        // XCUITest posible porque esta línea lo desmonta, y `qa/coverage-index.json` ya anotaba el hueco.
+        // `-uitest-groups-educativo` lo monta a propósito para las corridas que lo ejercitan; el resto de
+        // la suite sigue con el early-return intacto (el arg no está en `launchForUITest` por defecto), así
+        // que ningún test existente cambia de comportamiento.
+        if UITestHooks.isActive && !UITestHooks.groupsEducativo { return }
         #endif
         let shouldShow = GroupsOnboardingLogic.shouldShow(
-            hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
-            onboardingMode: sessionState.onboardingMode,
-            hasPendingGroupDeeplink: sessionState.pendingGroupID != nil
+            hasSeenEducational: hasSeenGroupsEducational,
+            hasPendingGroupDeeplink: navigation.pendingGroupID != nil
         )
         if shouldShow {
             showGroupsOnboarding = true
@@ -293,12 +581,21 @@ struct GroupsContainerView: View {
     }
 
     private func openPendingGroupIfAvailable() {
-        guard let groupID = sessionState.pendingGroupID,
+        guard let groupID = navigation.pendingGroupID,
               let uuid = UUID(uuidString: groupID),
               let group = viewModel.activeGroups.first(where: { $0.id == uuid })
         else { return }
 
-        sessionState.pendingGroupID = nil
+        navigation.pendingGroupID = nil
+
+        // La puerta también se cierra aquí (decisión owner 2026-09-06). `activeGroups` filtra por
+        // archivado/oculto y NO por el status del miembro, así que sin este gate un deep link de
+        // notificación metía al pendiente en el detalle saltándose la tarjeta — la única puerta que
+        // estaba cerrada. Se consume el intent igual (arriba) para que no quede reintentándose.
+        guard viewModel.canOpenDetail(for: group) else {
+            showPendingApprovalNotice = true
+            return
+        }
         viewModel.openDetail(for: group)
     }
 
@@ -307,12 +604,23 @@ struct GroupsContainerView: View {
     /// no tiene ninguno), el flag persiste y el `.onChange(of: groups.count)` reintenta
     /// al llegar el primero — abriendo el composer tras crear el primer grupo.
     private func openExpenseComposerIfRequested() {
-        guard sessionState.pendingNewGroupExpense else { return }
+        guard navigation.pendingNewGroupExpense else { return }
         let eligibles = viewModel.eligibleGroupsForExpense()
         guard let first = eligibles.first else { return }
 
-        sessionState.pendingNewGroupExpense = false
+        navigation.pendingNewGroupExpense = false
         expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
+    }
+
+    /// G3 · abre el formulario de grupo pedido por la rama organizador del Welcome. **Se consume al
+    /// primer intento y no espera a nada** —al contrario que su hermano `openExpenseComposerIfRequested`,
+    /// que necesita un grupo elegible—: aquí el usuario acaba de darse de alta y todavía no tiene ninguno,
+    /// que es justo el motivo de abrir el form. Si el sheet no llegara a presentarse, la red es el empty
+    /// state estándar con su CTA «crear grupo», que ya existe.
+    private func openGroupFormIfRequested() {
+        guard navigation.pendingNewGroupForm else { return }
+        navigation.pendingNewGroupForm = false
+        Task { await requestCreateGroup() }
     }
 
     /// Presenta el prompt de notificaciones de grupos, SALVO que un composer del FAB del
@@ -323,7 +631,7 @@ struct GroupsContainerView: View {
     private func maybeShowGroupsNotificationPrompt() {
         guard !appPreferences.hasSeenGroupsNotificationPrompt,
               !viewModel.activeGroups.isEmpty,
-              !sessionState.pendingNewGroupExpense,
+              !navigation.pendingNewGroupExpense,
               expenseComposerPayload == nil
         else { return }
         showNotificationPrompt = true
@@ -334,10 +642,16 @@ struct GroupsContainerView: View {
         case .activateFullMode:
             RouterEntryGate.shared.submit(.presentFullModeActivation)
         case .openPanel:
-            sessionState.selectMainTab(.panel)
+            navigation.selectMainTab(.panel)
         case .openGroupDetail:
-            if let group = viewModel.activeGroups.first {
+            // Tercera puerta. `activeGroups.first` puede ser perfectamente el grupo en el que aún
+            // estoy pendiente —si es el único que tengo, lo es siempre—, así que se elige el primero
+            // que SÍ se puede abrir en vez del primero a secas. Si ninguno abre, el nudge no lleva a
+            // un muro: explica por qué.
+            if let group = viewModel.firstGroupOpenableInDetail() {
                 viewModel.openDetail(for: group)
+            } else if viewModel.activeGroups.contains(where: { !viewModel.canOpenDetail(for: $0) }) {
+                showPendingApprovalNotice = true
             }
         case .dismiss:
             break
@@ -405,6 +719,262 @@ struct GroupsContainerView: View {
         }
     }
 
+    // MARK: - Join intent banner
+
+    /// Continuidad visible del join intent a nivel tab: el onboarding puede
+    /// cerrarse en "está tardando" y el reconciliador sigue trabajando detrás —
+    /// esta strip informa el estado real (conectando / esperando aprobación /
+    /// error con retry / expirado) alimentada por `GroupJoinIntentTracker`.
+    @ViewBuilder
+    private var joinIntentBanner: some View {
+        let tracker = GroupJoinIntentTracker.shared
+        switch tracker.phase {
+        case .idle, .active:
+            EmptyView()
+
+        case .accepting, .waitingForZone, .creatingMember:
+            joinBannerChip(accessibilityID: "invite_sync_banner") {
+                ProgressView()
+                    .controlSize(.small)
+                Text(L10n.Groups.Invite.syncBanner)
+                    .font(DS.Typography.caption)
+            }
+
+        case .pendingApproval:
+            joinBannerChip(accessibilityID: "invite_pending_banner") {
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                Text(L10n.Groups.Invite.waitingApprovalBanner)
+                    .font(DS.Typography.caption)
+            }
+
+        case .failed(let reason):
+            switch reason {
+            case .acceptFailed(recoverable: true), .memberSaveFailed:
+                joinBannerChip(accessibilityID: "invite_failed_banner") {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                    Text(L10n.Groups.Invite.errorTitle)
+                        .font(DS.Typography.caption)
+                    Button(L10n.Action.retry) {
+                        Task { @MainActor in await tracker.retry() }
+                    }
+                    .font(DS.Typography.caption.weight(.semibold))
+                }
+            case .acceptFailed(recoverable: false), .expired:
+                joinBannerChip(accessibilityID: "invite_expired_banner") {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                    Text(L10n.Groups.Invite.expiredBanner)
+                        .font(DS.Typography.caption)
+                    Button {
+                        tracker.clear()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.caption)
+                            .accessibilityLabel(L10n.Action.cancel)
+                    }
+                }
+            }
+        }
+    }
+
+    private func joinBannerChip(
+        accessibilityID: String,
+        @ViewBuilder content: () -> some View
+    ) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            content()
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
+        .glassEffect()
+        .accessibilityIdentifier(accessibilityID)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.xs)
+    }
+
+    // MARK: - Re-entry banner (D2, §3.3.3)
+
+    /// Banner one-shot sobre el empty state H-7 tras "Cerrar sesión de grupos". Solo se pinta cuando el
+    /// empty state de re-entrada (signInToView) está activo — así NUNCA aparece sobre tarjetas de grupo.
+    /// Se quema (limpia el marker) en su propio `onAppear` (regla de one-shots del repo — jamás en el
+    /// productor ni en el drain); dismiss manual con la X. `@State showGroupsSignOutReentryBanner` da la
+    /// visibilidad estable en la sesión (leído una vez en el `onAppear` del contenedor).
+    @ViewBuilder
+    private var groupsSignOutReentryBanner: some View {
+        if showGroupsSignOutReentryBanner && isGroupsSignedOutEmptyState {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .foregroundStyle(theme.accent)
+                Text(L10n.Groups.Empty.SignedOut.reentryBanner)
+                    .font(DS.Typography.caption)
+                Spacer(minLength: 0)
+                Button {
+                    showGroupsSignOutReentryBanner = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .accessibilityLabel(L10n.Action.cancel)
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+            .glassEffect()
+            .accessibilityIdentifier("groups_signout_reentry_banner")
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.xs)
+            .onAppear { GroupsSignOutBannerMarker.clear() }
+        }
+    }
+
+    /// True cuando el tab muestra el empty state de re-entrada H-7 (signInToView): lista cargada y vacía,
+    /// flag ON y sin sesión backend. Gatea el banner D2 para que jamás aparezca sobre tarjetas de grupo.
+    private var isGroupsSignedOutEmptyState: Bool {
+        viewModel.hasLoadedOnce
+            && viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty
+            && GroupsEmptyStateLogic.decide(
+                flagOn: CloudSyncFlags.groupsBackendEnabled,
+                hasSeenEducational: hasSeenGroupsEducational,
+                hadSessionEver: GroupsSessionHistoryMarker.hadSessionEver(),
+                hasSession: CloudAuthService.shared.hasSession,
+                isConsented: GroupsConsentState.isAccepted,
+                hasAssociatedAccount: GroupsAccountAssociation.shared.hasAssociation) == .signInToView
+    }
+
+    // MARK: - Aviso de attest terminal (2026-09-15)
+
+    /// **El aviso FIJO de que este teléfono no sincroniza grupos.** Hasta hoy el veredicto terminal solo salía al
+    /// intentar cerrar sesión, desasociar la cuenta o salir de un grupo: quien se limitaba a editar gastos no se
+    /// enteraba nunca de que nadie del grupo los veía (ticket `groups-tab-does-not-say-this-phone-cannot-sync-groups`,
+    /// decisión de Jürgen del 2026-09-15, opción 1).
+    ///
+    /// **Sin X y sin botón, a propósito.** Es el único de los tres avisos del tab que describe un estado que sigue
+    /// ahí después de leerlo, así que descartarlo solo serviría para ocultarlo; y no hay ninguna acción que lo
+    /// arregle desde este teléfono —reintentar es lo que lleva un día fallando—, así que el copy ofrece lo único
+    /// cierto: usar otro teléfono.
+    ///
+    /// Reusa el título de los gestos (`Groups.Errors.attestUnavailableTitle`) para que la avería se llame igual en
+    /// todas partes. Quién decide, en `GroupsAttestTabNoticeLogic`; cuándo se vuelve a mirar, en
+    /// `refreshAttestTerminalNotice`.
+    @ViewBuilder
+    private var groupsAttestTerminalBanner: some View {
+        if showsAttestTerminalNotice {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Groups.Errors.attestUnavailableTitle)
+                        .font(DS.Typography.labelSmall)
+                    Text(L10n.Groups.attestTerminalBanner)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.sm)
+            .glassEffect()
+            .accessibilityIdentifier("groups_attest_terminal_banner")
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.xs)
+        }
+    }
+
+    /// ¿Se enseña el aviso? El veredicto viene del `@State` —es lo único que no se puede leer reactivamente— y las
+    /// otras tres condiciones se leen AQUÍ, vivas, para que el body las vuelva a mirar cada vez que se re-evalúa.
+    ///
+    /// **El canal es la capacidad COMPILADA y no el getter compuesto**, por lo mismo que los cuatro teardowns de
+    /// `CloudSignOutFlowLogic.path`: el término remoto es fail-closed ante un snapshot ausente, así que el primer
+    /// arranque de un teléfono restaurado —que hereda la racha y no la key de attest— se quedaba sin aviso mientras
+    /// el cierre de sesión sí se lo enseñaba. El porqué largo, en `GroupsAttestTabNoticeLogic`.
+    private var showsAttestTerminalNotice: Bool {
+        GroupsAttestTabNoticeLogic.showsNotice(
+            verdictIsTerminal: attestVerdictIsTerminal,
+            channelIsCompiled: CloudSyncFlags.groupsBackendCompiledCapability,
+            hasLiveSession: CloudAuthService.shared.hasSession,
+            hasGroupsConsent: GroupsConsentState.isAccepted)
+    }
+
+    /// Relee el veredicto del attest. **Solo el veredicto**: las otras tres condiciones las lee el body en vivo.
+    ///
+    /// Se llama en los CINCO momentos en que el resultado puede haber cambiado sin que la vista se entere: al entrar
+    /// al tab, al terminar el refresco que ese `onAppear` lanza, al volver de background, tras un pull-to-refresh y
+    /// cuando el propio store avisa de que la racha cambió en disco (`GroupsAttestStreakStore.didChangeNotification`).
+    ///
+    /// Ese quinto es el que cierra el hueco de verdad y **el único que no depende de un gesto**: los cuatro primeros
+    /// dejaban la pestaña muda mientras la persona la miraba, que es justo cuando llega el 401 —medido en el
+    /// simulador el 2026-09-15, con la racha escrita un segundo después del arranque.
+    private func refreshAttestTerminalNotice() {
+        attestVerdictIsTerminal = GroupsAttestStreakStore.isTerminal()
+    }
+
+    // MARK: - Create-group routing (G5-A / C3 · C4)
+
+    /// Gate canal/consent/sign-in ANTES de abrir el form, y **choke-point ÚNICO de las cuatro entradas**
+    /// de creación del tab (empty state, FAB simple, FAB expandible y el `pendingNewGroupForm` que deja la
+    /// rama organizador del Welcome). El form es sheet de ESTE anchor (GroupsContainerView), distinto del
+    /// ContentView que posee `GroupsBackendInviteModifier` — emitir el intent con el form abierto lo dejaría
+    /// RETENIDO por peek-first ("el save no haría nada"). Residual documentado: sin auto-continuación — tras
+    /// la chain (consent/sign-in) el usuario re-tapea "crear grupo".
+    ///
+    /// **C4 · el `force: true` va ANTES de leer el flag, y no es cosmético:** sin él `refreshIfDue` es un
+    /// no-op exactamente en el caso del bug (min-interval de 6 h, ya gastada por el refresh fire-and-forget
+    /// del arranque) y las cuatro entradas medirían un snapshot rancio. La regla —«la intención del usuario
+    /// ES evidencia de que el canal debería estar encendido»— es la misma que aplica
+    /// `GroupInviteChannelRoutingLogic` al recibir un link backend, y la que ya protegía el Welcome
+    /// (`WelcomeGroupsGateView.evaluate`). El `force` vive AQUÍ y no replicado en los cuatro call-sites a
+    /// propósito: un solo punto de decisión es lo que hace que añadir una quinta entrada no reabra el
+    /// agujero. Lo fija `GroupCreateRoutingWiringTests` por source-scan — la lógica pura puede estar
+    /// perfecta y verde mientras nadie la llame donde hace falta.
+    ///
+    /// **Con `.channelOff` no se escribe NADA** (ni preferencias, ni `SplitGroup`): solo se dice la verdad.
+    private func requestCreateGroup() async {
+        // Hermeticidad: bajo `-uitest` no se toca red, igual que la puerta del Welcome. Los getters ya
+        // devuelven su default (ON bajo `Yala Dev`), así que el XCUITest recorre la rama buena.
+        if !SwiftDataConfiguration.isUITesting {
+            await RemoteConfigClient.shared.refreshIfDue(force: true)
+        }
+
+        switch GroupCreateRoutingLogic.route(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession,
+            consentAccepted: GroupsConsentState.isAccepted
+        ) {
+        case .backend:
+            // El anchor de ESTA vista abre el form; la creación la resuelve `GroupFormView.saveAsync`.
+            viewModel.showCreateGroup = true
+        case .channelOff:
+            // El copy que YA existe para este hecho, el de la puerta del Welcome (`welcome.groups.channelOff*`):
+            // estado transitorio, sin culpar al usuario y diciendo que no se guardó nada. Es el mismo
+            // precedente por el que esa puerta reusa `welcome.cloud.blocked*`.
+            DS.Haptic.warning()
+            showChannelOffAlert = true
+        case .needsConsent:
+            // Ceder el anchor: ContentView (libre) presenta el consent de inmediato. Sentinel "" ⇒
+            // `continueFlow` no-op (no hay PendingJoin para la creación — verificado en el handler).
+            RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))
+        case .needsSignIn:
+            RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+        }
+    }
+
+    /// CTA del empty state de re-entrada (H-2026-07-18-7): cede el anchor a ContentView (dueño ÚNICO de
+    /// `GroupsBackendInviteModifier`) para presentar el sign-in solo-grupos. Sentinel "" ⇒ sin PendingJoin.
+    /// El arranque del canal post-sign-in ya está cableado (f1c79424: el closure de éxito de
+    /// `GroupsSignInView` dentro de `GroupsBackendInviteModifier` llama `startIfEligible`), así que esta
+    /// CTA solo presenta el sign-in y hereda ese arranque gratis.
+    private func requestGroupsSignIn() {
+        RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+    }
+
+    /// C2 · CTA del empty state `.needsConsent`. Cede el anchor igual que sus hermanas y reusa el MISMO
+    /// intent que `requestCreateGroup` emite en su rama `.needsConsent` — un segundo productor duplicaría
+    /// el dueño de esa cadena. Sentinel "" ⇒ `continueFlow` no-op (no hay PendingJoin aquí).
+    private func requestGroupsConsent() {
+        RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))
+    }
+
     // MARK: - FAB
 
     private var newGroupFAB: some View {
@@ -429,7 +999,7 @@ struct GroupsContainerView: View {
                 accessibilityLabel: L10n.Groups.newGroup,
                 accessibilityIdentifier: "groups_fab_new"
             ) {
-                viewModel.showCreateGroup = true
+                Task { await requestCreateGroup() }
             }
             .dsFloatingShadow()
         } else {
@@ -443,7 +1013,7 @@ struct GroupsContainerView: View {
                         color: .electricIndigo,
                         accessibilityIdentifier: "groups_fab_new_group"
                     ) {
-                        viewModel.showCreateGroup = true
+                        Task { await requestCreateGroup() }
                     },
                     ExpandableFABAction(
                         id: "newExpense",

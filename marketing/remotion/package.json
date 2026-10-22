@@ -1,0 +1,42 @@
+{
+  "name": "yala-remotion",
+  "version": "1.0.0",
+  "description": "Estudio de demos de producto de Yala (Remotion). Footage real de iPhone + motion estilo Apple.",
+  "repository": {},
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.523",
+    "@remotion/google-fonts": "4.0.523",
+    "@remotion/media": "4.0.523",
+    "@remotion/tailwind-v4": "4.0.523",
+    "@remotion/transitions": "4.0.523",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.523",
+    "tailwindcss": "4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.523",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "studio": "remotionb studio",
+    "dev": "remotionb studio",
+    "build": "remotionb bundle",
+    "render:reels": "bash scripts/render-reels.sh",
+    "render:wide": "bash scripts/render-reels.sh --aspect 16x9",
+    "render:all": "bash scripts/render-all.sh",
+    "render:pack": "bash scripts/render-all.sh --pack",
+    "render:presentation": "bash scripts/render-reels.sh presentacion-yala-ia --presentation",
+    "lint": "eslint src && tsc",
+    "upgrade": "remotionb upgrade"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

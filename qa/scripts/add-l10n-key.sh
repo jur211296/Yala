@@ -35,19 +35,30 @@ COMMENT="${3:-}"
 
 # Locales BASE — variantes regionales (es-ES, es-AR, pt-PT, en-GB) se omiten
 # porque heredan del padre vía fallback chain en ls().
+#
+# `es` y `pt` NO están aquí a propósito: son ALIASES catch-all y se REGENERAN por
+# copia byte-a-byte de su base al final (ver sync de aliases). Cuando `pt` estaba en
+# esta lista caía al `else` y recibía "[NEEDS_TRANSLATION]", que alguien traducía a
+# mano — así derivó a portugués EUROPEO en 272 keys frente a pt-BR (2026-04-30 →
+# 2026-07-21), sirviendo texto híbrido a toda la diáspora lusófona con región no-BR.
 BASE_LOCALES=(
-  "es"           # alias catch-all (copia de es-419)
   "es-419"       # reference
   "en"
   "de"
   "fr"
   "it"
-  "pt"           # alias catch-all (copia de pt-BR)
   "pt-BR"        # reference lusofona
   "nl"
   "pl"
   "ja"
   "zh-Hans"
+)
+
+# Aliases catch-all: destino → base de la que son COPIA IDÉNTICA (contrato de
+# SupportedLocale.swift y L10N.md; enforced por LocalizationParityTests).
+ALIAS_PAIRS=(
+  "es:es-419"
+  "pt:pt-BR"
 )
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -72,8 +83,9 @@ for locale in "${BASE_LOCALES[@]}"; do
     continue
   fi
 
-  # es-419 + es (alias) reciben el valor real; el resto reciben el placeholder
-  if [ "$locale" = "es-419" ] || [ "$locale" = "es" ]; then
+  # es-419 (reference) recibe el valor real; el resto reciben el placeholder.
+  # Los aliases (es, pt) no pasan por aquí: se regeneran por copia al final.
+  if [ "$locale" = "es-419" ]; then
     value="$VALUE_ES_419"
   else
     value="$PLACEHOLDER $VALUE_ES_419"
@@ -130,6 +142,27 @@ for variant in "es-ES" "es-AR" "en-GB" "pt-PT"; do
 
   echo "  +  $variant: añadida con valor: $value"
   added=$((added + 1))
+done
+
+# Aliases catch-all — REGENERAR por copia byte-a-byte de su base. No se traducen
+# NUNCA a mano: `pt` sirve a todo portugués con región fuera del bloque lusófono
+# (diáspora brasileña en US/JP/DE/PE…) y `es` a todo hispanohablante fuera de LatAm,
+# así que deben leerse exactamente como su base. Idempotente: correr esto dos veces
+# no cambia nada. Cubre .strings Y .stringsdict (ambos derivaron en su momento).
+for pair in "${ALIAS_PAIRS[@]}"; do
+  alias_locale="${pair%%:*}"
+  base_locale="${pair##*:}"
+  for fname in "Localizable.strings" "Localizable.stringsdict" "InfoPlist.strings"; do
+    src="$RESOURCES/$base_locale.lproj/$fname"
+    dst="$RESOURCES/$alias_locale.lproj/$fname"
+    [ -f "$src" ] || continue
+    if cmp -s "$src" "$dst"; then
+      echo "  ✓  $alias_locale/$fname: ya sincronizado con $base_locale"
+    else
+      cp "$src" "$dst"
+      echo "  ⟳  $alias_locale/$fname: regenerado desde $base_locale"
+    fi
+  done
 done
 
 echo ""

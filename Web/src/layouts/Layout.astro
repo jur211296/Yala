@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import type { Language } from '../i18n/translations';
+import { languages } from '../i18n/translations';
 
 interface Props {
 	title: string;
@@ -13,6 +14,25 @@ const {
 	description = "Tu centro de control financiero con Yala IA y gastos compartidos. Registra en segundos, entiende en minutos.",
 	lang = 'es'
 } = Astro.props;
+
+const site = 'https://yala-app.pe';
+const APP_STORE_ID = '6758253109';
+const appStoreUrl = `https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id${APP_STORE_ID}`;
+
+// hreflang: cada página tiene una gemela por idioma con la misma ruta base
+// (`/`, `/privacy`, `/terms`, `/support`). ES vive en la raíz; el resto bajo `/xx/`.
+const rawPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const langCodes = Object.keys(languages) as Language[];
+const basePath = rawPath.replace(new RegExp(`^/(${langCodes.join('|')})(?=/|$)`), '') || '/';
+const knownBases = ['/', '/privacy', '/terms', '/support'];
+// Con barra final, igual que las URLs del sitemap (Astro las emite así): canonical y sitemap deben coincidir.
+const localizedUrl = (l: Language) =>
+	site + (l === 'es' ? basePath : `/${l}${basePath === '/' ? '' : basePath}`) + (basePath === '/' && l === 'es' ? '' : '/');
+const alternates = knownBases.includes(basePath)
+	? langCodes.map((l) => ({ l, href: localizedUrl(l) }))
+	: [];
+const canonical = knownBases.includes(basePath) ? localizedUrl(lang) : site + rawPath;
+const ogLocale = ({ es: 'es_PE', en: 'en_US', de: 'de_DE', fr: 'fr_FR', it: 'it_IT', pt: 'pt_BR' } as const)[lang];
 ---
 
 <!doctype html>
@@ -21,27 +41,100 @@ const {
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="description" content={description} />
+		<meta name="theme-color" content="#0F172A" />
+		<link rel="canonical" href={canonical} />
+		{alternates.map(({ l, href }) => <link rel="alternate" hreflang={l} href={href} />)}
+		{alternates.length > 0 && <link rel="alternate" hreflang="x-default" href={localizedUrl('es')} />}
 
-		<!-- Open Graph -->
+		<!-- Smart App Banner (Safari iOS): abre o descarga la app sin salir de la web -->
+		<meta name="apple-itunes-app" content={`app-id=${APP_STORE_ID}`} />
+
+		<!-- Open Graph / Twitter: las URLs de imagen deben ser absolutas para que WhatsApp, iMessage y X las rendericen -->
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
-		<meta property="og:image" content="/og-image.png" />
+		<meta property="og:site_name" content="Yala" />
+		<meta property="og:locale" content={ogLocale} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={`${site}/og-image.png`} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={`${site}/og-image.png`} />
 
 		<!-- Favicon -->
 		<link rel="icon" type="image/png" href="/favicon.png" />
 		<link rel="apple-touch-icon" href="/favicon.png" />
 
-		<!-- Geist Font -->
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<!-- Marca `js` cuanto antes: el scroll-reveal solo oculta contenido si hay JS que luego lo muestre -->
+		<script is:inline>document.documentElement.classList.add('js');</script>
+
+		<!-- Fuentes propias, servidas desde este dominio (`public/fonts/`). La hoja entra como `print` y se
+		     activa al cargar: así las caras se piden DESPUÉS del primer pintado y no le quitan ancho de
+		     banda a la imagen del hero — medido el 2026-09-04, meterlas en el CSS principal subía el LCP
+		     de 2,9 s a 5,2 s. Con `font-display: swap` el texto se lee desde el primer momento. -->
+		<link rel="preload" href="/fonts/bricolage-800-latin.woff2" as="font" type="font/woff2" crossorigin>
+		<link rel="stylesheet" href="/fonts/fonts.css" media="print" onload="this.media='all'">
+		<noscript><link rel="stylesheet" href="/fonts/fonts.css"></noscript>
+
+		<slot name="head" />
+
+		<!-- Datos estructurados: qué es Yala, quién la hace y cuánto cuesta, en el formato que leen
+		     Google y los lectores de IA. Sin `aggregateRating`: la nota es real pero se apoya en muy
+		     pocas valoraciones (decisión del owner, 2026-09-04); se añade cuando haya volumen. -->
+		<script type="application/ld+json" set:html={JSON.stringify({
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'Organization',
+					'@id': `${site}/#organization`,
+					name: 'Yala',
+					url: site,
+					logo: `${site}/icon-192.png`,
+					email: 'admin@yala-app.pe',
+					foundingLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: 'Lima', addressCountry: 'PE' } },
+				},
+				{
+					'@type': 'WebSite',
+					'@id': `${site}/#website`,
+					url: site,
+					name: 'Yala',
+					inLanguage: langCodes,
+					publisher: { '@id': `${site}/#organization` },
+				},
+				{
+					'@type': 'MobileApplication',
+					'@id': `${site}/#app`,
+					name: 'Yala',
+					applicationCategory: 'FinanceApplication',
+					operatingSystem: 'iOS 26.0 or later',
+					url: appStoreUrl,
+					installUrl: appStoreUrl,
+					publisher: { '@id': `${site}/#organization` },
+					inLanguage: langCodes,
+					datePublished: '2026-03-03',
+					description,
+					offers: [
+						{ '@type': 'Offer', name: 'Yala Gratis', price: '0', priceCurrency: 'PEN', category: 'free' },
+						{ '@type': 'Offer', name: 'Yala Pro', price: '12.90', priceCurrency: 'PEN', category: 'subscription' },
+					],
+				},
+			],
+		})} />
 
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 	</head>
 	<body>
-		<div class="aurora-bg" aria-hidden="true"></div>
+		<!-- Tema antes del primer pintado: oscuro por defecto (decisión del owner), claro solo si el
+		     visitante lo eligió aquí. Va antes del contenido para que no haya flash. -->
+		<script is:inline>
+			try {
+				if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+			} catch (e) {}
+		</script>
 		<slot />
 	</body>
 </html>

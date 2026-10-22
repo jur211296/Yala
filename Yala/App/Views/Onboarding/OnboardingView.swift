@@ -44,9 +44,17 @@ struct OnboardingView: View {
 
     private var expensesOnlyMode: Bool { selectedUsageMode == .expensesOnly }
 
-    private enum UsageMode: String {
-        case expensesOnly, dayToDay, fullControl
-    }
+    /// Qué va a pasar de verdad con las categorías: es lo único que el resumen puede contar y lo único
+    /// que `completeOnboarding` debe ejecutar. Hoy coincide con la respuesta del usuario; se conserva
+    /// como concepto propio porque el resumen y la ejecución tienen que leer la MISMA fuente — cuando
+    /// fueron dos, el resumen prometía categorías que el seed no llegaba a crear.
+    private var willSeedCategories: Bool { loadSeedCategories }
+
+    /// Definición movida a `OnboardingUsageMode` (pure-logic en
+    /// `Yala/App/Logic/OnboardingPurposeSelectionLogic.swift`) para que la selección
+    /// del paso «Propósito» sea testeable — mismo movimiento que `OnboardingStep`.
+    /// `UsageMode` queda como alias local.
+    private typealias UsageMode = OnboardingUsageMode
 
     // Animation state for category grid
     @State private var showCategoryIcons: Bool = false
@@ -69,7 +77,6 @@ struct OnboardingView: View {
     @State private var lastAutoName: String = ""
     /// Snapshot del currency cuando se abre el picker — permite detectar cambio
     /// y disparar `onboardingCurrencyPicked` solo si user efectivamente eligió.
-    @State private var currencyAtPickerOpen: CurrencyCode? = nil
 
     // Budget state (preserved for completeOnboarding — budget step removed from flow)
     @State private var wantsBudget: Bool = false
@@ -92,18 +99,29 @@ struct OnboardingView: View {
     /// Chevron back en step 1. Solo se setea cuando el OnboardingView viene
     /// del flow Welcome — descarta state silenciosamente y vuelve al Hero.
     var onCancelFromStep1: (() -> Void)? = nil
+    /// Paso 8 · el último botón ENTREGA la escritura en vez de ejecutarla. Con este gancho puesto,
+    /// «Empezar a usar Yala» no persiste nada: le pasa a quien lo puso un `commit` que persiste lo que hay en
+    /// memoria, y es él quien decide cuándo llamarlo. Lo usa la activación de Yala completo, cuya decisión de
+    /// Jürgen es que la cuenta en la nube se promocione DESPUÉS de terminar [P] y ANTES de escribir nada: si la
+    /// promoción falla o el usuario abandona, no queda ni una fila. `nil` (el Welcome) = el camino de siempre.
+    ///
+    /// El `commit` lee el `@State` de esta vista, así que solo vale mientras siga montada: quien lo recibe
+    /// tiene que tapar el onboarding, no sustituirlo.
+    var beforeCommit: ((_ commit: @escaping () -> Void) -> Void)? = nil
 
     init(prefilledData: ICloudAccountSummary? = nil,
          backgroundStyle: OnboardingBackgroundStyle = .heroFlow,
          mode: OnboardingFlowMode = .initial,
          onCancel: (() -> Void)? = nil,
          onCancelFromStep1: (() -> Void)? = nil,
+         beforeCommit: ((_ commit: @escaping () -> Void) -> Void)? = nil,
          onComplete: @escaping () -> Void) {
         self.prefilledData = prefilledData
         self.backgroundStyle = backgroundStyle
         self.mode = mode
         self.onCancel = onCancel
         self.onCancelFromStep1 = onCancelFromStep1
+        self.beforeCommit = beforeCommit
         self.onComplete = onComplete
 
         // Reconciliar el paso inicial con los pasos saltados por prefill: si el
@@ -160,7 +178,7 @@ struct OnboardingView: View {
             prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
             hasPrefill: prefilledData != nil,
             expensesOnly: expensesOnlyMode,
-            dayToDay: selectedUsageMode == .dayToDay
+            dayToDay: selectedUsageMode == .dayToDay,
         )
     }
 
@@ -204,8 +222,19 @@ struct OnboardingView: View {
 
     private var cardStroke: Color {
         switch backgroundStyle {
-        case .heroFlow:    return Color.white.opacity(0.1)
+        case .heroFlow:    return WelcomeFlowStyle.cardStroke
         case .themedPanel: return theme.cardBorder
+        }
+    }
+
+    /// Fondo de cards bifurcado. En `.heroFlow` el token del tema rompía con
+    /// tema Claro persistido (card casi-blanca bajo textos `.white` → invisible,
+    /// HALLAZGO 4 device 2026-07-14) → color FIJO de `WelcomeFlowStyle`;
+    /// `.themedPanel` conserva el token temático (equivale a `.thCard`).
+    private var cardFill: Color {
+        switch backgroundStyle {
+        case .heroFlow:    return WelcomeFlowStyle.cardFill
+        case .themedPanel: return theme.card
         }
     }
 
@@ -261,26 +290,6 @@ struct OnboardingView: View {
             }
         }
         .task {
-            // Telemetría de mount: started (funnel inicio) + stepViewed Step 1
-            // (drop-off por step). Por separado son correctos: started=mount,
-            // stepViewed=visit a step.
-            TelemetryService.track(
-                .onboardingStarted,
-                parameters: OnboardingTelemetryEventBuilder.paramsForStarted(
-                    mode: mode,
-                    prefilled: prefilledData != nil
-                )
-            )
-            TelemetryService.track(
-                .onboardingStepViewed,
-                parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
-                    step: currentStep.trackingName,
-                    stepIndex: effectiveSteps.firstIndex(of: currentStep) ?? 0,
-                    totalSteps: effectiveTotalSteps,
-                    mode: mode
-                )
-            )
-
             let defaults = UserDefaults.standard
             if let name = OnboardingPrefillResolver.resolveUserName(
                 prefilled: prefilledData,
@@ -348,7 +357,6 @@ struct OnboardingView: View {
         case (.heroFlow, .name):
             if let cancel = onCancelFromStep1 {
                 YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                    trackCancelled()
                     cancel()
                 }
             }
@@ -357,45 +365,17 @@ struct OnboardingView: View {
         case (.themedPanel, _):
             if let cancel = onCancel {
                 YalaToolbarButton(systemName: "xmark", label: L10n.Action.cancel) {
-                    trackCancelled()
                     cancel()
                 }
             }
         }
     }
 
-    private func trackCancelled() {
-        TelemetryService.track(
-            .onboardingCancelled,
-            parameters: OnboardingTelemetryEventBuilder.paramsForCancelled(
-                atStep: currentStep.trackingName,
-                mode: mode
-            )
-        )
-    }
-
     /// Navega un step atrás con la animación canónica del flow Welcome.
     /// Llamado por el chevron del toolbar (`.heroFlow`) y la back capsule
-    /// del bottom (`.themedPanel`). Dispara telemetría ANTES del withAnimation.
+    /// del bottom (`.themedPanel`).
     private func goBack() {
         guard let prev = previousStep(before: currentStep) else { return }
-
-        TelemetryService.track(
-            .onboardingBackTapped,
-            parameters: OnboardingTelemetryEventBuilder.paramsForBackTapped(
-                fromStep: currentStep.trackingName,
-                mode: mode
-            )
-        )
-        TelemetryService.track(
-            .onboardingStepViewed,
-            parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
-                step: prev.trackingName,
-                stepIndex: effectiveSteps.firstIndex(of: prev) ?? 0,
-                totalSteps: effectiveTotalSteps,
-                mode: mode
-            )
-        )
 
         navigatingForward = false
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
@@ -456,7 +436,7 @@ struct OnboardingView: View {
                         .font(DS.Typography.body)
                         .foregroundStyle(primaryTextStyle)
                         .padding(DS.Spacing.md)
-                        .background(.thCard)
+                        .background(cardFill)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .accessibilityIdentifier("onboarding_name_field")
                         .overlay(
@@ -488,7 +468,6 @@ struct OnboardingView: View {
                         Image(systemName: "target")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.purposeTitle)
@@ -501,21 +480,27 @@ struct OnboardingView: View {
                     .padding(.top, DS.Spacing.xl)
 
                     VStack(spacing: DS.Spacing.sm) {
+                        // La marca y el efecto del tap salen de la MISMA decisión pura
+                        // (`OnboardingPurposeSelectionLogic`): el bug de C5 no era que los dos
+                        // predicados estuvieran mal, era que eran DISTINTOS —`!expensesOnlyMode`
+                        // para pintar, `expensesOnlyMode` para decidir—, un selector de tres
+                        // cards expresado con un booleano de dos. Y vive fuera del `body` porque
+                        // aquí ningún unitario la alcanza (la lección de `965a4d86`).
                         binaryCard(
-                            isSelected: !expensesOnlyMode,
+                            isSelected: OnboardingPurposeSelectionLogic.isSelected(.control, mode: selectedUsageMode),
                             icon: "dollarsign.circle",
                             iconColor: .priorityNeed,
                             title: L10n.Onboarding.purposeControl,
                             description: L10n.Onboarding.purposeControlDesc,
                             accessibilityId: "onboarding_purpose_control"
                         ) {
-                            if expensesOnlyMode {
+                            if OnboardingPurposeSelectionLogic.shouldSelectFullControl(from: selectedUsageMode) {
                                 selectedUsageMode = .fullControl
                             }
                         }
 
                         binaryCard(
-                            isSelected: expensesOnlyMode,
+                            isSelected: OnboardingPurposeSelectionLogic.isSelected(.expenses, mode: selectedUsageMode),
                             icon: "list.bullet.clipboard",
                             iconColor: .essentialNeed,
                             title: L10n.Onboarding.purposeExpenses,
@@ -525,6 +510,10 @@ struct OnboardingView: View {
                             selectedUsageMode = .expensesOnly
                             selectedMindset = "cashFlow"
                         }
+
+                        // Dos cards y no tres: «solo grupos» no es un propósito de quien ya eligió
+                        // llevar sus finanzas, es una sesión que se abre desde el Welcome («Vengo por
+                        // un grupo»). Se retiró el 2026-09-10 (ADR 2026-09-09 §7) junto con su modo.
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 
@@ -546,7 +535,6 @@ struct OnboardingView: View {
                         Image(systemName: "building.columns.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.accountsTitle)
@@ -607,8 +595,9 @@ struct OnboardingView: View {
 
     /// Card de selección estilo capabilityCard del AI Onboarding: icono con halo
     /// gradient, sin checkmark/circle, selección visualizada con stroke 2pt
-    /// `styleAccentColor`. Background siempre `.thCard` — bifurca correctamente
-    /// entre `.heroFlow` (translúcido sobre dark) y `.themedPanel` (themed).
+    /// `styleAccentColor`. Background `cardFill` bifurcado — fijo en `.heroFlow`
+    /// (el token del tema rompía con tema Claro), token en `.themedPanel`.
+    /// No usa `.selectableCard` porque ese modifier pone `.thCard` sin bifurcar.
     private func binaryCard(
         isSelected: Bool,
         icon: String,
@@ -644,11 +633,14 @@ struct OnboardingView: View {
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .selectableCard(
-                isSelected: isSelected,
-                radius: DS.Radius.xl,
-                activeColor: styleAccentColor,
-                inactiveColor: cardStroke
+            .background(cardFill)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .stroke(
+                        isSelected ? styleAccentColor : cardStroke,
+                        lineWidth: isSelected ? 2 : 1
+                    )
             )
         }
         .buttonStyle(.plain)
@@ -665,7 +657,6 @@ struct OnboardingView: View {
                         Image(systemName: "wallet.bifold")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.accountTypeTitle)
@@ -743,7 +734,6 @@ struct OnboardingView: View {
                     Image(systemName: wantsSeparateAccounts ? "pencil.circle" : "star.circle")
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(primaryTextStyle)
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .accessibilityHidden(true)
 
                     Text(wantsSeparateAccounts
@@ -768,7 +758,9 @@ struct OnboardingView: View {
                 // Account name
                 OnboardingFieldSection(
                     title: L10n.Onboarding.accountNameLabel,
-                    titleStyle: secondaryTextStyle
+                    titleStyle: secondaryTextStyle,
+                    cardFill: cardFill,
+                    cardStroke: cardStroke
                 ) {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "pencil")
@@ -785,11 +777,12 @@ struct OnboardingView: View {
                 // Currency
                 OnboardingFieldSection(
                     title: L10n.Onboarding.accountCurrencyLabel,
-                    titleStyle: secondaryTextStyle
+                    titleStyle: secondaryTextStyle,
+                    cardFill: cardFill,
+                    cardStroke: cardStroke
                 ) {
                     Button {
                         accountNameFocused = false
-                        currencyAtPickerOpen = accountCurrency
                         showCurrencyPicker = true
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
@@ -809,6 +802,7 @@ struct OnboardingView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("onboarding_currency_selector")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
             }
@@ -823,16 +817,7 @@ struct OnboardingView: View {
                 lastAutoName = suggested
             }
         }
-        .sheet(isPresented: $showCurrencyPicker, onDismiss: {
-            // Track solo si user efectivamente cambió la divisa en el sheet.
-            if let initial = currencyAtPickerOpen, initial != accountCurrency {
-                TelemetryService.track(
-                    .onboardingCurrencyPicked,
-                    parameters: ["currency": accountCurrency.rawValue]
-                )
-            }
-            currencyAtPickerOpen = nil
-        }) {
+        .sheet(isPresented: $showCurrencyPicker) {
             accountCurrencyPickerSheet
         }
     }
@@ -847,7 +832,6 @@ struct OnboardingView: View {
                         Image(systemName: "dollarsign.circle.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.balanceTitle)
@@ -995,7 +979,9 @@ struct OnboardingView: View {
 
         return OnboardingFieldSection(
             title: L10n.Onboarding.accountBalanceLabel,
-            titleStyle: secondaryTextStyle
+            titleStyle: secondaryTextStyle,
+            cardFill: cardFill,
+            cardStroke: cardStroke
         ) {
             HStack(spacing: DS.Spacing.md) {
                 HStack(spacing: DS.Spacing.xs) {
@@ -1043,7 +1029,9 @@ struct OnboardingView: View {
     private var manualBalanceForm: some View {
         OnboardingFieldSection(
             title: L10n.Onboarding.accountBalanceLabel,
-            titleStyle: secondaryTextStyle
+            titleStyle: secondaryTextStyle,
+            cardFill: cardFill,
+            cardStroke: cardStroke
         ) {
             VStack(spacing: DS.Spacing.none) {
                 HStack(spacing: DS.Spacing.md) {
@@ -1201,7 +1189,7 @@ struct OnboardingView: View {
                     : L10n.Onboarding.categoriesCustom
             )
         }
-        .background(.thCard)
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
@@ -1231,13 +1219,19 @@ struct OnboardingView: View {
                 privacyCard(icon: "iphone", text: L10n.Onboarding.privacyLocalShort)
                 privacyCard(icon: "eye.slash.fill", text: L10n.Onboarding.privacyNoTrackingShort)
                 privacyCard(icon: "person.badge.key.fill", text: L10n.Onboarding.privacyIcloudShort)
-                privacyCard(icon: "lock.shield.fill", text: L10n.Onboarding.privacyNoSharingShort)
+                // La IA (foto, voz, chat) pasa por nuestro servidor hasta OpenAI, y solo con el
+                // consentimiento del usuario: la tarjeta dice eso, no que sea «segura».
+                privacyCard(
+                    icon: "lock.shield.fill",
+                    text: L10n.Onboarding.privacyAIShort,
+                    detail: L10n.Onboarding.privacyAIDetail
+                )
             }
         }
     }
 
     /// Row individual de la lista compacta — sin background propio (la card
-    /// `confirmItemsCard` lo envuelve con `.thCard` + cardStroke).
+    /// `confirmItemsCard` lo envuelve con `cardFill` + cardStroke).
     private func confirmItem(icon: String, color: Color, value: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             ZStack {
@@ -1279,7 +1273,6 @@ struct OnboardingView: View {
                         Image(systemName: "square.grid.2x2.fill")
                             .font(.system(size: heroIconSize))
                             .foregroundStyle(primaryTextStyle)
-                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.categoriesTitle)
@@ -1457,24 +1450,34 @@ struct OnboardingView: View {
     // MARK: - Reusable Components
 
     /// Mini-card del grid 2x2 de privacidad — VStack icon + text breve, card
-    /// individual `.thCard` + cardStroke. Iconos privacidad mantienen tints
+    /// individual `cardFill` + cardStroke. Iconos privacidad mantienen tints
     /// neutros (no aplica R3 — son contexto distinto a las cards de selección).
-    private func privacyCard(icon: String, text: String) -> some View {
+    private func privacyCard(icon: String, text: String, detail: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Image(systemName: icon)
                 .font(.system(size: 24, weight: .semibold)) // A11Y-DT: privacy card
                 .foregroundStyle(secondaryTextStyle)
                 .accessibilityHidden(true)
-            Text(text)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(secondaryTextStyle)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(text)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(secondaryTextStyle)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let detail {
+                    Text(detail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(secondaryTextStyle)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)
-        .background(.thCard)
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -1604,18 +1607,13 @@ struct OnboardingView: View {
     // MARK: - Navigation Buttons
 
     private var isNextDisabled: Bool {
-        switch currentStep {
-        case .name:
-            return userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .accountType:
-            return !fullControlAccountTypes.contains(selectedAccountType)
-        case .currencyName:
-            return accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .balance:
-            return initialBalanceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        default:
-            return false
-        }
+        OnboardingNextEnablement.isNextDisabled(
+            step: currentStep,
+            userName: userName,
+            accountName: accountName,
+            isAccountTypeValid: fullControlAccountTypes.contains(selectedAccountType),
+            initialBalanceText: initialBalanceText
+        )
     }
 
     /// Footer del flow. En `.heroFlow`: solo CTA único (back vive en toolbar).
@@ -1673,16 +1671,17 @@ struct OnboardingView: View {
     }
 
     /// Avanza al siguiente step (o completa el onboarding si es el último).
-    /// Dispara picks del step que dejamos (state final efectivo, evita ruido
-    /// de picks parciales) + stepViewed del próximo step ANTES del withAnimation.
     private func advance() {
         dismissKeyboard()
-        trackPickIfApplicable(forStep: currentStep)
 
         if currentStep == .confirmation {
             // Sync currency before completing
             selectedCurrency = accountCurrency
-            completeOnboarding()
+            if let beforeCommit {
+                beforeCommit { completeOnboarding() }
+            } else {
+                completeOnboarding()
+            }
             return
         }
 
@@ -1699,52 +1698,12 @@ struct OnboardingView: View {
 
         guard let next = nextStep(after: currentStep) else { return }
 
-        TelemetryService.track(
-            .onboardingStepViewed,
-            parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
-                step: next.trackingName,
-                stepIndex: effectiveSteps.firstIndex(of: next) ?? 0,
-                totalSteps: effectiveTotalSteps,
-                mode: mode
-            )
-        )
-
         navigatingForward = true
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
             currentStep = next
         }
         if next == .categories {
             triggerCategoryAnimation()
-        }
-    }
-
-    /// Dispara el evento de pick del step que estamos dejando, leyendo el state
-    /// final del view (no el handler — evita disparar 3 veces si user toca
-    /// `control → expenses → control` antes de avanzar).
-    private func trackPickIfApplicable(forStep step: Step) {
-        switch step {
-        case .purpose:
-            TelemetryService.track(
-                .onboardingPurposePicked,
-                parameters: ["purpose": selectedUsageMode.rawValue]
-            )
-        case .accounts:
-            TelemetryService.track(
-                .onboardingAccountsPicked,
-                parameters: ["accounts": wantsSeparateAccounts ? "multiple" : "single"]
-            )
-        case .accountType:
-            TelemetryService.track(
-                .onboardingAccountTypePicked,
-                parameters: ["type": selectedAccountType.rawValue]
-            )
-        case .categories:
-            TelemetryService.track(
-                .onboardingCategoriesPicked,
-                parameters: ["loadSeed": String(loadSeedCategories)]
-            )
-        default:
-            break
         }
     }
 
@@ -1768,17 +1727,20 @@ struct OnboardingView: View {
         sync.set(string: selectedMindset, forKey: "financialMindset")
         sessionState.financialMindset = selectedMindset
 
-        if loadSeedCategories {
+        // Los tres términos son `willSeedCategories` y no `loadSeedCategories`: en visita el paso no se
+        // muestra, así que la respuesta del usuario no existe y su default (`true`) mentiría. Ver el
+        // docblock de la propiedad — de ahí sale también el saldo inicial que en secundaria se perdía.
+        if willSeedCategories {
             seedCategoriesIfNeeded(in: modelContext)
         }
 
-        if !loadSeedCategories && !expensesOnlyMode {
+        if !willSeedCategories && !expensesOnlyMode {
             InitialBalanceService.ensureBalanceAdjustmentSubcategoryExists(context: modelContext)
         }
 
         createOnboardingAccount()
 
-        if wantsBudget && loadSeedCategories {
+        if wantsBudget && willSeedCategories {
             createOnboardingBudget()
         }
 
@@ -1792,12 +1754,14 @@ struct OnboardingView: View {
             #endif
         }
 
-        TelemetryService.track(.onboardingCompleted, parameters: [
-            "mode": mode.rawValue,
-            "expensesOnly": String(expensesOnlyMode),
-            "usedSeedCategories": String(loadSeedCategories),
-        ])
+        // KPI registros/día (alta local — onboarding completo)
+        MetricsService.localRegistrationCompleted(mode: mode.rawValue)
 
+        // Escritor y lector de esta key tienen que hablar contra el MISMO dominio — la lección de un
+        // defecto de 2026-09-03, cuando esto escribía en un dominio y su lector de `ContentView` leía de
+        // otro: el usuario terminaba su onboarding, el flag seguía en `false` y el Welcome podía
+        // reabrírsele. Desde el 2026-09-12 hay un único dominio (`UserDefaults.standard`) y la forma de
+        // fallar ya no existe, pero la regla de escribir donde se lee se conserva.
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
         PreferenceSyncService.shared.signalOnboardingCompleted()
@@ -1918,7 +1882,13 @@ struct OnboardingView: View {
 
         for notification in allDefaults {
             guard !existingTypes.contains(notification.typeRaw) else { continue }
-            notification.isActive = false
+            // Recordatorios/reportes nacen apagados (opt-in), pero el item de PAGOS conserva
+            // su default ACTIVO (toggle honesto D2 2026-07-22): forzarlo a false aquí dejaba
+            // al usuario nuevo sin ningún recordatorio de pagos hasta tocar Ajustes — y el
+            // flip one-shot no lo cubre (su sentinel protege el OFF post-flip).
+            if notification.notificationType != .scheduledPayments {
+                notification.isActive = false
+            }
             modelContext.insert(notification)
             inserted += 1
         }
@@ -1935,10 +1905,14 @@ struct OnboardingView: View {
 
 /// Sustituto de `SectionBox(title:)` para el flow Onboarding. Label arriba con
 /// estilo proporcionado por el owner (background-aware) + content envuelto en
-/// `.solidCard()` modifier para fondo consistente con el resto de cards.
+/// card con colores también inyectados por el owner (`cardFill`/`cardStroke`
+/// bifurcados por backgroundStyle — `.solidCard` ponía `.thCard` sin bifurcar
+/// y rompía en `.heroFlow` con tema Claro).
 fileprivate struct OnboardingFieldSection<Content: View>: View {
     let title: String
     let titleStyle: Color
+    let cardFill: Color
+    let cardStroke: Color
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -1949,7 +1923,12 @@ fileprivate struct OnboardingFieldSection<Content: View>: View {
                 .padding(.horizontal, DS.Spacing.xs)
 
             content()
-                .solidCard(padding: 0, radius: DS.Radius.lg)
+                .background(cardFill)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                        .stroke(cardStroke, lineWidth: 1)
+                )
         }
     }
 }

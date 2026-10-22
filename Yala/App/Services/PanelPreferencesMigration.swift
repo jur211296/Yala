@@ -55,7 +55,10 @@ enum PanelPreferencesMigration {
             // Cuando se invoca desde `AppPreferences.init` (deferFreshSeed=true) DIFERIMOS el seed
             // SIN marcar el sentinel: AppBootstrapper re-invoca esto tras `iCloudFirstImportCompleted`
             // (gateado por MigrationGateLogic), cuando iKV ya está asentado y la decisión es segura.
-            if deferFreshSeed {
+            if freshSeedDecision(
+                deferRequested: deferFreshSeed,
+                isICloudAvailable: SwiftDataConfiguration.isICloudAvailable()
+            ) == .deferToPostSyncHook {
                 #if DEBUG
                 print("PanelPreferencesMigration: fresh path → defer seed hasta post-sync hook")
                 #endif
@@ -107,6 +110,38 @@ enum PanelPreferencesMigration {
         #endif
     }
 
+    // MARK: - Decisión de siembra (pura)
+
+    enum FreshSeedDecision: Equatable {
+        /// Sembrar ahora mismo: la respuesta «no hay nada remoto» es de fiar.
+        case seedNow
+        /// Esperar al hook post-sync del paso 8.5 del bootstrap.
+        case deferToPostSyncHook
+    }
+
+    /// Decide si la siembra de una instalación fresca puede correr ya o hay que
+    /// diferirla.
+    ///
+    /// Está extraída y es pura porque el camino real no se puede aislar en un test:
+    /// `hasRemotePanelPreferences()` lee el iCloud-KV GLOBAL del proceso por
+    /// `OwnerKeyValueStore` —no el dominio inyectado—, así que depende de lo que
+    /// cualquier test haya escrito antes ahí y de las dos marcas de `.standard` que
+    /// abren o cierran esa puerta. Mismo motivo por el que el test de la siembra
+    /// llama a `setupDefaultsForNewUser()` a mano.
+    ///
+    /// **Sin cuenta iCloud no hay iKV del que puedan bajar preferencias**, así que
+    /// «no encuentro nada remoto» deja de ser ambiguo: es una instalación fresca de
+    /// verdad y sembrar no puede pisar nada. Es el mismo predicado con el que
+    /// `MigrationGateLogic.shouldWaitForCloudKit` decide `.runNow`; hasta ahora esta
+    /// rama esperaba igualmente hasta 15 s a un hook que en su caso no traería nada.
+    static func freshSeedDecision(
+        deferRequested: Bool,
+        isICloudAvailable: Bool
+    ) -> FreshSeedDecision {
+        guard deferRequested else { return .seedNow }
+        return isICloudAvailable ? .deferToPostSyncHook : .seedNow
+    }
+
     /// Synced per-section keys that carry the user's Panel 2.0 configuration.
     /// (`panelPrefsMigratedV2` is intentionally excluded — it is per-device.)
     private static let syncedPanelKeys: [String] = [
@@ -125,7 +160,11 @@ enum PanelPreferencesMigration {
     /// because an empty string is a valid state — the user may have hidden every
     /// widget in a section — and still means a real config exists to preserve.
     private static func hasRemotePanelPreferences() -> Bool {
-        let iKV = NSUbiquitousKeyValueStore.default
+        // La PUERTA y no el store crudo. Con una sesión solo-grupos en un móvil prestado este KV es el del
+        // DUEÑO: leído a pelo, su Panel haría saltarse la siembra, y como la puerta le enmascara también
+        // la aplicación, el teléfono se quedaría sin siembra y sin configuración. Cerrada, contesta «no
+        // hay nada» y se siembra en local.
+        let iKV = OwnerKeyValueStore.shared
         // Prime the local cache from the last successful sync (idempotent; the
         // sync service also calls this during its own bootstrap).
         iKV.synchronize()

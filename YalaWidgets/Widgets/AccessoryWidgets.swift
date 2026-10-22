@@ -13,6 +13,12 @@ import AppIntents
 // MARK: - Shared Helpers
 
 /// Compact amount formatting for Lock Screen widgets
+///
+/// **Sin marca «≈» a propósito.** No imprime divisa —devuelve «3,2K», «1,5M» o la cifra pelada— y
+/// el «≈» del repo se antepone al SÍMBOLO de la divisa, no al número. En un widget de pantalla de
+/// bloqueo, donde el ancho es de dos o tres glifos y el propio formato ya redondea a un decimal de
+/// millar, un «≈» delante se lee como parte de la cifra y compite por el espacio con ella. Que el
+/// número sea aproximado se ve en el widget grande del mismo dato, que sí trae divisa.
 private func formatCompact(_ value: Double) -> String {
     let absValue = abs(value)
     let sign = value < 0 ? "-" : ""
@@ -118,6 +124,7 @@ struct AccessoryBalanceWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryBalanceIntent.self, provider: AccessoryBalanceProvider()) { entry in
             AccessoryBalanceWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryBalance")
@@ -191,6 +198,7 @@ struct AccessoryExpenseWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryExpenseIntent.self, provider: AccessoryExpenseProvider()) { entry in
             AccessoryExpenseWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryExpense")
@@ -271,8 +279,11 @@ struct AccessoryBudgetWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryBudgetIntent.self, provider: AccessoryBudgetProvider()) { entry in
             AccessoryBudgetWidgetView(entry: entry)
-                .containerBackground(.clear, for: .widget)
+                // El enlace va DENTRO del modificador: en solo grupos la invitación lo sustituye por el suyo, y dos
+                // `widgetURL` en la misma jerarquía no tienen comportamiento definido.
                 .widgetURL(WidgetURLHelper.url(for: "budgets"))
+                .invitesToActivateFullWhenGroupsOnly()
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryBudget")
         .description("widget.gallery.accessoryBudget.desc")
@@ -388,8 +399,11 @@ struct AccessoryNextPaymentWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryNextPaymentIntent.self, provider: AccessoryNextPaymentProvider()) { entry in
             AccessoryNextPaymentWidgetView(entry: entry)
-                .containerBackground(.clear, for: .widget)
+                // El enlace va DENTRO del modificador: en solo grupos la invitación lo sustituye por el suyo, y dos
+                // `widgetURL` en la misma jerarquía no tienen comportamiento definido.
                 .widgetURL(WidgetURLHelper.url(for: "planning"))
+                .invitesToActivateFullWhenGroupsOnly()
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("widget.gallery.accessoryPayment")
         .description("widget.gallery.accessoryPayment.desc")

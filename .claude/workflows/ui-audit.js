@@ -14,7 +14,7 @@ export const meta = {
 // Parámetros (args opcional)
 // ---------------------------------------------------------------------------
 const DATE = (args && args.date) || ''
-const REPORT_PATH = (args && args.reportPath) || 'AUDIT-UI-patterns.md'
+const REPORT_PATH = (args && args.reportPath) || 'docs/audit/AUDIT-UI-patterns.md'
 const ONLY_AREAS = (args && Array.isArray(args.onlyAreas) && args.onlyAreas.length) ? args.onlyAreas : null
 const CHUNK = 8
 const VIEWS_ROOT = 'Yala/App/Views'

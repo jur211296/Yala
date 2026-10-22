@@ -37,31 +37,40 @@ struct YalaApp: App {
             // checkInitialSyncState. Hacerlo en el .task de bootstrap competía con ese
             // .task y dejaba la app en Welcome Hero. No-op en release (isActive == false).
             #if DEBUG
-            if UITestHooks.isActive {
-                bootstrapper.applyUITestHooksEarly(context: sharedModelContainer.mainContext)
+            // El `if let` no relaja nada: en el arranque el host SIEMPRE trae container (solo es `nil`
+            // dentro de la ventana del swap, que no puede solaparse con el init del `App`).
+            if UITestHooks.isActive, let container = PersonalContainerHost.shared.container {
+                bootstrapper.applyUITestHooksEarly(context: container.mainContext)
+            }
+            // `-fake-icloud` (standalone, SIN `-uitest`): mismo seam de cuenta simulada
+            // para el device-qa AGENTIC en sim — agent-device/XcodeBuildMCP lanzan la app
+            // sin `-uitest` (applyUITestHooksEarly no corre) y el sim no tiene cuenta
+            // iCloud, así que el gate "Grupos necesita iCloud" (§i.8(c)2) taparía todo el
+            // QA de Grupos. Fuerza también hasCompletedFirstImport=true
+            // (SplitSyncStartGate → .startNow) — deseable en QA. No-op en release.
+            if ProcessInfo.processInfo.arguments.contains("-fake-icloud") {
+                iCloudSyncService.shared._uiTestSimulateAvailableAccount()
             }
             #endif
         }
     }
 
     /// ModelContainer compartido para toda la app.
-    /// Dos configs: personal (CloudKit) + groups (local, synced por CKSyncEngine).
+    /// Tres configs: personal (CloudKit) + groups (local, synced por CKSyncEngine) +
+    /// sync-meta (`SyncIdentity` local, nunca CloudKit — Modo Nube I2).
     /// Bajo unit tests `personalConfiguration`/`groupsConfiguration` devuelven stores
     /// in-memory con `cloudKitDatabase: .none` (sin mirror CloudKit), así que crear este
     /// container en el host de tests es barato y NO toca CloudKit.
-    var sharedModelContainer: ModelContainer = {
-        do {
-            let iCloudWasAvailable = SwiftDataConfiguration.isICloudAvailable()
-            SwiftDataConfiguration.markContainerCloudKitState(iCloudWasAvailable)
-            return try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.personalConfiguration,
-                               SwiftDataConfiguration.groupsConfiguration
-            )
-        } catch {
-            fatalError("Error al inicializar ModelContainer de Yala: \(error)")
-        }
-    }()
+    ///
+    /// **R4: el container dejó de ser una constante de este `struct` y pasó a ser ESTADO de proceso**
+    /// (`PersonalContainerHost`). El cuerpo que lo construía —los cuatro hooks pre-mount en su orden
+    /// congelado y la captura del testigo— se movió ENTERO al host, sin partirlo: el swap de persona
+    /// remonta por ese mismo camino, y una copia habría podido divergir del arranque.
+    private let containerHost = PersonalContainerHost.shared
+
+    /// Compat de lectura para los call-sites de esta pantalla. **`nil` SOLO durante la ventana del swap**,
+    /// que es exactamente cuando no hay jerarquía montada que pueda pedirlo.
+    private var sharedModelContainer: ModelContainer? { containerHost.container }
 
     @State private var themeManager = ThemeManager()
 
@@ -69,59 +78,168 @@ struct YalaApp: App {
     private let bootstrapper = AppBootstrapper.shared
 
     var body: some Scene {
+        // **Fase 4 del carril adaptativo: cada ventana con su navegación.** La raíz de cada ventana (`SceneRoot`) vive
+        // FUERA del remonte del swap: el registro de ventanas y cuál es la líder sobreviven al cambio de persona.
         WindowGroup {
-            ContentView()
-                .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
-                .tint(themeManager.resolved.accent)
-                .environment(\.yalaTheme, themeManager.resolved)
-                .saturation(themeManager.resolved.mapsColorsToGrayscale ? 0 : 1)
-                .environment(themeManager)
-                .environment(bootstrapper.sessionState)
-                .environment(bootstrapper.currencyConverter)
-                .environment(bootstrapper.exchangeRateService)
-                .environment(bootstrapper.imageVisionService)
-                .environment(bootstrapper.voiceTranscriptionService)
-                .environment(bootstrapper.transcriptionParserService)
-                .environment(bootstrapper.draftService)
-                .environment(bootstrapper.entityDeletionService)
-                .environment(bootstrapper.transactionService)
-                .environment(bootstrapper.appPreferences)
-                .task {
-                    // Unit tests: saltar el bootstrap del host por completo (seeding,
-                    // CKSyncEngine de grupos, exchange rates, etc.). En sims sin cuenta
-                    // iCloud (CI) el CKSyncEngine de grupos genera errores ruidosos. Los
-                    // tests usan contextos aislados. UI tests (isUITesting) NO entran al
-                    // guard: corren el ciclo normal con su seed.
-                    guard !SwiftDataConfiguration.isRunningTests else { return }
-                    if !UITestHooks.isActive {
-                        try? Tips.configure([
-                            .displayFrequency(.immediate)
-                        ])
-                    }
-                    await bootstrapper.bootstrap(container: sharedModelContainer)
-                }
-                .onChange(of: bootstrapper.sessionState.needsExchangeRateReload) { _, needsReload in
-                    if needsReload {
-                        Task {
-                            await bootstrapper.handleExchangeRateReloadRequest(container: sharedModelContainer)
-                        }
-                    }
-                }
-                .onOpenURL { url in
-                    bootstrapper.handleIncomingURL(url)
-                }
-        }
-        .modelContainer(sharedModelContainer)
-        .onChange(of: scenePhase) { _, newPhase in
-            // Unit tests: el host no corre el ciclo became-active (sin bootstrap/sync).
-            guard !SwiftDataConfiguration.isRunningTests else { return }
-            if newPhase == .active {
-                bootstrapper.handleBecameActive(context: sharedModelContainer.mainContext)
-            } else if newPhase == .background {
-                // Drop transient router intents. Persistence-backed intents
-                // re-emit on next .active via handleBecameActive().
-                AppRouter.shared.resetTransients()
+            SceneRoot(route: nil, containerGeneration: containerHost.generation) {
+                windowContent()
             }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            handleScenePhase(newPhase)
+        }
+        // iPad con teclado: la lista de atajos que sale al mantener ⌘ (fase 3 del carril adaptativo).
+        .commands { YalaCommands() }
+
+        // «Abrir en una ventana nueva» (grupo o registro): una ventana de Yala completa que aterriza en ese destino.
+        WindowGroup(for: WindowRoute.self) { $route in
+            SceneRoot(route: route, containerGeneration: containerHost.generation) {
+                windowContent()
+            }
+        }
+        // El ciclo de vida del PROCESO cuelga también de aquí: si solo queda abierta una ventana de este grupo, el de
+        // arriba puede no tener ninguna. Con los dos vivos, `handleScenePhase` descarta el aviso repetido.
+        .onChange(of: scenePhase) { _, newPhase in
+            handleScenePhase(newPhase)
+        }
+    }
+
+    @ViewBuilder
+    private func windowContent() -> some View {
+        // **R4 · la ventana del swap.** Con el container soltado NO se monta la jerarquía: es lo que
+        // se lleva los 37 ViewModels y los 67 `@Query` que retienen filas del store viejo, y sin eso
+        // el release verificado no tiene ninguna posibilidad de salir verde (spike R3, eje 1c: una
+        // fila `@Model` retenida mantiene vivo el container por sí sola).
+        //
+        // Lo que se muestra mientras tanto es el MISMO cover terminal del cierre de sesión, así que
+        // para el usuario no hay corte visual: la pantalla que ya estaba puesta sigue puesta, y si el
+        // swap aborta se queda ahí pidiendo el relanzamiento de siempre. Llega a TODAS las ventanas a la vez:
+        // todas leen el mismo host.
+        if let container = containerHost.container {
+            rootView(container: container)
+                // El remonte cambia de container: sin `id` SwiftUI reusaría vistas cuyo estado interno
+                // (ViewModels con filas del store anterior) sobreviviría al swap — filas huérfanas que
+                // siguen legibles en memoria tras morir su store, que es la forma de mentir que el
+                // eje 1c midió.
+                .id(containerHost.generation)
+                .modelContainer(container)
+        } else {
+            SignOutRelaunchView()
+        }
+    }
+
+    @ViewBuilder
+    private func rootView(container: ModelContainer) -> some View {
+        WindowRoleView {
+            // Solo la ventana líder monta el shell de proceso y arranca la app (ver `WindowRoleView`).
+            leaderContent(container: container)
+        }
+            // Las hojas se dimensionan por el espacio de ESTA ventana, no por el aparato.
+            .sizesSheetsByWindow()
+            .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
+            .tint(themeManager.resolved.accent)
+            .environment(\.yalaTheme, themeManager.resolved)
+            .saturation(themeManager.resolved.mapsColorsToGrayscale ? 0 : 1)
+            .environment(themeManager)
+            .environment(bootstrapper.sessionState)
+            .environment(bootstrapper.currencyConverter)
+            .environment(bootstrapper.exchangeRateService)
+            .environment(bootstrapper.imageVisionService)
+            .environment(bootstrapper.voiceTranscriptionService)
+            .environment(bootstrapper.transcriptionParserService)
+            .environment(bootstrapper.draftService)
+            .environment(bootstrapper.entityDeletionService)
+            .environment(bootstrapper.transactionService)
+            .environment(bootstrapper.appPreferences)
+            .modifier(WindowURLEntry { url in
+                bootstrapper.handleIncomingURL(url)
+            })
+    }
+
+    /// El shell de proceso. **Solo en la ventana líder**: el arranque y la recarga de tipos de cambio corren una vez
+    /// por proceso, no una por ventana. Si la líder cambia, el `bootstrap` de la nueva es un no-op
+    /// (`isInitialized`); tras un swap vuelve a correr porque el remonte crea un `ContentView` nuevo.
+    @ViewBuilder
+    private func leaderContent(container: ModelContainer) -> some View {
+        ContentView()
+            // Con OTRA ventana cerrando la sesión, la líder deja de operar entera, hojas del shell incluidas.
+            .modifier(LeaderSignOutBusyOverlay())
+            .task {
+                // Unit tests: saltar el bootstrap del host por completo (seeding,
+                // CKSyncEngine de grupos, exchange rates, etc.). En sims sin cuenta
+                // iCloud (CI) el CKSyncEngine de grupos genera errores ruidosos. Los
+                // tests usan contextos aislados. UI tests (isUITesting) NO entran al
+                // guard: corren el ciclo normal con su seed.
+                guard !SwiftDataConfiguration.isRunningTests else {
+                    // Sin bootstrap nadie libera el blocker `bootstrapPending` y el shell
+                    // del host quedaría sin drenar un solo intent en toda la corrida.
+                    SessionState.shared.isBootstrapSettled = true
+                    return
+                }
+                if !UITestHooks.isActive {
+                    try? Tips.configure([
+                        .displayFrequency(.immediate)
+                    ])
+                }
+                await bootstrapper.bootstrap(container: container)
+            }
+            .onChange(of: bootstrapper.sessionState.needsExchangeRateReload) { _, needsReload in
+                if needsReload {
+                    Task {
+                        await bootstrapper.handleExchangeRateReloadRequest(container: container)
+                    }
+                }
+            }
+    }
+
+    private func handleScenePhase(_ newPhase: ScenePhase) {
+        // Unit tests: el host no corre el ciclo became-active (sin bootstrap/sync).
+        guard !SwiftDataConfiguration.isRunningTests else { return }
+        // Los dos `WindowGroup` avisan del mismo cambio del agregado: se atiende una vez.
+        let key: SceneRegistry.ScenePhaseKey
+        switch newPhase {
+        case .active: key = .active
+        case .background: key = .background
+        default: key = .inactive
+        }
+        guard SceneRegistry.shared.shouldHandleAppPhase(key) else { return }
+        if newPhase == .active {
+            // Red de la desconexión de ventanas: una escena que se fue sin notificarlo deja de contar como líder.
+            SceneRegistry.shared.pruneDisconnected()
+            // Durante la ventana del swap no hay contexto, y tampoco hay nada que reactivar: la app
+            // está entre dos stores. El ciclo normal vuelve con el remonte.
+            if let container = sharedModelContainer {
+                bootstrapper.handleBecameActive(context: container.mainContext)
+            }
+        } else if newPhase == .background {
+            // Decisión owner UX 2026-07-14: con un relaunch terminal pendiente (sign-out
+            // `.cloud`/secundario, ventana de ENTRADA secundaria, o —desde R0— el terminal
+            // del Welcome que pide reabrir para encender el mirror; todo lo persistente ya
+            // se escribió), terminar el proceso al ir a background: el próximo launch corre
+            // el cleanup pre-mount y aterriza en Welcome sin pedir matar la app a mano.
+            // También es la red FINAL del cover terminal (la ventana peligrosa no sobrevive
+            // un background). Vive AQUÍ y no en ContentView porque este scenePhase es el
+            // AGREGADO del proceso (en ContentView es por-escena — iPad multi-ventana:
+            // ocultar una ventana mataría el proceso con otra visible) y el guard
+            // isRunningTests de arriba aplica (jamás exit(0) bajo tests). exit(0)
+            // programático está desaconsejado por Apple pero es práctica aceptada en
+            // background para reinicios obligatorios; JAMÁS en foreground
+            // (RelaunchNetLogic solo lo permite en `.background`, no `.inactive`).
+            if RelaunchNetLogic.shouldExitOnBackground(
+                scenePhase: newPhase,
+                signOutPhase: CloudSessionSignOut.shared.phase,
+                // R0 · `peek` y JAMÁS `consume`: retirar aquí el destino dejaría al usuario que pidió
+                // restaurar de iCloud aterrizando en el onboarding normal tras reabrir, con su elección
+                // perdida — que es exactamente el daño para el que R2 lo hizo durable. Lo consume el
+                // encaminamiento del arranque siguiente (`ContentView`), que es quien lo honra.
+                welcomeMirrorRelaunchArmed: WelcomePendingDestinationStore.peek() != nil
+            ) {
+                CloudSyncBreadcrumb.relaunchExitOnBackground()
+                exit(0)
+            }
+            // Drop transient router intents. Persistence-backed intents
+            // re-emit on next .active via handleBecameActive().
+            AppRouter.shared.resetTransients()
         }
     }
 }

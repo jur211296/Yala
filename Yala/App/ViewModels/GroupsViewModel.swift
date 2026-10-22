@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import UIKit
 
 @MainActor
 @Observable
@@ -16,9 +17,27 @@ final class GroupsViewModel {
 
     private var modelContext: ModelContext?
 
+    // MARK: - Recalculation State (debounce — espejo de PanelViewModel)
+
+    /// El freno compartido de Grupos: coalesce ráfagas de `onChange(dataVersion)` del sync remoto en
+    /// un solo recálculo. Inyectable para que el coalescing se pruebe sin `applicationState`.
+    @ObservationIgnored private let debouncer: RecalculationDebouncer
+
+    init(debouncer: RecalculationDebouncer? = nil) {
+        self.debouncer = debouncer ?? RecalculationDebouncer(label: "GroupsViewModel")
+    }
+
     // MARK: - Data
 
     private(set) var groups: [SplitGroup] = []
+
+    /// `true` una vez que `loadData()` completó con éxito al menos una vez. Mientras es `false` la
+    /// vista muestra un spinner en lugar del empty state: en un cold launch de "Solo Grupos" el tab
+    /// monta antes de que el bootstrap configure el `modelContext` de `GroupService` (paso 16), así
+    /// que el primer `loadData()` puede fallar en silencio y dejar `groups` vacío — sin este gate se
+    /// vería "no tienes grupos" indebidamente hasta cambiar de tab y volver.
+    private(set) var hasLoadedOnce: Bool = false
+
     private(set) var membersByGroup: [String: [SplitMember]] = [:]       // zoneID → members
     private(set) var balancesByGroup: [String: [MemberBalance]] = [:]    // zoneID → balances
     private(set) var globalSummary: GroupGlobalSummary?
@@ -28,6 +47,21 @@ final class GroupsViewModel {
     private(set) var expensesByGroup: [String: [SplitExpense]] = [:]
     private(set) var sharesByGroup: [String: [SplitShare]] = [:]
     private(set) var settlementsByGroup: [String: [SplitSettlement]] = [:]
+
+    /// zoneID → deudas del current user ya calculadas, listas para la tarjeta.
+    ///
+    /// Evitar el fetch por render (M6 D3) no evitaba el CÁLCULO: `currentUserDebts(for:)` corría
+    /// `calculateDebts` (gastos × repartos) en el body de cada tarjeta, así que cualquier
+    /// invalidación de `GroupsContainerView` lo repetía una vez POR GRUPO. Y `searchText` vive en
+    /// este `@Observable`, de modo que cada tecla del buscador invalidaba ese body. Medido con
+    /// 30 grupos × 6 miembros × 50 gastos: ~25 ms por tecla, en el hilo principal — más que el
+    /// frame entero de 16,7 ms. Precalcularlo en `recalculate()` lo deja en un cálculo por
+    /// recarga de datos y un lookup por tarjeta.
+    ///
+    /// No lleva clave de invalidación propia a propósito: sus entradas son exactamente los dicts
+    /// de arriba más los toggles del grupo, y `recalculate()` es el único punto donde ese conjunto
+    /// puede haber cambiado — el mismo ciclo que ya gobierna `balancesByGroup`.
+    private(set) var debtsByGroup: [String: [DebtRow]] = [:]
 
     // MARK: - DebtRow (M6 D3)
 
@@ -82,17 +116,27 @@ final class GroupsViewModel {
 
     // MARK: - Data Loading
 
+    /// Path síncrono instantáneo: fetch + recálculo en una pasada. Usado por los ~19 callers locales
+    /// (setContext, Settings, Members, expense form, opening balance, retorno de detalle, archiveGroup)
+    /// que esperan feedback inmediato. El sync remoto (onChange dataVersion) usa `reloadAndRecalculate`.
     func loadData() {
+        fetchData()
+        recalculate()
+    }
+
+    /// Fase de FETCH pura (SwiftData). Puebla `groups` + los dicts por-grupo. NO calcula balances/summary.
+    private func fetchData() {
         guard modelContext != nil else { return }
 
         do {
-            groups = try GroupService.shared.fetchAllGroups()
+            let fetchedGroups = try GroupService.shared.fetchAllGroups()
+            if fetchedGroups != groups { groups = fetchedGroups }
 
-            // Per-group data
-            var allExpenses: [SplitExpense] = []
-            var allShares: [SplitShare] = []
-            var allSettlements: [SplitSettlement] = []
-            var currentUserMemberIDs = Set<String>()
+            // fetchAllGroups es el fetch que prueba que GroupService ya tiene contexto (la carrera de
+            // arranque). Marcamos "cargado" aquí, no al final: si un fetch por-grupo posterior lanzara
+            // (p.ej. datos de un grupo corruptos), la vista igual sale del spinner y muestra lo cargado,
+            // en vez de quedar en un ProgressView permanente.
+            hasLoadedOnce = true
 
             for group in groups {
                 let members = try GroupService.shared.fetchMembers(for: group)
@@ -101,47 +145,131 @@ final class GroupsViewModel {
                 // Skip heavy data loading for archived groups
                 guard !group.isArchived else { continue }
 
-                let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
-                let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
-                let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
-
-                // M6 D3: cache para recalcular debts on-demand (currentUserDebts).
-                expensesByGroup[group.cloudKitZoneID] = expenses
-                sharesByGroup[group.cloudKitZoneID] = shares
-                settlementsByGroup[group.cloudKitZoneID] = settlements
-
-                let balances = GroupBalanceService.calculateBalances(
-                    expenses: expenses,
-                    shares: shares,
-                    members: members,
-                    settlements: settlements
-                )
-                balancesByGroup[group.cloudKitZoneID] = balances
-
-                allExpenses.append(contentsOf: expenses)
-                allShares.append(contentsOf: shares)
-                allSettlements.append(contentsOf: settlements)
-
-                for member in members where member.isCurrentUser && member.isActive {
-                    currentUserMemberIDs.insert(member.id.uuidString)
-                }
-            }
-
-            // Global summary
-            if !groups.isEmpty {
-                globalSummary = GroupBalanceService.globalSummary(
-                    allExpenses: allExpenses,
-                    allShares: allShares,
-                    allSettlements: allSettlements,
-                    currentUserMemberIDs: currentUserMemberIDs
-                )
-            } else {
-                globalSummary = nil
+                // M6 D3: cache para recalcular debts on-demand (currentUserDebts) + para `recalculate()`.
+                expensesByGroup[group.cloudKitZoneID] = try GroupExpenseService.shared.fetchExpenses(for: group)
+                sharesByGroup[group.cloudKitZoneID] = try GroupExpenseService.shared.fetchAllShares(for: group)
+                settlementsByGroup[group.cloudKitZoneID] = try GroupExpenseService.shared.fetchSettlements(for: group)
             }
         } catch {
             #if DEBUG
-            print("GroupsViewModel: Error loading data: \(error)")
+            print("GroupsViewModel: Error fetching data: \(error)")
             #endif
+        }
+    }
+
+    /// Fase de CÁLCULO pura: opera sobre los dicts ya cacheados por `fetchData()` (sin fetch nuevo).
+    /// Reconstruye los acumuladores cruzando-grupos que antes se armaban en el loop de fetch.
+    private func recalculate() {
+        guard modelContext != nil else { return }
+
+        var allExpenses: [SplitExpense] = []
+        var allShares: [SplitShare] = []
+        var allSettlements: [SplitSettlement] = []
+        var currentUserMemberIDs = Set<String>()
+        var newBalancesByGroup: [String: [MemberBalance]] = [:]
+        var newDebtsByGroup: [String: [DebtRow]] = [:]
+
+        for group in groups {
+            let zoneID = group.cloudKitZoneID
+            let members = membersByGroup[zoneID] ?? []
+
+            // Deudas de la tarjeta: ANTES del guard de archivado, porque "Ver archivados" también
+            // pinta tarjetas y `computeDebts(for:)` reproduce el corte exacto que tenía el body —
+            // un grupo archivado EN ESTA SESIÓN conserva sus fuentes en los dicts (nadie las
+            // retira) y por eso su tarjeta sigue mostrando deudas hasta el próximo arranque.
+            // Saltárselo aquí cambiaría lo que ve el usuario, que no es lo que vengo a tocar.
+            if let rows = computeDebts(for: group) { newDebtsByGroup[zoneID] = rows }
+
+            guard !group.isArchived else { continue }
+
+            let expenses = expensesByGroup[zoneID] ?? []
+            let shares = sharesByGroup[zoneID] ?? []
+            let settlements = settlementsByGroup[zoneID] ?? []
+
+            newBalancesByGroup[zoneID] = GroupBalanceService.calculateBalances(
+                expenses: expenses,
+                shares: shares,
+                members: members,
+                settlements: settlements
+            )
+
+            allExpenses.append(contentsOf: expenses)
+            allShares.append(contentsOf: shares)
+            allSettlements.append(contentsOf: settlements)
+
+            for member in members where member.isCurrentUser && member.isActive {
+                currentUserMemberIDs.insert(member.id.uuidString)
+            }
+            // Ventana temprana (recién llegado por enlace: el pull no enciende `isCurrentUser`): sin esto
+            // el usuario no contaba en el resumen global aunque la tarjeta del grupo ya lo reconociera.
+            // AÑADE, no sustituye: en una zona migrada el mismo humano puede tener su member CloudKit
+            // legacy Y el backend, y quedarse solo con el canónico borraría del resumen el saldo del otro.
+            // Resolver SOBRE LOS ACTIVOS, no resolver y filtrar: con dos filas mías y la más antigua
+            // inactiva, lo segundo devuelve la inactiva y el fix no dispara en la zona migrada que este
+            // comentario invoca.
+            if let resolved = GroupExpenseService.resolveCurrentUserMember(
+                from: members.filter(\.isActive)) {
+                currentUserMemberIDs.insert(resolved.id.uuidString)
+            }
+        }
+
+        if newBalancesByGroup != balancesByGroup { balancesByGroup = newBalancesByGroup }
+        if newDebtsByGroup != debtsByGroup { debtsByGroup = newDebtsByGroup }
+
+        // Global summary
+        let newSummary: GroupGlobalSummary?
+        if !groups.isEmpty {
+            newSummary = GroupBalanceService.globalSummary(
+                allExpenses: allExpenses,
+                allShares: allShares,
+                allSettlements: allSettlements,
+                currentUserMemberIDs: currentUserMemberIDs
+            )
+        } else {
+            newSummary = nil
+        }
+        if newSummary != globalSummary { globalSummary = newSummary }
+    }
+
+    /// Fuerza un fetch remoto y recarga la lista (refresh acotado a Grupos, no un bump global de
+    /// dataVersion). Usado por pull-to-refresh (`force: true`) y entrada al tab (`force: false`).
+    /// Fase 3: queda un solo canal. `syncNowFromUI` está self-gateado (no-op sin sesión de nube o con el
+    /// kill remoto puesto) y descarta su `Bool` — residuo declarado en la re-medición de A1 (§S5.1), fuera
+    /// del alcance de este commit.
+    func refreshFromCloud(force: Bool) async {
+        _ = force
+        await GroupsSyncClient.shared.syncNowFromUI()
+        loadData()
+    }
+
+    // MARK: - Debounced Recalculation (sync remoto)
+
+    /// Recálculo debounced (150ms) — usado por el sync remoto (`onChange(dataVersion)` / vuelta a
+    /// foreground). Coalesce ráfagas de cambios de CloudKit en un solo `fetchData()` + `recalculate()`.
+    /// Las acciones LOCALES del usuario siguen usando `loadData()` directo (instantáneo).
+    func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
+    func cancelRecalculation() {
+        debouncer.cancel()
+    }
+
+    /// Estado de background — suprime el recálculo mientras la app no está activa.
+    func setBackground(_ value: Bool) {
+        debouncer.setBackground(value)
+    }
+
+    /// Debounce compartido (150ms, `RecalculationDebouncer`): un reload pedido dentro de la ventana no
+    /// se pierde, y la espera la suprimen el segundo plano y la app inactiva.
+    private func scheduleRecalculation(reload: Bool) {
+        debouncer.schedule(reload: reload) { [weak self] shouldReload in
+            guard let self else { return }
+            if shouldReload {
+                fetchData()
+            }
+            recalculate()
         }
     }
 
@@ -149,9 +277,11 @@ final class GroupsViewModel {
 
     /// Get the current user's net balance for a specific group.
     func currentUserBalance(for group: SplitGroup) -> MemberBalance? {
+        // Identidad RESUELTA: con el flag pelado, la tarjeta del grupo se contradecía sola — su
+        // `currentMemberStatus` (ya canónico) reconocía al recién llegado mientras su saldo salía vacío.
         guard let balances = balancesByGroup[group.cloudKitZoneID],
               let members = membersByGroup[group.cloudKitZoneID],
-              let currentMember = members.first(where: { $0.isCurrentUser }) else {
+              let currentMember = GroupExpenseService.resolveCurrentUserMember(from: members) else {
             return nil
         }
         let memberID = currentMember.id.uuidString
@@ -163,12 +293,24 @@ final class GroupsViewModel {
     /// (`.iOwe` / `.theyOweMe`) + counterpartyName resuelto.
     ///
     /// Worst case (5p × 3 monedas) puede generar 15 rows; la card aplica truncation max 3.
+    ///
+    /// Lookup puro: el cálculo vive en `recalculate()` (ver `debtsByGroup`). Se llama desde el body
+    /// de cada tarjeta, así que NO debe volver a calcular nada.
     func currentUserDebts(for group: SplitGroup) -> [DebtRow] {
+        debtsByGroup[group.cloudKitZoneID] ?? []
+    }
+
+    /// Calcula las deudas de un grupo desde los dicts que pobló `fetchData()`.
+    ///
+    /// Devuelve `nil` —y no `[]`— cuando al grupo le falta alguna fuente, para distinguir
+    /// "sin datos cargados" de "cargado y sin deudas": lo primero no entra en `debtsByGroup`, y
+    /// así el lookup cae en su `?? []`. Es el mismo corte que hacía el guard del body.
+    private func computeDebts(for group: SplitGroup) -> [DebtRow]? {
         guard let members = membersByGroup[group.cloudKitZoneID],
               let expenses = expensesByGroup[group.cloudKitZoneID],
               let shares = sharesByGroup[group.cloudKitZoneID],
               let settlements = settlementsByGroup[group.cloudKitZoneID] else {
-            return []
+            return nil
         }
         return Self.computeCurrentUserDebts(
             members: members,
@@ -198,12 +340,15 @@ final class GroupsViewModel {
         convertTo: String? = nil,
         converter: CurrencyConverting? = nil
     ) -> [DebtRow] {
-        guard let currentMember = members.first(where: { $0.isCurrentUser }) else {
+        // Identidad RESUELTA, gemela de `currentUserBalance(for:)`: sin ella el recién llegado veía la
+        // lista de deudas vacía. Sigue siendo pure-logic para el test: sin sesión ni `recordName` los dos
+        // fallbacks no matchean nada y la resolución es byte-idéntica al `first { $0.isCurrentUser }`.
+        guard let currentMember = GroupExpenseService.resolveCurrentUserMember(from: members) else {
             return []
         }
         let currentMemberID = currentMember.id.uuidString
         let nameLookup = Dictionary(
-            members.map { ($0.id.uuidString, $0.displayName) },
+            members.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
 
@@ -326,10 +471,19 @@ final class GroupsViewModel {
 
     /// Status del current user en el grupo. Drives `GroupCardView.displayMode`
     /// para mostrar chip pending/rejected en lugar del balance trailing.
+    /// Identidad RESUELTA, como en `GroupDetailViewModel.currentUserMember`. Sin esto la tarjeta
+    /// contradecía al detalle, y sobre todo: la tarjeta YA está cableada para los dos estados
+    /// —`.pendingApproval` la desactiva (`GroupCardView:90`) y `.rejected` enruta a `onRejectedTap`
+    /// (:275 → `GroupsContainerView:396`, la confirmación de salir)—, así que resolver aquí pone al
+    /// rechazado delante de esa salida en sesión viva, sin depender de que abra el detalle.
+    ///
+    /// Esa salida NO servía de nada por sí sola: `leaveGroup` no toleraba `memberNotFound` y a un
+    /// rechazado —que ya no es miembro server-side— el RPC le respondía con eso. Se le ofrecía una
+    /// acción destructiva que fallaba. Arreglado en el mismo commit dándole el `catch` que
+    /// `batchLeave` ya tenía.
     func currentMemberStatus(for group: SplitGroup) -> SplitMemberStatus? {
-        membersByGroup[group.cloudKitZoneID]?
-            .first(where: { $0.isCurrentUser })?
-            .memberStatus
+        guard let members = membersByGroup[group.cloudKitZoneID] else { return nil }
+        return GroupExpenseService.resolveCurrentUserMember(from: members)?.memberStatus
     }
 
     /// Grupos donde el current user puede crear un gasto USABLE (activo + miembro `.active`
@@ -341,7 +495,8 @@ final class GroupsViewModel {
             GroupExpenseEligibilityLogic.canCreateExpense(
                 currentMemberStatus: currentMemberStatus(for: $0),
                 isArchived: $0.isArchived,
-                isHiddenForAll: $0.isHiddenForAll
+                isHiddenForAll: $0.isHiddenForAll,
+                isMigratedFrozen: $0.isMigratedFrozen
             )
         }
     }
@@ -355,7 +510,7 @@ final class GroupsViewModel {
     /// lookup de `GroupDetailViewModel` para resolver nombres en el form de gasto.
     func memberNameLookup(for group: SplitGroup) -> [String: String] {
         Dictionary(
-            (membersByGroup[group.cloudKitZoneID] ?? []).map { ($0.id.uuidString, $0.displayName) },
+            (membersByGroup[group.cloudKitZoneID] ?? []).map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
     }
@@ -371,6 +526,24 @@ final class GroupsViewModel {
             print("GroupsViewModel: Error archiving group: \(error)")
             #endif
         }
+    }
+
+    /// ¿Se le puede abrir el detalle de este grupo al usuario actual? Envuelve el SSOT
+    /// (`GroupCardDisplayLogic.allowsDetailEntry`) con la identidad ya resuelta, para que las TRES
+    /// puertas del tab —la tarjeta, el deep link de una notificación y la acción de un nudge— hagan
+    /// la misma pregunta en vez de tres parecidas.
+    func canOpenDetail(for group: SplitGroup) -> Bool {
+        GroupCardDisplayLogic.allowsDetailEntry(
+            memberStatus: currentMemberStatus(for: group),
+            migrationState: group.migrationState
+        )
+    }
+
+    /// El primer grupo de la lista que SÍ se puede abrir. Para quien navega sin haber elegido grupo
+    /// (hoy, el nudge `.openGroupDetail`): sin esto aterrizaba en `activeGroups.first`, que puede ser
+    /// justo el que está esperando aprobación.
+    func firstGroupOpenableInDetail() -> SplitGroup? {
+        activeGroups.first { canOpenDetail(for: $0) }
     }
 
     /// Push del detalle vía `navigationDestination(item:)`: setear `selectedGroup` empuja.

@@ -40,7 +40,6 @@ struct ChatTopicsSheet: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) { dismiss() }
                 }
             }
-            .onAppear { TelemetryService.track(.chatTopicsSheetOpened) }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)

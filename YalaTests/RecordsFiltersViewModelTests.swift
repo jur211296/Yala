@@ -12,6 +12,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct RecordsFiltersViewModelTests {
 
     // MARK: - selectedAccountsText

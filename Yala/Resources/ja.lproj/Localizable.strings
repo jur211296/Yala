@@ -115,19 +115,10 @@
 
 // MARK: - Panel Hero (PP2-01)
 
-// Chip — greets by name; the golden emoji lives in the SF Symbol icon
-"panel.hero.chip.monthStart %@ %@" = "%1$@さん、%2$@が始まりました";
-"panel.hero.chip.default %@" = "%@さん";
 
 // KPI fallback (aiSubtitle takes the KPI slot when available)
 // Markdown bold (**amount**) renders via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "今月もスタート、一歩ずつ進めましょう。";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "今月はいいリズムです、この調子で。";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "今月も順調に進んでいます。";
-"panel.hero.kpi.tight %@ %@ %d" = "やりくりは大変ですが、一歩ずつ進めましょう。";
-"panel.hero.kpi.overBudget %@ %@" = "明日からまた仕切り直し、大丈夫です。";
 
-"panel.hero.upsellCTA" = "AIでメッセージをカスタマイズ";
 "panel.hero.availableLabel" = "利用可能";
 
 // MARK: - Trend Widget
@@ -499,7 +490,7 @@
 "settings.defaultCurrency" = "既定の通貨";
 "settings.currentIcon" = "現在のアイコン";
 "settings.resetAllData" = "すべてのデータをリセット";
-"settings.deleteAllData" = "すべてのデータを削除";
+"settings.deleteAllData" = "自分のデータを消去";
 
 // MARK: - Common
 
@@ -513,7 +504,7 @@
 "common.loading" = "読み込み中...";
 "common.error" = "エラー";
 "common.success" = "成功";
-"common.dataPrivacy" = "データはデバイスの外に出ません";
+"common.dataPrivacy" = "データの保存先";
 "common.active" = "アクティブ";
 "common.hidden" = "非表示";
 "common.inactive" = "非アクティブ";
@@ -749,10 +740,27 @@
 "panel.liveAnchorEducation.todayQuestion" = "今日の残高";
 "panel.liveAnchorEducation.whyQuestion" = "なぜこの金額？";
 "panel.liveAnchorEducation.breakdownToggle" = "通貨別に表示";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "本日 ≈ %@";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "本日 %@";
 "panel.liveAnchorEducation.coachTitle" = "残高は自然と動きます";
 "panel.liveAnchorEducation.coachMessage" = "他の通貨でお金をお持ちのとき、その価値は日々変わります。タップして詳しく見てみましょう。";
 "panel.liveAnchorEducation.dotA11yLabel" = "現在の為替レートでの本日の残高。タップして詳細を確認してください。";
+
+/* FX P&L card — ganancia/pérdida por tipo de cambio */
+"panel.fxPnL.titleGain" = "為替による利益";
+"panel.fxPnL.titleLoss" = "為替による損失";
+"panel.fxPnL.sentenceHoldingUpFormat" = "あなたの%1$@は、口座に入ったときより今日%2$@高くなっています。";
+"panel.fxPnL.sentenceHoldingDownFormat" = "あなたの%1$@は、口座に入ったときより今日%2$@安くなっています。";
+"panel.fxPnL.sentenceDebtUpFormat" = "%1$@建ての借入は、負ったときより今日%2$@高くついています。";
+"panel.fxPnL.sentenceDebtDownFormat" = "%1$@建ての借入は、負ったときより今日%2$@安くなっています。";
+"panel.fxPnL.openDetail" = "通貨ごとの内訳を見る";
+"panel.fxPnL.sheetTitle" = "為替の影響";
+"panel.fxPnL.totalLabel" = "合計";
+"panel.fxPnL.sheetIntroFormat" = "他の通貨で保有しているお金が、口座に入ったときの価値と比べて今日%@でいくらになるかを比較しています。その差が、あなたが何もしなくても為替がもたらした、または奪った金額です。";
+"panel.fxPnL.rowRatesFormat" = "入金時 %1$@ · 本日 %2$@";
+"panel.fxPnL.rowValueTodayFormat" = "= %@";
+"panel.fxPnL.averageNote" = "入金時のレートは、その通貨のすべての取引の平均であり、個々の購入ごとのレートではありません。";
+"panel.fxPnL.estimatedRateNote" = "一部の換算に本日以外のレートを使用したため、これらの数値は概算です。";
+
 "widget.today" = "今日";
 
 // Widget Preferences
@@ -1084,7 +1092,6 @@
 "insights.analyzingData" = "データを分析中...";
 "insights.activateAITitle" = "スマート概要を利用できます";
 "insights.activateAIBody" = "プロフィール > AI機能で有効化・カスタマイズできます。";
-"insights.activateAIDisclaimer" = "OpenAIには集計データのみが送信されます(合計、割合、推移)。個別の取引や個人情報は共有されません。";
 "insights.activate" = "有効化";
 "insights.goToSettings" = "設定に移動";
 "insights.notInterested" = "興味なし";
@@ -1125,25 +1132,6 @@
 "support.messagePlaceholder" = "詳しく教えてください...";
 "support.send" = "送信";
 
-// Biometric
-"biometric.title" = "生体認証セキュリティ";
-"biometric.description" = "生体認証またはデバイスのパスコードで金融情報を保護します。";
-"biometric.enableLock" = "ロックを有効化";
-"biometric.lockAfter" = "ロックまでの時間";
-"biometric.timeout.immediate" = "10秒";
-"biometric.timeout.oneMinute" = "1分";
-"biometric.timeout.fiveMinutes" = "5分";
-"biometric.timeout.fifteenMinutes" = "15分";
-"biometric.authReason" = "Yalaのロックを解除して資産にアクセス";
-"biometric.enableReason" = "ロックを有効にするため本人確認をしてください";
-"biometric.authFailed" = "認証に失敗しました";
-"biometric.authFailedMessage" = "本人確認できませんでした。もう一度お試しください。";
-"biometric.locked" = "Yalaはロック中です";
-"biometric.unlockPrompt" = "ボタンをタップしてロック解除";
-"biometric.unlock" = "ロック解除";
-"biometric.passcode" = "パスコード";
-"biometric.enableLockHint" = "アプリを開くたびに本人確認が求められます。";
-"biometric.lockAfterHint" = "ロックされるまでバックグラウンドに残せる時間を選択してください。";
 
 "profile.edit" = "プロフィールを編集";
 "profile.importSuccess" = "インポート完了";
@@ -1159,8 +1147,8 @@
 "profile.allowedChars" = "英数字とアンダースコアのみ";
 "profile.aliasAvailable" = "このエイリアスは利用可能です";
 "profile.aliasHelper" = "3〜20文字。英数字とアンダースコアのみ。";
-"profile.privacyTitle" = "データはデバイスの外に出ません";
-"profile.privacyDesc" = "Yalaは個人データをこのデバイス上にのみ保存します。AI機能(音声、画像、インサイト)は任意で、集計データのみを処理し、個別の取引や個人情報は扱いません。";
+"profile.privacyTitle" = "データの保存先";
+"profile.privacyDesc" = "プライベートなiCloudのアカウントでは、データはこの端末とあなたのiCloudに保存されます。クラウドのアカウントでは、Yalaのサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してOpenAIに届き、そこで処理されます。";
 "profile.aliasFutureNote" = "備考: エイリアスの一意性チェックは、シェア支出機能の実装時に利用可能になります。";
 "profile.proMember" = "PROメンバー";
 "profile.choosePhoto" = "写真を選ぶ";
@@ -1199,17 +1187,14 @@
 "settings.sunday" = "日曜日";
 "settings.monday" = "月曜日";
 "settings.resetDataDescription" = "この操作はYalaのプロフィールに関連付けられた口座、取引、予算、為替レート、カテゴリーなどのデータを完全に削除します。削除後、アプリは初期設定に近い状態に戻ります。";
-"settings.deleteDataConfirmation" = "すべてのデータを削除しますか？";
-"settings.deleteDataWarning" = "この操作は取り消せません。すべての口座、取引、予算、為替レート、カテゴリーが削除されます。Yalaは初期設定に近い状態にリセットされ、データは復元できません。";
-"settings.wipeICloudWarning" = "iCloudのデータも削除されます。同期している他のデバイスからもこのデータが消えます。";
-"settings.wipeGroupsExclusionNote" = "これにはグループは含まれません。グループから抜けるには、グループタブで保留中を清算してから退会してください。";
+"settings.deleteDataConfirmation" = "データを消去しますか？";
 "settings.delete" = "削除";
 "settings.cancel" = "キャンセル";
 "settings.iconOriginal" = "オリジナル";
 "settings.iconDark" = "ダーク";
 "settings.iconLight" = "ライト";
 "settings.iconNeon" = "ネオン";
-"settings.deleteAllDataAction" = "完全に削除";
+"settings.deleteAllDataAction" = "完全に消去";
 "settings.deletingData" = "データを削除中...";
 "settings.appIconTitle" = "アプリアイコン";
 "settings.iconNotSupported" = "このデバイスは代替アイコンに対応していません。";
@@ -1421,7 +1406,6 @@
 "subcategory.unassigned" = "未割り当て";
 "subcategory.deleteTransactionsConfirmMessage" = "%d件の取引が完全に削除されます。この操作は取り消せません。";
 
-"account.deleteBalanceError" = "残高が0でないため、この口座は削除できません。削除する前に残高を0に調整してください。";
 "account.type.general" = "一般";
 "account.type.cash" = "現金";
 "account.type.current" = "普通預金";
@@ -1696,7 +1680,6 @@
 "accessibility.skipSync" = "待機をスキップしてセットアップを続ける";
 "accessibility.tabLimitReached" = "タブの上限に達しました";
 "accessibility.noTransactionsToExport" = "エクスポートする取引がありません";
-"accessibility.accountCard %@ %@" = "口座%@、残高%@";
 "accessibility.editAccount" = "口座を編集";
 "accessibility.pageIndicator %d %d" = "%2$dページ中%1$dページ目";
 "accessibility.accountRow %@ %@" = "口座%@、通貨%@";
@@ -1844,10 +1827,9 @@
 "onboarding.usageMode.fullControl.desc" = "口座、カード、他人とのやり取りまで、すべてを残高に含めます。表示される数字が本当に自分のお金です。";
 "onboarding.privacyTitle" = "準備完了";
 "onboarding.privacySubtitle" = "Yalaを使い始める準備ができました";
-"onboarding.privacyLocal" = "金融データはデバイス内に保存されます";
+"onboarding.privacyLocal" = "家計データはあなたのアカウントに保存されます";
 "onboarding.privacyNoTracking" = "トラッキングや広告はありません";
-"onboarding.privacyIcloud" = "データにアクセスできるのはあなただけ";
-"onboarding.privacyNoSharing" = "AI機能は機微データを共有・保存しません";
+"onboarding.privacyIcloud" = "データにはあなたのアカウントでアクセスします";
 "onboarding.categoriesDefault" = "既定のカテゴリー";
 "onboarding.categoriesCustom" = "カスタムカテゴリー";
 "onboarding.privacyTutorialsHint" = "Yalaのチュートリアルとヒントを見る";
@@ -1873,10 +1855,11 @@
 "onboarding.balanceManualOption" = "残高を知っています";
 "onboarding.balanceManualHint" = "自分で入力します";
 "onboarding.balanceGuidedIncompleteHint" = "計算が完了していません。タップして再開してください。";
-"onboarding.privacyLocalShort" = "データはあなたの端末に";
+"onboarding.privacyLocalShort" = "データはあなたのアカウントに";
 "onboarding.privacyNoTrackingShort" = "追跡や広告なし";
-"onboarding.privacyIcloudShort" = "あなただけがアクセス";
-"onboarding.privacyNoSharingShort" = "安全な AI";
+"onboarding.privacyIcloudShort" = "アカウントでアクセス";
+"onboarding.privacyAIShort" = "AIは当社のサーバーを経由";
+"onboarding.privacyAIDetail" = "使うかどうかはあなたが決めます";
 "onboarding.accountBalanceGuideTitle" = "残高はどう計算する？";
 "onboarding.accountBalanceGuideIntro" = "初期残高は、Yalaに「いくらから始めるか」を伝えるものです。1円単位の正確さは不要、おおよその額で十分です。選んだ口座の種類ごとの考え方を以下に示します。";
 "onboarding.accountBalanceGuideGeneral" = "1つの通貨で支払い手段をまとめた一般口座を使う場合、残高は使えるお金の合計を表します。\n\n計算するには普通預金、貯蓄、現金などすべてを合算します。クレジットカードの未払い分があれば、より正確に把握するために差し引いてもよいですし、あとで各カードを別の口座として管理することもできます。\n\nその最終値が初期残高です。";
@@ -1993,9 +1976,7 @@
 "bulkEdit.availableTags" = "追加可能";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "システム";
-"voiceLanguage.spanish" = "スペイン語";
-"voiceLanguage.english" = "英語";
+"voiceLanguage.appLanguage" = "アプリの言語";
 
 // MARK: - Voice Input
 "voice.title" = "音声メモ";
@@ -2173,8 +2154,6 @@
 "tips.filters.detail" = "カテゴリー、タグ、口座、期間で必要な情報だけ表示。月ごとに比較して変化を捉えましょう。";
 "tips.export.title" = "データをエクスポート";
 "tips.export.detail" = "設定 > エクスポートから支出をCSVやExcelでダウンロード。表計算分析やバックアップに最適。";
-"tips.faceID.title" = "Face IDで保護";
-"tips.faceID.detail" = "設定 > セキュリティで生体認証ロックを有効化。アプリを離れたとき、または一定時間後にロックできます。";
 "tips.siri.title" = "音声で支出をメモ";
 "tips.siri.detail" = "「Yalaに支出をメモ」と話して、続けて詳細を口述します";
 "tips.siri.close" = "Siri候補を閉じる";
@@ -2223,12 +2202,10 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "音声入力";
 "tipkit.pro.voiceInput.message" = "支出を口述で入力できます。話すだけでYalaが記録します。";
-"tipkit.pro.imageInput.title" = "画像入力";
+"tipkit.pro.imageInput.title" = "写真・ファイル入力";
 "tipkit.pro.imageInput.message" = "レシートや請求書の写真を添付すると、Yalaが1件以上の取引を抽出します。";
 "tipkit.pro.smartInsights.title" = "スマートインサイト";
 "tipkit.pro.smartInsights.message" = "これを有効にすると、YalaがAIで資産状況に関するインサイトを生成します。";
-"tipkit.pro.exportExtended.title" = "無制限エクスポート";
-"tipkit.pro.exportExtended.message" = "1年分、全履歴、カスタム範囲でデータをエクスポートできます。";
 "tipkit.pro.premiumIcons.title" = "限定アイコン";
 "tipkit.pro.premiumIcons.message" = "プレミアムアイコンからアプリを自分仕様に。";
 "tipkit.pro.proThemes.title" = "プレミアムテーマ";
@@ -2286,10 +2263,10 @@
 "shortcut.voiceEntry.opening" = "音声入力を開いています...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "画像で記録";
-"shortcut.imageEntry.description" = "画像ピッカーを開いて写真から支出を記録します";
-"shortcut.imageEntry.shortTitle" = "画像で記録";
-"shortcut.imageEntry.opening" = "画像入力を開いています...";
+"shortcut.imageEntry.title" = "写真やファイルで記録";
+"shortcut.imageEntry.description" = "写真やPDFなどのファイルから支出を記録します";
+"shortcut.imageEntry.shortTitle" = "写真・ファイル";
+"shortcut.imageEntry.opening" = "写真・ファイル入力を開いています...";
 
 // MARK: - Apple Pay Intent
 
@@ -2336,10 +2313,10 @@
 "control.voiceEntry.intentTitle" = "音声入力を開く";
 "control.voiceEntry.intentDescription" = "Yalaを音声録音モードで開きます";
 
-"control.imageEntry.label" = "画像入力";
-"control.imageEntry.displayName" = "画像入力";
-"control.imageEntry.description" = "画像や写真で記録";
-"control.imageEntry.intentTitle" = "画像入力を開く";
+"control.imageEntry.label" = "写真・ファイル";
+"control.imageEntry.displayName" = "写真・ファイル";
+"control.imageEntry.description" = "写真やファイルで記録";
+"control.imageEntry.intentTitle" = "写真・ファイル入力を開く";
 "control.imageEntry.intentDescription" = "Yalaをカメラモードで開いて記録します";
 
 // MARK: - Notifications
@@ -2396,13 +2373,16 @@
 
 // Groups
 "notifications.groups.name" = "グループ";
+"notifications.groups.remoteActivity" = "グループに新しい動きがあります";
+"notifications.groups.remotePendingRequest" = "👋 グループへの参加リクエストが届いています";
+"notifications.groups.remoteMembershipUpdate" = "グループのメンバーシップに関するお知らせです";
 "notifications.groups.hint" = "他のメンバーが支出を追加したり、支払いをした際の通知";
-"notifications.groups.newExpense" = "%1$@が%2$@の支出を追加: %3$@";
-"notifications.groups.newExpenseNoDesc" = "%@が%@の支出を追加";
-"notifications.groups.modifiedExpense" = "%@が「%@」を編集";
-"notifications.groups.settlement" = "%@があなたに%@支払いました";
-"notifications.groups.newMember" = "%@がグループに参加しました";
-"notifications.groups.multipleChanges" = "新しい変更が%d件";
+"notifications.groups.newExpense" = "🧾 %1$@さんが「%2$@」を追加 — あなたの負担は%3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@さんが支出を追加 — あなたの負担は%2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@さんが「%2$@」を更新 — あなたの負担は%3$@";
+"notifications.groups.settlement" = "💸 %@さんがあなたに%@を支払いました";
+"notifications.groups.newMember" = "🙌 %@さんがグループに参加しました";
+"notifications.groups.multipleChanges" = "📋 新着%d件";
 "notifications.groups.fallbackGroup" = "グループ";
 "notifications.groups.fallbackMember" = "誰か";
 
@@ -2508,12 +2488,11 @@
 "featureGate.accounts" = "口座";
 "featureGate.budgets" = "予算";
 "featureGate.voiceInput" = "音声入力";
-"featureGate.imageInput" = "画像入力";
+"featureGate.imageInput" = "写真・ファイル入力";
 "featureGate.premiumIcons" = "プレミアムアイコン";
 "featureGate.proThemes" = "Proテーマ";
 "featureGate.smartInsightsAI" = "スマートインサイトAI";
 "featureGate.cashFlowAdvanced" = "高度なキャッシュフロー";
-"featureGate.exportExtendedPeriods" = "拡張エクスポート期間";
 
 // Titles
 "featureGate.limitReachedTitle" = "上限に達しました";
@@ -2872,7 +2851,7 @@
 "siriShortcuts.all.title" = "その他のショートカット";
 "siriShortcuts.shortcut.quick" = "クイック記録";
 "siriShortcuts.shortcut.voice" = "音声入力";
-"siriShortcuts.shortcut.image" = "画像入力";
+"siriShortcuts.shortcut.image" = "写真やファイルで記録";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "オートメーション";
 "siriShortcuts.desc.quick" = "1タップで記録フォームを開きます。";
@@ -2882,7 +2861,7 @@
 "siriShortcuts.desc.automation" = "システムショートカットで自動記録を作成します。";
 "siriShortcuts.phrase.quick" = "Yalaに記録";
 "siriShortcuts.phrase.voice" = "Yalaに音声で記録";
-"siriShortcuts.phrase.image" = "Yalaに画像で記録";
+"siriShortcuts.phrase.image" = "Yalaに写真やファイルで記録";
 "siriShortcuts.phrase.applePay" = "Yalaに Apple Payを記録";
 "siriShortcuts.phrase.automation" = "Yalaにオートメーションから記録";
 "siriShortcuts.faq.title" = "よくある質問";
@@ -2909,7 +2888,7 @@
 "aiPrivacy.revokeConfirmTitle" = "この機能を無効にしますか？";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
 "aiPrivacy.revokeConfirmAction" = "無効化";
-"aiPrivacy.footerHint" = "データはインサイト、アシスタント、音声・画像入力を使うときのみ処理されます。個人情報を共有することはありません。";
+"aiPrivacy.footerHint" = "データが送信されるのは、インサイト、アシスタント、音声・画像入力を使うときだけで、当社のサーバーを経由してOpenAIに届きます。データを販売したり、広告に使ったりすることはありません。";
 "aiPrivacy.policyLink" = "プライバシーポリシー";
 
 // MARK: - AI Consent
@@ -3260,6 +3239,56 @@
 "devseed.stepDeleting" = "データを削除中...";
 "devseed.stepReloading" = "データを再読み込み中...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "リスボン旅行";
+"devseed.ficha.groupWeekend" = "ポルトの週末";
+"devseed.ficha.memberYou" = "あなた";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "宿泊";
+"devseed.ficha.expenseTour" = "ガイドツアー";
+"devseed.ficha.expenseGroupDinner" = "みんなで夕食";
+"devseed.ficha.expenseAirportTaxi" = "空港タクシー";
+"devseed.ficha.expenseLocalMeal" = "シーフードディナー";
+"devseed.ficha.expenseMuseum" = "美術館チケット";
+"devseed.ficha.expenseTransport" = "交通費";
+"devseed.ficha.expenseGroceries" = "食料品";
+"devseed.ficha.expenseSouvenirs" = "お土産";
+"devseed.ficha.expenseWeekendStay" = "ポルトのホテル";
+"devseed.ficha.expenseWeekendMeal" = "ワインテイスティング";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "旅行 %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "空港までのタクシーに45、スーパーで120.50使った";
+"uitestDemo.chat.draftNoteTaxi" = "空港までのタクシー";
+"uitestDemo.chat.draftNoteGroceries" = "スーパーの買い物";
+"uitestDemo.chat.suggestionSplit" = "住居と個人の支出はどう分かれていますか？";
+"uitestDemo.chat.suggestionMonth" = "今月のレストランとデリバリーの支出は？";
+"uitestDemo.chat.suggestionBudget" = "外食の予算は足りましたか？";
+"uitestDemo.chat.pizzaNote" = "ピザ";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "ランチ25、カードで";
+"uitestDemo.voice.lunchNote" = "ランチ";
+"uitestDemo.voice.twoTranscript" = "タクシー12とコーヒー8、カードで";
+"uitestDemo.voice.taxiNote" = "タクシー";
+"uitestDemo.voice.coffeeNote" = "コーヒー";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "ビストロ・ブルードア";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "タクシー";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "%ldページ";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "はじめに";
@@ -3416,7 +3445,6 @@
 "chat.unavailable" = "Yala AIは現在利用できません。数分後にもう一度お試しください。";
 "chat.retry" = "再試行";
 "chat.noVoiceDetected" = "音声を検出できませんでした。もう一度お試しください。";
-"chat.contextMemory" = "Yala AIは%d件のメッセージを覚えています";
 
 // MARK: - Chat Draft (Yala AI Register)
 "chat.draft.chipExpense" = "支出";
@@ -3439,7 +3467,6 @@
 "chat.draft.selectAccount" = "口座を選択";
 "chat.draft.selectSubcategory" = "サブカテゴリーを選択";
 "chat.draft.saveButton" = "保存";
-"chat.draft.editButton" = "編集";
 "chat.draft.failedSavingLine" = "保存できませんでした。";
 "chat.draft.retryButton" = "再試行";
 "chat.draft.noAccountsBlocking" = "登録する前に、プロフィールから口座を作成してください。";
@@ -3452,7 +3479,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "金融アシスタント";
-"aiConsent.chatMessage" = "ご質問にお答えするため、この機能はあなたの財務状況の概要をOpenAIに送信します：口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い。\n\nデータは回答の生成にのみ使用されます。OpenAIはこのデータをモデルの学習に使用しません。";
+"aiConsent.chatMessage" = "ご質問にお答えするため、この機能はあなたの財務状況（直近13か月）の概要をOpenAIに送信します：口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い。\n\nデータは回答の生成にのみ使用されます。OpenAIはこのデータをモデルの学習に使用しません。";
 "aiConsent.inlineHintChat" = "あなたの財務概要は回答のためOpenAIで処理されます。永続的に保存されることはありません。";
 "aiConsent.inlineHintMultiple" = "複数のAI機能がOpenAIでデータを処理します。永続的に保存されることはありません。";
 
@@ -3514,7 +3541,6 @@
 "groups.bridge.errorTransactionUpdate" = "変更は個人の記録に反映されませんでした。もう一度試みます。";
 "groups.bridge.errorDelete" = "個人の記録を削除できませんでした。";
 "groups.bridge.errorNoAccounts" = "口座が設定されていません。先に1つ作成してください。";
-"groups.sync.errorAcceptShare" = "グループへの参加を完了できませんでした。もう一度お試しください。";
 "groups.sync.errorMemberSetup" = "グループに参加しましたが、識別情報に問題があります。アプリを再起動してください。";
 
 // Groups — Reconnect (GC-08)
@@ -3522,7 +3548,7 @@
 "groups.reconnect.subtitle" = "シェアグループに招待されました";
 "groups.reconnect.fallbackGroupName" = "このグループ";
 "groups.reconnect.archived.title" = "%@はアーカイブされました";
-"groups.reconnect.archived.body" = "管理者がアーカイブしたため、変更はもう受け付けられません。";
+"groups.reconnect.archived.body" = "管理者がアーカイブしたため、新しいメンバーはもう参加できません。";
 "groups.reconnect.archived.cta" = "OK";
 "groups.reconnect.alreadyMember.title" = "あなたはすでに%@に参加しています";
 "groups.reconnect.alreadyMember.body" = "グループへご案内します。";
@@ -4113,23 +4139,23 @@
 "groups.member.rejectConfirm" = "%@ のリクエストを拒否しますか？別のリンクで再度アクセスをリクエストできます。";
 "groups.member.pendingRequestsSection" = "保留中のリクエスト";
 "groups.invite.waitingApproval.title" = "リクエストを送信しました";
-"groups.invite.waitingApproval.body" = "参加するには、グループの管理者の承認が必要です。準備ができたらお知らせします。";
+"groups.invite.waitingApproval.body" = "グループの管理者が承認するまでは参加できません。それまではリストにグループが表示されますが、まだ開くことはできません。しばらくしてからYalaをもう一度開いて、承認されたか確認してください。";
 "groups.invite.waitingApproval.banner" = "管理者の承認を待っています";
 "groups.invite.rejected.title" = "リクエストが拒否されました";
 "groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";
 "groups.notifications.newPendingRequest" = "👋 %1$@ さんが %2$@ への参加を希望しています";
-"groups.notifications.newPendingRequestBody" = "Yalaから承認または拒否してください。";
+"groups.notifications.newPendingRequestBody" = "Yalaから承認または拒否できます。";
 "groups.errors.pendingApproval" = "まだこの操作はできません。管理者があなたのリクエストを承認する必要があります。";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
-"welcome.chooser.title" = "こんにちは！どうやってYalaにたどり着きましたか？";
-"welcome.chooser.subtitle" = "あなたに合わせた体験をご提供するため、教えてください。";
-"welcome.chooser.optionNew.title" = "初めて利用します";
+"welcome.chooser.title" = "こんにちは！Yalaで何をしたいですか？";
+"welcome.chooser.subtitle" = "スタート地点を選んでください。あとは一緒に進みましょう。";
+"welcome.chooser.optionNew.title" = "Yalaを使うのは初めてです";
 "welcome.chooser.optionNew.body" = "ゼロから始めましょう。一緒にステップごとに設定していきます。";
 "welcome.chooser.optionExisting.title" = "すでにアカウントがあります";
-"welcome.chooser.optionExisting.body" = "Yalaを再インストールしました。iCloudからデータを復元したいです。";
-"welcome.chooser.optionInvite.title" = "グループに招待されました";
-"welcome.chooser.optionInvite.body" = "招待リンクを持っています。グループに参加したいです。";
+"welcome.chooser.optionExisting.body" = "Yalaを使ったことがあります。iCloudでもアカウントでも、データを復元したいです。";
+"welcome.chooser.optionInvite.title" = "グループのために来ました";
+"welcome.chooser.optionInvite.body" = "友だちと支出を分けたい。グループを作るか、招待に参加します。";
 
 "welcome.restore.searching" = "iCloudでデータを検索しています…";
 "welcome.restore.searchingTip" = "数秒かかることがあります。";
@@ -4171,9 +4197,8 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "あなたの個人ファイナンスを、";
 "welcome.hero.titleAccent" = "簡単に。";
-"welcome.hero.subtitle" = "あなたは撮るだけ。Yalaが処理します。";
 "welcome.hero.cta" = "はじめる";
-"welcome.hero.trust" = "100%プライベート · あなたの情報はあなたのもの";
+"welcome.hero.trust" = "追跡や広告なし";
 
 "welcome.hero.cards.capture.title" = "レシートを撮影";
 "welcome.hero.cards.capture.body" = "カメラを向けるだけ。Yalaが読み取ります。";
@@ -4184,23 +4209,15 @@
 "welcome.hero.cards.budgets.title" = "予算と目標";
 "welcome.hero.cards.budgets.body" = "限度を決めて、守る。";
 "welcome.hero.cards.multiAndCurrencies.title" = "複数口座と通貨";
-"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、48以上の通貨。";
+"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、50以上の通貨。";
 "welcome.hero.cards.import.title" = "履歴をインポート";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
 "welcome.hero.cards.icloud.title" = "プライベートiCloud";
-"welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。サーバーなし。";
+"welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。";
 "welcome.hero.cards.more.title" = "さらに多くの機能";
 "welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.detectedData.title" = "おかえりなさい！アカウントを見つけました";
-"welcome.detectedData.message" = "iCloudにデータが保存されています。この端末に読み込みますか？";
-"welcome.detectedData.loadMyData" = "データを読み込む";
-"welcome.detectedData.startFresh" = "ゼロから始める";
-"welcome.offerRestore.title" = "アカウントが見つかりました";
-"welcome.offerRestore.message" = "iCloudにデータがあります。グループに参加する前に読み込みますか？";
-"welcome.offerRestore.loadData" = "データを読み込む";
-"welcome.offerRestore.startFresh" = "最初から始める";
 
 
 // MARK: FreshStart (segunda barrera)
@@ -4220,12 +4237,12 @@
 "yalaAI.onboarding.progressLabel" = "ステップ %1$d / %2$d";
 "yalaAI.onboarding.step1.title" = "Yala AIをご紹介します";
 "yalaAI.onboarding.step1.subtitle" = "あなたの家計のパートナーです。";
-"yalaAI.onboarding.step1.demoScenario1User" = "ランチに1,200円使いました。";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。1,200円のランチを記録しました。";
+"yalaAI.onboarding.step1.demoScenario1User" = "ランチに%@使いました。";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。%@のランチを記録しました。";
 "yalaAI.onboarding.step1.demoScenario2User" = "今月のコーヒーにいくら使いましたか？";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは4,500円です ☕ — 4月より12%減ですが、いつもの平均より800円多めです。";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは%1$@です ☕ 4月より12%%減ですが、いつもの平均より%2$@多めです。";
 "yalaAI.onboarding.step1.demoScenario3User" = "アドバイスは？";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 デリバリーが先月より20%増えています。いつものペースに戻すと月8,000円、年間で約96,000円の節約になります。";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 デリバリーが先月より20%%増えています。いつものペースに戻すと月%1$@、年間で%2$@の節約になります。";
 "yalaAI.onboarding.step1.demoAmountLabel" = "ランチ";
 "yalaAI.onboarding.step1.a11yLabel" = "Yala AIが支出を記録するチャットの例";
 "yalaAI.onboarding.step2.title" = "できることはこちら";
@@ -4251,11 +4268,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "毎月、より多く節約できるようサポートします。";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "ずれがあればお知らせし、見落としを防ぎます。";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "今月の支出は収入でカバーできています。良いペースです。";
-"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%減らすと、月3,000円の節約になります。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%%減らすと、月%@の節約になります。";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "注意：デリバリーのペースが先月より速くなっています。";
 "yalaAI.onboarding.step5.title" = "準備完了！";
 "yalaAI.onboarding.step5.subtitle" = "いつでもYalaに必要なことを伝えてください。";
-"yalaAI.onboarding.step5.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
+"yalaAI.onboarding.step5.tip" = "💡 例：「%@のコーヒーを記録して」「今日いくら使った？」";
 "yalaAI.onboarding.step5.cta" = "チャットを始める";
 
 // MARK: - Stats Records polish
@@ -4313,6 +4330,19 @@
 "stats.trends.insight.stableExpense" = "支出は安定しています。";
 "stats.trends.insight.stableIncome" = "収入は安定しています。";
 "stats.trends.insight.stableBalance" = "残高は安定しています。";
+"stats.trends.insight.sustainedUpExpense %@" = "支出は%@連続で増えています。";
+"stats.trends.insight.sustainedDownExpense %@" = "支出は%@連続で減っています。";
+"stats.trends.insight.sustainedUpIncome %@" = "収入は%@連続で増えています。";
+"stats.trends.insight.sustainedDownIncome %@" = "収入は%@連続で減っています。";
+"stats.trends.insight.sustainedUpBalance %@" = "残高は%@連続で増えています。";
+"stats.trends.insight.sustainedDownBalance %@" = "残高は%@連続で減っています。";
+"stats.trends.insight.durationWeeks %d" = "%d週";
+"stats.trends.insight.durationMonths %d" = "%dか月";
+"stats.trends.insight.durationYears %d" = "%d年";
+"stats.trends.insight.cashFlowSurplus %d" = "収入で支出の%d%%をまかなえました。プラスで締めくくりました。";
+"stats.trends.insight.cashFlowDeficit %d" = "収入で支出の%d%%をまかないました。入ってきた額より多く使いました。";
+"stats.trends.insight.cashFlowNoIncome" = "この期間は支出のみで、収入の記録はありません。";
+"stats.trends.insight.weekdayPeak %@ %@" = "最もお金を使う曜日は%@です。平均%@です。";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期間の比較";
@@ -4353,9 +4383,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "支出を支払うと、個人の口座にも自動的に記録します。残高が常に実態を反映するようにするためです。";
 "groups.onboarding.step3.title" = "プライバシーを第一に";
 "groups.onboarding.step3.subtitle" = "必要な情報だけを共有します。";
-"groups.onboarding.step3.point1" = "メンバー全員にiCloudアカウントが必要です。";
+"groups.onboarding.step3.point1" = "メンバー全員にYalaアカウントが必要です。";
 "groups.onboarding.step3.point2" = "個人データはグループと同期されません。共有された支払いのみが同期されます。";
 "groups.onboarding.step3.cta" = "グループへ";
+"groups.onboarding.step3.signInCTA" = "サインイン";
 
 "groups.onboarding.step3.bridgeAwareness" = "この動作はグループ設定で変更できます。";
 
@@ -4420,7 +4451,6 @@
 "settings.resetDataDescriptionGroupsOnly" = "この操作で、Yalaのプロフィールと設定が初期状態に戻ります。グループは削除されません。「グループ」タブで管理してください。";
 
 /* Delete-data confirmation warning — groups-only mode */
-"settings.deleteDataWarningGroupsOnly" = "この操作は取り消せません。Yalaのプロフィールと設定がリセットされます。";
 
 /* Apple Pay automation: failure notification title */
 "shortcut.notification.errorTitle" = "支払いを記録できませんでした";
@@ -4442,6 +4472,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "グループ「%@」の精算です。口座を割り当てるだけです。金額と日付はグループが管理します。";
+"inbox.groupSettlementDraft.alreadyRegistered" = "この支払いはすでに口座に記録されています。この下書きは破棄できます。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "口座とサブカテゴリを割り当て";
@@ -4452,11 +4483,19 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "この共有支出はグループにもう存在しません。";
 "whatsNew.v20.groups.title" = "グループ（ベータ版）";
-"whatsNew.v20.groups.description" = "グループを作って費用を分担すると、Yala が誰が誰にいくら払うかを計算します。ご安心ください。データはすべてあなたのプライベートな iCloud を経由し、当社のサーバーは通りません。";
+"whatsNew.v20.groups.description" = "グループを作って費用を分担すると、Yala が誰が誰にいくら払うかを計算します。";
 "whatsNew.v20.ai.title" = "Yala AI のご紹介";
 "whatsNew.v20.ai.description" = "AI を搭載したあなたの家計アシスタント。お金について質問したり、支出の記録を頼んだり、今月の分かりやすい分析を受け取れます。お金に詳しい友だちのように、メッセージひとつですぐそばに。";
 "whatsNew.v20.redesign.title" = "全面リニューアル";
 "whatsNew.v20.redesign.description" = "Yala を隅々まで一新しました。新しいウィジェット、各画面のより見やすいサマリー、そしてアプリ全体に iOS の新しい Liquid Glass デザインを採用。さらに多くの不具合を修正し、すべてがより快適になりました。";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "グループ";
+"whatsNew.v21.groups.description" = "好きな人と費用をシェア。リンクで招待して一緒に記録すれば、誰が誰にいくら払うかは Yala が計算します。面倒な計算も、気まずさもありません。";
+"whatsNew.v21.logging.title" = "記録がこんなに簡単に";
+"whatsNew.v21.logging.description" = "話しかけても、写真を撮っても、友だちにメッセージするように書いても大丈夫。Yala が使った内容を理解して記録するので、家計の管理はほんの数秒です。";
+"whatsNew.v21.data.title" = "あなたのデータは、あなたのルールで";
+"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。プライベートな iCloud か、Yala のクラウドか。すべてのデバイスで使えます。さらに、新しくなったホームと、iPad での Yala のフルスクリーン表示も。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4500,24 +4539,6 @@
 "groups.errors.inviteFailed" = "招待リンクを作成できませんでした。接続を確認してもう一度お試しください。";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "操作を完了できませんでした。もう一度お試しください。";
-/* Beta gate (Groups): screen/alert title */
-"groups.beta.gate.title" = "ベータ機能";
-
-/* Beta gate (Groups): explanation message */
-"groups.beta.gate.message" = "この機能はベータ版で、一部のユーザーのみが利用できます";
-
-/* Beta gate (Groups): button to enter the beta code */
-"groups.beta.gate.haveCode" = "ベータコードを持っています";
-
-/* Beta gate (Groups): code entry alert title */
-"groups.beta.gate.codePrompt" = "ベータコードを入力してください";
-
-/* Beta gate (Groups): code field placeholder */
-"groups.beta.gate.placeholder" = "コード";
-
-/* Beta gate (Groups): wrong code error */
-"groups.beta.gate.wrongCode" = "コードが正しくありません";
-
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "全員";
 
@@ -4624,3 +4645,2116 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "メンバーで分ける前に、支出の金額を入力してください。";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "予定されたグループ支出";
+"scheduled.groupExpense.toggle" = "共有の支出ですか？";
+"scheduled.groupExpense.toggleHelper" = "グループに記録し、あなたの分だけを計算します。";
+"scheduled.groupExpense.sectionTitle" = "共有の支出";
+"scheduled.groupExpense.groupRow" = "グループ";
+"scheduled.groupExpense.currencyRow" = "通貨";
+"scheduled.groupExpense.divisionRow" = "分割";
+"scheduled.groupExpense.splitSummary" = "%d人 · %@ · あなたの分 %@";
+"scheduled.groupExpense.totalHint" = "請求額の合計";
+"scheduled.groupExpense.sharedBadge" = "共有";
+
+
+/* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
+"inbox.convertToShared" = "共有の支出に変換";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Face IDで保護";
+"faceIDGuide.title" = "Face IDでYalaを保護";
+"faceIDGuide.subtitle" = "iOSのロックを使って、あなただけがアプリを開けるようにします";
+"faceIDGuide.step1Title" = "Yalaのアイコンを長押し";
+"faceIDGuide.step1Detail" = "ホーム画面で";
+"faceIDGuide.step2Title" = "「Face IDを要求」をタップ";
+"faceIDGuide.step2Detail" = "表示されるメニューで";
+"faceIDGuide.step3Title" = "顔で確認";
+"faceIDGuide.step3Detail" = "完了。アプリが保護されました";
+
+/* Success screen title after creating a group expense */
+"groups.expense.success.titleCreated" = "支出を追加しました！";
+
+/* Success screen title after editing a group expense */
+"groups.expense.success.titleUpdated" = "支出を更新しました！";
+
+/* Detail row label: the group the expense belongs to */
+"groups.expense.success.group" = "グループ";
+
+/* Detail row label: how the expense was split */
+"groups.expense.success.splitLabel" = "分割方法";
+
+/* Section header listing participants and their share */
+"groups.expense.success.participants" = "参加者";
+
+/* Button: create another group expense */
+"groups.expense.success.addAnother" = "別の支出を追加";
+
+/* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
+"storage.title" = "データの保存先";
+"storage.waitingForLeader" = "別のデバイスがこのアカウントのクラウドを有効化しています。完了までお待ちください。";
+"storage.status.icloudTitle" = "プライベート iCloud";
+"storage.status.icloudBody" = "データはデバイスに保存され、プライベートな iCloud で同期されます。私たちを含め、他の誰も読み取れません。";
+"storage.status.cloudTitle" = "クラウドアカウント";
+"storage.status.cloudBody" = "データは Yala アカウントに保存され、すべてのデバイスで同期されます。";
+"storage.migrate.title" = "クラウドへ移行";
+"storage.migrate.body" = "Apple または Google でアカウントを作成すれば、iCloud がなくてもどのデバイスからでもデータにアクセスできます。";
+"storage.migrate.button" = "クラウドを有効化";
+"storage.migrate.previewButton" = "移行される内容を見る";
+"storage.migrate.previewResult" = "取引 %1$d件 · カテゴリ %2$d件 · 口座 %3$d件 · 予算 %4$d件";
+"storage.adopt.title" = "この端末でクラウドを有効化";
+"storage.adopt.body" = "このアカウントのデータはすでにクラウドにあります。この端末で有効化しましょう。";
+"storage.adopt.button" = "この端末で有効化";
+"storage.revert.title" = "iCloud に戻す";
+"storage.revert.body" = "プライベートモードに戻します。データはデバイスと iCloud に保存され、何も失われません。";
+"storage.revert.button" = "iCloud に戻す";
+"storage.revert.ineligible" = "現在、この端末から iCloud に戻すことはできません。";
+"storage.sync.title" = "同期";
+"storage.sync.upToDate" = "すべて同期済み";
+"storage.sync.needsSignIn" = "サインインして %d件の変更をアップロード";
+"storage.sync.signInButton" = "サインイン";
+"storage.progress.migrating" = "クラウドを有効化しています…";
+"storage.progress.reverting" = "iCloud に戻しています…";
+"storage.progress.resume" = "再開";
+"storage.progress.retry" = "再試行";
+"storage.relaunch.title" = "あと少し — Yala を再起動してください";
+"storage.relaunch.body" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いて完了してください。";
+"storage.failed.migration" = "クラウドを有効化できませんでした。データはデバイスに安全に残っています。もう一度お試しください。";
+"storage.failed.reverse" = "iCloud への復帰を完了できませんでした。データは安全です。もう一度お試しください。";
+"storage.confirm.migrateTitle" = "クラウドを有効化しますか？";
+"storage.confirm.migrateBody" = "データが Yala アカウントに移動します。元に戻せますが、大きな変更です。";
+"storage.confirm.migrateContinue" = "続ける";
+"storage.confirm.migrate2Title" = "よろしいですか？";
+"storage.confirm.migrate2Body" = "この端末でクラウドが有効になります。";
+"storage.confirm.migrate2Confirm" = "はい、クラウドを有効化";
+"storage.confirm.revertTitle" = "iCloud に戻しますか？";
+"storage.confirm.revertBody" = "データはデバイスと iCloud に保存されます。何も失われません。";
+"storage.confirm.revertContinue" = "続ける";
+"storage.confirm.revert2Title" = "よろしいですか？";
+"storage.confirm.revert2Body" = "この端末でクラウドが無効になります。";
+"storage.confirm.revert2Confirm" = "はい、iCloud に戻す";
+"storage.errors.title" = "問題が発生しました";
+"storage.errors.generic" = "うまくいきませんでした。もう一度お試しください。";
+"storage.errors.adoptOtherAccount" = "この端末で有効化しようとしていたアカウントではありません。同じアカウントでもう一度お試しください。";
+"storage.errors.adoptICloudNotSettled" = "クラウドの有効化を開始できませんでした。iCloudがまだこの端末にデータを取り込んでいます。数分後にもう一度お試しください。";
+"storage.errors.signIn" = "サインインできませんでした。もう一度お試しください。";
+"storage.consent.title" = "Yala のクラウドにあるあなたのデータ";
+"storage.consent.pointServers" = "データは Yala のサーバーに保存され、サポートやスマート機能を提供するために私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";
+"storage.consent.pointPhotos" = "レシートの写真はこの端末にのみ残ります。クラウドにバックアップされず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
+"storage.consent.pointAccess" = "その代わり、iCloud に依存せず Apple または Google のログインだけでどの端末からでもアクセスできます。そのログインを保持している限り有効です。メールや Yala のパスワードによる復旧はないため、そのアカウントへのアクセスを失う前にデータを書き出してください（設定 → データをエクスポート）。";
+"storage.consent.footer" = "いつでもプライベートモードに戻せます。何も失われません。";
+"storage.consent.accept" = "理解したうえでクラウドを有効化します";
+"storage.consent.privacyLink" = "プライバシーポリシーを見る";
+
+/* Invite onboarding: spinner title while zone/member sync */
+"groups.invite.joining.title" = "グループに接続中…";
+
+/* Invite onboarding: spinner body */
+"groups.invite.joining.body" = "支出を分担できるよう準備しています。少々お待ちください。";
+
+/* Invite onboarding: soft-timeout state title */
+"groups.invite.slow.title" = "通常より少し時間がかかっています";
+
+/* Invite onboarding: soft-timeout body, honest copy */
+"groups.invite.slow.body" = "バックグラウンドでグループへの接続を続けています。その間もYalaを使えます。準備ができ次第、グループタブに表示されます。";
+
+/* Invite onboarding: exit CTA from soft-timeout state */
+"groups.invite.slow.continueButton" = "アプリへ進む";
+
+/* Invite onboarding: join failure title */
+"groups.invite.error.title" = "グループに参加できませんでした";
+
+/* Invite onboarding: join failure body */
+"groups.invite.error.body" = "インターネット接続を確認して、もう一度お試しください。";
+
+/* Invite onboarding: secondary exit from failure state */
+"groups.invite.error.exitButton" = "今は閉じる";
+
+/* Groups tab banner while join intent syncs in background */
+"groups.invite.syncBanner" = "グループに接続中…";
+
+/* Groups tab banner when join intent TTL expired */
+"groups.invite.expired.banner" = "グループに接続できませんでした。管理者に新しいリンクをもらってください。";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "サインアウト";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "このデバイスからサインアウトしますか？";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "サインアウト";
+
+/* Sign out dialog message when in cloud storage mode */
+
+/* Sign out dialog message when in private iCloud mode */
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "サインアウトできませんでした";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "まだクラウドにアップロードされていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.title" = "おかえりなさい！";
+"welcome.existing.subtitle" = "Yalaアカウントでサインインするか、iCloudからデータを復元します。";
+"welcome.existing.firstTimeQuestion" = "Yalaは初めてですか？";
+"welcome.existing.firstTimeAction" = "ここから始める";
+"welcome.form.or" = "または";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "iCloudから復元";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "iCloudに保存されたデータがこのデバイスに戻ります。";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "Appleでサインイン";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "クラウド上のYalaアカウントに、どのデバイスからでも。";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "アカウントにサインイン";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "クラウドアカウントを作成したときと同じApple IDを使ってください。";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "アカウントを確認しています…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "アカウントに接続しています…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "数分かかることがあります。Yalaを開いたままにしてください。";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "アカウントが見つかりませんでした";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "使用したサインイン方法には、まだYalaのクラウドアカウントがありません。";
+"welcome.cloud.notFoundCta" = "アカウントを作る";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "このデバイスには別のアカウントのデータがあります";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "データ保護のため、ここでは別のアカウントを接続できません。持ち主はいつでも再度サインインできます。";
+
+"welcome.cloud.blockedRestoreHint" = "もし自分のデータなら、iCloudからの復元を始めたばかりの可能性があります。完了するまで待ってから、もう一度サインインしてください。";
+
+"welcome.cloud.blockedBack" = "戻る";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "問題が発生しました";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "アカウントを確認できませんでした。接続を確認してからもう一度お試しください。";
+
+/* Retry button */
+"welcome.cloud.retry" = "もう一度試す";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "別のデバイスでアカウントを準備しています";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "ここで待つか、アプリに進むこともできます。引き続き試行します。";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "アプリに進む";
+
+/* Chip shown while the secondary (guest) session pulls its account data after relaunch */
+"welcome.cloud.hydrationBanner" = "データをダウンロード中…";
+"welcome.cloud.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
+"welcome.cloud.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。最初の画面に戻ります。いつでも「すでにアカウントがあります」からアカウントに再度ログインできます。";
+
+/* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
+"groups.icloud.gate.title" = "グループには iCloud が必要です";
+
+/* Body of the Groups-needs-iCloud gate; [tu nombre] refers to the user's name row at the top of iOS Settings */
+"groups.icloud.gate.message" = "グループは iCloud アカウントで共有・同期されます。設定 →［ユーザー名］→ iCloud からサインインして、ここに戻ってきてください。";
+
+/* CTA of the Groups-needs-iCloud gate; opens the app's Settings page (cannot deep-link to iCloud directly) */
+"groups.icloud.gate.openSettings" = "設定を開く";
+
+/* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
+"storage.relaunch.bodyAutoExit" = "ホーム画面に戻り、もう一度 Yala を開いてください。これで完了です。";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "クラウドのグループ";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、Yalaのクラウドに保存されます。";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "グループと共有されるのは最小限だけ：あなたのニックネームとグループの支出。ほかのメンバーにメールアドレスは表示されません。";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "あなた個人の家計データは動きません。選んだ場所に、これまでどおりプライベートなまま残ります。";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "グループのデータは保護されて送信・保存されます。グループはいつでも退出できます。";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "同意して続ける";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "アカウントを連携";
+
+/* G4 sign-in body */
+"groups.signin.body" = "グループに参加するにはYalaアカウントが必要です。AppleまたはGoogleでサインインして、招待を続けましょう。";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "これがあなたのYalaアカウントになります。いつか個人データをクラウドに移すときも、この同じアカウントを使います。";
+
+/* G4 sign-in error */
+"groups.signin.error" = "アカウントを連携できませんでした。もう一度お試しください。";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "削除されたユーザー";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "アカウントを削除";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Yalaアカウントを削除しますか？";
+/* G5-D1b: primer diálogo, modo nube */
+/* G5-D1b: primer diálogo, modo solo-grupos */
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "続ける";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "これは取り消せません";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "後戻りはできません。アカウントとデータは完全に削除されます。";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "アカウントを削除";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "アカウントを削除できませんでした";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "問題が発生し、削除が完了しませんでした。データはそのまま残っています。しばらくしてからもう一度お試しください。";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "再試行";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "グループを含める";
+"export.includeGroups.description" = "各グループの支出、支払い、あなたの残高を別ファイルで追加します。";
+"export.groups.header.group" = "グループ";
+"export.groups.header.type" = "種類";
+"export.groups.header.date" = "日付";
+"export.groups.header.description" = "説明";
+"export.groups.header.from" = "支払元";
+"export.groups.header.to" = "支払先";
+"export.groups.header.paidBy" = "支払者";
+"export.groups.header.amount" = "金額";
+"export.groups.header.myShare" = "自分の負担";
+"export.groups.header.currency" = "通貨";
+"export.groups.type.expense" = "支出";
+"export.groups.type.settlement" = "支払い";
+"export.groups.type.balance" = "自分の残高";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "個人ファイルは正常に書き出されましたが、今回はグループを含められませんでした。後でもう一度お試しください。";
+
+/* G6-3: freeze error surfaced when writing to a migrated group */
+"groups.errors.movedToBackend" = "このグループはYalaのクラウドに移動しました。引き続き使うには、もう一度サインインしてください。";
+
+/* G6-3: card chip for a migrated frozen group */
+"groups.card.movedChip" = "移動済み";
+
+/* G6-3: detail banner title for a migrated group */
+"groups.migrated.bannerTitle" = "このグループはYalaのクラウドに移動しました";
+
+/* G6-3: detail banner body for a migrated group */
+"groups.migrated.bannerBody" = "支出の表示と編集を続けるには、もう一度サインインしてください。";
+
+/* G6-3: re-join CTA button on a migrated group */
+"groups.migrated.rejoinCTA" = "もう一度サインイン";
+
+/* G6-3: settings row to delete the frozen CloudKit copy */
+
+/* G6-3: hint under the delete-copy row */
+
+
+
+
+/* G6-3: progress banner while the owner's groups migrate to backend */
+"groups.migrated.migratingBanner" = "グループをYalaのクラウドに移動しています…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Googleで続ける";
+"auth.googleButtonSignUp" = "Google でアカウントを作成";
+"auth.googleButtonSignIn" = "Google でログイン";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Googleでサインイン";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Googleアカウントで作成した場合の、クラウド上のYalaアカウントです。";
+"welcome.existing.usedOnThisDeviceNote" = "このiPhoneで使った方法";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "アカウントを作成したときと同じ方法でサインインしてください。Yalaアカウントはその方法に紐づいています。";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "このアカウントは別の方法を使っています";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "このApple IDのYalaアカウントは%@で作成されています。";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "このApple IDのYalaアカウントは別の方法で作成されています。";
+
+/* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
+"welcome.cloud.beaconOrigin" = "このApple IDでは、%@でYalaアカウントがすでに作成されています。";
+
+/* Paso 6: same origin line when the beacon does not know the sign-in method */
+"welcome.cloud.beaconOriginGeneric" = "このApple IDでは、Yalaアカウントがすでに作成されています。";
+
+/* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
+"welcome.cloud.createAnother" = "別のアカウントを作る";
+
+/* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
+"storage.progress.waitingImport" = "iCloudの同期が完了するまでお待ちください…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "サインイン方法を選択";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "データをクラウドに保存するにはYalaアカウントが必要です。AppleまたはGoogleでサインインしてください。";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "Yalaアカウントは選んだ方法に紐づきます。次回以降も同じ方法でサインインしてください。";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
+"groups.empty.signedOut.title" = "グループはアカウントに保存されています";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: mensaje */
+"groups.empty.signedOut.message" = "サインインすると、共有しているグループを表示できます。";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
+"groups.empty.signedOut.action" = "サインイン";
+
+/* H-2026-07-18-6 — caption while the sign-out saves pending changes */
+"settings.signOutWorking" = "保留中の変更を保存しています…";
+
+/* H-2026-07-18-6 — transient sign-out block alert title */
+"settings.signOutPendingTitle" = "もう少しお待ちください";
+
+/* H-2026-07-18-6 — transient sign-out block alert message */
+"settings.signOutPendingMessage" = "いくつかの変更をまだ保存しています。数秒待ってからもう一度お試しください。";
+
+/* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
+"storage.relaunch.bodyAutoExitGroupsOnly" = "グループからサインアウトしました。ホーム画面に戻り、もう一度 Yala を開いてください。個人データはこのデバイスに残ります。";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "本当によろしいですか？取り消せません。";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "コピーをCSVで保存します";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "データを消去します。アカウントとグループは残ります。";
+
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "データだけ消去してアカウントは残したいですか？「自分のデータを消去」を使ってください。";
+
+
+
+
+
+/* D6: confirmation dialog message for 'Salir de Yala' */
+
+/* D6: header title of the group-only export screen */
+"export.groupsOnlyTitle" = "グループをエクスポート";
+
+/* D6: description under the group-only export header */
+"export.groupsOnlyDescription" = "各グループの支出、支払い、あなたの残高をまとめたCSVファイルを保存します。";
+
+/* D6: alert title when there are no active groups to export */
+"export.groupsOnlyEmptyTitle" = "エクスポートできるグループがありません";
+
+/* D6: alert message when there are no active groups to export */
+"export.groupsOnlyEmpty" = "現在、エクスポートできるアクティブなグループはありません。";
+
+/* D6: a11y hint when Export row is disabled in group-only mode */
+"accessibility.noGroupsToExport" = "エクスポートできるグループがありません";
+
+
+
+
+/* D2 (3.3.3): mensaje del dialogo de 'Salir de Yala' en el split solo-grupos backend */
+
+/* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
+"groups.empty.signedOut.reentryBanner" = "グループからサインアウトしました。もう一度見たくなったら、いつでもサインインしてください。";
+
+/* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
+"settings.deleteAccountDebtWarning" = "グループに未精算の残高があります。他のメンバーには、「削除されたユーザー」からの未払いとして残ります。よろしければ、先に「グループ」タブから精算してください。";
+
+/* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
+"settings.deleteAccountViewGroups" = "グループを表示";
+
+/* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
+"settings.deleteAccountFrozenICloudNote" = "iCloudの古いデータ（クラウド以前のもの）はそのまま残ります。Yalaを再び開くと、再インストールと同じ状態で表示されます。";
+
+/* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
+"settings.deleteAccountLegacyFootprintNote" = "以前の（iCloud）グループでは、あなたの名前がメンバーに引き続き表示される場合があります。";
+
+/* D4 hoja de alcance: etiqueta fila dispositivo */
+"settings.scopeDeviceLabel" = "このデバイス";
+
+/* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
+"settings.scopeICloudLabel" = "iCloud";
+
+/* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
+"settings.scopeCloudAccountLabel" = "Yalaアカウント";
+
+/* D4 hoja de alcance: etiqueta fila grupos */
+"settings.scopeGroupsLabel" = "あなたのグループ";
+
+/* D4: detalle fila cuando algo no se ve afectado */
+"settings.scopeUntouchedShort" = "そのまま";
+
+/* D4: fila grupos al cerrar sesión de grupos */
+"settings.scopeForgetGroups" = "このデバイスはあなたのグループを忘れます（グループはアカウントに残ります）";
+
+/* D4: fila cuando lo personal en iCloud no se toca */
+"settings.scopePersonalInICloud" = "個人データはiCloudに残ります";
+
+/* D4 Vaciar: fila dispositivo */
+"settings.wipeScopeDevice" = "口座・記録・予算が削除されます";
+
+/* D4 Vaciar (solo grupos 5a): fila dispositivo */
+"settings.wipeScopeDeviceGroupsOnly" = "プロフィールと設定がリセットされます";
+
+
+/* D4 Vaciar: fila cuenta de Yala (modo nube) */
+"settings.wipeScopeCloudAccount" = "アカウントからも削除され、同期時に他のデバイスからも消えます";
+
+/* D4 Vaciar: fila grupos */
+"settings.wipeScopeGroups" = "変更されません — そのままです";
+
+/* D4 Vaciar: nota de conservación */
+"settings.wipeScopeConservation" = "Proサブスクリプションは変わりません。";
+
+/* D4 Vaciar (modo nube): residual multi-dispositivo (D9) */
+"settings.wipeScopeMultiDeviceResidual" = "オフラインのデバイスがあると、同期時に最近の変更が戻ってくることがあります。";
+
+/* D4 Eliminar cuenta (nube): fila dispositivo */
+"settings.deleteAccountScopeDeviceCloud" = "このデバイスのデータが削除されます";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
+"settings.deleteAccountScopeDeviceGroupsOnly" = "このデバイスの個人データはそのままです";
+
+/* D4 Eliminar cuenta (nube): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudCloud" = "アカウントとすべてのデータが完全に削除されます";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudGroupsOnly" = "アカウントが削除され、グループから退出します";
+
+/* D4 Eliminar cuenta: fila grupos */
+"settings.deleteAccountScopeGroups" = "「削除されたユーザー」と表示されたままになります";
+
+/* D4 Cerrar sesión (privado): fila dispositivo */
+"settings.signOutScopeDevicePrivate" = "このデバイスから削除されます。その前にiCloudへのアップロードを完了します";
+
+/* D4 Cerrar sesión (privado): fila iCloud */
+"settings.signOutScopeCloudPrivate" = "データはiCloudに残ります";
+
+/* D4 Cerrar sesión (nube): fila dispositivo */
+"settings.signOutScopeDeviceCloud" = "インストール直後の状態で開始画面に戻ります";
+
+/* D4 Cerrar sesión (nube): fila cuenta de Yala */
+"settings.signOutScopeCloudCloud" = "データは安全に保存されます。まず保留中の変更をアップロードします";
+
+
+
+
+
+
+/* D4 Cerrar sesión (privado): nota de conservación */
+"settings.signOutScopeConservationPrivate" = "データを戻すには、Yalaをもう一度開いたときに「iCloudから復元」を選んでください。";
+
+/* D4 Cerrar sesión (nube): nota de conservación */
+"settings.signOutScopeConservationCloud" = "いつでもまたサインインして、すべてを取り戻せます。";
+
+/* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
+"settings.signOutScopeConservationGroups" = "グループを見るには、いつでもまたサインインしてください。";
+"settings.signOutScopeDeviceNoCopy" = "このデバイスから完全に削除されます";
+"settings.signOutScopeCloudNoCopy" = "このデバイスではiCloudがオフです。どこにもコピーはありません";
+"settings.signOutNoCopyWarning" = "サインアウトすると、これらのデータは完全に失われます。";
+"settings.signOutNoCopyConfirmTitle" = "データを完全に削除しますか？";
+"settings.signOutNoCopyConfirmMessage" = "iCloudにも他の場所にもコピーはありません。この操作は取り消せません。";
+"settings.signOutNoCopyConfirmAction" = "サインアウトして削除";
+"settings.signOutScopeConservationPrivateWithGroups" = "戻るときは「iCloudから復元」を選び、アカウントでグループに再度サインインしてください。";
+"settings.signOutExportPendingTitle" = "まだiCloudに届いていない変更があります";
+"settings.signOutExportPendingMessage" = "このデバイスでまだiCloudに届いていない変更：%d件。今サインアウトすると失われます。";
+"settings.signOutExportPendingMessageUnknown" = "最新の変更がiCloudに届いたことを確認できませんでした。今サインアウトすると失われる可能性があります。";
+"settings.signOutExportDiscardButton" = "それでもサインアウト";
+
+
+
+
+
+
+/* Vaciar v2: botón para exportar los datos antes de vaciarlos (red de seguridad) */
+"settings.wipeExportBeforeButton" = "先にエクスポート";
+
+/* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
+"settings.wipeExportBeforeCloudCaption" = "クラウドモードでは、これが唯一のコピーになることがあります";
+
+/* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
+"settings.wipeScopeGroupsDebt" = "グループは残りますが、未精算の残高があります。グループタブから精算できます。";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "グループからも退出";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "グループを退出";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "グループから退出しています…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "グループから退出しました。";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "一部のグループから退出しました。";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "退出済み";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "移譲済み";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "対応が必要";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "これらのグループは手動での対応が必要です。自動で退出できません。";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "あなたが管理者で、他のメンバーがいます。";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "未精算の残高があります。";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "完了できませんでした。もう一度お試しください。";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "完了";
+
+
+
+
+
+
+
+
+/* Fila que abre la pantalla Tu cuenta de Yala (§3.3.5) */
+"settings.yalaAccountRowTitle" = "Yala アカウント";
+
+/* Subtítulo de la fila Tu cuenta de Yala */
+"settings.yalaAccountRowSubtitle" = "サインイン方法とアカウントのオプション";
+
+/* Título de la pantalla Tu cuenta de Yala */
+"settings.yalaAccountTitle" = "Yala アカウント";
+
+/* Método de entrada: Apple */
+"settings.yalaAccountMethodApple" = "Apple でサインインしました。";
+
+/* Método de entrada: Google */
+"settings.yalaAccountMethodGoogle" = "Google でサインインしました。";
+
+/* Método de entrada genérico (sin proveedor conocido) */
+"settings.yalaAccountMethodUnknown" = "Yala アカウントをお持ちです。";
+
+/* Nota de vínculo Apple/Google (H4) */
+"settings.yalaAccountLinkingNote" = "同じメールアドレスを使えば、Apple でも Google でも同じアカウントが開きます。";
+
+/* Título de la sección donde viven los datos */
+"settings.yalaAccountDataLocationTitle" = "データの保存先";
+
+/* Datos en modo nube */
+"settings.yalaAccountDataLocationCloud" = "クラウド上の Yala アカウントに保存されています。";
+
+/* Datos en solo-grupos (5b) */
+"settings.yalaAccountDataLocationGroupsOnly" = "この端末とプライベート iCloud に保存されています。アカウントはグループでのみ使用します。";
+"settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "アカウントに保存されるのはグループだけです。このデバイスに個人データはありません。";
+
+/* Alcance del desenlace Cerrar sesión */
+"settings.yalaAccountSignOutScope" = "アカウントはそのまま残ります。いつでも戻れます。";
+
+/* Desenlace Volver a iCloud (la Reversa) */
+"settings.yalaAccountReturnICloud" = "iCloud に戻す";
+
+/* Alcance del desenlace Volver a iCloud */
+"settings.yalaAccountReturnICloudScope" = "データはプライベート iCloud に戻り、アカウントは一時停止になります。";
+
+/* Alcance del desenlace Eliminar mi cuenta */
+"settings.yalaAccountDeleteScope" = "すべてが永久に削除されます。";
+
+/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
+"storage.revert.desenlaceNote" = "この端末からアカウントの連携を解除する方法です。戻ってきたときのために一時停止のまま残ります。";
+
+/* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
+"settings.accountSubsectionTitle" = "アカウント";
+
+/* Subtitulo de Donde viven tus datos, modo iCloud */
+"settings.dataLocationSubtitleICloud" = "プライベート iCloud";
+
+/* Subtitulo de Donde viven tus datos, modo nube */
+"settings.dataLocationSubtitleCloud" = "クラウドアカウント";
+
+/* D10 batch: stop button (D3) */
+"settings.batchLeaveStop" = "中止";
+
+/* D10 batch: result headline when user stopped (D3) */
+"settings.batchLeaveStopped" = "退出を中止しました。";
+
+/* D10 batch: stat label for groups not processed after stop (D3) */
+"settings.batchLeaveStatSkipped" = "未処理";
+
+/* D10 batch: body explaining how to relaunch after stop (D3) */
+"settings.batchLeaveStoppedBody" = "「自分のデータを消去」からいつでも再開できます。";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "精算";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@さんは%2$@さんに支払いました";
+
+/* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
+"groups.bridge.editPartialBannerCaseB" = "この支出はグループからのものです。カテゴリーとタグを編集できます。残りはグループと同期します。";
+
+/* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
+"panel.health.bills.sheet.explanation.expensesOnly" = "残高が期間内の保留中の支払いをカバーするかを見ています。";
+
+/* Force-update (min-version) blocking screen */
+"appUpdate.force.title" = "続けるにはアップデートが必要です";
+"appUpdate.force.message" = "このバージョンのYalaはサポートを終了しました。引き続きご利用いただくには、アップデートしてください。";
+"appUpdate.force.updateButton" = "今すぐアップデート";
+
+/* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
+"storage.migrate.accountReuseNote" = "現在の Yala アカウント（%@）をそのまま使います。データもグループも同じアカウントにまとまります。";
+
+/* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
+"storage.migrate.accountReuseNoteGeneric" = "現在の Yala アカウントをそのまま使います。データもグループも同じアカウントにまとまります。";
+
+/* Storage migrate card, after the identity check refused the live account: it already has personal finances */
+"storage.migrate.refusedPersonalData" = "現在の Yala アカウントにはすでに個人の家計データがあるため、このデバイスのデータを受け取れません。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
+
+/* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
+"storage.migrate.refusedOtherGroups" = "グループは別のアカウントを使っていて、このデバイスで使えるクラウドアカウントは1つだけです。データをクラウドに移すには、グループのアカウントでサインインするか、先に「グループ」でリンクを解除してください。";
+
+/* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
+"storage.migrate.refusedReturned" = "現在の Yala アカウントはiCloudに戻っていて、このアカウントでクラウドに戻すことはまだできません。";
+
+/* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
+"storage.migrate.refusedFreshStart" = "現在の Yala アカウントは別の人のものかもしれません。このデバイスを最初から始め直したときに、すでにサインインしていたアカウントです。ご自身のアカウントを選ぶには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。";
+"storage.migrate.refusedOtherDevice" = "あなたの別のデバイスがデータをこのアカウントに移しています。そのデバイスで有効化を完了するか、止まっている場合はそのデバイスでもう一度お試しください。";
+
+/* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
+"storage.adopt.otherAccountNote" = "このクラウドのコピーは別の Yala アカウント（%@）のものです。サインアウトして、そのアカウントでサインインしてください。";
+
+/* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
+"storage.adopt.otherAccountNoteGeneric" = "このクラウドのコピーは別の Yala アカウントのものです。サインアウトして、そのアカウントでサインインしてください。";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "クラウドの有効化を完了できませんでした。iCloudの容量がいっぱいです。データはこのデバイスにすべて残っています。iCloudの空き容量を増やしてから、もう一度お試しください。";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "クラウドの有効化を完了できませんでした。このデバイスではiCloudがオンになっていません。データはこのデバイスにすべて残っています。設定でiCloudをオンにしてから、もう一度お試しください。";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "クラウドの有効化を完了できませんでした。iCloudから最後の処理の確認が返ってきていません。データはこのデバイスにすべて残っています。通信状態のよいところで、もう一度お試しください。";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "iCloudの確認を待っています…";
+/* C-10: card chip when the frozen group cannot be rejoined by this build */
+"groups.card.movedUpdateChip" = "要アップデート";
+
+/* C-10: card chip when the groups backend channel is paused */
+"groups.card.movedPausedChip" = "一時停止中";
+
+/* C-10: detail banner body when this build cannot rejoin */
+"groups.migrated.updateBody" = "もう一度参加するには、Yalaをアップデートしてください。それまでは支出を見ることはできますが、編集はできません。";
+
+/* C-10: detail banner body when the channel is paused */
+"groups.migrated.pausedBody" = "このグループをYalaのクラウドに移動しているところです。少し時間をおいて、もう一度お試しください。何も失われないので安心してください。";
+
+/* C-10: read-only staleness note under the migrated banner */
+"groups.migrated.readOnlyNote" = "表示しているのはグループが移動した時点のコピーなので、最新ではない場合があります。";
+
+/* C-10: non-terminal sign-in failure message */
+"groups.signin.retryLater" = "今はアカウントを連携できませんでした。グループはそのまま残っているので、何も失われません。少ししてから、もう一度お試しください。";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "精算を削除";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "この精算を削除しますか？";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "これで清算された残高は再び未精算に戻ります。口座に取引が作成されていた場合、その取引も削除されます。";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "精算を削除できませんでした。もう一度お試しください。";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "この招待を今は開けませんでした。リクエストは保存したので、少し経ってからもう一度お試しください。";
+
+/* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
+   privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
+"welcome.new.subtitle" = "データの保存場所を選んでください。";
+"welcome.new.privateTitle" = "プライベートなiCloudのアカウント";
+"welcome.new.privateBody" = "データはあなたのApple IDのApple製デバイスに保存され、あなただけのiCloudで同期します。ほかの誰も読めません。私たちも読めません。";
+"welcome.new.cloudTitle" = "クラウドのアカウント";
+"welcome.new.cloudBody" = "データはほかの多くのアプリと同じように、私たちのサーバーに保存されます。サポートや新しい機能のために、私たちのチームが見ることがあります。";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "Yalaのアカウントを作る";
+"welcome.bornCloud.subtitle" = "アカウントがあれば、どのデバイスからでもYalaを開けます。";
+"welcome.bornCloud.providerNote" = "Yala のアカウントは、選んだ方法にひも付きます。";
+"welcome.bornCloud.creating" = "アカウントを作成しています…";
+
+/* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
+"welcome.mirrorRelaunch.title" = "あと一歩：Yala を開き直してください";
+
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "招待を開いています…";
+
+/* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
+"welcome.mirrorRelaunch.body" = "データを安全に扱うために、Yala を開き直す必要があります。ホーム画面に戻ってからもう一度開いてください。続きからそのまま再開できます。";
+
+/* Welcome · alta born-cloud completada sin relanzamiento (R2) */
+"welcome.bornCloud.readyTitle" = "アカウントの準備ができました！";
+
+/* Welcome · cuerpo del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyBody" = "準備は完了です。記録した内容はすべてアカウントに保存されます。";
+
+/* Welcome · CTA del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyCta" = "はじめる";
+
+/* Title of the two-paths groups screen in the Welcome flow */
+"welcome.groups.title" = "グループをどう始めますか？";
+
+/* Subtitle of the two-paths groups screen in the Welcome flow */
+"welcome.groups.subtitle" = "どちらを選んでも行き先は同じです。";
+
+/* Card title: the user organizes a new group */
+"welcome.groups.createTitle" = "最初のグループを作る";
+
+/* Card body: the user creates the group and invites others */
+"welcome.groups.createBody" = "招待するのはあなたです。みんなの支払いを記録すれば、Yalaが精算します。";
+
+/* Card title: the user already received an invitation link */
+"welcome.groups.joinTitle" = "招待を受け取っています";
+
+/* Card body: paste the invitation link to join */
+"welcome.groups.joinBody" = "届いたリンクを貼り付ければ、グループに参加できます。";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "準備が整っているか確認しています…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "今はグループを開けません";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "こちら側の問題で、すぐに直ります。少ししてからもう一度お試しください。何も保存されていません。";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "戻る";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "お名前は？";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "グループのみんなに表示される名前です。";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "グループを作成";
+
+/* C2 · empty state cuando aún no vio el educativo */
+"groups.empty.needsEducational.title" = "グループの仕組み";
+"groups.empty.needsEducational.message" = "1分で説明します。できることと、支出がどこに保存されるか。";
+"groups.empty.needsEducational.action" = "仕組みを見る";
+
+/* C2 · empty state de quien NUNCA tuvo cuenta (no «vuelve a la tuya») */
+"groups.empty.createAccount.title" = "Yalaアカウントを作成";
+"groups.empty.createAccount.message" = "グループの支出はあなたのアカウントに保存され、全員が最新の同じ内容を見られます。";
+"groups.empty.createAccount.action" = "アカウントを作成";
+
+/* C2 · empty state con sesión viva y sin consent */
+"groups.empty.needsConsent.title" = "あと1ステップ";
+"groups.empty.needsConsent.message" = "Yalaのクラウドに何が保存されるかをお伝えします。決めるのはあなたです。";
+"groups.empty.needsConsent.action" = "続ける";
+
+/* C2 · el hecho sustantivo, antes de pedir identidad */
+"groups.onboarding.step3.point0" = "グループに記録した支出はYalaのサーバーに保存され、全員が最新の状態で確認できます。";
+
+/* C2 · variante del CTA para quien nunca tuvo cuenta */
+"groups.onboarding.step3.createAccountCTA" = "アカウントを作成";
+
+/* Title of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedTitle" = "データを削除できませんでした";
+
+/* Body of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedMessage" = "データはそのまま残っているので、ここで止めました。Yalaを一度閉じてから開き直してください。それでも同じなら、ご連絡ください。";
+"groups.freshStartPending.title" = "グループの変更でまだアップロードされていないものがあります";
+"groups.freshStartPending.lead" = "何も消去していません。グループの変更の一部（%d件）がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
+"groups.freshStartPending.leadUnknown" = "何も消去していません。グループの変更の一部がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
+"groups.freshStartPending.lossSessionExpired" = "これらは作成したアカウントでしかアップロードできませんが、そのアカウントのセッションはもうこの端末にありません。そのアカウントで再度サインインしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossPermanent" = "作成したアカウントではもうアップロードできず、再試行しても解決しません。変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossAttest" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、アップロードできません。変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossAction" = "変更が失われても最初からやり直す";
+"groups.freshStartPending.lossConfirmTitle" = "これらの変更を失いますか？";
+"groups.freshStartPending.lossConfirmBody" = "失われるグループの変更：%d件。サーバーに届かないままこの端末から消去され、グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "サーバーに届かなかったグループの変更はこの端末から消去されます。グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmAction" = "変更を失って最初からやり直す";
+
+/* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
+"subscription.restoreEmptyTitle" = "サブスクリプションがありません";
+
+/* Cuerpo del aviso cuando Restaurar no encuentra una suscripción */
+"subscription.restoreEmpty" = "このAppleアカウントにYala Proが見つかりませんでした。購入した直後なら、少し待ってもう一度お試しください。";
+
+/* Apple confirmó la compra pero el derecho Pro no quedó activo */
+"subscription.purchaseNotActivated" = "支払いは完了しましたが、Yala Proはまだ有効になっていません。「購入を復元」を試してください。";
+
+/* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
+"panel.aiPill" = "AI";
+
+/* Share-link button: group predates the backend channel — permanent, no link is possible */
+"groups.errors.inviteLegacyGroup" = "このグループは以前のバージョンのYalaのもので、招待リンクに対応していません。リンクで招待するには、新しいグループを作成してください。";
+
+/* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
+"groups.errors.inviteChannelOff" = "現在、招待リンクを作成できません。しばらくしてからもう一度お試しください。";
+
+/* Adopt/sign-up blocked: HTTP 403 on account claim — the account exists but the backend refuses access */
+"welcome.cloud.accountBlockedTitle" = "アカウントを利用できません";
+/* Body for the blocked-account screen; explicitly rules out a network problem */
+"welcome.cloud.accountBlockedBody" = "通信の問題ではありません。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
+
+/* Sign-out blocked alert, guest session: stay in the app and retry later */
+"settings.signOutWaitButton" = "待つ";
+
+/* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
+"settings.signOutExitAnywayButton" = "それでも終了";
+
+/* Leave group rejected: the server says the current user owns the group */
+"groups.errors.ownerCannotLeave" = "このグループはあなたのものなので、退出できません。誰かが管理者として残る必要があります。もう必要なければ、削除できます。";
+/* Leave group failed for a transient/kill-switch reason: retry later, not the user's fault */
+"groups.errors.leaveUnavailable" = "グループからの退出を完了できませんでした。少ししてからもう一度お試しください。";
+/* Groups RPC rejected because the session token expired or is missing */
+"groups.errors.sessionExpired" = "セッションの有効期限が切れました。もう一度サインインしてお試しください。";
+/* Botón: el dueño cede el grupo y sale */
+"groups.settings.transferAndLeave" = "譲渡して退出";
+/* Hint bajo el botón Transferir y salir */
+"groups.settings.transferAndLeaveHint" = "グループは残高とともに残ります。あなたはメンバーではなくなります。";
+/* Confirmación con el nombre de quien hereda el grupo */
+"groups.settings.transferAndLeaveConfirm" = "%@ さんがグループを引き継ぎ、あなたは退出します。未精算の残高はそのままです。";
+/* Confirmación cuando no se pudo resolver el nombre de quien hereda */
+"groups.settings.transferAndLeaveConfirmUnknownHeir" = "グループは別のメンバーに引き継がれ、あなたは退出します。未精算の残高はそのままです。";
+/* Hint del borrado bloqueado cuando SÍ se puede transferir */
+"groups.settings.deleteGroupDisabledHintTransfer" = "グループに未精算の残高があります。退出したい場合は、譲渡してから退出してください。";
+/* El último miembro elegible salió durante la confirmación */
+"groups.errors.transferNoHeir" = "グループを引き継げる人がいなくなりました。";
+/* Aviso al transferir cuando el usuario tiene saldo propio */
+"groups.settings.transferAndLeaveDebtWarning" = "注意：未精算の残高が残ったまま退出します。相手にはその貸し借りが残ります。";
+/* Variante del rechazo por ser dueño cuando SÍ hay a quién transferir */
+"groups.errors.ownerCannotLeaveCanTransfer" = "このグループはあなたのものなので、そのままでは退出できません。誰かが引き継ぐ必要があります。譲渡してから退出できます。";
+/* Título del aviso al tocar la tarjeta de un grupo en el que sigo pendiente de aprobación */
+"groups.card.pendingNotice.title" = "承認待ち";
+
+/* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
+"groups.card.pendingNotice.body" = "グループの管理者がまだリクエストを承認していません。承認されると、グループを開いて支出を見られるようになります。しばらくしてからもう一度確認してください。";
+
+/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
+"stats.hero.captionAccountsBalance" = "口座残高";
+
+/* Stats hero caption: the figure is income minus expenses for the period (flow) */
+"stats.hero.captionNetPeriod" = "期間の収支";
+
+/* Stats hero caption: the figure is only the income side for the period */
+"stats.hero.captionIncomePeriod" = "期間の収入";
+
+/* Stats hero caption: the figure is only the expense side for the period */
+"stats.hero.captionExpensePeriod" = "期間の支出";
+
+/* Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side */
+"stats.hero.captionTotalPeriod" = "期間の合計";
+
+/* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
+"welcome.restore.cloudPausedTitle" = "Yalaのクラウドは一時停止中です";
+
+/* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
+"welcome.restore.cloudPausedBody" = "データはYalaアカウントに安全に保存されています。同期は現在一時停止中です。しばらくしてからもう一度お試しください。";
+
+/* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
+"notifications.groups.settlementReminder" = "👋 お知らせです。%2$@さんに%1$@の精算が残っています。都合のよいときにどうぞ。";
+
+/* Push: same gentle reminder when the user owes several people in one group (no args). */
+"notifications.groups.settlementReminderMultiple" = "👋 お知らせです。複数の人と精算が残っています。都合のよいときにどうぞ。";
+
+/* Settings toggle title: gentle reminders for idle group debts. */
+"notifications.settlementReminders.title" = "精算リマインダー";
+
+/* Settings toggle hint under notifications.settlementReminders.title. */
+"notifications.settlementReminders.hint" = "グループの精算が数週間動いていないときに、やさしくお知らせします";
+
+/* Shareable group summary: section title in group settings AND nav title of the sheet. */
+"groups.shareableSummary.title" = "グループのまとめ";
+
+/* Shareable group summary: primary action. NOT the invite link (createShareLink) - this shares a picture of how the accounts ended up. */
+"groups.shareableSummary.action" = "まとめを共有";
+
+/* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
+"groups.shareableSummary.hint" = "グループの合計と、精算に必要な最少の支払いをまとめた画像です。全期間が対象です。";
+
+/* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
+"groups.shareableSummary.totalSpent" = "支出の合計";
+
+/* Shareable group summary: heading of the per-member table. */
+"groups.shareableSummary.whoPaid" = "誰がいくら払ったか";
+
+/* Shareable group summary: column header - what this member put in. Keep it SHORT, it is a narrow column in a fixed-width image. */
+"groups.shareableSummary.paidLabel" = "支払い";
+
+/* Shareable group summary: column header - this member's share of the expenses. Keep it SHORT, narrow column. */
+"groups.shareableSummary.owedLabel" = "負担分";
+
+/* Shareable group summary: heading of the minimum list of transfers needed to settle. */
+"groups.shareableSummary.settleUp" = "精算する";
+
+/* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
+"groups.shareableSummary.allSettled" = "すべて精算済みです！";
+
+/* Shareable group summary: fallback when a member id does not match any member (removed member, half-synced data). */
+"groups.shareableSummary.unknownMember" = "名前なし";
+
+/* Shareable group summary: footer of the exported image. Soft branding, never an ad. */
+"groups.shareableSummary.footer" = "Yala で作成";
+
+/* Shareable group summary: shown when ImageRenderer returns nil. Never blame the user. */
+"groups.shareableSummary.renderFailed" = "画像を作成できませんでした。もう一度お試しください。";
+
+/* G14: título de la sección/tarjeta del presupuesto de grupo */
+"groups.budget.title" = "グループの予算";
+
+/* G14: %@ = código de moneda del grupo */
+"groups.budget.hint" = "グループ全体の支出上限（%@）。";
+
+/* G14: el grupo no tiene límite fijado */
+"groups.budget.none" = "予算なし";
+
+/* G14: acción para fijar el límite */
+"groups.budget.set" = "予算を設定";
+
+/* G14: acción para borrar el límite */
+"groups.budget.remove" = "予算を削除";
+
+/* G14: el server exige is_group_admin */
+"groups.budget.adminOnly" = "変更できるのは管理者のみです。";
+
+/* G14: %1 = gastado, %2 = tope; ambos ya formateados */
+"groups.budget.spentOfLimit" = "%2$@中%1$@";
+
+/* G14: %@ = importe restante formateado */
+"groups.budget.remaining" = "残り%@";
+
+/* G14: %@ = importe excedido formateado */
+"groups.budget.exceededBy" = "%@超過";
+
+/* G14: nota del ≈ */
+"groups.budget.convertedNote" = "他通貨の支出を本日のレートで換算して含みます。";
+
+/* G14: %@ = nombre del grupo */
+"groups.budget.alertTitle" = "%@の予算";
+
+/* G14: aviso al cruzar 50 */
+"groups.budget.alertBody50" = "グループは予算の半分を使いました。";
+
+/* G14: aviso al cruzar 75 */
+"groups.budget.alertBody75" = "グループは予算の4分の3を使いました。";
+
+/* G14: aviso al cruzar 90 */
+"groups.budget.alertBody90" = "グループの予算がまもなく尽きます。";
+
+/* G14: aviso al cruzar 100 */
+"groups.budget.alertBody100" = "グループが予算に達しました。";
+
+/* G14: el texto tecleado no era un importe valido */
+"groups.budget.invalidAmount" = "0より大きい金額を入力してください。";
+
+/* G14: confirmacion de quitar el presupuesto */
+"groups.budget.removeConfirm" = "グループの予算を削除しますか？全員に表示されなくなります。";
+
+/* Shown instead of the settlement reminders hint when the Groups notification master is off, so the toggle cannot deliver anything. */
+"notifications.settlementReminders.hintGroupsOff" = "受け取るには、まずグループの通知をオンにしてください";
+
+/* Delete-blocked hint for a group owner with debt and no heir: points at Archive, which already works with debt. */
+"groups.settings.deleteGroupDisabledHintArchive" = "グループに未精算の残高があります。一覧から外すにはアーカイブしてください。負債はそのまま保持されます。";
+
+/* Account currency locked because history is owned elsewhere */
+"account.currencyChange.blockedTitle" = "通貨は変更できません";
+
+/* %@ = comma-separated list of reasons */
+"account.currencyChange.blockedMessage" = "この口座には、アプリの別の場所で金額が管理されている記録があります（%@）。ここで通貨を変更すると、金額が合わなくなります。";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonTransfer" = "口座間の振替";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupExpense" = "グループの支出";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupSettlement" = "グループの精算";
+
+/* %1 old currency, %2 new currency */
+"account.currencyChange.confirmMessage" = "これらは%1$@で記録されており、それぞれの日付の為替レートで%2$@に換算されます。この操作は取り消せません。";
+
+/* Confirm button */
+"account.currencyChange.confirmAction" = "換算";
+
+/* Progress overlay title */
+"account.currencyChange.progressTitle" = "記録を換算しています";
+
+/* Progress overlay subtitle */
+"account.currencyChange.progressSubtitle" = "各日付の為替レートを適用しています";
+
+/* Rates could not be fetched */
+"account.currencyChange.ratesUnavailableTitle" = "換算できませんでした";
+
+/* Body of the rates-unavailable alert */
+"account.currencyChange.ratesUnavailableMessage" = "この口座の一部の日付の為替レートがありません。何も変更していません。接続を確認してからもう一度お試しください。";
+
+/* Bloque [I]: bloqueo al asociar una cuenta que ya lleva finanzas personales */
+"groups.accountIsComplete.title" = "そのアカウントはすでにYala全体を使っています";
+
+/* Bloque [I]: por qué se bloquea */
+"groups.accountIsComplete.body" = "そのアカウントには、すでに誰かの家計データがクラウドに入っています。グループだけに使うと2つのアカウントが1つに混ざってしまうので、ここではできません。";
+
+/* Bloque [I]: CTA para firmar con otra cuenta */
+"groups.accountIsComplete.useAnotherAccount" = "別のアカウントを使う";
+
+/* Bloque [I]: la otra salida del ADR */
+"groups.accountIsComplete.settingsHint" = "そのアカウントで家計を管理したいときは、設定の「データの保存先」で切り替えられます。";
+
+/* Private branch iCloud gate: spinner while probing CloudKit */
+"welcome.privateICloud.checking" = "iCloudの中を確認しています…";
+
+/* Private branch iCloud gate: spinner while deleting the iCloud corpus */
+"welcome.privateICloud.wiping" = "iCloudにあったデータを削除しています…";
+
+/* Private branch iCloud gate: title when previous data is found in iCloud */
+"welcome.privateICloud.foundTitle" = "iCloudにすでにデータがあります";
+
+/* Private branch iCloud gate: body explaining the two ways out */
+"welcome.privateICloud.foundBody" = "同じApple アカウントで保存したデータです。取り戻すこともできますし、最初から始めることもできます。ただし最初から始めると、この iPhone だけでなく iCloud からも削除され、元に戻せません。";
+
+/* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
+"welcome.privateICloud.foundSince" = "%@から";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap */
+"welcome.privateICloud.foundAtLeast" = "%d件以上の記録";
+
+/* Private branch iCloud gate: primary button, restore from iCloud */
+"welcome.privateICloud.restoreAction" = "データを取り戻す";
+
+/* Private branch iCloud gate: destructive button, delete the iCloud data */
+"welcome.privateICloud.wipeAction" = "最初から始める";
+
+/* Private branch iCloud gate: body of the second confirmation before deleting */
+"welcome.privateICloud.wipeConfirmBody" = "記録、口座、予算が iCloud から消えます。コピーは残らず、あとから戻すことはできません。";
+
+/* Private branch iCloud gate: safe button on the second confirmation */
+"welcome.privateICloud.wipeConfirmKeep" = "やっぱりやめる";
+
+/* Private branch iCloud gate: title when deleting the iCloud corpus failed */
+"welcome.privateICloud.wipeFailedTitle" = "すべてを削除できませんでした";
+
+/* Private branch iCloud gate: body when deleting failed */
+"welcome.privateICloud.wipeFailedBody" = "データは iCloud にそのまま残っています。接続を確認して、もう一度お試しください。";
+
+/* Private branch iCloud gate: title when the device has no iCloud account */
+"welcome.privateICloud.noAccountTitle" = "iCloudを確認できませんでした";
+
+/* Private branch iCloud gate: body when there is no iCloud account */
+"welcome.privateICloud.noAccountBody" = "この iPhone は iCloud がオフなので、以前に何か保存したかどうかわかりません。このまま進められます。データは当面ここに残り、iCloud をオンにしたら、何かが混ざる前にお知らせします。";
+
+/* Private branch iCloud gate: continue button when there is no iCloud account */
+"welcome.privateICloud.noAccountCta" = "このまま進む";
+
+/* Private branch iCloud gate: title when the CloudKit probe failed */
+"welcome.privateICloud.errorTitle" = "iCloudに接続できませんでした";
+
+/* Private branch iCloud gate: body when the CloudKit probe failed */
+"welcome.privateICloud.errorBody" = "接続の問題かもしれません。先に進む前にもう一度お試しください。古いデータが知らないうちに現れずに済みます。";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "iCloudの応答に時間がかかりすぎました";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "iCloudの確認を最後まで終えられませんでした。先に進む前にもう一度お試しください。古いデータが知らないうちに現れずに済みます。";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "iCloudの確認を最後まで終えられなかったので、何も削除していません。すべてそのままです。もう一度お試しいただくか、前に戻って、好きなときに決められます。";
+
+/* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
+"welcome.privateICloud.lateTitle" = "iCloudにあなたのデータが見つかりました";
+
+/* Late mirror notice: body with the counts of the previous corpus */
+"welcome.privateICloud.lateBody" = "iCloudをオンにしたら、以前このApple アカウントで保存したデータが見つかりました: %@。いま使っているデータと混ざります。このままにすることも、最初から始めて iCloud から削除することもできます。";
+
+/* Late mirror notice: safe button, both corpora coexist */
+"welcome.privateICloud.lateKeep" = "このままにする";
+
+/* Private branch iCloud gate: counts line fragment for user categories */
+"welcome.privateICloud.foundCategories" = "%d件のカテゴリ";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
+"welcome.privateICloud.foundUnknownAmount" = "大量の保存データ";
+
+/* Private branch iCloud gate: secondary button on the wipe-failed screen, gives up the deletion */
+"welcome.privateICloud.wipeFailedBack" = "今はやめておく";
+
+/* Paso 8 · «Activar Yala completo» pregunta dónde viven los datos personales */
+"groups.fullActivation.chooserTitle" = "家計のデータをどこに保存しますか？";
+"groups.fullActivation.chooserSubtitle" = "グループはそのままです。個人データの保存場所を選んでください。";
+"groups.fullActivation.cloudBody" = "グループで使っているアカウントをそのまま使います。新しいアカウントは作りません。データは私たちのサーバーに保存され、サポートのために私たちのチームが見ることがあります。";
+"groups.fullActivation.historyTitle" = "グループの支出も表示しますか？";
+"groups.fullActivation.historyBody" = "グループの支出を「ホーム」「記録」「統計」にも表示できます。";
+"groups.fullActivation.historyShow" = "はい、表示する";
+"groups.fullActivation.historyKeepInGroups" = "いいえ、グループだけにする";
+"groups.fullActivation.historyFootnote" = "今後登録する支出にも適用されます。グループ設定からいつでも変更できます。";
+"groups.fullActivation.promoting" = "アカウントを有効にしています…";
+"groups.fullActivation.failedTitle" = "アカウントを有効にできませんでした";
+"groups.fullActivation.failedBody" = "接続を確認して、もう一度お試しください。まだ何も変更していません。";
+"groups.fullActivation.unavailableBody" = "現在、アカウントを利用できません。まだ何も変更していません。";
+"groups.fullActivation.blockedPersonalDataTitle" = "このアカウントにはすでに個人の家計データがあります";
+"groups.fullActivation.blockedPersonalDataBody" = "このアカウントには、おそらく別のデバイスで作成された個人データがすでにあります。ここで使うには、いったんログアウトしてから、このアカウントで再度ログインしてください。何も変更していません。";
+"groups.fullActivation.blockedBusyTitle" = "別のデバイスがデータを移行中です";
+"groups.fullActivation.blockedBusyBody" = "完了するまで待ってから、数分後にもう一度お試しください。何も変更していません。";
+"groups.fullActivation.blockedSessionTitle" = "セッションの有効期限が切れました";
+"groups.fullActivation.blockedSessionBody" = "グループでもう一度ログインして、Yalaの全機能をもう一度有効にしてください。何も変更していません。";
+"groups.fullActivation.reinstallTitle" = "先にYalaを再インストールしてください";
+"groups.fullActivation.reinstallBody" = "このデバイスでは、以前のバージョンのYalaでグループを使い始めています。家計データの保存場所を選ぶには、アプリを削除してからもう一度インストールしてください。グループはアカウントに残り、iCloudのデータには手を付けません。";
+
+/* Vuelta al neutro: progreso mientras se espera al export y se prepara el borrado */
+"welcome.groups.neutralWorking" = "最新の変更をiCloudにアップロードし、グループのためにこの端末を準備しています…";
+
+/* Vuelta al neutro sin copia: titulo del segundo gesto */
+"welcome.groups.neutralNoBackupTitle" = "iCloudにコピーが見つかりませんでした";
+
+/* Vuelta al neutro sin copia: cuerpo del segundo gesto */
+"welcome.groups.neutralNoBackupBody" = "グループを始めるには、この端末を空にする必要があります。ここに保存されている内容はiCloudにないため、続けると失われます。";
+
+/* Vuelta al neutro sin copia: boton destructivo del segundo gesto */
+"welcome.groups.neutralNoBackupCta" = "続けて削除する";
+
+/* Vuelta al neutro: la espera del export se agoto */
+"welcome.groups.neutralStalledTitle" = "まだiCloudに届いていない変更があります";
+
+/* Vuelta al neutro: cuantos cambios quedan sin subir (%d = numero) */
+"welcome.groups.neutralStalledBody" = "まだiCloudに届いていないこの端末の変更: %d件。今続けると失われます。";
+
+/* Vuelta al neutro: la espera se agoto sin poder contar */
+"welcome.groups.neutralStalledBodyUnknown" = "最新の変更がiCloudに届いたか確認できませんでした。今続けると失われる可能性があります。";
+
+/* Vuelta al neutro: salida de emergencia tras la espera agotada */
+"welcome.groups.neutralStalledContinue" = "それでも続ける";
+
+/* Vuelta al neutro: seguir esperando al export */
+"welcome.groups.neutralStalledWait" = "待つ";
+
+/* Vuelta al neutro bloqueada: outbox de grupos de una sesion caducada */
+"welcome.groups.neutralBlockedTitle" = "グループの変更でまだアップロードされていないものがあります";
+
+/* Vuelta al neutro bloqueada: como desbloquearlo */
+"welcome.groups.neutralBlockedBody" = "この端末には、まだサーバーに届いていないグループの変更があります。そのアカウントで再度サインインしてアップロードしてから、ここでグループを始められます。";
+
+/* Vuelta al neutro imposible en esta celda: titulo */
+"welcome.groups.neutralUnavailableTitle" = "今はこの端末を準備できません";
+
+/* Vuelta al neutro imposible en esta celda: cuerpo */
+"welcome.groups.neutralUnavailableBody" = "この端末には開いたままのセッションがあります。ここでグループを始める前に、設定から閉じてください。戻ってください。何も変更していません。";
+
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "iCloud とクラウドの間のデータ移行が完了したことをまだ確認できません。今この端末を準備すると、まだアップロードされていないデータが削除されるおそれがあります。戻ってください。何も変更していません。";
+
+/* Título de la sección Grupos dentro de «Dónde viven tus datos» */
+"storage.groups.title" = "グループ";
+
+/* Cuerpo cuando no hay cuenta de grupos asociada */
+"storage.groups.noAccountBody" = "グループは Yala アカウントにあり、この iPhone のデータとは別に保存されます。";
+
+/* Botón para asociar una cuenta de grupos */
+"storage.groups.associateButton" = "グループ用のアカウントをリンク";
+
+/* Cuerpo cuando hay cuenta asociada pero no se sabe su nombre */
+"storage.groups.associatedUnnamedBody" = "グループは Yala アカウントを使っています。";
+
+/* Cuerpo en un segundo dispositivo, sin nombre de cuenta */
+"storage.groups.needsSignInUnnamedBody" = "グループは Yala アカウントにあります。この iPhone で見るにはサインインしてください。";
+
+/* Botón para entrar con la cuenta de grupos ya asociada */
+"storage.groups.signInButton" = "そのアカウントでサインイン";
+
+/* Botón para desasociar la cuenta de grupos */
+"storage.groups.detachButton" = "リンクを解除";
+
+/* Cuerpo cuando los datos personales ya viven en la cuenta de Yala */
+"storage.groups.sameAccountBody" = "グループも同じこのアカウントを使っています。";
+
+/* Título de la confirmación de desasociar */
+"storage.groups.detachTitle" = "グループのアカウントのリンクを解除しますか？";
+
+/* Botón: conservar en el Panel los gastos de grupo */
+"storage.groups.detachKeep" = "自分が払った支出を残す";
+
+/* Botón: quitar del Panel los gastos de grupo */
+"storage.groups.detachRemove" = "「ホーム」からすべて削除";
+
+/* Progreso mientras se desasocia */
+"storage.groups.detachWorking" = "リンクを解除しています…";
+
+/* Progreso mientras se suben los cambios de grupos */
+"storage.groups.detachWaiting" = "保留中の変更を保存しています…";
+
+/* Cuerpo con el nombre de la cuenta de grupos asociada */
+"storage.groups.associatedBody" = "グループは %@ を使っています。";
+
+/* Cuerpo en un segundo dispositivo, con el nombre de la cuenta */
+"storage.groups.needsSignInBody" = "グループは %@ にあります。この iPhone で見るにはサインインしてください。";
+
+/* Mensaje de la confirmación de desasociar */
+"storage.groups.detachBody" = "グループはこの iPhone から消えますが、アカウントには残ります。もう一度リンクすれば、また表示されます。貸し借りの記録はどちらを選んでも消えます。選べるのは、自分が払った支出をどうするかだけです。";
+
+/* Título del aviso cuando el desasociar se bloquea */
+"storage.groups.detachBlockedTitle" = "リンクを解除できませんでした";
+
+/* Aviso: bloqueo temporal al desasociar */
+"storage.groups.detachBlockedTransient" = "グループの変更がまだアップロードされていません。少ししてからもう一度お試しください。";
+
+/* Aviso: bloqueo permanente al desasociar */
+"storage.groups.detachBlockedPermanent" = "グループの変更がまだアップロードされておらず、接続できませんでした。接続を確認してからもう一度お試しください。";
+
+/* Aviso: sesión caducada al desasociar */
+"storage.groups.detachBlockedSession" = "グループのセッションの有効期限が切れました。もう一度サインインしてお試しください。";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "グループのセッションの有効期限が切れ、グループの最近の変更の一部をアップロード用に準備できませんでした。変更は失われません。再度サインインし、Yala を閉じて開き直してから（解決しない場合はアップデート）、もう一度お試しください。";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できておらず、グループの最近の変更の一部もアップロード用に準備できませんでした。変更は失われません。準備するには、Yala を閉じて開き直してください（解決しない場合はアップデート）。";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "この端末には、別のアカウントで作成されたグループの変更があり、そのアカウントでしかアップロードできません。さらに、グループの変更の一部はアップロード用に準備できませんでした。変更は失われません。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。そのアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。";
+
+/* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
+"welcome.groups.inviteNeutralTitle" = "参加する前に、この端末を空にします";
+
+/* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
+"welcome.groups.inviteNeutralBody" = "この端末には、あるiCloudと同期しているデータが保存されています。あなたのグループの支出がそこに届かないよう、この端末からは削除します。iCloud上のコピーはそのまま残ります。Yalaを再起動したあと、招待の続きに進みます。";
+
+/* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
+"welcome.groups.inviteNeutralBodyNoBackup" = "この端末にはデータが保存されていますが、iCloudにコピーは見つかりませんでした。あなたのグループの支出が混ざらないよう、この端末から削除する必要があり、元に戻すことはできません。Yalaを再起動したあと、招待の続きに進みます。";
+
+/* Puerta del invitado: CTA destructivo que arranca la vuelta al neutro */
+"welcome.groups.inviteNeutralCta" = "続けて削除";
+
+/* Aviso: el borrado local de los grupos falló al desasociar */
+"storage.groups.detachPurgeFailedTitle" = "リンクを解除できませんでした";
+
+/* Aviso: cuerpo del fallo del borrado al desasociar */
+"storage.groups.detachPurgeFailedBody" = "グループはこの iPhone に残っていて、アカウントのリンクも解除されていません。パネルの記録について選んだ内容はすでに反映され、そのアカウントからはサインアウトしました。もう一度試して完了してください。";
+
+/* Aviso: el desasociar abortó porque no se pudo leer el puente */
+"storage.groups.detachBlockedBridge" = "この iPhone でグループの記録を確認できませんでした。何も解除されていません。もう一度お試しください。";
+"storage.groups.detachBlockedSessionNotClosed" = "この iPhone でグループ用アカウントからサインアウトできませんでした。何も解除されていません。もう一度お試しください。";
+
+/* Botón cuando quedó un desasociar a medias */
+"storage.groups.detachFinishButton" = "アカウントのリンク解除を完了";
+
+/* Cuerpo de la sección cuando quedó un desasociar a medias */
+"storage.groups.detachPendingBody" = "途中で止まりました。グループはこの iPhone に残っていて、そのアカウントのセッションはすでに終了しています。";
+
+/* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
+"storage.groups.detachBusy" = "いまサインアウトの途中です。先にそれを終えてから、もう一度お試しください。";
+
+/* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
+"groups.errors.channelPaused" = "こちら側の問題です。グループは一時停止中ですが、変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
+
+/* Private gate: the phone already holds data from a previous stage */
+"welcome.privateICloud.foundDeviceTitle" = "この端末にすでにデータがあります";
+
+/* Private gate: body of the on-device data notice */
+"welcome.privateICloud.foundDeviceBody" = "この端末には以前のデータが残っています。これまでYalaで記録していた内容です。最初からやり直すと、この端末から取り除かれ、Yalaはまっさらな状態で始まります。";
+
+/* Private gate: second confirmation for the on-device wipe */
+"welcome.privateICloud.wipeDeviceConfirmBody" = "この端末にあるものはすべて取り除かれます。支出、口座、予算、カテゴリ、そしてグループです。端末にはコピーは残りません。";
+
+/* Private gate: progress while wiping the on-device corpus */
+"welcome.privateICloud.wipingDevice" = "この端末にあったデータを削除しています…";
+
+/* Private gate: the on-device wipe failed */
+"welcome.privateICloud.wipeDeviceFailedBody" = "最後まで進められませんでした。データの一部はすでに消えていて、残りはそのままかもしれません。もう一度お試しください。また失敗する場合は、Yalaを閉じて開き直してください。";
+
+/* Private gate: keep what the phone already has and go back to the chooser */
+"welcome.privateICloud.foundDeviceKeep" = "このままにする";
+
+/* Private gate: retry a failed wipe (not a re-search) */
+"welcome.privateICloud.wipeRetry" = "もう一度試す";
+
+/* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
+"groups.errors.uploadRetryLater" = "グループの最新の変更がサーバーに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
+
+/* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
+"groups.errors.captureUnfinished" = "グループの最近の変更の一部を、アップロード用に準備できませんでした。変更はこの端末に残っていて失われません。Yala を閉じてもう一度開いてください。それでも続く場合は、Yala をアップデートしてください。";
+
+/* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
+"icloud.appleIDChanged.title" = "iCloud アカウントが変わりました";
+
+/* Alert body: que pasa con los datos al cambiar de Apple ID */
+"icloud.appleIDChanged.message" = "この iPhone にある Yala のデータは以前の iCloud アカウントのもので、そのアカウントに保存されたまま残ります。この iPhone で Yala を使い続けるには、ここから削除する必要があります。そのアカウントに届いていない内容はもうアップロードできません。";
+
+/* Alert button: confirma el cierre de la sesion privada y el borrado local */
+"icloud.appleIDChanged.confirm" = "サインアウトして削除";
+
+/* Alert button: pospone el cierre hasta el proximo arranque */
+"icloud.appleIDChanged.later" = "後で";
+
+/* Gate de «Empezar desde cero» sin respuesta de iCloud: no se declara un borrado que no ocurrio */
+"welcome.privateICloud.discardUnverifiedBody" = "接続できず iCloud の中身を確認できなかったので、何も削除していません。すべてそのままです。もう一度お試しいただくか、前に戻って、好きなときに決められます。";
+
+/* Salida del gate de «Empezar desde cero» cuando iCloud no contesto: vuelve a Restaurar */
+"welcome.privateICloud.discardUnverifiedBack" = "戻る";
+
+/* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "この iPhone は iCloud がオフなので、以前に何か保存したか確認できず、何も削除していません。「設定」でオンにしてもう一度お試しいただくか、前に戻って、好きなときに決められます。";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "iCloudから削除されるため、あなたの個人データをそこに保存している他のデバイスからも消えます";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "この端末ではグループを同期できません";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。届かなかったグループの変更：%d件。今サインアウトすると失われ、グループの誰にも表示されません。";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "1日以上、サーバーが求めるセキュリティ確認を通過できておらず、届かなかったグループの変更があります。今サインアウトすると失われ、グループの誰にも表示されません。";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "変更が失われてもサインアウト";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、グループの変更をアップロードできません。";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "この端末ではグループを同期できないため、グループからの退出を完了できませんでした。";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。届かなかったグループの変更：%d件。今続けると失われ、グループの誰にも表示されません。";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "1日以上、サーバーが求めるセキュリティ確認を通過できておらず、届かなかったグループの変更があります。今続けると失われ、グループの誰にも表示されません。";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "変更が失われても続ける";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "後で";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "この端末ではデータを同期できません";
+"settings.signOutAttestMessage" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。クラウドのアカウントに届かなかった変更：%d件。決める前に、取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessageUnknown" = "1日以上、サーバーが求めるセキュリティ確認を通過できておらず、クラウドのアカウントに届かなかった変更があります。決める前に、取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestExportButton" = "取引をエクスポート";
+"settings.signOutAttestLossButton" = "変更が失われてもサインアウト";
+"settings.signOutAttestBlocked" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、変更をクラウドのアカウントにアップロードできません。";
+"settings.signOutAttestExportEmpty" = "エクスポートできる取引がありません。";
+"settings.signOutAttestExportFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。この端末での変更はグループに届かないため、当面は別の端末をお使いください。";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。この端末で記録した内容は端末内には残りますが、クラウドのアカウントには届きません。当面は別の端末をお使いください。";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "データを iCloud にアップロードしています。Yala はそのままお使いいただけます。";
+"storage.progress.reversePending" = "アップロード待ち：%d";
+"storage.progress.reverseICloudFull" = "iCloud にデータを保存する空き容量がありません。数分たってもアップロードが進まない場合は、クラウドのままになります。空き容量を増やしてから、もう一度お試しいただけます。";
+"storage.progress.reverseICloudUnavailable" = "このデバイスでは iCloud を利用できません。数分たってもアップロードが進まない場合は、クラウドのままになり、あとでもう一度お試しいただけます。";
+"storage.progress.cancelReverse" = "キャンセルしてクラウドのまま使う";
+"storage.confirm.cancelReverseTitle" = "iCloud に戻す処理をキャンセルしますか？";
+"storage.confirm.cancelReverseBody" = "データは Yala のクラウドとこのデバイスに残ります。このあと Yala から、一度終了してもう一度開くようご案内します。";
+"storage.confirm.cancelReverseConfirm" = "はい、クラウドのまま使う";
+"storage.confirm.cancelReverseKeep" = "このまま待つ";
+"storage.reverseAbort.relaunchTitle" = "データはクラウドに残っています";
+"storage.reverseAbort.relaunchBody" = "Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてクラウドを使い続けてください。";
+"storage.reverseAbort.icloudFull" = "iCloud に戻す処理を完了できませんでした。iCloud の空き容量が不足していました。空き容量を増やしてから、もう一度お試しください。";
+"storage.reverseAbort.icloudUnavailable" = "iCloud に戻す処理を完了できませんでした。このデバイスでは iCloud を利用できませんでした。設定で iCloud アカウントを確認してから、もう一度お試しください。";
+"storage.reverseAbort.stalled" = "iCloud に戻す処理を完了できませんでした。iCloud がすべてのデータを受け取れませんでした。このデバイスで iCloud がオンになっていることを確認し、通信状態のよいときに、アップロード中は Yala を開いたままにして、もう一度お試しください。";
+"storage.reverseAbort.claimRetryLater" = "iCloud に戻す処理を開始できませんでした。データのクラウドへの移行がまだ完了していませんでした。しばらくしてからもう一度お試しください。";
+"storage.reverseAbort.claimRefused" = "iCloud に戻す処理を開始できませんでした。このアカウントでは実行できませんでした。この操作では何も変更されていません。%@ までご連絡ください。一緒に確認します。";
+"storage.reverseAbort.otherDeviceReverting" = "iCloud に戻す処理を開始できませんでした。ほかのデバイスですでに iCloud に戻す処理が進んでいました。完了したら、このデバイスでも実行できます。";
+"storage.progress.reverseICloudMaybeOff" = "このデバイスで iCloud がオンになっていない場合、データは iCloud に届きません。設定でオンにするか、キャンセルしてクラウドのまま使い続けてください。";
+/* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
+"storage.progress.reverseLocalFailure" = "このデバイスで iCloud へのアップロード用のデータを準備できませんでした。数分たっても解決しない場合は、クラウドのままになり、あとでもう一度お試しいただけます。";
+"storage.reverseAbort.localFailure" = "iCloud への切り替えを完了できませんでした。このデバイスでアップロード用のデータを準備できませんでした。クラウドのままです。しばらくしてから、もう一度お試しください。";
+"storage.errors.reversePendingExit" = "まだ iCloud に戻せません。先にクラウドの再有効化を完了する必要があります。少し待ってからもう一度お試しください。";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "アカウントを確認できませんでした。少し待ってからもう一度お試しください。何も変更していません。";
+"storage.migrateBlock.personalDataTitle" = "そのアカウントにはすでに個人の家計データがあります";
+"storage.migrateBlock.personalDataBody" = "何も変更していません。データをクラウドに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "何も変更していません。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
+"storage.migrateBlock.otherGroupsTitle" = "グループにはすでに別のアカウントを使っています";
+"storage.migrateBlock.otherGroupsBody" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに別のアカウントを使っています。データをクラウドに移すには、グループのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.otherGroupsBodyEmail" = "何も変更していません。このデバイスで使えるクラウドアカウントは1つだけで、グループはすでに%@を使っています。データをクラウドに移すには、そのアカウントでサインインするか、別のアカウントを使う場合は先に「グループ」でリンクを解除してください。";
+"storage.migrateBlock.returnedTitle" = "このアカウントはiCloudに戻っています";
+"storage.migrateBlock.returnedBody" = "このアカウントでクラウドに戻すことはまだできません。何も変更していません。";
+"storage.migrateBlock.useAnotherAccount" = "別のアカウントを使う";
+"storage.migrateBlock.appleSameAccountNote" = "Appleでは、Yalaは常にこのデバイスのアカウントを使います。別のアカウントを使うには、Googleを選んでください。";
+"storage.migrateBlock.freshStartSessionTitle" = "このアカウントは別の人のものかもしれません";
+"storage.migrateBlock.freshStartSessionBody" = "何も変更していません。グループは、このデバイスですでにサインインしていたアカウントを使っています。このデバイスは最初から始め直したため、そのアカウントは別の人のものかもしれません。データをクラウドに移すには、「グループ」でリンクを解除してから、もう一度「クラウドを有効化」をタップしてください。ご自身のアカウントを選べます。";
+"storage.migrateBlock.otherDeviceTitle" = "あなたの別のデバイスがデータをクラウドに移しています";
+"storage.migrateBlock.otherDeviceBody" = "何も変更していません。そのデバイスで有効化を完了するか、止まっている場合はそのデバイスでもう一度お試しください。完了すると、ここでもクラウドを有効化できます。";
+
+/* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedTitle" = "データを確認できませんでした";
+
+/* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedBody" = "保存されたデータがあるかを確認するために接続できませんでした。少し経ってから、もう一度お試しください。";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "セッションの有効期限が切れました。iCloud に戻す作業を続けるには、もう一度サインインしてください。";
+"storage.progress.adoptSessionExpired" = "クラウドのセッションが無効になりました。有効化をキャンセルして、アカウントで再度サインインしてください。";
+"storage.progress.adoptAccountUnavailable" = "今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "別のアカウントでサインインしました。iCloud に戻す操作を始めたアカウントでサインインしてください。";
+"storage.errors.syncSignInOtherAccount" = "別のアカウントでサインインしたため、サインインしたままにしませんでした。この端末で Yala に使っているアカウントでサインインしてください。";
+
+/* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
+"welcome.restore.importIncompleteTitle" = "データを取得しています";
+
+/* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
+"welcome.restore.importIncompleteBody" = "iCloud がまだ履歴を送信しています。記録が多い場合や通信が遅い場合は数分かかることがあります。少し待ってからもう一度検索してください。";
+
+/* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
+"storage.reverseAbort.preMountRefused" = "iCloud への切り替えを完了できませんでした。クラウドのアカウントが許可しませんでした。データは Yala のクラウドにそのまま残っています。%@ までご連絡ください。一緒に確認します。";
+
+/* Salida de la vuelta antes de montar el espejo: venció el techo largo */
+"storage.reverseAbort.preMountStalled" = "iCloud への切り替えを完了できませんでした。処理が進まなくなりました。データは Yala のクラウドにそのまま残っています。いつでもやり直せます。";
+
+/* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
+"storage.confirm.cancelReverseBeforeMountBody" = "データは Yala のクラウドとこの端末にそのまま残ります。いつでもやり直せます。";
+
+/* Diálogo de cancelar: seguir, antes de montar el espejo */
+"storage.confirm.cancelReverseKeepBeforeMount" = "iCloud への切り替えを続ける";
+
+/* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
+"storage.reverseAbort.preMountOtherDevice" = "iCloud への切り替えを完了できませんでした。別のお使いの端末が引き継ぎました。そちらが終わったら、この端末でも実行できます。";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "クラウドを有効化できませんでした。データのアップロードが数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+/* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
+"storage.failed.snapshotMixedCauses" = "クラウドを有効化できませんでした。待っても解決しない問題で、データのアップロードが止まりました。データはデバイスに安全に残っています。もう一度お試しください。";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "クラウドを有効化できませんでした。データのアップロード中にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "クラウドを有効化できませんでした。クラウドのアカウントが許可しませんでした。データはデバイスに安全に残っています。%@ までご連絡ください。一緒に確認します。";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "クラウドを有効化できませんでした。このデバイスでアップロード用のデータを準備できませんでした。データは変更されずにここに残っています。しばらくしてから、もう一度お試しください。";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "クラウドを有効化できませんでした。有効化の処理が数日間進んでいません。データはデバイスに安全に残っています。時間をおいて、もう一度お試しください。";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "クラウドを有効化できませんでした。完了する前にセッションの有効期限が切れました。データはデバイスに安全に残っています。もう一度お試しいただき、再度サインインしてください。";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "このデバイスではクラウドを有効化できませんでした。同じアカウントの別のデバイスが処理を引き継ぎました。データは変更されずにここに残っています。";
+"storage.failed.adoptStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間進んでいません。この端末はクラウドのデータを何も変更していません。後でもう一度お試しください。";
+"storage.failed.adoptSessionExpired" = "クラウドのアカウントにサインインできませんでした。セッションの有効期限が切れました。この端末はクラウドのデータを何も変更していません。もう一度お試しいただき、アカウントで再度サインインしてください。";
+"storage.failed.adoptAccountUnavailable" = "クラウドのアカウントにサインインできませんでした。今このアカウントにはアクセスできません。%@ までご連絡ください。一緒に確認します。";
+"storage.failed.adoptEffectLocalFailure" = "クラウドのアカウントにサインインできませんでした。この端末でデータを読み込めず、アカウントのデータとまとめられませんでした。この端末のデータはこれまでどおり残っています。しばらくしてから、もう一度お試しください。";
+"storage.failed.adoptEffectStalled" = "クラウドのアカウントにサインインできませんでした。有効化が数日間完了していません。この端末のデータはこれまでどおり残っています。後でもう一度お試しください。";
+"storage.failed.adoptEffectLineageUnproven" = "クラウドのアカウントにサインインできませんでした。この端末には、そのアカウントにないデータがあり、そのアカウントのものか確認できなかったため、まとめませんでした。この端末のデータはこれまでどおり残っています。別の端末でこのiCloudのデータをクラウドに移した場合は、同じアカウントでサインインしているか確認し、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "有効化をキャンセル";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "クラウドの有効化をキャンセルしますか？";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "データはこれまでどおりこのデバイスに残ります。すでにアップロードされたものは、クラウドのアカウントに残ります。いつでもやり直せます。";
+"storage.confirm.cancelAdoptBody" = "この端末はクラウドのデータを何も変更していません。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.cancelAdoptEffectBody" = "この端末のデータはこれまでどおり残っています。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.waiting.stopWaiting" = "待つのをやめる";
+"storage.confirm.stopWaitingTitle" = "待つのをやめますか？";
+"storage.confirm.stopWaitingBody" = "もう一方のデバイスはクラウドの有効化を続けます。この端末は待つのをやめ、クラウドのデータは何も変更しません。いつでもここから、この端末でクラウドを再度有効化できます。";
+"storage.confirm.stopWaitingConfirm" = "やめる";
+"storage.confirm.stopWaitingKeep" = "このまま待つ";
+"storage.progress.followerSessionExpired" = "クラウドのセッションが無効になりました。待つのをやめて、アカウントで再度サインインしてください。";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "キャンセルする";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "有効化を続ける";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "データの状態を確認できませんでした。今はクラウドへの移行も iCloud への切り戻しもできません。引き続き確認します。解決しない場合は、Yala を終了してもう一度開いてください。";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "サインインして変更をアップロード";
+"storage.sync.waitingForConnectionUncounted" = "変更が接続待ちです";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "データを数えられませんでした。少し待ってからもう一度お試しください。";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "クラウドを有効にできませんでした。そのアカウントにはすでにクラウド上のデータがあり、この端末のデータとは一致しないため、まとめませんでした。この端末のデータはこれまでどおり残っています。正しいアカウントでサインインしているか確認してください。ご自身のアカウントで、この端末が同じiCloudを使っている場合は、iCloudがデータを取り込み終えるまで待ってから、もう一度お試しください。";
+"storage.failed.stepLeaderRowsNotArrived" = "クラウドを有効にできませんでした。別の端末がすでにデータの一部をアップロードしていますが、そのすべてがまだiCloud経由でこの端末に届いていないため、重複を避けるために何もアップロードしませんでした。この端末のデータはこれまでどおり残っています。インターネットに接続した状態でその別の端末でYalaを開き、iCloudがこの端末にデータを取り込み終えるまで待ってから、もう一度お試しください。";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "まだクラウドにアップロードされていない変更があります。データのクラウドへの移行状況を確認できなかったため、今はアップロードできません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+"settings.signOutCaptureUnfinished" = "最近の変更の一部を、クラウドへのアップロード用に準備できませんでした。変更はこの端末に残っていて失われません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "まだクラウドにアップロードされていない変更があります。クラウドと iCloud の間のデータ移行が完了していないため、同期は一時停止しています。このプロフィール画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "まだクラウドにアップロードされていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";
+
+/* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
+"settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
+"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。このプロフィール画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
+"settings.signOutSessionSurvived" = "この iPhone ではまだサインインしたままのため、何も削除されていません。もう一度お試しください。";
+"settings.signOutMigrationInFlight" = "iCloud とクラウドの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。プロフィールの「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+"settings.signOutMigrationUnreadable" = "iCloud とクラウドの間のデータ移行の状況を確認できませんでした。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "削除が途中で止まりました";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "iCloudにあったデータはすでに削除しましたが、この端末では最後まで削除できませんでした。以前のデータの全部または一部がまだ残っている可能性があります。残っているデータをそのままにするか、最後まで削除して最初からやり直すことができます。";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "最後まで削除する";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "この端末に残っているデータは、その後に作成したものも含めて削除され、最初からやり直します。コピーは残りません。";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "この端末には、別のアカウントで作成されたグループの変更があり、そのアカウントでしかアップロードできません。変更は失われません。そのアカウントでサインインするまで、この端末に保存されます。";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "未アップロードのグループの変更：%d件。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。アップロードするには、そのアカウントで再度サインインしてください。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "まだアップロードされていないグループの変更があります。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。アップロードするには、そのアカウントで再度サインインしてください。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "未アップロードのグループの変更：%d件。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "まだアップロードされていないグループの変更があります。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "セッションの有効期限が切れました。未アップロードのグループの変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "セッションの有効期限が切れ、まだアップロードされていないグループの変更があります。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "未アップロードのグループの変更：%d件。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。今続けると失われ、グループの誰にも表示されません。";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "まだアップロードされていないグループの変更があります。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。今続けると失われ、グループの誰にも表示されません。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "未アップロードのグループの変更：%d件。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。今続けると失われ、グループの誰にも表示されません。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "まだアップロードされていないグループの変更があります。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。今続けると失われ、グループの誰にも表示されません。";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "これらは、それぞれを作成したアカウントでサインインしないとアップロードできませんが、この端末で開いているセッションは別のアカウントのものです。それが無理なら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "一部は別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。そうしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.titleNeutral" = "グループの変更でまだアップロードされていないものがあります";
+"groups.freshStartPending.leadNeutral" = "何も消去していません。グループの変更の一部（%d件）がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
+"groups.freshStartPending.leadNeutralUnknown" = "何も消去していません。グループの変更の一部がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
+"groups.freshStartPending.leadSplit" = "何も消去していません。グループの変更の一部がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。あなたの変更：%1$d件。別のアカウントで作成された変更：%2$d件。";
+"groups.freshStartPending.splitOwnPermanent" = "あなたのアカウントではもうあなたの変更をアップロードできず、再試行しても解決しません。";
+"groups.freshStartPending.splitOwnSessionExpired" = "あなたの変更は作成したアカウントでしかアップロードできませんが、この端末でのそのセッションはもう有効ではありません。";
+"groups.freshStartPending.splitAnotherAccount" = "別のアカウントで作成された変更は、それぞれを作成したアカウントでサインインしないとアップロードできません。待っても再試行してもアップロードされません。";
+"groups.freshStartPending.splitLossTail" = "すべての変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.splitAfterOwnUpload" = "あなたの変更がアップロードできた場合は、別のアカウントで作成された変更だけを失って最初からやり直せるようになります。";
+"groups.freshStartPending.lossConfirmBodySplit" = "失われるグループの変更：あなたの変更 %1$d件、別のアカウントで作成された変更 %2$d件。サーバーに届かないままこの端末から消去され、グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "失われるグループの変更：%d件。サーバーに届かないままこの端末から消去され、グループの誰にも表示されず、復元もできません。";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "サーバーに届かなかったグループの変更はこの端末から消去されます。グループの誰にも表示されず、復元もできません。";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。クラウドのアカウントに届かなかった変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "セッションの有効期限が切れ、クラウドのアカウントに届かなかった変更があります。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に取引をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "記録を選ぶとここに表示されます";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "予算または支払いを選ぶとここに表示されます";
+"groups.detailPlaceholder" = "グループを選ぶとここに表示されます";
+"settings.detailPlaceholder" = "設定を選ぶとここに表示されます";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "何も変更していません。招待はそのまま保存されています。少し待ってからもう一度お試しください。進まない場合は、Yala を完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "参加するには Yala をもう一度開いてください";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "クラウドのアカウントは、Yala をもう一度開くと準備が完了します。アプリを完全に閉じて（App スイッチャーから上にスワイプ）もう一度開いてください。招待はそのまま保存されており、そこから続けられます。";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "まず、この端末のアカウントでサインインしてください";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "この端末には、サインインしていないクラウドアカウントのデータがあり、グループの支出はそのアカウントに入ってしまいます。ご自身のアカウントなら「すでにアカウントがあります」からサインインすると、招待の続きから進められます。そうでない場合は、ご自身の端末から参加してください。";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "この端末を準備できませんでした";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "Yala を開き直したときに、この端末に保存されている内容を消去できなかったため、この端末はまだグループに使える状態になっていません。自動ではもう一度試しません。戻って、よければ後でもう一度お試しください。";
+
+/* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
+"icloud.appleIDChanged.groupsLine" = "この iPhone にあるグループも削除されます。";
+
+/* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
+/* Keyboard menu (iPad, hold Cmd): go to a section */
+"keyboard.menu.go" = "移動";
+/* Keyboard menu (iPad, hold Cmd): actions on the open record */
+"keyboard.menu.record" = "記録";
+/* Keyboard command Cmd-Shift-N: new shared expense in a group */
+"keyboard.newGroupExpense" = "新規グループ支出";
+/* Keyboard command Up arrow: open the previous record in the list */
+"keyboard.previousRecord" = "前の記録";
+/* Keyboard command Down arrow: open the next record in the list */
+"keyboard.nextRecord" = "次の記録";
+/* Context menu on a record row: pick another category for it */
+"records.contextMenu.changeCategory" = "カテゴリーを変更";
+/* Context menu on an account card in the Panel: show only this account */
+"panel.accounts.filterByAccount" = "この口座で絞り込む";
+/* Context menu on a group card: open the group */
+"groups.contextMenu.open" = "グループを開く";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "新しいウインドウで開く";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yalaは別のウインドウで待っています";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "もう一方のYalaウインドウで回答が必要です。そちらが終わると、このウインドウは自動的に戻ります。";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "そのウインドウへ移動";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "こちら側の問題で、グループは現在一時停止中です。再開したら、ここから続けられます。";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "ステップ %1$d / %2$d";
+"stepGuide.markDone" = "できた";
+"stepGuide.stuck" = "うまくいかない";
+"stepGuide.whatYouWillSee" = "表示される画面";
+"stepGuide.phaseDone" = "完了";
+"stepGuide.phaseActive" = "現在のステップ";
+"stepGuide.phaseUpcoming" = "未完了";
+"tutorials.applePay.openShortcuts" = "ショートカットを開く";
+"tutorials.applePay.guarantee" = "支払いはドラフトとして届きます。承認するまで記録されません。";
+"tutorials.applePay.pendingDrafts" = "受信箱のApple Pay支払い：%d件";
+"faceIDGuide.guarantee" = "Yalaがあなたの顔を見ることはありません。確認するのはiOSです。";
+"faceIDGuide.previewAction" = "Face IDを要求";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "残高";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "未払い";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "支出 · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "入金";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "出金";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "使い道";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "最近の取引";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "%@の残高（%@）";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "この期間の取引はありません";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "アーカイブすると、この口座は合計と統計に含まれなくなり、取引は「記録」に表示されなくなります。引き続き含めるには「統計から除外」をオフにしてください。";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "詳細";
+"chat.draft.detailsTitle" = "提案された記録";
+"chat.draft.openFullForm" = "フォームで開く";
+"chat.draft.missingSubcategory" = "サブカテゴリーが未選択";
+"chat.draft.missingAccount" = "口座が未選択";
+"chat.draft.missingAmount" = "金額が未入力";
+"chat.draft.addTag" = "タグ";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "例：「ランチにカードで25使った」";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "送信する前にテキストを確認してください。";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ 録音済み";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "録音を破棄";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "記録を読み取っています…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "記録を準備しています…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "もう一度録音";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "聞き取った内容";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "%d件の記録を聞き取りました";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "%d件を保存";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "保存せずに閉じると、受信箱に残ります。";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "接続がありません";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yalaはマイクを使えません";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "聞き取れませんでした";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "録音が空か短すぎました。もう一度お試しください。";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "金額が聞き取れませんでした";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "金額も言ってください（例：「25」）。";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "今回はうまく聞き取れませんでした";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "音声の処理中に問題が発生しました。少し待ってからもう一度お試しください。";
+"voice.failure.trialUsedUp.title" = "お試しの音声メモを使い切りました";
+"voice.failure.trialUsedUp.message" = "Yala Pro なら、音声で支出を無制限に記録できます。";
+"ai.trial.seePro" = "Yala Pro を見る";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "写真やファイルで記録";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "レシート、銀行のスクリーンショット、PDF。金額・店舗・日付を読み取ります。";
+/* Image entry source: take a photo */
+"image.entry.camera" = "カメラ";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "写真";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "ファイル";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "写真から一度に最大10枚まで";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "写真を読み取り中…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "写真を読み取り中…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "金額を探しています";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "%2$d枚中%1$d枚目";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "読み取った内容";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "%d件の記録を読み取りました";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1枚の写真を読み取れませんでした";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d枚の写真を読み取れませんでした";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "別の写真";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "読み取りを中止";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "金額が見つかりませんでした";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "合計に近づけて撮った写真か、別の画像でお試しください。";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "この画像を開けませんでした";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yalaはカメラを使用できません";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "レシートを撮影するには、設定でアクセスを許可してください。";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "今回は読み取れませんでした";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "写真に問題はありません。読み取りに失敗しました。少ししてからもう一度お試しください。";
+"image.entry.failure.trialUsedUp.title" = "お試しの写真を使い切りました";
+"image.entry.failure.trialUsedUp.message" = "Yala Pro なら、写真でレシートを無制限に記録できます。";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "あなた";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "内訳";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "%@を支払い";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "あなたの家計";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "・分け方";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "あなた";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "削除が完了していません";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、削除はまだ完了していません。クラウドを有効にすると削除は取り消され、削除されなかったデータがYalaアカウントに入る可能性があります。待つ場合は何も変わらず、削除は保留のままです。";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "削除せずにクラウドを有効化";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "今はしない";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "削除が完了しませんでした";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、データがクラウドに移る前に削除が完了せず、今後も実行されません。削除するはずだったデータの一部が、iCloudに残っているか、Yalaアカウントに移っている可能性があります。";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "金額が変更されました";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "「%2$@」の%1$@さんからの支払いが変更されました：%3$@から%4$@になりました。%5$@には%6$@が記録されています。";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "「%2$@」の%1$@さんへの支払いが変更されました：%3$@から%4$@になりました。%5$@には%6$@が記録されています。";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」のこの精算が変更されました：%2$@から%3$@になりました。%4$@には%5$@が記録されています。";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "%@に調整";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "%@のままにする";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%1$@に%2$@が記録済み";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "この通知はもう適用できません。取引が変更されたか、口座にありません。";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "このファイルを開けませんでした";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "空か、破損している可能性があります。レシートの別の写真かPDFでお試しください。";
+
+/* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
+"account.currencyChange.confirmTitleNoHistory" = "通貨を%@に変更しますか？";
+
+/* Account currency change confirmation: pending inbox drafts converted with their own date's rate. %1$d = count, %2$@ = new currency code */
+"account.currencyChange.draftsLine" = "受信箱の保留中の下書き：%1$d件。それぞれの日付の為替レートで%2$@に換算されます。";
+
+/* Account currency change confirmation: header before the list of scheduled payments and favorites converted at today's rate. %@ = new currency code */
+"account.currencyChange.plansHeader" = "今日の為替レートで%@に換算される予定支払いとお気に入り：";
+
+/* Account currency change confirmation: one scheduled payment or favorite. %1$@ = its name, %2$@ = amount before, %3$@ = amount after */
+"account.currencyChange.planItem" = "• %1$@：%2$@ → %3$@";
+
+/* Account currency change confirmation: how many more scheduled payments or favorites are converted beyond the ones listed. %d = count */
+"account.currencyChange.plansMore" = "ほか%d件";
+
+/* Account currency change confirmation: closing sentence when there are no movements to convert */
+"account.currencyChange.cannotUndo" = "この操作は取り消せません。";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "このPDFにはパスワードがあります";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "ファイルを開くにはパスワードを入力してください。この端末でのみ使われ、保存も送信もされません。";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "PDFのパスワード";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "開く";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "パスワードが違います。確認してもう一度お試しください。";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1ページを読み取れませんでした。一度に読み取れるのは%dページまでです。読み取るには、別のPDFでアップロードしてください。";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$dページを読み取れませんでした。一度に読み取れるのは%2$dページまでです。読み取るには、別のPDFでアップロードしてください。";
+
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "1枚の写真を読み取れませんでした。一度に読み取れるのは%d枚までです。読み取るには、別に共有してください。";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "%1$d枚の写真を読み取れませんでした。一度に読み取れるのは%2$d枚までです。読み取るには、別に共有してください。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "お試しの写真を使い切りました。1枚を読み取れませんでした。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "お試しの写真を使い切りました。%d枚を読み取れませんでした。";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "%2$dページ中%1$dページ目";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "残り1日";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "AI分析を作成するにはインターネット接続が必要です。";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "今日のAI分析の上限に達しました。また明日お試しください。";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "短時間に分析を続けてリクエストしました。少し待ってからもう一度お試しください。";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "Yala Proを確認できませんでした。少ししてからもう一度お試しください。";
+
+/* Private gate: reading the data already on this phone failed */
+"welcome.privateICloud.deviceUnreadableTitle" = "この端末を確認できませんでした";
+
+/* Private gate: body when the phone's data could not be read */
+"welcome.privateICloud.deviceUnreadableBody" = "この端末にすでにあるデータを確認中に問題が発生したため、データがあるかどうかわかりません。何も変更していません。少し待ってからもう一度お試しください。";
+
+/* Private gate: secondary button that goes back to the choice */
+"welcome.privateICloud.deviceUnreadableBack" = "戻る";
+
+/* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
+"welcome.bornCloud.readyExistingAccountTitle" = "すでにアカウントをお持ちだったため、そのアカウントにログインしました。";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "「%@」を削除";
+"account.removal.intro" = "削除する前に、中身をどうするか選んでください。";
+"account.removal.countRecords" = "取引";
+"account.removal.countScheduled" = "予定の支払い";
+"account.removal.countFavorites" = "お気に入りの支払い";
+"account.removal.countDrafts" = "受信トレイの保留中";
+"account.removal.choiceHeader" = "中身の扱い";
+"account.removal.moveTitle" = "別の口座に移動する";
+"account.removal.moveSubtitle" = "おすすめ。履歴と残高はそのまま残ります。";
+"account.removal.noDestination" = "移動先にできる口座がほかにありません。";
+"account.removal.deleteTitle" = "取引を削除する";
+"account.removal.deleteSubtitle" = "口座とともに完全に削除されます。";
+"account.removal.deleteBlockedGroups" = "グループの取引が含まれています。移動のみ可能です。";
+"account.removal.destinationHeader" = "移動先";
+"account.removal.destinationBlockedCurrency" = "利用不可：この通貨に換算できない振替やグループの取引が含まれています。";
+"account.removal.convertNote" = "別の通貨のものは%@に換算されます。取引は各日付の為替レートで、予定の支払いとお気に入りは本日のレートで換算されます。";
+"account.removal.collapsedNote" = "「%1$@」と「%2$@」の間の振替は削除されます。同じ口座内ではお金が動かないためです。";
+"account.removal.partnersNote" = "ほかの口座との振替は、その口座に通常の取引として残ります。";
+"account.removal.plansNote" = "予定の支払い、お気に入り、受信トレイの保留中の項目は口座なしになります。使うときに口座を選んでください。";
+"account.removal.moveAction" = "移動して口座を削除";
+"account.removal.deleteAction" = "取引と口座を削除";
+"account.removal.confirmDeleteTitle" = "取引を削除しますか？";
+"account.removal.confirmDeleteCount" = "削除される取引";
+"account.removal.confirmDeleteMessage" = "完全に削除され、元に戻せません。口座も削除されます。";
+"account.removal.confirmDeleteAction" = "はい、すべて削除";
+"account.removal.working" = "口座を削除しています…";
+"account.removal.failedTitle" = "口座は削除されませんでした";
+"account.removal.failedUnreadable" = "この口座の中身を読み込めませんでした。何も変更されていません。";
+"account.removal.failedChanged" = "その間に口座で変更がありました。確認してもう一度お試しください。";
+"account.removal.failedRates" = "換算用の為替レートを取得できませんでした。何も移動されていません。接続してからもう一度お試しください。";
+"account.removal.noAllowedDestination" = "ほかの口座は別の通貨で、この口座には換算できない振替やグループの項目があります。";
+"account.removal.countBudgets" = "予算";
+"account.removal.budgetsMovedNote" = "この口座を対象にしていた予算は「%@」を対象にします。";
+"account.removal.budgetsOnlyNote" = "この口座だけを対象にしていた予算があります。口座がなくなると、すべての口座が対象になります。";
+"orphanedRecords.title" = "口座のない取引";
+"orphanedRecords.bannerMessage" = "口座を削除したときに口座がなくなり、残高にも支出にも含まれていません。";
+"orphanedRecords.bannerAction" = "移動先の口座を選ぶ";
+"orphanedRecords.intro" = "口座を削除したときに、これらの取引は口座がなくなりました。口座がない間は、残高にも支出にも含まれません。移動先の口座を選んでください。";
+"orphanedRecords.listHeader" = "対象の取引";
+"orphanedRecords.moreNote" = "ほか%d件。";
+"orphanedRecords.noDestination" = "移動するには口座を作成してください。";
+"orphanedRecords.keptCurrencyNote" = "別の通貨の振替は換算せずにそのまま移動します。相手側の金額と合ったままにするためです。";
+"orphanedRecords.convertNote" = "別の通貨のものは、その日付の為替レートで%@に換算されます。";
+"orphanedRecords.collapsedNote" = "「%@」の中で完結してしまう振替は削除されます：同じ口座内ではお金は動かないためです。";
+"orphanedRecords.moveAction" = "「%@」に移動";
+"orphanedRecords.moveActionGeneric" = "移動";
+"orphanedRecords.working" = "移動中…";
+"orphanedRecords.failedTitle" = "移動できませんでした";
+"orphanedRecords.failedUnreadable" = "取引を読み込めませんでした。何も変更されていません。";
+"orphanedRecords.failedChanged" = "その間に変更がありました。確認してもう一度お試しください。";
+"orphanedRecords.untitled" = "説明なし";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "このデバイスではiCloudを利用できません";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "YalaはデータをあなたのiCloudに保存していますが、今は読み込めません。iCloudが再び利用できるようになると、そこにあるデータがまた表示されます。設定のiCloudで確認できます。";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "iCloud を確認しています…";
+"storage.revert.prior.title" = "iCloud にすでに Yala のデータがあります";
+"storage.revert.prior.body" = "この端末の iCloud に、アカウントにない Yala のデータがあります：%@。追加すると、あなたのデータと一緒に表示されます。追加せずに始めると、iCloud から削除されます。";
+"storage.revert.prior.bodyNoCount" = "この端末の iCloud に、アカウントにない Yala のデータがあります。追加すると、あなたのデータと一緒に表示されます。追加せずに始めると、iCloud から削除されます。";
+"storage.revert.prior.groupRecords" = "グループの記録 %d 件";
+"storage.revert.prior.groupsNote" = "グループの記録は、グループなしで届くことがあります。";
+"storage.revert.prior.merge" = "自分のデータに追加";
+"storage.revert.prior.discard" = "追加せずに始める";
+"storage.revert.prior.discardConfirmTitle" = "iCloud から削除しますか？";
+"storage.revert.prior.discardConfirmBody" = "iCloud と、この Apple ID で iCloud を使っているデバイスから削除されます。コピーは残らず、復元できません。その後、iCloud への切り替えが始まります。";
+"storage.revert.prior.discardConfirm" = "削除して iCloud に戻る";
+"storage.revert.prior.checkFailedTitle" = "iCloud を確認できませんでした";
+"storage.revert.prior.checkFailedBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。接続の問題かもしれません。もう一度お試しください。";
+"storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
+"storage.revert.prior.wipeStopped" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
+"storage.revert.prior.wiping" = "以前のデータを削除しています…（%d 件完了）";
+"storage.revert.prior.noAccountTitle" = "この iPhone で iCloud にサインインしてください";
+"storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この iPhone は iCloud にサインインしていません。iPhone の設定からサインインして、もう一度お試しください。";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "この端末で非表示";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "この端末でのみ非表示にします。グループが届くと再び表示されます。";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "別の通貨のグループの支出は換算せずそのまま移動します。金額はグループが決めます。";

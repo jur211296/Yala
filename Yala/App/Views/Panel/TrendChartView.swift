@@ -27,6 +27,9 @@ struct TrendChartView: View {
     /// Desglose por moneda nativa del `liveAnchor`. Habilita el sheet
     /// educativo "Tu saldo hoy" en multi-currency. Nil → tap no abre sheet.
     var liveAnchorBreakdown: [String: Decimal]? = nil
+    /// `true` si el saldo vivo salió de alguna tasa que no era la de hoy. Viaja con el desglose
+    /// porque lo consume la misma hoja. Default `false`: un callsite sin saldo vivo no marca nada.
+    var liveAnchorIsApproximate: Bool = false
     /// Muestra el marcador "Hoy" (línea vertical) y la pill "Hoy ⓘ". Default
     /// `true` (Panel/Tendencias). Se pasa `false` en históricos sin saldo vivo
     /// (p. ej. la tendencia de un grupo) donde esos indicadores no aplican.
@@ -320,6 +323,7 @@ struct TrendChartView: View {
                let anchor = liveAnchor {
                 BalanceLiveAnchorEducationSheet(
                     liveAnchorValue: anchor.value,
+                    liveAnchorIsApproximate: liveAnchorIsApproximate,
                     historicalValue: rawPoints.last?.value,
                     nativeBalances: breakdown,
                     preferredCurrencyCode: currencyCode

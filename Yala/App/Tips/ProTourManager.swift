@@ -72,7 +72,6 @@ final class ProTourManager {
 
         triggered = true
         currentPhase = .profile
-        TelemetryService.track(.proTourStarted)
     }
 
     /// Advances to the next phase after the current one completes.
@@ -85,13 +84,11 @@ final class ProTourManager {
             print("ProTourManager: Phase 1 (profile) completed — advancing to panel")
             #endif
             currentPhase = .panel
-            TelemetryService.track(.proTourPhaseCompleted, parameters: ["phase": "profile"])
         case .panel:
             #if DEBUG
             print("ProTourManager: Phase 2 (panel) completed — advancing to insights")
             #endif
             currentPhase = .insights
-            TelemetryService.track(.proTourPhaseCompleted, parameters: ["phase": "panel"])
         case .insights:
             #if DEBUG
             print("ProTourManager: Phase 3 (insights) completed — tour done")
@@ -106,7 +103,6 @@ final class ProTourManager {
     func markCompleted() {
         currentPhase = .done
         hasCompleted = true
-        TelemetryService.track(.proTourCompleted)
     }
 
     /// Marks the tour as completed when user dismisses mid-tour (don't insist).
@@ -114,7 +110,6 @@ final class ProTourManager {
         #if DEBUG
         print("ProTourManager: Tour skipped at phase \(currentPhase)")
         #endif
-        TelemetryService.track(.proTourSkipped, parameters: ["phase": "\(currentPhase)"])
         currentPhase = .done
         hasCompleted = true
     }

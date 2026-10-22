@@ -52,7 +52,7 @@ final class AccountsSettingsListViewModel {
     }
 
     var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived && !$0.isSystemAccount }
+        accounts.billableUserAccounts
     }
 
     var systemAccounts: [Account] {

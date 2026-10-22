@@ -20,7 +20,29 @@ struct AccountFormView: View {
     @State private var viewModel: AccountFormViewModel
     @State private var showBalanceCalculator: Bool = false
     @State private var calcFieldState = BalanceCalculatorFieldState()
+    /// La hoja «¿Qué hacemos con lo que hay dentro?» de eliminar una cuenta con movimientos: la cuenta, con su
+    /// nombre y su divisa leídos al tocar «Eliminar» (la hoja se sigue pintando con la cuenta ya eliminada).
+    @State private var removalTarget: AccountRemovalTarget?
+    /// La hoja eliminó la cuenta: al cerrarse, se cierra también el formulario (en su `onDismiss`, no
+    /// mientras la hoja sigue montada — dos `dismiss` a la vez dejan presentaciones colgadas).
+    @State private var accountWasRemoved: Bool = false
     @FocusState private var focusedField: Field?
+    /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
+    @State private var selectedDetent: PresentationDetent = .medium
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Con un tamaño de texto de accesibilidad, media altura enseña un solo campo: la hoja abre grande.
+    private var sheetDetents: Set<PresentationDetent> {
+        dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
+    }
+
+    /// Grande si el usuario la arrastró o si no hay medium que mostrar: la ventana ancha
+    /// (`.yalaSheetDetents` presenta `[.large]`) o el texto de accesibilidad. En esos dos casos
+    /// `selectedDetent` no tiene por qué dejar `.medium`.
+    private var isLargeDetent: Bool {
+        usesLargeSheets || !sheetDetents.contains(.medium) || selectedDetent == .large
+    }
 
     private enum Field {
         case name, accountNumber, balance
@@ -75,7 +97,7 @@ struct AccountFormView: View {
                     .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(L10n.Account.configure)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -145,8 +167,14 @@ struct AccountFormView: View {
                 }
             }
         }
-
-
+        .yalaSheetDetents(sheetDetents, selection: $selectedDetent)
+        .presentationDragIndicator(.visible)
+        .modifier(AccountRemovalPresentation(
+            target: $removalTarget,
+            accountWasRemoved: $accountWasRemoved,
+            deleteAccount: removeAccount,
+            onDismissed: removalSheetDismissed
+        ))
         .alert(
             L10n.Account.deleteError,
             isPresented: $viewModel.isShowingDeleteError,
@@ -193,6 +221,152 @@ struct AccountFormView: View {
                 }
             }
         )
+        .alert(
+            viewModel.pendingCurrencyConversion.map { Self.currencyConversionTitle($0) } ?? "",
+            isPresented: Binding(
+                get: { viewModel.pendingCurrencyConversion != nil },
+                // **El setter solo cierra el alert; NO revierte la divisa.** En iOS un alert no tiene
+                // gesto de descarte: se cierra pulsando un botón, y SwiftUI escribe `false` aquí al
+                // pulsar CUALQUIERA de ellos — Convertir incluido. Si este setter cancelara, competiría
+                // con la acción del propio botón que lo disparó. Revertir es trabajo de Cancelar, que
+                // lo hace explícitamente.
+                set: { if !$0 { viewModel.pendingCurrencyConversion = nil } }
+            ),
+            actions: {
+                // El dato se lee AQUÍ, síncronamente, y viaja en la llamada: el cuerpo `async` no
+                // puede depender de un estado que el setter de arriba está a punto de limpiar.
+                // (Sin `accessibilityIdentifier`: dentro del closure de un `.alert` no llega al árbol
+                // de accesibilidad — `docs/aprendizajes-tecnicos.md`, 2026-09-04.)
+                let pending = viewModel.pendingCurrencyConversion
+                Button(L10n.Account.CurrencyChange.confirmAction) {
+                    guard let pending else { return }
+                    confirmCurrencyConversion(pending)
+                }
+
+                Button(L10n.Common.cancel, role: .cancel) {
+                    viewModel.cancelCurrencyConversion()
+                }
+            },
+            message: {
+                if let pending = viewModel.pendingCurrencyConversion {
+                    Text(Self.currencyConversionMessage(pending))
+                }
+            }
+        )
+        .alert(
+            L10n.Account.CurrencyChange.blockedTitle,
+            isPresented: $viewModel.isShowingCurrencyChangeBlocked,
+            actions: {
+                Button(L10n.Common.understood, role: .cancel) {
+                    viewModel.cancelCurrencyConversion()
+                }
+            },
+            message: {
+                Text(L10n.Account.CurrencyChange.blockedMessage(blockedReasonsText))
+            }
+        )
+        .alert(
+            L10n.Account.CurrencyChange.ratesUnavailableTitle,
+            isPresented: $viewModel.isShowingCurrencyRatesUnavailable,
+            actions: {
+                Button(L10n.Common.understood, role: .cancel) {}
+            },
+            message: {
+                Text(L10n.Account.CurrencyChange.ratesUnavailableMessage)
+            }
+        )
+        .overlay {
+            if viewModel.isConvertingCurrency {
+                currencyConversionOverlay
+            }
+        }
+        // A media conversión el histórico está partido entre dos divisas: cerrar el formulario ahí
+        // dejaría la cuenta en un estado que ninguna pantalla sabe leer.
+        .interactiveDismissDisabled(viewModel.isConvertingCurrency)
+    }
+
+    // MARK: - Texto del aviso de conversión
+
+    /// Con movimientos, el título de siempre («¿Convertir N movimientos?»); sin ellos —solo
+    /// programados, favoritos o borradores—, «¿Cambiar la divisa a USD?».
+    static func currencyConversionTitle(
+        _ pending: AccountFormViewModel.PendingCurrencyConversion
+    ) -> String {
+        pending.rowCount > 0
+            ? L10n.Account.CurrencyChange.confirmTitle(pending.rowCount)
+            : L10n.Account.CurrencyChange.confirmTitleNoHistory(pending.toCurrencyCode)
+    }
+
+    /// El cuerpo del aviso: qué se convierte y con qué tasa (decisión D7).
+    ///
+    /// Va en un solo `Text` con saltos de línea: es el `message` de un `.alert`, y ahí no caben
+    /// vistas propias. Los importes se rotulan con el código ISO, no con el símbolo: el aviso pone
+    /// dos divisas una al lado de la otra y «$» no dice cuál de las dos es.
+    static func currencyConversionMessage(
+        _ pending: AccountFormViewModel.PendingCurrencyConversion
+    ) -> String {
+        var paragraphs: [String] = []
+        if pending.rowCount > 0 {
+            paragraphs.append(L10n.Account.CurrencyChange.confirmMessage(
+                pending.fromCurrencyCode, pending.toCurrencyCode))
+        }
+        if pending.draftCount > 0 {
+            paragraphs.append(L10n.Account.CurrencyChange.draftsLine(
+                pending.draftCount, pending.toCurrencyCode))
+        }
+        if pending.planCount > 0 {
+            var lines = [L10n.Account.CurrencyChange.plansHeader(pending.toCurrencyCode)]
+            for item in pending.planPreview {
+                lines.append(L10n.Account.CurrencyChange.planItem(
+                    item.name,
+                    formatPlanAmount(item.fromAmount, currencyCode: item.fromCurrencyCode, isEstimate: false),
+                    formatPlanAmount(item.toAmount, currencyCode: pending.toCurrencyCode, isEstimate: item.isEstimate)
+                ))
+            }
+            let more = pending.planCount - pending.planPreview.count
+            if more > 0 { lines.append(L10n.Account.CurrencyChange.plansMore(more)) }
+            paragraphs.append(lines.joined(separator: "\n"))
+        }
+        // El «no se puede deshacer» ya va dentro del texto de los movimientos; sin ellos, se dice aparte.
+        if pending.rowCount == 0 {
+            paragraphs.append(L10n.Account.CurrencyChange.cannotUndo)
+        }
+        return paragraphs.joined(separator: "\n\n")
+    }
+
+    private static func formatPlanAmount(_ value: Double, currencyCode: String, isEstimate: Bool) -> String {
+        CurrencyFormattingHelper.currency(
+            value,
+            decimals: AccountCurrencyPlanLogic.fractionDigits(for: currencyCode),
+            identifier: currencyCode,
+            forceSign: false,
+            isEstimate: isEstimate
+        )
+    }
+
+    /// Tapa la pantalla mientras se reexpresa el histórico. Espeja el overlay del cambio de divisa
+    /// preferida (`CurrencySettingsView`), que resuelve el mismo problema.
+    private var currencyConversionOverlay: some View {
+        ZStack {
+            Color.black.opacity(DS.Opacity.overlay)
+                .ignoresSafeArea()
+
+            VStack(spacing: DS.Spacing.lg) {
+                ProgressView()
+
+                Text(L10n.Account.CurrencyChange.progressTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+
+                Text(L10n.Account.CurrencyChange.progressSubtitle)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(DS.Spacing.xxl)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        }
+        .accessibilityIdentifier("account_currency_converting")
     }
 
     // MARK: Secciones de la vista
@@ -247,31 +421,74 @@ struct AccountFormView: View {
 
     private var currencySection: some View {
         SectionBox(title: L10n.Account.currency) {
-            NavigationLink {
-                CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
-                    .swipeBack()
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    Text(currencyInfo(for: viewModel.selectedCurrency).flag)
-                        .font(DS.Typography.title)
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                if viewModel.isCurrencyEditable {
+                    NavigationLink {
+                        CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
+                            .swipeBack()
+                    } label: {
+                        currencyRow(showsChevron: true)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("account_currency_link")
+                } else {
+                    // Sin `NavigationLink`: no hay destino al que llegar, así que tampoco hay tap.
+                    // El motivo va debajo y no en un alert porque se puede leer ANTES de intentarlo
+                    // — un alert solo aparecería después de un toque que no lleva a ninguna parte.
+                    // La divisa de la CUENTA, no `selectedCurrency`: si el bloqueo aparece por una
+                    // fila que llegó por sync mientras el selector estaba abierto, enseñar la
+                    // elección del usuario junto a «no se puede cambiar» afirmaría algo falso.
+                    currencyRow(showsChevron: false, currency: viewModel.balanceDisplayCurrency)
+                        .accessibilityIdentifier("account_currency_locked")
 
-                    Text(L10n.Account.currency)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-
-                    Spacer()
-
-                    Text(currencyInfo(for: viewModel.selectedCurrency).name.capitalized)
-                        .foregroundStyle(.secondary)
-
-                    Image(systemName: "chevron.right")
+                    Text(L10n.Account.CurrencyChange.blockedMessage(blockedReasonsText))
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_currency_locked_reason")
                 }
-                .padding()
             }
-            .buttonStyle(.plain)
         }
+    }
+
+    private func currencyRow(showsChevron: Bool, currency: CurrencyCode? = nil) -> some View {
+        let shown = currency ?? viewModel.selectedCurrency
+        return HStack(spacing: DS.Spacing.md) {
+            Text(currencyInfo(for: shown).flag)
+                .font(DS.Typography.title)
+
+            Text(L10n.Account.currency)
+                .font(DS.Typography.body)
+                .foregroundStyle(showsChevron ? .primary : .secondary)
+
+            Spacer()
+
+            Text(currencyInfo(for: shown).name.capitalized)
+                .foregroundStyle(.secondary)
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding()
+    }
+
+    /// Los motivos del bloqueo, como lista legible. El orden lo fija el ViewModel para que el texto
+    /// no cambie entre aperturas.
+    private var blockedReasonsText: String {
+        viewModel.blockedCurrencyReasons
+            .map { reason in
+                switch reason {
+                case .transfer: return L10n.Account.CurrencyChange.blockedReasonTransfer
+                case .groupExpense: return L10n.Account.CurrencyChange.blockedReasonGroupExpense
+                case .groupSettlement: return L10n.Account.CurrencyChange.blockedReasonGroupSettlement
+                }
+            }
+            .formatted(.list(type: .and))
     }
 
     private var adjustmentSection: some View {
@@ -324,6 +541,7 @@ struct AccountFormView: View {
         .onChange(of: viewModel.selectedAdjustmentMode) {
             viewModel.adjustmentModeChanged()
         }
+        .disabled(viewModel.isCurrencyChangeRequested)
     }
 
     private var balanceSection: some View {
@@ -341,7 +559,7 @@ struct AccountFormView: View {
                         Spacer()
                         Text(
                             formatAmount(
-                                viewModel.currentBalance, currency: viewModel.selectedCurrency)
+                                viewModel.currentBalance, currency: viewModel.balanceDisplayCurrency)
                         )
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
@@ -517,6 +735,8 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.excludeFromStatistics) {
                     Text(L10n.Account.excludeFromStats)
                 }
+                .onChange(of: viewModel.excludeFromStatistics) { _, excluded in viewModel.excludeChanged(to: excluded) }
+                .accessibilityIdentifier("account_exclude_stats_toggle")
 
                 .padding()
 
@@ -525,8 +745,23 @@ struct AccountFormView: View {
                 Toggle(isOn: $viewModel.isArchived) {
                     Text(L10n.Account.archive)
                 }
+                .onChange(of: viewModel.isArchived) { _, archived in viewModel.setArchived(archived) }
+                .accessibilityIdentifier("account_archive_toggle")
 
                 .padding()
+
+                // Avisar sin confirmar: archivar no borra nada, cambia qué suma y qué se ve en
+                // Registros. El texto dice dónde se deshace: el toggle de arriba, en esta tarjeta.
+                if viewModel.showsArchiveExclusionNotice {
+                    Text(L10n.Account.archiveExcludedNotice)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_archive_excluded_notice")
+                }
 
                 if viewModel.isEditing {
                     SubsectionDivider()
@@ -540,6 +775,7 @@ struct AccountFormView: View {
                             Spacer()
                         }
                     }
+                    .accessibilityIdentifier("account_delete_button")
                     .padding()
                 }
             }
@@ -608,6 +844,23 @@ struct AccountFormView: View {
         }
     }
 
+    /// El usuario dijo que sí: convierte y guarda.
+    ///
+    /// El `Task` no es decorativo — la conversión refresca tasas antes de tocar importes, y eso hace
+    /// red. Cerrar solo si el guardado salió bien deja el formulario abierto cuando algo falló, que
+    /// es lo mismo que hace el guardado normal.
+    private func confirmCurrencyConversion(
+        _ pending: AccountFormViewModel.PendingCurrencyConversion
+    ) {
+        Task {
+            if await viewModel.confirmCurrencyConversion(pending, context: modelContext) {
+                if viewModel.currencyToSuggestAsSecondary == nil {
+                    dismiss()
+                }
+            }
+        }
+    }
+
     private func acceptSecondaryCurrency() {
         guard let code = viewModel.currencyToSuggestAsSecondary else { return }
         let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
@@ -631,18 +884,82 @@ struct AccountFormView: View {
 
     // MARK: - Eliminación de cuenta
 
+    /// Con algo dentro (movimientos, programados, favoritos o borradores pendientes) pregunta qué hacer con ello;
+    /// vacía, se elimina como siempre. Card `tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst`.
+    ///
+    /// Lo que cuelga se LEE del store (`AccountRemovalService.inventory`), no de las relaciones inversas, y un
+    /// fallo al leer no se toma por «vacía»: se avisa y no se elimina nada.
     private func handleDeleteTapped() {
         guard let account = viewModel.accountToEdit else { return }
         deletionService.setContext(modelContext)
         do {
+            let inventory = try AccountRemovalService.inventory(of: account, context: modelContext)
+            if inventory.shape.needsQuestion {
+                accountWasRemoved = false
+                removalTarget = AccountRemovalTarget(
+                    account: account, name: account.name, currencyCode: account.currencyCode)
+                return
+            }
             try deletionService.deleteAccount(account)
             dismiss()
+        } catch AccountRemovalService.Failure.unreadable {
+            viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
+            viewModel.isShowingDeleteError = true
         } catch {
             #if DEBUG
             print("AccountFormView: Error deleting account: \(error)")
             #endif
             viewModel.deleteErrorMessage = error.localizedDescription
             viewModel.isShowingDeleteError = true
+        }
+    }
+
+    /// Elimina la cuenta y guarda todo lo que la hoja dejó en el contexto (`EntityDeletionService.deleteAccount`).
+    /// Antes suelta las filas que el formulario tenía cargadas: sigue montado mientras la hoja se cierra, y su
+    /// `body` no debe leer filas ya borradas.
+    private func removeAccount(_ account: Account) throws {
+        viewModel.releaseLoadedRows()
+        deletionService.setContext(modelContext)
+        try deletionService.deleteAccount(account)
+    }
+
+    /// La hoja se cerró. Si eliminó la cuenta, se cierra también el formulario; si no (cancelar, o un error que
+    /// deshizo todo), el formulario vuelve a leer sus filas, que soltó antes de guardar.
+    private func removalSheetDismissed() {
+        if accountWasRemoved {
+            accountWasRemoved = false
+            dismiss()
+        } else {
+            viewModel.loadTransactions()
+            viewModel.loadPlans()
+        }
+    }
+}
+
+// MARK: - Hoja de eliminar con algo dentro
+
+/// La cuenta que se va a eliminar, con lo que la hoja necesita leído ANTES de eliminarla.
+struct AccountRemovalTarget: Identifiable {
+    let account: Account
+    let name: String
+    let currencyCode: String
+    var id: PersistentIdentifier { account.persistentModelID }
+}
+
+/// Presenta `AccountRemovalSheet` desde el formulario. Va en su propio modificador: la cadena del `body` ya es
+/// larga y el compilador del CI (Xcode 26.6) deja de tiparla con un modificador más (`swiftui-ds.md`).
+private struct AccountRemovalPresentation: ViewModifier {
+    @Binding var target: AccountRemovalTarget?
+    @Binding var accountWasRemoved: Bool
+    let deleteAccount: (Account) throws -> Void
+    let onDismissed: () -> Void
+
+    func body(content: Content) -> some View {
+        content.sheet(item: $target, onDismiss: onDismissed) { target in
+            AccountRemovalSheet(
+                account: target.account, name: target.name, currencyCode: target.currencyCode,
+                deleteAccount: deleteAccount
+            ) { accountWasRemoved = true }
         }
     }
 }

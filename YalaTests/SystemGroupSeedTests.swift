@@ -15,7 +15,7 @@ import Testing
 
 @testable import Yala
 
-@Suite("F2 — System group seed roles")
+@Suite("F2 — System group seed roles", .serialized)
 struct SystemGroupSeedTests {
 
     // MARK: - GroupBridgeSystemRole — identificadores estables

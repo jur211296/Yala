@@ -176,6 +176,7 @@ struct GroupFormView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
                         .font(DS.Typography.body)
+                        .accessibilityIdentifier("group_form_single_currency_toggle")
 
                     Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
                         .font(DS.Typography.captionSmall)
@@ -205,9 +206,14 @@ struct GroupFormView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .padding(.vertical, DS.Spacing.sm)
+                            // El `contentShape` va DENTRO del label, NO en el `Button`: el label es un
+                            // `HStack` con `Spacer()` y sin fondo relleno, así que ahí el hueco central
+                            // no es tocable y solo responden los glifos de los extremos. Ver la regla del
+                            // DS en `.claude/rules/swiftui-ds.md`.
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .contentShape(Rectangle())
+                        .accessibilityIdentifier("group_form_currency_row")
                     }
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -266,17 +272,56 @@ struct GroupFormView: View {
                     membersCanInvite: false
                 )
             } else {
-                // Create
-                try await GroupService.shared.createGroup(
-                    name: trimmedName,
-                    iconName: iconName,
-                    colorHex: colorHex,
-                    currencyCode: currencyCode,
-                    simplifyDebts: simplifyDebts,
-                    showDebtsInSingleCurrency: showDebtsInSingleCurrency,
-                    defaultSplitType: defaultSplitType.rawValue,
-                    membersCanInvite: false
-                )
+                // Create — C4: el ÚNICO canal de creación es el backend. El gate canal/consent/sign-in ya
+                // corrió en el call-site que abrió el form (GroupsContainerView.requestCreateGroup, que
+                // además re-mide el flag con `refreshIfDue(force: true)`); las ramas no-`.backend` de aquí
+                // son belt defensivo (no deberían alcanzarse) — las needs* ceden el anchor con dismiss()
+                // PRIMERO, y `.channelOff` NO cede: se queda y dice el porqué, porque tras el dismiss no
+                // queda nadie que pueda contárselo al usuario.
+                switch GroupCreateRoutingLogic.route(
+                    flagOn: CloudSyncFlags.groupsBackendEnabled,
+                    hasSession: CloudAuthService.shared.hasSession,
+                    consentAccepted: GroupsConsentState.isAccepted
+                ) {
+                case .channelOff:
+                    // Cero escrituras: antes de C4 esta rama era `.cloudKit` y acuñaba un `SplitGroup`
+                    // local con `isBackendGroup == false` — no invitable y sin vía de migración.
+                    DS.Haptic.warning()
+                    saveErrorMessage = L10n.Welcome.Groups.channelOffBody
+                    showSaveError = true
+                    return
+                case .backend:
+                    // `displayName` no-vacío (patrón defaultName R1: `join`/`create_group` hacen btrim=''
+                    // → yala_bad_input permanente si vacío).
+                    let profile = UserDefaults.standard.string(forKey: "userName") ?? ""
+                    let displayName = profile.isEmpty ? L10n.Profile.defaultName : profile
+                    _ = try await GroupBackendMembershipService(
+                        client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
+                        .createGroup(
+                            name: trimmedName,
+                            iconName: iconName,
+                            colorHex: colorHex,
+                            currencyCode: currencyCode,
+                            displayName: displayName,
+                            defaultSplitType: defaultSplitType.rawValue,
+                            simplifyDebts: simplifyDebts,
+                            showDebtsInSingleCurrency: showDebtsInSingleCurrency,
+                            membersCanInvite: false,
+                            context: modelContext
+                        )
+                    // Paridad de side-effects: el servicio backend NO los emite (a diferencia de
+                    // GroupService.createGroup) — replicarlos aquí para no regresionar la UX.
+                    SessionState.shared.incrementDataVersion()
+                    NudgeService.shared.recordGroupJoinIfNeeded()
+                case .needsConsent:
+                    dismiss()
+                    RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))
+                    return
+                case .needsSignIn:
+                    dismiss()
+                    RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+                    return
+                }
             }
             DS.Haptic.success()
             dismiss()

@@ -559,5 +559,118 @@ struct DevSeedTransactions {
         usdTx.createdAt = startDate
         context.insert(usdTx)
     }
+
+    // MARK: - Desync Fixtures (XCUI clasificación income/expense por categoría)
+
+    /// Set MÍNIMO y determinista para `IncomeExpenseClassificationUITests`: 4 TX en
+    /// `Date.now` (cae en cualquier período por defecto — hoy/semana/mes/año) donde DOS
+    /// tienen el signo del monto CONTRARIO a su categoría (income con monto negativo,
+    /// expense con monto positivo). La regla canónica (`TransactionClassificationLogic.isIncome`)
+    /// clasifica por CATEGORÍA, no por signo, con acumulación signed (un monto de signo
+    /// contrario reduce el bucket). Valores elegidos para que el bucket CORRECTO (fix) y
+    /// el INCORRECTO (bug por-signo) den totales DISTINTOS y sin colisión de dígitos:
+    ///   fix (por categoría):   Ingresos = 600 − 100 = 500 · Gastos = 500 − 200 = 300
+    ///   bug (por signo):       Ingresos = 600 + 200 = 800 · Gastos = 100 + 500 = 600
+    /// Moneda = la de display (`currencyCode`) con `amountInPreferredCurrency = amount`
+    /// (sin FX): así income/expense usan el valor signed CRUDO en ambas superficies —
+    /// Registros (usa `amountInPreferredCurrency` directo) e Insights (vía CashFlowCalculator,
+    /// que usa el crudo sólo si `preferredCurrencyCode == currencyCode` de display).
+    @MainActor
+    static func createDesyncFixtures(
+        account: Account,
+        subcategoryLookup: [String: Subcategory],
+        currencyCode: String,
+        in context: ModelContext
+    ) {
+        let now = Date.now
+        let salary = subcategoryLookup[L10n.Subcategory.salary]           // categoría income
+        let restaurants = subcategoryLookup[L10n.Subcategory.restaurants] // categoría expense
+
+        func insert(amount: Double, sub: Subcategory?) {
+            let tx = TransactionItem(
+                date: now,
+                amount: amount,
+                currencyCode: currencyCode,
+                note: nil,
+                category: sub?.category,
+                subcategory: sub,
+                account: account,
+                exchangeRate: 1.0,
+                amountInPreferredCurrency: amount,
+                preferredCurrencyCode: currencyCode
+            )
+            tx.createdAt = now
+            context.insert(tx)
+        }
+
+        insert(amount: 600, sub: salary)        // income normal (categoría income, monto +)
+        insert(amount: -100, sub: salary)       // DESYNC: categoría income, monto NEGATIVO
+        insert(amount: -500, sub: restaurants)  // gasto normal (categoría expense, monto −)
+        insert(amount: 200, sub: restaurants)   // DESYNC: categoría expense, monto POSITIVO
+
+        do { try context.save() } catch {
+            print("DevSeedTransactions: Desync fixtures save error: \(error)")
+        }
+    }
+
+    // MARK: - Dead-pointer fixture (AC-c fantasma)
+
+    /// Constantes que Mini y los unit tests comparten. La nota viaja al
+    /// `accessibilityLabel` de `record_row` (`note, amount, …`).
+    enum DeadPointerUITestSeed {
+        static let profile = "dead-pointer"
+        static let note = "Dead group pointer"
+        static let unresolvedExpenseIDString = "DEAD0000-0000-4000-8000-000000000001"
+        static let amount: Double = -42
+    }
+
+    /// Planta el estado que `NewTransactionView.resolveBridgedPointer` trata como puntero
+    /// MUERTO: `bridgedPointerResolves = found || !isFresh` sale `false`.
+    ///
+    /// **Por qué un grupo legacy asentado, y no un backend.** El editor no toma un fetch
+    /// vacío por «no existe» a secas: exige que la zona sea fresca. Un `SplitGroup` del
+    /// canal backend en uitest queda `.backendChannelIdle` (no hay pull) ⇒ `isFresh == false`
+    /// ⇒ el puntero se trata como VIVO y Borrar/Duplicar se apagan — justo el bug. Una zona
+    /// asentada SIN canal concede `.fresh` (Fase 3). El barrido de huérfanas no la toca
+    /// (`belongsToBackendChannel` es el primer guard). `LegacyGroupsRetirement.retire`
+    /// corre en el MISMO boot (tras `awaitPersonalStoreReady`) y nilea el puntero:
+    /// AppBootstrapper salta ese retire solo bajo DEBUG + `-uitest` + perfil
+    /// `dead-pointer`. `-uitest-reset` no basta.
+    ///
+    /// **No se setea `isBackendGroup = true`.** Eso es a propósito y va pinneado: el seed
+    /// `.grupos` lo pone por C3, y copiarlo aquí reabriría el caso.
+    @MainActor
+    static func createDeadPointerFixture(
+        account: Account,
+        currencyCode: String,
+        in context: ModelContext
+    ) {
+        let group = SplitGroup(
+            name: "Dead pointer zone",
+            currencyCode: currencyCode,
+            isOwner: true
+        )
+        group.initialMemberImportStartedAt = nil
+        context.insert(group)
+
+        let tx = TransactionItem(
+            date: Date.now,
+            amount: DeadPointerUITestSeed.amount,
+            currencyCode: currencyCode,
+            note: DeadPointerUITestSeed.note,
+            account: account,
+            exchangeRate: 1.0,
+            amountInPreferredCurrency: DeadPointerUITestSeed.amount,
+            preferredCurrencyCode: currencyCode
+        )
+        tx.splitExpenseID = DeadPointerUITestSeed.unresolvedExpenseIDString
+        tx.splitGroupZoneID = group.cloudKitZoneID
+        tx.createdAt = Date.now
+        context.insert(tx)
+
+        do { try context.save() } catch {
+            print("DevSeedTransactions: Dead pointer fixture save error: \(error)")
+        }
+    }
 }
 #endif

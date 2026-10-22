@@ -2,35 +2,99 @@ import type { Env } from "./env";
 import type { SessionClaims } from "./attest/session";
 import { jsonError } from "./errors";
 import { type Category, limitsFor } from "./policy";
-import type { RateLimitResult } from "./rate_limiter";
+import type { CheckRequest, ForgetRequest, QuotaTicket, RateLimitResult, RefundRequest } from "./rate_limiter";
 
 /**
  * Aplica entitlement + rate-limit a un request ya autenticado.
  * Devuelve una Response de error si debe bloquearse, o null si está permitido.
  *
  * - Categoría no permitida para el tier → 403 yala_pro_required.
+ * - Cupo de prueba agotado + ENFORCE="enforce" → 403 yala_trial_exhausted (la app ofrece pasarse a Pro).
  * - Límite excedido + ENFORCE="enforce" → 429 (daily/burst).
  * - Límite excedido + ENFORCE="observe" → se cuenta pero NO se bloquea (ventana de rollout).
  */
 export async function gateRequest(env: Env, claims: SessionClaims, category: Category): Promise<Response | null> {
+  return (await gateAIRequest(env, claims, category)).blocked;
+}
+
+export interface GateOutcome {
+  blocked: Response | null;
+  /** Lo que gastó el paso, para devolverlo con `refundQuota` si el proveedor falla. `null` si no gastó nada. */
+  ticket: QuotaTicket | null;
+}
+
+function limiter(env: Env, claims: SessionClaims) {
+  return env.RATE_LIMITER.get(env.RATE_LIMITER.idFromName(claims.keyId));
+}
+
+/**
+ * El cubo de cuota de una CUENTA: el que usan las rutas que solo exigen el JWT de usuario (`requireUser`) y las
+ * estrictas cuando no llega sesión de attest. Es el único contador ligado a la cuenta; el de la clave de App Attest
+ * es del dispositivo (ver `forgetAccountQuota`).
+ */
+export function accountQuotaBucket(sub: string): string {
+  return `sub:${sub}`;
+}
+
+/**
+ * Borrado de cuenta: olvida el contador de la CUENTA. El del dispositivo (cubo = keyId de App Attest) se conserva a
+ * propósito: no lleva nada de la cuenta, sigue sirviendo a ese teléfono (IA, tipos de cambio) y es el que guarda el
+ * cupo de prueba de la IA, que no se repone nunca; borrarlo con la cuenta lo repondría con cada alta y baja.
+ */
+export async function forgetAccountQuota(env: Env, sub: string): Promise<void> {
+  const body: ForgetRequest = { op: "forget" };
+  await limiter(env, { keyId: accountQuotaBucket(sub), tier: "free" }).fetch("https://ratelimiter/forget", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function gateAIRequest(
+  env: Env,
+  claims: SessionClaims,
+  category: Category,
+  notePairing?: "grant" | "consume",
+): Promise<GateOutcome> {
   const limits = limitsFor(claims.tier, category);
   if (!limits) {
-    return jsonError("yala_pro_required", "Esta función requiere Yala Pro.", 403);
+    return { blocked: jsonError("yala_pro_required", "Esta función requiere Yala Pro.", 403), ticket: null };
   }
 
-  const id = env.RATE_LIMITER.idFromName(claims.keyId);
-  const stub = env.RATE_LIMITER.get(id);
-  const res = await stub.fetch("https://ratelimiter/check", {
-    method: "POST",
-    body: JSON.stringify({ category, daily: limits.daily, burstPerMin: limits.burstPerMin }),
-  });
-  const { allowed, reason } = (await res.json()) as RateLimitResult;
+  const check: CheckRequest = { category, burstPerMin: limits.burstPerMin, ...(limits.trial !== undefined ? { trial: limits.trial } : { daily: limits.daily }), ...(notePairing ? { notePairing } : {}) };
+  const res = await limiter(env, claims).fetch("https://ratelimiter/check", { method: "POST", body: JSON.stringify(check) });
+  const { allowed, reason, ticket } = (await res.json()) as RateLimitResult;
 
   if (!allowed && env.ENFORCE === "enforce") {
+    if (reason === "trial") {
+      return {
+        blocked: jsonError("yala_trial_exhausted", "Ya usaste tu prueba gratuita. Con Yala Pro puedes seguir.", 403, { "X-Yala-Limit": "trial" }),
+        ticket: null,
+      };
+    }
     const type = reason === "burst" ? "yala_quota_burst" : "yala_quota_daily";
-    return jsonError(type, "Límite de uso alcanzado. Intenta más tarde.", 429, {
-      "X-Yala-Limit": reason ?? "daily",
-    });
+    return {
+      blocked: jsonError(type, "Límite de uso alcanzado. Intenta más tarde.", 429, { "X-Yala-Limit": reason ?? "daily" }),
+      ticket: null,
+    };
   }
-  return null;
+  return { blocked: null, ticket: ticket ?? null };
+}
+
+/**
+ * Devuelve lo que gastó una petición cuyo proveedor no contestó (5xx o red). Best-effort: un fallo aquí deja el uso
+ * gastado, que es como estaba antes de la sesión 2.
+ */
+export async function refundQuota(env: Env, claims: SessionClaims, category: Category, ticket: QuotaTicket | null): Promise<void> {
+  if (!ticket) return;
+  const body: RefundRequest = { op: "refund", category, ticket };
+  try {
+    await limiter(env, claims).fetch("https://ratelimiter/refund", { method: "POST", body: JSON.stringify(body) });
+  } catch (err) {
+    console.log(`[gw-ai] refund fallido ${category}: ${String(err).slice(0, 120)}`);
+  }
+}
+
+/** ¿Este status del proveedor es un fallo suyo (no del usuario) que no debe gastar cupo? */
+export function isProviderFailure(status: number): boolean {
+  return status >= 500 || status === 429 || status === 408;
 }

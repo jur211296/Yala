@@ -11,10 +11,11 @@ struct PanelAccountsSection: View {
     let sessionState: SessionState
     let accountsSortOrderNames: [String]
     @Binding var accountFormSheet: AccountFormSheet?
+    @Binding var accountDetail: AccountDetailPresentation?
     @Binding var showUpgradeForAccounts: Bool
 
     private var isAccountsLimitReached: Bool {
-        let activeCount = viewModel.accounts.count(where: { !$0.isArchived })
+        let activeCount = viewModel.accounts.billableUserAccounts.count
         return !FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount)
     }
 
@@ -46,6 +47,9 @@ struct PanelAccountsSection: View {
                 },
                 onEditAccount: { account in
                     accountFormSheet = AccountFormSheet(account: account)
+                },
+                onOpenAccount: { account in
+                    accountDetail = AccountDetailPresentation(account: account)
                 }
             )
         }

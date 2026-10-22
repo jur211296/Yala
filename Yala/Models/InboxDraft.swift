@@ -25,10 +25,22 @@ enum DraftSourceType: String, Codable {
     case groupExpense   // A0-Bridge: caso A/B sin match — apunta a TX existente via splitExpenseID
     case groupSettlement // A0-Bridge: caso C/D — TX cuenta real diferida hasta asignar cuenta
     case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
+    case groupScheduledExpense // Pago planificado de grupo: al aprobar abre el form de grupo y crea el SplitExpense.
 
-    /// True para sources de grupos que NO permiten eliminar/rechazar (solo asignar+finalizar).
+    /// True para los sources que crea el bridge de grupos. Decide el ruteo del aprobar en lote
+    /// (`BulkApproveRoutingLogic`). Si se pueden rechazar o borrar lo decide `blocksInboxDismissal`.
+    /// `.groupScheduledExpense` NO se incluye: aún no existe un SplitExpense, así que debe poder
+    /// saltarse/rechazarse como un pago planificado (el descarte hace skip de la ocurrencia).
     var isFromGroup: Bool {
         self == .groupExpense || self == .groupSettlement
+    }
+
+    /// True si el Inbox NO deja rechazar ni borrar un borrador de este source. Solo `.groupExpense`: apunta a una
+    /// transacción que ya existe y solo pide clasificarla. `.groupSettlement` SÍ se deja descartar (ticket
+    /// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`): un borrador de liquidación que vuelve a
+    /// preguntar por un pago ya registrado no puede dejar a la persona atrapada.
+    var blocksInboxDismissal: Bool {
+        self == .groupExpense
     }
 }
 
@@ -45,6 +57,10 @@ enum DraftOriginReason: String {
     case remoteCreate = "groups.bridge.draftReasonRemoteCreate"
     /// Cambio de moneda en el grupo invalidó la cuenta personal previa.
     case currencyChanged = "groups.bridge.draftReasonCurrencyChanged"
+    /// El importe de una liquidación ya aprobada a una cuenta real cambió en remoto: el borrador es el AVISO que ofrece
+    /// ajustar esa transacción (ticket `settlement-amount-edited-after-approval-leaves-the-bank-stale`). No es un borrador
+    /// de «¿a qué cuenta llegó?»: ver `InboxDraft.isSettlementAmountChangeNotice`.
+    case settlementAmountChanged = "groups.bridge.draftReasonSettlementAmountChanged"
 }
 
 /// M6: Campos que un draft espera del user para finalizar. Centraliza los strings
@@ -191,6 +207,11 @@ final class InboxDraft: Identifiable {
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. Opcional sin default (gotcha de UUID colapsado — ver
+    /// `TransactionItem.syncID`). Poblado por `SyncIdentityService`.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     // MARK: - Computed Properties
 
     var sourceType: DraftSourceType {
@@ -216,6 +237,42 @@ final class InboxDraft: Identifiable {
     /// Indica si la transacción aprobada fue eliminada (permite re-aprobar)
     var wasTransactionDeleted: Bool {
         status == .approved && approvedTransaction == nil
+    }
+
+    /// **La marca de una liquidación ya registrada, con su transacción viva** (ticket
+    /// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`). Mientras la transacción exista, la marca no se
+    /// borra ni se devuelve a pendientes desde el Inbox: sin ella, el siguiente re-puente volvería a preguntar por el
+    /// pago, y devuelta a pendientes se aprobaría otra vez. Sin transacción (la persona la borró) vuelve a ser un
+    /// borrador más: tocarla la re-aprueba, como cualquier aprobado cuya transacción desapareció.
+    var isLiveSettlementApprovalMark: Bool {
+        sourceType == .groupSettlement && status == .approved && approvedTransaction != nil
+            && !isSettlementAmountChangeNotice
+    }
+
+    /// **El aviso de que cambió el importe de una liquidación ya aprobada** (ticket
+    /// `settlement-amount-edited-after-approval-leaves-the-bank-stale`). Es un borrador `.groupSettlement` con
+    /// `originReasonKey` propio, y su `amount` es el importe nuevo con signo. Pendiente, pregunta; rechazado, es la
+    /// decisión «dejarla como está» y evita volver a preguntar por la misma corrección; ajustar lo borra.
+    ///
+    /// **No lleva `approvedTransaction`**: la relación es uno a uno con `TransactionItem.approvedDraft`, así que enlazar
+    /// el aviso a la transacción le quitaría el enlace a la marca (y con él, la protección contra aprobar el pago otra
+    /// vez). La transacción a ajustar se resuelve siempre a través de la marca viva (`SettlementAmountChangeTarget`).
+    ///
+    /// **No es la marca ni un borrador de «¿a qué cuenta llegó?»**: todo lo que lee la marca o sustituye pendientes
+    /// (`GroupSettlementDraftResolutionLogic`, el re-puente, la poda en frío, `computeFreezePlan`) lo deja fuera.
+    /// `sourceType` se queda en `.groupSettlement` a propósito: un build desde el 2026-09-28 lo trata como un borrador de
+    /// liquidación y aprobarlo choca con la marca en vez de crear otra transacción. Uno anterior sí podría (residual con
+    /// ticket `settlement-amount-change-notice-on-a-build-before-the-approval-mark`).
+    var isSettlementAmountChangeNotice: Bool {
+        sourceType == .groupSettlement && originReasonKey == DraftOriginReason.settlementAmountChanged.rawValue
+    }
+
+    /// Si sale en la pestaña Archivados. Los archivados sin cuenta cacheada no salen (sus relaciones pueden estar
+    /// invalidadas), salvo el de una liquidación: se rechaza sin haber elegido cuenta, y si no saliera, el rechazo no se
+    /// podría deshacer nunca —el re-puente lo respeta—. Su fila solo lee valores guardados (`needsUserInput`, importe).
+    var isShownInArchive: Bool {
+        (status == .approved || status == .rejected)
+            && (cachedAccountName != nil || sourceType == .groupSettlement)
     }
 
     /// Indica si todos los campos están completos (para mostrar vista completa vs incompleta)
@@ -301,12 +358,22 @@ final class InboxDraft: Identifiable {
         case .groupExpense: return "person.2.fill"
         case .groupSettlement: return "arrow.left.arrow.right.circle.fill"
         case .manual: return "square.and.pencil"
+        case .groupScheduledExpense: return "arrow.trianglehead.2.clockwise.rotate.90"
         }
     }
 
     /// True si este draft NO permite eliminar/rechazar (solo asignar+finalizar).
     /// Drafts de grupos solo se eliminan al borrar el expense/settlement origen.
     var isFromGroup: Bool { sourceType.isFromGroup }
+
+    /// True si el draft NO puede aprobarse con quick-approve (swipe / bulk): requiere abrir el
+    /// form dedicado que crea la entidad correcta. `.groupScheduledExpense` crea un `SplitExpense`
+    /// de grupo vía `GroupExpenseFormView`, NO una `TransactionItem` personal — aprobarlo por el
+    /// path genérico lo registraría como gasto personal y nunca lo compartiría con el grupo.
+    ///
+    /// El aviso de importe cambiado tampoco: aprobarlo es AJUSTAR una transacción que ya existe, y eso se decide en su hoja,
+    /// viendo las dos cifras, no deslizando ni en «Aprobar todo».
+    var requiresApprovalForm: Bool { sourceType == .groupScheduledExpense || isSettlementAmountChangeNotice }
 
     // MARK: - Init
 

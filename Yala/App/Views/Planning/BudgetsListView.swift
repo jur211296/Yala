@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BudgetsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -81,10 +82,18 @@ struct BudgetsListView: View {
         .yalaScreenBackground(.panel)
         .navigationDestination(for: BudgetNavigationID.self) { navID in
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
+                .announcesShownInDetailColumn()
+                // En la columna de detalle SwiftUI reutiliza el destino al abrir otro presupuesto, y el resumen
+                // (`@State`, calculado en `onAppear`) se quedaba con el gastado del anterior (medido en el iPad el
+                // 2026-10-12). Con la identidad del presupuesto, cada uno es una vista nueva.
+                .id(navID.id)
         }
+        // `editingBudget`: `nil` crea (el FAB y el empty state lo ponen a `nil` antes); un presupuesto lo edita
+        // (menú contextual de la fila, fase 3). Hasta entonces nadie lo leía y la hoja creaba siempre.
         .sheet(isPresented: $viewModel.showBudgetEditor) {
-            BudgetEditorView(budget: nil)
+            BudgetEditorView(budget: viewModel.editingBudget)
                 .onDisappear {
+                    viewModel.editingBudget = nil
                     refreshData()
                 }
         }
@@ -94,7 +103,7 @@ struct BudgetsListView: View {
                 transactions: viewModel.allTransactions,
                 onPeriodChange: { refreshData() }
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+            .yalaSheetDetents([.medium])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showUpgradeSheet) {
@@ -123,8 +132,8 @@ struct BudgetsListView: View {
         // Peek first so we only drain intents this view handles —
         // ScheduledPaymentsView shares the .planning consumer.
         .routerConsumer(.planning) {
-            if case .autoOpenBudgetEditor = AppRouter.shared.peekNext(for: .planning) {
-                _ = AppRouter.shared.drainNext(for: .planning)
+            if case .autoOpenBudgetEditor = AppRouter.shared.peekNext(for: .planning, in: navigation.id) {
+                _ = AppRouter.shared.drainNext(for: .planning, in: navigation.id)
                 viewModel.editingBudget = nil
                 viewModel.showBudgetEditor = true
             }
@@ -189,6 +198,13 @@ struct BudgetsListView: View {
                             summary: summary,
                             currencyCode: summary.budget.currencyCode
                         )
+                        // Clic secundario en el iPad, pulsación larga en el iPhone: el editor de siempre.
+                        .contextMenu {
+                            Button(L10n.Action.edit, systemImage: "pencil") {
+                                viewModel.editingBudget = summary.budget
+                                viewModel.showBudgetEditor = true
+                            }
+                        }
                     }
                 }
             }
@@ -273,4 +289,5 @@ private struct BudgetDetailDestination: View {
     NavigationStack {
         BudgetsListView()
     }
+    .environment(SceneNavigation())
 }

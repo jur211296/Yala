@@ -34,7 +34,10 @@ struct InsightsRuleBasedTests {
             dailyAverageCount: 1,
             dailyAverageExpense: 33,
             dailyAverageVariation: nil,
-            previousPeriodLabel: "last month"
+            previousPeriodLabel: "last month",
+            incomeAmountsAreApproximate: false,
+            expenseAmountsAreApproximate: false,
+            amountsAreApproximate: false
         )
     }
 
@@ -80,7 +83,10 @@ struct InsightsRuleBasedTests {
             totalExpense: 1000,
             netFlow: 1000,
             chartData: [],
-            currencyCode: "USD"
+            currencyCode: "USD",
+            incomeAmountsAreApproximate: false,
+            expenseAmountsAreApproximate: false,
+            amountsAreApproximate: false
         )
     }
 

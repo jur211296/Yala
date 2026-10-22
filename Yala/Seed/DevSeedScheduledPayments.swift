@@ -15,14 +15,23 @@ struct DevSeedScheduledPayments {
         let payments: [ScheduledPayment]
     }
 
+    /// Nombre fijo (no localizado) del pago que vence hoy, para que los XCUITests lo
+    /// localicen igual en cualquier locale — mismo criterio que `DevSeedDrafts.draftNoteA`.
+    static let dueTodayName = "Recibo vence hoy"
+
+    /// Nombre fijo (no localizado) del pago que vence el ÚLTIMO día de cada mes. Solo lo siembra el
+    /// perfil `minimal` (ver `includeEndOfMonthPayment`).
+    static let endOfMonthName = "Recibo fin de mes"
+
     @MainActor
     static func create(
         account: Account,
         subcategoryLookup: [String: Subcategory],
+        today: Date = .now,
+        includeEndOfMonthPayment: Bool = false,
         in context: ModelContext
     ) -> Result {
         let calendar = Calendar.current
-        let today = Date.now
 
         func nextOccurrence(dayOfMonth day: Int) -> Date {
             // Always return THIS month's date if it hasn't passed,
@@ -58,6 +67,50 @@ struct DevSeedScheduledPayments {
         ]
 
         var payments: [ScheduledPayment] = []
+
+        // `-uitest-scheduled-due-today`: un pago que vence HOY, que los 8 de arriba nunca
+        // garantizan (se reparten por el mes y `min(day, 28)` capa los días 29-31).
+        //
+        // Por qué es un SEAM y no una fila más del fixture: un pago que vence hoy se ordena
+        // el PRIMERO de la lista, y `ScheduledPaymentSkipUITests` opera sobre
+        // `app.buttons["scheduled_payment_row"].firstMatch` ⇒ meterlo siempre le cambiaría el
+        // sujeto a un test verde. Aditivo y apagado por defecto.
+        //
+        // Es «una sola vez» (`isRecurring: false`) a propósito: replica el resultado de elegir
+        // esa opción en el segmentado de Recurrencia, que es la interacción que el QA por
+        // árbol de accesibilidad NO puede hacer (los `Picker` segmentados no se enumeran como
+        // tapeables). Con esto el escenario se alcanza sin tocar el segmentado.
+        //
+        // OJO al verificarlo en pantalla: la fila lo rotula «Mensual», no «Una sola vez».
+        // No es este seam fallando. `RecurrenceType` no tiene caso `once` —«una sola vez» se
+        // modela SOLO con `isRecurring: false`— y `ScheduledPaymentRowView.recurrenceBadge`
+        // pinta `recurrenceType` sin mirar `isRecurring`. El `recurrenceType: "monthly"` de
+        // abajo es el valor por defecto del modelo, inerte mientras `isRecurring` sea false.
+        if UITestHooks.scheduledDueToday {
+            // Mediodía, no `startOfDay`: una fecha a medianoche exacta cae en la frontera
+            // cerrada de `DateInterval` (CLAUDE.md → «Cálculos con fechas»).
+            let dueToday = calendar.startOfDay(for: today).addingTimeInterval(12 * 3600)
+            let oneOff = ScheduledPayment(
+                name: Self.dueTodayName,
+                amount: 75,
+                currencyCode: "PEN",
+                transactionType: TransactionType.expense.rawValue,
+                account: account,
+                subcategory: subcategoryLookup[L10n.Subcategory.utilities],
+                isRecurring: false,
+                recurrenceType: "monthly",
+                recurrenceInterval: 1,
+                nextDueDate: dueToday,
+                dayOfMonth: calendar.component(.day, from: dueToday),
+                paymentCategory: "recurring",
+                notifyOnDueDate: true,
+                notifyDaysBefore: 0,
+                isVariableAmount: false
+            )
+            context.insert(oneOff)
+            payments.append(oneOff)
+        }
+
         for def in definitions {
             let sub = subcategoryLookup[def.subKey]
             let payment = ScheduledPayment(
@@ -77,8 +130,44 @@ struct DevSeedScheduledPayments {
                 notifyDaysBefore: 3,
                 isVariableAmount: def.variable
             )
+            // `createdAt` sigue a `today`: con el `.now` por defecto es el mismo instante que pone el init,
+            // y con un día forzado (`-uitest-scheduled-seed-day`) es lo que hace que el mes se vea como ese
+            // día — el calculador descarta las fechas anteriores a `createdAt`.
+            payment.createdAt = today
             context.insert(payment)
             payments.append(payment)
+        }
+
+        // Un pago que cae SIEMPRE en el mes en curso. Los 8 de arriba van del día 3 al 28, y el calculador
+        // descarta las fechas anteriores a `createdAt` (el día de la siembra): sembrando del día 29 en
+        // adelante, «Este mes» se quedaba vacío y `ScheduledPaymentSkipUITests` no tenía fila que tocar
+        // (ticket `scheduled-payment-skip-uitests-fail-at-the-end-of-the-month`). `dayOfMonth: 31` lo lleva
+        // al último día de cada mes (el calculador lo recorta a la longitud del mes), que nunca queda atrás.
+        // Del día 1 al 28 se ordena el último, así que no le cambia el sujeto a ningún test.
+        if includeEndOfMonthPayment,
+           let monthInterval = calendar.dateInterval(of: .month, for: today),
+           let lastDay = calendar.date(byAdding: .day, value: -1, to: monthInterval.end) {
+            let dueDate = calendar.startOfDay(for: lastDay)
+            let endOfMonth = ScheduledPayment(
+                name: Self.endOfMonthName,
+                amount: 40,
+                currencyCode: "PEN",
+                transactionType: TransactionType.expense.rawValue,
+                account: account,
+                subcategory: subcategoryLookup[L10n.Subcategory.utilities],
+                isRecurring: true,
+                recurrenceType: "monthly",
+                recurrenceInterval: 1,
+                nextDueDate: dueDate,
+                dayOfMonth: 31,
+                paymentCategory: "recurring",
+                notifyOnDueDate: true,
+                notifyDaysBefore: 3,
+                isVariableAmount: false
+            )
+            endOfMonth.createdAt = today
+            context.insert(endOfMonth)
+            payments.append(endOfMonth)
         }
 
         return Result(payments: payments)

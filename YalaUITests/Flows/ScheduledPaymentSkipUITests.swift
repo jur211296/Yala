@@ -10,6 +10,13 @@
 //  el badge interno del row. Seed `minimal` (8 pagos recurrentes con ocurrencias
 //  futuras). Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
+//  La lista abre en «Este mes», así que el test depende de que algún pago caiga en el mes en
+//  curso. Los 8 del fixture van del día 3 al 28 y el calculador descarta lo anterior a la siembra:
+//  del 29 en adelante «Este mes» quedaba vacío y los dos casos caían con «No se montó la lista».
+//  El perfil `minimal` siembra además «Recibo fin de mes» (último día de cada mes), y los casos
+//  `_onLastDayOfMonth` / `_onFirstDayOfMonth` fuerzan la fecha de la siembra con
+//  `-uitest-scheduled-seed-day` para medirlo cualquier día, sin esperar a fin de mes.
+//
 
 import XCTest
 
@@ -47,8 +54,23 @@ final class ScheduledPaymentSkipUITests: XCTestCase {
 
     /// Saltar una ocurrencia: tras saltar, reabrir la ocurrencia ofrece "Deshacer salto".
     func test_skippingOccurrencePersists() {
+        assertSkippingOccurrencePersists(seedDay: nil)
+    }
+
+    /// Fin de mes: sembrando el último día, solo «Recibo fin de mes» cae en «Este mes». Sin él, la lista
+    /// sale vacía y este caso cae en `openFirstPaymentDetail` — el rojo del ticket, reproducido a demanda.
+    func test_skippingOccurrencePersists_onLastDayOfMonth() {
+        assertSkippingOccurrencePersists(seedDay: 31)
+    }
+
+    /// Principio de mes: los 9 pagos caen en «Este mes» y el primero sigue siendo uno del fixture de siempre.
+    func test_skippingOccurrencePersists_onFirstDayOfMonth() {
+        assertSkippingOccurrencePersists(seedDay: 1)
+    }
+
+    private func assertSkippingOccurrencePersists(seedDay: Int?) {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true)
+        app.launchForUITest(pro: true, scheduledSeedDay: seedDay)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openFirstPaymentDetail(app)

@@ -70,6 +70,9 @@ struct TutorialDetailView: View {
                 UserDefaults.standard.set(true, forKey: tutorial.completionKey)
             }
         }
+        // Tope con motivo: cada paso es una página de un `TabView` paginado, sin scroll propio, con el vídeo
+        // y los botones de navegación compartiendo el alto de la pantalla. Pasado AX1 el texto de un paso no
+        // cabe en su página y se cortaría sin forma de leerlo. Quitarlo pide dar scroll a cada página.
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(tutorial.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -276,7 +279,9 @@ struct TutorialDetailView: View {
 
 // MARK: - Looping Video Player
 
-private struct LoopingVideoView: UIViewRepresentable {
+// Sin `private`: la guía por pasos de Apple Pay (`ApplePayAutomationGuideView`) enseña el vídeo del paso activo como
+// «Lo que vas a ver».
+struct LoopingVideoView: UIViewRepresentable {
     let step: TutorialStep
     @Binding var isPlaying: Bool
     var loopEnabled: Bool = true
@@ -303,7 +308,7 @@ private struct LoopingVideoView: UIViewRepresentable {
     }
 }
 
-private final class LoopingPlayerUIView: UIView {
+final class LoopingPlayerUIView: UIView {
     private var playerLayer = AVPlayerLayer()
     private var player: AVPlayer?
     private var currentURL: URL?

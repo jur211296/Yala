@@ -1,0 +1,598 @@
+{
+ "scorer": "Frank (sesión 2, trabajador B), leyendo cada respuesta ANTES de ver al juez",
+ "rubric": "contradice = alguna afirmación falsa o sin apoyo en los datos; util = dice algo concreto y relevante sobre estos datos; voz = no regaña, no pregunta. Pasa = !contradice && util.",
+ "items": [
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-haiku-4-5|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": false,
+   "nota": "«el alquiler de S/ 950 representa el 24% de tu ingreso mensual»: es el 17 % del ingreso (24 % es del gasto); da por hecho que los 2 recurrentes son alquiler + servicios; un consejo es una pregunta («¿todas activas?»)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|gemini:gemini-3.5-flash-lite|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "dato curioso inventa la causa: el viernes «coincide con tus salidas a Bares y Recitales» (no hay dato que lo una); el resto cuadra"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|openai:gpt-5.6-luna|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "todo cuadra (el £ 27 es 104 − 77; el alquiler es más de 4 veces lo opcional); consejos algo planos"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|workersai:gpt-oss-20b|low|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«de € 2 685 à € 3 076»: 2.685 es el gasto ACTUAL, el 3.076 no existe; «un paiement en attente» cuando son 3"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c12-pl-one-off|anthropic:claude-haiku-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas (2.600 + 1.450 = 4.050; 43 % + 26 % > 2/3); mezcla palabras en español (eso lo mide el criterio determinista, no el juez)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c14-zh-no-income|gemini:gemini-3.8-flash|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "todo correcto; buen dato curioso (外卖 es justo la mitad de 餐饮)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|openai:gpt-5.6-terra|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; «63 %» suma dos porcentajes truncados (34 + 29; el real es 64,0 %): redondeo, no contradicción"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|workersai:llama-4-scout|-|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«El gasto en Delivery creció»: no hay dato anterior de Delivery (comparación sin apoyo); consejos genéricos"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "todo cuadra (410 + 190 = 600; £ 38 < la mitad de £ 104); el «£ 80 por ejemplo» es una sugerencia, no un dato"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; consejos algo genéricos"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f01-es-PE-healthy|anthropic:claude-haiku-4-5|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f02-es-ES-goes-negative|gemini:gemini-3.5-flash-lite|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto y al grano (enero en −450)"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f04-en-irregular-income|openai:gpt-5.6-luna|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; el conector «pese a» es raro pero no falso; en español a un usuario en inglés (lo mide el criterio)"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f06-pt-BR-dip-middle|workersai:llama-4-scout|-|0",
+   "contradice": false,
+   "util": false,
+   "voz": true,
+   "nota": "«tu saldo inicial de R$ 6.000 generará un acumulado de R$ 3.470» suena a crecimiento y esconde la caída y el mínimo de febrero"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f09-de-long-healthy|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f13-ja-bonus-months|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f14-zh-sliding-negative|openai:gpt-6-astra|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "«flujo negativo en 3 de los 6 meses» lee monthsNegative al pie de la letra (son meses con acumulado negativo); aceptable con los datos que ve"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f01-es-PE-healthy|xai:grok-4.20-non-reasoning|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f02-es-ES-goes-negative|anthropic:claude-sonnet-5-5|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.cashflow",
+   "key": "f04-en-irregular-income|openai:gpt-5.4-mini|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d01-es-PE-two-lines|anthropic:claude-haiku-4-5|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d03-es-AR-three-lines|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d05-en-GB-three-lines|openai:gpt-6-astra|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d08-fr-big-and-tiny|xai:grok-4.20-non-reasoning|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d09-de-five-lines|gemini:gemini-3.5-flash-lite|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cita lo gastado (€ 520) y no el exceso (€ 270), pero no es falso"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d12-pl-three-lines|openai:gpt-5.6-luna|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d13-ja-three-lines|workersai:gpt-oss-120b|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; en español a un usuario japonés (lo mide el criterio)"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d01-es-PE-two-lines|anthropic:claude-sonnet-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d03-es-AR-three-lines|openai:gpt-5.4-mini|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto (178.000 = suma de excesos)"
+  },
+  {
+   "task": "insights.deviation",
+   "key": "d05-en-GB-three-lines|openai:gpt-6-luna|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t01-es-PE-all-blocks|anthropic:claude-haiku-4-5|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "compara octubre EN CURSO (1.820) con la media de meses completos (4.100) y concluye «ritmo más contenido»: justo lo que el prompt prohíbe"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t05-en-GB-week|gemini:gemini-3.5-flash-lite|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; en español a un usuario en inglés (lo mide el criterio)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t03-es-AR-balance|openai:gpt-5.6-luna|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«El viernes promedia ARS 98.500, casi el doble que el martes»: es 2,5 veces (39.500); el resto cuadra (99.800 = 345.500 − 245.700)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t07-pt-PT-all-time|workersai:gpt-oss-20b|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; mezcla español y portugués (lo mide el criterio)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t09-de-sparse-weekdays|anthropic:claude-haiku-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto (media 2.980 exacta; dice que el mes sigue en curso)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t12-pl-spike-in-history|gemini:gemini-3.8-flash|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; el «wzrosły» de abril a septiembre esconde que fue un pico puntual, pero no es falso"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t13-ja-month|openai:gpt-5.6-terra|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; lee «9月 26» como «26 de septiembre»: la etiqueta de la app es ambigua, no lo cuento"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t14-zh-cautious|workersai:llama-4-scout|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto, redacción torpe"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t01-es-PE-all-blocks|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto y cuidadoso («al mismo corte de septiembre», «en lo que va del mes»)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t03-es-AR-balance|openai:gpt-4.1-mini|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t05-en-GB-week|anthropic:claude-haiku-4-5|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«estable en torno a £500 seis semanas»: falso, hay picos de 1.361 y 1.402",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t02-es-ES-filters-cautious|anthropic:claude-haiku-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto, avisa del mes en curso y del filtro",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t04-en-income-irregular|anthropic:claude-haiku-5-5:none|none|0",
+   "contradice": true,
+   "util": false,
+   "voz": true,
+   "nota": "en español para un usuario en inglés; «cayó de junio a abril» invierte el orden",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t07-pt-PT-all-time|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t09-de-sparse-weekdays|anthropic:claude-sonnet-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto (mezcla palabras sueltas en español)",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t06-pt-BR-year|gemini:gemini-3.1-flash-lite|-|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«queda de 63.800 a 48.650»: compara 2026 en curso con un año completo",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t08-fr-previous-zero|gemini:gemini-3.5-flash-lite|low|0",
+   "contradice": false,
+   "util": false,
+   "voz": true,
+   "nota": "todo en español para un usuario en francés",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t10-it-no-history|gemini:gemini-3.8-flash|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t11-nl-negative-balance|openai:gpt-4.1-mini|-|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«sinds 26 aug»: lee la etiqueta Aug 26 como una fecha inventada",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t12-pl-spike-in-history|openai:gpt-5.4-mini|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t13-ja-month|openai:gpt-5.5|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto (mezcla gasto/ingreso en español)",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t15-es-PE-no-income|openai:gpt-5.6-luna|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t14-zh-cautious|openai:gpt-5.6-terra|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«较9月26日»: lee la etiqueta como el día 26 de septiembre",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t01-es-PE-all-blocks|openai:gpt-6-astra|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t16-en-closed-month-saver|openai:gpt-6-luna|none|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t02-es-ES-filters-cautious|openai:gpt-6.1-sol|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t03-es-AR-balance|workersai:gpt-oss-120b|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t05-en-GB-week|workersai:gpt-oss-20b|low|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "atribuye £1.361 a la semana del 28 sept (era la del 31 ago)",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t07-pt-PT-all-time|workersai:llama-4-scout|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "cifras correctas; cashflow repetido",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t09-de-sparse-weekdays|workersai:mistral-small-3.1|-|0",
+   "contradice": true,
+   "util": false,
+   "voz": true,
+   "nota": "en español para un usuario en alemán; media 2.986 mal calculada (es 2.980)",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t12-pl-spike-in-history|xai:grok-4.20-non-reasoning|-|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«6 meses en torno a 6.000–6.300»: ignora el pico de 9.841; compara octubre en curso con meses completos",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t13-ja-month|xai:grok-4.3|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t14-zh-cautious|xai:grok-4.7|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t03-es-AR-balance|anthropic:claude-haiku-4-5|none|0",
+   "contradice": true,
+   "util": true,
+   "voz": true,
+   "nota": "«creció sostenido»: falso, baja en abril y en junio",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t04-en-income-irregular|anthropic:claude-haiku-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto, media 4.970 bien calculada",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t06-pt-BR-year|anthropic:claude-haiku-5-5:none|none|0",
+   "contradice": false,
+   "util": false,
+   "voz": true,
+   "nota": "cifras correctas, pero en español para un usuario en portugués",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t05-en-GB-week|anthropic:claude-opus-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t01-es-PE-all-blocks|anthropic:claude-sonnet-5-5|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t08-fr-previous-zero|gemini:gemini-3.1-flash-lite|-|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto; «début de ton suivi» es una lectura razonable de previous=0",
+   "scored": "2026-10-10"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t10-it-no-history|gemini:gemini-3.5-flash-lite|low|0",
+   "contradice": false,
+   "util": true,
+   "voz": true,
+   "nota": "correcto",
+   "scored": "2026-10-10"
+  }
+ ],
+ "scored_at": "2026-10-07, antes de lanzar ningún juez sobre estas respuestas",
+ "scored_at_2026_10_10": "30 respuestas más de trends.summary (las que llevan scored=2026-10-10), puntuadas por Frank antes de lanzar ningún juez sobre ellas. Mismo criterio; además, una respuesta entera en otro idioma que el del usuario no es útil."
+}

@@ -35,8 +35,23 @@ enum LanguageManager {
 
     /// App Group suite — compartido con widgets, share extension y procesos hermanos.
     /// Si por alguna razón el suite no está disponible, fallback a `UserDefaults.standard`.
+    ///
+    /// **El App Group a propósito, y NO `.standard`:** ahí es donde leen el idioma los procesos
+    /// hermanos —widget y share extension—. Éste es el único consumidor de preferencias cuyo dominio
+    /// normal no es `.standard`, y por eso cualquier barrido que trate «el dominio local» como
+    /// sinónimo de `.standard` se lo salta o se lo cambia a todo el mundo.
+    ///
+    /// **Hasta el 2026-09-12 aquí había un desvío al cajón de preferencias de la sesión secundaria**,
+    /// para que la invitada no le dejara al dueño el móvil en otro idioma. Se retiró con la puerta
+    /// entera: sin sesiones secundarias no hay dos idiomas que separar. **Se borró la línea en vez de
+    /// sustituirla por `.standard`**, que es la trampa evidente de ese barrido — habría cambiado el
+    /// almacén del idioma al 100 % de los usuarios y roto widget y share extension a la vez.
+    ///
+    /// La lección de verificación que dejó, porque sigue valiendo: un E2E que compruebe el idioma
+    /// **puede salir verde sin estar arreglado**, porque `applyRemoteValues` lo restaura desde el
+    /// iCloud KV. Un test que pasa por la razón equivocada es una familia de fallo ya pagada aquí.
     static var sharedDefaults: UserDefaults {
-        UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
+        return UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
     }
 
     /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
@@ -56,9 +71,15 @@ enum LanguageManager {
         set {
             guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
             sharedDefaults.set(newValue, forKey: overrideKey)
-            let iKV = NSUbiquitousKeyValueStore.default
+            // La PUERTA, no el store crudo, por dos motivos. El GUARD: con una sesión solo-grupos en un
+            // móvil prestado este KV es el del DUEÑO, y el idioma que elegía quien lo usa le cambiaba la
+            // app en su iPad (lo decide `OwnerKeyValueGate`). Y el CONTEO: esta escritura fue la SÉPTIMA
+            // vía al iCloud-KV del Apple ID y no figuraba en ningún inventario (2026-08-12); lo que
+            // impide una novena es que haya UN solo sitio que nombrar, y eso lo cuenta
+            // `OwnerKeyValueWiringTests`.
+            let iKV = OwnerKeyValueStore.shared
             if let value = newValue {
-                iKV.set(value, forKey: overrideKey)
+                iKV.setString(value, forKey: overrideKey)
             } else {
                 iKV.removeObject(forKey: overrideKey)
             }
@@ -147,8 +168,10 @@ enum LanguageManager {
            let alias = SupportedLocale(rawValue: current),
            let canonical = aliasRemap[alias] {
             suite.set(canonical.code, forKey: overrideKey)
-            NSUbiquitousKeyValueStore.default.set(canonical.code, forKey: overrideKey)
-            NSUbiquitousKeyValueStore.default.synchronize()
+            // Los mismos dos motivos que el setter de arriba: el remap de alias es una escritura al
+            // iCloud-KV del Apple ID, así que va por la puerta, que la guarda y la cuenta.
+            OwnerKeyValueStore.shared.setString(canonical.code, forKey: overrideKey)
+            OwnerKeyValueStore.shared.synchronize()
 
             #if DEBUG
             print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical.code)'")
@@ -208,6 +231,48 @@ extension L10n {
 enum L10n {
 
     // MARK: - Panel
+
+    /// iPad con teclado: menús que salen al mantener ⌘, y los menús contextuales que añade la fase 3 del carril
+    /// adaptativo. Los verbos que ya existían (Editar, Eliminar, Duplicar, Buscar…) se reusan de `Action`/`Common`.
+    enum Keyboard {
+        static var goMenu: String { ls("keyboard.menu.go", comment: "Menú de teclado: ir a una sección") }
+        static var recordMenu: String { ls("keyboard.menu.record", comment: "Menú de teclado: el registro abierto") }
+        static var newGroupExpense: String { ls("keyboard.newGroupExpense", comment: "⌘⇧N: nuevo gasto de grupo") }
+        static var previousRecord: String { ls("keyboard.previousRecord", comment: "↑: registro anterior") }
+        static var nextRecord: String { ls("keyboard.nextRecord", comment: "↓: registro siguiente") }
+        static var changeCategory: String { ls("records.contextMenu.changeCategory", comment: "Menú contextual de registro") }
+        static var filterByAccount: String { ls("panel.accounts.filterByAccount", comment: "Menú contextual de cuenta") }
+        static var openGroup: String { ls("groups.contextMenu.open", comment: "Menú contextual de grupo") }
+    }
+
+    /// Etiqueta encima del importe de la tarjeta de cuenta del Panel: dice qué es ese número.
+    enum PanelAccountCard {
+        static var balance: String { ls("panel.accounts.card.balance", comment: "Label above the amount on a Panel account card") }
+        static var toPay: String { ls("panel.accounts.card.toPay", comment: "Label above the amount on a credit card account with debt") }
+        static func spentInPeriod(_ period: String) -> String {
+            String(format: ls("panel.accounts.card.spentInPeriod %@", comment: "Label above the amount in expenses-only mode"), period)
+        }
+    }
+
+    /// Vista de una cuenta (la hoja que abre el toque en su tarjeta del Panel).
+    enum AccountDetail {
+        static var moneyIn: String { ls("accountDetail.moneyIn", comment: "Money that came into the account in the period") }
+        static var moneyOut: String { ls("accountDetail.moneyOut", comment: "Money that left the account in the period") }
+        static var topCategories: String { ls("accountDetail.topCategories", comment: "Section with top expense categories") }
+        static var latest: String { ls("accountDetail.latest", comment: "Section with latest records") }
+        static var empty: String { ls("accountDetail.empty", comment: "No records in the period") }
+        static func chartLabel(account: String, period: String) -> String {
+            String(format: ls("accountDetail.chartLabel %@ %@", comment: "Accessibility label of the balance chart"), account, period)
+        }
+    }
+
+    /// Varias ventanas (iPad, iPhone Duo abierto): fase 4 del carril adaptativo.
+    enum Window {
+        static var openInNewWindow: String { ls("window.openInNewWindow", comment: "Menú contextual de grupo o registro: abrirlo en una ventana nueva de Yala") }
+        static var followerTitle: String { ls("window.follower.title", comment: "Ventana secundaria mientras la principal pregunta algo que hay que contestar allí") }
+        static var followerBody: String { ls("window.follower.body", comment: "Ventana secundaria: explicación bajo el título") }
+        static var followerCta: String { ls("window.follower.cta", comment: "Botón: traer al frente la otra ventana de Yala") }
+    }
 
     enum Panel {
         static var accounts: String {
@@ -741,6 +806,9 @@ enum L10n {
             static var billsSheetExplanation: String {
                 ls("panel.health.bills.sheet.explanation", comment: "Bills explanation — how it is calculated")
             }
+            static var billsSheetExplanationExpensesOnly: String {
+                ls("panel.health.bills.sheet.explanation.expensesOnly", comment: "Bills explanation in expenses-only mode — coverage only, no income mention")
+            }
             static var billsHeadlineHigh: String {
                 ls("panel.health.bills.headline.high", comment: "Encouraging headline for bills sub-score ≥ 90")
             }
@@ -785,44 +853,8 @@ enum L10n {
             }
         }
 
-        /// Hero del Panel (PP2-01). El `aiSubtitle` LLM es el KPI protagonista
-        /// cuando está disponible (Pro + consent); si no, el fallback rule-based
-        /// con cifras concretas sube al protagonista. El chip conserva el sufijo
-        /// de mes sólo durante la primera semana.
+        /// Hero del Panel (PP2-01). El chip conserva el sufijo de mes sólo durante la primera semana.
         enum Hero {
-            // MARK: Chip (greeting line)
-            static func chipMonthStart(userName: String, month: String) -> String {
-                String(format: ls("panel.hero.chip.monthStart %@ %@", comment: "Hero chip — first week, greets user + empezamos <mes>"), userName, month)
-            }
-            static func chipDefault(userName: String) -> String {
-                String(format: ls("panel.hero.chip.default %@", comment: "Hero chip — default greeting, greets user"), userName)
-            }
-
-            // MARK: Rule-based KPI fallback (aiSubtitle nil — Free / sin consent / offline / cache miss).
-            // Los montos llegan con `**` para render bold via `AttributedString(markdown:)`.
-            static func kpiMonthStart(income: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.monthStart %@ %d", comment: "Hero KPI fallback — month just started, markdown bold"), income, daysRemaining)
-            }
-            static func kpiOnTrack(income: String, spent: String, available: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.onTrack %@ %@ %@ %d", comment: "Hero KPI fallback — on track, markdown bold"), income, spent, available, daysRemaining)
-            }
-            static func kpiNeutral(income: String, spent: String, available: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.neutral %@ %@ %@ %d", comment: "Hero KPI fallback — neutral, markdown bold"), income, spent, available, daysRemaining)
-            }
-            static func kpiTight(spent: String, available: String, daysRemaining: Int) -> String {
-                String(format: ls("panel.hero.kpi.tight %@ %@ %d", comment: "Hero KPI fallback — budget tight, markdown bold"), spent, available, daysRemaining)
-            }
-            static func kpiOverBudget(spent: String, income: String) -> String {
-                String(format: ls("panel.hero.kpi.overBudget %@ %@", comment: "Hero KPI fallback — over budget, markdown bold"), spent, income)
-            }
-
-            // MARK: AI Hero
-            /// CTA inline visible cuando no hay aiSubtitle disponible y el user
-            /// aún puede "desbloquearlo" (Free → upgrade; Pro sin consent →
-            /// activar el toggle de Insights IA en Perfil).
-            static var upsellCTA: String {
-                ls("panel.hero.upsellCTA", comment: "Hero inline CTA — appears for Free and for Pro users without AI consent")
-            }
             /// Label inline arriba del monto disponible — desambigua qué
             /// representa el monto. Se compone con el `displayName` del
             /// período actual ("Disponible · Este mes", "Available · This year").
@@ -839,6 +871,11 @@ enum L10n {
         static func title(_ name: String) -> String {
             String(format: ls("panel.title", comment: ""), name)
         }
+        /// Píldora de IA en la fila de acciones del Panel. Clave propia y no la
+        /// de `cashFlowPlan`: misma palabra hoy, pero acoplar dos pantallas por
+        /// un literal es cómo acaban cambiando juntas sin querer.
+        static var aiPill: String { ls("panel.aiPill", comment: "Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale)") }
+
         static var fabVoice: String {
             ls("panel.fabVoice", comment: "")
         }
@@ -883,6 +920,51 @@ enum L10n {
         }
 
         // MARK: - Live Anchor Education ("Tu saldo hoy" sheet)
+
+        enum FXPnL {
+            static var titleGain: String {
+                ls("panel.fxPnL.titleGain", comment: "FX P&L card title when the user gained value from exchange rates")
+            }
+            static var titleLoss: String {
+                ls("panel.fxPnL.titleLoss", comment: "FX P&L card title when the user lost value from exchange rates")
+            }
+            static func sentenceHoldingUpFormat(_ currency: String, _ percent: String) -> String {
+                String(format: ls("panel.fxPnL.sentenceHoldingUpFormat", comment: "Card sentence, positive balance, rate rose. %1$@ is the plural currency name (e.g. 'dolares'), %2$@ a percentage"), currency, percent)
+            }
+            static func sentenceHoldingDownFormat(_ currency: String, _ percent: String) -> String {
+                String(format: ls("panel.fxPnL.sentenceHoldingDownFormat", comment: "Card sentence, positive balance, rate fell. %1$@ plural currency name, %2$@ percentage"), currency, percent)
+            }
+            static func sentenceDebtUpFormat(_ currency: String, _ percent: String) -> String {
+                String(format: ls("panel.fxPnL.sentenceDebtUpFormat", comment: "Card sentence, NEGATIVE balance (a debt), rate rose so the debt got more expensive. %1$@ plural currency name, %2$@ percentage"), currency, percent)
+            }
+            static func sentenceDebtDownFormat(_ currency: String, _ percent: String) -> String {
+                String(format: ls("panel.fxPnL.sentenceDebtDownFormat", comment: "Card sentence, NEGATIVE balance (a debt), rate fell so the debt got cheaper. %1$@ plural currency name, %2$@ percentage"), currency, percent)
+            }
+            static var openDetail: String {
+                ls("panel.fxPnL.openDetail", comment: "Accessibility hint: opens the per-currency FX detail sheet")
+            }
+            static var sheetTitle: String {
+                ls("panel.fxPnL.sheetTitle", comment: "Title of the FX gain/loss detail sheet")
+            }
+            static var totalLabel: String {
+                ls("panel.fxPnL.totalLabel", comment: "Label above the total FX gain/loss amount in the sheet")
+            }
+            static func sheetIntroFormat(_ currency: String) -> String {
+                String(format: ls("panel.fxPnL.sheetIntroFormat", comment: "Sheet paragraph explaining where the number comes from. %@ is the preferred currency code or symbol"), currency)
+            }
+            static func rowRatesFormat(_ entryRate: String, _ todayRate: String) -> String {
+                String(format: ls("panel.fxPnL.rowRatesFormat", comment: "Per-currency row subtitle: %1$@ is the average entry exchange rate, %2$@ today's rate"), entryRate, todayRate)
+            }
+            static func rowValueTodayFormat(_ value: String) -> String {
+                String(format: ls("panel.fxPnL.rowValueTodayFormat", comment: "Per-currency row: what that balance is worth today in the preferred currency. %@ is the formatted amount"), value)
+            }
+            static var averageNote: String {
+                ls("panel.fxPnL.averageNote", comment: "Honest caveat: the entry rate is a weighted average, not a per-purchase lot")
+            }
+            static var estimatedRateNote: String {
+                ls("panel.fxPnL.estimatedRateNote", comment: "Caveat shown when some conversion used a rate that was not today's")
+            }
+        }
 
         enum LiveAnchorEducation {
             static var title: String {
@@ -1294,9 +1376,13 @@ enum L10n {
         static var perDay: String { ls("insights.perDay", comment: "") }
         static var ofTotal: String { ls("insights.ofTotal", comment: "") }
         static var analyzingData: String { ls("insights.analyzingData", comment: "") }
+        // Tarjeta de error del análisis de IA (Resumen, Distribución y Tendencias): `AIInsightCardComponents.message(for:)`.
+        static var aiErrorOffline: String { ls("insights.aiError.offline", comment: "") }
+        static var aiErrorDailyLimit: String { ls("insights.aiError.dailyLimit", comment: "") }
+        static var aiErrorTooManyRequests: String { ls("insights.aiError.tooManyRequests", comment: "") }
+        static var aiErrorProRequired: String { ls("insights.aiError.proRequired", comment: "") }
         static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }
         static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
-        static var activateAIDisclaimer: String { ls("insights.activateAIDisclaimer", comment: "") }
         static var activate: String { ls("insights.activate", comment: "") }
         static var goToSettings: String { ls("insights.goToSettings", comment: "") }
         static var notInterested: String { ls("insights.notInterested", comment: "") }
@@ -1549,6 +1635,7 @@ enum L10n {
         static var latest: String { ls("records.latest", comment: "") }
         static var noRecords: String { ls("records.noRecords", comment: "") }
         static var noRecordsThisDay: String { ls("records.noRecordsThisDay", comment: "Calendario: día seleccionado sin registros") }
+        static var detailPlaceholder: String { ls("records.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Registros") }
         static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
         static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
@@ -1660,6 +1747,9 @@ enum L10n {
         static var select: String { ls("action.select", comment: "") }
         static var retry: String { ls("action.retry", comment: "") }
         static var later: String { ls("action.later", comment: "") }
+        /// «Ahora no»: la salida que no destruye de un aviso que ofrece perder algo (2026-09-15, el cierre de sesión sin
+        /// App Attest). Genérica a propósito, para que otro aviso no tenga que tomar prestada la del cambio de Apple ID.
+        static var notNow: String { ls("action.notNow", comment: "") }
         static var close: String { ls("action.close", comment: "") }
         static var reorder: String { ls("action.reorder", comment: "") }
         static var clearAll: String { ls("action.clearAll", comment: "") }
@@ -1726,6 +1816,91 @@ enum L10n {
     // MARK: - Groups
 
     enum Groups {
+        static var detailPlaceholder: String { ls("groups.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Grupos") }
+        /// **«Empezar de cero» no borró: quedan cambios de grupos sin subir** (ticket
+        /// `fresh-start-wipe-kills-unsent-group-writes-silently`). Lo enseñan las tres pantallas del gesto —la puerta
+        /// privada del Welcome, el aviso del espejo tardío y el alert del shell—, seguido del motivo de la subida
+        /// (`SignOutBlockedCopy.freshStartGroupsPendingMessage`). Espacio propio y no `Welcome.FreshStart`: aquel copy
+        /// describe el borrado de datos del DISPOSITIVO, y la puerta tiene prohibido reusarlo.
+        enum FreshStartPending {
+            static var title: String { ls("groups.freshStartPending.title", comment: "") }
+            static func lead(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.lead", comment: ""), count)
+            }
+            /// Sin cifra: el recuento falló (`CloudSignOutFlowLogic.shownLossCount` devolvió `nil`).
+            static var leadUnknown: String { ls("groups.freshStartPending.leadUnknown", comment: "") }
+
+            // MARK: «Empezar de cero y perderlos» (ticket `fresh-start-has-no-way-out-when-group-writes-can-never-upload`)
+            //
+            // Van detrás de `lead`, en vez del texto del cierre de sesión, con los tres motivos que esperar no arregla
+            // (`CloudSignOutFlowLogic.freshStartOffersGroupsLossExit`). Dicen por qué no suben y ofrecen perderlos.
+            /// La sesión que los apuntó ya no está. **No pide «vuelve a iniciar sesión»**: en un iPhone heredado esa cuenta
+            /// no es de quien empieza de cero.
+            static var lossSessionExpired: String { ls("groups.freshStartPending.lossSessionExpired", comment: "") }
+            /// La cuenta que los apuntó ya no puede subirlos (`.permanent`).
+            static var lossPermanent: String { ls("groups.freshStartPending.lossPermanent", comment: "") }
+            /// La sesión abierta es de OTRA cuenta que la que los apuntó (`.groupsChangesFromAnotherAccount`, ticket
+            /// `groups-outbox-rows-without-a-live-session-have-no-exit`). Sin número de cuentas desde el 2026-10-05: pueden
+            /// ser de varias, y decía «esa cuenta».
+            static var lossOtherAccount: String { ls("groups.freshStartPending.lossOtherAccount", comment: "") }
+            /// Lo mismo cuando la cifra cuenta además cambios que el drain no capturó (2026-10-05, ticket
+            /// `stuck-groups-drain-hides-held-rows-of-another-account`): pueden ser tuyos, así que nombra las dos causas.
+            static var lossOtherAccountAndCaptureUnfinished: String {
+                ls("groups.freshStartPending.lossOtherAccountAndCaptureUnfinished", comment: "")
+            }
+            /// Más de un día sin App Attest (`.attestUnavailable`), con las palabras de `Groups.Errors.attestUnavailable`.
+            static var lossAttest: String { ls("groups.freshStartPending.lossAttest", comment: "") }
+            /// El botón destructivo del aviso, que lleva al «¿seguro?».
+            static var lossAction: String { ls("groups.freshStartPending.lossAction", comment: "") }
+            /// La segunda confirmación.
+            static var lossConfirmTitle: String { ls("groups.freshStartPending.lossConfirmTitle", comment: "") }
+            static func lossConfirmBody(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.lossConfirmBody", comment: ""), count)
+            }
+            /// Sin cifra honesta: el recuento falló.
+            static var lossConfirmBodyUnknown: String { ls("groups.freshStartPending.lossConfirmBodyUnknown", comment: "") }
+            /// El botón que borra perdiéndolos. Es el único de todo el gesto que acepta la pérdida.
+            static var lossConfirmAction: String { ls("groups.freshStartPending.lossConfirmAction", comment: "") }
+
+            // MARK: Cambios tuyos y de otra cuenta (ticket
+            // `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason`, decisión A de Jürgen, 2026-10-05)
+            //
+            // Con cambios de otra cuenta en la cifra, el aviso no dice «tus grupos», y si además hay tuyos parte la cifra y da
+            // a cada parte su motivo (`SignOutBlockedCopy.freshStartGroupsPendingMessage`). Plurales con «Etiqueta: %d.»,
+            // el patrón de `lossConfirmBody`: las variantes no tienen stringsdict.
+            static var titleNeutral: String { ls("groups.freshStartPending.titleNeutral", comment: "") }
+            static func leadNeutral(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.leadNeutral", comment: ""), count)
+            }
+            static var leadNeutralUnknown: String { ls("groups.freshStartPending.leadNeutralUnknown", comment: "") }
+            /// La cifra partida: los tuyos y los apuntados con otra cuenta.
+            static func leadSplit(own: Int, anotherAccount: Int) -> String {
+                String(format: ls("groups.freshStartPending.leadSplit", comment: ""), own, anotherAccount)
+            }
+            /// El motivo de los tuyos con `.permanent`: `lossPermanent` habla de «los» (todos).
+            static var splitOwnPermanent: String { ls("groups.freshStartPending.splitOwnPermanent", comment: "") }
+            /// El motivo de los tuyos con `.sessionExpired`, sin pedir que vuelva a entrar (como `lossSessionExpired`).
+            static var splitOwnSessionExpired: String {
+                ls("groups.freshStartPending.splitOwnSessionExpired", comment: "")
+            }
+            /// El motivo de los de otra cuenta: solo suben con la cuenta que apuntó cada uno, y esperar no los sube.
+            static var splitAnotherAccount: String { ls("groups.freshStartPending.splitAnotherAccount", comment: "") }
+            /// La cola con la salida en pantalla: el botón pierde los dos.
+            static var splitLossTail: String { ls("groups.freshStartPending.splitLossTail", comment: "") }
+            /// La cola sin la salida: cuando suban los tuyos, el intento siguiente ofrece perder solo los de otra cuenta
+            /// (`CloudSignOutFlowLogic.heldRowsVerdict` y `freshStartResidualReason` dan entonces «otra cuenta»).
+            static var splitAfterOwnUpload: String { ls("groups.freshStartPending.splitAfterOwnUpload", comment: "") }
+            static func lossConfirmBodySplit(own: Int, anotherAccount: Int) -> String {
+                String(format: ls("groups.freshStartPending.lossConfirmBodySplit", comment: ""), own, anotherAccount)
+            }
+            static func lossConfirmBodyNeutral(_ count: Int) -> String {
+                String(format: ls("groups.freshStartPending.lossConfirmBodyNeutral", comment: ""), count)
+            }
+            static var lossConfirmBodyNeutralUnknown: String {
+                ls("groups.freshStartPending.lossConfirmBodyNeutralUnknown", comment: "")
+            }
+        }
+
         static var title: String { ls("groups.title", comment: "") }
         static var newGroup: String { ls("groups.new", comment: "") }
         static var editGroup: String { ls("groups.edit", comment: "") }
@@ -1734,10 +1909,51 @@ enum L10n {
         /// Etiqueta singular "Grupo" — chip de contexto de grupo en el form de gasto.
         static var groupLabel: String { ls("groups.groupLabel", comment: "") }
 
+        /// **Aviso FIJO de la pestaña Grupos** (2026-09-15, ticket `groups-tab-does-not-say-this-phone-cannot-sync-groups`,
+        /// decisión de Jürgen): el cuerpo que acompaña a `Groups.Errors.attestUnavailableTitle` cuando el veredicto de
+        /// App Attest es terminal. **Reusa ese título a propósito** — es el mismo hecho que ya cuentan los gestos que
+        /// pueden perder algo, y decirlo con otras palabras dejaría dos vocabularios para una sola avería.
+        ///
+        /// Se diferencia de `Groups.Errors.attestUnavailable`, que dice el hecho y para ahí, en que **este ofrece qué
+        /// hacer**: usar otro teléfono. Ver `GroupsAttestTabNoticeLogic`.
+        static var attestTerminalBanner: String { ls("groups.attestTerminalBanner", comment: "") }
+
         enum Empty {
             static var title: String { ls("groups.empty.title", comment: "") }
             static var message: String { ls("groups.empty.message", comment: "") }
             static var action: String { ls("groups.empty.action", comment: "") }
+
+            /// Empty state tras cerrar sesión solo-grupos (H-2026-07-18-7): los grupos viven en la cuenta.
+            enum SignedOut {
+                static var title: String { ls("groups.empty.signedOut.title", comment: "") }
+                static var message: String { ls("groups.empty.signedOut.message", comment: "") }
+                static var action: String { ls("groups.empty.signedOut.action", comment: "") }
+                /// D2 (§3.3.3): banner one-shot sobre el empty state tras "Cerrar sesión de grupos".
+                static var reentryBanner: String { ls("groups.empty.signedOut.reentryBanner", comment: "") }
+            }
+
+            /// C2 · aún no vio ningún educativo de Grupos: primero se le cuenta, después se le pide nada.
+            enum NeedsEducational {
+                static var title: String { ls("groups.empty.needsEducational.title", comment: "") }
+                static var message: String { ls("groups.empty.needsEducational.message", comment: "") }
+                static var action: String { ls("groups.empty.needsEducational.action", comment: "") }
+            }
+
+            /// C2 · NUNCA tuvo cuenta. `SignedOut` le mentía dos veces: no hay grupos suyos esperando en
+            /// ninguna cuenta, y la cuenta hay que CREARLA, no «iniciar sesión» en ella.
+            enum CreateAccount {
+                static var title: String { ls("groups.empty.createAccount.title", comment: "") }
+                static var message: String { ls("groups.empty.createAccount.message", comment: "") }
+                static var action: String { ls("groups.empty.createAccount.action", comment: "") }
+            }
+
+            /// C2 · sesión viva sin consent: el tap de «crear grupo» acabaría en `GroupsConsentView`, así
+            /// que el empty state lo anuncia en vez de que aparezca como sorpresa.
+            enum NeedsConsent {
+                static var title: String { ls("groups.empty.needsConsent.title", comment: "") }
+                static var message: String { ls("groups.empty.needsConsent.message", comment: "") }
+                static var action: String { ls("groups.empty.needsConsent.action", comment: "") }
+            }
         }
 
         enum Summary {
@@ -1745,6 +1961,28 @@ enum L10n {
             static var iOwe: String { ls("groups.summary.iOwe", comment: "") }
             static var pendingSettlements: String { ls("groups.summary.pendingSettlements", comment: "") }
             static var allSettled: String { ls("groups.summary.allSettled", comment: "") }
+        }
+
+        /// «Cierre del viaje»: la imagen compartible con los totales del grupo y la lista mínima de
+        /// pagos para saldar. Namespace APARTE de `Summary` (que es la banda de «te deben / debes»
+        /// del header) porque son dos cosas distintas con nombres parecidos: aquel resume TU saldo,
+        /// éste resume el grupo entero para mandarlo al chat. `groups.summary.allSettled` ya existía
+        /// y dice otra cosa, así que estas claves cuelgan de `groups.shareableSummary.*`.
+        enum ShareableSummary {
+            /// Título de la sección en Ajustes del grupo Y del sheet — es literalmente el mismo
+            /// rótulo, así que comparten clave en vez de duplicar texto en dieciséis idiomas.
+            static var title: String { ls("groups.shareableSummary.title", comment: "") }
+            static var action: String { ls("groups.shareableSummary.action", comment: "") }
+            static var hint: String { ls("groups.shareableSummary.hint", comment: "") }
+            static var totalSpent: String { ls("groups.shareableSummary.totalSpent", comment: "") }
+            static var whoPaid: String { ls("groups.shareableSummary.whoPaid", comment: "") }
+            static var paidLabel: String { ls("groups.shareableSummary.paidLabel", comment: "") }
+            static var owedLabel: String { ls("groups.shareableSummary.owedLabel", comment: "") }
+            static var settleUp: String { ls("groups.shareableSummary.settleUp", comment: "") }
+            static var allSettled: String { ls("groups.shareableSummary.allSettled", comment: "") }
+            static var unknownMember: String { ls("groups.shareableSummary.unknownMember", comment: "") }
+            static var footer: String { ls("groups.shareableSummary.footer", comment: "") }
+            static var renderFailed: String { ls("groups.shareableSummary.renderFailed", comment: "") }
         }
 
         enum Detail {
@@ -1828,6 +2066,8 @@ enum L10n {
             static var editSettlementInGroup: String { ls("groups.bridge.editSettlementInGroup", comment: "") }
             // M6: Caso A edit parcial banner + draft hint reasons
             static var editPartialBanner: String { ls("groups.bridge.editPartialBanner", comment: "") }
+            // Caso B clasificable: subcat/tags editables, cuenta no.
+            static var editPartialBannerCaseB: String { ls("groups.bridge.editPartialBannerCaseB", comment: "") }
             static var draftReasonRemoteCreate: String { ls("groups.bridge.draftReasonRemoteCreate", comment: "") }
             static var draftReasonCurrencyChanged: String { ls("groups.bridge.draftReasonCurrencyChanged", comment: "") }
             // Activation/deactivation modals (F12)
@@ -1853,7 +2093,7 @@ enum L10n {
             static var deactivationOptionDelete: String { ls("groups.bridge.deactivationOptionDelete", comment: "") }
             static var importing: String { ls("groups.bridge.importing", comment: "") }
             static var importError: String { ls("groups.bridge.importError", comment: "") }
-            // Upsell para .groupInvite users
+            // Upsell para sesiones solo-grupos
             static var upsellGroupInviteSettlement: String { ls("groups.bridge.upsellGroupInviteSettlement", comment: "") }
             // Opt-out alert (F2c)
             static var optoutAlertTitle: String { ls("groups.bridge.optoutAlertTitle", comment: "") }
@@ -1886,6 +2126,48 @@ enum L10n {
             static var membersCanInviteHint: String { ls("groups.form.membersCanInviteHint", comment: "") }
         }
 
+        /// Presupuesto del grupo (G14): UN límite por grupo, expresado en `SplitGroup.currencyCode`.
+        enum Budget {
+            static var title: String { ls("groups.budget.title", comment: "") }
+            /// `%@` = código de moneda del grupo (el límite no tiene moneda propia).
+            static func hint(_ currencyCode: String) -> String {
+                String(format: ls("groups.budget.hint", comment: ""), currencyCode)
+            }
+            static var none: String { ls("groups.budget.none", comment: "") }
+            static var set: String { ls("groups.budget.set", comment: "") }
+            static var remove: String { ls("groups.budget.remove", comment: "") }
+            static var adminOnly: String { ls("groups.budget.adminOnly", comment: "") }
+            static var invalidAmount: String { ls("groups.budget.invalidAmount", comment: "") }
+            static var removeConfirm: String { ls("groups.budget.removeConfirm", comment: "") }
+            /// `%1$@` = gastado, `%2$@` = tope. Ambos llegan YA formateados como importe (y el gastado
+            /// puede traer el `≈` si hubo conversión), así que aquí no se formatea ningún número.
+            static func spentOfLimit(_ spent: String, _ limit: String) -> String {
+                String(format: ls("groups.budget.spentOfLimit", comment: ""), spent, limit)
+            }
+            static func remaining(_ amount: String) -> String {
+                String(format: ls("groups.budget.remaining", comment: ""), amount)
+            }
+            static func exceededBy(_ amount: String) -> String {
+                String(format: ls("groups.budget.exceededBy", comment: ""), amount)
+            }
+            static var convertedNote: String { ls("groups.budget.convertedNote", comment: "") }
+            /// `%@` = nombre del grupo.
+            static func alertTitle(_ groupName: String) -> String {
+                String(format: ls("groups.budget.alertTitle", comment: ""), groupName)
+            }
+            /// Cuerpo del aviso por umbral cruzado. Devuelve `nil` para un umbral sin copy propio: quien
+            /// llama no debe inventarse un texto genérico ni mandar la key cruda.
+            static func alertBody(threshold: Int) -> String? {
+                switch threshold {
+                case 50: return ls("groups.budget.alertBody50", comment: "")
+                case 75: return ls("groups.budget.alertBody75", comment: "")
+                case 90: return ls("groups.budget.alertBody90", comment: "")
+                case 100: return ls("groups.budget.alertBody100", comment: "")
+                default: return nil
+                }
+            }
+        }
+
         enum Settings {
             static var title: String { ls("groups.settings.title", comment: "") }
             static var members: String { ls("groups.settings.members", comment: "") }
@@ -1900,6 +2182,25 @@ enum L10n {
             static var deleteGroupConfirm: String { ls("groups.settings.deleteGroupConfirm", comment: "") }
             static var deleteGroupFinalConfirm: String { ls("groups.settings.deleteGroupFinalConfirm", comment: "") }
             static var deleteGroupDisabledHint: String { ls("groups.settings.deleteGroupDisabledHint", comment: "") }
+            /// Variante del hint anterior para cuando SÍ hay a quién transferirle el grupo. El original
+            /// («liquida las deudas antes de eliminar») manda al dueño a una acción imposible cuando el
+            /// saldo que le bloquea es entre TERCEROS. Ver `GroupOwnerExitLogic.DeleteHint`.
+            static var deleteGroupDisabledHintTransfer: String { ls("groups.settings.deleteGroupDisabledHintTransfer", comment: "") }
+            /// Dueño con deuda, sin heredero y con el grupo aún sin archivar: se le nombra «Archivar».
+            static var deleteGroupDisabledHintArchive: String { ls("groups.settings.deleteGroupDisabledHintArchive", comment: "") }
+            // Transferir y salir — la salida del dueño (ticket `groups-owner-transfer-and-leave`).
+            static var transferAndLeave: String { ls("groups.settings.transferAndLeave", comment: "") }
+            static var transferAndLeaveHint: String { ls("groups.settings.transferAndLeaveHint", comment: "") }
+            /// `%@` = nombre de quien hereda el grupo. Lo elige el SERVIDOR
+            /// (`transfer_group_ownership`); la app solo lo replica para poder nombrarlo.
+            static func transferAndLeaveConfirm(_ heirName: String) -> String {
+                String(format: ls("groups.settings.transferAndLeaveConfirm", comment: ""), heirName)
+            }
+            static var transferAndLeaveConfirmUnknownHeir: String { ls("groups.settings.transferAndLeaveConfirmUnknownHeir", comment: "") }
+            /// Párrafo APARTE que se añade a la confirmación cuando el usuario sale con saldo propio.
+            /// Las otras dos salidas de esta pantalla ya avisan; ésta callaba, y encima borra el
+            /// histórico local del grupo al salir.
+            static var transferAndLeaveDebtWarning: String { ls("groups.settings.transferAndLeaveDebtWarning", comment: "") }
             static var archive: String { ls("groups.settings.archive", comment: "") }
             static var unarchive: String { ls("groups.settings.unarchive", comment: "") }
             static var archiveHint: String { ls("groups.settings.archiveHint", comment: "") }
@@ -1924,10 +2225,160 @@ enum L10n {
             static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
             /// Acción de grupo que necesita el sync pero el primer import de iCloud no se asentó.
             static var syncPreparing: String { ls("groups.errors.syncPreparing", comment: "") }
-            /// Falló la generación del enlace de invitación.
+            /// Falló la generación del enlace de invitación **por RED** («revisa tu conexión»). Es el
+            /// `catch` del RPC y solo eso: los dos bloqueos previos tienen copy propio abajo, porque
+            /// culpar a la conexión cuando el fallo es permanente manda al admin a reintentar para
+            /// siempre. Ver `GroupInviteLinkCreationLogic`.
             static var inviteFailed: String { ls("groups.errors.inviteFailed", comment: "") }
+            /// El último co-member elegible salió entre que se pintó «Transferir y salir» y la
+            /// confirmación: el servidor devolvió `no_eligible_owner`. No es un fallo — es un cambio
+            /// de estado, y por eso no pasa por `GroupLeaveErrorLogic`.
+            static var transferNoHeir: String { ls("groups.errors.transferNoHeir", comment: "") }
+            /// Variante de `ownerCannotLeave` para cuando SÍ hay a quién transferirle el grupo. El
+            /// original acaba en «puedes eliminarlo», y con deuda ese botón está en gris apuntando a
+            /// «transfiérelo y sal»: el error mandaba a un sitio y el sitio devolvía al error.
+            static var ownerCannotLeaveCanTransfer: String { ls("groups.errors.ownerCannotLeaveCanTransfer", comment: "") }
+            /// Bloqueo PERMANENTE: el grupo es de la era CloudKit y no admite enlaces por ninguna vía.
+            static var inviteLegacyGroup: String { ls("groups.errors.inviteLegacyGroup", comment: "") }
+            /// Bloqueo TRANSITORIO: el canal de grupos está apagado ahora mismo (kill remoto o
+            /// snapshot de remote-config ausente). Reintentar más tarde sí tiene sentido.
+            static var inviteChannelOff: String { ls("groups.errors.inviteChannelOff", comment: "") }
             /// Fallo genérico de una acción de grupo (eliminar gasto, liquidar, aprobar/rechazar).
             static var actionFailed: String { ls("groups.errors.actionFailed", comment: "") }
+            /// G6-3: el grupo se migró a la nube de Yala y está congelado en este device (hay que re-entrar).
+            static var movedToBackend: String { ls("groups.errors.movedToBackend", comment: "") }
+            /// El servidor rechazó la SALIDA porque el usuario es el dueño server-side del grupo
+            /// (`yala_owner_cannot_leave`). No es un fallo del usuario ni sirve reintentar: se le
+            /// ofrece la acción que su rol real sí permite (eliminar el grupo). El flag local
+            /// `SplitGroup.isOwner` puede decir lo contrario — solo lo escribe el creador y el pull
+            /// jamás lo actualiza —, así que este error es la ÚNICA afirmación autoritativa de
+            /// ownership que llega al device. Ver `GroupLeaveErrorLogic`.
+            static var ownerCannotLeave: String { ls("groups.errors.ownerCannotLeave", comment: "") }
+            /// Salida no completada por un motivo TRANSITORIO (red, 5xx, sesión que se renueva sola o
+            /// kill-switch del canal). Reintentar más tarde sí tiene sentido, y el mismo criterio que
+            /// `groups.invite.channelUnavailable` en el enlace de invitación: no se culpa al usuario.
+            static var leaveUnavailable: String { ls("groups.errors.leaveUnavailable", comment: "") }
+            /// La sesión no sirve (`GroupsRPCError.sessionExpired`): el SDK la borró, o el servidor
+            /// rechazó su token. Acción concreta: volver a iniciar sesión. Se separa de `leaveUnavailable`
+            /// porque aquí el usuario SÍ tiene algo que hacer. Un token que no se renovó con la sesión
+            /// guardada, casi siempre por falta de red, ya no llega aquí desde el 2026-09-17: es
+            /// `leaveUnavailable` (`GroupsMembershipClient.call`).
+            static var sessionExpired: String { ls("groups.errors.sessionExpired", comment: "") }
+            /// El canal de Grupos está apagado a propósito (403 `yala_groups_disabled`) y quedan cambios
+            /// sin subir, así que el gesto que los necesitaba —cerrar sesión, o soltar la cuenta de
+            /// grupos— no pudo completarse. **Una sola key para las DOS pantallas**: el hecho que cuenta
+            /// es el mismo y sus títulos ya las distinguen («No pudimos cerrar tu sesión» / «No pudimos
+            /// soltar la cuenta»). Dice lo único cierto —el canal volverá— y no manda a revisar una
+            /// conexión que funciona. Ver `CloudSignOutFlowLogic.BlockReason.channelPaused`.
+            static var channelPaused: String { ls("groups.errors.channelPaused", comment: "") }
+            /// La subida de los cambios de grupos falló por algo PASAJERO —un corte de red, un 5xx, un
+            /// cortafuegos delante del servidor— mientras se cerraba la sesión en la nube, y ese camino no
+            /// reintenta (decisión de Jürgen, 2026-09-14). Dice lo único cierto: no se pudo subir, no se
+            /// pierde nada y se vuelve a intentar en un rato. Sustituye al genérico «revisa tu conexión»,
+            /// que mandaba a buscar un fallo que no existe. Ver
+            /// `CloudSignOutFlowLogic.BlockReason.uploadRetryLater`.
+            static var uploadRetryLater: String { ls("groups.errors.uploadRetryLater", comment: "") }
+            /// **Este teléfono no consigue preparar para subir algunos cambios de grupos**: el drain no termina en ninguna
+            /// vuelta y nada abre la salida que los pierde (`CloudSignOutFlowLogic.BlockReason.groupsCaptureUnfinished`,
+            /// opción A de Jürgen del 2026-10-05). `Settings.signOutCaptureUnfinished` dicho de tus grupos: no promete
+            /// plazo, dice que no se pierde nada y que se cierre y abra Yala, o se actualice.
+            static var captureUnfinished: String { ls("groups.errors.captureUnfinished", comment: "") }
+            /// **Este teléfono lleva más de un día sin conseguir App Attest** (2026-09-15, ticket
+            /// `groups-phone-that-never-attests-is-told-to-retry-forever`). Título del aviso en Ajustes, en la hoja del
+            /// cambio de Apple ID y en la puerta de Grupos del Welcome. Ver `CloudSignOutFlowLogic.BlockReason.attestUnavailable`.
+            static var attestUnavailableTitle: String { ls("groups.errors.attestUnavailableTitle", comment: "") }
+            /// El mismo hecho SIN salida: el desasociar, la invitada del Welcome y todo bloqueo de ese motivo que no puso
+            /// un cierre. No dice «en un rato», que dejó de ser verdad, y no ofrece nada.
+            static var attestUnavailable: String { ls("groups.errors.attestUnavailable", comment: "") }
+            /// El aviso que OFRECE salir perdiendo los cambios de grupos. Accessor-FUNCIÓN y cifra tras dos puntos, por lo
+            /// mismo que `Settings.signOutExportPendingMessage`: la key entra en `L10nFormatAccessorsTests` y el plural no
+            /// se arrastra a los 16 idiomas.
+            static func attestUnavailableSignOutLoss(_ count: Int) -> String {
+                String(format: ls("groups.errors.attestUnavailableSignOutLoss", comment: "Cerrar sesión sin App Attest; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló, así que no hay número honesto que dar.
+            static var attestUnavailableSignOutLossUnknown: String { ls("groups.errors.attestUnavailableSignOutLossUnknown", comment: "") }
+            /// El botón destructivo del aviso: nombra la pérdida (decisión de Jürgen). Literal, como todo botón de `.alert`.
+            static var attestUnavailableSignOutLossButton: String { ls("groups.errors.attestUnavailableSignOutLossButton", comment: "") }
+            /// **Quedan cambios de grupos de otra cuenta, sin salida** (`CloudSignOutFlowLogic.BlockReason
+            /// .groupsChangesFromAnotherAccount`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`): el
+            /// desasociar y todo bloqueo de ese motivo que no ofrece perderlos. Dice que no se pierden y con qué se suben.
+            static var groupsChangesFromAnotherAccount: String {
+                ls("groups.errors.groupsChangesFromAnotherAccount", comment: "")
+            }
+            /// **El aviso que OFRECE perder los cambios de grupos que solo suben con una sesión que no está**: la de su cuenta
+            /// caducó, o la abierta es de otra (mismo ticket). Un texto para las dos causas, porque las dos se arreglan igual
+            /// —entrando con la cuenta que los apuntó— y la persona no tiene por qué distinguirlas. Accessor-FUNCIÓN y cifra
+            /// tras dos puntos, como `attestUnavailableSignOutLoss`. El botón es `attestUnavailableSignOutLossButton`, que ya
+            /// dice «Cerrar sesión y perderlos» sin nombrar el attest.
+            static func noSessionSignOutLoss(_ count: Int) -> String {
+                String(format: ls("groups.errors.noSessionSignOutLoss", comment: "Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló.
+            static var noSessionSignOutLossUnknown: String { ls("groups.errors.noSessionSignOutLossUnknown", comment: "") }
+            /// **Otra cuenta y la captura atascada, en el aviso que ofrece perderlos** (ticket
+            /// `stuck-groups-drain-hides-held-rows-of-another-account`, decisión A de Jürgen del 2026-10-05): la cifra suma lo
+            /// de la otra cuenta y lo que el drain no capturó, que puede ser tuyo. Nombra las dos causas, dice qué hace subir
+            /// cada parte y ofrece perderlos, sin plazo. Lo elige `SignOutBlockedCopy.groupsLossMessage`.
+            static func otherAccountAndCaptureUnfinishedSignOutLoss(_ count: Int) -> String {
+                String(format: ls("groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss", comment: "Cerrar sesión con cambios de grupos de otra cuenta y otros que no se pudieron preparar; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: alguna mitad de lo que se perdería no se pudo leer.
+            static var otherAccountAndCaptureUnfinishedSignOutLossUnknown: String {
+                ls("groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown", comment: "")
+            }
+            /// Salir de un grupo con el attest ya terminal (`GroupLeaveErrorLogic.Kind.deviceCannotSyncGroups`): no hay
+            /// salida local, así que no ofrece nada.
+            static var leaveAttestUnavailable: String { ls("groups.errors.leaveAttestUnavailable", comment: "") }
+        }
+
+        /// G6-3: grupo migrado a la nube de Yala (congelado en CloudKit) — banner/CTA/borrar copia.
+        enum Migrated {
+            /// Banner de progreso del uploader ("moviendo tus grupos a la nube de Yala…").
+            static var migratingBanner: String { ls("groups.migrated.migratingBanner", comment: "") }
+            static var bannerTitle: String { ls("groups.migrated.bannerTitle", comment: "") }
+            static var bannerBody: String { ls("groups.migrated.bannerBody", comment: "") }
+            static var rejoinCTA: String { ls("groups.migrated.rejoinCTA", comment: "") }
+            /// C-10: cuerpo del banner cuando ESTE build no puede volver a entrar (hay que actualizar).
+            static var updateBody: String { ls("groups.migrated.updateBody", comment: "") }
+            /// C-10: cuerpo del banner cuando el canal está en pausa (kill remoto). Sin CTA.
+            static var pausedBody: String { ls("groups.migrated.pausedBody", comment: "") }
+            /// C-10: nota de solo lectura bajo el banner, en los TRES estados congelados.
+            static var readOnlyNote: String { ls("groups.migrated.readOnlyNote", comment: "") }
+        }
+
+        /// G4-invites (A2, §8): consentimiento informado de grupos (molde Storage.Consent).
+        enum Consent {
+            static var title: String { ls("groups.consent.title", comment: "") }
+            static var point1: String { ls("groups.consent.point1", comment: "") }
+            static var point2: String { ls("groups.consent.point2", comment: "") }
+            static var point3: String { ls("groups.consent.point3", comment: "") }
+            static var point4: String { ls("groups.consent.point4", comment: "") }
+            static var accept: String { ls("groups.consent.accept", comment: "") }
+        }
+
+        /// **Bloque [I]** · el bloqueo de «privada + asociar una cuenta que ya tiene Yala completo».
+        enum AccountIsComplete {
+            static var title: String { ls("groups.accountIsComplete.title", comment: "") }
+            static var body: String { ls("groups.accountIsComplete.body", comment: "") }
+            static var useAnotherAccount: String {
+                ls("groups.accountIsComplete.useAnotherAccount", comment: "")
+            }
+            /// La otra salida del ADR: dónde se decide usar esa cuenta como tu Yala.
+            static var settingsHint: String {
+                ls("groups.accountIsComplete.settingsHint", comment: "")
+            }
+        }
+
+        /// G4-invites (A2, §16d): sign-in solo-grupos (SIWA para unirse por link backend).
+        enum SignIn {
+            static var title: String { ls("groups.signin.title", comment: "") }
+            static var body: String { ls("groups.signin.body", comment: "") }
+            /// Invariante R9: esta será LA cuenta si algún día migra lo personal.
+            static var accountNote: String { ls("groups.signin.accountNote", comment: "") }
+            static var error: String { ls("groups.signin.error", comment: "") }
+            /// C-10: fallo de sign-in NO terminal — dice que no se pierde nada y que el grupo sigue ahí.
+            static var retryLater: String { ls("groups.signin.retryLater", comment: "") }
         }
 
         /// #26: chips mostrados en GroupCardView cuando el current user está
@@ -1935,8 +2386,23 @@ enum L10n {
         enum Card {
             static var pendingApprovalChip: String { ls("groups.card.pendingApprovalChip", comment: "") }
             static var rejectedChip: String { ls("groups.card.rejectedChip", comment: "") }
+            /// G6-3: chip "se movió" en la card de un grupo migrado y congelado.
+            static var movedChip: String { ls("groups.card.movedChip", comment: "") }
+            /// C-10: chip cuando el grupo se movió y ESTE build no puede volver a entrar.
+            static var movedUpdateChip: String { ls("groups.card.movedUpdateChip", comment: "") }
+            /// C-10: chip cuando el canal de grupos está en pausa (kill remoto).
+            static var movedPausedChip: String { ls("groups.card.movedPausedChip", comment: "") }
             static var leaveGroupAlertTitle: String { ls("groups.card.leaveGroupAlertTitle", comment: "") }
             static var leaveGroupAlertBody: String { ls("groups.card.leaveGroupAlertBody", comment: "") }
+
+            /// Aviso al tocar la tarjeta de un grupo en el que sigo `pendingApproval` (decisión owner
+            /// 2026-09-06). Claves PROPIAS y no las de `Invite.waitingApproval*`: aquélla es la pantalla
+            /// del alta —se ve una vez, justo al unirse— y ésta se ve cada vez que toco la tarjeta días
+            /// después. Compartirlas ataría dos superficies que van a divergir.
+            enum PendingNotice {
+                static var title: String { ls("groups.card.pendingNotice.title", comment: "") }
+                static var body: String { ls("groups.card.pendingNotice.body", comment: "") }
+            }
             // M6 D3: chip overflow cuando hay más de 3 deudas en la card.
             static func moreDebts(_ count: Int) -> String {
                 String(format: ls("groups.card.moreDebts", comment: ""), count)
@@ -1955,6 +2421,11 @@ enum L10n {
             static var admin: String { ls("groups.member.admin", comment: "") }
             static var member: String { ls("groups.member.member", comment: "") }
             static var you: String { ls("groups.member.you", comment: "") }
+            /// "Tú" sin paréntesis: el nombre del usuario actual dentro de una lista o frase.
+            static var youName: String { ls("groups.member.youName", comment: "") }
+            /// «ti» tras preposición: «Pagado por ti».
+            static var youObject: String { ls("groups.member.youObject", comment: "") }
+            static var deletedUser: String { ls("groups.member.deletedUser", comment: "") }
             static var left: String { ls("groups.member.left", comment: "") }
             static var removed: String { ls("groups.member.removed", comment: "") }
             static var changeRole: String { ls("groups.member.changeRole", comment: "") }
@@ -2007,6 +2478,14 @@ enum L10n {
             static var youOwe: String { ls("groups.expense.youOwe", comment: "") }
             /// Caption: "No participaste" — current user not in the split.
             static var notIncluded: String { ls("groups.expense.notIncluded", comment: "") }
+            /// Cabecera de la tarjeta con cuánto pone cada persona en el detalle del gasto.
+            static var breakdownTitle: String { ls("groups.expense.breakdownTitle", comment: "") }
+            /// "Pagó %@" — bajo el nombre de quien pagó, en el reparto del detalle.
+            static func paidAmount(_ amount: String) -> String {
+                String(format: ls("groups.expense.paidAmount", comment: ""), amount)
+            }
+            /// Fila del detalle con el movimiento personal enlazado (cuenta y monto).
+            static var inYourFinances: String { ls("groups.expense.inYourFinances", comment: "") }
             static var selectAll: String { ls("groups.expense.selectAll", comment: "") }
             static var deselectAll: String { ls("groups.expense.deselectAll", comment: "") }
             static func membersSelected(_ count: Int, _ total: Int) -> String {
@@ -2018,6 +2497,8 @@ enum L10n {
             static var dividePayment: String { ls("groups.expense.dividePayment", comment: "") }
             /// Label inline antes del chip de modo de división ("Dividido [en partes iguales]").
             static var dividedLabel: String { ls("groups.expense.dividedLabel", comment: "") }
+            /// «y dividido»: mitad de la frase «Pagado por <quién> y dividido <modo>» del formulario.
+            static var andDividedLabel: String { ls("groups.expense.andDividedLabel", comment: "") }
             /// Alert al tocar el chip "Dividido" (o la pre-pantalla de 2 personas) con monto 0:
             /// no se abre el sheet de división (dividir 0 no tiene sentido) y se pide el monto.
             static var amountRequiredTitle: String { ls("groups.expense.amountRequiredTitle", comment: "") }
@@ -2068,6 +2549,15 @@ enum L10n {
                 static var sharesTitle: String { ls("groups.expense.splitSheet.sharesTitle", comment: "") }
                 static var sharesHint: String { ls("groups.expense.splitSheet.sharesHint", comment: "") }
             }
+            /// Pantalla de éxito tras crear/editar un gasto de grupo (GroupExpenseSuccessView).
+            enum Success {
+                static var titleCreated: String { ls("groups.expense.success.titleCreated", comment: "") }
+                static var titleUpdated: String { ls("groups.expense.success.titleUpdated", comment: "") }
+                static var group: String { ls("groups.expense.success.group", comment: "") }
+                static var splitLabel: String { ls("groups.expense.success.splitLabel", comment: "") }
+                static var participants: String { ls("groups.expense.success.participants", comment: "") }
+                static var addAnother: String { ls("groups.expense.success.addAnother", comment: "") }
+            }
             static var title: String { ls("groups.expense.title", comment: "") }
             static var editTitle: String { ls("groups.expense.editTitle", comment: "") }
             static var descriptionLabel: String { ls("groups.expense.description", comment: "") }
@@ -2085,6 +2575,12 @@ enum L10n {
         }
 
         enum Settlement {
+            /// Título de la fila de una liquidación confirmada en el feed del grupo.
+            static var entryDescription: String { ls("groups.settlement.entryDescription", comment: "") }
+            /// Subtítulo del feed: "%1$@ le pagó a %2$@".
+            static func feedRow(_ from: String, _ to: String) -> String {
+                String(format: ls("groups.settlement.feedRow", comment: ""), from, to)
+            }
             static var title: String { ls("groups.settlement.title", comment: "") }
             static var payTo: String { ls("groups.settlement.payTo", comment: "") }
             static var registerPayment: String { ls("groups.settlement.registerPayment", comment: "") }
@@ -2094,6 +2590,11 @@ enum L10n {
             static var settleHint: String { ls("groups.settlement.settleHint", comment: "") }
             static var confirmQuestion: String { ls("groups.settlement.confirmQuestion", comment: "") }
             static var rejectQuestion: String { ls("groups.settlement.rejectQuestion", comment: "") }
+            /// Eliminar una liquidación CONFIRMADA (menú de la fila en Balances + su diálogo).
+            static var deleteAction: String { ls("groups.settlement.deleteAction", comment: "") }
+            static var deleteTitle: String { ls("groups.settlement.deleteTitle", comment: "") }
+            static var deleteMessage: String { ls("groups.settlement.deleteMessage", comment: "") }
+            static var deleteFailed: String { ls("groups.settlement.deleteFailed", comment: "") }
             // A0-Bridge Caso C proactivo
             static var fromAccount: String { ls("groups.settlement.fromAccount", comment: "") }
             static var fromAccountNone: String { ls("groups.settlement.fromAccountNone", comment: "") }
@@ -2122,10 +2623,30 @@ enum L10n {
             static var ready: String { ls("groups.invite.ready", comment: "") }
             static var goToGroup: String { ls("groups.invite.goToGroup", comment: "") }
             static var waitingApprovalTitle: String { ls("groups.invite.waitingApproval.title", comment: "") }
+            /// **No promete ningún aviso, y eso está MEDIDO** (2026-08-12). Decía «Te avisamos cuando esté
+            /// listo» y era falso por dos vías independientes: el único push del gateway es un *silent*
+            /// `content-available:1` de fan-out disparado SOLO por `/groups/push` (deltas de sync) —los RPC,
+            /// donde vive `approve_member`, no hacen fan-out— y además `get_group_push_tokens` EXCLUYE a los
+            /// `pendingApproval`, así que ni siquiera recibiría ese.
+            ///
+            /// Y nombra lo que NO se ve: un endurecimiento del DDL pasó las policies SELECT de
+            /// `split_expenses`/`split_shares`/`split_settlements` a `is_group_writer` (solo `active`), así
+            /// que mientras espera le llegan el grupo y el roster y CERO contenido financiero. El copy
+            /// hablaba de «participar» cuando el hecho es que tampoco VE.
             static var waitingApprovalBody: String { ls("groups.invite.waitingApproval.body", comment: "") }
             static var waitingApprovalBanner: String { ls("groups.invite.waitingApproval.banner", comment: "") }
             static var rejectedTitle: String { ls("groups.invite.rejected.title", comment: "") }
             static var rejectedBody: String { ls("groups.invite.rejected.body", comment: "") }
+            static var joiningTitle: String { ls("groups.invite.joining.title", comment: "") }
+            static var joiningBody: String { ls("groups.invite.joining.body", comment: "") }
+            static var slowTitle: String { ls("groups.invite.slow.title", comment: "") }
+            static var slowBody: String { ls("groups.invite.slow.body", comment: "") }
+            static var slowContinueButton: String { ls("groups.invite.slow.continueButton", comment: "") }
+            static var errorTitle: String { ls("groups.invite.error.title", comment: "") }
+            static var errorBody: String { ls("groups.invite.error.body", comment: "") }
+            static var errorExitButton: String { ls("groups.invite.error.exitButton", comment: "") }
+            static var syncBanner: String { ls("groups.invite.syncBanner", comment: "") }
+            static var expiredBanner: String { ls("groups.invite.expired.banner", comment: "") }
         }
 
         enum Reconnect {
@@ -2188,15 +2709,38 @@ enum L10n {
             static var done: String { ls("groups.activate.done", comment: "") }
         }
 
-        // MARK: Beta Gate (validación v2.0.1 — gate TEMPORAL, remover al estabilizar)
+        /// Paso 8 del rediseño de sesiones · «Activar Yala completo» pregunta dónde viven los datos personales.
+        enum FullActivation {
+            static var chooserTitle: String { ls("groups.fullActivation.chooserTitle", comment: "") }
+            static var chooserSubtitle: String { ls("groups.fullActivation.chooserSubtitle", comment: "") }
+            /// La card de nube en este contexto: LA MISMA cuenta que ya usa para grupos (decisión de Jürgen).
+            static var cloudBody: String { ls("groups.fullActivation.cloudBody", comment: "") }
+            static var historyTitle: String { ls("groups.fullActivation.historyTitle", comment: "") }
+            static var historyBody: String { ls("groups.fullActivation.historyBody", comment: "") }
+            static var historyShow: String { ls("groups.fullActivation.historyShow", comment: "") }
+            static var historyKeepInGroups: String { ls("groups.fullActivation.historyKeepInGroups", comment: "") }
+            static var historyFootnote: String { ls("groups.fullActivation.historyFootnote", comment: "") }
+            static var promoting: String { ls("groups.fullActivation.promoting", comment: "") }
+            static var failedTitle: String { ls("groups.fullActivation.failedTitle", comment: "") }
+            static var failedBody: String { ls("groups.fullActivation.failedBody", comment: "") }
+            static var unavailableBody: String { ls("groups.fullActivation.unavailableBody", comment: "") }
+            static var blockedPersonalDataTitle: String { ls("groups.fullActivation.blockedPersonalDataTitle", comment: "") }
+            static var blockedPersonalDataBody: String { ls("groups.fullActivation.blockedPersonalDataBody", comment: "") }
+            static var blockedBusyTitle: String { ls("groups.fullActivation.blockedBusyTitle", comment: "") }
+            static var blockedBusyBody: String { ls("groups.fullActivation.blockedBusyBody", comment: "") }
+            static var blockedSessionTitle: String { ls("groups.fullActivation.blockedSessionTitle", comment: "") }
+            static var blockedSessionBody: String { ls("groups.fullActivation.blockedSessionBody", comment: "") }
+            /// Instalación solo-grupos anterior al paso 5, con el espejo ya adjunto: se reinstala antes.
+            static var reinstallTitle: String { ls("groups.fullActivation.reinstallTitle", comment: "") }
+            static var reinstallBody: String { ls("groups.fullActivation.reinstallBody", comment: "") }
+        }
 
-        enum Beta {
-            static var title: String { ls("groups.beta.gate.title", comment: "") }
-            static var message: String { ls("groups.beta.gate.message", comment: "") }
-            static var haveCode: String { ls("groups.beta.gate.haveCode", comment: "") }
-            static var codePrompt: String { ls("groups.beta.gate.codePrompt", comment: "") }
-            static var placeholder: String { ls("groups.beta.gate.placeholder", comment: "") }
-            static var wrongCode: String { ls("groups.beta.gate.wrongCode", comment: "") }
+        // MARK: iCloud Availability Gate (§i.8(c)2 — endurecimiento Grupos-v1)
+
+        enum ICloudGate {
+            static var title: String { ls("groups.icloud.gate.title", comment: "") }
+            static var message: String { ls("groups.icloud.gate.message", comment: "") }
+            static var openSettings: String { ls("groups.icloud.gate.openSettings", comment: "") }
         }
 
         // MARK: Nudge (GC-09)
@@ -2282,9 +2826,20 @@ enum L10n {
             // Step 3 — Privacy + CTA
             static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
             static var step3Subtitle: String { ls("groups.onboarding.step3.subtitle", comment: "") }
+            /// C2 · el HECHO sustantivo, y va el primero. Los otros dos puntos tranquilizan («tu privacidad,
+            /// primero») sin decir nunca DÓNDE se guardan los gastos del grupo; el consent sí lo dice, pero
+            /// llega después de pedir identidad. Sin promesa de cifrado, a propósito: `GroupsConsentView`
+            /// evita esa palabra por lo mismo (G7 no aterrizó — «protegidos» es lo honesto).
+            static var step3Point0: String { ls("groups.onboarding.step3.point0", comment: "") }
             static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
             static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
             static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
+            /// A1 (D-A7): CTA de sign-in del cierre. Solo se pinta sin sesión Yala viva
+            /// (`GroupsOnboardingLogic.shouldShowSignInCTA`).
+            static var step3SignInCTA: String { ls("groups.onboarding.step3.signInCTA", comment: "") }
+            /// C2 · la variante del mismo CTA para quien NUNCA tuvo cuenta. «Iniciar sesión» le pide volver
+            /// a un sitio donde no ha estado; el hecho es que se le está creando una cuenta de Yala.
+            static var step3CreateAccountCTA: String { ls("groups.onboarding.step3.createAccountCTA", comment: "") }
             /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
             static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
         }
@@ -2362,13 +2917,13 @@ enum L10n {
         static var resetContext: String { ls("chat.resetContext", comment: "") }
         static var listening: String { ls("chat.listening", comment: "") }
         static var transcribing: String { ls("chat.transcribing", comment: "") }
+        static var voiceHint: String { ls("chat.voice.hint", comment: "") }
+        static var voiceTranscribingHint: String { ls("chat.voice.transcribingHint", comment: "") }
+        static func voiceRecorded(_ duration: String) -> String { String(format: ls("chat.voice.recorded", comment: ""), duration) }
         static var preparingAI: String { ls("chat.preparingAI", comment: "") }
         static var noVoiceDetected: String { ls("chat.noVoiceDetected", comment: "") }
         static var unavailable: String { ls("chat.unavailable", comment: "") }
         static var retry: String { ls("chat.retry", comment: "") }
-        static func contextMemory(_ count: Int) -> String {
-            String(format: ls("chat.contextMemory", comment: ""), count)
-        }
 
         enum Topics {
             static var title: String { ls("chat.topics.title", comment: "") }
@@ -2396,7 +2951,13 @@ enum L10n {
             static var selectAccount: String { ls("chat.draft.selectAccount", comment: "") }
             static var selectSubcategory: String { ls("chat.draft.selectSubcategory", comment: "") }
             static var saveButton: String { ls("chat.draft.saveButton", comment: "") }
-            static var editButton: String { ls("chat.draft.editButton", comment: "") }
+            static var detailsButton: String { ls("chat.draft.detailsButton", comment: "") }
+            static var detailsTitle: String { ls("chat.draft.detailsTitle", comment: "") }
+            static var openFullForm: String { ls("chat.draft.openFullForm", comment: "") }
+            static var missingSubcategory: String { ls("chat.draft.missingSubcategory", comment: "") }
+            static var missingAccount: String { ls("chat.draft.missingAccount", comment: "") }
+            static var missingAmount: String { ls("chat.draft.missingAmount", comment: "") }
+            static var addTag: String { ls("chat.draft.addTag", comment: "") }
             static var failedSavingLine: String { ls("chat.draft.failedSavingLine", comment: "") }
             static var retryButton: String { ls("chat.draft.retryButton", comment: "") }
             static var noAccountsBlocking: String { ls("chat.draft.noAccountsBlocking", comment: "") }
@@ -2420,6 +2981,7 @@ enum L10n {
         static var clearFilters: String { ls("accessibility.clearFilters", comment: "") }
         static var cancelRecording: String { ls("accessibility.cancelRecording", comment: "") }
         static var stopRecording: String { ls("accessibility.stopRecording", comment: "") }
+        static var discardRecording: String { ls("accessibility.discardRecording", comment: "") }
         static var startRecording: String { ls("accessibility.startRecording", comment: "") }
         static var cancelPreview: String { ls("accessibility.cancelPreview", comment: "") }
         static var cancelProcessing: String { ls("accessibility.cancelProcessing", comment: "") }
@@ -2472,7 +3034,8 @@ enum L10n {
         static var skipSync: String { ls("accessibility.skipSync", comment: "") }
         static var tabLimitReached: String { ls("accessibility.tabLimitReached", comment: "") }
         static var noTransactionsToExport: String { ls("accessibility.noTransactionsToExport", comment: "") }
-        static func accountCard(_ name: String, _ balance: String) -> String { String(format: ls("accessibility.accountCard %@ %@", comment: ""), name, balance) }
+        /// D6 (§3.3.6): "Exportar datos" deshabilitada en solo-grupos sin grupos activos.
+        static var noGroupsToExport: String { ls("accessibility.noGroupsToExport", comment: "") }
         static var editAccount: String { ls("accessibility.editAccount", comment: "") }
         static func pageIndicator(_ current: Int, _ total: Int) -> String { String(format: ls("accessibility.pageIndicator %d %d", comment: ""), current, total) }
         static func accountRow(_ name: String, _ currency: String) -> String { String(format: ls("accessibility.accountRow %@ %@", comment: ""), name, currency) }
@@ -2811,6 +3374,39 @@ enum L10n {
         }
     }
 
+    // MARK: - Movimientos sin cuenta
+
+    /// El aviso del Panel y la hoja «Movimientos sin cuenta» (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`).
+    enum OrphanedRecords {
+        static var title: String { ls("orphanedRecords.title", comment: "") }
+        static var bannerTitle: String { title }
+        static var bannerMessage: String { ls("orphanedRecords.bannerMessage", comment: "") }
+        static var bannerAction: String { ls("orphanedRecords.bannerAction", comment: "") }
+        static var intro: String { ls("orphanedRecords.intro", comment: "") }
+        static var listHeader: String { ls("orphanedRecords.listHeader", comment: "") }
+        static func moreNote(_ count: Int) -> String {
+            String(format: ls("orphanedRecords.moreNote", comment: ""), count)
+        }
+        static var noDestination: String { ls("orphanedRecords.noDestination", comment: "") }
+        static var keptCurrencyNote: String { ls("orphanedRecords.keptCurrencyNote", comment: "") }
+        static var groupKeptCurrencyNote: String { ls("orphanedRecords.groupKeptCurrencyNote", comment: "") }
+        static func convertNote(_ to: String) -> String {
+            String(format: ls("orphanedRecords.convertNote", comment: ""), to)
+        }
+        static func collapsedNote(_ destination: String) -> String {
+            String(format: ls("orphanedRecords.collapsedNote", comment: ""), destination)
+        }
+        static func moveAction(_ destination: String) -> String {
+            String(format: ls("orphanedRecords.moveAction", comment: ""), destination)
+        }
+        static var moveActionGeneric: String { ls("orphanedRecords.moveActionGeneric", comment: "") }
+        static var working: String { ls("orphanedRecords.working", comment: "") }
+        static var failedTitle: String { ls("orphanedRecords.failedTitle", comment: "") }
+        static var failedUnreadable: String { ls("orphanedRecords.failedUnreadable", comment: "") }
+        static var failedChanged: String { ls("orphanedRecords.failedChanged", comment: "") }
+        static var untitled: String { ls("orphanedRecords.untitled", comment: "") }
+    }
+
     // MARK: - Account
 
     enum Account {
@@ -2853,12 +3449,57 @@ enum L10n {
         static var excludeFromStats: String {
             ls("account.excludeFromStats", comment: "")
         }
+        /// Aviso bajo «Archivar cuenta» cuando archivar encendió «Excluir de las estadísticas».
+        static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
-        static var deleteBalanceError: String {
-            ls("account.deleteBalanceError", comment: "")
-        }
         static var addAccount: String { ls("account.addAccount", comment: "") }
+
+        // MARK: - Eliminar con movimientos (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst)
+        enum Removal {
+            static func title(_ name: String) -> String {
+                String(format: ls("account.removal.title", comment: ""), name)
+            }
+            static func convertNote(_ to: String) -> String {
+                String(format: ls("account.removal.convertNote", comment: ""), to)
+            }
+            static func budgetsMovedNote(_ destination: String) -> String {
+                String(format: ls("account.removal.budgetsMovedNote", comment: ""), destination)
+            }
+            static var noAllowedDestination: String { ls("account.removal.noAllowedDestination", comment: "") }
+            static var countBudgets: String { ls("account.removal.countBudgets", comment: "") }
+            static var budgetsOnlyNote: String { ls("account.removal.budgetsOnlyNote", comment: "") }
+            static func collapsedNote(_ source: String, _ destination: String) -> String {
+                String(format: ls("account.removal.collapsedNote", comment: ""), source, destination)
+            }
+            static var intro: String { ls("account.removal.intro", comment: "") }
+            static var countRecords: String { ls("account.removal.countRecords", comment: "") }
+            static var countScheduled: String { ls("account.removal.countScheduled", comment: "") }
+            static var countFavorites: String { ls("account.removal.countFavorites", comment: "") }
+            static var countDrafts: String { ls("account.removal.countDrafts", comment: "") }
+            static var choiceHeader: String { ls("account.removal.choiceHeader", comment: "") }
+            static var moveTitle: String { ls("account.removal.moveTitle", comment: "") }
+            static var moveSubtitle: String { ls("account.removal.moveSubtitle", comment: "") }
+            static var noDestination: String { ls("account.removal.noDestination", comment: "") }
+            static var deleteTitle: String { ls("account.removal.deleteTitle", comment: "") }
+            static var deleteSubtitle: String { ls("account.removal.deleteSubtitle", comment: "") }
+            static var deleteBlockedGroups: String { ls("account.removal.deleteBlockedGroups", comment: "") }
+            static var destinationHeader: String { ls("account.removal.destinationHeader", comment: "") }
+            static var destinationBlockedCurrency: String { ls("account.removal.destinationBlockedCurrency", comment: "") }
+            static var partnersNote: String { ls("account.removal.partnersNote", comment: "") }
+            static var plansNote: String { ls("account.removal.plansNote", comment: "") }
+            static var moveAction: String { ls("account.removal.moveAction", comment: "") }
+            static var deleteAction: String { ls("account.removal.deleteAction", comment: "") }
+            static var confirmDeleteTitle: String { ls("account.removal.confirmDeleteTitle", comment: "") }
+            static var confirmDeleteCount: String { ls("account.removal.confirmDeleteCount", comment: "") }
+            static var confirmDeleteMessage: String { ls("account.removal.confirmDeleteMessage", comment: "") }
+            static var confirmDeleteAction: String { ls("account.removal.confirmDeleteAction", comment: "") }
+            static var working: String { ls("account.removal.working", comment: "") }
+            static var failedTitle: String { ls("account.removal.failedTitle", comment: "") }
+            static var failedUnreadable: String { ls("account.removal.failedUnreadable", comment: "") }
+            static var failedChanged: String { ls("account.removal.failedChanged", comment: "") }
+            static var failedRates: String { ls("account.removal.failedRates", comment: "") }
+        }
 
         enum AccountType {
             static var general: String { ls("account.type.general", comment: "") }
@@ -2926,6 +3567,65 @@ enum L10n {
         }
         static var secondaryCurrencyReject: String {
             ls("account.secondaryCurrency.reject", comment: "")
+        }
+
+        // MARK: - Cambio de divisa con histórico
+        enum CurrencyChange {
+            static var blockedTitle: String { ls("account.currencyChange.blockedTitle", comment: "") }
+            static func blockedMessage(_ reasons: String) -> String {
+                String(format: ls("account.currencyChange.blockedMessage", comment: ""), reasons)
+            }
+            static var blockedReasonTransfer: String {
+                ls("account.currencyChange.blockedReasonTransfer", comment: "")
+            }
+            static var blockedReasonGroupExpense: String {
+                ls("account.currencyChange.blockedReasonGroupExpense", comment: "")
+            }
+            static var blockedReasonGroupSettlement: String {
+                ls("account.currencyChange.blockedReasonGroupSettlement", comment: "")
+            }
+            /// Plural: vive en `.stringsdict` (y flat en las variantes, que no llevan uno propio).
+            static func confirmTitle(_ count: Int) -> String {
+                String(format: ls("account.currencyChange.confirmTitle", comment: ""), count)
+            }
+            static func confirmMessage(_ from: String, _ to: String) -> String {
+                String(format: ls("account.currencyChange.confirmMessage", comment: ""), from, to)
+            }
+            static var confirmAction: String {
+                ls("account.currencyChange.confirmAction", comment: "")
+            }
+            static var progressTitle: String {
+                ls("account.currencyChange.progressTitle", comment: "")
+            }
+            static var progressSubtitle: String {
+                ls("account.currencyChange.progressSubtitle", comment: "")
+            }
+            static var ratesUnavailableTitle: String {
+                ls("account.currencyChange.ratesUnavailableTitle", comment: "")
+            }
+            static var ratesUnavailableMessage: String {
+                ls("account.currencyChange.ratesUnavailableMessage", comment: "")
+            }
+            // Programados, favoritos y borradores (ticket
+            // `account-currency-change-leaves-scheduled-and-favorites-stale`).
+            static func confirmTitleNoHistory(_ to: String) -> String {
+                String(format: ls("account.currencyChange.confirmTitleNoHistory", comment: ""), to)
+            }
+            static func draftsLine(_ count: Int, _ to: String) -> String {
+                String(format: ls("account.currencyChange.draftsLine", comment: ""), count, to)
+            }
+            static func plansHeader(_ to: String) -> String {
+                String(format: ls("account.currencyChange.plansHeader", comment: ""), to)
+            }
+            static func planItem(_ name: String, _ before: String, _ after: String) -> String {
+                String(format: ls("account.currencyChange.planItem", comment: ""), name, before, after)
+            }
+            static func plansMore(_ count: Int) -> String {
+                String(format: ls("account.currencyChange.plansMore", comment: ""), count)
+            }
+            static var cannotUndo: String {
+                ls("account.currencyChange.cannotUndo", comment: "")
+            }
         }
 
         // MARK: - Credit Card
@@ -3330,6 +4030,10 @@ enum L10n {
         static var csvGeneratedSuccess: String {
             ls("export.csvGeneratedSuccess", comment: "")
         }
+        /// F1 review G5-D2: el usuario pidió incluir grupos y el CSV de grupos falló — cero silencios.
+        static var groupsExportFailedNote: String {
+            ls("export.groupsExportFailedNote", comment: "")
+        }
         static var confirmExport: String { ls("export.confirmExport", comment: "") }
         static var selectColumns: String {
             ls("export.selectColumns", comment: "")
@@ -3369,6 +4073,19 @@ enum L10n {
         }
         static var exportData: String {
             ls("export.exportData", comment: "")
+        }
+        // D6 (§3.3.6): export directo de grupos (solo-grupos legado, sin wizard personal).
+        static var groupsOnlyTitle: String {
+            ls("export.groupsOnlyTitle", comment: "")
+        }
+        static var groupsOnlyDescription: String {
+            ls("export.groupsOnlyDescription", comment: "")
+        }
+        static var groupsOnlyEmptyTitle: String {
+            ls("export.groupsOnlyEmptyTitle", comment: "")
+        }
+        static var groupsOnlyEmpty: String {
+            ls("export.groupsOnlyEmpty", comment: "")
         }
         static var greaterThan: String {
             ls("export.greaterThan", comment: "")
@@ -3439,6 +4156,29 @@ enum L10n {
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
         static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
         static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
+
+        // G5-D2: export ampliado con grupos (archivo CSV aparte)
+        static var includeGroups: String { ls("export.includeGroups", comment: "") }
+        static var includeGroupsDescription: String { ls("export.includeGroups.description", comment: "") }
+
+        enum Groups {
+            // Headers de columnas del CSV de grupos
+            static var headerGroup: String { ls("export.groups.header.group", comment: "") }
+            static var headerType: String { ls("export.groups.header.type", comment: "") }
+            static var headerDate: String { ls("export.groups.header.date", comment: "") }
+            static var headerDescription: String { ls("export.groups.header.description", comment: "") }
+            static var headerFrom: String { ls("export.groups.header.from", comment: "") }
+            static var headerTo: String { ls("export.groups.header.to", comment: "") }
+            static var headerPaidBy: String { ls("export.groups.header.paidBy", comment: "") }
+            static var headerAmount: String { ls("export.groups.header.amount", comment: "") }
+            static var headerMyShare: String { ls("export.groups.header.myShare", comment: "") }
+            static var headerCurrency: String { ls("export.groups.header.currency", comment: "") }
+
+            // Valores de la columna "tipo"
+            static var typeExpense: String { ls("export.groups.type.expense", comment: "") }
+            static var typeSettlement: String { ls("export.groups.type.settlement", comment: "") }
+            static var typeBalance: String { ls("export.groups.type.balance", comment: "") }
+        }
     }
 
     // MARK: - Favorites
@@ -3563,6 +4303,21 @@ enum L10n {
             static var badge: String { ls("scheduled.variableAmount.badge", comment: "") }
         }
 
+        enum GroupExpense {
+            static var toggle: String { ls("scheduled.groupExpense.toggle", comment: "") }
+            static var toggleHelper: String { ls("scheduled.groupExpense.toggleHelper", comment: "") }
+            static var sectionTitle: String { ls("scheduled.groupExpense.sectionTitle", comment: "") }
+            static var groupRow: String { ls("scheduled.groupExpense.groupRow", comment: "") }
+            static var currencyRow: String { ls("scheduled.groupExpense.currencyRow", comment: "") }
+            static var divisionRow: String { ls("scheduled.groupExpense.divisionRow", comment: "") }
+            static var totalHint: String { ls("scheduled.groupExpense.totalHint", comment: "") }
+            static var sharedBadge: String { ls("scheduled.groupExpense.sharedBadge", comment: "") }
+            /// "Entre %d · %@ · Tu parte %@" — participantes, modo de división, tu parte.
+            static func splitSummary(_ count: Int, _ mode: String, _ share: String) -> String {
+                String(format: ls("scheduled.groupExpense.splitSummary", comment: ""), count, mode, share)
+            }
+        }
+
         enum Editor {
             static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
             static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }
@@ -3608,6 +4363,7 @@ enum L10n {
 
     enum Settings {
         static var title: String { ls("settings.title", comment: "") }
+        static var detailPlaceholder: String { ls("settings.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Ajustes") }
         static var theme: String { ls("settings.theme", comment: "") }
         static var themeDescription: String {
             ls("settings.themeDescription", comment: "")
@@ -3752,6 +4508,7 @@ enum L10n {
         static var wipeData: String { ls("settings.wipeData", comment: "") }
         static var faceId: String { ls("settings.faceId", comment: "") }
         static var permissions: String { ls("settings.permissions", comment: "") }
+        static var faceIDProtection: String { ls("settings.faceIDProtection", comment: "") }
         static var aiPrivacy: String { ls("settings.aiPrivacy", comment: "") }
         static var subscriptions: String {
             ls("settings.subscriptions", comment: "")
@@ -3878,24 +4635,251 @@ enum L10n {
         static var deleteDataConfirmation: String {
             ls("settings.deleteDataConfirmation", comment: "")
         }
-        static var deleteDataWarning: String {
-            ls("settings.deleteDataWarning", comment: "")
+        // D4: `deleteDataWarning`/`wipeICloudWarning`/`wipeICloudWarningCloud`/`wipeGroupsExclusionNote`
+        // RETIRADAS — el mensaje concatenado de Vaciar lo sustituyen las filas de la hoja de alcance.
+        /// Fase 1 (C3): segunda confirmación corta de Vaciar.
+        static var wipeDataSecondConfirmTitle: String {
+            ls("settings.wipeDataSecondConfirmTitle", comment: "")
         }
-        static var wipeICloudWarning: String {
-            ls("settings.wipeICloudWarning", comment: "")
-        }
-        /// Aclaración: el wipe NO toca grupos (separación A0-Bridge V2.0).
-        static var wipeGroupsExclusionNote: String {
-            ls("settings.wipeGroupsExclusionNote", comment: "")
-        }
+        /// Fase 1 (§3.2): subtítulos de una línea de las filas de Ajustes.
+        static var exportDataSubtitle: String { ls("settings.exportDataSubtitle", comment: "") }
+        static var wipeDataSubtitle: String { ls("settings.wipeDataSubtitle", comment: "") }
         /// Descripción de "Borrar datos" en modo solo-grupos (sin finanzas personales).
         static var resetDataDescriptionGroupsOnly: String {
             ls("settings.resetDataDescriptionGroupsOnly", comment: "")
         }
-        /// Advertencia de la alerta de borrado en modo solo-grupos.
-        static var deleteDataWarningGroupsOnly: String {
-            ls("settings.deleteDataWarningGroupsOnly", comment: "")
+        // D4: `deleteDataWarningGroupsOnly` RETIRADA — sustituida por las filas de la hoja (5a).
+        // Cierre de sesión universal (H4 — privada y nube)
+        /// La fila «Cerrar sesión» no lleva subtítulo desde el paso 9 del rediseño (2026-09-11): es el mismo
+        /// verbo en las cuatro celdas, y el detalle de qué se borra vive en la hoja de alcance.
+        static var signOut: String { ls("settings.signOut", comment: "") }
+        static var signOutConfirmTitle: String { ls("settings.signOutConfirmTitle", comment: "") }
+        static var signOutConfirmAction: String { ls("settings.signOutConfirmAction", comment: "") }
+        // D4: `signOutConfirmMessage{Cloud,ICloud,Secondary,GroupsOnly}` RETIRADAS — el copy por-path
+        // lo sustituyen las filas de la hoja de alcance (operación resuelta por `signOutScopeOperation`).
+        // §3.3.5: pantalla "Tu cuenta de Yala" (mapa/explainer del enlace privado ↔ nube).
+        static var yalaAccountRowTitle: String { ls("settings.yalaAccountRowTitle", comment: "") }
+        static var yalaAccountRowSubtitle: String { ls("settings.yalaAccountRowSubtitle", comment: "") }
+        static var yalaAccountTitle: String { ls("settings.yalaAccountTitle", comment: "") }
+        static var yalaAccountMethodApple: String { ls("settings.yalaAccountMethodApple", comment: "") }
+        static var yalaAccountMethodGoogle: String { ls("settings.yalaAccountMethodGoogle", comment: "") }
+        static var yalaAccountMethodUnknown: String { ls("settings.yalaAccountMethodUnknown", comment: "") }
+        static var yalaAccountLinkingNote: String { ls("settings.yalaAccountLinkingNote", comment: "") }
+        static var yalaAccountDataLocationTitle: String { ls("settings.yalaAccountDataLocationTitle", comment: "") }
+        static var yalaAccountDataLocationCloud: String { ls("settings.yalaAccountDataLocationCloud", comment: "") }
+        static var yalaAccountDataLocationGroupsOnly: String { ls("settings.yalaAccountDataLocationGroupsOnly", comment: "") }
+        /// Paso 9: solo grupos SIN sesión privada — no hay datos personales en ninguna parte.
+        static var yalaAccountDataLocationGroupsOnlyNoPrivate: String { ls("settings.yalaAccountDataLocationGroupsOnlyNoPrivate", comment: "") }
+        static var yalaAccountSignOutScope: String { ls("settings.yalaAccountSignOutScope", comment: "") }
+        static var yalaAccountReturnICloud: String { ls("settings.yalaAccountReturnICloud", comment: "") }
+        static var yalaAccountReturnICloudScope: String { ls("settings.yalaAccountReturnICloudScope", comment: "") }
+        static var yalaAccountDeleteScope: String { ls("settings.yalaAccountDeleteScope", comment: "") }
+        // §3.2: reorganización de Ajustes (subsección "Tu cuenta" + subtítulo de "Dónde viven tus datos").
+        static var accountSubsectionTitle: String { ls("settings.accountSubsectionTitle", comment: "") }
+        static var dataLocationSubtitleICloud: String { ls("settings.dataLocationSubtitleICloud", comment: "") }
+        static var dataLocationSubtitleCloud: String { ls("settings.dataLocationSubtitleCloud", comment: "") }
+        static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
+        static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
+        // H-2026-07-18-6 — espera/retry interno del sign-out solo-grupos
+        static var signOutWorking: String { ls("settings.signOutWorking", comment: "") }
+        static var signOutPendingTitle: String { ls("settings.signOutPendingTitle", comment: "") }
+        static var signOutPendingMessage: String { ls("settings.signOutPendingMessage", comment: "") }
+        // Decisión del owner 2026-09-03 — la sesión de VISITA suma «salir igualmente» al aviso de
+        // bloqueo: está en el móvil de otra persona y hay que devolverlo, así que un cierre que no se
+        // puede completar la deja atrapada.
+        static var signOutWaitButton: String { ls("settings.signOutWaitButton", comment: "") }
+        static var signOutExitAnywayButton: String { ls("settings.signOutExitAnywayButton", comment: "") }
+        // Paso 9 (2026-09-11): «Salir de Yala en este dispositivo» y «Cerrar sesión de grupos» RETIRADAS —
+        // un solo verbo, «Cerrar sesión», en las cuatro celdas del ADR 2026-09-09.
+        // Cierre PRIVADO: la espera del export de iCloud y su salida de emergencia avisada (decisión de
+        // Jürgen, 2026-09-09) + la confirmación reforzada cuando no hay copia en iCloud.
+        static var signOutExportPendingTitle: String { ls("settings.signOutExportPendingTitle", comment: "") }
+        /// «Cambios de este dispositivo que aún no llegaron a iCloud: N.» El número va tras dos puntos a
+        /// propósito: evita la concordancia de plural en los 16 idiomas.
+        static func signOutExportPendingMessage(_ count: Int) -> String {
+            String(format: ls("settings.signOutExportPendingMessage", comment: "Aviso de cierre de sesión con cambios sin subir a iCloud; %d = cuántos"), count)
         }
+        /// Variante cuando el historial no se pudo leer: no hay número honesto que dar.
+        static var signOutExportPendingMessageUnknown: String { ls("settings.signOutExportPendingMessageUnknown", comment: "") }
+        static var signOutExportDiscardButton: String { ls("settings.signOutExportDiscardButton", comment: "") }
+        // Cierre en la NUBE con un teléfono sin App Attest y cambios PERSONALES sin subir (decisión de Jürgen, 2026-09-15,
+        // ticket `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes`): el aviso ofrece exportar los
+        // movimientos, cerrar sesión perdiéndolos o dejarlo. Ver `CloudSignOutFlowLogic.BlockReason.personalAttestUnavailable`.
+        static var signOutAttestTitle: String { ls("settings.signOutAttestTitle", comment: "") }
+        /// El aviso, con la cifra tras dos puntos por lo mismo que `signOutExportPendingMessage`: la key entra en
+        /// `L10nFormatAccessorsTests` y el plural no se arrastra a los 16 idiomas.
+        static func signOutAttestMessage(_ count: Int) -> String {
+            String(format: ls("settings.signOutAttestMessage", comment: "Cerrar sesión en la nube sin App Attest; %d = cambios personales que se pierden"), count)
+        }
+        /// Sin cifra: el recuento del outbox personal falló, así que no hay número honesto que dar.
+        static var signOutAttestMessageUnknown: String { ls("settings.signOutAttestMessageUnknown", comment: "") }
+        /// El botón que exporta todos los movimientos antes de decidir. Literal, como todo botón de `.alert`.
+        static var signOutAttestExportButton: String { ls("settings.signOutAttestExportButton", comment: "") }
+        /// El botón destructivo: nombra la pérdida, como el del aviso de grupos.
+        static var signOutAttestLossButton: String { ls("settings.signOutAttestLossButton", comment: "") }
+        /// El mismo hecho SIN salida, para un bloqueo de ese motivo cuya oferta ya no está.
+        static var signOutAttestBlocked: String { ls("settings.signOutAttestBlocked", comment: "") }
+        /// Cierre en la nube bloqueado con la sincronización parada porque no se pudo leer el registro de la migración
+        /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsUpdate`): la salida es reabrir o actualizar Yala, no la red.
+        static var signOutSyncStoppedNeedsUpdate: String { ls("settings.signOutSyncStoppedNeedsUpdate", comment: "") }
+        /// Cierre en la nube bloqueado porque este teléfono no consigue preparar para subir algunos cambios: el drain no
+        /// termina en ninguna vuelta (`CloudSignOutFlowLogic.BlockReason.personalCaptureUnfinished`). No promete segundos: dice
+        /// que no se pierde nada y que se cierre y abra Yala, o se actualice.
+        static var signOutCaptureUnfinished: String { ls("settings.signOutCaptureUnfinished", comment: "") }
+        /// Lo mismo con el paso entre la nube e iCloud a medias o fallido
+        /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedMidMigration`): la salida está en «Dónde viven tus datos».
+        static var signOutSyncStoppedMidMigration: String { ls("settings.signOutSyncStoppedMidMigration", comment: "") }
+        /// Lo mismo con el paso terminado pero el espejo de iCloud aún montado
+        /// (`CloudSignOutFlowLogic.BlockReason.syncStoppedNeedsRelaunch`): la salida es reabrir Yala.
+        static var signOutSyncStoppedNeedsRelaunch: String { ls("settings.signOutSyncStoppedNeedsRelaunch", comment: "") }
+        /// La subida de tus cambios a la nube no llegó al servidor —sin red, un 5xx— y el cierre en la nube bloquea sin borrar
+        /// nada (`CloudSignOutFlowLogic.BlockReason.personalUploadRetryLater`). El texto de `Groups.Errors.uploadRetryLater`,
+        /// dicho de tus datos.
+        static var signOutUploadRetryLater: String { ls("settings.signOutUploadRetryLater", comment: "") }
+        /// La sesión en la nube caducó y quedan cambios sin subir (`CloudSignOutFlowLogic.BlockReason.cloudSessionExpired`).
+        /// Nombra la puerta: «Dónde viven tus datos» y su «Iniciar sesión» (ticket
+        /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`).
+        static var signOutCloudSessionExpired: String { ls("settings.signOutCloudSessionExpired", comment: "") }
+        /// Lo mismo cuando el aviso OFRECE perder los cambios de GRUPOS (ticket
+        /// `groups-outbox-rows-without-a-live-session-have-no-exit`): nombra la puerta para subirlos y la salida para quien
+        /// no puede entrar. Accessor-FUNCIÓN y cifra tras dos puntos, como `Groups.Errors.attestUnavailableSignOutLoss`.
+        static func signOutCloudSessionExpiredGroupsLoss(_ count: Int) -> String {
+            String(format: ls("settings.signOutCloudSessionExpiredGroupsLoss", comment: "Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden"), count)
+        }
+        /// Sin cifra: el recuento del outbox de Grupos falló.
+        static var signOutCloudSessionExpiredGroupsLossUnknown: String {
+            ls("settings.signOutCloudSessionExpiredGroupsLossUnknown", comment: "")
+        }
+        /// Lo mismo cuando el aviso OFRECE exportar y perder los cambios PERSONALES (ticket
+        /// `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): nombra la puerta para subirlos,
+        /// ofrece exportar antes y dice qué se pierde, en la línea de `signOutAttestMessage`. Accessor-FUNCIÓN.
+        static func signOutCloudSessionExpiredPersonalLoss(_ count: Int) -> String {
+            String(format: ls("settings.signOutCloudSessionExpiredPersonalLoss", comment: "Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden"), count)
+        }
+        /// Sin cifra: el recuento del outbox personal falló.
+        static var signOutCloudSessionExpiredPersonalLossUnknown: String {
+            ls("settings.signOutCloudSessionExpiredPersonalLossUnknown", comment: "")
+        }
+        /// El cierre soltó la sesión en la nube y la sesión SIGUE guardada: no se armó el borrado
+        /// (`CloudSignOutFlowLogic.BlockReason.signOutSessionSurvived`, ticket `sign-out-exits-do-not-verify-the-cloud-session-closed`).
+        static var signOutSessionSurvived: String { ls("settings.signOutSessionSurvived", comment: "") }
+        /// El cierre de una sesión privada se paró con el paso de los datos entre iCloud y la nube fuera de reposo
+        /// (`CloudSignOutFlowLogic.BlockReason.migrationInFlight`, ticket `private-sign-out-proceeds-with-a-migration-in-flight`).
+        static var signOutMigrationInFlight: String { ls("settings.signOutMigrationInFlight", comment: "") }
+        /// Lo mismo con el journal de la migración ilegible (`BlockReason.migrationUnreadable`).
+        static var signOutMigrationUnreadable: String { ls("settings.signOutMigrationUnreadable", comment: "") }
+        /// La exportación de ese aviso no encontró ningún movimiento que exportar.
+        static var signOutAttestExportEmpty: String { ls("settings.signOutAttestExportEmpty", comment: "") }
+        /// La exportación de ese aviso no pudo generar el archivo.
+        static var signOutAttestExportFailed: String { ls("settings.signOutAttestExportFailed", comment: "") }
+
+        /// **Aviso FIJO del canal personal** (2026-09-15, ticket
+        /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`): el cuerpo que acompaña a
+        /// `signOutAttestTitle` cuando el veredicto de App Attest es terminal y los datos personales viven en la
+        /// nube. **Reusa ese título a propósito** —es el mismo hecho que ya cuentan los gestos que pueden perder
+        /// algo— y vive en este namespace, junto a los seis `signOutAttest*`, para que la avería entera esté en un
+        /// sitio; la superficie donde se pinta no decide el prefijo.
+        ///
+        /// Se diferencia de `signOutAttestBlocked`, que dice el hecho y para ahí, en que **este ofrece qué hacer**:
+        /// usar otro teléfono, y exportar los datos, que el #175 ya construyó. Ver `CloudAttestNoticeLogic`.
+        static var attestTerminalBanner: String { ls("settings.attestTerminalBanner", comment: "") }
+        static var signOutNoCopyConfirmTitle: String { ls("settings.signOutNoCopyConfirmTitle", comment: "") }
+        static var signOutNoCopyConfirmMessage: String { ls("settings.signOutNoCopyConfirmMessage", comment: "") }
+        static var signOutNoCopyConfirmAction: String { ls("settings.signOutNoCopyConfirmAction", comment: "") }
+        // Eliminar mi cuenta (G5-D1b — borrado GDPR, DARK)
+        static var deleteAccount: String { ls("settings.deleteAccount", comment: "") }
+        /// Fase 1 (§3.2): subtítulo de la fila "Eliminar mi cuenta".
+        /// Fase 1 (§3.3.4): desvío cruzado del diálogo de eliminar cuenta hacia Vaciar.
+        static var deleteAccountCrossReferHint: String {
+            ls("settings.deleteAccountCrossReferHint", comment: "")
+        }
+        /// D5 (§3.3.4): aviso condicional de saldos pendientes en grupos (informa, no bloquea).
+        static var deleteAccountDebtWarning: String {
+            ls("settings.deleteAccountDebtWarning", comment: "")
+        }
+        /// D5 (§3.3.4): botón que lleva a la pestaña Grupos para saldar antes de borrar.
+        static var deleteAccountViewGroups: String {
+            ls("settings.deleteAccountViewGroups", comment: "")
+        }
+        /// D5 (§3.3.4): aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive.
+        static var deleteAccountFrozenICloudNote: String {
+            ls("settings.deleteAccountFrozenICloudNote", comment: "")
+        }
+        /// D5 (§3.3.4): huella legacy — el nombre persiste en zonas CloudKit tras el borrado.
+        static var deleteAccountLegacyFootprintNote: String {
+            ls("settings.deleteAccountLegacyFootprintNote", comment: "")
+        }
+
+        // MARK: - D4 · Hoja de alcance destructiva (§3.1/§3.3)
+        // Etiquetas de fila compartidas + detalles por operación + notas de conservación. Las decide
+        // `DestructiveScopeLogic`; aquí solo el mapeo token→string. La fila ☁️ es dinámica por `storageMode`.
+        static var scopeDeviceLabel: String { ls("settings.scopeDeviceLabel", comment: "") }
+        static var scopeICloudLabel: String { ls("settings.scopeICloudLabel", comment: "") }
+        static var scopeCloudAccountLabel: String { ls("settings.scopeCloudAccountLabel", comment: "") }
+        static var scopeGroupsLabel: String { ls("settings.scopeGroupsLabel", comment: "") }
+        static var scopeUntouchedShort: String { ls("settings.scopeUntouchedShort", comment: "") }
+        static var scopeForgetGroups: String { ls("settings.scopeForgetGroups", comment: "") }
+        static var scopePersonalInICloud: String { ls("settings.scopePersonalInICloud", comment: "") }
+        static var wipeScopeDevice: String { ls("settings.wipeScopeDevice", comment: "") }
+        static var wipeScopeDeviceGroupsOnly: String { ls("settings.wipeScopeDeviceGroupsOnly", comment: "") }
+        /// Vaciar en privada: el borrado sale de iCloud, así que alcanza a los dispositivos cuyos datos
+        /// personales viven en ESE iCloud — y a ningún otro. **No nombra el Apple ID** (decisión de Jürgen,
+        /// 2026-09-14): desde que la señal de vaciado solo la obedece un dispositivo con los datos de ese
+        /// iCloud, un iPad prestado o con la cuenta de Yala no la cumple, y prometerlo era falso.
+        static var wipeScopeCloudICloudPersonal: String { ls("settings.wipeScopeCloudICloudPersonal", comment: "") }
+        static var wipeScopeCloudAccount: String { ls("settings.wipeScopeCloudAccount", comment: "") }
+        static var wipeScopeGroups: String { ls("settings.wipeScopeGroups", comment: "") }
+        static var wipeScopeConservation: String { ls("settings.wipeScopeConservation", comment: "") }
+        static var wipeScopeMultiDeviceResidual: String { ls("settings.wipeScopeMultiDeviceResidual", comment: "") }
+        static var wipeScopeGroupsDebt: String { ls("settings.wipeScopeGroupsDebt", comment: "") }
+        static var wipeExportBeforeButton: String { ls("settings.wipeExportBeforeButton", comment: "") }
+        static var wipeExportBeforeCloudCaption: String { ls("settings.wipeExportBeforeCloudCaption", comment: "") }
+        // D10 — batch "salir de todos mis grupos"
+        static var wipeLeaveGroupsButton: String { ls("settings.wipeLeaveGroupsButton", comment: "") }
+        static var batchLeaveTitle: String { ls("settings.batchLeaveTitle", comment: "") }
+        static var batchLeaveProgress: String { ls("settings.batchLeaveProgress", comment: "") }
+        static var batchLeaveAllDone: String { ls("settings.batchLeaveAllDone", comment: "") }
+        static var batchLeaveSomeNeedDecision: String { ls("settings.batchLeaveSomeNeedDecision", comment: "") }
+        static var batchLeaveStatLeft: String { ls("settings.batchLeaveStatLeft", comment: "") }
+        static var batchLeaveStatTransferred: String { ls("settings.batchLeaveStatTransferred", comment: "") }
+        static var batchLeaveNeedsDecisionHeader: String { ls("settings.batchLeaveNeedsDecisionHeader", comment: "") }
+        static var batchLeaveNeedsDecisionBody: String { ls("settings.batchLeaveNeedsDecisionBody", comment: "") }
+        static var batchLeaveReasonManual: String { ls("settings.batchLeaveReasonManual", comment: "") }
+        static var batchLeaveReasonDebt: String { ls("settings.batchLeaveReasonDebt", comment: "") }
+        static var batchLeaveReasonFailed: String { ls("settings.batchLeaveReasonFailed", comment: "") }
+        static var batchLeaveDone: String { ls("settings.batchLeaveDone", comment: "") }
+        // D3 — botón «Detener» del batch
+        static var batchLeaveStop: String { ls("settings.batchLeaveStop", comment: "") }
+        static var batchLeaveStopped: String { ls("settings.batchLeaveStopped", comment: "") }
+        static var batchLeaveStoppedBody: String { ls("settings.batchLeaveStoppedBody", comment: "") }
+        static var batchLeaveStatSkipped: String { ls("settings.batchLeaveStatSkipped", comment: "") }
+        static var deleteAccountScopeDeviceCloud: String { ls("settings.deleteAccountScopeDeviceCloud", comment: "") }
+        static var deleteAccountScopeDeviceGroupsOnly: String { ls("settings.deleteAccountScopeDeviceGroupsOnly", comment: "") }
+        static var deleteAccountScopeCloudCloud: String { ls("settings.deleteAccountScopeCloudCloud", comment: "") }
+        static var deleteAccountScopeCloudGroupsOnly: String { ls("settings.deleteAccountScopeCloudGroupsOnly", comment: "") }
+        static var deleteAccountScopeGroups: String { ls("settings.deleteAccountScopeGroups", comment: "") }
+        static var signOutScopeDevicePrivate: String { ls("settings.signOutScopeDevicePrivate", comment: "") }
+        static var signOutScopeCloudPrivate: String { ls("settings.signOutScopeCloudPrivate", comment: "") }
+        static var signOutScopeDeviceCloud: String { ls("settings.signOutScopeDeviceCloud", comment: "") }
+        static var signOutScopeCloudCloud: String { ls("settings.signOutScopeCloudCloud", comment: "") }
+        static var signOutScopeDeviceNoCopy: String { ls("settings.signOutScopeDeviceNoCopy", comment: "") }
+        static var signOutScopeCloudNoCopy: String { ls("settings.signOutScopeCloudNoCopy", comment: "") }
+        static var signOutNoCopyWarning: String { ls("settings.signOutNoCopyWarning", comment: "") }
+        static var signOutScopeConservationPrivate: String { ls("settings.signOutScopeConservationPrivate", comment: "") }
+        static var signOutScopeConservationCloud: String { ls("settings.signOutScopeConservationCloud", comment: "") }
+        static var signOutScopeConservationGroups: String { ls("settings.signOutScopeConservationGroups", comment: "") }
+        static var signOutScopeConservationPrivateWithGroups: String { ls("settings.signOutScopeConservationPrivateWithGroups", comment: "") }
+
+        static var deleteAccountConfirmTitle: String { ls("settings.deleteAccountConfirmTitle", comment: "") }
+        // D4: `deleteAccountConfirmMessage{Cloud,GroupsOnly}` RETIRADAS — la línea `.base` se reparte en
+        // las 3 filas de la hoja; las condicionales (deudas/desvío/copia congelada/huella) se conservan.
+        static var deleteAccountContinue: String { ls("settings.deleteAccountContinue", comment: "") }
+        static var deleteAccountFinalTitle: String { ls("settings.deleteAccountFinalTitle", comment: "") }
+        static var deleteAccountFinalMessage: String { ls("settings.deleteAccountFinalMessage", comment: "") }
+        static var deleteAccountFinalAction: String { ls("settings.deleteAccountFinalAction", comment: "") }
+        static var deleteAccountErrorTitle: String { ls("settings.deleteAccountErrorTitle", comment: "") }
+        static var deleteAccountErrorMessage: String { ls("settings.deleteAccountErrorMessage", comment: "") }
+        static var deleteAccountRetry: String { ls("settings.deleteAccountRetry", comment: "") }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }
@@ -4222,6 +5206,14 @@ enum L10n {
     // MARK: - Budgets
 
     enum Budgets {
+        /// «N días restantes», en singular cuando queda uno: el último día del presupuesto todavía
+        /// cuenta (decisión de Jürgen, 2026-09-06).
+        static func daysRemaining(_ days: Int) -> String {
+            days == 1
+                ? ls("budgets.days.remaining.one", comment: "")
+                : String(format: ls("budgets.days.remaining", comment: ""), "\(days)")
+        }
+
         enum Widget {
             static var selectFavorites: String {
                 ls("budgets.widget.selectFavorites", comment: "")
@@ -4307,6 +5299,7 @@ enum L10n {
 
     enum Planning {
         static var title: String { ls("planning.title", comment: "") }
+        static var detailPlaceholder: String { ls("planning.detailPlaceholder", comment: "iPad/ventana ancha: columna de detalle vacía en Planificación") }
         static var budgets: String { ls("planning.budgets", comment: "") }
         static var goals: String { ls("planning.goals", comment: "") }
         static var comingSoon: String { ls("planning.comingSoon", comment: "") }
@@ -4475,6 +5468,19 @@ enum L10n {
         }
     }
 
+    // MARK: - Auth (sign-in compartido — botones de provider)
+
+    enum Auth {
+        /// "Continuar con Google" — texto del `GoogleSignInButton` (brand guideline: acompaña
+        /// SIEMPRE al logo G). Es el verbo NEUTRO: lo usan las superficies donde el usuario puede
+        /// estar creando cuenta o entrando a la suya (Ajustes/migración y Grupos).
+        static var googleButton: String { ls("auth.googleButton", comment: "") }
+        /// W4 (decisión del owner 2026-08-11, punto 15): el ALTA dice crear, no continuar.
+        static var googleButtonSignUp: String { ls("auth.googleButtonSignUp", comment: "") }
+        /// W4: la RE-ENTRADA dice iniciar sesión — el usuario ya tiene cuenta.
+        static var googleButtonSignIn: String { ls("auth.googleButtonSignIn", comment: "") }
+    }
+
     // MARK: - Welcome (Chooser pre-onboarding A4)
 
     enum Welcome {
@@ -4487,6 +5493,433 @@ enum L10n {
             static var optionExistingBody: String { ls("welcome.chooser.optionExisting.body", comment: "") }
             static var optionInviteTitle: String { ls("welcome.chooser.optionInvite.title", comment: "") }
             static var optionInviteBody: String { ls("welcome.chooser.optionInvite.body", comment: "") }
+        }
+
+        /// Sub-chooser de "Ya tengo una cuenta" (2º nivel, H4).
+        enum Existing {
+            /// Titular de «Ya tengo una cuenta» (referencia del 15-sep): el «¡Hola de nuevo!» de quien vuelve.
+            static var title: String { ls("welcome.existing.title", comment: "") }
+            static var subtitle: String { ls("welcome.existing.subtitle", comment: "") }
+            /// Pregunta de pie, fuera de la tarjeta, y su acción: lleva a «Es mi primera vez».
+            static var firstTimeQuestion: String { ls("welcome.existing.firstTimeQuestion", comment: "") }
+            static var firstTimeAction: String { ls("welcome.existing.firstTimeAction", comment: "") }
+            static var restoreTitle: String { ls("welcome.existing.restoreTitle", comment: "") }
+            static var restoreBody: String { ls("welcome.existing.restoreBody", comment: "") }
+            static var cloudTitle: String { ls("welcome.existing.cloudTitle", comment: "") }
+            static var cloudBody: String { ls("welcome.existing.cloudBody", comment: "") }
+            // Sesión 2: tercera card — sign-in con Google.
+            static var googleTitle: String { ls("welcome.existing.googleTitle", comment: "") }
+            static var googleBody: String { ls("welcome.existing.googleBody", comment: "") }
+            /// vb1f (opción A): nota bajo el botón del método con que se creó la cuenta de este Apple ID, según el faro.
+            static var usedOnThisDeviceNote: String { ls("welcome.existing.usedOnThisDeviceNote", comment: "") }
+        }
+
+        /// Piezas compartidas de las pantallas de entrada del Welcome (`WelcomeForm.swift`).
+        enum Form {
+            /// El «o» entre dos caminos dentro de la tarjeta.
+            static var or: String { ls("welcome.form.or", comment: "") }
+        }
+
+        /// Sub-chooser de "Soy nuevo" (2º nivel, A4 de D-A7): dónde viven tus datos.
+        enum New {
+            static var subtitle: String { ls("welcome.new.subtitle", comment: "") }
+            static var privateTitle: String { ls("welcome.new.privateTitle", comment: "") }
+            static var privateBody: String { ls("welcome.new.privateBody", comment: "") }
+            // `recommendedBadge` RETIRADA (2026-08-10): ninguna de las dos opciones se recomienda
+            // — decisión del owner que supersede el §k.6. Se quitó de la vista, de la etiqueta de
+            // accesibilidad y de los 16 locales; sin call-sites, la key no sobrevive.
+            static var cloudTitle: String { ls("welcome.new.cloudTitle", comment: "") }
+            static var cloudBody: String { ls("welcome.new.cloudBody", comment: "") }
+            // `cloudWarning` RETIRADA (2026-08-11, W2): la renuncia inline de §k.6 sermoneaba —
+            // decisión del owner. La idea sigue en el flujo: el `cloudBody` recortado dice quién
+            // puede ver los datos, y el consent la lleva completa. Sin call-sites, la key tampoco
+            // sobrevive (16 locales).
+        }
+
+        /// **Paso 4 del rediseño de sesiones · la puerta de iCloud de la rama privada** (ADR §9) y el
+        /// aviso del espejo que se adjunta tarde.
+        ///
+        /// **Copy PROPIO, y tiene que nombrar iCloud** (decisión de Jürgen, 2026-09-09): no se reusa
+        /// «Detectamos datos previos en tu dispositivo» —el alert de `welcome.freshStart.*`— porque ese
+        /// texto describe otro hecho y, sobre todo, promete otra consecuencia. Aquí los datos están en
+        /// **tu iCloud**, borrarlos los quita de iCloud y no solo de este teléfono, y eso es
+        /// irreversible: el copy tiene que decirlo.
+        ///
+        /// Lo que sí se REUSA son las CIFRAS (`welcome.restore.foundTransactions`, `foundAccounts`) y la
+        /// segunda confirmación (`settings.wipeDataSecondConfirmTitle`, `settings.deleteAllDataAction`):
+        /// son el mismo hecho contado en el mismo sitio, y una key gemela para decir «3 cuentas» otra vez
+        /// es exactamente cómo divergen dos pantallas que hablan de lo mismo.
+        enum PrivateICloud {
+            static var checking: String { ls("welcome.privateICloud.checking", comment: "") }
+            static var wiping: String { ls("welcome.privateICloud.wiping", comment: "") }
+            static var foundTitle: String { ls("welcome.privateICloud.foundTitle", comment: "") }
+            static var foundBody: String { ls("welcome.privateICloud.foundBody", comment: "") }
+            /// «desde marzo de 2025» — el mes del movimiento más antiguo del contenedor.
+            static func foundSince(_ monthYear: String) -> String {
+                String(format: ls("welcome.privateICloud.foundSince", comment: ""), monthYear)
+            }
+            /// La sonda alcanzó su tope de registros: la cifra es un MÍNIMO y el copy no puede
+            /// presentarla como un total.
+            static func foundAtLeast(_ count: Int) -> String {
+                String(format: ls("welcome.privateICloud.foundAtLeast", comment: ""), count)
+            }
+            /// El restore no tiene clave propia para categorías (su pantalla no las enseña), así que
+            /// ésta sí es nueva. Va con las otras cifras y no en `Welcome.Restore` porque su única
+            /// consumidora es esta pantalla.
+            static func foundCategories(_ count: Int) -> String {
+                String(format: ls("welcome.privateICloud.foundCategories", comment: ""), count)
+            }
+            /// La sonda agotó su tope antes de llegar a ningún tipo contable: hay datos, pero no sabemos
+            /// cuántos. Un aviso que pide confirmar un borrado irreversible no puede salir en blanco.
+            static var foundUnknownAmount: String {
+                ls("welcome.privateICloud.foundUnknownAmount", comment: "")
+            }
+            static var restoreAction: String { ls("welcome.privateICloud.restoreAction", comment: "") }
+            static var wipeAction: String { ls("welcome.privateICloud.wipeAction", comment: "") }
+            static var wipeConfirmBody: String { ls("welcome.privateICloud.wipeConfirmBody", comment: "") }
+            static var wipeConfirmKeep: String { ls("welcome.privateICloud.wipeConfirmKeep", comment: "") }
+            static var wipeFailedTitle: String { ls("welcome.privateICloud.wipeFailedTitle", comment: "") }
+            static var wipeFailedBody: String { ls("welcome.privateICloud.wipeFailedBody", comment: "") }
+            /// Rendirse tras un fallo. Es el ÚNICO gesto que retira el arm del borrado, así que su copy
+            /// tiene que sonar a decisión y no a «cerrar».
+            static var wipeFailedBack: String { ls("welcome.privateICloud.wipeFailedBack", comment: "") }
+            /// Estado K: no hay iCloud en el dispositivo. Distinto de `errorTitle`, y no es un matiz: allí
+            /// hay un remedio (reintentar) y aquí no.
+            static var noAccountTitle: String { ls("welcome.privateICloud.noAccountTitle", comment: "") }
+            static var noAccountBody: String { ls("welcome.privateICloud.noAccountBody", comment: "") }
+            static var noAccountCta: String { ls("welcome.privateICloud.noAccountCta", comment: "") }
+            static var errorTitle: String { ls("welcome.privateICloud.errorTitle", comment: "") }
+            static var errorBody: String { ls("welcome.privateICloud.errorBody", comment: "") }
+            /// La revisión de iCloud se quedó sin avanzar (card blqa): no culpa a la conexión.
+            static var stalledTitle: String { ls("welcome.privateICloud.stalledTitle", comment: "") }
+            static var stalledBody: String { ls("welcome.privateICloud.stalledBody", comment: "") }
+            static var discardStalledBody: String { ls("welcome.privateICloud.discardStalledBody", comment: "") }
+            /// **El cuerpo de `.unreachable` cuando la puerta VUELVE atrás en vez de seguir** (decisión de
+            /// Jürgen, 2026-09-14). `errorBody` no sirve ahí: dice «Inténtalo otra vez **antes de
+            /// seguir**», y en esa puerta no se ofrece ningún «seguir». Nombra el reintento igual que él,
+            /// porque ese botón sigue estando y es el único que de verdad resuelve.
+            static var discardUnverifiedBody: String {
+                ls("welcome.privateICloud.discardUnverifiedBody", comment: "")
+            }
+            /// **Y el de `.noICloud`, que es OTRO y no una copia** (review adversarial, 2026-09-14). Con el
+            /// cuerpo de arriba, esa pantalla repetía su propio título —«No pudimos revisar tu iCloud» +
+            /// «No pudimos revisar qué hay en tu iCloud»— y perdía lo único accionable que `noAccountBody`
+            /// sí decía: **que iCloud está apagado en este teléfono**. Sin esa causa, el botón «Reintentar»
+            /// que esa fase estrena es un control que parece roto: sin tocar nada, reintentar vuelve aquí.
+            static var discardUnverifiedNoAccountBody: String {
+                ls("welcome.privateICloud.discardUnverifiedNoAccountBody", comment: "")
+            }
+            /// Y su salida. `noAccountCta` («Seguir así») describe lo que hace la otra y mentiría aquí.
+            static var discardUnverifiedBack: String {
+                ls("welcome.privateICloud.discardUnverifiedBack", comment: "")
+            }
+            /// El espejo que llegó tarde: activaste iCloud después de hacer el onboarding sin él.
+            static var lateTitle: String { ls("welcome.privateICloud.lateTitle", comment: "") }
+            /// Lleva las cifras dentro porque es el MENSAJE del alert, no el label de un botón: un label
+            /// dependiente del estado en el `actions` builder de un `.alert` rompe flujos sin relación
+            /// (medido el 2026-09-06, `.claude/rules/swiftui-ds.md`).
+            static func lateBody(_ counts: String) -> String {
+                String(format: ls("welcome.privateICloud.lateBody", comment: ""), counts)
+            }
+            static var lateKeep: String { ls("welcome.privateICloud.lateKeep", comment: "") }
+            /// **El borrado del aviso tardío quedó a medias**: la zona de iCloud ya se borró y el teléfono no. No reusa
+            /// `wipeFailedBody` porque ése dice «Tus datos siguen en iCloud, intactos», que aquí es falso (ticket
+            /// `late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed`).
+            static var leftHalfwayTitle: String { ls("welcome.privateICloud.leftHalfwayTitle", comment: "") }
+            static var leftHalfwayBody: String { ls("welcome.privateICloud.leftHalfwayBody", comment: "") }
+            static var leftHalfwayFinish: String { ls("welcome.privateICloud.leftHalfwayFinish", comment: "") }
+            /// **Un borrado de iCloud pendiente se canceló al activar la nube** (ticket
+            /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Lo enseña el arranque en la nube una
+            /// vez. Vale para el borrado armado y para el que quedó a medias, así que no afirma qué queda en iCloud.
+            static var cancelledInCloudTitle: String { ls("welcome.privateICloud.cancelledInCloudTitle", comment: "") }
+            static var cancelledInCloudBody: String { ls("welcome.privateICloud.cancelledInCloudBody", comment: "") }
+            /// El «¿seguro?» de «Terminar de borrar»: dice qué se va (lo que queda en el teléfono, también lo nuevo).
+            static var leftHalfwayConfirmBody: String {
+                ls("welcome.privateICloud.leftHalfwayConfirmBody", comment: "")
+            }
+
+            // MARK: El corpus que ya está en el TELÉFONO
+            //
+            // Copy propio y no reusado del alert de «Empezar desde cero», aunque describan el mismo
+            // hecho: aquél es un `.alert` del anchor de `ContentView` y su texto está escrito para dos
+            // botones de sistema; éste es una pantalla con dos fases, progreso y error. Reusar sus
+            // claves ataría el copy de la puerta a un alert que puede cambiar por motivos que no son
+            // los suyos.
+            static var foundDeviceTitle: String {
+                ls("welcome.privateICloud.foundDeviceTitle", comment: "")
+            }
+            static var foundDeviceBody: String {
+                ls("welcome.privateICloud.foundDeviceBody", comment: "")
+            }
+            /// La 2.ª confirmación del borrado local. **No puede ser `wipeConfirmBody`**: aquél promete
+            /// que lo borrado se va «de iCloud», y en este camino iCloud no se toca.
+            static var wipeDeviceConfirmBody: String {
+                ls("welcome.privateICloud.wipeDeviceConfirmBody", comment: "")
+            }
+            static var wipingDevice: String { ls("welcome.privateICloud.wipingDevice", comment: "") }
+            /// La salida que NO destruye del aviso del teléfono. Clave propia y no `wipeConfirmKeep`
+            /// («Mejor no»): ese label responde a un «¿seguro?» que en esa pantalla todavía no se ha
+            /// hecho, y a una pantalla de distancia lleva a otro sitio — allí retrocede una fase, aquí
+            /// sale de la puerta.
+            static var foundDeviceKeep: String {
+                ls("welcome.privateICloud.foundDeviceKeep", comment: "")
+            }
+            /// «No pudimos revisar este teléfono» (ticket `private-gate-device-notice-has-no-forward-exit`): la lectura del
+            /// teléfono falló. Ni «hay datos» ni «no hay»: nada que borrar, solo reintentar o volver.
+            static var deviceUnreadableTitle: String {
+                ls("welcome.privateICloud.deviceUnreadableTitle", comment: "")
+            }
+            static var deviceUnreadableBody: String {
+                ls("welcome.privateICloud.deviceUnreadableBody", comment: "")
+            }
+            static var deviceUnreadableBack: String {
+                ls("welcome.privateICloud.deviceUnreadableBack", comment: "")
+            }
+            /// Reintentar un BORRADO que falló. `Welcome.Restore.retry` dice «Reintentar búsqueda», que
+            /// aquí no significa nada: no hay ninguna búsqueda que repetir. Se usa en las dos fases de
+            /// fallo de borrado; `.unreachable` conserva aquél, porque ahí sí se vuelve a medir.
+            static var wipeRetry: String { ls("welcome.privateICloud.wipeRetry", comment: "") }
+            /// Y su fallo, por lo mismo: `wipeFailedBody` dice que los datos siguen en iCloud, que aquí
+            /// sería falso — siguen en el teléfono. Lo reusa también el fallo del borrado de iCloud cuando la zona ya
+            /// se había ido (`WelcomePrivateICloudGateView.wipeFailedBody(zoneGone:)`): es el mismo hecho.
+            static var wipeDeviceFailedBody: String {
+                ls("welcome.privateICloud.wipeDeviceFailedBody", comment: "")
+            }
+        }
+
+        /// Step de dos caminos de «Vengo por un grupo» (G2 de Grupos-first). La card del chooser dejó de
+        /// hablarle solo al invitado con enlace: aquí elige entre organizar su primer grupo o pegar la
+        /// invitación que ya tiene.
+        enum Groups {
+            static var title: String { ls("welcome.groups.title", comment: "") }
+            static var subtitle: String { ls("welcome.groups.subtitle", comment: "") }
+            static var createTitle: String { ls("welcome.groups.createTitle", comment: "") }
+            static var createBody: String { ls("welcome.groups.createBody", comment: "") }
+            static var joinTitle: String { ls("welcome.groups.joinTitle", comment: "") }
+            static var joinBody: String { ls("welcome.groups.joinBody", comment: "") }
+            /// G3 · la PUERTA de la rama organizador, mientras re-mide el canal.
+            static var checking: String { ls("welcome.groups.checking", comment: "") }
+            /// G3 · el canal sigue apagado tras el refresh forzado. Tono del único sitio donde el kill se
+            /// le explica hoy a alguien (`groups.invite.channelUnavailable`): transitorio y honesto, jamás
+            /// «enlace no válido» — aquí no hay ningún enlace y el usuario no ha hecho nada mal.
+            static var channelOffTitle: String { ls("welcome.groups.channelOffTitle", comment: "") }
+            static var channelOffBody: String { ls("welcome.groups.channelOffBody", comment: "") }
+            /// **La vuelta al neutro (2026-09-11).** Sustituye a `existingData*`, que era el copy de un
+            /// BLOQUEO —«Aquí ya hay datos guardados … crea el grupo desde la app que ya usas»— dicho a la
+            /// dueña de esos datos, y con «la app que ya usas» siendo ÉSTA. Ahora la app no bloquea: deja
+            /// el dispositivo en blanco y sigue. Se informa mientras se hace, en vez de preguntar (decisión
+            /// de Jürgen en el ticket padre).
+            ///
+            /// **Describe la ACCIÓN, no promete el resultado**, y eso es una corrección de la review: la
+            /// primera versión decía «tus datos personales siguen a salvo en tu iCloud», que es una
+            /// afirmación categórica sobre algo que este momento todavía no sabe — la espera del export
+            /// puede agotarse. Quien no tiene cuenta de iCloud llega igual aquí (el canal solo dice «no hay
+            /// copia» **con prueba**, que es lo correcto), y a ése la frase le mentía. Ahora dice qué se está
+            /// haciendo; el aviso de la espera agotada dice lo que de verdad pasó.
+            static var neutralWorking: String { ls("welcome.groups.neutralWorking", comment: "") }
+            /// El ÚNICO punto de este flujo donde se pregunta, y se llega solo **con prueba** de que no hay
+            /// copia (`PrivateSignOutExportGateLogic.CopyChannel.none`): informar diría «tus datos siguen a
+            /// salvo en iCloud», y sin copia eso sería mentira.
+            static var neutralNoBackupTitle: String { ls("welcome.groups.neutralNoBackupTitle", comment: "") }
+            static var neutralNoBackupBody: String { ls("welcome.groups.neutralNoBackupBody", comment: "") }
+            static var neutralNoBackupCta: String { ls("welcome.groups.neutralNoBackupCta", comment: "") }
+            /// La espera del export agotó su presupuesto. Copy PROPIO y no el de Ajustes
+            /// (`settings.signOutExportPending*`): allí el verbo es «cerrar sesión» y aquí es «empezar tu
+            /// grupo», y quien lee esto no ha pedido cerrar nada. La cifra sí dice lo mismo, porque es el
+            /// mismo hecho y sale del mismo contador.
+            static var neutralStalledTitle: String { ls("welcome.groups.neutralStalledTitle", comment: "") }
+            /// Accessor-FUNCIÓN, como su hermano de Ajustes (`Settings.signOutExportPendingMessage`) y por la
+            /// misma razón: formatear en la vista deja la key fuera de `L10nFormatAccessorsTests`, que enumera
+            /// accessors-función a mano — y una key con `%d` que desaparece de un locale sale cruda, con el
+            /// número al lado, sin que ningún test lo vea. El número va tras dos puntos para no arrastrar la
+            /// concordancia de plural a los 16 idiomas.
+            static func neutralStalledBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.neutralStalledBody", comment: "Vuelta al neutro con cambios sin subir a iCloud; %d = cuántos"), count)
+            }
+            /// Sin cifra: el historial no se pudo leer, así que no hay número honesto que dar.
+            static var neutralStalledBodyUnknown: String { ls("welcome.groups.neutralStalledBodyUnknown", comment: "") }
+            static var neutralStalledContinue: String { ls("welcome.groups.neutralStalledContinue", comment: "") }
+            static var neutralStalledWait: String { ls("welcome.groups.neutralStalledWait", comment: "") }
+            /// **Este teléfono lleva más de un día sin App Attest** y la vuelta al neutro se paró en cambios de grupos que
+            /// no suben (2026-09-15). Accessor-FUNCIÓN y cifra tras dos puntos, por lo mismo que `neutralStalledBody`. Dice
+            /// «si continúas ahora» y no «si cierras sesión»: aquí nadie ha pedido cerrar nada.
+            static func neutralAttestLossBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.neutralAttestLossBody", comment: "Vuelta al neutro sin App Attest; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló.
+            static var neutralAttestLossBodyUnknown: String { ls("welcome.groups.neutralAttestLossBodyUnknown", comment: "") }
+            /// El botón destructivo: nombra la pérdida, como «Cerrar sesión y perderlos» en Ajustes.
+            static var neutralAttestLossContinue: String { ls("welcome.groups.neutralAttestLossContinue", comment: "") }
+            /// **Los cambios de grupos solo suben con una sesión que no está** —caducó, o la abierta es de otra cuenta— y la
+            /// vuelta al neutro se paró en ellos (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`). «Si
+            /// continúas ahora», como `neutralAttestLossBody`. El botón es `neutralAttestLossContinue`.
+            static func neutralNoSessionLossBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.neutralNoSessionLossBody", comment: "Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra: el recuento del outbox de Grupos falló.
+            static var neutralNoSessionLossBodyUnknown: String { ls("welcome.groups.neutralNoSessionLossBodyUnknown", comment: "") }
+            /// El gemelo de `Groups.Errors.otherAccountAndCaptureUnfinishedSignOutLoss` en esta pantalla (2026-10-05): «si
+            /// continúas ahora», como `neutralNoSessionLossBody`.
+            static func neutralOtherAccountAndCaptureUnfinishedLossBody(_ count: Int) -> String {
+                String(format: ls("welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody", comment: "Vuelta al neutro con cambios de grupos de otra cuenta y otros que no se pudieron preparar; %d = cambios de grupos que se pierden"), count)
+            }
+            /// Sin cifra.
+            static var neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown: String {
+                ls("welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown", comment: "")
+            }
+            /// Quedaron cambios de GRUPOS sin subir de una sesión que caducó. No se descartan nunca, así
+            /// que la única salida honesta es volver a entrar con esa cuenta.
+            static var neutralBlockedTitle: String { ls("welcome.groups.neutralBlockedTitle", comment: "") }
+            static var neutralBlockedBody: String { ls("welcome.groups.neutralBlockedBody", comment: "") }
+            /// **La puerta del INVITADO** (`GroupInviteNeutralGateLogic`), que a diferencia de la del
+            /// organizador PREGUNTA. Allí la persona acaba de tapear «Crear mi primer grupo» y la pantalla
+            /// es la respuesta a su gesto; aquí el reconciler puede llegar por el trigger `.boot`, sin que
+            /// nadie haya tocado nada, y borrar el corpus de alguien en un arranque sin que mire es lo que
+            /// el ADR 2026-09-09 prohíbe.
+            static var inviteNeutralTitle: String { ls("welcome.groups.inviteNeutralTitle", comment: "") }
+            /// Dos cuerpos para la MISMA pregunta y no dos preguntas encadenadas: el hecho que cambia es si
+            /// hay copia en iCloud, y `neutralNoBackup*` —que sí es una segunda pantalla en la rama del
+            /// organizador— se saltaría aquí, porque este gesto ya cubre los dos.
+            static var inviteNeutralBody: String { ls("welcome.groups.inviteNeutralBody", comment: "") }
+            /// Sin copia en iCloud, **y solo se dice con prueba** (`PrivateSignOutExportGateLogic.CopyChannel.none`).
+            static var inviteNeutralBodyNoBackup: String { ls("welcome.groups.inviteNeutralBodyNoBackup", comment: "") }
+            static var inviteNeutralCta: String { ls("welcome.groups.inviteNeutralCta", comment: "") }
+            /// Este arranque no puede volver al neutro por el cierre privado: su celda es la de la nube o la
+            /// de una visita, que hacen OTRO borrado. Se dice y se vuelve; cero escrituras.
+            static var neutralUnavailableTitle: String { ls("welcome.groups.neutralUnavailableTitle", comment: "") }
+            static var neutralUnavailableBody: String { ls("welcome.groups.neutralUnavailableBody", comment: "") }
+            /// **El «ahora no» del INVITADO, con salida** (2026-09-29): el cierre de sesión del teléfono está a medias, o la
+            /// celda cambió entre medir y arrancar. La pantalla se re-mide sola cuando el cierre acaba; el texto no afirma
+            /// ninguna causa, porque no siempre es la misma, y dice qué hacer si no avanza. Va con `neutralUnavailableTitle`.
+            static var inviteRetryBody: String { ls("welcome.groups.inviteRetryBody", comment: "") }
+            /// El invitado en el arranque que acaba de pasar los datos a la nube, con el espejo aún montado: reabrir lo
+            /// resuelve y la invitación sigue guardada.
+            static var inviteRelaunchTitle: String { ls("welcome.groups.inviteRelaunchTitle", comment: "") }
+            static var inviteRelaunchBody: String { ls("welcome.groups.inviteRelaunchBody", comment: "") }
+            /// El invitado sobre los datos de una cuenta de la nube con la sesión cerrada: ni se puede borrar ni unirse
+            /// encima. Si la cuenta es suya, entrar con ella; si no, unirse desde su teléfono.
+            static var inviteCloudSignInTitle: String { ls("welcome.groups.inviteCloudSignInTitle", comment: "") }
+            static var inviteCloudSignInBody: String { ls("welcome.groups.inviteCloudSignInBody", comment: "") }
+            /// **El borrado del arranque no pudo borrar los archivos** (ticket `sign-out-wipe-abort-loops-the-groups-gate`): la
+            /// puerta NO lo reintenta sola, que era el bucle. El cuerpo no dice dónde siguen los datos ni que no se tocó nada,
+            /// porque ninguna de las dos cosas es verdad en todos los abortos.
+            static var wipeFailedTitle: String { ls("welcome.groups.wipeFailedTitle", comment: "") }
+            static var wipeFailedBody: String { ls("welcome.groups.wipeFailedBody", comment: "") }
+            /// La vuelta al neutro se paró porque el paso de los datos entre iCloud y la nube no está en reposo (los dos
+            /// motivos de la migración). No manda a Perfil: en el Welcome no existe.
+            static var neutralMigrationBody: String { ls("welcome.groups.neutralMigrationBody", comment: "") }
+            /// CTA de las pantallas con una sola salida: vuelta al step con las otras vías intactas.
+            static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
+            /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).
+            static var nameTitle: String { ls("welcome.groups.nameTitle", comment: "") }
+            static var nameBody: String { ls("welcome.groups.nameBody", comment: "") }
+            static var nameCta: String { ls("welcome.groups.nameCta", comment: "") }
+        }
+
+        /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:
+        /// las fases terminales (relanzamiento, espera de líder, mismatch, error) y la nota §13 del
+        /// método reusan las de `Cloud` — son literalmente el mismo hecho.
+        enum BornCloud {
+            static var title: String { ls("welcome.bornCloud.title", comment: "") }
+            static var subtitle: String { ls("welcome.bornCloud.subtitle", comment: "") }
+            /// W4 (decisión del owner 2026-08-11, punto 16): la nota del alta dice SOLO que la cuenta
+            /// queda ligada al método. La de `Cloud.providerNote` empieza por «entra con el mismo método
+            /// que usaste», que aquí no significa nada: el usuario no ha usado ninguno todavía.
+            static var providerNote: String { ls("welcome.bornCloud.providerNote", comment: "") }
+            /// Progreso del claim: la cuenta se está CREANDO, no verificando.
+            static var creating: String { ls("welcome.bornCloud.creating", comment: "") }
+            /// R2 · el alta terminó SIN relanzamiento (el proceso montó el store neutro). Copy propio y no
+            /// el de `Storage.Relaunch`: aquí no hay nada que reabrir, hay que seguir al onboarding.
+            static var readyTitle: String { ls("welcome.bornCloud.readyTitle", comment: "") }
+            static var readyBody: String { ls("welcome.bornCloud.readyBody", comment: "") }
+            static var readyCta: String { ls("welcome.bornCloud.readyCta", comment: "") }
+            /// El alta encontró la cuenta ya creada (el Apple ID tenía una) y entró en ella: la terminal lo dice en vez de
+            /// «¡Tu cuenta está lista!». Ticket `born-cloud-signup-lands-on-existing-account-silently`.
+            static var readyExistingAccountTitle: String { ls("welcome.bornCloud.readyExistingAccountTitle", comment: "") }
+        }
+
+        /// R2 · terminal del Welcome cuando el destino elegido necesita el espejo de iCloud y este proceso
+        /// montó el store NEUTRO. Copy propio y NO `Storage.Relaunch.*`: aquel describe una migración de un
+        /// corpus que ya existe; aquí el usuario acaba de elegir y todavía no tiene datos.
+        /// «Abriendo tu invitación…» (card z81w): la bienvenida mientras se abre un enlace en una instalación nueva.
+        enum InviteOpening {
+            static var title: String { ls("welcome.inviteOpening.title", comment: "") }
+        }
+
+        enum MirrorRelaunch {
+            static var title: String { ls("welcome.mirrorRelaunch.title", comment: "") }
+            /// R0 · el cuerpo dice ya la variante AUTO-EXIT («ve a la pantalla de inicio y vuelve»), porque
+            /// desde este chip el terminal se cierra solo al pasar a background y pedir que el usuario
+            /// mate la app a mano sería instrucción de más.
+            ///
+            /// Es un cambio de VALOR y no una key `bodyAutoExit` nueva —al revés que `Storage.Relaunch`—
+            /// porque aquí no hay bifurcación: `Storage.Relaunch` mantiene las dos porque tiene cuatro
+            /// consumidores repartidos entre auto-exit y manual, y este terminal tiene UNO solo. Una key
+            /// con un valor vivo y otro muerto es residuo, no cobertura.
+            static var body: String { ls("welcome.mirrorRelaunch.body", comment: "") }
+        }
+
+        /// Pantalla de sign-in a cuenta del Modo Nube (H4).
+        enum Cloud {
+            static var title: String { ls("welcome.cloud.title", comment: "") }
+            static var subtitle: String { ls("welcome.cloud.subtitle", comment: "") }
+            // Sesión 2 Google: subtitle del intro con provider .google + nota §13 (ambos
+            // providers) + pantalla R9 de provider-mismatch (sub-first, H4).
+            static var subtitleGoogle: String { ls("welcome.cloud.subtitleGoogle", comment: "") }
+            static var providerNote: String { ls("welcome.cloud.providerNote", comment: "") }
+            static var providerMismatchTitle: String { ls("welcome.cloud.providerMismatchTitle", comment: "") }
+            /// Body con el nombre VISIBLE del método conocido ("Apple"/"Google").
+            static func providerMismatchBody(_ providerName: String) -> String {
+                String(format: ls("welcome.cloud.providerMismatchBody", comment: ""), providerName)
+            }
+            static var providerMismatchBodyGeneric: String { ls("welcome.cloud.providerMismatchBodyGeneric", comment: "") }
+            /// Paso 6 · el intro al que encamina el faro dice de dónde viene. Solo el nombre VISIBLE del
+            /// método («Apple»/«Google»), nunca un correo (decisión de Jürgen, 2026-09-09).
+            static func beaconOrigin(_ providerName: String) -> String {
+                String(format: ls("welcome.cloud.beaconOrigin", comment: ""), providerName)
+            }
+            /// Paso 6 · la misma línea cuando el faro no dice con qué método se creó la cuenta.
+            static var beaconOriginGeneric: String { ls("welcome.cloud.beaconOriginGeneric", comment: "") }
+            /// Paso 6 · la salida de la entrada encaminada por el faro: vuelve al chooser entero.
+            static var createAnother: String { ls("welcome.cloud.createAnother", comment: "") }
+            static var checking: String { ls("welcome.cloud.checking", comment: "") }
+            static var adopting: String { ls("welcome.cloud.adopting", comment: "") }
+            static var adoptingHint: String { ls("welcome.cloud.adoptingHint", comment: "") }
+            static var notFoundTitle: String { ls("welcome.cloud.notFoundTitle", comment: "") }
+            static var notFoundBody: String { ls("welcome.cloud.notFoundBody", comment: "") }
+            /// Bloque [I] · la salida de «no hay cuenta»: lleva al alta con el proveedor ya elegido.
+            static var notFoundCta: String { ls("welcome.cloud.notFoundCta", comment: "") }
+            static var blockedTitle: String { ls("welcome.cloud.blockedTitle", comment: "") }
+            static var blockedBody: String { ls("welcome.cloud.blockedBody", comment: "") }
+            /// El SEGUNDO mundo de la misma pantalla: el dueño que restauró de iCloud y volvió atrás con
+            /// el import a medias. `checkHasExistingData` cuenta filas y no sabe de quién son, así que a
+            /// él le cuenta en contra lo que él mismo está bajando.
+            static var blockedRestoreHint: String { ls("welcome.cloud.blockedRestoreHint", comment: "") }
+            /// «Volver». Lo comparten dos pantallas: el bloqueo por datos de otra cuenta y «No encontramos una cuenta» en
+            /// un teléfono que no puede darse de alta. Si el texto deja de servir a las dos, sepáralas.
+            static var blockedBack: String { ls("welcome.cloud.blockedBack", comment: "") }
+            static var errorTitle: String { ls("welcome.cloud.errorTitle", comment: "") }
+            static var errorBody: String { ls("welcome.cloud.errorBody", comment: "") }
+            /// 403 en el claim: la cuenta existe pero el backend no deja entrar. Copy PROPIO —el de
+            /// `error*` culpa a la conexión, y aquí la conexión está perfectamente bien.
+            static var accountBlockedTitle: String { ls("welcome.cloud.accountBlockedTitle", comment: "") }
+            /// Body con el correo de soporte (`AppConstants.supportEmail`): esta pantalla vive FUERA de
+            /// la app, así que el formulario de Perfil no está a mano y el correo es lo único accionable.
+            static func accountBlockedBody(_ supportEmail: String) -> String {
+                String(format: ls("welcome.cloud.accountBlockedBody", comment: ""), supportEmail)
+            }
+            static var retry: String { ls("welcome.cloud.retry", comment: "") }
+            static var waitingTitle: String { ls("welcome.cloud.waitingTitle", comment: "") }
+            static var waitingBody: String { ls("welcome.cloud.waitingBody", comment: "") }
+            static var continueToApp: String { ls("welcome.cloud.continueToApp", comment: "") }
+            static var hydrationBanner: String { ls("welcome.cloud.hydrationBanner", comment: "") }
+            /// Los dos cuerpos de «Cancelar la activación» en la barra del adopt de la bienvenida (ticket
+            /// `welcome-adopt-cancel-dialog-says-from-here`, decisión B de Jürgen del 2026-10-04). Llevan la primera frase
+            /// de los de Almacenamiento (`Storage.Confirm.cancelAdoptBody` / `cancelAdoptEffectBody`) y cambian la segunda:
+            /// al confirmar, la pantalla vuelve al selector, así que no hay «desde aquí»; nombran «Ya tengo una cuenta»
+            /// con el texto exacto de `welcome.chooser.optionExisting.title` de cada idioma.
+            static var cancelAdoptBody: String { ls("welcome.cloud.cancelAdoptBody", comment: "") }
+            static var cancelAdoptEffectBody: String { ls("welcome.cloud.cancelAdoptEffectBody", comment: "") }
         }
 
         enum Restore {
@@ -4522,6 +5955,27 @@ enum L10n {
             static var continueAction: String { ls("welcome.restore.continue", comment: "") }
             static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }
             static var notFoundBody: String { ls("welcome.restore.notFoundBody", comment: "") }
+            /// Kill-switch remoto puesto + faro de cuenta nube encendido: los datos EXISTEN, lo que
+            /// no está disponible es la nube. Copy propio y no una variante de `notFound` porque los
+            /// dos hechos son opuestos — ver `WelcomeRestoreEmptyOutcome`.
+            static var cloudPausedTitle: String { ls("welcome.restore.cloudPausedTitle", comment: "") }
+            static var cloudPausedBody: String { ls("welcome.restore.cloudPausedBody", comment: "") }
+            /// Ni `notFound` ni `cloudPaused`: no hemos podido preguntar. Es el tercer hecho posible y
+            /// necesita copy propio porque los otros dos AFIRMAN algo sobre los datos del usuario —uno
+            /// que no existen, otro que existen— y aquí no se sabe. No nombra «tu cuenta en la nube»
+            /// a propósito: la misma pantalla la ve quien usa iCloud privado, y sin red ninguna de las
+            /// dos comprobaciones concluye.
+            static var cloudUnverifiedTitle: String { ls("welcome.restore.cloudUnverifiedTitle", comment: "") }
+            static var cloudUnverifiedBody: String { ls("welcome.restore.cloudUnverifiedBody", comment: "") }
+            /// El tope de la búsqueda se agotó con el import de CloudKit en marcha: los datos EXISTEN y
+            /// están bajando. Es el cuarto hecho posible y el contrario de `notFound`, que hasta el
+            /// 2026-09-20 era el copy que veía esta persona. Describe lo observado —iCloud sigue
+            /// enviando— y da un orden de magnitud, no una promesa: «puede tardar unos minutos» acota
+            /// la espera sin comprometer un plazo. Solo lo ve quien tiene un import EN MARCHA y sin
+            /// error vigente; el que falla sale por otro lado (`RestoreImportSettlement`), porque a ése
+            /// esta frase le mentiría.
+            static var importIncompleteTitle: String { ls("welcome.restore.importIncompleteTitle", comment: "") }
+            static var importIncompleteBody: String { ls("welcome.restore.importIncompleteBody", comment: "") }
             static var startFresh: String { ls("welcome.restore.startFresh", comment: "") }
             static var retry: String { ls("welcome.restore.retry", comment: "") }
             static var errorTitle: String { ls("welcome.restore.errorTitle", comment: "") }
@@ -4549,7 +6003,6 @@ enum L10n {
         enum Hero {
             static var title: String { ls("welcome.hero.title", comment: "") }
             static var titleAccent: String { ls("welcome.hero.titleAccent", comment: "") }
-            static var subtitle: String { ls("welcome.hero.subtitle", comment: "") }
             static var cta: String { ls("welcome.hero.cta", comment: "") }
             static var trust: String { ls("welcome.hero.trust", comment: "") }
 
@@ -4572,30 +6025,16 @@ enum L10n {
             static var moreBody: String { ls("welcome.hero.cards.more.body", comment: "") }
         }
 
-        // MARK: - DetectedData (A4 v3.1: alert post-Hero cuando iCloud tiene data residual)
-
-        enum DetectedData {
-            static var title: String { ls("welcome.detectedData.title", comment: "") }
-            static var message: String { ls("welcome.detectedData.message", comment: "") }
-            static var loadMyData: String { ls("welcome.detectedData.loadMyData", comment: "") }
-            static var startFresh: String { ls("welcome.detectedData.startFresh", comment: "") }
-        }
-
-        // MARK: - OfferRestore (Parte F: oferta cargar-datos al abrir un link siendo returning)
-
-        enum OfferRestore {
-            static var title: String { ls("welcome.offerRestore.title", comment: "") }
-            static var message: String { ls("welcome.offerRestore.message", comment: "") }
-            static var loadData: String { ls("welcome.offerRestore.loadData", comment: "") }
-            static var startFresh: String { ls("welcome.offerRestore.startFresh", comment: "") }
-        }
-
         // MARK: - FreshStart (segunda barrera: alert al tap "Soy nuevo" si hay data residual)
 
         enum FreshStart {
             static var alertTitle: String { ls("welcome.freshStart.alertTitle", comment: "") }
             static var alertMessage: String { ls("welcome.freshStart.alertMessage", comment: "") }
             static var alertConfirm: String { ls("welcome.freshStart.alertConfirm", comment: "") }
+            /// El wipe LANZÓ. Antes este camino era mudo fuera de Debug y la app entraba igual al
+            /// onboarding «de cero» sobre datos que no se borraron.
+            static var failedTitle: String { ls("welcome.freshStart.failedTitle", comment: "") }
+            static var failedMessage: String { ls("welcome.freshStart.failedMessage", comment: "") }
         }
     }
 
@@ -4717,7 +6156,6 @@ enum L10n {
         static var privacyLocal: String { ls("onboarding.privacyLocal", comment: "") }
         static var privacyNoTracking: String { ls("onboarding.privacyNoTracking", comment: "") }
         static var privacyIcloud: String { ls("onboarding.privacyIcloud", comment: "") }
-        static var privacyNoSharing: String { ls("onboarding.privacyNoSharing", comment: "") }
         static var categoriesDefault: String { ls("onboarding.categoriesDefault", comment: "") }
         static var categoriesCustom: String { ls("onboarding.categoriesCustom", comment: "") }
         static var privacyTutorialsHint: String { ls("onboarding.privacyTutorialsHint", comment: "") }
@@ -4748,7 +6186,8 @@ enum L10n {
         static var privacyLocalShort: String { ls("onboarding.privacyLocalShort", comment: "") }
         static var privacyNoTrackingShort: String { ls("onboarding.privacyNoTrackingShort", comment: "") }
         static var privacyIcloudShort: String { ls("onboarding.privacyIcloudShort", comment: "") }
-        static var privacyNoSharingShort: String { ls("onboarding.privacyNoSharingShort", comment: "") }
+        static var privacyAIShort: String { ls("onboarding.privacyAIShort", comment: "") }
+        static var privacyAIDetail: String { ls("onboarding.privacyAIDetail", comment: "") }
         static var accountBalanceGuideTitle: String { ls("onboarding.accountBalanceGuideTitle", comment: "") }
         static var accountBalanceGuideIntro: String { ls("onboarding.accountBalanceGuideIntro", comment: "") }
         static var accountBalanceGuideGeneral: String { ls("onboarding.accountBalanceGuideGeneral", comment: "") }
@@ -4894,14 +6333,9 @@ enum L10n {
     // MARK: - Voice Language
 
     enum VoiceLanguage {
-        static var system: String {
-            ls("voiceLanguage.system", comment: "")
-        }
-        static var spanish: String {
-            ls("voiceLanguage.spanish", comment: "")
-        }
-        static var english: String {
-            ls("voiceLanguage.english", comment: "")
+        /// «Idioma de la app»: la voz se transcribe en el idioma elegido en Yala.
+        static var appLanguage: String {
+            ls("voiceLanguage.appLanguage", comment: "Voice language option that follows the language chosen in the app")
         }
     }
 
@@ -4927,6 +6361,45 @@ enum L10n {
             static var assignAccount: String { ls("inbox.groupSettlementDraft.assignAccount", comment: "") }
             /// Banner explicativo (liquidación). Formato: %@ = nombre del grupo.
             static var banner: String { ls("inbox.groupSettlementDraft.banner", comment: "") }
+            /// Error al finalizar el borrador de una liquidación cuyo pago ya está registrado (hay marca de aprobación).
+            static var alreadyRegistered: String { ls("inbox.groupSettlementDraft.alreadyRegistered", comment: "") }
+        }
+
+        /// Aviso de que cambió el importe de una liquidación ya aprobada a una cuenta real (ticket
+        /// `settlement-amount-edited-after-approval-leaves-the-bank-stale`).
+        enum GroupSettlementAmountChange {
+            static var title: String { ls("inbox.groupSettlementAmountChange.title", comment: "") }
+            /// La otra persona me pagó. Formato: persona, grupo, importe revisado, importe nuevo, cuenta, importe en la cuenta.
+            static func bannerReceived(_ person: String, _ group: String, _ before: String, _ now: String,
+                                       _ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.bannerReceived", comment: ""),
+                       person, group, before, now, account, inAccount)
+            }
+            /// Yo le pagué a la otra persona. Mismo formato.
+            static func bannerSent(_ person: String, _ group: String, _ before: String, _ now: String,
+                                   _ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.bannerSent", comment: ""),
+                       person, group, before, now, account, inAccount)
+            }
+            /// Sin el nombre de la otra persona. Formato: grupo, importe revisado, importe nuevo, cuenta, importe en la cuenta.
+            static func bannerUnnamed(_ group: String, _ before: String, _ now: String,
+                                      _ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.bannerUnnamed", comment: ""),
+                       group, before, now, account, inAccount)
+            }
+            /// Botón principal. Formato: importe nuevo.
+            static func adjust(_ amount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.adjust", comment: ""), amount)
+            }
+            /// Botón secundario. Formato: importe en la cuenta.
+            static func keep(_ amount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.keep", comment: ""), amount)
+            }
+            /// Segunda línea de la fila. Formato: cuenta, importe en la cuenta.
+            static func rowDetail(_ account: String, _ inAccount: String) -> String {
+                String(format: ls("inbox.groupSettlementAmountChange.rowDetail", comment: ""), account, inAccount)
+            }
+            static var transactionGone: String { ls("inbox.groupSettlementAmountChange.transactionGone", comment: "") }
         }
 
         // M6: sheet finalización Caso A pendiente cuenta.
@@ -5038,12 +6511,22 @@ enum L10n {
         static var sourceGroupSettlement: String {
             ls("inbox.sourceGroupSettlement", comment: "")
         }
+        static var sourceGroupScheduledExpense: String {
+            ls("inbox.sourceGroupScheduledExpense", comment: "")
+        }
         static var sourceManual: String {
             ls("inbox.sourceManual", comment: "")
         }
         /// "Esta transacción se elimina solo desde el grupo origen."
         static var groupDraftCannotDelete: String {
             ls("inbox.groupDraftCannotDelete", comment: "")
+        }
+        /// "Quitar de aquí": oculta en este teléfono un gasto de grupo cuyo grupo no está aquí.
+        static var hideHere: String {
+            ls("inbox.hideHere", comment: "")
+        }
+        static var hideHereHint: String {
+            ls("inbox.hideHereHint", comment: "")
         }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")
@@ -5080,6 +6563,9 @@ enum L10n {
         }
         static var saveLater: String {
             ls("inbox.saveLater", comment: "")
+        }
+        static var convertToShared: String {
+            ls("inbox.convertToShared", comment: "")
         }
         static var deleteTitle: String {
             ls("inbox.deleteTitle", comment: "")
@@ -5271,6 +6757,30 @@ enum L10n {
         static var tryImage: String {
             ls("voice.tryImage", comment: "")
         }
+        static var understanding: String { ls("voice.processing.understanding", comment: "") }
+        static var preparing: String { ls("voice.processing.preparing", comment: "") }
+        static var recordAgain: String { ls("voice.recordAgain", comment: "") }
+        static var reviewTitle: String { ls("voice.review.title", comment: "") }
+        static func reviewTitleMany(_ count: Int) -> String {
+            String(format: ls("voice.review.titleMany", comment: ""), count)
+        }
+        static func saveMany(_ count: Int) -> String {
+            String(format: ls("voice.review.saveMany", comment: ""), count)
+        }
+        static var reviewInboxNote: String { ls("voice.review.inboxNote", comment: "") }
+        static var failureNoConnectionTitle: String { ls("voice.failure.noConnection.title", comment: "") }
+        static var failureMicTitle: String { ls("voice.failure.mic.title", comment: "") }
+        static var failureNoVoiceTitle: String { ls("voice.failure.noVoice.title", comment: "") }
+        static var failureNoVoiceMessage: String { ls("voice.failure.noVoice.message", comment: "") }
+        static var failureNoAmountTitle: String { ls("voice.failure.noAmount.title", comment: "") }
+        static var failureNoAmountMessage: String { ls("voice.failure.noAmount.message", comment: "") }
+        static var failureGenericTitle: String { ls("voice.failure.generic.title", comment: "") }
+        static var failureGenericMessage: String { ls("voice.failure.generic.message", comment: "") }
+        /// El plan free probó la voz con su cupo de prueba entero (lo decide el gateway: `yala_trial_exhausted`).
+        static var failureTrialUsedUpTitle: String { ls("voice.failure.trialUsedUp.title", comment: "Free plan used up its trial voice notes") }
+        static var failureTrialUsedUpMessage: String { ls("voice.failure.trialUsedUp.message", comment: "Free plan used up its trial voice notes: Pro has no limit") }
+        /// Botón que abre la hoja de Yala Pro desde el cupo de prueba agotado (voz y foto).
+        static var trialSeePro: String { ls("ai.trial.seePro", comment: "Button that opens Yala Pro when the trial is used up") }
     }
 
     // MARK: - Image Input
@@ -5384,43 +6894,104 @@ enum L10n {
         static var example3: String {
             ls("image.example3", comment: "")
         }
+
+        /// El registro por imagen de la propuesta C (2026-10-04): elegir, leer, revisar y fallar en la misma hoja.
+        enum Entry {
+            static var title: String { ls("image.entry.title", comment: "") }
+            static var subtitle: String { ls("image.entry.subtitle", comment: "") }
+            static var camera: String { ls("image.entry.camera", comment: "") }
+            static var photos: String { ls("image.entry.photos", comment: "") }
+            static var file: String { ls("image.entry.file", comment: "") }
+            static var multipleHint: String { ls("image.entry.multipleHint", comment: "") }
+            static var readingOne: String { ls("image.entry.readingOne", comment: "") }
+            static var readingMany: String { ls("image.entry.readingMany", comment: "") }
+            static var readingStep: String { ls("image.entry.readingStep", comment: "") }
+            static func readingProgress(_ current: Int, _ total: Int) -> String {
+                String(format: ls("image.entry.readingProgress", comment: ""), current, total)
+            }
+            static var reviewTitle: String { ls("image.entry.reviewTitle", comment: "") }
+            static func reviewTitleMany(_ count: Int) -> String {
+                String(format: ls("image.entry.reviewTitleMany", comment: ""), count)
+            }
+            static func photosFailed(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.photoFailedOne", comment: "")
+                    : String(format: ls("image.entry.photoFailedMany", comment: ""), count)
+            }
+            static var otherPhoto: String { ls("image.entry.otherPhoto", comment: "") }
+            static var cancelReading: String { ls("image.entry.cancelReading", comment: "") }
+            static var failureNoAmountTitle: String { ls("image.entry.failure.noAmount.title", comment: "") }
+            static var failureNoAmountMessage: String { ls("image.entry.failure.noAmount.message", comment: "") }
+            static var failureUnreadableTitle: String { ls("image.entry.failure.unreadable.title", comment: "") }
+            static var failureUnreadableFileTitle: String { ls("image.entry.failure.unreadableFile.title", comment: "") }
+            static var failureUnreadableFileMessage: String {
+                ls("image.entry.failure.unreadableFile.message", comment: "")
+            }
+            static var failureCameraTitle: String { ls("image.entry.failure.camera.title", comment: "") }
+            static var failureCameraMessage: String { ls("image.entry.failure.camera.message", comment: "") }
+            static var failureGenericTitle: String { ls("image.entry.failure.generic.title", comment: "") }
+            static var failureGenericMessage: String { ls("image.entry.failure.generic.message", comment: "") }
+            /// El plan free probó la foto con su cupo de prueba entero (`yala_trial_exhausted` del gateway).
+            static var failureTrialUsedUpTitle: String { ls("image.entry.failure.trialUsedUp.title", comment: "Free plan used up its trial photos") }
+            static var failureTrialUsedUpMessage: String { ls("image.entry.failure.trialUsedUp.message", comment: "Free plan used up its trial photos: Pro has no limit") }
+
+            // Un PDF página a página (ticket pdf-statement-reads-only-the-first-page, 2026-10-08).
+            static func readingPageProgress(_ current: Int, _ total: Int) -> String {
+                String(format: ls("image.entry.readingPageProgress", comment: ""), current, total)
+            }
+            static var passwordTitle: String { ls("image.entry.password.title", comment: "") }
+            static var passwordMessage: String { ls("image.entry.password.message", comment: "") }
+            static var passwordField: String { ls("image.entry.password.field", comment: "") }
+            static var passwordOpen: String { ls("image.entry.password.open", comment: "") }
+            static var passwordWrong: String { ls("image.entry.password.wrong", comment: "") }
+            /// Páginas de PDF que no entraron en la tanda; `limit` es el tope de páginas por vez.
+            static func pagesLeftOut(_ count: Int, limit: Int) -> String {
+                count == 1
+                    ? String(format: ls("image.entry.pagesLeftOutOne", comment: ""), limit)
+                    : String(format: ls("image.entry.pagesLeftOutMany", comment: ""), count, limit)
+            }
+            /// Fotos compartidas de una vez que no entraron en la tanda; `limit` es el tope de fotos por vez.
+            static func sharedPhotosLeftOut(_ count: Int, limit: Int) -> String {
+                count == 1
+                    ? String(format: ls("image.entry.sharedLeftOutOne", comment: ""), limit)
+                    : String(format: ls("image.entry.sharedLeftOutMany", comment: ""), count, limit)
+            }
+            /// El cupo de prueba se acabó a mitad de la tanda: `count` fotos o páginas sin leer.
+            static func trialLeftOut(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.trialLeftOutOne", comment: "")
+                    : String(format: ls("image.entry.trialLeftOutMany", comment: ""), count)
+            }
+        }
     }
 
-    // MARK: - Biometric
+    // MARK: - Face ID protection guide
 
-    enum Biometric {
-        static var title: String { ls("biometric.title", comment: "") }
-        static var description: String { ls("biometric.description", comment: "") }
-        static var enableLock: String { ls("biometric.enableLock", comment: "") }
-        static var lockAfter: String { ls("biometric.lockAfter", comment: "") }
-        static var timeoutImmediate: String {
-            ls("biometric.timeout.immediate", comment: "")
+    enum FaceIDGuide {
+        static var title: String { ls("faceIDGuide.title", comment: "") }
+        static var subtitle: String { ls("faceIDGuide.subtitle", comment: "") }
+        static var step1Title: String { ls("faceIDGuide.step1Title", comment: "") }
+        static var step1Detail: String { ls("faceIDGuide.step1Detail", comment: "") }
+        static var step2Title: String { ls("faceIDGuide.step2Title", comment: "") }
+        static var step2Detail: String { ls("faceIDGuide.step2Detail", comment: "") }
+        static var step3Title: String { ls("faceIDGuide.step3Title", comment: "") }
+        static var step3Detail: String { ls("faceIDGuide.step3Detail", comment: "") }
+        static var guarantee: String { ls("faceIDGuide.guarantee", comment: "") }
+        /// El nombre que iOS da a la opción del menú del icono. Se pinta en «Lo que vas a ver».
+        static var previewAction: String { ls("faceIDGuide.previewAction", comment: "") }
+    }
+
+    // MARK: - Step Guide (flujo por pasos, referencia del 2026-09-15)
+    enum StepGuide {
+        static func progress(_ current: Int, _ total: Int) -> String {
+            String(format: ls("stepGuide.progress", comment: ""), current, total)
         }
-        static var timeoutOneMinute: String {
-            ls("biometric.timeout.oneMinute", comment: "")
-        }
-        static var timeoutFiveMinutes: String {
-            ls("biometric.timeout.fiveMinutes", comment: "")
-        }
-        static var timeoutFifteenMinutes: String {
-            ls("biometric.timeout.fifteenMinutes", comment: "")
-        }
-        static var authReason: String { ls("biometric.authReason", comment: "") }
-        static var enableReason: String { ls("biometric.enableReason", comment: "") }
-        static var authFailed: String { ls("biometric.authFailed", comment: "") }
-        static var authFailedMessage: String {
-            ls("biometric.authFailedMessage", comment: "")
-        }
-        static var locked: String { ls("biometric.locked", comment: "") }
-        static var unlockPrompt: String { ls("biometric.unlockPrompt", comment: "") }
-        static var unlock: String { ls("biometric.unlock", comment: "") }
-        static var passcode: String { ls("biometric.passcode", comment: "") }
-        static var enableLockHint: String {
-            ls("biometric.enableLockHint", comment: "")
-        }
-        static var lockAfterHint: String {
-            ls("biometric.lockAfterHint", comment: "")
-        }
+        static var markDone: String { ls("stepGuide.markDone", comment: "") }
+        static var stuck: String { ls("stepGuide.stuck", comment: "") }
+        static var whatYouWillSee: String { ls("stepGuide.whatYouWillSee", comment: "") }
+        static var phaseDone: String { ls("stepGuide.phaseDone", comment: "") }
+        static var phaseActive: String { ls("stepGuide.phaseActive", comment: "") }
+        static var phaseUpcoming: String { ls("stepGuide.phaseUpcoming", comment: "") }
     }
 
     // MARK: - Subscription
@@ -5431,6 +7002,9 @@ enum L10n {
         static var subscribe: String { ls("subscription.subscribe", comment: "") }
         static var processing: String { ls("subscription.processing", comment: "") }
         static var restore: String { ls("subscription.restore", comment: "") }
+        static var restoreEmptyTitle: String { ls("subscription.restoreEmptyTitle", comment: "") }
+        static var restoreEmpty: String { ls("subscription.restoreEmpty", comment: "") }
+        static var purchaseNotActivated: String { ls("subscription.purchaseNotActivated", comment: "") }
         static var planMonthly: String { ls("subscription.planMonthly", comment: "") }
         static var planYearly: String { ls("subscription.planYearly", comment: "") }
         static var perYear: String { ls("subscription.perYear", comment: "") }
@@ -5611,6 +7185,11 @@ enum L10n {
         static var applePayStep1Title: String { ls("tutorials.applePay.step1.title", comment: "") }
         static var applePayStep2Title: String { ls("tutorials.applePay.step2.title", comment: "") }
         static var applePayStep3Title: String { ls("tutorials.applePay.step3.title", comment: "") }
+        static var applePayOpenShortcuts: String { ls("tutorials.applePay.openShortcuts", comment: "") }
+        static var applePayGuarantee: String { ls("tutorials.applePay.guarantee", comment: "") }
+        static func applePayPendingDrafts(_ count: Int) -> String {
+            String(format: ls("tutorials.applePay.pendingDrafts", comment: ""), count)
+        }
         // Step Descriptions
         static var createAccountStep0Desc: String { ls("tutorials.createAccount.step0.desc", comment: "") }
         static var createAccountStep1Desc: String { ls("tutorials.createAccount.step1.desc", comment: "") }
@@ -5744,20 +7323,32 @@ enum L10n {
         // System notifications
         static var scheduledPaymentsName: String { ls("notifications.scheduledPayments.name", comment: "") }
         static var scheduledPaymentsHint: String { ls("notifications.scheduledPayments.hint", comment: "") }
+        /// "Tienes %d pagos planificados para hoy 📅" — plural en .stringsdict (body de la
+        /// summary diaria agendada del canal híbrido D1).
+        /// `locale:` explícito: con override in-app, la .lproj se carga por path y Foundation
+        /// pierde la procedencia — sin locale, la CATEGORÍA plural se elegiría con el idioma
+        /// del SISTEMA (verificado empíricamente en el review adversarial 2026-07-22).
+        static func scheduledPaymentsSummaryBody(_ count: Int) -> String {
+            String(
+                format: ls("notifications.scheduledPayments.summaryBody", comment: ""),
+                locale: LanguageManager.resolved.locale,
+                count
+            )
+        }
 
         // Groups
         static var groupsName: String { ls("notifications.groups.name", comment: "") }
         static var groupsHint: String { ls("notifications.groups.hint", comment: "") }
 
         enum Group {
-            static func newExpense(_ member: String, _ amount: String, _ desc: String) -> String {
-                String(format: ls("notifications.groups.newExpense", comment: ""), member, amount, desc)
+            static func newExpense(_ member: String, _ desc: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.newExpense", comment: ""), member, desc, myShare)
             }
-            static func newExpenseNoDesc(_ member: String, _ amount: String) -> String {
-                String(format: ls("notifications.groups.newExpenseNoDesc", comment: ""), member, amount)
+            static func newExpenseNoDesc(_ member: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.newExpenseNoDesc", comment: ""), member, myShare)
             }
-            static func modifiedExpense(_ member: String, _ desc: String) -> String {
-                String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc)
+            static func modifiedExpense(_ member: String, _ desc: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc, myShare)
             }
             static func settlement(_ member: String, _ amount: String) -> String {
                 String(format: ls("notifications.groups.settlement", comment: ""), member, amount)
@@ -5768,6 +7359,16 @@ enum L10n {
             static func multipleChanges(_ count: Int) -> String {
                 String(format: ls("notifications.groups.multipleChanges", comment: ""), count)
             }
+            /// Nudge amable al DEUDOR de una deuda parada. `amount` ya viene formateado por
+            /// `YalaFormatterStatic.currency`; `creditor` es el `resolvedDisplayName` del acreedor.
+            /// Los argumentos son POSICIONALES (`%1$@`/`%2$@`) porque varios idiomas invierten el
+            /// orden — en inglés se nombra antes a la persona que al importe.
+            static func settlementReminder(_ amount: String, _ creditor: String) -> String {
+                String(format: ls("notifications.groups.settlementReminder", comment: ""), amount, creditor)
+            }
+            /// El mismo nudge cuando se le debe a VARIAS personas del grupo: una sola notificación,
+            /// sin nombrar a nadie (ver `GroupSettlementReminderService`, «una por grupo»).
+            static var settlementReminderMultiple: String { ls("notifications.groups.settlementReminderMultiple", comment: "") }
             static var fallbackGroup: String { ls("notifications.groups.fallbackGroup", comment: "") }
             static var fallbackMember: String { ls("notifications.groups.fallbackMember", comment: "") }
         }
@@ -5804,6 +7405,13 @@ enum L10n {
         // Budget alerts
         static var budgetAlertsTitle: String { ls("notifications.budgetAlerts.title", comment: "") }
         static var budgetAlertsHint: String { ls("notifications.budgetAlerts.hint", comment: "") }
+
+        // Recordatorios de liquidación de grupo
+        static var settlementRemindersTitle: String { ls("notifications.settlementReminders.title", comment: "") }
+        static var settlementRemindersHint: String { ls("notifications.settlementReminders.hint", comment: "") }
+        /// Se muestra en lugar del hint cuando el maestro de avisos de Grupos está apagado y el
+        /// toggle no puede entregar nada.
+        static var settlementRemindersGroupsOff: String { ls("notifications.settlementReminders.hintGroupsOff", comment: "") }
 
         // MARK: - Scheduled Payment Notifications (personalized)
 
@@ -5902,6 +7510,12 @@ enum L10n {
         static var v20AIDescription: String { ls("whatsNew.v20.ai.description", comment: "") }
         static var v20RedesignTitle: String { ls("whatsNew.v20.redesign.title", comment: "") }
         static var v20RedesignDescription: String { ls("whatsNew.v20.redesign.description", comment: "") }
+        static var v21GroupsTitle: String { ls("whatsNew.v21.groups.title", comment: "") }
+        static var v21GroupsDescription: String { ls("whatsNew.v21.groups.description", comment: "") }
+        static var v21LoggingTitle: String { ls("whatsNew.v21.logging.title", comment: "") }
+        static var v21LoggingDescription: String { ls("whatsNew.v21.logging.description", comment: "") }
+        static var v21DataTitle: String { ls("whatsNew.v21.data.title", comment: "") }
+        static var v21DataDescription: String { ls("whatsNew.v21.data.description", comment: "") }
     }
 
     // MARK: - App Update
@@ -5913,6 +7527,13 @@ enum L10n {
         }
         static var updateButton: String { ls("appUpdate.updateButton", comment: "") }
         static var dismissButton: String { ls("appUpdate.dismissButton", comment: "") }
+
+        /// Pantalla BLOQUEANTE de forzado (min-version). DARK hasta encender el fetch de /config.
+        enum Force {
+            static var title: String { ls("appUpdate.force.title", comment: "") }
+            static var message: String { ls("appUpdate.force.message", comment: "") }
+            static var updateButton: String { ls("appUpdate.force.updateButton", comment: "") }
+        }
     }
 
     // MARK: - Weekday
@@ -5979,12 +7600,549 @@ enum L10n {
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
+        /// El aviso que sale en lugar del de borrado cuando faltan los datos y iCloud no está disponible en este
+        /// iPhone (iCloud Drive apagado, sin sesión de iCloud). No ofrece borrar nada.
+        static var unavailableNoticeTitle: String { ls("icloud.unavailableNotice.title", comment: "") }
+        static var unavailableNoticeMessage: String { ls("icloud.unavailableNotice.message", comment: "") }
         static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
         static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
         static var forceSyncOfflineNote: String { ls("icloud.forceSync.offlineNote", comment: "") }
         static var mismatchTitle: String { ls("icloud.mismatch.title", comment: "") }
         static var mismatchMessage: String { ls("icloud.mismatch.message", comment: "") }
         static var mismatchAction: String { ls("icloud.mismatch.action", comment: "") }
+        // El Apple ID del teléfono cambió y la sesión privada era del anterior (ADR 2026-09-09 §1).
+        // Vocabulario de USUARIO y no el interno: se habla de «tu cuenta de iCloud» y de dónde quedan
+        // los datos, nunca de «sesión privada» — ver `.claude/rules/l10n.md`.
+        static var appleIDChangedTitle: String { ls("icloud.appleIDChanged.title", comment: "") }
+        static var appleIDChangedMessage: String { ls("icloud.appleIDChanged.message", comment: "") }
+        static var appleIDChangedConfirm: String { ls("icloud.appleIDChanged.confirm", comment: "") }
+        static var appleIDChangedLater: String { ls("icloud.appleIDChanged.later", comment: "") }
+        static var appleIDChangedGroupsLine: String { ls("icloud.appleIDChanged.groupsLine", comment: "") }
+    }
+
+    // MARK: - Modo Nube (I14): almacenamiento / migración / consentimiento
+
+    enum Storage {
+        static var title: String { ls("storage.title", comment: "") }
+        static var waitingForLeader: String { ls("storage.waitingForLeader", comment: "") }
+        /// El botón de salir de esa espera (ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`, texto de Jürgen del
+        /// 2026-09-23): «Cancelar la activación» bajo «otro de tus dispositivos está activando la nube» se leía como parar
+        /// el OTRO teléfono, y ese no se entera.
+        static var stopWaiting: String { ls("storage.waiting.stopWaiting", comment: "") }
+        /// El journal de la migración no se deja leer (ticket `an-unreadable-migration-journal-reads-as-never-started`).
+        static var journalUnreadableMessage: String { ls("storage.journalUnreadable.message", comment: "") }
+
+        /// Paso 10 · la sección «Grupos»: qué cuenta usa esta sesión privada para grupos, y su desenlace.
+        enum Groups {
+            static var title: String { ls("storage.groups.title", comment: "") }
+            static var noAccountBody: String { ls("storage.groups.noAccountBody", comment: "") }
+            static var associateButton: String { ls("storage.groups.associateButton", comment: "") }
+            /// "Tus grupos usan %@." — el correo, o el proveedor cuando no hay correo capturado.
+            static func associatedBody(_ cuenta: String) -> String {
+                String(format: ls("storage.groups.associatedBody", comment: ""), cuenta)
+            }
+            static var associatedUnnamedBody: String { ls("storage.groups.associatedUnnamedBody", comment: "") }
+            /// "Tus grupos están en %@. Entra para verlos en este iPhone."
+            static func needsSignInBody(_ cuenta: String) -> String {
+                String(format: ls("storage.groups.needsSignInBody", comment: ""), cuenta)
+            }
+            static var needsSignInUnnamedBody: String { ls("storage.groups.needsSignInUnnamedBody", comment: "") }
+            static var signInButton: String { ls("storage.groups.signInButton", comment: "") }
+            /// Ocupa el sitio de «Asociar» / «Entrar» cuando el canal de Grupos está matado en remoto.
+            static var channelPausedNote: String { ls("storage.groups.channelPausedNote", comment: "") }
+            static var detachButton: String { ls("storage.groups.detachButton", comment: "") }
+            static var sameAccountBody: String { ls("storage.groups.sameAccountBody", comment: "") }
+            static var detachTitle: String { ls("storage.groups.detachTitle", comment: "") }
+            static var detachBody: String { ls("storage.groups.detachBody", comment: "") }
+            static var detachKeep: String { ls("storage.groups.detachKeep", comment: "") }
+            static var detachRemove: String { ls("storage.groups.detachRemove", comment: "") }
+            static var detachWorking: String { ls("storage.groups.detachWorking", comment: "") }
+            static var detachWaiting: String { ls("storage.groups.detachWaiting", comment: "") }
+            static var detachBlockedTitle: String { ls("storage.groups.detachBlockedTitle", comment: "") }
+            static var detachBlockedTransient: String { ls("storage.groups.detachBlockedTransient", comment: "") }
+            static var detachBlockedPermanent: String { ls("storage.groups.detachBlockedPermanent", comment: "") }
+            static var detachBlockedSession: String { ls("storage.groups.detachBlockedSession", comment: "") }
+            /// **Dos causas a la vez en el desasociar** (2026-10-05, opción B de Jürgen, ticket
+            /// `detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes`): la captura de grupos atascada
+            /// (`Groups.Errors.captureUnfinished`) y, además, lo que en un cierre abriría la salida de perderlos. El desasociar no
+            /// ofrece esa salida, así que el texto nombra las dos causas y dice qué hacer para todo
+            /// (`CloudSignOutFlowLogic.DetachBlockedNotice.alsoCaptureUnfinished`). Este, con la sesión caducada; texto literal
+            /// de Jürgen.
+            static var detachBlockedSessionAndCaptureUnfinished: String {
+                ls("storage.groups.detachBlockedSessionAndCaptureUnfinished", comment: "")
+            }
+            /// El gemelo del teléfono sin App Attest: arranca con el hecho de `Groups.Errors.attestUnavailable`. **No termina en
+            /// «vuelve a intentarlo»**: reabrir Yala cura el drain, no la verificación, y prometerlo era falso (review del
+            /// 2026-10-05). El aviso del App Attest a secas tampoco promete nada.
+            static var detachBlockedAttestAndCaptureUnfinished: String {
+                ls("storage.groups.detachBlockedAttestAndCaptureUnfinished", comment: "")
+            }
+            /// El gemelo de los cambios de otra cuenta: arranca con el hecho de `Groups.Errors.groupsChangesFromAnotherAccount`.
+            /// **Desde el 2026-10-05 no dice «algunos de ellos»** (ticket `stuck-groups-drain-hides-held-rows-of-another-account`):
+            /// lo atascado puede ser tuyo —filas de otra cuenta en el outbox y un cambio propio que el drain no captura—, y
+            /// entonces «ellos», los de la otra cuenta, era falso. Vale para los dos casos.
+            static var detachBlockedOtherAccountAndCaptureUnfinished: String {
+                ls("storage.groups.detachBlockedOtherAccountAndCaptureUnfinished", comment: "")
+            }
+            static var detachPurgeFailedTitle: String { ls("storage.groups.detachPurgeFailedTitle", comment: "") }
+            static var detachPurgeFailedBody: String { ls("storage.groups.detachPurgeFailedBody", comment: "") }
+            static var detachBlockedBridge: String { ls("storage.groups.detachBlockedBridge", comment: "") }
+            static var detachBlockedSessionNotClosed: String { ls("storage.groups.detachBlockedSessionNotClosed", comment: "") }
+            static var detachFinishButton: String { ls("storage.groups.detachFinishButton", comment: "") }
+            static var detachPendingBody: String { ls("storage.groups.detachPendingBody", comment: "") }
+            static var detachBusy: String { ls("storage.groups.detachBusy", comment: "") }
+        }
+
+        enum Status {
+            static var icloudTitle: String { ls("storage.status.icloudTitle", comment: "") }
+            static var icloudBody: String { ls("storage.status.icloudBody", comment: "") }
+            static var cloudTitle: String { ls("storage.status.cloudTitle", comment: "") }
+            static var cloudBody: String { ls("storage.status.cloudBody", comment: "") }
+        }
+
+        enum Migrate {
+            static var title: String { ls("storage.migrate.title", comment: "") }
+            static var body: String { ls("storage.migrate.body", comment: "") }
+            static var button: String { ls("storage.migrate.button", comment: "") }
+            static var previewButton: String { ls("storage.migrate.previewButton", comment: "") }
+            /// Los conteos de «Ver qué migraría» no se dejaron leer: sin cifras.
+            static var previewUnreadable: String { ls("storage.migrate.previewUnreadable", comment: "") }
+            /// "%1$lld movimientos · %2$lld categorías · %3$lld cuentas · %4$lld presupuestos".
+            static func previewResult(_ tx: Int, _ cat: Int, _ acc: Int, _ budgets: Int) -> String {
+                String(format: ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
+            }
+            /// C-7: con sesión de nube viva la migración REUSA esa cuenta y no pregunta el método.
+            /// `%@` = nombre visible del proveedor (`ProviderMismatchLogic.displayName`, jamás el
+            /// rawValue del wire); método desconocido → `accountReuseNoteGeneric`.
+            static func accountReuseNote(_ providerName: String) -> String {
+                String(format: ls("storage.migrate.accountReuseNote", comment: ""), providerName)
+            }
+            static var accountReuseNoteGeneric: String {
+                ls("storage.migrate.accountReuseNoteGeneric", comment: "")
+            }
+            /// La nota que sustituye a `accountReuseNote` cuando la comprobación ya rechazó la cuenta de la sesión viva
+            /// (ticket `migrate-card-keeps-promising-an-account-the-check-refused`): el motivo y la salida que ya daba la
+            /// hoja, sin su «No cambiamos nada», que habla del toque y no de la tarjeta.
+            static func refusedNote(for reason: StorageMigrationIdentityGateLogic.Block) -> String {
+                switch reason {
+                case .accountHasPersonalData:         return ls("storage.migrate.refusedPersonalData", comment: "")
+                case .anotherGroupsAccountAssociated: return ls("storage.migrate.refusedOtherGroups", comment: "")
+                case .accountReturnedToICloud:        return ls("storage.migrate.refusedReturned", comment: "")
+                case .sessionFromBeforeFreshStart:    return ls("storage.migrate.refusedFreshStart", comment: "")
+                case .migrationInProgressOnAnotherDevice:
+                    return ls("storage.migrate.refusedOtherDevice", comment: "")
+                }
+            }
+        }
+
+        enum Adopt {
+            static var title: String { ls("storage.adopt.title", comment: "") }
+            static var body: String { ls("storage.adopt.body", comment: "") }
+            static var button: String { ls("storage.adopt.button", comment: "") }
+            /// C-7: la sesión viva NO es la cuenta que migró este corpus (el faro del device nombra
+            /// otra). `%@` = método visible de la sesión actual; desconocido → variante genérica.
+            static func otherAccountNote(_ providerName: String) -> String {
+                String(format: ls("storage.adopt.otherAccountNote", comment: ""), providerName)
+            }
+            static var otherAccountNoteGeneric: String {
+                ls("storage.adopt.otherAccountNoteGeneric", comment: "")
+            }
+        }
+
+        enum Revert {
+            static var title: String { ls("storage.revert.title", comment: "") }
+            static var body: String { ls("storage.revert.body", comment: "") }
+            /// §3.3.5: frase de que la Reversa ES el desenlace funcional del enlace privado ↔ nube.
+            static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
+            static var button: String { ls("storage.revert.button", comment: "") }
+            static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
+
+            /// El aviso de datos previos en iCloud antes de volver (ticket
+            /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`).
+            enum Prior {
+                static var checking: String { ls("storage.revert.prior.checking", comment: "") }
+                static var title: String { ls("storage.revert.prior.title", comment: "") }
+                static func body(_ summary: String) -> String {
+                    String(format: ls("storage.revert.prior.body", comment: ""), summary)
+                }
+                static var bodyNoCount: String { ls("storage.revert.prior.bodyNoCount", comment: "") }
+                static func groupRecords(_ count: Int) -> String {
+                    String(format: ls("storage.revert.prior.groupRecords", comment: ""), count)
+                }
+                static var groupsNote: String { ls("storage.revert.prior.groupsNote", comment: "") }
+                static var merge: String { ls("storage.revert.prior.merge", comment: "") }
+                static var discard: String { ls("storage.revert.prior.discard", comment: "") }
+                static var discardConfirmTitle: String { ls("storage.revert.prior.discardConfirmTitle", comment: "") }
+                static var discardConfirmBody: String { ls("storage.revert.prior.discardConfirmBody", comment: "") }
+                static var discardConfirm: String { ls("storage.revert.prior.discardConfirm", comment: "") }
+                static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
+                static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
+                static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
+                static var wipeStopped: String { ls("storage.revert.prior.wipeStopped", comment: "") }
+                static func wiping(_ deleted: Int) -> String {
+                    String(format: ls("storage.revert.prior.wiping", comment: ""), deleted)
+                }
+                static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
+                static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
+            }
+        }
+
+        enum Sync {
+            static var title: String { ls("storage.sync.title", comment: "") }
+            static var upToDate: String { ls("storage.sync.upToDate", comment: "") }
+            static func needsSignIn(_ count: Int) -> String {
+                String(format: ls("storage.sync.needsSignIn", comment: ""), count)
+            }
+            /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
+            static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }
+            /// Quedan cambios sin subir y el motor no completó su último ciclo (sin red, en backoff o parado por el gate de
+            /// dominio). Plural en el `.stringsdict`.
+            static func waitingForConnection(_ count: Int) -> String {
+                String.localizedStringWithFormat(ls("storage.sync.waitingForConnection", comment: ""), count)
+            }
+            /// Lo mismo cuando las colas no se dejaron contar: sin cifra, pero tampoco «Todo sincronizado».
+            static var waitingForConnectionUncounted: String {
+                ls("storage.sync.waitingForConnectionUncounted", comment: "")
+            }
+            static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
+        }
+
+        enum Progress {
+            static var migrating: String { ls("storage.progress.migrating", comment: "") }
+            static var reverting: String { ls("storage.progress.reverting", comment: "") }
+            static var resume: String { ls("storage.progress.resume", comment: "") }
+            static var retry: String { ls("storage.progress.retry", comment: "") }
+            static var waitingImport: String { ls("storage.progress.waitingImport", comment: "") }
+            static var waitingICloudExport: String { ls("storage.progress.waitingICloudExport", comment: "") }
+            /// Espera de la vuelta a iCloud (`reverseUpload`), ticket `reverse-upload-has-no-ceiling-and-no-exit`.
+            static var reverseUploading: String { ls("storage.progress.reverseUploading", comment: "") }
+            static func reversePending(_ count: Int) -> String {
+                String(format: ls("storage.progress.reversePending", comment: ""), count)
+            }
+            static var reverseICloudFull: String { ls("storage.progress.reverseICloudFull", comment: "") }
+            static var reverseICloudUnavailable: String {
+                ls("storage.progress.reverseICloudUnavailable", comment: "")
+            }
+            static var reverseICloudMaybeOff: String { ls("storage.progress.reverseICloudMaybeOff", comment: "") }
+            /// La muestra de la vuelta no se deja leer en este teléfono (ticket
+            /// `reverse-upload-unreadable-sample-waits-the-long-ceiling`): calco del `snapshotLocalFailure` de la ida.
+            static var reverseLocalFailure: String { ls("storage.progress.reverseLocalFailure", comment: "") }
+            static var cancelReverse: String { ls("storage.progress.cancelReverse", comment: "") }
+            /// «Cancelar la activación» durante la subida del snapshot de la ida (ticket
+            /// `snapshot-upload-has-no-ceiling-and-no-way-out`).
+            static var cancelMigration: String { ls("storage.progress.cancelMigration", comment: "") }
+            /// La vuelta a iCloud parada porque la sesión de la nube ya no vale, antes de montar el espejo (ticket
+            /// `reverse-before-mount-stays-stuck-with-an-expired-session`). El BOTÓN que la acompaña reusa
+            /// `Storage.Sync.signInButton`: es el mismo gesto que ya pide el banner hermano de esta pantalla, y dos
+            /// literales para un mismo botón acaban divergiendo.
+            static var reverseNeedsSignIn: String { ls("storage.progress.reverseNeedsSignIn", comment: "") }
+            // El claim de un ADOPT aparcado por un motivo que esperar no arregla, dicho antes del techo (ticket
+            // `adopt-claim-stays-parked-with-no-ceiling`).
+            static var adoptSessionExpired: String { ls("storage.progress.adoptSessionExpired", comment: "") }
+            /// Con el correo de soporte (`AppConstants.supportEmail`): esperar no despierta una cuenta que no deja entrar.
+            static func adoptAccountUnavailable(_ supportEmail: String) -> String {
+                String(format: ls("storage.progress.adoptAccountUnavailable", comment: ""), supportEmail)
+            }
+            /// La sesión borrada en la espera del seguidor: la salida se llama «Dejar de esperar», no «Cancelar la activación».
+            static var followerSessionExpired: String { ls("storage.progress.followerSessionExpired", comment: "") }
+        }
+
+        /// Después de que la vuelta a iCloud termine sin llegar —por la espera o porque el servidor no dejó empezar—:
+        /// la tarjeta de relanzar, la nota de la tarjeta de «Volver a iCloud» y la alerta del toque.
+        enum ReverseAbort {
+            static var relaunchTitle: String { ls("storage.reverseAbort.relaunchTitle", comment: "") }
+            static var relaunchBody: String { ls("storage.reverseAbort.relaunchBody", comment: "") }
+            static var icloudFull: String { ls("storage.reverseAbort.icloudFull", comment: "") }
+            static var icloudUnavailable: String { ls("storage.reverseAbort.icloudUnavailable", comment: "") }
+            static var stalled: String { ls("storage.reverseAbort.stalled", comment: "") }
+            /// Sin correo de soporte, como la ida (`storage.failed.snapshotLocalFailure`): volver a intentarlo sí puede
+            /// funcionar.
+            static var localFailure: String { ls("storage.reverseAbort.localFailure", comment: "") }
+            static var claimRetryLater: String { ls("storage.reverseAbort.claimRetryLater", comment: "") }
+            /// Con el correo de soporte (`AppConstants.supportEmail`), molde de `welcome.cloud.accountBlockedBody`:
+            /// reintentar no cambia este rechazo, así que el texto dice a quién acudir.
+            static func claimRefused(_ supportEmail: String) -> String {
+                String(format: ls("storage.reverseAbort.claimRefused", comment: ""), supportEmail)
+            }
+            static var otherDeviceReverting: String { ls("storage.reverseAbort.otherDeviceReverting", comment: "") }
+            /// Con el correo de soporte, como `claimRefused`, pero con texto PROPIO: aquí la vuelta sí había
+            /// empezado —el servidor concedió la reserva—, así que «ese intento no cambió nada» sería falso.
+            static func preMountRefused(_ supportEmail: String) -> String {
+                String(format: ls("storage.reverseAbort.preMountRefused", comment: ""), supportEmail)
+            }
+            static var preMountStalled: String { ls("storage.reverseAbort.preMountStalled", comment: "") }
+            static var preMountOtherDevice: String { ls("storage.reverseAbort.preMountOtherDevice", comment: "") }
+
+            /// El texto de un porqué. UN solo sitio para la nota de la tarjeta, la de relanzar y la alerta del toque:
+            /// con dos copias, la alerta y la nota acabarían diciendo cosas distintas del mismo rechazo.
+            static func note(for reason: ReverseAbortReason) -> String {
+                switch reason {
+                case .icloudFull:
+                    return icloudFull
+                case .icloudUnavailable:
+                    return icloudUnavailable
+                case .stalled, .cancelled:
+                    // `cancelled` no llega aquí (`ReverseUploadWaitingCopyLogic.abortNote` lo filtra); se agrupa con
+                    // `stalled` para que el switch sea exhaustivo sin un `default` que se trague un motivo nuevo.
+                    return stalled
+                case .localFailure:
+                    return localFailure
+                case .claimRetryLater:
+                    return claimRetryLater
+                case .claimRefused:
+                    return claimRefused(AppConstants.supportEmail)
+                case .otherDeviceReverting:
+                    return otherDeviceReverting
+                case .preMountRefused:
+                    return preMountRefused(AppConstants.supportEmail)
+                case .preMountStalled:
+                    return preMountStalled
+                case .preMountOtherDevice:
+                    return preMountOtherDevice
+                }
+            }
+        }
+
+        /// El aviso de un «Migrar a la nube» que se paró sin escribir nada (ticket
+        /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). Título y cuerpo salen de aquí y de ningún
+        /// otro sitio: la hoja no elige textos.
+        enum MigrateBlock {
+            static var personalDataTitle: String { ls("storage.migrateBlock.personalDataTitle", comment: "") }
+            /// Con «Usar otra cuenta» debajo: dice los dos caminos.
+            static var personalDataBody: String { ls("storage.migrateBlock.personalDataBody", comment: "") }
+            /// Sin ese botón (la sesión era la de sus grupos): solo el camino que tiene.
+            static var personalDataBodyNoSwitch: String { ls("storage.migrateBlock.personalDataBodyNoSwitch", comment: "") }
+            static var otherGroupsTitle: String { ls("storage.migrateBlock.otherGroupsTitle", comment: "") }
+            static var otherGroupsBody: String { ls("storage.migrateBlock.otherGroupsBody", comment: "") }
+            /// "…y tus grupos ya usan %@…" — el correo de la cuenta asociada.
+            static func otherGroupsBodyEmail(_ email: String) -> String {
+                String(format: ls("storage.migrateBlock.otherGroupsBodyEmail", comment: ""), email)
+            }
+            static var returnedTitle: String { ls("storage.migrateBlock.returnedTitle", comment: "") }
+            static var returnedBody: String { ls("storage.migrateBlock.returnedBody", comment: "") }
+            /// La sesión viva estaba en un teléfono que empezó desde cero (ticket
+            /// `fresh-start-keeps-a-groups-session-that-migrate-promotes`).
+            static var freshStartSessionTitle: String { ls("storage.migrateBlock.freshStartSessionTitle", comment: "") }
+            /// Manda a desasociar en «Grupos», que con esa sesión viva la sección ofrece en un teléfono con sesión privada, y a
+            /// volver a activar la nube, que sin sesión abre la elección de cuenta. No nombra el correo: la sección ya lo
+            /// enseña. En una sesión solo-grupos esa sección no existe (`groups-only-session-storage-screen-says-data-lives-in-icloud`).
+            static var freshStartSessionBody: String { ls("storage.migrateBlock.freshStartSessionBody", comment: "") }
+            static var useAnotherAccount: String { ls("storage.migrateBlock.useAnotherAccount", comment: "") }
+            /// Otro dispositivo de esta misma persona está llevando sus datos a esa cuenta (ticket
+            /// `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen del 2026-10-08). El título es su
+            /// texto. El cuerpo nombra las dos salidas —terminar allí, o reintentar allí si se paró— y no promete que aquí se
+            /// active solo: con el otro parado no pasaría nunca.
+            static var otherDeviceTitle: String { ls("storage.migrateBlock.otherDeviceTitle", comment: "") }
+            static var otherDeviceBody: String { ls("storage.migrateBlock.otherDeviceBody", comment: "") }
+            /// Junto a «Usar otra cuenta» cuando la cuenta rechazada era de Apple: en el iPhone, «Iniciar sesión con Apple»
+            /// firma siempre con el Apple ID del dispositivo, así que elegir Apple otra vez acaba en la misma cuenta
+            /// (Jürgen, 2026-09-16; poder elegir otro Apple ID es otro ticket).
+            static var appleSameAccountNote: String { ls("storage.migrateBlock.appleSameAccountNote", comment: "") }
+
+            static func title(for reason: StorageMigrationIdentityGateLogic.Block) -> String {
+                switch reason {
+                case .accountHasPersonalData:         return personalDataTitle
+                case .anotherGroupsAccountAssociated: return otherGroupsTitle
+                case .accountReturnedToICloud:        return returnedTitle
+                case .sessionFromBeforeFreshStart:    return freshStartSessionTitle
+                case .migrationInProgressOnAnotherDevice: return otherDeviceTitle
+                }
+            }
+
+            /// - Parameters:
+            ///   - offersAnotherAccount: si la hoja enseña «Usar otra cuenta». El cuerpo de «ya tiene finanzas personales»
+            ///     solo dice «usa otra cuenta» cuando ese botón existe.
+            ///   - associatedEmail: el correo de la cuenta de grupos asociada; sin él, el texto no la nombra.
+            static func body(
+                for reason: StorageMigrationIdentityGateLogic.Block,
+                offersAnotherAccount: Bool,
+                associatedEmail: String?
+            ) -> String {
+                switch reason {
+                case .accountHasPersonalData:
+                    return offersAnotherAccount ? personalDataBody : personalDataBodyNoSwitch
+                case .anotherGroupsAccountAssociated:
+                    guard let email = associatedEmail, !email.isEmpty else { return otherGroupsBody }
+                    return otherGroupsBodyEmail(email)
+                case .accountReturnedToICloud:
+                    return returnedBody
+                case .sessionFromBeforeFreshStart:
+                    return freshStartSessionBody
+                case .migrationInProgressOnAnotherDevice:
+                    return otherDeviceBody
+                }
+            }
+        }
+
+        enum Relaunch {
+            static var title: String { ls("storage.relaunch.title", comment: "") }
+            static var body: String { ls("storage.relaunch.body", comment: "") }
+            /// Cover terminal con auto-exit en background (sign-out/entrada secundaria):
+            /// basta ir al inicio — la app se cierra sola. `body` (compartido con la
+            /// relaunchCard de migración/reversa, que NO auto-exita) queda intacto.
+            static var bodyAutoExit: String { ls("storage.relaunch.bodyAutoExit", comment: "") }
+            /// H-2026-07-18-6 — variante del cover terminal para el cierre SOLO-GRUPOS:
+            /// los datos personales siguen en el device (device en `.icloud`); lo aclara
+            /// para no desorientar tras el relaunch.
+            static var bodyAutoExitGroupsOnly: String {
+                ls("storage.relaunch.bodyAutoExitGroupsOnly", comment: "")
+            }
+        }
+
+        enum Failed {
+            static var migration: String { ls("storage.failed.migration", comment: "") }
+            static var reverse: String { ls("storage.failed.reverse", comment: "") }
+            static var migrationICloudFull: String { ls("storage.failed.migrationICloudFull", comment: "") }
+            static var migrationICloudOff: String { ls("storage.failed.migrationICloudOff", comment: "") }
+            static var migrationICloudStalled: String { ls("storage.failed.migrationICloudStalled", comment: "") }
+            // Una subida del snapshot que venció su techo, por MOTIVO (ticket
+            // `snapshot-upload-has-no-ceiling-and-no-way-out`, decisión de Jürgen: texto por motivo, no el genérico).
+            static var snapshotStalled: String { ls("storage.failed.snapshotStalled", comment: "") }
+            /// El techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket
+            /// `snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling`, decisión de Jürgen: motivo
+            /// propio, sin plazo). `snapshotStalled` dice «lleva días», y esta salida llega a los 15 min.
+            static var snapshotMixedCauses: String { ls("storage.failed.snapshotMixedCauses", comment: "") }
+            static var snapshotSessionExpired: String { ls("storage.failed.snapshotSessionExpired", comment: "") }
+            /// Con el correo de soporte (`AppConstants.supportEmail`): reintentar no despierta una cuenta suspendida.
+            static func snapshotAccountUnavailable(_ supportEmail: String) -> String {
+                String(format: ls("storage.failed.snapshotAccountUnavailable", comment: ""), supportEmail)
+            }
+            static var snapshotLocalFailure: String { ls("storage.failed.snapshotLocalFailure", comment: "") }
+            // Uno de los tres pasos sin cifra que baje (22 %, 35 %, 80 %) que venció su techo (ticket
+            // `forward-migration-steps-have-no-ceiling-and-no-exit`). Las frases de la cuenta y del dispositivo se reusan
+            // de la subida; estas tres existen porque las de la subida hablan de subir los datos.
+            static var stepStalled: String { ls("storage.failed.stepStalled", comment: "") }
+            static var stepSessionExpired: String { ls("storage.failed.stepSessionExpired", comment: "") }
+            static var stepOtherDevice: String { ls("storage.failed.stepOtherDevice", comment: "") }
+            static var stepLineageUnproven: String { ls("storage.failed.stepLineageUnproven", comment: "") }
+            // El relevo del MISMO iCloud al que aún no le llegaron las filas que el líder subió (ticket
+            // `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`): los datos sí coinciden.
+            static var stepLeaderRowsNotArrived: String { ls("storage.failed.stepLeaderRowsNotArrived", comment: "") }
+            // El claim de un ADOPT que venció su techo (ticket `adopt-claim-stays-parked-with-no-ceiling`). Frases propias:
+            // quien entraba en su cuenta puede estar en un teléfono recién instalado, y las de la ida hablan de sus datos
+            // en el dispositivo.
+            static var adoptStalled: String { ls("storage.failed.adoptStalled", comment: "") }
+            static var adoptSessionExpired: String { ls("storage.failed.adoptSessionExpired", comment: "") }
+            static func adoptAccountUnavailable(_ supportEmail: String) -> String {
+                String(format: ls("storage.failed.adoptAccountUnavailable", comment: ""), supportEmail)
+            }
+            // El EFECTO del adopt —el reconcile, tras un claim que ya contestó— que venció su techo (ticket
+            // `adopt-effect-retries-forever-with-no-ceiling`, textos de Jürgen del 2026-09-23). No afirman nada de la nube.
+            static var adoptEffectLocalFailure: String { ls("storage.failed.adoptEffectLocalFailure", comment: "") }
+            static var adoptEffectStalled: String { ls("storage.failed.adoptEffectStalled", comment: "") }
+            // El efecto del adopt que no pudo comprobar que los datos de este dispositivo vengan de esa cuenta (ticket
+            // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). No subió nada, y lo dice.
+            static var adoptEffectLineageUnproven: String { ls("storage.failed.adoptEffectLineageUnproven", comment: "") }
+        }
+
+        /// **Activar la nube con un borrado de iCloud pendiente** (ticket
+        /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). La nube no puede terminar ese borrado:
+        /// el diálogo deja elegir entre esperar y activarla sin borrar. El cuerpo no afirma qué queda dónde —el borrado
+        /// armado y el que quedó a medias dejan cosas distintas—, por eso dice «puede».
+        enum PendingICloudWipe {
+            static var title: String { ls("storage.pendingICloudWipe.title", comment: "") }
+            static var body: String { ls("storage.pendingICloudWipe.body", comment: "") }
+            static var proceed: String { ls("storage.pendingICloudWipe.proceed", comment: "") }
+            static var wait: String { ls("storage.pendingICloudWipe.wait", comment: "") }
+        }
+
+        enum Confirm {
+            static var migrateTitle: String { ls("storage.confirm.migrateTitle", comment: "") }
+            static var migrateBody: String { ls("storage.confirm.migrateBody", comment: "") }
+            static var migrateContinue: String { ls("storage.confirm.migrateContinue", comment: "") }
+            static var migrate2Title: String { ls("storage.confirm.migrate2Title", comment: "") }
+            static var migrate2Body: String { ls("storage.confirm.migrate2Body", comment: "") }
+            static var migrate2Confirm: String { ls("storage.confirm.migrate2Confirm", comment: "") }
+            static var revertTitle: String { ls("storage.confirm.revertTitle", comment: "") }
+            static var revertBody: String { ls("storage.confirm.revertBody", comment: "") }
+            static var revertContinue: String { ls("storage.confirm.revertContinue", comment: "") }
+            static var revert2Title: String { ls("storage.confirm.revert2Title", comment: "") }
+            static var revert2Body: String { ls("storage.confirm.revert2Body", comment: "") }
+            static var revert2Confirm: String { ls("storage.confirm.revert2Confirm", comment: "") }
+            static var cancelReverseTitle: String { ls("storage.confirm.cancelReverseTitle", comment: "") }
+            static var cancelReverseBody: String { ls("storage.confirm.cancelReverseBody", comment: "") }
+            /// El cuerpo del mismo diálogo ANTES del montaje del espejo: ahí no hay espejo que apagar, así que no se
+            /// pide cerrar y volver a abrir Yala (ticket `reverse-before-mount-has-no-way-to-abandon-the-return`).
+            static var cancelReverseBeforeMountBody: String {
+                ls("storage.confirm.cancelReverseBeforeMountBody", comment: "")
+            }
+            static var cancelReverseConfirm: String { ls("storage.confirm.cancelReverseConfirm", comment: "") }
+            /// El «no» del mismo diálogo antes del montaje. «Seguir esperando» describe la espera de la subida; en
+            /// las cuatro fases previas la vuelta está AVANZANDO, y nadie espera nada.
+            static var cancelReverseKeepBeforeMount: String {
+                ls("storage.confirm.cancelReverseKeepBeforeMount", comment: "")
+            }
+            static var cancelReverseKeep: String { ls("storage.confirm.cancelReverseKeep", comment: "") }
+            // «Cancelar la activación» de la ida, durante la subida del snapshot.
+            static var cancelMigrationTitle: String { ls("storage.confirm.cancelMigrationTitle", comment: "") }
+            static var cancelMigrationBody: String { ls("storage.confirm.cancelMigrationBody", comment: "") }
+            /// El cuerpo del mismo diálogo en el claim de un ADOPT: nada de «tus datos siguen en este dispositivo» (ticket
+            /// `adopt-claim-stays-parked-with-no-ceiling`).
+            static var cancelAdoptBody: String { ls("storage.confirm.cancelAdoptBody", comment: "") }
+            /// El cuerpo en el EFECTO del adopt: el de arriba afirma que no cambió nada en la nube, y aquí el reconcile puede
+            /// haber subido algo (ticket `adopt-effect-retries-forever-with-no-ceiling`).
+            static var cancelAdoptEffectBody: String { ls("storage.confirm.cancelAdoptEffectBody", comment: "") }
+            static var cancelMigrationConfirm: String { ls("storage.confirm.cancelMigrationConfirm", comment: "") }
+            static var cancelMigrationKeep: String { ls("storage.confirm.cancelMigrationKeep", comment: "") }
+            /// El mismo diálogo en la espera del seguidor (ticket `adopt-follower-waits-for-the-leader-with-no-ceiling`): este
+            /// teléfono solo espera, así que ni «cancelar la activación» ni «seguir activando la nube» son verdad ahí.
+            static var stopWaitingTitle: String { ls("storage.confirm.stopWaitingTitle", comment: "") }
+            static var stopWaitingBody: String { ls("storage.confirm.stopWaitingBody", comment: "") }
+            static var stopWaitingConfirm: String { ls("storage.confirm.stopWaitingConfirm", comment: "") }
+            static var stopWaitingKeep: String { ls("storage.confirm.stopWaitingKeep", comment: "") }
+        }
+
+        enum Errors {
+            static var title: String { ls("storage.errors.title", comment: "") }
+            static var generic: String { ls("storage.errors.generic", comment: "") }
+            /// La tarjeta de adopt que abrió la salida de un adopt anterior, firmada con OTRA cuenta (ticket
+            /// `adopt-claim-stays-parked-with-no-ceiling`): no se adopta.
+            static var adoptOtherAccount: String { ls("storage.errors.adoptOtherAccount", comment: "") }
+            /// El adopt de Almacenamiento no llegó a empezar porque iCloud seguía trayendo datos (ticket
+            /// `settings-adopt-stalled-before-the-claim-keeps-the-session`).
+            static var adoptICloudNotSettled: String { ls("storage.errors.adoptICloudNotSettled", comment: "") }
+            static var signIn: String { ls("storage.errors.signIn", comment: "") }
+            /// «Volver a iCloud» con la salida anterior de la espera todavía a medias (`reverse_abort` pendiente).
+            static var reversePendingExit: String { ls("storage.errors.reversePendingExit", comment: "") }
+            /// «Migrar a la nube» no pudo preguntar al backend por la cuenta, así que no siguió.
+            static var identityCheck: String { ls("storage.errors.identityCheck", comment: "") }
+            /// El sign-in para retomar la vuelta a iCloud trajo OTRA cuenta (ticket
+            /// `reverse-before-mount-stays-stuck-with-an-expired-session`). La vuelta no se retoma: el outbox que
+            /// subiría no lleva dueño, así que con el `sub` de al lado escribiría el corpus de una persona en la
+            /// cuenta de otra.
+            static var reverseSignInOtherAccount: String {
+                ls("storage.errors.reverseSignInOtherAccount", comment: "")
+            }
+            /// «Iniciar sesión» de la tarjeta de sincronización trajo OTRA cuenta que la del motor (ticket
+            /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). Esa sesión se cierra y no se reanuda
+            /// nada: el outbox pendiente no lleva dueño y subiría a nombre de la cuenta que entró.
+            static var syncSignInOtherAccount: String {
+                ls("storage.errors.syncSignInOtherAccount", comment: "")
+            }
+        }
+
+        /// W3 (2026-08-11): los 7 bullets numerados se podaron a TRES + un pie, y las keys
+        /// pasaron a nombres semánticos — con `point1…point7` la numeración mentía sobre lo
+        /// que quedó dentro. Qué salió y a dónde: el resumen que viaja al proveedor de IA
+        /// vive ahora en `aiConsent.chatMessage` (que ya lo decía, y gana el horizonte de 13
+        /// meses) y la ubicación de los servidores en la política de privacidad.
+        enum Consent {
+            static var title: String { ls("storage.consent.title", comment: "") }
+            static var pointServers: String { ls("storage.consent.pointServers", comment: "") }
+            static var pointPhotos: String { ls("storage.consent.pointPhotos", comment: "") }
+            static var pointAccess: String { ls("storage.consent.pointAccess", comment: "") }
+            /// Es un alivio, no una advertencia: va al pie y con jerarquía secundaria.
+            static var footer: String { ls("storage.consent.footer", comment: "") }
+            static var accept: String { ls("storage.consent.accept", comment: "") }
+            static var privacyLink: String { ls("storage.consent.privacyLink", comment: "") }
+        }
+
+        /// Chooser Apple|Google de la entrada de migración/adopt (Bloque C 2026-07-17).
+        enum SignIn {
+            static var title: String { ls("storage.signin.title", comment: "") }
+            static var body: String { ls("storage.signin.body", comment: "") }
+            static var note: String { ls("storage.signin.note", comment: "") }
+        }
     }
 
     // MARK: - Shortcut Notifications
@@ -6114,8 +8272,6 @@ enum L10n {
         static var proImageInputMessage: String { ls("tipkit.pro.imageInput.message", comment: "") }
         static var proSmartInsightsTitle: String { ls("tipkit.pro.smartInsights.title", comment: "") }
         static var proSmartInsightsMessage: String { ls("tipkit.pro.smartInsights.message", comment: "") }
-        static var proExportExtendedTitle: String { ls("tipkit.pro.exportExtended.title", comment: "") }
-        static var proExportExtendedMessage: String { ls("tipkit.pro.exportExtended.message", comment: "") }
         static var proPremiumIconsTitle: String { ls("tipkit.pro.premiumIcons.title", comment: "") }
         static var proPremiumIconsMessage: String { ls("tipkit.pro.premiumIcons.message", comment: "") }
         static var proProThemesTitle: String { ls("tipkit.pro.proThemes.title", comment: "") }
@@ -6220,6 +8376,66 @@ enum L10n {
         static var stepDone: String { ls("devseed.stepDone", comment: "") }
         static var stepDeleting: String { ls("devseed.stepDeleting", comment: "") }
         static var stepReloading: String { ls("devseed.stepReloading", comment: "") }
+
+        /// Perfil `ficha` (capturas y vídeo de la App Store): los grupos y la cuenta en divisa extranjera, en el idioma
+        /// de la app. Las cifras viven en `DevSeedFicha`, por divisa.
+        enum Ficha {
+            static var groupTrip: String { ls("devseed.ficha.groupTrip", comment: "") }
+            static var groupWeekend: String { ls("devseed.ficha.groupWeekend", comment: "") }
+            static var memberYou: String { ls("devseed.ficha.memberYou", comment: "") }
+            static var memberA: String { ls("devseed.ficha.memberA", comment: "") }
+            static var memberB: String { ls("devseed.ficha.memberB", comment: "") }
+            static var memberC: String { ls("devseed.ficha.memberC", comment: "") }
+            static var expenseLodging: String { ls("devseed.ficha.expenseLodging", comment: "") }
+            static var expenseTour: String { ls("devseed.ficha.expenseTour", comment: "") }
+            static var expenseGroupDinner: String { ls("devseed.ficha.expenseGroupDinner", comment: "") }
+            static var expenseAirportTaxi: String { ls("devseed.ficha.expenseAirportTaxi", comment: "") }
+            static var expenseLocalMeal: String { ls("devseed.ficha.expenseLocalMeal", comment: "") }
+            static var expenseMuseum: String { ls("devseed.ficha.expenseMuseum", comment: "") }
+            static var expenseTransport: String { ls("devseed.ficha.expenseTransport", comment: "") }
+            static var expenseGroceries: String { ls("devseed.ficha.expenseGroceries", comment: "") }
+            static var expenseSouvenirs: String { ls("devseed.ficha.expenseSouvenirs", comment: "") }
+            static var expenseWeekendStay: String { ls("devseed.ficha.expenseWeekendStay", comment: "") }
+            static var expenseWeekendMeal: String { ls("devseed.ficha.expenseWeekendMeal", comment: "") }
+            /// «Travel EUR», «Viagem USD», «Ahorros USD»: el nombre lleva el código ISO de la cuenta.
+            static func accountForeign(_ currencyCode: String) -> String {
+                String(format: ls("devseed.ficha.accountForeign", comment: ""), currencyCode)
+            }
+        }
+    }
+
+    // MARK: - UI-test demo seams
+
+    /// Lo que «dicen» los seams DEBUG que sustituyen a la red en las capturas y el vídeo de la App Store
+    /// (`-uitest-chat-draft`, `-uitest-chat-suggestions`, `-uitest-chat-reply`, `-uitest-voice-result`,
+    /// `-uitest-image-result`). En español conservan el texto de siempre, que es el que leen los XCUITest.
+    enum UITestDemo {
+        enum Chat {
+            static var draftMessage: String { ls("uitestDemo.chat.draftMessage", comment: "") }
+            static var draftNoteTaxi: String { ls("uitestDemo.chat.draftNoteTaxi", comment: "") }
+            static var draftNoteGroceries: String { ls("uitestDemo.chat.draftNoteGroceries", comment: "") }
+            static var suggestionSplit: String { ls("uitestDemo.chat.suggestionSplit", comment: "") }
+            static var suggestionMonth: String { ls("uitestDemo.chat.suggestionMonth", comment: "") }
+            static var suggestionBudget: String { ls("uitestDemo.chat.suggestionBudget", comment: "") }
+            static var pizzaNote: String { ls("uitestDemo.chat.pizzaNote", comment: "") }
+        }
+        enum Voice {
+            static var lunchTranscript: String { ls("uitestDemo.voice.lunchTranscript", comment: "") }
+            static var lunchNote: String { ls("uitestDemo.voice.lunchNote", comment: "") }
+            static var twoTranscript: String { ls("uitestDemo.voice.twoTranscript", comment: "") }
+            static var taxiNote: String { ls("uitestDemo.voice.taxiNote", comment: "") }
+            static var coffeeNote: String { ls("uitestDemo.voice.coffeeNote", comment: "") }
+        }
+        enum Photo {
+            static var merchant: String { ls("uitestDemo.photo.merchant", comment: "") }
+            static var secondMerchant: String { ls("uitestDemo.photo.secondMerchant", comment: "") }
+            /// El total del recibo de la ficha de cada idioma (la boleta que se ve al lado en la captura), con punto
+            /// decimal. 251.81 si la cadena no es un número.
+            static var receiptTotal: Double { Double(ls("uitestDemo.photo.receiptTotal", comment: "")) ?? 251.81 }
+            static func page(_ number: Int) -> String {
+                String(format: ls("uitestDemo.photo.pageFormat", comment: ""), number)
+            }
+        }
     }
 
     // MARK: - Yala AI Onboarding
@@ -6238,12 +8454,17 @@ enum L10n {
             // Step 1 — Hero with chat preview animation (3 scenarios)
             static var step1Title: String { ls("yalaAI.onboarding.step1.title", comment: "") }
             static var step1Subtitle: String { ls("yalaAI.onboarding.step1.subtitle", comment: "") }
-            static var step1DemoScenario1User: String { ls("yalaAI.onboarding.step1.demoScenario1User", comment: "") }
-            static var step1DemoScenario1Bot: String { ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: "") }
+            // Los importes llegan ya formateados en la divisa principal (`YalaAIOnboardingDemoAmounts`).
+            static func step1DemoScenario1User(_ lunch: String) -> String { String(format: ls("yalaAI.onboarding.step1.demoScenario1User", comment: ""), lunch) }
+            static func step1DemoScenario1Bot(_ lunch: String) -> String { String(format: ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: ""), lunch) }
             static var step1DemoScenario2User: String { ls("yalaAI.onboarding.step1.demoScenario2User", comment: "") }
-            static var step1DemoScenario2Bot: String { ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: "") }
+            static func step1DemoScenario2Bot(_ coffeeThisMonth: String, _ aboveAverage: String) -> String {
+                String(format: ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: ""), coffeeThisMonth, aboveAverage)
+            }
             static var step1DemoScenario3User: String { ls("yalaAI.onboarding.step1.demoScenario3User", comment: "") }
-            static var step1DemoScenario3Bot: String { ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: "") }
+            static func step1DemoScenario3Bot(_ perMonth: String, _ perYear: String) -> String {
+                String(format: ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: ""), perMonth, perYear)
+            }
             static var step1DemoAmountLabel: String { ls("yalaAI.onboarding.step1.demoAmountLabel", comment: "") }
             static var step1A11yLabel: String { ls("yalaAI.onboarding.step1.a11yLabel", comment: "") }
 
@@ -6275,13 +8496,13 @@ enum L10n {
             static var step4FocusSaverDescription: String { ls("yalaAI.onboarding.step4.focusSaverDescription", comment: "") }
             static var step4FocusCautiousDescription: String { ls("yalaAI.onboarding.step4.focusCautiousDescription", comment: "") }
             static var step4FocusBalancedQuote: String { ls("yalaAI.onboarding.step4.focusBalancedQuote", comment: "") }
-            static var step4FocusSaverQuote: String { ls("yalaAI.onboarding.step4.focusSaverQuote", comment: "") }
+            static func step4FocusSaverQuote(_ perMonth: String) -> String { String(format: ls("yalaAI.onboarding.step4.focusSaverQuote", comment: ""), perMonth) }
             static var step4FocusCautiousQuote: String { ls("yalaAI.onboarding.step4.focusCautiousQuote", comment: "") }
 
             // Step 5 — Done
             static var step5Title: String { ls("yalaAI.onboarding.step5.title", comment: "") }
             static var step5Subtitle: String { ls("yalaAI.onboarding.step5.subtitle", comment: "") }
-            static var step5Tip: String { ls("yalaAI.onboarding.step5.tip", comment: "") }
+            static func step5Tip(_ coffee: String) -> String { String(format: ls("yalaAI.onboarding.step5.tip", comment: ""), coffee) }
             static var step5CTA: String { ls("yalaAI.onboarding.step5.cta", comment: "") }
         }
     }
@@ -6388,6 +8609,48 @@ enum L10n {
                 static var stableBalance: String {
                     ls("stats.trends.insight.stableBalance", comment: "Trend Insight: balance holds stable (variation < 5%)")
                 }
+                // V2 — Tendencia: racha sostenida (%@ = duración, ej. «3 meses»).
+                static func sustainedUpExpense(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedUpExpense %@", comment: "Trend Insight bullet: expense has risen for %@ (duration, e.g. '3 months') in a row"), duration)
+                }
+                static func sustainedDownExpense(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedDownExpense %@", comment: "Trend Insight bullet: expense has fallen for %@ (duration) in a row"), duration)
+                }
+                static func sustainedUpIncome(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedUpIncome %@", comment: "Trend Insight bullet: income has grown for %@ (duration) in a row"), duration)
+                }
+                static func sustainedDownIncome(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedDownIncome %@", comment: "Trend Insight bullet: income has fallen for %@ (duration) in a row"), duration)
+                }
+                static func sustainedUpBalance(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedUpBalance %@", comment: "Trend Insight bullet: balance has grown (positive net) for %@ (duration) in a row"), duration)
+                }
+                static func sustainedDownBalance(_ duration: String) -> String {
+                    String(format: ls("stats.trends.insight.sustainedDownBalance %@", comment: "Trend Insight bullet: balance has fallen (negative net) for %@ (duration) in a row"), duration)
+                }
+                static func durationWeeks(_ count: Int) -> String {
+                    String(format: ls("stats.trends.insight.durationWeeks %d", comment: "Duration inside the sustained-trend bullet: N weeks (N >= 3)"), count)
+                }
+                static func durationMonths(_ count: Int) -> String {
+                    String(format: ls("stats.trends.insight.durationMonths %d", comment: "Duration inside the sustained-trend bullet: N months (N >= 3)"), count)
+                }
+                static func durationYears(_ count: Int) -> String {
+                    String(format: ls("stats.trends.insight.durationYears %d", comment: "Duration inside the sustained-trend bullet: N years (N >= 3)"), count)
+                }
+                // V2 — Flujo de efectivo.
+                static func cashFlowSurplus(_ ratio: Int) -> String {
+                    String(format: ls("stats.trends.insight.cashFlowSurplus %d", comment: "Trend Insight bullet: income covered %d%% of expenses, net flow positive"), ratio)
+                }
+                static func cashFlowDeficit(_ ratio: Int) -> String {
+                    String(format: ls("stats.trends.insight.cashFlowDeficit %d", comment: "Trend Insight bullet: income covered %d%% of expenses, net flow negative"), ratio)
+                }
+                static var cashFlowNoIncome: String {
+                    ls("stats.trends.insight.cashFlowNoIncome", comment: "Trend Insight bullet: expenses logged but no income in the period")
+                }
+                // V2 — Día de la semana con mayor gasto promedio.
+                static func weekdayPeak(_ weekday: String, _ average: String) -> String {
+                    String(format: ls("stats.trends.insight.weekdayPeak %@ %@", comment: "Trend Insight bullet: %1$@ weekday name is the priciest day, %2$@ average spend amount"), weekday, average)
+                }
             }
         }
         enum Distribution {
@@ -6439,6 +8702,26 @@ enum L10n {
         enum Sankey {
             static var subtitle: String {
                 ls("stats.sankey.subtitle", comment: "Sankey widget internal subtitle (above the KPI total amount)")
+            }
+        }
+        /// Rótulo bajo el hero de las cuatro pestañas: dice QUÉ magnitud es la cifra.
+        /// El caso lo deriva `StatsHeroCaptionLogic` del mismo estado que elige el número
+        /// — no es fijo por pestaña (ver la cabecera de ese fichero).
+        enum Hero {
+            static var captionAccountsBalance: String {
+                ls("stats.hero.captionAccountsBalance", comment: "Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI")
+            }
+            static var captionNetPeriod: String {
+                ls("stats.hero.captionNetPeriod", comment: "Stats hero caption: the figure is income minus expenses for the period (flow)")
+            }
+            static var captionIncomePeriod: String {
+                ls("stats.hero.captionIncomePeriod", comment: "Stats hero caption: the figure is only the income side for the period")
+            }
+            static var captionExpensePeriod: String {
+                ls("stats.hero.captionExpensePeriod", comment: "Stats hero caption: the figure is only the expense side for the period")
+            }
+            static var captionTotalPeriod: String {
+                ls("stats.hero.captionTotalPeriod", comment: "Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side")
             }
         }
     }

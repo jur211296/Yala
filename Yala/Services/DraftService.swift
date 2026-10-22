@@ -33,7 +33,7 @@ final class DraftService {
     // MARK: - Context Injection
 
     /// Sets the model context (call this from views that use the service)
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 
@@ -48,6 +48,12 @@ final class DraftService {
 
     /// Caches display values on a draft for when relationships are deleted
     private func cacheDisplayValues(_ draft: InboxDraft) {
+        Self.cacheArchiveDisplayValues(draft)
+    }
+
+    /// Lo mismo, para quien archiva un borrador fuera del servicio (el barrido de `processDuePayments`): sin estos
+    /// valores un rechazado no sale en Archivados (`InboxDraft.isShownInArchive`) y no se puede devolver.
+    static func cacheArchiveDisplayValues(_ draft: InboxDraft) {
         if let account = draft.account {
             draft.cachedAccountName = account.name
             draft.cachedCurrencyCode = account.currencyCode
@@ -72,6 +78,8 @@ final class DraftService {
 
     func createDraft(_ draft: InboxDraft) throws {
         let context = try requireContext()
+        // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+        SyncIdentityService.captureIfEnabled(draft)
         context.insert(draft)
         try context.save()
     }
@@ -79,9 +87,162 @@ final class DraftService {
     func createDrafts(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
         for draft in drafts {
+            // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+            SyncIdentityService.captureIfEnabled(draft)
             context.insert(draft)
         }
         try context.save()
+    }
+
+    // MARK: - Inbox Row Pruning (crash iOS 27)
+
+    /// Borra un `InboxDraft` PODANDO PRIMERO su fila del `InboxViewModel` (si la bandeja está
+    /// montada). Obligatorio en TODO borrado de draft de los flujos de grupo (aprobar/finalizar/
+    /// convertir): `InboxDraftRowView` observa el @Model y re-renderiza al invalidarse aunque esté
+    /// cubierto por un sheet → SIGTRAP de SwiftData en iOS 27 si la fila sigue montada. El prune es
+    /// síncrono (mismo hilo MainActor) y no-op si el Inbox no está abierto. Ver
+    /// `InboxRowPruneCoordinator`. El path personal genérico (`status = .approved`, sin borrar) NO
+    /// lo necesita — su @Model nunca se invalida.
+    private func deleteInboxDraftPruningRow(_ draft: InboxDraft, in context: ModelContext) {
+        InboxRowPruneCoordinator.shared.pruneRow(draft.persistentModelID)
+        context.delete(draft)
+    }
+
+    // MARK: - Marca de aprobación de una liquidación
+
+    /// **La marca de que el borrador de una liquidación ya se aprobó** (ticket
+    /// `settlement-approval-leaves-no-trace-so-a-rebridge-asks-again`). La transacción real no lleva `splitSettlementID`
+    /// (D7), así que sin esto el re-puente de la liquidación —convergencia, retome— no veía
+    /// el pago ya registrado y volvía a preguntar: aprobado dos veces, el banco lo cuenta doble.
+    ///
+    /// La marca es un borrador APROBADO de la liquidación enlazado a su transacción, el mecanismo del camino personal,
+    /// que viaja por el espejo sin campos nuevos. **Es un registro NUEVO, no el pendiente que se aprueba:** ese nació con
+    /// la pata virtual, y un receptor tardío que importó la virtual lo importó con ella; su borrado llegaría después y se
+    /// llevaría la marca. El nuevo nace en el mismo guardado que la transacción real y corre su suerte: si un receptor se
+    /// lleva la real, se lleva la marca, y volver a preguntar es lo correcto. `GroupSettlementDraftResolutionLogic` es
+    /// quien la lee.
+    private func insertSettlementApprovalMark(
+        for draft: InboxDraft, transaction: TransactionItem, in context: ModelContext
+    ) {
+        let mark = InboxDraft(
+            note: draft.note,
+            amount: draft.amount,
+            date: draft.effectiveDate,
+            account: draft.account,
+            subcategory: draft.subcategory,
+            sourceType: .groupSettlement,
+            confidenceAmount: draft.confidenceAmount,
+            confidenceDate: draft.confidenceDate,
+            confidenceMerchant: draft.confidenceMerchant,
+            confidenceSubcategory: draft.confidenceSubcategory,
+            needsUserInput: [],
+            status: .approved,
+            splitGroupZoneID: draft.splitGroupZoneID,
+            splitSettlementID: draft.splitSettlementID,
+            originReasonKey: draft.originReasonKey,
+            originActorName: draft.originActorName,
+            originGroupName: draft.originGroupName,
+            optInPersonalOnly: draft.optInPersonalOnly
+        )
+        mark.approvedTransaction = transaction
+        cacheDisplayValues(mark)
+        context.insert(mark)
+    }
+
+    // MARK: - Aviso de importe cambiado tras aprobar
+
+    /// **«Ajustar» del aviso de importe cambiado** (ticket `settlement-amount-edited-after-approval-leaves-the-bank-stale`):
+    /// pone la transacción real en el importe nuevo, y la marca de aprobación con ella, para que el re-puente no vuelva a
+    /// avisar de la misma corrección. Es un AJUSTE, no una suma: aplicarlo dos veces (dos avisos de dos dispositivos) deja
+    /// el mismo importe. Retira todos los avisos de esa liquidación en el mismo guardado.
+    ///
+    /// La transacción se resuelve por la marca (`GroupTransactionBridge.amountChangeTarget`), nunca por el aviso, y tiene
+    /// que seguir en la divisa de la liquidación: si la persona cambió la divisa de la cuenta, el importe del aviso ya no
+    /// significa lo mismo. La transacción sigue siendo independiente (D7): sin `splitSettlementID`, solo cambia porque la
+    /// persona lo aceptó aquí.
+    private func applySettlementAmountChange(_ notice: InboxDraft, context: ModelContext) throws -> TransactionItem {
+        guard let amount = notice.amount else { throw DraftServiceError.missingAmount }
+        guard let target = try GroupTransactionBridge.amountChangeTarget(
+            settlementID: notice.splitSettlementID, in: context),
+              let settlementUUID = notice.splitSettlementID.flatMap(UUID.init(uuidString:)) else {
+            throw DraftServiceError.settlementAmountChangeTransactionGone
+        }
+        var settlementDescriptor = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == settlementUUID })
+        settlementDescriptor.fetchLimit = 1
+        guard let settlement = try context.fetch(settlementDescriptor).first,
+              target.transaction.currencyCode == settlement.currencyCode else {
+            throw DraftServiceError.settlementAmountChangeTransactionGone
+        }
+        let transaction = target.transaction
+
+        if transaction.amount != amount {
+            transaction.amount = amount
+            transaction.recalculatePreferredCurrency(context: context)
+        }
+        if target.mark.amount != amount {
+            target.mark.amount = amount
+            target.mark.updatedAt = Date.now
+        }
+
+        let settlementID = notice.splitSettlementID
+        let settlementRaw = DraftSourceType.groupSettlement.rawValue
+        let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.sourceTypeRaw == settlementRaw && $0.splitSettlementID == settlementID }))
+        for other in siblings where other.isSettlementAmountChangeNotice
+            && other.persistentModelID != notice.persistentModelID {
+            deleteInboxDraftPruningRow(other, in: context)
+        }
+        deleteInboxDraftPruningRow(notice, in: context)
+        try context.save()
+
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        return transaction
+    }
+
+    /// **Aprobar una liquidación ya aprobada no crea otra transacción.** Un borrador pendiente puede convivir con la marca:
+    /// otro dispositivo lo creó antes de que la marca le llegara por el espejo, o lo creó una versión anterior de la app.
+    /// Si hay marca de la misma liquidación, se rechaza con un error que se lo dice a la persona, y el pendiente se queda
+    /// para que lo descarte (o lo poda el arranque siguiente, `pruneSettlementDraftsAlreadyResolved`); no se borra aquí
+    /// porque la hoja que lo muestra sigue montada.
+    ///
+    /// **Basta el estado, no la transacción enlazada:** CloudKit puede traer la marca antes que su transacción, y en esa
+    /// ventana la relación está a `nil`; exigirla creaba justo la segunda transacción que esto evita. Es el mismo criterio
+    /// que el re-puente (`GroupSettlementDraftResolutionLogic`). Si la persona borró la transacción, se re-aprueba desde la
+    /// marca en Archivados, que al tocarla vuelve a pendiente.
+    private func ensureSettlementNotAlreadyApproved(_ draft: InboxDraft, in context: ModelContext) throws {
+        guard let settlementID = draft.splitSettlementID else { return }
+        let approvedRaw = DraftStatus.approved.rawValue
+        var descriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitSettlementID == settlementID && $0.statusRaw == approvedRaw }
+        )
+        descriptor.fetchLimit = 1
+        guard try !context.fetch(descriptor).isEmpty else { return }
+        Logger(subsystem: "com.yala", category: "GroupBridge").notice(
+            "groupSettlement draft for an already approved settlement; no second transaction"
+        )
+        throw DraftServiceError.groupSettlementAlreadyRegistered
+    }
+
+    // MARK: - Convert to Group Expense
+
+    /// Cierra el ciclo tras convertir un draft PERSONAL de gasto en un `SplitExpense` de grupo.
+    /// El form (`GroupExpenseFormView`) ya creó el gasto + la contraparte personal vía el bridge
+    /// Caso A (`GroupExpenseService.createExpense`), e invoca esto desde su `onExpenseCreated`.
+    /// A diferencia de `handleGroupScheduledExpenseApproved`, NO hay `ScheduledPayment` que
+    /// avanzar: solo se borra el draft y se refresca. NO invoca `approveDraft` (no crea una
+    /// `TransactionItem` personal — el gasto ya vive en el grupo).
+    func handleDraftConvertedToGroupExpense(_ draft: InboxDraft, context: ModelContext) {
+        do {
+            deleteInboxDraftPruningRow(draft, in: context)
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            WidgetDataCache.updateCache(context: context)
+        } catch {
+            #if DEBUG
+            print("DraftService: Error convirtiendo draft a gasto de grupo: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Approve Operations
@@ -91,6 +252,21 @@ final class DraftService {
         currencyConverter: CurrencyConverter
     ) throws -> TransactionItem {
         let context = try requireContext()
+
+        // Gasto planificado de grupo: se aprueba SOLO vía GroupExpenseFormView (crea el
+        // SplitExpense de grupo). Nunca por este path — crearía una TransactionItem personal
+        // y marcaría el pago pagado sin compartir el gasto. Defensa dura: swipe/bulk ya lo
+        // excluyen (requiresApprovalForm); esto cubre cualquier otro caller.
+        guard draft.sourceType != .groupScheduledExpense else {
+            throw DraftServiceError.groupScheduledExpenseRequiresForm
+        }
+
+        // Aviso de importe cambiado de una liquidación ya aprobada: aprobarlo es AJUSTAR la transacción que ya existe, nunca
+        // crear otra. Va antes que todo lo demás porque el aviso es un `.groupSettlement` con cuenta, importe y subcategoría,
+        // y el camino de la liquidación de abajo lo leería como un pago por registrar.
+        if draft.isSettlementAmountChangeNotice {
+            return try applySettlementAmountChange(draft, context: context)
+        }
 
         // Draft opt-in de settlement (bridge OFF): crea TX manual independiente SIN bridge —
         // el virtual del settlement ya es de signo opuesto al real, compensa sin doble conteo.
@@ -121,10 +297,9 @@ final class DraftService {
                 targetTx.subcategory = subcategory
                 targetTx.category = subcategory.safeCategory
                 cacheDisplayValues(draft)
-                context.delete(draft)
+                deleteInboxDraftPruningRow(draft, in: context)
                 try context.save()
                 SessionState.shared.incrementDataVersion()
-                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
                 return targetTx
             }
             // Target con subcategory==nil ausente: o el gasto ya se clasificó en otro device (y
@@ -142,7 +317,7 @@ final class DraftService {
             let candidateTxs = try context.fetch(anyTxDescriptor)
             let existingTx = candidateTxs.first { $0.account?.isSystemAccount == false } ?? candidateTxs.first
             cacheDisplayValues(draft)
-            context.delete(draft)
+            deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
             SessionState.shared.incrementDataVersion()
 
@@ -153,7 +328,6 @@ final class DraftService {
                 logger.error(
                     "groupExpense draft for splitExpenseID=\(splitID, privacy: .public) already classified elsewhere; discarded redundant draft."
                 )
-                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
                 return existingTx
             }
             // No existe ninguna TX → el expense desapareció. El draft stale ya se limpió arriba;
@@ -172,16 +346,22 @@ final class DraftService {
         // borre la TX manual del user (ej: transferiste vía Yape, después editas el monto del
         // settlement → tu TX en Yape desaparece). La TX virtual (lado bridge) sigue ligada
         // al settlement y se regenera correctamente.
+        // Lo que sí queda ligado a la liquidación es la MARCA de aprobación (`insertSettlementApprovalMark`):
+        // sin ella, un re-puente posterior volvía a preguntar por un pago ya registrado.
         if draft.sourceType == .groupSettlement, let account = draft.account,
            let amount = draft.amount, let subcategory = draft.subcategory {
+            try ensureSettlementNotAlreadyApproved(draft, in: context)
             let preferredCode = CurrencyDefaults.currentPreferred
-            let amountInPreferred = currencyConverter.convert(
+            // `convertChecked` y no `convert`: lo que sigue PERSISTE el monto convertido, y
+            // `convert` tira la calidad de la tasa.
+            let outcome = currencyConverter.convertChecked(
                 Decimal(amount),
                 from: account.currencyCode,
                 to: preferredCode,
                 on: draft.effectiveDate,
                 context: context
             )
+            let amountInPreferred = outcome.amount
 
             let exchangeRate: Double = abs(amount) > 0.0001
                 ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
@@ -199,21 +379,22 @@ final class DraftService {
             tx.exchangeRate = abs(exchangeRate)
             tx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
             tx.preferredCurrencyCode = preferredCode
+            tx.isExchangeRateProvisional = !outcome.quality.isExact
             // D7: NO setear tx.splitSettlementID ni tx.splitGroupZoneID — TX queda manual independiente.
 
             context.insert(tx)
-            cacheDisplayValues(draft)
-            context.delete(draft)
+            insertSettlementApprovalMark(for: draft, transaction: tx, in: context)
+            deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
 
             SessionState.shared.incrementDataVersion()
             WidgetDataCache.updateCache(context: context)
-            TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
             return tx
         }
 
-        // Validate: block future dates
-        guard draft.effectiveDate <= Date.now else {
+        // Validate: block future dates. Por DÍA, no por instante: la foto y la voz fijan la fecha a las 12:00, y un
+        // registro de hoy era «futuro» hasta el mediodía (`DraftFutureDateLogic`).
+        guard !DraftFutureDateLogic.isFuture(draft.effectiveDate) else {
             throw DraftServiceError.futureDateNotAllowed
         }
 
@@ -229,13 +410,14 @@ final class DraftService {
 
         // Calculate amount in preferred currency for charts/statistics
         let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = currencyConverter.convert(
+        let outcome = currencyConverter.convertChecked(
             Decimal(amount),
             from: account.currencyCode,
             to: preferredCode,
             on: draft.effectiveDate,
             context: context
         )
+        let amountInPreferred = outcome.amount
 
         let exchangeRate: Double
         if abs(amount) > 0.0001 {
@@ -269,6 +451,7 @@ final class DraftService {
         transaction.exchangeRate = abs(exchangeRate)
         transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         transaction.preferredCurrencyCode = preferredCode
+        transaction.isExchangeRateProvisional = !outcome.quality.isExact
 
         context.insert(transaction)
 
@@ -295,8 +478,6 @@ final class DraftService {
 
         try context.save()
 
-        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
-
         // Count approved draft toward transaction total (for review prompt)
         let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
         UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
@@ -309,8 +490,9 @@ final class DraftService {
         if !FeatureGateService.shared.isProUser,
            ProUpsellService.shared.shouldShowMilestone(transactionCount: txCount),
            let milestone = ProUpsellService.shared.nextMilestone(for: txCount) {
+            // El one-shot lo quema MilestoneUpgradeSheet.onAppear (ver
+            // NewTransactionViewModel — mismo racional anti-pérdida).
             RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
-            ProUpsellService.shared.markMilestoneShown(milestone)
         }
 
         // Update widgets
@@ -334,7 +516,9 @@ final class DraftService {
         var genericApprovedCount = 0
         let preferredCode = CurrencyDefaults.currentPreferred
 
-        for draft in drafts where draft.isReadyToApprove {
+        // `.groupScheduledExpense` se excluye: solo se aprueba vía GroupExpenseFormView (crea el
+        // SplitExpense). En bulk queda pendiente para finalizar con un tap individual.
+        for draft in drafts where draft.isReadyToApprove && !draft.requiresApprovalForm {
             // Drafts de grupo → delegar a approveDraft (SSOT del ruteo de grupo). El path
             // genérico de abajo insertaría una TransactionItem NUEVA sin splitExpenseID →
             // doble conteo del gasto + la TX virtual del bridge quedaría sin subcategoría.
@@ -352,8 +536,8 @@ final class DraftService {
                 continue
             }
 
-            // Skip drafts with future dates (solo path genérico personal).
-            guard draft.effectiveDate <= Date.now else { continue }
+            // Skip drafts with future dates (solo path genérico personal). Por día, como `approveDraft`.
+            guard !DraftFutureDateLogic.isFuture(draft.effectiveDate) else { continue }
 
             guard let account = draft.account,
                   !account.isArchived,
@@ -361,13 +545,14 @@ final class DraftService {
                   let subcategory = draft.subcategory else { continue }
 
             // Calculate amount in preferred currency
-            let amountInPreferred = currencyConverter.convert(
+            let outcome = currencyConverter.convertChecked(
                 Decimal(amount),
                 from: account.currencyCode,
                 to: preferredCode,
                 on: draft.effectiveDate,
                 context: context
             )
+            let amountInPreferred = outcome.amount
 
             let exchangeRate: Double
             if abs(amount) > 0.0001 {
@@ -400,6 +585,7 @@ final class DraftService {
             transaction.exchangeRate = abs(exchangeRate)
             transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
+            transaction.isExchangeRateProvisional = !outcome.quality.isExact
 
             context.insert(transaction)
 
@@ -457,13 +643,18 @@ final class DraftService {
     // MARK: - Reject Operations
 
     func rejectDraft(_ draft: InboxDraft) throws {
-        // A0-Bridge: drafts de grupos no se rechazan desde Inbox.
-        // Solo se eliminan desde el grupo (delete del expense/settlement origen).
-        if draft.isFromGroup {
+        // A0-Bridge: los punteros `.groupExpense` no se rechazan desde Inbox: solo se eliminan desde el
+        // grupo. Los de liquidación sí (`blocksInboxDismissal`), y el re-puente respeta el rechazo.
+        if draft.sourceType.blocksInboxDismissal {
             throw DraftServiceError.cannotRejectGroupDraft
         }
 
         let context = try requireContext()
+
+        // Pago programado (personal, suscripción o de grupo): rechazar = saltar la ocurrencia que retiene, o
+        // `processDuePayments` lo recrea en el arranque siguiente. Antes de cambiar el estado: solo un pendiente
+        // retiene una ocurrencia.
+        let skipped = dismissScheduledOccurrence(of: draft, in: context, keepsTheOccurrenceDate: true)
 
         // Cache values for display in archived list
         cacheDisplayValues(draft)
@@ -472,69 +663,181 @@ final class DraftService {
         draft.updatedAt = Date.now
 
         try context.save()
-
-        TelemetryService.track(.draftRejected, parameters: ["source": draft.sourceTypeRaw])
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     func bulkReject(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
 
+        var skipped = false
         for draft in drafts {
-            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
-            if draft.isFromGroup { continue }
+            // A0-Bridge: skip de los que no se pueden descartar (silent skip en bulk).
+            if draft.sourceType.blocksInboxDismissal { continue }
+            if dismissScheduledOccurrence(of: draft, in: context, keepsTheOccurrenceDate: true) { skipped = true }
             cacheDisplayValues(draft)
             draft.status = .rejected
             draft.updatedAt = Date.now
         }
 
         try context.save()
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     // MARK: - Delete Operations
 
     func deleteDraft(_ draft: InboxDraft) throws {
-        // A0-Bridge: drafts de grupos no se eliminan desde Inbox.
-        // Solo se eliminan al borrar el expense/settlement origen en el grupo.
-        if draft.isFromGroup {
+        // A0-Bridge: los punteros `.groupExpense` no se eliminan desde Inbox: solo al borrar el gasto
+        // origen en el grupo. Los de liquidación sí (`blocksInboxDismissal`).
+        // El aviso de importe cambiado tampoco: se resuelve ajustando o dejándolo (rechazar). Borrado, el siguiente
+        // re-puente volvería a preguntar por la misma corrección.
+        if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark
+            || draft.isSettlementAmountChangeNotice {
             throw DraftServiceError.cannotDeleteGroupDraft
         }
         let context = try requireContext()
+        let skipped = dismissScheduledOccurrence(of: draft, in: context)
         context.delete(draft)
         try context.save()
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     func bulkDelete(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
+        var skipped = false
         for draft in drafts {
-            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
-            if draft.isFromGroup { continue }
+            // A0-Bridge: skip de los que no se pueden descartar (silent skip en bulk). La marca viva de una
+            // liquidación tampoco: sin ella el siguiente re-puente volvería a preguntar por el pago.
+            if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark
+                || draft.isSettlementAmountChangeNotice { continue }
+            if dismissScheduledOccurrence(of: draft, in: context) { skipped = true }
             context.delete(draft)
         }
         try context.save()
+        if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
+    }
+
+    /// Descartar (rechazar o borrar) el borrador PENDIENTE de un pago programado salta la ocurrencia que retiene
+    /// (`ScheduledDraftOccurrenceLogic`): si no, `processDuePayments` la recrea en el arranque siguiente. Vale para
+    /// los tres orígenes —pago programado, suscripción y de grupo— y es la misma marca que «Saltar» en
+    /// Planificación. Un borrador ya archivado no retiene nada (borrarlo desde Archivados no salta otra
+    /// ocurrencia), y el duplicado de una ocurrencia ya pagada tampoco.
+    ///
+    /// Los demás pendientes de ESA ocurrencia —los que creó otro dispositivo antes de saber del descarte— se
+    /// archivan con él (rechazados, recuperables), como hace Planificación al saltar. No hace save (lo hace el
+    /// caller). Devuelve si saltó algo, para re-planear los avisos.
+    ///
+    /// Si la ocurrencia saltada es la próxima fecha y ya venció, la próxima fecha avanza en el acto, igual que hace
+    /// `processDuePayments` con una fecha saltada: si esperara al arranque siguiente, «Adelantar» en Planificación
+    /// en la misma sesión pagaría la siguiente y `processDuePayments` la volvería a crear (doble pago). Y el
+    /// rechazado vuelve a la fecha de su vencimiento (`keepsTheOccurrenceDate`): la x guarda antes la fecha
+    /// editada, y una fecha fuera del calendario del pago no diría, al devolverlo, qué ocurrencia era.
+    @discardableResult
+    private func dismissScheduledOccurrence(
+        of draft: InboxDraft, in context: ModelContext, keepsTheOccurrenceDate: Bool = false
+    ) -> Bool {
+        guard draft.status == .pending,
+              ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType),
+              let payment = scheduledPayment(of: draft, in: context) else { return false }
+        let draftDate = draft.date ?? draft.createdAt
+        let schedule = payment.occurrenceSchedule
+        guard let occurrence = ScheduledDraftOccurrenceLogic.occurrenceToSkipOnDismiss(
+            draftDate: draftDate, schedule: schedule
+        ) else { return false }
+        payment.skipDate(occurrence)
+
+        let paymentID = payment.id.uuidString
+        let draftID = draft.persistentModelID
+        do {
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.sourceScheduledPaymentID == paymentID && $0.statusRaw == "pending"
+            }))
+            for sibling in siblings where sibling.persistentModelID != draftID
+                && ScheduledDraftOccurrenceLogic.holdsAnOccurrence(sibling.sourceType)
+                && ScheduledDraftOccurrenceLogic.heldOccurrence(
+                    draftDate: sibling.date ?? sibling.createdAt, schedule: schedule
+                ) == occurrence {
+                cacheDisplayValues(sibling)
+                sibling.status = .rejected
+                sibling.updatedAt = Date.now
+            }
+        } catch {
+            #if DEBUG
+            print("DraftService: error fetching sibling drafts of a dismissed occurrence: \(error)")
+            #endif
+        }
+
+        let today = Calendar.current.startOfDay(for: Date.now)
+        if keepsTheOccurrenceDate, occurrence <= today,
+           !Calendar.current.isDate(draftDate, inSameDayAs: occurrence) {
+            draft.date = occurrence
+        }
+        if Calendar.current.isDate(occurrence, inSameDayAs: schedule.nextDueDate), occurrence <= today {
+            ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+        }
+        return true
+    }
+
+    /// El pago programado del borrador, o `nil`.
+    private func scheduledPayment(of draft: InboxDraft, in context: ModelContext) -> ScheduledPayment? {
+        guard let paymentIDString = draft.sourceScheduledPaymentID,
+              let paymentUUID = UUID(uuidString: paymentIDString) else { return nil }
+        var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
+        descriptor.fetchLimit = 1
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("DraftService: error fetching the scheduled payment of a draft: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// «Volver a pendientes» deshace el salto que hizo el descarte: la persona quiere esa ocurrencia. Si la app ya
+    /// pasó de largo, aprobarla no vuelve a avanzar la próxima fecha (`ScheduledDraftOccurrenceLogic
+    /// .approvalAdvancesPointer`). Devuelve si deshizo algo.
+    @discardableResult
+    private func restoreScheduledOccurrence(of draft: InboxDraft, in context: ModelContext) -> Bool {
+        guard ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType),
+              let payment = scheduledPayment(of: draft, in: context),
+              let occurrence = ScheduledDraftOccurrenceLogic.occurrenceToRestoreOnReturn(
+                draftDate: draft.date ?? draft.createdAt, schedule: payment.occurrenceSchedule,
+                isSkipped: payment.isDateSkipped
+              ) else { return false }
+        payment.unskipDate(occurrence)
+        return true
     }
 
     // MARK: - Return to Pending
 
     func returnToPending(_ draft: InboxDraft) throws {
         let context = try requireContext()
+        // La marca viva de una liquidación no vuelve a pendientes: aprobarla otra vez sería el mismo pago dos veces.
+        guard !draft.isLiveSettlementApprovalMark else { return }
 
+        let restored = draft.status != .pending && restoreScheduledOccurrence(of: draft, in: context)
         draft.status = .pending
         draft.updatedAt = Date.now
         updateNeedsUserInput(draft)
 
         try context.save()
+        if restored { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     func bulkReturnToPending(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
 
-        for draft in drafts {
+        // La marca viva de una liquidación se salta (silent skip en bulk), como en `returnToPending`.
+        var restored = false
+        for draft in drafts where !draft.isLiveSettlementApprovalMark {
+            if draft.status != .pending, restoreScheduledOccurrence(of: draft, in: context) { restored = true }
             draft.status = .pending
             draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
         }
 
         try context.save()
+        if restored { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
 
     // MARK: - Save (without approve)
@@ -553,7 +856,8 @@ final class DraftService {
     func bulkUpdateAccount(_ drafts: [InboxDraft], account: Account) throws {
         let context = try requireContext()
 
-        for draft in drafts {
+        // El aviso de importe cambiado ajusta una transacción concreta: su cuenta es la de ella y no se cambia en lote.
+        for draft in drafts where !draft.isSettlementAmountChangeNotice {
             draft.account = account
             draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
@@ -565,7 +869,7 @@ final class DraftService {
     func bulkUpdateSubcategory(_ drafts: [InboxDraft], subcategory: Subcategory) throws {
         let context = try requireContext()
 
-        for draft in drafts {
+        for draft in drafts where !draft.isSettlementAmountChangeNotice {
             draft.subcategory = subcategory
             draft.updatedAt = Date.now
             updateNeedsUserInput(draft)
@@ -619,7 +923,7 @@ final class DraftService {
         )
         guard let expense = try context.fetch(expenseDescriptor).first else {
             // Expense origen ya no existe (sync race con remote delete) — limpia draft y aborta.
-            context.delete(draft)
+            deleteInboxDraftPruningRow(draft, in: context)
             try context.save()
             throw DraftServiceError.missingAccount
         }
@@ -641,13 +945,14 @@ final class DraftService {
             realSubcat = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
         }
         let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = currencyConverter.convert(
+        let outcome = currencyConverter.convertChecked(
             Decimal(amount),
             from: expense.currencyCode,
             to: preferredCode,
             on: draft.effectiveDate,
             context: context
         )
+        let amountInPreferred = outcome.amount
         let exchangeRate: Double = abs(amount) > 0.0001
             ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
             : 1.0
@@ -668,6 +973,7 @@ final class DraftService {
         realTx.exchangeRate = abs(exchangeRate)
         realTx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         realTx.preferredCurrencyCode = preferredCode
+        realTx.isExchangeRateProvisional = !outcome.quality.isExact
         context.insert(realTx)
 
         // 4 + 5. Invocar bridge con flag para no borrar este draft activo.
@@ -705,18 +1011,17 @@ final class DraftService {
                 && pointer.targetTransactionID == nil
                 && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
                 && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
-                context.delete(pointer)
+                deleteInboxDraftPruningRow(pointer, in: context)
             }
         }
 
         // Cache + delete draft + save.
         cacheDisplayValues(draft)
-        context.delete(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
         try context.save()
 
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
-        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
         return realTx
     }
 
@@ -765,7 +1070,7 @@ final class DraftService {
                 && pointer.targetTransactionID == nil
                 && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
                 && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
-                context.delete(pointer)
+                deleteInboxDraftPruningRow(pointer, in: context)
             }
         }
 
@@ -833,12 +1138,14 @@ final class DraftService {
     ) throws -> TransactionItem {
         guard let account = draft.account else { throw DraftServiceError.missingAccount }
         guard let amount = draft.amount else { throw DraftServiceError.missingAmount }
+        try ensureSettlementNotAlreadyApproved(draft, in: context)
 
         let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = currencyConverter.convert(
+        let outcome = currencyConverter.convertChecked(
             Decimal(amount), from: account.currencyCode, to: preferredCode,
             on: draft.effectiveDate, context: context
         )
+        let amountInPreferred = outcome.amount
         let exchangeRate: Double = abs(amount) > 0.0001
             ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
             : 1.0
@@ -857,15 +1164,15 @@ final class DraftService {
         tx.exchangeRate = abs(exchangeRate)
         tx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         tx.preferredCurrencyCode = preferredCode
+        tx.isExchangeRateProvisional = !outcome.quality.isExact
         // NO setear splitSettlementID / splitGroupZoneID — preserva edición independiente.
 
         context.insert(tx)
-        cacheDisplayValues(draft)
-        context.delete(draft)
+        insertSettlementApprovalMark(for: draft, transaction: tx, in: context)
+        deleteInboxDraftPruningRow(draft, in: context)
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
-        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
         return tx
     }
 }
@@ -879,13 +1186,20 @@ enum DraftServiceError: LocalizedError {
     case missingSubcategory
     case futureDateNotAllowed
     case saveFailed(Error)
-    /// A0-Bridge: drafts de grupos (groupExpense/groupSettlement) no permiten eliminar/rechazar.
-    /// Solo se borran al eliminar el expense/settlement origen en el grupo.
+    /// A0-Bridge: los drafts `.groupExpense` no permiten eliminar/rechazar (`blocksInboxDismissal`).
+    /// Solo se borran al eliminar el expense origen en el grupo.
     case cannotDeleteGroupDraft
     case cannotRejectGroupDraft
     /// Draft-puntero `.groupExpense` cuyo expense origen se borró remotamente (no existe TX).
     /// El draft stale ya se limpió; este error informa al usuario en la sheet de finalización.
     case groupExpenseTargetMissing
+    /// `.groupScheduledExpense` solo se aprueba vía GroupExpenseFormView (crea el SplitExpense),
+    /// nunca por el path genérico de approveDraft. Defensa interna — no debería alcanzar al usuario.
+    case groupScheduledExpenseRequiresForm
+    /// El borrador de una liquidación cuyo pago ya se registró (hay marca de aprobación): aprobarlo lo contaría dos veces.
+    case groupSettlementAlreadyRegistered
+    /// El aviso de importe cambiado ya no se puede aplicar: su transacción ya no está, hay dos, o cambió de divisa.
+    case settlementAmountChangeTransactionGone
 
     var errorDescription: String? {
         switch self {
@@ -905,6 +1219,12 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.groupDraftCannotDelete
         case .groupExpenseTargetMissing:
             return L10n.Inbox.errorGroupExpenseGone
+        case .groupScheduledExpenseRequiresForm:
+            return "DraftService: group scheduled expense must be approved via the group form"
+        case .groupSettlementAlreadyRegistered:
+            return L10n.Inbox.GroupSettlementDraft.alreadyRegistered
+        case .settlementAmountChangeTransactionGone:
+            return L10n.Inbox.GroupSettlementAmountChange.transactionGone
         }
     }
 }

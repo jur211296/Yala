@@ -21,6 +21,9 @@ final class ProfileViewModel {
     // MARK: - Data
 
     private(set) var hasTransactions: Bool = false
+    /// D6 (§3.3.6): gate de la fila "Exportar datos" en modo solo-grupos, donde no hay
+    /// transacciones personales pero sí grupos que exportar (builder CloudKit vivo).
+    private(set) var hasExportableGroups: Bool = false
     private(set) var accounts: [Account] = []
     private(set) var categories: [Category] = []
 
@@ -35,6 +38,7 @@ final class ProfileViewModel {
 
     func loadData() {
         loadTransactions()
+        loadExportableGroups()
         loadAccounts()
         loadCategories()
     }
@@ -49,6 +53,12 @@ final class ProfileViewModel {
             #endif
             hasTransactions = false
         }
+    }
+
+    /// D6: hay grupos activos que exportar (reusa el gate read-only del wizard de grupos).
+    private func loadExportableGroups() {
+        guard let context = modelContext else { return }
+        hasExportableGroups = GroupsExportBuilder.hasExportableGroups(in: context)
     }
 
     private func loadAccounts() {

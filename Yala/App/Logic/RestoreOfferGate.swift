@@ -7,9 +7,14 @@
 //  timestamps del KV-store (`lastOnboardingTimestamp` / `lastWipeTimestamp`).
 //
 //  Usado por:
-//  - WelcomeHero (detección rápida del alert) → `hasReturningSignal`.
-//  - WelcomeRestoreView (estado `.wiped` vs `.found`/`.notFound`).
+//  - WelcomeRestoreView (estado `.wiped` vs `.found`/`.notFound`) → `wasWiped`.
 //  - Invitación de grupo + returning user (Parte F) → ofrecer cargar antes de unirse.
+//
+//  **El Hero dejó de consultarlo el 2026-08-11** (decisión del owner, punto 2 de
+//  MODO-NUBE-REVISION-FLUJOS-NOTAS): su alert «Detectamos tu cuenta» empujaba hacia la
+//  cuenta iCloud del container, y la reentrada pasó a ser decisión del usuario. El gate
+//  se CONSERVA porque `wasWiped` sigue con call-site vivo (MEDIDO) — y con él la señal
+//  del KV-store, que también leen `ContentView` y `WelcomeRestoreView`.
 //
 //  Evita el bug #6 (autopromote por KV-store contaminado): la señal solo decide
 //  si OFRECER (alert/oferta), nunca dispara wipe ni completa onboarding.

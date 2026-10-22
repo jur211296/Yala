@@ -39,7 +39,7 @@ struct NeedSelectorSheet: View {
                     }
                 }
             }
-            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent, ignoredEdges: [])
+            .yalaScreenBackground(.partialSheet, ignoredEdges: [])
         }
     }
 }

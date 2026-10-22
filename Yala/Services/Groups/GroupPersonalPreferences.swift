@@ -8,7 +8,7 @@
 //  para settlements (form/draft sheets ahora siempre piden cuenta al user).
 //
 //  `removeAll(for:)` se mantiene para limpiar prefs legacy heredadas de versiones
-//  pre-M6 al hacer leaveGroup/deleteGroup. Idempotente.
+//  pre-M6 al hacer leaveGroup. Idempotente.
 //
 
 import Foundation

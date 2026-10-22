@@ -37,6 +37,7 @@ struct PlanningView: View {
     // MARK: - Environment
 
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.yalaTheme) private var theme
 
     // MARK: - State
@@ -48,8 +49,21 @@ struct PlanningView: View {
 
     // MARK: - Body
 
+    /// Lista y detalle (`ListDetailSplit`): en ventana ancha, la lista y el presupuesto o pago abierto a
+    /// la vez; en compacta se pliega solo a la pila de siempre (ADR «Yala se adapta por espacio, no por
+    /// dispositivo»). Los `navigationDestination` de la columna de lista presentan en la de detalle.
     var body: some View {
-        NavigationStack {
+        ListDetailSplit {
+            listColumn
+        } detail: {
+            ContentUnavailableView(L10n.Planning.detailPlaceholder, systemImage: ConfigurableTab.planning.iconName)
+                .yalaScreenBackground(.panel)
+                .accessibilityIdentifier("planning_detail_placeholder")
+                .marksEmptyDetailColumn()
+        }
+    }
+
+    private var listColumn: some View {
             VStack(spacing: DS.Spacing.none) {
                 // Contextual guide for current planning tab
                 planningGuide
@@ -58,9 +72,8 @@ struct PlanningView: View {
 
                 tabContent
             }
-            .safeAreaInset(edge: .top) {
+            .navigationChipsInset {
                 navigationChipsBar
-                    .padding(.vertical, DS.Spacing.sm)
             }
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Planning.title)
@@ -98,13 +111,12 @@ struct PlanningView: View {
             }
             .onAppear {
                 // Sync with SessionState on appear
-                selectedTab = sessionState.selectedPlanningTab
+                selectedTab = navigation.selectedPlanningTab
             }
             .onChange(of: selectedTab) { _, newValue in
                 // Keep SessionState in sync
-                sessionState.selectedPlanningTab = newValue
+                navigation.selectedPlanningTab = newValue
             }
-        }
     }
 
     // MARK: - Tab Content

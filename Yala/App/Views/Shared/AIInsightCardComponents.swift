@@ -28,19 +28,33 @@ enum AIInsightCardComponents {
         .panelCard()
     }
 
-    /// Card de error AI con icon warning + texto caption.
+    /// Card de error AI con icon warning + texto caption. Recibe el MOTIVO, no un texto: un `String` aquí dejaba
+    /// pasar `error.localizedDescription`, en inglés con la app en cualquier idioma.
     @ViewBuilder
-    static func errorCard(_ error: String) -> some View {
+    static func errorCard(_ failure: AIInsightFailure) -> some View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "exclamationmark.triangle")
                 .foregroundStyle(DS.Semantic.warningForeground)
-            Text(error)
+            Text(message(for: failure))
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .panelCard()
+    }
+
+    /// Lo que dice la tarjeta para cada motivo de fallo, en el idioma de la app. Lo comparten Resumen, Distribución
+    /// y Tendencias.
+    static func message(for failure: AIInsightFailure) -> String {
+        switch failure {
+        case .offline: L10n.Insights.aiErrorOffline
+        case .timeout: L10n.Chat.errorTimeout
+        case .dailyLimit: L10n.Insights.aiErrorDailyLimit
+        case .tooManyRequests: L10n.Insights.aiErrorTooManyRequests
+        case .proRequired: L10n.Insights.aiErrorProRequired
+        case .generic: L10n.Chat.errorGeneric
+        }
     }
 
     /// Renderiza markdown con fallback al texto plano si el parse falla.

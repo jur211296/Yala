@@ -83,7 +83,7 @@ enum GroupBridgePreferenceDeduplicationService {
             print("GroupBridgePrefDedup: removed \(plan.toDeleteIDs.count) duplicates across \(plan.duplicateZoneCounts.count) zones")
             #endif
             for dup in plan.duplicateZoneCounts {
-                TelemetryService.cloudkitDuplicateDetected(
+                MetricsService.cloudkitDuplicateDetected(
                     model: "GroupBridgePreference",
                     count: dup.count,
                     context: .bootCleanup,

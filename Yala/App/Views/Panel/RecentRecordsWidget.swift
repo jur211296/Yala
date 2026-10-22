@@ -10,6 +10,7 @@ import SwiftUI
 
 struct RecentRecordsWidget: View {
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let records: [TransactionItem]
     let currencyCode: String
 
@@ -74,8 +75,11 @@ struct RecentRecordsWidget: View {
 
     // MARK: - Layout (Medium Style: 5 records)
 
+    /// En compacta, la columna de siempre. En ancha el widget ocupa la fila entera del Panel
+    /// (`WidgetConfigManager.spansRowWhenAloneTypes`) y sus filas van en pares, para no dejar concepto e importe a
+    /// 900 pt; si no caben dos columnas, una.
     private var mediumLayout: some View {
-        VStack(spacing: DS.Spacing.md) {
+        PairedCardsStack(rowSpacing: DS.Spacing.md, columnSpacing: DS.Spacing.xxl) {
             ForEach(Array(records.prefix(5).enumerated()), id: \.element.persistentModelID) {
                 _, record in
                 recordRow(record)
@@ -86,7 +90,9 @@ struct RecentRecordsWidget: View {
     // MARK: - Record Rows
 
     private func recordRow(_ record: TransactionItem) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        // A tamaños de accesibilidad el importe baja bajo el concepto, como en `RecordRowView`: en fila se
+        // cortaba («S/-…00»).
+        AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.sm) {
             // Icon
             subcategoryIcon(for: record, size: 36)
 
@@ -120,11 +126,9 @@ struct RecentRecordsWidget: View {
                         .lineLimit(1)
                 }
             }
-
-            Spacer()
-
+        } trailing: {
             // Right Column: Amount + Nature (matches RecordRowView)
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
                 AmountText(
                     value: record.amount,
                     currencyCode: record.currencyCode,
@@ -211,7 +215,12 @@ struct RecentRecordsWidget: View {
     private func amountColor(for record: TransactionItem) -> Color {
         if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer { return Color(.label) }
         let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-        return isIncome ? Color.electricIndigo : Color.hotPink
+        // Sólo el ingreso lleva color. El gasto es el caso mayoritario en esta
+        // lista: teñirlo pinta la pantalla entera y el color deja de avisar de
+        // nada. Además ninguno de los dos tonos anteriores llegaba al mínimo AA
+        // sobre tarjeta blanca (#FF0080 = 3,77 · #6366F1 = 4,47), y el símbolo
+        // y los decimales que `AmountText` pinta al 60 % los dejaban en ~2,5.
+        return isIncome ? Color.incomeAmount : Color.primary
     }
 
     private func shortDateFormat(_ date: Date) -> String {

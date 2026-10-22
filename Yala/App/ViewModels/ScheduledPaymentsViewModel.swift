@@ -262,6 +262,17 @@ final class ScheduledPaymentsViewModel {
         }
     }
 
+    /// Save + refresco de widget/UI + re-plan de summaries agendadas. Los sitios que
+    /// mutan inputs del planner (skip/unskip, asociar/desvincular TX) pasan por aquí;
+    /// `advanceOccurrence` NO re-planea a propósito (crear el draft adelantado no cambia
+    /// `nextDueDate` — el re-plan llega al APROBAR, vía `handleDraftApproved`).
+    private func persistAndRefresh(context: ModelContext) throws {
+        try context.save()
+        WidgetDataCache.updateCache(context: context)
+        SessionState.shared.incrementDataVersion()
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
+    }
+
     // MARK: - Skip/Unskip
 
     func skipOccurrence(payment: ScheduledPayment, date: Date) {
@@ -269,9 +280,7 @@ final class ScheduledPaymentsViewModel {
         payment.skipDate(date)
         rejectPendingDraft(for: payment)
         do {
-            try context.save()
-            WidgetDataCache.updateCache(context: context)
-            SessionState.shared.incrementDataVersion()
+            try persistAndRefresh(context: context)
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving skip: \(error)")
@@ -285,9 +294,7 @@ final class ScheduledPaymentsViewModel {
         payment.unskipDate(date)
         ScheduledPaymentDraftService.recreateDraftIfNeeded(for: payment, date: date, context: context)
         do {
-            try context.save()
-            WidgetDataCache.updateCache(context: context)
-            SessionState.shared.incrementDataVersion()
+            try persistAndRefresh(context: context)
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error saving unskip: \(error)")
@@ -604,9 +611,7 @@ final class ScheduledPaymentsViewModel {
 
         guard let context = modelContext else { return }
         do {
-            try context.save()
-            WidgetDataCache.updateCache(context: context)
-            SessionState.shared.incrementDataVersion()
+            try persistAndRefresh(context: context)
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error associating transaction: \(error)")
@@ -620,9 +625,7 @@ final class ScheduledPaymentsViewModel {
 
         guard let context = modelContext else { return }
         do {
-            try context.save()
-            WidgetDataCache.updateCache(context: context)
-            SessionState.shared.incrementDataVersion()
+            try persistAndRefresh(context: context)
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error unlinking transaction: \(error)")
@@ -652,9 +655,7 @@ final class ScheduledPaymentsViewModel {
             }
 
             if didUnlink {
-                try context.save()
-                WidgetDataCache.updateCache(context: context)
-                SessionState.shared.incrementDataVersion()
+                try persistAndRefresh(context: context)
             }
         } catch {
             #if DEBUG

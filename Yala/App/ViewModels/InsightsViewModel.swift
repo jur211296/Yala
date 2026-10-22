@@ -27,7 +27,8 @@ final class InsightsViewModel {
 
     private(set) var aiInsights: LLMInsightResponse?
     private(set) var isLoadingAI = false
-    private(set) var aiError: String?
+    /// Por qué falló el análisis de IA. El texto lo elige la vista (`AIInsightCardComponents.message(for:)`).
+    private(set) var aiError: AIInsightFailure?
     private(set) var aiActivated = false
 
     // MARK: - AI Generation Context (stored for on-demand button)
@@ -67,7 +68,8 @@ final class InsightsViewModel {
         criteria: FilterCriteria,
         currencyCode: String,
         customRange: DateInterval?,
-        comparisonMode: ComparisonMode = .month
+        comparisonMode: ComparisonMode = .month,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         // El toggle "incluir transacciones de grupos en estadísticas" filtra las TX
         // bridgeadas y por tanto es un input del cálculo — debe entrar en la firma
@@ -104,7 +106,8 @@ final class InsightsViewModel {
             comparisonMode: comparisonMode,
             tone: currentTone,
             focus: currentFocus,
-            includeBridgedGroupTx: includeBridgedGroupTx
+            includeBridgedGroupTx: includeBridgedGroupTx,
+            adjustment: adjustment
         )
     }
 
@@ -120,7 +123,8 @@ final class InsightsViewModel {
         paidAmounts: [String: [PaidOccurrenceInfo]],
         period: DetailPeriod,
         customRange: DateInterval?,
-        preferredCurrencyCode: String
+        preferredCurrencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none
     ) {
         let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let newScore = FinancialScoreCalculator.calculate(
@@ -132,7 +136,8 @@ final class InsightsViewModel {
             period: period,
             customRange: customRange,
             preferredCurrencyCode: preferredCurrencyCode,
-            includeBridgedGroupTx: includeBridgedGroupTx
+            includeBridgedGroupTx: includeBridgedGroupTx,
+            adjustment: adjustment
         )
         if newScore != financialScore { financialScore = newScore }
     }
@@ -253,9 +258,8 @@ final class InsightsViewModel {
                 focus: focus
             )
             aiInsights = response
-            TelemetryService.track(.aiInsightsGenerated)
         } catch {
-            aiError = error.localizedDescription
+            aiError = AIInsightFailureLogic.failure(for: error, isConnected: NetworkMonitor.shared.isConnected)
             #if DEBUG
             print("InsightsViewModel: AI error: \(error)")
             #endif
@@ -266,7 +270,7 @@ final class InsightsViewModel {
 
     // MARK: - Helpers
 
-    private func buildAggregatedData(
+    func buildAggregatedData(
         _ data: InsightData,
         currencyCode: String,
         comparisonMode: ComparisonMode,
@@ -280,7 +284,9 @@ final class InsightsViewModel {
             "currency": currencyCode,
             // Snapshot al payload IA — no reactivo. YalaFormatter deprecated permitido.
             "currency_display": YalaFormatterStatic.currencyIdentifier(for: currencyCode),
-            "locale": Locale.current.language.languageCode?.identifier ?? "es",
+            // El idioma de la app, no el de la región: con la app en inglés y el iPhone en Perú,
+            // `Locale.current.language` decía español y el análisis llegaba en español.
+            "locale": AIPromptLanguage.current,
             "country": Locale.current.region?.identifier ?? "",
             "comparison_ref": comparisonLabel,
             "comparison_label": data.periodSummary.previousPeriodLabel,

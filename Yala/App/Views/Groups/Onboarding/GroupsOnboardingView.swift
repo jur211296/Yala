@@ -11,6 +11,11 @@
 //  El CTA solo cierra el sheet; NO abre `GroupFormView`. El user queda en
 //  `GroupsContainerView` con su empty state, que ya tiene CTA "Crear grupo".
 //
+//  A1 (D-A7, P1(b)): SIN sesión Yala el Step 3 ofrece ADEMÁS "Iniciar sesión"
+//  (`onResult(.completeAndSignIn)`), que reusa el MISMO intent que el CTA del empty state
+//  (`.presentGroupsSignIn`) — no monta una presentación nueva. La visibilidad la decide
+//  `GroupsOnboardingLogic.shouldShowSignInCTA` (lógica pura, tests de tabla).
+//
 
 import SwiftUI
 
@@ -55,16 +60,6 @@ struct GroupsOnboardingView: View {
                     progressIndicator
                 }
             }
-        }
-        .onAppear {
-            TelemetryService.track(.groupsOnboardingShown, parameters: [
-                "launcher": GroupsOnboardingLauncher.groupsTab.rawValue
-            ])
-        }
-        .onChange(of: currentStep, initial: true) { _, newStep in
-            TelemetryService.track(.groupsOnboardingStepViewed, parameters: [
-                "step": String(newStep.rawValue)
-            ])
         }
     }
 
@@ -252,7 +247,12 @@ struct GroupsOnboardingView: View {
             }
 
             VStack(spacing: DS.Spacing.md) {
-                privacyPoint(icon: "icloud.fill", text: L10n.Groups.Onboarding.step3Point1)
+                // C2 · el HECHO sustantivo, y va PRIMERO. Los otros dos tranquilizan sin decir nunca dónde
+                // se guardan los gastos del grupo; el consent sí lo dice, pero llega después de pedir
+                // identidad, y a estas alturas el usuario todavía no ha dado ninguna.
+                privacyPoint(icon: "icloud.fill", text: L10n.Groups.Onboarding.step3Point0)
+                // El icono acompaña al copy: la cuenta es de Yala, no de iCloud (A1).
+                privacyPoint(icon: "person.crop.circle.badge.checkmark", text: L10n.Groups.Onboarding.step3Point1)
                 privacyPoint(icon: "lock.shield.fill", text: L10n.Groups.Onboarding.step3Point2)
             }
             .padding(.top, DS.Spacing.md)
@@ -289,13 +289,45 @@ struct GroupsOnboardingView: View {
 
     // MARK: - CTA
 
+    @ViewBuilder
     private var ctaSection: some View {
         let label = currentStep == .privacy
             ? L10n.Groups.Onboarding.step3CTA
             : L10n.Action.continueAction
 
-        return YalaPrimaryButton(label) {
-            advance()
+        // A1: sin sesión Yala, el cierre convierte — el sign-in manda y "Ir a Grupos" queda
+        // como salida visible (nunca un muro: quien lo salte se topa con el CTA del empty
+        // state, que es el contextual de siempre).
+        if GroupsOnboardingLogic.shouldShowSignInCTA(
+            isLastStep: currentStep == .privacy,
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession
+        ) {
+            VStack(spacing: DS.Spacing.sm) {
+                // C2 · el MISMO CTA con el copy honesto por caso: a quien nunca tuvo cuenta se le está
+                // CREANDO una, y «Iniciar sesión» le pide volver a un sitio donde no ha estado. La señal es
+                // el latch `GroupsSessionHistoryMarker`, la misma que decide el empty state — no una
+                // segunda fuente. El intent que emite es idéntico en los dos casos: `GroupsSignInView` es
+                // la pantalla que crea la cuenta además de recuperarla.
+                YalaPrimaryButton(
+                    GroupsSessionHistoryMarker.hadSessionEver()
+                        ? L10n.Groups.Onboarding.step3SignInCTA
+                        : L10n.Groups.Onboarding.step3CreateAccountCTA
+                ) {
+                    onResult(.completeAndSignIn)
+                }
+                .accessibilityIdentifier("groups_onboarding_signin_cta")
+
+                YalaSecondaryButton(label) {
+                    advance()
+                }
+                .accessibilityIdentifier("groups_onboarding_cta")
+            }
+        } else {
+            YalaPrimaryButton(label) {
+                advance()
+            }
+            .accessibilityIdentifier("groups_onboarding_cta")
         }
     }
 
@@ -314,7 +346,6 @@ struct GroupsOnboardingView: View {
                 currentStep = next
             }
         } else {
-            TelemetryService.track(.groupsOnboardingCompleted)
             onResult(.complete)
         }
     }

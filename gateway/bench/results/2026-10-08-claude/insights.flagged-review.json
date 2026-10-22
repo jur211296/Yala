@@ -1,0 +1,489 @@
+{
+ "reviewer": "Frank (banco Claude del 2026-10-08), leyendo cada cifra contra los datos del caso",
+ "criteria": "El mismo de 2026-10-07/insights.flagged-review.json: derivado = aritmética correcta que el verificador no admite sola (también la suma de porcentajes mostrados o truncados); sugerencia = importe propuesto como consejo, que no afirma nada de los datos; inventado = cifra falsa o sin base (media o suma mal calculada, ahorro estimado sin base).",
+ "items": [
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-sonnet-5-5|none|0",
+   "number": "180",
+   "verdict": "sugerencia",
+   "nota": "«por ejemplo S/ 180» para el sábado: tope propuesto"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-sonnet-5-5|none|0",
+   "number": "1,124",
+   "verdict": "derivado",
+   "nota": "1.035 + 89,9 (recurrentes + suscripciones)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-sonnet-5-5|none|1",
+   "number": "180",
+   "verdict": "sugerencia",
+   "nota": "tope propuesto para el sábado"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-sonnet-5-5|none|1",
+   "number": "1,124",
+   "verdict": "derivado",
+   "nota": "1.035 + 89,9"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-sonnet-5-5|low|0",
+   "number": "20",
+   "verdict": "sugerencia",
+   "nota": "reparto propuesto de los S/ 90 de margen por semana"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|anthropic:claude-sonnet-5-5|low|1",
+   "number": "180",
+   "verdict": "sugerencia",
+   "nota": "tope propuesto para el sábado"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c01-es-PE-good-month|openai:gpt-6-luna|low|0",
+   "number": "1,124",
+   "verdict": "derivado",
+   "nota": "1.035 + 89,9"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|anthropic:claude-sonnet-5-5|none|0",
+   "number": "14",
+   "verdict": "derivado",
+   "nota": "425 / 30 = 14,2 al día"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|anthropic:claude-sonnet-5-5|none|0",
+   "number": "3,055",
+   "verdict": "derivado",
+   "nota": "2.875,4 + 180 (pendientes)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|anthropic:claude-sonnet-5-5|none|1",
+   "number": "15",
+   "verdict": "sugerencia",
+   "nota": "ajuste diario propuesto («cerraría buena parte»: 15 × 30 = 450 ≥ 425)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|anthropic:claude-sonnet-5-5|low|1",
+   "number": "80",
+   "verdict": "sugerencia",
+   "nota": "tope diario propuesto de 80"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|anthropic:claude-sonnet-5-5|low|1",
+   "number": "605",
+   "verdict": "derivado",
+   "nota": "−425,4 − 180 (pendientes)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|anthropic:claude-sonnet-5-5|low|1",
+   "number": "150",
+   "verdict": "sugerencia",
+   "nota": "recorte propuesto de lo opcional («acercar», no «llevar», a cero)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c02-es-ES-bad-month|anthropic:claude-haiku-5-5|low|0",
+   "number": "10",
+   "verdict": "sugerencia",
+   "nota": "tope semanal propuesto (quedan 40 de margen en Restaurantes)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|anthropic:claude-sonnet-5-5|none|0",
+   "number": "43,000",
+   "verdict": "derivado",
+   "nota": "10 % de 434.300 (opcional)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|anthropic:claude-sonnet-5-5|none|1",
+   "number": "43,000",
+   "verdict": "derivado",
+   "nota": "10 % de 434.300"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|anthropic:claude-sonnet-5-5|low|0",
+   "number": "40,000",
+   "verdict": "sugerencia",
+   "nota": "tope semanal propuesto para Delivery"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|anthropic:claude-haiku-5-5|low|1",
+   "number": "10,000",
+   "verdict": "inventado",
+   "nota": "«cancelar una de ARS 10.000 ya suma 120.000 al año»: ninguna suscripción de 10.000 en los datos (media 8.733); ahorro estimado sin base"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c03-es-AR-inflation|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "37,000",
+   "verdict": "derivado",
+   "nota": "98.500 − 61.810 = 36.690"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c04-en-irregular-income|anthropic:claude-sonnet-5-5|none|0",
+   "number": "11",
+   "verdict": "derivado",
+   "nota": "1.500 / 137 = 10,9 días"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c04-en-irregular-income|anthropic:claude-sonnet-5-5|none|1",
+   "number": "53%",
+   "verdict": "derivado",
+   "nota": "(210 − 137,4) / 137,4 = 52,9 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c04-en-irregular-income|anthropic:claude-sonnet-5-5|low|1",
+   "number": "350",
+   "verdict": "derivado",
+   "nota": "1.850 − 1.500 (ingreso − alquiler)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|openai:gpt-6-luna|low|0",
+   "number": "1,023",
+   "verdict": "inventado",
+   "nota": "compra + transporte + comer fuera = 410 + 230 + 190 = 830; 1.023 no sale de nada"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|openai:gpt-6-luna|low|0",
+   "number": "27",
+   "verdict": "inventado",
+   "nota": "1.050 − 1.023: resta sobre la suma inventada"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c05-en-GB-year-compare|openai:gpt-6-luna|low|1",
+   "number": "89%",
+   "verdict": "derivado",
+   "nota": "49 + 17 + 9 + 8 + 6 (suma de los porcentajes truncados; el real es 92,6 %)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c06-pt-BR-shared|anthropic:claude-sonnet-5-5|low|0",
+   "number": "59%",
+   "verdict": "derivado",
+   "nota": "34 % + 25 % (porcentajes mostrados; el real es 60,2 %)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c06-pt-BR-shared|openai:gpt-6-luna|low|1",
+   "number": "59%",
+   "verdict": "derivado",
+   "nota": "34 % + 25 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c07-pt-PT-exclude-filter|anthropic:claude-sonnet-5-5|none|0",
+   "number": "38",
+   "verdict": "derivado",
+   "nota": "10 % de 380 (Supermercado)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c07-pt-PT-exclude-filter|anthropic:claude-sonnet-5-5|none|1",
+   "number": "55",
+   "verdict": "sugerencia",
+   "nota": "teto propuesto para el sábado"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c07-pt-PT-exclude-filter|anthropic:claude-sonnet-5-5|low|1",
+   "number": "21",
+   "verdict": "derivado",
+   "nota": "10 % de 210 (Lazer)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c07-pt-PT-exclude-filter|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "1,409",
+   "verdict": "derivado",
+   "nota": "1.240 / 0,88 con el 12 % mostrado («cerca de»; el real es 1.417)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c07-pt-PT-exclude-filter|openai:gpt-6-luna|low|0",
+   "number": "61%",
+   "verdict": "derivado",
+   "nota": "41 % + 20 % (porcentajes truncados; el real es 62,9 %)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|anthropic:claude-sonnet-5-5|none|0",
+   "number": "3,095",
+   "verdict": "derivado",
+   "nota": "2.685,9 + 410 (pendientes)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|anthropic:claude-sonnet-5-5|none|0",
+   "number": "2,175",
+   "verdict": "derivado",
+   "nota": "3.150 − 975 (ingreso − recurrentes)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|anthropic:claude-sonnet-5-5|none|1",
+   "number": "3,095",
+   "verdict": "derivado",
+   "nota": "2.685,9 + 410"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|anthropic:claude-sonnet-5-5|low|0",
+   "number": "54",
+   "verdict": "derivado",
+   "nota": "464 − 410"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|anthropic:claude-sonnet-5-5|low|1",
+   "number": "54",
+   "verdict": "derivado",
+   "nota": "464 − 410"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c08-fr-budgets-at-risk|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "42",
+   "verdict": "derivado",
+   "nota": "131 − 89"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|none|0",
+   "number": "80",
+   "verdict": "inventado",
+   "nota": "«zwei Restaurantbesuche … rund EUR 80–100 freisetzen»: ahorro estimado sin base (no hay número de visitas)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|none|1",
+   "number": "88",
+   "verdict": "derivado",
+   "nota": "104,01 / 1,187 = 87,6 (media del mes anterior)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|none|1",
+   "number": "480",
+   "verdict": "derivado",
+   "nota": "(104 − 88) × 30"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|none|1",
+   "number": "270",
+   "verdict": "derivado",
+   "nota": "1.370 − 1.100 (límite propuesto)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|none|1",
+   "number": "15",
+   "verdict": "inventado",
+   "nota": "«ein pausiertes Abo spart bis zu EUR 15»: ahorro estimado sin base (media por suscripción 22,5)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|low|0",
+   "number": "80",
+   "verdict": "inventado",
+   "nota": "«etwa EUR 80 bis 100 sparen» con dos visitas al restaurante: ahorro estimado sin base"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|low|0",
+   "number": "137",
+   "verdict": "derivado",
+   "nota": "10 % de 1.370"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|anthropic:claude-sonnet-5-5|low|1",
+   "number": "80",
+   "verdict": "inventado",
+   "nota": "«rund EUR 80-100 sparen» con dos visitas al restaurante: ahorro estimado sin base"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c09-de-optional-heavy|openai:gpt-6-luna|low|0",
+   "number": "48",
+   "verdict": "derivado",
+   "nota": "152 − 104"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c10-it-low-data|anthropic:claude-sonnet-5-5|none|0",
+   "number": "99%",
+   "verdict": "derivado",
+   "nota": "60 % + 39 % (porcentajes truncados; el real es 100 %)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c10-it-low-data|anthropic:claude-sonnet-5-5|none|1",
+   "number": "99%",
+   "verdict": "derivado",
+   "nota": "60 % + 39 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c11-nl-include-filter|anthropic:claude-sonnet-5-5|none|0",
+   "number": "124",
+   "verdict": "derivado",
+   "nota": "612,8 − 488,6"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c11-nl-include-filter|anthropic:claude-sonnet-5-5|none|1",
+   "number": "21%",
+   "verdict": "derivado",
+   "nota": "100 − 79 (79 % truncado de 79,7; el real es 20,3 %)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c11-nl-include-filter|anthropic:claude-sonnet-5-5|none|1",
+   "number": "40%",
+   "verdict": "derivado",
+   "nota": "41 / (612,8 / 21 = 29,2) = 1,40"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c11-nl-include-filter|openai:gpt-6-luna|low|0",
+   "number": "124",
+   "verdict": "derivado",
+   "nota": "612,8 − 488,6"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c12-pl-one-off|anthropic:claude-sonnet-5-5|none|0",
+   "number": "5,541",
+   "verdict": "derivado",
+   "nota": "9.840,5 − 4.299"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c12-pl-one-off|anthropic:claude-sonnet-5-5|none|1",
+   "number": "5,541",
+   "verdict": "derivado",
+   "nota": "9.840,5 − 4.299"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c12-pl-one-off|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "5,541",
+   "verdict": "derivado",
+   "nota": "9.840,5 − 4.299"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c12-pl-one-off|anthropic:claude-haiku-5-5:none|none|1",
+   "number": "3,901",
+   "verdict": "derivado",
+   "nota": "8.200 − 4.299 (frase rebuscada, aritmética correcta)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|anthropic:claude-sonnet-5-5|none|0",
+   "number": "5,000",
+   "verdict": "sugerencia",
+   "nota": "ajuste mensual propuesto («se acerca» al periodo anterior)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|anthropic:claude-sonnet-5-5|none|1",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 % (el mismo caso que en la sesión 2)"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|anthropic:claude-sonnet-5-5|low|1",
+   "number": "3,850",
+   "verdict": "derivado",
+   "nota": "13.400 − 9.548 = 3.852"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|anthropic:claude-haiku-5-5:none|none|0",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|openai:gpt-6-luna|low|0",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c13-ja-steady|openai:gpt-6-luna|low|1",
+   "number": "56%",
+   "verdict": "derivado",
+   "nota": "33 % + 23 %"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c14-zh-no-income|anthropic:claude-sonnet-5-5|none|1",
+   "number": "20",
+   "verdict": "sugerencia",
+   "nota": "tope diario propuesto para los ¥ 140 restantes"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c14-zh-no-income|openai:gpt-6-luna|low|1",
+   "number": "164",
+   "verdict": "derivado",
+   "nota": "452 − 288"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c16-en-bonus-year|anthropic:claude-sonnet-5-5|none|0",
+   "number": "130",
+   "verdict": "sugerencia",
+   "nota": "tope propuesto para el domingo"
+  },
+  {
+   "task": "insights.cards",
+   "key": "c16-en-bonus-year|anthropic:claude-sonnet-5-5|low|1",
+   "number": "66",
+   "verdict": "derivado",
+   "nota": "178 − 112 (con la media mostrada; 178 − 112,67 = 65,3)"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t14-zh-cautious|anthropic:claude-sonnet-5-5|none|0",
+   "number": "8,640,7",
+   "verdict": "derivado",
+   "nota": "artefacto del verificador: «¥ 8,640,7月» es 8.640 (septiembre) seguido de «7月» (julio); las dos cifras están en los datos"
+  },
+  {
+   "task": "trends.summary",
+   "key": "t14-zh-cautious|anthropic:claude-sonnet-5-5|low|1",
+   "number": "8,640,7",
+   "verdict": "derivado",
+   "nota": "el mismo artefacto: 8.640 + «7月»"
+  }
+ ]
+}

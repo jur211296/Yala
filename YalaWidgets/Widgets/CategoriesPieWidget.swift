@@ -32,6 +32,9 @@ struct CategoriesPieEntry: TimelineEntry {
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    /// Marca «≈» del TOTAL. Las tajadas del pie no la llevan: son subconjuntos del gasto y su
+    /// calculador no acumula calidad de conversión (`fx-category-totals-unmarked`).
+    var expenseIsApproximate: Bool = false
 
     static var placeholder: CategoriesPieEntry {
         CategoriesPieEntry(
@@ -116,7 +119,8 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            expenseIsApproximate: summary?.expenseIsApproximate ?? false
         )
     }
 }
@@ -148,7 +152,8 @@ struct CategoriesPieWidgetView: View {
                         displayFormat: entry.currencyDisplayFormat,
                         font: WDS.Typography.kpiSmall,
                         secondaryFont: WDS.Typography.kpiSmallSecondary,
-                        tint: .color(WidgetColors.expense)
+                        tint: .color(WidgetColors.expense),
+                        isEstimate: entry.expenseIsApproximate
                     )
                 }
             }
@@ -205,6 +210,7 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.categoriesPie")

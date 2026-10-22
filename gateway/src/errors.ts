@@ -16,7 +16,28 @@ export type YalaErrorType =
   | "yala_quota_daily"
   | "yala_quota_burst"
   | "yala_unavailable"
-  | "yala_bad_request";
+  /// Kill-switch de Grupos: `GROUPS_BACKEND_ROLLOUT_PERCENT = 0` ⇒ 403 en las 4 rutas de `/groups/*`.
+  /// Apagado DELIBERADO, jamás transitorio — el cliente NO debe reintentarlo (ver `groups/killSwitch.ts`).
+  | "yala_groups_disabled"
+  | "yala_bad_request"
+  | "yala_bad_input"
+  | "yala_account_reverting"
+  | "yala_rpc_error"
+  | "yala_siwa_not_configured"
+  /// C-8: el JWS declara (`appAccountToken`) una cuenta de Yala distinta a la del JWT — la
+  /// suscripción ya tiene dueño y el bind no la reasigna.
+  | "yala_entitlement_owner_mismatch"
+  /// IA (tabla tarea → modelo, 2026-10-07): el modelo pedido no está en la tabla ni es deducible.
+  | "yala_model_not_allowed"
+  /// IA: la cabecera `X-Yala-Task` nombra una tarea de otro cubo de cuota u otra ruta.
+  | "yala_task_mismatch"
+  /// IA: el proveedor elegido por la tabla falló (lo emiten los adaptadores, src/ai/providers/common.ts).
+  | "yala_upstream_error"
+  /// Cupo de prueba del plan free agotado (5 notas de voz o 5 fotos en total por instalación, sesión 2). 403: no se
+  /// repone esperando; la app ofrece pasarse a Pro.
+  | "yala_trial_exhausted"
+  /// IA: el cuerpo supera el tope de su tarea (`maxBodyBytes` en src/ai/tasks.ts).
+  | "yala_too_large";
 
 interface OpenAIErrorBody {
   error: {

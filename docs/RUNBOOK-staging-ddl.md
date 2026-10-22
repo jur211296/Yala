@@ -1,0 +1,497 @@
+---
+updated: 2026-10-12
+tags: [runbook, staging, ddl, owner]
+---
+
+# Runbook — las tres migraciones de staging
+
+> ## ✅ APLICADAS Y VERIFICADAS EL 2026-09-08
+>
+> Las tres están dentro. **Este documento queda como registro de cómo se hizo y de qué comprobar si
+> hay que repetirlo**, no como trabajo pendiente. Lo que se midió al aplicarlas:
+>
+> | | Antes | Después |
+> |---|---|---|
+> | `join_group` — claves `changed` | 0 | 3 `true` + 1 `false` |
+> | `join_group` — `yala_group_archived` | 0 | 2 |
+> | `join_group` — md5 / chars | `9653d591…` / 4510 | **`4982b50de23df93ed8f9c8bc369e9e17`** / **5365** |
+> | `split_groups.budget_limit_amount` | no existía | **`bytea`** |
+> | `apply_group_delta` (functiondef) | — | **`61c38595cdd8b7b0ab043437f49a7f2c`** |
+> | `groups_pull_rows_split_groups` | — | **`2cac864c6b67ab6da941601e8e53cf2c`** |
+>
+> Los tres md5 son los que el repo declaraba como esperados ⇒ **staging quedó byte a byte igual que
+> producción**. El punto de partida cuadraba con el `c_before` de la guarda de `g14_01`
+> (`d2e748320da4f2eca82b19a0048e84ab`), así que ninguna abortó.
+>
+> **Una desviación del fichero, y por qué:** a `g14_01` se le quitaron su `begin;`/`commit;` propios
+> porque el applier (`apply_migration`) ya envuelve en transacción y anidarlos habría cerrado la
+> externa antes de tiempo. La atomicidad la puso el applier, igual que en las otras dos, y las
+> guardas de md5 fueron dentro intactas.
+>
+> **Lo que NO se verificó como se esperaba:** los goldens completos dieron 15/25, y **no por las
+> migraciones** — son timeouts, y los mismos tests pasan en 1,3 s al correrlos solos. Ver
+> `tickets/backlog/goldens-de-staging-solo-pasan-a-trozos.md`.
+>
+> **Causa de esos timeouts, cerrada el 2026-10-12:** el corpus de grupos de A y B crecía con cada corrida
+> y el pull cuesta 5 peticiones por grupo. Ahora los goldens relevan sus grupos a un usuario custodio al
+> terminar y lo acumulado se purgó por la misma vía. Antes de culpar a una migración por un timeout de
+> los goldens de Grupos, cuenta los grupos de A y B: `qa/cloud/README.md` §«Corpus de Grupos de staging».
+
+## Cómo se hizo (registro)
+
+**Para quién:** era para Jürgen. **Ya no.** ⚠️ **La premisa central de este runbook CADUCÓ el
+2026-09-10**, y conviene saberlo antes de reusar cualquier frase de aquí:
+
+> Este documento decía «no hay credencial de DDL de staging en el entorno del agente — el conector MCP
+> de Supabase solo lista producción (`kefvaiymtgytemwbltlz`), no staging (`fostjbbwstyuunmmefuk`)».
+> **Medido el 2026-09-10, era al revés en las dos mitades**: el MCP lista **staging**, y su
+> `execute_sql` entra como `postgres` (DDL y DML completos). Producción ya **no** aparece listada y su
+> `execute_sql` responde como `supabase_read_only_user`… pero **`apply_migration` sí escribe** allí, DDL
+> incluido (verificado con control positivo: crear schema + tabla + fila, leerlos y borrarlos).
+
+⇒ **El mapa de acceso cambia sin avisar: mídelo al empezar la sesión, no lo heredes de un documento.**
+Cuestan dos llamadas — `list_projects` y un `select current_user` por proyecto— y esta premisa llevaba
+cuatro días propagándose entre tickets como si fuera un hecho. Lo demás de este runbook —orden,
+idempotencia, verificación, trampas— sigue medido y vigente.
+
+**Cuánto lleva:** 10-15 minutos las tres, si las pegas seguidas.
+
+**Qué pasa si no se hace:** producción está al día y verificada, así que la app no se rompe. Lo que
+se rompe es *staging*: con `g14_01` sin aplicar, fijar un presupuesto de grupo contra staging deja
+un **dead-letter permanente**, y un dead-letter **apaga el Merkle de ese grupo**. Hasta que alguien
+fije un presupuesto ahí, no pasa nada — la bomba está armada, no detonada.
+
+---
+
+## Antes de empezar
+
+**El orden importa y no es alfabético por casualidad.** `g13_05` es superset de `g13_04` (lleva sus
+cuatro claves `changed` dentro), así que aplicarlas al revés deja el estado bueno igualmente — pero
+entonces el bloque de verificación de `g13_04` mide un cuerpo que ya no es el suyo y te dará un
+falso rojo. Aplícalas en este orden:
+
+1. `qa/cloud/g13_04_join_group_reports_transition.sql`
+2. `qa/cloud/g13_05_join_group_rejects_archived.sql`
+3. `qa/cloud/g14_01_group_budget_limit.sql`
+
+**Dos vías, elige una:**
+
+- **(A) SQL Editor del dashboard de staging** — proyecto `fostjbbwstyuunmmefuk`. Pega el fichero
+  entero. Es la vía canónica del repo y la que envuelve sola en transacción.
+- **(B) `psql`** con la URI del pooler:
+  ```bash
+  psql -1 -f qa/cloud/<fichero>.sql "$SUPABASE_DB_URL"
+  ```
+  La URI se saca en *Dashboard → Project Settings → Database → Connection string → URI (session
+  pooler, puerto 5432)*. La contraseña **no está en el repo ni en `~/Secrets/`**: es tuya.
+
+> **El `-1` de `psql` no es opcional para las dos primeras.** Medido: `g13_04` y `g13_05` **no
+> traen `begin;`/`commit;` propios** (0 ocurrencias de cada uno) — dependen de que quien las aplica
+> las envuelva. `g14_01` **sí los trae** (`:99` y `:180`), así que ahí el `-1` es redundante pero
+> inofensivo.
+
+---
+
+## 1 · `g13_04_join_group_reports_transition.sql`
+
+**Qué arregla, en una frase:** volver a tocar un enlace de invitación al que ya perteneces deja de
+avisar a los admins como si acabaras de entrar.
+
+**Cómo:** añade el campo `changed` a las cuatro ramas de retorno de `public.join_group` — `false`
+solo en la rama no-op. El gateway ya lo respeta (`gateway/src/groups/rpc.ts:262`:
+`if (body.changed === false) return;`), así que **no hace falta desplegar el Worker para esto**.
+
+**Idempotente:** sí. Es un `create or replace` con el cuerpo completo (`:44`); re-ejecutarla
+converge al mismo estado. Sin rollback explícito porque no lo necesita.
+
+**Verificar después:** el propio fichero trae el bloque en **`:150-176`** — cuatro comprobaciones
+(3 ramas con `changed=true` + 1 con `false`; una aparición de `yala_group_deleted` y una de
+`yala_invalid_invite`; grants intactos; y una llamada real contra la BD). Córrelo y mira que las
+cuatro pasen.
+
+> El comentario de `:171` remite a «la entrada g13_04 de este README» dentro de
+> `qa/cloud/README.md`. **Esa entrada no existe** — medido: el README menciona `g13_04` una sola
+> vez y no como sección. Este runbook es lo que había que leer ahí; queda ticket propio
+> (`qa-cloud-readme-sin-entradas-g13-04-y-g13-05`).
+
+---
+
+## 2 · `g13_05_join_group_rejects_archived.sql`
+
+**Qué arregla, en una frase:** un grupo archivado deja de aceptar a alguien que entra por un enlace
+viejo.
+
+**Cómo:** `join_group` lanza `yala_group_archived` (P0001) cuando el grupo tiene `is_archived=true`,
+en dos puntos — la re-entrada desde estado terminal y el alta nueva. El rebind legacy y el re-tap de
+un miembro activo siguen pasando, a propósito.
+
+**Idempotente:** sí, mismo motivo (`create or replace` con cuerpo completo, `:65`).
+
+**No hace falta desplegar el Worker:** el gateway propaga cualquier código `/^yala_[a-z_]+$/` como
+400 sin allowlist, así que el error nuevo viaja solo.
+
+**Verificar después:** bloque en **`:187`** en adelante — seis comprobaciones. La quinta es la que
+vale la pena mirar dos veces: compara el **md5 del cuerpo** (`4982b50de23df93ed8f9c8bc369e9e17`,
+5365 caracteres) para que staging quede **byte a byte** igual que producción. Si ese md5 no cuadra,
+no sigas a la tercera: quiere decir que staging tenía drift previo.
+
+---
+
+## 3 · `g14_01_group_budget_limit.sql`
+
+**Qué añade, en una frase:** la columna donde vive el tope de gasto de un grupo — la que hoy falta
+en staging y arma la bomba del dead-letter.
+
+**Cómo:** añade `split_groups.budget_limit_amount` como columna **cifrada** (`bytea`, patrón G7),
+con grant de `update` por columna a `authenticated`; la mete en la lista de columnas cifradas de
+`apply_group_delta` y la sirve descifrada en `groups_pull_rows_split_groups`.
+
+**NO es idempotente, y eso es deliberado** (`:80-83`). No pasa nada: trae su propia transacción
+(`begin;` en `:99`, `commit;` en `:180`) y **dos guardas de md5 que abortan** (`:110-111`):
+
+- `c_before = d2e748320da4f2eca82b19a0048e84ab` — el cuerpo vivo que espera encontrar. Si no cuadra,
+  aborta antes de tocar nada (`:119`).
+- `c_after = ae78bce687ab00da0ae463e6525cc09c` — el resultado. Si no cuadra, aborta y revierte
+  (`:135`).
+
+⇒ **Es seguro intentarla**: o entra entera o no entra. Y si la ejecutas dos veces, la segunda aborta
+diciendo el md5 de llegada — eso significa «ya estaba aplicada», no un error.
+
+### Dos trampas que este fichero se sabe y tú no
+
+- **El orden interno**: la función va **antes** que la columna (`:64-73`). Está así en el fichero;
+  no lo reordenes. Al revés, un push de `budget_limit_amount` se guarda **en claro** dentro de una
+  columna cifrada y el presupuesto desaparece para todo el grupo. En producción se aplicó al revés y
+  salió bien por suerte; el fichero del repo ya está corregido.
+- **Nunca re-apliques `qa/cloud/g7_02_encrypt_groups_cutover.sql` después de esta.** Sigue en el
+  repo y recrea `apply_group_delta` con `array['name']`, lo que **reabre el agujero** que g14_01
+  acaba de cerrar (lo avisa el propio `g14_01:72-73`).
+
+**Verificar después:** las guardas ya lo hacen solas al aplicar. Si quieres el contraste externo:
+
+```sql
+select md5(pg_get_functiondef('public.apply_group_delta'::regproc));
+-- esperado: 61c38595cdd8b7b0ab043437f49a7f2c
+select md5(pg_get_functiondef('public.groups_pull_rows_split_groups'::regproc));
+-- esperado: 2cac864c6b67ab6da941601e8e53cf2c
+```
+
+> Ojo: ese baremo es sobre `functiondef`, que **no** es el mismo texto que el `prosrc` de las
+> guardas internas. Dos md5 distintos del mismo objeto, los dos correctos.
+
+El `.ddl` de referencia del repo (`supabase-groups-staging.ddl`) **ya refleja el estado
+post-`g14_01`**, así que no hay que regenerarlo: sirve tal cual como texto esperado.
+
+---
+
+## Verificación end-to-end de las tres (esto es lo que zanja)
+
+Desde `gateway/`, contra staging real:
+
+```bash
+set -a; . ~/Secrets/yala-supabase-test/test-users.env; set +a
+export GROUPS_ENC_KEY=$(cat ~/Secrets/yala-groups-enc/staging.key)
+npm run sync:manifest                         # ← NO lo hace `npx vitest`: sin esto mides con el manifest viejo
+npx vitest run test/groups.goldens.test.ts    # esperado: 25/25, ~5 min
+```
+
+**Qué significa hoy y qué significará después.** Hoy pasa 25/25 *porque nadie fija un presupuesto
+contra staging*: la suite mide que un manifest con una columna que el server no tiene no rompe nada
+mientras nadie la use. Tras aplicar `g14_01`, sigue en 25/25 pero ya sin la bomba debajo.
+
+**Antes de creerte un rojo, mira estas dos cosas** (las dos costaron un día el 2026-09-08):
+
+1. **`npm run sync:manifest`.** La copia `gateway/group_capability_manifest.json` está en
+   `.gitignore` y sólo se refresca en `pretest`; `npx vitest` no lo dispara. Con la copia vieja el
+   gateway calcula el Merkle con el contrato de columnas anterior. Desde hoy lo canta
+   `test/manifest.sync.test.ts`, que es offline y tarda 2 ms — córrelo primero si algo huele raro.
+2. **Si el rojo es un TIMEOUT sin aserción, probablemente no está roto: va justo de tiempo.** Un
+   pull cuesta 5 peticiones por cada grupo del usuario, y el corpus de `i5-user-a/b` sólo crece
+   (530 y 678 grupos el 2026-09-08; +20 y +15 por corrida). Medido ese día: la corrida entera son
+   ~32 800 peticiones y 311 s, y el golden más ajustado (`G2 · 2`) consume el **55 %** de su
+   timeout — se cae si el tiempo se multiplica por 1,8, sea por latencia o por corpus. Detalle y
+   decisión pendiente en `corpus-de-test-de-staging-crece-sin-limite`.
+
+---
+
+## Lo que NO es parte de esto: el Worker
+
+**Estado, medido hoy:** `group_capability_manifest.json:3` ya dice `"canon_version": "c2"` en el
+repo, pero el Worker no se ha desplegado. Mientras tanto los clientes caen en el guard de canon y
+**saltan la verificación Merkle de Grupos** — a propósito y sin daño. Vuelve encendido cuando
+despliegues y el parque converja.
+
+**El bloqueo NO es de credencial, y hasta hoy la documentación decía lo contrario.**
+`gateway/README.md` afirmaba «`wrangler deploy` no está autenticado en este entorno». Medido con
+`wrangler whoami`: **sí lo está** — OAuth de `admin@yala-app.pe`, con `workers (write)` y
+`workers_scripts (write)`. Corregido en ese README en este mismo cambio.
+
+**Entonces por qué no lo despliego yo:** porque el último deploy de staging es del **2026-08-12** y
+arrastra commits ajenos (`eb6593ce`, `6bf0f588`). Desplegar hoy subiría trabajo de otros que nadie
+ha revisado. Eso es decisión tuya, no falta de acceso.
+
+```bash
+cd gateway && npm run deploy:staging      # el predeploy copia los manifests
+cd gateway && npm run deploy:production
+```
+
+**Orden recomendado: SQL primero, Worker después** (lo dice `g13_04:29-31`). Ningún orden pierde un
+aviso legítimo; solo ese hace que el arreglo entre en vigor de una vez.
+
+---
+
+## `mcp0_01_readonly_role.sql` — conector de Claude, fase 0 (solo staging, 2026-09-26)
+
+**Aplicada en staging** con `apply_migration` el 2026-09-26. **Producción: no**, hasta la fase 1.
+
+Crea el rol `yala_mcp_reader` (miembro de `authenticator`, SELECT sobre 9 tablas y nada más), una política SELECT
+para ese rol en cada tabla y la función `yala_mcp_access_token_hook`. Es **aditiva**: no toca ninguna política,
+función ni GRANT existente, así que no choca con las migraciones de la cola A. Marcha atrás:
+`qa/cloud/mcp0_01_rollback.sql`, **después** de apagar el hook (si no, falla todo login).
+
+Verificado en SQL como `yala_mcp_reader` con el `sub` de A: lee sus 69 filas de `accounts` y 1291 de `tx_items` (lápidas incluidas), y 0 de B;
+`UPDATE`, `INSERT`, `delete_personal_account` y `apply_delta` dan `42501`; `claim_account` y
+`migration_progress` (las dos que PUBLIC puede ejecutar) también. El hook cambia el rol solo si hay `client_id`.
+
+**Y la configuración de Auth, que no es DDL**, también se aplicó el mismo día por la Management API, en este
+orden: hook, Site URL y servidor OAuth con DCR. El antes y el después, y cómo se revierte, están en
+`tickets/done/claude-mcp-activate-oauth-in-staging.md`. **El orden importa:** con OAuth encendido y el hook
+apagado, Supabase emite a los clientes OAuth tokens que escriben. Para revertir, primero OAuth y luego el hook.
+
+---
+
+## `mcp0_02_oauth_client_allowlist.sql` — el token de Claude deja de ser de Supabase (solo staging, 2026-09-26)
+
+**Aplicada en staging** con `apply_migration` el 2026-09-26, por la tarde. **Producción: no**, hasta la fase 1 y con
+otro id de cliente (`claude-mcp-production-auth-hardening`).
+
+Va con un cambio de arquitectura. El Worker `mcp/` pasa a ser el servidor OAuth de Claude y consigue la sesión de
+Supabase como su propio cliente confidencial. Lo explica el ADR «El conector de Claude emite sus propios tokens»
+(`docs/DECISIONS.md`). La migración cambia UNA función: el hook solo da tokens OAuth a ese cliente
+(`65fb5767-59a5-4f50-b77c-7970e67589c5`), con `role = yala_mcp_reader`; a cualquier otro `client_id` le devuelve un
+error 403. Lleva una guarda: solo se aplica sobre el cuerpo de `mcp0_01` o sobre sí misma.
+
+Verificado:
+
+- En SQL, antes de aplicarla, con una copia en `pg_temp` y cinco casos: login sin `client_id` intacto; cliente del
+  Worker → lector; cliente de la fase 0 → error 403; `client_id` en la raíz del evento → 403; `client_id` vacío →
+  intacto.
+- Tras aplicarla: md5 `ab0f247643cc82fa54a18079579f733a`, el que el fichero predecía, y los mismos GRANTs.
+- De punta a punta, con `mcp/test/e2e/oauth.e2e.test.ts`: un cliente de la fase 0, aprobado por el propio usuario,
+  recibe 403 y ningún token.
+
+**Estado de staging, antes → después:**
+
+| Qué | Antes | Después |
+|---|---|---|
+| Worker `yala-mcp-staging` | versión `ecd32b4f-79e2-4280-84cb-600cb445ba85` | versión `c597b9cc-04d6-4260-9eed-ccbe60e85b44` |
+| KV `OAUTH_KV` | — | `yala-mcp-staging-oauth`, id `9705886913ee4d1fb7217ef6e3ecdef7` |
+| Secreto `SUPABASE_OAUTH_CLIENT_SECRET` | — | cargado; copia en `~/Secrets/yala-mcp-staging/supabase-oauth-client.json` |
+| Cliente OAuth «Yala para Claude (staging)» | — | `65fb5767-59a5-4f50-b77c-7970e67589c5`, confidencial, `client_secret_basic` |
+| Hook (md5 de `prosrc`) | `5a048417a612be4ceea44ee89ce969f6` | `ab0f247643cc82fa54a18079579f733a` |
+| `oauth_server_allow_dynamic_registration` | `true` | `false` |
+| `security_update_password_require_reauthentication` | `false` | `true` |
+| `security_update_password_require_current_password` | `false` | `true` |
+
+Los tres campos de Auth se cambiaron con un `PATCH` a `/v1/projects/fostjbbwstyuunmmefuk/config/auth` y el token de
+gestión de `~/Secrets/yala-supabase-mgmt/`. Nada más de la configuración de Auth cambió: `site_url`, hook y
+servidor OAuth siguen como los dejó `mcp0_01`.
+
+**Marcha atrás, en este orden.** Va al revés que la subida, para no abrir nunca una ventana con tokens que cambian
+la cuenta:
+
+1. **El Worker vuelve a la fase 0:** `cd mcp && npx wrangler rollback ecd32b4f-79e2-4280-84cb-600cb445ba85`.
+   Ojo: desde ese momento Claude vuelve a recibir tokens de Supabase, es decir, el hueco de
+   `claude-mcp-oauth-token-can-change-the-account`.
+2. **El hook:** `qa/cloud/mcp0_02_rollback.sql`, que vuelve al md5 `5a048417…`.
+3. **La configuración de Auth:** el mismo `PATCH` con los valores de «Antes». Con el DCR encendido, Claude puede
+   volver a registrarse directamente en Supabase.
+4. **El cliente, el KV y el secreto** pueden quedarse: sin el Worker nuevo, no los usa nadie.
+
+**Lo que queda en staging y no molesta:**
+
+- **Seis clientes OAuth registrados.** Cinco ya no reciben tokens: los cuatro públicos de la fase 0 y un «Claude»
+  que registró el primer e2e antes de apagar el DCR. Borrarlos exige `service_role`.
+- Ningún cliente tiene consentimientos ni sesiones vivas (medido tras el e2e).
+
+---
+
+## `mcp0_03_hook_keys_on_session.sql` — el hook decide por la sesión, no por el claim (solo staging, 2026-09-26)
+
+**Aplicada en staging** el 2026-09-26, por la tarde, tras la review adversarial. **Producción: no.**
+
+**Por qué.** Con `mcp0_02` el hook miraba el claim `client_id`. GoTrue reemite un token para la MISMA sesión al
+verificar un factor MFA (`updateMFASessionAndClaims`, `internal/api/token.go:380`) y esa reemisión NO lleva `client_id`,
+así que salía con `role = authenticated`: escribía toda la base. Con un Worker comprometido —que tiene la sesión de solo
+lectura— alguien haría enroll+verify de un TOTP y tendría un token que borra las finanzas. `mcp0_03` decide por
+`auth.sessions.oauth_client_id`: todo token de la sesión del Worker es de solo lectura, MFA incluido.
+
+**El hook pasa a leer `auth.sessions`.** Es aceptable: GoTrue ya lee esa tabla en cada petición autenticada, y
+`supabase_auth_admin` (quien lo invoca) tiene SELECT. Si la lectura fallara, el hook falla y no se emite el token
+(cerrado). El `session_id` siempre es un uuid; se comprueba su forma antes de castear.
+
+Verificado (SQL, en una transacción que se revierte): una sesión sintética del cliente del Worker con un token SIN
+`client_id` (la forma del MFA) → `yala_mcp_reader`; una sesión normal sin `client_id` → intacto; otro cliente → 403;
+login sin `session_id` → intacto; `session_id` con forma rara → no rompe. md5 del cuerpo desplegado = `0a03fb94…`, el que
+el fichero predice.
+
+**Y MFA apagado en staging** (la app no lo usa): `mfa_totp_enroll_enabled` y `mfa_totp_verify_enabled` pasaron de `true`
+a `false`, por el mismo `PATCH` de la Management API. Es defensa en profundidad; el cierre real es `mcp0_03`.
+
+**Marcha atrás:** `qa/cloud/mcp0_03_rollback.sql` (vuelve a `mcp0_02`, md5 `ab0f2476…`), y reencender MFA con el
+`PATCH` inverso. Solo tiene sentido si se revierte también el Worker.
+
+---
+
+## `g17_01_reverse_claim_keeps_reverted_at.sql` — «Volver a iCloud» se puede reintentar en el 2.º dispositivo (PENDIENTE, 2026-10-09)
+
+**Estado: preparada y probada en local; NO aplicada en ningún entorno.** Autorizada por Jürgen el 2026-10-09 14:01. La
+sesión que la preparó no tenía acceso de escritura a ninguna de las dos bases: el token de gestión
+(`~/Secrets/yala-supabase-mgmt/pat`) da **401** en los dos proyectos, el conector de Supabase pedía OAuth y no hay URI de
+base en `~/Secrets`. Ticket: `reverse-exit-on-a-reverted-account-rejects-the-retry`.
+
+**Qué arregla.** En una cuenta que ya volvió a iCloud desde otro teléfono, el claim de la vuelta borraba `reverted_at`, y
+con él la mitad del guard de `g15_02` que deja pasar al segundo dispositivo. Medido en staging el 2026-10-09 con el golden
+16-ter (función viva, sin tocarla): tras el claim de B, `reverted_at` queda a null y **el tercer dispositivo, el re-claim
+del mismo B y el reintento tras salir reciben `not_complete`**. La migración cambia cada `reverted_at = null` por
+`reverted_at = case when kind = 'complete' then null else reverted_at end`: igual que hoy en una cuenta `complete`,
+conservado en una `groups_only`. **Sin cambio de Worker ni de app**: mismos códigos y misma forma de respuesta.
+
+**Probado en local** (`bash qa/cloud/g17_01-local-test.sh`, Postgres 17 desechable) contra **el cuerpo real**
+(`qa/cloud/fixtures/migration_progress.g15_02.functiondef.sql`, exportado de staging el 2026-10-09, md5 `14fc5e2c…`; la
+migración corre sin tocar) y contra una réplica con un espacio por escritura: el §3 de conducta falla con el cuerpo viejo
+en los cuatro caminos del ticket y deja verdes los cuatro controles; la migración pasa 11/11; re-aplicar es no-op; el
+rollback vuelve al md5 de partida; un cuerpo divergido, una cuarta escritura o una cuarta con otra grafía (mayúsculas,
+`nullif`) abortan sin tocar nada. Dos mutantes de la sustitución (solo la primera escritura; no borrar nunca) los caza el
+§3, y uno que no conserve el espaciado lo caza la comprobación de inversa exacta del §1.
+
+**El espaciado** (2026-10-09). En el cuerpo vivo las tres escrituras están alineadas con sus vecinas del `SET`: dos
+`reverted_at          = null` (10 espacios) y una `reverted_at           = null` (11). La primera versión de la guarda
+buscaba el literal con un espacio y abortó en staging con `aparece 0 vez/veces` sin tocar nada; el banco no lo vio porque
+solo tenía la réplica. Ahora cuenta y sustituye por patrón (`\mreverted_at(\s*)=(\s*)null\M`), conserva el espaciado de
+cada una (la inversa es exacta) y sigue exigiendo 3. **md5 nuevo esperado**: `776dac35d585393fabeabedf8eafee82`
+(`md5(prosrc)`; `md5(pg_get_functiondef)` = `4171f5f401ff4cd19ace1e7995f1e340`), medido en el banco sobre el cuerpo real.
+
+**Repara también a quien el bug ya atascó** (§1-bis, añadido por la review): las filas `groups_only` con
+`personal_claimed_at` y sin `reverted_at` —solo las deja una vuelta completada a la que un claim posterior le borró
+`reverted_at`— recuperan `reverted_at`. Sin eso, el arreglo de la función no curaría a quien ya recibe «tu cuenta no
+lo permitía», ni el canario `cloudReverseClaimRejected|not_complete` llegaría a cero.
+
+### Los pasos, en orden
+
+Desde la raíz del repo. `$STAGING_DB_URL` y `$PROD_DB_URL` son la URI del pooler de cada proyecto (*Dashboard → Project
+Settings → Database → Connection string → URI, session pooler, puerto 5432*); la contraseña no está en el repo. Con el
+conector de Supabase autenticado, cada `psql -1 -f` equivale a `apply_migration` con el contenido del fichero.
+
+1. **Medir antes, en staging** (`fostjbbwstyuunmmefuk`). Tiene que salir `14fc5e2c54766dd7c5706966c7381f51` (el final de
+   `g15_02`, medido en producción el 16-sep). Si sale otro, para: la migración abortaría igual.
+   ```bash
+   psql "$STAGING_DB_URL" -At -c "select md5(prosrc), md5(pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='migration_progress' and p.pronargs=2"
+   psql "$STAGING_DB_URL" -At -c "select pg_get_functiondef('public.migration_progress(text,text)'::regprocedure)" > /tmp/migration_progress.staging.antes.sql
+   psql "$STAGING_DB_URL" -At -c "select (select count(*) from regexp_matches(prosrc, '\mreverted_at\s*=\s*null\M', 'g')), (select count(*) from regexp_matches(prosrc, 'reverted_at\s*=\s*null', 'gi')) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='migration_progress' and p.pronargs=2"   # tiene que dar 3|3; si no, la migración aborta
+   psql "$STAGING_DB_URL" -At -c "select count(*) from public.profiles where kind='groups_only' and personal_claimed_at is not null and reverted_at is null"   # cuentas ya atascadas
+   ```
+2. **Aplicar en staging.** El §3 corre dentro y aborta todo si un escenario falla.
+   ```bash
+   psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql "$STAGING_DB_URL"
+   ```
+   Esperado: `g17_01: 3 sustitución(es)`, `g17_01: K cuenta(s) ya revertida(s) recuperan reverted_at` (K = el
+   recuento del paso 1), `g17_01: md5 nuevo de migration_progress: 776dac35d585393fabeabedf8eafee82.` y
+   `g17_01 OK · 11/11 escenarios`. Apunta K y comprueba el md5 nuevo con el comando del paso 1.
+3. **Goldens contra staging**, desde `gateway/`:
+   ```bash
+   set -a; . ~/Secrets/yala-supabase-test/test-users.env; set +a
+   npm run sync:manifest && npx vitest run test/account.goldens.test.ts -t "I11-3"
+   ```
+   Esperado: 11/11, **con el 16-ter en verde** (hoy, sin la migración, es el único rojo).
+4. **Producción** (`kefvaiymtgytemwbltlz`): el paso 1 (mismo md5 de partida), el paso 2 con `$PROD_DB_URL`, y el md5
+   nuevo tiene que ser **el mismo** que en staging (`776dac35…`). El §3 usa usuarios sintéticos dentro de savepoints: no deja filas ni
+   toca a nadie real.
+5. **Humo en producción** sin datos de usuarios: re-aplicar el fichero (rama no-op: corre el §3 otra vez contra el cuerpo
+   ya cambiado; prueba el camino nuevo y, con sus controles `complete`, `born-cloud`, solo grupos y la ida abandonada, que
+   el viejo sigue igual), y `POST /account/migration` sin JWT → el mismo 401 de antes.
+6. **Apuntar** el antes → después (md5 de los dos entornos, N, resultado del §3 y de los goldens) aquí, en el ticket y en
+   el PR que lo cierre.
+
+**Marcha atrás:** `psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g17_01_rollback.sql "$..._DB_URL"` — devuelve el cuerpo al md5
+`14fc5e2c…` y aborta si el vivo no es el de g17_01. No reescribe filas.
+
+**Después del deploy**, cinco textos describen el reset como vigente y se corrigen cuando deje de serlo (hoy son
+verdad): el residual de `MigrationStateMachine.swift` (rama `reverseClaimRejected`), «`reverted_at` queda null» en
+`MigrationWorkExecutor.swift` (`.reverseRollback`) y `CloudSyncEngine.swift` (docblock del rastro `reverseRollback`), el apartado
+«Reversa server-side» de `qa/cloud/README.md` y la lista de residuales de la regla «El claim de la reversa tampoco
+puede quedarse sin salida» en `.claude/rules/swiftdata-cloudkit.md`. Y se mira el canario
+`cloudReverseClaimRejected` con detalle `not_complete`: tiene que caer a cero.
+
+---
+
+## `hlc01_cap_future_hlc.sql` — tope a un HLC del futuro (staging y producción, 2026-10-07)
+
+**Aplicada en staging (`fostjbbwstyuunmmefuk`) y en producción (`kefvaiymtgytemwbltlz`) el 2026-10-07.** Verificado:
+**22** triggers `cap_future_hlc` y la sonda `qa/cloud/hlc01-cap-staging-probe.sh` **4/4**. No constan en el repo la
+hora, el número de filas normalizadas ni quién la corrió. Lo de abajo queda como registro de cómo se aplica y de qué
+comprobar si hay que repetirlo.
+
+La escribió una sesión nocturna sin credencial de escritura: el token de
+gestión de `~/Secrets/yala-supabase-mgmt/pat` daba **401** en los dos proyectos y el conector Supabase de Claude
+pedía OAuth. Tickets `personal-clock-ahead-wins-every-conflict-until-real-time-catches-up` y
+`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`; las decisiones, en el Paso 0 del encargo
+`encargos/lanzados/2026-10-07-clock-ahead-wins-every-conflict-server-cap.md`.
+
+Pone un trigger `cap_future_hlc` en las 22 tablas sincronizadas (17 personales + 5 de Grupos) que guarda todo HLC
+acotado a `now() + 60 s`, y normaliza lo que ya estuviera por encima. **No toca ningún RPC ni ninguna respuesta**:
+el cliente viejo sigue igual. Es transaccional (`begin`/`commit`) e idempotente, y aborta sin tocar nada si falta
+alguna de las 22 tablas.
+
+**Orden: staging → sonda → producción.**
+
+1. **Staging.** Supabase → proyecto `fostjbbwstyuunmmefuk` → *SQL Editor* → *New query* → pega el fichero entero →
+   *Run*. Deben salir los avisos `hlc01: tope aplicado a 22 tablas; N filas normalizadas` y, en staging,
+   `hlc01: tablas con columna hlc que NO reciben el tope: spike_…` (las `spike_*` no sincronizan; es esperado).
+   Con `apply_migration` del MCP, **quita antes el `begin;` y el `commit;`**: ese applier ya envuelve en
+   transacción (la trampa de `g14_01`, arriba).
+2. **Sonda**, desde el repo: `bash qa/cloud/hlc01-cap-staging-probe.sh` → `hlc01-staging: 4/4 PASS`. Antes de
+   aplicar da **1/4** (medido el 2026-10-07: el HLC de un mes se guardaba entero y el otro dispositivo perdía con
+   `all_units_stale`).
+3. **Producción.** Lo mismo en `kefvaiymtgytemwbltlz`. No hay usuarios de test ahí; se verifica con
+   `select count(*) from pg_trigger where tgname = 'cap_future_hlc' and not tgisinternal;` → **22**.
+4. ✅ **Hecho el 2026-10-08:** el trigger y sus funciones están en los dos snapshots (`supabase-staging.ddl`, al
+   final, y `supabase-groups-staging.ddl` §10). El banco local (`bash qa/cloud/hlc01-cap-test.sh`) sigue en 33/33:
+   retira el tope antes de sembrar.
+
+**Marcha atrás:** `qa/cloud/hlc01_rollback.sql` (quita los 22 triggers y las 3 funciones). La normalización no se
+deshace y no hace falta: solo acotó HLC por encima de `now() + 60 s`, nunca un valor.
+
+## `migration_in_progress` en `/account/exists` — solo Worker, sin SQL (staging y producción, 2026-10-09)
+
+Ticket `settings-migrate-blocks-a-second-device-before-its-marker` (opción A de Jürgen, deploy autorizado el 2026-10-09
+14:01). `/account/exists` añade `migration_in_progress: true|false` cuando la fila existe; la app instalada lo ignora
+(decodifica sin claves estrictas) y la nueva lo lee para el aviso de «otro de tus dispositivos».
+
+**No hay migración SQL.** Los grants de `profiles` son a nivel tabla (`qa/cloud/g15_01_account_kind.sql:25-28`), así que el
+`select` con el JWT del usuario ya podía leer la columna. Medido antes de desplegar, por PostgREST con la clave anónima y
+`limit=0` (no devuelve filas): `select=id,kind,migration_in_progress` da **200** en los dos proyectos, y el control con una
+columna inexistente da **400 / 42703**. El token de gestión (`~/Secrets/yala-supabase-mgmt/pat`) seguía dando
+`Invalid access token`, así que no se leyeron los `md5` de funciones: ninguna cambió.
+
+| Paso | Antes | Después | Resultado |
+|---|---|---|---|
+| Worker staging (`npm run deploy:staging`) | `de51aa1b-cb70-4911-9f83-c5f8eef4c4fc` (2026-10-08 00:01Z) | `47b02439-ab1f-4ef6-9604-3b15f4b53675` | goldens de `account.goldens.test.ts` con el código local: 34 en verde, 3 saltados por fixture, 1 rojo (el 20 falla igual en `HEAD`: `account-goldens-freeze-read-test-times-out`); el Worker desplegado, con el usuario B: `false` → (ida en curso por PATCH) `true` → (limpia) `false` |
+| Worker producción (`npm run deploy:production`) | `4e93d41f-c01c-469c-b601-d602bf741dfb` (2026-10-08 00:03Z) | `c2b95bd0-43f9-4ff9-9d53-2331b1b3ea1b` | humo: `/account/exists` sin JWT → 401 `yala_attest_required` y con JWT inválido → 401 `yala_attest_invalid`, como antes; `/config` → 200. Sin usuario de test en producción, el campo nuevo no se pidió ahí: lo prueban los goldens contra staging con el mismo código |
+
+Entre el deploy anterior y este no cambió nada más de `gateway/src`, `wrangler.toml` ni los manifiestos (medido con
+`git diff b4b988ea9 HEAD`): el deploy llevó solo este cambio.
+
+**Marcha atrás:** `npx wrangler rollback 4e93d41f-c01c-469c-b601-d602bf741dfb --env production` (y `de51aa1b-…` en staging).
+La app nueva sin el campo cae al aviso de siempre, que sigue bloqueando.
+
+---
+
+## Referencias
+
+- Detalle por migración y su historia: `qa/cloud/README.md` (la entrada de `g14_01` está en
+  `:1558-1594`; las de `g13_04` y `g13_05` **no existen** — ver el ticket citado arriba).
+- Tabla de accesos por entorno: `.claude/agent-memory/frank/reference_verificar_backend_yala.md`.
+- Los tickets que dejaron esto pendiente: `tickets/qa/rejoin-tap-renotifies-admins.md` (g13_04),
+  `tickets/qa/groups-archived-group-rejects-join.md` (g13_05), `tickets/qa/groups-budget.md`
+  (g14_01).

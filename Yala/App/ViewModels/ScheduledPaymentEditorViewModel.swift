@@ -100,7 +100,12 @@ final class ScheduledPaymentEditorViewModel {
         notifyDaysBefore: Int,
         isActive: Bool,
         needOverride: String? = nil,
-        isVariableAmount: Bool = false
+        isVariableAmount: Bool = false,
+        splitTotalAmount: Double? = nil,
+        groupZoneID: String? = nil,
+        splitType: String? = nil,
+        splitParticipantIDs: [UUID] = [],
+        splitValues: [UUID: Double] = [:]
     ) -> UUID? {
         guard let context = modelContext else { return nil }
 
@@ -141,6 +146,12 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.isActive = isActive
             existingPayment.isVariableAmount = isVariableAmount
 
+            // Group shared expense (F3) — nil/[] limpia los campos si se apagó el toggle.
+            existingPayment.groupZoneID = groupZoneID
+            existingPayment.splitTotalAmount = splitTotalAmount
+            existingPayment.splitType = splitType
+            existingPayment.setSplitConfig(participantIDs: splitParticipantIDs, values: splitValues)
+
             paymentID = existingPayment.id
         } else {
             // Create new
@@ -170,6 +181,13 @@ final class ScheduledPaymentEditorViewModel {
                 isVariableAmount: isVariableAmount
             )
             context.insert(newPayment)
+
+            // Group shared expense (F3)
+            newPayment.groupZoneID = groupZoneID
+            newPayment.splitTotalAmount = splitTotalAmount
+            newPayment.splitType = splitType
+            newPayment.setSplitConfig(participantIDs: splitParticipantIDs, values: splitValues)
+
             paymentID = newPayment.id
         }
 
@@ -177,16 +195,7 @@ final class ScheduledPaymentEditorViewModel {
             try context.save()
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
-
-            TelemetryService.track(.scheduledPaymentSaved, parameters: [
-                "recurrence": recurrenceType.rawValue,
-                "category": paymentCategory.rawValue,
-                "isNew": String(existing == nil),
-            ])
-
-            if existing == nil, (try? context.fetchCount(FetchDescriptor<ScheduledPayment>())) == 1 {
-                TelemetryService.track(.firstScheduledPayment, parameters: ["recurrencia": recurrenceType.rawValue])
-            }
+            ScheduledPaymentNotificationService.shared.requestSummaryReplan()
 
             return paymentID
         } catch {
@@ -208,7 +217,6 @@ final class ScheduledPaymentEditorViewModel {
             try service.deleteScheduledPayment(payment)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
-            TelemetryService.track(.scheduledPaymentDeleted)
             return true
         } catch {
             #if DEBUG

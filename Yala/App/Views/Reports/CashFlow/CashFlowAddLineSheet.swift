@@ -554,12 +554,15 @@ struct CashFlowAddFromScheduledView: View {
 
                         Spacer()
 
+                        let converted = ScheduledPaymentAmountConversion.magnitude(
+                            of: payment, in: currencyCode, converter: CurrencyConverter.shared
+                        )
                         AmountText(
-                            value: abs(payment.amount),
+                            value: converted.amount,
                             currencyCode: currencyCode,
                             font: DS.Typography.amountSmall.monospacedDigit(),
                             tint: .secondary,
-                            isEstimate: payment.isVariableAmount
+                            isEstimate: payment.isVariableAmount || converted.isApproximate
                         )
 
                         Image(systemName: selectedPayment?.persistentModelID == payment.persistentModelID ? "checkmark.circle.fill" : "circle")

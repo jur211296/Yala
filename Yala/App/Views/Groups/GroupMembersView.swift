@@ -86,11 +86,7 @@ struct GroupMembersView: View {
             }
             .sheet(isPresented: $showShareSheet) {
                 if let url = shareURL {
-                    ActivityView(activityItems: [url]) { completed in
-                        if completed {
-                            TelemetryService.track(.groupInviteSent, parameters: ["via": "link"])
-                        }
-                    }
+                    ActivityView(activityItems: [url])
                 }
             }
             .sheet(isPresented: $showOpeningBalanceEditor, onDismiss: { viewModel.loadData() }) {
@@ -103,7 +99,7 @@ struct GroupMembersView: View {
                     prefillDebtorMemberID: openingBalanceToEdit == nil ? openingBalancePrefillDebtor : nil,
                     onSave: { viewModel.loadData() }
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .yalaSheetDetents([.large])
                 .presentationDragIndicator(.visible)
             }
             .confirmationDialog(
@@ -172,6 +168,13 @@ struct GroupMembersView: View {
 
     // MARK: - Members Section
 
+    /// C-10: en un grupo CONGELADO las acciones de admin (quitar, aprobar/rechazar, cambiar rol, invitar)
+    /// se ocultan. El detalle pasó a ser alcanzable en congelado — antes el tap de la card no lo abría —
+    /// y estas escrituras irían a una zona CloudKit muerta: se perderían en silencio. La UX primaria es
+    /// ocultarlas (mismo criterio que `canCurrentUserParticipate` con el resto de escrituras); la RED es
+    /// el guard service-level en `GroupService`.
+    private var canActAsAdmin: Bool { viewModel.isCurrentUserAdmin && !group.isMigratedFrozen }
+
     private var membersSection: some View {
         SectionBox(title: L10n.Groups.Settings.members) {
             VStack(spacing: DS.Spacing.none) {
@@ -179,17 +182,26 @@ struct GroupMembersView: View {
                     GroupMemberRow(
                         member: member,
                         groupColorHex: group.colorHex,
-                        isCurrentUserAdmin: viewModel.isCurrentUserAdmin,
+                        isCurrentUserAdmin: canActAsAdmin,
+                        // El flag O la identidad resuelta: la unión de los dos criterios, nunca uno
+                        // solo. Una zona MIGRADA puede tener DOS filas del mismo humano con el flag
+                        // puesto —`refreshCurrentUserFlags` conserva el de la fila legacy
+                        // (GroupService:1136) y enciende el de la born-backend por `sub`—, y el
+                        // resolvedor devuelve UNA (la de `min(joinedAt)`). Comparar solo contra ella
+                        // dejaría la otra fila propia con «quitar» y «cambiar rol» a la vista, que es
+                        // justo la regresión que este parámetro venía a evitar.
+                        isSelf: member.isCurrentUser
+                            || member.id.uuidString == viewModel.currentMemberID,
                         onChangeRole: { changeRole(member) },
                         onRemove: {
                             memberToRemove = member
                             showRemoveMemberConfirm = true
                         },
-                        onApprove: viewModel.isCurrentUserAdmin && member.isPendingApproval ? {
+                        onApprove: canActAsAdmin && member.isPendingApproval ? {
                             pendingActionMember = member
                             showApproveConfirm = true
                         } : nil,
-                        onReject: viewModel.isCurrentUserAdmin && member.isPendingApproval ? {
+                        onReject: canActAsAdmin && member.isPendingApproval ? {
                             pendingActionMember = member
                             showRejectConfirm = true
                         } : nil
@@ -202,7 +214,7 @@ struct GroupMembersView: View {
                 }
 
                 // Invite by link
-                if group.isOwner && viewModel.isCurrentUserAdmin {
+                if group.isOwner && canActAsAdmin {
                     Divider()
                     Button {
                         DS.Haptic.light()
@@ -246,47 +258,48 @@ struct GroupMembersView: View {
     private func performApprove() {
         guard let member = pendingActionMember else { return }
         let memberID = member.id.uuidString
-        let memberName = member.displayName
-        do {
-            try GroupService.shared.approveMember(member, in: group)
-            viewModel.loadData()
-            pendingActionMember = nil
-            // Atajo (owner-only): ofrecer crear un saldo inicial para el miembro recién aprobado.
-            if group.isOwner {
-                openingBalancePrefillDebtor = memberID
-                approvedMemberName = memberName
-                showOpeningBalanceApprovalPrompt = true
+        let memberName = member.resolvedDisplayName
+        // `approveMember` es `async` (C5: grupo backend rutea a un RPC). Con flag OFF no suspende — el camino
+        // CloudKit corre igual, solo envuelto en un Task (MainActor heredado).
+        Task {
+            do {
+                try await GroupService.shared.approveMember(member, in: group)
+                viewModel.loadData()
+                pendingActionMember = nil
+                // Atajo (owner-only): ofrecer crear un saldo inicial para el miembro recién aprobado.
+                if group.isOwner {
+                    openingBalancePrefillDebtor = memberID
+                    approvedMemberName = memberName
+                    showOpeningBalanceApprovalPrompt = true
+                }
+            } catch {
+                pendingErrorMessage = error.localizedDescription
+                showPendingError = true
+                pendingActionMember = nil
+                #if DEBUG
+                print("GroupMembersView: approveMember failed: \(error)")
+                #endif
             }
-        } catch {
-            pendingErrorMessage = error.localizedDescription
-            showPendingError = true
-            pendingActionMember = nil
-            #if DEBUG
-            print("GroupMembersView: approveMember failed: \(error)")
-            #endif
         }
     }
 
+    /// `rejectMember` es `async` desde que el grupo de la nube rechaza en el servidor (card 840m): mismo molde que
+    /// `performApprove`. Con el canal de CloudKit no suspende.
     private func performReject() {
-        runPendingMemberAction(label: "rejectMember", GroupService.shared.rejectMember)
-    }
-
-    private func runPendingMemberAction(
-        label: String,
-        _ action: (SplitMember, SplitGroup) throws -> Void
-    ) {
         guard let member = pendingActionMember else { return }
-        do {
-            try action(member, group)
-            viewModel.loadData()
-        } catch {
-            pendingErrorMessage = error.localizedDescription
-            showPendingError = true
-            #if DEBUG
-            print("GroupMembersView: \(label) failed: \(error)")
-            #endif
+        Task {
+            do {
+                try await GroupService.shared.rejectMember(member, in: group)
+                viewModel.loadData()
+            } catch {
+                pendingErrorMessage = error.localizedDescription
+                showPendingError = true
+                #if DEBUG
+                print("GroupMembersView: rejectMember failed: \(error)")
+                #endif
+            }
+            pendingActionMember = nil
         }
-        pendingActionMember = nil
     }
 
     // MARK: - Opening Balance Section
@@ -445,9 +458,36 @@ struct GroupMembersView: View {
 
         isCreatingShare = true
         do {
-            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-            if let ckURL {
-                shareURL = buildBrandedInviteURL(from: ckURL)
+            // Fase 3: el `else` era el CKShare y ya no existe canal que lo sirva. El guard se conserva
+            // ENTERO —flag + zona backend— y su rama negativa informa: un grupo legacy no se puede invitar
+            // por ninguna vía, y dejar el botón mudo sería el apagón silencioso que la re-medición marca
+            // como peor modo de fallo (§S5.2).
+            // Qué dice esa rama lo decide `GroupInviteLinkCreationLogic`: las DOS causas que cubre el
+            // `else` (grupo legacy, permanente · canal apagado, transitorio) piden consejos opuestos, y
+            // ninguna de las dos es la conexión del admin.
+            if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
+                // C4: grupo backend → invite por TOKEN RPC (link ya branded). Cache in-VM (`shareURL != nil`,
+                // arriba) conservado. Nota A1: el flag cubre "no emitir hasta que el parser esté desplegado".
+                let name = UserDefaults.standard.string(forKey: "userName") ?? ""
+                let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
+                shareURL = try await GroupBackendInviteService(
+                    membership: GroupBackendMembershipService(
+                        client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
+                ).createInviteLink(for: group, inviterName: inviterName, members: viewModel.activeMembers)
+            } else {
+                isCreatingShare = false
+                shareErrorMessage = switch GroupInviteLinkCreationLogic.blocker(
+                    backendEnabled: CloudSyncFlags.groupsBackendEnabled,
+                    isBackendGroup: group.isBackendGroup
+                ) {
+                case .legacyGroup: L10n.Groups.Errors.inviteLegacyGroup
+                case .channelOff: L10n.Groups.Errors.inviteChannelOff
+                // No alcanzable: este `else` es la negación exacta del guard que la logic evalúa.
+                // El copy de red es el fallback correcto si algún día dejan de ser el mismo predicado.
+                case nil: L10n.Groups.Errors.inviteFailed
+                }
+                showShareError = true
+                return
             }
             isCreatingShare = false
             if shareURL != nil {
@@ -455,23 +495,11 @@ struct GroupMembersView: View {
             }
         } catch {
             isCreatingShare = false
-            // SplitZoneError carries localized copy; map any other error (raw CKError) to the
-            // branded inviteFailed copy instead of leaking a technical system string.
-            shareErrorMessage = (error as? SplitZoneError)?.errorDescription ?? L10n.Groups.Errors.inviteFailed
+            shareErrorMessage = L10n.Groups.Errors.inviteFailed
             showShareError = true
         }
     }
 
-    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
-        let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
-        return InviteLinkService.buildInviteURL(
-            shareURL: ckURL,
-            group: group,
-            members: viewModel.activeMembers,
-            inviterName: inviterName
-        ) ?? ckURL
-    }
 
     private func changeRole(_ member: SplitMember) {
         let newRole = member.role == "admin" ? "member" : "admin"
@@ -486,14 +514,17 @@ struct GroupMembersView: View {
 
     private func removeMember() {
         guard let member = memberToRemove else { return }
-        do {
-            try GroupService.shared.removeMember(member, from: group)
-            viewModel.loadData()
-            DS.Haptic.warning()
-        } catch {
-            actionErrorMessage = error.localizedDescription
-            showActionError = true
-        }
         memberToRemove = nil
+        // `removeMember` es `async` (C5: grupo backend rutea a un RPC). Con flag OFF no suspende.
+        Task {
+            do {
+                try await GroupService.shared.removeMember(member, from: group)
+                viewModel.loadData()
+                DS.Haptic.warning()
+            } catch {
+                actionErrorMessage = error.localizedDescription
+                showActionError = true
+            }
+        }
     }
 }

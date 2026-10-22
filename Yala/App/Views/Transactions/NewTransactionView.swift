@@ -40,6 +40,13 @@ struct NewTransactionView: View {
     // A0-Bridge V2.0: cached fetch del draft pendiente (evita re-fetch en hot path).
     @State private var cachedPendingGroupDraft: InboxDraft?
 
+    /// ¿El puntero de grupo de la TX en edición apunta a un gasto/liquidación que EXISTE?
+    ///
+    /// Arranca en `true` —la dirección segura— y lo corrige el fetch del `onAppear`: abrir un frame
+    /// como de-grupo y liberarlo es inocuo; lo contrario permitiría editar el monto de un gasto
+    /// compartido vivo durante ese frame.
+    @State private var bridgedPointerResolves = true
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -57,38 +64,128 @@ struct NewTransactionView: View {
     // Transaction being edited (if any)
     let transactionToEdit: TransactionItem?
 
+    /// Menú contextual «Duplicar» de una fila (iPad, fase 3): el editor arranca ya convertido en un registro nuevo,
+    /// igual que tras pulsar su botón Duplicar. Solo si ese botón estaría habilitado (ver `openAsDuplicateIfAsked`).
+    let startsAsDuplicate: Bool
+    @State private var didStartAsDuplicate = false
+
     init(
         prefillAccountID: PersistentIdentifier? = nil,
         prefillCategoryID: PersistentIdentifier? = nil,
         prefillSubcategoryName: String? = nil,
         prefillFromChatDraft: ChatDraftPrefill? = nil,
-        transactionToEdit: TransactionItem? = nil
+        transactionToEdit: TransactionItem? = nil,
+        startsAsDuplicate: Bool = false
     ) {
         self.prefillAccountID = prefillAccountID
         self.prefillCategoryID = prefillCategoryID
         self.prefillSubcategoryName = prefillSubcategoryName
         self.prefillFromChatDraft = prefillFromChatDraft
         self.transactionToEdit = transactionToEdit
+        self.startsAsDuplicate = startsAsDuplicate
     }
 
     // MARK: - A0-Bridge V2.0 Read-Only Mode (P1-3)
 
     /// True si la TX en edición viene del bridge de grupos (no editable manualmente).
+    ///
+    /// **Exige que el puntero RESUELVA, no solo que exista.** Mirar solo `!= nil` es lo que convertía
+    /// una TX huérfana —su gasto de grupo fue borrado y el des-puenteo no llegó— en algo atrapado para
+    /// siempre: ni editable (manda el grupo) ni borrable (ver `isBridgedCasoA`), con un banner que
+    /// ofrece abrir un grupo donde ya no hay nada. Si mañana se abre otro hueco, el usuario puede
+    /// arreglarlo él en vez de quedarse sin salida.
     private var isBridgedReadOnly: Bool {
-        guard let tx = transactionToEdit else { return false }
+        guard let tx = transactionToEdit, bridgedPointerResolves else { return false }
         return tx.splitExpenseID != nil || tx.splitSettlementID != nil
     }
 
     /// M6: True si la TX bridgeada es Caso A (cuenta personal real, no virtual).
     /// En este caso el form permite **edit parcial** — campos personales editables
     /// (cuenta/note/subcat/tags), campos del grupo read-only (monto/fecha/moneda/tipo).
+    ///
+    /// Gobierna además los botones **Duplicar y Borrar** (`.disabled(isBridgedCasoA)`), y ese Borrar es
+    /// el atrapamiento: su motivo declarado —«reaparece como draft vía el próximo sync»— deja de ser
+    /// cierto justo cuando el `SplitExpense` ya no existe. De ahí el mismo guard del puntero.
     private var isBridgedCasoA: Bool {
         guard let tx = transactionToEdit,
+              bridgedPointerResolves,
               tx.splitExpenseID != nil,
               let account = tx.account,
               !account.isSystemAccount
         else { return false }
         return true
+    }
+
+    /// Forma de la TX en edición para `BridgedEditPolicy` (qué campos son editables + banner).
+    private var bridgedPolicyShape: BridgedEditPolicy.TxShape {
+        let tx = transactionToEdit
+        return BridgedEditPolicy.TxShape(
+            hasSplitExpenseID: tx?.splitExpenseID != nil,
+            hasSplitSettlementID: tx?.splitSettlementID != nil,
+            accountIsNil: tx != nil && tx?.account == nil,
+            accountIsSystem: tx?.account?.isSystemAccount == true,
+            subcategoryIsSystem: tx?.subcategory?.isAnySystem == true,
+            hasPendingPointerDraft: cachedPendingGroupDraft != nil,
+            pointerResolves: bridgedPointerResolves
+        )
+    }
+
+    private var bridgedClassification: BridgedEditPolicy.Classification {
+        BridgedEditPolicy.classify(bridgedPolicyShape)
+    }
+
+    /// Cuenta editable (no bridgeada o Caso A real). Caso B usa cuenta de sistema → bloqueada.
+    private var canEditBridgedAccount: Bool {
+        BridgedEditPolicy.canEditAccount(bridgedClassification)
+    }
+
+    /// Subcategoría y tags editables (no bridgeada, Caso A real, o Caso B clasificable).
+    private var canEditBridgedSubcategoryAndTags: Bool {
+        BridgedEditPolicy.canEditSubcategoryAndTags(bridgedClassification)
+    }
+
+    /// Botón guardar habilitado (algún campo personal es editable).
+    private var canSaveBridged: Bool {
+        BridgedEditPolicy.canSave(bridgedClassification)
+    }
+
+    /// Comprueba UNA vez al aparecer si el puntero de grupo de la TX en edición resuelve a una fila que
+    /// existe. Un fetch por apertura del editor, y solo cuando hay puntero que comprobar.
+    ///
+    /// **Un fetch VACÍO no es «no existe»: puede ser «el canal de Grupos todavía no lo ha traído».** Los dos
+    /// stores bajan por canales INDEPENDIENTES, y en un device recién reinstalado el de Grupos arranca
+    /// literalmente vacío (`cloudKitDatabase: .none`, se repuebla por el pull) mientras el espejo personal ya
+    /// entregó las transacciones. Tomar el vacío por «no existe» habilitaba Borrar y Duplicar sobre un gasto
+    /// de grupo VIVO — y ese borrado se exporta por el espejo personal a los demás devices. Por eso el vacío
+    /// solo cuenta con evidencia de que el canal de esa zona agotó su entrega: el MISMO criterio, y la misma
+    /// primitiva, que usa `OrphanedBridgedTxSweeper` para decidir si una transacción es huérfana.
+    ///
+    /// Ante un fetch fallido se queda en `true` (sigue tratándose como de grupo): un error del store no
+    /// debe abrir la edición del monto de un gasto compartido que sí está vivo.
+    private func resolveBridgedPointer() {
+        guard let tx = transactionToEdit else { return }
+        do {
+            let found: Bool
+            if let raw = tx.splitExpenseID, let id = UUID(uuidString: raw) {
+                // `#Predicate` CONCRETO por tipo (nunca genérico-protocolo: crashea al ejecutar el fetch).
+                found = try !modelContext.fetch(
+                    FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == id })
+                ).isEmpty
+            } else if let raw = tx.splitSettlementID, let id = UUID(uuidString: raw) {
+                found = try !modelContext.fetch(
+                    FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id })
+                ).isEmpty
+            } else {
+                return  // sin puntero que comprobar: se queda como estaba (`true`, inocuo).
+            }
+            bridgedPointerResolves = found
+                || !GroupChannelFreshness.isFresh(zone: tx.splitGroupZoneID, context: modelContext)
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: resolución del puntero de grupo falló: \(error)")
+            #endif
+            bridgedPointerResolves = true
+        }
     }
 
     /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
@@ -100,7 +197,10 @@ struct NewTransactionView: View {
             predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
         )
         do {
-            cachedPendingGroupDraft = try modelContext.fetch(descriptor).first
+            // Sin los quitados de la Bandeja en este teléfono: si no, el banner mandaría a la Bandeja a buscar un
+            // borrador que ahí ya no sale (`InboxGroupDraftsHiddenHere`).
+            cachedPendingGroupDraft = InboxGroupDraftsHiddenHere.visible(
+                try modelContext.fetch(descriptor), context: modelContext).first
         } catch {
             #if DEBUG
             print("NewTransactionView: pending group draft fetch failed: \(error)")
@@ -111,21 +211,22 @@ struct NewTransactionView: View {
 
     @ViewBuilder
     private var bridgedTxReadOnlyBanner: some View {
-        if let tx = transactionToEdit, isBridgedReadOnly {
-            let pendingDraft = cachedPendingGroupDraft
+        if isBridgedReadOnly {
+            // Mensaje y CTA salen del MISMO `banner` de la policy — una sola fuente de verdad
+            // (si su precedencia cambia, no se desincronizan).
+            let banner = BridgedEditPolicy.banner(bridgedPolicyShape)
             let message: String = {
-                if pendingDraft != nil {
-                    return L10n.Groups.Bridge.assignFromInbox
-                } else if tx.splitSettlementID != nil {
-                    return L10n.Groups.Bridge.editSettlementInGroup
-                } else if isBridgedCasoA {
-                    // M6: Caso A — edit parcial habilitado para campos personales.
-                    return L10n.Groups.Bridge.editPartialBanner
-                } else {
-                    return L10n.Groups.Bridge.editFromGroup
+                switch banner {
+                case .assignFromInbox: return L10n.Groups.Bridge.assignFromInbox
+                case .editSettlementInGroup: return L10n.Groups.Bridge.editSettlementInGroup
+                case .editPartial: return L10n.Groups.Bridge.editPartialBanner
+                case .editPartialCaseB: return L10n.Groups.Bridge.editPartialBannerCaseB
+                // .none inalcanzable (solo se renderiza bajo isBridgedReadOnly); fallback inofensivo.
+                case .editFromGroup, .none: return L10n.Groups.Bridge.editFromGroup
                 }
             }()
-            let ctaLabel: String = pendingDraft != nil
+            let hasPendingDraft = banner == .assignFromInbox
+            let ctaLabel: String = hasPendingDraft
                 ? L10n.Inbox.openInbox
                 : L10n.Groups.Detail.openGroup
 
@@ -140,7 +241,7 @@ struct NewTransactionView: View {
                         .multilineTextAlignment(.leading)
                 }
                 Button {
-                    handleBridgedCTA(hasPendingDraft: pendingDraft != nil)
+                    handleBridgedCTA(hasPendingDraft: hasPendingDraft)
                 } label: {
                     Text(ctaLabel)
                         .font(DS.Typography.body)
@@ -224,51 +325,63 @@ struct NewTransactionView: View {
 
     private var transactionFormView: some View {
         NavigationStack {
-            VStack(spacing: DS.Spacing.none) {
-                    // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
-                    if !isBridgedReadOnly {
-                        transactionTypeSelector
-                            .padding(.top, DS.Spacing.sm)
+            // El formulario reparte su alto con `Spacer`s y no tenía scroll: en un iPhone SE con el texto en
+            // tamaños de accesibilidad no cabía, el selector de tipo quedaba bajo la barra y «Guardar» y los
+            // chips de cuenta y subcategoría, fuera de la pantalla — no se podía guardar (medido el
+            // 2026-09-28). Ahora va en un scroll que solo se mueve si hace falta (`.basedOnSize`), con el
+            // alto mínimo de la pantalla para que los `Spacer`s sigan repartiendo igual cuando cabe.
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: DS.Spacing.none) {
+                        // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
+                        if !isBridgedReadOnly {
+                            transactionTypeSelector
+                                .padding(.top, DS.Spacing.sm)
+                        }
+
+                        // P1-3: banner CTA contextual cuando la TX es bridgeada.
+                        bridgedTxReadOnlyBanner
+
+                        // Contextual guide for new users (oculto en read-only).
+                        if !isBridgedReadOnly {
+                            ContextualGuideBanner.transaction()
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.top, DS.Spacing.xs)
+                        }
+
+                        // Resto del form: disabled granular según tipo bridged (M5 vs M6 Caso A).
+                        Group {
+                            Spacer()
+
+                            // Central content area: campos del grupo (monto/fecha/tipo) — always
+                            // disabled si bridged (M5 + M6 Caso A: el grupo es la fuente de verdad).
+                            centralContent
+                                .disabled(isBridgedReadOnly)
+                                .opacity(isBridgedReadOnly ? 0.5 : 1.0)
+
+                            Spacer()
+
+                            // Bottom selection chips: el disabled es GRANULAR por chip según
+                            // `BridgedEditPolicy` (dentro de `bottomChips`): cuenta editable solo en
+                            // Caso A real; subcat/tags también en Caso B clasificable; nada en
+                            // derivadas/settlements. Sin `.disabled` de contenedor aquí.
+                            bottomChips
+                                .padding(.bottom, DS.Spacing.lg)
+
+                            // Register button: habilitado si algún campo personal es editable
+                            // (Caso A y Caso B clasificable). Solo toca campos personales en
+                            // SwiftData, no invoca service del grupo.
+                            registerButton
+                                .disabled(!canSaveBridged)
+                                .opacity(canSaveBridged ? 1.0 : 0.5)
+                                .padding(.horizontal, DS.Spacing.xl)
+                                .padding(.bottom, DS.Spacing.xxl)
+                        }
                     }
-
-                    // P1-3: banner CTA contextual cuando la TX es bridgeada.
-                    bridgedTxReadOnlyBanner
-
-                    // Contextual guide for new users (oculto en read-only).
-                    if !isBridgedReadOnly {
-                        ContextualGuideBanner.transaction()
-                            .padding(.horizontal, DS.Spacing.md)
-                            .padding(.top, DS.Spacing.xs)
-                    }
-
-                    // Resto del form: disabled granular según tipo bridged (M5 vs M6 Caso A).
-                    Group {
-                        Spacer()
-
-                        // Central content area: campos del grupo (monto/fecha/tipo) — always
-                        // disabled si bridged (M5 + M6 Caso A: el grupo es la fuente de verdad).
-                        centralContent
-                            .disabled(isBridgedReadOnly)
-                            .opacity(isBridgedReadOnly ? 0.5 : 1.0)
-
-                        Spacer()
-
-                        // Bottom selection chips: campos personales (cuenta/subcat/tags) —
-                        // M6 Caso A los habilita. M5 puro (Caso B/settlements) sigue disabled.
-                        bottomChips
-                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
-                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
-                            .padding(.bottom, DS.Spacing.lg)
-
-                        // Register button: M6 Caso A puede guardar cambios personales (solo
-                        // toca campos personales en SwiftData, no invoca service del grupo).
-                        registerButton
-                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
-                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
-                            .padding(.horizontal, DS.Spacing.xl)
-                            .padding(.bottom, DS.Spacing.xxl)
-                    }
+                    .frame(minHeight: proxy.size.height)
                 }
+                .scrollBounceBehavior(.basedOnSize)
+            }
             .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
             .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
             .dismissKeyboardOnTap()
@@ -283,6 +396,7 @@ struct NewTransactionView: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("new_transaction_close")
                 }
 
                 if !isBridgedReadOnly {
@@ -306,7 +420,8 @@ struct NewTransactionView: View {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
                     title: L10n.Transaction.account,
-                    currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil
+                    currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil,
+                    sizing: .mediumFirst
                 )
                 .onChange(of: viewModel.selectedAccount) { _, newAccount in
                     if let account = newAccount {
@@ -318,24 +433,27 @@ struct NewTransactionView: View {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.sourceAccount,
                     title: L10n.Transaction.sourceAccount,
-                    excludeAccount: viewModel.destinationAccount
+                    excludeAccount: viewModel.destinationAccount,
+                    sizing: .mediumFirst
                 )
             }
             .sheet(isPresented: $viewModel.showDestinationAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.destinationAccount,
                     title: L10n.Transaction.destinationAccount,
-                    excludeAccount: viewModel.sourceAccount
+                    excludeAccount: viewModel.sourceAccount,
+                    sizing: .mediumFirst
                 )
             }
             .sheet(isPresented: $viewModel.showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
-                    transactionType: viewModel.transactionType
+                    transactionType: viewModel.transactionType,
+                    sizing: .mediumFirst
                 )
             }
             .sheet(isPresented: $viewModel.showTagSelector) {
-                TagSelectorSheet(selectedTags: $viewModel.selectedTags)
+                TagSelectorSheet(selectedTags: $viewModel.selectedTags, sizing: .mediumFirst)
             }
             .sheet(isPresented: $viewModel.showFavoritesSheet) {
                 FavoritesListView(mode: .select) { favorite in
@@ -360,7 +478,7 @@ struct NewTransactionView: View {
                         set: { viewModel.selectedNeed = $0 }
                     )
                 )
-                .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
+                .yalaSheetDetents([.medium])
             }
             .onChange(of: viewModel.showAccountSelector) { _, isPresenting in
                 if isPresenting {
@@ -466,7 +584,11 @@ struct NewTransactionView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             prefillFromContext()
+            // ANTES del draft: `loadPendingGroupDraftIfNeeded` abre con `guard isBridgedReadOnly`, que ya
+            // depende de esta resolución.
+            resolveBridgedPointer()
             loadPendingGroupDraftIfNeeded()
+            openAsDuplicateIfAsked()
             // Force expense type in expenses-only mode
             if sessionState.isExpensesOnlyMode {
                 viewModel.transactionType = .expense
@@ -722,7 +844,6 @@ struct NewTransactionView: View {
                     }
                 }
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .animation(.easeInOut(duration: DS.Animation.fast), value: viewModel.transactionType)
     }
 
@@ -733,7 +854,7 @@ struct NewTransactionView: View {
     /// Currency display for amount field - respects user preference (code vs symbol)
     private var currencySymbol: String? {
         guard viewModel.effectiveAccount != nil else { return nil }
-        return appPreferences.currencyIdentifier(for: viewModel.effectiveCurrencyCode)
+        return appPreferences.currencyIdentifier(for: viewModel.amountCurrencyCode)
     }
 
     /// Exchange rate chip showing the converted amount and rate
@@ -753,7 +874,7 @@ struct NewTransactionView: View {
             formattedAmount = String(format: "%.2f", convertedAmount)
         }
 
-        let formattedRate = String(format: "%.4f", rate)
+        let formattedRate = ExchangeRateDisplayFormatter.string(rate)
 
         return Text("≈ \(currencyDisplay) \(formattedAmount) (TC: \(formattedRate))")
             .font(DS.Typography.labelSmall)
@@ -780,6 +901,7 @@ struct NewTransactionView: View {
                 }
                 .disabled(isBridgedCasoA)  // M6: duplicar TX bridgeada generaría TX huérfana sin splitExpenseID
                 .opacity(isBridgedCasoA ? 0.4 : 1.0)
+                .accessibilityIdentifier("new_transaction_duplicate_action")
             }
 
             // Delete (only in edit mode)
@@ -792,6 +914,7 @@ struct NewTransactionView: View {
                 }
                 .disabled(isBridgedCasoA)  // M6: delete reaparece como draft via próximo sync. Bloqueamos.
                 .opacity(isBridgedCasoA ? 0.4 : 1.0)
+                .accessibilityIdentifier("new_transaction_delete_action")
             }
 
             // Split calculator (only for expenses)
@@ -894,7 +1017,7 @@ struct NewTransactionView: View {
     private var splitCalculatorSheetContent: some View {
         SplitCalculatorSheet(
             currencySymbol: viewModel.effectiveAccount != nil
-                ? CurrencyCode(rawValue: viewModel.effectiveCurrencyCode)?.symbol ?? viewModel.effectiveCurrencyCode
+                ? CurrencyCode(rawValue: viewModel.amountCurrencyCode)?.symbol ?? viewModel.amountCurrencyCode
                 : nil,
             fieldState: splitFieldState,
             onUseSplit: { amount, splitType, totalAmount, myValue, divisor in
@@ -946,50 +1069,56 @@ struct NewTransactionView: View {
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
-                // Account chip (or source/dest for transfers)
-                if viewModel.isTransfer {
-                    // Source account chip - pink
-                    SelectionChip(
-                        icon: "arrow.up.circle",
-                        text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
-                        isSelected: viewModel.sourceAccount != nil,
-                        color: viewModel.sourceAccount != nil ? Color.hotPink : nil
-                    ) {
-                        dismissKeyboard()
-                        viewModel.showSourceAccountSelector = true
-                    }
+                // Account chip (or source/dest for transfers). En Caso B/derivadas/settlement la
+                // cuenta es de sistema por diseño → bloqueada; transfers no son bridgeadas.
+                Group {
+                    if viewModel.isTransfer {
+                        // Source account chip - pink
+                        SelectionChip(
+                            icon: "arrow.up.circle",
+                            text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
+                            isSelected: viewModel.sourceAccount != nil,
+                            color: viewModel.sourceAccount != nil ? Color.hotPink : nil
+                        ) {
+                            dismissKeyboard()
+                            viewModel.showSourceAccountSelector = true
+                        }
 
-                    // Destination account chip - purple
-                    SelectionChip(
-                        icon: "arrow.down.circle",
-                        text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
-                        isSelected: viewModel.destinationAccount != nil,
-                        color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil
-                    ) {
-                        dismissKeyboard()
-                        viewModel.showDestinationAccountSelector = true
-                    }
+                        // Destination account chip - purple
+                        SelectionChip(
+                            icon: "arrow.down.circle",
+                            text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
+                            isSelected: viewModel.destinationAccount != nil,
+                            color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil
+                        ) {
+                            dismissKeyboard()
+                            viewModel.showDestinationAccountSelector = true
+                        }
 
-                    // Transfer accounts validation message
-                    if case .invalid(let message) = viewModel.accountValidation {
-                        Text(message)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(DS.Semantic.errorForeground)
+                        // Transfer accounts validation message
+                        if case .invalid(let message) = viewModel.accountValidation {
+                            Text(message)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Semantic.errorForeground)
+                        }
+                    } else {
+                        SelectionChip(
+                            icon: "creditcard",
+                            text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
+                            isSelected: viewModel.selectedAccount != nil,
+                            color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
+                        ) {
+                            dismissKeyboard()
+                            viewModel.showAccountSelector = true
+                        }
+                        .accessibilityIdentifier("new_transaction_account_chip")
                     }
-                } else {
-                    SelectionChip(
-                        icon: "creditcard",
-                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
-                        isSelected: viewModel.selectedAccount != nil,
-                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
-                    ) {
-                        dismissKeyboard()
-                        viewModel.showAccountSelector = true
-                    }
-                    .accessibilityIdentifier("new_transaction_account_chip")
                 }
+                .disabled(!canEditBridgedAccount)
+                .opacity(canEditBridgedAccount ? 1.0 : 0.5)
 
-                // Subcategory chip (not for transfers) - uses category color when selected
+                // Subcategory chip (not for transfers) - uses category color when selected.
+                // Editable en Caso A real y Caso B clasificable; bloqueada en derivadas/settlement.
                 if !viewModel.isTransfer {
                     SelectionChip(
                         icon: "tag",
@@ -1001,10 +1130,14 @@ struct NewTransactionView: View {
                         viewModel.showSubcategorySelector = true
                     }
                     .accessibilityIdentifier("new_transaction_subcategory_chip")
+                    .disabled(!canEditBridgedSubcategoryAndTags)
+                    .opacity(canEditBridgedSubcategoryAndTags ? 1.0 : 0.5)
                 }
 
-                // Tags - individual chip per tag or default chip (not for transfers)
+                // Tags - individual chip per tag or default chip (not for transfers).
+                // Mismo permiso que subcategoría.
                 if !viewModel.isTransfer {
+                    Group {
                     if viewModel.selectedTags.isEmpty {
                         // Default chip when no tags selected
                         SelectionChip(
@@ -1016,6 +1149,7 @@ struct NewTransactionView: View {
                             dismissKeyboard()
                             viewModel.showTagSelector = true
                         }
+                        .accessibilityIdentifier("new_transaction_tags_chip")
                     } else {
                         // Individual chip for each selected tag with remove button inside
                         // Styled to match SelectionChip size
@@ -1060,6 +1194,9 @@ struct NewTransactionView: View {
                             )
                         }
                     }
+                    }
+                    .disabled(!canEditBridgedSubcategoryAndTags)
+                    .opacity(canEditBridgedSubcategoryAndTags ? 1.0 : 0.5)
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
@@ -1277,14 +1414,28 @@ struct NewTransactionView: View {
         if let saved = viewModel.save(context: modelContext), let first = saved.first {
             // Mark setup checklist step 2 with practice cleanup option
             if SetupChecklistManager.shared.stepCompleted[.firstExpense] != true {
-                SetupChecklistManager.shared.markCompleted(
-                    .firstExpense,
-                    practiceItem: PracticeCleanupItem(
-                        stepID: .firstExpense,
-                        itemName: first.note ?? "",
-                        persistentID: first.persistentModelID
+                // «¿Era de prueba?» solo si este es el ÚNICO registro: la marca del paso puede
+                // seguir sin poner con historial (ver `markFirstCreation`). Mismo criterio que
+                // `autoDetect` desde el Panel: todos los `TransactionItem`.
+                do {
+                    let total = try modelContext.fetchCount(FetchDescriptor<TransactionItem>())
+                    SetupChecklistManager.shared.markFirstCreation(
+                        .firstExpense,
+                        totalOfKind: total,
+                        justSaved: saved.count,
+                        practiceItem: PracticeCleanupItem(
+                            stepID: .firstExpense,
+                            itemName: first.note ?? "",
+                            persistentID: first.persistentModelID
+                        )
                     )
-                )
+                } catch {
+                    #if DEBUG
+                    print("NewTransactionView: Error counting transactions: \(error)")
+                    #endif
+                    // Sin recuento no se sabe si es el primero: no se ofrece borrarlo como prueba.
+                    SetupChecklistManager.shared.markCompleted(.firstExpense)
+                }
             } else {
                 SetupChecklistManager.shared.markCompleted(.firstExpense)
             }
@@ -1318,7 +1469,7 @@ struct NewTransactionView: View {
             accountColorHex: account?.colorHex ?? AppConstants.defaultColorHex,
             note: viewModel.note,
             amount: Decimal(viewModel.amount),
-            currencyCode: viewModel.effectiveCurrencyCode,
+            currencyCode: viewModel.amountCurrencyCode,
             subcategoryName: viewModel.selectedSubcategory?.name,
             subcategoryColorHex: viewModel.selectedSubcategory?.colorHex,
             categoryName: viewModel.selectedSubcategory?.safeCategory.name,
@@ -1500,9 +1651,16 @@ struct NewTransactionView: View {
         )
     }
 
+    /// Tras `resolveBridgedPointer`: con la MISMA condición que deshabilita el botón Duplicar (`isBridgedCasoA`) y la
+    /// del modo solo lectura. Una vez por editor: el `onAppear` vuelve a correr al cerrarse una hoja encima.
+    private func openAsDuplicateIfAsked() {
+        guard startsAsDuplicate, !didStartAsDuplicate, !isBridgedCasoA, !isBridgedReadOnly else { return }
+        didStartAsDuplicate = true
+        duplicateTransaction()
+    }
+
     private func duplicateTransaction() {
         guard transactionToEdit != nil else { return }
-        TelemetryService.track(.transactionDuplicated, parameters: ["type": viewModel.transactionType.rawValue])
 
         // Animate form out
         dsWithAnimation(reduceMotion) {
@@ -1558,7 +1716,6 @@ struct NewTransactionView: View {
 
             modelContext.delete(transaction)
             try modelContext.save()
-            TelemetryService.track(.transactionDeleted, parameters: ["type": viewModel.transactionType.rawValue])
             WidgetDataCache.updateCache(context: modelContext)
             SessionState.shared.incrementDataVersion()
             dismiss()

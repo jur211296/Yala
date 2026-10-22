@@ -54,9 +54,6 @@ struct YalaAIOnboardingView: View {
                 }
             }
         }
-        .onAppear {
-            TelemetryService.track(.yalaAIOnboardingShown, parameters: ["launcher": launcher.rawValue])
-        }
     }
 
     @ViewBuilder
@@ -244,7 +241,6 @@ struct YalaAIOnboardingView: View {
             a11yPrefix: L10n.YalaAI.Onboarding.step3Title
         ) {
             prefs.insightsTone = tone
-            trackPersonalizationPicked(prefs: prefs)
         }
     }
 
@@ -282,7 +278,6 @@ struct YalaAIOnboardingView: View {
             a11yPrefix: L10n.YalaAI.Onboarding.step4Title
         ) {
             prefs.insightsFocus = focus
-            trackPersonalizationPicked(prefs: prefs)
         }
     }
 
@@ -322,7 +317,7 @@ struct YalaAIOnboardingView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Text(L10n.YalaAI.Onboarding.step5Tip)
+            Text(L10n.YalaAI.Onboarding.step5Tip(demoAmountText(demoAmounts.tipCoffee)))
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.thSecondaryText)
                 .multilineTextAlignment(.center)
@@ -421,10 +416,22 @@ struct YalaAIOnboardingView: View {
         }
     }
 
+    /// Importes de ejemplo en la divisa principal (ticket `ai-onboarding-demo-speaks-english-and-dollars`).
+    private var demoAmounts: YalaAIOnboardingDemoAmounts.Amounts {
+        YalaAIOnboardingDemoAmounts.amounts(for: appPreferences.defaultCurrencyCode)
+    }
+
+    private func demoAmountText(_ value: Double) -> String {
+        YalaAIOnboardingDemoAmounts.formatted(
+            value,
+            identifier: appPreferences.currencyIdentifier(for: appPreferences.defaultCurrencyCode.rawValue)
+        )
+    }
+
     private func focusQuote(for focus: InsightFocus) -> String {
         switch focus {
         case .balanced: return L10n.YalaAI.Onboarding.step4FocusBalancedQuote
-        case .saver:    return L10n.YalaAI.Onboarding.step4FocusSaverQuote
+        case .saver:    return L10n.YalaAI.Onboarding.step4FocusSaverQuote(demoAmountText(demoAmounts.saverSavingPerMonth))
         case .cautious: return L10n.YalaAI.Onboarding.step4FocusCautiousQuote
         }
     }
@@ -435,14 +442,6 @@ struct YalaAIOnboardingView: View {
         case .saver:    return L10n.YalaAI.Onboarding.step4FocusSaverDescription
         case .cautious: return L10n.YalaAI.Onboarding.step4FocusCautiousDescription
         }
-    }
-
-    private func trackPersonalizationPicked(prefs: AppPreferences) {
-        TelemetryService.track(.yalaAIOnboardingTonePicked, parameters: [
-            "tone": prefs.insightsTone.rawValue,
-            "focus": prefs.insightsFocus.rawValue,
-            "launcher": launcher.rawValue
-        ])
     }
 
     // MARK: - CTA
@@ -470,11 +469,6 @@ struct YalaAIOnboardingView: View {
                 currentStep = next
             }
         } else {
-            TelemetryService.track(.yalaAIOnboardingCompleted, parameters: [
-                "launcher": launcher.rawValue,
-                "tone": appPreferences.insightsTone.rawValue,
-                "focus": appPreferences.insightsFocus.rawValue
-            ])
             onResult(.complete)
         }
     }

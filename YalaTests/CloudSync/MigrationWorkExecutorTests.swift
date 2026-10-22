@@ -1,0 +1,7450 @@
+//
+//  MigrationWorkExecutorTests.swift
+//  YalaTests / CloudSync
+//
+//  Ejecutor REAL del seam de la migración (I10-wiring w5). Container 3-stores on-disk (`.serialized`) +
+//  RoutingStub (dispatch por path: /account/claim, /sync/push, /sync/pull, /sync/merkle) + KV beacon stub.
+//  Cubre: claim (sin JWT → sessionExpired; 200 created → success), faro escrito en el KV, notWired journaled
+//  (throw), verify pre-check TOCTOU (outbox no vacío → push-first → newDeltaDetected) + verify limpio
+//  (pull → verifyIntegrity converge → match), y assignIdentity (backfill + flip del gate permanente).
+//
+//  Toca `CloudSyncFlags.identityCaptureEnabled` → `.serialized` + `defer { restore }`.
+//
+//  C-1 (última sección): las 3 señales REALES que alimentan `probeICloudChannel()` (cuenta iCloud, huella
+//  CloudKit del corpus, último `CKError` del mirror) y el par (`storageMode`, mirror-off armado) visto con
+//  `isCloudWithMirrorOn` en los 3 caminos que lo escriben.
+//
+
+import CloudKit
+import Foundation
+import SQLite3
+import SwiftData
+import Testing
+
+@testable import Yala
+
+// MARK: - Stubs
+
+@MainActor
+private final class FakeSession: CloudSyncSessionProviding {
+    var token: String?
+    var userID: String?
+    init(token: String?, userID: String?) { self.token = token; self.userID = userID }
+    var currentUserID: String? { userID }
+    func accessToken() async -> String? { token }
+    /// Lo que hoy separa «sin red» de «vuelve a entrar» en los pasos de la reversa que piden el token a mano
+    /// (ticket `reverse-before-mount-stays-stuck-with-an-expired-session`). **Sin override el default deriva del
+    /// token**, que es el trato de antes de ese ticket: sin token no se puede renovar ⇒ sesión caducada. Ponerlo a
+    /// `true` con `token = nil` es el caso nuevo: la renovación no volvió, pero la sesión sigue guardada.
+    var canRenewSessionOverride: Bool?
+    var canRenewSession: Bool { canRenewSessionOverride ?? (token != nil) }
+    /// Tokens de App Attest que irá dando, en orden (el último se repite). Vacío = `nil`, el trato de siempre.
+    var attestTokens: [String] = []
+    /// Si no es `nil`, `attestToken()` lanza esto (el teléfono no consigue token).
+    var attestError: Error?
+    private(set) var attestCallCount = 0
+    func attestToken() async throws -> String? {
+        attestCallCount += 1
+        if let attestError { throw attestError }
+        guard let first = attestTokens.first else { return nil }
+        if attestTokens.count > 1 { attestTokens.removeFirst() }
+        return first
+    }
+}
+
+/// El SDK BORRA la sesión dentro de la renovación, antes de devolver `nil`: el testigo solo dice la verdad leído DESPUÉS
+/// de pedir el token. Con el `FakeSession` de arriba, leerlo antes o después da lo mismo y un mutante que lo adelanta
+/// sobrevive (lo cazó una lente de la review de `forward-migration-steps-have-no-ceiling-and-no-exit`).
+@MainActor
+private final class SessionRemovedWhileFetching: CloudSyncSessionProviding {
+    private var saved = true
+    var currentUserID: String? { "sub-1" }
+    func accessToken() async -> String? { saved = false; return nil }
+    var canRenewSession: Bool { saved }
+    func attestToken() async throws -> String? { nil }
+}
+
+/// Reloj MONOTÓNICO mutable para la puerta del lease (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`):
+/// el ejecutor mide la confirmación con `ContinuousClock`, y un `Instant` solo se construye avanzando otro.
+private final class MutableLeaseClock: @unchecked Sendable {
+    private let base = ContinuousClock.now
+    var offset: Duration = .zero
+    var now: ContinuousClock.Instant { base.advanced(by: offset) }
+}
+
+/// Reloj MUTABLE para el test de throttle del heartbeat (I14-pre): avanzar `value` entre ticks sin recrear
+/// el executor. MainActor (se muta y lee solo desde el test MainActor).
+@MainActor
+private final class MutableClock {
+    var value: Date
+    init(_ start: Date) { value = start }
+}
+
+private final class FakeBeaconStore: BeaconKeyValueStore, @unchecked Sendable {
+    var bools: [String: Bool] = [:]
+    var strings: [String: String] = [:]
+    var doubles: [String: Double] = [:]
+    func setBool(_ value: Bool, forKey key: String) { bools[key] = value }
+    func setString(_ value: String, forKey key: String) { strings[key] = value }
+    func setDouble(_ value: Double, forKey key: String) { doubles[key] = value }
+    func bool(forKey key: String) -> Bool { bools[key] ?? false }
+    func string(forKey key: String) -> String? { strings[key] }
+    func double(forKey key: String) -> Double { doubles[key] ?? 0 }
+    func removeObject(forKey key: String) { bools[key] = nil; strings[key] = nil; doubles[key] = nil }
+    @discardableResult func synchronize() -> Bool { true }
+}
+
+/// Fuente de tombstones fabricada para el barrido de zombies (§h.3, golden §h.5). Sirve `pages` en orden
+/// y luego una página VACÍA que agota la paginación; `forced` fuerza un outcome de red.
+@MainActor
+private final class FakeTombstoneSource: ReverseTombstoneSource {
+    var pages: [PulledPage] = []
+    var forced: PullOutcome?
+    private var index = 0
+    /// Cuántas páginas se pidieron: el adopt con la base local ilegible no debe pedir ninguna.
+    private(set) var callCount = 0
+    func pullPage(since: Int64, limit: Int) async -> PullOutcome {
+        callCount += 1
+        if let forced { return forced }
+        if index < pages.count { defer { index += 1 }; return .page(pages[index]) }
+        return .page(PulledPage(deltas: [], maxServerSeq: 0))
+    }
+}
+
+/// Construye un tombstone `PulledDelta` de una tabla + syncID (op=.tombstone, fields vacíos).
+@MainActor
+private func tombstone(table: String, syncID: UUID, seq: Int64) -> PulledDelta {
+    PulledDelta(entityType: table, syncID: syncID, op: .tombstone, fields: [:], fieldHlcs: [:],
+                hlc: "deleted", serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
+}
+
+/// Construye un upsert `PulledDelta` (para la enumeración del backend del adopt-reconcile: la enumeración
+/// colecciona syncIDs de upserts Y tombstones; solo importa el `syncID`).
+@MainActor
+private func upsertDelta(table: String, syncID: UUID, seq: Int64, fields: [String: WireValue] = [:],
+                         hlc: String = "hlc") -> PulledDelta {
+    PulledDelta(entityType: table, syncID: syncID, op: .upsert, fields: fields, fieldHlcs: [:],
+                hlc: hlc, serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
+}
+
+/// El endpoint de métricas caído: el canario se queda en el spool, donde el test lo lee.
+private final class MetricsDown: SyncHTTPSession, @unchecked Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        (Data(), HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
+/// Enruta por path: claim / push (ecoa applied) / pull (página vacía) / merkle (body configurable).
+private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
+    var claimBody = Data("{\"state\":\"created\"}".utf8)
+    var claimStatus = 200
+    private(set) var lastClaimBody: [String: Any]?
+    /// Se llama cuando el POST del claim LLEGA al stub, antes de la respuesta: es el instante de una respuesta perdida, y lo
+    /// que la marca del claim tiene que haber dejado escrito ya.
+    var onClaimRequest: (() -> Void)?
+    var migrationBody = Data("{\"ok\":true}".utf8)
+    var migrationStatus = 200
+    private(set) var lastMigrationBody: [String: Any]?
+    private(set) var migrationCallCount = 0
+    /// Se llama cuando el POST de `/account/migration` LLEGA al stub, antes de la respuesta: deja avanzar un reloj
+    /// DURANTE la pregunta (la puerta del lease cuenta la confirmación desde que preguntó, no desde que le contestaron).
+    var onMigrationRequest: (() -> Void)?
+    /// Respuesta de `/account/migration` POR ACCIÓN (`heartbeat`, `complete`…), por delante de `migrationBody`. El reconcile
+    /// de `done` pregunta el latido, `complete` y el claim en la misma pasada, y cada uno contesta otra cosa (ticket
+    /// `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`). Una cola por acción: se consume en orden
+    /// y su última respuesta se repite.
+    var migrationBodiesByAction: [String: [Data]] = [:]
+    /// Las acciones de `/account/migration`, en el orden en que llegaron.
+    private(set) var migrationActions: [String] = []
+    /// Cuántos claims llegaron.
+    private(set) var claimCallCount = 0
+    /// Se llama cuando llega cada POST de `/sync/push`, antes de la respuesta.
+    var onPushRequest: (() -> Void)?
+    private(set) var pushCallCount = 0
+    var pushStatus = 200
+    /// Statuses del push en orden, por delante de `pushStatus` (se consumen; vacía = `pushStatus`).
+    var pushStatusQueue: [Int] = []
+    /// Cuerpo de la respuesta del push cuando no es 200 (el envelope del gateway separa los dos 401).
+    var pushErrorBody = Data()
+    /// La cabecera `X-Yala-Attest-Session` de cada push, en orden (`nil` = sin cabecera).
+    private(set) var pushAttestHeaders: [String?] = []
+    /// 401 aquí = sesión caducada del pull, que es la mitad que `reverseDrainOnce` y `verify` no podían separar
+    /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
+    var pullStatus = 200
+    /// Cuerpo del pull con 200. `nil` = la página vacía de siempre; con valor se sirve UNA vez y después la vacía, para que
+    /// el loop del pull termine.
+    var pullBody: Data?
+    /// Se llama en el main actor cuando llega cada GET de `/sync/pull`, antes de la respuesta: es la espera del pull, en la
+    /// que el import del espejo puede aterrizar (ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`).
+    var onPullRequestOnMain: (@MainActor () -> Void)?
+    var merkleBody = Data()
+    /// Se llama en el main actor cuando llega cada GET de `/sync/merkle`, antes de la respuesta (la espera del remoto).
+    var onMerkleRequestOnMain: (@MainActor () -> Void)?
+    /// Status de `/sync/merkle`. 401 y 403 son la mitad que el Merkle NO podía separar hasta el ticket
+    /// `reverse-verify-network-bucket-hides-a-definitive-server-no`: `SyncMerkle` aplanaba los tres desenlaces del
+    /// fetch y salían como red.
+    var merkleStatus = 200
+    /// Cuerpo de la respuesta cuando `merkleStatus != 200` — el envelope del gateway separa los dos 401.
+    var merkleErrorBody = Data()
+    private let lock = NSLock()
+    private(set) var pushedSyncIDs: [String] = []
+    /// Cuántas veces se pidió cada paso. Lo que prueba que un desenlace CORTÓ la pasada no es su valor —un
+    /// `.blocked` puede salir de cualquiera de los tres— sino que los pasos posteriores no llegaron a pedirse.
+    private(set) var pullCallCount = 0
+    private(set) var merkleCallCount = 0
+    /// Deltas COMPLETOS del último push (para assertar contenido real — lección d49d2e47: fila full-row, no
+    /// solo identidad). Cada entry es el objeto JSON `{sync_id, entity_type, fields, client_mutation_id}`.
+    private(set) var lastPushedDeltas: [[String: Any]] = []
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let path = request.url?.path ?? ""
+        func resp(_ status: Int) -> HTTPURLResponse {
+            HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        }
+        if path.contains("account/migration") {
+            migrationCallCount += 1
+            lastMigrationBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
+            let action = lastMigrationBody?["action"] as? String ?? ""
+            migrationActions.append(action)
+            onMigrationRequest?()
+            if var queue = migrationBodiesByAction[action], let first = queue.first {
+                if queue.count > 1 { queue.removeFirst(); migrationBodiesByAction[action] = queue }
+                return (first, resp(migrationStatus))
+            }
+            return (migrationBody, resp(migrationStatus))
+        }
+        if path.contains("account/claim") {
+            claimCallCount += 1
+            lastClaimBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
+            onClaimRequest?()
+            return (claimBody, resp(claimStatus))
+        }
+        if path.contains("sync/push") {
+            pushCallCount += 1
+            pushAttestHeaders.append(request.value(forHTTPHeaderField: "X-Yala-Attest-Session"))
+            onPushRequest?()
+            let status = pushStatusQueue.isEmpty ? pushStatus : pushStatusQueue.removeFirst()
+            if status != 200 { return (pushErrorBody, resp(status)) }
+            var results: [[String: Any]] = []
+            if let json = try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any],
+               let deltas = json["deltas"] as? [[String: Any]] {
+                lock.lock()
+                lastPushedDeltas = deltas
+                for d in deltas {
+                    let sid = d["sync_id"] as? String ?? ""
+                    let cmid = d["client_mutation_id"] as? String ?? ""
+                    pushedSyncIDs.append(sid)
+                    results.append(["sync_id": sid, "client_mutation_id": cmid, "status": "applied"])
+                }
+                lock.unlock()
+            }
+            let body = (try? JSONSerialization.data(withJSONObject: ["results": results])) ?? Data()
+            return (body, resp(200))
+        }
+        if path.contains("sync/pull") {
+            pullCallCount += 1
+            if let hook = onPullRequestOnMain { hook() }
+            if pullStatus != 200 { return (Data(), resp(pullStatus)) }
+            if let body = pullBody {
+                pullBody = nil
+                return (body, resp(200))
+            }
+            return (Data("{\"deltas\":[],\"max_server_seq\":0}".utf8), resp(200))
+        }
+        if path.contains("sync/merkle") {
+            merkleCallCount += 1
+            if let hook = onMerkleRequestOnMain { hook() }
+            if merkleStatus != 200 { return (merkleErrorBody, resp(merkleStatus)) }
+            return (merkleBody, resp(200))
+        }
+        return (Data(), resp(404))
+    }
+}
+
+@Suite("MigrationWorkExecutor · ejecutor real (I10-wiring w5)", .serialized)
+@MainActor
+struct MigrationWorkExecutorTests {
+
+    private let fixedNow = Date(timeIntervalSince1970: 1_700_000_000)
+    private let workerURL = URL(string: "https://stub.yala.test")!
+
+    // MARK: - Infra
+
+    private func freshDir() -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MWExec-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+
+    private func relayLedgerURL(forStore personalStoreURL: URL) -> URL {
+        personalStoreURL.deletingLastPathComponent().appendingPathComponent("relay-identity-ledger.json")
+    }
+
+    private func makeContext(_ dir: URL) throws -> ModelContext {
+        let personalCfg = ModelConfiguration(
+            "MWE-Personal", schema: SwiftDataConfiguration.personalSchema,
+            url: dir.appendingPathComponent("personal.sqlite"), cloudKitDatabase: .none)
+        let groupsCfg = ModelConfiguration(
+            "MWE-Groups", schema: SwiftDataConfiguration.groupsSchema,
+            url: dir.appendingPathComponent("groups.sqlite"), cloudKitDatabase: .none)
+        let syncMetaCfg = ModelConfiguration(
+            "MWE-SyncMeta", schema: SwiftDataConfiguration.syncMetaSchema,
+            url: dir.appendingPathComponent("syncmeta.sqlite"), cloudKitDatabase: .none)
+        let container = try ModelContainer(for: SwiftDataConfiguration.schema,
+                                           configurations: personalCfg, groupsCfg, syncMetaCfg)
+        return ModelContext(container)
+    }
+
+    private func makeExecutor(
+        _ context: ModelContext, _ engine: CloudSyncEngine, _ stub: RoutingStub,
+        _ session: CloudSyncSessionProviding, _ beaconStore: FakeBeaconStore, personalStoreURL: URL,
+        storageDefaults: UserDefaults? = nil,
+        now: (() -> Date)? = nil,
+        heartbeatInterval: TimeInterval = 60,
+        leaseClock: MutableLeaseClock? = nil,
+        tombstoneSource: ReverseTombstoneSource? = nil,
+        adoptQuiescenceSignal: @escaping () -> Bool = { true },
+        adoptMirrorAttached: @escaping @MainActor () -> Bool = { false },
+        adoptICloudCorpusCheck: @escaping @MainActor () async -> ICloudAdoptCorpusCheck = { .failed("unwired") },
+        adoptImportSettled: @escaping @MainActor () -> Bool = { true },
+        claimStore: CloudClaimActionStore? = nil,
+        provider: @escaping @MainActor () -> String = { "apple" },
+        icloudAccountPresent: (@MainActor () -> Bool)? = nil,
+        icloudLastExportErrorCode: (@MainActor () -> CKError.Code?)? = nil,
+        icloudMirrorReportedNotAuthenticated: (@MainActor () -> Bool)? = nil,
+        icloudLastExportErrorAt: (@MainActor () -> Date?)? = nil,
+        icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil,
+        snapshotPageSize: Int = 200,
+        attest: @escaping () async -> String? = { nil }
+    ) -> MigrationWorkExecutor {
+        let token: () async -> String? = { "jwt" }
+        let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
+        let push = SyncPushClient(baseURL: workerURL, tokenProvider: token, attestProvider: attest, urlSession: stub)
+        let pull = SyncPullClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
+        let merkle = SyncMerkleClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
+        // El registro fila → identidad vive junto al store del test, y el motor lee el mismo: con el de producción, dos tests
+        // se lo pisarían y el host de test guardaría uno.
+        let ledgerURL = relayLedgerURL(forStore: personalStoreURL)
+        engine.relayIdentityLedgerURL = ledgerURL
+        return MigrationWorkExecutor(
+            engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
+            accountClient: account, session: session, context: context,
+            calendar: Calendar(identifier: .gregorian), now: now ?? { self.fixedNow },
+            deviceID: "device-1", provider: provider, beacon: CloudBeacon(store: beaconStore),
+            personalStoreURL: personalStoreURL,
+            storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
+            snapshotPageSize: snapshotPageSize, heartbeatInterval: heartbeatInterval,
+            leaseClock: leaseClock.map { clock in { clock.now } } ?? { ContinuousClock.now },
+            reverseTombstoneSource: tombstoneSource,
+            adoptQuiescenceSignal: adoptQuiescenceSignal,
+            adoptMirrorAttached: adoptMirrorAttached,
+            adoptICloudCorpusCheck: adoptICloudCorpusCheck,
+            adoptImportSettled: adoptImportSettled,
+            claimStore: claimStore,
+            icloudAccountPresent: icloudAccountPresent,
+            icloudLastExportErrorCode: icloudLastExportErrorCode,
+            icloudMirrorReportedNotAuthenticated: icloudMirrorReportedNotAuthenticated,
+            icloudLastExportErrorAt: icloudLastExportErrorAt,
+            icloudLastSuccessfulExportAt: icloudLastSuccessfulExportAt,
+            relayIdentityLedgerURL: ledgerURL)
+    }
+
+    // MARK: - Claim
+
+    @Test("performClaim: sin JWT → sessionExpired (nunca lanza)")
+    func claim_noJWT_sessionExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: nil, userID: nil)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        let outcome = await executor.performClaim()
+        #expect(outcome == .sessionExpired(detail: "no access token"))
+    }
+
+    @Test("performClaim: 200 created → success(.created)")
+    func claim_created_success() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.performClaim() == .success(.created))
+    }
+
+    @Test("performClaim: el body lleva migration=true (bug device 2026-07-10: sin él el cutover se clava en not_in_progress)")
+    func claim_sendsMigrationTrue() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        _ = await executor.performClaim()
+        #expect(stub.lastClaimBody?["migration"] as? Bool == true,
+                "el claim de la MIGRACIÓN debe armar migration_in_progress en el INSERT atómico")
+    }
+
+    @Test("performClaim con provider 'google': el BODY del claim lleva provider=google (sesión 1 Google Sign-In)")
+    func claim_providerGoogle_sendsGoogleInBody() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    provider: { "google" })
+        _ = await executor.performClaim()
+        #expect(stub.lastClaimBody?["provider"] as? String == "google",
+                "el provider REAL de la sesión debe llegar al BODY del claim (lección d49d2e47)")
+    }
+
+    @Test("performClaim lee el provider VIVO al momento del claim, no el de la construcción (I4 sesión 3: runner nacido pre-sign-in)")
+    func claim_providerIsReadLive_notFrozenAtInit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        // El executor nace ANTES del sign-in (provider aún "apple" — el fallback de key perdida).
+        var currentProvider = "apple"
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    provider: { currentProvider })
+        // Sign-in con Google DESPUÉS de construir el executor (el caso real del residual I4).
+        currentProvider = "google"
+        _ = await executor.performClaim()
+        #expect(stub.lastClaimBody?["provider"] as? String == "google",
+                "el BODY del claim debe reflejar el provider VIGENTE al claimear, no el congelado en init")
+    }
+
+    @Test("execute(.writeBeacon) lee el provider VIVO (ajuste A1: el faro con provider stale rompería la red R9)")
+    func writeBeacon_providerIsReadLive_notFrozenAtInit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let beaconStore = FakeBeaconStore()
+        var currentProvider = "apple"
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, beaconStore,
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    provider: { currentProvider })
+        currentProvider = "google"
+        try await executor.execute(.writeBeacon)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.provider) == "google",
+                "el faro debe estampar el provider VIGENTE (un faro 'apple' para cuenta Google haría que R9 mostrara el método equivocado)")
+    }
+
+    // MARK: - Beacon / efectos
+
+    @Test("execute(.writeBeacon): escribe linked+provider+hash en el KV (sin PII)")
+    func execute_writeBeacon() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-abc-123")
+        let beaconStore = FakeBeaconStore()
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, beaconStore,
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.writeBeacon)
+        #expect(beaconStore.bool(forKey: CloudBeacon.Keys.linked))
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.provider) == "apple")
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) == CloudBeacon.hash("sub-abc-123"))
+        // El hash NO es el sub en claro (sin PII).
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) != "sub-abc-123")
+    }
+
+    @Test("execute(.rollback): no-op REAL (device intacto pre-cutover) — no lanza y desarma mirror-off")
+    func execute_rollback_isRealNoop() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = UserDefaults(suiteName: "test.rollback.\(UUID().uuidString)")!
+        defaults.set(true, forKey: MigrationWorkExecutor.relaunchRequestedKey)  // defensivo: no debería estar
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.rollback)   // bug device 2026-07-10: notWired lo dejaba journaled-pendiente para siempre
+        #expect(defaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == false)
+    }
+
+    // MARK: - Cutover (w6, §g.4)
+
+    /// El reparto del no del servidor para el techo de `cutover(.pending)` (ticket
+    /// `forward-migration-steps-have-no-ceiling-and-no-exit`): hasta ese ticket todo era un `false`, y sin separarlo no
+    /// había techo corto posible. `other_leader` y un `rejected` son definitivos; la red espera.
+    @Test("confirmCutoverServer: ok → confirmed · other_leader → otherDevice · rejected → refused · 5xx → transient")
+    func confirmCutoverServer_classifiesTheServerAnswer() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.confirmCutoverServer() == .confirmed)
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        #expect(await executor.confirmCutoverServer() == .blocked(.otherDevice))
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+        #expect(await executor.confirmCutoverServer() == .blocked(.refused))
+
+        stub.migrationStatus = 503
+        #expect(await executor.confirmCutoverServer() == .transient)
+    }
+
+    /// Sin JWT, o con un 401: definitivo SOLO con la sesión borrada por el SDK. Con la sesión guardada —el token que no se
+    /// renueva sin red, el reloj atrasado— espera el plazo largo, que es la regla de la familia.
+    @Test("confirmCutoverServer: sin JWT o 401 → sessionExpired solo con la sesión borrada")
+    func confirmCutoverServer_sessionExpired_onlyWithTheSessionGone() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let gone = FakeSession(token: nil, userID: nil)
+        let executorGone = makeExecutor(context, CloudSyncEngine(), RoutingStub(), gone, FakeBeaconStore(),
+                                        personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executorGone.confirmCutoverServer() == .blocked(.sessionExpired))
+
+        let kept = FakeSession(token: nil, userID: "sub-1")
+        kept.canRenewSessionOverride = true
+        let executorKept = makeExecutor(context, CloudSyncEngine(), RoutingStub(), kept, FakeBeaconStore(),
+                                        personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executorKept.confirmCutoverServer() == .transient, "token nulo con la sesión guardada")
+
+        let stub401 = RoutingStub()
+        stub401.migrationStatus = 401
+        let withToken = FakeSession(token: "jwt", userID: "sub-1")
+        let executor401 = makeExecutor(context, CloudSyncEngine(), stub401, withToken, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor401.confirmCutoverServer() == .transient, "401 con la sesión guardada")
+        withToken.canRenewSessionOverride = false
+        #expect(await executor401.confirmCutoverServer() == .blocked(.sessionExpired), "401 con la sesión borrada")
+
+        // El SDK borra la sesión DENTRO de la renovación: leído antes de pedir el token, el testigo diría «guardada».
+        let removed = SessionRemovedWhileFetching()
+        let executorRemoved = makeExecutor(context, CloudSyncEngine(), RoutingStub(), removed, FakeBeaconStore(),
+                                           personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executorRemoved.confirmCutoverServer() == .blocked(.sessionExpired),
+                "el testigo se lee DESPUÉS de pedir el token")
+    }
+
+    /// La marca del claim sin respuesta: se escribe ANTES del POST —el stub la mira en el instante en que le llega la
+    /// petición, que es cuando se pierde una respuesta— y se borra con cualquier respuesta. Sin ella, un claim que crea la
+    /// cuenta y pierde la respuesta deja la cuenta `complete` sin sello, y tras el techo o «Cancelar» al 22 % la puerta de
+    /// «Migrar» la tomaba por una cuenta con datos ajenos.
+    @Test("performClaim de «Migrar»: la marca está puesta al llegar el POST, sobrevive sin respuesta y se borra con cualquiera")
+    func performClaim_attemptMark_survivesALostAnswer_andClearsWithAnyAnswer() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-mark")
+        let stub = RoutingStub()
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.attempt"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        var markedWhenThePostArrived: Bool?
+        stub.onClaimRequest = { markedWhenThePostArrived = claimStore.hasMigrationClaimAttempt(forUserID: "sub-mark") }
+
+        stub.claimStatus = 503
+        guard case .transient = await executor.performClaim(marksMigrationAttempt: true) else {
+            Issue.record("control del escenario: un 503 es `.transient`")
+            return
+        }
+        #expect(markedWhenThePostArrived == true, "la marca va ANTES del POST: un kill con la petición en vuelo la conserva")
+        #expect(claimStore.hasMigrationClaimAttempt(forUserID: "sub-mark"), "sin respuesta no se sabe: la marca se queda")
+        #expect(claimStore.action(forUserID: "sub-mark") == nil, "control: el sello solo llega con la respuesta")
+
+        for body in ["{\"state\":\"existing_stable\"}", "{\"state\":\"claiming_in_progress\"}",
+                     "{\"state\":\"created\"}"] {
+            claimStore.recordMigrationClaimAttempt(forUserID: "sub-mark")
+            stub.claimStatus = 200
+            stub.claimBody = Data(body.utf8)
+            _ = await executor.performClaim(marksMigrationAttempt: true)
+            #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-mark"), "con respuesta la marca sobra: \(body)")
+        }
+    }
+
+    /// Un claim que no es de «Migrar» (adopt, seguidor) no marca: la marca abre la puerta de «Migrar», y la de un adopt la
+    /// abriría a un teléfono que nunca lo pidió. Pero su respuesta SÍ borra una marca anterior de la misma cuenta.
+    @Test("performClaim de un adopt: no marca, y su respuesta borra una marca anterior")
+    func performClaim_notMigrate_doesNotMark_butItsAnswerClears() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-adopt-mark")
+        let stub = RoutingStub()
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.adopt.mark"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        stub.claimStatus = 503
+        _ = await executor.performClaim(marksMigrationAttempt: false)
+        #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-adopt-mark"))
+
+        claimStore.recordMigrationClaimAttempt(forUserID: "sub-adopt-mark")
+        stub.claimStatus = 200
+        stub.claimBody = Data("{\"state\":\"existing_stable\"}".utf8)
+        _ = await executor.performClaim(marksMigrationAttempt: false)
+        #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-adopt-mark"))
+    }
+
+    /// Sin JWT el claim ni sale: no hay POST, así que tampoco marca.
+    @Test("performClaim: sin JWT no marca nada")
+    func performClaim_noJWT_leavesNoAttemptMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: nil, userID: "sub-nojwt")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.nojwt"))
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        _ = await executor.performClaim(marksMigrationAttempt: true)
+        #expect(!claimStore.hasMigrationClaimAttempt(forUserID: "sub-nojwt"))
+    }
+
+    @Test("persistLocalMode: escribe storageMode=.cloud en los defaults inyectados → true")
+    func persistLocalMode_writesCloud() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.persist")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults)
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud)   // antes: default
+        #expect(await executor.persistLocalMode() == true)
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud)
+    }
+
+    @Test("isMirrorConfirmedOff: false en tests (personalStoreMountedDecision default .iCloudMirror)")
+    func isMirrorConfirmedOff_defaultFalse() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(executor.isMirrorConfirmedOff() == false)
+    }
+
+    @Test("execute(.writeCloudKitMarker): inserta el marcador con serverSeqCut + accountHash (sin PII)")
+    func execute_writeCloudKitMarker_insertsMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-xyz")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // serverSeqCut se lee del SyncCursor (single-row).
+        let cursor = SyncCursor(serverSeqCursor: 42)
+        context.insert(cursor)
+        try context.save()
+
+        try await executor.execute(.writeCloudKitMarker)
+
+        let markers = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+        #expect(markers.count == 1)
+        let marker = try #require(markers.first)
+        #expect(marker.serverSeqCut == 42)
+        #expect(marker.writerDeviceID == "device-1")
+        #expect(marker.migratedAtStamp == fixedNow)
+        #expect(marker.accountHash == CloudBeacon.hash("sub-xyz"))
+        #expect(marker.accountHash != "sub-xyz")   // sin PII
+    }
+
+    @Test("isMarkerExported: false en un store de test (sin metadata CloudKit real)")
+    func isMarkerExported_falseWithoutRealCloudKit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(executor.isMarkerExported() == false)   // sin marcador
+        try await executor.execute(.writeCloudKitMarker)
+        // Marcador presente pero el store de test no tiene metadata CloudKit (cloudKitDatabase: .none).
+        #expect(executor.isMarkerExported() == false)
+    }
+
+    @Test("execute(.runLeaderReconcileFromFrozenCloudKit): complete ok → no throw (sin residual, barrido no-op)")
+    func execute_reconcileComplete_ok() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)   // migration_progress('complete') ok
+    }
+
+    /// **La migración terminada deja de abrir la comprobación de «Migrar a la nube».** `.proceedMigration` es lo que deja
+    /// reintentar un intento que falló (`StorageMigrationIdentityGateLogic.check`); con el `complete` confirmado el sello
+    /// pasa a `.routeReturningUser`. Sin confirmar, no se toca: el intento sigue a medias.
+    @Test("execute(.runLeaderReconcileFromFrozenCloudKit): complete ok cambia el sello a routeReturningUser; rechazado, no")
+    func execute_reconcileComplete_restampsTheClaim() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-leader")
+        let stub = RoutingStub()
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.complete.stamp"))
+        claimStore.record(.proceedMigration, forUserID: "sub-leader")
+        // El sello de otra cuenta que usó este teléfono antes (ticket `a-previous-owners-claim-seal-passes-the-cloud-identity-gate`).
+        claimStore.record(.routeReturningUser, forUserID: "sub-anterior")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+
+        // El lease confirmado y el `complete` rechazado: la carrera entre la puerta y el cierre. Cada rechazo con su
+        // `effect` EXACTO — con `MigrationExecutorError.self` a secas pasaba también la resolución del lease perdido.
+        for (completeBody, effect) in [
+            (Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8), "runLeaderReconcile: otherLeader"),
+            (Data("{\"ok\":false,\"reason\":\"no_profile\"}".utf8), "runLeaderReconcile: no_profile"),
+        ] {
+            stub.migrationBodiesByAction = ["heartbeat": [Data("{\"ok\":true}".utf8)], "complete": [completeBody]]
+            await #expect(throws: MigrationExecutorError.notWired(effect: effect)) {
+                try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+            }
+            #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration, "sin complete, el intento sigue a medias")
+            #expect(claimStore.action(forUserID: "sub-anterior") == .routeReturningUser, "sin complete, nadie se quedó el corpus")
+        }
+        #expect(stub.claimCallCount == 0, "con el lease confirmado no se reclama nada")
+
+        stub.migrationBodiesByAction = [:]
+        stub.migrationBody = Data("{\"ok\":true}".utf8)
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+        #expect(claimStore.action(forUserID: "sub-anterior") == nil, "MUTACIÓN: la migración terminada no olvidó a la otra cuenta")
+    }
+
+    @Test("done-effect w8: el barrido de RED rescata un write huérfano de la ventana de cutover ANTES del complete")
+    func execute_reconcile_sweepRescuesOrphanWrite() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Write "huérfano" de la ventana localModeSet→mirrorOff: en History, aún sin drenar/subir.
+        let cat = Category(name: "orphan-window", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(cat)
+        try context.save()
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(!stub.pushedSyncIDs.isEmpty, "el barrido debe drenar + subir el write huérfano")
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty, "tras el barrido el outbox vivo queda limpio (rescate confirmado)")
+    }
+
+    @Test("done-effect w8: barrido con red caída → throw retomable, el complete NO se marca")
+    func execute_reconcile_sweepTransient_retomable() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        stub.pushStatus = 503   // red caída durante el barrido
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        let cat = Category(name: "orphan-transient", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(cat)
+        try context.save()
+
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        // El residual sigue VIVO (nada se perdió) → el resume re-corre el efecto entero.
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(!live.isEmpty, "con red caída el residual queda vivo, retomable")
+    }
+
+    // MARK: - El lease después del cutover (ticket `leader-displaced-after-the-cutover-pushes-its-residual-in-the-reconcile`)
+
+    private static let okBody = Data("{\"ok\":true}".utf8)
+    private static let otherLeaderBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+    private static let notInProgressBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+    private static func claimBody(_ state: String) -> Data { Data("{\"state\":\"\(state)\"}".utf8) }
+
+    /// El escenario común: el líder en `done` con un write de la ventana del cutover sin subir y el sello del intento.
+    private func postCutoverLeader(
+        _ dir: URL, stub: RoutingStub, session: CloudSyncSessionProviding? = nil, leaseClock: MutableLeaseClock? = nil,
+        residualRows: Int = 1
+    ) throws -> (MigrationWorkExecutor, ModelContext, CloudClaimActionStore) {
+        let context = try makeContext(dir)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.postcutover"))
+        claimStore.record(.proceedMigration, forUserID: "sub-leader")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    session ?? FakeSession(token: "jwt", userID: "sub-leader"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    leaseClock: leaseClock, claimStore: claimStore)
+        for index in 0..<residualRows {
+            context.insert(Category(name: "window-\(index)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        }
+        try context.save()
+        return (executor, context, claimStore)
+    }
+
+    private func liveOutboxCount(_ context: ModelContext) throws -> Int {
+        try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }.count
+    }
+
+    @Test("reconcile post-cutover: con el lease confirmado pregunta el latido ANTES de subir, y sube y cierra como siempre")
+    func postCutover_leaseHeld_pushesThenCompletes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        var pushesSeenAtFirstHeartbeat: Int?
+        stub.onMigrationRequest = { if pushesSeenAtFirstHeartbeat == nil { pushesSeenAtFirstHeartbeat = stub.pushCallCount } }
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.migrationActions == ["heartbeat", "complete"])
+        #expect(pushesSeenAtFirstHeartbeat == 0, "la puerta va delante del push")
+        #expect(!stub.pushedSyncIDs.isEmpty, "con el lease, el residual sube")
+        #expect(try liveOutboxCount(context) == 0)
+        #expect(stub.claimCallCount == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+    }
+
+    /// EL BUG. Otro dispositivo tomó el relevo después del cutover y sigue liderando: hasta el ticket este teléfono subía
+    /// su residual encima y reintentaba en cada arranque. Ahora no sube nada, no toca el sello y espera.
+    @Test("reconcile post-cutover: otro lidera con el lease vivo → no sube NADA, no cierra y espera")
+    func postCutover_otherLeaderAlive_pushesNothingAndWaits() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.otherLeaderBody], "complete": [Self.otherLeaderBody]]
+        stub.claimBody = Self.claimBody("claiming_in_progress")
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: otherLeaderActive")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.pushCallCount == 0, "el desplazado no sube su residual encima de la migración del otro")
+        #expect(stub.pullCallCount == 0)
+        #expect(stub.migrationActions == ["heartbeat", "complete"])
+        #expect(stub.lastClaimBody?["migration"] as? Bool == true, "solo un claim de migración puede volver a liderar")
+        #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration,
+                "el claim va directo al cliente: `claiming_in_progress` no puede cambiar el sello")
+        _ = try? context.fetch(FetchDescriptor<SyncOutbox>())
+    }
+
+    /// Otro dispositivo terminó la migración: este teléfono se une como uno más. El efecto termina (el runtime arranca y el
+    /// residual viaja por el sync normal, con la migración ya cerrada), y no sube nada desde aquí.
+    @Test("reconcile post-cutover: el otro ya cerró la migración → se une sin subir nada desde el reconcile")
+    func postCutover_otherFinished_joinsWithoutPushing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.otherLeaderBody]]
+        stub.claimBody = Self.claimBody("existing_stable")
+        let (executor, _, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.pushCallCount == 0)
+        #expect(stub.claimCallCount == 1)
+        #expect(stub.migrationActions == ["heartbeat", "complete"])
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser, "la migración está cerrada: se une")
+    }
+
+    /// `not_in_progress` es AMBIGUO después del cutover: también lo recibe el líder cuyo `complete` llegó y perdió la
+    /// respuesta. `complete` lo desempata (idempotente para el líder), sin claim.
+    @Test("reconcile post-cutover: su propio complete ya había llegado → termina sin claim y sin subir")
+    func postCutover_ownCompleteLanded_finishes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.okBody]]
+        let (executor, _, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.claimCallCount == 0, "sin claim: la migración la cerró este mismo teléfono")
+        #expect(stub.pushCallCount == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+    }
+
+    /// Quien tomó el relevo lo dejó caducar: el claim de migración le devuelve el relevo a este teléfono, que lo confirma
+    /// con otro latido y termina como líder.
+    @Test("reconcile post-cutover: el otro soltó el lease → vuelve a liderar, confirma y entonces sube y cierra")
+    func postCutover_otherAbandoned_retakesThenPushes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = [
+            "heartbeat": [Self.otherLeaderBody, Self.okBody],
+            "complete": [Self.otherLeaderBody, Self.okBody],
+        ]
+        var pushesSeenAtClaim: Int?
+        stub.onClaimRequest = { pushesSeenAtClaim = stub.pushCallCount }
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.migrationActions == ["heartbeat", "complete", "heartbeat", "complete"])
+        #expect(pushesSeenAtClaim == 0, "nada sube antes de recuperar el relevo")
+        #expect(!stub.pushedSyncIDs.isEmpty)
+        #expect(try liveOutboxCount(context) == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .routeReturningUser)
+    }
+
+    @Test("reconcile post-cutover: el claim devuelve el relevo pero el latido no lo confirma → no sube")
+    func postCutover_retakeNotConfirmed_pushesNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationBodiesByAction = ["heartbeat": [Self.otherLeaderBody], "complete": [Self.otherLeaderBody]]
+        let (executor, _, _) = try postCutoverLeader(dir, stub: stub)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.migrationActions == ["heartbeat", "complete", "heartbeat"])
+        #expect(stub.pushCallCount == 0)
+    }
+
+    @Test("reconcile post-cutover: sin poder confirmar el lease (red) no sube, no cierra y no reclama")
+    func postCutover_leaseUnconfirmed_pushesNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        stub.migrationStatus = 503
+        let (executor, context, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.migrationActions == ["heartbeat"])
+        #expect(stub.pushCallCount == 0)
+        #expect(stub.claimCallCount == 0)
+        #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration)
+        _ = context
+    }
+
+    @Test("reconcile post-cutover: un complete o un claim que no contestan → espera, sin subir")
+    func postCutover_resolutionUnconfirmed_pushesNothing() async throws {
+        for (completeBody, claimStatus) in [(Data("{\"ok\":false,\"reason\":\"no_profile\"}".utf8), 200),
+                                            (Self.otherLeaderBody, 503)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            stub.migrationBodiesByAction = ["heartbeat": [Self.otherLeaderBody], "complete": [completeBody]]
+            stub.claimStatus = claimStatus
+            let (executor, _, claimStore) = try postCutoverLeader(dir, stub: stub)
+
+            await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+                try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+            }
+            #expect(stub.pushCallCount == 0)
+            #expect(claimStore.action(forUserID: "sub-leader") == .proceedMigration)
+        }
+    }
+
+    @Test("reconcile post-cutover: sin token — con sesión que renovar espera; sin ella es sesión caducada")
+    func postCutover_noToken() async throws {
+        let dirA = freshDir(); defer { cleanup(dirA) }
+        let renewable = FakeSession(token: nil, userID: "sub-leader")
+        renewable.canRenewSessionOverride = true
+        let (a, _, _) = try postCutoverLeader(dirA, stub: RoutingStub(), session: renewable)
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: leaseUnconfirmed")) {
+            try await a.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        let dirB = freshDir(); defer { cleanup(dirB) }
+        let (b, _, _) = try postCutoverLeader(dirB, stub: RoutingStub(), session: FakeSession(token: nil, userID: "sub-leader"))
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")) {
+            try await b.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+    }
+
+    /// La sesión que el SDK borra DENTRO de la renovación del `complete` de desempate: leída antes del `await` se leería
+    /// guardada. Sin red ni sesión, este teléfono no puede preguntar nada más.
+    @Test("reconcile post-cutover: la sesión borrada al pedir el token del desempate es sesión caducada")
+    func postCutover_sessionRemovedDuringResolution() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let (executor, _, _) = try postCutoverLeader(dir, stub: RoutingStub(), session: SessionRemovedWhileFetching())
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+    }
+
+    /// El canario dice que el relevo tras el cutover PASÓ: sale al unirse y al volver a liderar, y NO cuando la migración
+    /// la cerró este mismo teléfono (su `complete` perdido no es un lease perdido). Las dos ramas de «terminar» hacen lo
+    /// mismo con el efecto; lo único que las separa es esto, y sin la aserción confundirlas pasaba en verde.
+    @Test("reconcile post-cutover: el canario sale al unirse y al volver a liderar, no con su propio complete")
+    func postCutover_canaryOnlyWhenTheLeaseWasReallyLost() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.postcutover.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        func canaries() -> [String?] {
+            MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudPostCutoverLeaseLost" }.map(\.d)
+        }
+
+        let dirOwn = freshDir(); defer { cleanup(dirOwn) }
+        let own = RoutingStub()
+        own.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.okBody]]
+        try await postCutoverLeader(dirOwn, stub: own).0.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(canaries().isEmpty, "su propio complete no es un relevo")
+
+        let dirJoin = freshDir(); defer { cleanup(dirJoin) }
+        let join = RoutingStub()
+        join.migrationBodiesByAction = ["heartbeat": [Self.notInProgressBody], "complete": [Self.otherLeaderBody]]
+        join.claimBody = Self.claimBody("existing_stable")
+        try await postCutoverLeader(dirJoin, stub: join).0.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(canaries() == ["joined"])
+
+        let dirRetake = freshDir(); defer { cleanup(dirRetake) }
+        let retake = RoutingStub()
+        retake.migrationBodiesByAction = [
+            "heartbeat": [Self.otherLeaderBody, Self.okBody], "complete": [Self.otherLeaderBody, Self.okBody],
+        ]
+        try await postCutoverLeader(dirRetake, stub: retake).0.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(canaries() == ["joined", "retaken"])
+    }
+
+    /// Una pasada con el lease confirmado pero congelada a mitad del barrido: los trozos del push cortan cuando la
+    /// confirmación pasa de `leaseInFlightBudget`, como en la subida del snapshot.
+    @Test("reconcile post-cutover: la confirmación que caduca a mitad del barrido corta los trozos del push")
+    func postCutover_leaseExpiresMidSweep_stopsChunks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        stub.onPushRequest = { clock.offset += .seconds(1801) }
+        let (executor, context, _) = try postCutoverLeader(dir, stub: stub, leaseClock: clock, residualRows: 60)
+
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: sweepTransient")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.pushCallCount == 1, "el segundo trozo no sale con la confirmación caducada")
+        #expect(!stub.migrationActions.contains("complete"))
+        #expect(try liveOutboxCount(context) > 0)
+    }
+
+    // MARK: - Verify
+
+    @Test("verify pre-check TOCTOU: outbox no vacío → push-first → newDeltaDetected")
+    func verify_precheck_pushFirst() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Una escritura local pendiente (sin drenar): el drain del pre-check la captura y la sube.
+        let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(cat)
+        try context.save()
+
+        let probe = await executor.verify()
+        #expect(probe == .newDeltaDetected)
+        #expect(!stub.pushedSyncIDs.isEmpty, "el pre-check debe haber subido la fila pendiente")
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty, "tras el push el outbox vivo debe quedar limpio")
+    }
+
+    /// **El 401 del canal deja de colapsar en «red», y esto es lo que la pantalla necesita para poder decir algo.**
+    /// Hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`, `verify()` devolvía
+    /// `.networkTimeout` y `reverseDrainOnce()` `.transient` ante una sesión que ya no vale: esperar no la renueva,
+    /// así que la vuelta a iCloud se quedaba parada al 30 % y al 50 % sin decirlo.
+    ///
+    /// Los dos caminos que producen ese 401 se prueban por separado —el push y el pull—, porque cada uno tiene su
+    /// `case` y un mutante puede colapsar solo uno. Aquí llegan como sesión caducada porque estos clientes se
+    /// construyen con el default `{ false }` de `canRenewSession`; en producción el token que no llega sin red se
+    /// queda en `.transient` antes de llegar aquí.
+    @Test("verify y reverseDrainOnce: un 401 del canal sale como sesión caducada, no como red")
+    func reverseSteps_channel401_surfaceAsSessionExpired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // — Por el PULL, con el outbox vacío (no hay push que hacer).
+        stub.pullStatus = 401
+        #expect(await executor.verify() == .sessionExpired, "verify: el 401 del pull es sesión caducada")
+        #expect(await executor.reverseDrainOnce() == .sessionExpired, "drain: el 401 del pull es sesión caducada")
+
+        // — Por el PUSH, que corre ANTES del pull: con una fila viva pendiente se llega a él primero.
+        stub.pullStatus = 200
+        stub.pushStatus = 401
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        #expect(await executor.verify() == .sessionExpired, "verify: el 401 del push es sesión caducada")
+        #expect(await executor.reverseDrainOnce() == .sessionExpired, "drain: el 401 del push es sesión caducada")
+
+        // — Controles en la dirección contraria, por las DOS rutas. Sin ellos, un mutante que mandara todo a
+        // `.sessionExpired` saldría verde y la tarjeta diría «Tu sesión caducó. Vuelve a entrar» a quien solo está
+        // sin cobertura, que es el falso positivo que este cambio existe para no cometer.
+        stub.pushStatus = 503
+        #expect(await executor.verify() == .networkTimeout, "verify: un 5xx del push sigue siendo red")
+        #expect(await executor.reverseDrainOnce() == .transient, "drain: un 5xx del push sigue siendo red")
+
+        // — Y el 403: cuenta suspendida. Sigue sin pedir volver a entrar —«Iniciar sesión» ahí manda a un gesto que
+        // no cambia nada— pero desde el 2026-09-21 tampoco se confunde con la red: sale TIPADO
+        // (`reverse-before-mount-has-no-way-to-abandon-the-return`), que es lo que deja elegir el techo corto de la
+        // etapa. Con `.transient`, como estaba, la vuelta se quedaba parada aquí sin salida.
+        stub.pushStatus = 403
+        #expect(await executor.verify() == .blocked(.accountUnavailable),
+                "verify: el 403 del push no es red, y tampoco pide volver a entrar")
+        #expect(await executor.reverseDrainOnce() == .blocked(.accountUnavailable),
+                "drain: el 403 del push no es red, y tampoco pide volver a entrar")
+
+        // El 403 del PULL exige el outbox vacío: con filas vivas, el push las sube y `verify()` sale por
+        // `.newDeltaDetected` antes de llegar al pull. Un `reverseDrainOnce` con el push en 200 lo limpia.
+        stub.pushStatus = 200
+        #expect(await executor.reverseDrainOnce() == .completed, "control: con todo en 200, el drain cierra")
+        #expect(try liveOutboxRows(context).isEmpty, "control del escenario: sin este vacío, el pull no se alcanza")
+        stub.pullStatus = 403
+        #expect(await executor.verify() == .blocked(.accountUnavailable),
+                "verify: el 403 del pull no es red, y tampoco pide volver a entrar")
+        #expect(await executor.reverseDrainOnce() == .blocked(.accountUnavailable),
+                "drain: el 403 del pull no es red, y tampoco pide volver a entrar")
+    }
+
+    /// Filas vivas del outbox: el escenario de arriba depende de que esté vacío, y afirmarlo es lo que impide que el
+    /// caso se sostenga por casualidad (la trampa del «escenario que no recorre la rama que dice»).
+    ///
+    /// **Propaga desde el 2026-09-22** (ticket `verify-reads-a-failed-local-fetch-as-an-empty-outbox`): era un
+    /// `try?` con `?? []`, o sea el mismo antipatrón que el ticket arregla, metido en el CONTROL del escenario. Un
+    /// fetch que lanzara aquí habría dado «outbox vacío» y el control habría certificado una premisa falsa — justo
+    /// lo que estos helpers existen para no hacer. Si lanza, el test se cae, que es lo correcto.
+    private func liveOutboxRows(_ context: ModelContext) throws -> [SyncOutbox] {
+        try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+    }
+
+    // MARK: - El outbox que no se deja leer (`verify-reads-a-failed-local-fetch-as-an-empty-outbox`)
+
+    /// **EL caso del ticket.** Hasta el 2026-09-22 un `fetch(SyncOutbox)` que lanzaba devolvía `[]`, y la misma
+    /// avería producía dos conclusiones opuestas en UNA pasada: el pre-check leía «no hay nada que subir» y se
+    /// saltaba el push entero, y veinte líneas después `verifyIntegrity` repetía el mismo fetch y lo trataba como
+    /// algo que no se arregla esperando. La primera era demasiado optimista y la segunda demasiado pesimista.
+    ///
+    /// Se mide en las dos mitades, porque un desenlace correcto por el camino equivocado no cierra el ticket:
+    /// (a) el veredicto es `.blocked(.localFailure)`, el mismo al que `VerifyProbeMapping` manda
+    /// `outbox-fetch-failed` — o sea, la pasada tiene UNA sola lectura; (b) **la pasada CORTÓ**, y eso se afirma
+    /// con los contadores del stub: sin push subido, sin pull pedido y sin Merkle pedido. Con el `[]` de antes el
+    /// pull y el Merkle sí se pedían, así que el contador en cero es lo que distingue «lo arreglé» de «coincide».
+    @Test("verify: un outbox ilegible corta con un desenlace propio y NO se salta el push")
+    func verify_unreadableOutbox_blocksLocalFailure_andStopsThePass() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Una fila local pendiente: sin ella el escenario no distingue «no había nada» de «no se pudo leer».
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        // Control del escenario ANTES de la avería: esa fila LLEGA al outbox y sin el seam se sube. Sin esto, el
+        // caso no distinguiría «no había nada que subir» de «no se pudo leer», que es justo su tesis.
+        let sano = makeExecutor(context, CloudSyncEngine(), stub,
+                                FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await sano.verify() == .newDeltaDetected,
+                "control del escenario: sin la avería esta fila se sube y la pasada pide un re-run")
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: la fila existe y el push la sube")
+
+        // Y ahora el caso, con el outbox re-poblado para que haya algo que saltarse.
+        context.insert(Category(name: "drinks", colorHex: "#FEDCBA", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        let pullsAntes = stub.pullCallCount
+        let merkleAntes = stub.merkleCallCount
+        let subidasAntes = stub.pushedSyncIDs.count
+
+        executor._testOutboxFetchThrowsFromCall = 1
+        let probe = await executor.verify()
+
+        #expect(probe == .blocked(.localFailure),
+                "el outbox ilegible tiene desenlace propio, no se lee como vacío")
+        #expect(probe == VerifyProbeMapping.map(verdict: .skipped(reason: MerkleSkipReason.outboxFetchFailed)),
+                "y es EL MISMO que el verificador Merkle da para ese fallo: una lectura, una conclusión")
+        #expect(stub.pushedSyncIDs.count == subidasAntes, "no se sube nada a ciegas")
+        // Y NO llega al pull. Con el `[]` de antes sí llegaba, y es el detalle que distingue este arreglo de
+        // cualquier otro corte: `live.isEmpty` daba true, se saltaba el push entero y la pasada seguía adelante
+        // hasta el Merkle, que sacaba la conclusión CONTRARIA del mismo fallo. Lo mata el mutante.
+        #expect(stub.pullCallCount == pullsAntes, "la pasada corta AQUÍ: con el `[]` de antes seguía al pull")
+        #expect(stub.merkleCallCount == merkleAntes, "y no llega al Merkle a sacar la conclusión contraria")
+    }
+
+    /// La SEGUNDA lectura de `verify()`, la de después del push, y era la peor de las dos: con `[]` devolvía
+    /// `.newDeltaDetected`, que **no consume reintento**. O sea que una base ilegible no solo se leía como «todo
+    /// subido» sino como «llegó un delta, vuelve a correr gratis» — una re-corrida sin techo alimentada por la
+    /// propia avería. El contador del seam existe para que esta rama sea alcanzable: con un `Bool`, la primera
+    /// lectura corta antes y nadie mediría ésta.
+    ///
+    /// El control del escenario es `pushedSyncIDs`: si el push no llegó a correr, este test estaría midiendo el
+    /// caso de arriba con otro nombre.
+    @Test("verify: si el outbox se vuelve ilegible DESPUÉS del push, tampoco es un re-run gratis")
+    func verify_unreadableOutboxAfterPush_blocksInsteadOfFreeRerun() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        // La 1.ª lectura (pre-check) pasa y deja correr el push; la 2.ª (post-push) lanza.
+        executor._testOutboxFetchThrowsFromCall = 2
+        let probe = await executor.verify()
+
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: el push TIENE que haber corrido")
+        #expect(probe == .blocked(.localFailure),
+                "la relectura fallida no vale un re-run barato — devolvía `.newDeltaDetected`, que NO consume reintento")
+    }
+
+    /// El gemelo en la VUELTA, y donde el precio es mayor: `reverseDrainOnce` podía devolver `.completed` con el
+    /// outbox sin leer, y lo siguiente que hace la vuelta a iCloud es CONGELAR el backend. Dar por drenado lo que
+    /// nadie pudo mirar y cerrar la puerta detrás.
+    ///
+    /// `.blocked(.localFailure)` elige el techo CORTO de la etapa (`ReversePreMountBlocker.stallCause`), que es el
+    /// trato que el ticket hermano ya le dio a esta misma avería vista desde el Merkle.
+    @Test("reverseDrainOnce: un outbox ilegible no se da por drenado")
+    func reverseDrain_unreadableOutbox_doesNotReportCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        executor._testOutboxFetchThrowsFromCall = 1
+        let outcome = await executor.reverseDrainOnce()
+
+        #expect(outcome == .blocked(.localFailure),
+                "esperar no arregla una lectura que falla, y no se da por drenado: detrás viene el congelado")
+        #expect(stub.pullCallCount == 0, "corta antes del pull final")
+        #expect(stub.pushedSyncIDs.isEmpty, "sin subir nada a ciegas")
+
+        // Control en la dirección contraria: con el store legible el mismo escenario cierra Y SUBE. Sin la
+        // segunda mitad, `.completed` también sale con el outbox vacío —el push es condicional— así que el
+        // control pasaría aunque la `Category` no hubiera encolado nada.
+        executor._testOutboxFetchThrowsFromCall = nil
+        #expect(await executor.reverseDrainOnce() == .completed,
+                "control: sin la avería, este escenario SÍ drena — el `blocked` de arriba lo produce el fetch")
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: y había de verdad una fila que subir")
+    }
+
+    /// El barrido del líder antes de `migration_progress('complete')`. Con `[]` el residual salía vacío, no se
+    /// subía nada y el `complete` se mandaba igual: la migración de la cuenta se cerraba con las filas del líder
+    /// fuera. Ahora propaga como el resto de cortes retomables de ese bloque, y el `complete` no llega a pedirse.
+    @Test("leader-reconcile: un outbox ilegible corta retomable y NO manda 'complete'")
+    func leaderReconcile_unreadableOutbox_throwsBeforeComplete() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub,
+                                    FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Control del escenario PRIMERO: sin la avería este efecto llega a mandar `complete`. Sin él, un mutante
+        // que lanzara al ENTRAR en el efecto pasaría las dos aserciones de abajo sin tocar el outbox.
+        let sano = makeExecutor(context, CloudSyncEngine(), stub,
+                                FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await sano.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(stub.migrationActions.filter { $0 == "complete" }.count == 1,
+                "control del escenario: sin la avería SÍ se manda `complete`")
+
+        executor._testOutboxFetchThrowsFromCall = 1
+        // El `effect` EXACTO, no el tipo: `notWired` es el mismo case que usan `sweepTransient`,
+        // `sessionExpired`, `otherLeader` y `rejected`, así que `throws: MigrationExecutorError.self` no
+        // distinguiría esta rama de ninguna de las otras cuatro.
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: outboxUnreadable")) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.migrationActions.filter { $0 == "complete" }.count == 1,
+                "el `complete` NO se manda otra vez: cerraría la migración con filas del líder sin subir")
+    }
+
+
+    @Test("verify limpio: pull vacío marca lastPull + Merkle converge → match")
+    func verify_clean_converged_match() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Merkle remoto = árbol LOCAL (store vacío → converge byte a byte).
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
+        var entitiesJSON: [String: Any] = [:]
+        for (table, summary) in local.entities {
+            entitiesJSON[table] = ["count": summary.count, "hash": summary.hashHex]
+        }
+        stub.merkleBody = try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c1", "capability_set": "v1",
+            "root": local.rootHex, "entities": entitiesJSON,
+        ])
+
+        #expect(await executor.verify() == .match)
+    }
+
+    /// **La cadena ENTERA, que es lo que el ticket cierra: un «no» del servidor que solo ve el TERCER paso.**
+    /// El push y el pull tipan su 401 y su 403 desde el 2026-09-16, y el Merkle los aplanaba, así que la ventana
+    /// viva era la del rechazo que empieza justo entre el pull y el Merkle. Aquí se monta exactamente eso: los dos
+    /// primeros pasos en 200 y el Merkle contestando que no.
+    ///
+    /// El escenario arranca con el outbox VACÍO a propósito: con filas vivas el push las sube y `verify()` sale por
+    /// `.newDeltaDetected` sin llegar al Merkle. **Con él vacío el push no se ejecuta siquiera** —`live.isEmpty`
+    /// salta el bloque entero—, así que el único paso que corre antes del Merkle es el pull, que es justo la ventana
+    /// que el ticket describe. El control positivo del final impide que el caso se sostenga por casualidad: con el
+    /// mismo escenario y el Merkle en 200, `verify()` da `.match`.
+    @Test("verify: el 401 y el 403 que solo ve el MERKLE ya no salen como red")
+    func verify_merkleOnly401and403_areTyped() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Merkle remoto = árbol LOCAL (store vacío → converge byte a byte) para el control del final.
+        let local = try SyncMerkle.computeLocalMerkle(context: context)
+        var entitiesJSON: [String: Any] = [:]
+        for (table, summary) in local.entities {
+            entitiesJSON[table] = ["count": summary.count, "hash": summary.hashHex]
+        }
+        stub.merkleBody = try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c1", "capability_set": "v1",
+            "root": local.rootHex, "entities": entitiesJSON,
+        ])
+
+        #expect(try liveOutboxRows(context).isEmpty, "control del escenario: sin outbox vacío no se alcanza el Merkle")
+
+        stub.merkleStatus = 401
+        #expect(await executor.verify() == .sessionExpired,
+                "verify: el 401 del Merkle es sesión caducada — en la vuelta enciende «vuelve a entrar»")
+
+        stub.merkleStatus = 403
+        #expect(await executor.verify() == .blocked(.accountUnavailable),
+                "verify: el 403 del Merkle no es red — en la vuelta elige el techo CORTO")
+
+        // Control en la dirección contraria: lo que SÍ es red del Merkle sigue siendo red. Y el 401 del ATTEST
+        // también, que es la otra mitad de este 401 y la que no debe pedir volver a entrar (regla
+        // `.claude/rules/gateway-attest.md`): en la vuelta elige el techo LARGO, como el resto de la red.
+        stub.merkleStatus = 503
+        #expect(await executor.verify() == .networkTimeout, "verify: un 5xx del Merkle sigue siendo red")
+
+        stub.merkleStatus = 401
+        stub.merkleErrorBody = Data(#"{"error":{"type":"yala_attest_required","code":"yala_attest_required"}}"#.utf8)
+        #expect(await executor.verify() == .networkTimeout,
+                "verify: el 401 de attest del Merkle es pasajero, no una sesión que renovar")
+        stub.merkleErrorBody = Data()
+
+        // Control positivo: el mismo escenario con el Merkle sano converge.
+        stub.merkleStatus = 200
+        #expect(await executor.verify() == .match)
+    }
+
+    /// El `reason` desconocido y el `fetch` de la CUARENTENA no se pueden montar desde el transporte, así que su
+    /// lectura se fija en el mapping (`VerifyProbeMappingTests`). **Ya no son «los dos `fetch`»**: desde
+    /// `verify-reads-a-failed-local-fetch-as-an-empty-outbox` el del outbox SÍ se monta —con
+    /// `_testOutboxFetchThrowsFromCall`, en los tests de más arriba— y el del cómputo del árbol local también, en
+    /// `SyncMerkleTests`. Lo que SÍ se mide aquí es que ese mapping es el que `verify()` usa: con un canon que
+    /// este build no compara, el veredicto sale por él.
+    @Test("verify: el veredicto del Merkle pasa por VerifyProbeMapping, no por una tabla paralela")
+    func verify_contractMismatch_goesThroughTheMapping() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        stub.merkleBody = try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c2", "capability_set": "v1", "root": "r", "entities": [:],
+        ])
+        #expect(await executor.verify() == .mismatch,
+                "canon futuro → mismatch, que es lo que dice la tabla del mapping")
+    }
+
+    // MARK: - Identidad
+
+    @Test("assignIdentity: backfill de syncID + testigos + flip del gate permanente")
+    func assignIdentity_backfillsAndFlips() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        let cat = Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        #expect(cat.syncID == nil)
+        context.insert(cat)
+        try context.save()
+
+        try await executor.assignIdentity()
+
+        #expect(CloudSyncFlags.identityCaptureEnabled, "el gate permanente debe quedar ON")
+        #expect(cat.syncID != nil, "el backfill debe acuñar el syncID")
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        #expect(witnesses.contains { $0.syncID == cat.syncID }, "debe existir la fila testigo")
+    }
+
+    // MARK: - Reversa (§h, I11-2)
+
+    /// GOLDEN §h.5: 50 TX post-cutover + 10 tombstones fake + 1 SyncIdentity rebound → tras sweep 40 vivas,
+    /// 0 zombies, verifyRebinds()==1; idempotente; tombstone de syncID inexistente no-op; el sweep NO avanza
+    /// SyncCursor NI borra testigos; anti-eco (drainOnce tras el sweep no produce filas nuevas en el outbox).
+    @Test("sweepZombies §h.5: barrido tombstones-vs-vivas — 40 vivas, verifyRebinds==1, idempotente, sin side-effects, anti-eco")
+    func sweepZombies_goldenH5() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // 50 TX post-cutover con syncID acuñado (sin CKRecord — irrelevante in-memory).
+        var syncIDs: [UUID] = []
+        for i in 0..<50 {
+            let tx = TransactionItem(date: fixedNow, amount: Double(i), currencyCode: "USD")
+            tx.syncID = UUID()
+            syncIDs.append(tx.syncID!)
+            context.insert(tx)
+        }
+        try context.save()
+
+        // Baseline: drenar los 50 inserts al outbox (autor por DEFECTO) → token avanza.
+        engine.drainOnce(context: context)
+        let baselineOutbox = try context.fetchCount(FetchDescriptor<SyncOutbox>())
+        #expect(baselineOutbox > 0, "los inserts se emitieron al outbox como baseline")
+
+        // 1 testigo SyncIdentity rebound (lastReboundAt) apuntando a una TX que SOBREVIVE (no está entre 0..<10).
+        let reboundSyncID = syncIDs[49]
+        context.insert(SyncIdentity(syncID: reboundSyncID, entityType: SyncEntityType.transactionItem,
+                                    localAnchor: "anchor", lastReboundAt: fixedNow))
+        try context.save()
+
+        // Fuente: 10 tombstones (syncIDs 0..<10) + 1 tombstone de syncID INEXISTENTE (no-op).
+        var deltas = (0..<10).map { tombstone(table: "tx_items", syncID: syncIDs[$0], seq: Int64($0 + 1)) }
+        deltas.append(tombstone(table: "tx_items", syncID: UUID(), seq: 999))
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: deltas, maxServerSeq: 999)]
+
+        let executor = makeExecutor(context, engine, RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        // Testigos ANTES del sweep (para asserts de no-side-effects).
+        let cursorBefore = try context.fetch(FetchDescriptor<SyncCursor>()).first?.serverSeqCursor ?? 0
+        let witnessesBefore = try context.fetchCount(FetchDescriptor<SyncIdentity>())
+
+        // SWEEP.
+        #expect(await executor.sweepZombies(sinceSeq: 0) == .completed(deleted: 10),
+                "10 filas vivas tombstoneadas borradas (el syncID inexistente es no-op)")
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 40, "quedan 40 vivas")
+        #expect(executor.verifyRebinds() == 1, "la fila rebound sigue viva portando su syncID")
+
+        // El sweep NO avanza SyncCursor NI borra testigos SyncIdentity (enumeración read-only salvo deletes).
+        let cursorAfter = try context.fetch(FetchDescriptor<SyncCursor>()).first?.serverSeqCursor ?? 0
+        #expect(cursorAfter == cursorBefore, "el sweep NO avanza SyncCursor")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == witnessesBefore, "el sweep NO borra testigos")
+
+        // Idempotencia: re-sweep con la misma página → 0 deletes (ya no hay filas vivas que casen).
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: deltas, maxServerSeq: 999)]
+        let executor2 = makeExecutor(context, engine, RoutingStub(), session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        #expect(await executor2.sweepZombies(sinceSeq: 0) == .completed(deleted: 0), "re-sweep idempotente")
+
+        // ANTI-ECO: los deletes van bajo outboxSaveAuthor → un drainOnce posterior NO los re-emite al outbox.
+        engine.drainOnce(context: context)
+        #expect(try context.fetchCount(FetchDescriptor<SyncOutbox>()) == baselineOutbox,
+                "los deletes del sweep NO se re-emiten al outbox (anti-eco)")
+    }
+
+    @Test("sweepZombies: red del pull → transient (sin mutación)")
+    func sweepZombies_networkTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: 1, currencyCode: "USD")
+        tx.syncID = UUID()
+        context.insert(tx)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.forced = .transient
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.sweepZombies(sinceSeq: 0) == .transient)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 1, "red → sin borrar nada")
+    }
+
+    /// Ticket `apply-overwrites-a-pending-local-write-without-its-guards`: una tabla que no se deja leer ya no
+    /// cuenta como «0 zombies». Las tablas se barren en orden (`tags` antes que `tx_items`), así que `tags` ya
+    /// dejó su delete en el contexto cuando `tx_items` lanza: el rollback lo tira, nada se guarda y el runner
+    /// reintenta. Control positivo: con la lectura de vuelta, borra las dos.
+    @Test("sweepZombies: tabla ilegible → transient con rollback, sin dar el barrido por hecho")
+    func sweepZombies_unreadableTable_transientWithRollback() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        defer { EntityApplyMap._testThrowOnFetchOf = [] }
+        let tx = TransactionItem(date: fixedNow, amount: 1, currencyCode: "USD")
+        tx.syncID = UUID()
+        let tag = Yala.Tag(name: "Viaje")
+        context.insert(tx)
+        context.insert(tag)
+        try context.save()
+        let deltas = [tombstone(table: "tags", syncID: tag.id, seq: 1),
+                      tombstone(table: "tx_items", syncID: try #require(tx.syncID), seq: 2)]
+
+        func executor() -> MigrationWorkExecutor {
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: deltas, maxServerSeq: 2)]
+            return makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source)
+        }
+
+        EntityApplyMap._testThrowOnFetchOf = ["TransactionItem"]
+        #expect(await executor().sweepZombies(sinceSeq: 0) == .transient)
+        EntityApplyMap._testThrowOnFetchOf = []
+        #expect(context.hasChanges == false, "rollback: el delete de tags no queda dirty")
+        #expect(try context.fetchCount(FetchDescriptor<Yala.Tag>()) == 1)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 1)
+
+        #expect(await executor().sweepZombies(sinceSeq: 0) == .completed(deleted: 2))
+        #expect(try context.fetchCount(FetchDescriptor<Yala.Tag>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 0)
+    }
+
+    @Test("execute(.mountMirrorAndRelaunch): DESARMA el flag mirror-off (el proceso NO se mata solo)")
+    func execute_mountMirror_disarmsFlag() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.mount")
+        defaults.set(true, forKey: MigrationWorkExecutor.relaunchRequestedKey)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.mountMirrorAndRelaunch)
+        #expect(defaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == false)
+    }
+
+    @Test("execute(.persistICloudMode): storageMode=.icloud + mirrorOffArmed=false JUNTOS (invariante SERIO 1)")
+    func execute_persistICloudMode_pair() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.icloud")
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        defaults.set(true, forKey: StorageModePersistence.mirrorOffArmedKey)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.persistICloudMode)
+        #expect(StorageModePersistence.read(defaults) == .icloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults) == false)
+    }
+
+    /// Ticket `needsrelaunch-hides-the-groups-section`. Almacenamiento no monta la sección de Grupos en `.needsRelaunch`, y
+    /// eso es seguro SOLO porque las aristas que pintan la tarjeta de relanzar dejan el modo en `.cloud`: con `.cloud` la
+    /// sección sería `.sameAccountAsPersonal`, que no ofrece soltar nada. El ticket suponía `.icloud` en la vuelta a iCloud
+    /// y, con él, una cuenta de grupos sin puerta hasta matar la app. Esto fija la cadena entera con los efectos reales: si
+    /// una arista escribe `.icloud` antes de relanzar, el `case` de la vista tiene que montar la sección.
+    @Test("MUTACIÓN: en .needsRelaunch el modo sigue en .cloud, así que esconder la sección de Grupos no quita ninguna puerta")
+    func needsRelaunch_keepsCloudMode_soTheGroupsSectionHasNoDoorToLose() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.relaunch.groups")
+        // Modo Nube estable, de donde sale la vuelta a iCloud: el par entero.
+        StorageModePersistence.writeCloudArmed(defaults: defaults)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+
+        // La vuelta a iCloud: `reverseFreezeBackend → reverseMountMirror`, y el proceso sigue montado sin espejo.
+        try await executor.execute(.mountMirrorAndRelaunch)
+        let toICloud = CloudMigrationUIStateDeriver.derive(
+            storageMode: StorageModePersistence.read(defaults), phase: .reverseMountMirror,
+            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(defaults), mountedDecision: .cloudMirrorOff)
+        try #require(toICloud == .needsRelaunch(.toICloud), "control: no es el estado del ticket (\(toICloud))")
+        #expect(StorageModePersistence.read(defaults) == .cloud, """
+            la vuelta a iCloud escribió `.icloud` antes de relanzar: la sección de Grupos ofrecería desasociar y \
+            `StorageSettingsView` la esconde en `.needsRelaunch` — la cuenta de grupos se queda sin puerta hasta matar la app
+            """)
+        assertNoGroupsDoor(storageMode: StorageModePersistence.read(defaults), "needsRelaunch(.toICloud)")
+
+        // La salida de la espera de la vuelta (techo o «Cancelar»): re-arma el par con el espejo todavía montado.
+        try await executor.execute(.rearmMirrorOff)
+        let toCloud = CloudMigrationUIStateDeriver.derive(
+            storageMode: StorageModePersistence.read(defaults), phase: .done,
+            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(defaults), mountedDecision: .iCloudMirror)
+        try #require(toCloud == .needsRelaunch(.toCloud), "control: no es la tarjeta de relanzar (\(toCloud))")
+        #expect(StorageModePersistence.read(defaults) == .cloud)
+        assertNoGroupsDoor(storageMode: StorageModePersistence.read(defaults), "needsRelaunch(.toCloud)")
+    }
+
+    /// Con este modo, en ninguna combinación de sesión privada, registro de asociación y sesión de grupos la sección ofrece
+    /// soltar la cuenta.
+    private func assertNoGroupsDoor(storageMode: StorageMode, _ label: String) {
+        for hasPrivateSession in [false, true] {
+            let device = CloudIdentityRoutingLogic.deviceState(
+                hasCompletedOnboarding: true, storageMode: storageMode, hasPrivateSession: hasPrivateSession)
+            for hasAssociation in [false, true] {
+                for hasLiveSession in [false, true] {
+                    let state = GroupsAssociationLogic.sectionState(
+                        deviceState: device, hasPersistedAssociation: hasAssociation, hasLiveGroupsSession: hasLiveSession)
+                    #expect(!GroupsAssociationLogic.offersDetach(state), """
+                        \(label): la sección ofrecería desasociar (\(state)) y Almacenamiento no la monta en este estado
+                        """)
+                }
+            }
+        }
+    }
+
+    @Test("execute(.persistICloudMode): retira los sentinels del drenaje iKV (#37) — TODOS los userIDs, keys ajenas intactas")
+    func execute_persistICloudMode_clearsDrainSentinels() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.icloud.sentinel")
+        defaults.set(true, forKey: PrefsCutoverDrain.sentinelPrefix + "userA")
+        defaults.set(true, forKey: PrefsCutoverDrain.sentinelPrefix + "userB")
+        defaults.set(true, forKey: "cloudSync.otherKey")   // ajena: jamás se toca
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.persistICloudMode)
+        #expect(defaults.object(forKey: PrefsCutoverDrain.sentinelPrefix + "userA") == nil,
+                "sentinel del userID A retirado — una re-migración vuelve a drenar")
+        #expect(defaults.object(forKey: PrefsCutoverDrain.sentinelPrefix + "userB") == nil,
+                "sentinel de OTRO userID también (basura inerte post-reversa)")
+        #expect(defaults.bool(forKey: "cloudSync.otherKey"), "key ajena al prefijo intacta")
+        // Idempotencia (kill-safe: el efecto puede re-ejecutarse en resume): segunda pasada no lanza.
+        try await executor.execute(.persistICloudMode)
+    }
+
+    @Test("execute(.clearCloudBeacon): remueve las 4 keys del faro (simétrico a write)")
+    func execute_clearBeacon_removesKeys() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let beaconStore = FakeBeaconStore()
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, beaconStore,
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.writeBeacon)
+        #expect(beaconStore.bool(forKey: CloudBeacon.Keys.linked))
+        try await executor.execute(.clearCloudBeacon)
+        #expect(beaconStore.bool(forKey: CloudBeacon.Keys.linked) == false)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.provider) == nil)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) == nil)
+        #expect(beaconStore.double(forKey: CloudBeacon.Keys.linkedAt) == 0)
+    }
+
+    @Test("execute(.deleteCloudKitMarker): borra los marcadores (idempotente)")
+    func execute_deleteMarker_idempotent() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.writeCloudKitMarker)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 1)
+        try await executor.execute(.deleteCloudKitMarker)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+        try await executor.execute(.deleteCloudKitMarker)   // idempotente (0 marcadores)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    // MARK: - Reversa server-side (I11-3): las 4 acciones `reverse_*`. LECCIÓN d49d2e47: cada acción
+    // asserta el BODY enviado (device_id + action exactos) — el gap del bug del claim era exactamente un
+    // test faltante del body.
+
+    @Test("performReverseClaim: ok → accepted + BODY {device_id, action:'reverse_claim'} exacto")
+    func reverseClaim_ok_sendsExactBody() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.performReverseClaim() == .accepted)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_claim")
+    }
+
+    @Test("performReverseClaim: mapeo de outcomes — other_leader/rejected/500/sin-JWT")
+    func reverseClaim_outcomeMapping() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        #expect(await executor.performReverseClaim() == .otherLeader)
+
+        // g15_02: el rechazo por tipo de cuenta ya no es `not_migrated` sino `not_complete` (solo-grupos,
+        // o una cuenta que YA volvió a iCloud). El executor lo propaga OPACO — no hay `switch` por motivo.
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_complete\"}".utf8)
+        #expect(await executor.performReverseClaim() == .rejected(reason: "not_complete"))
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"migration_in_progress\"}".utf8)
+        #expect(await executor.performReverseClaim() == .rejected(reason: "migration_in_progress"))
+
+        stub.migrationStatus = 500
+        #expect(await executor.performReverseClaim() == .transient)
+
+        session.token = nil
+        #expect(await executor.performReverseClaim() == .sessionExpired, "sin JWT → sessionExpired SIN tocar la red")
+
+        // El caso que abre el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`: el token no llega
+        // pero el SDK CONSERVA la sesión ⇒ la renovación no volvió (sin red, 5xx del servidor de auth), no hay nada
+        // que volver a firmar. Sin esta separación, quedarse sin cobertura a mitad de la vuelta pediría iniciar
+        // sesión — el mismo falso positivo que cerró `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`.
+        session.canRenewSessionOverride = true
+        #expect(await executor.performReverseClaim() == .transient,
+                "token ausente con la sesión guardada → pasajero, NO sesión caducada")
+    }
+
+    @Test("""
+        freezeBackendForReverse: ok → completed + BODY {device_id, action:'reverse_freeze'}; rechazo/red → transient; \
+        sin JWT → sessionExpired, salvo que el SDK conserve la sesión (entonces pasajero)
+        """)
+    func reverseFreeze_bodyAndOutcomes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.freezeBackendForReverse() == .completed)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_freeze")
+
+        // Desde el 2026-09-21 los dos rechazos del servidor salen TIPADOS
+        // (`reverse-before-mount-has-no-way-to-abandon-the-return`): hasta entonces colapsaban en `.transient` y esta
+        // fase era la única de las cuatro sin ninguna salida, reintentando un «no» para siempre.
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        #expect(await executor.freezeBackendForReverse() == .blocked(.otherLeader))
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+        #expect(await executor.freezeBackendForReverse() == .blocked(.refused))
+
+        stub.migrationStatus = 500
+        #expect(await executor.freezeBackendForReverse() == .transient)
+
+        // 401 del gateway: `/account/migration` NO exige App Attest, así que su 401 es siempre el JWT (a diferencia
+        // de `/sync/*`, donde hay un segundo 401 que es del attest y NO pide volver a entrar).
+        stub.migrationStatus = 401
+        #expect(await executor.freezeBackendForReverse() == .sessionExpired)
+
+        stub.migrationStatus = 200
+        session.token = nil
+        #expect(await executor.freezeBackendForReverse() == .sessionExpired,
+                "sin JWT y sin sesión guardada → hay que volver a entrar")
+
+        session.canRenewSessionOverride = true
+        #expect(await executor.freezeBackendForReverse() == .transient,
+                "token ausente con la sesión guardada → pasajero: esperar lo arregla")
+    }
+
+    @Test("execute(.completeReverseServer): ok → no throw + BODY {device_id, action:'reverse_complete'}; rechazo → throw retomable")
+    func reverseComplete_bodyAndThrows() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.completeReverseServer)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_complete")
+
+        // Rechazo (not_in_progress) → THROW: queda journaled-pendiente retomable (patrón de la ida).
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.completeReverseServer)
+        }
+        // Red caída → THROW retomable.
+        stub.migrationStatus = 500
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.completeReverseServer)
+        }
+    }
+
+    @Test("execute(.reverseRollback): ok → no throw + BODY {device_id, action:'reverse_abort'}; rejected/other_leader NO throwean (perpetuo); red sí")
+    func reverseRollback_bodyAndNoPerpetualThrow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.reverseRollback)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_abort")
+
+        // Decisión I11-3: un abort RECHAZADO (lease usurpado / rejected) COMPLETA el efecto (no throw) —
+        // el estado local ya es terminal estable; re-lanzar perpetuo repetiría el bug-class del rollback
+        // de la ida (device 2026-07-10). Breadcrumb RUIDOSO delata el caso.
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        try await executor.execute(.reverseRollback)
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"no_profile\"}".utf8)
+        try await executor.execute(.reverseRollback)
+
+        // Red caída / sin JWT → THROW retomable (la red/el re-login lo despiertan).
+        stub.migrationStatus = 500
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.reverseRollback)
+        }
+        session.token = nil
+        stub.migrationStatus = 200
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.reverseRollback)
+        }
+    }
+
+    @Test("reverseUploadStatus: store vacío → drained (0 pares, sin cambios que persistir)")
+    func reverseUploadStatus_empty_drained() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(executor.reverseUploadStatus() == .drained)
+    }
+
+    @Test("healDuplicates: AUTO-CURA (I11-4) — fusiona copias idénticas de Account y devuelve nº de perdedores")
+    func healDuplicates_mergesDuplicates() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        // 2 cuentas idénticas por contenido (shortcutID distinto) → 1 grupo duplicado → 1 perdedor curado.
+        context.insert(Account(name: "Cash", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        context.insert(Account(name: "Cash", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        try context.save()
+        #expect(executor.healDuplicates() == 1)
+        #expect(try context.fetchCount(FetchDescriptor<Account>()) == 1, "el perdedor fue borrado (cura, no solo detección)")
+        #expect(executor.healDuplicates() == 0, "idempotente: 2ª pasada no cura nada")
+    }
+
+    // MARK: - ReverseEligibility (guardarraíl §h.6-A1, obligación 1 del review)
+
+    @Test("ReverseEligibility: notCloudMode / reverseAlreadyTerminal / eligible")
+    func reverseEligibility_decisions() {
+        #expect(ReverseEligibility.decide(
+            storageMode: .icloud, hasCKMap: true, isBornCloud: false, journaledPhase: .done) == .notCloudMode)
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: true, isBornCloud: false, journaledPhase: .icloudActive) == .reverseAlreadyTerminal)
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: true, isBornCloud: false, journaledPhase: .reverseFailedRollback) == .reverseAlreadyTerminal)
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: true, isBornCloud: false, journaledPhase: .done) == .eligible)
+    }
+
+    /// El eje que g15_02 abre: el mapa CloudKit solo se le exige a quien NO consta como born-cloud. Los dos
+    /// casos de `hasCKMap: false` son los que discriminan — si alguien retira `|| isBornCloud` cae el
+    /// born-cloud; si retira `hasCKMap ||` cae el sin-mapa-sin-marca, que sigue excluido a propósito.
+    @Test("ReverseEligibility: sin mapa CloudKit, born-cloud entra y el resto NO (resurrección de borrados)")
+    func reverseEligibility_mapOnlyRequiredWithoutBornCloudMark() {
+        // Sin mapa y sin marca: puede ser un MIGRADO que perdió el mapa, y su zona CloudKit sigue ahí con
+        // los records que borró durante la época nube. Remontar el mirror los resucitaría → sigue fuera.
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: false, isBornCloud: false, journaledPhase: .done) == .degradedNoMap)
+
+        // Born-cloud: nunca hubo zona con borrados de la época nube, así que no hay nada que resucitar.
+        // Hasta el 2026-09-10 caía en `degradedNoMap` por arrastre, y tras el fresh start de ese día eso
+        // era TODA la población.
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: false, isBornCloud: true, journaledPhase: .done) == .eligible)
+
+        // Born-cloud que ya pobló el mapa en una reversa anterior (`reverseUploadStatus` captura las
+        // coordenadas conforme el mirror exporta): elegible por las dos vías.
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: true, isBornCloud: true, journaledPhase: .done) == .eligible)
+    }
+
+    /// La PRECEDENCIA de los guards, que sin este test es decorado: los casos de arriba se pueden reordenar
+    /// sin que ninguno caiga. El que carga el peso es el primero — sin-mapa-sin-marca **ya en un terminal**
+    /// tiene que decir `reverseAlreadyTerminal`, no `degradedNoMap`. Un mutante que suba el guard del mapa
+    /// por encima del `switch` de fase lo tumba, y no tumba nada más.
+    @Test("ReverseEligibility: el terminal y el modo GANAN al guard del mapa (precedencia, no solo salida)")
+    func reverseEligibility_guardPrecedence() {
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: false, isBornCloud: false, journaledPhase: .icloudActive) == .reverseAlreadyTerminal)
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: false, isBornCloud: false, journaledPhase: .reverseFailedRollback) == .reverseAlreadyTerminal)
+        #expect(ReverseEligibility.decide(
+            storageMode: .icloud, hasCKMap: false, isBornCloud: false, journaledPhase: .done) == .notCloudMode)
+        // Y el terminal también gana a un born-cloud que por lo demás sería elegible.
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: false, isBornCloud: true, journaledPhase: .icloudActive) == .reverseAlreadyTerminal)
+    }
+
+    /// El CABLEADO de la marca, que es donde vive el riesgo real: `decide` es pura y recibe un `Bool`, así
+    /// que toda la tabla de verdad de arriba puede estar verde con ese `Bool` mal calculado en producción.
+    /// Aquí se prueba el mapeo población → `Bool` contra `UserDefaults` de verdad.
+    ///
+    /// Lo que fija, y por qué importa: la marca es POSITIVA y **ausente ⇒ false**. La primera versión de
+    /// este cambio la derivaba de la AUSENCIA del `CloudMigrationMarker` y fallaba ABIERTO — un 2.º device
+    /// adoptado cuyo marcador no llegó por el mirror (su propio belt dice «ausente = no bloquea»), o
+    /// cualquiera que hubiese usado el botón DEBUG de «borrar marcador stale», pasaba por born-cloud y se
+    /// llevaba por delante el guardarraíl de la resurrección de borrados.
+    @Test("StorageModePersistence: la marca born-cloud es positiva, la escribe el alta y ausente es false")
+    func bornCloudMark_isPositiveAndDefaultsToFalse() {
+        let defaults = makeIsolatedDefaults(prefix: "reverse.bornCloud")
+        defer { defaults.removeObject(forKey: StorageModePersistence.bornCloudKey) }
+
+        // Un dominio limpio es un device del que no sabemos nada ⇒ NO se le abre la puerta.
+        #expect(StorageModePersistence.isBornCloud(defaults) == false)
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: false,
+            isBornCloud: StorageModePersistence.isBornCloud(defaults),
+            journaledPhase: .done) == .degradedNoMap)
+
+        // El alta born-cloud la escribe, y con ella la reversa se abre sin exigir mapa.
+        StorageModePersistence.markBornCloud(defaults: defaults)
+        #expect(StorageModePersistence.isBornCloud(defaults) == true)
+        #expect(ReverseEligibility.decide(
+            storageMode: .cloud, hasCKMap: false,
+            isBornCloud: StorageModePersistence.isBornCloud(defaults),
+            journaledPhase: .done) == .eligible)
+
+        // Idempotente: el alta puede reentrar (su propio docblock lo declara) sin cambiar nada.
+        StorageModePersistence.markBornCloud(defaults: defaults)
+        #expect(StorageModePersistence.isBornCloud(defaults) == true)
+
+        // Y NO la escribe `writeCloudArmed`, que es el escritor del par y lo llama TAMBIÉN el adopt de un
+        // 2.º device. Si alguien la mueve ahí, un migrado adoptado se volvería elegible sin mapa: es el
+        // fallo exacto que este diseño evita.
+        let armado = makeIsolatedDefaults(prefix: "reverse.armado")
+        defer { armado.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey) }
+        StorageModePersistence.writeCloudArmed(defaults: armado)
+        #expect(StorageModePersistence.read(armado) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(armado) == true)
+        #expect(StorageModePersistence.isBornCloud(armado) == false,
+                "writeCloudArmed NO puede marcar born-cloud: el adopt lo llama y no es un alta")
+    }
+
+    // MARK: - Heartbeat del lease (I14-pre, residual pendiente #3)
+
+    @Test("sendLeaseHeartbeatIfDue: BODY exacto {device_id:'device-1', action:'heartbeat'} (lección d49d2e47)")
+    func heartbeat_sendsExactBody() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "heartbeat")
+    }
+
+    @Test("sendLeaseHeartbeatIfDue: throttle — 2 ticks dentro de la ventana → 1 request; pasada la ventana → 2")
+    func heartbeat_throttlesWithinWindow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let clock = MutableClock(fixedNow)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    now: { clock.value }, heartbeatInterval: 60)
+        await executor.sendLeaseHeartbeatIfDue()               // t=0 → emite
+        #expect(stub.migrationCallCount == 1)
+        clock.value = fixedNow.addingTimeInterval(10)          // +10s: dentro de la ventana
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1, "throttled: 10s < 60s")
+        clock.value = fixedNow.addingTimeInterval(70)          // +70s: pasada la ventana
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 2, "pasada la ventana → 2º heartbeat")
+    }
+
+    @Test("sendLeaseHeartbeatIfDue: best-effort — rechazo (other_leader) y red (500) NO lanzan y ARMAN el throttle")
+    func heartbeat_bestEffort_armsThrottleOnReject() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        let clock = MutableClock(fixedNow)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    now: { clock.value }, heartbeatInterval: 60)
+        // La firma NO lanza (best-effort garantizado por el compilador). El rechazo arma el throttle igual.
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1)
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1, "other_leader armó el throttle → 2º tick inmediato no re-pega")
+        // Red caída (500) pasada la ventana: tampoco lanza y también arma el throttle.
+        clock.value = fixedNow.addingTimeInterval(70)
+        stub.migrationStatus = 500
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 2)
+        clock.value = fixedNow.addingTimeInterval(80)
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 2, "el 500 también armó el throttle")
+    }
+
+    @Test("sendLeaseHeartbeatIfDue: sin JWT → 0 requests (no arma throttle; el paso reporta sessionExpired por su camino)")
+    func heartbeat_noJWT_noRequest() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: nil, userID: nil)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 0)
+    }
+
+    // MARK: - La puerta del lease de la ida (ticket `displaced-migration-leader-keeps-uploading-after-a-takeover`)
+
+    private func leaseExecutor(
+        _ stub: RoutingStub, session: CloudSyncSessionProviding? = nil,
+        clock: MutableLeaseClock = MutableLeaseClock()
+    ) throws -> (MigrationWorkExecutor, URL) {
+        let session = session ?? FakeSession(token: "jwt", userID: "sub-1")
+        let dir = freshDir()
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    heartbeatInterval: 60, leaseClock: clock)
+        return (executor, dir)
+    }
+
+    @Test("confirmMigrationLease: pregunta con el latido de siempre, BODY exacto, y un ok es `.held`")
+    func lease_asksWithTheHeartbeatBody_andOkIsHeld() async throws {
+        let stub = RoutingStub()
+        let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+        #expect(stub.migrationCallCount == 1)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "heartbeat")
+    }
+
+    @Test("confirmMigrationLease: una confirmación vale 60 s — a los 59 no pregunta, a los 60 sí")
+    func lease_confirmationLastsOneWindow_59And60() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, dir) = try leaseExecutor(stub, clock: clock); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+        clock.offset = .seconds(59)
+        #expect(await executor.confirmMigrationLease() == .held)
+        #expect(stub.migrationCallCount == 1, "dentro de la ventana no pregunta")
+        clock.offset = .seconds(60)
+        #expect(await executor.confirmMigrationLease() == .held)
+        #expect(stub.migrationCallCount == 2, "a los 60 s la confirmación ya no vale")
+    }
+
+    @Test("confirmMigrationLease: la ventana cuenta desde que PREGUNTÓ, no desde que le contestaron")
+    func lease_windowCountsFromTheQuestion() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        stub.onMigrationRequest = { clock.offset += .seconds(50) }   // la respuesta tarda 50 s
+        let (executor, dir) = try leaseExecutor(stub, clock: clock); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+        stub.onMigrationRequest = nil
+        clock.offset = .seconds(61)                                   // 61 s desde la pregunta, 11 desde la respuesta
+        _ = await executor.confirmMigrationLease()
+        #expect(stub.migrationCallCount == 2)
+    }
+
+    @Test("confirmMigrationLease: `other_leader` y `not_in_progress` son `.lost`")
+    func lease_otherLeaderAndNotInProgress_areLost() async throws {
+        for reason in ["other_leader", "not_in_progress"] {
+            let stub = RoutingStub()
+            stub.migrationBody = Data("{\"ok\":false,\"reason\":\"\(reason)\"}".utf8)
+            let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+            #expect(await executor.confirmMigrationLease() == .lost, "\(reason)")
+        }
+    }
+
+    @Test("confirmMigrationLease: un rechazo que no habla del líder, un 5xx o una respuesta ilegible no prueban nada")
+    func lease_otherRejectionsAndServerErrors_areUnconfirmed() async throws {
+        for (status, body) in [(200, "{\"ok\":false,\"reason\":\"no_profile\"}"),
+                               (200, "{\"ok\":false,\"reason\":\"bad_action\"}"),
+                               (500, "{}"), (400, "{}"), (200, "no-es-json")] {
+            let stub = RoutingStub()
+            stub.migrationStatus = status
+            stub.migrationBody = Data(body.utf8)
+            let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+            #expect(await executor.confirmMigrationLease() == .unconfirmed, "\(status) \(body)")
+        }
+    }
+
+    @Test("confirmMigrationLease: sin throttle de intentos — un rechazo o una red caída no silencian la pregunta siguiente")
+    func lease_aFailedQuestionConfirmsNothing_andTheNextOneAsksAgain() async throws {
+        let stub = RoutingStub()
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        let (executor, dir) = try leaseExecutor(stub); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .lost)
+        #expect(await executor.confirmMigrationLease() == .lost)
+        #expect(stub.migrationCallCount == 2, "un «otro lidera» no arma ningún throttle: la siguiente vuelve a preguntar")
+        stub.migrationStatus = 500
+        #expect(await executor.confirmMigrationLease() == .unconfirmed)
+        #expect(await executor.confirmMigrationLease() == .unconfirmed)
+        #expect(stub.migrationCallCount == 4, "la red caída tampoco")
+        // Y el mismo teléfono puede volver a liderar (tras «Reintentar», un claim `created`): nada queda cacheado.
+        stub.migrationStatus = 200
+        stub.migrationBody = Data("{\"ok\":true}".utf8)
+        #expect(await executor.confirmMigrationLease() == .held)
+    }
+
+    @Test("confirmMigrationLease: sin token — con sesión que renovar espera como la red; sin ella es `.sessionExpired`")
+    func lease_noToken_dependsOnWhetherTheSessionSurvives() async throws {
+        let stub = RoutingStub()
+        let kept = FakeSession(token: nil, userID: "sub-1")
+        kept.canRenewSessionOverride = true
+        let (a, dirA) = try leaseExecutor(stub, session: kept); defer { cleanup(dirA) }
+        #expect(await a.confirmMigrationLease() == .unconfirmed)
+        let gone = FakeSession(token: nil, userID: nil)
+        let (b, dirB) = try leaseExecutor(stub, session: gone); defer { cleanup(dirB) }
+        #expect(await b.confirmMigrationLease() == .sessionExpired)
+        // El SDK borra la sesión DENTRO de la renovación: el testigo se lee después de pedir el token.
+        let (c, dirC) = try leaseExecutor(stub, session: SessionRemovedWhileFetching()); defer { cleanup(dirC) }
+        #expect(await c.confirmMigrationLease() == .sessionExpired)
+        #expect(stub.migrationCallCount == 0, "sin token no hay pregunta")
+    }
+
+    @Test("confirmMigrationLease: un 401 con la sesión guardada espera; con la sesión borrada es `.sessionExpired`")
+    func lease_http401_dependsOnWhetherTheSessionSurvives() async throws {
+        let stub = RoutingStub()
+        stub.migrationStatus = 401
+        let kept = FakeSession(token: "jwt", userID: "sub-1")
+        let (a, dirA) = try leaseExecutor(stub, session: kept); defer { cleanup(dirA) }
+        #expect(await a.confirmMigrationLease() == .unconfirmed)
+        let gone = FakeSession(token: "jwt", userID: "sub-1")
+        gone.canRenewSessionOverride = false
+        let (b, dirB) = try leaseExecutor(stub, session: gone); defer { cleanup(dirB) }
+        #expect(await b.confirmMigrationLease() == .sessionExpired)
+    }
+
+    // La confirmación caduca también a MEDIA página: el push y el pull de la ida no salen con una confirmación de más de
+    // `leaseInFlightBudget` (la app congelada entre dos trozos). Lo cazó la review del ticket.
+
+    private func leaseExecutorWithContext(
+        _ stub: RoutingStub, clock: MutableLeaseClock
+    ) throws -> (MigrationWorkExecutor, ModelContext, URL) {
+        let dir = freshDir()
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    heartbeatInterval: 60, leaseClock: clock)
+        return (executor, context, dir)
+    }
+
+    @Test("verify de la ida: sin confirmación del lease no sube ni trae nada; la vuelta sí corre")
+    func leaseInFlight_forwardVerifyWithoutConfirmation_neitherPushesNorPulls() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, context, dir) = try leaseExecutorWithContext(stub, clock: clock); defer { cleanup(dir) }
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        #expect(await executor.verify(underMigrationLease: true) == .networkTimeout)
+        #expect(stub.pushedSyncIDs.isEmpty, "ni un trozo del push")
+        #expect(stub.pullCallCount == 0)
+
+        // Control: la vuelta a iCloud no depende de este lease y el mismo outbox sí sube.
+        _ = await executor.verify(underMigrationLease: false)
+        #expect(!stub.pushedSyncIDs.isEmpty, "control del escenario: la fila existe y la vuelta la sube")
+    }
+
+    @Test("verify de la ida: el pull no se pide con la confirmación caducada, aunque no haya nada que subir")
+    func leaseInFlight_forwardVerifyStaleConfirmation_skipsThePull_1799And1800() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, _, dir) = try leaseExecutorWithContext(stub, clock: clock); defer { cleanup(dir) }
+        #expect(await executor.confirmMigrationLease() == .held)
+
+        clock.offset = .seconds(1799)
+        _ = await executor.verify(underMigrationLease: true)
+        #expect(stub.pullCallCount == 1, "a los 1799 s la confirmación todavía vale")
+
+        clock.offset = .seconds(1800)
+        #expect(await executor.verify(underMigrationLease: true) == .networkTimeout)
+        #expect(stub.pullCallCount == 1, "a los 1800 s ya no: el pull no se pide")
+    }
+
+    @Test("uploadSnapshot: sin confirmación del lease la página no sube; confirmada, sí")
+    func leaseInFlight_snapshotPageWithoutConfirmation_pushesNothing() async throws {
+        let stub = RoutingStub()
+        let clock = MutableLeaseClock()
+        let (executor, context, dir) = try leaseExecutorWithContext(stub, clock: clock); defer { cleanup(dir) }
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        try SyncIdentityService.backfillIdentities(context: context)
+
+        let sinLease = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushedSyncIDs.isEmpty, "ni un trozo sin confirmación")
+        #expect(sinLease != .completed)
+
+        #expect(await executor.confirmMigrationLease() == .held)
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(!stub.pushedSyncIDs.isEmpty, "control: con la confirmación la página sube")
+    }
+
+    // MARK: - App Attest de la migración (ticket `cloud-activation-stalls-without-uploading-until-relaunch`)
+
+    /// El executor con el proveedor de attest de PRODUCCIÓN (`CloudMigrationController.migrationAttestProvider`) sobre
+    /// `session`, y el lease ya confirmado: la página está lista para subir.
+    private func attestExecutor(
+        _ stub: RoutingStub, session: FakeSession
+    ) async throws -> (MigrationWorkExecutor, ModelContext, URL) {
+        let dir = freshDir()
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    leaseClock: MutableLeaseClock(),
+                                    attest: CloudMigrationController.migrationAttestProvider(session: session))
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        try SyncIdentityService.backfillIdentities(context: context)
+        #expect(await executor.confirmMigrationLease() == .held)
+        return (executor, context, dir)
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_required` de la subida hace olvidar el token que viajó, y el reintento lleva otro")
+    func snapshot401AttestRequired_discardsTheSentToken_andTheRetryCarriesANewOne() async throws {
+        var rejected: [String?] = []
+        AttestSessionProvider.rejectionSink = { rejected.append($0) }
+        defer { AttestSessionProvider.rejectionSink = AttestSessionProvider.defaultRejectionSink }
+        let stub = RoutingStub()
+        stub.pushStatusQueue = [401]
+        stub.pushErrorBody = Data(#"{"error":{"type":"yala_attest_required","message":"x"}}"#.utf8)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestTokens = ["tokA", "tokB"]
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        let first = await executor.uploadSnapshot(cursor: nil)
+        #expect(first != .completed)
+        #expect(stub.pushedSyncIDs.isEmpty, "el gateway no aceptó nada")
+        #expect(rejected == ["tokA"], "se olvida exactamente el token que viajó")
+        #expect(stub.pushAttestHeaders == ["Bearer tokA"])
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushAttestHeaders == ["Bearer tokA", "Bearer tokB"], "el reintento pide un token nuevo")
+        #expect(!stub.pushedSyncIDs.isEmpty, "y con él la página sube")
+    }
+
+    @Test("Control: el 401 `yala_attest_invalid` (sesión caducada) NO toca el token de attest")
+    func snapshot401AttestInvalid_leavesTheAttestTokenAlone() async throws {
+        var rejected: [String?] = []
+        AttestSessionProvider.rejectionSink = { rejected.append($0) }
+        defer { AttestSessionProvider.rejectionSink = AttestSessionProvider.defaultRejectionSink }
+        let stub = RoutingStub()
+        stub.pushStatusQueue = [401]
+        stub.pushErrorBody = Data(#"{"error":{"type":"yala_attest_invalid","message":"x"}}"#.utf8)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestTokens = ["tokA"]
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushAttestHeaders == ["Bearer tokA"], "control del escenario: el push salió con el token")
+        #expect(rejected.isEmpty)
+    }
+
+    @Test("Sin token de attest la migración no se para ni lanza: la página sale sin cabecera")
+    func migrationAttestProvider_withoutAToken_sendsWithoutTheHeader() async throws {
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestError = AppAttestError.unavailable
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(session.attestCallCount >= 1, "el proveedor sí preguntó")
+        #expect(stub.pushAttestHeaders == [nil], "sin token, sin cabecera: el contrato «cabecera o nada»")
+    }
+
+    // MARK: - Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK)
+
+    /// Helper: crea una categoría con un syncID PRE-asignado (fila con identidad estable ya presente).
+    private func makeCategory(_ name: String, syncID: UUID, in context: ModelContext) -> Yala.Category {
+        let cat = Yala.Category(name: name, colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = syncID
+        context.insert(cat)
+        return cat
+    }
+
+    /// Body `RemoteMerkle` mínimo con los counts de VIVAS por tabla — COHERENTE con las páginas del fake
+    /// (SERIO 1: el reconcile verifica positivamente la completitud de la enumeración contra estos counts).
+    private func makeMerkleBody(_ counts: [String: Int]) throws -> Data {
+        var entities: [String: Any] = [:]
+        for (table, count) in counts { entities[table] = ["count": count, "hash": "h"] }
+        return try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c1", "capability_set": "v1", "root": "r", "entities": entities,
+        ])
+    }
+
+    @Test("runAdoptOrphanReconcile: sube EXACTAMENTE la huérfana (∉ backend) fila-COMPLETA; conocida y tombstone NO se suben")
+    func adoptReconcile_uploadsOnlyOrphanFullRow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let knownID = UUID(); let tombID = UUID(); let orphanID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)     // ∈ backend (upsert) → NO huérfana
+        _ = makeCategory("tomb", syncID: tombID, in: context)       // ∈ backend (tombstone) → zombie, NO huérfana
+        _ = makeCategory("orphan-of-window", syncID: orphanID, in: context)  // ∉ backend → huérfana
+        try context.save()
+
+        // Backend enumerado: upsert de knownID + tombstone de tombID (mezcla upsert+tombstone). Merkle
+        // COHERENTE: 1 viva en categories (el tombstone no cuenta).
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [
+            upsertDelta(table: "categories", syncID: knownID, seq: 1),
+            tombstone(table: "categories", syncID: tombID, seq: 2),
+        ], maxServerSeq: 2)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(outcome == .completed(uploaded: 1, identityAssigned: 0))
+
+        // EXACTAMENTE la huérfana subida (lección d49d2e47).
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [orphanID.uuidString.lowercased()])
+        #expect(!stub.pushedSyncIDs.map { $0.lowercased() }.contains(knownID.uuidString.lowercased()),
+                "la conocida NO se sube")
+        #expect(!stub.pushedSyncIDs.map { $0.lowercased() }.contains(tombID.uuidString.lowercased()),
+                "la tombstoneada NO se sube (zombie del apply)")
+
+        // Fila COMPLETA: el delta lleva `fields` poblados (no solo identidad).
+        let delta = try #require(stub.lastPushedDeltas.first { ($0["sync_id"] as? String)?.lowercased() == orphanID.uuidString.lowercased() })
+        let fields = try #require(delta["fields"] as? [String: Any])
+        #expect(!fields.isEmpty, "fila full-row: fields poblados, no solo la identidad")
+        #expect(delta["entity_type"] as? String == "categories")
+
+        // El outbox vivo quedó limpio (rescate confirmado).
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty)
+    }
+
+    @Test("runAdoptOrphanReconcile: fila nil-identity → backfill acuña syncID + testigo y viaja full-row")
+    func adoptReconcile_nilIdentity_backfilledAndUploaded() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // Categoría SIN identidad (sintética; syncID nil por default).
+        let cat = Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        #expect(cat.syncID == nil)
+        context.insert(cat)
+        try context.save()
+
+        // Backend NO vacío (para pasar el guard anti mass-upload) pero SIN la fila local. Merkle coherente.
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(outcome == .completed(uploaded: 1, identityAssigned: 1))
+
+        // El backfill acuñó el syncID + su fila testigo.
+        let freshID = try #require(cat.syncID, "el backfill debe acuñar el syncID de la fila sin identidad")
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        #expect(witnesses.contains { $0.syncID == freshID }, "debe existir la fila testigo SyncIdentity")
+
+        // La fila viajó COMPLETA con su syncID fresco.
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [freshID.uuidString.lowercased()])
+        let delta = try #require(stub.lastPushedDeltas.first)
+        let fields = try #require(delta["fields"] as? [String: Any])
+        #expect(!fields.isEmpty, "fila full-row (fieldsJSON poblado)")
+    }
+
+    // MARK: - La guarda de linaje del adopt (ticket `adopt-uploads-a-foreign-corpus-without-a-lineage-check`)
+
+    /// El marcador que el líder de `userID` escribió en SU CloudKit en el cutover, tal como llega por el espejo al store del
+    /// 2.º dispositivo del mismo Apple ID. Es la prueba de linaje que la guarda exige para subir.
+    private func seedLeaderMarker(for userID: String, in context: ModelContext) throws {
+        context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash(userID), writerDeviceID: "leader"))
+        try context.save()
+    }
+
+    /// Un teléfono con una categoría `known`, una huérfana y una fila sin identidad, y DOS backends de una categoría viva
+    /// para el MISMO inventario:
+    /// - `backend` es la cuenta de la que este corpus desciende: tiene `known`. Es el 2.º dispositivo del mismo iCloud, y esa
+    ///   fila compartida ya prueba el linaje sin marcador (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
+    /// - `foreignBackend` es una cuenta ajena: su fila no está aquí, porque ninguna tabla personal tiene identidades fijas
+    ///   entre teléfonos. Contra ella solo el marcador prueba, y `known` también es huérfana (tres filas que subir).
+    /// Devuelve FÁBRICAS y no fuentes: `FakeTombstoneSource` se consume al paginar, y cada executor enumera desde cero.
+    private func seedWindowCorpus(in context: ModelContext) throws -> (backend: () -> FakeTombstoneSource,
+                                                                      foreignBackend: () -> FakeTombstoneSource,
+                                                                      orphanID: UUID, nilRow: Yala.Category) {
+        let knownID = UUID(); let orphanID = UUID(); let foreignID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        let nilRow = Category(name: "sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilRow)
+        try context.save()
+        func source(_ id: UUID) -> () -> FakeTombstoneSource {
+            {
+                let source = FakeTombstoneSource()
+                source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: id, seq: 1)], maxServerSeq: 1)]
+                return source
+            }
+        }
+        return (source(knownID), source(foreignID), orphanID, nilRow)
+    }
+
+    /// **El criterio 1 y el 2 en el MISMO inventario y SIN marcador.** Contra la cuenta ajena —un seguidor con otro iCloud,
+    /// un teléfono con el corpus de otra persona— no sube NADA y no toca nada: ni push, ni encolado, ni backfill. Contra la
+    /// cuenta de la que desciende —el 2.º dispositivo del mismo Apple ID cuyo líder pasó el cutover del servidor sin
+    /// exportar el marcador (ticket `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`)— la fila que comparte
+    /// prueba el linaje y sube sus huérfanas de la ventana, las dos. Lo que los separa es el linaje, no el marcador.
+    @Test("runAdoptOrphanReconcile: sin marcador, el corpus ajeno no sube nada y el que comparte una fila viva sube sus huérfanas")
+    func adoptReconcile_lineage_foreignCorpusStays_secondDeviceUploads() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let (backend, foreignBackend, orphanID, nilRow) = try seedWindowCorpus(in: context)
+
+        let foreign = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: foreignBackend())
+        let foreignOutcome = await foreign.runAdoptOrphanReconcile()
+        #expect(foreignOutcome == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty, "el corpus sin linaje no viaja")
+        #expect(nilRow.syncID == nil, "ni el backfill corre: la guarda va ANTES de toda mutación")
+        #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty, "ni se encola")
+        #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty, "ni se acuñan testigos")
+
+        #expect(try context.fetch(FetchDescriptor<CloudMigrationMarker>()).isEmpty, "control: sigue sin marcador")
+        let secondDevice = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                        personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: backend())
+        let secondOutcome = await secondDevice.runAdoptOrphanReconcile()
+        #expect(secondOutcome == .completed(uploaded: 2, identityAssigned: 1))
+        let freshID = try #require(nilRow.syncID)
+        #expect(Set(stub.pushedSyncIDs.map { $0.lowercased() })
+                == [orphanID.uuidString.lowercased(), freshID.uuidString.lowercased()],
+                "las dos huérfanas de la ventana, y solo ellas")
+    }
+
+    /// **Una fila compartida no basta si las identidades del líder no llegaron** (review adversarial del ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`, lente del dispositivo legítimo). El líder paró su
+    /// exportación —por eso el marcador no llegó—: la cuenta del iCloud ya viaja con su identidad, pero una categoría que el
+    /// líder subió con un `syncID` que asignó él sigue aquí SIN identidad. El backfill le acuñaría otra y el adopt subiría la
+    /// misma categoría duplicada. Sin nada: ni push ni backfill. Cuando su identidad llega, sube SOLO la fila de este teléfono.
+    @Test("runAdoptOrphanReconcile: sin marcador, si faltan filas de la cuenta en una tabla que sube, no sube nada")
+    func adoptReconcile_lineage_leadersIdentitiesNotArrivedBlocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let sharedID = UUID(); let leadersID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        let leadersRow = Category(name: "del-líder-sin-identidad-aún", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(leadersRow)
+        try context.save()
+        let source = try backend([("categories", sharedID), ("categories", leadersID)], stub: stub)
+
+        let early = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await early.runAdoptOrphanReconcile() == .lineageUnproven)
+        #expect(leadersRow.syncID == nil, "ni el backfill corre")
+        #expect(stub.pushedSyncIDs.isEmpty, "la categoría del líder no sube con otra identidad")
+        #expect(MigrationWorkExecutor.adoptSharedRowsProof(
+            plan: AdoptOrphanDiff.Plan(orphans: [:], needsIdentity: ["categories": 1]),
+            inventory: [("categories", sharedID), ("categories", nil)],
+            liveByTable: ["categories": [sharedID, leadersID]],
+            candidates: [MigrationWorkExecutor.LineageCandidate(table: "categories", key: nil, ref: 0)])
+                == .accountRowsMissing(table: "categories", missing: 1),
+                "la fila sin identidad es candidata, no consta como nueva y no casa: sospechosa")
+
+        // Llega su identidad por iCloud, y este teléfono escribe una categoría suya.
+        leadersRow.syncID = leadersID
+        let mine = Category(name: "de-este-teléfono", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(mine)
+        try context.save()
+        let late = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await late.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        let mineID = try #require(mine.syncID)
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [mineID.uuidString.lowercased()], "solo la fila nueva")
+    }
+
+    /// **La cobertura se pide solo en las tablas que suben algo, y nunca en los tipos de cambio.** A la cuenta le falta aquí
+    /// una CUENTA (el líder la creó y aún no llegó), pero este teléfono no sube cuentas. Y le falta un tipo de cambio, pero
+    /// los tipos de cambio los siembra cualquier teléfono al arrancar sin identidad: pedir cobertura ahí dejaría fuera a
+    /// casi todos. La tabla de categorías, la que importa, está completa: pasa.
+    @Test("runAdoptOrphanReconcile: una fila de la cuenta que falta en una tabla que no sube, o en los tipos de cambio, no bloquea")
+    func adoptReconcile_lineage_missingRowsElsewhereDoNotBlock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(); let orphanID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("nueva", syncID: orphanID, in: context)
+        context.insert(try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7]))
+        try context.save()
+        let source = try backend([("categories", sharedID), ("accounts", UUID()), ("exchange_rates", UUID())], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 2, identityAssigned: 1),
+                "la categoría nueva y el tipo de cambio sembrado, como siempre")
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() }.contains(orphanID.uuidString.lowercased()))
+    }
+
+    /// **La guarda del plan DEFINITIVO decide con SU inventario** (lente de tests de la review). Una fila de la cuenta y una
+    /// huérfana que el import confirma entre las dos lecturas: el preliminar no tenía nada que subir ni nada compartido, y el
+    /// definitivo tiene las dos. Juzgarlo con el inventario preliminar lo bloquearía en falso.
+    @Test("runAdoptOrphanReconcile: la guarda definitiva prueba con las filas que llegaron entre los dos planes")
+    func adoptReconcile_lineage_definitiveGateUsesItsOwnInventory() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(); let orphanID = UUID()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        var inventoryReads = 0
+        executor._testInventoryFetchThrows = { step, entity in
+            guard step == "adopt-inventory", entity == "TransactionItem" else { return false }
+            inventoryReads += 1
+            if inventoryReads == 3 {
+                _ = self.makeCategory("de-la-cuenta", syncID: sharedID, in: context)
+                _ = self.makeCategory("huérfana", syncID: orphanID, in: context)
+            }
+            return false
+        }
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(inventoryReads == 4, "control: el paso 0, el preliminar, el definitivo y el del relevo del marcador")
+        #expect(outcome == .completed(uploaded: 1, identityAssigned: 0))
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [orphanID.uuidString.lowercased()])
+    }
+
+    /// **Y el marcador sigue probando solo**, sin fila compartida: contra la cuenta ajena del fixture —cuya fila no está
+    /// aquí— el marcador de ESA cuenta basta. Es el camino de siempre del 2.º dispositivo (la tarjeta con marcador).
+    @Test("runAdoptOrphanReconcile: con el marcador de la cuenta sube aunque no comparta ninguna fila")
+    func adoptReconcile_lineage_markerAloneStillProves() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let (_, foreignBackend, _, _) = try seedWindowCorpus(in: context)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: foreignBackend())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 3, identityAssigned: 1))
+    }
+
+    /// **La prueba por fila compartida es la de la ida, con sus mismas exclusiones** (ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`): la fila tiene que estar VIVA en el backend —un
+    /// tombstone dice que existió, no que siga—, en SU tabla, y fuera de los tipos de cambio, que cualquier teléfono siembra.
+    /// Cada caso lleva una huérfana de usuario al lado, que es lo que pide prueba. Control positivo al final: la misma
+    /// categoría, viva y en su tabla, prueba.
+    @Test("runAdoptOrphanReconcile: sin marcador, ni un tombstone, ni otra tabla, ni un tipo de cambio prueban el linaje")
+    func adoptReconcile_lineage_sharedRowMustBeLiveInItsTableAndNotARate() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("huérfana", syncID: UUID(), in: context)
+        let rate = try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7])
+        let rateID = UUID()
+        rate.syncID = rateID
+        context.insert(rate)
+        try context.save()
+        func run(_ source: FakeTombstoneSource) async -> AdoptReconcileOutcome {
+            await makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                               personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                               tombstoneSource: source).runAdoptOrphanReconcile()
+        }
+
+        // Un tombstone: el backend la borró. La fila viva de la cuenta es una CUENTA, en una tabla que aquí no sube nada, así
+        // que la cobertura de categorías no para nada: la única coincidencia posible es la borrada, y no cuenta.
+        stub.merkleBody = try makeMerkleBody(["accounts": 1])
+        let tombstoned = FakeTombstoneSource()
+        tombstoned.pages = [PulledPage(deltas: [tombstone(table: "categories", syncID: sharedID, seq: 1),
+                                                upsertDelta(table: "accounts", syncID: UUID(), seq: 2)], maxServerSeq: 2)]
+        #expect(await run(tombstoned) == .lineageUnproven)
+
+        // La misma identidad, en otra tabla.
+        #expect(await run(try backend([("accounts", sharedID)], stub: stub)()) == .lineageUnproven)
+
+        // Solo un tipo de cambio compartido, con una fila de la cuenta que no está aquí.
+        #expect(await run(try backend([("exchange_rates", rateID), ("accounts", UUID())], stub: stub)()) == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty, "nada de lo anterior sube")
+
+        // Control: viva y en su tabla, prueba y sube la huérfana (el tipo de cambio sube con ella, como siempre).
+        guard case .completed(let uploaded, _) = await run(try backend([("categories", sharedID)], stub: stub)()) else {
+            Issue.record("una fila viva compartida en su tabla debía probar el linaje"); return
+        }
+        #expect(uploaded == 2)
+    }
+
+    /// **Un marcador que no es de ESTA cuenta no prueba nada**: uno de otra cuenta —una migración anterior de este iCloud—
+    /// y uno con el hash vacío. Tampoco sin sesión, porque entonces no hay cuenta con la que comparar.
+    @Test("runAdoptOrphanReconcile: marcador de otra cuenta, marcador sin hash o sin sesión → lineageUnproven")
+    func adoptReconcile_lineage_onlyTheAccountsOwnMarkerCounts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        // Contra la cuenta AJENA del fixture: su fila no está aquí, así que el marcador es la única prueba posible.
+        let (_, backend, _, _) = try seedWindowCorpus(in: context)
+        try seedLeaderMarker(for: "otra-cuenta", in: context)
+        context.insert(CloudMigrationMarker(accountHash: ""))
+        try context.save()
+
+        let other = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: backend())
+        let otherOutcome = await other.runAdoptOrphanReconcile()
+        #expect(otherOutcome == .lineageUnproven)
+
+        // Sin sesión, ni el marcador de la cuenta que la tenía vale: no hay con quién compararlo.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let noSession = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: nil),
+                                     FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: backend())
+        let noSessionOutcome = await noSession.runAdoptOrphanReconcile()
+        #expect(noSessionOutcome == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // Control positivo en el mismo store: con la sesión de la cuenta del marcador, pasa.
+        let owner = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: backend())
+        guard case .completed(let uploaded, _) = await owner.runAdoptOrphanReconcile() else {
+            Issue.record("el marcador de la cuenta debía bastar"); return
+        }
+        #expect(uploaded == 3, "`known` también es huérfana contra esta cuenta")
+    }
+
+    /// **Sin nada que subir no hace falta marcador** (Paso 0, D2). Es el 2.º dispositivo de una cuenta NACIDA en la nube
+    /// —que nunca puede tenerlo—, o un teléfono cuyo corpus el backend ya conoce entero. El adopt sigue como siempre.
+    @Test("runAdoptOrphanReconcile: sin huérfanas ni filas sin identidad, adopta sin marcador")
+    func adoptReconcile_lineage_nothingToUpload_needsNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let knownID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **Una fila SIN identidad también es algo que subir.** Es la del retraso de importación —su `CD_syncID` aún no llegó—
+    /// o la de un corpus que nunca migró; el backfill le acuñaría una identidad fresca y subiría. Sin marcador ni filas de la
+    /// cuenta, nada.
+    @Test("runAdoptOrphanReconcile: solo filas sin identidad y sin marcador → lineageUnproven, sin backfill")
+    func adoptReconcile_lineage_rowsWithoutIdentityAlsoNeedIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let nilRow = Category(name: "sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilRow)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(outcome == .lineageUnproven)
+        #expect(nilRow.syncID == nil)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **Un marcador que no se deja leer es la base local, no «probado» ni «la red»**: `.localFailure`, que cuenta para el
+    /// techo corto, y sin subir nada. Control en el mismo store: con la lectura sana, sube. Y el marcador se lee ANTES que
+    /// la fila compartida: este backend comparte `known`, y aun así la tabla ilegible para (ticket
+    /// `adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`).
+    @Test("runAdoptOrphanReconcile: la tabla del marcador ilegible → localFailure, sin subir")
+    func adoptReconcile_lineage_unreadableMarkerIsALocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let (backend, _, _, _) = try seedWindowCorpus(in: context)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let sick = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: backend())
+        sick._testInventoryFetchThrows = { step, entity in step == "adopt-lineage" && entity == "CloudMigrationMarker" }
+        let sickOutcome = await sick.runAdoptOrphanReconcile()
+        #expect(sickOutcome == .localFailure)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        let healthy = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                   FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: backend())
+        guard case .completed(let uploaded, _) = await healthy.runAdoptOrphanReconcile() else {
+            Issue.record("con la lectura sana debía subir"); return
+        }
+        #expect(uploaded == 2)
+    }
+
+    /// **Los tipos de cambio que siembra el arranque no piden marcador** (hallazgo de la review). Un teléfono recién instalado
+    /// nunca llega al adopt con el store vacío: `AppBootstrapper.loadExchangeRates` guarda los del día y 12 meses ANTES del
+    /// Welcome, sin identidad. Sin la excepción, el 2.º dispositivo de una cuenta nacida en la nube —sin marcador posible—
+    /// no entraba jamás. Suben como antes. Y la excepción no diluye la guarda: con una fila de usuario al lado, bloquea.
+    @Test("runAdoptOrphanReconcile: solo tipos de cambio sin identidad → adopta sin marcador; con una fila de usuario, no")
+    func adoptReconcile_lineage_exchangeRatesAloneNeedNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        for day in ["2026-09-23", "2026-09-24"] {
+            context.insert(try ExchangeRate(dateKey: day, base: "USD", ratesDictionary: ["PEN": 3.7]))
+        }
+        try context.save()
+        let backend = {
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+            return source
+        }
+        #expect(MigrationWorkExecutor.adoptLineageExemptTables == [EntityEmissionMap.exchangeRate.table])
+
+        let freshPhone = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                      FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                      tombstoneSource: backend())
+        let freshOutcome = await freshPhone.runAdoptOrphanReconcile()
+        #expect(freshOutcome == .completed(uploaded: 2, identityAssigned: 2), "suben como antes, sin pedir marcador")
+
+        _ = makeCategory("de-otra-persona", syncID: UUID(), in: context)
+        try context.save()
+        let withUserRow = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                       FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                       tombstoneSource: backend())
+        let userRowOutcome = await withUserRow.runAdoptOrphanReconcile()
+        #expect(userRowOutcome == .lineageUnproven)
+    }
+
+    /// **La guarda mira también el plan DEFINITIVO, que es el que sube** (hallazgo de la review). Una fila que el import
+    /// confirma entre el plan preliminar —vacío: no pidió prueba— y el definitivo no puede subir sin marcador. Se simula con
+    /// el seam del inventario: en la TERCERA lectura (la del definitivo) aparece una categoría del corpus de otro iCloud.
+    @Test("runAdoptOrphanReconcile: una fila que llega entre los dos planes también pide prueba de linaje")
+    func adoptReconcile_lineage_rowArrivingBetweenThePlansNeedsItToo() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        var inventoryReads = 0
+        executor._testInventoryFetchThrows = { step, entity in
+            guard step == "adopt-inventory", entity == "TransactionItem" else { return false }
+            inventoryReads += 1
+            if inventoryReads == 3 {
+                let late = Category(name: "llegó-tarde", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+                late.syncID = UUID()
+                context.insert(late)
+            }
+            return false
+        }
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(inventoryReads == 3, "control: el paso 0, el preliminar y el definitivo")
+        #expect(outcome == .lineageUnproven)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **La guarda va ANTES del guard de backend vacío** (Paso 0, D3). Ese guard SIGUE el adopt —cambia el modo—, así que
+    /// sin linaje dejaría un corpus ajeno dentro de la cuenta. Con el marcador, el guard de siempre.
+    @Test("runAdoptOrphanReconcile: backend vacío sin marcador → lineageUnproven; con marcador → abortedEmptyBackend")
+    func adoptReconcile_lineage_precedesTheEmptyBackendGuard() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])
+        _ = makeCategory("local", syncID: UUID(), in: context)
+        try context.save()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let noMarker = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: FakeTombstoneSource())
+        #expect(await noMarker.runAdoptOrphanReconcile() == .lineageUnproven)
+
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let withMarker = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                      personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                      tombstoneSource: FakeTombstoneSource())
+        #expect(await withMarker.runAdoptOrphanReconcile() == .abortedEmptyBackend)
+    }
+
+    // MARK: - El relevo del marcador (ticket `markerless-adopt-stays-blocked-while-another-device-writes-to-the-account`)
+
+    /// Los marcadores de la cuenta en el store, para leer lo que dejó el relevo.
+    private func accountMarkers(_ userID: String, in context: ModelContext) throws -> [CloudMigrationMarker] {
+        try context.fetch(FetchDescriptor<CloudMigrationMarker>()).filter { $0.accountHash == CloudBeacon.hash(userID) }
+    }
+
+    /// **El primero que adopta sin marcador deja el suyo.** Comparte la categoría de la cuenta —toda fila viva del backend
+    /// está aquí con su identidad— y sube la suya. Deja un marcador con el hash de la cuenta, su dispositivo y corte 0, y el
+    /// canario lo cuenta.
+    @Test("relevo del marcador: sin marcador y con cobertura total, el adopt deja el suyo")
+    func adoptRelay_markerlessFullCoverage_leavesItsMarker() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(), ownID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: ownID, in: context)
+        context.insert(SyncCursor(serverSeqCursor: 42))   // el cursor de ESTE teléfono no es el corte del líder
+        try context.save()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(try accountMarkers("sub-1", in: context).isEmpty, "control: llega sin marcador")
+
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+
+        let markers = try accountMarkers("sub-1", in: context)
+        #expect(markers.count == 1)
+        let marker = try #require(markers.first)
+        #expect(marker.writerDeviceID == "relay:device-1")
+        #expect(marker.isRelay, "el prefijo lo separa del marcador del cutover")
+        #expect(marker.serverSeqCut == 0, "el corte de la reversa no lo sabe el adoptador: barre desde 0")
+        #expect(marker.migratedAtStamp == fixedNow, "el sello es el inicio de su espera de export")
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptMarkerRelayed" }
+        #expect(canaries.isEmpty, "escribirlo no es relevarlo: el canario sale al terminar la espera de export")
+    }
+
+    /// Sin nada que subir el adopt no pasa por la guarda, pero sigue siendo el primero que escribe en la nube: releva igual.
+    @Test("relevo del marcador: también sin nada que subir")
+    func adoptRelay_nothingToUpload_stillRelays() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        try context.save()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(try accountMarkers("sub-1", in: context).count == 1)
+    }
+
+    /// **Sin cobertura total no se releva.** A la cuenta le falta aquí una cuenta bancaria que el backend tiene. El adopt
+    /// entra —`accounts` no sube nada, así que la prueba no la mira—, pero un marcador de este teléfono haría creer al
+    /// siguiente que todo llegó.
+    @Test("relevo del marcador: si falta una fila viva de la cuenta, no se releva")
+    func adoptRelay_incompleteCoverage_leavesNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID(), ownID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: ownID, in: context)
+        try context.save()
+        let source = try backend([("categories", sharedID), ("accounts", UUID())], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0),
+                "control: el adopt entra igual")
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    /// Con el marcador de la cuenta no se escribe otro; con el de OTRA cuenta sí (no prueba nada de ésta).
+    @Test("relevo del marcador: con el de la cuenta no escribe otro; con el de otra cuenta, sí")
+    func adoptRelay_accountMarkerPresent_writesNone_foreignMarker_relays() async throws {
+        for (seeded, expected) in [("sub-1", 1), ("otra-cuenta", 2)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedLeaderMarker(for: seeded, in: context)
+            let stub = RoutingStub()
+            let sharedID = UUID()
+            _ = makeCategory("compartida", syncID: sharedID, in: context)
+            _ = makeCategory("mía", syncID: UUID(), in: context)
+            try context.save()
+            let source = try backend([("categories", sharedID)], stub: stub)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+            #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == expected, "sembrado: \(seeded)")
+            #expect(try accountMarkers("sub-1", in: context).count == 1, "sembrado: \(seeded)")
+        }
+    }
+
+    /// Un guardado que falla deja el adopt entero y sin marcador: ni a medias ni pendiente de un save ajeno.
+    @Test("relevo del marcador: si el guardado falla, el adopt entra sin marcador y la inserción se deshace")
+    func adoptRelay_saveFails_adoptCompletesWithoutMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: UUID(), in: context)
+        try context.save()
+        let source = try backend([("categories", sharedID)], stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        executor._testRelayMarkerSaveError = CocoaError(.fileWriteUnknown)
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+        try context.save()   // un save posterior de cualquiera no lo resucita
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    /// **EL caso del ticket.** Otro teléfono escribe a diario en la cuenta: su categoría de hoy falta aquí y nunca llegará
+    /// por iCloud. Este teléfono tiene una categoría vieja sin identidad (sospechosa: no consta que la creara él después). Sin
+    /// marcador se queda fuera —y el canario lo cuenta—; con el marcador que relevó el primer adoptador, entra y sube la suya.
+    @Test("relevo del marcador: el tercer teléfono, fuera sin marcador, entra con el relevado")
+    func adoptRelay_thirdDevice_entersByTheRelayedMarker() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.third.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        for relayed in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let stub = RoutingStub()
+            let sharedID = UUID(), dailyID = UUID()
+            _ = makeCategory("compartida", syncID: sharedID, in: context)
+            if relayed {
+                // La forma exacta de un relevo (la de `adoptRelay_markerlessFullCoverage_leavesItsMarker`), importada.
+                context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), migratedAtStamp: fixedNow,
+                                                    serverSeqCut: 0, writerDeviceID: "relay:iphone"))
+            }
+            try context.save()
+            // Bajó de iCloud: no consta que la creara este teléfono, así que es sospechosa aunque el HLC se deje leer.
+            let old = Category(name: "vieja-sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            context.insert(old)
+            try saveAsImported(context)
+            // El otro teléfono escribió hace dos días: `quiet`. El HLC legible hace que el canario lea la última escritura.
+            let source = try backend([("categories", sharedID), ("categories", dailyID)],
+                                     hlc: hlc(leaderLastWrite - 2 * 86_400_000), stub: stub)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            let outcome = await executor.runAdoptOrphanReconcile()
+            if relayed {
+                #expect(outcome == .completed(uploaded: 1, identityAssigned: 1))
+                let freshID = try #require(old.syncID)
+                #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [freshID.uuidString.lowercased()])
+                #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 1, "no releva otra vez")
+            } else {
+                #expect(outcome == .lineageUnproven)
+                #expect(stub.pushedSyncIDs.isEmpty)
+            }
+        }
+        let blocked = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptLineageBlocked" }
+        #expect(blocked.map(\.d) == ["rowsMissing|quiet"])
+    }
+
+    /// El otro motivo del canario, con un escritor de hoy: el corpus ajeno no comparte ninguna fila con una cuenta que
+    /// alguien escribió en las últimas 24 h.
+    @Test("canario del adopt bloqueado: sin filas compartidas y con el backend escrito hoy → noSharedRows|active")
+    func adoptLineageBlockedCanary_noSharedRows_activeWriter() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.blocked.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        _ = makeCategory("mía", syncID: UUID(), in: context)
+        try context.save()
+        let source = try backend([("categories", UUID())], hlc: hlc(leaderLastWrite), stub: stub)
+        for _ in 0..<2 {   // la fuente se consume al paginar: cada pasada, la suya
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            #expect(await executor.runAdoptOrphanReconcile() == .lineageUnproven)
+        }
+        let blocked = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptLineageBlocked" }
+        #expect(blocked.map(\.d) == ["noSharedRows|active"], "una vez por proceso: el re-kick repite el mismo bloqueo")
+    }
+
+    @Test("adoptCoverageComplete: toda fila viva fuera de las exentas, y al menos una")
+    func adoptCoverageComplete_cases() {
+        let a = UUID(), b = UUID(), rate = UUID()
+        let inventory: [(table: String, syncID: UUID?)] = [("categories", a), ("categories", nil), ("accounts", b)]
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: [:]) == false,
+                "sin filas vivas no hay linaje que certificar")
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: ["exchange_rates": [rate]])
+                == false, "solo exentas: tampoco")
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory,
+                                                            liveByTable: ["categories": [a], "accounts": [b],
+                                                                          "exchange_rates": [rate]]))
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory,
+                                                            liveByTable: ["categories": [a, UUID()]]) == false)
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: ["accounts": [a]]) == false,
+                "la identidad cuenta en SU tabla")
+        #expect(MigrationWorkExecutor.adoptCoverageComplete(inventory: inventory, liveByTable: ["categories": [a], "tags": []]),
+                "una tabla sin filas vivas no pide nada")
+    }
+
+    @Test("adoptBackendWriterActivity: 24 h exactas es activo; un ms más, quieto; ilegible, desconocido")
+    func adoptBackendWriterActivity_boundaries() {
+        let nowMs = Int64(fixedNow.timeIntervalSince1970 * 1000)
+        let window = Int64(MigrationWorkExecutor.adoptActiveWriterWindow * 1000)
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nowMs - window, now: fixedNow) == "active")
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nowMs - window - 1, now: fixedNow) == "quiet")
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nowMs, now: fixedNow) == "active")
+        #expect(MigrationWorkExecutor.adoptBackendWriterActivity(lastWriteMs: nil, now: fixedNow) == "unknown")
+        #expect(MigrationWorkExecutor.adoptActiveWriterWindow == 86_400)
+    }
+
+    /// El aborto del paso 4 borra los del cutover —el suyo, y también uno con otro `deviceID` (el de un arranque en que
+    /// `identifierForVendor` era otro)— y deja el que relevó un adoptador: ese se exportaría borrado para todos.
+    @Test("execute(.deleteCutoverCloudKitMarkers): borra los del cutover y deja el relevado (idempotente)")
+    func execute_deleteCutoverMarkers_keepsTheRelayedOne() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "relay:iphone"))
+        context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "otro-arranque"))
+        try context.save()
+        try await executor.execute(.writeCloudKitMarker)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 3)
+        try await executor.execute(.deleteCutoverCloudKitMarkers)
+        try await executor.execute(.deleteCutoverCloudKitMarkers)
+        let left = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+        #expect(left.map(\.writerDeviceID) == ["relay:iphone"])
+    }
+
+    /// El paso 4 pregunta si el marcador del CUTOVER llegó a CloudKit. Uno relevado e importado trae su nombre de registro
+    /// por definición y no cuenta; uno del cutover con otro `deviceID` sí (el propio, de un arranque con otro
+    /// `identifierForVendor`: filtrar por dispositivo lo dejaría esperando hasta abortar).
+    @Test("isMarkerExported: cuenta los del cutover, no uno relevado ya exportado")
+    func isMarkerExported_ignoresTheRelayedMarker() async throws {
+        for (exportedWriter, expected) in [("relay:iphone", false), ("device-1", true), ("otro-arranque", true)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+            context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "relay:iphone"))
+            if exportedWriter == "otro-arranque" {
+                context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), writerDeviceID: "otro-arranque"))
+            }
+            try context.save()
+            try await executor.execute(.writeCloudKitMarker)
+            let exported = try #require(try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+                .first { $0.writerDeviceID == exportedWriter })
+            try seedMirrorMetadata(dir, rows: [(exported.persistentModelID, "rec-marker")])
+            #expect(executor.isMarkerExported() == expected, "exportado: \(exportedWriter)")
+        }
+    }
+
+    // MARK: · la espera de export del relevo y lo que no releva
+
+    /// El adopt sin marcador y con cobertura total, a punto para `runAdoptFlow`. `source` es una FÁBRICA: cada pasada
+    /// enumera de cero.
+    private func relayAdoptFixture(_ dir: URL, stub: RoutingStub) throws -> (context: ModelContext,
+                                                                           source: () -> FakeTombstoneSource) {
+        let context = try makeContext(dir)
+        let sharedID = UUID()
+        _ = makeCategory("compartida", syncID: sharedID, in: context)
+        _ = makeCategory("mía", syncID: UUID(), in: context)
+        try context.save()
+        return (context, try backend([("categories", sharedID)], stub: stub))
+    }
+
+    /// Un reloj que el test mueve.
+    private final class TestClock { var date: Date; init(_ date: Date) { self.date = date } }
+
+    /// **El adopt no arma el apagado del espejo con el relevo sin exportar.** La primera pasada escribe el marcador y sale
+    /// a reintentar sin persistir el modo; la segunda sale ANTES del reconcile (con la enumeración caída, un reconcile daría
+    /// `reconcileTransient`); con el marcador exportado entra y el canario dice `exported`.
+    @Test("relevo del marcador: el adopt espera a que se exporte antes de armar el apagado del espejo")
+    func adoptRelay_flowWaitsForTheExport() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.export.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let (context, source) = try relayAdoptFixture(dir, stub: stub)
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.export")
+        func executor(_ source: FakeTombstoneSource) -> MigrationWorkExecutor {
+            makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                         personalStoreURL: dir.appendingPathComponent("personal.sqlite"), storageDefaults: storageDefaults,
+                         tombstoneSource: source)
+        }
+
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+            try await executor(source()).runAdoptFlow()
+        }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "sin armar el apagado del espejo")
+        let relay = try #require(try accountMarkers("sub-1", in: context).first)
+
+        let down = FakeTombstoneSource()
+        down.forced = .transient
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+            try await executor(down).runAdoptFlow()
+        }
+
+        try seedMirrorMetadata(dir, rows: [(relay.persistentModelID, "rec-relay")])
+        try await executor(source()).runAdoptFlow()
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud)
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptMarkerRelayed" }
+        #expect(canaries.map(\.d) == ["exported"])
+    }
+
+    /// **La espera tiene techo**: a los 10 min sin constar exportado el adopt entra igual (un segundo antes, no), y el
+    /// canario dice `unconfirmed`. Un reloj que se atrasó por debajo del sello también cuenta como vencido.
+    @Test("relevo del marcador: a los 10 min sin exportar el adopt entra igual; un reloj atrasado también")
+    func adoptRelay_exportWaitHasACeiling() async throws {
+        for skewed in [false, true] {
+            let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.ceiling.metrics")
+            MetricsService._testReset()
+            MetricsService.start(
+                client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+                defaults: defaults)
+            defer { MetricsService._testReset() }
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            let (context, source) = try relayAdoptFixture(dir, stub: stub)
+            let clock = TestClock(fixedNow)
+            let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.ceiling")
+            func executor() -> MigrationWorkExecutor {
+                makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                             personalStoreURL: dir.appendingPathComponent("personal.sqlite"), storageDefaults: storageDefaults,
+                             now: { clock.date }, tombstoneSource: source())
+            }
+            await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+                try await executor().runAdoptFlow()
+            }
+            if skewed {
+                clock.date = fixedNow.addingTimeInterval(-1)
+            } else {
+                clock.date = fixedNow.addingTimeInterval(MigrationWorkExecutor.relayMarkerExportBudget - 1)
+                await #expect(throws: MigrationExecutorError.adoptRetry(reason: "relayMarkerExport")) {
+                    try await executor().runAdoptFlow()
+                }
+                clock.date = fixedNow.addingTimeInterval(MigrationWorkExecutor.relayMarkerExportBudget)
+            }
+            try await executor().runAdoptFlow()
+            #expect(StorageModePersistence.read(storageDefaults) == .cloud, "atrasado: \(skewed)")
+            let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptMarkerRelayed" }
+            #expect(canaries.map(\.d) == ["unconfirmed"], "atrasado: \(skewed)")
+        }
+        #expect(MigrationWorkExecutor.relayMarkerExportBudget == 600)
+    }
+
+    /// Un relevo de OTRO teléfono (importado, o de este con otro `deviceID`) no hace esperar; y si el marcador no se deja
+    /// leer para esperarlo, tampoco: la espera es un añadido y no puede bloquear un adopt que antes entraba.
+    @Test("relevo del marcador: sin relevo propio, o sin poder leerlo, el adopt no espera")
+    func adoptRelay_noOwnRelayOrUnreadable_doesNotWait() async throws {
+        for unreadable in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            let (context, source) = try relayAdoptFixture(dir, stub: stub)
+            if !unreadable {
+                context.insert(CloudMigrationMarker(accountHash: CloudBeacon.hash("sub-1"), migratedAtStamp: fixedNow,
+                                                    writerDeviceID: "relay:iphone"))
+                try context.save()
+            }
+            let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.relay.nowait")
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        storageDefaults: storageDefaults, tombstoneSource: source())
+            if unreadable {
+                executor._testInventoryFetchThrows = { step, _ in step == "adopt-relay-export" }
+            }
+            try await executor.runAdoptFlow()
+            #expect(StorageModePersistence.read(storageDefaults) == .cloud, "ilegible: \(unreadable)")
+            if unreadable {
+                #expect(try accountMarkers("sub-1", in: context).count == 1, "control: el relevo sí se escribió")
+            }
+        }
+    }
+
+    /// Solo releva un adopt que TERMINÓ: con el encolado de las huérfanas fallando sale `.localFailure` y no queda marcador.
+    @Test("relevo del marcador: un adopt que no termina no releva")
+    func adoptRelay_notCompleted_leavesNoMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let (context, source) = try relayAdoptFixture(dir, stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        executor._testAdoptEnqueueError = CocoaError(.fileWriteUnknown)
+        #expect(await executor.runAdoptOrphanReconcile() == .localFailure)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    /// Una lectura del relevo que falla —los marcadores o el inventario de la cobertura— deja el adopt entero y sin marcador.
+    @Test("relevo del marcador: si sus lecturas fallan, el adopt termina sin marcador")
+    func adoptRelay_unreadableReads_leaveNoMarker() async throws {
+        for failing in ["adopt-relay", "adopt-inventory#4"] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            let (context, source) = try relayAdoptFixture(dir, stub: stub)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source())
+            var inventoryReads = 0
+            executor._testInventoryFetchThrows = { step, entity in
+                if failing == "adopt-relay" { return step == "adopt-relay" }
+                guard step == "adopt-inventory", entity == "TransactionItem" else { return false }
+                inventoryReads += 1
+                return inventoryReads == 4
+            }
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0), "\(failing)")
+            #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0, "\(failing)")
+        }
+    }
+
+    /// **`runAdoptFlow` no adopta sin linaje**: lanza su error propio —que el runner cuenta para el techo CORTO— y no toca
+    /// el modo, el sello del claim ni el consent. El teléfono sigue en iCloud con lo suyo.
+    @Test("runAdoptFlow: sin linaje lanza adoptLineageUnproven y NO persiste el modo nube")
+    func adoptFlow_lineageUnproven_throwsWithoutSwitchingMode() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let (_, foreignBackend, _, _) = try seedWindowCorpus(in: context)
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.lineage")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.adopt.lineage.claim"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: foreignBackend(), claimStore: claimStore)
+        await #expect(throws: MigrationExecutorError.adoptLineageUnproven) { try await executor.runAdoptFlow() }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "la guarda corta ANTES del paso 5")
+        #expect(executor.hasPersistedCloudMode() == false)
+        #expect(claimStore.action(forUserID: "sub-1") == nil, "sin sello del claim: no entró")
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    @Test("runAdoptOrphanReconcile: red en el PULL (enumeración) → transient SIN mutación (backfill no corre)")
+    func adoptReconcile_pullTransient_noMutation() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let cat = Category(name: "orphan", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.forced = .transient
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty, "red en la enumeración → nada se sube")
+        // El backfill NO corrió (la enumeración es el paso 1): sin testigos SyncIdentity.
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
+    }
+
+    @Test("runAdoptOrphanReconcile: red en el PUSH → transient; re-run completa (idempotencia kill-resume)")
+    func adoptReconcile_pushTransient_thenResumes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let orphanID = UUID()
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        stub.pushStatus = 503   // red en el push
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        // El residual sigue VIVO (nada perdido) → el resume re-diffea.
+        let liveAfterFail = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(!liveAfterFail.isEmpty)
+
+        // Re-run con la red arriba → completa y limpia el outbox (LWW absorbe la re-emisión H5).
+        stub.pushStatus = 200
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor2 = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        guard case .completed = await executor2.runAdoptOrphanReconcile() else {
+            Issue.record("el re-run debía completar"); return
+        }
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() }.contains(orphanID.uuidString.lowercased()))
+        let liveAfterResume = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(liveAfterResume.isEmpty, "tras el resume el outbox vivo queda limpio")
+    }
+
+    @Test("runAdoptOrphanReconcile: 2ª pasada (huérfana ya en backend) → completed(0,0) no-op")
+    func adoptReconcile_secondPass_noop() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let orphanID = UUID()
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        try context.save()
+
+        // 1ª pasada: la huérfana NO está en el backend → se sube.
+        let source1 = FakeTombstoneSource()
+        source1.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let executor1 = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source1)
+        #expect(await executor1.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+
+        // 2ª pasada: ahora el backend YA conoce la ex-huérfana → diff vacío → no-op.
+        let stub2 = RoutingStub()
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: orphanID, seq: 5)], maxServerSeq: 5)]
+        stub2.merkleBody = try makeMerkleBody(["categories": 1])
+        let executor2 = makeExecutor(context, engine, stub2, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        #expect(await executor2.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(stub2.pushedSyncIDs.isEmpty, "no-op: nada que subir")
+    }
+
+    @Test("runAdoptOrphanReconcile: guard anti mass-upload — backend enumerado VACÍO + huérfanas → abortedEmptyBackend, SIN NINGUNA mutación")
+    func adoptReconcile_emptyBackend_aborts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+
+        // Enumeración VACÍA (página vacía inmediata) + merkle en 0s COHERENTE (un backend realmente vacío
+        // pasa la completitud pero sigue abortando A PROPÓSITO — decisión de producto de I14).
+        let source = FakeTombstoneSource()
+        stub.merkleBody = try makeMerkleBody([:])
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.runAdoptOrphanReconcile() == .abortedEmptyBackend)
+        #expect(stub.pushedSyncIDs.isEmpty, "guard: NO se sube el corpus entero")
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty, "el guard corta ANTES del enqueue")
+        // MENOR 2 del review: el guard corre ANTES del backfill → CERO mutación (ni testigos SyncIdentity).
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0,
+                "abortedEmptyBackend sin backfill: sin testigos")
+    }
+
+    @Test("runAdoptOrphanReconcile: merkle declara MÁS vivas que lo enumerado → transient (enumeración incompleta) SIN mutación")
+    func adoptReconcile_incompleteEnumeration_transient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        let nilCat = Yala.Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilCat)
+        try context.save()
+
+        // La enumeración ve 1 viva pero el merkle declara 2 → página vacía prematura simulada: subir el diff
+        // pisaría con HLC fresco contenido más nuevo del backend → transient retomable (SERIO 1).
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 2])
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty, "enumeración incompleta → NADA se sube")
+        // Sin mutación: ni backfill (testigos) ni enqueue (outbox).
+        #expect(nilCat.syncID == nil, "el backfill NO corre con enumeración incompleta")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<SyncOutbox>()) == 0)
+    }
+
+    @Test("runAdoptOrphanReconcile: fetchMerkle no-snapshot (body indecodificable) → transient SIN mutación")
+    func adoptReconcile_merkleTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()   // merkleBody default = Data() → decode falla → .transient
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0, "sin merkle no hay mutación")
+        #expect(try context.fetchCount(FetchDescriptor<SyncOutbox>()) == 0)
+    }
+
+    @Test("adoptOrphanDryRun: read-only por el MISMO camino verificado — diff sin mutar; merkle incompleto → nil")
+    func adoptDryRun_readOnly() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let orphanID = UUID()
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        let nilCat = Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilCat)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])   // camino VERIFICADO (SERIO 1)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        let plan = try #require(await executor.adoptOrphanDryRun())
+        #expect(plan.orphans["categories"] == [orphanID])   // solo la que tiene identidad ∉ backend
+        #expect(plan.needsIdentity["categories"] == 1)       // la nil (sin backfill se ve como needsIdentity)
+        // READ-ONLY: NO acuñó identidad ni testigos.
+        #expect(nilCat.syncID == nil, "el dry-run NO hace backfill")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // El dry-run usa el MISMO guard de completitud: merkle > enumerado → nil (sin plan).
+        let stub2 = RoutingStub()
+        stub2.merkleBody = try makeMerkleBody(["categories": 3])
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor2 = makeExecutor(context, CloudSyncEngine(), stub2, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        #expect(await executor2.adoptOrphanDryRun() == nil, "enumeración incompleta → el dry-run devuelve nil")
+    }
+
+    // MARK: - El adopt con el espejo adjunto y el store sin corpus (ticket `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`)
+
+    /// Lo que un teléfono REAL tiene antes del Welcome: los tipos de cambio que siembra el arranque, sin identidad. Nunca
+    /// llega vacío, y esas filas no piden linaje (`adoptLineageExemptTables`).
+    private func seedBootstrapRates(in context: ModelContext) throws {
+        context.insert(try ExchangeRate(dateKey: "2026-09-25", base: "USD", ratesDictionary: ["PEN": 3.7]))
+        try context.save()
+    }
+
+    /// La sonda de CloudKit, espiada: cuenta las preguntas y contesta lo que se le diga.
+    @MainActor private final class ICloudCheckSpy {
+        var answer: ICloudAdoptCorpusCheck
+        private(set) var calls = 0
+        init(_ answer: ICloudAdoptCorpusCheck) { self.answer = answer }
+        func ask() async -> ICloudAdoptCorpusCheck { calls += 1; return answer }
+    }
+
+    /// **El caso del ticket.** Con el espejo adjunto y nada local que pida linaje, el adopt NO termina mientras CloudKit diga
+    /// que ese iCloud tiene corpus: sin esperar, la guarda no vería nada, se armaría la nube, y lo que el espejo bajara hasta
+    /// el relanzamiento subiría en el primer drain. Mientras espera no toca el backend ni el store, y el flujo no arma la
+    /// nube. Cuando el corpus llega, y es de OTRO iCloud, decide la guarda de siempre: no sube nada.
+    @Test("adopt con el espejo adjunto y el store sin corpus: espera a que iCloud lo baje, y el ajeno no sube")
+    func adoptEmptyStore_mirrorAttached_foreignCorpusArrivingLate_neverUploads() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)   // la cuenta en la nube, con una categoría suya
+        let enumeration = source()
+        let spy = ICloudCheckSpy(.found(recordType: "CD_TransactionItem"))
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.empty.foreign")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: enumeration,
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+        #expect(spy.calls == 1)
+        #expect(enumeration.callCount == 0, "ni enumera el backend")
+        #expect(stub.merkleCallCount == 0, "ni pregunta al Merkle")
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty, "ni el backfill corre")
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "icloudCorpusNotImported")) {
+            try await executor.runAdoptFlow()
+        }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "no arma la nube: no hay relanzamiento que esperar")
+        #expect(spy.calls == 2)
+
+        // El espejo baja el corpus de ESE iCloud, que no desciende de la cuenta.
+        let foreign = Yala.Category(name: "de otro iCloud", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(foreign)
+        try context.save()
+        #expect(await executor.runAdoptOrphanReconcile() == .lineageUnproven)
+        #expect(spy.calls == 2, "con el corpus aquí ya no se pregunta a CloudKit: decide la guarda")
+        #expect(enumeration.callCount > 0, "control: esta vez sí llegó al backend")
+        #expect(stub.pushedSyncIDs.isEmpty, "el corpus ajeno no sube")
+        #expect(foreign.syncID == nil)
+    }
+
+    /// **El 2.º teléfono de una cuenta nacida en la nube sigue entrando** (criterio 2 del ticket): su iCloud no tiene nada
+    /// que pida linaje, o no hay iCloud. Entra como antes, y sube sus tipos de cambio como siempre.
+    @Test("adopt con el espejo adjunto y el store sin corpus: sin corpus en iCloud, o sin cuenta de iCloud, entra")
+    func adoptEmptyStore_mirrorAttached_noICloudCorpus_enters() async throws {
+        for answer in [ICloudAdoptCorpusCheck.none, .noAccount] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let source = try backend([("categories", UUID())], stub: stub)
+            let spy = ICloudCheckSpy(answer)
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1),
+                    "\(answer): entra y sube su tipo de cambio")
+            #expect(spy.calls == 1, "\(answer): preguntó")
+        }
+    }
+
+    /// **Y el del mismo iCloud también** (criterio 2): espera a que su corpus llegue —el de la cuenta, con las identidades
+    /// que el backend conoce— y entonces entra sin subirlo otra vez.
+    @Test("adopt con el espejo adjunto y el store sin corpus: el del mismo iCloud espera a su corpus y entra sin resubirlo")
+    func adoptEmptyStore_mirrorAttached_sameICloud_waitsThenEnters() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let accountID = UUID()
+        let source = try backend([("categories", accountID)], stub: stub)
+        let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source(),
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+
+        _ = makeCategory("de la cuenta", syncID: accountID, in: context)   // el espejo la baja con su identidad
+        try context.save()
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        #expect(!stub.pushedSyncIDs.map { $0.lowercased() }.contains(accountID.uuidString.lowercased()),
+                "la categoría de la cuenta no vuelve a subir: solo el tipo de cambio")
+        #expect(spy.calls == 1)
+    }
+
+    /// **Sin respuesta de CloudKit no se entra**: `.transient`, sin tocar el backend, y el flujo no arma la nube.
+    @Test("adopt con el espejo adjunto y el store sin corpus: si CloudKit no contesta, reintenta sin entrar")
+    func adoptEmptyStore_mirrorAttached_checkFailed_isTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)
+        let enumeration = source()
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.empty.failed")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: enumeration,
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { .failed("CKError.4") })
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(enumeration.callCount == 0)
+        #expect(stub.pushedSyncIDs.isEmpty)
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "reconcileTransient")) {
+            try await executor.runAdoptFlow()
+        }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud)
+    }
+
+    /// **Solo se pregunta cuando hace falta.** Sin espejo (el neutro del Welcome: no importa nada, y al relanzar monta sin
+    /// espejo) el adopt sigue como siempre. Y con el espejo pero con una fila local que pide linaje, el corpus ya empezó a
+    /// llegar: decide la guarda. En los dos casos la sonda contestaría «hay corpus» y no se la escucha.
+    @Test("adopt: sin espejo adjunto, o con filas de linaje en local, no se pregunta a CloudKit")
+    func adoptEmptyStore_checkOnlyWithMirrorAndNoLineageRows() async throws {
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let source = try backend([("categories", UUID())], stub: stub)
+            let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { false }, adoptICloudCorpusCheck: { await spy.ask() })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+            #expect(spy.calls == 0, "sin espejo no hay nada que vaya a llegar")
+        }
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let accountID = UUID()
+            _ = makeCategory("de la cuenta", syncID: accountID, in: context)
+            try context.save()
+            let source = try backend([("categories", accountID)], stub: stub)
+            let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+            #expect(spy.calls == 0, "con una fila de la cuenta aquí, el corpus ya está llegando")
+        }
+    }
+
+    /// **La primera tanda no es el corpus entero** (review del ticket, lente de tests). Tras un `found`, una fila que ya llegó
+    /// no apaga la espera: hasta que el primer import del proceso termina y queda quieto, el adopt sigue esperando, y la
+    /// guarda juzga el corpus completo. Sin esto, la segunda tanda caía por encima del ancla del paso 3 y subía en el primer
+    /// drain tras relanzar.
+    @Test("adopt con el espejo adjunto y el store sin corpus: tras un found, la primera tanda no basta: espera al import entero")
+    func adoptEmptyStore_mirrorAttached_waitsForTheWholeImportAfterFound() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let firstID = UUID(), secondID = UUID()
+        let source = try backend([("categories", firstID), ("categories", secondID)], stub: stub)
+        let enumeration = source()
+        let spy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+        var settled = false
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: enumeration,
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() },
+                                    adoptImportSettled: { settled })
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+
+        _ = makeCategory("primera tanda", syncID: firstID, in: context)
+        try context.save()
+        #expect(await executor.runAdoptOrphanReconcile() == .awaitingICloudCorpus, "una fila no es el corpus")
+        #expect(spy.calls == 1, "no vuelve a preguntar: ya sabe que hay corpus")
+        #expect(enumeration.callCount == 0, "ni llega al backend")
+
+        _ = makeCategory("segunda tanda", syncID: secondID, in: context)
+        try context.save()
+        settled = true
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1),
+                "con el import entero, entra y solo sube su tipo de cambio")
+    }
+
+    /// **Sin sonda cableada no se entra** (review del ticket, lente de tests): el default del init es `.failed("unwired")`, así
+    /// que declarar el espejo sin inyectar la sonda deja el adopt en `.transient`. Se construye el ejecutor SIN el parámetro,
+    /// que es lo único que prueba el default del init y no el del helper de los tests.
+    @Test("adopt: con el espejo declarado y la sonda sin cablear, el ejecutor no entra")
+    func adoptEmptyStore_unwiredCheck_neverEnters() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)
+        let token: () async -> String? = { "jwt" }
+        let executor = MigrationWorkExecutor(
+            engine: CloudSyncEngine(),
+            pushClient: SyncPushClient(baseURL: workerURL, tokenProvider: token, urlSession: stub),
+            pullClient: SyncPullClient(baseURL: workerURL, tokenProvider: token, urlSession: stub),
+            merkleClient: SyncMerkleClient(baseURL: workerURL, tokenProvider: token, urlSession: stub),
+            accountClient: CloudAccountClient(baseURL: workerURL, urlSession: stub),
+            session: FakeSession(token: "jwt", userID: "sub-1"), context: context,
+            personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+            storageDefaults: makeIsolatedDefaults(prefix: "mwe.adopt.empty.unwired"),
+            reverseTombstoneSource: source(),
+            adoptMirrorAttached: { true },
+            relayIdentityLedgerURL: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// El predicado de «hay filas que pedirían linaje»: cualquier fila viva fuera de las tablas exentas, con identidad o sin
+    /// ella; los tipos de cambio no cuentan.
+    @Test("adoptInventoryHasLineageRows: los tipos de cambio no cuentan; cualquier otra fila sí, con o sin identidad")
+    func adoptInventoryHasLineageRows_table() {
+        #expect(!MigrationWorkExecutor.adoptInventoryHasLineageRows([]))
+        #expect(!MigrationWorkExecutor.adoptInventoryHasLineageRows([("exchange_rates", nil), ("exchange_rates", UUID())]))
+        #expect(MigrationWorkExecutor.adoptInventoryHasLineageRows([("exchange_rates", nil), ("categories", nil)]))
+        #expect(MigrationWorkExecutor.adoptInventoryHasLineageRows([("transaction_items", UUID())]))
+    }
+
+    /// El canario sale una vez por proceso y desenlace, con el detalle de la sonda.
+    @Test("adopt con el espejo adjunto y el store sin corpus: el canario cuenta cada desenlace una vez")
+    func adoptEmptyStore_canaryOncePerOutcome() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.adopt.empty.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedBootstrapRates(in: context)
+        let stub = RoutingStub()
+        let source = try backend([("categories", UUID())], stub: stub)
+        let spy = ICloudCheckSpy(.found(recordType: "CD_TransactionItem"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source(),
+                                    adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await spy.ask() })
+        _ = await executor.runAdoptOrphanReconcile()
+        _ = await executor.runAdoptOrphanReconcile()
+        spy.answer = .failed("scanDeadline")
+        _ = await executor.runAdoptOrphanReconcile()
+        let details = MetricsSpool.pending(defaults)
+            .filter { $0.e == "canary" && $0.n == "cloudAdoptICloudCorpusChecked" }.map(\.d)
+        #expect(details == ["found", "failed:scanDeadline"])
+    }
+
+    // MARK: - Adopt flow (I14 P6, #30)
+
+    @Test("execute(.adoptBackendAccount): reconcile transient (merkle indecodificable) → THROW retomable (journaled)")
+    func adoptFlow_transientReconcile_throws() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        // RoutingStub default: merkleBody vacío → fetchMerkle no-snapshot → reconcile transient → adopt throw.
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.adoptBackendAccount)
+        }
+    }
+
+    /// Ticket `adopt-effect-retries-forever-with-no-ceiling`: el runner cuenta para el techo CORTO solo lo que el
+    /// ejecutor tipa como avería local. La red tiene que seguir saliendo como `adoptRetry` —el plazo largo—, o una caída
+    /// de red de un cuarto de hora sacaría a la persona de la activación.
+    @Test("runAdoptFlow: la red del reconcile es adoptRetry y NO adoptLocalFailure")
+    func adoptFlow_networkReconcile_isAdoptRetryNotLocal() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "reconcileTransient")) {
+            try await executor.runAdoptFlow()
+        }
+    }
+
+    @Test("runAdoptFlow: la base local ilegible en el reconcile es adoptLocalFailure, sin mutar el modo")
+    func adoptFlow_localReconcile_isAdoptLocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.local")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults)
+        executor._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
+        await #expect(throws: MigrationExecutorError.adoptLocalFailure) { try await executor.runAdoptFlow() }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "la avería corta ANTES del paso 5")
+        #expect(executor.hasPersistedCloudMode() == false)
+    }
+
+    /// El encolado de las huérfanas separa las dos familias de fallo como la subida del snapshot: la deriva del reloj
+    /// puede corregirse sola (`.transient`); cualquier otro error es la base local (`.localFailure`).
+    @Test("runAdoptOrphanReconcile: el encolado separa la deriva del reloj de la base local")
+    func adoptReconcile_enqueueFailure_splitsDriftFromLocal() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let knownID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        func source() -> FakeTombstoneSource {
+            let s = FakeTombstoneSource()
+            s.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+            return s
+        }
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let local = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        local._testAdoptEnqueueError = CocoaError(.fileWriteUnknown)
+        #expect(await local.runAdoptOrphanReconcile() == .localFailure)
+
+        let deriva = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                  personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        deriva._testAdoptEnqueueError = ClockDriftError.driftExceeded(driftMillis: 600_000)
+        #expect(await deriva.runAdoptOrphanReconcile() == .transient)
+
+        let canonica = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        canonica._testAdoptEnqueueError = CanonicalTimeError.yearOutOfRange(10_000)
+        #expect(await canonica.runAdoptOrphanReconcile() == .transient, "la otra familia de la deriva del reloj")
+        #expect(stub.pushedSyncIDs.isEmpty, "ninguno de los tres sube nada")
+    }
+
+    @Test("runAdoptOrphanReconcile: un outbox ilegible tras encolar es localFailure, no completed(0)")
+    func adoptReconcile_unreadableOutbox_isLocalFailure() async throws {
+        // Cada mitad en su propio store: la avería deja la huérfana ENCOLADA (a propósito: la pasada siguiente la sube), y
+        // un control sobre el mismo store la contaría dos veces.
+        func escenario() throws -> (URL, ModelContext, RoutingStub, MigrationWorkExecutor) {
+            let dir = freshDir()
+            let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+            let stub = RoutingStub()
+            let knownID = UUID()
+            _ = makeCategory("known", syncID: knownID, in: context)
+            _ = makeCategory("orphan", syncID: UUID(), in: context)
+            try context.save()
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+            stub.merkleBody = try makeMerkleBody(["categories": 1])
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source)
+            return (dir, context, stub, executor)
+        }
+
+        let (dirEnfermo, _, stubEnfermo, enfermo) = try escenario(); defer { cleanup(dirEnfermo) }
+        enfermo._testOutboxFetchThrowsFromCall = 1
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure)
+        #expect(stubEnfermo.pushedSyncIDs.isEmpty)
+
+        // Control: legible, el mismo escenario sube la huérfana — el `localFailure` de arriba lo produce el fetch.
+        let (dirSano, _, stubSano, sano) = try escenario(); defer { cleanup(dirSano) }
+        #expect(await sano.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+        #expect(stubSano.pushedSyncIDs.count == 1)
+    }
+
+    @Test("runAdoptFlow: no quiescente → THROW SIN mutar el modo (retomable)")
+    func adoptFlow_notQuiescent_throwsWithoutMutating() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.q")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, adoptQuiescenceSignal: { false })
+        // La quiescencia va al plazo LARGO (ticket `adopt-effect-retries-forever-with-no-ceiling`): el caso exacto.
+        await #expect(throws: MigrationExecutorError.adoptRetry(reason: "quiescence")) { try await executor.runAdoptFlow() }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "no quiescente → NO persiste .cloud")
+        #expect(storageDefaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == false)
+    }
+
+    @Test("runAdoptFlow: backend vacío + merkle coherente → persiste PAR .cloud+armed + estampa claim-store routeReturningUser")
+    func adoptFlow_happy_persistsCloudArmedAndClaimStore() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-adopt")
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])   // enumeración vacía coherente (0 vivas) → reconcile completa
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [], maxServerSeq: 0)]
+
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.ok")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.adopt.claim"))
+        claimStore.record(.routeReturningUser, forUserID: "sub-anterior")
+        // Rutea `PreferenceSyncService.set` por el outbox (no iKV): `.cloud` override + userID nil → sin
+        // enqueue; solo escribe las 2 keys de consent a standard, que se limpian abajo.
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags._testResetStorageModeOverride()
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
+        }
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: source,
+                                    claimStore: claimStore)
+
+        try await executor.runAdoptFlow()
+
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud, "persiste el modo nube")
+        #expect(executor.hasPersistedCloudMode(), "el testigo del runner lee los mismos defaults que escribe el paso 5")
+        #expect(storageDefaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == true, "arma el mirror-off")
+        #expect(claimStore.action(forUserID: "sub-adopt") == .routeReturningUser, "estampa el claim-store")
+        #expect(claimStore.action(forUserID: "sub-anterior") == nil, "MUTACIÓN: el adopt no olvidó el sello de otra cuenta")
+    }
+
+    @Test("performClaim: 200 created → estampa el claim-store con proceedMigration (branch migración)")
+    func performClaim_stampsClaimStore() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-claim")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.stamp"))
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.created))
+        #expect(claimStore.action(forUserID: "sub-claim") == .proceedMigration,
+                "created + branch migración → proceedMigration persistido (contenido real, lección d49d2e47)")
+    }
+
+    // MARK: - Claim · los otros tres estados (ampliación de la tabla, A2 de D-A7)
+    //
+    // Al escribir el productor born-cloud (`BornCloudSignUpService`, A2) la nota del punto de control exigía
+    // comprobar que la rama `.migration` ya estuviera pinneada antes de acotar la matriz nueva a
+    // `.bornCloud`. **No lo estaba**: a nivel de `performClaim` solo había `created` y el camino sin JWT —
+    // `existing_stable`, `claiming_in_progress` y el transient viajaban cubiertos únicamente por la lógica
+    // PURA (`AccountClaimDecisionTests`) y por el runner con un executor FALSO, que no ejercita ni el
+    // estampado ni el gate de la métrica. Estos tres cierran esa mitad.
+
+    @Test("performClaim: 200 existing_stable → estampa routeReturningUser (el líder se retira, no re-migra)")
+    func performClaim_existingStable_stampsRouteReturningUser() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-stable")
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.stable"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.existingStable))
+        #expect(claimStore.action(forUserID: "sub-stable") == .routeReturningUser,
+                "existing_stable NUNCA siembra ni lidera: es la clausura de la variante A (§k.4)")
+    }
+
+    // MARK: - Claim · deshacer el sello cuando «Migrar» lo devuelve al inicio
+    //
+    // Ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`. Con la intención de migrar, el runner no
+    // entrega un `existing_stable` a la máquina y pide deshacer el sello: `.routeReturningUser` sin adopt afirmaría que
+    // esa cuenta entró en el dispositivo, y el Welcome deja re-entrar libre a «la misma cuenta» por ese sello.
+
+    @Test("discardLastClaimStamp: sin sello previo, el de existing_stable se borra")
+    func discardLastClaimStamp_withoutPreviousStamp_clearsIt() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.undo.none"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-undo"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.existingStable))
+        #expect(claimStore.action(forUserID: "sub-undo") == .routeReturningUser, "control: el claim selló")
+
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == nil)
+    }
+
+    @Test("discardLastClaimStamp: repone el sello que había antes del claim, no lo borra")
+    func discardLastClaimStamp_restoresThePreviousStamp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.undo.prev"))
+        claimStore.record(.proceedMigration, forUserID: "sub-undo")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-undo"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.existingStable))
+        #expect(claimStore.action(forUserID: "sub-undo") == .routeReturningUser, "control: el claim pisó el sello")
+
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == .proceedMigration)
+    }
+
+    /// Solo se deshace el claim de la llamada en curso: un segundo `discard` no tiene nada que hacer, y un claim que no
+    /// selló —sin JWT— tampoco deja que se deshaga el de un claim anterior.
+    @Test("discardLastClaimStamp: un solo uso, y un claim sin sello no deshace el anterior")
+    func discardLastClaimStamp_isOneShot_andOnlyForTheLastClaim() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"existing_stable"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.undo.once"))
+        let session = FakeSession(token: "jwt", userID: "sub-undo")
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == nil, "sin claim no hay nada que deshacer")
+
+        #expect(await executor.performClaim() == .success(.existingStable))
+        executor.discardLastClaimStamp()
+        claimStore.record(.proceedMigration, forUserID: "sub-undo")
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == .proceedMigration, "el segundo discard no toca nada")
+
+        #expect(await executor.performClaim() == .success(.existingStable))
+        session.token = nil
+        #expect(await executor.performClaim() == .sessionExpired(detail: "no access token"))
+        executor.discardLastClaimStamp()
+        #expect(claimStore.action(forUserID: "sub-undo") == .routeReturningUser,
+                "el claim sin JWT no selló, así que no deshace el del claim anterior")
+    }
+
+    @Test("performClaim: 200 claiming_in_progress → estampa waitForLeader (otro device lidera; el gate no arranca)")
+    func performClaim_claimingInProgress_stampsWaitForLeader() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-follower")
+        let stub = RoutingStub()
+        stub.claimBody = Data(#"{"state":"claiming_in_progress"}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.follower"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.claimingInProgress))
+        #expect(claimStore.action(forUserID: "sub-follower") == .waitForLeader)
+        #expect(CloudSyncRuntime.shouldStartSync(after: .waitForLeader) == false,
+                "un seguidor no debe arrancar el sync mientras el líder no termine (§g.6)")
+    }
+
+    @Test("performClaim: 500 → transient y el claim-store queda INTACTO (nada que estampar sin claim)")
+    func performClaim_transient_doesNotStamp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-5xx")
+        let stub = RoutingStub()
+        stub.claimStatus = 500
+        stub.claimBody = Data(#"{"error":{"message":"upstream"}}"#.utf8)
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.5xx"))
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        guard case .transient = await executor.performClaim() else {
+            Issue.record("500 debe clasificar como transient (retomable)")
+            return
+        }
+        #expect(claimStore.action(forUserID: "sub-5xx") == nil)
+    }
+
+    // MARK: - Canal iCloud · probeICloudChannel (C-1)
+    //
+    // La decisión es pura y se pinnea celda a celda en `ICloudCutoverGateLogicTests`. Lo que se pinnea AQUÍ
+    // es el CABLEADO: que el executor recoja las tres señales de las fuentes correctas y las pase en el orden
+    // correcto. Si alguien invierte `accountPresent`, lee la huella con el predicado equivocado (p.ej. contando
+    // testigos SIN `ckRecordName`) o se salta el error code, la lógica pura seguiría verde y el bug C-1
+    // volvería: un veredicto `.healthy` falso deja al paso 4 esperando un marcador que jamás exporta.
+    //
+    // Las 2 closures se inyectan SIEMPRE (también donde el veredicto no dependería del error code): los
+    // argumentos de `decide` se evalúan de forma eager, y el default de producción es
+    // `iCloudSyncService.shared` — un singleton que los tests no deben tocar.
+
+    @Test("probeICloudChannel: sin cuenta iCloud y sin huella CloudKit → noChannelNoFootprint (el waiver del gate del marcador)")
+    func probeICloudChannel_noAccountNoFootprint() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // Testigo SIN `ckRecordName`: existe la fila pero NUNCA hizo round-trip a CloudKit. La huella es
+        // "hay copia en CloudKit", no "hay testigos" — contarlo como huella vetaría el modo nube para siempre
+        // al usuario que no usa iCloud ("necesitas iCloud para dejar de usar iCloud").
+        context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.category, localAnchor: "anchor"))
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { false },
+                                    icloudLastExportErrorCode: { nil })
+        #expect(await executor.probeICloudChannel() == .noChannelNoFootprint)
+    }
+
+    @Test("probeICloudChannel: sin cuenta iCloud pero CON huella (≥1 ckRecordName) → noAccountWithFootprint (bloquea la entrada)")
+    func probeICloudChannel_noAccountWithFootprint() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // Huella DURABLE: el corpus ya tiene copia viva en CloudKit (sobrevive a que el usuario cierre iCloud).
+        // Hay a quién avisar del cutover y no podemos → nada durable ha cambiado aún, así que se aborta la
+        // entrada en vez de quedar en `.cloud` con el mirror vivo.
+        context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.category,
+                                    localAnchor: "anchor", ckRecordName: "CKR-1",
+                                    ckZoneName: "com.apple.coredata.cloudkit.zone", ckOwnerName: "__defaultOwner__"))
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { false },
+                                    icloudLastExportErrorCode: { nil })
+        #expect(await executor.probeICloudChannel() == .noAccountWithFootprint)
+    }
+
+    @Test("probeICloudChannel: cuenta presente + quotaExceeded → quotaExceeded (iCloud lleno = el write NO entra)")
+    func probeICloudChannel_quotaExceeded() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        // Con cuenta presente la huella es irrelevante: manda el dictamen post-hoc de CloudKit. Es la ÚNICA
+        // señal real de "lleno" que iOS expone (no hay API de espacio disponible).
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { .quotaExceeded })
+        #expect(await executor.probeICloudChannel() == .quotaExceeded)
+    }
+
+    @Test("probeICloudChannel: cuenta presente + error RETRIABLE (networkUnavailable) → healthy (fail-open)")
+    func probeICloudChannel_retriableError_failsOpen() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        // FAIL-OPEN: un túnel o un rate-limit NO son un canal roto. Abortar por ellos cancelaría migraciones
+        // sanas; el atasco de verdad lo caza el TOPE POR TIEMPO del paso 4, no este probe.
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { .networkUnavailable })
+        #expect(await executor.probeICloudChannel() == .healthy)
+    }
+
+    @Test("probeICloudChannel: cuenta presente + sin error observado (nil) → healthy (el caso del 99 % de 2.x)")
+    func probeICloudChannel_noError_healthy() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        // `nil` es también el estado tras un boot fresco (el error vive EN MEMORIA) — de ahí que este probe
+        // sea un acelerador y no la autoridad.
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { nil })
+        #expect(await executor.probeICloudChannel() == .healthy)
+    }
+
+    // MARK: - El par (storageMode, mirror-off armado) visto con isCloudWithMirrorOn (C-1)
+    //
+    // `isCloudWithMirrorOn == true` significa "modo nube con el mirror de CloudKit VIVO" = doble escritura.
+    // Es LEGÍTIMO y transitorio dentro de la ventana del cutover, y PROHIBIDO en cualquier fase estable. Los
+    // 3 tests de abajo pinnean el valor del invariante en los 3 caminos que escriben el par, para que la
+    // ventana sea un estado DECLARADO (y por tanto gateable por `MigrationRuntimeGate.canRun`) y no un
+    // accidente que nadie note hasta que el motor y el mirror escriban a la vez.
+
+    @Test("persistLocalMode: ABRE la ventana declarada — isCloudWithMirrorOn true (.cloud persistido, mirror aún VIVO)")
+    func persistLocalMode_declaresCloudWithMirrorOn() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.pair.open")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults)
+        // Antes: en `.icloud` el invariante es false por construcción (el gate es inerte para 2.x).
+        #expect(StorageModePersistence.isCloudWithMirrorOn(storageDefaults) == false)
+
+        #expect(await executor.persistLocalMode() == true)
+
+        // El paso 2 persiste `.cloud` SIN armar el mirror-off a propósito (el marcador todavía tiene que
+        // exportar por el mirror vivo, pasos 3-4). Ese estado debe ser LEGIBLE, no inferido.
+        #expect(StorageModePersistence.isCloudWithMirrorOn(storageDefaults) == true,
+                "la ventana del cutover es un estado DECLARADO — el gate del motor la reconoce por aquí")
+    }
+
+    @Test("execute(.persistICloudMode): CIERRA la ventana — isCloudWithMirrorOn false (vuelta a .icloud)")
+    func execute_persistICloudMode_closesCloudWithMirrorOnWindow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.pair.close")
+        // Estado de partida: la ventana ABIERTA (lo que deja el paso 2 antes del rollback de C-1).
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == true)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.persistICloudMode)
+        // El rollback del atasco del marcador devuelve el device a `.icloud`: el mirror sigue vivo, pero ya
+        // NO en modo nube ⇒ no hay doble escritura que gatear.
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == false)
+    }
+
+    @Test("runAdoptFlow (camino feliz): el par queda COMPLETO por el escritor único → isCloudWithMirrorOn false")
+    func adoptFlow_happy_pairIsCompleteNotHalfWritten() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-adopt-pair")
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])   // enumeración vacía coherente (0 vivas) → reconcile completa
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [], maxServerSeq: 0)]
+
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.pair.adopt")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.pair.adopt.claim"))
+        // Mismo aislamiento que el test hermano del adopt feliz: `.cloud` override + userID nil rutea
+        // `PreferenceSyncService.set` por el outbox sin enqueue; las 2 keys de consent van a standard.
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags._testResetStorageModeOverride()
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
+        }
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: source,
+                                    claimStore: claimStore)
+
+        try await executor.runAdoptFlow()
+
+        // El adopt cruza el gate del marcador por definición (lo exportó el LÍDER) ⇒ escribe las DOS mitades
+        // de una vez con `writeCloudArmed`. Media escritura dejaría al secundario en modo nube con el mirror
+        // vivo hasta el relanzamiento: exactamente el estado que C-1 persigue.
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(storageDefaults) == true)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(storageDefaults) == false,
+                "el par completo NO abre ventana de doble escritura (escritor único, no dos `set` sueltos)")
+    }
+
+    // MARK: - Techo de `reverseUpload` (ticket `reverse-upload-has-no-ceiling-and-no-exit`)
+
+    @Test("execute(.rearmMirrorOff): en la espera de la reversa (.cloud + mirror vivo) re-arma el par ENTERO y cierra la ventana")
+    func execute_rearmMirrorOff_rearmsTheWholePair() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.rearm")
+        // Estado de partida de `reverseUpload`: `.mountMirrorAndRelaunch` desarmó el flag manteniendo `.cloud`.
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == true)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.rearmMirrorOff)
+
+        // Con el par completo, el siguiente arranque monta el store sin mirror y el motor puede correr. Con el
+        // flag suelto y `.icloud` (el otro orden posible), `derive` pediría relanzar en bucle.
+        #expect(StorageModePersistence.read(defaults) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults) == true)
+        #expect(StorageModePersistence.isCloudWithMirrorOn(defaults) == false)
+    }
+
+    @Test("execute(.rearmMirrorOff): escribe el MODO también — desde `.icloud` no deja la mitad «armado + .icloud»")
+    func execute_rearmMirrorOff_fromICloud_writesTheModeToo() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.rearm.icloud")
+        // No debería pasar en `reverseUpload` (el modo es `.cloud`), pero si pasa, armar el flag suelto dejaría la
+        // mitad que `derive` lee como «relanza» en bucle. Con el escritor único del par no puede quedar a medias.
+        StorageModePersistence.write(.icloud, defaults: defaults)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.rearmMirrorOff)
+        try await executor.execute(.rearmMirrorOff)         // idempotente: re-ejecutarlo tras un kill no cambia nada
+        #expect(StorageModePersistence.read(defaults) == .cloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults) == true)
+    }
+
+    // La decisión es pura y se pinnea en `ReverseUploadCeilingLogicTests`. Aquí, el CABLEADO: que las tres señales
+    // lleguen al sitio que les toca. Se inyectan las tres siempre (los argumentos se evalúan eager y el default de
+    // producción es `iCloudSyncService.shared`).
+
+    @Test("reverseUploadBlocker: sin token de iCloud y sin error → icloudOff (copy honesto, presupuesto LARGO)")
+    func reverseUploadBlocker_noTokenNoError_isICloudOff() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { false },
+                                    icloudLastExportErrorCode: { nil },
+                                    icloudMirrorReportedNotAuthenticated: { false },
+                                    icloudLastExportErrorAt: { nil },
+                                    icloudLastSuccessfulExportAt: { nil })
+        #expect(executor.reverseUploadBlocker() == .icloudOff)
+        #expect(executor.reverseUploadBlocker().stallCause == .unknown)
+    }
+
+    @Test("reverseUploadBlocker: quotaExceeded → icloudFull; mirror no autenticado → icloudUnusable")
+    func reverseUploadBlocker_cloudKitWord_isDefinitive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let failedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let full = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                icloudAccountPresent: { true },
+                                icloudLastExportErrorCode: { .quotaExceeded },
+                                icloudMirrorReportedNotAuthenticated: { false },
+                                icloudLastExportErrorAt: { failedAt },
+                                icloudLastSuccessfulExportAt: { failedAt.addingTimeInterval(-60) })
+        #expect(full.reverseUploadBlocker() == .icloudFull)
+        let unauthenticated = makeExecutor(
+            context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+            FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+            icloudAccountPresent: { true },
+            icloudLastExportErrorCode: { nil },
+            icloudMirrorReportedNotAuthenticated: { true },
+            icloudLastExportErrorAt: { nil },
+            icloudLastSuccessfulExportAt: { nil })
+        #expect(unauthenticated.reverseUploadBlocker() == .icloudUnusable)
+    }
+
+    @Test("reverseUploadBlocker: un «iCloud lleno» ANTERIOR al último export con éxito ya no manda → unknown")
+    func reverseUploadBlocker_errorOutdatedByASuccess_isUnknown() async throws {
+        // El cableado de las dos fechas: si el executor pasara la del error como la del éxito (o no las pasara), el
+        // latch de `lastExportError` volvería a acortar la espera a quien ya liberó espacio.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let failedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { .quotaExceeded },
+                                    icloudMirrorReportedNotAuthenticated: { false },
+                                    icloudLastExportErrorAt: { failedAt },
+                                    icloudLastSuccessfulExportAt: { failedAt.addingTimeInterval(60) })
+        #expect(executor.reverseUploadBlocker() == .unknown)
+    }
+
+    @Test("reverseUploadBlocker: token presente y sin error → unknown (el caso normal de una subida lenta)")
+    func reverseUploadBlocker_healthySignals_isUnknown() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "s"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    icloudAccountPresent: { true },
+                                    icloudLastExportErrorCode: { nil },
+                                    icloudMirrorReportedNotAuthenticated: { false },
+                                    icloudLastExportErrorAt: { nil },
+                                    icloudLastSuccessfulExportAt: { nil })
+        #expect(executor.reverseUploadBlocker() == .unknown)
+    }
+
+    // MARK: - Muestreo de `reverseUpload` con filas SIN testigo (born-cloud, D15)
+
+    /// Side-tables de CloudKit fabricadas a mano (molde de `CKIdentityCaptureTests`) para una sola `TransactionItem`:
+    /// su `Z_ENT` y, si se pide, su fila de metadata con o sin nombre de registro.
+    private func makeReverseUploadFixture(_ dir: URL, zpk: Int64, recordName: String?, withMetadata: Bool) -> URL {
+        let url = dir.appendingPathComponent("ckfixture-reverse.sqlite")
+        var db: OpaquePointer?
+        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+        var statements = [
+            "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+            """
+            CREATE TABLE ANSCKRECORDMETADATA
+            (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)
+            """,
+            "CREATE TABLE ANSCKRECORDZONEMETADATA (Z_PK INTEGER, ZCKRECORDZONENAME TEXT, ZCKOWNERNAME TEXT)",
+            "INSERT INTO ANSCKRECORDZONEMETADATA VALUES (2, 'com.apple.coredata.cloudkit.zone', '__defaultOwner__')",
+        ]
+        if withMetadata {
+            let name = recordName.map { "'\($0)'" } ?? "NULL"
+            statements.append("INSERT INTO ANSCKRECORDMETADATA VALUES (1, \(zpk), 5, \(name), 2)")
+        }
+        for sql in statements {
+            #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)")
+        }
+        sqlite3_close(db)
+        return url
+    }
+
+    /// EL test de D15: una fila creada en ESTE teléfono por una cuenta nacida en la nube NO tiene testigo
+    /// `SyncIdentity` (solo lo crean `backfillIdentities` y el pull de filas nuevas). Antes el muestreo emparejaba
+    /// únicamente filas con testigo: cero pares ⇒ `.drained` ⇒ la vuelta a iCloud se daba por hecha sin comprobar
+    /// nada. Ahora la fila entra con un testigo scratch: sin metadata de CloudKit cuenta como PENDIENTE, y con su
+    /// nombre de registro cuenta como exportada. Y el testigo scratch no se persiste.
+    @Test("reverseUploadStatus: fila viva SIN testigo (born-cloud) → pendiente hasta que CloudKit le da nombre")
+    func reverseUploadStatus_unwitnessedRow_isPendingUntilExported() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        try context.save()
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0, "premisa: la fila no tiene testigo")
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+
+        let sinMetadata = makeReverseUploadFixture(dir, zpk: zpk, recordName: nil, withMetadata: false)
+        let pendiente = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                     personalStoreURL: sinMetadata)
+        #expect(pendiente.reverseUploadStatus() == .pending(count: 1),
+                "sin metadata de CloudKit la fila no ha subido: la vuelta no puede darse por hecha")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0, "el testigo scratch no se inserta")
+
+        try FileManager.default.removeItem(at: sinMetadata)
+        let exportada = makeReverseUploadFixture(dir, zpk: zpk, recordName: "rec-born-cloud", withMetadata: true)
+        let drenado = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                   personalStoreURL: exportada)
+        #expect(drenado.reverseUploadStatus() == .drained, "con nombre de registro, la fila ya está en CloudKit")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
+    }
+
+    // MARK: - Un inventario que no pudo leer una tabla no es el corpus entero
+    // (ticket `an-incomplete-inventory-reads-as-the-whole-corpus`)
+    //
+    // Cada caso monta la avería con `_testInventoryFetchThrows` —que lanza un `CocoaError` dentro del `do` real— y lleva
+    // su control: el MISMO escenario sin la avería da el desenlace bueno. Sin el control, el desenlace de la avería podría
+    // venir de cualquier otra cosa del escenario.
+
+    /// La captura de identidad de la ida. Su llamador SÍ puede fallar —`driveIdentity` convierte el `throw` en
+    /// `.localFailure`— y la premisa del ticket, que decía lo contrario, era falsa. Antes la tabla se saltaba y la
+    /// captura corría sobre un inventario parcial, con el breadcrumb contando `captured: 0` como si no hubiera nada.
+    @Test("assignIdentity: una tabla ilegible en la captura lanza, no captura sobre un inventario parcial")
+    func assignIdentity_unreadableInventoryTable_throws() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+
+        // Control: sin la avería la captura termina.
+        let sano = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await sano.assignIdentity()
+
+        // Una tabla de negocio…
+        let enferma = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        enferma._testInventoryFetchThrows = { step, entity in step == "identity-capture" && entity == "Category" }
+        await #expect(throws: MigrationExecutorError.inventoryUnreadable(entity: "Category")) {
+            try await enferma.assignIdentity()
+        }
+
+        // …el backfill que corre antes, que se tragaba su error y dejaba filas sin identidad…
+        defer { SyncIdentityService._testThrowOnBackfillFetchOf = [] }
+        SyncIdentityService._testThrowOnBackfillFetchOf = ["Category"]
+        let sinBackfill = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await #expect(throws: CocoaError.self) { try await sinBackfill.assignIdentity() }
+        SyncIdentityService._testThrowOnBackfillFetchOf = []
+
+        // …y la de testigos, que antes devolvía `[]` entera: cero pares y ni una coordenada capturada.
+        let sinTestigos = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        sinTestigos._testInventoryFetchThrows = { step, entity in step == "identity-capture" && entity == "SyncIdentity" }
+        await #expect(throws: MigrationExecutorError.inventoryUnreadable(entity: "SyncIdentity")) {
+            try await sinTestigos.assignIdentity()
+        }
+    }
+
+    /// El guard anti-fusión del adopt. Con el backend VACÍO y una huérfana local, el adopt tiene que abortar
+    /// (`.abortedEmptyBackend`); con la tabla ilegible el plan preliminar salía con `uploadCount == 0` y el guard, que
+    /// existe para no fusionar dos corpus, se apagaba. Y como el plan definitivo también salía vacío, el adopt se
+    /// declaraba completo.
+    @Test("runAdoptOrphanReconcile: un inventario ilegible no apaga el guard anti-fusión — localFailure, sin mutar ni tocar la red")
+    func adoptReconcile_unreadablePrePlanInventory_isLocalFailureNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        stub.merkleBody = try makeMerkleBody([:])
+
+        // Control: sin la avería, backend vacío + huérfana ⇒ el guard aborta.
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: FakeTombstoneSource())
+        #expect(await sano.runAdoptOrphanReconcile() == .abortedEmptyBackend,
+                "control del escenario: con el inventario legible el guard SÍ salta")
+
+        let merkleAntes = stub.merkleCallCount
+        let fuenteEnferma = FakeTombstoneSource()
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: fuenteEnferma)
+        enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure,
+                "ilegible no es «sin huérfanas»: se reintenta con el motivo local, no se cierra el adopt")
+        #expect(stub.pushedSyncIDs.isEmpty, "nada se sube")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0,
+                "corta ANTES del backfill: sin testigos, igual que el guard")
+        // Ticket `adopt-effect-retries-forever-with-no-ceiling`: el inventario se lee ANTES de la red, así que una avería
+        // local no paga la enumeración ni el Merkle en cada reintento. El control de arriba sí los pagó.
+        #expect(fuenteEnferma.callCount == 0, "sin enumeración del backend")
+        #expect(stub.merkleCallCount == merkleAntes, "sin Merkle")
+    }
+
+    /// La SEGUNDA lectura del inventario del adopt, la de después del backfill, y la que cerraba el adopt en falso:
+    /// `guard !plan.orphans.isEmpty else { return .completed(uploaded: 0) }`, y el adopt no vuelve a pasar por ahí. El
+    /// closure del seam es lo que la hace alcanzable: la primera lectura pasa y la segunda lanza.
+    @Test("runAdoptOrphanReconcile: si el inventario post-backfill no se deja leer, el adopt no se da por completo")
+    func adoptReconcile_unreadableDefinitiveInventory_isTransientNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let knownID = UUID(); let orphanID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source)
+        let lecturas = InventoryReadCounter()
+        enfermo._testInventoryFetchThrows = { step, entity in
+            guard step == "adopt-inventory", entity == "Category" else { return false }
+            lecturas.value += 1
+            return lecturas.value >= 3
+        }
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure,
+                "con el plan definitivo ilegible el adopt se reintenta: `completed(0)` lo cerraba con la huérfana fuera")
+        // Tres lecturas desde `adopt-effect-retries-forever-with-no-ceiling`: la puerta antes de la red, el plan preliminar
+        // DESPUÉS de la enumeración (lo que se creó mientras se enumeraba también cuenta para el guard) y el definitivo.
+        #expect(lecturas.value == 3, "control del seam: las dos primeras lecturas pasaron y la tercera lanzó")
+        #expect(stub.pushedSyncIDs.isEmpty, "nada se sube a ciegas")
+
+        // Control: el mismo escenario, legible, sube la huérfana. Fuente nueva: la de arriba ya sirvió su página.
+        let fuente = FakeTombstoneSource()
+        fuente.pages = source.pages
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: fuente)
+        #expect(await sano.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0),
+                "control del escenario: sin la avería la huérfana SÍ se sube")
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [orphanID.uuidString.lowercased()])
+    }
+
+    /// El backfill entre los dos inventarios. Tragado, dejaba la fila SIN identidad, el diff la contaba como
+    /// `needsIdentity` y no como huérfana, y el adopt cerraba `completed(0, 1)` sin subirla.
+    @Test("runAdoptOrphanReconcile: si el backfill no termina, localFailure — no un adopt completo sin la fila")
+    func adoptReconcile_backfillFails_isLocalFailureNotCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        context.insert(Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        func source() -> FakeTombstoneSource {
+            let s = FakeTombstoneSource()
+            s.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+            return s
+        }
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        defer { SyncIdentityService._testThrowOnBackfillFetchOf = [] }
+        SyncIdentityService._testThrowOnBackfillFetchOf = ["Category"]
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source())
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // Control: con el backfill sano, la misma fila recibe identidad y se sube.
+        SyncIdentityService._testThrowOnBackfillFetchOf = []
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source())
+        #expect(await sano.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+    }
+
+    /// El diff del panel DEBUG usa el mismo inventario: ilegible devuelve `nil` en vez de un diff parcial.
+    @Test("adoptOrphanDryRun: un inventario ilegible no pinta un diff parcial")
+    func adoptDryRun_unreadableInventory_isNil() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        func source() -> FakeTombstoneSource {
+            let s = FakeTombstoneSource()
+            s.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+            return s
+        }
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let sano = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await sano.adoptOrphanDryRun()?.uploadCount == 1, "control: legible, el diff ve la huérfana")
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Category" }
+        #expect(await enfermo.adoptOrphanDryRun() == nil)
+    }
+
+    /// El fetch dirigido de las huérfanas. Saltar la tabla dejaba `inputs` sin sus filas, el outbox vivo vacío y el
+    /// adopt `completed(uploaded: 0)`: las huérfanas de esa tabla no llegaban nunca al backend.
+    @Test("runAdoptOrphanReconcile: si la tabla de las huérfanas no se deja leer al emitirlas, localFailure")
+    func adoptReconcile_unreadableOrphanInputs_isLocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // El 2.º dispositivo del mismo Apple ID: su espejo trajo el marcador del líder (guarda de linaje, ticket
+        // `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin él no subiría nada.
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let knownID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: knownID, seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source)
+        enfermo._testInventoryFetchThrows = { step, entity in step == "adopt-orphan-inputs" && entity == "Category" }
+        #expect(await enfermo.runAdoptOrphanReconcile() == .localFailure)
+        #expect(stub.pushedSyncIDs.isEmpty, "nada se sube")
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty, "corta antes de encolar")
+    }
+
+    /// La muestra de la vuelta. Si la tabla ilegible era la de las filas pendientes, la muestra salía vacía y
+    /// `.drained` cerraba la vuelta a iCloud con esos datos sin llegar. El control es el test de D15 de arriba: la misma
+    /// fila, legible, cuenta como pendiente.
+    @Test("reverseUploadStatus: una tabla ilegible en la muestra es .unreadable, no .drained")
+    func reverseUploadStatus_unreadableTable_isUnreadableNotDrained() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        try context.save()
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+        let sinMetadata = makeReverseUploadFixture(dir, zpk: zpk, recordName: nil, withMetadata: false)
+
+        let sano = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: sinMetadata)
+        #expect(sano.reverseUploadStatus() == .pending(count: 1), "control del escenario: la fila está pendiente")
+
+        let enfermo = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                   personalStoreURL: sinMetadata)
+        enfermo._testInventoryFetchThrows = { step, entity in step == "reverse-sample" && entity == "TransactionItem" }
+        #expect(enfermo.reverseUploadStatus() == .unreadable,
+                "sin la tabla la muestra contaba cero pendientes y daba la vuelta por hecha")
+    }
+
+    // MARK: - Una captura que no pudo mirar ninguna fila no es «nada pendiente»
+    // (ticket `reverse-upload-sample-reads-unreadable-rows-as-drained`)
+    //
+    // Antes, con el SQLite cerrado o sin las tablas del espejo, todas las filas salían `failed`, `failed` no contaba en
+    // la suma y la vuelta se daba por `.drained`: el cuarteto de cierre corría con los datos sin llegar a iCloud. Que el
+    // runner no cierre con `.unreadable` lo fija `reverseUploadCeiling_unreadableSample_neitherClosesNorAdvances_…` en
+    // `MigrationRunnerTests`.
+
+    /// Un SQLite con UNA pieza rota; `nil` en `statements` = el fichero no existe (el SQLite no abre).
+    private func makeBrokenReverseFixture(_ dir: URL, statements: [String]?) -> URL {
+        let url = dir.appendingPathComponent("ckfixture-broken-\(UUID().uuidString).sqlite")
+        guard let statements else { return url }
+        var db: OpaquePointer?
+        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+        for sql in statements {
+            #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)")
+        }
+        sqlite3_close(db)
+        return url
+    }
+
+    static let brokenReverseFixtures: [(reason: String, statements: [String]?)] = [
+        ("sqlite-open", nil),
+        ("no-record-metadata-table", [
+            "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+        ]),
+        ("meta-columns-missing", [
+            "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+            "CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZRECORDZONE INTEGER)",
+        ]),
+        ("primary-key-map-unreadable", [
+            "CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)",
+        ]),
+    ]
+
+    @Test("reverseUploadStatus: una captura que no pudo mirar ninguna fila es .unreadable, no .drained",
+          arguments: 0..<4)
+    func reverseUploadStatus_structuralCaptureFailure_isUnreadableNotDrained(caseIndex: Int) async throws {
+        let (reason, statements) = Self.brokenReverseFixtures[caseIndex]
+        let defaults = makeIsolatedDefaults(prefix: "mwe.reverse.structural.\(caseIndex)")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        try context.save()
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+
+        // Control: la misma fila, con el SQLite entero y sin metadata, es una pendiente.
+        let sano = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: makeReverseUploadFixture(dir, zpk: zpk, recordName: nil, withMetadata: false))
+        #expect(sano.reverseUploadStatus() == .pending(count: 1), "control del escenario: la fila está pendiente")
+
+        let roto = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                personalStoreURL: makeBrokenReverseFixture(dir, statements: statements))
+        #expect(roto.reverseUploadStatus() == .unreadable,
+                "sin poder mirar la fila, la muestra daba cero pendientes y la vuelta se cerraba sin iCloud")
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudReverseUploadSampleUnreadable" }
+        #expect(canaries.count == 1)
+        #expect(canaries.first?.d?.hasPrefix(reason) == true, "el motivo viaja en el canario")
+        #expect(MetricsSpool.pending(defaults).allSatisfy { $0.n != "cloudReverseUploadFailedRows" },
+                "un estructural no se cuenta como fallos por fila")
+    }
+
+    /// Los `failed` POR FILA siguen fuera de la suma (decisión del encargo: pueden ser benignos y permanentes), y dejan
+    /// el canario con el conjunto de motivos para medirlos en device. La fila `Tag` no está en `Z_PRIMARYKEY` del fixture:
+    /// `no-zent` con el mapa leído.
+    @Test("reverseUploadStatus: un failed por fila no cambia el cálculo y deja su motivo en el canario")
+    func reverseUploadStatus_perRowFailure_keepsTheOldSumAndIsMeasured() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.reverse.perrow")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: -12.5, currencyCode: "USD")
+        context.insert(tx)
+        context.insert(Tag(name: "sin-zent"))
+        try context.save()
+        let zpk = try #require(CKIdentityCapture.entityAndPK(for: tx.persistentModelID)?.zpk)
+
+        let exportada = makeReverseUploadFixture(dir, zpk: zpk, recordName: "rec-tx", withMetadata: true)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: exportada)
+        #expect(executor.reverseUploadStatus() == .drained, "el failed por fila no cuenta: la decisión espera a medirlo")
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudReverseUploadFailedRows" }
+        #expect(canaries.map(\.d) == ["no-zent"])
+        #expect(MetricsSpool.pending(defaults).allSatisfy { $0.n != "cloudReverseUploadSampleUnreadable" })
+    }
+
+    @Test("reverseUploadFailedRowsDetail: motivos ordenados, sin cifras, dentro de 128 y nunca vacío")
+    func reverseUploadFailedRowsDetail_shape() {
+        #expect(MetricsService.reverseUploadFailedRowsDetail(reasons: ["zone-fk-missing": 2, "no-zent": 5])
+                == "no-zent|zone-fk-missing")
+        #expect(MetricsService.reverseUploadFailedRowsDetail(reasons: [:]) == "unknown")
+        let long = Dictionary(uniqueKeysWithValues: (0..<40).map { ("motivo-largo-\($0)", 1) })
+        #expect(MetricsService.reverseUploadFailedRowsDetail(reasons: long).count == 128)
+    }
+
+    /// El canario de metadata huérfana. Con el `Set` vacío de antes, toda la metadata de una tabla ilegible contaba como
+    /// huérfana; ahora la tabla se queda sin key y el escáner la ignora, como a una entidad no cableada.
+    @Test("collectLiveByEntityName: una tabla ilegible se queda SIN key, no con un Set vacío")
+    func collectLiveByEntityName_unreadableTable_hasNoKey() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        context.insert(Tag(name: "t"))
+        try context.save()
+
+        let sano = MigrationWorkExecutor.collectLiveByEntityName(context: context)
+        #expect(sano["Tag"]?.count == 1, "control: legible, la key está y trae la fila")
+        #expect(sano["Category"] == [], "control: sin filas, la key está con un Set vacío (contrato RP-4)")
+
+        let enfermo = MigrationWorkExecutor.collectLiveByEntityName(context: context, throwingOn: { $0 == "Tag" })
+        #expect(enfermo["Tag"] == nil, "ilegible: sin key, o toda su metadata contaría como huérfana")
+        #expect(enfermo["Category"] == [], "las demás tablas siguen con su key")
+        #expect(enfermo.count == sano.count - 1)
+    }
+
+    // MARK: - El linaje de la IDA (ticket `migration-takeover-uploads-without-a-lineage-check`)
+
+    /// El backend de un líder que ya subió algo: las páginas que sirve la enumeración y el Merkle COHERENTE con ellas.
+    /// Fábrica y no fuente, por lo mismo que `seedWindowCorpus`: la fuente se consume al paginar.
+    private func backend(_ rows: [(table: String, id: UUID)], fields: [UUID: [String: WireValue]] = [:],
+                         hlc: String = "hlc", tombstones: [(table: String, id: UUID)] = [],
+                         stub: RoutingStub) throws -> () -> FakeTombstoneSource {
+        var counts: [String: Int] = [:]
+        for row in rows { counts[row.table, default: 0] += 1 }
+        stub.merkleBody = try makeMerkleBody(counts)
+        return {
+            let source = FakeTombstoneSource()
+            if !rows.isEmpty || !tombstones.isEmpty {
+                let live = rows.enumerated().map {
+                    upsertDelta(table: $0.element.table, syncID: $0.element.id, seq: Int64($0.offset + 1),
+                                fields: fields[$0.element.id] ?? [:], hlc: hlc)
+                }
+                let deleted = tombstones.enumerated().map {
+                    tombstone(table: $0.element.table, syncID: $0.element.id, seq: Int64(rows.count + $0.offset + 1))
+                }
+                source.pages = [PulledPage(deltas: live + deleted, maxServerSeq: Int64(rows.count + tombstones.count))]
+            }
+            return source
+        }
+    }
+
+    /// **Los dos criterios en el MISMO backend.** Un líder callado subió una cuenta y una categoría. El relevo con otro
+    /// corpus —otro iCloud— no comparte ninguna y sale `unproven`; el del mismo iCloud trae por CloudKit la cuenta, con su
+    /// `shortcutID` de siempre, y la categoría con la identidad que le asignó el líder, y sale `proven`. Compartir solo la
+    /// cuenta ya no basta si hay categorías que subir (`forwardLineage_leaderIdentitiesNotArrived_blocksUntilTheyDo`). Ninguno toca nada: ni push, ni encolado, ni backfill.
+    @Test("checkForwardLineage: otro corpus → unproven; el mismo iCloud (comparte la cuenta) → proven; ninguno muta")
+    func forwardLineage_foreignCorpusUnproven_sameICloudProven() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let leaderAccount = UUID(), leaderCategory = UUID()
+        let source = try backend([("accounts", leaderAccount), ("categories", leaderCategory)], stub: stub)
+
+        // El corpus ajeno: sus propias filas, ninguna del líder. Una sin identidad, para ver que nadie la backfillea.
+        context.insert(Account(name: "Ajena", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        let nilRow = Category(name: "ajena-sin-identidad", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilRow)
+        try context.save()
+        let foreign = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                   personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await foreign.checkForwardLineage() == .unproven(liveRows: 2))
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(nilRow.syncID == nil, "no muta: el backfill no corre")
+        #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty)
+
+        // El mismo iCloud: la cuenta del líder llega por CloudKit con su identidad de siempre, y también la categoría que el
+        // líder subió, con la identidad que le asignó. (Sin la categoría es el caso de
+        // `forwardLineage_leaderIdentitiesNotArrived_blocksUntilTheyDo`.)
+        let shared = Account(name: "Del líder", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        shared.shortcutID = leaderAccount
+        context.insert(shared)
+        _ = makeCategory("del-líder", syncID: leaderCategory, in: context)
+        try context.save()
+        let relief = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                  personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await relief.checkForwardLineage() == .proven(sharedRows: 2))
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **El caso del ticket `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`.** El líder callado
+    /// asignó identidad a sus categorías y subió dos; su exportación a iCloud se paró, así que aquí están las MISMAS dos
+    /// categorías sin `syncID`, y la cuenta sí —su identidad nace con la fila—. Una fila compartida probaba el linaje, el
+    /// backfill acuñaba identidades frescas y el servidor, que solo deduplica por identidad, guardaba las dos dos veces. Ahora
+    /// sale `accountRowsMissing` sin tocar nada, y cuando iCloud trae las identidades, `proven`.
+    ///
+    /// Y lo que falta cuenta solo en las tablas que SUBEN: una tabla sin nada que subir no puede duplicar, así que no bloquea.
+    @Test("checkForwardLineage: mismo iCloud sin las identidades del líder → accountRowsMissing, no muta; al llegar → proven")
+    func forwardLineage_leaderIdentitiesNotArrived_blocksUntilTheyDo() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let leaderAccount = UUID(), cat1 = UUID(), cat2 = UUID()
+        let source = try backend([("accounts", leaderAccount), ("categories", cat1), ("categories", cat2), ("tags", UUID())],
+                                 stub: stub)
+
+        let account = Account(name: "Del líder", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        account.shortcutID = leaderAccount
+        context.insert(account)
+        let row1 = Category(name: "comida", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        let row2 = Category(name: "casa", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(row1)
+        context.insert(row2)
+        try context.save()
+
+        let early = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await early.checkForwardLineage() == .accountRowsMissing(table: "categories", missing: 2))
+        #expect(row1.syncID == nil && row2.syncID == nil, "no muta: el backfill no corre")
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncIdentity>()).isEmpty)
+
+        // Llega UNA: sigue faltando la otra, y la cifra lo dice.
+        row1.syncID = cat1
+        try context.save()
+        let half = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await half.checkForwardLineage() == .accountRowsMissing(table: "categories", missing: 1))
+
+        // iCloud termina de traerlas: la cuenta y las dos categorías, compartidas.
+        row2.syncID = cat2
+        try context.save()
+        let late = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await late.checkForwardLineage() == .proven(sharedRows: 3),
+                "la etiqueta del backend sigue faltando, pero aquí no hay etiquetas que subir: no bloquea")
+    }
+
+    /// Una tabla con filas PROPIAS que subir —una categoría que el líder no tenía, ya con identidad— también pide todas las de
+    /// la cuenta: es la misma condición que el marcador daba por hecha, «llegó todo», y no depende de saber qué fila es cuál.
+    @Test("checkForwardLineage: una huérfana con identidad en una tabla a la que le faltan filas de la cuenta también bloquea")
+    func forwardLineage_orphanWithIdentity_alsoNeedsTheAccountRows() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID()
+        let source = try backend([("accounts", leaderAccount), ("categories", UUID())], stub: stub)
+        let account = Account(name: "Del líder", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        account.shortcutID = leaderAccount
+        context.insert(account)
+        _ = makeCategory("solo-de-aquí", syncID: UUID(), in: context)
+        try context.save()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .accountRowsMissing(table: "categories", missing: 1))
+    }
+
+    /// La identidad compartida tiene que estar en SU tabla: la misma UUID en otra no prueba nada (defensa del cruce por
+    /// tabla; con UUID aleatorias no pasa, pero el diff del adopt ya compara por tabla y esto no puede ser más laxo).
+    @Test("checkForwardLineage: una identidad compartida en OTRA tabla no prueba el linaje")
+    func forwardLineage_sharedIdInAnotherTable_doesNotProve() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let id = UUID()
+        let source = try backend([("categories", id)], stub: stub)
+        let account = Account(name: "x", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        account.shortcutID = id
+        context.insert(account)
+        try context.save()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .unproven(liveRows: 1))
+    }
+
+    /// Sin filas personales vivas en el backend no hay nada que mezclar: el líder callado murió antes de subir, o todo lo
+    /// que subió se borró. Los tipos de cambio no cuentan (caché que cualquier teléfono siembra), ni para pedir prueba ni para
+    /// darla: un relevo que solo comparte un tipo de cambio con un backend que tiene más sigue `unproven`.
+    @Test("checkForwardLineage: backend vacío o solo tipos de cambio → sin datos; un tipo de cambio compartido no prueba nada")
+    func forwardLineage_noLiveRows_andExchangeRatesDoNotCount() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        context.insert(Account(name: "Mía", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        let rate = try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7])
+        let rateID = UUID()
+        rate.syncID = rateID
+        context.insert(rate)
+        try context.save()
+
+        let empty = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                 personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: try backend([], stub: stub)())
+        #expect(await empty.checkForwardLineage() == .noLivePersonalRows)
+
+        let onlyRates = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: try backend([("exchange_rates", rateID)], stub: stub)())
+        #expect(await onlyRates.checkForwardLineage() == .noLivePersonalRows)
+
+        let rateAndMore = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                       personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                       tombstoneSource: try backend([("exchange_rates", rateID), ("accounts", UUID())], stub: stub)())
+        #expect(await rateAndMore.checkForwardLineage() == .unproven(liveRows: 1))
+    }
+
+    /// Un tombstone del backend no es una fila viva: una identidad local que el backend BORRÓ no prueba nada, y sin vivas no
+    /// hay con qué mezclar.
+    @Test("checkForwardLineage: una identidad que el backend borró no prueba ni pide prueba")
+    func forwardLineage_tombstoneIsNotLive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])
+        let id = UUID()
+        _ = makeCategory("borrada-en-el-backend", syncID: id, in: context)
+        try context.save()
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [tombstone(table: "categories", syncID: id, seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.checkForwardLineage() == .noLivePersonalRows)
+    }
+
+    /// Sesgo a esperar, jamás a proceder ni a bloquear por una página que faltó: la red de la enumeración y un Merkle que
+    /// cuenta más vivas de las enumeradas son `transient`. **Y también con una identidad compartida ya enumerada** (desde el
+    /// ticket `migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived`; hasta entonces probaba igual):
+    /// «llegó todo» es una afirmación sobre la enumeración ENTERA, y la página que faltó es justo la que la desmentiría.
+    @Test("checkForwardLineage: red o enumeración incompleta → transient, también con una fila compartida")
+    func forwardLineage_networkAndIncompleteEnumeration() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let shared = UUID()
+        _ = makeCategory("compartida", syncID: shared, in: context)
+        try context.save()
+
+        let offline = FakeTombstoneSource()
+        offline.forced = .transient
+        let e1 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                              personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: offline)
+        #expect(await e1.checkForwardLineage() == .transient)
+
+        // El Merkle dice 2 vivas y la enumeración trajo 1 ajena: incompleta → no se puede decir «no comparte nada».
+        stub.merkleBody = try makeMerkleBody(["categories": 2])
+        let partial = FakeTombstoneSource()
+        partial.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let e2 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                              personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: partial)
+        #expect(await e2.checkForwardLineage() == .transient)
+
+        // Lo mismo, pero la página que llegó trae la compartida: sigue sin poder decir que llegó todo.
+        let partialShared = FakeTombstoneSource()
+        partialShared.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: shared, seq: 1)], maxServerSeq: 1)]
+        let e3 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                              personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: partialShared)
+        #expect(await e3.checkForwardLineage() == .transient)
+
+        // Control: con el Merkle coherente con esa página, la misma compartida prueba.
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let wholeShared = FakeTombstoneSource()
+        wholeShared.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: shared, seq: 1)], maxServerSeq: 1)]
+        let e4 = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                              personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: wholeShared)
+        #expect(await e4.checkForwardLineage() == .proven(sharedRows: 1))
+    }
+
+    /// Un inventario local que no se deja leer es `localFailure`, y ANTES de la red: nunca «probado» ni «sin datos», y sin
+    /// pagar la enumeración.
+    @Test("checkForwardLineage: el inventario local ilegible → localFailure, sin tocar la red")
+    func forwardLineage_unreadableInventory_isLocalFailure() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let source = FakeTombstoneSource()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        executor._testInventoryFetchThrows = { step, entity in step == "adopt-inventory" && entity == "Account" }
+        #expect(await executor.checkForwardLineage() == .localFailure)
+        #expect(source.callCount == 0, "la avería local no paga la enumeración")
+    }
+
+    /// La pista del claim: `performClaim` guarda `has_personal_writes` del `created` y la borra en el claim siguiente, que
+    /// puede no traerla (un servidor sin g16_03) o no ser `created`.
+    @Test("performClaim: guarda la pista de g16_03 del created y la borra en el siguiente claim")
+    func claim_recordsThePersonalWritesHint() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.hint")))
+        stub.claimBody = Data(#"{"state":"created","has_personal_writes":true,"kind":"complete"}"#.utf8)
+        #expect(await executor.performClaim() == .success(.created))
+        #expect(executor.lastClaimReportedPersonalWrites() == true)
+
+        stub.claimBody = Data(#"{"state":"created","kind":"complete"}"#.utf8)
+        _ = await executor.performClaim()
+        #expect(executor.lastClaimReportedPersonalWrites() == nil, "sin el campo, sin pista: el runner falla cerrado")
+
+        stub.claimBody = Data(#"{"state":"created","has_personal_writes":false,"kind":"complete"}"#.utf8)
+        _ = await executor.performClaim()
+        #expect(executor.lastClaimReportedPersonalWrites() == false)
+
+        stub.claimStatus = 500
+        _ = await executor.performClaim()
+        #expect(executor.lastClaimReportedPersonalWrites() == nil, "un claim sin respuesta no hereda la pista del anterior")
+    }
+
+    // MARK: - La fila borrada durante la espera (ticket `lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait`)
+
+    /// `created_at` tal cual lo devuelve PostgREST: `timestamptz` con microsegundos y zona. La clave lo trunca a ms.
+    private func wireCreatedAt(_ date: Date) -> WireValue {
+        let micros = Int64((date.timeIntervalSince1970 * 1_000_000).rounded(.down))
+        let seconds = micros / 1_000_000
+        let fraction = micros % 1_000_000
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let c = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second],
+                                        from: Date(timeIntervalSince1970: TimeInterval(seconds)))
+        return .string(String(format: "%04d-%02d-%02dT%02d:%02d:%02d.%06lld+00:00",
+                              c.year!, c.month!, c.day!, c.hour!, c.minute!, c.second!, fraction))
+    }
+
+    /// Un HLC c1 válido. La última escritura del líder: con `leaderLastWrite` (2023) todo lo que el test crea con el autor
+    /// normal consta como nacido DESPUÉS; con `hlc: "hlc"` (ilegible) nada consta como nuevo.
+    private func hlc(_ ms: Int64) throws -> String {
+        try HLC(physicalMs: ms, counter: 0, nodeID: NodeID(validating: "0123456789abcdef")).description
+    }
+    private let leaderLastWrite: Int64 = 1_700_000_000_000
+
+    /// Guarda como lo haría la importación del espejo de CloudKit: lo que BAJÓ del líder, no lo creado aquí.
+    private func saveAsImported(_ context: ModelContext) throws {
+        context.author = "NSCloudKitMirroringDelegate.import"
+        defer { context.author = nil }
+        try context.save()
+    }
+
+    private func makeTx(createdAt: Date, amount: Double, account: Account, syncID: UUID?, in context: ModelContext) -> TransactionItem {
+        let tx = TransactionItem(date: fixedNow, amount: amount, currencyCode: "USD")
+        tx.createdAt = createdAt
+        tx.account = account
+        tx.syncID = syncID
+        context.insert(tx)
+        return tx
+    }
+
+    /// La cuenta del líder, que llegó por iCloud con la identidad que nace con la fila: la fila compartida de todos estos casos.
+    private func importLeaderAccount(_ id: UUID, in context: ModelContext) throws -> Account {
+        let account = Account(name: "Del líder", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash")
+        account.shortcutID = id
+        context.insert(account)
+        try saveAsImported(context)
+        return account
+    }
+
+    /// **El caso del ticket.** El líder subió su cuenta y dos movimientos, y calló. Aquí llegaron los dos; la persona BORRÓ
+    /// uno durante la espera y escribió otro. El borrado no vuelve a llegar nunca y el único que lo tombstonea en el backend
+    /// es el líder: hasta este ticket la cobertura pedía la fila y el relevo esperaba para siempre. Ahora no bloquea, porque
+    /// lo único que sube es un movimiento que consta creado AQUÍ después de la última escritura del líder: no puede ser el
+    /// borrado. Y no hereda su identidad. Sin esa constancia —la última escritura ilegible— sigue esperando.
+    @Test("checkForwardLineage: un movimiento borrado aquí durante la espera ya no bloquea si lo que sube se creó aquí después")
+    func forwardLineage_rowDeletedHereDuringTheWait_doesNotBlock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), kept = UUID(), deleted = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123_456), t2 = Date(timeIntervalSince1970: 1_699_000_200.5)
+        let rows: [(table: String, id: UUID)] = [("accounts", leaderAccount), ("tx_items", kept), ("tx_items", deleted)]
+        let fields: [UUID: [String: WireValue]] = [kept: ["created_at": wireCreatedAt(t1)],
+                                                   deleted: ["created_at": wireCreatedAt(t2)]]
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        _ = makeTx(createdAt: t1, amount: 10, account: account, syncID: kept, in: context)
+        let gone = makeTx(createdAt: t2, amount: 20, account: account, syncID: deleted, in: context)
+        try saveAsImported(context)
+        context.delete(gone)
+        let mine = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 30, account: account, syncID: nil,
+                          in: context)
+        try context.save()
+
+        let unknown = try backend(rows, fields: fields, stub: stub)
+        let blind = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: unknown())
+        #expect(await blind.checkForwardLineage() == .accountRowsMissing(table: "tx_items", missing: 1),
+                "sin saber cuándo escribió el líder, el movimiento nuevo no consta como nuevo: falla cerrado")
+
+        let known = try backend(rows, fields: fields, hlc: hlc(leaderLastWrite), stub: stub)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: known())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 2))
+        #expect(mine.syncID == nil, "no casa con la borrada: su identidad la acuña el backfill, después")
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<SyncOutbox>()).isEmpty)
+    }
+
+    /// **Sin reabrir el duplicado de #241.** Mismo borrado, pero aquí queda además un movimiento del LÍDER que llegó sin su
+    /// identidad y cuya clave no casa con nada (su `createdAt` lo rellenó este teléfono en la migración ligera, y en el
+    /// backend va el del líder). No casar no prueba nada: puede ser la fila que falta con otra clave. Sigue esperando.
+    @Test("checkForwardLineage: una fila del líder sin identidad que no casa por clave sigue bloqueando aunque haya un borrado")
+    func forwardLineage_unmatchedImportedRow_stillBlocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderTx = UUID()
+        let source = try backend([("accounts", leaderAccount), ("tx_items", leaderTx)],
+                                 fields: [leaderTx: ["created_at": wireCreatedAt(Date(timeIntervalSince1970: 1_699_000_000))]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let leaders = makeTx(createdAt: Date(timeIntervalSince1970: 1_699_500_000), amount: 7, account: account, syncID: nil,
+                             in: context)
+        try saveAsImported(context)
+        _ = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 30, account: account, syncID: nil, in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .accountRowsMissing(table: "tx_items", missing: 1))
+        #expect(leaders.syncID == nil)
+    }
+
+    /// **Y sin esperar cuando casan.** Las identidades del líder no llegaron: su movimiento y su comercio están aquí sin
+    /// `syncID`. Con una clave de linaje ÚNICA en el backend y aquí, cada fila casa con la suya —el movimiento por
+    /// `created_at` aunque aquí se editara el importe; el comercio por su clave canónica— y TOMA la identidad del líder,
+    /// guardada. El backfill ya no les acuña otra. La fila propia de este teléfono no casa con nada y sigue sin identidad.
+    @Test("checkForwardLineage: las filas del líder sin identidad casan por su clave única y toman la del backend; la propia no")
+    func forwardLineage_leaderRowsWithoutIdentity_takeTheirIdentityByKey() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderTx = UUID(), leaderMerchant = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.987)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", leaderTx), ("merchant_memory", leaderMerchant)],
+                                 fields: [leaderTx: ["created_at": wireCreatedAt(t1)],
+                                          leaderMerchant: ["merchant_canonical": .string("starbucks")]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let edited = makeTx(createdAt: t1, amount: 99, account: account, syncID: nil, in: context)
+        let merchant = MerchantMemory(merchantCanonical: "starbucks")
+        context.insert(merchant)
+        try saveAsImported(context)
+        let mine = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 5, account: account, syncID: nil,
+                          in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 1))
+        #expect(edited.syncID == leaderTx, "el movimiento del líder, editado aquí, toma su identidad")
+        #expect(merchant.syncID == leaderMerchant)
+        #expect(mine.syncID == nil)
+        #expect(!context.hasChanges, "las re-identificaciones se guardan antes de devolver `proven`")
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // La pasada siguiente ya las encuentra cubiertas: idempotente.
+        let again = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        #expect(await again.checkForwardLineage() == .proven(sharedRows: 3))
+    }
+
+    /// **Una clave repetida no casa nada.** Dos movimientos del líder con el mismo `created_at` (una importación) llegaron
+    /// sin identidad. Casarlos «en orden» podría cruzar sus identidades —importe y cuenta de uno bajo la del otro—, así que
+    /// ninguno casa y la tabla sigue esperando a que iCloud traiga las identidades.
+    @Test("checkForwardLineage: con la clave repetida no se re-identifica nada y sigue esperando")
+    func forwardLineage_repeatedKey_doesNotRebind() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), tx1 = UUID(), tx2 = UUID()
+        let t = Date(timeIntervalSince1970: 1_699_000_100)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", tx1), ("tx_items", tx2)],
+                                 fields: [tx1: ["created_at": wireCreatedAt(t)], tx2: ["created_at": wireCreatedAt(t)]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let a = makeTx(createdAt: t, amount: 1, account: account, syncID: nil, in: context)
+        let b = makeTx(createdAt: t, amount: 2, account: account, syncID: nil, in: context)
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .accountRowsMissing(table: "tx_items", missing: 2))
+        #expect(a.syncID == nil && b.syncID == nil)
+    }
+
+    /// **El deduplicador de categorías.** El líder subió su semilla «Food»; iCloud la trajo aquí y el deduplicador la fundió
+    /// con la semilla de este teléfono, «Comida» (misma clave: icono, color, ingreso), y borró la del líder. Por nombre no
+    /// casan —cada teléfono sembró en su idioma—, por la clave del deduplicador sí: la superviviente toma la identidad de
+    /// la fundida y el backend no guarda dos semillas.
+    @Test("checkForwardLineage: la semilla que sobrevive al deduplicador casa con la fundida del líder y toma su identidad")
+    func forwardLineage_seedCategoryFusedByTheDeduplicator_takesTheLeadersIdentity() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderSeed = UUID()
+        let source = try backend([("accounts", leaderAccount), ("categories", leaderSeed)],
+                                 fields: [leaderSeed: ["name": .string("Food"), "is_default_seed": .bool(true),
+                                                       "icon_name": .string("fork.knife"), "color_hex": .string("#FF9500"),
+                                                       "is_income": .bool(false)]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        let survivor = Category(name: "Comida", colorHex: "#FF9500", isIncome: false, isDefaultSeed: true)
+        survivor.iconName = "fork.knife"
+        context.insert(survivor)
+        try saveAsImported(context)
+        #expect(LineageTwinKey.category(isDefaultSeed: true, iconName: survivor.iconName,
+                                        colorHex: survivor.colorHex, isIncome: survivor.isIncome)
+                == "seed:" + CategoryDeduplicationService.identityKey(for: survivor),
+                "la misma clave que el deduplicador")
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 1))
+        #expect(survivor.syncID == leaderSeed)
+    }
+
+    /// **Una huérfana que casa se re-identifica con su testigo.** Una pasada anterior le acuñó identidad al comercio del
+    /// líder (tiene testigo) sin subirlo. Casa por su clave con el del backend: la fila y su testigo pasan a la identidad del
+    /// líder, con el ancla de contenido intacta y `lastReboundAt` estampado.
+    @Test("checkForwardLineage: una huérfana que casa pasa a la identidad del backend, y su testigo con ella")
+    func forwardLineage_orphanTwin_isRekeyedWithItsWitness() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderMerchant = UUID(), minted = UUID()
+        let source = try backend([("accounts", leaderAccount), ("merchant_memory", leaderMerchant)],
+                                 fields: [leaderMerchant: ["merchant_canonical": .string("wong")]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        let merchant = MerchantMemory(merchantCanonical: "wong")
+        merchant.syncID = minted
+        context.insert(merchant)
+        context.insert(SyncIdentity(syncID: minted, entityType: SyncEntityType.merchantMemory, localAnchor: "ancla",
+                                    createdAt: fixedNow))
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.checkForwardLineage() == .proven(sharedRows: 1))
+        #expect(merchant.syncID == leaderMerchant)
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        #expect(witnesses.map(\.syncID) == [leaderMerchant])
+        #expect(witnesses.first?.localAnchor == "ancla")
+        #expect(witnesses.first?.lastReboundAt == fixedNow)
+    }
+
+    /// **Identidad propia.** Un presupuesto del líder falta aquí (se borró aquí, o se borró en otro teléfono y nunca llegó).
+    /// Lo que sube en esa tabla es un presupuesto creado aquí después: no puede ser el del líder, y no bloquea. Si lo que
+    /// sube es un presupuesto que BAJÓ de iCloud sin estar en el backend, podría ser el del líder re-identificado aquí
+    /// (reparación de UUID colapsados): sigue bloqueando. El historial ilegible es avería local, nunca «probado».
+    @Test("checkForwardLineage: en identidad propia no bloquea si lo que sube se creó aquí después; si bajó de iCloud, sí")
+    func forwardLineage_intrinsicMissingRow_blocksOnlyWithASuspect() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderBudget = UUID()
+        let source = try backend([("accounts", leaderAccount), ("budgets", leaderBudget)], hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        context.insert(Budget(currencyCode: "USD", limitAmount: 50, name: "de este teléfono"))
+        try context.save()
+
+        let fresh = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        #expect(await fresh.checkForwardLineage() == .proven(sharedRows: 1))
+
+        let sick = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source())
+        sick._testInventoryFetchThrows = { step, _ in step == "lineage-born-here" }
+        #expect(await sick.checkForwardLineage() == .localFailure)
+
+        context.insert(Budget(currencyCode: "USD", limitAmount: 70, name: "bajó de iCloud"))
+        try saveAsImported(context)
+        let suspect = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                   FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                   tombstoneSource: source())
+        #expect(await suspect.checkForwardLineage() == .accountRowsMissing(table: "budgets", missing: 1))
+    }
+
+    /// **Los deduplicadores de identidad propia.** El deduplicador fundió la subcategoría semilla del líder con la de este
+    /// teléfono y borró la del líder: la superviviente es su gemela con otra identidad, y no se puede re-identificar (su
+    /// `shortcutID` lo referencian los espejos CSV). Esperar no la trae nunca. Si sube duplicada, el deduplicador del
+    /// arranque la vuelve a fundir con la del líder —misma clave de fusión, el icono—, así que no bloquea. Con otro icono (el
+    /// líder lo editó) el deduplicador no las fundiría: bloquea. Y una subcategoría del usuario, también.
+    @Test("checkForwardLineage: una subcategoría semilla con la clave de fusión de la que falta no bloquea; con otra, sí")
+    func forwardLineage_seedSubcategorySurvivor_doesNotBlock() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let leaderAccount = UUID(), leaderSeedSub = UUID()
+        let source = try backend([("accounts", leaderAccount), ("subcategories", leaderSeedSub)],
+                                 fields: [leaderSeedSub: ["is_default_seed": .bool(true), "icon_name": .string("cart")]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        _ = try importLeaderAccount(leaderAccount, in: context)
+        let survivor = Subcategory(name: "Supermercado", isDefaultSeed: true, iconName: "cart", category: nil)
+        context.insert(survivor)
+        try saveAsImported(context)
+
+        let seed = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                tombstoneSource: source())
+        #expect(await seed.checkForwardLineage() == .proven(sharedRows: 1))
+
+        survivor.iconName = "basket"
+        try saveAsImported(context)
+        let otherIcon = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                     FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source())
+        #expect(await otherIcon.checkForwardLineage() == .accountRowsMissing(table: "subcategories", missing: 1))
+
+        survivor.iconName = "cart"
+        survivor.isDefaultSeed = false
+        try saveAsImported(context)
+        let custom = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                  FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                  tombstoneSource: source())
+        #expect(await custom.checkForwardLineage() == .accountRowsMissing(table: "subcategories", missing: 1))
+    }
+
+    /// **El adopt, el mismo arreglo.** Sin marcador: la cuenta se comparte, un movimiento del líder se borró aquí y otro
+    /// llegó sin su identidad. Antes, `lineageUnproven` para siempre. Ahora el del líder toma su identidad y NO sube, y
+    /// sube solo el movimiento que este teléfono creó después.
+    @Test("runAdoptOrphanReconcile: con una fila borrada aquí y otra sin identidad, sube solo la fila nueva")
+    func adoptReconcile_rowDeletedHere_andLeaderRowWithoutIdentity_uploadsOnlyTheNewRow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let leaderAccount = UUID(), deleted = UUID(), leaderTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100), t2 = Date(timeIntervalSince1970: 1_699_000_200)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", deleted), ("tx_items", leaderTx)],
+                                 fields: [deleted: ["created_at": wireCreatedAt(t1)], leaderTx: ["created_at": wireCreatedAt(t2)]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let leaders = makeTx(createdAt: t2, amount: 2, account: account, syncID: nil, in: context)
+        try saveAsImported(context)
+        let mine = makeTx(createdAt: Date(timeIntervalSince1970: 1_758_000_000), amount: 3, account: account, syncID: nil,
+                          in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        #expect(leaders.syncID == leaderTx)
+        let mineID = try #require(mine.syncID)
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [mineID.uuidString.lowercased()], "solo la fila nueva")
+    }
+
+    // MARK: - La identidad que el espejo cambia por debajo (ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus`)
+    //
+    // El relevo acuñó y subió sus identidades; el líder desplazado vuelve y su espejo exporta las suyas; CloudKit le da la
+    // razón y el espejo del relevo —vivo hasta el remonte— cambia el `syncID` de filas que el backend ya conoce. Qué gana
+    // CloudKit no se puede medir sin dos teléfonos: aquí el import se simula como lo haría el espejo (mismo objeto, solo la
+    // identidad, firmado con su autor) y se mide lo que hace la migración con eso.
+
+    /// Un relevo con categorías que ESTE teléfono ya identificó: backfill real de `assignIdentity` y testigos con las
+    /// coordenadas de CloudKit que la captura les pone con el espejo vivo (en el store de test no hay metadatos, así que se
+    /// escriben a mano y el seam devuelve las mismas para cada fila). Con el baseline del History adelantado: el drain solo
+    /// ve lo que pase después.
+    private func relayWithIdentities(
+        _ dir: URL, stub: RoutingStub, ids: [UUID], pageSize: Int = 200
+    ) async throws -> (executor: MigrationWorkExecutor, context: ModelContext, categories: [Yala.Category],
+                       records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates], engine: CloudSyncEngine) {
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-relay"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    snapshotPageSize: pageSize)
+        var categories: [Yala.Category] = []
+        for (index, id) in ids.enumerated() {
+            let category = Category(name: "relay-\(index)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            category.syncID = id
+            context.insert(category)
+            categories.append(category)
+        }
+        try context.save()
+        try await executor.assignIdentity()
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        var records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates] = [:]
+        for (index, category) in categories.enumerated() {
+            let record = MigrationWorkExecutor.RecordCoordinates(
+                recordName: "record-\(index)", zoneName: "com.apple.coredata.cloudkit.zone", ownerName: "__defaultOwner__")
+            records[category.persistentModelID] = record
+            let witness = try #require(witnesses.first { $0.syncID == category.syncID })
+            witness.ckRecordName = record.recordName
+            witness.ckZoneName = record.zoneName
+            witness.ckOwnerName = record.ownerName
+        }
+        try context.save()
+        executor._testRecordCoordinates = { records[$0] }
+        engine.fastForwardHistoryBaseline(context: context)
+        return (executor, context, categories, records, engine)
+    }
+
+    /// Lo que hace el espejo al importar la exportación tardía del líder: la MISMA fila cambia de identidad (y, si el líder
+    /// la había editado sin red, trae también la edición), firmado con el autor del espejo.
+    private func mirrorRekeys(_ category: Yala.Category, to id: UUID, renamedTo name: String? = nil,
+                              in context: ModelContext) throws {
+        category.syncID = id
+        if let name { category.name = name }
+        try saveAsImported(context)
+    }
+
+    /// Una página del pull con la copia del backend de una categoría: lo que el relevo subió con su identidad.
+    private func backendCopyPage(of id: UUID, name: String) throws -> Data {
+        let body = """
+        {"deltas":[{"entity_type":"categories","sync_id":"\(id.uuidString.lowercased())","op":"upsert",\
+        "fields":{"name":"\(name)"},"field_hlcs":{},"hlc":"\(try hlc(leaderLastWrite))","server_seq":1,\
+        "schema_version":1}],"max_server_seq":1}
+        """
+        return Data(body.utf8)
+    }
+
+    private func categoryCount(_ context: ModelContext) throws -> Int {
+        try context.fetchCount(FetchDescriptor<Yala.Category>())
+    }
+
+    /// EL BUG, por el pull. El relevo ya subió la categoría; el espejo le cambia la identidad; la verificación trae la copia
+    /// del backend. Sin restaurar, esa copia no encuentra fila con su identidad y entra como born-remote: la misma categoría
+    /// dos veces aquí, y la re-identificada sube después como otra.
+    @Test("relevo: la fila que el espejo re-identificó después de subirla recupera su identidad y el pull no la duplica")
+    func relayRestore_verify_rekeyedRowIsNotDuplicatedByThePull() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        stub.pullBody = try backendCopyPage(of: uploaded, name: "from-the-backend")
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        _ = await relay.executor.verify(underMigrationLease: true)
+
+        #expect(relay.categories[0].name == "from-the-backend", "control: la página se aplicó, sobre la fila restaurada")
+        #expect(relay.categories[0].syncID == uploaded)
+        #expect(try categoryCount(relay.context) == 2, "sin born-remote de la copia del backend")
+    }
+
+    /// El import aterriza DURANTE la espera del pull, después de la restauración de arriba: la que lo cubre es la del pull,
+    /// justo antes del drain de la página.
+    @Test("relevo: la identidad que el espejo cambia durante la espera del pull se restaura antes de aplicar la página")
+    func relayRestore_verify_rekeyDuringThePullWait() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        stub.pullBody = try backendCopyPage(of: uploaded, name: "relay-0")
+        let leaders = UUID()
+        var landed: UUID?
+        stub.onPullRequestOnMain = {
+            guard landed == nil else { return }
+            do {
+                try self.mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+                landed = relay.categories[0].syncID
+            } catch {
+                Issue.record("el import simulado no se guardó: \(error)")
+            }
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        _ = await relay.executor.verify(underMigrationLease: true)
+
+        #expect(landed == leaders, "control: el import aterrizó durante la espera y cambió la identidad")
+        #expect(relay.categories[0].syncID == uploaded)
+        #expect(try categoryCount(relay.context) == 2)
+    }
+
+    /// El import trae también la edición que el líder hizo sin red. El pre-check de la verificación la drena y la sube antes
+    /// de pedir nada: tiene que salir con la identidad del relevo, no como una fila nueva.
+    @Test("relevo: la edición que trae el import sube en la verificación con la identidad que el backend conoce")
+    func relayRestore_verify_importedEditIsPushedUnderTheRelayIdentity() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, renamedTo: "edited-offline", in: relay.context)
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .newDeltaDetected, "control: la edición subió")
+
+        #expect(stub.pushedSyncIDs == [uploaded.uuidString.lowercased()])
+        #expect(relay.categories[0].syncID == uploaded)
+    }
+
+    /// El drain del cutover (`startParallelHistoryCapture`) tampoco traduce bajo la identidad nueva, y si la restauración no
+    /// se deja leer no drena: la History sigue ahí para el reconcile, que restaura antes.
+    @Test("relevo: el drain del cutover restaura antes, y sin poder restaurar no drena")
+    func relayRestore_cutoverDrain_restoresFirstOrSkips() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try mirrorRekeys(relay.categories[0], to: UUID(), renamedTo: "edited-offline", in: relay.context)
+
+            try await relay.executor.execute(.startParallelHistoryCapture)
+
+            #expect(try liveOutboxRows(relay.context).map(\.syncID) == [uploaded])
+            #expect(relay.categories[0].syncID == uploaded)
+        }
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            try mirrorRekeys(relay.categories[0], to: UUID(), renamedTo: "edited-offline", in: relay.context)
+            relay.executor._testInventoryFetchThrows = { step, _ in step == "identity-pin" }
+
+            try await relay.executor.execute(.startParallelHistoryCapture)
+
+            #expect(try liveOutboxRows(relay.context).isEmpty, "sin restaurar no se traduce nada")
+        }
+    }
+
+    /// EL BUG, por la subida. El snapshot pagina por `afterSyncID`: una fila ya subida que pasa a una identidad mayor que el
+    /// cursor sale otra vez en una página posterior, y el backend la guarda dos veces.
+    @Test("relevo: una fila ya subida que el espejo re-identifica no se sube otra vez con la identidad nueva")
+    func relayRestore_upload_uploadedRowIsNotUploadedAgain() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let low = try #require(UUID(uuidString: "00000000-0000-4000-8000-000000000001"))
+        let mid = try #require(UUID(uuidString: "00000000-0000-4000-8000-000000000002"))
+        let high = try #require(UUID(uuidString: "FFFFFFFF-FFFF-4FFF-BFFF-FFFFFFFFFFFF"))
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [low, mid], pageSize: 1)
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        guard case .pageConfirmed(let first) = await relay.executor.uploadSnapshot(cursor: nil) else {
+            Issue.record("la primera página tenía que confirmarse"); return
+        }
+        #expect(stub.pushedSyncIDs == [low.uuidString.lowercased()], "control: la primera página subió la fila")
+        try mirrorRekeys(relay.categories[0], to: high, in: relay.context)
+
+        var cursor: String? = first
+        var passes = 0
+        while passes < 10 {
+            passes += 1
+            _ = await relay.executor.confirmMigrationLease()
+            let outcome = await relay.executor.uploadSnapshot(cursor: cursor)
+            if case .pageConfirmed(let next) = outcome { cursor = next; continue }
+            #expect(outcome == .completed)
+            break
+        }
+
+        #expect(stub.pushedSyncIDs == [low, mid].map { $0.uuidString.lowercased() }, "cada fila una vez, con su identidad")
+        #expect(relay.categories[0].syncID == low)
+    }
+
+    /// Lo que llegó entre la última verificación y el remonte: el reconcile de `done` restaura antes de su drain, que si no
+    /// traduciría la edición que trajo el import bajo la identidad nueva y la subiría como fila aparte.
+    @Test("relevo: el reconcile de done restaura antes de drenar y no sube nada bajo la identidad nueva")
+    func relayRestore_leaderReconcile_restoresBeforeItsDrain() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, renamedTo: "edited-offline", in: relay.context)
+
+        try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(stub.pushedSyncIDs == [uploaded.uuidString.lowercased()], "la edición sube con la identidad del relevo")
+        #expect(!stub.pushedSyncIDs.contains(leaders.uuidString.lowercased()))
+        #expect(relay.categories[0].syncID == uploaded)
+        #expect(relay.categories[0].name == "edited-offline", "la edición se conserva")
+    }
+
+    /// El reconcile de `done` restaura ANTES de su primera petición de red y con CUALQUIER respuesta del lease (ticket
+    /// descartado `displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays`). Antes de la red porque
+    /// el runtime puede estar corriendo ya (`canRunDomain` no mira los pendientes) y su pull, llegando antes, creaba un
+    /// born-remote que dejaba la fila sin restaurar. Con cualquier respuesta porque aquí solo llega quien pasó su propia
+    /// verificación: la identidad que se devuelve el backend la tiene, también en quien se une a la migración de otro.
+    /// Cada escena mira la fila en el instante de la primera petición y al final.
+    @Test("reconcile de done: restaura antes de la primera pregunta de red, sea cual sea la respuesta del lease")
+    func relayRestore_leaderReconcile_restoresBeforeAskingForTheLease() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        typealias Scene = (label: String, heartbeat: [Data], complete: [Data], claim: String?, status: Int, error: String?)
+        let scenes: [Scene] = [
+            ("lidera", [], [], nil, 200, nil),
+            ("su complete llegó", [Self.notInProgressBody], [Self.okBody], nil, 200, nil),
+            ("se une a la de otro", [Self.notInProgressBody], [Self.otherLeaderBody], "existing_stable", 200, nil),
+            ("otro lidera", [Self.otherLeaderBody], [Self.otherLeaderBody], "claiming_in_progress", 200,
+             "runLeaderReconcile: otherLeaderActive"),
+            ("sin red", [], [], nil, 503, "runLeaderReconcile: leaseUnconfirmed"),
+        ]
+        for scene in scenes {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let stub = RoutingStub()
+            stub.migrationBodiesByAction = ["heartbeat": scene.heartbeat, "complete": scene.complete]
+            stub.migrationStatus = scene.status
+            if let claim = scene.claim { stub.claimBody = Self.claimBody(claim) }
+            let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+            var atFirstRequest: UUID?
+            var asked = false
+            stub.onMigrationRequest = {
+                if !asked { asked = true; atFirstRequest = relay.categories[0].syncID }
+            }
+
+            if let error = scene.error {
+                await #expect(throws: MigrationExecutorError.notWired(effect: error), "\(scene.label)") {
+                    try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+                }
+            } else {
+                try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+            }
+
+            #expect(asked, "\(scene.label): control, preguntó por el lease")
+            #expect(stub.claimCallCount == (scene.claim == nil ? 0 : 1), "\(scene.label): control, llegó a esa respuesta")
+            #expect(atFirstRequest == uploaded, "\(scene.label): restaurada antes de la primera petición")
+            #expect(relay.categories[0].syncID == uploaded, "\(scene.label)")
+        }
+    }
+
+    /// Falla cerrado: solo se toca la fila que se reconoce sin duda. El primer caso es el control positivo de todos —la
+    /// escena limpia restaura—, porque «no tocó nada» también lo da una restauración rota; y cada caso de duda la añade
+    /// sobre esa misma escena.
+    @Test("relevo: sin testigo único con coordenadas, o con su identidad viva en otra fila, no se toca nada")
+    func relayRestore_leavesAloneWhatItCannotTellApart() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        // Control positivo: la escena limpia restaura.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 1)
+            #expect(relay.categories[0].syncID == uploaded)
+        }
+        // La fila creada aquí después de la identidad (sin testigo, con su propio record) no es de nadie: se queda.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            // Un testigo huérfano de verdad: la fila se borró aquí y su testigo se queda (para el rebind).
+            relay.context.delete(relay.categories[1])
+            let bornHere = Category(name: "born-here", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            let bornID = UUID()
+            bornHere.syncID = bornID
+            relay.context.insert(bornHere)
+            try relay.context.save()
+            var records = relay.records
+            records[bornHere.persistentModelID] = .init(recordName: "record-new", zoneName: "com.apple.coredata.cloudkit.zone",
+                                                         ownerName: "__defaultOwner__")
+            relay.executor._testRecordCoordinates = { records[$0] }
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.executor._testRecordCoordinateLookups == 1, "control: llegó a comparar records")
+            #expect(bornHere.syncID == bornID)
+        }
+        // Dos filas con el mismo record: no se sabe cuál era.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let rekeyed = UUID(), twinID = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            let twin = Category(name: "twin", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            twin.syncID = twinID
+            relay.context.insert(twin)
+            try relay.context.save()
+            var records = relay.records
+            records[twin.persistentModelID] = relay.records[relay.categories[0].persistentModelID]
+            relay.executor._testRecordCoordinates = { records[$0] }
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+            #expect(twin.syncID == twinID)
+        }
+        // Otra fila viva ya lleva la identidad del testigo: restaurarla crearía dos filas con la misma.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let rekeyed = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            let holder = Category(name: "holder", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            holder.syncID = uploaded
+            relay.context.insert(holder)
+            try relay.context.save()
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+        }
+        // La identidad nueva YA tiene testigo aquí: la cambió este teléfono (la re-identificación del linaje deja así el
+        // testigo viejo cuando el nuevo ya existía), no el espejo.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let local = UUID()
+            relay.context.insert(SyncIdentity(syncID: local, entityType: SyncEntityType.category, localAnchor: ""))
+            try relay.context.save()
+            try mirrorRekeys(relay.categories[0], to: local, in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == local)
+        }
+        // Dos testigos huérfanos con el mismo record: no se sabe cuál era.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let record = try #require(relay.records[relay.categories[0].persistentModelID])
+            relay.context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.category, localAnchor: "",
+                                              ckRecordName: record.recordName, ckZoneName: record.zoneName,
+                                              ckOwnerName: record.ownerName))
+            try relay.context.save()
+            let rekeyed = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+        }
+        // Un testigo sin coordenadas de CloudKit no se puede emparejar con nada.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let witness = try #require(try relay.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+            witness.ckRecordName = nil
+            try relay.context.save()
+            let rekeyed = UUID()
+            try mirrorRekeys(relay.categories[0], to: rekeyed, in: relay.context)
+            #expect(try relay.executor.restoreRelayIdentities() == 0)
+            #expect(relay.categories[0].syncID == rekeyed)
+        }
+    }
+
+    /// Los seis tipos de identidad acuñada, no solo categorías: los movimientos son justo lo que más duele duplicar.
+    @Test("relevo: restaura los seis tipos de identidad acuñada")
+    func relayRestore_restoresEveryMintedType() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        let tx = TransactionItem(date: fixedNow, amount: 12, currencyCode: "USD")
+        let draft = InboxDraft(note: "draft", amount: 1, sourceType: .voice, rawText: "draft")
+        let category = Category(name: "cat", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        let favorite = FavoritePayment(name: "fav")
+        let merchant = MerchantMemory(merchantCanonical: "tambo")
+        let rate = try ExchangeRate(dateKey: "2026-09-24", base: "USD", ratesDictionary: ["PEN": 3.7])
+        let models: [any PersistentModel & SyncIdentifiable] = [tx, draft, category, favorite, merchant, rate]
+        for model in models { context.insert(model) }
+        try context.save()
+        try await executor.assignIdentity()
+
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        var records: [PersistentIdentifier: MigrationWorkExecutor.RecordCoordinates] = [:]
+        var uploaded: [UUID] = []
+        for (index, model) in models.enumerated() {
+            let id = try #require(model.syncID)
+            uploaded.append(id)
+            let record = MigrationWorkExecutor.RecordCoordinates(
+                recordName: "record-\(index)", zoneName: "com.apple.coredata.cloudkit.zone", ownerName: "__defaultOwner__")
+            records[model.persistentModelID] = record
+            let witness = try #require(witnesses.first { $0.syncID == id })
+            witness.ckRecordName = record.recordName
+            witness.ckZoneName = record.zoneName
+            witness.ckOwnerName = record.ownerName
+        }
+        try context.save()
+        executor._testRecordCoordinates = { records[$0] }
+        for model in models { model.syncID = UUID() }
+        try saveAsImported(context)
+
+        #expect(try executor.restoreRelayIdentities() == 6)
+        #expect(models.map { $0.syncID } == uploaded.map { Optional($0) })
+    }
+
+    /// Lo que el seam sustituye, sin el seam: metadatos del espejo sembrados en el SQLite del store (las mismas tablas que
+    /// lee `CKIdentityCapture`), coordenadas capturadas por el `assignIdentity` real y restauración leyendo el SQLite.
+    @Test("relevo: sin seam, la captura real de assignIdentity y la lectura real de los metadatos restauran")
+    func relayRestore_productionCoordinatePath() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        let categories = (0..<2).map {
+            Category(name: "relay-\($0)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        }
+        for category in categories { context.insert(category) }
+        try context.save()
+        try seedMirrorMetadata(dir, rows: categories.enumerated().map { ($1.persistentModelID, "record-\($0)") })
+        try await executor.assignIdentity()
+
+        let uploaded = try #require(categories[0].syncID)
+        let witness = try #require(try context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+        #expect(witness.ckRecordName == "record-0", "control: la captura real leyó el record sembrado")
+        #expect(witness.ckZoneName == "com.apple.coredata.cloudkit.zone")
+
+        try mirrorRekeys(categories[0], to: UUID(), in: context)
+        #expect(try executor.restoreRelayIdentities() == 1)
+        #expect(categories[0].syncID == uploaded)
+    }
+
+    /// Metadatos de CloudKit ilegibles con algo que decidir: con el espejo vivo es avería (lanza); en el reconcile de
+    /// `done`, ya remontado, se tolera para no dejar el motor parado para siempre.
+    @Test("relevo: metadatos de CloudKit ilegibles son avería con el espejo vivo y se toleran en el reconcile")
+    func relayRestore_unreadableRecordMetadata() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        relay.executor._testRecordCoordinates = nil  // el store de test no tiene las tablas del espejo
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+
+        #expect(throws: MigrationExecutorError.inventoryUnreadable(entity: "CloudKitRecordMetadata")) {
+            try relay.executor.restoreRelayIdentities()
+        }
+        #expect(await relay.executor.uploadSnapshot(cursor: nil) == .blocked(.localFailure))
+        #expect(stub.pushCallCount == 0)
+        #expect(try relay.executor.restoreRelayIdentities(toleratingUnreadableRecords: true) == 0)
+        #expect(relay.categories[0].syncID == leaders)
+        try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(stub.migrationActions.contains("complete"), "el reconcile no se queda parado")
+    }
+
+    /// El import que aterriza durante la espera del Merkle remoto: el árbol local se calcula después, y sin restaurar
+    /// daba una divergencia falsa que gastaba un reintento de MISMATCH.
+    @Test("relevo: la identidad que el espejo cambia durante la espera del Merkle se restaura antes del árbol local")
+    func relayRestore_verify_rekeyDuringTheMerkleWait() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let local = try SyncMerkle.computeLocalMerkle(context: relay.context)
+        var entitiesJSON: [String: Any] = [:]
+        for (table, summary) in local.entities {
+            entitiesJSON[table] = ["count": summary.count, "hash": summary.hashHex]
+        }
+        stub.merkleBody = try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c1", "capability_set": "v1", "root": local.rootHex, "entities": entitiesJSON,
+        ])
+        var landed = false
+        stub.onMerkleRequestOnMain = {
+            guard !landed else { return }
+            do {
+                try self.mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+                landed = true
+            } catch {
+                Issue.record("el import simulado no se guardó: \(error)")
+            }
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .match)
+        #expect(landed, "control: el import aterrizó durante la espera del Merkle")
+        #expect(relay.categories[0].syncID == uploaded)
+    }
+
+    // MARK: - El tombstone de una fila re-identificada (ticket `relay-row-rekeyed-then-deleted-tombstones-the-leader-identity`)
+    //
+    // La misma escena de arriba, pero la fila se BORRA antes de que ninguna restauración la alcance. El tombstone lleva la
+    // identidad que la fila tenía al borrarse —la del líder, que el backend no conoce— y el movimiento seguía vivo allí.
+    // Desde el ticket salen las DOS identidades: la preservada y la que el registro dice que tuvo aquí. Desde un solo
+    // teléfono no se sabe cuál conoce el backend (en el líder desplazado es al revés), y `apply_delta` guarda como borrada
+    // la que no conoce.
+
+    /// El usuario borra en el relevo la fila que el espejo acaba de re-identificar.
+    private func userDeletes(_ model: any PersistentModel, in context: ModelContext) throws {
+        context.delete(model)
+        try context.save()
+    }
+
+    /// Las identidades de los tombstones del outbox.
+    private func outboxTombstones(_ context: ModelContext) throws -> [UUID] {
+        try liveOutboxRows(context).filter { $0.opRaw == SyncOutboxOp.tombstone.rawValue }.map(\.syncID)
+    }
+
+    private func ledgerExists(_ dir: URL) -> Bool {
+        FileManager.default.fileExists(atPath: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")).path)
+    }
+
+    /// EL BUG, por la verificación. El borrado de la fila re-identificada sube también con la identidad del relevo, la que el
+    /// backend tiene: sin ella subía solo la del líder, el backend no borraba nada y el movimiento volvía en los otros
+    /// teléfonos. Desde el lado del líder desplazado la escena es la misma con los papeles cambiados, y por eso salen las dos.
+    @Test("relevo: el borrado de una fila que el espejo re-identificó sube también con la identidad que el backend conoce")
+    func relayTombstone_verify_deletedRekeyedRowTombstonesTheRelayIdentity() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .newDeltaDetected, "control: el borrado subió")
+
+        #expect(Set(stub.pushedSyncIDs) == Set([uploaded, leaders].map { $0.uuidString.lowercased() }))
+        #expect(stub.lastPushedDeltas.map { $0["op"] as? String } == [SyncOutboxOp.tombstone.rawValue, SyncOutboxOp.tombstone.rawValue])
+        #expect(ledgerExists(dir), "sin la marca del cierre el registro se queda: puede llegar otro borrado")
+    }
+
+    /// La intercalación más probable con el motor vivo: el espejo cambia la identidad, el drain corre (y no escribe nada: la
+    /// identidad no es columna), y después el usuario borra.
+    @Test("relevo: con un drain entre el cambio de identidad y el borrado, el borrado sale igual con las dos")
+    func relayTombstone_drainBetweenTheRekeyAndTheDelete() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(try liveOutboxRows(relay.context).isEmpty, "control: cambiar solo la identidad no emite")
+
+        try userDeletes(relay.categories[0], in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+
+        #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+    }
+
+    /// La ventana larga: del cutover al relanzamiento pueden pasar horas con el espejo vivo. El borrado lo drena el reconcile
+    /// de `done` en OTRO proceso —otro motor, otro executor—, así que el registro tiene que sobrevivir al relanzamiento (en un
+    /// unit test el proceso es el mismo: lo que se prueba es que va por el fichero, con motor y contexto nuevos). El cierre
+    /// marca el registro y el drain SIGUIENTE lo retira.
+    @Test("relevo: un borrado entre el cutover y el relanzamiento sale en el reconcile, y el registro se retira después")
+    func relayTombstone_afterTheCutover_isTranslatedByTheReconcileAfterRelaunch() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        try await relay.executor.execute(.startParallelHistoryCapture)
+        #expect(try liveOutboxRows(relay.context).isEmpty, "control: el cutover no tenía nada que drenar")
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+
+        // El relanzamiento: contexto, motor y executor nuevos sobre los mismos ficheros.
+        let relaunched = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(relaunched, engine, stub, FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(Set(stub.pushedSyncIDs) == Set([uploaded, leaders].map { $0.uuidString.lowercased() }))
+        #expect(stub.migrationActions.contains("complete"), "control: el reconcile llegó al final")
+        #expect(ledgerExists(dir), "el drain del reconcile va antes del cierre: el registro sigue")
+        #expect(engine.drainOnce(context: relaunched))
+        #expect(!ledgerExists(dir), "con la marca del cierre, el drain siguiente lo retira")
+    }
+
+    /// Sin la marca, ni la fase `done` ni un drain completo lo retiran: el runtime puede arrancar con el reconcile pendiente,
+    /// antes de que la restauración haya corrido.
+    @Test("relevo: sin la marca del cierre el registro no se retira aunque la fase sea done")
+    func relayTombstone_ledgerIsNotRetiredWithoutTheMark() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        relay.engine._testMigrationPhaseOverride = .done
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(ledgerExists(dir))
+        try RelayIdentityLedger.markRetirable(relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(!ledgerExists(dir), "control: con la marca, sí")
+    }
+
+    /// Sembrar es empezar una migración: una marca que quedó de otra no puede retirar el registro nuevo en el primer drain.
+    @Test("relevo: sembrar el registro quita una marca de retirada vieja")
+    func relayTombstone_seedClearsAStaleRetireMark() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        try RelayIdentityLedger.markRetirable(relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+        try await relay.executor.assignIdentity()
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(ledgerExists(dir))
+    }
+
+    /// Si la restauración del reconcile no pudo leer los metadatos de CloudKit, pudo quedar una fila VIVA con la identidad
+    /// del líder, y el registro es lo único que traduciría su borrado: el cierre no lo marca.
+    @Test("relevo: un reconcile que toleró metadatos ilegibles no marca el registro para retirarlo")
+    func relayTombstone_toleratedRestoreKeepsTheLedger() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        relay.executor._testRecordCoordinates = nil  // el store de test no tiene las tablas del espejo
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+
+        try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        #expect(stub.migrationActions.contains("complete"), "control: el reconcile llegó al final")
+        #expect(relay.categories[0].syncID == leaders, "control: la restauración no pudo")
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(ledgerExists(dir))
+
+        try userDeletes(relay.categories[0], in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+        #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+    }
+
+    /// La vuelta atrás antes del cutover borra el registro: el teléfono vuelve a iCloud.
+    @Test("relevo: el rollback de la ida borra el registro")
+    func relayTombstone_rollbackRemovesTheLedger() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+        #expect(ledgerExists(dir), "control: assignIdentity lo sembró")
+        try await relay.executor.execute(.rollback)
+        #expect(!ledgerExists(dir))
+    }
+
+    /// Los seis tipos de identidad acuñada: salen las dos identidades en cada uno; y si una fila viva lleva la del
+    /// registro, solo la preservada, también en cada uno (cada tipo tiene su lectura de «¿la lleva alguien?»).
+    @Test("relevo: los seis tipos acuñados, con y sin otra fila viva que lleve la identidad del registro")
+    func relayTombstone_everyMintedType() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        for withHolders in [false, true] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let engine = CloudSyncEngine()
+            let executor = makeExecutor(context, engine, RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+            func sixModels(_ tag: String) throws -> [any PersistentModel & SyncIdentifiable] {
+                [TransactionItem(date: fixedNow, amount: 12, currencyCode: "USD"),
+                 InboxDraft(note: "draft-\(tag)", amount: 1, sourceType: .voice, rawText: "draft"),
+                 Category(name: "cat-\(tag)", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false),
+                 FavoritePayment(name: "fav-\(tag)"),
+                 MerchantMemory(merchantCanonical: "tambo-\(tag)"),
+                 try ExchangeRate(dateKey: "2026-09-2\(tag)", base: "USD", ratesDictionary: ["PEN": 3.7])]
+            }
+            let models = try sixModels("4")
+            for model in models { context.insert(model) }
+            try context.save()
+            try await executor.assignIdentity()
+            var uploaded: [UUID] = []
+            for (index, model) in models.enumerated() {
+                let id = try #require(model.syncID)
+                uploaded.append(id)
+                let witness = try #require(try context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == id })
+                witness.ckRecordName = "record-\(index)"
+                witness.ckZoneName = "com.apple.coredata.cloudkit.zone"
+                witness.ckOwnerName = "__defaultOwner__"
+            }
+            try context.save()
+            engine.fastForwardHistoryBaseline(context: context)
+            var rekeyed: [UUID] = []
+            for model in models {
+                let id = UUID()
+                rekeyed.append(id)
+                model.syncID = id
+            }
+            try saveAsImported(context)
+            if withHolders {
+                let holders = try sixModels("5")
+                for (holder, id) in zip(holders, uploaded) {
+                    holder.syncID = id
+                    context.insert(holder)
+                }
+                try context.save()
+            }
+            for model in models { context.delete(model) }
+            try context.save()
+
+            #expect(engine.drainOnce(context: context))
+
+            let expected = withHolders ? Set(rekeyed) : Set(rekeyed + uploaded)
+            #expect(Set(try outboxTombstones(context)) == expected, "holders: \(withHolders)")
+        }
+    }
+
+    /// Falla cerrado: la identidad del registro se añade solo si se reconoce sin duda. El primer caso es el control positivo
+    /// de todos, porque «solo la preservada» también lo da una traducción rota; cada caso de duda la añade sobre esa escena.
+    @Test("relevo: sin registro, con la identidad ya testigo, viva en otra fila o sin coordenadas, sale solo la preservada")
+    func relayTombstone_leavesAloneWhatItCannotTellApart() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+
+        // Control positivo: la escena limpia añade la del relevo.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+        }
+        // Un borrado normal, sin re-identificar: sale con la suya y nada más.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [uploaded])
+        }
+        // La identidad nueva YA tiene testigo aquí: la cambió este teléfono (sin el autor del espejo), no el espejo.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let local = UUID()
+            relay.context.insert(SyncIdentity(syncID: local, entityType: SyncEntityType.category, localAnchor: ""))
+            relay.categories[0].syncID = local
+            try relay.context.save()
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [local])
+        }
+        // Otra fila viva lleva ya la identidad del registro: no es de esta fila.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            let holder = Category(name: "holder", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            holder.syncID = uploaded
+            relay.context.insert(holder)
+            try relay.context.save()
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        // Al testigo del registro le falta una de las tres coordenadas de CloudKit: la restauración tampoco lo tocaría.
+        for missing in ["record", "zone", "owner"] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let witness = try #require(try relay.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+            switch missing {
+            case "record": witness.ckRecordName = nil
+            case "zone": witness.ckZoneName = nil
+            default: witness.ckOwnerName = nil
+            }
+            try relay.context.save()
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders], "sin \(missing)")
+        }
+        // La entrada es de OTRO store (uno que un wipe borró): su `Z_PK` no es esta fila.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let url = relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite"))
+            let ledger = try RelayIdentityLedger.load(from: url)
+            #expect(ledger.count == 1, "control: la entrada sembrada")
+            let store = try #require(CKIdentityCapture.objectURI(for: relay.categories[0].persistentModelID)?.host)
+            var foreign: [String: UUID] = [:]
+            for (key, value) in ledger { foreign[key.replacingOccurrences(of: store, with: "OTRO-STORE")] = value }
+            try JSONEncoder().encode(foreign).write(to: url)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        // El testigo del registro es de OTRO tipo: la identidad no es de esta fila.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let witness = try #require(try relay.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+            witness.entityType = SyncEntityType.merchantMemory
+            try relay.context.save()
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        // La fila nació después de la identidad: no está en el registro.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let bornHere = Category(name: "born-here", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+            let bornID = UUID()
+            bornHere.syncID = bornID
+            relay.context.insert(bornHere)
+            relay.context.insert(SyncIdentity(syncID: bornID, entityType: SyncEntityType.category, localAnchor: "",
+                                              ckRecordName: "record-new", ckZoneName: "com.apple.coredata.cloudkit.zone",
+                                              ckOwnerName: "__defaultOwner__"))
+            try relay.context.save()
+            let leaders = UUID()
+            try mirrorRekeys(bornHere, to: leaders, in: relay.context)
+            try userDeletes(bornHere, in: relay.context)
+            try await relay.executor.execute(.startParallelHistoryCapture)
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+    }
+
+    /// Un registro que no se deja leer no para el drain: sale solo la preservada, como antes del ticket. Lo que SÍ decide
+    /// —el testigo, la fila viva— si no se deja leer, aborta la vuelta ENTERA (`false`: quien lee el outbox después no puede
+    /// darlo por completo) y la siguiente lo emite.
+    @Test("relevo: registro ilegible → solo la preservada; testigo o fila ilegibles → el drain aborta y se reintenta")
+    func relayTombstone_unreadableInputs() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try Data("no es json".utf8).write(to: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+            #expect(relay.engine.drainOnce(context: relay.context))
+            #expect(try outboxTombstones(relay.context) == [leaders])
+        }
+        for unreadable in ["SyncIdentity", "Category"] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID()])
+            let uploaded = try #require(relay.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+            try userDeletes(relay.categories[0], in: relay.context)
+            try RelayIdentityLedger.markRetirable(relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")))
+            EntityApplyMap._testThrowOnFetchOf = [unreadable]
+            defer { EntityApplyMap._testThrowOnFetchOf = [] }
+            #expect(!relay.engine.drainOnce(context: relay.context), "\(unreadable): la vuelta aborta")
+            #expect(try outboxTombstones(relay.context).isEmpty, "\(unreadable): nada a medias en el outbox")
+            #expect(ledgerExists(dir), "\(unreadable): una vuelta abortada no retira el registro")
+            EntityApplyMap._testThrowOnFetchOf = []
+            #expect(relay.engine.drainOnce(context: relay.context))
+            #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders], "\(unreadable)")
+        }
+    }
+
+    /// Una pasada de la identidad repetida (un kill a mitad) FUSIONA: la entrada de la fila ya borrada es la que hace falta.
+    @Test("relevo: repetir assignIdentity no tira del registro la entrada de una fila ya borrada")
+    func relayTombstone_reseedKeepsTheDeletedRowsEntry() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        let uploaded = try #require(relay.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(relay.categories[0], to: leaders, in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+
+        try await relay.executor.assignIdentity()
+        try await relay.executor.execute(.startParallelHistoryCapture)
+
+        #expect(Set(try outboxTombstones(relay.context)) == [uploaded, leaders])
+    }
+
+    /// Un registro que no se puede escribir no para la identidad: el paso sigue, sin la red.
+    @Test("relevo: si el registro no se puede sembrar, assignIdentity sigue")
+    func relayTombstone_seedFailureDoesNotStopTheIdentity() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), FakeSession(token: "jwt", userID: "sub-relay"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        // Un directorio donde va el fichero: ni se lee ni se escribe.
+        try FileManager.default.createDirectory(at: relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")),
+                                                withIntermediateDirectories: true)
+        let category = Category(name: "cat", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(category)
+        try context.save()
+
+        try await executor.assignIdentity()
+
+        #expect(category.syncID != nil, "control: la identidad se asignó")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 1)
+    }
+
+    /// El canario cuenta en la flota cuántos borrados se habrían perdido.
+    @Test("relevo: el borrado re-identificado deja el canario con el tipo")
+    func relayTombstone_emitsTheCanary() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let defaults = makeIsolatedDefaults(prefix: "mwe.relay.tombstone.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        try userDeletes(relay.categories[0], in: relay.context)
+        #expect(relay.engine.drainOnce(context: relay.context))
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudRelayTombstoneTranslated" }
+        #expect(canaries.map(\.d) == ["Category"])
+    }
+
+    /// Siembra en el SQLite del store personal las dos tablas de metadatos del espejo que lee `CKIdentityCapture`, con un
+    /// record por fila en la zona por defecto. `Z_ENT` y `Z_PK` son los reales del store.
+    private func seedMirrorMetadata(_ dir: URL, rows: [(PersistentIdentifier, String)]) throws {
+        var db: OpaquePointer?
+        let url = dir.appendingPathComponent("personal.sqlite")
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            Issue.record("no abre \(url.path)"); return
+        }
+        defer { sqlite3_close(db) }
+        func exec(_ sql: String) { #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)") }
+        exec("CREATE TABLE ANSCKRECORDMETADATA (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)")
+        exec("CREATE TABLE ANSCKRECORDZONEMETADATA (Z_PK INTEGER, ZCKRECORDZONENAME TEXT, ZCKOWNERNAME TEXT)")
+        exec("INSERT INTO ANSCKRECORDZONEMETADATA VALUES (1, 'com.apple.coredata.cloudkit.zone', '__defaultOwner__')")
+        for (index, row) in rows.enumerated() {
+            let resolved = try #require(CKIdentityCapture.entityAndPK(for: row.0))
+            var statement: OpaquePointer?
+            #expect(sqlite3_prepare_v2(db, "SELECT Z_ENT FROM Z_PRIMARYKEY WHERE Z_NAME = '\(resolved.entityName)'", -1,
+                                       &statement, nil) == SQLITE_OK)
+            #expect(sqlite3_step(statement) == SQLITE_ROW)
+            let zent = sqlite3_column_int64(statement, 0)
+            sqlite3_finalize(statement)
+            exec("INSERT INTO ANSCKRECORDMETADATA VALUES (\(index + 1), \(resolved.zpk), \(zent), '\(row.1)', 1)")
+        }
+    }
+
+    /// Sin fila re-identificada no se busca ni una coordenada: el camino de cada página y de cada verificación es barato.
+    @Test("relevo: sin nada re-identificado la restauración no busca coordenadas")
+    func relayRestore_cheapPathLooksUpNoCoordinates() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        #expect(try relay.executor.restoreRelayIdentities() == 0)
+        #expect(relay.executor._testRecordCoordinateLookups == 0)
+        // Tampoco con un testigo de identidad PROPIA con coordenadas (una cuenta: su UUID nace con la fila y el espejo no
+        // lo cambia) y una fila creada aquí sin testigo: esos testigos no entran.
+        relay.context.insert(SyncIdentity(syncID: UUID(), entityType: SyncEntityType.account, localAnchor: "",
+                                          ckRecordName: "record-account", ckZoneName: "com.apple.coredata.cloudkit.zone",
+                                          ckOwnerName: "__defaultOwner__"))
+        let bornHere = Category(name: "born-here", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        bornHere.syncID = UUID()
+        relay.context.insert(bornHere)
+        try relay.context.save()
+        #expect(try relay.executor.restoreRelayIdentities() == 0)
+        #expect(relay.executor._testRecordCoordinateLookups == 0)
+
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        #expect(try relay.executor.restoreRelayIdentities() == 1)
+        #expect(relay.executor._testRecordCoordinateLookups == 2, "control: con una re-identificada sí busca (ella y la creada aquí)")
+    }
+
+    /// Una restauración que no se deja leer es avería local en los cuatro sitios, y ninguno sube: seguir sería subir con
+    /// identidades sin comprobar. La vuelta a iCloud no la hace.
+    @Test("relevo: si la restauración no se deja leer, cada paso para como avería local y no sube nada")
+    func relayRestore_unreadableIsALocalFailureEverywhere() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID()])
+        let reads = InventoryReadCounter()
+        relay.executor._testInventoryFetchThrows = { step, _ in
+            guard step == "identity-pin" else { return false }
+            reads.value += 1
+            return true
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.uploadSnapshot(cursor: nil) == .blocked(.localFailure))
+        #expect(await relay.executor.verify(underMigrationLease: true) == .blocked(.localFailure))
+        await #expect(throws: MigrationExecutorError.notWired(effect: "runLeaderReconcile: relayIdentityPinUnreadable")) {
+            try await relay.executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        #expect(stub.pushCallCount == 0)
+        #expect(stub.pullCallCount == 0)
+        #expect(stub.migrationActions.filter { $0 != "heartbeat" }.isEmpty, "sin complete")
+        #expect(reads.value == 3, "control: las tres pasaron por la restauración")
+
+        reads.value = 0
+        stub.pullBody = try backendCopyPage(of: UUID(), name: "from-the-backend")
+        _ = await relay.executor.verify(underMigrationLease: false)
+        #expect(stub.pullCallCount >= 1, "control: la vuelta llegó al pull con una página")
+        #expect(reads.value == 0, "la vuelta a iCloud no restaura, ni arriba ni en el pull")
+    }
+
+    /// El fallo que llega en la restauración DEL PULL —la de arriba pasó— tampoco se lee como red.
+    @Test("relevo: la restauración del pull que no se deja leer es avería local, no red, y no aplica la página")
+    func relayRestore_unreadableInsideThePullIsALocalFailure() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let relay = try await relayWithIdentities(dir, stub: stub, ids: [UUID()])
+        let copy = UUID()
+        stub.pullBody = try backendCopyPage(of: copy, name: "from-the-backend")
+        let reads = InventoryReadCounter()
+        relay.executor._testInventoryFetchThrows = { step, entity in
+            guard step == "identity-pin", entity == "SyncIdentity" else { return false }
+            reads.value += 1
+            return reads.value >= 2
+        }
+
+        #expect(await relay.executor.confirmMigrationLease() == .held)
+        #expect(await relay.executor.verify(underMigrationLease: true) == .blocked(.localFailure))
+        #expect(stub.pullCallCount == 1, "control: el pull llegó a pedirse")
+        #expect(try categoryCount(relay.context) == 1, "la página no se aplicó")
+    }
+
+    /// El canario es lo que mide en la flota lo que el ticket no pudo: que CloudKit le da la razón al líder que vuelve.
+    @Test("relevo: restaurar deja el canario con el tipo y la cuenta")
+    func relayRestore_emitsTheCanary() async throws {
+        let original = CloudSyncFlags.identityCaptureEnabled
+        defer { CloudSyncFlags.identityCaptureEnabled = original }
+        let defaults = makeIsolatedDefaults(prefix: "mwe.relay.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let relay = try await relayWithIdentities(dir, stub: RoutingStub(), ids: [UUID(), UUID()])
+        try mirrorRekeys(relay.categories[0], to: UUID(), in: relay.context)
+        try mirrorRekeys(relay.categories[1], to: UUID(), in: relay.context)
+        #expect(try relay.executor.restoreRelayIdentities() == 2)
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudRelayIdentityRestored" }
+        #expect(canaries.map(\.d) == ["Category"])
+        #expect(canaries.map(\.x) == [2])
+    }
+
+    // MARK: - En el adopt, lo que un líder desplazado exporta TARDE (ticket `adopt-window-late-leader-identity-export-can-duplicate-after-the-remount`)
+    //
+    // Un líder se queda sin red tras acuñar sus identidades, otro teléfono toma el relevo y termina, y el líder vuelve y su
+    // espejo las exporta. Si CloudKit le da la razón —sin medir: pide dos teléfonos—, un teléfono que ADOPTA recibe por su
+    // espejo filas con una identidad que el backend no conoce. Dos ventanas: antes del reconcile de huérfanas (con el
+    // marcador, subían como huérfanas y el duplicado quedaba en el backend) y del reconcile al remonte (el runtime drenaba y
+    // hacía pull sin mirar). El import se simula como en las pruebas del relevo: mismo objeto, solo la identidad, con el
+    // autor del espejo.
+
+    /// Un teléfono que ya adoptó: el marcador del líder llegó por su espejo y dos categorías que el relevo subió con sus
+    /// identidades. El reconcile no sube nada y deja el registro del adopt; el baseline del History, adelantado como en
+    /// `runAdoptFlow`. Con `seedingCoordinates`, los metadatos del espejo están en el SQLite y la captura real los lee.
+    private func adoptedPhone(_ dir: URL, stub: RoutingStub, seedingCoordinates: Bool = false) async throws
+        -> (executor: MigrationWorkExecutor, context: ModelContext, categories: [Yala.Category], engine: CloudSyncEngine,
+            backend: () -> FakeTombstoneSource) {
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let ids = [UUID(), UUID()]
+        let categories = ids.enumerated().map { makeCategory("relay-\($0.offset)", syncID: $0.element, in: context) }
+        try saveAsImported(context)
+        if seedingCoordinates {
+            try seedMirrorMetadata(dir, rows: categories.enumerated().map { ($0.element.persistentModelID, "record-\($0.offset)") })
+        }
+        let source = try backend(ids.map { (table: "categories", id: $0) }, stub: stub)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        engine.fastForwardHistoryBaseline(context: context)
+        return (executor, context, categories, engine, source)
+    }
+
+    /// El relanzamiento que remonta el store sin espejo: contexto y motor nuevos sobre los mismos ficheros.
+    private func remount(_ dir: URL) throws -> (context: ModelContext, engine: CloudSyncEngine) {
+        let engine = CloudSyncEngine()
+        engine.relayIdentityLedgerURL = relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite"))
+        return (try makeContext(dir), engine)
+    }
+
+    private func ledgerURL(_ dir: URL) -> URL { relayLedgerURL(forStore: dir.appendingPathComponent("personal.sqlite")) }
+
+    /// **EL BUG DEL TICKET.** Entre el reconcile y el remonte el espejo le cambia la identidad a una categoría (y trae la
+    /// edición del líder). Tras el remonte el runtime restaura antes de drenar: la fila vuelve a la identidad del backend y el
+    /// pull no crea un born-remote. Sin la restauración —el control, sobre otra copia del mismo escenario— el pull la
+    /// duplica. La edición del líder NO sube: la trajo el espejo sobre una fila que el backend conoce, y desde
+    /// `adopt-window-late-imports-overwrite-newer-cloud-edits` manda el backend (hasta ese ticket este test afirmaba que
+    /// subía, con un HLC fresco que pisaba lo que la nube tuviera más nuevo).
+    @Test("adopt: la fila que el espejo re-identifica tras el reconcile vuelve a su identidad al arrancar, y el pull no la duplica")
+    func adoptPin_rekeyAfterTheReconcile_isRestoredAtStart() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let phone = try await adoptedPhone(dir, stub: stub)
+        let uploaded = try #require(phone.categories[0].syncID)
+        let leaders = UUID()
+        try mirrorRekeys(phone.categories[0], to: leaders, renamedTo: "editada por el líder", in: phone.context)
+        #expect(RelayIdentityLedger.isAdoptPinned(ledgerURL(dir)), "control: el reconcile dejó la marca del adopt")
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let ids = Set(try remounted.context.fetch(FetchDescriptor<Yala.Category>()).compactMap(\.syncID))
+        #expect(ids.contains(uploaded) && !ids.contains(leaders))
+
+        stub.pullBody = try backendCopyPage(of: uploaded, name: "relay-0")
+        let pull = SyncPullClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
+        _ = await remounted.engine.pullAndApplyOnce(using: pull, context: remounted.context)
+        #expect(try categoryCount(remounted.context) == 2, "sin born-remote")
+        let upserts = try liveOutboxRows(remounted.context).filter { $0.opRaw == SyncOutboxOp.upsert.rawValue }.map(\.syncID)
+        #expect(!upserts.contains(uploaded) && !upserts.contains(leaders), "la edición vieja del espejo no sube con ninguna")
+        let restored = try remounted.context.fetch(FetchDescriptor<Yala.Category>()).first { $0.syncID == uploaded }
+        #expect(restored?.name == "relay-0", "manda la versión del backend")
+        #expect(!RelayIdentityLedger.isAdoptPinned(ledgerURL(dir)))
+        #expect(!ledgerExists(dir), "marcado para retirar, el drain del pull lo retiró")
+
+        // El control: la misma escena sin la marca del adopt. El pull crea la copia del backend como fila nueva.
+        let controlDir = freshDir(); defer { cleanup(controlDir) }
+        let controlStub = RoutingStub()
+        let control = try await adoptedPhone(controlDir, stub: controlStub)
+        let controlUploaded = try #require(control.categories[0].syncID)
+        try mirrorRekeys(control.categories[0], to: UUID(), in: control.context)
+        try RelayIdentityLedger.clearAdoptPin(ledgerURL(controlDir))
+        let controlRemounted = try remount(controlDir)
+        #expect(!controlRemounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: controlRemounted.context))
+        controlStub.pullBody = try backendCopyPage(of: controlUploaded, name: "relay-0")
+        let controlPull = SyncPullClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: controlStub)
+        _ = await controlRemounted.engine.pullAndApplyOnce(using: controlPull, context: controlRemounted.context)
+        #expect(try categoryCount(controlRemounted.context) == 3, "control: sin restaurar, la misma categoría dos veces")
+    }
+
+    /// El borrado de la fila re-identificada en la misma ventana: sale también con la identidad del backend. Es el drain de
+    /// #244 sin cambios; lo nuevo es que el adopt siembre el registro y capture las coordenadas de sus testigos (aquí por el
+    /// camino real: los metadatos del espejo sembrados en el SQLite).
+    @Test("adopt: el borrado de una fila re-identificada tras el reconcile sale también con la identidad del backend")
+    func adoptPin_rekeyedThenDeleted_tombstonesTheBackendIdentity() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let phone = try await adoptedPhone(dir, stub: RoutingStub(), seedingCoordinates: true)
+        let uploaded = try #require(phone.categories[0].syncID)
+        let witness = try #require(try phone.context.fetch(FetchDescriptor<SyncIdentity>()).first { $0.syncID == uploaded })
+        #expect(witness.ckRecordName == "record-0", "control: el adopt capturó las coordenadas")
+        let leaders = UUID()
+        try mirrorRekeys(phone.categories[0], to: leaders, in: phone.context)
+        try userDeletes(phone.categories[0], in: phone.context)
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(Set(try outboxTombstones(remounted.context)) == [uploaded, leaders])
+    }
+
+    /// **La ventana grande: antes del reconcile.** El líder desplazado volvió después del remonte del relevo, y un
+    /// movimiento que el relevo subió llega aquí con la identidad del líder. Con el marcador subía como huérfano: el
+    /// duplicado quedaba en el backend. Ahora casa por su `created_at` y toma la identidad del backend. Y lo que no casa no
+    /// bloquea: el movimiento que el líder creó sin red no está en el backend y sube, aunque falte uno que el relevo escribió
+    /// después del cutover.
+    @Test("adopt con marcador: la fila que llegó re-identificada casa por su clave y no sube; la nueva del líder sí")
+    func adoptRekeyedBeforeTheReconcile_rebindsByKey_andNeverBlocks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let leaderAccount = UUID(), relayTx = UUID(), writtenAfterTheCutover = UUID(), offlineTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", relayTx), ("tx_items", writtenAfterTheCutover)],
+                                 fields: [relayTx: ["created_at": wireCreatedAt(t1)],
+                                          writtenAfterTheCutover: ["created_at": wireCreatedAt(Date(timeIntervalSince1970: 1_699_900_000))]],
+                                 hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let rekeyed = makeTx(createdAt: t1, amount: 10, account: account, syncID: UUID(), in: context)
+        _ = makeTx(createdAt: Date(timeIntervalSince1970: 1_699_500_000), amount: 20, account: account, syncID: offlineTx,
+                   in: context)
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+        #expect(rekeyed.syncID == relayTx)
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [offlineTx.uuidString.lowercased()])
+    }
+
+    /// La unicidad se cuenta con TODAS las candidatas: una fila de este teléfono sin identidad con la misma clave hace
+    /// ambiguo el casado, y no se toca ninguna (sube como antes: residual con ticket).
+    @Test("adopt con marcador: una fila propia con la misma clave hace ambiguo el casado y no se re-identifica nada")
+    func adoptRekeyedBeforeTheReconcile_ambiguousKeyIsLeftAlone() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let leaderAccount = UUID(), relayTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", relayTx)],
+                                 fields: [relayTx: ["created_at": wireCreatedAt(t1)]], hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let leaders = UUID()
+        let rekeyed = makeTx(createdAt: t1, amount: 10, account: account, syncID: leaders, in: context)
+        try saveAsImported(context)
+        _ = makeTx(createdAt: t1, amount: 30, account: account, syncID: nil, in: context)
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 2, identityAssigned: 1))
+        #expect(rekeyed.syncID == leaders)
+    }
+
+    /// En un reintento del adopt (la red del push falló, la quiescencia no llegó), lo que el espejo cambió desde la pasada
+    /// anterior vuelve por el registro que esa pasada sembró. Las categorías del usuario no tienen clave de linaje: sin esto
+    /// subía como huérfana.
+    @Test("adopt: en un reintento, la fila que el espejo re-identificó desde la pasada anterior vuelve a su identidad")
+    func adoptPin_retryRestoresFromTheLedger() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let phone = try await adoptedPhone(dir, stub: stub)
+        let uploaded = try #require(phone.categories[0].syncID)
+        try mirrorRekeys(phone.categories[0], to: UUID(), in: phone.context)
+
+        let again = makeExecutor(phone.context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: phone.backend())
+        #expect(await again.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(phone.categories[0].syncID == uploaded)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **El líder desplazado que adopta con un registro viejo de su ida.** El registro dice SU identidad; el espejo le trajo
+    /// la del relevo, que es la del backend. Restaurar hacia la suya subiría la categoría como huérfana: solo se restaura
+    /// hacia identidades que el backend conoce.
+    @Test("adopt: la restauración del reconcile no devuelve una identidad que el backend no conoce")
+    func adoptPin_retryNeverRestoresAnIdentityTheBackendDoesNotKnow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let own = UUID(), relays = UUID()
+        let category = makeCategory("del líder", syncID: own, in: context)
+        context.insert(SyncIdentity(syncID: own, entityType: SyncEntityType.category, localAnchor: "a"))
+        try context.save()
+        let key = try #require(RelayIdentityLedger.key(for: category.persistentModelID))
+        try RelayIdentityLedger.merge([key: own], into: ledgerURL(dir))
+        category.syncID = relays
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: try backend([("categories", relays)], stub: stub)())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(category.syncID == relays)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// **El reintento tras un push fallido** (review del ticket). La pasada anterior acuñó la identidad de una fila de este
+    /// teléfono, la sembró en el registro, la encoló y el push falló: esa identidad aún no está en el backend, solo en el
+    /// outbox. Si el espejo cambia la fila antes del reintento, la restauración la devuelve a la del outbox: sin eso subían
+    /// las dos.
+    @Test("adopt: en un reintento tras un push fallido, la fila vuelve a la identidad que ya esperaba en el outbox")
+    func adoptPin_retryRestoresTowardsTheIdentityWaitingInTheOutbox() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let known = UUID()
+        _ = makeCategory("del relevo", syncID: known, in: context)
+        try saveAsImported(context)
+        let mine = Category(name: "de este teléfono", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(mine)
+        try context.save()
+        let source = try backend([("categories", known)], stub: stub)
+
+        stub.pushStatus = 500
+        let first = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        #expect(await first.runAdoptOrphanReconcile() == .transient)
+        let minted = try #require(mine.syncID)
+        let leaders = UUID()
+        try mirrorRekeys(mine, to: leaders, in: context)
+
+        stub.pushStatus = 200
+        let again = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                 FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                 tombstoneSource: source())
+        _ = await again.runAdoptOrphanReconcile()
+        #expect(mine.syncID == minted)
+        #expect(Set(stub.pushedSyncIDs.map { $0.lowercased() }) == [minted.uuidString.lowercased()])
+    }
+
+    /// Con el marcador, una fila SIN identidad que casa por clave única con una que falta también toma la del backend
+    /// (review del ticket): es el import que no llegó, y sin casarla el mismo teléfono decidía distinto según el push de la
+    /// pasada anterior hubiera fallado (el backfill ya le había dado identidad).
+    @Test("adopt con marcador: una fila sin identidad que casa por su clave toma la del backend en la primera pasada")
+    func adoptWithMarker_rowWithoutIdentity_rebindsByKey() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let leaderAccount = UUID(), relayTx = UUID()
+        let t1 = Date(timeIntervalSince1970: 1_699_000_100.123)
+        let source = try backend([("accounts", leaderAccount), ("tx_items", relayTx)],
+                                 fields: [relayTx: ["created_at": wireCreatedAt(t1)]], hlc: hlc(leaderLastWrite), stub: stub)
+        let account = try importLeaderAccount(leaderAccount, in: context)
+        let lagging = makeTx(createdAt: t1, amount: 10, account: account, syncID: nil, in: context)
+        try saveAsImported(context)
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(lagging.syncID == relayTx)
+        #expect(stub.pushedSyncIDs.isEmpty)
+    }
+
+    /// Las condiciones de la restauración por el registro, una por fila. Solo la última se restaura.
+    @Test("restauración por el registro: solo la fila que el espejo cambió, hacia una identidad de este teléfono libre")
+    func ledgerRestore_leavesAloneWhatItCannotTellApart() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        engine.relayIdentityLedgerURL = ledgerURL(dir)
+        func witness(_ id: UUID, _ type: String = SyncEntityType.category) {
+            context.insert(SyncIdentity(syncID: id, entityType: type, localAnchor: id.uuidString))
+        }
+        // 1. La identidad de ahora tiene testigo: la cambió un camino local.
+        let localPrior = UUID(), localNow = UUID()
+        let local = makeCategory("local", syncID: localNow, in: context); witness(localPrior); witness(localNow)
+        // 2. El testigo de la del registro es de otro tipo.
+        let otherTypePrior = UUID()
+        let otherType = makeCategory("otro tipo", syncID: UUID(), in: context); witness(otherTypePrior, SyncEntityType.transactionItem)
+        // 3. Otra fila viva lleva ya la del registro.
+        let carriedPrior = UUID()
+        let carried = makeCategory("llevada", syncID: UUID(), in: context); witness(carriedPrior)
+        _ = makeCategory("la que la lleva", syncID: carriedPrior, in: context)
+        // 4. Dos filas reclaman la misma.
+        let claimedPrior = UUID()
+        let claimA = makeCategory("a", syncID: UUID(), in: context), claimB = makeCategory("b", syncID: UUID(), in: context)
+        witness(claimedPrior)
+        // 5. La buena.
+        let goodPrior = UUID()
+        let good = makeCategory("buena", syncID: UUID(), in: context); witness(goodPrior)
+        try context.save()
+        func key(_ model: Yala.Category) throws -> String { try #require(RelayIdentityLedger.key(for: model.persistentModelID)) }
+        try RelayIdentityLedger.merge([try key(local): localPrior, try key(otherType): otherTypePrior,
+                                       try key(carried): carriedPrior, try key(claimA): claimedPrior,
+                                       try key(claimB): claimedPrior, try key(good): goodPrior], into: ledgerURL(dir))
+        let before = [local, otherType, carried, claimA, claimB].map(\.syncID)
+
+        // Sin `onlyTo`: cada negativo lo descarta SU condición, no el filtro (con el filtro puesto, tres no discriminaban nada:
+        // lo cazó la review y lo confirmaron tres mutantes vivos).
+        #expect(try engine.restoreRelayIdentitiesFromLedger(context: context) == 1)
+        #expect(good.syncID == goodPrior)
+        #expect([local, otherType, carried, claimA, claimB].map(\.syncID) == before)
+
+        // `onlyTo` fuera: ni la buena.
+        good.syncID = UUID(); try saveAsImported(context)
+        #expect(try engine.restoreRelayIdentitiesFromLedger(context: context, onlyTo: []) == 0)
+        // Un registro que no se deja leer no para nada: cero, sin lanzar.
+        try Data("no es json".utf8).write(to: ledgerURL(dir))
+        #expect(try engine.restoreRelayIdentitiesFromLedger(context: context) == 0)
+    }
+
+    /// El ciclo de vida de la marca del adopt: el reconcile la pone con el registro; el arranque restaura, la quita y marca
+    /// el registro para retirar; sembrar para una ida la quita (una marca vieja no retira el registro de una ida); y sin ella
+    /// el arranque no toca nada.
+    @Test("adopt: la marca del adopt la pone el reconcile, la consume el arranque y la quitan la siembra de la ida y la vuelta atrás")
+    func adoptPin_lifecycle() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let phone = try await adoptedPhone(dir, stub: RoutingStub())
+        let url = ledgerURL(dir)
+        let ledger = try RelayIdentityLedger.load(from: url)
+        #expect(Set(ledger.values) == Set(phone.categories.compactMap(\.syncID)), "el registro lleva las identidades definitivas")
+        #expect(RelayIdentityLedger.isAdoptPinned(url))
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(!RelayIdentityLedger.isAdoptPinned(url) && RelayIdentityLedger.isRetirable(url))
+        #expect(!remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context), "una vez basta")
+
+        try RelayIdentityLedger.markAdoptPin(url)
+        try RelayIdentityLedger.merge([:], into: url)
+        #expect(!RelayIdentityLedger.isAdoptPinned(url), "sembrar para una ida quita la marca del adopt")
+        try RelayIdentityLedger.markAdoptPin(url)
+        try RelayIdentityLedger.remove(at: url)
+        #expect(!RelayIdentityLedger.isAdoptPinned(url), "la vuelta atrás la borra con el registro")
+    }
+
+    // MARK: - Lo que el espejo importa TARDE tras el adopt (ticket `adopt-window-late-imports-overwrite-newer-cloud-edits`)
+    //
+    // El adopt terminó y el paso 3 ancló la línea base del History, pero el import de iCloud no había bajado todo. Lo que el
+    // espejo trae después lo lee el primer drain tras relanzar. De las filas que el backend ya conoce es la versión vieja de
+    // iCloud, y traducida subía con un HLC fresco que pisaba por LWW la edición más nueva de la nube.
+
+    /// La escena, tras el paso 3 del adopt y antes del remonte. El backend conoce cinco categorías que ya estaban aquí, dos
+    /// que el espejo aún no había bajado y una que la nube ya borró. En la ventana el espejo baja las que faltaban (también la
+    /// borrada), trae una edición vieja de otra, un borrado de otra y una categoría que el backend no conoce; llega otra
+    /// conocida sin la firma del espejo; y en este teléfono se edita una del backend, otro escritor con autor propio edita
+    /// otra, se borra una y se crea una nueva.
+    private struct LateImportScene {
+        let late: UUID, lateWithoutAuthor: UUID, deletedInTheCloud: UUID, editedByMirror: UUID, deletedByMirror: UUID
+        let editedHere: UUID, editedByAnotherWriter: UUID, deletedHere: UUID, createdHere: UUID, unknownImport: UUID
+        var skippedByTheFix: Set<UUID> { [late, lateWithoutAuthor, deletedInTheCloud, editedByMirror] }
+    }
+
+    private func adoptThenLateImports(_ dir: URL, stub: RoutingStub) async throws -> LateImportScene {
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let editedByMirror = UUID(), deletedByMirror = UUID(), editedHere = UUID(), editedByAnotherWriter = UUID()
+        let deletedHere = UUID(), late = UUID(), lateWithoutAuthor = UUID(), deletedInTheCloud = UUID()
+        let imported = [editedByMirror, deletedByMirror, editedHere, editedByAnotherWriter, deletedHere].enumerated().map {
+            makeCategory("importada-\($0.offset)", syncID: $0.element, in: context)
+        }
+        try saveAsImported(context)
+        let source = try backend([editedByMirror, deletedByMirror, editedHere, editedByAnotherWriter, deletedHere, late,
+                                  lateWithoutAuthor].map { (table: "categories", id: $0) },
+                                 tombstones: [(table: "categories", id: deletedInTheCloud)], stub: stub)
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"), tombstoneSource: source())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        engine.fastForwardHistoryBaseline(context: context)
+
+        // El espejo termina de bajar lo que iCloud tenía: una que faltaba, una edición vieja, un borrado y una que el backend
+        // no conoce (esa sigue subiendo: es `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`).
+        _ = makeCategory("vieja de iCloud", syncID: late, in: context)
+        _ = makeCategory("borrada ya en la nube", syncID: deletedInTheCloud, in: context)
+        imported[0].name = "editada en iCloud hace días"
+        context.delete(imported[1])
+        let unknownImport = UUID()
+        _ = makeCategory("solo en iCloud", syncID: unknownImport, in: context)
+        try saveAsImported(context)
+        // Un alta con una identidad que el backend ya tiene, sin la firma del espejo: tampoco la creó este teléfono.
+        _ = makeCategory("sin firma", syncID: lateWithoutAuthor, in: context)
+        try context.save()
+        // Lo que se hace en este teléfono en la ventana: editar una del backend, borrar otra y crear una. Eso sí sale.
+        imported[2].name = "editada aquí"
+        context.delete(imported[4])
+        let createdHere = UUID()
+        _ = makeCategory("creada aquí", syncID: createdHere, in: context)
+        try context.save()
+        // Un escritor de este teléfono con autor propio (no el del espejo ni el del motor): también sale.
+        imported[3].name = "editada por otro escritor"
+        context.author = "OtroEscritorDeEsteTelefono"
+        defer { context.author = nil }
+        try context.save()
+        return LateImportScene(late: late, lateWithoutAuthor: lateWithoutAuthor, deletedInTheCloud: deletedInTheCloud,
+                               editedByMirror: editedByMirror, deletedByMirror: deletedByMirror, editedHere: editedHere,
+                               editedByAnotherWriter: editedByAnotherWriter, deletedHere: deletedHere,
+                               createdHere: createdHere, unknownImport: unknownImport)
+    }
+
+    private func outboxUpserts(_ context: ModelContext) throws -> Set<UUID> {
+        Set(try liveOutboxRows(context).filter { $0.opRaw == SyncOutboxOp.upsert.rawValue }.map(\.syncID))
+    }
+
+    /// **EL BUG DEL TICKET.** Tras el remonte, el primer drain no traduce lo que el espejo trajo de filas que el backend
+    /// conoce (vivas o borradas): ni el alta (firmada o no), ni la edición vieja, ni el borrado. Lo que se hace en este teléfono
+    /// y lo que el backend no conoce sale como siempre. El control, sobre otra copia de la misma escena y quitando SOLO lo que
+    /// el backend conocía: todo sube, con HLC fresco.
+    @Test("adopt: el primer drain tras el remonte no sube lo que el espejo importó tarde de filas que el backend conoce")
+    func adoptLateImport_knownRowsDoNotUpload() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        #expect(RelayIdentityLedger.hasAdoptBackendKnown(for: ledgerURL(dir)), "control: el reconcile dejó lo que el backend conoce")
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context)
+                == [scene.editedHere, scene.editedByAnotherWriter, scene.createdHere, scene.unknownImport])
+        #expect(try outboxTombstones(remounted.context) == [scene.deletedHere], "el borrado del espejo no sale; el de aquí sí")
+
+        let controlDir = freshDir(); defer { cleanup(controlDir) }
+        let control = try await adoptThenLateImports(controlDir, stub: RoutingStub())
+        try RelayIdentityLedger.clearAdoptBackendKnown(for: ledgerURL(controlDir))
+        let controlRemounted = try remount(controlDir)
+        #expect(controlRemounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: controlRemounted.context))
+        #expect(controlRemounted.engine.drainOnce(context: controlRemounted.context))
+        #expect(try outboxUpserts(controlRemounted.context).isSuperset(of: control.skippedByTheFix),
+                "control: sin la lista, lo importado tarde sube")
+        #expect(Set(try outboxTombstones(controlRemounted.context)) == [control.deletedByMirror, control.deletedHere],
+                "control: y el borrado del espejo también")
+    }
+
+    /// Lo que no subió lo trae el pull con la versión de la nube, sobre la misma fila: el backend manda y no se duplica.
+    @Test("adopt: lo que el espejo importó tarde toma la versión de la nube en el primer pull, sin duplicarse")
+    func adoptLateImport_thePullBringsTheCloudVersion() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let stub = RoutingStub()
+        let scene = try await adoptThenLateImports(dir, stub: stub)
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let before = try categoryCount(remounted.context)
+
+        stub.pullBody = try backendCopyPage(of: scene.late, name: "editada en la nube")
+        let pull = SyncPullClient(baseURL: workerURL, tokenProvider: { "jwt" }, urlSession: stub)
+        _ = await remounted.engine.pullAndApplyOnce(using: pull, context: remounted.context)
+        #expect(stub.pullCallCount >= 1, "control: el pull llegó a pedirse")
+        let late = try remounted.context.fetch(FetchDescriptor<Yala.Category>()).filter { $0.syncID == scene.late }
+        #expect(late.map(\.name) == ["editada en la nube"])
+        #expect(try categoryCount(remounted.context) == before, "sin born-remote")
+        #expect(try !outboxUpserts(remounted.context).contains(scene.late), "la versión vieja no queda esperando a subir")
+    }
+
+    /// El canario: cuántos cambios no salieron, por tipo. Es lo que mide en la flota lo que el ticket solo infirió.
+    @Test("adopt: el drain que no traduce lo importado tarde deja el canario con el tipo y la cuenta")
+    func adoptLateImport_emitsTheCanary() async throws {
+        let defaults = makeIsolatedDefaults(prefix: "mwe.lateimport.metrics")
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        defer { MetricsService._testReset() }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+
+        let canaries = MetricsSpool.pending(defaults).filter { $0.e == "canary" && $0.n == "cloudAdoptLateImportSkipped" }
+        #expect(canaries.map(\.d) == ["Category"])
+        #expect(canaries.map(\.x) == [5], "las dos altas firmadas, la sin firma, la edición y el borrado")
+    }
+
+    /// El ciclo de vida de lo que el backend conocía: lo escribe el reconcile, lo lee el primer drain tras el remonte y ese
+    /// mismo drain lo retira; la siembra de una ida y la vuelta atrás lo quitan. Y lo retira la marca aunque el registro no
+    /// llegara a escribirse (un adopt sin filas de identidad acuñada con testigo).
+    @Test("adopt: lo que el backend conocía lo escribe el reconcile, lo retira el primer drain y lo quitan la siembra y la vuelta atrás")
+    func adoptLateImport_backendKnownLifecycle() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let phone = try await adoptedPhone(dir, stub: RoutingStub())
+        let url = ledgerURL(dir)
+        #expect(try RelayIdentityLedger.loadAdoptBackendKnown(for: url) == Set(phone.categories.compactMap(\.syncID)))
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(RelayIdentityLedger.hasAdoptBackendKnown(for: url), "control: la restauración no lo quita, lo necesita el drain")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url), "el primer drain completo lo retira con el registro")
+
+        // Sin fichero del registro, con la marca de retirada: se retira igual.
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: url)
+        try RelayIdentityLedger.markRetirable(url)
+        #expect(!ledgerExists(dir), "control: no hay registro")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url))
+        #expect(!RelayIdentityLedger.isRetirable(url))
+
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: url)
+        try RelayIdentityLedger.merge([:], into: url)
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url), "sembrar para una ida lo quita")
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: url)
+        try RelayIdentityLedger.remove(at: url)
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: url), "la vuelta atrás lo borra con el registro")
+    }
+
+    /// **Lo cazó la review.** El espejo re-identifica una fila (la exportación tardía del líder) y después importa su borrado.
+    /// La preservada es la del líder, que el backend no conoce, pero el registro la traduce a la del backend: ese tombstone
+    /// tampoco sale. El mismo borrado hecho por el usuario sale con las dos (`adoptPin_rekeyedThenDeleted_tombstonesTheBackendIdentity`).
+    @Test("adopt: el borrado que el espejo importa de una fila que antes re-identificó tampoco sale con la identidad del backend")
+    func adoptLateImport_mirrorDeleteOfARekeyedRow_doesNotTombstoneTheBackendIdentity() async throws {
+        func scene(_ dir: URL) async throws -> (uploaded: UUID, leaders: UUID) {
+            let phone = try await adoptedPhone(dir, stub: RoutingStub(), seedingCoordinates: true)
+            let uploaded = try #require(phone.categories[0].syncID)
+            let leaders = UUID()
+            try mirrorRekeys(phone.categories[0], to: leaders, in: phone.context)
+            phone.context.delete(phone.categories[0])
+            try saveAsImported(phone.context)
+            return (uploaded, leaders)
+        }
+        let dir = freshDir(); defer { cleanup(dir) }
+        _ = try await scene(dir)
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxTombstones(remounted.context).isEmpty)
+
+        let controlDir = freshDir(); defer { cleanup(controlDir) }
+        let control = try await scene(controlDir)
+        try RelayIdentityLedger.clearAdoptBackendKnown(for: ledgerURL(controlDir))
+        let controlRemounted = try remount(controlDir)
+        #expect(controlRemounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: controlRemounted.context))
+        #expect(controlRemounted.engine.drainOnce(context: controlRemounted.context))
+        #expect(Set(try outboxTombstones(controlRemounted.context)) == [control.uploaded, control.leaders],
+                "control: sin la lista salen las dos")
+    }
+
+    /// Un adopt que se reintenta y sale por backend vacío no deja la lista de una pasada anterior (review): ya no describe el
+    /// backend.
+    @Test("adopt: la salida por backend vacío quita lo que una pasada anterior guardó como conocido")
+    func adoptLateImport_emptyBackendExitClearsAnOldList() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        _ = makeCategory("huérfana", syncID: UUID(), in: context)
+        try context.save()
+        try RelayIdentityLedger.writeAdoptBackendKnown([UUID()], for: ledgerURL(dir))
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: FakeTombstoneSource())
+        #expect(await executor.runAdoptOrphanReconcile() == .abortedEmptyBackend)
+        #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: ledgerURL(dir)))
+    }
+
+    /// Un fichero que no se deja leer no para el motor: el drain termina y todo sale como antes del ticket.
+    @Test("adopt: lo que el backend conocía ilegible no para el drain y todo sale como antes")
+    func adoptLateImport_unreadableListTranslatesAsBefore() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        try Data("no es json".utf8).write(to: ledgerURL(dir).appendingPathExtension("backend-known"))
+        #expect(throws: (any Error).self) { try RelayIdentityLedger.loadAdoptBackendKnown(for: ledgerURL(dir)) }
+        let remounted = try remount(dir)
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).isSuperset(of: scene.skippedByTheFix))
+    }
+
+    // MARK: - Lo que el espejo trae tras el chequeo del adopt y el backend NO conoce (ticket `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`)
+    //
+    // Canario, no política: el drain que cierra la ventana del adopt cuenta las altas que SUBE sin que el backend las
+    // conociera, por autor (espejo o este teléfono), el camino por el que entró el adopt y la clase (movimientos u otras).
+    // Lo que sale no cambia.
+
+    /// Arranca el spool de métricas aislado y devuelve cómo leer los canarios de altas sin linaje: `(detalle, cuántas)`.
+    /// Se llama JUSTO antes del drain, que es síncrono: entre un `await` y el drain otra suite podría resetear el servicio.
+    private func startUnprovenMetrics(_ prefix: String) -> () -> [(detail: String, count: Double)] {
+        let defaults = makeIsolatedDefaults(prefix: prefix)
+        MetricsService._testReset()
+        MetricsService.start(
+            client: MetricsClient(baseURL: URL(string: "https://gw.test")!, urlSession: MetricsDown()),
+            defaults: defaults)
+        return {
+            MetricsSpool.pending(defaults)
+                .filter { $0.e == "canary" && $0.n == "cloudAdoptLateImportUnproven" }
+                // El wire omite `x` cuando vale 1 (`MetricsEvent.canary`).
+                .map { (detail: $0.d ?? "", count: $0.x ?? 1) }
+        }
+    }
+
+    private func adoptRouteURL(_ dir: URL) -> URL { ledgerURL(dir).appendingPathExtension("adopt-route") }
+
+    /// Un movimiento como lo bajaría el espejo, con su identidad y sin cuenta.
+    private func mirrorTransaction(amount: Double, in context: ModelContext) -> UUID {
+        let tx = TransactionItem(date: fixedNow, amount: amount, currencyCode: "USD")
+        let id = UUID()
+        tx.syncID = id
+        context.insert(tx)
+        return id
+    }
+
+    /// **EL CASO DEL TICKET.** El adopt entra con el espejo adjunto y nada local que pida linaje, porque iCloud dijo que no
+    /// había nada (`none`) o que no había cuenta (`noAccount`). Después del chequeo el espejo baja dos categorías y un
+    /// movimiento de un corpus que el backend no conoce, y un tipo de cambio. Tras el remonte el primer drain SUBE todo (no
+    /// cambia) y el canario cuenta las tres altas que piden linaje, por clase y con su camino; el tipo de cambio no cuenta.
+    @Test("adopt: lo que el espejo baja tras el chequeo de iCloud y el backend no conoce sube y el canario lo cuenta con su camino")
+    func adoptLateImportUnproven_afterTheICloudCheck_countsWithItsRoute() async throws {
+        defer { MetricsService._testReset() }
+        for (answer, route) in [(ICloudAdoptCorpusCheck.none, "none"), (.noAccount, "noAccount")] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            try seedBootstrapRates(in: context)
+            let stub = RoutingStub()
+            let source = try backend([("categories", UUID())], stub: stub)
+            let engine = CloudSyncEngine()
+            let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source(),
+                                        adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { answer })
+            #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+            #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(dir))?.rawValue == route,
+                    "\(route): el reconcile deja el camino con la lista")
+            engine.fastForwardHistoryBaseline(context: context)
+
+            // Después del chequeo: el iPad del mismo Apple ID apunta algo, o se inicia sesión en un iCloud con años de datos.
+            let foreign = [UUID(), UUID()]
+            for (i, id) in foreign.enumerated() { _ = makeCategory("llegó después \(i)", syncID: id, in: context) }
+            let movement = mirrorTransaction(amount: 12.5, in: context)
+            let rate = try ExchangeRate(dateKey: "2026-09-26", base: "USD", ratesDictionary: ["EUR": 0.9])
+            let rateID = UUID()
+            rate.syncID = rateID
+            context.insert(rate)
+            try saveAsImported(context)
+            // Otra tanda del import, en otra transacción: la cuenta se suma entre transacciones.
+            let secondBatch = UUID()
+            _ = makeCategory("otra tanda", syncID: secondBatch, in: context)
+            try saveAsImported(context)
+
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.\(route)")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).isSuperset(of: Set(foreign + [movement, rateID, secondBatch])),
+                    "\(route): sube igual — canario, no política (y control: el tipo de cambio también se tradujo)")
+            let seen = canaries()
+            #expect(seen.map(\.detail) == ["mirror|\(route)|TransactionItem", "mirror|\(route)|other"],
+                    "\(route): por clase, con su camino, sin el tipo de cambio")
+            #expect(seen.map(\.count) == [1, 3], "\(route): el movimiento y las tres categorías, de dos tandas")
+        }
+    }
+
+    /// Las dos series y lo que NO cuenta, sobre la escena del ticket hermano (camino `noMirror`: el executor no declara el
+    /// espejo). Cuenta la que el espejo bajó y el backend no conoce (`mirror`) y la creada aquí en la ventana (`local`). No
+    /// cuentan las altas que el backend conocía (#250 ya no las sube), ni cambios ni borrados.
+    @Test("adopt: el canario cuenta por autor las altas que suben sin linaje y no las que el backend conocía")
+    func adoptLateImportUnproven_splitsByAuthorAndSkipsKnownRows() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.split")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).isSuperset(of: [scene.unknownImport, scene.createdHere]))
+        let seen = canaries()
+        #expect(seen.map(\.detail) == ["local|noMirror|other", "mirror|noMirror|other"])
+        #expect(seen.map(\.count) == [1, 1])
+    }
+
+    /// **Lo cazó la review.** Un re-anclaje del token relee un margen ANTERIOR al paso 3: lo que el espejo importó ahí no llegó
+    /// después del chequeo. Con el token roto, el primer drain sube las dos categorías (la de antes del ancla, por el margen)
+    /// y el canario cuenta solo la de después.
+    @Test("adopt: tras un re-anclaje del token, el canario no cuenta lo anterior al paso 3 aunque suba")
+    func adoptLateImportUnproven_ignoresWhatPrecedesTheBaseline() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try seedLeaderMarker(for: "sub-1", in: context)
+        let known = UUID()
+        _ = makeCategory("de la cuenta", syncID: known, in: context)
+        try saveAsImported(context)
+        let stub = RoutingStub()
+        let engine = CloudSyncEngine()
+        let executor = makeExecutor(context, engine, stub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: try backend([("categories", known)], stub: stub)())
+        #expect(await executor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        let before = UUID()
+        _ = makeCategory("antes del ancla", syncID: before, in: context)
+        try saveAsImported(context)
+        engine.fastForwardHistoryBaseline(context: context)
+        let after = UUID()
+        _ = makeCategory("después del ancla", syncID: after, in: context)
+        try saveAsImported(context)
+
+        // El token del cursor no se deja decodificar: la rama acotada relee desde el ancla menos el margen.
+        let cursor = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursor.lastDrainedTxAt != nil, "control: el paso 3 dejó el ancla")
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        cursor.historyTokenData = Data("garbage-token".utf8)
+        try context.save()
+        context.author = nil
+
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.floor")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).isSuperset(of: [before, after]),
+                "control: el margen releyó la de antes del ancla y sube")
+        #expect(canaries().map(\.detail) == ["mirror|noMirror|other"])
+        #expect(canaries().map(\.count) == [1], "solo la de después del ancla")
+    }
+
+    /// Un alta que el códec rechaza no sube, y no cuenta: el canario dice lo que SUBE.
+    @Test("adopt: un alta que el códec rechaza no sube y el canario no la cuenta")
+    func adoptLateImportUnproven_skipsWhatTheCodecRejects() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let context = try makeContext(dir)
+        let rejected = mirrorTransaction(amount: .infinity, in: context)
+        let accepted = mirrorTransaction(amount: 3, in: context)
+        try saveAsImported(context)
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.codec")
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        let upserts = try outboxUpserts(remounted.context)
+        #expect(upserts.contains(accepted) && !upserts.contains(rejected), "control: el códec la descartó")
+        #expect(canaries().filter { $0.detail == "mirror|noMirror|TransactionItem" }.map(\.count) == [1])
+    }
+
+    /// Un drain que guarda el outbox y muere antes del cursor no emite su canario. El siguiente re-lee la misma ventana y
+    /// vuelve a añadir sus filas (medido: el HLC lleva el reloj físico, no se deduplican): cuenta una vez.
+    @Test("adopt: tras un drain que muere antes del cursor, el siguiente cuenta las altas sin linaje una sola vez")
+    func adoptLateImportUnproven_countsOnceAfterADrainThatDiedBeforeTheCursor() async throws {
+        defer { MetricsService._testReset() }
+        let dir = freshDir(); defer { cleanup(dir) }
+        let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+        let remounted = try remount(dir)
+        #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+        let canaries = startUnprovenMetrics("mwe.unproven.replay")
+        remounted.engine._testThrowOnDrainCursorSave = true
+        #expect(!remounted.engine.drainOnce(context: remounted.context))
+        #expect(try outboxUpserts(remounted.context).contains(scene.unknownImport), "control: el outbox quedó guardado")
+        #expect(canaries().isEmpty, "control: la vuelta muerta no emitió")
+        remounted.engine._testThrowOnDrainCursorSave = false
+        #expect(remounted.engine.drainOnce(context: remounted.context))
+        #expect(canaries().map(\.detail) == ["local|noMirror|other", "mirror|noMirror|other"])
+        #expect(canaries().map(\.count) == [1, 1])
+    }
+
+    /// La ventana es la que cierra el primer drain tras la restauración del arranque. Sin esa marca no se cuenta; tras
+    /// retirarse, un alta nueva sube y no se cuenta; con la lista ilegible no se cuenta; sin el fichero del camino, `unknown`.
+    @Test("adopt: el canario de altas sin linaje cuenta solo en el drain que cierra la ventana, y sin camino dice unknown")
+    func adoptLateImportUnproven_windowBounds() async throws {
+        defer { MetricsService._testReset() }
+
+        // Sin la restauración del arranque (no hay marca de retirada): no cuenta.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+            let remounted = try remount(dir)
+            let canaries = startUnprovenMetrics("mwe.unproven.nomark")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).contains(scene.unknownImport), "control: subió")
+            #expect(canaries().isEmpty, "sin la marca de retirada no hay ventana que cerrar")
+        }
+
+        // Con ella cuenta una vez; lo que llega después de retirarse sube y ya no cuenta.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.after")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(canaries().count == 2, "control: la ventana contó")
+            #expect(!RelayIdentityLedger.hasAdoptBackendKnown(for: ledgerURL(dir)), "control: la ventana se retiró")
+            let later = UUID()
+            _ = makeCategory("después de la ventana", syncID: later, in: remounted.context)
+            try saveAsImported(remounted.context)
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).contains(later), "control: subió")
+            #expect(canaries().count == 2, "retirada la ventana, no cuenta más")
+        }
+
+        // La lista ilegible: no sabe qué conocía el backend, no cuenta.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let scene = try await adoptThenLateImports(dir, stub: RoutingStub())
+            try Data("no es json".utf8).write(to: ledgerURL(dir).appendingPathExtension("backend-known"))
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.unreadable")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(try outboxUpserts(remounted.context).contains(scene.unknownImport), "control: subió")
+            #expect(canaries().isEmpty)
+        }
+
+        // Sin el fichero del camino (un build anterior, o su escritura falló): cuenta con `unknown`.
+        do {
+            let dir = freshDir(); defer { cleanup(dir) }
+            _ = try await adoptThenLateImports(dir, stub: RoutingStub())
+            #expect(FileManager.default.fileExists(atPath: adoptRouteURL(dir).path), "control: el camino estaba")
+            try FileManager.default.removeItem(at: adoptRouteURL(dir))
+            let remounted = try remount(dir)
+            #expect(remounted.engine.restoreAdoptedRelayIdentitiesIfPinned(context: remounted.context))
+            let canaries = startUnprovenMetrics("mwe.unproven.unknown")
+            #expect(remounted.engine.drainOnce(context: remounted.context))
+            #expect(canaries().map(\.detail) == ["local|unknown|other", "mirror|unknown|other"])
+        }
+    }
+
+    /// La agrupación del canario: por autor, camino y clase; suma tipos; descarta una clave mal formada.
+    @Test("adopt: el canario agrupa los conteos por autor, camino y clase")
+    func adoptLateImportUnproven_canaryGrouping() {
+        let grouped = CloudSyncEngine.adoptUnprovenCanaryDetails([
+            "TransactionItem|mirror|none": 4, "Category|mirror|none": 2, "Account|mirror|none": 1,
+            "Category|local|none": 3, "roto": 9,
+        ])
+        #expect(grouped == ["mirror|none|TransactionItem": 4, "mirror|none|other": 3, "local|none|other": 3])
+    }
+
+    /// El camino que deja cada salida del paso 0-bis que deja entrar: sin espejo, con filas que piden linaje, y tras esperar
+    /// al corpus que la sonda encontró.
+    @Test("adopt: el camino de entrada es noMirror, lineageRows o found según por dónde pasó el paso 0-bis")
+    func adoptLateImportUnproven_routeOfEachEntry() async throws {
+        // Espejo no adjunto.
+        let noMirrorDir = freshDir(); defer { cleanup(noMirrorDir) }
+        _ = try await adoptThenLateImports(noMirrorDir, stub: RoutingStub())
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(noMirrorDir)) == .noMirror)
+
+        // Espejo adjunto y filas locales que piden linaje: no se pregunta a iCloud.
+        let lineageDir = freshDir(); defer { cleanup(lineageDir) }
+        let lineageContext = try makeContext(lineageDir)
+        try seedLeaderMarker(for: "sub-1", in: lineageContext)
+        let known = UUID()
+        _ = makeCategory("de la cuenta", syncID: known, in: lineageContext)
+        try lineageContext.save()
+        let lineageStub = RoutingStub()
+        let lineageSpy = ICloudCheckSpy(.none)
+        let lineageExecutor = makeExecutor(
+            lineageContext, CloudSyncEngine(), lineageStub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+            personalStoreURL: lineageDir.appendingPathComponent("personal.sqlite"),
+            tombstoneSource: try backend([("categories", known)], stub: lineageStub)(),
+            adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await lineageSpy.ask() })
+        #expect(await lineageExecutor.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(lineageSpy.calls == 0, "control: no preguntó")
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(lineageDir)) == .lineageRows)
+
+        // Espejo adjunto, sin nada local: la sonda encuentra corpus, se espera, llega y entra.
+        let foundDir = freshDir(); defer { cleanup(foundDir) }
+        let foundContext = try makeContext(foundDir)
+        try seedBootstrapRates(in: foundContext)
+        let foundStub = RoutingStub()
+        let accountID = UUID()
+        let foundSpy = ICloudCheckSpy(.found(recordType: "CD_Category"))
+        let foundExecutor = makeExecutor(
+            foundContext, CloudSyncEngine(), foundStub, FakeSession(token: "jwt", userID: "sub-1"), FakeBeaconStore(),
+            personalStoreURL: foundDir.appendingPathComponent("personal.sqlite"),
+            tombstoneSource: try backend([("categories", accountID)], stub: foundStub)(),
+            adoptMirrorAttached: { true }, adoptICloudCorpusCheck: { await foundSpy.ask() })
+        #expect(await foundExecutor.runAdoptOrphanReconcile() == .awaitingICloudCorpus)
+        _ = makeCategory("de la cuenta", syncID: accountID, in: foundContext)
+        try foundContext.save()
+        #expect(await foundExecutor.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 1))
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: ledgerURL(foundDir)) == .found)
+    }
+
+    /// El camino vive y muere con la lista: la siembra de una ida, la vuelta atrás y quitar la lista lo borran. Un contenido
+    /// que no es un camino se lee `nil` (el drain dice `unknown`).
+    @Test("adopt: el camino de entrada se borra con lo que el backend conocía")
+    func adoptLateImportUnproven_routeLifecycle() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let url = ledgerURL(dir)
+        for clear in [{ try RelayIdentityLedger.merge([:], into: url) },
+                      { try RelayIdentityLedger.remove(at: url) },
+                      { try RelayIdentityLedger.clearAdoptBackendKnown(for: url) }] {
+            try RelayIdentityLedger.writeAdoptRoute(.noAccount, for: url)
+            #expect(try RelayIdentityLedger.loadAdoptRoute(for: url) == .noAccount)
+            try clear()
+            #expect(try RelayIdentityLedger.loadAdoptRoute(for: url) == nil)
+        }
+        try Data("otro".utf8).write(to: adoptRouteURL(dir))
+        #expect(try RelayIdentityLedger.loadAdoptRoute(for: url) == nil)
+    }
+}
+
+/// Caja para contar desde el closure del seam: el closure se guarda en el ejecutor y la cuenta tiene que sobrevivir a él.
+@MainActor
+private final class InventoryReadCounter {
+    var value = 0
+}

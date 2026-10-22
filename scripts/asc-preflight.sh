@@ -3,12 +3,15 @@
 # asc-preflight.sh — Validación previa al upload a App Store Connect.
 #
 # Bloquea la subida de un build que:
-#   1. Tenga TELEMETRY_DECK_APP_ID vacío o sin resolver → la telemetría quedaría
-#      MUDA en producción (regresión de jun-2026: los builds 3→21 salieron sin
-#      App ID y nunca enviaron una sola señal real).
-#   2. Tenga OPENAI_API_KEY / EXCHANGE_RATE_API_KEY embebidas en el Info.plist →
+#   1. Tenga OPENAI_API_KEY / EXCHANGE_RATE_API_KEY embebidas en el Info.plist →
 #      secretos extraíbles del IPA. Desde el épico del gateway viven SOLO en el
 #      Cloudflare Worker; no deben volver al binario (regresión de builds ≤18).
+#
+# Nota: el chequeo de TELEMETRY_DECK_APP_ID se retiró el 2026-07-24 — TelemetryDeck
+# fue eliminado por completo el 2026-07-17 (branch 2.0.5, commits `67508ee5`/
+# `13791215`/`d460480b`). La telemetría propia (MetricsService → POST /metrics del
+# gateway → Analytics Engine) no usa una key embebida en el binario, así que no
+# aplica un chequeo equivalente en este nivel.
 #
 # Uso — entre `xcodebuild -exportArchive` y `asc builds upload`:
 #   scripts/asc-preflight.sh .asc/artifacts/Yala-buildNN.xcarchive
@@ -32,16 +35,7 @@ fi
 echo "🔍 Pre-flight sobre $PLIST"
 fail=0
 
-# 1) TELEMETRY_DECK_APP_ID debe estar presente y resuelto.
-appid="$(plutil -extract TELEMETRY_DECK_APP_ID raw "$PLIST" 2>/dev/null || true)"
-if [[ -z "$appid" || "$appid" == '$(TELEMETRY_DECK_APP_ID)' ]]; then
-  echo "❌ TELEMETRY_DECK_APP_ID vacío o sin resolver → telemetría MUDA en producción." >&2
-  fail=1
-else
-  echo "✅ TELEMETRY_DECK_APP_ID presente ($appid)."
-fi
-
-# 2) Las API keys NO deben viajar en el binario (viven solo en el gateway).
+# 1) Las API keys NO deben viajar en el binario (viven solo en el gateway).
 for key in OPENAI_API_KEY EXCHANGE_RATE_API_KEY; do
   if plutil -extract "$key" raw "$PLIST" >/dev/null 2>&1; then
     echo "❌ $key embebida en el Info.plist → secreto filtrado en el IPA." >&2

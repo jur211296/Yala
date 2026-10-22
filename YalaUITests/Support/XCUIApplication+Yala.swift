@@ -10,6 +10,14 @@
 import XCTest
 
 extension XCUIApplication {
+    /// El locale que `launchForUITest` FIJA a la app (`-AppleLocale`). Un test que construya
+    /// una expectativa con formato (fechas, meses) la formatea con ÉSTE, no con `Locale.current`:
+    /// `Locale.current` es el del proceso del RUNNER, que hereda el idioma del simulador, y en el
+    /// CI ese idioma es inglés. Medido el 2026-10-06 (run 37485294893): la app pintaba «3 oct.»
+    /// —la fecha correcta— y la expectativa decía «Oct 3», así que el rojo acusaba a la
+    /// conversión de borradores de algo que no hacía.
+    static let uiTestLocaleIdentifier = "es_PE"
+
     /// Lanza la app en modo UI-test con los launch args indicados.
     /// Por defecto: estado limpio + onboarding saltado + seed minimal (rápido).
     @discardableResult
@@ -19,11 +27,77 @@ extension XCUIApplication {
         pro: Bool = false,
         seed: String? = "minimal",
         deeplink: String? = nil,
+        deeplinkURL: String? = nil,
+        seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
+        trialOffer: Bool = false,
         forceUpdate: Bool = false,
         aiConsent: Bool = false,
-        groupInvite: Bool = false
+        aiChatReady: Bool = false,
+        chatConversation: Bool = false,
+        groupInvite: Bool = false,
+        fakeICloud: Bool = false,
+        cloudSession: Bool = false,
+        groupsConsent: Bool = false,
+        groupsEducativo: Bool = false,
+        inviteOnboarding: Bool = false,
+        icloudIdentity: Bool = false,
+        joinPhase: String? = nil,
+        joinSoftTimeout: String? = nil,
+        foreignAccount: String? = nil,
+        fakeBeacon: String? = nil,
+        appleIDChanged: Bool = false,
+        appleIDCloseNeverMounts: Bool = false,
+        remoteWipeNoticeNeverMounts: Bool = false,
+        groupsOutboxPending: Bool = false,
+        groupsAttestTerminal: Bool = false,
+        fakeAttestSupport: Bool = false,
+        pendingICloudWipe: Bool = false,
+        // «Volver a iCloud» en un teléfono nacido en la nube y la respuesta fingida de la pregunta a iCloud (ticket
+        // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
+        // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
+        bornCloudStorage: Bool = false,
+        reversePriorICloud: String? = nil,
+        reversePriorICloudWipe: String? = nil,
+        fakeMigrationIdentity: String? = nil,
+        pendingMigrationBlock: String? = nil,
+        migrationJournalUnreadable: Bool = false,
+        migrationFailed: Bool = false,
+        signOutKeepsSession: Bool = false,
+        groupsGateMirrorLive: Bool = false,
+        groupsGateWipeFailed: Bool = false,
+        settlementAmountChange: Bool = false,
+        lateNoticeKeptGroups: Bool = false,
+        welcomeAfterAdoptExit: Bool = false,
+        // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
+        // esa lectura del teléfono fingida e iCloud «sin cuenta» (ticket `private-gate-device-notice-has-no-forward-exit`).
+        privateGateDeviceReading: String? = nil,
+        // `-uitest-private-gate-probe-stalled`: la revisión de iCloud de esa puerta contesta «se quedó sin avanzar» (card
+        // blqa). `-uitest-invite-opening`: el arranque enciende «Abriendo tu invitación…» (card z81w). NOMBRADOS por lo
+        // mismo que sus vecinos: un typo dejaría la pantalla normal y el rojo culparía a la vista.
+        privateGateProbeStalled: Bool = false,
+        inviteOpening: Bool = false,
+        scheduledSeedDay: Int? = nil,
+        // `-uitest-last-seen-version <versión|none|keep>`: la última versión cuyas Novedades «vio» el dispositivo
+        // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
+        // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
+        lastSeenAppVersion: String? = nil,
+        // `-uitest-pending-trial-offer`: la oferta de prueba queda pendiente, como la deja la 2.0.4 tras «Restaurar»
+        // (`UITestHooks.pendingTrialOffer`). NOMBRADO por lo mismo que sus vecinos.
+        pendingTrialOffer: Bool = false,
+        // `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de «iCloud
+        // no está disponible» (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). El simulador nunca tiene token de
+        // iCloud, así que sin el seam ese chequeo saldría en todo arranque sin seed. NOMBRADO por lo mismo que sus vecinos: un
+        // typo dejaría el caso positivo sin aviso y los controles en verde sin haber medido nada.
+        coldStartICloudCheck: Bool = false,
+        // Idioma y región de la corrida. El default es el de toda la suite (ver abajo); solo lo cambia un test que
+        // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
+        // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
+        // que este harness quiera depender de medir.
+        appleLanguages: String = "(es)",
+        appleLocale: String = XCUIApplication.uiTestLocaleIdentifier,
+        extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
         if reset { args.append("-uitest-reset") }
@@ -33,15 +107,173 @@ extension XCUIApplication {
             args.append("-uitest-seed")
             args.append(seed)
         }
+        if seedDesync { args.append("-uitest-seed-desync") }
+        // Liquidación aprobada cuyo importe cambia después (`DevSeedSettlementAmountChange`). NOMBRADO por lo mismo que
+        // sus vecinos: un typo dejaría el Inbox sin aviso y el rojo culparía a la pantalla.
+        if settlementAmountChange { args.append("-uitest-seed-settlement-amount-change") }
+        // La marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`). NOMBRADO por lo mismo que sus
+        // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
+        // pondría verde el control y rojo el caso, culpando al Welcome.
+        if lateNoticeKeptGroups { args.append("-uitest-late-notice-kept-groups") }
+        if welcomeAfterAdoptExit { args.append("-uitest-welcome-after-adopt-exit") }
+        if coldStartICloudCheck { args.append("-uitest-cold-start-icloud-check") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)
         }
+        if let deeplinkURL {
+            args.append("-uitest-deeplink-url")
+            args.append(deeplinkURL)
+        }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
+        if trialOffer { args.append("-uitest-trial-offer") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
+        if aiChatReady { args.append("-uitest-ai-chat-ready") }
+        if chatConversation { args.append("-uitest-chat-conversation") }
         if groupInvite { args.append("-uitest-group-invite") }
+        if fakeICloud { args.append("-uitest-fake-icloud") }
+        // Sesión de nube fingida + consent de Grupos aceptado. Son parámetros nombrados y no
+        // `extraArguments:` crudo a propósito: `-uitest-fake-cloud-session` es vecino tipográfico de
+        // `-uitest-fake-backend-session` (otro hook, otro significado) y un typo en un string suelto
+        // daría un rojo MUDO — el arg desconocido se ignora en silencio.
+        if cloudSession { args.append("-uitest-fake-cloud-session") }
+        if groupsConsent { args.append("-uitest-groups-consent") }
+        // C2 · invierte el early-return que desmonta el educativo bajo `-uitest`. Va aquí, con nombre, y
+        // NO por `extraArguments:` por la misma razón que sus dos vecinos: un typo en un string suelto se
+        // ignora en silencio y el rojo resultante no menciona el arg. **Por defecto `false`**, así que
+        // ninguna corrida existente cambia: el sheet del educativo interceptaría los taps de toda la suite
+        // de Grupos, que es justo por lo que ese early-return existe.
+        if groupsEducativo { args.append("-uitest-groups-educativo") }
+        if inviteOnboarding { args.append("-uitest-invite-onboarding") }
+        // Siembra la identidad iCloud de Grupos. Va NOMBRADO, no por `extraArguments:`, por la
+        // misma razón que sus vecinos y con una de propina: este seam decide QUIÉN ERES, así que un
+        // typo que lo dejara fuera no da rojo — da un VERDE que prueba el camino del flag creyendo
+        // probar el de la identidad resuelta.
+        if icloudIdentity { args.append("-uitest-icloud-identity") }
+        if let joinPhase {
+            args.append("-uitest-join-phase")
+            args.append(joinPhase)
+        }
+        if let joinSoftTimeout {
+            args.append("-uitest-join-soft-timeout")
+            args.append(joinSoftTimeout)
+        }
+        // Cuenta en una divisa AUSENTE de la fila de tasas (familia FX). Va NOMBRADO y no por
+        // `extraArguments:` por la misma razón que sus vecinos, y con el mismo agravante que el seam
+        // de identidad: un typo que lo dejara fuera no da rojo — da un VERDE que mide el corpus SIN
+        // filas aproximadas creyendo medirlo con ellas, que es justo el estado que estos tests
+        // existen para distinguir.
+        if let foreignAccount {
+            args.append("-uitest-seed-foreign-account")
+            args.append(foreignAccount)
+        }
+        // Paso 6 · el faro de iCloud-KV fingido, SOLO en lectura (`CloudBeacon`). NOMBRADO y no por
+        // `extraArguments:` por la misma razón que sus vecinos: un typo dejaría el faro apagado y el test del
+        // encaminamiento caería con un rojo que culparía a la pantalla en vez de al arg.
+        if let fakeBeacon {
+            args.append("-uitest-fake-beacon")
+            args.append(fakeBeacon)
+        }
+        // La hoja del cambio de Apple ID y el estado REAL que bloquea su cierre. NOMBRADOS y no por
+        // `extraArguments:` por lo mismo que sus vecinos, con el agravante más caro de todos: un typo en el
+        // seam del outbox no daría un rojo — daría un cierre que TERMINA BIEN, y eso arma un boot-wipe real en
+        // el simulador. Dos redes, cada una para su caso: el nombre de los dos args lo fija un test de paridad
+        // con `UITestHooks` (`AppleIDCloseNoticeWiringTests`), y si la SIEMBRA fallara, la app no encola la hoja.
+        if appleIDChanged { args.append("-uitest-apple-id-changed") }
+        // Siembra los pagos planificados como si hoy fuera el día N del mes en curso (`UITestHooks.scheduledSeedToday`).
+        // Nombrado y no por `extraArguments:`: un typo dejaría la fecha real y el caso de fin de mes saldría verde sin medirlo.
+        if let scheduledSeedDay {
+            args.append("-uitest-scheduled-seed-day")
+            args.append(String(scheduledSeedDay))
+        }
+        // Los dos seams del XCUITest del DESARME: la condición viva se enciende y la presentación no monta
+        // nunca. NOMBRADOS por lo mismo que sus vecinos y con un agravante: un typo dejaría el aviso montando
+        // de verdad, y el caso del desarme se quedaría esperando un paywall que solo sale al contestarlo.
+        if appleIDCloseNeverMounts { args.append("-uitest-apple-id-close-never-mounts") }
+        if remoteWipeNoticeNeverMounts { args.append("-uitest-remote-wipe-notice-never-mounts") }
+        if groupsOutboxPending { args.append("-uitest-groups-outbox-pending") }
+        // El veredicto de App Attest terminal. NOMBRADO por lo mismo que sus vecinos, y con un agravante
+        // propio: el test que prueba la AUSENCIA del aviso se lanza con este arg puesto y SIN
+        // `cloudSession:` — un typo que lo dejara fuera le quitaría la mitad que discrimina y el caso
+        // pasaría en verde sin haber medido nada. Su nombre lo fija el test de paridad con `UITestHooks`.
+        if groupsAttestTerminal { args.append("-uitest-groups-attest-terminal") }
+        // Finge que el teléfono puede conseguir token, SOLO en la puerta de «Es mi primera vez»: el simulador no tiene App
+        // Attest, así que sin esto la card de la nube no sale. NOMBRADO por lo mismo que sus vecinos, y con su agravante:
+        // el test que prueba la condición va con `-uitest-cloud-chooser` y SIN este arg, así que un typo aquí dejaría a los
+        // positivos cayendo con un rojo que culpa a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`.
+        if fakeAttestSupport { args.append("-uitest-fake-attest-support") }
+        // Un borrado de iCloud pendiente, visto solo por la tarjeta de la nube de Ajustes. NOMBRADO por lo mismo que sus
+        // vecinos: un typo dejaría la tarjeta sin borrado pendiente, el toque iría directo al consentimiento y el caso
+        // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
+        // (`PendingICloudWipeMigrationWiringTests`).
+        if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
+        if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
+        if let reversePriorICloud {
+            args.append("-uitest-reverse-prior-icloud")
+            args.append(reversePriorICloud)
+        }
+        // El borrado de «Empezar sin ellos» fingido: `network`, `stalled` o `progress` (`UITestHooks.fakeReverseForeignWipe`).
+        if let reversePriorICloudWipe {
+            args.append("-uitest-reverse-prior-icloud-wipe")
+            args.append(reversePriorICloudWipe)
+        }
+        // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
+        // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
+        // verdad, la comprobación no podría (sin sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la
+        // hoja. Su nombre y sus valores los fija un test de paridad con `UITestHooks` (`MigrationIdentityGateWiringTests`).
+        if let privateGateDeviceReading {
+            args.append("-uitest-private-gate-device-reading")
+            args.append(privateGateDeviceReading)
+        }
+        if privateGateProbeStalled { args.append("-uitest-private-gate-probe-stalled") }
+        if inviteOpening { args.append("-uitest-invite-opening") }
+        if let fakeMigrationIdentity {
+            args.append("-uitest-fake-migration-identity")
+            args.append(fakeMigrationIdentity)
+        }
+        // Un aviso de «Migrar a la nube» ya publicado al abrir la pantalla (`personalData` o `personalDataApple`), con
+        // «Usar otra cuenta»: la cadena hoja → elección de Apple/Google no se recorre con una sesión fingida. Mismo test de
+        // paridad que el de arriba.
+        if let pendingMigrationBlock {
+            args.append("-uitest-pending-migration-block")
+            args.append(pendingMigrationBlock)
+        }
+        // El fetch del journal de la migración que hace el controller LANZA: la pantalla de Almacenamiento con el journal
+        // ilegible. NOMBRADO por lo mismo que sus vecinos: un typo dejaría el journal legible y el caso positivo caería
+        // culpando a la pantalla. Su nombre lo fija un test de paridad con `UITestHooks`
+        // (`MigrationJournalUnreadableWiringTests`).
+        if migrationJournalUnreadable { args.append("-uitest-migration-journal-unreadable") }
+        // Los dos fetch del journal devuelven una ida en `failedRollback` y sin efectos pendientes. NOMBRADO por lo mismo:
+        // un typo dejaría el journal en reposo y el caso caería culpando al cierre. Su nombre lo fija
+        // `PrivateSignOutMigrationWiringTests.seamDeLaIdaFallida`.
+        if migrationFailed { args.append("-uitest-migration-failed") }
+        // El cierre de la sesión en la nube devuelve «sigue guardada»: el desasociar tiene que pararse antes de soltar nada.
+        // NOMBRADO por lo mismo que sus vecinos: un typo dejaría el cierre diciendo que terminó, el gesto seguiría hasta el
+        // final y el caso caería culpando al aviso. Su nombre lo fija un test de paridad con `UITestHooks`
+        // (`GroupsDetachSessionSurvivesTests`).
+        if signOutKeepsSession { args.append("-uitest-sign-out-keeps-session") }
+        if groupsGateMirrorLive { args.append("-uitest-groups-gate-mirror-live") }
+        if groupsGateWipeFailed { args.append("-uitest-groups-gate-wipe-failed") }
+        if let lastSeenAppVersion {
+            args.append("-uitest-last-seen-version")
+            args.append(lastSeenAppVersion)
+        }
+        if pendingTrialOffer { args.append("-uitest-pending-trial-offer") }
+        // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
+        args.append(contentsOf: extraArguments)
+        // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado
+        // (`DevSeedAccounts.swift:22`/`:31` → `L10n.DevSeed.accountMain`/`accountSavings`), y hay
+        // tests que seleccionan filas por un identificador que lleva ese nombre dentro
+        // (`accounts_row_<nombre>`, AccountsSettingsListView.swift:197). Sin override, `L10n` cae en
+        // `Locale.preferredLanguages.first` = el idioma del DISPOSITIVO: en la Mac del owner es
+        // es-PE y pasa; en un runner en inglés el identificador no casa y el rojo culpa a la fila.
+        // Mismo remedio que `TEST_RUNNER_TZ` en qa.yml, y por la misma razón: la suite se escribió y
+        // se verificó en un idioma, así que se declara en vez de heredarlo del entorno.
+        // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
+        // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
+        args += ["-AppleLanguages", appleLanguages, "-AppleLocale", appleLocale]
         launchArguments = args
         launch()
         return self
@@ -57,14 +289,60 @@ extension XCUIApplication {
             .waitForExistence(timeout: timeout)
     }
 
+    /// Baja por el Panel hasta que el FAB flotante sea alcanzable, y lo devuelve.
+    ///
+    /// Desde `a4445a26` (2026-09-02) el FAB NO está montado con el Panel arriba del todo: las
+    /// acciones bajaron al flujo, viven en la fila del hero (`panel_quick_actions`) y los
+    /// flotantes solo entran cuando el scroll se la lleva — `PanelView.swift:591`
+    /// (`if showFloatingActions`), con umbrales 180/150 e histéresis (`:63-65`, `:543-548`).
+    /// Un `waitForExistence` sobre `fab_new_transaction` nada más arrancar espera por un nodo
+    /// que, por diseño, todavía no existe, y agota el timeout entero antes de rendirse.
+    ///
+    /// Se BAJA hasta el flotante en vez de cambiar de camino a la píldora `panel_action_new`
+    /// porque el MENÚ (voz / imagen / manual / grupo) sigue siendo exclusivo del flotante: la
+    /// fila del hero lleva a cada entrada directamente, sin desplegarlo. Cambiar de camino
+    /// dejaría sin cubrir justo lo que estas suites cubren.
+    ///
+    /// Se comprueba `isHittable` y no `exists`: el nodo puede estar en el árbol y no tener
+    /// punto de impacto, y entonces el tap se sintetiza en `{-1, -1}` y se pierde en silencio
+    /// — el rojo mudo que documenta `openProfile` más abajo.
+    @discardableResult
+    func revealPanelFAB(maxSwipes: Int = 14, timeout: TimeInterval = 10) -> XCUIElement {
+        let fab = buttons["fab_new_transaction"]
+        var intentos = 0
+        while !fab.isHittable && intentos < maxSwipes {
+            swipeUp()
+            intentos += 1
+        }
+        XCTAssertTrue(
+            fab.waitForExistence(timeout: timeout),
+            "No apareció el FAB del Panel (fab_new_transaction) tras \(intentos) scrolls. Si el Panel cambió de umbral, mira `showFloatingActions` en PanelView."
+        )
+        return fab
+    }
+
     // MARK: - Navegación reutilizable
 
     /// Abre el sheet de Perfil desde el avatar del toolbar del Panel.
-    /// Falla el test si el avatar no aparece (la app no llegó al Panel).
+    /// Falla el test si el avatar no aparece (la app no llegó al Panel) o si
+    /// aparece pero no es alcanzable (algo lo tapa y el tap se perdería).
     @discardableResult
     func openProfile(timeout: TimeInterval = 10) -> XCUIApplication {
         let avatar = buttons["profile_avatar"]
         XCTAssertTrue(avatar.waitForExistence(timeout: timeout), "No apareció el avatar de Perfil (profile_avatar) en el Panel.")
+        // `exists` NO implica alcanzable, y la diferencia es justo la que produce un
+        // rojo MUDO: con un sheet presentado encima, el Panel sigue ENTERO en el árbol
+        // de accesibilidad —`profile_avatar` y `fab_new_transaction` «existen»— pero sin
+        // punto de impacto. XCUITest computa entonces el hit point en `{-1, -1}`,
+        // sintetiza el tap ahí y no pasa nada: sin error, sin excepción, sin traza. El
+        // test sigue como si el Perfil se hubiera abierto y muere mucho después, en la
+        // pantalla que nunca llegó a montarse. Así se leyó durante dos días el rojo de
+        // `profile_favorites` (Lista Negra, 2026-08-02) como «la fila no aparece»
+        // cuando el Perfil ni siquiera se había abierto.
+        XCTAssertTrue(
+            avatar.waitForHittable(timeout: timeout),
+            "El avatar de Perfil existe pero NO es alcanzable — algo lo tapa (¿un sheet sin cerrar?) y el tap se perdería."
+        )
         avatar.tap()
         return self
     }
@@ -76,6 +354,147 @@ extension XCUIApplication {
         let row = buttons[rowID]
         XCTAssertTrue(row.waitForExistence(timeout: timeout), "No apareció la fila de ajustes '\(rowID)'.")
         row.tap()
+    }
+
+    // MARK: - Transacciones
+
+    /// Cierra la pantalla de éxito que queda tras guardar una transacción y espera
+    /// a que se desmonte de verdad.
+    ///
+    /// **Guardar NO cierra el sheet de `NewTransactionView`**: su `body` conmuta a
+    /// `TransactionSuccessView` (`NewTransactionView.swift:252`), que solo se descarta
+    /// con «Aceptar» o «Registrar otro». Mientras siga montada, el Panel de fondo
+    /// permanece en el árbol de accesibilidad ⇒ **afirmar que `fab_new_transaction`
+    /// existe NO prueba que se volvió al Panel** (se cumple igual con el sheet puesto),
+    /// y cualquier tap sobre el Panel se pierde en `{-1, -1}`. La señal determinista es
+    /// que la pantalla de éxito desapareció; a partir de ahí el Panel vuelve a ser
+    /// alcanzable. Todo test que guarde una transacción y siga interactuando con la app
+    /// tiene que pasar por aquí.
+    @discardableResult
+    func dismissTransactionSuccess(timeout: TimeInterval = 10) -> XCUIApplication {
+        let accept = buttons["transaction_success_accept"]
+        XCTAssertTrue(
+            accept.waitForExistence(timeout: timeout),
+            "No apareció la pantalla de éxito de la transacción (transaction_success_accept) — el guardado no completó."
+        )
+        accept.tap()
+        XCTAssertTrue(
+            accept.waitForNonExistence(timeout: timeout),
+            "La pantalla de éxito no se cerró tras tocar «Aceptar» — el sheet sigue tapando el Panel."
+        )
+        return self
+    }
+
+    // MARK: - Selectores (cuenta, subcategoría, etiquetas)
+
+    /// Abre un selector desde su chip (o fila) y devuelve su primera fila, sin tocarla.
+    ///
+    /// **Por qué no basta con `chip.tap()`** (medido el 2026-10-09, iPhone 17 Pro, iOS 27.0): tras
+    /// `typeText` en el monto, el teclado sigue ENTRANDO —su marco estaba en y=891, fuera de la
+    /// pantalla— y el formulario aún no ha subido para dejarle sitio. XCUITest sintetiza el toque
+    /// donde estaba el chip (y=716); cuando llega, el chip ya está en y=513 y el toque se pierde sin
+    /// error. La hoja no se monta y el rojo dice «No se montó AccountSelectorSheet con filas». Un
+    /// segundo toque, con todo quieto, la abre. iOS 27 anima el teclado más despacio que 26.x, por
+    /// eso el rojo solo salía en 27.0. El aviso «Automation type mismatch … PopUpButton» del log
+    /// no era la causa: con la hoja abierta, las filas salen como `Button`.
+    ///
+    /// Así que antes de tocar se espera a que el teclado acabe de moverse y el chip deje de
+    /// moverse (`waitForSettledLayout`), y la fila se busca por identificador con cualquier tipo
+    /// de elemento, para que un cambio de tipo de accesibilidad del runtime no la deje ciega.
+    ///
+    /// Medido con mutantes: sin ninguna espera, rojo; solo con `waitForSettledLayout`, verde, y sus
+    /// lecturas la ven esperar (teclado aún fuera de la pantalla, luego el chip una lectura más en su
+    /// sitio viejo). El `waitForExistence` previo también lo tapa hoy, por accidente: en iOS 27 tarda
+    /// ~1 s aunque el chip ya exista. No te fíes de esa latencia; la guarda es la espera de asentamiento.
+    @discardableResult
+    func openSelectorFirstRow(
+        chip chipID: String,
+        rowPrefix: String,
+        timeout: TimeInterval = 5,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> XCUIElement {
+        let chip = buttons[chipID]
+        XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No apareció \(chipID).", file: file, line: line)
+        XCTAssertTrue(
+            waitForSettledLayout(of: chip, timeout: timeout),
+            "\(chipID) no dejó de moverse (¿el teclado sigue entrando o saliendo?).",
+            file: file, line: line
+        )
+        // En la fila horizontal de chips de «Nuevo registro», con cuenta y subcategoría elegidas, el de
+        // etiquetas queda a la derecha del borde (x=417 en 402 pt, ticket
+        // `record-selectors-uitest-taps-the-tags-chip-off-screen`): se desplaza la fila hasta verlo, con un
+        // arrastre horizontal a la altura del chip (la primera vista con scroll que lo contiene es la vertical
+        // del formulario, que no se mueve de lado). Se mira el marco y no `isHittable`: con el chip entero
+        // fuera de la pantalla, `isHittable` no devuelve `false`, LANZA («Activation point invalid»).
+        var swipes = 0
+        let origin = coordinate(withNormalizedOffset: .zero)
+        let windowFrame = windows.firstMatch.frame
+        while !windowFrame.contains(chip.frame) && swipes < 3 {
+            let width = windowFrame.width
+            origin.withOffset(CGVector(dx: width * 0.75, dy: chip.frame.midY))
+                .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: width * 0.25, dy: chip.frame.midY)))
+            _ = waitForSettledLayout(of: chip, timeout: timeout)
+            swipes += 1
+        }
+        XCTAssertTrue(chip.waitForHittable(timeout: timeout), "\(chipID) existe pero no es alcanzable.", file: file, line: line)
+        chip.tap()
+        let row = descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", rowPrefix))
+            .firstMatch
+        XCTAssertTrue(
+            row.waitForExistence(timeout: timeout),
+            "No se montó el selector de \(chipID) con filas (\(rowPrefix)…).",
+            file: file, line: line
+        )
+        return row
+    }
+
+    /// Abre un selector desde su chip y elige su primera fila (sin acoplarse al nombre del seed).
+    func chooseFirstSelectorRow(
+        chip chipID: String,
+        rowPrefix: String,
+        timeout: TimeInterval = 5,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        openSelectorFirstRow(chip: chipID, rowPrefix: rowPrefix, timeout: timeout, file: file, line: line).tap()
+    }
+
+    /// Espera a que el teclado termine de entrar o salir y `element` esté quieto: tres lecturas
+    /// seguidas con el teclado en su sitio y el mismo marco. Devuelve `false` si no se asienta
+    /// antes de `timeout`.
+    ///
+    /// **El plazo acota el movimiento, no el coste de leer** (medido el 2026-10-10 en la tanda 2 del
+    /// CI, iPhone 17 Pro iOS 26.5): en un runner frío cada consulta a la UI tarda 1–3,5 s y una
+    /// vuelta del bucle hace tres, así que en 5 s cabían dos lecturas y nunca la tercera. El helper
+    /// devolvía «no dejó de moverse» con todo quieto, y `test_distributionHeroFollowsANewRecord`
+    /// caía 3 de 3. Por eso se hacen siempre las `minimumReads` aunque el plazo venza a mitad: son
+    /// las justas para poder concluir «quieto». Si en ellas algo se mueve, sigue saliendo `false`.
+    func waitForSettledLayout(of element: XCUIElement, timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        let windowMaxY = windows.firstMatch.frame.maxY
+        // La que fija el marco y dos iguales detrás.
+        let minimumReads = 3
+        var reads = 0
+        var lastFrame: CGRect?
+        var stableReads = 0
+        while Date() < deadline || reads < minimumReads {
+            reads += 1
+            let keyboard = keyboards.firstMatch
+            // Entrando o saliendo, el teclado asoma por debajo de la ventana.
+            let keyboardSettled = !keyboard.exists || keyboard.frame.maxY <= windowMaxY + 0.5
+            let frame = element.frame
+            if keyboardSettled, frame == lastFrame {
+                stableReads += 1
+                if stableReads >= 2 { return true }
+            } else {
+                stableReads = 0
+            }
+            lastFrame = frame
+            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+        }
+        return false
     }
 
     // MARK: - Menú (···) de Registros
@@ -105,5 +524,23 @@ extension XCUIApplication {
         let select = buttons["records_select_button"]
         XCTAssertTrue(select.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Seleccionar'.")
         select.tap()
+    }
+}
+
+extension XCUIElement {
+    /// Espera (sin sleeps) a que el elemento sea REALMENTE alcanzable por un tap.
+    /// `exists` solo dice que está en el árbol de accesibilidad; `isHittable` añade
+    /// que tiene un punto de impacto válido — la diferencia entre un tap que actúa y
+    /// uno que se sintetiza en `{-1, -1}` y se pierde sin error. El predicate
+    /// re-consulta, así que absorbe la animación de cierre de un sheet.
+    ///
+    /// Consultar `isHittable` de un elemento que NO existe lanza, así que llamar a
+    /// esto siempre DESPUÉS de `waitForExistence`.
+    func waitForHittable(timeout: TimeInterval) -> Bool {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "isHittable == true"),
+            object: self
+        )
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 }

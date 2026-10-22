@@ -3,8 +3,9 @@
 //  Yala
 //
 //  UIApplicationDelegate for:
-//  - APNs registration (required by CKSyncEngine for silent push)
-//  - CKShare acceptance with segment-based routing (GC-08)
+//  - APNs registration (silent push)
+//  - Clasificación de los push de CloudKit del store PERSONAL, que sigue espejado por
+//    NSPersistentCloudKitContainer (la Fase 3 solo se llevó el transporte de GRUPOS)
 //
 
 import CloudKit
@@ -16,10 +17,75 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // El delegado de notificaciones, antes de que termine el lanzamiento (Apple lo exige): con la app cerrada, el
+        // toque en una notificación se entrega justo después de este método, y sin delegado se pierde. Lo que el toque
+        // pida antes de que acabe el arranque se aplaza en `DeferredIntentBuffer` y lo drena el paso 20.
+        NotificationService.installAsCenterDelegate()
+
         // CKSyncEngine requires APNs registration for silent push notifications.
         // The engine handles push routing internally via CKDatabaseSubscription.
         application.registerForRemoteNotifications()
         return true
+    }
+
+    // MARK: - Remote Notifications (spike G0 Grupos→backend — semilla de G8)
+
+    /// Key DEBUG-only con el device token hex para el panel CloudSyncDebugView (spike G0).
+    /// Deliberadamente FUERA de la auditoría del wipe (`removeUserPreferenceKeys`): es
+    /// diagnóstica y solo existe en builds DEBUG lanzados por Xcode.
+    static let debugDeviceTokenKey = "debug.apnsDeviceToken"
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        let token = deviceToken.map { String(format: "%02hhx", $0) }.joined()
+        PushBreadcrumb.tokenRegistered(token)
+        #if DEBUG
+        UserDefaults.standard.set(token, forKey: Self.debugDeviceTokenKey)
+        #endif
+        // G8-2: capturar el token para el canal de Grupos → backend (persiste local + dispara la subida
+        // self-gateada por flag+sesión). Fuera del `#if DEBUG` — vive en prod DARK detrás del flag.
+        Task { @MainActor in PushTokenRegistrar.shared.capture(token: token) }
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        PushBreadcrumb.tokenFailed(error)
+    }
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        // 1) ¿Es de CloudKit? Clasificar PRIMERO y NO tocarlo: CKSyncEngine recibe sus push
+        //    por su canal interno (CKDatabaseSubscription) — este handler no debe procesarlos.
+        if CKNotification(fromRemoteNotificationDictionary: userInfo) != nil {
+            PushBreadcrumb.received(kind: .cloudKit)
+            completionHandler(.noData)
+            return
+        }
+        // 2) ¿Es nuestro? Contrato con el gateway: key top-level "yala" (jamás "ck").
+        if let yala = userInfo["yala"] as? [AnyHashable: Any] {
+            PushBreadcrumb.received(kind: .yala(kind: yala["kind"] as? String))
+            // G8-2: disparar UN ciclo del canal, acotado por timeout (iOS da ~30s; 20s de margen).
+            // Con el flag OFF / sin sesión / canal no arrancado, `syncNowFromPush` retorna rápido →
+            // `.noData`. ⚠️ Cambio observable byte-consciente: HOY esta rama devolvía `.newData`
+            // incondicional; con flag OFF pasa a `.noData` — aceptable porque NINGÚN push con key `yala`
+            // existe en producción con el flag OFF (solo el gateway los emite, fan-out staging-only). El
+            // breadcrumb se conserva idéntico.
+            Task { @MainActor in
+                let result = await GroupsSyncClient.shared.syncNowFromPush(timeout: .seconds(20))
+                completionHandler(result ? .newData : .noData)
+            }
+            return
+        }
+        // 3) Desconocido.
+        PushBreadcrumb.received(kind: .unknown)
+        completionHandler(.noData)
     }
 
     // MARK: - Universal Link Handling (GC-11)
@@ -38,16 +104,5 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
             AppBootstrapper.shared.handleInviteLink(url)
         }
         return true
-    }
-
-    // MARK: - CKShare Acceptance (GC-08: segment-based routing)
-
-    func application(
-        _ application: UIApplication,
-        userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
-    ) {
-        Task { @MainActor in
-            await CKShareEntryHandler.handle(metadata: cloudKitShareMetadata, source: .shareAccepted)
-        }
     }
 }

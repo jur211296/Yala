@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
@@ -85,12 +86,13 @@ struct ScheduledPaymentsView: View {
         }
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
             ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
+                .announcesShownInDetailColumn()
         }
         // Peek first so we only drain intents this view handles —
         // BudgetsListView shares the .planning consumer.
         .routerConsumer(.planning) {
-            if case .autoOpenScheduledEditor = AppRouter.shared.peekNext(for: .planning) {
-                _ = AppRouter.shared.drainNext(for: .planning)
+            if case .autoOpenScheduledEditor = AppRouter.shared.peekNext(for: .planning, in: navigation.id) {
+                _ = AppRouter.shared.drainNext(for: .planning, in: navigation.id)
                 viewModel.editingPayment = nil
                 viewModel.showPaymentEditor = true
             }
@@ -164,6 +166,9 @@ private struct ScheduledPaymentDetailDestination: View {
     var body: some View {
         if let payment = modelContext.model(for: paymentID) as? ScheduledPayment {
             ScheduledPaymentDetailView(payment: payment, viewModel: viewModel)
+                // Mismo caso que el presupuesto: en la columna de detalle la vista se reutiliza al abrir otro pago, y
+                // sus `@State` (los registros enlazados de la `.task`, la ocurrencia elegida) serían del anterior.
+                .id(paymentID)
         } else {
             ContentUnavailableView(
                 NSLocalizedString("scheduled.detail.not.found", comment: "Payment not found"),
@@ -179,4 +184,5 @@ private struct ScheduledPaymentDetailDestination: View {
     NavigationStack {
         ScheduledPaymentsView()
     }
+    .environment(SceneNavigation())
 }

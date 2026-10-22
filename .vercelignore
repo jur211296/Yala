@@ -6,14 +6,7 @@ YalaShare/
 build/
 qa/
 .claude/
-App Store/
-Instagram/
-ReferenceAssets/
-Demo/
-Yala_Spark_Assets_ORIGINAL-2/
-Yala_Spark_Assets_DARK-2/
-Yala_Spark_Assets_LIGHT-2/
-Yala_Spark_Assets_NEON-2/
+marketing/
 *.xcconfig
 .deriveddata/
 .spm/

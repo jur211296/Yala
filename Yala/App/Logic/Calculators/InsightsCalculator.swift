@@ -47,6 +47,20 @@ struct PeriodSummary {
     let dailyAverageExpense: Double
     let dailyAverageVariation: Double?
     let previousPeriodLabel: String
+
+    /// Si algún importe agregado aquí salió de una tasa que no era la de su día — **por lado**,
+    /// porque el hero de Tendencias pinta uno de los tres números según la métrica elegida y una
+    /// señal única le ponía «≈» al total de ingresos por culpa de un gasto. Vienen del
+    /// `CashFlowSummary` que calcula los totales.
+    let incomeAmountsAreApproximate: Bool
+    let expenseAmountsAreApproximate: Bool
+
+    /// Para `netBalance`, que **resta** un lado del otro.
+    ///
+    /// Se recibe del `CashFlowSummary`, que lo calcula contra el número que se muestra. **No es el
+    /// OR de los dos de arriba** desde el 2026-09-08: con umbrales por lado, ese OR se apaga justo
+    /// cuando el balance es pequeño y la incertidumbre de los dos lados grande.
+    let amountsAreApproximate: Bool
 }
 
 struct QuickStats {
@@ -193,7 +207,9 @@ struct InsightsCalculator {
         converter: CurrencyConverting = CurrencyConverter.shared,
         splitGroups: [SplitGroup] = [],
         currentUserMemberIDs: Set<String> = [],
-        includeBridgedGroupTx: Bool = true
+        includeBridgedGroupTx: Bool = true,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        now: Date = .now
     ) -> InsightData {
         // Filter transactions using FilterService
         let filtered = FilterService.filterForTrends(
@@ -203,14 +219,31 @@ struct InsightsCalculator {
             includeBridgedGroupTx: includeBridgedGroupTx
         )
 
-        let interval = period.dateInterval(customRange: customRange)
+        // `now` inyectado también aquí para que el intervalo ACTUAL y el `asOf` de
+        // la alineación (abajo) compartan el mismo "hoy" (determinismo + evita que
+        // diverjan si el reloj cruza medianoche entre ambas lecturas).
+        let interval = period.dateInterval(customRange: customRange, now: now)
 
         // Transactions in current period
         let periodTxns = filtered.filter { interval.contains($0.date) }
 
-        // Previous period for variations
+        // Previous period for variations. El previo se trunca al punto equivalente
+        // del actual para los períodos EN CURSO cuyo previo llega completo —
+        // .thisMonth (día equivalente) y .thisWeek (weekday equivalente); .thisYear
+        // cruza el gate pero su previo ya es del mismo span—, así las 4 variaciones
+        // (balance/ingreso/gasto/prom. diario) comparan a-la-fecha en vez de parcial
+        // contra completo. Quién entra lo decide
+        // `DateAlignmentHelper.aggregatePreviousNeedsAlignment`, no esta lista.
+        // `prevInterval` COMPLETO se conserva SOLO para el label.
         let prevInterval = PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: customRange)
-        let prevTxns = filtered.filter { prevInterval.contains($0.date) }
+        let alignedPrevInterval = DateAlignmentHelper.alignedPreviousInterval(
+            currentInterval: interval,
+            previousInterval: prevInterval,
+            asOf: now,
+            period: period,
+            comparisonMode: comparisonMode
+        )
+        let prevTxns = filtered.filter { alignedPrevInterval.contains($0.date) }
 
         // Period Summary
         let cashFlow = CashFlowCalculator.calculateCashFlow(
@@ -218,13 +251,15 @@ struct InsightsCalculator {
             interval: interval,
             grouping: .day,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
         let prevCashFlow = CashFlowCalculator.calculateCashFlow(
             transactions: prevTxns,
-            interval: prevInterval,
+            interval: alignedPrevInterval,
             grouping: .day,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
@@ -242,12 +277,25 @@ struct InsightsCalculator {
         )
 
         let calendar = Calendar.current
-        let daysInPeriod = max(1, calendar.dateComponents([.day], from: interval.start, to: interval.end).day ?? 1)
+        // El gemelo de `prevDaysInPeriod` (unas líneas abajo), que ya se corrigió el 2026-09-02
+        // mientras éste se quedó crudo: los dos dividen sobre el mismo tipo de intervalo. Con el período
+        // ACTUAL cerrado —`.lastMonth`, `.lastYear`, un rango personalizado— el denominador salía un día
+        // corto e inflaba «Promedio diario» ~3,3 % en un mes de 31. Y como el lado «anterior» ya estaba
+        // bien, los dos lados de la comparación usaban reglas distintas.
+        let daysInPeriod = max(1, DateIntervalDayCount.days(in: interval, calendar: calendar))
         let dailyAverageCount = Double(periodTxns.count) / Double(daysInPeriod)
         let dailyAverageExpense = cashFlow.totalExpense / Double(daysInPeriod)
 
-        // Previous daily average for variation
-        let prevDaysInPeriod = max(1, calendar.dateComponents([.day], from: prevInterval.start, to: prevInterval.end).day ?? 1)
+        // Previous daily average for variation. Usa el intervalo ALINEADO (no el
+        // completo): el numerador (`prevCashFlow.totalExpense`) ya es del tramo
+        // truncado; el denominador debe escalar igual o `prevDailyAvg` colapsa y
+        // `dailyAverageVariation` se dispara (D2 p20-15).
+        // El conteo va por `DateIntervalDayCount`, igual que su gemelo `daysInPeriod` de arriba.
+        // Esta normalización se escribió aquí a mano el 2026-09-02 y el gemelo se quedó sin ella
+        // durante un día: con dos formas de contar lo mismo, una corrección arregla una sola. Ahora
+        // hay una.
+        let prevDaysInPeriod = max(1, DateIntervalDayCount.days(
+            in: alignedPrevInterval, calendar: calendar))
         let prevDailyAvg = prevCashFlow.totalExpense / Double(prevDaysInPeriod)
         let dailyAverageVariation = PreviousPeriodHelper.calculateVariation(
             currentAmount: dailyAverageExpense,
@@ -272,7 +320,10 @@ struct InsightsCalculator {
             dailyAverageCount: dailyAverageCount,
             dailyAverageExpense: dailyAverageExpense,
             dailyAverageVariation: dailyAverageVariation,
-            previousPeriodLabel: previousPeriodLabel
+            previousPeriodLabel: previousPeriodLabel,
+            incomeAmountsAreApproximate: cashFlow.incomeAmountsAreApproximate,
+            expenseAmountsAreApproximate: cashFlow.expenseAmountsAreApproximate,
+            amountsAreApproximate: cashFlow.amountsAreApproximate
         )
 
         // Weekday Spending (computed before Quick Stats for highestAvgWeekday)
@@ -280,6 +331,7 @@ struct InsightsCalculator {
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
@@ -296,16 +348,18 @@ struct InsightsCalculator {
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
         let topSubcategories = TopSubcategoriesCalculator.calculateTopSubcategories(
             transactions: periodTxns,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
-        let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, converter: converter)
+        let highestExpense = findHighestExpense(periodTxns, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
         let subscriptionsTotal = calculateSubscriptionsTotal(scheduledPayments, currencyCode: currencyCode, converter: converter)
 
         let quickStats = QuickStats(
@@ -325,11 +379,12 @@ struct InsightsCalculator {
             allTransactions: transactions,
             interval: interval,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 
         // Need Distribution
-        let needDistribution = calculateNeedDistribution(periodTxns, currencyCode: currencyCode, converter: converter)
+        let needDistribution = calculateNeedDistribution(periodTxns, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
         // Year-over-Year
         let yearOverYear = calculateYearOverYear(
@@ -338,6 +393,7 @@ struct InsightsCalculator {
             period: period,
             currencyCode: currencyCode,
             customRange: customRange,
+            adjustment: adjustment,
             converter: converter
         )
 
@@ -357,15 +413,18 @@ struct InsightsCalculator {
 
         // Build group insights context if user has group transactions
         var groupContext: GroupInsightsContext?
-        let sharedTxns = periodTxns.filter { $0.splitExpenseID != nil }
+        // Excluir las patas de préstamo derivadas (préstamo a grupos) — sin esto `totalShared`
+        // doble-contaba AMBAS hermanas del Caso A (real -total + lent +lent) y `totalPersonal`
+        // colapsaba a 0. Con el filtro + monto ajustado, `totalShared` = Σ mi parte.
+        let sharedTxns = periodTxns.filter { $0.splitExpenseID != nil && !adjustment.isSuppressed($0) }
         if !sharedTxns.isEmpty {
             // Precompute converted amounts once per transaction (avoid repeated currency conversion)
-            let sharedAmounts = sharedTxns.map { abs(txAmount($0, currencyCode: currencyCode, converter: converter)) }
+            let sharedAmounts = sharedTxns.map { abs(txAmount($0, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
             let totalShared = sharedAmounts.reduce(0.0, +)
             let totalPersonal = cashFlow.totalExpense - totalShared
 
-            let prevSharedTxns = prevTxns.filter { $0.splitExpenseID != nil }
-            let prevShared: Double? = prevSharedTxns.isEmpty ? nil : prevSharedTxns.reduce(0.0) { $0 + abs(txAmount($1, currencyCode: currencyCode, converter: converter)) }
+            let prevSharedTxns = prevTxns.filter { $0.splitExpenseID != nil && !adjustment.isSuppressed($0) }
+            let prevShared: Double? = prevSharedTxns.isEmpty ? nil : prevSharedTxns.reduce(0.0) { $0 + abs(txAmount($1, currencyCode: currencyCode, adjustment: adjustment, converter: converter)) }
 
             let groupNameLookup = Dictionary(splitGroups.map { ($0.cloudKitZoneID, $0.name) }, uniquingKeysWith: { a, _ in a })
             let indexed = zip(sharedTxns, sharedAmounts)
@@ -443,13 +502,19 @@ struct InsightsCalculator {
     }
 
     /// Convenience for TransactionItem → target currency
-    private static func txAmount(_ tx: TransactionItem, currencyCode: String, converter: CurrencyConverting) -> Double {
-        convertedAmount(
-            tx.amount,
+    /// `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto) antes de convertir.
+    /// El guardado solo se ofrece si `resolvedAmount` también lo leería (`readsStoredAmount`): un
+    /// convertido sin escribir (0) no es un importe y se reconvierte desde el nativo.
+    private static func txAmount(_ tx: TransactionItem, currencyCode: String, adjustment: GroupBridgeStatsAdjustment, converter: CurrencyConverting) -> Double {
+        let readsStored = CashFlowCalculator.readsStoredAmount(
+            tx, currencyCode: currencyCode, adjustment: adjustment
+        )
+        return convertedAmount(
+            adjustment.amount(tx),
             from: tx.currencyCode,
             to: currencyCode,
             preferredCode: tx.preferredCurrencyCode,
-            preferredAmount: tx.amountInPreferredCurrency,
+            preferredAmount: readsStored ? adjustment.amountInPreferredCurrency(tx) : nil,
             on: tx.date,
             converter: converter
         )
@@ -460,15 +525,17 @@ struct InsightsCalculator {
     private static func findHighestExpense(
         _ transactions: [TransactionItem],
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> HighestExpenseInfo? {
         var highest: (amount: Double, note: String)? = nil
 
         for tx in transactions {
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
-            let amount = txAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
             if highest.map({ amount > $0.amount }) ?? true {
                 let note = tx.note ?? tx.subcategory?.name ?? category.name
@@ -499,39 +566,11 @@ struct InsightsCalculator {
         return total
     }
 
-    /// Returns the current budget period interval based on the budget's periodType and Date.now.
-    static func currentBudgetInterval(for budget: Budget) -> DateInterval {
-        let calendar = userConfiguredCalendar()
-        let now = Date.now
-
-        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
-            let monthStart = calendar.startOfMonth(for: now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-        }
-
-        switch periodType {
-        case .weekly:
-            let weekStart = calendar.startOfWeek(for: now)
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
-        case .monthly:
-            let monthStart = calendar.startOfMonth(for: now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-        case .yearly:
-            let year = calendar.component(.year, from: now)
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
-        case .unique:
-            guard let start = budget.startDate, let end = budget.endDate else {
-                let monthStart = calendar.startOfMonth(for: now)
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                return DateInterval(start: monthStart, end: monthEnd)
-            }
-            return DateInterval(start: start, end: end)
-        }
+    /// Periodo EN CURSO del presupuesto (lo usa también el chat). Cierra en su último segundo
+    /// (`BudgetPeriodInterval`): con el `end` en la medianoche siguiente, un gasto de ese instante
+    /// contaba en los dos periodos.
+    static func currentBudgetInterval(for budget: Budget, now: Date = .now) -> DateInterval {
+        BudgetPeriodInterval.current(for: budget, now: now, calendar: userConfiguredCalendar())
     }
 
     private static func calculateCommitments(
@@ -541,6 +580,7 @@ struct InsightsCalculator {
         allTransactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> Commitments {
         let now = Date.now
@@ -587,16 +627,18 @@ struct InsightsCalculator {
             // Filter transactions within the budget's OWN current period (not the global Insights period)
             let budgetTxns: [TransactionItem]
             if let category = budget.category {
-                let budgetInterval = currentBudgetInterval(for: budget)
+                let budgetInterval = currentBudgetInterval(for: budget, now: now)
                 let categoryTxns = txnsByCategory[category.persistentModelID] ?? []
                 budgetTxns = categoryTxns.filter { budgetInterval.contains($0.date) }
             } else {
                 continue
             }
 
-            // Sum expenses in budget currency
+            // Sum expenses in budget currency (proyectadas a "mi parte" en gastos de grupo).
             let spent = budgetTxns.reduce(0.0) { sum, tx in
-                sum + txAmount(tx, currencyCode: budget.currencyCode, converter: converter)
+                adjustment.isSuppressed(tx)
+                    ? sum
+                    : sum + txAmount(tx, currencyCode: budget.currencyCode, adjustment: adjustment, converter: converter)
             }
 
             let usage = (spent / budget.limitAmount) * 100
@@ -630,6 +672,7 @@ struct InsightsCalculator {
     private static func calculateNeedDistribution(
         _ transactions: [TransactionItem],
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> NeedDistribution {
         var essential: Double = 0
@@ -637,10 +680,11 @@ struct InsightsCalculator {
         var optional: Double = 0
 
         for tx in transactions {
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
-            let amount = txAmount(tx, currencyCode: currencyCode, converter: converter)
+            let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
             let need = tx.subcategory?.need
             switch need {
@@ -670,6 +714,7 @@ struct InsightsCalculator {
         period: DetailPeriod,
         currencyCode: String,
         customRange: DateInterval?,
+        adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> YearComparison? {
         let prevYearInterval = PreviousPeriodHelper.previousInterval(for: period, mode: .year, customRange: customRange)
@@ -682,6 +727,7 @@ struct InsightsCalculator {
             interval: prevYearInterval,
             grouping: .day,
             currencyCode: currencyCode,
+            adjustment: adjustment,
             converter: converter
         )
 

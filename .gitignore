@@ -1,7 +1,12 @@
 # Xcode
 DerivedData/
 .deriveddata/
+# `.ddp` es el `-derivedDataPath` que usan los pasos de build y test de
+# .github/workflows/qa.yml, y toda corrida local que copie esos comandos. En el runner es
+# efimero; en local son GB sin ignorar que un `git add -A` metia enteros en el repo.
+.ddp/
 build/
+build_output.txt
 build_output_*.txt
 *.xcworkspace/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
@@ -42,10 +47,10 @@ __pycache__/
 # QA automation results (generated at runtime)
 qa/results/
 
-# Planning docs live in Obsidian vault (iCloud)
-.planning/
+# Local scratch only (process + tickets live in docs/ and tickets/)
+.planning
 
 # Agent skills (third-party, reinstall via: npx skills add)
 .agents/
-.claude/skills/ui-ux-pro-max/scripts/__pycache__/
 .claude/sessions/tests-passed
+docs/modo-nube/briefs/

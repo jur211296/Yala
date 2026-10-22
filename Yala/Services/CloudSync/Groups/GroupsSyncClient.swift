@@ -1,0 +1,4061 @@
+//
+//  GroupsSyncClient.swift
+//  Yala
+//
+//  Cliente del canal de sync de GRUPOS → backend (incremento G2). CLASE NUEVA, DARK detrás de
+//  `CloudSyncFlags.groupsBackendEnabled` (SIEMPRE `false` esta fase): captura los cambios del store de
+//  Grupos del SwiftData History (drain), los sube al gateway (`POST /groups/push`), baja los deltas
+//  remotos (`GET /groups/pull`) y los aplica a los `@Model` `Split*` locales — todo con anclas/token/
+//  reloj PROPIOS del canal, sin tocar el motor personal (`CloudSyncEngine`) ni su `personalEntityNames`.
+//
+//  El muro anti-fuga es BIDIRECCIONAL: el drain de Grupos filtra por `GroupEntityEmissionMap.
+//  groupEntityNames` (disjunto de `personalEntityNames`) → NUNCA emite entidades personales, y el drain
+//  personal NUNCA emite `Split*`. El History es por-CONTAINER, así que ambos canales lo leen con cursores
+//  independientes (`GroupSyncCursor` vs `SyncCursor`).
+//
+//  Echo-suppression: el drain DESCARTA las transacciones cuyo author sea `Self.outboxSaveAuthor` — el
+//  MISMO autor con el que persiste su outbox Y aplica los deltas remotos (así el apply no se re-drena).
+//  El bridge a modelos personales (`GroupTransactionBridge`) escribe bajo autor por DEFECTO (que el drain
+//  PERSONAL sí captura → las TX puenteadas se sincronizan por el canal personal) — nunca bajo este autor.
+//
+//  DUPLICACIÓN CONSCIENTE (G2, decisión de la sesión): el patrón de drain (token + `lastDrainedTxAt` +
+//  `recoverIfHistoryTokenIncomparable` + dedup `(syncID,hlc,op)` + HLC monótono persistido) se DUPLICA
+//  del motor personal en vez de factorizarse, para NO tocar `CloudSyncEngine` esta noche. La refactor a
+//  un core compartido queda diferida.
+//
+//  SIMPLIFICACIONES DARK (documentadas): el apply es full-row last-pulled-wins (el server ya hace el
+//  merge por-unidad; el LWW por-campo client-side de Grupos se difiere), sin cuarentena / unit-clock /
+//  espejo App Group / clasificación de reason (audit-only del personal). El ciclo de vida (cadencia,
+//  backoff, observadores de remote-change) se cablea cuando el canal encienda (G4+).
+//
+
+import Foundation
+import OSLog
+import SwiftData
+
+@MainActor
+final class GroupsSyncClient {
+
+    // MARK: Singleton (DARK)
+
+    // COMPOSICIÓN de producción (AJUSTE review #7): inyecta el provider registrar-backed del device token para
+    // el header `X-Yala-Device-Token` del push (G8-3). El init designado tiene default `{ nil }` (los tests no
+    // se acoplan al singleton); solo aquí, en el `.shared`, se ata a `PushTokenRegistrar.shared.storedToken`.
+    //
+    // `attestProvider` es OBLIGATORIO aquí, y su ausencia fue el 401 del 2026-07-31: `POST /groups/push` y
+    // `GET /groups/pull` pasan por `requireUserAndAttest` (`gateway/src/groups/routes.ts:67-73`), que bajo
+    // `ENFORCE = "enforce"` responde `yala_attest_required` sin el header. Cablearlo aquí cablea TAMBIÉN el
+    // `GroupsMerkleClient` de `GET /groups/merkle`: el init lo construye reenviando ESTE provider (:234).
+    static let shared = GroupsSyncClient(
+        attestProvider: AttestSessionProvider.live,
+        deviceTokenProvider: { PushTokenRegistrar.shared.storedToken })
+
+    // MARK: Constantes
+
+    /// Autor del CONTEXTO con el que el canal de Grupos persiste su outbox Y aplica deltas remotos. El
+    /// drain DESCARTA las transacciones con este autor (anti-auto-captura / echo suppression).
+    static let outboxSaveAuthor = "GroupsSyncOutbox"
+
+    /// Los 5 nombres de clase del store de Grupos (muro anti-fuga). Delegado al mapa de emisión (SSOT).
+    static var groupEntityNames: Set<String> { GroupEntityEmissionMap.groupEntityNames }
+
+    private let logger = Logger(subsystem: "com.yala.app", category: "GroupsSync")
+
+    // MARK: Dependencias inyectables
+
+    private let baseURL: URL
+    // Providers `@MainActor`: leen singletons main-actor-isolados (`CloudAuthService`). El cliente es
+    // `@MainActor` → invocarlos no cruza actor.
+    private let tokenProvider: @MainActor () async -> String?
+    /// H-2026-07-18-4: FUERZA el refresh del access token para el retry-once del 401 (el auto-refresh del
+    /// SDK solo dispara con <30s de margen → un `tokenProvider()` normal en la ventana de expiry devolvería
+    /// el MISMO token vencido). Inyectable (default = `CloudAuthService.shared.forceRefreshAccessToken`;
+    /// los tests inyectan uno hermético). `@MainActor` (el cliente ya lo es → no cruza actor).
+    private let forceRefreshTokenProvider: @MainActor () async -> String?
+    /// ¿Conserva el SDK la sesión guardada? Es lo que separa «sin conexión» de «sesión caducada» cuando el token
+    /// no llega (`sdkRemovedTheSession`). Default = `CloudAuthService.shared.canRenewSession`, y **no**
+    /// `hasSession` —el `sessionCheck` de abajo—: aquel lleva el seam `-uitest-fake-cloud-session`, que dice «hay
+    /// sesión» sin ninguna guardada, y con él un XCUITest con la sesión fingida y cambios de grupos pasaría del
+    /// bloqueo inmediato a 45 s de reintentos. En producción los dos valen lo mismo.
+    private let canRenewSession: @MainActor () -> Bool
+    private let attestProvider: @MainActor () async -> String?
+    private let urlSession: SyncHTTPSession
+    private let sessionCheck: @MainActor () -> Bool
+    /// El `sub` de la sesión (auth uid). Inyectable para el RE-DRIVE del dead-letter (A2). Default: el
+    /// singleton de sesión. `@MainActor` (el cliente ya lo es → no cruza actor).
+    private let currentUserIDProvider: @MainActor () -> String?
+    /// Qué cuenta tenía este teléfono en cada momento (`SessionSignInLog`): el drain fecha cada transacción contra él para
+    /// darle su dueño (`GroupsOutboxOwnershipLogic.owner`). Default: el que escriben `CloudAuthService` y el arranque.
+    private let signInLogProvider: @MainActor () -> SessionSignInLog?
+    /// G8-3: el device token APNs local para el header `X-Yala-Device-Token` del push (el server excluye SOLO
+    /// este device del autor del fan-out → el 2º device del autor SÍ recibe el silent push). Provider inyectado;
+    /// el DEFAULT del init es `{ nil }` (AJUSTE review #7 — NO acoplar los tests existentes a
+    /// `PushTokenRegistrar.shared`/UserDefaults, que viola la regla de singletons). La COMPOSICIÓN de producción
+    /// (`.shared`) inyecta el provider registrar-backed. El header solo se añade si non-nil.
+    private let deviceTokenProvider: @MainActor () -> String?
+    private let now: () -> Date
+    /// H-2026-07-18-5: bump VIVO del refresh de UI tras un ciclo de pull que aplicó deltas que CAMBIAN
+    /// contenido (`deltasApplied > 0`). Con la vista de DETALLE montada, `markRemoteChangePending` (por-
+    /// página) solo setea el flag diferido — nadie bumpea `dataVersion` en vivo, así que la lista/balance
+    /// no refrescaban hasta salir/entrar o pull-to-refresh. Este closure bumpea `dataVersion` POR-CICLO (no
+    /// por-página: un ciclo puede aplicar N páginas → un solo bump; los VMs de Grupos ya debouncan 150ms).
+    /// DEFAULT = `SessionState.shared.incrementDataVersion()`. El `markRemoteChangePending` por-página se
+    /// CONSERVA como red del caso background/vista-no-montada (redundancia aceptada: 1 reload extra en la
+    /// próxima navegación, coalescido por el debounce). Inyectable para tests (contar llamadas). `@MainActor`
+    /// (el cliente ya lo es → no cruza actor). NO se gatea por `applicationState`: el archivo no importa
+    /// UIKit y un reload en background es inofensivo (una vista no montada no recomputa su body).
+    private let onRemoteChangesApplied: @MainActor () -> Void
+    /// Fase 2 (2.1): consumidor de las notificaciones locales de grupo. El canal CloudKit clasificaba los
+    /// records del fetch en un `RemoteChangeSet` y se lo pasaba a `GroupNotificationService` desde
+    /// `SplitSyncManager.processPendingRemoteChanges`; con el transporte camino de la Fase 3, el apply del
+    /// canal backend es quien tiene que emitirlo. DEFAULT = `GroupNotificationService.shared`. Inyectable
+    /// para tests (capturar el set sin montar el singleton ni `NotificationService`). `@MainActor` (el
+    /// cliente ya lo es → no cruza actor).
+    private let onRemoteChanges: @MainActor (RemoteChangeSet) -> Void
+    /// Cliente del snapshot Merkle de Grupos (`GET /groups/merkle`) — endurecimiento B1. Inyectable para
+    /// tests (stub HTTP). Solo se usa con el flag ON (la verificación se cablea en `syncCycleOnce`).
+    private let merkleClient: GroupsMerkleClient
+    /// Espejo App Group del `GroupSyncOutbox` (durabilidad ante lightweight migration — B2, molde
+    /// `SyncOutboxMirror` del personal). `nil` = mirroring deshabilitado (App Group no disponible /
+    /// tests que no lo ejercitan). SOLO espeja filas PENDIENTES (dead-letters excluidas).
+    private let outboxMirror: GroupsOutboxMirror?
+
+    // MARK: Estado
+
+    private var clock: HLCClock
+    /// El registro de sesiones de la vuelta de drain EN CURSO (`performDrain` lo lee al empezar y `appendRow` fecha cada
+    /// transacción contra él). `nil` fuera de un drain, o sin registro.
+    private var drainSignInLog: SessionSignInLog?
+    private var isDraining = false
+    private var pendingDrain = false
+    private var bridgeRetryTask: Task<Void, Never>?
+    /// Camino rápido del reintento en sesión: lo que espera a que la quiescencia deje correr el bridge.
+    /// ACUMULATIVO a propósito —el `Task` de `scheduleBridgeRetry` se cancela con cada lote nuevo, así que
+    /// capturar los IDs en su closure perdía todas las páginas menos la última—. No es la red: la red es
+    /// `GroupsPendingBridgeIntent`; esto solo evita que el bridge de una cola de páginas tenga que esperar
+    /// al próximo arranque.
+    private var retryBridgeExpenseIDs: Set<UUID> = []
+    private var retryBridgeSettlementIDs: Set<UUID> = []
+
+    /// G8-2 (AJUSTE review #3): el `mainContext` compartido retenido en `startIfEligible` para que
+    /// `syncNowFromPush` (invocado desde el AppDelegate SIN un `ModelContext` del caller) pueda ciclar el
+    /// canal. STRONG (molde `SplitSyncManager.swift:54` / `CloudSyncRuntime.swift:122` — es el contexto de
+    /// vida de proceso; `weak` arriesgaría un nil espurio). `nil` = el canal no arrancó en este proceso.
+    private var context: ModelContext?
+
+    /// B2: anti-solape del CICLO "one in-flight, one queued" (molde `CloudSyncRuntime.
+    /// performCycleCoalesced`). Con el piggyback 5.6 hay DOS callers posibles de un ciclo (el loop
+    /// propio y el runtime personal) — sin este guard, dos ciclos concurrentes drenarían/pushearían
+    /// el mismo outbox en paralelo.
+    private var isCycling = false
+    private var pendingCycle = false
+
+    /// B2 (MEDIA del review adversarial — guardia de GENERACIÓN, molde `sessionEpoch` del runtime
+    /// personal): la cancelación del loop es COOPERATIVA (solo se chequea al tope y post-sleep) — un
+    /// ciclo suspendido en el `await` del push/pull RESUME después de `teardownForSignOut` y, sin esta
+    /// guardia, su vuelta encolada correría `drainOnce → writeMirror → save` REPOBLANDO el espejo recién
+    /// purgado (archivos con montos sobreviven la purga de sign-out — el boot-wipe NO borra el dir del
+    /// espejo → minaría la garantía M1). `teardownForSignOut` lo incrementa; el ciclo lo captura al
+    /// entrar y lo RE-VERIFICA tras cada await mayor (post-push, post-pull, pre-apply de cada request)
+    /// — generación cambiada ⇒ abortar SIN escribir.
+    private(set) var teardownGeneration = 0
+
+    // MARK: Ciclo de vida del loop (G4)
+
+    /// Tarea del loop de cadencia (single-instance: `startIfEligible` no re-arranca si vive). `nil` fuera
+    /// del loop (se limpia en el `defer` de `runLoop`).
+    private var loopTask: Task<Void, Never>?
+    /// Generación del loop: sube con cada arranque y la lleva la vuelta que corre, para que el `defer` de
+    /// uno que muere tarde no le borre el handle al que nació detrás (ver `runLoop`).
+    private var loopGeneration = 0
+    /// El ÚLTIMO 403 recibido venía del KILL-SWITCH del canal (`yala_groups_disabled`). Lo escriben los dos
+    /// únicos sitios que leen un 403 —el push y el pull— en AMBAS ramas (no solo cuando es el kill), para
+    /// que nunca quede un valor viejo describiendo la parada siguiente.
+    ///
+    /// **Desde el 2026-09-13 los dos 403 ya no comparten outcome, y el testigo sigue haciendo falta.** El
+    /// 403 que no trae el envelope del kill sube `.transient` (viene de infraestructura, no del Worker), así
+    /// que la única forma de llegar a `.accountUnavailable` por un 403 es el kill. El testigo sigue siendo
+    /// necesario porque `.accountUnavailable` tiene OTRO productor que no es un 403 —el 409
+    /// `yala_account_reverting`— y el aviso de los dos no es el mismo.
+    ///
+    /// **Para qué existe, que es lo que no es obvio:** el kill y el freeze de la reversa paran el loop de la
+    /// misma forma, pero no le dicen lo mismo a la persona. El kill del canal es una palanca de OPERACIÓN que
+    /// se mueve en los dos sentidos con un deploy, así que a quien intenta cerrar sesión o soltar su cuenta
+    /// de grupos con cambios sin subir le toca «el canal está en pausa»; una cuenta revirtiendo no es una
+    /// pausa. Lo consume `stoppedByChannelKill(for:)`, y `runLoop` lo usa para dejar en el log cuál de las
+    /// dos paró el canal.
+    ///
+    /// **Ninguna de las dos paradas se queda puesta.** El loop muere en esta vuelta y el próximo
+    /// `startIfEligible` (cold boot, foreground o post-sign-in) lo vuelve a intentar. No es un bucle: cada
+    /// intento cuesta como mucho un request, y con el kill, en cuanto el snapshot de remote-config refresque,
+    /// el gate compuesto de `startIfEligible` lo apaga sin red. Que la del kill no se quede puesta no es un
+    /// detalle: si lo hiciera, apagar el canal sería inmediato pero volver a encenderlo exigiría que cada
+    /// usuario matara y reabriera la app, o sea la simétrica exacta del bug que el kill vino a cerrar (el
+    /// 2026-07-31 un iPhone real se quedó con el canal OFF durante horas DESPUÉS de que el percent subiera
+    /// a 100).
+    ///
+    /// **Describe el ÚLTIMO ciclo, no la vida del proceso**, porque `syncCycleOnce` lo baja al entrar. Sin
+    /// ese reset sería un residuo, y hay un productor de `.accountUnavailable` que NO pasa por las dos
+    /// ramas del 403: el 409 `yala_account_reverting` del push. Con un kill anterior en el mismo proceso,
+    /// una cuenta revirtiendo se habría anunciado como «el canal está en pausa».
+    ///
+    /// **Sigue siendo `private`, y fuera se lee por `stoppedByChannelKill(for:)`** — ver allí.
+    private var lastStopWasChannelKill = false
+
+    /// ¿Paró el ciclo que acaba de correr por el KILL-SWITCH del canal? Es la señal que el push-all previo
+    /// a cerrar sesión o a soltar la cuenta de grupos necesita para elegir el aviso
+    /// (`CloudSignOutFlowLogic.BlockReason.channelPaused`): con el kill puesto y cambios sin subir, el de
+    /// `.permanent` le decía a la persona que el problema era su cuenta.
+    ///
+    /// **Exige el outcome, y ése es todo el punto de que exista en vez de exponer el campo.** El testigo
+    /// solo significa algo cuando el ciclo paró por un 403; ligarlos aquí impide la única lectura que podía
+    /// mentir —`syncCycleOnceCoalesced` devuelve `.coalesced` SIN correr ciclo cuando ya hay uno en vuelo,
+    /// así que su testigo describe el ciclo AJENO— y deja el invariante en el mismo fichero que el campo,
+    /// que es donde el siguiente lector lo va a buscar. Con el campo expuesto, quien lo leyera suelto
+    /// tendría que acordarse de la condición, y acordarse no es una garantía.
+    func stoppedByChannelKill(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .accountUnavailable && lastStopWasChannelKill
+    }
+
+    /// El testigo del attest ausente: si el ciclo que acaba de correr chocó con un 401 `yala_attest_required`, en el push
+    /// o en el pull. Molde exacto de `lastStopWasChannelKill`: lo baja `syncCycleOnce` al entrar y solo lo suben las dos
+    /// ramas de ese 401, así que describe el ÚLTIMO ciclo y no la vida del proceso.
+    private var lastCycleHitAttestRequired = false
+
+    /// ¿Paró el ciclo que acaba de correr porque este teléfono ya no consigue App Attest? Es la señal que el push-all
+    /// previo a cerrar sesión necesita para ofrecer la salida que pierde los cambios de grupos
+    /// (`CloudSignOutFlowLogic.BlockReason.attestUnavailable`, ticket
+    /// `groups-phone-that-never-attests-is-told-to-retry-forever`).
+    ///
+    /// **Tres condiciones, y ninguna sobra.** El outcome, por lo mismo que en `stoppedByChannelKill`: un `.coalesced`
+    /// describe un ciclo ajeno. El testigo, porque una racha terminal no dice por qué falló ESTE ciclo: sin red, con el
+    /// kill o con la sesión caducada, el aviso de la pérdida mentiría. Y la racha (`GroupsAttestStreakStore.isTerminal`),
+    /// porque un 401 de hace un rato es lo pasajero de siempre.
+    func stoppedByUnavailableAttest(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .transient && lastCycleHitAttestRequired && GroupsAttestStreakStore.isTerminal(now: now())
+    }
+
+    /// El testigo de la SUBIDA que no llegó: si el ciclo que acaba de correr chocó con el servidor **empujando**.
+    /// Molde exacto de sus dos hermanos —lo baja `syncCycleOnce` al entrar y solo lo suben las ramas del push—,
+    /// así que describe el ÚLTIMO ciclo y no la vida del proceso.
+    ///
+    /// **Existe porque `CadenceOutcome.transient` NO es «la subida falló», y confundirlos fue un bug medido**
+    /// (review adversarial del 2026-09-16, ticket `signout-pending-copy-says-wait-seconds-when-offline`). Ese
+    /// outcome es el cajón de todo lo pasajero, y además **el outcome del ciclo es el del PULL siempre que el push
+    /// vaya bien** (`syncCycleOnce`: el push que no para devuelve `nil` en `stopOutcome` y el veredicto sale de
+    /// `GroupsSyncCadence.outcome(pull:)`). Sin este testigo, dos poblaciones oían «tus cambios no llegaron al
+    /// servidor» con la subida perfecta: la del `save()` LOCAL de una página que no entra
+    /// (`pullUntilExhausted`, `guard saved`) —que es literalmente el caso de H-2026-07-18-6, el que motivó los 45 s
+    /// de reintentos— y la del pull que agota su tope de páginas.
+    private var lastCycleFailedUpload = false
+
+    /// ¿Paró el ciclo que acaba de correr porque la SUBIDA no llegó al servidor? Es la señal que el push-all previo
+    /// a cerrar sesión o a soltar la cuenta necesita para elegir entre los dos avisos de lo pasajero
+    /// (`CloudSignOutFlowLogic.BlockReason.uploadRetryLater` frente a `.transient`).
+    ///
+    /// **Marca lo que habló con el servidor y falló**: la petición que lanzó, la respuesta que no era HTTP, un 5xx,
+    /// el 403 de un cortafuegos, el 409 que no es la reversa, el decode de la respuesta, el 401 del attest, y el
+    /// token que no se pudo renovar con la sesión todavía guardada —que es un refresh HTTP que no volvió—.
+    ///
+    /// **Y NO marca lo que es del teléfono**: el `fetch` del outbox, el `buildDelta` de una fila poison, ni el
+    /// teardown que invalida un 200 que sí llegó. Marcar de menos deja el aviso conservador de siempre («un momento
+    /// más»), que es el comportamiento anterior al ticket; marcar de más le echa la culpa al servidor de algo que
+    /// pasó aquí dentro. Por eso la marca es POSITIVA y se enciende donde ocurre el fallo, no donde se traduce.
+    func stoppedByFailedUpload(for outcome: SyncCadencePolicy.CadenceOutcome) -> Bool {
+        outcome == .transient && lastCycleFailedUpload
+    }
+    /// Contador de transitorios consecutivos para el backoff exponencial (reset al `.completed`/stop).
+    private var consecutiveTransients = 0
+    /// Sleep INYECTABLE entre vueltas del loop (default `Task.sleep`) — los tests inyectan uno que no
+    /// duerme de verdad (regla: jamás `Task.sleep > 0.5s` en tests).
+    var sleeper: (TimeInterval) async -> Void = { seconds in
+        try? await Task.sleep(for: .seconds(seconds))
+    }
+    /// El sueño de la vuelta EN CURSO, en tarea PROPIA para poder cortarlo desde fuera sin matar el loop
+    /// (`wakeLoopIfSleeping`). `nil` fuera del sueño — lo limpia el `defer` de `nap(_:)`.
+    ///
+    /// **Es una tarea aparte y no un `await sleeper(delay)` a secas porque cancelar es lo único que
+    /// interrumpe un sueño**, y cancelar el loop entero lo mataría en vez de adelantarlo. El precio de
+    /// tenerla aparte es que la cancelación del loop ya no le llega sola: la propaga el
+    /// `withTaskCancellationHandler` de `nap(_:)`, y sin él un `stopLoop()` durante el sueño dejaría al loop
+    /// esperando hasta 5 minutos antes de mirar su propia cancelación.
+    private var napTask: Task<Void, Never>?
+    /// Un «vuelve a primer plano» llegó MIENTRAS el ciclo de esta vuelta corría, así que no había sueño que
+    /// cortar. Se consume saltándose el delay de esta vuelta: el ciclo siguiente sale ya.
+    ///
+    /// **Se baja al ENTRAR en cada vuelta**, así que describe esta vuelta y no la vida del loop: un wake
+    /// anterior al arranque del loop ya lo sirve el ciclo que arranca, y el que llega durante el sueño lo
+    /// sirve la cancelación del `napTask`. Alcances disjuntos: la marca cubre la ventana del ciclo, el
+    /// `napTask` cubre la del sueño, y entre las dos no queda hueco.
+    private var wakeRequested = false
+
+    /// Tope de iteraciones del pull de una vuelta (server que no converge → breadcrumb + transitorio).
+    private static let pullMaxIterations = 20
+
+    // MARK: Merkle (endurecimiento B1)
+
+    /// `true` cuando la ÚLTIMA vuelta de `pullUntilExhausted` terminó `.completed` (guard A-3 del Merkle:
+    /// molde `CloudSyncEngine.lastPullCycleCompleted`). Un pull transitorio/expirado lo deja `false`.
+    private(set) var lastPullCycleCompleted = false
+    /// Pulls COMPLETOS desde la última verificación Merkle (avanza SOLO en ciclos `.completed`, como el
+    /// personal). La cadencia usa `SyncCadencePolicy.shouldRunMerkle` TAL CUAL.
+    private(set) var completedPullsSinceMerkle = 0
+    /// Reloj de la última verificación Merkle (condición temporal de la cadencia). `nil` = nunca verificado.
+    private(set) var lastMerkleAt: Date?
+    /// La remediación (reset de cursor + re-pull) corre UNA vez por sesión — molde
+    /// `CloudSyncRuntime.didRemediateMerkleThisSession`. Se resetea en `resetMerkleSessionState` (teardown).
+    private(set) var didRemediateGroupMerkleThisSession = false
+
+    // MARK: Guard del token de History (molde HALLAZGO 2)
+
+    private(set) var historyTokenValidated = false
+    private static let historyTokenSlack: TimeInterval = 60
+    private(set) var historyTokenIncomparableCount = 0
+    private(set) var historyTokenRecoveredCount = 0
+
+    // MARK: Seams de test
+
+    /// Cuando `true`, `drainOnce` NO avanza el token del cursor tras persistir el outbox (simula un kill
+    /// entre el save del outbox y el avance del token). SOLO tests.
+    var _testSuppressTokenAdvance = false
+
+    /// Fija el `context` retenido sin correr el gate/loop de `startIfEligible` (para probar
+    /// `syncNowFromPush` aislado). SOLO tests.
+    func _testSetContext(_ ctx: ModelContext) { self.context = ctx }
+
+    /// Cuando `true`, el `saveWithAuthor` de `applyPulledPage` LANZA justo antes del commit. SOLO tests:
+    /// es la única forma de ejercitar el `catch` —y por tanto su `rollback()`— sin un fallo real de
+    /// SwiftData. Molde de `CloudSyncEngine._testThrowOnApplySave`, el mirror declarado de esa función.
+    var _testThrowOnApplySave = false
+
+    /// Hace que el `save` de las filas nuevas del drain lance, como un store que no puede escribir. Para fijar que
+    /// `drainOnce` lo devuelve como captura sin terminar (ticket `groups-drain-failure-reads-as-nothing-pending`). SOLO tests.
+    var _testThrowOnDrainSave = false
+
+    /// Hace que el estampado del HLC lance al traducir, como un año fuera de rango: es lo único que aún puede cortar la
+    /// traducción desde que el drain estampa con `sendLocal`, y en un iPhone no se alcanza. Para seguir fijando qué hace la
+    /// vuelta cortada (devuelve `false`, no re-ancla). SOLO tests.
+    var _testThrowOnClockStamp = false
+
+    // MARK: Init
+
+    /// El default `{ nil }` de `attestProvider` es **SOLO PARA TESTS**: `POST /groups/push` y
+    /// `GET /groups/pull` pasan por `requireUserAndAttest` (`gateway/src/groups/routes.ts:67-73`).
+    /// Producción DEBE pasar `AttestSessionProvider.live` — y lo hace en un único sitio, el `.shared` de
+    /// arriba. No se invierte el default porque ~20 construcciones de la suite lo usan y llamarían al App
+    /// Attest REAL (red) en un unit test. Pinneado por `AttestWiringTests`.
+    init(
+        baseURL: URL = ProxyConfig.baseURL,
+        tokenProvider: @escaping @MainActor () async -> String? = { await CloudAuthService.shared.accessToken() },
+        attestProvider: @escaping @MainActor () async -> String? = { nil },
+        urlSession: SyncHTTPSession = URLSession.shared,
+        sessionCheck: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession },
+        currentUserIDProvider: @escaping @MainActor () -> String? = { CloudAuthService.shared.currentUserID },
+        signInLogProvider: @escaping @MainActor () -> SessionSignInLog? = { SessionSignInLog.read() },
+        now: @escaping () -> Date = { .now },
+        nodeID: NodeID = NodeID.generate(),
+        merkleClient: GroupsMerkleClient? = nil,
+        outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror(),
+        deviceTokenProvider: @escaping @MainActor () -> String? = { nil },
+        forceRefreshTokenProvider: @escaping @MainActor () async -> String? =
+            { await CloudAuthService.shared.forceRefreshAccessToken() },
+        canRenewSession: @escaping @MainActor () -> Bool = { CloudAuthService.shared.canRenewSession },
+        onRemoteChangesApplied: @escaping @MainActor () -> Void = { SessionState.shared.incrementDataVersion() },
+        onRemoteChanges: @escaping @MainActor (RemoteChangeSet) -> Void =
+            { GroupNotificationService.shared.processRemoteChanges($0) }
+    ) {
+        self.baseURL = baseURL
+        self.tokenProvider = tokenProvider
+        self.forceRefreshTokenProvider = forceRefreshTokenProvider
+        self.canRenewSession = canRenewSession
+        self.attestProvider = attestProvider
+        self.urlSession = urlSession
+        self.sessionCheck = sessionCheck
+        self.currentUserIDProvider = currentUserIDProvider
+        self.signInLogProvider = signInLogProvider
+        self.deviceTokenProvider = deviceTokenProvider
+        self.now = now
+        self.onRemoteChangesApplied = onRemoteChangesApplied
+        self.onRemoteChanges = onRemoteChanges
+        self.clock = HLCClock(nodeID: nodeID)
+        // Default: mismo baseURL + los providers de sesión del canal (el Merkle de Grupos NO manda
+        // capability-set). Los tests inyectan uno con `StubHTTPSession`.
+        self.merkleClient = merkleClient ?? GroupsMerkleClient(
+            baseURL: baseURL, tokenProvider: tokenProvider, attestProvider: attestProvider,
+            urlSession: urlSession)
+        self.outboxMirror = outboxMirror
+    }
+
+    // MARK: - Arranque (DARK)
+
+    /// Arranca el LOOP de cadencia del canal de Grupos SOLO si `groupsBackendEnabled && hasSession`
+    /// (SESIÓN VIVA, no storageMode — la persona solo-grupos). Con el flag `false` (SIEMPRE esta fase) es
+    /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-sites DARK en `AppBootstrapper`
+    /// (cold boot `trigger: nil`; foreground resume `trigger: "foreground"`) y en el modifier de invite
+    /// backend (post-sign-in `trigger: "post-sign-in"`). Single-instance (no re-arranca si el loop vive).
+    ///
+    /// **La decisión de (re)arranque del loop propio vive en `GroupsLoopRestartLogic.shouldStart`** (pura,
+    /// testeada) — SSOT de flag/sesión/single-instance/D8, para no partir la verdad entre guards
+    /// dispersos. `trigger` NO-nil emite `groupsLoopRestarted` SOLO si el loop se crea de verdad — y, si ya
+    /// vivía, `groupsLoopWoken`, porque desde el 2026-09-16 ese caso **no es un no-op**: despierta el loop que
+    /// duerme su backoff (`wakeLoopIfSleeping`, ticket `groups-loop-in-backoff-ignores-the-return-to-foreground`).
+    ///
+    /// **D8 (H-2026-07-18-4): AHORA es SEGURO llamarlo MID-SESSION** (foreground / post-sign-in), a
+    /// diferencia de antes (que exigía SOLO cold boot): `shouldStart` incorpora el guard de mount-mismatch
+    /// (`secondaryActive && !secondaryMounted`, idéntico a `CloudSyncRuntime.canRunDomain`) — en la ventana
+    /// de entrada de la sesión secundaria (store del DUEÑO montado + descriptor secundario ya persistido)
+    /// bloquea ANTES del rehydrate, así ni el rehydrate ni el loop drenan la History del dueño a la cuenta
+    /// entrante. El re-arranque en foreground/post-sign-in resucita un loop que murió en silencio (401
+    /// transitorio en la ventana de expiry → `sessionExpired` → `break loop`; el retry-once del 401 de
+    /// abajo cubre el caso común, este re-arranque es la red del residual).
+    ///
+    /// **[R3] Coordinación anti-doble-loop (B2):** si el runtime PERSONAL va a cadenciar
+    /// (`syncRuntimeEnabled && CloudSyncRuntime.canRunDomain()`), Grupos NO arranca loop propio — el
+    /// ciclo de Grupos corre como paso 5.6 (piggyback) de `CloudSyncRuntime.performCycle` (un solo
+    /// `fetchHistory` cadenciado del container, sin dos loops de 60s sin coordinación). NO es `.cloud`
+    /// a secas: `canRunDomain()` exige además fase de migración ESTABLE + sin mount-mismatch — en
+    /// `.cloud` con fase TRANSICIONAL el personal NO cadencia y Grupos DEBE correr su loop propio o
+    /// quedaría sin sync toda la migración. Residual documentado: las TRANSICIONES (sign-out, cambio
+    /// de modo, fin de migración) las media el relaunch en v1 — el modo elegido aquí no se re-evalúa
+    /// en caliente. El rehydrate del espejo (B2) corre en AMBOS modos (es red de boot, no de loop).
+    func startIfEligible(context: ModelContext, trigger: String? = nil) {
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else { return }
+        // G8-2 (AJUSTE review #3): retener el context AQUÍ — DESPUÉS del guard flag+sesión, ANTES del
+        // return del piggyback. Sin esto, en modo piggyback (personal cadencia) el context quedaría
+        // sin fijar y `syncNowFromPush` devolvería siempre false.
+        self.context = context
+        // SSOT del (re)arranque del loop propio — hace seguro el call mid-session. El piggyback NO lo
+        // modela: `loopAlive==false` ⇒ shouldStart==true ⇒ el rehydrate corre y el early-return del
+        // piggyback decide después.
+        guard GroupsLoopRestartLogic.shouldStart(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: sessionCheck(),
+            loopAlive: loopTask != nil
+        ) else {
+            // El loop ya vive ⇒ no se duplica, pero SÍ se despierta: vivo no es trabajando, y un fallo
+            // pasajero lo deja durmiendo hasta 5 min. Con el flag OFF o sin sesión esto ya retornó arriba.
+            wakeLoopIfSleeping(trigger: trigger)
+            return
+        }
+
+        // Barrido del veneno YA ENCOLADO: un tombstone de `split_groups` de un build anterior al guard del
+        // 2026-08-02 borra el grupo para TODOS sus miembros en cuanto se empuje. Va aquí —y no entre los
+        // retomes de `AppBootstrapper`— porque tiene que ser anterior al primer push del proceso; el
+        // porqué completo, en el doc del método.
+        purgeQueuedSplitGroupTombstones(context: context)
+        // B2: red de boot — re-insertar del espejo App Group lo que una lightweight migration se llevó.
+        rehydrateOutboxFromMirror(context: context)
+        // [R3] Personal cadencia ⇒ grupos piggyback (paso 5.6); si no ⇒ loop propio.
+        if CloudSyncFlags.syncRuntimeEnabled && CloudSyncRuntime.canRunDomain() { return }
+        // A7: canario de push fallando permanente (filas ya en dead-letter al arrancar el loop).
+        let deadLettered = (try? deadLetteredCount(context)) ?? 0
+        if deadLettered > 0 { GroupsSyncBreadcrumb.groupsDeadLetteredCount(deadLettered) }
+        // El loop lleva su propia GENERACIÓN para comprobar, al morir, que el publicado sigue siendo él.
+        loopGeneration += 1
+        let generation = loopGeneration
+        loopTask = Task { @MainActor in await self.runLoop(context: context, generation: generation) }
+        // Solo cuando el loop se creó de verdad (no en piggyback / no-op): breadcrumb de re-arranque.
+        if let trigger { GroupsSyncBreadcrumb.groupsLoopRestarted(trigger: trigger) }
+    }
+
+    /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
+    /// `sessionExpired` (401, salvo el de App Attest ausente, que es pasajero) y `accountUnavailable` TERMINAN el
+    /// loop, y los dos son re-arrancables por el próximo `startIfEligible`.
+    private func runLoop(context: ModelContext, generation: Int) async {
+        // A6: liberar el single-instance al salir, y SOLO si el que sale es el que está publicado. La
+        // comparación es de la misma familia que la del `nap`: entre `stopLoop()` y la muerte real de este
+        // loop cabe un `startIfEligible` que publique otro, y sin ella el que sale se lo lleva por delante
+        // —dos loops vivos y un `stopLoop` posterior cancelando `nil`—.
+        defer { if loopGeneration == generation { loopTask = nil } }
+        loop: while true {
+            // A6: cinturón contra store muerto en la ventana wipe→token-nil (sesión caída entre vueltas).
+            guard sessionCheck() else {
+                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "session-check-failed")
+                break loop
+            }
+
+            // La marca describe ESTA vuelta: se baja antes del ciclo, así que solo la enciende un foreground
+            // llegado mientras el ciclo corre.
+            wakeRequested = false
+
+            let outcome = await syncCycleOnceCoalesced(context: context)
+            switch outcome {
+            case .transient: consecutiveTransients += 1
+            case .coalesced: break  // sin señal de red — contador INTACTO (molde runtime personal)
+            default: consecutiveTransients = 0
+            }
+
+            let action = SyncCadencePolicy.nextAction(
+                outcome: outcome, consecutiveTransients: consecutiveTransients)
+            let delay: TimeInterval
+            switch action {
+            case .scheduleNext(let t), .backoff(let t):
+                delay = t
+            case .stopUntilSignIn:
+                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "session-expired")
+                break loop                               // A5: re-arrancable por próximo startIfEligible
+            case .stopUntilRelaunch:
+                // `.accountUnavailable` para el loop en esta vuelta y es RE-ARRANCABLE por el próximo
+                // startIfEligible, como la sesión caducada: en este canal la acción no espera a relanzar la
+                // app (el nombre es de la política, que comparte con el runtime personal). El testigo del
+                // kill solo elige qué motivo queda en el log (ver `lastStopWasChannelKill`).
+                if stoppedByChannelKill(for: outcome) {
+                    GroupsSyncBreadcrumb.groupsLoopStopped(reason: "channel-disabled")
+                } else {
+                    GroupsSyncBreadcrumb.groupsLoopStopped(reason: "account-unavailable")
+                }
+                break loop
+            }
+
+            // Un foreground durante el ciclo no tuvo sueño que cortar: se sirve aquí, sin delay. Se duerme
+            // igual (un `0` sigue siendo un punto de suspensión y de cancelación) y solo vale para ESTA
+            // vuelta, así que un ciclo `.coalesced` no puede encadenar vueltas sin pausa.
+            await nap(wakeRequested ? 0 : delay, generation: generation)
+            guard !Task.isCancelled else {               // A6: cancelado durante el sleep → salir
+                GroupsSyncBreadcrumb.groupsLoopStopped(reason: "cancelled")
+                break loop
+            }
+        }
+    }
+
+    /// Duerme `delay` de forma CORTABLE desde fuera: el sueño vive en `napTask` y `wakeLoopIfSleeping` lo
+    /// cancela para que el loop cicle ya.
+    ///
+    /// El `withTaskCancellationHandler` es lo que conserva el comportamiento de antes: una tarea creada con
+    /// `Task {}` NO hereda la cancelación de quien la crea, así que sin él un `stopLoop()` —o el teardown del
+    /// sign-out— se quedaría esperando a que venciera el backoff entero antes de que el loop mirase su propia
+    /// cancelación. Con él, cancelar el loop cancela el sueño en el acto, como cuando el `Task.sleep` corría
+    /// dentro del propio `loopTask`.
+    private func nap(_ delay: TimeInterval, generation: Int) async {
+        let nap = Task { @MainActor in await self.sleeper(delay) }
+        // Publica y limpia SOLO el loop VIGENTE, y solo su propio handle. Sin las dos comprobaciones, un
+        // loop viejo que tarda en morir —`stopLoop()` deja `loopTask = nil` en el acto, pero el ciclo en
+        // vuelo no reanuda hasta que su request vuelve— pisaría o borraría el sueño del loop que ya nació
+        // detrás: el wake siguiente cancelaría `nil`, dejaría su rastro en el log y el loop dormiría el
+        // backoff entero. O sea, el bug del ticket resucitado y encima invisible.
+        if loopGeneration == generation { napTask = nap }
+        defer { if napTask == nap { napTask = nil } }
+        await withTaskCancellationHandler {
+            await nap.value
+        } onCancel: {
+            nap.cancel()
+        }
+    }
+
+    /// Corta el sueño del loop VIVO para que cicle ya. Lo llama `startIfEligible` cuando no hay loop que
+    /// arrancar porque ya lo hay — o sea, en el foreground y en el post-sign-in.
+    ///
+    /// **Para qué existe:** tras un fallo pasajero el loop duerme un backoff que crece 5, 10, 20… hasta 300 s
+    /// (`SyncCadencePolicy.backoffDelay`). Quien se quedó sin red, salió de Yala, recuperó la conexión y
+    /// volvió, veía sus cambios de grupos esperando ese sueño entero: hasta cinco minutos, salvo que guardara
+    /// algo o tirase hacia abajo. Es el molde del runtime personal, cuyo `handleBecameActive` re-arranca la
+    /// cadencia y con eso corta el sueño en curso.
+    ///
+    /// **No arranca nada ni salta ningún gate**: si el loop no vive, `shouldWake` devuelve `false` y el
+    /// (re)arranque es cosa de `shouldStart`. Con el flag OFF o sin sesión no hace nada, igual que el
+    /// arranque. Y no toca `consecutiveTransients`: adelantar un reintento no borra la racha de fallos, que
+    /// es lo que mide cuánto esperar si este ciclo también falla.
+    ///
+    /// **En piggyback no hace falta y por eso no se llama**: con el runtime personal cadenciando, Grupos no
+    /// tiene loop propio (`loopAlive == false`) y quien despierta el ciclo de Grupos —que va de paso 5.6— es
+    /// `CloudSyncRuntime.handleBecameActive`.
+    func wakeLoopIfSleeping(trigger: String? = nil) {
+        guard GroupsLoopRestartLogic.shouldWake(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: sessionCheck(),
+            loopAlive: loopTask != nil
+        ) else { return }
+        let wasSleeping = napTask != nil
+        wakeRequested = true
+        napTask?.cancel()
+        if let trigger { GroupsSyncBreadcrumb.groupsLoopWoken(trigger: trigger, sleeping: wasSleeping) }
+    }
+
+    /// Cancela el loop. B2: cableado a los 3 paths de `CloudSessionSignOut` vía `teardownForSignOut()`.
+    func stopLoop() {
+        loopTask?.cancel()
+        loopTask = nil
+        resetMerkleSessionState()  // B1: frontera de sesión → re-armar la remediación (una-vez-por-sesión)
+    }
+
+    /// Teardown del canal de Grupos en el sign-out (B2): detiene el loop + purga el espejo App Group
+    /// (contiene MONTOS — red M1(a), espejo del `mirror?.purgeAll()` de `teardownGuestSession` del
+    /// personal). Lo llaman los 3 paths de `CloudSessionSignOut` EXPLÍCITAMENTE junto a cada
+    /// `teardownGuestSession()` — decisión B2 documentada: NO va dentro de `teardownGuestSession` para
+    /// no acoplar el runtime personal al canal de Grupos (el runtime no debe conocer grupos).
+    /// Idempotente; seguro con el flag OFF (loop nil + espejo vacío → no-ops).
+    func teardownForSignOut() {
+        teardownGeneration += 1  // aborta el ciclo EN VUELO en su próximo re-chequeo post-await (MEDIA)
+        stopLoop()
+        GroupsSaveSyncTrigger.shared.cancel()
+        outboxMirror?.purgeAll()
+    }
+
+    /// **R4 · seam del swap de persona in-process.** Suelta el `mainContext` retenido, que es lo único que
+    /// `teardownForSignOut` NO hace y que este singleton conserva con vida de proceso: sin esto el
+    /// container viejo sobrevive dentro del canal de Grupos y el release verificado aborta.
+    ///
+    /// **Va DESPUÉS de `teardownForSignOut()` y nunca en su lugar.** Aquel corta la generación y para el
+    /// loop; éste solo suelta la referencia. Invertirlos —o llamar solo a éste— dejaría un ciclo en vuelo
+    /// que ya capturó el contexto por parámetro escribiendo sobre un store a punto de borrarse. Lo repone
+    /// `startIfEligible(context:)` en el re-bootstrap.
+    func releaseContextForSwap() {
+        context = nil
+    }
+
+    /// Anti-solape del ciclo "one in-flight, one queued" (B2, molde `performCycleCoalesced` del runtime):
+    /// si ya hay un ciclo en vuelo, encola a lo sumo UNO y devuelve `.coalesced` (sin señal de red — el
+    /// caller no lo cuenta como transitorio). Con el piggyback 5.6 este es el punto de entrada de AMBOS
+    /// callers (loop propio Y runtime personal). La vuelta ENCOLADA re-verifica la generación: un
+    /// teardown durante el ciclo en vuelo la descarta (arrancarla drenaría → writeMirror sobre el espejo
+    /// recién purgado).
+    @discardableResult
+    func syncCycleOnceCoalesced(context: ModelContext) async -> SyncCadencePolicy.CadenceOutcome {
+        if isCycling {
+            pendingCycle = true
+            return .coalesced
+        }
+        isCycling = true
+        defer { isCycling = false }
+        let generation = teardownGeneration
+        var last: SyncCadencePolicy.CadenceOutcome = .coalesced
+        repeat {
+            pendingCycle = false
+            guard generation == teardownGeneration else { return .coalesced }  // teardown → ni la encolada
+            last = await syncCycleOnce(context: context)
+        } while pendingCycle
+        return last
+    }
+
+    /// G8-2: dispara UN ciclo del canal desde un silent push (`didReceiveRemoteNotification`, rama `yala`),
+    /// carreado contra `timeout` (iOS da ~30s de background; el caller pasa 20s de margen). SIN `ModelContext`
+    /// del caller — usa el `context` retenido en `startIfEligible`. Devuelve `true` si el ciclo COMPLETÓ
+    /// dentro del timeout (→ `.newData`), `false` en cualquier gate no satisfecho / timeout / ciclo
+    /// no-completado (→ `.noData`). Gates SIN red: flag OFF, sin sesión o `context` nil (el canal no
+    /// arrancó en este proceso). Idempotente con la doble fuente CloudKit (§16d): el
+    /// coalescing anti-solape de `syncCycleOnceCoalesced` ya lo garantiza.
+    ///
+    /// Residual documentado (AJUSTE review #5): un launch puramente en BACKGROUND por silent push puede no
+    /// ejecutar el `.task` del bootstrap (YalaApp) ⇒ el canal no arranca en ese proceso, `context` es nil y
+    /// esto devuelve false (.noData); el pull real ocurre al próximo foreground (consistencia eventual v1).
+    @discardableResult
+    func syncNowFromPush(timeout: Duration) async -> Bool {
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), context != nil else { return false }
+        // Lanza AMBOS hijos ANTES del primer `next()` (AJUSTE review #7). El hijo del ciclo puede sobrevivir
+        // al timeout tras `cancelAll` — benigno: el push es chunked con dedupe por `client_mutation_id` y el
+        // próximo ciclo re-emite. `self` (clase @MainActor) es Sendable; el hijo lee `self.context` en el
+        // MainActor (NO captura el `ModelContext` no-Sendable a través de la frontera del task).
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask { @MainActor [weak self] in
+                guard let self, let ctx = self.context else { return false }
+                return await self.syncCycleOnceCoalesced(context: ctx) == .completed
+            }
+            group.addTask {
+                try? await Task.sleep(for: timeout)
+                return false
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
+    }
+
+    /// Fase 2 · 2.5: pull-to-refresh de la UI de Grupos (lista y detalle). Reusa `syncNowFromPush` TAL CUAL
+    /// —mismos gates (flag, sesión, canal arrancado en este proceso), mismo
+    /// coalescing anti-solape y mismo `context` retenido— porque lo que necesita un tirón hacia abajo es
+    /// exactamente lo que necesita un silent push: un ciclo, ya. El tope existe para que el spinner no se
+    /// quede colgado de una red lenta; pasado el tope el ciclo sigue en background y lo que baje entra por
+    /// el refresh normal. Con el flag OFF es un no-op sin red, así que convive con el `syncNow` del
+    /// transporte hasta que la Fase 3 se lo lleve.
+    @discardableResult
+    func syncNowFromUI(timeout: Duration = .seconds(15)) async -> Bool {
+        await syncNowFromPush(timeout: timeout)
+    }
+
+    /// Ciclo pedido por `GroupsSaveSyncTrigger` tras un save local. Mismos gates que `syncNowFromPush`
+    /// (flag, sesión, context retenido), SIN carrera de timeout: el presupuesto
+    /// es el background task que el trigger ya pidió. No toca `consecutiveTransients` — un fallo aquí
+    /// no escala la escalera de backoff del loop.
+    func syncNowAfterLocalSave() async {
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), let ctx = context else { return }
+        _ = await syncCycleOnceCoalesced(context: ctx)
+    }
+
+    /// UNA vuelta del ciclo: captura local → push → pull-hasta-agotar → apply. Devuelve el
+    /// `CadenceOutcome` NORMALIZADO que consume el loop. DARK (solo corre con el flag ON).
+    @discardableResult
+    func syncCycleOnce(context: ModelContext) async -> SyncCadencePolicy.CadenceOutcome {
+        // Guardia de generación (MEDIA): capturada al entrar (el drain de abajo es SÍNCRONO — la
+        // generación no puede cambiar entre la captura y su writeMirror), re-verificada tras cada await.
+        let generation = teardownGeneration
+        // El testigo del kill describe ESTE ciclo (ver `lastStopWasChannelKill`): se baja al entrar y solo
+        // lo suben las dos ramas del 403. Sin esto, un `.accountUnavailable` que no viene de un 403 —el 409
+        // del freeze de la reversa— heredaría el veredicto de un kill anterior del mismo proceso.
+        lastStopWasChannelKill = false
+        // Lo mismo para el testigo del attest ausente (ver `lastCycleHitAttestRequired`): un 401 de un ciclo anterior no
+        // puede convertir el corte de red de éste en «este teléfono no puede sincronizar».
+        lastCycleHitAttestRequired = false
+        // Y para el de la subida que no llegó (ver `lastCycleFailedUpload`). Aquí el reset importa el doble: el
+        // veredicto del ciclo sale del PULL siempre que el push no pare (línea de abajo), así que sin bajarlo un
+        // push fallido de hace tres ciclos convertiría el `save()` local de éste en «no llegaron al servidor».
+        lastCycleFailedUpload = false
+        drainOnce(context: context)
+        let push = await pushPending(context: context)
+        guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push
+        if let stop = GroupsSyncCadence.stopOutcome(push: push) { return stop }
+        let pull = await pullUntilExhausted(context: context)
+        guard generation == teardownGeneration else { return .coalesced }  // teardown durante el pull
+
+        // B1: cadencia Merkle — tras un pull COMPLETO (guard A-3), avanza el contador y, si
+        // `SyncCadencePolicy.shouldRunMerkle` (reusada TAL CUAL) lo pide, verifica TODOS los grupos con cursor.
+        // Un ciclo INCOMPLETO (transient/401/403) deja el flag en false → la verificación se salta (molde
+        // `SyncApplyEngine`: divergencia esperada, no incidente).
+        if case .completed = pull {
+            lastPullCycleCompleted = true
+            completedPullsSinceMerkle += 1
+            if SyncCadencePolicy.shouldRunMerkle(
+                completedPullsSinceMerkle: completedPullsSinceMerkle, lastMerkleAt: lastMerkleAt, now: now()) {
+                await runGroupMerkleVerification(context: context, now: now())
+            }
+        } else {
+            lastPullCycleCompleted = false
+        }
+        return GroupsSyncCadence.outcome(pull: pull)
+    }
+
+    /// Nº de filas de outbox en dead-letter (rechazo permanente). Canario A7 al arrancar el loop.
+    private func deadLetteredCount(_ context: ModelContext) throws -> Int {
+        try context.fetchCount(
+            FetchDescriptor<GroupSyncOutbox>(predicate: #Predicate { $0.rejectedReason != nil }))
+    }
+
+    // MARK: - Seams de test del loop
+
+    /// La tarea del loop en vuelo (para que los tests la aguarden sin dormir). SOLO tests.
+    var _testLoopTask: Task<Void, Never>? { loopTask }
+
+    /// Marca el gate A-3 del Merkle "último pull completado" (que en producción solo setea un pull
+    /// `.completed`) para probar `verifyGroupIntegrity` sin correr un ciclo entero. SOLO tests.
+    func _testMarkPullCompleted() { lastPullCycleCompleted = true }
+
+    // MARK: - Drain (captura del History → GroupSyncOutbox)
+
+    /// Ejecuta UNA vuelta de captura. Re-entrante (coalescing one-in-flight/one-queued, molde personal).
+    ///
+    /// **Devuelve si la captura TERMINÓ** (ticket `groups-drain-failure-reads-as-nothing-pending`, molde de
+    /// `CloudSyncEngine.drainOnce`). `false` = algo local quedó sin llegar al outbox y solo vive en el History: una lectura
+    /// o un `save` que lanzó, o la traducción cortada porque el HLC no se pudo estampar (desde
+    /// `groups-clock-rollback-wedges-the-drain-forever`, ya no por la deriva del reloj). Quien cuente el outbox para decidir que no
+    /// queda nada —el cierre, el desasociar, «Empezar de cero»— no puede seguir con `false`: el recuento daría 0 y el
+    /// borrado se llevaría ese gasto sin que ningún drain posterior encontrara una fila viva que traducir.
+    ///
+    /// **A diferencia del personal, la traducción cortada también es `false`.** Allí esa vuelta persiste lo traducido y el
+    /// llamador que lee el outbox es el guard del pull; aquí lo leen gestos que BORRAN, y lo que quedó detrás del corte es
+    /// exactamente lo que se perdería. Desde `groups-clock-rollback-wedges-the-drain-forever` la deriva del reloj ya no
+    /// corta (el drain estampa con `HLCClock.sendLocal`); solo un año fuera de 0001–9999. Una llamada re-entrante devuelve `false`: no drenó ella.
+    @discardableResult
+    func drainOnce(context: ModelContext) -> Bool {
+        guard !isDraining else {
+            pendingDrain = true
+            return false
+        }
+        isDraining = true
+        defer { isDraining = false }
+        var completed = false
+        repeat {
+            pendingDrain = false
+            completed = performDrain(context: context)
+        } while pendingDrain
+        return completed
+    }
+
+    /// **Todo lo local de grupos, dentro del outbox, antes de una salida que lo borra** (ticket
+    /// `groups-drain-failure-reads-as-nothing-pending`). Tres pasos, en este orden:
+    ///  1. **Rehidratar el espejo del App Group.** Un kill entre el espejo y el `save` del drain deja la fila solo en el
+    ///     espejo (regla Q3: el espejo se escribe antes del `save`; un `save` que lanza deja además las filas sucias en el
+    ///     contexto, que el recuento sí ve), y la rehidratación solo corría en `startIfEligible`, detrás del
+    ///     flag compuesto y de una sesión. Con el kill remoto puesto el cierre sí sube —el transporte no consulta el flag—
+    ///     pero esas filas no llegaban al outbox, el recuento daba 0 y el teardown purgaba el espejo.
+    ///  2. **Drenar el History.** Lo que se apuntó hace segundos solo vive ahí.
+    ///  3. **Barrer los tombstones venenosos de `split_groups`**, detrás del drain por si algún día lo produjera.
+    ///
+    /// Devuelve lo que devuelve el drain: si la captura terminó. Lo que el espejo guarde fuera del outbox después de
+    /// rehidratar —otra identidad, o la rehidratación que no pudo guardar— lo cuenta `mirrorEntriesMissingFromOutbox`.
+    @discardableResult
+    func captureLocalWritesForExit(context: ModelContext) -> Bool {
+        rehydrateOutboxFromMirror(context: context)
+        let completed = drainOnce(context: context)
+        purgeQueuedSplitGroupTombstones(context: context)
+        return completed
+    }
+
+    /// De quién son las entradas del espejo que cuentan como pendientes.
+    enum MirrorPendingScope {
+        /// Solo las de la sesión: las únicas que este gesto puede subir. Sin sesión, ninguna. Es el alcance del push-all,
+        /// que comparten el cierre y el desasociar: una entrada que nadie aquí puede subir no puede bloquearlos para
+        /// siempre. Ojo, no es que se conserven: el teardown de esos gestos purga el espejo ENTERO (`teardownForSignOut`,
+        /// red M1(a) de `GroupsOutboxMirror`), las de otra identidad incluidas. Es la decisión B2 de siempre; lo que M1
+        /// garantiza es que la rehidratación no las re-inserta.
+        case sessionOwner
+        /// Las de la sesión y, **sin sesión, todas**: nadie puede probar que no sean de quien vuelve a entrar. Es el alcance
+        /// de la oferta de pérdida del cierre de sesión (`CloudSessionSignOut.groupsLossRowIDs`), decisión B2.
+        case sessionOwnerOrEveryoneWhenSignedOut
+        /// **Todas, haya sesión o no** (ticket `fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`,
+        /// decisión A de Jürgen del 2026-10-04). Es el alcance de «Empezar de cero», que purga el espejo ENTERO
+        /// (`DataWipeService.wipeLocalGroupsDomain`): con el de arriba, con sesión, las entradas de otra cuenta se borraban
+        /// sin que el aviso ni la cifra de «perderlos» las contaran.
+        case wholeMirror
+        /// **Las de otra cuenta que la de la sesión.** Sin sesión, ninguna: ahí no hay «otra», hay sesión caducada. Es lo
+        /// que dice a «Empezar de cero» si lo que queda solo lo sube otra cuenta (`.groupsChangesFromAnotherAccount`) y
+        /// cuánto suma a un bloqueo que no ofrece perderlos.
+        case anotherAccount
+    }
+
+    /// **Entradas del espejo que NO están en el outbox**: cambios que sobrevivieron a su fila y que un borrado del espejo
+    /// se llevaría con un recuento de 0. Mismo filtro que `rehydrateOutboxFromMirror`, que es quien las devolvería: la
+    /// clave `(syncID, hlc, op)` contra TODAS las filas (una dead-letter presente no es pendiente), y fuera los tombstones
+    /// de `split_groups` y los `op` ilegibles, que nunca se re-insertan. Un archivo que no se decodifica no cuenta: ninguna
+    /// versión de este build podría subirlo. `Int.max` si el outbox no se pudo leer (una fila que no se pudo mirar no se
+    /// tira). Sin App Group, 0.
+    func mirrorEntriesMissingFromOutbox(context: ModelContext, scope: MirrorPendingScope) -> Int {
+        Self.mirrorEntriesMissingFromOutbox(
+            mirror: outboxMirror, ownerID: currentUserIDProvider(), scope: scope, context: context)
+    }
+
+    /// El cuerpo de `mirrorEntriesMissingFromOutbox`, con el espejo y la identidad inyectados para poder medirlo.
+    static func mirrorEntriesMissingFromOutbox(
+        mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
+    ) -> Int {
+        mirrorEntryKeysMissingFromOutbox(mirror: mirror, ownerID: ownerID, scope: scope, context: context)
+            .map(\.count) ?? Int.max
+    }
+
+    /// **Las mismas entradas que cuenta `mirrorEntriesMissingFromOutbox`, por su clave `(syncID, hlc, op)`** (ticket
+    /// `fresh-start-has-no-way-out-when-group-writes-can-never-upload`). Es lo que «Empezar de cero y perderlos» enseña y
+    /// lo que la persona acepta perder: el borrado purga el espejo entero, y aceptar una cifra cubriría cualquier entrada
+    /// que llegase después. `nil` si el outbox no se pudo leer. Un solo filtro para las dos: si divergieran, el aviso
+    /// contaría una cosa y el borrado se llevaría otra.
+    func mirrorEntryKeysMissingFromOutbox(context: ModelContext, scope: MirrorPendingScope) -> Set<String>? {
+        Self.mirrorEntryKeysMissingFromOutbox(
+            mirror: outboxMirror, ownerID: currentUserIDProvider(), scope: scope, context: context)
+    }
+
+    /// El cuerpo de `mirrorEntryKeysMissingFromOutbox`, con el espejo y la identidad inyectados para poder medirlo.
+    ///
+    /// **La cifra es la de entradas y la clave es un conjunto**: dos entradas con la misma clave cuentan dos en
+    /// `mirrorEntriesMissingFromOutbox` y una aquí. Se conserva así a propósito —el recuento es el que ya usaban el cierre y
+    /// el cinturón—, y no importa para lo aceptado: la rehidratación deduplica por esa clave, así que es un solo cambio.
+    static func mirrorEntryKeysMissingFromOutbox(
+        mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
+    ) -> Set<String>? {
+        mirrorEntriesMissingFromOutboxList(mirror: mirror, ownerID: ownerID, scope: scope, context: context)
+            .map { Set($0.map(\.key)) }
+    }
+
+    /// **Las mismas entradas, por su `clientMutationID`** (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
+    /// Es lo que el cierre de sesión suma a las filas vivas al ofrecer perder los cambios de grupos: el teardown purga el espejo
+    /// entero, así que una entrada sin fila se perdería sin que el aviso la contara (review adversarial del 2026-09-28). Mismo
+    /// filtro que la cifra y que la clave, para que las tres digan lo mismo. `nil` si el outbox no se pudo leer.
+    func mirrorEntryMutationIDsMissingFromOutbox(context: ModelContext, scope: MirrorPendingScope) -> Set<UUID>? {
+        Self.mirrorEntriesMissingFromOutboxList(
+            mirror: outboxMirror, ownerID: currentUserIDProvider(), scope: scope, context: context)
+            .map { Set($0.map(\.entry.clientMutationID)) }
+    }
+
+    /// El filtro compartido: las entradas del espejo sin fila, cada una con su clave. `nil` si el outbox no se pudo leer.
+    private static func mirrorEntriesMissingFromOutboxList(
+        mirror: GroupsOutboxMirror?, ownerID: String?, scope: MirrorPendingScope, context: ModelContext
+    ) -> [(entry: GroupsOutboxMirrorEntry, key: String)]? {
+        guard let mirror else { return [] }
+        let entries: [GroupsOutboxMirrorEntry]
+        switch (ownerID, scope) {
+        // Antes que la sesión: el borrado entero no mira de quién son.
+        case (_, .wholeMirror): entries = mirror.allEntries()
+        // Mismo criterio de «hay sesión» que `liveRowsHeldForAnotherAccount`: una identidad vacía no es sesión.
+        case (let owner?, .anotherAccount) where !owner.isEmpty: entries = mirror.allEntries().filter { $0.userID != owner }
+        case (_, .anotherAccount): return []
+        case (let owner?, _): entries = mirror.entriesForUser(owner)
+        case (nil, .sessionOwner): return []
+        case (nil, .sessionOwnerOrEveryoneWhenSignedOut): entries = mirror.allEntries()
+        }
+        guard !entries.isEmpty else { return [] }
+        let keys: Set<String>
+        do {
+            keys = try outboxKeys(context)
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient: Error leyendo el outbox para contar el espejo: \(error)")
+            #endif
+            return nil
+        }
+        return entries.compactMap { entry in
+            guard let op = SyncOutboxOp(rawValue: entry.op) else { return nil }
+            if entry.entityType == GroupSyncEntityType.splitGroup, op == .tombstone { return nil }
+            let key = dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op)
+            return keys.contains(key) ? nil : (entry, key)
+        }
+    }
+
+    // MARK: - Lo que el drain no capturó (solo lectura, `groups-drain-that-always-aborts-takes-the-loss-exit-away`)
+
+    /// Un cambio del History de Grupos que ningún drain ha capturado: su clave y si la sesión de ahora no lo podría subir.
+    struct UncapturedChange: Equatable {
+        /// La clave estable del cambio (`CloudSyncEngine.uncapturedChangeKey`: store, transacción y cambio). Es lo que el
+        /// aviso cuenta y lo que la persona acepta perder; una edición posterior es otra transacción y no queda cubierta.
+        let key: String
+        /// La transacción es de otra cuenta, o sin dueño probado, según el registro de sesiones a su fecha
+        /// (`GroupsOutboxOwnershipLogic`): la fila que el drain le daría no la subiría esta sesión. Sin sesión, `false`.
+        let heldForAnotherAccount: Bool
+        /// **De OTRA cuenta concreta**, no solo sin dueño probado: el registro de sesiones nombra a su fecha una cuenta que no
+        /// es la de la sesión (2026-10-05, ticket `stuck-groups-drain-hides-held-rows-of-another-account`). Lo «sin dueño»
+        /// incluye ruido —cambios anteriores al registro, de la era CloudKit, que la sonda cuenta a propósito—, y basta UN
+        /// cambio así para abrir la salida que pierde cambios (`CloudSignOutFlowLogic.uncapturedPointsToAnotherAccount`), así
+        /// que ahí solo cuenta lo probado. `false` por defecto: el lado que no abre nada.
+        var provenAnotherAccount: Bool = false
+    }
+
+    /// **Los cambios del History de Grupos que ningún drain ha capturado**, uno por clave (2026-10-05, ticket
+    /// `groups-drain-that-always-aborts-takes-the-loss-exit-away`). Es el gemelo de `CloudSyncEngine.uncapturedPersonalChangeKeys`:
+    /// con un drain que no termina en ninguna vuelta esos cambios no llegan nunca al outbox, así que el aviso de una salida
+    /// los cuenta junto a las filas y la persona acepta perder exactamente esos.
+    ///
+    /// **Solo LEE**: ni crea el cursor (`loadOrCreateCursor` lo inserta y guarda), ni drena, ni re-ancla. La ventana es la del
+    /// drain siguiente —el token anclado en el store de Grupos o, sin él, el suelo por timestamp (`fetchHistory`)— más el
+    /// paso 3-bis del guard (`recoverIfHistoryTokenIncomparable`): mientras ningún drain haya validado el token en este
+    /// proceso, lo posterior al ancla también cuenta. Sin cursor, el History entero.
+    ///
+    /// **Más ancho que lo que el drain emitiría, a propósito**: cuenta todo cambio de una entidad del store de Grupos que no
+    /// escribió el propio canal, también de un grupo de la era CloudKit que el drain no traduce. Es la dirección segura —el
+    /// aviso enseña más de lo que se perdería, nunca menos— y por eso sus llamadores solo la leen con la captura atascada:
+    /// con un drain sano esos cambios ya están consumidos y fuera de la ventana.
+    ///
+    /// `nil` = un fetch lanzó; quien decida con esto lo trata como «no se pudo contar».
+    func uncapturedGroupsChanges(context: ModelContext) -> [UncapturedChange]? {
+        do {
+            var cursorDescriptor = FetchDescriptor<GroupSyncCursor>()
+            cursorDescriptor.fetchLimit = 1
+            let txns: [DefaultHistoryTransaction]
+            if let cursor = try context.fetch(cursorDescriptor).first {
+                var window = try fetchHistory(after: anchoredHistoryToken(cursor), cursor: cursor, context: context)
+                if !historyTokenValidated, cursor.historyTokenData != nil, let anchor = cursor.lastDrainedTxAt {
+                    window += try context.fetchHistory(
+                        HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > anchor }))
+                }
+                txns = window
+            } else {
+                txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            }
+            let sessionOwner = currentUserIDProvider()
+            let log = signInLogProvider()
+            var seen = Set<String>()
+            var changes: [UncapturedChange] = []
+            for tx in txns where tx.author != Self.outboxSaveAuthor {
+                let rowOwner = GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: log)
+                let held = GroupsOutboxOwnershipLogic.isHeldForAnotherAccount(rowOwner: rowOwner, sessionOwner: sessionOwner)
+                for (index, change) in tx.changes.enumerated()
+                where Self.groupEntityNames.contains(change.changedPersistentIdentifier.entityName) {
+                    let key = CloudSyncEngine.uncapturedChangeKey(tx: tx, change: change, index: index)
+                    if seen.insert(key).inserted {
+                        changes.append(UncapturedChange(key: key, heldForAnotherAccount: held,
+                                                        provenAnotherAccount: held && rowOwner != nil))
+                    }
+                }
+            }
+            return changes
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: no se pudo leer el History sin capturar: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    // MARK: - El dueño de cada fila (`groups-outbox-rows-without-a-live-session-have-no-exit`)
+
+    /// **Filas VIVAS que la sesión de ahora no puede subir porque no son suyas**: de otra cuenta, o sin dueño probado. Es lo
+    /// que el push-all del cierre cuenta aparte para bloquear con `.groupsChangesFromAnotherAccount` en vez de esperar a un
+    /// outbox que esta sesión nunca va a vaciar. Sin sesión, 0: ahí el bloqueo es la sesión caducada. `Int.max` si el outbox
+    /// no se pudo leer (el «no se pudo contar» del repo).
+    func liveRowsHeldForAnotherAccount(context: ModelContext) -> Int {
+        Self.liveRowsHeldForAnotherAccount(sessionOwner: currentUserIDProvider(), context: context)
+    }
+
+    /// El cuerpo de `liveRowsHeldForAnotherAccount`, con la sesión inyectada para poder medirlo.
+    static func liveRowsHeldForAnotherAccount(sessionOwner: String?, context: ModelContext) -> Int {
+        guard let sessionOwner, !sessionOwner.isEmpty else { return 0 }
+        do {
+            let live = try context.fetch(FetchDescriptor<GroupSyncOutbox>(predicate: #Predicate { $0.rejectedReason == nil }))
+            return live.filter {
+                GroupsOutboxOwnershipLogic.isHeldForAnotherAccount(rowOwner: $0.ownerUserID, sessionOwner: sessionOwner)
+            }.count
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient: Error contando las filas de otra cuenta: \(error)")
+            #endif
+            return Int.max
+        }
+    }
+
+    /// **Dar dueño a las filas de un build anterior**, una vez y con prueba: las encoladas antes de que existiera `ownerUserID`
+    /// (`schemaVersion` 1). Las de este build ya nacieron con su dueño decidido, también cuando es «ninguno». Dos pruebas, por
+    /// orden:
+    ///  1. **La entrada del espejo del App Group** que casa por `(syncID, hlc)`: guarda el `sub` que la escribió desde B2, así
+    ///     que no es una reatribución, es el mismo sello.
+    ///  2. **El registro de sesiones a la hora en que se encoló** (`createdAt`): la cuenta que tenía el teléfono al drenarla.
+    ///     Es lo que cubre la fila capturada sin sesión o rechazada —el espejo no guarda ni una ni otra— de un build anterior,
+    ///     que el arranque siembra con la cuenta que ya estaba (`SessionSignInLog.seedIfAbsent`). Sin las dos, se queda sin
+    ///     dueño y no la sube nadie (`GroupSyncOutbox.ownerUserID`).
+    ///
+    /// Incluye las dead-letter: el re-drive de `yala_not_authorized` las devuelve a pendientes, y sin dueño quedarían retenidas
+    /// para siempre (review adversarial del 2026-09-28). **No aborta el drain**: es contabilidad del dueño, y una fila que no
+    /// lo recibe hoy se queda retenida, que es el lado seguro. Sin filas sin dueño no lee el espejo.
+    private func adoptOwnersForUnownedRows(context: ModelContext, log: SessionSignInLog?) {
+        do {
+            // Solo las de un build anterior: una fila nueva sin dueño lo dejó así la regla del drain, y buscárselo ahora se
+            // lo daría a la sesión de ahora —el registro ya tiene su entrada para el `createdAt` del drain que la creó—, que
+            // es el bug de este ticket por otra puerta (review adversarial del 2026-09-28).
+            let legacy = CloudSyncSchemaVersions.groupSyncOutboxBeforeOwners
+            let unowned = try context.fetch(FetchDescriptor<GroupSyncOutbox>(
+                predicate: #Predicate { $0.ownerUserID == nil && $0.schemaVersion <= legacy }))
+            guard !unowned.isEmpty else { return }
+            var ownerByFile: [String: String] = [:]
+            for entry in outboxMirror?.allEntries() ?? [] where !entry.userID.isEmpty {
+                ownerByFile[GroupsOutboxMirror.fileName(syncID: entry.syncID, hlc: entry.hlc)] = entry.userID
+            }
+            let adopted = unowned.compactMap { row -> (GroupSyncOutbox, String)? in
+                let owner = ownerByFile[GroupsOutboxMirror.fileName(syncID: row.syncID, hlc: row.hlc)]
+                    ?? log?.owner(at: row.createdAt)
+                return owner.map { (row, $0) }
+            }
+            guard !adopted.isEmpty else { return }
+            try saveWithAuthor(context) {
+                for (row, owner) in adopted { row.ownerUserID = owner }
+            }
+            GroupsSyncBreadcrumb.groupsOutboxOwnersAdopted(count: adopted.count)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: no se pudo dar dueño a las filas sin dueño: \(error)")
+            #endif
+        }
+    }
+
+    /// ¿Pertenece la transacción al store de GRUPOS? Toda transacción de ese store cambia al menos una de
+    /// sus 5 entidades y NINGUNA transacción de otro store lo hace — `groupEntityNames` es exactamente el
+    /// conjunto de entidades del `groupsSchema` (invariante pinneado por
+    /// `partition_groupEntityNames_matchGroupsSchema_disjointFromPersonal`).
+    private func isGroupsStoreTransaction(_ tx: DefaultHistoryTransaction) -> Bool {
+        tx.changes.contains { Self.groupEntityNames.contains($0.changedPersistentIdentifier.entityName) }
+    }
+
+    /// El token del cursor SOLO si consta que se ancló en el store de Grupos. Ver `historyTokenStoreID`:
+    /// un ancla de procedencia desconocida (fila de un build anterior a este fix, que anclaba en el store
+    /// de la última transacción procesada —casi siempre el PERSONAL—) es INUTILIZABLE y se descarta.
+    private func anchoredHistoryToken(_ cursor: GroupSyncCursor) -> DefaultHistoryToken? {
+        guard cursor.historyTokenStoreID != nil else { return nil }
+        return decodeToken(cursor.historyTokenData)
+    }
+
+    private func performDrain(context: ModelContext) -> Bool {
+        defer { drainSignInLog = nil }
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            loadClock(from: cursor)
+            let token = anchoredHistoryToken(cursor)
+            // **De quién es lo que se capture en esta vuelta** (`groups-outbox-rows-without-a-live-session-have-no-exit`): el
+            // registro de sesiones, leído UNA vez. Cada transacción se fecha contra él; la sesión de ahora no cuenta.
+            let signInLog = signInLogProvider()
+            drainSignInLog = signInLog
+            adoptOwnersForUnownedRows(context: context, log: signInLog)
+
+            let lookups = try buildLookups(context)
+            // C2-bis (CRÍTICO #1): partición POR-GRUPO simétrica del push. Solo los grupos del canal BACKEND
+            // (`isBackendGroup`) drenan al outbox — sin este muro, editar un grupo CloudKit bajo flag ON
+            // drenaría sus filas al backend (`group_id` inexistente server-side → dead-letters permanentes +
+            // doble-sync CKSyncEngine∥backend). El PULL ya está scoped por cursores/memberships; la asimetría
+            // era solo del push.
+            let backendZoneIDs = try backendGroupZoneIDs(context)
+            let tokenTxns = try fetchHistory(after: token, cursor: cursor, context: context)
+
+            let tokenGuard = recoverIfHistoryTokenIncomparable(
+                cursor: cursor, tokenTxns: tokenTxns, context: context)
+            if tokenGuard.validatedByCompare { historyTokenValidated = true }
+            let txns = tokenGuard.txns
+
+            var seen = try existingOutboxKeys(context)
+
+            var rows: [PendingGroupRow] = []
+            var advancedToken: DefaultHistoryToken?
+            var advancedTxAt: Date?
+            var advancedStoreID: String?
+            // Barrido: el timestamp MÁXIMO visto en esta vuelta (de CUALQUIER store) y si se vio alguna
+            // transacción del store de Grupos. Solo se usan cuando NO hay ninguna: ver `advanceScanFloor`.
+            var maxScannedTxAt: Date?
+            var sawGroupsStoreTx = false
+            // La traducción se cortó (el HLC no se pudo estampar): lo que queda detrás del corte sigue solo en el History.
+            var translationAborted = false
+            for tx in txns {
+                if let seen = maxScannedTxAt { maxScannedTxAt = max(seen, tx.timestamp) }
+                else { maxScannedTxAt = tx.timestamp }
+                let isGroupsTx = isGroupsStoreTransaction(tx)
+                if isGroupsTx { sawGroupsStoreTx = true }
+                // Anti-auto-captura (echo suppression): los writes del propio canal NO se TRADUCEN — el
+                // apply de un pull no se re-emite al servidor como si fuera una edición local. Ojo: esto
+                // decide QUÉ SE EMITE, no dónde se ancla el high-water (bloque de abajo).
+                if tx.author != Self.outboxSaveAuthor {
+                    do {
+                        for change in tx.changes {
+                            let entityName = change.changedPersistentIdentifier.entityName
+                            // Muro anti-fuga: solo entidades del store de Grupos (personal lo captura el otro canal).
+                            guard Self.groupEntityNames.contains(entityName) else { continue }
+                            try translate(change, entityName: entityName, tx: tx, lookups: lookups,
+                                          backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
+                        }
+                    } catch {
+                        // El estampado del HLC lanzó: abortar en la FRONTERA de esta transacción. Desde que se estampa con
+                        // `sendLocal` ni la deriva ni el contador agotado cortan aquí; solo un año fuera de 0001–9999.
+                        #if DEBUG
+                        logger.error("GroupsSync: el HLC no se pudo estampar al traducir tx: \(error)")
+                        #endif
+                        translationAborted = true
+                        break
+                    }
+                }
+                // CRÍTICO: el high-water del token SOLO se mueve con transacciones del store de GRUPOS.
+                // `DefaultHistoryToken` es POR-STORE — anclarlo en una transacción del store PERSONAL (que
+                // en producción domina el tráfico) hace que `fetchHistory($0.token > token)` deje de
+                // devolver NADA del store de Grupos, y como sin verlo el canal tampoco puede re-anclar en
+                // él, el estado es un PUNTO FIJO: ningún gasto vuelve a salir del device. Medido en
+                // producción el 2026-07-31 (`POST /groups/push` jamás emitido) y pinneado por
+                // `GroupsDrainHistoryStoreAnchorTests`.
+                //
+                // Y SÍ se mueve con el ECO. Son dos razones DISTINTAS para no avanzar y confundirlas costó
+                // el segundo defecto: «es mía, no la re-emitas» habla de TRADUCIR; «no es de mi store»
+                // habla de ANCLAR. El eco de este canal sí es del store de Grupos —`applyPulledPage`
+                // inserta los `Split*` bajo `outboxSaveAuthor` (:1550)— así que descartarlo también aquí
+                // dejaba sin nada donde anclar al device que solo RECIBE (el invitado de un grupo, que
+                // nunca crea gastos: las ÚNICAS transacciones de su store de Grupos son las que escribe su
+                // propio pull). `sawGroupsStoreTx` bloqueaba el suelo del barrido y `advancedToken` se
+                // quedaba nil ⇒ NINGUNA de las tres ramas de abajo escribía el cursor ⇒ el fetch por
+                // timestamp re-barría una ventana que CRECÍA en cada drain, indefinidamente y en silencio.
+                //
+                // El bucle que temía el comentario original («cada avance escribiría el cursor → loop»)
+                // era real cuando el ancla no estaba acotada al store, y HOY no existe: los únicos writes
+                // del propio drain —`GroupSyncOutbox` y `GroupSyncCursor`— viven en `syncMetaSchema`, NO
+                // en `groupsSchema` ⇒ avanzar aquí no genera ninguna transacción del store de Grupos ⇒ el
+                // drain siguiente no encuentra nada nuevo que anclar y no re-escribe el cursor. Las dos
+                // mitades (avanza con el eco / no entra en bucle) están pinneadas en
+                // `GroupsDrainHistoryStoreAnchorTests`, sección «Device que solo RECIBE».
+                guard isGroupsTx else { continue }
+                advancedToken = tx.token
+                advancedTxAt = tx.timestamp
+                advancedStoreID = tx.storeIdentifier
+            }
+
+            if !rows.isEmpty {
+                // B2 (regla Q3): espejo App Group ANTES del insert+save, en la MISMA vuelta síncrona
+                // (sin `await` entremedias — autosave no puede invertir el orden fila-durable-sin-espejo).
+                writeMirror(rows: rows)
+                try saveWithAuthor(context) {
+                    for row in rows { context.insert(row.makeModel()) }
+                    if _testThrowOnDrainSave { throw GroupsDrainTestCrash.save }
+                }
+            }
+
+            if !_testSuppressTokenAdvance {
+                // **Con la traducción cortada no se re-ancla** (review adversarial del 2026-09-26): el re-ancla salta a la
+                // última transacción de Grupos de la UNIÓN, que puede estar DETRÁS del corte, y el drain siguiente ya no
+                // vería lo que no se tradujo — devolvería `true` con el outbox a 0, que es el bug de
+                // `groups-drain-failure-reads-as-nothing-pending` por otra puerta. Se cae al avance normal, que se queda en
+                // la última transacción CONSUMIDA (un token de este mismo fetch, así que comparable); el guard vuelve a
+                // correr en la vuelta siguiente.
+                if let reanchor = tokenGuard.reanchor, !translationAborted {
+                    try saveWithAuthor(context) {
+                        cursor.historyTokenData = try encodeToken(reanchor.token)
+                        cursor.historyTokenStoreID = reanchor.storeID
+                        cursor.lastDrainedTxAt = reanchor.txAt
+                        cursor.clockLatestHLC = clock.latest?.description
+                    }
+                    historyTokenValidated = true
+                    historyTokenRecoveredCount += 1
+                    GroupsSyncBreadcrumb.groupsHistoryTokenRecovered()
+                } else if let advancedToken {
+                    try saveWithAuthor(context) {
+                        cursor.historyTokenData = try encodeToken(advancedToken)
+                        cursor.historyTokenStoreID = advancedStoreID
+                        cursor.lastDrainedTxAt = advancedTxAt
+                        cursor.clockLatestHLC = clock.latest?.description
+                    }
+                    historyTokenValidated = true
+                } else if !sawGroupsStoreTx, let floor = maxScannedTxAt,
+                          cursor.historyTokenStoreID == nil {
+                    // SUELO DEL BARRIDO. Sin ancla de Grupos el fetch cae al predicado por TIMESTAMP, y sin
+                    // este avance ese fetch re-lee todo el History en CADA drain (el coste que el ancla
+                    // por-token ahorraba antes de este fix, a costa de anclar en el store equivocado).
+                    // Solo es seguro porque acabamos de comprobar que en la ventana barrida NO había ni
+                    // una transacción del store de Grupos: nada quedó sin drenar por debajo del suelo. En
+                    // cuanto aparezca la primera, manda el token y este camino no se vuelve a tomar.
+                    try saveWithAuthor(context) {
+                        cursor.historyTokenData = nil
+                        cursor.lastDrainedTxAt = floor
+                        cursor.clockLatestHLC = clock.latest?.description
+                    }
+                }
+            }
+            return !translationAborted
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: drain error: \(error)")
+            #endif
+            return false
+        }
+    }
+
+    // MARK: - Traducción de un cambio (dispatch por tipo concreto)
+
+    private struct Lookups {
+        var splitGroup: [PersistentIdentifier: SplitGroup] = [:]
+        var splitExpense: [PersistentIdentifier: SplitExpense] = [:]
+        var splitShare: [PersistentIdentifier: SplitShare] = [:]
+        var splitSettlement: [PersistentIdentifier: SplitSettlement] = [:]
+    }
+
+    /// C2-bis: conjunto de `group_id` (= `cloudKitZoneID`) de los grupos del canal BACKEND. `#Predicate`
+    /// CONCRETO por tipo (regla del repo — nada de genéricos-protocolo).
+    private func backendGroupZoneIDs(_ context: ModelContext) throws -> Set<String> {
+        let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.isBackendGroup == true })
+        return Set(try context.fetch(descriptor).map(\.cloudKitZoneID))
+    }
+
+    private func translate(
+        _ change: HistoryChange,
+        entityName: String,
+        tx: DefaultHistoryTransaction,
+        lookups: Lookups,
+        backendZoneIDs: Set<String>,
+        rows: inout [PendingGroupRow],
+        seen: inout Set<String>
+    ) throws {
+        switch entityName {
+        case GroupSyncEntityType.splitExpense:
+            try translateChange(change, type: SplitExpense.self, entityType: entityName,
+                                emission: GroupEntityEmissionMap.splitExpense,
+                                liveSyncID: { $0.id }, liveGroupID: { $0.groupZoneID },
+                                tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                tombstoneGroupID: { $0.tombstone[\.groupZoneID] as? String },
+                                updateOnly: false, lookup: lookups.splitExpense, tx: tx,
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
+        case GroupSyncEntityType.splitShare:
+            try translateChange(change, type: SplitShare.self, entityType: entityName,
+                                emission: GroupEntityEmissionMap.splitShare,
+                                liveSyncID: { $0.id }, liveGroupID: { $0.groupZoneID },
+                                tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                tombstoneGroupID: { $0.tombstone[\.groupZoneID] as? String },
+                                updateOnly: false, lookup: lookups.splitShare, tx: tx,
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
+        case GroupSyncEntityType.splitSettlement:
+            try translateChange(change, type: SplitSettlement.self, entityType: entityName,
+                                emission: GroupEntityEmissionMap.splitSettlement,
+                                liveSyncID: { $0.id }, liveGroupID: { $0.groupZoneID },
+                                tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                tombstoneGroupID: { $0.tombstone[\.groupZoneID] as? String },
+                                updateOnly: false, lookup: lookups.splitSettlement, tx: tx,
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
+        case GroupSyncEntityType.splitGroup:
+            // UPDATE-only: el grupo nace vía RPC create_group (G3+) → NO se emite su INSERT. `group_id` del
+            // wire = `cloudKitZoneID` (la identidad server-side); `syncID` local = `id` (dedup).
+            try translateChange(change, type: SplitGroup.self, entityType: entityName,
+                                emission: GroupEntityEmissionMap.splitGroup,
+                                liveSyncID: { $0.id }, liveGroupID: { $0.cloudKitZoneID },
+                                tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                tombstoneGroupID: { $0.tombstone[\.cloudKitZoneID] as? String },
+                                updateOnly: true, lookup: lookups.splitGroup, tx: tx,
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
+        default:
+            // SplitMember (pull-only) y cualquier otro: sin emisión.
+            return
+        }
+    }
+
+    private func translateChange<T: PersistentModel>(
+        _ change: HistoryChange,
+        type: T.Type,
+        entityType: String,
+        emission: EntityEmission<T>,
+        liveSyncID: (T) -> UUID,
+        liveGroupID: (T) -> String,
+        tombstoneSyncID: (DefaultHistoryDelete<T>) -> UUID?,
+        tombstoneGroupID: (DefaultHistoryDelete<T>) -> String?,
+        updateOnly: Bool,
+        lookup: [PersistentIdentifier: T],
+        tx: DefaultHistoryTransaction,
+        backendZoneIDs: Set<String>,
+        rows: inout [PendingGroupRow],
+        seen: inout Set<String>
+    ) throws {
+        switch change {
+        case .insert(let insert):
+            guard !updateOnly else { return }  // split_groups: el INSERT nace vía RPC → no emitir
+            guard insert is DefaultHistoryInsert<T> else { return }
+            guard let model = lookup[insert.changedPersistentIdentifier] else { return }
+            let groupID = liveGroupID(model)
+            // C2-bis: solo drena si el grupo es del canal backend (el push de grupos CloudKit iría a un
+            // `group_id` inexistente server-side → dead-letter permanente).
+            guard backendZoneIDs.contains(groupID) else {
+                GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
+                return
+            }
+            try appendUpsert(model: model, emission: emission, syncID: liveSyncID(model),
+                             groupID: groupID, entityType: entityType,
+                             changedColumns: emission.columns, tx: tx, rows: &rows, seen: &seen)
+
+        case .update(let update):
+            guard let typed = update as? DefaultHistoryUpdate<T> else { return }
+            guard let model = lookup[typed.changedPersistentIdentifier] else { return }
+            let groupID = liveGroupID(model)
+            guard backendZoneIDs.contains(groupID) else {
+                GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
+                return
+            }
+            var changedColumns: Set<String> = []
+            for keyPath in typed.updatedAttributes {
+                if let columns = emission.columnKeyPaths[keyPath as PartialKeyPath<T>] {
+                    changedColumns.formUnion(columns)
+                }
+            }
+            guard !changedColumns.isEmpty else { return }
+            try appendUpsert(model: model, emission: emission, syncID: liveSyncID(model),
+                             groupID: groupID, entityType: entityType,
+                             changedColumns: changedColumns, tx: tx, rows: &rows, seen: &seen)
+
+        case .delete(let delete):
+            // `split_groups` no nace NI MUERE por el push: nace por el RPC `create_group` y muere por
+            // `groups_forget_user`. El `case .insert` lleva este mismo guard desde el principio; que aquí
+            // faltara no era simetría cosmética, era el único camino VIVO por el que un tombstone de grupo
+            // llega a existir — y el que hace alcanzable la cascada de arriba.
+            //
+            // Por qué el otro guard no basta: `backendZoneIDs` se calcula sobre las filas VIVAS (`:675`)
+            // DESPUÉS del borrado, así que solo protege cuando la fila borrada es la ÚNICA de su zona. Con
+            // un `SplitGroup` DUPLICADO en la misma zona —estado documentado, `SplitGroupDeduplicationService`—
+            // la ganadora mantiene la zona dentro del set, y el dedup del arranque (`AppBootstrapper` 16.4,
+            // `context.save()` pelado ⇒ autor por defecto) emitía el tombstone de la perdedora. Aguas abajo
+            // no lo frena NADA: `pushModeOf` del manifest no tiene call-site en el gateway (el `update_only`
+            // no se enforza), el validador del push solo rechaza `pull_only`, y `apply_group_delta` hace
+            // `update split_groups set deleted = true` con un simple `is_group_admin` — que el device del
+            // owner cumple. Resultado: una tarea de HIGIENE LOCAL borraba el grupo para todos los miembros.
+            //
+            // ⇒ El gate por ZONA sobre filas vivas es la herramienta equivocada para un tombstone por FILA.
+            // Éste va por ENTIDAD y es el que carga el peso.
+            guard !updateOnly else { return }
+            guard let typed = delete as? DefaultHistoryDelete<T> else { return }
+            guard let syncID = tombstoneSyncID(typed), let groupID = tombstoneGroupID(typed) else {
+                #if DEBUG
+                logger.error("GroupsSync: tombstone sin identidad preservada para \(entityType, privacy: .public)")
+                #endif
+                return
+            }
+            // C2-bis: un tombstone cuyo grupo NO está en el set backend se salta. Incluye el cascade de leave
+            // de un grupo backend (`performLocalCleanupAndDelete` ya borró el SplitGroup → su zona salió del
+            // set): CORRECTO — el server aplica el leave vía RPC y RLS rechazaría esos tombstones igual.
+            // H3 (review): el mismo skip también salta UPSERTS previos aún no drenados de ese grupo
+            // (crear→gastar→salir antes del primer drain) — correcto igual: tras el leave, RLS rechazaría
+            // esas filas (`not_authorized`), solo se ahorra el round-trip al dead-letter.
+            // PRECISIÓN: «su zona salió del set» solo vale con UNA fila por zona. Con un `SplitGroup`
+            // duplicado la zona sigue dentro y este guard NO frena nada — por eso el de `updateOnly` de
+            // arriba va por entidad y no se apoya en éste. Para el cascade del leave la premisa se cerró
+            // en el EMISOR el 2026-08-03: `performLocalCleanupAndDelete` barre TODAS las filas de la zona
+            // (`GroupLocalCleanupZoneTests`), así que la zona sale del set siempre. Este guard sigue sin
+            // ser la defensa de nada que dependa del recuento de filas.
+            guard backendZoneIDs.contains(groupID) else {
+                GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
+                return
+            }
+            try appendRow(op: .tombstone, syncID: syncID, groupID: groupID, entityType: entityType,
+                          tx: tx, rows: &rows, seen: &seen) { _ in ("{}", nil) }
+
+        @unknown default:
+            return
+        }
+    }
+
+    private func appendUpsert<T: AnyObject>(
+        model: T,
+        emission: EntityEmission<T>,
+        syncID: UUID,
+        groupID: String,
+        entityType: String,
+        changedColumns: Set<String>,
+        tx: DefaultHistoryTransaction,
+        rows: inout [PendingGroupRow],
+        seen: inout Set<String>
+    ) throws {
+        try appendRow(op: .upsert, syncID: syncID, groupID: groupID, entityType: entityType,
+                      tx: tx, rows: &rows, seen: &seen) { hlc in
+            let result = DeltaEmitter.emit(model: model, emission: emission,
+                                           changedColumns: changedColumns, hlc: hlc)
+            let fieldsJSON: String
+            do {
+                fieldsJSON = try Canonc1Codec.encode(result.fields,
+                                                     groupedColumns: Set(emission.groupByColumn.keys))
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: codec c1 rechazó \(entityType, privacy: .public): \(error)")
+                #endif
+                return nil
+            }
+            return (fieldsJSON, encodeFieldHlcs(result.fieldHlcs))
+        }
+    }
+
+    private func appendRow(
+        op: SyncOutboxOp,
+        syncID: UUID,
+        groupID: String,
+        entityType: String,
+        tx: DefaultHistoryTransaction,
+        rows: inout [PendingGroupRow],
+        seen: inout Set<String>,
+        makePayload: (String) -> (fieldsJSON: String, fieldHlcsJSON: String?)?
+    ) throws {
+        // `sendLocal` y no `send`: con la hora del teléfono retrocedida, la guarda de deriva de `send` cortaba en esta
+        // transacción en cada vuelta y nada de lo apuntado después salía (`groups-clock-rollback-wedges-the-drain-forever`).
+        if _testThrowOnClockStamp { throw CanonicalTimeError.yearOutOfRange(0) }
+        let hlc = try clock.sendLocal(eventTime: tx.timestamp).description
+        let key = dedupKey(syncID: syncID, hlc: hlc, op: op)
+        guard !seen.contains(key) else { return }
+        seen.insert(key)
+        guard let payload = makePayload(hlc) else { return }
+        rows.append(PendingGroupRow(
+            syncID: syncID,
+            groupID: groupID,
+            entityType: entityType,
+            op: op,
+            hlc: hlc,
+            clientMutationID: UUID(),
+            fieldsJSON: payload.fieldsJSON,
+            fieldHlcsJSON: payload.fieldHlcsJSON,
+            author: tx.author ?? "",
+            createdAt: now(),
+            ownerUserID: GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: drainSignInLog)
+        ))
+    }
+
+    // MARK: - Lookups
+
+    private func buildLookups(_ context: ModelContext) throws -> Lookups {
+        var lookups = Lookups()
+        lookups.splitGroup = try index(SplitGroup.self, context: context)
+        lookups.splitExpense = try index(SplitExpense.self, context: context)
+        lookups.splitShare = try index(SplitShare.self, context: context)
+        lookups.splitSettlement = try index(SplitSettlement.self, context: context)
+        return lookups
+    }
+
+    private func index<T: PersistentModel>(
+        _ type: T.Type, context: ModelContext
+    ) throws -> [PersistentIdentifier: T] {
+        let models = try context.fetch(FetchDescriptor<T>())
+        var map: [PersistentIdentifier: T] = [:]
+        for model in models { map[model.persistentModelID] = model }
+        return map
+    }
+
+    // MARK: - Cursor / token / reloj
+
+    func loadOrCreateCursor(_ context: ModelContext) throws -> GroupSyncCursor {
+        var descriptor = FetchDescriptor<GroupSyncCursor>()
+        descriptor.fetchLimit = 1
+        if let existing = try context.fetch(descriptor).first { return existing }
+        let cursor = GroupSyncCursor()
+        context.insert(cursor)
+        try saveWithAuthor(context) { }
+        return cursor
+    }
+
+    /// Los `group_id` que el cursor del pull lista HOY. **Read-only a propósito**: no usa
+    /// `loadOrCreateCursor`, que INSERTA la fila y hace un `saveWithAuthor` — quien pregunta por el alcance
+    /// del canal (el barrido de huérfanas, el editor) no debe materializar estado del canal, y menos desde
+    /// un camino que puede correr con el canal apagado.
+    ///
+    /// El `group_id` **es** el `cloudKitZoneID` de la fila (`applyGroupMeta` lo pisa con `delta.groupID`, y
+    /// `GroupBackendMembershipService.createGroup` manda ese mismo string al servidor), así que el conjunto
+    /// se indexa por zona sin derivar nada. Cursor ausente o JSON corrupto ⇒ conjunto VACÍO, que en el gate
+    /// de frescura niega la evidencia: fail-closed.
+    func pulledGroupIDs(context: ModelContext) -> Set<String> {
+        var descriptor = FetchDescriptor<GroupSyncCursor>()
+        descriptor.fetchLimit = 1
+        do {
+            guard let cursor = try context.fetch(descriptor).first else { return [] }
+            return Set(decodeCursors(cursor.groupCursorsJSON).keys)
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient: fetch del cursor del pull falló: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    /// El pull toma el reloj persistido solo si va por DELANTE del de memoria (o si éste no tiene nada): nunca lo baja.
+    private func adoptPersistedClockIfAhead(_ cursor: GroupSyncCursor) {
+        guard let raw = cursor.clockLatestHLC else { return }
+        do {
+            let persisted = try HLC.parse(raw)
+            if let current = clock.latest, current >= persisted { return }
+            clock = HLCClock(nodeID: clock.nodeID, latest: persisted)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: el reloj persistido no parsea (\(raw, privacy: .public)): \(error)")
+            #endif
+        }
+    }
+
+    /// Integra en el reloj el HLC de una fila bajada (`HLCClock.observePulled`). Devuelve el motivo si el remoto va más de
+    /// 5 min por delante de la hora del teléfono y no se integró (el llamador lo cuenta y deja UN rastro por página); un HLC
+    /// que no supera al reloj propio no es un rechazo. La fila se aplica igual en los tres casos.
+    private func integratePulledClock(_ raw: String) -> String? {
+        let remote: HLC
+        do {
+            remote = try HLC.parse(raw)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: HLC de fila bajada no parsea (\(raw, privacy: .public)): \(error)")
+            #endif
+            return nil
+        }
+        if case .rejected(let reason) = clock.observePulled(remote, now: now()) { return reason }
+        return nil
+    }
+
+    private func loadClock(from cursor: GroupSyncCursor) {
+        guard let raw = cursor.clockLatestHLC else { return }
+        do {
+            let hlc = try HLC.parse(raw)
+            clock = HLCClock(nodeID: clock.nodeID, latest: hlc)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: loadClock parse falló para \(raw, privacy: .public): \(error)")
+            #endif
+        }
+    }
+
+    /// Ejecuta `body` y hace `context.save()` bajo `Self.outboxSaveAuthor`, restaurando el autor previo.
+    private func saveWithAuthor(_ context: ModelContext, _ body: () throws -> Void) throws {
+        let previous = context.author
+        context.author = Self.outboxSaveAuthor
+        defer { context.author = previous }
+        try body()
+        try context.save()
+    }
+
+    private func decodeToken(_ data: Data?) -> DefaultHistoryToken? {
+        guard let data else { return nil }
+        do {
+            return try JSONDecoder().decode(DefaultHistoryToken.self, from: data)
+        } catch {
+            return nil
+        }
+    }
+
+    private func encodeToken(_ token: DefaultHistoryToken) throws -> Data {
+        try JSONEncoder().encode(token)
+    }
+
+    /// Sin ancla de Grupos (`token == nil`: cursor nuevo, o procedencia descartada por `anchoredHistoryToken`)
+    /// el fetch cae al SUELO POR TIMESTAMP de `lastDrainedTxAt` — comparable cross-store, al revés que el
+    /// token — con el mismo `historyTokenSlack` que el guard, para absorber el desorden entre stores (los
+    /// timestamps de dos stores no vienen intercalados: `fetchHistory` los agrupa por store).
+    private func fetchHistory(
+        after token: DefaultHistoryToken?, cursor: GroupSyncCursor, context: ModelContext
+    ) throws -> [DefaultHistoryTransaction] {
+        guard let token else {
+            guard let floor = cursor.lastDrainedTxAt else {
+                return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            }
+            let cutoff = floor.addingTimeInterval(-Self.historyTokenSlack)
+            do {
+                return try context.fetchHistory(
+                    HistoryDescriptor<DefaultHistoryTransaction>(
+                        predicate: #Predicate { $0.timestamp > cutoff }))
+            } catch {
+                return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            }
+        }
+        do {
+            return try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token }))
+        } catch {
+            return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+        }
+    }
+
+    private func existingOutboxKeys(_ context: ModelContext) throws -> Set<String> {
+        try Self.outboxKeys(context)
+    }
+
+    private static func outboxKeys(_ context: ModelContext) throws -> Set<String> {
+        let existing = try context.fetch(FetchDescriptor<GroupSyncOutbox>())
+        var keys: Set<String> = []
+        for row in existing {
+            guard let op = SyncOutboxOp(rawValue: row.opRaw) else { continue }
+            keys.insert(dedupKey(syncID: row.syncID, hlc: row.hlc, op: op))
+        }
+        return keys
+    }
+
+    private func dedupKey(syncID: UUID, hlc: String, op: SyncOutboxOp) -> String {
+        Self.dedupKey(syncID: syncID, hlc: hlc, op: op)
+    }
+
+    private static func dedupKey(syncID: UUID, hlc: String, op: SyncOutboxOp) -> String {
+        "\(syncID.uuidString)\u{1}\(hlc)\u{1}\(op.rawValue)"
+    }
+
+    private func encodeFieldHlcs(_ fieldHlcs: [String: String]) -> String {
+        guard !fieldHlcs.isEmpty else { return "{}" }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        do {
+            return String(decoding: try encoder.encode(fieldHlcs), as: UTF8.self)
+        } catch {
+            return "{}"
+        }
+    }
+
+    // MARK: - Espejo del outbox (B2, molde CloudSyncEngine A1/§d.5)
+
+    /// Escribe el espejo `.atomic` de cada fila NUEVA de un drain, ANTES del insert+save (mismo cuerpo
+    /// síncrono, regla Q3). Best-effort: un fallo se loguea y NO aborta el drain (la History es backup
+    /// redundante). No-op sin espejo; una fila sin dueño probado no se espeja (owner-scoping M1: sin identidad no se
+    /// sella). **La entrada lleva el dueño de la FILA**, no la sesión: desde
+    /// `groups-outbox-rows-without-a-live-session-have-no-exit` son lo mismo casi siempre, y cuando no lo son —captura sin
+    /// sesión, o lo escrito antes de que entrara otra cuenta— la rehidratación tiene que devolver la fila a su dueño.
+    private func writeMirror(rows: [PendingGroupRow]) {
+        guard let mirror = outboxMirror else { return }
+        for row in rows {
+            guard let userID = row.ownerUserID, !userID.isEmpty else { continue }
+            do {
+                try mirror.write(row.mirrorEntry(userID: userID))
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: espejo write falló para \(row.entityType, privacy: .public): \(error)")
+                #endif
+            }
+        }
+    }
+
+    /// Espeja una fila de outbox YA materializada (`@Model`) — para el RE-DRIVE (una dead-letter revivida
+    /// vuelve a ser pendiente y re-entra al espejo). Mismo best-effort que `writeMirror(rows:)`.
+    private func writeMirrorEntry(for row: GroupSyncOutbox) {
+        guard let mirror = outboxMirror, let userID = row.ownerUserID, !userID.isEmpty else { return }
+        do {
+            try mirror.write(GroupsOutboxMirrorEntry(
+                userID: userID, syncID: row.syncID, groupID: row.groupID, entityType: row.entityType,
+                op: row.opRaw, hlc: row.hlc, clientMutationID: row.clientMutationID,
+                fieldsJSON: row.fieldsJSON, fieldHlcsJSON: row.fieldHlcsJSON,
+                tombstoneReason: row.tombstoneReason, author: GroupsOutboxMirror.author,
+                createdAt: row.createdAt))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: espejo write (revive) falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Barrido IDEMPOTENTE de los tombstones de `split_groups` que quedaron ENCOLADOS antes del guard del
+    /// 2026-08-02 (`translateChange`, `case .delete` → `guard !updateOnly`).
+    ///
+    /// **Por qué hace falta además del guard: el guard es hacia delante.** Un teléfono que ya tenga una
+    /// fila de `GroupSyncOutbox` con `entityType == GroupSyncEntityType.splitGroup` (el nombre de CLASE —
+    /// la tabla Postgres solo aparece en `buildDelta`) y `op == .tombstone` la seguirá empujando en el
+    /// próximo push. Server-side la identidad de `split_groups` es la ZONA, no la fila: `apply_group_delta`
+    /// hace `update split_groups set deleted = true` con un simple `is_group_admin` —que el device del
+    /// owner cumple— y aguas abajo no lo frena NADA (`pushModeOf` del manifest no tiene call-site en
+    /// `gateway/src`, el validador del push solo rechaza `pull_only`). ⇒ una tarea de higiene puramente
+    /// LOCAL (`SplitGroupDeduplicationService`, `AppBootstrapper` 16.4) borra el grupo para TODOS sus
+    /// miembros.
+    ///
+    /// **Dónde vive, y por qué NO entre los retomes de `AppBootstrapper`:** aquellos son `Task` gateados
+    /// por `awaitPersonalStoreReady()` (poll de 2 s), mientras que `startIfEligible` se llama SÍNCRONO en
+    /// el paso 15 del bootstrap y crea el loop en la misma vuelta. Un barrido diferido perdería la carrera
+    /// contra el primer `syncCycleOnce` — que es exactamente el push que hay que impedir. Desde
+    /// `startIfEligible` es anterior al loop propio (nace unas líneas más abajo), al piggyback
+    /// (`CloudSyncRuntime.performCycle` paso 5.6, `Task` posterior al paso 15) y a `syncNowFromPush` (que
+    /// comparte su guard de flag y exige el `context` que se fija ahí).
+    ///
+    /// **Pero UN call-site NO basta, y la razón es una asimetría de flags que engaña** (hallazgo de la
+    /// review adversarial del 2026-08-03, refutado dos veces y superviviente): `startIfEligible` gatea por
+    /// el flag COMPUESTO (`groupsBackendEnabled` = compilado && kill remoto) mientras que
+    /// `CloudSessionSignOut.pushAllPendingGroupsForSignOut` gatea por el COMPILADO
+    /// (`groupsBackendCompiledCapability`) y `pushPending` no consulta flag alguno. ⇒ con el kill remoto
+    /// puesto —o con el snapshot de remote-config ausente/corrupto/fuera de bucket, que es fail-closed—
+    /// existe un camino de push REAL en el estado exacto en el que este barrido sería inerte, y encima es
+    /// el estado que produce bajar `GROUPS_BACKEND_ROLLOUT_PERCENT`, o sea la contención de ESTE mismo
+    /// incidente. Por eso hay un SEGUNDO call-site en el push-all del sign-out, bajo su propio gate. Al
+    /// añadir un camino nuevo que llame a `pushPending`, pregúntate por qué gate pasa: si no es el
+    /// compuesto, necesita su propia llamada aquí. Lo pinnea
+    /// `GroupsSyncHardeningTests.signOutPushAll_wiresPurge_beforePendingPreCheck`.
+    ///
+    /// Los otros dos gates de `startIfEligible` sí implican «sin push»: sin sesión `pushPending` devuelve
+    /// `.sessionExpired` antes de emitir nada, y en la ventana de mount-mismatch de la sesión secundaria
+    /// tocar el outbox del DUEÑO desde la sesión invitada sería el bug, no la cura.
+    ///
+    /// **Incluye las DEAD-LETTER a propósito** (sin filtro por `rejectedReason`, al revés que
+    /// `pushPending`): el re-drive de `upstream_400:yala_not_authorized` revive una fila rechazada y la
+    /// vuelve a hacer pendiente, así que dejarlas sería dejar el veneno con un temporizador.
+    ///
+    /// **Sin sentinel**, mismo criterio que `OrphanedBridgedTxSweeper`: idempotente por construcción (la
+    /// segunda pasada no encuentra nada) y es además la red de cualquier camino futuro que reabra el
+    /// hueco. Un one-shot en `UserDefaults` se desincronizaría del espejo del App Group, que los caminos
+    /// de wipe no tocan igual. Coste en el caso dominante: un fetch con predicado sobre una tabla
+    /// normalmente vacía, y ni eso cuando el loop ya vive (`shouldStart` corta antes).
+    ///
+    /// **Orden filas→espejo** (molde de `applyResults`/`confirmUploaded`): si el borrado de archivos falla,
+    /// la fila YA no existe —el riesgo de push está cerrado— y el filtro de `rehydrateOutboxFromMirror`
+    /// impide que el archivo superviviente la resucite. Si es el `save()` el que lanza, se sale SIN tocar
+    /// el espejo, pero conviene ser exacto y no repetir la fórmula del molde: los `delete` quedan DIRTY en
+    /// el `mainContext` compartido y el próximo `save()` de cualquiera los persistirá bajo el autor por
+    /// DEFECTO. Aquí eso es inocuo y hasta deseable —el muro del drain (`groupEntityNames`) no contiene
+    /// `GroupSyncOutbox`, así que no se traduce a nada, y borrar esas filas es justo el objetivo—, de modo
+    /// que NO se hace `rollback()`: sobre un contexto compartido tiraría también el estado dirty personal
+    /// de otras partes de la app. Lo que sí puede quedar es el par «fila borrada + archivo del espejo
+    /// vivo», y de ese se encarga el cinturón del rehydrate.
+    ///
+    /// El `save()` va bajo `outboxSaveAuthor` como el resto del canal. Es doble cinturón: el muro del
+    /// drain (`groupEntityNames`) tampoco emite `GroupSyncOutbox`, que vive en `syncMetaSchema` y por eso
+    /// no mueve el ancla de History del store de Grupos.
+    func purgeQueuedSplitGroupTombstones(context: ModelContext) {
+        let entityName = GroupSyncEntityType.splitGroup
+        let tombstoneRaw = SyncOutboxOp.tombstone.rawValue
+
+        let rows: [GroupSyncOutbox]
+        do {
+            rows = try context.fetch(FetchDescriptor<GroupSyncOutbox>(
+                predicate: #Predicate { $0.entityType == entityName && $0.opRaw == tombstoneRaw }))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: fetch del barrido de tombstones de grupo falló: \(error)")
+            #endif
+            return
+        }
+
+        // Pares `(syncID, hlc)` a retirar del espejo, DEDUPLICADOS por su clave de archivo. Se recogen los
+        // de las filas Y los de las entries venenosas que ya no tienen fila: una lightweight migration pudo
+        // recrear la tabla vacía dejando solo el archivo, que es exactamente el caso para el que existe
+        // `rehydrateOutboxFromMirror` — sin este segundo barrido, el espejo re-inyectaría el tombstone.
+        var mirrorPairs: [String: (syncID: UUID, hlc: String)] = [:]
+        for row in rows {
+            mirrorPairs[GroupsOutboxMirror.fileName(syncID: row.syncID, hlc: row.hlc)] = (row.syncID, row.hlc)
+        }
+        // Entries venenosas REALMENTE vistas en el espejo. Se cuenta aparte de `mirrorPairs` a propósito:
+        // ese diccionario son pares a INTENTAR borrar e incluye los de filas que nunca tuvieron gemela
+        // (las dead-letter se excluyen del espejo por diseño B2), así que usarlo como métrica inflaría el
+        // canario — y este canario existe precisamente para medir el radio del bug, no para dar un número.
+        var mirrorHits = 0
+        if let mirror = outboxMirror, let userID = currentUserIDProvider() {
+            // Owner-scoped (M1): las entries de otra identidad NI se leen NI se borran. Cuando esa persona
+            // arranque su sesión, este mismo barrido correrá con SU `sub` antes de su rehydrate.
+            for entry in mirror.entriesForUser(userID)
+            where entry.entityType == entityName && entry.op == tombstoneRaw {
+                mirrorHits += 1
+                mirrorPairs[GroupsOutboxMirror.fileName(syncID: entry.syncID, hlc: entry.hlc)] =
+                    (entry.syncID, entry.hlc)
+            }
+        }
+        guard !mirrorPairs.isEmpty else { return }
+
+        if !rows.isEmpty {
+            do {
+                try saveWithAuthor(context) {
+                    for row in rows { context.delete(row) }
+                }
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: save del barrido de tombstones de grupo falló: \(error)")
+                #endif
+                return  // espejo intacto ⇒ consistente con el store; el próximo arranque reintenta
+            }
+        }
+
+        if let mirror = outboxMirror {
+            for pair in mirrorPairs.values { mirror.remove(syncID: pair.syncID, hlc: pair.hlc) }
+        }
+
+        GroupsSyncBreadcrumb.groupsGroupTombstonesPurged(rows: rows.count, mirror: mirrorHits)
+        MetricsService.canary(
+            .groupsOutboxGroupTombstonePurged,
+            detail: "rows=\(rows.count)|mirror=\(mirrorHits)")
+    }
+
+    /// Re-hidrata el `GroupSyncOutbox` desde el espejo App Group tras una lightweight migration que
+    /// recreó la tabla (B2, molde `CloudSyncEngine.rehydrateOutboxFromMirror`). DIFF INCONDICIONAL con
+    /// owner-scoping DURO: solo procesa `entriesForUser(sub actual)` (las de otra identidad se IGNORAN);
+    /// por cada entry cuyo `(syncID, hlc, op)` NO tiene fila en el outbox (vivas Y dead-letter — una
+    /// dead-letter presente NO se revive por esta vía), re-inserta con los valores ORIGINALES bajo
+    /// `outboxSaveAuthor` (el drain no re-captura el save). Idempotente. Un archivo huérfano (crash entre
+    /// purga y remove) es benigno: se re-sube y el backend deduplica por `client_mutation_id`.
+    func rehydrateOutboxFromMirror(context: ModelContext) {
+        guard let mirror = outboxMirror, let userID = currentUserIDProvider() else { return }
+        let entries = mirror.entriesForUser(userID)
+        guard !entries.isEmpty else { return }
+
+        let liveKeys: Set<String>
+        do { liveKeys = try existingOutboxKeys(context) } catch {
+            #if DEBUG
+            logger.error("GroupsSync: rehydrate fetch(GroupSyncOutbox) falló: \(error)")
+            #endif
+            return
+        }
+
+        var missing: [GroupsOutboxMirrorEntry] = []
+        for entry in entries {
+            guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+            // CINTURÓN de `purgeQueuedSplitGroupTombstones`: `split_groups` ni nace ni muere por el push
+            // (nace por el RPC `create_group`, muere por `groups_forget_user`), así que un tombstone de
+            // grupo en el espejo solo puede ser veneno de un build anterior al guard del 2026-08-02 y
+            // JAMÁS debe volver al outbox — empujarlo borra el grupo para todos sus miembros. El barrido
+            // corre unas líneas antes que este rehydrate y ya se llevó el archivo; esto cubre la ventana
+            // en la que el borrado de archivos no llegó a completarse (y cualquier orden futuro entre los
+            // dos). Se SALTA, no se borra: este es el camino de LECTURA; quien muta es el barrido.
+            if entry.entityType == GroupSyncEntityType.splitGroup, op == .tombstone { continue }
+            if !liveKeys.contains(dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op)) {
+                missing.append(entry)
+            }
+        }
+        guard !missing.isEmpty else { return }
+
+        do {
+            try saveWithAuthor(context) {
+                for entry in missing {
+                    guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+                    context.insert(GroupSyncOutbox(
+                        syncID: entry.syncID, groupID: entry.groupID, entityType: entry.entityType,
+                        op: op, hlc: entry.hlc, clientMutationID: entry.clientMutationID,
+                        fieldsJSON: entry.fieldsJSON, fieldHlcsJSON: entry.fieldHlcsJSON,
+                        author: entry.author, tombstoneReason: entry.tombstoneReason,
+                        createdAt: entry.createdAt,
+                        // El dueño es el que selló la entrada, que por el filtro de arriba es la sesión.
+                        ownerUserID: entry.userID))
+                }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: rehydrate save falló: \(error)")
+            #endif
+            return
+        }
+        GroupsSyncBreadcrumb.groupsMirrorRehydrated(count: missing.count)
+    }
+
+    // MARK: - Guard del token de History (molde HALLAZGO 2)
+
+    private struct TokenGuardResult {
+        var txns: [DefaultHistoryTransaction]
+        var validatedByCompare = false
+        var reanchor: (token: DefaultHistoryToken, txAt: Date, storeID: String)?
+    }
+
+    /// Detecta y recupera un token que dejó de surfacear transacciones nuevas del mount ACTUAL usando los
+    /// TIMESTAMPS de History (comparables cross-mount). Molde byte-a-byte de
+    /// `CloudSyncEngine.recoverIfHistoryTokenIncomparable`, acotado a las entidades de Grupos.
+    private func recoverIfHistoryTokenIncomparable(
+        cursor: GroupSyncCursor,
+        tokenTxns: [DefaultHistoryTransaction],
+        context: ModelContext
+    ) -> TokenGuardResult {
+        guard !historyTokenValidated,
+              cursor.historyTokenData != nil,
+              let lastDrainedTxAt = cursor.lastDrainedTxAt else {
+            return TokenGuardResult(txns: tokenTxns)
+        }
+        let cutoff = lastDrainedTxAt.addingTimeInterval(-Self.historyTokenSlack)
+        let timestampTxns: [DefaultHistoryTransaction]
+        do {
+            timestampTxns = try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > cutoff }))
+        } catch {
+            return TokenGuardResult(txns: tokenTxns)
+        }
+        guard !timestampTxns.isEmpty else { return TokenGuardResult(txns: tokenTxns) }
+
+        let tokenTokens = tokenTxns.map(\.token)
+        func tokenPresent(_ tx: DefaultHistoryTransaction) -> Bool {
+            tokenTokens.contains { $0 == tx.token }
+        }
+        let missing = timestampTxns.filter { tx in
+            guard tx.timestamp > lastDrainedTxAt else { return false }
+            guard tx.author != Self.outboxSaveAuthor else { return false }
+            guard tx.changes.contains(where: {
+                Self.groupEntityNames.contains($0.changedPersistentIdentifier.entityName)
+            }) else { return false }
+            return !tokenPresent(tx)
+        }
+        guard !missing.isEmpty else {
+            return TokenGuardResult(txns: tokenTxns, validatedByCompare: true)
+        }
+
+        historyTokenIncomparableCount += 1
+        GroupsSyncBreadcrumb.groupsHistoryTokenIncomparable(missed: missing.count)
+        var union = tokenTxns
+        for tx in timestampTxns where !tokenPresent(tx) { union.append(tx) }
+        let orderedUnion = union.enumerated()
+            .sorted { a, b in
+                a.element.timestamp != b.element.timestamp
+                    ? a.element.timestamp < b.element.timestamp
+                    : a.offset < b.offset
+            }
+            .map(\.element)
+        // El re-ancla tiene que caer en el store de GRUPOS, igual que el avance normal: `orderedUnion.last`
+        // pelado es la última por TIMESTAMP, que en producción es casi siempre una transacción del store
+        // PERSONAL (el bridge escribe su `TransactionItem` justo después del gasto) — y anclar ahí
+        // reintroduce exactamente el punto fijo que este guard tiene que deshacer.
+        guard let last = orderedUnion.last(where: { isGroupsStoreTransaction($0) }) else {
+            return TokenGuardResult(txns: orderedUnion)
+        }
+        return TokenGuardResult(
+            txns: orderedUnion,
+            reanchor: (token: last.token, txAt: last.timestamp, storeID: last.storeIdentifier))
+    }
+
+    // MARK: - Push (POST /groups/push)
+
+    /// Máximo de deltas por REQUEST (B2, molde `SyncPushClient.pushChunkSize` / anti-patrón I14-H2 del
+    /// personal): el Worker aplica los `apply_group_delta` SECUENCIALMENTE — un batch sin cap (backlog
+    /// grande tras un kill/offline) excede el timeout del URLSession → `.transient` → nada se purga →
+    /// loop sin progreso. 50 deltas deja margen 4× bajo el timeout.
+    static let pushChunkSize = 50
+
+    /// El token no llegó: ¿sesión caducada o fallo pasajero? **Lo decide el SDK, no este cliente.**
+    ///
+    /// supabase-swift (2.50.0) solo BORRA la sesión guardada ante cuatro respuestas del servidor de auth
+    /// —`session_not_found`, `session_expired`, `refresh_token_not_found` y `refresh_token_already_used`
+    /// (`Internal/APIClient.swift`, `sessionCleanupErrorCodes`)— y la borra ANTES de lanzar. Sin red, con un 5xx
+    /// o con un rechazo que no esté en esa lista, lanza y la deja donde estaba. ⇒ con la sesión guardada, un token
+    /// que no llega es pasajero: `.transient`, con su backoff, y el loop propio de Grupos vuelve a subir solo en su
+    /// siguiente reintento (hasta 5 min; al momento si hay un guardado local). Solo con la sesión borrada es
+    /// `.sessionExpired`, que para el loop y pide volver a entrar. La premisa del SDK la fija
+    /// `SupabaseSessionRenewalContractTests`.
+    ///
+    /// **Dos límites, medidos en la review del 2026-09-15.** En `.cloud` Grupos no tiene loop propio: cicla dentro
+    /// del runtime personal (paso 5.6). Hasta el 2026-09-16 su push y su pull leían el token nulo como caducado y paraban
+    /// antes de llegar aquí; desde entonces reintentan con backoff, y Grupos cicla en la primera vuelta en que el push
+    /// personal pasa (`personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Y un loop vivo en backoff no
+    /// se despierta al volver a primer plano, cuando el loop muerto de antes se re-arrancaba justo ahí
+    /// (`groups-loop-in-backoff-ignores-the-return-to-foreground`).
+    ///
+    /// Lo consultan el token nulo del push y del pull, y el refresh forzado que vuelve sin token tras un 401.
+    /// Hasta el 2026-09-15 los cuatro devolvían `.sessionExpired` a pelo, y a quien estaba sin conexión con el
+    /// token caducado el cierre de sesión le decía «Tu sesión caducó»
+    /// (`groups-push-reads-an-offline-token-refresh-as-a-session-expiry`).
+    ///
+    /// **Lo que se acepta a sabiendas:** un rechazo que el SDK no cuenta como terminal (p. ej. `user_banned`) se
+    /// lee pasajero y reintenta con su backoff en vez de parar. «Tu sesión caducó» tampoco sería verdad ahí, y el
+    /// cierre de sesión con cambios de grupos sigue bloqueado como antes, ahora con el aviso de lo pasajero.
+    private func sdkRemovedTheSession() -> Bool { !canRenewSession() }
+
+    /// Sube el outbox pendiente (filas sin dead-letter) al gateway en CHUNKS de `pushChunkSize` con
+    /// PROGRESO INCREMENTAL (molde `SyncPushClient.push` I14-H2): cada chunk confirmado se purga/marca
+    /// vía `applyResults` **POR CHUNK con las filas de ESE chunk** ([R8] — la correlación por
+    /// `client_mutation_id` es chunk-independiente) ANTES de pedir el siguiente. Un chunk fallido tras
+    /// confirmados → `.completed(parciales)` (lo confirmado ya se aplicó; el próximo ciclo re-emite solo
+    /// el resto — un outcome TERMINAL 401/403 resurfacea en el PRIMER chunk del próximo intento).
+    /// NO purga si la sesión está caída. Sin token no hay request: `.sessionExpired` solo si el SDK borró la
+    /// sesión, y `.transient` si la conserva (`sdkRemovedTheSession`).
+    func pushPending(context: ModelContext) async -> PushOutcome {
+        let live: [GroupSyncOutbox]
+        do {
+            var descriptor = FetchDescriptor<GroupSyncOutbox>(
+                sortBy: [SortDescriptor(\.createdAt, order: .forward)])
+            descriptor.predicate = #Predicate { $0.rejectedReason == nil }
+            live = try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: fetch outbox para push falló: \(error)")
+            #endif
+            return .transient
+        }
+        // **Solo sube lo que es de la sesión** (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`). Lo de
+        // otra cuenta —o sin dueño probado— se queda en el outbox, intacto y sin re-sellar: lo sube su dueño cuando vuelva,
+        // o lo pierde el cierre de sesión con el aviso que lo cuenta (`CloudSessionSignOut`). Sin sesión no se filtra: el
+        // token de abajo es quien dice «sesión caducada».
+        let sessionOwner = currentUserIDProvider()
+        // En orden de HLC y no de `createdAt` (`HLC.uploadOrder`): un cambio drenado con la hora adelantada queda fechado
+        // después de los que se drenan cuando la hora vuelve, y llegando después le ganaba al cambio nuevo de la misma
+        // unidad (`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`).
+        let rows = HLC.uploadOrder(live.filter {
+            GroupsOutboxOwnershipLogic.isUploadable(rowOwner: $0.ownerUserID, sessionOwner: sessionOwner)
+        }, hlc: \.hlc, createdAt: \.createdAt)
+        if rows.count < live.count {
+            GroupsSyncBreadcrumb.groupsOutboxHeldForAnotherAccount(count: live.count - rows.count)
+        }
+        guard !rows.isEmpty else { return .completed([]) }
+
+        guard var token = await tokenProvider(), !token.isEmpty else {
+            // La sesión que el SDK CONSERVA tras un refresh que no volvió: ese refresh es una petición HTTP al
+            // servidor de auth, así que la subida falló por la red y no por este teléfono. Es el caso del ticket
+            // `signout-pending-copy-says-wait-seconds-when-offline`.
+            if !sdkRemovedTheSession() { lastCycleFailedUpload = true }
+            return sdkRemovedTheSession() ? .sessionExpired(pending: rows.count) : .transient
+        }
+        // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push, molde personal).
+        let attest = await attestProvider()
+        // **La sesión del token tiene que ser la del filtro** (review adversarial del 2026-09-28): durante los dos `await` de
+        // arriba —el token y el attest— pudo entrar otra cuenta, y sus credenciales firmarían filas que se filtraron para
+        // otra. Se deja para el ciclo siguiente, que filtra con la sesión de entonces. Una sola comprobación tras los dos
+        // basta (el mutante que quitaba otra tras el token sobrevivía por eso); la del refresh vive en `pushChunk`.
+        guard currentUserIDProvider() == sessionOwner else { return .transient }
+
+        var confirmed: [SyncDeltaResult] = []
+        var index = 0
+        while index < rows.count {
+            let upper = min(index + Self.pushChunkSize, rows.count)
+            let chunk = Array(rows[index..<upper])
+            // `token` es inout: si un chunk rescata un 401 con refresh forzado, el token FRESCO se
+            // propaga a los chunks siguientes (sin él, cada chunk posterior forzaría su propio refresh).
+            let outcome = await pushChunk(chunk, token: &token, attest: attest,
+                                          totalPending: rows.count, sessionOwner: sessionOwner, context: context)
+            switch outcome {
+            case .completed(let results):
+                confirmed.append(contentsOf: results)
+                index = upper
+            case .sessionExpired, .accountUnavailable, .transient:
+                // Progreso parcial: lo confirmado YA se aplicó por chunk; sin nada confirmado, el outcome
+                // del chunk fallido sube tal cual (conserva la clasificación 401/403/transitorio).
+                return confirmed.isEmpty ? outcome : .completed(confirmed)
+            }
+        }
+        return .completed(confirmed)
+    }
+
+    /// UN request `POST /groups/push` con un chunk de filas. Mapeo de status EXACTAMENTE el previo al
+    /// chunking; al 200 aplica los resultados DEL CHUNK ([R8]) antes de devolver. `token` es `inout`:
+    /// un 401 rescatado con refresh forzado ESCRIBE el token fresco de vuelta (los chunks siguientes de
+    /// `pushPending` lo reusan sin re-forzar el refresh por chunk).
+    private func pushChunk(
+        _ chunk: [GroupSyncOutbox], token: inout String, attest: String?,
+        totalPending: Int, sessionOwner: String?, context: ModelContext
+    ) async -> PushOutcome {
+        let generation = teardownGeneration  // guardia MEDIA: no aplicar resultados post-teardown
+        let deltas: [GroupSyncDelta]
+        do {
+            deltas = try chunk.map { try buildDelta(from: $0) }
+        } catch {
+            // LOW aceptado (review adversarial, follow-up): una fila poison hace transitorio el CHUNK
+            // entero en vez de aislarse con un `partitionBuildable` como el personal (DIFERIDOS #26).
+            // NO-REGRESIÓN vs pre-B2: antes del chunking, la misma fila hacía transitorio el batch
+            // COMPLETO. El canal de Grupos solo emite las 4 clases cableadas → poison requiere drift.
+            #if DEBUG
+            logger.error("GroupsSync: buildDelta falló: \(error)")
+            #endif
+            return .transient
+        }
+
+        let body = wireBody(deltas)
+
+        // Cierre interno con la request YA construida (body/attest/deviceToken idénticos): solo cambia el
+        // bearer, para poder RE-EMITIR el chunk con un token fresco tras un 401. Mapeo de status EXACTO.
+        func send(bearer: String) async -> PushOutcome {
+            var request = URLRequest(url: baseURL.appendingPathComponent("groups/push"))
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+            if let attest, !attest.isEmpty {
+                request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+            }
+            // G8-3: el device token local (header opcional) → el server excluye SOLO este device del autor del
+            // fan-out. Solo se añade si el provider da un token non-nil/no-vacío (default `{ nil }` → header AUSENTE,
+            // byte-idéntico al pre-G8-3). Flag OFF: pushChunk solo corre con el canal activo — sin divergencia.
+            if let deviceToken = deviceTokenProvider(), !deviceToken.isEmpty {
+                request.setValue(deviceToken, forHTTPHeaderField: "X-Yala-Device-Token")
+            }
+            request.httpBody = body
+
+            let data: Data
+            let response: URLResponse
+            do {
+                (data, response) = try await urlSession.data(for: request)
+            } catch {
+                // Aquí empieza el testigo de la subida fallida, y es su caso más puro: la petición salió y no
+                // volvió (sin cobertura, timeout, DNS, TLS). Se enciende donde ocurre el fallo, no donde se
+                // traduce — ver `lastCycleFailedUpload`.
+                lastCycleFailedUpload = true
+                return .transient
+            }
+            guard let http = response as? HTTPURLResponse else {
+                lastCycleFailedUpload = true
+                return .transient
+            }
+
+            switch http.statusCode {
+            case 200:
+                // El attest pasó la guard: la racha de rechazos se acaba (`GroupsAttestStreakStore`). Va ANTES de la
+                // guardia de abajo porque describe al teléfono, no a la sesión: un teardown en vuelo no lo desmiente.
+                GroupsAttestStreakStore.recordAcceptance()
+                // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar resultados (ni purga
+                // ni dead-letter ni removals del espejo bajo una sesión que ya no existe). `.transient` es
+                // seguro: nada se confirmó localmente; el server deduplica por client_mutation_id.
+                guard generation == teardownGeneration else { return .transient }
+                do {
+                    let decoded = try JSONDecoder().decode(GroupPushResponse.self, from: data)
+                    // El `SyncDeltaResult` local descarta `outcome`; se decodifica APARTE para leer el código
+                    // SANITIZADO (`outcome.message` = yala_*) del rechazo y el `reason` del noop group_not_found
+                    // — SIN tocar el `SyncPushClient` del personal (A2).
+                    let outcomeInfo = Self.decodeOutcomeInfo(data)
+                    applyResults(decoded.results, outcomeInfo: outcomeInfo, rows: chunk, context: context)
+                    return .completed(decoded.results)
+                } catch {
+                    // El servidor contestó pero su respuesta no se pudo leer, así que nada quedó confirmado aquí:
+                    // para la persona, la subida no llegó. El copy del 2026-09-14 ya nombra este caso.
+                    lastCycleFailedUpload = true
+                    return .transient
+                }
+            case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                AttestSessionProvider.reportRejected(sentIn: request)
+                // App Attest ausente con el JWT bueno: la guard solo llega a este código tras verificar el JWT, y
+                // este cliente no manda nada sin él. Ni volver a entrar ni un JWT nuevo lo arreglan, así que no es
+                // sesión caducada ni pasa por el refresh de abajo: pasajero, con su backoff y con su rastro
+                // (decisión de Jürgen, 2026-09-15; `groups-sync-reads-a-missing-attest-401-as-a-session-expiry`).
+                // Un 401 que no trae este código conserva el trato de siempre.
+                //
+                // **Y cuenta en la racha, con su testigo** (ticket `groups-phone-that-never-attests-is-told-to-retry-forever`):
+                // tras 24 h sin un acierto, el cierre de sesión deja de decir «en un rato» y ofrece salir perdiendo los
+                // cambios (`stoppedByUnavailableAttest(for:)`).
+                GroupsSyncBreadcrumb.groupsAttestRequired(edge: "push")
+                lastCycleHitAttestRequired = true
+                // El servidor rechazó la subida. Con la racha ya terminal manda el testigo del attest, que `classify`
+                // lee ANTES y tiene su propio aviso; por debajo de las 24 h, «no llegaron al servidor» es el hecho, y
+                // no acusa a la conexión de nada — que es lo que el encargo pedía no hacer.
+                lastCycleFailedUpload = true
+                GroupsAttestStreakStore.recordRejection(now: now())
+                return .transient
+            case 401:
+                return .sessionExpired(pending: totalPending)
+            case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
+                // El kill-switch del canal: parada inmediata sin bucle (ningún backoff levanta una palanca
+                // que alguien bajó a mano) pero RE-ARRANCABLE — el testigo es lo que la distingue del 409.
+                lastStopWasChannelKill = true
+                return .accountUnavailable
+            case 403:
+                // Cualquier OTRO 403 viene de FUERA del Worker, y por eso es TRANSITORIO. Medido el
+                // 2026-09-13 sobre `gateway/src/`: los únicos dos 403 que emite el gateway son el kill de
+                // arriba (`groups/killSwitch.ts`) y `yala_pro_required` (`ratelimit.ts`), que no alcanza
+                // estas rutas —`policy.ts` da límites de `sync` a los DOS tiers, «Modo Nube es GRATIS»—, y
+                // los fallos upstream de `/groups/*` salen como 502 `yala_unavailable`, nunca reenviando el
+                // status. O sea que aquí solo cae un proxy, un WAF o una página de error del edge: tratarlo
+                // como veredicto sobre la CUENTA apagaba el canal el resto de la vida del proceso y le decía
+                // a la persona que revisara su conexión. `GroupsMembershipClient` ya lo había medido y
+                // decidido igual para las SUYAS (`POST /groups/rpc/{fn}`; ver su `case 403 where`).
+                //
+                // El breadcrumb no es adorno: antes de separar los dos 403 este caso paraba el loop y
+                // dejaba su `loopStopped reason=account-unavailable`. Sin él, un WAF que apague `/groups/*`
+                // para una cohorte no deja NADA en los logs — el canal deja de converger en silencio.
+                lastStopWasChannelKill = false
+                GroupsSyncBreadcrumb.groupsForbiddenNotKill(edge: "push")
+                // El cortafuegos que estará ahí diez minutos: el caso por el que «espera unos segundos» era falso.
+                lastCycleFailedUpload = true
+                return .transient
+            case 409:
+                if !GatewayErrorEnvelope.isAccountReverting(data) { lastCycleFailedUpload = true }
+                return GatewayErrorEnvelope.isAccountReverting(data) ? .accountUnavailable : .transient
+            default:
+                // 5xx, 429 y el resto de códigos que el gateway no cablea: el servidor no aceptó la subida.
+                lastCycleFailedUpload = true
+                return .transient
+            }
+        }
+
+        let outcome = await send(bearer: token)
+        // Retry-once del 401 (H-2026-07-18-4): fuerza el refresh del token y RE-EMITE el chunk UNA vez si el
+        // token nuevo DIFIERE del usado (jamás recursión: solo un reintento). Solo el 401 se rescata — el resto de
+        // códigos suben tal cual, y el de App Attest ausente ya salió de `send` como `.transient`: un JWT nuevo no
+        // trae el attest. El token fresco se escribe de vuelta (inout) para que los chunks SIGUIENTES lo
+        // reusen. Si el refresh vuelve SIN token, decide lo mismo que sin token de entrada
+        // (`sdkRemovedTheSession`): la red puede caerse entre el 401 y el refresh. Si vuelve con el MISMO token,
+        // el servidor rechaza uno que el SDK da por bueno, y eso sigue siendo sesión caducada.
+        guard case .sessionExpired = outcome else { return outcome }
+        guard let fresh = await forceRefreshTokenProvider() else {
+            // Mismo caso que el token de entrada, y aquí es aún más literal: el refresh es un POST explícito que no
+            // volvió. Con la sesión conservada, lo que falló es la red.
+            if !sdkRemovedTheSession() { lastCycleFailedUpload = true }
+            return sdkRemovedTheSession() ? outcome : .transient
+        }
+        guard fresh != token else { return outcome }
+        // **El token nuevo tiene que ser de la MISMA cuenta que el filtro** (review adversarial del 2026-09-28): si mientras
+        // el refresh volaba entró otra cuenta, reenviar este chunk lo firmaría ella. Se deja para el ciclo siguiente, que
+        // filtra con la sesión de entonces.
+        guard currentUserIDProvider() == sessionOwner else { return .transient }
+        token = fresh
+        return await send(bearer: fresh)
+    }
+
+    /// Traduce UNA fila de outbox de Grupos a su `GroupSyncDelta` de wire. `entity_type` = tabla Postgres.
+    func buildDelta(from row: GroupSyncOutbox) throws -> GroupSyncDelta {
+        guard let table = GroupEntityEmissionMap.table(forClass: row.entityType) else {
+            throw SyncPushError.unknownEntity(row.entityType)
+        }
+        let op = SyncOutboxOp(rawValue: row.opRaw) ?? .upsert
+        let isTombstone = (op == .tombstone)
+        // split_groups: el wire lleva `sync_id = null` (la identidad es `group_id`, §A.2 rama especial).
+        let isSplitGroup = (row.entityType == GroupSyncEntityType.splitGroup)
+        return GroupSyncDelta(
+            entityType: table,
+            groupID: row.groupID,
+            syncID: isSplitGroup ? nil : row.syncID,
+            op: op,
+            fieldsRawJSON: isTombstone ? nil : row.fieldsJSON,
+            fieldHlcsRawJSON: isTombstone ? nil : row.fieldHlcsJSON,
+            hlc: row.hlc,
+            clientMutationID: row.clientMutationID,
+            schemaVersion: row.schemaVersion
+        )
+    }
+
+    /// `outcome` decodificado APARTE por `client_mutation_id`: `message` = código SANITIZADO del rechazo
+    /// upstream (yala_*); `reason` = motivo del noop (group_not_found). Ambos sin PII (constantes del RPC).
+    struct OutcomeInfo: Equatable {
+        let message: String?
+        let reason: String?
+    }
+
+    /// Aplica los resultados del push: `applied` → purga; `noop` → purga (con breadcrumb agregado para el
+    /// noop group_not_found, anti retry-storm de meta legacy); `rejected` → dead-letter con el código
+    /// sanitizado, salvo `upstream_5xx/429` que sigue transitorio (reintento). Correlación por
+    /// `client_mutation_id` (unívoco por mutación).
+    private func applyResults(
+        _ results: [SyncDeltaResult], outcomeInfo: [String: OutcomeInfo],
+        rows: [GroupSyncOutbox], context: ModelContext
+    ) {
+        guard !results.isEmpty else { return }
+        var byMutation: [String: GroupSyncOutbox] = [:]
+        for row in rows { byMutation[row.clientMutationID.uuidString.lowercased()] = row }
+
+        var groupNotFoundPurged = 0
+        // B2: pares (syncID, hlc) cuyo archivo espejo debe borrarse — purgas (applied/noop) Y dead-letters
+        // (excluidas del espejo). Se borra DESPUÉS del save exitoso (orden fila-primero, molde
+        // `confirmUploaded` del personal); si el save falla, el espejo queda consistente con el store.
+        // LOW aceptado (review adversarial): una dead-letter REVIVIBLE (`upstream_400:yala_not_authorized`
+        // — member en pendingApproval) queda SIN red de espejo durante esa ventana: si una lightweight
+        // migration recrea la tabla ANTES de la aprobación, ese delta se pierde. Consecuencia asumida de
+        // la decisión dead-letters-excluidas (el espejo es red de PENDIENTES); el contenido es recuperable
+        // re-escribiéndolo tras el re-join/aprobación, y el re-drive re-espeja las que sobreviven.
+        var mirrorRemovals: [(syncID: UUID, hlc: String)] = []
+        do {
+            try saveWithAuthor(context) {
+                for result in results {
+                    guard let mutationID = result.clientMutationID?.lowercased(),
+                          let row = byMutation[mutationID] else { continue }
+                    let info = outcomeInfo[mutationID]
+                    switch result.status {
+                    case .applied:
+                        mirrorRemovals.append((row.syncID, row.hlc))
+                        context.delete(row)
+                    case .noop:
+                        // La PURGA del noop group_not_found SE MANTIENE (decisión G3: anti retry-storm de
+                        // meta de grupos legacy no migrados) — deja de ser silenciosa (breadcrumb al final).
+                        if info?.reason == "group_not_found" { groupNotFoundPurged += 1 }
+                        mirrorRemovals.append((row.syncID, row.hlc))
+                        context.delete(row)
+                    case .rejected:
+                        let reason = result.reason ?? "rejected"
+                        if reason == "upstream_400" {
+                            // P0001 de los RPCs (yala_*): dead-letter con el código SANITIZADO. El server NO
+                            // garantiza que un 400 sea un slug yala_* — el bloque exception de apply_group_delta
+                            // solo captura insufficient_privilege; una data-exception (22P02) propagaría un
+                            // mensaje que ECOA el valor del cliente → PII a telemetría/persistencia. Solo se
+                            // acepta si matchea el patrón slug del gateway (^yala_[a-z_]+$); si no, "upstream_400"
+                            // pelado en AMBOS. El re-drive de `applyMember` revive `upstream_400:yala_not_authorized`.
+                            let slug = Self.sanitizedYalaSlug(info?.message)
+                            let stored = slug.map { "upstream_400:\($0)" } ?? "upstream_400"
+                            markDeadLetter(row, reason: stored, telemetryReason: slug ?? "upstream_400")
+                            mirrorRemovals.append((row.syncID, row.hlc))
+                        } else if reason.hasPrefix("upstream_") {
+                            // 5xx / 429: transitorio (reintento en el próximo push). El espejo se conserva.
+                            continue
+                        } else {
+                            // Rechazos locales del gateway (malformed_delta, unknown_entity, coherence_*,
+                            // pull_only…): dead-letter (ya era el comportamiento).
+                            markDeadLetter(row, reason: reason, telemetryReason: reason)
+                            mirrorRemovals.append((row.syncID, row.hlc))
+                        }
+                    }
+                }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: applyResults save falló: \(error)")
+            #endif
+            return  // save fallido → NO tocar el espejo (queda consistente con el store)
+        }
+        for removal in mirrorRemovals {
+            outboxMirror?.remove(syncID: removal.syncID, hlc: removal.hlc)
+        }
+        if groupNotFoundPurged > 0 {
+            GroupsSyncBreadcrumb.groupsMetaPurgedGroupNotFound(count: groupNotFoundPurged)
+        }
+    }
+
+    /// Sanitiza el `message` del outcome upstream: SOLO acepta un slug `yala_*` (réplica exacta del regex
+    /// del gateway `^yala_[a-z_]+$`) — cualquier otro contenido puede ECOAR el valor del cliente (data-
+    /// exception que el RPC no captura) y NO debe persistirse ni llegar a telemetría. `nil` si no matchea.
+    static func sanitizedYalaSlug(_ message: String?) -> String? {
+        guard let message, message.hasPrefix("yala_"), message.count > 5 else { return nil }
+        guard message.allSatisfy({ $0 == "_" || ($0 >= "a" && $0 <= "z") }) else { return nil }
+        return message
+    }
+
+    /// Marca una fila como dead-letter + breadcrumb + telemetría (canario `groupPushRejected`). El `reason`
+    /// persistido puede portar el código sanitizado (`upstream_400:yala_*`); `telemetryReason` es un slug
+    /// sin PII para el canario.
+    private func markDeadLetter(_ row: GroupSyncOutbox, reason: String, telemetryReason: String) {
+        row.rejectedReason = reason
+        row.rejectedAt = now()
+        GroupsSyncBreadcrumb.groupsPushDeadLettered(reason: reason)
+        MetricsService.canary(.groupPushRejected, detail: telemetryReason)
+    }
+
+    /// Decodifica el `outcome` de cada resultado del push APARTE (el `SyncDeltaResult` local lo descarta),
+    /// indexado por `client_mutation_id` lowercased. Tolerante a bodies sin `outcome`.
+    static func decodeOutcomeInfo(_ data: Data) -> [String: OutcomeInfo] {
+        guard let decoded = try? JSONDecoder().decode(RawOutcomeResponse.self, from: data) else { return [:] }
+        var map: [String: OutcomeInfo] = [:]
+        for r in decoded.results {
+            guard let mid = r.clientMutationID?.lowercased() else { continue }
+            map[mid] = OutcomeInfo(message: r.outcome?.message, reason: r.outcome?.reason)
+        }
+        return map
+    }
+
+    // MARK: - Wire body (RawJSON crudo, molde SyncPushClient)
+
+    private func wireBody(_ deltas: [GroupSyncDelta]) -> Data {
+        let joined = deltas.map(Self.encodeDelta).joined(separator: ",")
+        return Data("{\"deltas\":[\(joined)]}".utf8)
+    }
+
+    static func encodeDelta(_ d: GroupSyncDelta) -> String {
+        var parts: [String] = [
+            "\"entity_type\":\(SyncPushClient.jsonString(d.entityType))",
+            "\"group_id\":\(SyncPushClient.jsonString(d.groupID))",
+        ]
+        // split_groups → sync_id null; el resto → uuid lowercased.
+        if let syncID = d.syncID {
+            parts.append("\"sync_id\":\(SyncPushClient.jsonString(syncID.uuidString.lowercased()))")
+        } else {
+            parts.append("\"sync_id\":null")
+        }
+        parts.append("\"op\":\(SyncPushClient.jsonString(d.op.rawValue))")
+        if let fields = d.fieldsRawJSON { parts.append("\"fields\":\(fields)") }
+        if let fieldHlcs = d.fieldHlcsRawJSON { parts.append("\"field_hlcs\":\(fieldHlcs)") }
+        parts.append("\"hlc\":\(SyncPushClient.jsonString(d.hlc))")
+        parts.append("\"client_mutation_id\":\(SyncPushClient.jsonString(d.clientMutationID.uuidString.lowercased()))")
+        parts.append("\"schema_version\":\(d.schemaVersion)")
+        return "{\(parts.joined(separator: ","))}"
+    }
+
+    // MARK: - Pull (GET /groups/pull) + apply
+
+    /// Itera `pullAndApplyOnce` hasta AGOTAR la cola. TERMINA cuando la página aplicada trae 0 deltas (única
+    /// señal válida — el `limit` del gateway es POR GRUPO, así que el atajo `deltas.count < limit → done`
+    /// del canal personal NO aplica). Cap duro de `pullMaxIterations` (server que no converge) → breadcrumb
+    /// `groupsPullExhaustedCap` + `.transient`. A1: si el save de una página FALLÓ (cursor no avanzó), corta
+    /// como `.transient` INMEDIATAMENTE — jamás re-pide el mismo `since` en el mismo ciclo (evitando 20
+    /// round-trips por un save atascado). Acumula pages/deltas.
+    func pullUntilExhausted(context: ModelContext, limit: Int = 500) async -> GroupsPullOutcome {
+        var pages = 0
+        var totalDeltas = 0
+        for _ in 0..<Self.pullMaxIterations {
+            let page = await pullAndApplyOnce(context: context, limit: limit)
+            switch page {
+            case .applied(let deltas, let saved):
+                guard saved else { return .transient }             // A1: cursor no avanzó → cortar
+                if deltas == 0 {
+                    // H-2026-07-18-5: bump VIVO de refresh POR-CICLO (no por-página) — solo si el ciclo
+                    // aplicó deltas que cambian contenido. `markRemoteChangePending` (por-página, en
+                    // `applyPulledPage`) se CONSERVA como red del caso background/vista-no-montada.
+                    if totalDeltas > 0 {
+                        // 2.2: el pull se AGOTÓ ⇒ el contenido de las zonas recién descubiertas ya bajó, así
+                        // que las notificaciones de membership pueden reanudarse sin esperar los 15 min.
+                        // Mismo gate que el bump de refresh: un ciclo ocioso no paga el fetch.
+                        completeInitialMemberImport(context: context)
+                        onRemoteChangesApplied()
+                    }
+                    return .completed(pages: pages, deltasApplied: totalDeltas)
+                }
+                pages += 1
+                totalDeltas += deltas
+            case .sessionExpired: return .sessionExpired
+            case .accountUnavailable: return .accountUnavailable
+            case .transient: return .transient
+            }
+        }
+        GroupsSyncBreadcrumb.groupsPullExhaustedCap(pages: pages)
+        return .transient
+    }
+
+    /// Baja UNA página de deltas remotos y la aplica. Devuelve el resultado POR-PÁGINA (`deltas` bajados +
+    /// si el save de la página tuvo éxito) que `pullUntilExhausted` agrega.
+    func pullAndApplyOnce(context: ModelContext, limit: Int = 500) async -> GroupsPullPageOutcome {
+        let generation = teardownGeneration  // guardia MEDIA: no aplicar una página post-teardown
+        let cursor: GroupSyncCursor
+        do { cursor = try loadOrCreateCursor(context) } catch { return .transient }
+
+        guard let token = await tokenProvider(), !token.isEmpty else {
+            return sdkRemovedTheSession() ? .sessionExpired : .transient   // mismo criterio que el push
+        }
+
+        guard let url = buildPullURL(cursorsJSON: cursor.groupCursorsJSON, limit: limit) else {
+            return .transient
+        }
+        let attest = await attestProvider()
+
+        // Cierre interno con la URL/attest ya resueltos: solo cambia el bearer, para RE-EMITIR la página
+        // con un token fresco tras un 401. Mapeo de status EXACTO al previo.
+        func send(bearer: String) async -> GroupsPullPageOutcome {
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+            if let attest, !attest.isEmpty {
+                request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+            }
+
+            let data: Data
+            let response: URLResponse
+            do {
+                (data, response) = try await urlSession.data(for: request)
+            } catch {
+                return .transient
+            }
+            guard let http = response as? HTTPURLResponse else { return .transient }
+
+            switch http.statusCode {
+            case 200:
+                // Mismo criterio que el push (ver allí): el attest pasó la guard y la racha se acaba.
+                GroupsAttestStreakStore.recordAcceptance()
+                // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar la página (el apply
+                // escribe Split*/cursor y el re-drive haría `writeMirrorEntry` sobre el espejo recién
+                // purgado). `.transient` corta el pull sin avanzar cursor.
+                guard generation == teardownGeneration else { return .transient }
+                do {
+                    let page = try Self.decodePage(data)
+                    let saved = applyPulledPage(page, cursor: cursor, context: context)
+                    return .applied(deltas: page.deltas.count, saved: saved)
+                } catch {
+                    return .transient
+                }
+            case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                AttestSessionProvider.reportRejected(sentIn: request)
+                // Mismo criterio que el push (ver allí): App Attest ausente con el JWT bueno → pasajero, sin refresh, y
+                // cuenta en la racha con su testigo.
+                GroupsSyncBreadcrumb.groupsAttestRequired(edge: "pull")
+                lastCycleHitAttestRequired = true
+                GroupsAttestStreakStore.recordRejection(now: now())
+                return .transient
+            case 401: return .sessionExpired
+            case 403 where GatewayErrorEnvelope.isGroupsChannelDisabled(data):
+                // Mismo criterio que el push (ver allí): kill → parada re-arrancable.
+                lastStopWasChannelKill = true
+                return .accountUnavailable
+            case 403:
+                // Mismo criterio que el push (ver allí): un 403 que no trae el envelope del kill viene de
+                // fuera del Worker → transitorio, con su backoff, y con su rastro.
+                lastStopWasChannelKill = false
+                GroupsSyncBreadcrumb.groupsForbiddenNotKill(edge: "pull")
+                return .transient
+            default: return .transient
+            }
+        }
+
+        let outcome = await send(bearer: token)
+        // Retry-once del 401 (H-2026-07-18-4): fuerza el refresh y RE-EMITE la página UNA vez si el token
+        // nuevo DIFIERE del usado (sin recursión). Refresh sin token o con el mismo: el criterio del push (ver allí).
+        guard case .sessionExpired = outcome else { return outcome }
+        guard let fresh = await forceRefreshTokenProvider() else {
+            return sdkRemovedTheSession() ? outcome : .transient
+        }
+        guard fresh != token else { return outcome }
+        return await send(bearer: fresh)
+    }
+
+    /// Construye la URL del pull con `cursors` (JSON URL-encoded) + `limit`. `internal` para test #4.
+    func buildPullURL(cursorsJSON: String, limit: Int) -> URL? {
+        var components = URLComponents(url: baseURL.appendingPathComponent("groups/pull"),
+                                       resolvingAgainstBaseURL: false)
+        let clampedLimit = min(max(limit, 1), 1000)
+        components?.queryItems = [
+            URLQueryItem(name: "cursors", value: cursorsJSON),
+            URLQueryItem(name: "limit", value: String(clampedLimit)),
+        ]
+        return components?.url
+    }
+
+    // MARK: - Apply de una página → Split*
+
+    /// Aplica una `GroupPulledPage` a los `@Model` `Split*` bajo `Self.outboxSaveAuthor`, avanza los
+    /// cursores por grupo, y al cierre dispara `markRemoteChangePending` + el gate 5/5 del bridge remoto.
+    /// Devuelve `true` si el `saveWithAuthor` tuvo éxito (mirror de `SyncApplyEngine.applyPage`, A1): un
+    /// `false` = el cursor NO avanzó → `pullUntilExhausted` corta. `internal` para tests (cursores).
+    @discardableResult
+    func applyPulledPage(_ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext) -> Bool {
+        var bridgeExpenseIDs: [UUID] = []
+        var bridgeSettlementIDs: [UUID] = []
+        // Tombstones de gasto/liquidación: hay que DESHACER su puente personal, no solo borrar la fila
+        // del grupo. Se acumulan y se drenan al cerrar la página (un `save()` para todas) por lo mismo
+        // que el bridge de alta — `unbridgeDeletedRemotely` escribe en el store PERSONAL y el apply corre
+        // en un bucle por delta.
+        var unbridgeExpenseIDs: Set<UUID> = []
+        var unbridgeSettlementIDs: Set<UUID> = []
+        var notify = PendingNotificationChanges()
+        var freezeZones: Set<String> = []
+        var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
+        // H-2026-07-18-3: grupos cuyo cursor hay que RESETEAR a 0 tras esta página (re-join del propio user:
+        // pendingApproval→active). Lo llena `applyMember`; se aplica DESPUÉS del merge de `page.cursors`.
+        var cursorResetGroupIDs: Set<String> = []
+
+        // Ciclo idle (60s): página SIN deltas Y sin cursor que avance → NO escribir (evita una transacción
+        // de History no-op por vuelta, que re-drenaría groupCursorsJSON/clockLatestHLC idénticos). Si
+        // `page.cursors` trae un avance (grupo nuevo descubierto por memberships con cursor pero sin deltas
+        // en esta página) SÍ hay que persistir → no cortar.
+        let cursorsAdvance = page.cursors.contains { gid, seq in seq > (maxSeqByGroup[gid] ?? 0) }
+        if page.deltas.isEmpty, !cursorsAdvance {
+            // Este `return` es el PRIMERO que no deja rastro, y `memberships` viaja en TODAS las páginas —
+            // también en ésta. Una remoción de membresía NO produce ni un delta (la RLS deja de entregar la
+            // zona en cuanto el status pasa a `removed`), así que su página típica es EXACTAMENTE la del
+            // ciclo idle: salir aquí sin mirarla es lo que hacía que la señal no llegara nunca a aplicarse.
+            reconcileLostMemberships(page, cursor: cursor, context: context)
+            return true
+        }
+
+        // El reloj del pull parte del persistido si va por delante del de memoria: el drain lo carga, pero un pull que llegue
+        // sin drain previo en este proceso escribiría abajo (`clockLatestHLC`) un reloj fresco encima del adelantado.
+        adoptPersistedClockIfAhead(cursor)
+        var clockRejections: (count: Int, firstReason: String?) = (0, nil)
+        do {
+            try saveWithAuthor(context) {
+                for delta in page.deltas {
+                    // Integra el HLC de la fila ANTES de aplicarla, como el canal personal (D-3): el cambio siguiente de este
+                    // teléfono sobre una fila que ya VIO se estampa por encima de ella y gana en el servidor, en vez de perder
+                    // y quedarse divergente (`groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`). Persiste con
+                    // el cursor, en este mismo save.
+                    if let reason = integratePulledClock(delta.hlc) {
+                        clockRejections.count += 1
+                        if clockRejections.firstReason == nil { clockRejections.firstReason = reason }
+                    }
+                    try applyDelta(delta, context: context,
+                                   bridgeExpenseIDs: &bridgeExpenseIDs,
+                                   bridgeSettlementIDs: &bridgeSettlementIDs,
+                                   unbridgeExpenseIDs: &unbridgeExpenseIDs,
+                                   unbridgeSettlementIDs: &unbridgeSettlementIDs,
+                                   cursorResetGroupIDs: &cursorResetGroupIDs,
+                                   notify: &notify, freezeZones: &freezeZones)
+                    // Avanzar el cursor del grupo al server_seq máximo aplicado.
+                    let prev = maxSeqByGroup[delta.groupID] ?? 0
+                    if delta.serverSeq > prev { maxSeqByGroup[delta.groupID] = delta.serverSeq }
+                }
+                // Cursores autoritativos del server (por si vienen por delante del delta máximo aplicado).
+                for (gid, seq) in page.cursors {
+                    let prev = maxSeqByGroup[gid] ?? 0
+                    if seq > prev { maxSeqByGroup[gid] = seq }
+                }
+                // H-2026-07-18-3: reset por re-join. DESPUÉS del merge de `page.cursors` → gana sobre
+                // cualquier avance de ESTA página; el próximo pull re-pide ese grupo desde 0 y re-visita el
+                // contenido que RLS ocultaba mientras el member estaba pendingApproval.
+                for gid in cursorResetGroupIDs { maxSeqByGroup[gid] = 0 }
+                cursor.groupCursorsJSON = encodeCursors(maxSeqByGroup)
+                cursor.clockLatestHLC = clock.latest?.description
+                // Seam de test: crash ANTES del commit → se ejercita el `catch` de abajo con el grafo
+                // remoto a medias, que es el único estado donde el `rollback()` significa algo.
+                if _testThrowOnApplySave { throw GroupsApplyTestCrash.suppressed }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: applyPulledPage save falló: \(error)")
+            #endif
+            // Rollback OBLIGATORIO, como en el mirror declarado (`SyncApplyEngine.applyPage`, cuyo
+            // comentario usa esa misma palabra). SwiftData **no revierte el contexto** cuando un `save()`
+            // lanza: sin esto los `context.insert` de esta página —y la mutación de `groupCursorsJSON`—
+            // seguirían vivos en el `mainContext` COMPARTIDO y el próximo save de cualquier otro (y hay
+            // muchos) los persistiría. Y el daño no se queda en local: el drain filtra por
+            // `tx.author != Self.outboxSaveAuthor`, así que capturaría esas filas colándose bajo el autor
+            // por defecto y las RE-EMPUJARÍA al servidor como ediciones locales con HLC fresco —laundering
+            // del grafo remoto a medias—. Con el rollback el cursor tampoco avanza **en el store** ⇒ el
+            // próximo pull re-pide la página entera, que es idempotente.
+            //
+            // Precisión medida el 2026-07-30 en iOS 26.5 **y** 27.0, porque su ausencia costó un chip
+            // entero persiguiendo un agujero que no existe: `rollback()` deja el STORE limpio en los dos
+            // runtimes (verificado con sonda: el cursor en disco sigue en `{}` y las filas de la página no
+            // están), pero el valor EN MEMORIA del objeto `cursor` —un `@Model` ya persistido— solo se
+            // re-hidrata en 27.0; en 26.5 sigue devolviendo el valor mutado. Eso **no es una pérdida**: el
+            // objeto no queda sucio (`hasChanges == false`), así que ningún save ajeno lo persiste, y el
+            // `fetch` de `loadOrCreateCursor` con el que arranca el ciclo siguiente lo refresca al valor
+            // del store. La ventana existe solo entre este `rollback()` y ese fetch, y en producción nadie
+            // lee ahí: `pullUntilExhausted` corta el bucle en cuanto esta función devuelve `false`.
+            // ⇒ No aserjar `cursor.groupCursorsJSON` directo en un test; aserjar el store o el re-fetch.
+            context.rollback()
+            // El `arm` se queda, y ahora es red REDUNDANTE en vez de la principal: revertidas las filas, el
+            // retome las clasifica en el cubo *abandonado* y las retira sin gastar presupuesto ni emitir
+            // canario (cuesta dos fetch en un arranque), y el re-pull las volverá a armar de verdad. Se
+            // conserva porque cubre el residual que el rollback no puede prometer —un save que dejara algo
+            // escrito antes de lanzar— y porque no armar sería permanente si eso pasara. No toca el
+            // contexto (escribe en `UserDefaults`), así que su orden respecto al rollback es indiferente.
+            armBridgeIntent(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
+            return false
+        }
+
+        // Armar va INMEDIATAMENTE después del save y antes de todo lo demás. Lo que sigue —notificaciones,
+        // y sobre todo `drainSoftDeleteFreeze`, que hace su propio `save()` del store PERSONAL sin gate de
+        // quiescencia (`GroupTransactionBridge.freezeForSoftDelete`)— puede lanzar o morir, y a partir de
+        // esta línea las filas YA están en disco con el cursor avanzado: cualquier hueco entre ambas cosas
+        // es una ventana donde el gasto existe y su intención no.
+        armBridgeIntent(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
+        if clockRejections.count > 0 {
+            GroupsSyncBreadcrumb.groupsClockReceiveRejected(count: clockRejections.count,
+                                                            reason: clockRejections.firstReason ?? "")
+        }
+
+        // H-2026-07-18-3: canario del reset por re-join (solo tras un save exitoso — el catch retornó arriba).
+        if !cursorResetGroupIDs.isEmpty {
+            GroupsSyncBreadcrumb.groupsRejoinCursorReset(groups: cursorResetGroupIDs.count)
+        }
+        SessionState.shared.markRemoteChangePending()
+        // Fase del join intent: la aprobación (o el rechazo) del admin llega por ESTE pull y es lo único que
+        // puede retirar el banner «esperando aprobación». Va aquí, lo ANTES posible tras el save y antes de
+        // notificaciones/freeze/bridge, porque todo lo que sigue puede morir y a partir de esta línea el
+        // member ya está en disco: un hueco entre ambas cosas deja al usuario con el banner puesto sobre un
+        // member que YA está aprobado. Post-save y no dentro del `saveWithAuthor` por lo simétrico: con el
+        // `catch` de arriba habríamos publicado una fase de un member revertido por el `rollback()`.
+        publishTrackedJoinPhaseIfNeeded(page, context: context)
+        // 2.1: notificaciones locales de grupo. Post-save (como el canal CloudKit, que las procesaba en
+        // `processPendingRemoteChanges` tras persistir): un save fallido retornó arriba y no notifica nada
+        // que el usuario no tenga en el store.
+        let changes = resolveNotificationChanges(notify, context: context)
+        if !changes.isEmpty { onRemoteChanges(changes) }
+        // ORDEN: el CONGELADO va PRIMERO, el des-puenteo después. Una misma página puede traer el tombstone
+        // del GRUPO y los de sus gastos (el servidor cascadea), y los dos criterios chocan sobre las mismas
+        // filas: el grupo dice «congela, esos gastos ocurrieron» y el gasto dice «destruye, este gasto no
+        // ocurrió». Con el congelado delante gana el criterio correcto sin ninguna coordinación extra: deja
+        // la transacción de cuenta real con los punteros ya en `nil`, así que el des-puenteo —que busca por
+        // `splitExpenseID`— no la encuentra y la PRESERVA; la virtual de sistema, que el congelado deja
+        // intacta, sí se borra, que es lo que toca cuando su gasto Y su grupo han desaparecido: preservarla
+        // ahí sería justo el fantasma que este código existe para matar. Invertirlos destruye la de cuenta
+        // real, que es dinero que salió de verdad.
+        drainSoftDeleteFreeze(freezeZones, context: context)
+        drainUnbridge(expenseIDs: unbridgeExpenseIDs, settlementIDs: unbridgeSettlementIDs)
+        scheduleBridge(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
+        // «Me sacaron del grupo». Va AL FINAL y no compite con nada de arriba: lo de arriba trabaja sobre las
+        // zonas que ESTA página trajo y esto sobre las que NO trajo. Segundo call-site — el otro está en la
+        // salida idle, que es la que cubre el caso dominante.
+        reconcileLostMemberships(page, cursor: cursor, context: context)
+        return true
+    }
+
+    /// Espeja «me sacaron del grupo», que el pull dice EN NEGATIVO y hasta hoy no leía nadie.
+    ///
+    /// `remove_member` no borra la fila del miembro: la pone en `removed`, y en ese instante la RLS y el
+    /// gateway dejan de entregar la zona ⇒ **no baja tombstone ni upsert de nada**. La única señal es la
+    /// AUSENCIA del grupo en `memberships` (las filas `group_members` del `sub` con `deleted = false` y
+    /// `status in (active, pendingApproval)` — `gateway/src/groups/routes.ts:388`), que viaja en todas las
+    /// páginas y que este cliente decodificaba (`decodePage`) sin leer en ningún sitio. El destino es el
+    /// mismo del canal CloudKit: `GroupService.performRemovedSelfCleanup`.
+    ///
+    /// **Es una señal de NIVEL, no de flanco**: el estado completo de mis membresías, no un evento. Por eso
+    /// NO necesita intent durable, al revés que `armBridgeIntent` — si esta vuelta se pierde, la siguiente la
+    /// vuelve a traer entera. Lo que sí es irrepetible es el cursor, y de ahí el orden de abajo.
+    ///
+    /// **Tres gates, y cada uno cierra una forma distinta de borrar de más:**
+    ///
+    ///  1. **`memberships == nil` ⇒ no tocar nada.** «No sé» no es «no eres miembro de nada» (docblock de
+    ///     `GroupPulledPage`).
+    ///  2. **Unión con los `group_id` de los deltas y de los cursores de ESTA página.** No es cautela, es un
+    ///     invariante del wire: el gateway construye `deltas` y `cursors` recorriendo `memberGroupIds`
+    ///     (`routes.ts:455`), así que un grupo presente en la página ES un grupo del que soy miembro. Cubre
+    ///     cualquier página en la que las dos mitades del envelope se contradigan.
+    ///  3. **La zona tiene que estar YA en `groupCursorsJSON`** — evidencia de que el backend la enumeró para
+    ///     este device al menos una vez. Cierra la carrera del ALTA: `GroupBackendMembershipService`
+    ///     `createGroup`/`joinGroup` son server-first pero materializan la fila local DESPUÉS del `await` del
+    ///     RPC, así que un pull cuya petición salió ANTES de ese RPC vuelve, legítimamente, sin el grupo
+    ///     recién creado. Sin este gate, crear un grupo con un pull en vuelo lo borraría.
+    ///
+    /// La unidad es la ZONA y la pertenencia al canal se decide ANY-row, como en toda esta familia:
+    /// `memberships` es autoritativo para las zonas cuya verdad vive en el backend y **no dice absolutamente
+    /// nada de las de CloudKit**, que es la no-regresión que más importa en este release. El predicado es el
+    /// ESTRECHO (`isBackendGroup` a secas) y NO `belongsToBackendChannel`, que es el de RETENCIÓN: una copia
+    /// CONGELADA (`movedToBackendAt != nil`, `isBackendGroup == false`) es un grupo cuyo miembro AÚN NO
+    /// re-joineó ⇒ no tiene membresía server-side ⇒ **no puede aparecer en `memberships` jamás**, y con el
+    /// predicado ancho sería candidata permanente a que la borráramos. Mismo criterio, y por la misma razón,
+    /// que `GroupBackendIdentityLogic.membershipRoutesToBackend`.
+    ///
+    /// **El cursor del grupo se resetea a 0 ANTES de limpiar, y ese orden carga peso.** Sin reset, un
+    /// re-join posterior encontraría el cursor en su marca alta y el servidor solo manda lo que tenga
+    /// `server_seq` mayor ⇒ ni el `split_groups` ni el contenido vuelven a bajar y el re-admitido se queda
+    /// sin grupo (el reset por re-join de `applyMember` no lo cubre: exige una fila de member PREEXISTENTE
+    /// en `pendingApproval`, y aquí la limpieza se la llevó). Y con el reset delante, morir entre las dos
+    /// mitades deja el grupo como candidato en la vuelta siguiente —auto-sana—; al revés no: sin filas
+    /// locales ya no hay candidata que reconsiderar. El reset va bajo `outboxSaveAuthor` y no puede pisarlo
+    /// la página en vuelo, porque un grupo que no está en `memberships` tampoco puede estar en `page.cursors`.
+    ///
+    /// POST-SAVE y jamás dentro del `saveWithAuthor`, molde de `publishTrackedJoinPhaseIfNeeded`: el
+    /// `rollback()` del `catch` revertiría el grafo de la página y esto habría borrado un grupo sobre un
+    /// estado que no está en disco.
+    private func reconcileLostMemberships(
+        _ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext
+    ) {
+        guard let memberships = page.memberships else { return }
+        var live = Set(memberships)
+        live.formUnion(page.deltas.map(\.groupID))
+        live.formUnion(page.cursors.keys)
+        let enumeratedByServer = Set(decodeCursors(cursor.groupCursorsJSON).keys)
+
+        let rows: [SplitGroup]
+        do { rows = try context.fetch(FetchDescriptor<SplitGroup>()) }
+        catch {
+            #if DEBUG
+            logger.error("GroupsSync: fetch de grupos para reconciliar membresías falló: \(error)")
+            #endif
+            return  // fail-closed: sin poder enumerar las zonas no se borra ninguna
+        }
+        var rowsByZone: [String: [SplitGroup]] = [:]
+        for row in rows where !row.cloudKitZoneID.isEmpty {
+            rowsByZone[row.cloudKitZoneID, default: []].append(row)
+        }
+        let lostZones = rowsByZone
+            .filter { zone, zoneRows in
+                !live.contains(zone) && enumeratedByServer.contains(zone)
+                    && zoneRows.contains(where: \.isBackendGroup)
+            }
+            .keys
+            .sorted()
+        guard !lostZones.isEmpty else { return }
+
+        GroupsSyncBreadcrumb.groupsMembershipLost(zones: lostZones.count)
+        MetricsService.canary(.groupsMembershipLost, detail: "pull", value: Double(lostZones.count))
+        resetGroupCursors(lostZones, context: context)
+        let cleanupContext = context
+        for zone in lostZones {
+            // `Task` porque el cleanup es `async` (su mitad CloudKit lo es), molde EXACTO del canal viejo
+            // (`SplitSyncManager.handleFetchedRecordZoneChanges`, drenaje de `pendingRemovedSelfZoneNames`).
+            // Perder el Task no pierde la señal: la vuelta siguiente del pull la vuelve a traer.
+            Task { @MainActor in
+                await GroupService.shared.performRemovedSelfCleanup(zoneName: zone, context: cleanupContext)
+            }
+        }
+    }
+
+    /// Deshace el puente personal de los gastos y liquidaciones que esta página borró por tombstone.
+    ///
+    /// **POST-SAVE, nunca antes ni dentro**: si el `saveWithAuthor` de la página lanza, su `catch` hace
+    /// `context.rollback()` y las filas `Split*` vuelven a existir — un unbridge ejecutado antes ya se
+    /// habría llevado la `TransactionItem` de un gasto que sigue vivo, y eso NO lo revierte el rollback
+    /// (`unbridgeDeletedRemotely` cierra con su propio `save()`). Al ir después del `return false` del
+    /// `catch`, el borrado personal solo ocurre cuando el borrado del grupo está en disco.
+    ///
+    /// **Sin gate del sello de dominio** (`isDomainOpenForBridge`), a diferencia de `armBridgeIntent`:
+    /// ese gate corta la CREACIÓN, y cerrar la puerta jamás debe impedir LIMPIAR lo que ya está dentro.
+    ///
+    /// Si el bridge todavía no tiene contexto esto lanza y se pierde la limpieza de ESTA página; lo
+    /// recoge el barrido de huérfanas del arranque (`OrphanedBridgedTxSweeper`), que es la red que
+    /// cubre a los usuarios que ya tienen fantasmas de builds anteriores.
+    private func drainUnbridge(expenseIDs: Set<UUID>, settlementIDs: Set<UUID>) {
+        guard !expenseIDs.isEmpty || !settlementIDs.isEmpty else { return }
+        do {
+            try GroupTransactionBridge.shared.unbridgeDeletedRemotely(
+                expenseIDs: expenseIDs, settlementIDs: settlementIDs)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: unbridgeDeletedRemotely falló: \(error)")
+            #endif
+        }
+    }
+
+    /// 2.3: congela el bridge personal de las zonas que acaban de pasar a soft-delete. Post-save, como en el
+    /// canal CloudKit (que lo drenaba tras persistir el batch del fetch), e idempotente: `freezeForSoftDelete`
+    /// es no-op si ya no queda nada colgando de la zona.
+    private func drainSoftDeleteFreeze(_ zones: Set<String>, context: ModelContext) {
+        guard !zones.isEmpty else { return }
+        for zone in zones {
+            do {
+                // Por ZONA, no por objeto: el `SplitGroup` sigue existiendo cuando la zona entra aquí por
+                // un flip a `isHiddenForAll`, pero NO cuando entra por un tombstone del grupo — el apply
+                // acaba de borrarlo. El fetch previo devolvía `nil` en ese segundo caso y se saltaba la
+                // limpieza justo cuando más falta hace. `freezeForSoftDelete` solo necesitaba el zoneID.
+                try GroupTransactionBridge.shared.freezeForSoftDelete(zoneID: zone)
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: freezeForSoftDelete falló para \(zone): \(error)")
+                #endif
+            }
+        }
+    }
+
+    /// Retira (o mueve) la fase del join intent cuando esta página trajo members de la zona trackeada.
+    /// Cierra el bug device 2026-07-31: el banner «esperando aprobación» no tenía en este canal quién lo
+    /// retirase tras la aprobación del admin — el porqué completo y las fases que cuentan viven en
+    /// `GroupInviteOnboardingLogic.shouldRepublishPhase`.
+    ///
+    /// Lo que se publica es SIEMPRE el status del member PROPIO leído del store, nunca el del delta: en el
+    /// mismo pull puede venir la aprobación de un compañero, y el status del wire no dice de quién es sin
+    /// resolver identidad. `noteMemberResolved` hace el resto (mapa status→fase, monotonía, y `clear()` para
+    /// los terminales rejected/left/removed — el rechazo dejaba el banner igual de pegado que la aprobación).
+    private func publishTrackedJoinPhaseIfNeeded(_ page: GroupPulledPage, context: ModelContext) {
+        let tracker = GroupJoinIntentTracker.shared
+        // Guard barato primero: sin join trackeado no se escanea la página (el caso de casi todos los pulls).
+        guard tracker.zoneName != nil else { return }
+        let memberZones = Set(page.deltas.lazy.filter { $0.entityType == "group_members" }.map(\.groupID))
+        for zone in memberZones where GroupInviteOnboardingLogic.shouldRepublishPhase(
+            trackedPhase: tracker.phase, trackedZone: tracker.zoneName, appliedZone: zone)
+        {
+            guard let status = ownMemberStatus(zone: zone, context: context) else { continue }
+            let before = tracker.phase
+            tracker.noteMemberResolved(zoneName: zone, status: status)
+            // Canario solo cuando la fase SE MUEVE (una página con members de otro compañero re-publica el
+            // mismo status y no es un evento). Mismo evento y misma forma de `detail` que el reconciliador.
+            if tracker.phase != before {
+                MetricsService.canary(.groupJoinIntentReconciled, detail: "backendPull|\(status.rawValue)")
+            }
+        }
+    }
+
+    /// Status del `SplitMember` PROPIO de una zona según ESTE canal: match por `userID`/`memberKey == sub`
+    /// (`GroupJoinReconcileLogic.backendMemberMatchesCurrentUser`, la misma primitiva que el reconciliador),
+    /// NUNCA por `isCurrentUser` — `applyMember` jamás lo setea, así que filtrar por él daría `nil` para
+    /// siempre justo en el caso que importa: quien se UNE recibe su member por el pull sin el flag.
+    ///
+    /// Devuelve `nil` si el status no parsea, en vez del `.active` con el que degrada `memberStatus`: aquí un
+    /// falso `.active` RETIRARÍA el banner sin evidencia, y la dirección segura es dejarlo puesto.
+    /// `#Predicate` concreto por tipo, con el filtro de identidad en memoria (igualdad sobre opcionales —
+    /// nada de coalesce ni `contains`, regla `#Predicate`).
+    private func ownMemberStatus(zone: String, context: ModelContext) -> SplitMemberStatus? {
+        guard let currentID = currentUserIDProvider(), !currentID.isEmpty else { return nil }
+        let descriptor = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zone })
+        do {
+            let mine = try context.fetch(descriptor).first {
+                GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                    memberUserID: $0.userID, memberKey: $0.memberKey, currentUserID: currentID)
+            }
+            guard let mine else { return nil }
+            return SplitMemberStatus(rawValue: mine.status)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: fetch del member propio falló para \(zone): \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// Acumulador por-página de lo que puede notificar (2.1). Guarda el `group_id` del wire (==
+    /// `cloudKitZoneID`); la traducción a `SplitGroup.id` —que es por lo que indexa `RemoteChangeSet`— se
+    /// hace al CIERRE de la página, cuando todo `GroupMeta` de ESTA página ya está insertado.
+    private struct PendingNotificationChanges {
+        var newExpenses: [(id: UUID, zone: String)] = []
+        var modifiedExpenses: [(id: UUID, zone: String)] = []
+        var newSettlements: [(id: UUID, zone: String)] = []
+        var newMembers: [(id: UUID, zone: String)] = []
+        var newPendingMembers: [(id: UUID, zone: String)] = []
+        /// Caches por-página de la clasificación de membership (2.2) — evitan re-fetchear por cada miembro
+        /// del mismo grupo. Seguros por página: el baseline solo puede moverse HACIA `initialImport` (un
+        /// `GroupMeta` insertado a media página), nunca al revés.
+        var baselines: [String: MemberChangeNotificationLogic.ZoneBaseline] = [:]
+        var isAdminByZone: [String: Bool] = [:]
+    }
+
+    /// 2.2: clasifica un `SplitMember` que el pull acaba de insertar. Preserva las DOS condiciones que la
+    /// regla de área exige (bug «Jür se unió al grupo»): baseline de primer import de la zona **y**
+    /// autoexclusión por identidad. Sin la segunda, el invitado recibe «X se unió al grupo» por el miembro
+    /// del owner en cuanto baja la zona. La identidad de ESTE canal es el `sub` de la cuenta Yala
+    /// (`SplitMember.userID`), nunca `isCurrentUser` — `applyMember` jamás setea ese flag.
+    private func classifyNewMemberForNotification(
+        _ model: SplitMember, zone: String, context: ModelContext,
+        notify: inout PendingNotificationChanges
+    ) {
+        // `isCurrentUserAdmin` solo decide el caso pending → no se paga su fetch para los demás.
+        let isPending = model.memberStatus == .pendingApproval
+        let isAdmin = isPending && isCurrentUserAdminOfZone(zone, context: context,
+                                                           cache: &notify.isAdminByZone)
+        switch MemberChangeNotificationLogic.classifyNewMember(
+            rawStatus: model.status,
+            isCurrentUserAdmin: isAdmin,
+            // La comparación de la lógica pura es exacta; el canal backend normaliza el `sub` en TODAS sus
+            // comparaciones de identidad (`GroupBackendIdentityLogic.isCurrentUser`), así que se pasan ya
+            // normalizados: una diferencia de caso no puede convertirse en un «se unió» sobre uno mismo.
+            memberUserRecordID: model.userID?.lowercased(),
+            currentUserRecordID: currentUserIDProvider()?.lowercased(),
+            zoneBaseline: zoneBaseline(zone, context: context, cache: &notify.baselines)
+        ) {
+        case .pendingRequestForAdmin:
+            notify.newPendingMembers.append((id: model.id, zone: zone))
+        case .joined:
+            notify.newMembers.append((id: model.id, zone: zone))
+        case .ignore:
+            break
+        }
+    }
+
+    /// Baseline de primer import de la zona. Un fetch fallido devuelve `.initialImport` (dirección segura:
+    /// callar, jamás notificar de más) y NO se cachea.
+    private func zoneBaseline(
+        _ zone: String, context: ModelContext,
+        cache: inout [String: MemberChangeNotificationLogic.ZoneBaseline]
+    ) -> MemberChangeNotificationLogic.ZoneBaseline {
+        if let cached = cache[zone] { return cached }
+        let rows: [SplitGroup]
+        do {
+            rows = try fetchSplitGroupRows(zoneID: zone, context: context)
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: zoneBaseline fetch falló para \(zone): \(error)")
+            #endif
+            return .initialImport
+        }
+        // Por ZONA y con el MISMO sesgo que el `catch` de arriba: callar, jamás notificar de más. Se toma el
+        // `initialMemberImportStartedAt` MÁS RECIENTE de la zona, que es el que más probablemente cae dentro
+        // de la ventana ⇒ `.initialImport`. Con una fila arbitraria bastaba con que la elegida fuera la que
+        // no lleva la marca para que el import de la gemela notificara «Jür se unió al grupo» miembro a
+        // miembro, que es el bug que la marca existe para evitar.
+        let baseline = MemberChangeNotificationLogic.zoneBaseline(
+            groupExistsLocally: !rows.isEmpty,
+            importStartedAt: rows.compactMap(\.initialMemberImportStartedAt).max(),
+            now: now())
+        cache[zone] = baseline
+        return baseline
+    }
+
+    /// ¿El usuario de la sesión es admin de esta zona? Resuelto por el `sub` (`SplitMember.userID`), que es
+    /// la identidad del canal backend. Un fetch fallido devuelve `false` (una solicitud pendiente no
+    /// notificada es mejor que notificarla a quien no la puede aprobar) y NO se cachea.
+    private func isCurrentUserAdminOfZone(
+        _ zone: String, context: ModelContext, cache: inout [String: Bool]
+    ) -> Bool {
+        if let cached = cache[zone] { return cached }
+        guard let uid = currentUserIDProvider(), !uid.isEmpty else { return false }
+        let members: [SplitMember]
+        do {
+            members = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zone }))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: isCurrentUserAdminOfZone fetch falló para \(zone): \(error)")
+            #endif
+            return false
+        }
+        let result = members.contains {
+            $0.isAdmin && GroupBackendIdentityLogic.isCurrentUser(memberUserID: $0.userID, currentUserID: uid)
+        }
+        cache[zone] = result
+        return result
+    }
+
+    /// Cierra el baseline de primer import de las zonas que lo tuvieran abierto — gemelo de
+    /// `completeInitialMemberImport` del canal CloudKit, que lo hacía por zona al cerrar su ciclo de fetch.
+    /// Aquí el pull es global, así que agotarlo las cierra todas. El filtro va EN MEMORIA a propósito (un
+    /// `#Predicate` sobre un opcional es el gotcha documentado) y la escritura bajo el autor del outbox: es
+    /// una marca LOCAL que no debe re-emitirse.
+    private func completeInitialMemberImport(context: ModelContext) {
+        do {
+            let backendGroups = try context.fetch(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.isBackendGroup == true }))
+            let pending = backendGroups.filter { $0.initialMemberImportStartedAt != nil }
+            guard !pending.isEmpty else { return }
+            try saveWithAuthor(context) {
+                for group in pending { group.initialMemberImportStartedAt = nil }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: completeInitialMemberImport falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Traduce el acumulador por-zona al `RemoteChangeSet` que consume `GroupNotificationService`. Una zona
+    /// sin `SplitGroup` local se DESCARTA: sin grupo no hay nombre ni deep-link que ofrecer, y el filtro de
+    /// participación del consumidor tampoco podría resolver al miembro.
+    private func resolveNotificationChanges(
+        _ pending: PendingNotificationChanges, context: ModelContext
+    ) -> RemoteChangeSet {
+        var cache: [String: UUID?] = [:]
+        func groupID(_ zone: String) -> UUID? {
+            if let cached = cache[zone] { return cached }
+            do {
+                // La CANÓNICA de la zona (`createdAt` ASC). Este `id` va al deep-link de la notificación, y
+                // `GroupService.group(for:)` —lo que la UI resuelve al abrirla— usa ese mismo criterio: con
+                // una fila arbitraria, el toque podía aterrizar en una fila distinta de la que se muestra.
+                let resolved = try fetchSplitGroupRows(zoneID: zone, context: context).first?.id
+                cache[zone] = resolved   // cachea solo el resultado de un fetch EXITOSO (incl. nil legítimo)
+                return resolved
+            } catch {
+                // Fetch fallido: no se cachea (envenenaría toda la zona en esta página) y no se notifica.
+                #if DEBUG
+                logger.error("GroupsSync: resolveNotificationChanges fetch falló para \(zone): \(error)")
+                #endif
+                return nil
+            }
+        }
+        func mapped(_ entries: [(id: UUID, zone: String)]) -> [(id: UUID, groupID: UUID)] {
+            entries.compactMap { entry in groupID(entry.zone).map { (id: entry.id, groupID: $0) } }
+        }
+        var set = RemoteChangeSet()
+        set.newExpenses = mapped(pending.newExpenses)
+        set.modifiedExpenses = mapped(pending.modifiedExpenses)
+        set.newSettlements = mapped(pending.newSettlements)
+        set.newMembers = mapped(pending.newMembers)
+        set.newPendingMembers = mapped(pending.newPendingMembers)
+        return set
+    }
+
+    private func applyDelta(
+        _ delta: GroupPulledDelta,
+        context: ModelContext,
+        bridgeExpenseIDs: inout [UUID],
+        bridgeSettlementIDs: inout [UUID],
+        unbridgeExpenseIDs: inout Set<UUID>,
+        unbridgeSettlementIDs: inout Set<UUID>,
+        cursorResetGroupIDs: inout Set<String>,
+        notify: inout PendingNotificationChanges,
+        freezeZones: inout Set<String>
+    ) throws {
+        switch delta.entityType {
+        case GroupEntityEmissionMap.splitExpense.table:
+            guard let id = delta.syncID else {
+                GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
+            }
+            try applyExpense(delta, id: id, context: context, bridgeExpenseIDs: &bridgeExpenseIDs,
+                             unbridgeExpenseIDs: &unbridgeExpenseIDs, notify: &notify)
+        case GroupEntityEmissionMap.splitShare.table:
+            guard let id = delta.syncID else {
+                GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
+            }
+            try applyShare(delta, id: id, context: context)
+        case GroupEntityEmissionMap.splitSettlement.table:
+            guard let id = delta.syncID else {
+                GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
+            }
+            try applySettlement(delta, id: id, context: context, bridgeSettlementIDs: &bridgeSettlementIDs,
+                                unbridgeSettlementIDs: &unbridgeSettlementIDs, notify: &notify)
+        case GroupEntityEmissionMap.splitGroup.table:
+            try applyGroupMeta(delta, context: context, freezeZones: &freezeZones)
+        case "group_members":
+            try applyMember(delta, context: context, cursorResetGroupIDs: &cursorResetGroupIDs,
+                            notify: &notify)
+        default:
+            GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType)
+            return  // entidad no cableada al apply
+        }
+    }
+
+    private func applyExpense(
+        _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeExpenseIDs: inout [UUID],
+        unbridgeExpenseIDs: inout Set<UUID>, notify: inout PendingNotificationChanges
+    ) throws {
+        let existing = try fetchSplitExpense(id: id, context: context)
+        if delta.op == .tombstone {
+            if let existing { context.delete(existing) }
+            // Borrar SOLO la fila del grupo dejaba la `TransactionItem` puenteada VIVA en el Panel del
+            // otro miembro, apuntando a un gasto que ya no existe: dinero fantasma en Panel, presupuestos
+            // y reportes, y además ATRAPADO (la TX no se puede editar ni borrar porque su puntero la manda
+            // al grupo, donde ya no está). El borrado LOCAL sí lo hacía bien desde siempre
+            // (`GroupExpenseService.performExpenseDeletion` → `unbridgeExpense`); esa asimetría entre quien
+            // borra y quien recibe ERA el bug (device, producción, 2026-08-02).
+            unbridgeExpenseIDs.insert(id)
+            // Se acumula SIN mirar `existing`: un tombstone re-emitido de un gasto que este device ya no
+            // tiene es la única señal capaz de recoger una TX que quedó suelta en una versión anterior.
+            // Y si el mismo id llegó como upsert antes en ESTA página, el tombstone gana — puentear un
+            // gasto borrado solo armaría una intención que el retome tendría que descartar.
+            bridgeExpenseIDs.removeAll { $0 == id }
+            return
+        }
+        // Un importe no finito no entra: la fila local se queda como estaba (o no nace), sin puentear ni avisar.
+        if skipsNonFiniteMoney(delta, columns: ["amount"]) { return }
+        unbridgeExpenseIDs.remove(id)
+        // 2.1: nuevo vs modificado, igual que la clasificación del fetch CloudKit (que lo decidía con el
+        // pre-fetch de IDs del batch). El filtro de participación —y la exclusión de los opening balances
+        // y de lo que escribió el propio usuario— vive en el consumidor, que también alimenta al bridge.
+        if existing == nil {
+            notify.newExpenses.append((id: id, zone: delta.groupID))
+        } else {
+            notify.modifiedExpenses.append((id: id, zone: delta.groupID))
+        }
+        let model = existing ?? SplitExpense()
+        model.id = id
+        model.groupZoneID = delta.groupID
+        let f = delta.fields
+        if let v = wireString(f["expense_description"]) { model.expenseDescription = v }
+        if let v = wireDouble(f["amount"]) { model.amount = v }
+        if let v = wireString(f["currency_code"]) { model.currencyCode = v }
+        if let v = f["note"] { model.note = wireString(v) }
+        if let v = wireDate(f["date"]) { model.date = v }
+        if let v = wireDate(f["created_at"]) { model.createdAt = v }
+        if let v = wireString(f["paid_by_member_key"]) { model.paidByMemberID = v }
+        if let v = wireString(f["split_type"]) { model.splitType = v }
+        if let v = wireBool(f["is_settled"]) { model.isSettled = v }
+        if let v = wireBool(f["is_opening_balance"]) { model.isOpeningBalance = v }
+        if let v = f["subcategory_name"] { model.subcategoryName = wireString(v) }
+        if existing == nil { context.insert(model) }
+        bridgeExpenseIDs.append(id)
+    }
+
+    private func applyShare(_ delta: GroupPulledDelta, id: UUID, context: ModelContext) throws {
+        let existing = try fetchSplitShare(id: id, context: context)
+        if delta.op == .tombstone {
+            if let existing { context.delete(existing) }
+            return
+        }
+        if skipsNonFiniteMoney(delta, columns: ["amount"]) { return }
+        let model = existing ?? SplitShare()
+        model.id = id
+        model.groupZoneID = delta.groupID
+        let f = delta.fields
+        if let v = wireUUID(f["expense_id"]) { model.expenseID = v }
+        if let v = wireString(f["member_key"]) { model.memberID = v }
+        if let v = wireDouble(f["amount"]) { model.amount = v }
+        if let v = wireBool(f["is_paid"]) { model.isPaid = v }
+        if existing == nil { context.insert(model) }
+    }
+
+    private func applySettlement(
+        _ delta: GroupPulledDelta, id: UUID, context: ModelContext, bridgeSettlementIDs: inout [UUID],
+        unbridgeSettlementIDs: inout Set<UUID>, notify: inout PendingNotificationChanges
+    ) throws {
+        let existing = try fetchSplitSettlement(id: id, context: context)
+        if delta.op == .tombstone {
+            if let existing { context.delete(existing) }
+            // Gemelo exacto del tombstone de gasto (ver `applyExpense`): el borrado LOCAL de una
+            // liquidación llama `unbridgeSettlement` (`GroupExpenseService.deleteSettlement`), así que el
+            // receptor del tombstone tiene que hacer lo mismo o su movimiento personal queda huérfano.
+            unbridgeSettlementIDs.insert(id)
+            bridgeSettlementIDs.removeAll { $0 == id }
+            return
+        }
+        if skipsNonFiniteMoney(delta, columns: ["amount"]) { return }
+        unbridgeSettlementIDs.remove(id)
+        // 2.1: solo las liquidaciones NUEVAS notifican (el canal CloudKit tampoco clasificaba las
+        // modificaciones de settlement).
+        if existing == nil { notify.newSettlements.append((id: id, zone: delta.groupID)) }
+        let model = existing ?? SplitSettlement()
+        model.id = id
+        model.groupZoneID = delta.groupID
+        let f = delta.fields
+        if let v = wireString(f["from_member_key"]) { model.fromMemberID = v }
+        if let v = wireString(f["to_member_key"]) { model.toMemberID = v }
+        if let v = wireDouble(f["amount"]) { model.amount = v }
+        if let v = wireString(f["currency_code"]) { model.currencyCode = v }
+        if let v = f["note"] { model.note = wireString(v) }
+        if let v = wireDate(f["date"]) { model.date = v }
+        if let v = wireBool(f["is_confirmed"]) { model.isConfirmed = v }
+        if existing == nil { context.insert(model) }
+        bridgeSettlementIDs.append(id)
+    }
+
+    private func applyGroupMeta(
+        _ delta: GroupPulledDelta, context: ModelContext, freezeZones: inout Set<String>
+    ) throws {
+        // Identidad = group_id (cloudKitZoneID) y la unidad es la ZONA: server-side `split_groups` se
+        // identifica por ella, así que TODAS las filas locales con ese `cloudKitZoneID` son el MISMO grupo.
+        // UPDATE-only en push; en apply se crea si falta (el grupo nace vía RPC/CKSyncEngine, pero el pull es
+        // autoritativo para un member — idempotente).
+        let rows = try fetchSplitGroupRows(zoneID: delta.groupID, context: context)
+        if rows.count > 1 {
+            MetricsService.cloudkitDuplicateDetected(
+                model: "SplitGroup", count: rows.count, context: .syncApply, keySuffix: delta.groupID)
+        }
+        if delta.op == .tombstone {
+            // Las hijas cuelgan del string plano `groupZoneID`, SIN `@Relationship` ⇒ SwiftData NO cascadea
+            // y borrar solo el `SplitGroup` las dejaba HUÉRFANAS. Corre aunque la zona esté VACÍA de filas
+            // de grupo: pudo borrarse en una vuelta anterior que no llegó a limpiar, y el barrido es
+            // idempotente.
+            //
+            // **TODAS las filas de la zona, y ANTES de las hijas** (molde de `GroupZoneCacheGate.deleteCache`
+            // y `GroupService.performLocalCleanupAndDelete`). Borraba UNA —la que devolviera el fetch— y con
+            // un duplicado la gemela SOBREVIVÍA con todas sus hijas muertas: un CASCARÓN, no huérfanas.
+            //
+            // Lo que el cascarón hace, MEDIDO y no inferido: es VISIBLE (`fetchAllGroups` no lleva predicado
+            // ⇒ `GroupsViewModel.groups`/`activeGroups` ⇒ tarjeta en el tab con 0 miembros y 0 gastos), pero
+            // NO es escribible por el camino obvio — la cascada se llevó los `SplitMember`, así que
+            // `eligibleGroupsForExpense` lo excluye (`currentMemberStatus == nil`) y `createExpense` lanza.
+            // La escritura que SÍ es alcanzable es `GroupService.softDelete`, gateado SOLO por `isOwner`: su
+            // guard de balances pasa en vacío y escribe `isHiddenForAll` con el autor por DEFECTO ⇒ el drain
+            // lo emite como upsert de `split_groups` contra un grupo que el servidor ya tombstoneó.
+            //
+            // El orden grupo→hijas es indiferente HOY (todo esto va dentro del `saveWithAuthor` de
+            // `applyPulledPage`, cuyo `catch` hace `rollback()`, así que no hay commit intermedio que
+            // observar), y va primero para no depender de eso.
+            for row in rows { context.delete(row) }
+            try cascadeDeleteGroupRows(zoneID: delta.groupID, context: context)
+            // El grupo desaparece entero → hay que SOLTAR sus transacciones y borradores personales, o
+            // quedan colgando de una zona que ya no existe. Aquí manda `freezeForSoftDelete` y NO el
+            // unbridge, al revés que en el tombstone de un gasto suelto: un grupo que desaparece no niega
+            // los gastos que ocurrieron —el rastro «lo pagué yo» sigue siendo verdad y el dinero salió de
+            // una cuenta real—, mientras que un gasto que alguien borró no ocurrió. Es el mismo criterio
+            // del camino local (`GroupService.performLocalCleanupAndDelete`, que también congela).
+            // El drenaje va POST-SAVE (`drainSoftDeleteFreeze`), por zona: la fila ya no está.
+            freezeZones.insert(delta.groupID)
+            return
+        }
+        // 2.3: estado ANTES del update, para detectar el flip a soft-delete. Un grupo que nace ya oculto
+        // (invitado con fresh-install POSTERIOR al soft-delete) cuenta como flip: `false` es el valor previo.
+        //
+        // Por ZONA y con sesgo a DISPARAR el freeze: `wasHidden` solo es cierto si TODAS las filas ya estaban
+        // ocultas. Con la fila arbitraria, elegir la gemela ya oculta se comía el flip y dejaba las TX y los
+        // borradores personales colgando de una zona invisible; un freeze de más es idempotente y no cuesta
+        // nada. Zona vacía ⇒ `false`, igual que antes.
+        let wasHidden = !rows.isEmpty && rows.allSatisfy(\.isHiddenForAll)
+        // La meta del wire se aplica a TODAS las filas de la zona: son el mismo grupo y su autoridad es el
+        // servidor. Escribir en una sola las hacía DIVERGIR (nombre, icono, archivado…) y la UI mostraba una
+        // u otra según qué fetch usara. Solo se escriben campos del wire + `cloudKitZoneID`: la identidad
+        // local (`id`), `initialMemberImportStartedAt`, `ckSystemFieldsData`, `rejoinRevokedAt`,
+        // `movedToBackendAt` y `isOwner` NO se tocan y siguen siendo por fila.
+        let isBorn = rows.isEmpty
+        let models = isBorn ? [SplitGroup()] : rows
+        let f = delta.fields
+        for model in models {
+            model.cloudKitZoneID = delta.groupID
+            if let v = wireString(f["name"]) { model.name = v }
+            if let v = wireString(f["icon_name"]) { model.iconName = v }
+            if let v = wireString(f["color_hex"]) { model.colorHex = v }
+            if let v = wireString(f["currency_code"]) { model.currencyCode = v }
+            if let v = wireBool(f["simplify_debts"]) { model.simplifyDebts = v }
+            if let v = wireBool(f["show_debts_in_single_currency"]) { model.showDebtsInSingleCurrency = v }
+            if let v = wireBool(f["members_can_invite"]) { model.membersCanInvite = v }
+            if let v = wireString(f["default_split_type"]) { model.defaultSplitType = v }
+            if let v = wireBool(f["is_archived"]) { model.isArchived = v }
+            if let v = wireBool(f["is_hidden_for_all"]) { model.isHiddenForAll = v }
+            // G14: se lee por PRESENCIA DE LA CLAVE, no por valor no-nil, y la diferencia es el feature:
+            // `budget_limit_amount: null` significa "el admin quitó el presupuesto" y TIENE que aplicarse;
+            // la clave AUSENTE significa "este delta no habla del presupuesto" (PATCH parcial) y no se
+            // toca. Con el `if let v = wireDouble(...)` de las líneas de arriba, quitar un presupuesto no
+            // llegaría jamás a los demás miembros. Mismo molde que `note`/`subcategory_name` en applyDelta.
+            // Un límite no finito no se aplica: con `wireDouble` a `nil` QUITARÍA el presupuesto a todos. Se queda
+            // el que había (ticket `wire-decoder-accepts-non-finite-money`).
+            if let v = f["budget_limit_amount"] {
+                if WireValueDecoder.isNonFiniteNumber(v) {
+                    reportNonFiniteMoney(delta, columns: ["budget_limit_amount"])
+                } else {
+                    model.budgetLimitAmount = wireDouble(v)
+                }
+            }
+            if let v = wireDate(f["created_at"]) { model.createdAt = v }
+        }
+        if isBorn, let model = models.first {
+            // C1 write-site (2): born-remote del pull backend → marca el grupo como del canal backend.
+            model.isBackendGroup = true
+            // 2.2 (baseline de primer import, bug «Jür se unió al grupo»): un SplitGroup que NACE del pull
+            // implica que sus miembros preexistentes vienen detrás — suprimir sus notificaciones de
+            // membership hasta que el pull se agote (`completeInitialMemberImport`) o venza la ventana de
+            // 15 min, que auto-sana. El grupo que crea el propio usuario no pasa por aquí (lo materializa
+            // `GroupBackendMembershipService` server-first) ⇒ el creador no sufre la supresión.
+            model.initialMemberImportStartedAt = now()
+            context.insert(model)
+        } else {
+            // C3 (G6-2) ADOPCIÓN ATÓMICA: un SplitGroup CloudKit PREEXISTENTE que aparece en el pull backend
+            // (mismo `group_id`) = grupo MIGRADO cuyo member local re-entró por el backend. Flipear a backend
+            // DENTRO del mismo `saveWithAuthor` del apply (sin save extra, molde del re-drive A2) es el
+            // interruptor que congela CloudKit (choke-points de G5-A) y activa el drain backend en UN commit;
+            // sin atomicidad habría una ventana de doble-verdad.
+            //
+            // **A TODAS las filas de la zona.** Precisión que costó medirla: este flip **no PRODUCE** el
+            // duplicado MIXTO —`applyGroupMeta` resuelve por ZONA y solo inserta si está vacía, así que no
+            // puede crear la segunda fila—, sino que era el único punto capaz de CURARLO y marcaba una sola,
+            // dejando la zona mixta indefinidamente. Quien crea la segunda fila es el canal CloudKit:
+            // `SplitSyncManager.applyGroupMeta` resuelve con `#Predicate { $0.id == modelID }`, y una fila
+            // born-remote del pull backend (UUID fresco, `cloudKitZoneID` pisado con el `group_id` del
+            // server) es invisible a ese fetch ⇒ inserta una gemela vía `CKRecordTranslator.group(from:)`,
+            // que nunca setea `isBackendGroup` ⇒ **el duplicado nace ya MIXTO**. El guard `!isBackendGroup`
+            // se conserva por fila para no escribir de más en las ya marcadas.
+            for model in models where !model.isBackendGroup { model.isBackendGroup = true }
+        }
+        // 2.3: soft-delete remoto (`is_hidden_for_all` de false a true) → hay que soltar las transacciones
+        // y los borradores personales que colgaban de esa zona. El drenaje va fuera del `saveWithAuthor`,
+        // porque `freezeForSoftDelete` escribe en el store PERSONAL y hace su propio save.
+        if !wasHidden, models.contains(where: \.isHiddenForAll) { freezeZones.insert(delta.groupID) }
+    }
+
+    /// Borra las filas hijas de una zona cuyo grupo desaparece. Es la mitad que el camino REMOTO no había
+    /// copiado del LOCAL (`GroupService.cascadeDeleteGroupData`, el mismo barrido por `groupZoneID` que
+    /// hace `performLocalCleanupAndDelete`): sin `@Relationship` entre `SplitGroup` y sus
+    /// hijas —van por el string plano— SwiftData no cascadea nada solo.
+    ///
+    /// **Va DENTRO del `saveWithAuthor` de `applyPulledPage` y NO hace `save()` propio.** Esa es la
+    /// condición que separa esto de una destrucción de datos AJENOS, y no es cautela genérica: bajo el autor
+    /// por DEFECTO el drain captura la transacción (filtra `author != outboxSaveAuthor`, `:566`) y traduciría
+    /// estos borrados a tombstones de `split_expenses`/`split_shares`/`split_settlements` con HLC fresco —
+    /// que el servidor SÍ aplica, y con `is_group_writer`, más laxo que el `is_group_admin` que protege la
+    /// meta ⇒ los gastos desaparecerían para TODOS los miembros. Ir dentro le da además el `rollback()` del
+    /// `catch` de la página: si el save de la página falla, la cascada se revierte con ella.
+    ///
+    /// **NO alimenta `unbridgeExpenseIDs`/`unbridgeSettlementIDs`, a propósito.** El criterio de un grupo
+    /// que desaparece es CONGELAR y no destruir (esos gastos ocurrieron y el dinero salió de una cuenta
+    /// real); el des-puenteo se llevaría por delante la `TransactionItem` de cuenta real. Ese lado lo cierra
+    /// `freezeZones` → `drainSoftDeleteFreeze`, que trabaja por ZONA sobre el store personal y no lee ni una
+    /// de estas filas ⇒ borrarlas aquí no le quita nada de lo que necesita.
+    private func cascadeDeleteGroupRows(zoneID: String, context: ModelContext) throws {
+        // `#Predicate` CONCRETO por tipo: uno genérico-protocolo compila y crashea al EJECUTAR el fetch.
+        // La clave es `delta.groupID` y no el `cloudKitZoneID` de la fila (que puede no existir) ni la zona
+        // derivada del `id` local — en un grupo born-backend el `id` es un UUID fresco sin relación con la
+        // zona, que es justo el defecto que arrastra `SplitSyncManager.deleteGroupCache`.
+        for member in try context.fetch(
+            FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(member)
+        }
+        for share in try context.fetch(
+            FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(share)
+        }
+        for expense in try context.fetch(
+            FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(expense)
+        }
+        for settlement in try context.fetch(
+            FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneID })) {
+            context.delete(settlement)
+        }
+    }
+
+    private func applyMember(
+        _ delta: GroupPulledDelta, context: ModelContext, cursorResetGroupIDs: inout Set<String>,
+        notify: inout PendingNotificationChanges
+    ) throws {
+        // PULL-ONLY: identidad server-side = member_key (string, en el `sync_id` del wire; el
+        // `cloudKitUserRecordID` es su ESPACIO paralelo solo para members preexistentes del mundo CloudKit).
+        // El sentinel '__deleted_user__' NO se traduce aquí (l10n de UI, G4+).
+        guard let memberKey = delta.rawSyncID else {
+            GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType)
+            return
+        }
+        let existing = try fetchSplitMember(zoneID: delta.groupID, memberKey: memberKey, context: context)
+        if delta.op == .tombstone {
+            if let existing { context.delete(existing) }
+            return
+        }
+        let model = existing ?? SplitMember()
+        let priorStatus = existing?.status
+        if existing == nil {
+            // Born-remote: id LOCAL determinista. R10 (G6-2, namespace-aware): un `member_key` LEGACY
+            // (recordName de CloudKit — el member de un grupo MIGRADO que re-entró por el backend) deriva en
+            // el namespace CloudKit-era `"SplitMember"` con `delta.groupID` (== `cloudKitZoneID` == `zoneID` de
+            // la derivación CloudKit-era) → BYTE-IDÉNTICO al id que ya usa el owner (`GroupService`), preservando
+            // la identidad del mundo CloudKit sin remap. Un `sub` UUID nacido del backend deriva en el namespace
+            // PROPIO del canal. El discriminador es puro (parseabilidad de UUID). Dedup estable cross-device en
+            // ambos casos, sin depender del path CloudKit (G3).
+            model.id = GroupBackendIdentityLogic.isLegacyMemberKey(memberKey)
+                ? GroupUserIdentityService.deterministicUUID(
+                    namespace: "SplitMember", name: "\(delta.groupID):\(memberKey)")
+                : GroupBackendIdentityLogic.deterministicMemberID(
+                    groupID: delta.groupID, memberKey: memberKey)
+        }
+        model.groupZoneID = delta.groupID
+        // Separación de canales (G3): el `member_key` del backend aterriza en `SplitMember.memberKey`, NUNCA
+        // en `cloudKitUserRecordID` (el `sub` no debe contaminar el campo CloudKit). Al ADOPTAR una fila
+        // CloudKit preexistente por fallback (member_key == su `cloudKitUserRecordID`) también se escribe el
+        // `memberKey` — a partir de ahí matchea por el path directo. En born-remote `cloudKitUserRecordID`
+        // se queda "" (nunca lo tocamos aquí).
+        model.memberKey = memberKey
+        let f = delta.fields
+        if let v = wireString(f["display_name"]) { model.displayName = v }
+        if let v = wireString(f["role"]) { model.role = v }
+        if let v = wireString(f["status"]) { model.status = v }
+        if let v = wireDate(f["joined_at"]) { model.joinedAt = v }
+        // `user_id` = auth uid del wire → `SplitMember.userID` (LOCAL-only del canal backend; nunca CKRecord).
+        // Presente-y-null (anonimización del server) NULLea el campo (`wireString(.null) == nil`), igual que
+        // `note`; ausente = no tocar (PATCH parcial). Cierra el residual documentado del commit G2.
+        if let v = f["user_id"] { model.userID = wireString(v) }
+        if existing == nil {
+            context.insert(model)
+            classifyNewMemberForNotification(model, zone: delta.groupID, context: context, notify: &notify)
+        }
+
+        // A2 RE-DRIVE: si el member aplicado es el PROPIO usuario (userID == auth uid) y su status
+        // TRANSICIONA a "active", revivir las filas dead-lettered por "upstream_400:yala_not_authorized"
+        // de ESTE grupo. RATIONALE: un member `pendingApproval` que escribió contenido fue rechazado por
+        // WITH CHECK (yala_not_authorized transitorio-DE-ESTADO) — al ser APROBADO el MISMO delta aplicaría.
+        // Otros códigos permanentes (yala_bad_request) NO se re-driven. Corre DENTRO del `saveWithAuthor`
+        // de `applyPulledPage` → sin save extra.
+        if model.status == "active", priorStatus != "active",
+           let uid = model.userID, let current = currentUserIDProvider(),
+           uid.lowercased() == current.lowercased() {
+            reviveDeadLetteredNotAuthorized(groupID: delta.groupID, context: context)
+            // H-2026-07-18-3: re-join hueco de cursor. Mientras el PROPIO user estuvo `pendingApproval`, RLS
+            // ocultó el contenido del grupo PERO el cursor por-grupo avanzó igual → al pasar a `active` el
+            // pull incremental jamás re-visita ese hueco. Resetear el cursor de ESTE grupo a 0 (en
+            // `applyPulledPage`, tras el merge de cursores) fuerza un re-pull completo. Rama MÁS ESTRECHA que
+            // el re-drive: SOLO la transición pendingApproval→active — un born-remote `nil`→active trae el
+            // contenido de una vez (priorStatus nil NO matchea) y NO debe resetear.
+            if priorStatus == SplitMemberStatus.pendingApproval.rawValue {
+                cursorResetGroupIDs.insert(delta.groupID)
+            }
+        }
+    }
+
+    /// Revive (dead-letter → pendiente) las filas de outbox de un grupo rechazadas por
+    /// `upstream_400:yala_not_authorized` — el próximo push las reintenta (A2). Sin save propio (corre
+    /// dentro del `saveWithAuthor` del apply). `#Predicate` concreto + igualdad exacta sobre el opcional.
+    private func reviveDeadLetteredNotAuthorized(groupID: String, context: ModelContext) {
+        let target = "upstream_400:yala_not_authorized"
+        let descriptor = FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.groupID == groupID && $0.rejectedReason == target })
+        do {
+            for row in try context.fetch(descriptor) {
+                row.rejectedReason = nil
+                row.rejectedAt = nil
+                // B2: la fila vuelve a ser PENDIENTE → re-entra al espejo (las dead-letter están
+                // excluidas; el dead-letter borró su archivo). Misma vuelta síncrona del save del apply.
+                writeMirrorEntry(for: row)
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: revive dead-lettered falló: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: fetch por identidad (concreto por tipo — regla `#Predicate`)
+
+    private func fetchSplitExpense(id: UUID, context: ModelContext) throws -> SplitExpense? {
+        var d = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == id }); d.fetchLimit = 1
+        return try context.fetch(d).first
+    }
+    private func fetchSplitShare(id: UUID, context: ModelContext) throws -> SplitShare? {
+        var d = FetchDescriptor<SplitShare>(predicate: #Predicate { $0.id == id }); d.fetchLimit = 1
+        return try context.fetch(d).first
+    }
+    private func fetchSplitSettlement(id: UUID, context: ModelContext) throws -> SplitSettlement? {
+        var d = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id }); d.fetchLimit = 1
+        return try context.fetch(d).first
+    }
+    /// **TODAS** las filas `SplitGroup` de la zona, ordenadas por `createdAt` ASC (la primera es la CANÓNICA,
+    /// mismo criterio que `GroupService.group(for:)` — de ahí sale el grupo que resuelve la UI, y los dos
+    /// tienen que elegir la misma o un deep-link abre una fila distinta de la que se muestra).
+    ///
+    /// Sustituye al `fetchSplitGroup` que devolvía UNA fila con `fetchLimit = 1` y **sin `sortBy`**: existen
+    /// `SplitGroup` distintos con el mismo `cloudKitZoneID` (`SplitGroupDeduplicationService`), así que ese
+    /// fetch entregaba una fila arbitraria y de ella salían la meta del wire, el flip de canal de la adopción
+    /// C3 y el borrado del tombstone. Sus tres call-sites deciden ahora por ZONA, cada uno con su criterio.
+    private func fetchSplitGroupRows(zoneID: String, context: ModelContext) throws -> [SplitGroup] {
+        try context.fetch(FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID },
+            sortBy: [SortDescriptor(\.createdAt, order: .forward)]))
+    }
+    /// Dual-match del `member_key` (G3): PRIMERO por el campo directo `SplitMember.memberKey` (members del
+    /// canal backend — born-remote y ya-adoptados); si no matchea, FALLBACK por `cloudKitUserRecordID` para
+    /// una fila preexistente del mundo CloudKit (grupos migrados G6-era, cuyo `member_key` server-side ES su
+    /// viejo record-name). El caller (applyMember) escribe `memberKey` al adoptar → el próximo apply matchea
+    /// por el path directo y no re-cae al fallback. `#Predicate` CONCRETO por tipo + igualdad exacta sobre el
+    /// opcional (patrón seguro, regla inviolable — nada de `localizedStandardContains`/coalesce sobre opcional).
+    private func fetchSplitMember(zoneID: String, memberKey: String, context: ModelContext) throws -> SplitMember? {
+        var direct = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.memberKey == memberKey })
+        direct.fetchLimit = 1
+        if let hit = try context.fetch(direct).first { return hit }
+
+        var legacy = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.cloudKitUserRecordID == memberKey })
+        legacy.fetchLimit = 1
+        return try context.fetch(legacy).first
+    }
+
+    // MARK: - Gate 5/5 del bridge remoto (molde SplitSyncManager.processPendingRemoteChanges)
+
+    /// Anota en el intent DURABLE que estos IDs necesitan bridge. Lo llama `applyPulledPage` en sus DOS
+    /// salidas, **pegado al save y antes de cualquier otro trabajo**, porque a partir de ahí las filas ya
+    /// están (o pueden estar) en disco con el cursor avanzado, y todo lo que venga después es una ventana
+    /// donde el gasto existe y su intención no. Los caminos que perdían, y que el sitio «natural»
+    /// —`scheduleBridge`, donde se decide el bridge— NO cubría:
+    ///
+    ///  1. **El `catch` del save de página** (`:1505`). SwiftData no revierte el contexto al fallar un
+    ///     `save()`, así que los `insert` de la página siguen vivos en el `mainContext` compartido.
+    ///  2. **`drainSoftDeleteFreeze`** (`:1535`), que hace su propio `save()` del store personal sin gate
+    ///     de quiescencia y corre ENTRE el save de la página y el bridge.
+    ///  3. **`isReady == false`** — el `guard` de `scheduleBridge` retorna sin dejar rastro cuando el
+    ///     bridge todavía no tiene `ModelContext`, y ese return es anterior a toda acumulación.
+    ///  4. **La quiescencia no cumplida** — difiere a `scheduleBridgeRetry`, un `Task` con `Task.sleep` en
+    ///     MEMORIA.
+    ///
+    /// Perder por cualquiera de ellos es definitivo, por la misma razón que en el canal CloudKit con otro
+    /// mecanismo: `applyPulledPage` persiste `groupCursorsJSON` en el MISMO `saveWithAuthor` que insertó las
+    /// filas (`:1502`), así que el servidor no vuelve a emitir esos deltas jamás. El gasto se queda sin su
+    /// `TransactionItem` y sin su `InboxDraft`: invisible en Panel, Inbox y presupuestos.
+    ///
+    /// Con el dominio SELLADO no se arma nada, mismo racional (y mismo orden guard-antes-de-`arm`) que
+    /// `SplitSyncManager.notePendingBridge`: una intención que la puerta cerrada no puede cumplir solo
+    /// acumularía la cola del humano anterior, que es una REGRESIÓN respecto a no tener intent.
+    private func armBridgeIntent(expenseIDs: [UUID], settlementIDs: [UUID]) {
+        guard GroupTransactionBridge.isDomainOpenForBridge() else { return }
+        GroupsPendingBridgeIntent.arm(
+            expenseIDs: Set(expenseIDs), settlementIDs: Set(settlementIDs), channel: .backend)
+    }
+
+    private func scheduleBridge(expenseIDs: [UUID], settlementIDs: [UUID]) {
+        guard !expenseIDs.isEmpty || !settlementIDs.isEmpty, GroupTransactionBridge.shared.isReady else { return }
+
+        // Autoridad de quiescencia enrutada por storageMode (byte-idéntico al gate del canal CKSyncEngine).
+        switch StorageModeSignalRouter.quiescenceSource(mode: CloudSyncFlags.storageMode) {
+        case .cloudEngine:
+            guard SyncQuiescenceCoordinator.shared.isQuiescentForEngineSaves else {
+                scheduleBridgeRetry(expenseIDs: expenseIDs, settlementIDs: settlementIDs, after: 8)
+                return
+            }
+        case .icloudImport:
+            let decision = SubcategoryDedupGate.decide(
+                now: now(),
+                lastImportDate: iCloudSyncService.shared.lastSuccessfulImportDate,
+                isSyncing: iCloudSyncService.shared.status.isImporting,
+                lastDedupRunAt: nil
+            )
+            guard decision == .run else {
+                let retryAfter: TimeInterval
+                if case .waitQuiescence(let t) = decision { retryAfter = max(t, 1) } else { retryAfter = 8 }
+                scheduleBridgeRetry(expenseIDs: expenseIDs, settlementIDs: settlementIDs, after: retryAfter)
+                return
+            }
+        }
+
+        runBridge(expenseIDs: expenseIDs, settlementIDs: settlementIDs)
+    }
+
+    private func runBridge(expenseIDs: [UUID], settlementIDs: [UUID]) {
+        // Gate de dominio ANTES de intentar nada (molde `SplitSyncManager.processPendingRemoteChanges`,
+        // `:1975`): con Grupos sellado para un usuario nuevo del dispositivo `bridgeExpense` hace
+        // early-return devolviendo «no atendido», así que intentar aquí solo gastaría los tres intentos
+        // del ID contra una puerta cerrada. La intención se conserva entera y se drena el día que el
+        // usuario abra Grupos.
+        guard GroupTransactionBridge.isDomainOpenForBridge() else { return }
+
+        var bridgedExpenses: Set<UUID> = []
+        var bridgedSettlements: Set<UUID> = []
+        if !expenseIDs.isEmpty {
+            do { bridgedExpenses = try GroupTransactionBridge.shared.bridgeRemoteExpenses(ids: expenseIDs) }
+            catch {
+                #if DEBUG
+                logger.error("GroupsSync: bridgeRemoteExpenses falló: \(error)")
+                #endif
+            }
+        }
+        if !settlementIDs.isEmpty {
+            do { bridgedSettlements = try GroupTransactionBridge.shared.bridgeRemoteSettlements(ids: settlementIDs) }
+            catch {
+                #if DEBUG
+                logger.error("GroupsSync: bridgeRemoteSettlements falló: \(error)")
+                #endif
+            }
+        }
+
+        // Desarme DESPUÉS del intento y SOLO por ID CUMPLIDO. El valor de retorno de `bridgeRemote*` se
+        // descartaba aquí: confirmar el lote entero desarmaría la intención de los gastos que el `catch`
+        // por fila se traga y de los que el bridge deja en estado INCOMPLETO sin lanzar —el `SplitMember`
+        // propio aún sin marcar, las `SplitShare` que no han bajado—, que es exactamente la pérdida que el
+        // intent existe para cerrar y la que la review adversarial cazó en el fix del canal viejo.
+        GroupsPendingBridgeIntent.confirm(expenseIDs: bridgedExpenses, settlementIDs: bridgedSettlements)
+    }
+
+    /// Reintento en sesión. Los IDs se ACUMULAN en propiedades y no viajan capturados en el closure: este
+    /// método abre cancelando el `Task` anterior, y `pullUntilExhausted` encadena páginas sin pausa, así que
+    /// una cola de N páginas durante una ventana no-quiescente producía N llamadas en milisegundos y las
+    /// N−1 primeras se cancelaban entre sí — solo la última se reintentaba. Con el intent eso ya no PIERDE
+    /// nada (el retome del arranque lo drena), pero dejaba el bridge de casi toda la cola esperando al
+    /// próximo cold launch en el escenario donde más pasa: el primer sync tras instalar o restaurar, que es
+    /// justo cuando el import personal no está quieto. Es el papel que en el canal CloudKit hacen los Sets
+    /// acumulativos `pendingBridge*IDs`.
+    private func scheduleBridgeRetry(expenseIDs: [UUID], settlementIDs: [UUID], after seconds: TimeInterval) {
+        retryBridgeExpenseIDs.formUnion(expenseIDs)
+        retryBridgeSettlementIDs.formUnion(settlementIDs)
+        bridgeRetryTask?.cancel()
+        bridgeRetryTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, let self else { return }
+            // Se vacían ANTES de reintentar: si `scheduleBridge` vuelve a diferir, re-acumula por este mismo
+            // camino. Vaciar después re-encolaría lo ya reintentado en cada vuelta.
+            let expenseIDs = Array(self.retryBridgeExpenseIDs)
+            let settlementIDs = Array(self.retryBridgeSettlementIDs)
+            self.retryBridgeExpenseIDs.removeAll()
+            self.retryBridgeSettlementIDs.removeAll()
+            self.scheduleBridge(expenseIDs: expenseIDs, settlementIDs: settlementIDs)
+        }
+    }
+
+    // MARK: - Decode del pull (envelope de wire)
+
+    /// Decodifica el envelope `{ deltas, cursors, memberships }` de `GET /groups/pull` a `GroupPulledPage`.
+    static func decodePage(_ data: Data) throws -> GroupPulledPage {
+        let decoded = try JSONDecoder().decode(RawGroupPullResponse.self, from: data)
+        let deltas: [GroupPulledDelta] = decoded.deltas.map { raw in
+            GroupPulledDelta(
+                entityType: raw.entityType,
+                groupID: raw.groupID,
+                rawSyncID: raw.syncID,
+                syncID: raw.syncID.flatMap { UUID(uuidString: $0) },
+                op: SyncOutboxOp(rawValue: raw.op) ?? .upsert,
+                fields: raw.fields ?? [:],
+                fieldHlcs: raw.fieldHlcs ?? [:],
+                hlc: raw.hlc,
+                serverSeq: raw.serverSeq,
+                schemaVersion: raw.schemaVersion ?? 1
+            )
+        }
+        return GroupPulledPage(
+            deltas: deltas,
+            cursors: decoded.cursors ?? [:],
+            // SIN `?? []`: la ausencia del campo se propaga como `nil` y `reconcileLostMemberships` no
+            // toca nada. Ver el docblock de `GroupPulledPage`.
+            memberships: decoded.memberships
+        )
+    }
+
+    // MARK: - cursors JSON
+
+    private func decodeCursors(_ json: String) -> [String: Int64] {
+        guard let data = json.data(using: .utf8),
+              let map = try? JSONDecoder().decode([String: Int64].self, from: data) else { return [:] }
+        return map
+    }
+
+    private func encodeCursors(_ map: [String: Int64]) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(map) else { return "{}" }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    // MARK: - Decodificadores de valor de wire (reusan WireValueDecoder)
+
+    private func wireString(_ v: WireValue?) -> String? {
+        guard let v else { return nil }
+        if case .string(let s) = v { return s }
+        return nil
+    }
+    private func wireDouble(_ v: WireValue?) -> Double? { v.flatMap(WireValueDecoder.double) }
+
+    /// `true` si el upsert trae un importe NO FINITO en `columns`: entonces no se aplica (ticket
+    /// `wire-decoder-accepts-non-finite-money`). Grupos no tiene cuarentena: el patrón para un delta que no se puede
+    /// materializar es saltarlo con rastro (`groupsApplySkippedDelta`). Aplicarlo sin el importe dejaría un gasto en 0
+    /// en el balance de todos; con él, `NaN` rompería cada total que lo sume. La fila se arregla sola cuando llega una
+    /// versión posterior con un importe finito.
+    private func skipsNonFiniteMoney(_ delta: GroupPulledDelta, columns: [String]) -> Bool {
+        let bad = columns.filter { column in delta.fields[column].map(WireValueDecoder.isNonFiniteNumber) ?? false }
+        guard !bad.isEmpty else { return false }
+        reportNonFiniteMoney(delta, columns: bad)
+        return true
+    }
+
+    /// Rastro y canario de un importe no finito que no se aplicó. Salen dentro del save de la página: con un rollback
+    /// se reportaría un salto que no se confirmó, y el re-pull lo vuelve a ver (el canario va una vez por proceso).
+    private func reportNonFiniteMoney(_ delta: GroupPulledDelta, columns: [String]) {
+        GroupsSyncBreadcrumb.groupsApplyNonFiniteMoney(entity: delta.entityType, columns: columns)
+        MetricsService.cloudSyncPullNonFiniteMoney(channel: "groups", table: delta.entityType)
+    }
+    private func wireBool(_ v: WireValue?) -> Bool? {
+        guard let v else { return nil }
+        if case .bool(let b) = v { return b }
+        return nil
+    }
+    private func wireUUID(_ v: WireValue?) -> UUID? {
+        guard let s = wireString(v) else { return nil }
+        return UUID(uuidString: s)
+    }
+    private func wireDate(_ v: WireValue?) -> Date? {
+        guard let s = wireString(v) else { return nil }
+        return WireValueDecoder.date(.string(s))
+    }
+}
+
+// MARK: - Merkle client-side (endurecimiento B1)
+
+/// Los `reason` de `.skipped` que produce `verifyGroupIntegrity`, en UN solo sitio (ticket
+/// `groups-merkle-reads-an-unreadable-table-as-an-empty-one`).
+///
+/// **No viven en `MerkleSkipReason` a propósito.** Aquél es del canal PERSONAL y su `all` es el canario de «motivo
+/// desconocido» de `VerifyProbeMapping`, que decide techos y copy de la vuelta a iCloud: meter aquí los de Grupos lo
+/// ensancharía para un canal que no pasa por ese mapping. Los dos comparten solo el tipo del veredicto. Algunos
+/// valores coinciden byte a byte con los personales (`outbox-pending`, `fetch-failed`…) y eso no los acopla: nadie
+/// consume un veredicto de Grupos por su literal fuera de este fichero y sus tests.
+nonisolated enum GroupMerkleSkipReason {
+    static let outboxFetchFailed = "outbox-fetch-failed"
+    static let outboxPending = "outbox-pending"
+    static let deadLetterFetchFailed = "dead-letter-fetch-failed"
+    static let deadLetters = "dead-letters"
+    static let noCompletedPull = "no-completed-pull"
+    static let fetchFailed = "fetch-failed"
+    static let canonVersionMismatch = "canon-version-mismatch"
+    /// El árbol LOCAL del grupo no se pudo computar: una de sus tablas no se dejó leer. Hasta el 2026-09-23 esa
+    /// tabla se hasheaba como VACÍA y el grupo salía `.diverged` —cursor a 0 y el grupo entero de vuelta—.
+    static let localMerkleFetchFailed = "local-merkle-fetch-failed"
+    static let emptyRemote = "empty-remote"
+
+    /// Los NUEVE, para que un test pueda exigir que no se repitan: dos motivos con el mismo texto se leerían como uno
+    /// en el rastro, y la avería local volvería a confundirse con la red.
+    static let all: [String] = [
+        outboxFetchFailed, outboxPending, deadLetterFetchFailed, deadLetters, noCompletedPull, fetchFailed,
+        canonVersionMismatch, localMerkleFetchFailed, emptyRemote,
+    ]
+}
+
+extension GroupsSyncClient {
+
+    /// Verifica la integridad Merkle de TODOS los grupos con cursor y, si hay divergencia, emite UNA señal
+    /// de canario por corrida (`groupMerkleDivergence` con el COUNT) + remedia UNA vez por sesión (reset del
+    /// cursor de cada grupo divergente + re-pull). `now` inyectado (cadencia). O(grupos): un fetch Merkle por
+    /// grupo, secuencial — el corpus real es pequeño; residual documentado ~200 grupos.
+    func runGroupMerkleVerification(context: ModelContext, now: Date) async {
+        let cursor: GroupSyncCursor
+        do {
+            cursor = try loadOrCreateCursor(context)
+        } catch {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "cursor-load-failed")
+            return
+        }
+        let groupIDs = decodeCursors(cursor.groupCursorsJSON).keys.sorted()
+
+        var divergentGroups: [String] = []
+        var verifiedGroups = 0
+        for gid in groupIDs {
+            switch await verifyGroupIntegrity(groupID: gid, context: context) {
+            case .converged:
+                verifiedGroups += 1
+            case .diverged:
+                verifiedGroups += 1
+                divergentGroups.append(gid)
+            // `.sessionExpired` y `.accountUnavailable` son casos del enum COMPARTIDO que el Merkle personal
+            // estrenó el 2026-09-22 (`reverse-verify-network-bucket-hides-a-definitive-server-no`), y
+            // `verifyGroupIntegrity` **no los devuelve**: sigue aplanando su fetch en `.skipped("fetch-failed")`,
+            // que es lo que aquí hacía y hace su 401 y su 403. Van juntos a propósito — el día que Grupos deje de
+            // aplanar, este caller no tiene que cambiar: aquí no hay techo de migración detrás, el ciclo de sync ya
+            // gestiona la sesión y el 403 aguas arriba, y lo correcto para los tres sigue siendo no contar ni remediar.
+            case .skipped, .sessionExpired, .accountUnavailable:
+                continue  // precondición no satisfecha (breadcrumb ya emitido); no cuenta ni remedia
+            }
+        }
+
+        // La cadencia se re-arma tras CUALQUIER verificación intentada (molde personal: reset del contador +
+        // sello temporal aunque todos hayan sido skip — evita reintentar cada 60s).
+        lastMerkleAt = now
+        completedPullsSinceMerkle = 0
+
+        guard !divergentGroups.isEmpty else {
+            if verifiedGroups > 0 { GroupsSyncBreadcrumb.groupsMerkleConverged(groups: verifiedGroups) }
+            return
+        }
+
+        // UNA señal por corrida (params: count de grupos divergentes) — jamás por-grupo (evita PII y ruido).
+        MetricsService.groupMerkleDivergence(groupCount: divergentGroups.count)
+        GroupsSyncBreadcrumb.groupsMerkleDivergence(groups: divergentGroups.count)
+
+        // Remediación UNA vez por sesión: reset del cursor de cada grupo divergente + un re-pull.
+        guard !didRemediateGroupMerkleThisSession else { return }
+        didRemediateGroupMerkleThisSession = true
+        resetGroupCursors(divergentGroups, context: context)
+        _ = await pullUntilExhausted(context: context)
+        GroupsSyncBreadcrumb.groupsMerkleRemediated(groups: divergentGroups.count)
+    }
+
+    /// Verifica la integridad Merkle de UN grupo. Guards EN ORDEN (molde `CloudSyncEngine.verifyIntegrity`,
+    /// adaptado por-grupo): (1) outbox VIVO del grupo == 0; (2) dead-letters del grupo == 0 ([R7]: un
+    /// dead-letter PERMANENTE deshabilita el Merkle de ESE grupo para siempre — aceptado; solo
+    /// `yala_not_authorized` revive vía re-drive al aprobar al member); (3) último pull del canal completado;
+    /// (4) canon `c2`; (5) árbol LOCAL legible — una tabla que no se deja leer es skip, nunca tabla vacía;
+    /// ([R4]) corpus-vacío-remoto + local no-vacío → remoción de membership (skip, sin canario). Divergencia real →
+    /// `.diverged` (el canario/remediación los agrega el caller). Los `reason` salen de `GroupMerkleSkipReason`.
+    func verifyGroupIntegrity(groupID gid: String, context: ModelContext) async -> MerkleVerdict {
+        // (1) outbox VIVO del grupo.
+        let liveOutbox: Int
+        do { liveOutbox = try liveOutboxCount(groupID: gid, context: context) }
+        catch { return .skipped(reason: GroupMerkleSkipReason.outboxFetchFailed) }
+        guard liveOutbox == 0 else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "outbox-pending:\(liveOutbox)")
+            return .skipped(reason: GroupMerkleSkipReason.outboxPending)
+        }
+        // (2) dead-letters del grupo ([R7]).
+        let deadLetters: Int
+        do { deadLetters = try groupDeadLetteredCount(groupID: gid, context: context) }
+        catch { return .skipped(reason: GroupMerkleSkipReason.deadLetterFetchFailed) }
+        guard deadLetters == 0 else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "dead-letters:\(deadLetters)")
+            return .skipped(reason: GroupMerkleSkipReason.deadLetters)
+        }
+        // (3) último pull del canal completado.
+        guard lastPullCycleCompleted else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: GroupMerkleSkipReason.noCompletedPull)
+            return .skipped(reason: GroupMerkleSkipReason.noCompletedPull)
+        }
+
+        // Snapshot remoto.
+        let outcome = await merkleClient.fetchMerkle(groupID: gid)
+        guard case .snapshot(let remote) = outcome else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "fetch:\(outcome)")
+            return .skipped(reason: GroupMerkleSkipReason.fetchFailed)
+        }
+        // (4) canon (nunca comparar contratos distintos — divergencia FALSA permanente).
+        // G14: `c2` desde el 2026-09-07. Lo que versiona este campo es el CONTRATO DE COLUMNAS, no el
+        // codec (que sigue siendo el c1 de `Canonc1Codec`): al entrar `budget_limit_amount` en el
+        // manifest, el root del server cambió para TODAS las filas —también las que no traen el campo,
+        // porque el canon emite `null`— y un cliente de la versión anterior compararía 11 columnas
+        // contra 12. Sin este bump eso sería una divergencia FALSA en el 100 % de los grupos, con su
+        // reset de cursores y su re-pull por sesión; con él, esos clientes caen aquí y SALTAN la
+        // verificación, que es justo para lo que existe este guard. El canal personal no necesita el
+        // truco porque manda `X-Yala-Capability-Set` y el server le poda las columnas que no conoce.
+        guard remote.canonVersion == "c2" else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "canon:\(remote.canonVersion)")
+            return .skipped(reason: GroupMerkleSkipReason.canonVersionMismatch)
+        }
+
+        // El cómputo local LANZA desde el 2026-09-23 (ticket `groups-merkle-reads-an-unreadable-table-as-an-empty-one`):
+        // hasta ese día una tabla que no se dejaba leer entraba con el hash de una tabla VACÍA. Con el remoto poblado
+        // eso salía de aquí como `.diverged` —y el caller le reseteaba el cursor al grupo y lo bajaba entero, sobre una
+        // avería del teléfono—; con el remoto vacío, `.converged` en falso. Y el guard [R4] de abajo no lo paraba,
+        // porque exige `!localEmpty`. El rastro por tabla lo deja `collectLeaves`; aquí, el del veredicto.
+        let local: GroupMerkleProjection.LocalGroupMerkle
+        do {
+            local = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+        } catch {
+            #if DEBUG
+            print("GroupsSyncClient.verifyGroupIntegrity: cómputo del árbol local falló: \(error)")
+            #endif
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: GroupMerkleSkipReason.localMerkleFetchFailed)
+            return .skipped(reason: GroupMerkleSkipReason.localMerkleFetchFailed)
+        }
+
+        // [R4] Política remoto-vacío: root remoto de corpus VACÍO (todas las entities count 0) + local no
+        // vacío → NO es divergencia, es la firma de remoción de membership vía RLS (el server responde tablas
+        // vacías al no-member). Skip SIN canario ni remediación porque de la limpieza se encarga
+        // `reconcileLostMemberships`, que lee esa misma remoción del `memberships` del pull.
+        //
+        // Esa frase estuvo AQUÍ ANTES QUE LA IMPLEMENTACIÓN, y era el bug B-1 de la re-medición del
+        // 2026-08-04: `GroupPulledPage.memberships` se escribía y no se leía en ningún sitio, así que el skip
+        // se apoyaba en una limpieza que no existía — misma familia que el `AppAttestClient.ensureRegistered()`
+        // de `.claude/rules/gateway-attest.md`. Si alguien vuelve a retirar ese lector, este skip pasa a ser
+        // un descarte silencioso: cámbialo por remediación o canario en el mismo commit.
+        let remoteEmpty = remote.entities.values.allSatisfy { $0.count == 0 }
+        let localEmpty = local.entities.values.allSatisfy { $0.count == 0 }
+        if remoteEmpty && !localEmpty {
+            GroupsSyncBreadcrumb.groupsMerkleEmptyRemote()
+            return .skipped(reason: GroupMerkleSkipReason.emptyRemote)
+        }
+
+        // Comparación por entidad (las 5 SIEMPRE — grupos no tiene cuarentena ni tablas sin cablear) + root.
+        var diverged: [String] = []
+        for table in GroupMerkleProjection.entityTables.sorted() {
+            guard let localEntity = local.entities[table] else { continue }
+            if remote.entities[table]?.hash != localEntity.hashHex { diverged.append(table) }
+        }
+        if diverged.isEmpty, remote.root != local.rootHex { diverged.append("root") }
+
+        return diverged.isEmpty ? .converged : .diverged(entities: diverged)
+    }
+
+    /// Filas de outbox VIVAS (no dead-letter) de un grupo. Cero → el grupo está quiescente para el Merkle.
+    private func liveOutboxCount(groupID gid: String, context: ModelContext) throws -> Int {
+        try context.fetchCount(FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.groupID == gid && $0.rejectedReason == nil }))
+    }
+
+    /// Filas de outbox en DEAD-LETTER de un grupo ([R7]). Cero → sin rechazo permanente pendiente.
+    private func groupDeadLetteredCount(groupID gid: String, context: ModelContext) throws -> Int {
+        try context.fetchCount(FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.groupID == gid && $0.rejectedReason != nil }))
+    }
+
+    /// Resetea a 0 el cursor de pull de los grupos dados (remediación: fuerza re-pull completo del grupo).
+    /// Los que no estén en el mapa se dejan intactos. Persiste bajo `outboxSaveAuthor`.
+    private func resetGroupCursors(_ gids: [String], context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            var map = decodeCursors(cursor.groupCursorsJSON)
+            for gid in gids { map[gid] = 0 }
+            try saveWithAuthor(context) { cursor.groupCursorsJSON = encodeCursors(map) }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: resetGroupCursors falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Re-arma el estado Merkle POR SESIÓN (una nueva sesión debe poder remediar de nuevo). Lo llama
+    /// `stopLoop()` (frontera de sesión). No toca cursores persistidos — solo el estado en-memoria.
+    func resetMerkleSessionState() {
+        completedPullsSinceMerkle = 0
+        lastMerkleAt = nil
+        lastPullCycleCompleted = false
+        didRemediateGroupMerkleThisSession = false
+    }
+}
+
+/// Error del seam `_testThrowOnApplySave` (simula un crash antes del commit de una página).
+/// Gemelo de `ApplyTestCrash` del canal personal, que es `private` a su propio fichero.
+private enum GroupsApplyTestCrash: Error { case suppressed }
+
+/// Error del seam `_testThrowOnDrainSave` (simula un `save` del drain que no puede escribir).
+private enum GroupsDrainTestCrash: Error { case save }
+
+// MARK: - PendingGroupRow
+
+/// Fila de outbox de Grupos acumulada en memoria durante un drain, materializada a `@Model` al persistir.
+private struct PendingGroupRow {
+    let syncID: UUID
+    let groupID: String
+    let entityType: String
+    let op: SyncOutboxOp
+    let hlc: String
+    let clientMutationID: UUID
+    let fieldsJSON: String
+    let fieldHlcsJSON: String?
+    let author: String
+    let createdAt: Date
+    /// De quién es el cambio (`GroupsOutboxOwnershipLogic.owner`). `nil` = sin probar.
+    let ownerUserID: String?
+
+    @MainActor
+    func makeModel() -> GroupSyncOutbox {
+        GroupSyncOutbox(
+            syncID: syncID, groupID: groupID, entityType: entityType, op: op, hlc: hlc,
+            clientMutationID: clientMutationID, fieldsJSON: fieldsJSON, fieldHlcsJSON: fieldHlcsJSON,
+            author: author, tombstoneReason: op == .tombstone ? SyncTombstoneReason.user.rawValue : nil,
+            createdAt: createdAt, ownerUserID: ownerUserID
+        )
+    }
+
+    /// DTO del espejo App Group (B2). `author` = la CONSTANTE de re-inserción del canal (echo-suppression),
+    /// NO el autor de la transacción de origen (diagnóstico que no viaja en la identidad — molde personal).
+    func mirrorEntry(userID: String) -> GroupsOutboxMirrorEntry {
+        GroupsOutboxMirrorEntry(
+            userID: userID, syncID: syncID, groupID: groupID, entityType: entityType,
+            op: op.rawValue, hlc: hlc, clientMutationID: clientMutationID,
+            fieldsJSON: fieldsJSON, fieldHlcsJSON: fieldHlcsJSON,
+            tombstoneReason: op == .tombstone ? SyncTombstoneReason.user.rawValue : nil,
+            author: GroupsOutboxMirror.author, createdAt: createdAt
+        )
+    }
+}
+
+// MARK: - Outcomes del ciclo de vida (G4)
+
+/// Resultado de UNA página del pull (lo agrega `pullUntilExhausted`). `saved == false` = el save de la
+/// página falló → el cursor NO avanzó (A1).
+enum GroupsPullPageOutcome: Equatable {
+    case applied(deltas: Int, saved: Bool)
+    case sessionExpired
+    case accountUnavailable
+    case transient
+}
+
+/// Resultado de una vuelta COMPLETA del pull (hasta agotar). El loop lo mapea a `CadenceOutcome`.
+enum GroupsPullOutcome: Equatable {
+    case completed(pages: Int, deltasApplied: Int)
+    case sessionExpired
+    case accountUnavailable
+    case transient
+}
+
+/// Mapeo PURO de los outcomes del canal de Grupos al `CadenceOutcome` común de `SyncCadencePolicy` (A4:
+/// se REUTILIZA la política del personal — sin `GroupsSyncCadencePolicy` propio; esto solo traduce el eje).
+nonisolated enum GroupsSyncCadence {
+    /// `PushOutcome` → `CadenceOutcome` de STOP/transitorio. `nil` = push OK (`.completed`): seguir al pull.
+    static func stopOutcome(push: PushOutcome) -> SyncCadencePolicy.CadenceOutcome? {
+        switch push {
+        case .completed: return nil
+        case .sessionExpired: return .sessionExpired
+        case .accountUnavailable: return .accountUnavailable
+        case .transient: return .transient
+        }
+    }
+
+    /// `GroupsPullOutcome` → `CadenceOutcome`.
+    static func outcome(pull: GroupsPullOutcome) -> SyncCadencePolicy.CadenceOutcome {
+        switch pull {
+        case .completed: return .completed
+        case .sessionExpired: return .sessionExpired
+        case .accountUnavailable: return .accountUnavailable
+        case .transient: return .transient
+        }
+    }
+}
+
+// MARK: - Wire types (Grupos)
+
+/// Delta de wire de Grupos (espeja `SyncDelta` + `group_id`; `sync_id` nullable para `split_groups`).
+struct GroupSyncDelta: Equatable {
+    let entityType: String          // TABLA Postgres (split_expenses, …)
+    let groupID: String
+    let syncID: UUID?               // nil ⇒ split_groups (wire emite sync_id=null)
+    let op: SyncOutboxOp
+    let fieldsRawJSON: String?
+    let fieldHlcsRawJSON: String?
+    let hlc: String
+    let clientMutationID: UUID
+    let schemaVersion: Int
+}
+
+/// Respuesta de `POST /groups/push`.
+private struct GroupPushResponse: Decodable {
+    let results: [SyncDeltaResult]
+}
+
+/// Vista PARALELA de la respuesta del push SOLO para el `outcome` (el `SyncDeltaResult` local lo descarta).
+/// `outcome.message` = código sanitizado del rechazo upstream (yala_*); `outcome.reason` = motivo del noop
+/// (group_not_found). Ambos son constantes del RPC (sin PII).
+private struct RawOutcomeResponse: Decodable {
+    let results: [RawOutcomeResult]
+}
+
+private struct RawOutcomeResult: Decodable {
+    let clientMutationID: String?
+    let outcome: RawOutcome?
+
+    struct RawOutcome: Decodable {
+        let message: String?
+        let reason: String?
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case clientMutationID = "client_mutation_id"
+        case outcome
+    }
+}
+
+/// Delta bajado del pull de Grupos (ya decodificado). `rawSyncID` = el `sync_id` crudo del wire (member_key
+/// para group_members; UUID-string para las entidades de contenido; `null` para split_groups).
+struct GroupPulledDelta: Equatable {
+    let entityType: String          // TABLA Postgres
+    let groupID: String
+    let rawSyncID: String?
+    let syncID: UUID?
+    let op: SyncOutboxOp
+    let fields: [String: WireValue]
+    let fieldHlcs: [String: String]
+    let hlc: String
+    let serverSeq: Int64
+    let schemaVersion: Int
+}
+
+/// Página del pull de Grupos: deltas + cursores autoritativos por grupo + memberships descubiertas.
+///
+/// **`memberships` es OPCIONAL a propósito y `nil` NO es `[]`.** El gateway lo manda SIEMPRE
+/// (`routes.ts:481`, aunque el array sea vacío), así que su ausencia solo puede venir de una respuesta que
+/// no conoce el contrato. `GroupsSyncClient.reconcileLostMemberships` BORRA grupos locales a partir de este
+/// campo: colapsar la ausencia a «no eres miembro de nada» con un `??` es leer «no sé» como una remoción.
+struct GroupPulledPage: Equatable {
+    let deltas: [GroupPulledDelta]
+    let cursors: [String: Int64]
+    let memberships: [String]?
+}
+
+private struct RawGroupPullResponse: Decodable {
+    let deltas: [RawGroupPulledDelta]
+    let cursors: [String: Int64]?
+    let memberships: [String]?
+}
+
+private struct RawGroupPulledDelta: Decodable {
+    let entityType: String
+    let groupID: String
+    let syncID: String?
+    let op: String
+    let fields: [String: WireValue]?
+    let fieldHlcs: [String: String]?
+    let hlc: String
+    let serverSeq: Int64
+    let schemaVersion: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case entityType = "entity_type"
+        case groupID = "group_id"
+        case syncID = "sync_id"
+        case op
+        case fields
+        case fieldHlcs = "field_hlcs"
+        case hlc
+        case serverSeq = "server_seq"
+        case schemaVersion = "schema_version"
+    }
+}

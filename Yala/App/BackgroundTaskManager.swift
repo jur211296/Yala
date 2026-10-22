@@ -43,6 +43,23 @@ final class BackgroundTaskManager {
     /// Sets the model container for background operations
     func setModelContainer(_ container: ModelContainer) {
         self.modelContainer = container
+        // §i.9 (I10-wiring w6): conecta el journal real al SSOT de fase que consultan los gates de los
+        // BGTasks + deriva el gate permanente de captura de identidad al boot. Aquí (no en AppBootstrapper)
+        // porque este manager ya recibe el container temprano en el bootstrap.
+        MigrationPhaseStore.shared.configure(container: container)
+    }
+
+    /// **R4 · seam del swap de persona in-process.** Suelta el container ANTES de que el orquestador
+    /// verifique el release: este manager y el journal de migración lo retienen con vida propia (viven en
+    /// singletons de proceso, no en la jerarquía de vistas), así que desmontar la UI no basta para
+    /// matarlos. Se repone entero en el re-bootstrap, por el mismo `setModelContainer` de arriba.
+    ///
+    /// No es un `teardown`: no cancela ni desprograma un solo `BGTask`. Los requests encolados en el
+    /// sistema sobreviven al swap a propósito —son del DEVICE, no de la sesión— y sus handlers ya gatean
+    /// por container ausente.
+    func releaseModelContainerForSwap() {
+        modelContainer = nil
+        MigrationPhaseStore.shared.releaseContainerForSwap()
     }
 
     /// Registers all background tasks with the system
@@ -130,8 +147,27 @@ final class BackgroundTaskManager {
     // MARK: - Task Handlers
 
     private func handleWidgetRefreshTask(_ task: BGAppRefreshTask) {
-        // Schedule next refresh
+        // Schedule next refresh (esto ES la re-programación — no dupliques submits abajo)
         scheduleWidgetRefresh()
+
+        // §i.9 gate — widget-refresh es el ÚNICO SOLO-LECTURA. En estados ESTABLES corre normal; en un
+        // estado TRANSITORIO de migración/reversa SUSPENDE (no toca el mainContext a medio hidratar → no
+        // reabre el SIGTRAP de la saga de Grupos). El re-scheduling de arriba hace que iOS lo reintente.
+        // HOY la fase real es SIEMPRE .notStarted → .run: comportamiento IDÉNTICO al actual hasta I10-wiring.
+        let gateDecision = BGTaskMigrationGate.decide(
+            read: MigrationPhaseStore.shared.currentPhaseRead,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .reader
+        )
+        // `!= .run` (no el case concreto): si un refactor futuro cruzara decisiones de rol, el
+        // fallo debe ser CERRADO (no tocar el mainContext en transición), nunca fail-open al crash.
+        if gateDecision != .run {
+            #if DEBUG
+            print("BackgroundTaskManager: widget-refresh SUSPENDED by §i.9 gate (fase transitoria) — re-programado [\(gateDecision)]")
+            #endif
+            task.setTaskCompleted(success: false)
+            return
+        }
 
         // Set expiration handler
         task.expirationHandler = {
@@ -163,8 +199,27 @@ final class BackgroundTaskManager {
 
     /// Handles report notification background task
     private func handleReportNotificationTask(_ task: BGAppRefreshTask) {
-        // Schedule next report check
+        // Schedule next report check (re-programa main + backup — no dupliques submits abajo)
         scheduleNextReportTask()
+
+        // §i.9 gate — ESCRITOR: report-notification Y report-backup comparten este handler (ambos
+        // escriben `lastNotifiedDate` + save()). En estados ESTABLES escribe normal; en un estado
+        // TRANSITORIO exige QUIESCENCIA del import antes de leer/escribir el mainContext, difiriendo
+        // (re-programado arriba) si aún no la hay → nunca un save() sobre grafo a medio hidratar. HOY la
+        // fase real es SIEMPRE .notStarted → .run: comportamiento IDÉNTICO al actual hasta I10-wiring.
+        let gateDecision = BGTaskMigrationGate.decide(
+            read: MigrationPhaseStore.shared.currentPhaseRead,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .writer
+        )
+        // `!= .run` (no el case concreto) — misma defensa fail-closed que el lector.
+        if gateDecision != .run {
+            #if DEBUG
+            print("BackgroundTaskManager: report task DEFERRED by §i.9 gate (fase transitoria, sin quiescencia) — re-programado [\(gateDecision)]")
+            #endif
+            task.setTaskCompleted(success: false)
+            return
+        }
 
         // Perform the report check
         guard let container = modelContainer else {
@@ -380,4 +435,72 @@ final class BackgroundTaskManager {
 
         return candidate
     }
+
+    #if DEBUG
+    // MARK: - Spike S7 (DEBUG) — ejecución DIRECTA del camino del handler (sin daemon)
+
+    /// HALLAZGO de plataforma (device, iOS 26, spike S7): `_simulateLaunchForTaskWithIdentifier` es NO
+    /// CONFIABLE — "No task request … has been scheduled" con el request confirmado en cola (siembra
+    /// inmediata sin fecha, con y sin espera de asentamiento; funcionó 1 de 6 veces sin patrón). Estos
+    /// runners ejecutan el MISMO camino gate+trabajo del handler real sobre el store real — lo que el
+    /// spike debe validar es NUESTRO gate, no el despachador de Apple. Mantener ESPEJADOS con los
+    /// handlers de arriba (se retiran junto al resto del harness al cerrar I11).
+    func spikeS7RunWidgetPath() {
+        let gateDecision = BGTaskMigrationGate.decide(
+            read: MigrationPhaseStore.shared.currentPhaseRead,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .reader
+        )
+        if gateDecision != .run {
+            print("BackgroundTaskManager: [S7-directo] widget-refresh SUSPENDED by §i.9 gate [\(gateDecision)]")
+            return
+        }
+        guard let container = modelContainer else {
+            print("BackgroundTaskManager: [S7-directo] No model container available")
+            return
+        }
+        WidgetDataCache.updateCache(context: container.mainContext)
+        print("BackgroundTaskManager: [S7-directo] Widget cache refreshed (gate .run)")
+    }
+
+    func spikeS7RunReportPath() {
+        let gateDecision = BGTaskMigrationGate.decide(
+            read: MigrationPhaseStore.shared.currentPhaseRead,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .writer
+        )
+        if gateDecision != .run {
+            print("BackgroundTaskManager: [S7-directo] report task DEFERRED by §i.9 gate [\(gateDecision)]")
+            return
+        }
+        guard let container = modelContainer else {
+            print("BackgroundTaskManager: [S7-directo] No model container for report task")
+            return
+        }
+        Task {
+            await ReportNotificationService.shared.sendDueReports(context: container.mainContext)
+            print("BackgroundTaskManager: [S7-directo] Report notifications processed (gate .run)")
+        }
+    }
+
+    // MARK: - Spike S7 (DEBUG) — siembra INMEDIATA para `_simulateLaunchForTaskWithIdentifier`
+
+    /// Re-somete los 3 requests SIN `earliestBeginDate` (= "cuanto antes"). HALLAZGO de plataforma
+    /// (device, iOS 26, spike S7): `_simulateLaunchForTaskWithIdentifier` RESPETA `earliestBeginDate`
+    /// — un request con fecha futura responde "No task request … has been scheduled" aunque esté en
+    /// cola (antes lo ignoraba). Con fecha nil el simulate dispara. `submit` REEMPLAZA el request
+    /// pendiente por identifier → la siguiente pasada real del scheduler de la app restaura las
+    /// fechas normales (boot re-siembra reports; el propio handler re-programa widget).
+    func seedImmediateForSpikeS7() {
+        for id in [Self.widgetRefreshTaskID, Self.reportNotificationTaskID, Self.reportBackupTaskID] {
+            let request = BGAppRefreshTaskRequest(identifier: id)
+            do {
+                try BGTaskScheduler.shared.submit(request)
+                print("BackgroundTaskManager: [S7] sembrado INMEDIATO \(id)")
+            } catch {
+                print("BackgroundTaskManager: [S7] siembra inmediata falló para \(id): \(error)")
+            }
+        }
+    }
+    #endif
 }

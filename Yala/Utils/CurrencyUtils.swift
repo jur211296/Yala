@@ -831,9 +831,10 @@ enum CurrencyDefaults {
 
     /// Detects the recommended currency based on the user's device region.
     /// Derives automatically from CurrencyCode.regionCodes.
-    static func detectCurrencyFromRegion() -> CurrencyCode {
-        let regionCode = Locale.current.region?.identifier ?? ""
-
+    /// - Parameter regionCode: código de región ISO. Default: la región del dispositivo
+    ///   (`Locale.current.region`). Inyectable para tests deterministas que no dependen
+    ///   de la región del simulador (patrón canónico `now: Date = .now`).
+    static func detectCurrencyFromRegion(regionCode: String = Locale.current.region?.identifier ?? "") -> CurrencyCode {
         // Busca en el mapeo centralizado del enum
         if let currency = CurrencyCode.fromRegion(regionCode) {
             return currency

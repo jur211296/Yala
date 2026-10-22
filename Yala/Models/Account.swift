@@ -31,7 +31,10 @@ final class Account {
     /// Stable identifier for App Intents (Siri/Shortcuts). Unaffected by `name` renames.
     /// CloudKit: must have default value, no `@Attribute(.unique)`. Migration: legacy entities
     /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDsIfNeeded.
-    var shortcutID: UUID = UUID()
+    /// I12: identidad de sync del Modo Nube (`sync_id_source = Account.shortcutID`).
+    /// `.preserveValueOnDeletion` para que el history tombstone conserve el `shortcutID` (metadata de
+    /// History; NO es un campo CloudKit nuevo → sin deploy .ckdb).
+    @Attribute(.preserveValueOnDeletion) var shortcutID: UUID = UUID()
 
     // Credit card specific
     var creditCardPaymentReminder: Bool = false
@@ -80,4 +83,20 @@ final class Account {
         self.isArchived = isArchived
         self.isSystemAccount = isSystemAccount
     }
+}
+
+// MARK: - Free-limit billing
+
+extension Account {
+    /// Cuenta de USUARIO que consume el límite Free de cuentas.
+    /// Las cuentas de sistema del bridge de grupos (`isSystemAccount`) NO cuentan:
+    /// el usuario no las creó y no puede eliminarlas. Las archivadas tampoco.
+    /// SSOT del predicado — el bug 2026-07-22 (3 call-sites divergidos) es la prueba
+    /// de que repetirlo a mano diverge. NUNCA re-implementar el filtro inline.
+    var isBillableUserAccount: Bool { !isArchived && !isSystemAccount }
+}
+
+extension Array where Element == Account {
+    /// Cuentas que consumen el límite Free (ver `isBillableUserAccount`).
+    var billableUserAccounts: [Account] { filter(\.isBillableUserAccount) }
 }

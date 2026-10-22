@@ -11,6 +11,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct SubcategorySelectorViewModelTests {
 
     // MARK: - Initial State

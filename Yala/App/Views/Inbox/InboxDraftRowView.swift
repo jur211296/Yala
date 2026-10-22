@@ -19,10 +19,14 @@ struct InboxDraftRowView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.tagCatalog) private var tagCatalog
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: DS.ListRow.spacing) {
+            // A tamaños de accesibilidad el importe baja bajo el concepto (`AdaptiveRowStack`), como en
+            // `RecordRowView`: en fila se cortaba («S/-…50»). Apilada, icono y texto quedan juntos en su propia fila.
+            AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
                 // Selection circle (only in selection mode)
                 if isSelectionMode {
                     selectionCircle
@@ -41,9 +45,7 @@ struct InboxDraftRowView: View {
                         incompleteContentView
                     }
                 }
-
-                Spacer()
-
+            } trailing: {
                 // Amount column
                 amountColumn
             }
@@ -60,8 +62,15 @@ struct InboxDraftRowView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue))
+        .accessibilityLabel(accessibilityText)
         .accessibilityIdentifier("inbox_draft_row_\(draft.note)")
+    }
+
+    /// La etiqueta de siempre y, en el aviso de importe cambiado, su segunda línea: sin ella VoiceOver no dice qué cambió.
+    private var accessibilityText: String {
+        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue)
+        guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
+        return "\(base), \(detail)"
     }
 
     // MARK: - Complete Content View (like RecordRowView)
@@ -77,10 +86,10 @@ struct InboxDraftRowView: View {
             Text(draft.note)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(conceptLineLimit)
 
-            // Line 2: Subcategory • Account
-            Text("\(subcategoryName) • \(accountName)")
+            // Line 2: Subcategory • Account (el aviso de importe cambiado: la cuenta y lo que tiene ahora)
+            Text(settlementAmountChangeDetail(accountName: accountName) ?? "\(subcategoryName) • \(accountName)")
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -93,7 +102,7 @@ struct InboxDraftRowView: View {
 
             // Line 2: Account name
             if !accountName.isEmpty {
-                Text(accountName)
+                Text(settlementAmountChangeDetail(accountName: accountName) ?? accountName)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
@@ -109,6 +118,30 @@ struct InboxDraftRowView: View {
         }
     }
 
+    /// Segunda línea del aviso de importe cambiado pendiente: la cuenta de la transacción y lo que tiene ahora, leídos por
+    /// la marca (`GroupTransactionBridge.amountChangeTarget`), no por el aviso. Solo pendiente: un archivado no lee
+    /// relaciones (pueden estar invalidadas) y cae a la línea de siempre.
+    private func settlementAmountChangeDetail(accountName: String) -> String? {
+        guard draft.isSettlementAmountChangeNotice, draft.status == .pending else { return nil }
+        let resolved: (mark: InboxDraft, transaction: TransactionItem)?
+        do {
+            resolved = try GroupTransactionBridge.amountChangeTarget(
+                settlementID: draft.splitSettlementID, in: modelContext)
+        } catch {
+            #if DEBUG
+            print("InboxDraftRowView: amountChangeTarget: Error: \(error)")
+            #endif
+            return nil
+        }
+        guard let transaction = resolved?.transaction else { return nil }
+        let inAccount = appPreferences.currency(
+            abs(transaction.amount), currencyCode: transaction.currencyCode, forceFullPrecision: true)
+        return L10n.Inbox.GroupSettlementAmountChange.rowDetail(transaction.account?.name ?? accountName, inAccount)
+    }
+
+    /// Una línea a los tamaños normales; dos a los de accesibilidad, donde el concepto ya tiene la fila entera.
+    private var conceptLineLimit: Int { dynamicTypeSize.isAccessibilitySize ? 2 : 1 }
+
     // MARK: - Incomplete Content View
 
     @ViewBuilder
@@ -117,7 +150,7 @@ struct InboxDraftRowView: View {
         Text(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note)
             .font(DS.Typography.label)
             .foregroundStyle(draft.note.isEmpty ? .secondary : .primary)
-            .lineLimit(1)
+            .lineLimit(conceptLineLimit)
 
         // Line 2: Missing fields indicators
         if !draft.needsUserInput.isEmpty {
@@ -133,7 +166,7 @@ struct InboxDraftRowView: View {
     // MARK: - Amount Column
 
     private var amountColumn: some View {
-        VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
                 AmountText(
                     value: amount,
@@ -316,6 +349,8 @@ struct InboxDraftRowView: View {
             return Color.hotPink             // brand pink — grupos
         case .manual:
             return theme.secondaryText       // neutro — draft convertido (FU-02 cleanup)
+        case .groupScheduledExpense:
+            return Color.hotPink             // brand pink — gasto de grupo recurrente
         }
     }
 

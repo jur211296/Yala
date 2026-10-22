@@ -27,6 +27,23 @@ final class DetailContainerViewModel {
     private(set) var budgets: [Budget] = []
     private(set) var scheduledPayments: [ScheduledPayment] = []
 
+    /// Avanza cuando una recarga del store trae algo nuevo. Es la señal de «los datos cambiaron» para quien precalcula a
+    /// partir de estos arrays (hoy, Distribución).
+    ///
+    /// Los arrays solos no sirven de señal: editar el importe de un movimiento deja las MISMAS filas,
+    /// `fetched != allTransactions` da `false` y nada aguas abajo se entera. Por eso cuenta también `dataVersion`, que
+    /// todo mutador sube (alta, edición, borrado, ediciones masivas, sync). Observar `dataVersion` directamente tampoco
+    /// vale: salta 150 ms antes de esta recarga (el debounce del contenedor) y quien lo mirara leería los arrays viejos.
+    ///
+    /// **No avanza en una recarga que no trae nada.** El contenedor recarga dos veces por alta —al guardar, por
+    /// `dataVersion`, y al cerrar la pantalla de éxito, por el `onDisappear` del sheet— y también al cerrar un sheet sin
+    /// guardar o al volver de segundo plano. Avanzar en cada una recalcularía Distribución más veces por gesto que el
+    /// `.count` al que sustituye (medido: el Sankey pasaba de 1 a 2 por alta).
+    private(set) var dataGeneration = 0
+
+    /// `dataVersion` de la última recarga: lo que permite saber si la siguiente trae una mutación nueva.
+    private var lastLoadedDataVersion: Int?
+
     // MARK: - Setup
 
     func setContext(_ context: ModelContext) {
@@ -35,8 +52,12 @@ final class DetailContainerViewModel {
         if isNewContext { loadData() }
     }
 
-    func loadData() {
+    /// - Parameter dataVersion: el `SessionState.dataVersion` en el momento de recargar; `nil` lo lee del singleton.
+    ///   Inyectable para que los tests no dependan de él.
+    func loadData(dataVersion: Int? = nil) {
         guard let context = modelContext else { return }
+        let dataVersion = dataVersion ?? SessionState.shared.dataVersion
+        var changed = false
 
         // Load transactions
         let transactionsDescriptor = FetchDescriptor<TransactionItem>(
@@ -47,7 +68,7 @@ final class DetailContainerViewModel {
         )
         do {
             let fetched = try context.fetch(transactionsDescriptor)
-            if fetched != allTransactions { allTransactions = fetched }
+            if fetched != allTransactions { allTransactions = fetched; changed = true }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading transactions: \(error)")
@@ -60,7 +81,7 @@ final class DetailContainerViewModel {
         )
         do {
             let fetched = try context.fetch(accountsDescriptor)
-            if fetched != accounts { accounts = fetched }
+            if fetched != accounts { accounts = fetched; changed = true }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading accounts: \(error)")
@@ -73,7 +94,7 @@ final class DetailContainerViewModel {
         )
         do {
             let fetched = try context.fetch(categoriesDescriptor)
-            if fetched != categories { categories = fetched }
+            if fetched != categories { categories = fetched; changed = true }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading categories: \(error)")
@@ -86,7 +107,7 @@ final class DetailContainerViewModel {
         )
         do {
             let fetched = try context.fetch(subcategoriesDescriptor)
-            if fetched != allSubcategories { allSubcategories = fetched }
+            if fetched != allSubcategories { allSubcategories = fetched; changed = true }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading subcategories: \(error)")
@@ -99,7 +120,7 @@ final class DetailContainerViewModel {
         )
         do {
             let fetched = try context.fetch(tagsDescriptor)
-            if fetched != tags { tags = fetched }
+            if fetched != tags { tags = fetched; changed = true }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading tags: \(error)")
@@ -112,7 +133,7 @@ final class DetailContainerViewModel {
         )
         do {
             let fetched = try context.fetch(budgetsDescriptor)
-            if fetched != budgets { budgets = fetched }
+            if fetched != budgets { budgets = fetched; changed = true }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading budgets: \(error)")
@@ -125,12 +146,18 @@ final class DetailContainerViewModel {
         )
         do {
             let fetched = try context.fetch(paymentsDescriptor)
-            if fetched != scheduledPayments { scheduledPayments = fetched }
+            if fetched != scheduledPayments { scheduledPayments = fetched; changed = true }
         } catch {
             #if DEBUG
             print("DetailContainerViewModel: Error loading scheduled payments: \(error)")
             #endif
         }
+
+        if dataVersion != lastLoadedDataVersion {
+            lastLoadedDataVersion = dataVersion
+            changed = true
+        }
+        if changed { dataGeneration &+= 1 }
     }
 
     // MARK: - Computed Properties

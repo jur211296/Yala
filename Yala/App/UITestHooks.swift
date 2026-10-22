@@ -38,28 +38,733 @@ final class UITestHooks {
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
+    /// `-uitest-last-seen-version <valor>`: qué `lastSeenAppVersion` deja el arranque uitest. Sin el flag, la versión
+    /// actual (las Novedades no tapan el primer tap de ningún XCUITest). Con una versión (`2.0.4`), esa: el
+    /// dispositivo «viene de actualizar». `none` borra la key; `keep` no la toca, para medir lo que dejó el
+    /// arranque anterior. Lo usa `WhatsNewLaunchUITests`.
+    nonisolated static var lastSeenAppVersionOverride: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-last-seen-version", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-onboarding`: presenta el OnboardingView directo (salta Welcome Hero/Chooser),
     /// SIN marcar onboarding completado. Para testear el flujo de onboarding aislado.
     nonisolated static var startAtOnboarding: Bool { hasArg("-uitest-onboarding") }
 
-    /// `-uitest-group-invite`: arranca en modo solo-grupos (`OnboardingMode.groupInvite`),
-    /// con onboarding saltado y el tab Grupos seleccionado. Para testear el Perfil reducido.
+    /// `-uitest-group-invite`: arranca en modo solo-grupos (el eje 1 apagado — no hay sesión privada
+    /// en este dispositivo), con onboarding saltado y el tab Grupos seleccionado. Para testear el
+    /// Perfil reducido.
     nonisolated static var forceGroupInvite: Bool { hasArg("-uitest-group-invite") }
+    /// Siembra la marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`), atada a «sin sesión».
+    /// Con `-uitest-seed solo-grupos` y el Welcome visible monta el estado del ticket
+    /// `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start` sin pasar por iCloud, que el simulador no tiene.
+    nonisolated static var lateNoticeKeptGroups: Bool { hasArg("-uitest-late-notice-kept-groups") }
+    /// `-uitest-welcome-after-adopt-exit`: arranca en el estado que deja cualquier salida de un adopt (error,
+    /// `.adoptExit`, `.lineageExit` o «Cancelar la activación»): el onboarding dado por completo —el `true` temprano de
+    /// `onAdoptStarted`, efímero aquí— y el Welcome reabierto en `.chooser`, con el mismo trío que su `onBack`. Existe
+    /// para el XCUITest de `fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app`: en el simulador no hay SIWA
+    /// y el adopt real no se puede conducir. **Finge la ENTRADA, no la decisión**: el alert de «empiezo de cero», sus
+    /// botones y el testigo `freshStartAlertPresentedOverWelcome` son los de producción. Solo DEBUG.
+    nonisolated static var welcomeAfterAdoptExit: Bool { hasArg("-uitest-welcome-after-adopt-exit") }
+
+    /// `-uitest-cloud-chooser`: destapa las cards de sign-in cloud (Apple/Google) del
+    /// 2º nivel del Welcome bajo uitest — opt-in EXPLÍCITO del XCUITest del chooser
+    /// (sesión 2 Google). Sin él, uitest conserva el bypass a restore (byte-idéntico).
+    /// Solo NAVEGACIÓN determinista: el test jamás tapea el botón de sign-in real.
+    /// La card de la nube de «Es mi primera vez» pide además `-uitest-fake-attest-support`: ver abajo.
+    nonisolated static var forceCloudChooser: Bool { hasArg("-uitest-cloud-chooser") }
+
+    /// `-uitest-fake-attest-support`: finge que este teléfono puede conseguir token de App Attest, **solo en la entrada
+    /// de las puertas que ofrecen la nube**: `WelcomeNewOptionsGate` (la card de «Es mi primera vez» y las salidas al alta
+    /// de la pantalla de entrar) y, desde el 2026-09-16, la card de migración de Ajustes
+    /// (`StorageSettingsView.offersCloudMigrationEntry`). El simulador no tiene App Attest, así que sin
+    /// este arg no sale ninguna de las dos: ni la del Welcome aunque se pida `-uitest-cloud-chooser`, ni la de Ajustes.
+    /// No toca `AppAttestClient`: el cliente sigue sin poder conseguir token.
+    ///
+    /// Los dos args son ortogonales a propósito. `-uitest-cloud-chooser` sin este es el caso que prueba la CONDICIÓN: la
+    /// card desaparece porque el host no tiene App Attest, y un mutante que quite el término lo pone en rojo. Un seam que
+    /// fingiera las dos cosas a la vez dejaría ciegos a todos sus tests (`.claude/rules/testing.md`). Solo DEBUG.
+    nonisolated static var fakeAttestSupport: Bool { hasArg("-uitest-fake-attest-support") }
+
+    /// `-uitest-pending-icloud-wipe`: finge que la persona pidió borrar su iCloud y el borrado no ha terminado, **solo en
+    /// la tarjeta de «¿Dónde viven tus datos?»** (`StorageSettingsView.hasPendingICloudWipe`; ticket
+    /// `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`). Finge la ENTRADA, no la decisión: el
+    /// diálogo y lo que hace cada botón son los de producción. No escribe el arm de verdad porque el arranque del XCUITest
+    /// lo reanudaría (`ContentView.runLateICloudMirrorCheck`) y borraría la semilla. Solo DEBUG.
+    nonisolated static var fakePendingICloudWipe: Bool { hasArg("-uitest-pending-icloud-wipe") }
+
+    /// Valor de `-uitest-fake-beacon <apple|google|…>`: finge que el faro de iCloud-KV dice que este Apple ID
+    /// YA tiene una cuenta en la nube creada con ese método (el `#if DEBUG` vive en las lecturas de
+    /// `CloudBeacon`). Existe para el XCUITest de «Crear otra cuenta» (ticket
+    /// `beacon-routes-only-never-blocks`): sin él, el encaminamiento por faro solo se veía en un teléfono
+    /// con una cuenta real detrás.
+    ///
+    /// **Finge la ENTRADA, no la decisión**: `WelcomeAccountChoiceLogic.routeNewBranch` sigue decidiendo
+    /// entero con el faro fingido y la disponibilidad REAL de la entrada nube, que bajo `-uitest` exige
+    /// además `-uitest-cloud-chooser`. Y **no persiste**: no escribe en el iCloud-KV del simulador. Un valor
+    /// que no sea un método conocido se pasa tal cual, que es justo el caso del faro con método
+    /// desconocido. Solo DEBUG.
+    nonisolated static var fakeBeaconProvider: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-fake-beacon", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-fake-icloud`: fuerza `iCloudSyncService.isAccountAvailable = true` en el
+    /// simulador (que NO tiene cuenta iCloud). Desbloquea los flujos cuyo único obstáculo
+    /// es el guard de disponibilidad de cuenta —prompts de restore de iCloud, por ejemplo—
+    /// que de otro modo bloquean ANTES de poder ejercitarlos en sim.
+    /// NO habilita CloudKit real: crear grupo/CKShare/sync bidireccional siguen sin
+    /// funcionar en sim (el store uitest es local, `cloudKitDatabase: .none`). El
+    /// AppBootstrapper también marca el primer import como asentado para que los gates
+    /// de boot no esperen un import de CloudKit que en sim nunca llega. Solo DEBUG.
+    nonisolated static var fakeICloudAvailable: Bool { hasArg("-uitest-fake-icloud") }
+
+    /// `-uitest-fake-backend-session`: fuerza el input `hasSession` de «Eliminar mi cuenta» (desde el paso 9 vive en «Tu cuenta de Yala»)
+    /// (ProfileView) a `true`, para QA/XCUITest del diálogo de D5 (aviso de deudas + «Ver mis grupos»)
+    /// SIN un sign-in backend real —SIWA/Google no corren en sim—. NO crea una sesión Supabase real
+    /// (`CloudAuthService.hasSession` global NO se toca): solo hace visible la fila + el diálogo; tocar
+    /// «Continuar → Eliminar» no completa (no hay backend). Combinar con `-uitest-seed grupos` para que
+    /// el usuario tenga saldos pendientes → aparece el aviso. Solo DEBUG (inerte en release vía `hasArg`).
+    ///
+    /// NO CONFUNDIR con `-uitest-fake-cloud-session` (abajo), su vecino tipográfico: aquel fuerza el
+    /// predicado GLOBAL de sesión y este solo el input de DOS filas de Perfil. Fusionarlos rompería
+    /// `YalaAccountUITests` y `DeleteAccountDialogUITests`, que dependen de que con este arg el path de
+    /// cierre siga siendo el privado (`.privateSignOut`) y no el del «equipo» con grupos.
+    nonisolated static var fakeBackendSession: Bool { hasArg("-uitest-fake-backend-session") }
+
+    /// `-uitest-fake-cloud-session`: fuerza el predicado GLOBAL `CloudAuthService.hasSession` a `true`
+    /// (el `#if DEBUG` vive en `CloudAuthService.swift`). Existe porque con `groupsBackendEnabled` ON
+    /// —lo que ocurre en TODO XCUITest bajo `Yala Dev`, donde el default-ausente de remote-config es ON—
+    /// Grupos exige sesión POR DISEÑO: sin ella el tab pinta el empty state de re-entrada
+    /// (`GroupsEmptyStateLogic.decide` → `.signInToView`) y «Nuevo grupo» rutea al sign-in
+    /// (`GroupCreateRoutingLogic.route` → `.needsSignIn`), así que los XCUI escritos para el canal
+    /// CloudKit no llegan ni al empty state estándar ni al formulario.
+    ///
+    /// NO crea una sesión Supabase real, y eso es deliberado: `currentUserID`, `sessionExpiry`,
+    /// `canRenewSession` y `accessToken()` quedan intactos (`nil`/`false`). Es justo lo que mantiene el
+    /// tráfico HTTP en CERO —cada cliente del canal tiene un SEGUNDO guard sobre el JWT y lanza antes de
+    /// tocar `URLSession`— y lo que deja byte-idéntica la resolución de identidad por `sub`. Fabricar un
+    /// JWT mandaría credenciales basura a un backend real. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var fakeCloudSession: Bool { hasArg("-uitest-fake-cloud-session") }
+
+    /// `-uitest-sign-out-keeps-session`: `CloudAuthService.signOut()` devuelve «la sesión sigue guardada», como si el
+    /// llavero no la hubiera borrado o un refresco del token en vuelo la hubiera repuesto (ticket
+    /// `detach-does-not-verify-the-cloud-session-actually-closed`). En el simulador no hay forma de provocar ninguna de las
+    /// dos, y sin el seam el aviso del desasociar parado no se ve. Solo cambia lo que el cierre DEVUELVE: todo lo que hace
+    /// antes corre igual. Solo DEBUG.
+    nonisolated static var signOutKeepsSession: Bool { hasArg("-uitest-sign-out-keeps-session") }
+
+    /// Valor de `-uitest-fake-migration-identity <personalData|proceed|otherDeviceMigrating>`: finge la RESPUESTA de la puerta de identidad de
+    /// «Migrar a la nube» (`CloudMigrationController.checkMigrationIdentity`), para el XCUITest de la hoja del bloqueo
+    /// (ticket `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). El simulador no puede preguntar a
+    /// `/account/exists` con una sesión real, así que sin esto la hoja no se ve.
+    ///
+    /// **Cubre la presentación, no la decisión**: con el seam, cualquier cuenta «tiene datos». Qué cuenta bloquea y cuál no
+    /// lo fijan los unit de `StorageMigrationIdentityGateLogic` y de la tabla [I]. Se combina con
+    /// `-uitest-fake-cloud-session`, que es lo que hace que la comprobación se adelante al toque. No persiste nada. Un valor
+    /// desconocido se ignora. Solo DEBUG.
+    nonisolated static var fakeMigrationIdentityCheck: StorageMigrationIdentityGateLogic.Check? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-fake-migration-identity", from: ProcessInfo.processInfo.arguments) {
+        case "personalData": return .blocked(.accountHasPersonalData)
+        case "proceed":      return .proceed
+        // Otro dispositivo de esta persona está llevando sus datos a la cuenta (ticket
+        // `settings-migrate-blocks-a-second-device-before-its-marker`). Finge la respuesta, no la decisión.
+        case "otherDeviceMigrating": return .blocked(.migrationInProgressOnAnotherDevice)
+        default:             return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado»
+    /// mide en vez de salir de largo, con iCloud «sin cuenta» y la LECTURA del teléfono fingida (ticket
+    /// `private-gate-device-notice-has-no-forward-exit`). En el simulador esa pantalla es inalcanzable por construcción
+    /// —bajo XCUITest la puerta no mide y el mount nunca es neutro—, así que sin esto no hay XCUITest ni capturas.
+    /// **Finge la entrada, no la decisión**: lo que se pinta lo decide `WelcomePrivateICloudGateLogic.decide`. No toca la
+    /// red ni persiste nada. Un valor desconocido se ignora. Solo DEBUG.
+    /// `-uitest-private-gate-probe-stalled`: la revisión de iCloud de la puerta privada contesta «se quedó sin avanzar»
+    /// (`ICloudZoneScanEnd.stalledReason`) sin tocar CloudKit, para el XCUITest y las capturas del texto que no culpa a la
+    /// conexión (card blqa). **Finge la entrada, no la decisión**: lo que se pinta lo decide la tabla de producción. Solo
+    /// DEBUG.
+    nonisolated static var privateGateProbeStalled: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-probe-stalled")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-uitest-invite-opening`: al presentar la bienvenida se enciende «Abriendo tu invitación…» como si acabara de llegar
+    /// un enlace (card z81w), sin enlace ni red. Lo apagan el techo o la cadena del invitado, como en producción. Solo DEBUG.
+    nonisolated static var inviteOpening: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-invite-opening")
+        #else
+        return false
+        #endif
+    }
+
+    nonisolated static var privateGateDeviceReading: WelcomePrivateICloudGateLogic.DeviceDataReading? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-private-gate-device-reading", from: ProcessInfo.processInfo.arguments) {
+        case "present":    return .present
+        case "unreadable": return .unreadable
+        default:           return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-pending-migration-block <personalData|personalDataApple>`: el controller nace con un aviso de
+    /// «Migrar a la nube» ya publicado, con «Usar otra cuenta» (y, con `…Apple`, la cuenta rechazada de Apple). Existe para
+    /// el XCUITest de la cadena hoja → elección de Apple/Google, que con una sesión fingida no se puede recorrer: la
+    /// sesión viva quita ese botón a propósito. Finge la SALIDA del controller, no su decisión. No persiste nada. Solo
+    /// DEBUG.
+    nonisolated static var pendingMigrationBlock: (reason: StorageMigrationIdentityGateLogic.Block, rejectedProvider: CloudSignInProvider?)? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-pending-migration-block", from: ProcessInfo.processInfo.arguments) {
+        case "personalData":      return (.accountHasPersonalData, nil)
+        case "personalDataApple": return (.accountHasPersonalData, .apple)
+        default:                  return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-born-cloud-storage`: `CloudMigrationController` LEE el modo persistido como `.cloud` y «la cuenta nació en la
+    /// nube aquí» como cierto, al derivar la pantalla de Almacenamiento y la elegibilidad de «Volver a iCloud» (ticket
+    /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`). Sin esto la tarjeta de la vuelta es inalcanzable en el
+    /// simulador: crear una cuenta en la nube pide App Attest, y el secreto de staging no está en esta Mac.
+    ///
+    /// **Finge la ENTRADA, no la decisión**, y solo esa lectura: el modo real sigue en `.icloud`, el store monta igual y el
+    /// motor no arranca. Lo que la pantalla pinta lo siguen decidiendo `CloudMigrationUIStateDeriver` y
+    /// `ReverseEligibility`. No persiste nada. Solo DEBUG.
+    nonisolated static var fakeBornCloudStorage: Bool { hasArg("-uitest-born-cloud-storage") }
+
+    /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|noAccount>`: lo que contesta la pregunta a iCloud antes
+    /// de «Volver a iCloud» (`ICloudPersonalCorpusProbe.foreignCorpusForReverse`), que en el simulador no tiene CloudKit.
+    /// `found`: 12 registros, 2 cuentas y 1 presupuesto ajenos; `foundGroups`: solo 9 registros de grupos, el caso del QA
+    /// del 2026-10-15. **Finge la respuesta, no la decisión**: qué hace el botón lo decide `ReverseICloudPriorDataLogic`.
+    /// Un valor desconocido se ignora. Solo DEBUG.
+    nonisolated static var fakeReverseForeignCorpus: ICloudForeignCorpusCheck? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-reverse-prior-icloud", from: ProcessInfo.processInfo.arguments) {
+        case "found":
+            return .measured(ICloudForeignCorpus(
+                transactions: 12, groupTransactions: 0, accounts: 2, budgets: 1, otherRecords: 6,
+                truncated: false, fieldsUnread: false))
+        case "foundGroups":
+            return .measured(ICloudForeignCorpus(
+                transactions: 0, groupTransactions: 9, accounts: 0, budgets: 0, otherRecords: 0,
+                truncated: false, fieldsUnread: false))
+        case "none":      return .measured(.empty)
+        case "noAccount": return .noAccount
+        case "failed": return .failed("uitest")
+        default:       return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-reverse-prior-icloud-wipe <network|stalled|progress>`: el borrado de «Empezar sin ellos» fingido. Sin
+    /// red, parado sin avanzar, o borrando sin terminar (para ver el progreso). Nunca termina bien: un borrado que
+    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Un valor desconocido se ignora. Solo
+    /// DEBUG.
+    nonisolated static var fakeReverseForeignWipe: FakeReverseForeignWipe? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-reverse-prior-icloud-wipe", from: ProcessInfo.processInfo.arguments) {
+        case "network":  return .network
+        case "stalled":  return .stalled
+        case "progress": return .progress
+        default:         return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Lo que finge `fakeReverseForeignWipe`. La cifra es la del QA guiado del 2026-10-19: el primer intento borró unos
+    /// 1.200 registros antes de cortarse.
+    enum FakeReverseForeignWipe {
+        case network, stalled, progress
+
+        static let deletedSoFar = 1_197
+
+        @MainActor
+        func run(_ onProgress: @MainActor (Int) -> Void) async -> ForeignWipeOutcome {
+            switch self {
+            case .network:
+                return .failed("uitest", network: true)
+            case .stalled:
+                onProgress(Self.deletedSoFar)
+                return .stalled
+            case .progress:
+                onProgress(Self.deletedSoFar)
+                // Se queda borrando: la tarjeta enseña el progreso hasta que el test termina.
+                while true {
+                    do {
+                        try await Task.sleep(for: .seconds(3_600))
+                    } catch {
+                        return .stalled
+                    }
+                }
+            }
+        }
+    }
+
+    /// `-uitest-migration-journal-unreadable`: el fetch del journal de la migración que hace `CloudMigrationController` LANZA
+    /// (ticket `an-unreadable-migration-journal-reads-as-never-started`). Existe para el XCUITest de la pantalla de
+    /// Almacenamiento con el journal ilegible: con un `ModelContext` real no hay forma de hacer fallar esa lectura desde
+    /// fuera. **Finge la ENTRADA, no la decisión**: lo que la pantalla pinta con ella lo sigue decidiendo el controller. No
+    /// toca `MigrationPhaseStore`, que tiene su propio seam de tests. Solo DEBUG.
+    nonisolated static var migrationJournalUnreadable: Bool { hasArg("-uitest-migration-journal-unreadable") }
+
+    /// `-uitest-migration-failed`: los DOS fetch del journal de producción —el de `CloudMigrationController` y el de
+    /// `MigrationPhaseStore`— devuelven una fila en `failedRollback` y SIN efectos pendientes, la de una ida que salió por
+    /// un fallo y ya ejecutó su `.rollback` (ticket `apple-id-change-check-stays-off-after-a-failed-migration`). Existe para
+    /// el XCUITest de «tras una migración fallida, Cerrar sesión ya no se para»: el simulador no puede llevar una ida real
+    /// hasta su techo.
+    ///
+    /// **Finge la ENTRADA, no la decisión**, molde de `-uitest-migration-journal-unreadable`: la pantalla y el cierre siguen
+    /// derivando con su código. La fila no se inserta en ningún store —se construye en cada lectura—, así que no sobrevive a
+    /// la corrida. Los fetch del runner (`loadState`) no la ven: ningún gesto que la conduzca entra en el test. Solo DEBUG.
+    nonisolated static var migrationFailed: Bool { hasArg("-uitest-migration-failed") }
+
+    /// La fila que devuelven esos dos fetch con `-uitest-migration-failed`, o `nil` sin él.
+    static var failedMigrationJournalRow: MigrationState? {
+        guard migrationFailed else { return nil }
+        let state = MigrationState()
+        state.setPhase(.failedRollback)
+        state.setPendingEffects([])
+        return state
+    }
+
+    /// `-uitest-icloud-identity`: siembra la identidad iCloud de Grupos con un recordName fijo
+    /// (`uitestICloudRecordName`), síncrono y SIN red — `GroupICloudIdentitySeed.adopt` no toca
+    /// CloudKit.
+    ///
+    /// Existe porque sin él NINGÚN XCUITest puede ejercitar la resolución de identidad, que es la
+    /// que decide si la app te reconoce como miembro. Las dos fuentes están apagadas bajo test a
+    /// propósito: `CloudAuthService.currentUserID` es nil incluso con `-uitest-fake-cloud-session`
+    /// (para que el tráfico HTTP siga en cero) y el fetch real de `seedIfNeededBestEffort` falla en
+    /// un simulador sin cuenta iCloud. ⇒ el resolvedor caía siempre al primer criterio, el flag, y
+    /// como los seeds lo siembran a mano la suite entera era ciega al estado que SÍ ocurre en
+    /// producción: «mi member llegó por el pull y el flag no está puesto».
+    ///
+    /// Es ORTOGONAL a `-uitest-fake-cloud-session`: aquel finge el predicado de sesión, este siembra
+    /// una identidad. No fuerza ningún predicado de la lógica bajo prueba — el resolvedor sigue
+    /// decidiendo entero, que es lo que hace que el test pueda ponerse rojo.
+    nonisolated static var seedICloudIdentity: Bool { hasArg("-uitest-icloud-identity") }
+
+    /// El recordName que siembra `-uitest-icloud-identity`. Mismo literal que usan los perfiles de
+    /// `DevSeedGroups` para el member propio, que es lo que hace que casen.
+    nonisolated static let uitestICloudRecordName = "uitest-current-user"
+
+    /// `-uitest-groups-consent`: da por aceptado el consent de Grupos (§C5) sembrando sus dos keys de
+    /// `UserDefaults` desde `AppBootstrapper`, SIN pasar por `GroupsConsentState.register()` —ese camino
+    /// escribe por `PreferenceSyncService` (iKV en `.icloud`, outbox en `.cloud`) y un XCUITest no debe
+    /// encolar preferencias—. Es ORTOGONAL a `-uitest-fake-cloud-session` porque el gate de crear grupo
+    /// tiene dos escalones: sin sesión rutea a sign-in, y CON sesión pero sin consent rutea al consent
+    /// (`GroupCreateRoutingLogic.route`). Separados, mañana se puede cubrir ese segundo escalón sin tocar
+    /// el seam. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var groupsConsentAccepted: Bool { hasArg("-uitest-groups-consent") }
+
+    /// `-uitest-groups-educativo`: **invierte el early-return que desmonta el educativo bajo `-uitest`**
+    /// (`GroupsContainerView.evaluateGroupsOnboarding`). Ese early-return existe porque el sheet
+    /// interceptaría los taps de toda la suite de Grupos, y por eso NO se retira: lo que este seam hace es
+    /// permitir que las corridas que ejercitan el educativo lo monten a propósito.
+    ///
+    /// **Sin él, C2 dejaría su primer escalón sin ninguna red determinista.** El educativo pasa a ser el
+    /// paso 1 de las puertas de Grupos y era, medido, inalcanzable desde XCUITest — `qa/coverage-index.json`
+    /// ya anotaba el hueco. La alternativa era cubrirlo solo con unit + device-qa, y el spec lo dice: el
+    /// primer escalón de la cadena nacería sin red.
+    ///
+    /// Es ORTOGONAL a `-uitest-fake-cloud-session` y a `-uitest-groups-consent`, por la misma razón que
+    /// ellos entre sí: cada uno abre un escalón distinto de la cadena y combinarlos en uno impediría
+    /// ejercitar los intermedios. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var groupsEducativo: Bool { hasArg("-uitest-groups-educativo") }
+
+    /// `-uitest-groups-gate-mirror-live`: le dice a la puerta de «Vengo por un grupo» que el store personal
+    /// de este proceso **espeja a iCloud**, para poder recorrer su vuelta al neutro en simulador.
+    ///
+    /// **Existe porque el testigo del mount MIENTE en los hosts de test, y eso está medido:**
+    /// `SwiftDataConfiguration.personalConfiguration` sale por su rama `YalaModel-UITest` —con
+    /// `cloudKitDatabase: .none`— **antes** de llamar a `capturePersonalStoreMountedDecisionOnce`, así que
+    /// `personalStoreMountedDecision` se queda en el default de su declaración, que es `.iCloudMirror`. La
+    /// consecuencia muerde aquí en el sentido contrario al que parece.
+    ///
+    /// Por eso el default de este seam es **`false`, que es la VERDAD del host de test** (ese store no
+    /// espeja), y no una inversión: sin él, la puerta leería `true` en toda corrida y ningún XCUITest
+    /// podría volver a ver su rama buena.
+    ///
+    /// **Quien lo encienda tiene que saber lo que compra:** con él la puerta ejecuta el cierre de sesión
+    /// privado de verdad, y ése ARMA el boot-wipe (`StorageModePersistence.armSignOutWipe`) sin guard de
+    /// uitest — el guard está en el EJECUTOR. La key es `cloudSync.*`, que ni `-uitest-reset` limpia ni
+    /// `DataWipeService` toca, así que una corrida que llegue hasta el arm deja el simulador con el borrado
+    /// puesto para el siguiente arranque MANUAL, donde el ejecutor sí corre. Un test que use este seam
+    /// tiene que limpiar el arm al terminar.
+    nonisolated static var groupsGateMirrorLive: Bool { hasArg("-uitest-groups-gate-mirror-live") }
+
+    /// `-uitest-groups-gate-wipe-failed`: deja puesta al arrancar la marca «la vuelta al neutro de la puerta de Grupos no
+    /// pudo borrar este teléfono» (`GroupsGateWipeFailureMarker`), que en producción escribe el abort S3 del borrado del
+    /// arranque. Ese borrado no corre bajo `-uitest` (su wrapper lo corta), así que el aborto no se puede provocar aquí:
+    /// se fabrica su RESULTADO y la puerta se recorre de verdad. Con `-uitest-groups-gate-mirror-live` y datos sembrados,
+    /// la puerta tiene que enseñar el aviso y NO arrancar el cierre de sesión.
+    nonisolated static var groupsGateWipeFailed: Bool { hasArg("-uitest-groups-gate-wipe-failed") }
+
+    /// `-uitest-groups-batch-demo`: QA/XCUITest del batch "salir de todos mis grupos" (D10) SIN backend ni
+    /// iCloud (imposibles en sim — la ejecución real de leave/transfer es device/TestFlight). Fuerza que la
+    /// hoja de Vaciar OFREZCA «También salir de mis grupos» (input `canLeaveAllGroups` de `UserDataResetView`)
+    /// y hace que la vista del batch (`GroupBatchLeaveView`) muestre un RESULTADO determinista fabricado
+    /// (2 salidos + 1 transferido + 1 «necesita tu decisión») en vez de ejecutar el orquestador real. Solo
+    /// verifica el CABLEADO/UI; la lógica del orquestador va por unit tests (kill-sim). Inerte en release
+    /// vía `hasArg`; el seed demo del store está bajo `#if DEBUG`.
+    nonisolated static var groupsBatchDemo: Bool { hasArg("-uitest-groups-batch-demo") }
+
+    /// `-uitest-groups-batch-running`: variante EN CURSO del seam anterior, para el botón «Detener» (D3).
+    /// Siembra el intent con entries `.pending` SIN ejecutar el orquestador real (imposible en sim), de modo
+    /// que la vista muestre el progreso con «Detener». El tap SÍ recorre la mecánica real
+    /// (`requestStop` → `stopPending` → marcador + resultado honesto): esto no fabrica el resultado, solo el
+    /// punto de partida. Inerte en release vía `hasArg`; el seed está bajo `#if DEBUG`.
+    nonisolated static var groupsBatchRunning: Bool { hasArg("-uitest-groups-batch-running") }
 
     /// `-uitest-inbox-alert`: tras el seed, encola `.showInboxAlert` con un payload de
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
 
+    /// `-uitest-remote-wipe-notice`: tras el seed, encola `.presentRemoteWipeNotice` — el aviso de «tus
+    /// datos fueron eliminados de iCloud».
+    ///
+    /// **Cubre la mitad de la PRESENTACIÓN, no la del productor.** Quien pide el aviso en producción es
+    /// la gracia de cinco segundos de `ContentView`, que arranca cuando las filas personales
+    /// desaparecen del store bajo el proceso vivo — y para eso no hay seam (ticket
+    /// `remote-wipe-receiver-has-no-behaviour-test`). Encolando el intent a mano se ejercita lo que este
+    /// hook sí puede probar y ningún escáner alcanza: que el aviso entra por la cola del router, que la
+    /// red de presentación efectiva NO lo desarma cuando de verdad está en pantalla, y a dónde aterrizan
+    /// sus dos botones.
+    ///
+    /// El eje de sesión que el drenaje re-mide no hace falta armarlo: con el onboarding dado por hecho
+    /// (`-uitest-skip-onboarding`), el backfill del arranque ya escribe la marca privada por el camino de
+    /// producción. Y el store arranca vacío con `-uitest-reset`, que es la otra condición viva.
+    nonisolated static var showRemoteWipeNotice: Bool { hasArg("-uitest-remote-wipe-notice") }
+
+    /// `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de
+    /// «iCloud no está disponible» (`ContentView.requestColdStartICloudNoticeIfNeeded`, card
+    /// `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). **Habilita al productor, no fuerza la decisión**: el
+    /// simulador nunca tiene token de iCloud, así que sin este flag el chequeo saldría en todo XCUITest que arranca sin
+    /// seed y con el onboarding hecho. Con él puesto, deciden el eje, la medida del store, el onboarding y la cuenta de
+    /// iCloud de producción. Fuera de `-uitest` el chequeo corre siempre. Solo DEBUG.
+    nonisolated static var coldStartICloudCheck: Bool { hasArg("-uitest-cold-start-icloud-check") }
+
+    /// `-uitest-remote-wipe-notice-never-mounts`: el aviso de vaciado remoto «no llega a montarse» — la
+    /// condición viva se enciende igual, pero su RED VISUAL (`showRemoteWipeAlert`) no, ni en el drenaje ni
+    /// en los reintentos de la red. Es lo que pasa cuando UIKit descarta la presentación con el anchor
+    /// ocupado, y existe para el XCUITest del DESARME (ticket `presentation-net-desarm-has-no-automated-net`):
+    /// la red tiene que recorrer `.retry` hasta `.exhausted` y soltar la condición viva.
+    ///
+    /// **Finge la ENTRADA, no la decisión**: la sonda (`ModalPresentationProbe`), el veredicto de
+    /// `RelaunchNetLogic` y el desarme son los de producción. No toca el binding del alert —eso sería el
+    /// setter no-op que prohíbe la regla (1) de `.claude/rules/swiftui-ds.md`— y tampoco ciega a la sonda,
+    /// que ejercitaría «la sonda miente», otro escenario con otro desenlace. Solo DEBUG.
+    nonisolated static var remoteWipeNoticeNeverMounts: Bool { hasArg("-uitest-remote-wipe-notice-never-mounts") }
+
+    /// `-uitest-apple-id-changed`: tras el seed, encola `.appleIDChangedClosePrivate` — la hoja «Cambiaste
+    /// de cuenta de iCloud».
+    ///
+    /// **Cubre la hoja y el cierre, no la detección.** La detección sale a CloudKit
+    /// (`AppBootstrapper.checkForAppleIDChange`) y está apagada bajo test a propósito: el simulador no
+    /// tiene cuentas de iCloud reales. Desde el intent en adelante —la cola, la hoja, sus fases y el cierre
+    /// del coordinador— todo es el camino de producción.
+    ///
+    /// **Ningún test debe CONFIRMAR con este hook solo.** Un cierre que termina bien arma un boot-wipe
+    /// REAL (`armSignOutWipe` no tiene guard de test) y su key sobrevive a `-uitest-reset`: el arranque
+    /// manual siguiente del simulador borraría el store. Para recorrer la fase de bloqueo, acompáñalo de
+    /// `-uitest-groups-outbox-pending`.
+    nonisolated static var showAppleIDChangedNotice: Bool { hasArg("-uitest-apple-id-changed") }
+
+    /// `-uitest-apple-id-close-never-mounts`: la hoja «Cambiaste de cuenta de iCloud» «no llega a montarse» —
+    /// la condición viva (`appleIDCloseNotice`) se enciende igual, pero su red visual (`showSheet` de
+    /// `AppleIDCloseNoticeModifier`) no, ni al armarse ni en los reintentos. Gemelo de
+    /// `remoteWipeNoticeNeverMounts`, para el XCUITest del desarme de esta otra red: el `onAppear` del
+    /// contenido no dispara nunca, la red agota el cap y suelta el aviso. Solo DEBUG.
+    nonisolated static var appleIDCloseNoticeNeverMounts: Bool { hasArg("-uitest-apple-id-close-never-mounts") }
+
+    /// `-uitest-groups-outbox-pending`: tras el seed, deja UNA fila viva en el outbox de Grupos, sin sesión.
+    ///
+    /// **Es el estado real que bloquea un cierre privado, no un seam que fuerce el veredicto.** La celda C
+    /// no sube grupos, así que con cambios de grupos sin subir el coordinador se bloquea con
+    /// `.sessionExpired` (`CloudSessionSignOut.blockIfGroupsCannotUpload`) ANTES de tocar nada. Así se
+    /// recorre la fase de bloqueo de la hoja del cambio de Apple ID sin fingir el coordinador: un seam que
+    /// forzara `.blocked` dejaría ciego al test (`.claude/rules/testing.md`).
+    ///
+    /// Sin sesión no hay canal que la suba, y `-uitest-reset` la purga (`DevSeedGroups.reset`): el store
+    /// `YalaSyncMeta-UITest` es persistente y, sin esa purga, bloquearía los cierres de la corrida siguiente.
+    nonisolated static var seedPendingGroupsOutboxRow: Bool { hasArg("-uitest-groups-outbox-pending") }
+
+    /// `-uitest-groups-attest-terminal`: deja este teléfono con el veredicto de App Attest TERMINAL — tres
+    /// rechazos repartidos en más de 24 h, sin un solo acierto.
+    ///
+    /// **Es el estado real, escrito por el camino de producción, no un seam que fuerce el predicado.** La siembra
+    /// llama a `GroupsAttestStreakStore.recordRejection(now:)` tres veces con relojes separados, igual que harían
+    /// tres 401 `yala_attest_required`, y deja que `GroupsAttestVerdictLogic` decida. Un seam que devolviera
+    /// `isTerminal = true` dejaría ciegos a los tests que entran por él (`.claude/rules/testing.md`): pasarían en
+    /// verde con la tabla del veredicto rota.
+    ///
+    /// **La racha NO la borra `-uitest-reset`**, y es a propósito en producción: describe al teléfono, así que
+    /// `DataWipeService.removeUserPreferenceKeys` no la lleva y cerrar sesión no la arregla. Por eso la siembra
+    /// tiene su propia purga en el `else` de `AppBootstrapper.applyUITestSeed`: sin ella, una corrida que la
+    /// sembrara dejaría el aviso puesto para todas las siguientes del mismo simulador.
+    ///
+    /// Para VER el aviso del tab Grupos hace falta además sesión en la nube (`-uitest-fake-cloud-session`): sin
+    /// ella el veredicto es cierto y la frase sería mentira (`GroupsAttestTabNoticeLogic`). Los dos args son
+    /// ortogonales a propósito — el caso «racha sí, sesión no» es justo el que prueba esa mitad.
+    nonisolated static var groupsAttestTerminal: Bool { hasArg("-uitest-groups-attest-terminal") }
+
+    /// `-uitest-pending-trial-offer`: el arranque deja la oferta de prueba PENDIENTE (`needsPostOnboardingTrial`), como la
+    /// deja la 2.0.4 tras un alta por «Restaurar» con destino directo a la app. No encola nada: decide el arranque del usuario
+    /// que vuelve (`WhatsNewLaunchLogic.returningUserSheet`). Lo usa `WhatsNewLaunchUITests` (ticket
+    /// `whats-new-yields-to-a-pending-trial-offer-after-updating`).
+    nonisolated static var pendingTrialOffer: Bool { hasArg("-uitest-pending-trial-offer") }
+
+    /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
+    /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —
+    /// las emisiones AUTOMÁTICAS de monetización están suprimidas en uitest, este
+    /// hook explícito es el único camino (escenario paywall + alert en cola).
+    nonisolated static var showTrialOffer: Bool { hasArg("-uitest-trial-offer") }
+
     /// `-uitest-force-update`: fuerza el estado "hay update disponible" en AppUpdateService
     /// (sin red) para testear el UpdateAvailableBanner del Panel.
     nonisolated static var forceUpdateBanner: Bool { hasArg("-uitest-force-update") }
+
+    /// `-uitest-force-required`: fuerza la pantalla BLOQUEANTE de forzado (min-version) sin red ni
+    /// snapshot, para QA/XCUITest del cover terminal. Inerte en release (hasArg + seam DEBUG).
+    nonisolated static var forceUpdateRequired: Bool { hasArg("-uitest-force-required") }
 
     /// `-uitest-ai-consent`: marca el consentimiento de datos IA aceptado, para poder
     /// abrir entradas IA Pro (voz/imagen) sin el alert de consentimiento. No graba ni
     /// transcribe — solo destraba la navegación a la vista.
     nonisolated static var aiConsent: Bool { hasArg("-uitest-ai-consent") }
 
-    /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado"). Nil si ausente.
+    /// `-uitest-ai-chat-ready`: el chat de Yala IA ya tiene su consentimiento y su onboarding vistos, así que
+    /// tocar la entrada abre el chat directo (`YalaAIOnboardingLogic.nextScreen` → `.chat`). Lo usa el XCUITest de
+    /// la columna de Yala IA en iPad: solo monta la vista, no envía nada.
+    nonisolated static var aiChatReady: Bool { hasArg("-uitest-ai-chat-ready") }
+
+    /// `-uitest-chat-conversation`: deja guardada una conversación de hoy (una pregunta y su respuesta) donde el chat
+    /// la lee al abrirse. Sin red no hay forma de conversar en un XCUITest, y hace falta una conversación para
+    /// probar que redimensionar la ventana con Yala IA abierto no la pierde.
+    nonisolated static var chatConversation: Bool { hasArg("-uitest-chat-conversation") }
+
+    /// `-uitest-chat-suggestions`: el chat vacío enseña tres sugerencias fijas en vez de pedirlas al LLM. Sin red las
+    /// sugerencias fallan, y con el fallo la caja de escribir se apaga: así el XCUITest y las capturas del chat vacío
+    /// no dependen de la red.
+    nonisolated static var chatSuggestions: Bool { hasArg("-uitest-chat-suggestions") }
+
+    /// `-uitest-chat-draft`: el chat abre con un mensaje del asistente que propone dos registros —uno completo y otro
+    /// sin subcategoría— resueltos contra los datos sembrados. Sin red Yala IA no propone nada, y hace falta una card
+    /// en pantalla para capturar y probar su diseño.
+    nonisolated static var chatDraft: Bool { hasArg("-uitest-chat-draft") }
+
+    /// Valor de `-uitest-chat-reply <pizza>`: enviar en el chat no llama a la red. El mensaje del usuario entra en el
+    /// hilo, el indicador de «pensando» se ve un momento y Yala IA contesta con lo que diga el perfil, resuelto contra
+    /// los datos sembrados (`pizza`: un gasto completo «Pizza», 280 en la divisa principal, Restaurantes, hoy). Existe
+    /// para la demo grabada del chat (`DemoIAPizzaUITests`): `-uitest-chat-draft` abre con la respuesta ya puesta, y el
+    /// vídeo tiene que ver escribir y contestar.
+    nonisolated static var chatReply: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-chat-reply", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-voice-result <one|incomplete|two|trial-used-up>`: el registro por voz no graba ni llama a la red.
+    /// La hoja abre escuchando sin pedir el micro y, al tocar Listo, «entiende» lo que diga el perfil, resuelto contra los
+    /// datos sembrados (`one`: un gasto completo · `incomplete`: sin subcategoría · `two`: dos gastos completos ·
+    /// `trial-used-up`: el gateway contesta que el cupo de prueba de voz se agotó). Sin red no
+    /// hay transcripción, y hacen falta borradores en pantalla para capturar y probar «Lo entendido».
+    nonisolated static var voiceResult: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-voice-result", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|pages|pages-trial>`: el registro por imagen no abre
+    /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
+    /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
+    /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe · `pages`: un gasto distinto por
+    /// página de PDF · `pages-trial`: la primera página se lee y en las demás se acaba el cupo de prueba). El selector de Fotos es de
+    /// otro proceso y en el simulador el servicio no contesta: sin esto no hay lectura que capturar ni probar.
+    nonisolated static var imageResult: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-image-result", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-image-file <ruta>`: con `-uitest-image-result one`, la foto que «elige» Fotos es este fichero en
+    /// vez del recibo de ejemplo de la práctica guiada. Lo pasa el molde de la ficha de la App Store
+    /// (`ficha-app-store/`) con el recibo de cada idioma, para que la foto que se «lee» diga lo mismo que la hoja: los
+    /// recibos de ejemplo traducidos siguen siendo de Lima y en soles. Nil si falta.
+    nonisolated static var imageFile: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-image-file", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-receipt-drop <unreadable|readable|pdf3|pdf3-locked>`: en cuanto la ventana queda libre, suelta un
+    /// recibo por el camino real del `onDrop` (`ReceiptDropHandler.handle`). `unreadable`: un «PDF» que no lo es ·
+    /// `readable`: el recibo de ejemplo como imagen · `pdf3`: un extracto ficticio de tres páginas · `pdf3-locked`: el mismo
+    /// con la contraseña «1234» (con `-uitest-image-result` para que la hoja «lea» sin red). El arrastre entre apps no se puede
+    /// conducir desde XCUITest; esto prueba todo lo que hay detrás de soltar.
+    nonisolated static var receiptDrop: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-receipt-drop", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
+    /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
+    /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.
+    nonisolated static var startAtInviteOnboarding: Bool { hasArg("-uitest-invite-onboarding") }
+
+    /// Valor de `-uitest-join-phase <waitingForZone|creatingMember|pendingApproval|active|failed>`:
+    /// congela la fase del tracker para los XCUI del onboarding de invitación.
+    nonisolated static var joinPhaseOverride: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-join-phase", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-join-soft-timeout <segundos>`: acorta el soft-timeout del
+    /// onboarding de invitación (default 20s) para no dormir en los XCUI.
+    var joinSoftTimeoutOverride: TimeInterval? {
+        #if DEBUG
+        guard Self.isActive,
+              let raw = Self.parseValue(after: "-uitest-join-soft-timeout", from: ProcessInfo.processInfo.arguments)
+        else { return nil }
+        return TimeInterval(raw)
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-seed-desync`: siembra un set MÍNIMO y determinista de transacciones
+    /// "desincronizadas" (categoría income con monto NEGATIVO y categoría expense con
+    /// monto POSITIVO) para el XCUI de clasificación income/expense por CATEGORÍA
+    /// (fix `8347a776`/`13f2cbb0`). Excluyente con `-uitest-seed <perfil>`: el test lo
+    /// lanza SIN perfil para no contaminar los totales. Ver `DevSeedTransactions.createDesyncFixtures`.
+    nonisolated static var seedDesync: Bool { hasArg("-uitest-seed-desync") }
+
+    /// `-uitest-seed-settlement-amount-change`: una liquidación que Ana me pagó, aprobada a «Banco QA» por 25, cuyo importe
+    /// pasa después a 30 como lo deja una edición remota (`DevSeedSettlementAmountChange`). Deja en el Inbox el aviso de
+    /// importe cambiado (`settlement-amount-edited-after-approval-leaves-the-bank-stale`).
+    nonisolated static var seedSettlementAmountChange: Bool { hasArg("-uitest-seed-settlement-amount-change") }
+
+    /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence
+    /// HOY (`DevSeedScheduledPayments.dueTodayName`). Los 8 del fixture base se reparten por el
+    /// mes y `min(day, 28)` capa los días 29-31, así que NINGUNO vence hoy de forma garantizada.
+    ///
+    /// Por qué existe: el escenario de vencimiento se alcanzaba solo eligiendo «Una sola vez» en
+    /// el segmentado de Recurrencia, y los `Picker` segmentados NO se enumeran en el árbol de
+    /// accesibilidad de `snapshot_ui` ⇒ el QA por referencia de elemento no podía llegar. Este
+    /// seam produce el mismo estado sin la interacción imposible.
+    ///
+    /// Es ADITIVO y apagado por defecto a propósito: el pago que vence hoy encabeza la lista, y
+    /// `ScheduledPaymentSkipUITests` opera sobre el `firstMatch` de las filas.
+    nonisolated static var scheduledDueToday: Bool { hasArg("-uitest-scheduled-due-today") }
+
+    /// `-uitest-scheduled-seed-day <N>`: siembra los pagos planificados como si hoy fuera el día `N` del mes
+    /// EN CURSO (recortado a su longitud: `31` es siempre el último día). Solo mueve el «hoy» de
+    /// `DevSeedScheduledPayments` —sus fechas y su `createdAt`—; la app sigue mirando el reloj real, así que
+    /// «Este mes» es el mismo mes. Existe para reproducir sin esperar a fin de mes el rojo de
+    /// `scheduled-payment-skip-uitests-fail-at-the-end-of-the-month`: sembrando del 29 en adelante, «Este mes»
+    /// se quedaba vacío. Nil si falta o no es un número.
+    nonisolated static var scheduledSeedToday: Date? {
+        #if DEBUG
+        guard isActive,
+              let raw = parseValue(after: "-uitest-scheduled-seed-day", from: ProcessInfo.processInfo.arguments),
+              let day = Int(raw)
+        else { return nil }
+        return seedDate(dayOfCurrentMonth: day, now: .now)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Pure-logic de `scheduledSeedToday`: mediodía del día `day` del mes de `now`, recortado a `1...longitud`.
+    /// Mediodía y no medianoche: una fecha a medianoche cae en la frontera cerrada de `DateInterval`.
+    nonisolated static func seedDate(dayOfCurrentMonth day: Int, now: Date, calendar: Calendar = .current) -> Date? {
+        guard let monthLength = calendar.range(of: .day, in: .month, for: now)?.count else { return nil }
+        var comps = calendar.dateComponents([.year, .month], from: now)
+        comps.day = min(max(day, 1), monthLength)
+        comps.hour = 12
+        return calendar.date(from: comps)
+    }
+
+    /// `-uitest-fail-wipe`: hace que los borrados LANCEN antes de tocar nada, dejando los datos
+    /// intactos. Es la superficie que faltaba para ver en pantalla las ramas de FALLO que en producción
+    /// son mudas.
+    ///
+    /// **Cubre TRES caminos, y desde el 2026-09-11 por un solo sitio.** `wipeAllUserData` lo consulta
+    /// aparte; los otros dos lo heredan de `DataWipeService.deleteLocalGroupsRows`, el escritor común
+    /// del dominio Grupos: «Empiezo de cero» (`wipeLocalGroupsDomain` → canario `freshStartWipeFailed`
+    /// + alert) y **el desasociar del paso 10** (`CloudSessionSignOut.purgeGroupsDomainForDetach` →
+    /// canario `groupsDetachPurgeFailed` + su propio aviso). Ese tercero estuvo fuera hasta entonces:
+    /// el seam se repetía en cada llamador en vez de vivir en el escritor, así que el camino que no se
+    /// acordó de copiarlo se quedó sin forma de verse en pantalla.
+    ///
+    /// NO simula un wipe a medias: lanza ANTES del primer borrado, así que el estado observable
+    /// tras el fallo es «todo sigue ahí», que es exactamente el caso que el alert debe cubrir.
+    /// Un wipe parcial es otro escenario y este seam no lo representa.
+    ///
+    /// **Gateado por `isReady` a propósito, y esto es lo que lo hace utilizable:** `-uitest-reset`
+    /// limpia el estado llamando al MISMO `wipeAllUserData` desde `applyUITestHooksEarly`, en
+    /// `YalaApp.init()`. Sin el gate, combinar los dos seams hacía fallar el reset del ARRANQUE —
+    /// y su `catch` solo imprime, así que el test habría corrido sobre un estado sucio en
+    /// silencio. `markReady()` corre al final del bootstrap (`applyUITestSeed`), después del
+    /// reset y antes de que nadie pueda tocar «Empiezo de cero» ⇒ separa los dos casos exactos.
+    @MainActor
+    static var shouldFailWipeNow: Bool {
+        hasArg("-uitest-fail-wipe") && shared.isReady
+    }
+
+    /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado", "dead-pointer"). Nil si ausente.
+    /// `dead-pointer` siembra UNA TX personal cuyo puntero de grupo no resuelve — AC (c) de
+    /// `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo`. Ver `DevSeedTransactions.createDeadPointerFixture`.
     nonisolated static var seedProfile: String? {
         #if DEBUG
         guard isActive else { return nil }
@@ -75,6 +780,68 @@ final class UITestHooks {
         parseValue(after: "-uitest-seed", from: args)
     }
 
+    /// Valor de `-uitest-seed-foreign-account <ISO>`: siembra una cuenta en esa divisa con gasto e
+    /// ingreso, para el estado de partida que necesita toda la familia FX — **una divisa AUSENTE de
+    /// la fila de tasas del día**. Ver `DevSeedForeignCurrencyAccount`.
+    ///
+    /// Existe porque a ese estado no se llegaba por ninguna de las dos vías: el selector de Moneda
+    /// del formulario de cuenta es un `NavigationLink` y no responde a los taps sintéticos de la
+    /// automatización (medido el 2026-09-08, cuatro técnicas; el otro `NavigationLink` del mismo
+    /// formulario tampoco abre, así que va con el patrón y no es un bug de la app), y el seed crea
+    /// PEN + USD sembrando tasas de PEN/EUR/USD — multi-divisa, pero nunca una divisa fuera de la
+    /// fila, que es el único estado en el que este módulo falla.
+    ///
+    /// Es **ADITIVO** al perfil y ortogonal a él: se aplica después de `-uitest-seed <perfil>` y
+    /// también funciona a solas (siembra las categorías que le falten). Aditivo y apagado por
+    /// defecto a propósito — la cuenta añade filas con tasa aproximada, y encenderlas siempre le
+    /// pondría «≈» a los totales de toda la suite, que es justo el control negativo que hoy
+    /// sostiene los tickets de FX.
+    nonisolated static var foreignAccountCurrency: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-seed-foreign-account", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-seed-chat-sealed-rate <ISO>`: siembra UNA fila **envenenada por el chat
+    /// viejo** —monto convertido correcto, `exchangeRate` sellado a 1,0— que es el corpus que el
+    /// barrido `fxOneToOneRepairSweep.v2` cura en el sitio. Ver `DevSeedChatSealedRate`.
+    ///
+    /// Es el caso CONTRARIO al de `foreignAccountCurrency`, y por eso son dos args y no uno: aquél
+    /// siembra filas sanas-pero-aproximadas (tasa buena, flag encendido) y éste una fila con la
+    /// tasa falsa y el flag apagado, que es lo que la deja fuera del reparador de arranque.
+    ///
+    /// **El veredicto necesita dos arranques**: el que siembra deja la fila envenenada (el barrido
+    /// ya había corrido sobre un store vacío) y el siguiente, sin `-uitest-reset`, la cura. El seed
+    /// es idempotente para que ese segundo arranque no plante una fila nueva al lado de la curada.
+    nonisolated static var chatSealedRateCurrency: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-seed-chat-sealed-rate", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-seed-group-bridge-fx <ISO>`: siembra un gasto de grupo bridgeado cuyas dos
+    /// patas tienen **coberturas de tasa distintas** —la real exacta, la de préstamo provisional—,
+    /// que es el escenario de `bridge-de-grupos-pierde-la-marca-de-sus-patas`.
+    /// Ver `DevSeedGroupBridgeFXLegs`.
+    ///
+    /// No se llega a él con los otros seeds: `GroupTransactionBridge` crea las dos patas con la
+    /// misma divisa y la misma fecha, así que **nacen con el mismo flag**; la asimetría solo
+    /// aparece después (aprobar un draft tarde, el reparador por cola, o editar la pata real).
+    nonisolated static var groupBridgeFXCurrency: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-seed-group-bridge-fx", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-deeplink <target>`: simula un deeplink externo a un tab al arranque
     /// (panel/statistics/records/planning/budgets/groups/inbox/scheduledPayments/categories).
     /// Ejercita el wiring de routing a tabs ocultos (bug review-deeplinks).
@@ -87,6 +854,28 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-deeplink-url <url>`: a diferencia de `-uitest-deeplink <target>` (que
+    /// mapea un target BARE a un tab POST-seed vía `uitestDeeplinkDestination`), esta URL
+    /// COMPLETA entra PRE-init por `AppBootstrapper.handleIncomingURL(_:)` → el intent se
+    /// DIFIERE al DeferredIntentBuffer y se re-emite en el drain (bootstrap paso 20),
+    /// ejercitando el defer→drain REAL de un deep link en cold launch (fix `ba8513e5`).
+    /// Soporta el token `seeded-first` en el path (`yala://groups/seeded-first`), que el
+    /// hook sustituye por el id del primer grupo sembrado (persistido en `seededGroupIDKey`).
+    nonisolated static var deeplinkURL: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-deeplink-url", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Key en `UserDefaults.standard` donde `DevSeedGroups.create` publica el
+    /// `SplitGroup.id.uuidString` del primer grupo sembrado, para que el hook de
+    /// `-uitest-deeplink-url` resuelva el token `seeded-first` a un id real en una
+    /// corrida posterior (patrón de 2 launches del XCUI de deep link en cold launch).
+    nonisolated static let seededGroupIDKey = "uitest.seededGroupID"
+
     /// Pure-logic: extrae el valor que sigue a `flag`. Nil si ausente, si es el último
     /// token, o si el siguiente token es otro flag (`-...`). Separado para test.
     nonisolated static func parseValue(after flag: String, from args: [String]) -> String? {
@@ -94,6 +883,11 @@ final class UITestHooks {
         let value = args[i + 1]
         return value.hasPrefix("-") ? nil : value
     }
+
+    /// `-uitest-seed-marketing`: la semilla `ficha` para material público de lanzamiento. Los grupos son los de casa
+    /// («Depa compartido», «Almuerzos de la oficina») en vez de los viajes, y el presupuesto de mascota no lleva nombre
+    /// propio. Ver `DevSeedGroups.FichaCasa`.
+    nonisolated static var marketingSeed: Bool { hasArg("-uitest-seed-marketing") }
 
     nonisolated private static func hasArg(_ flag: String) -> Bool {
         #if DEBUG

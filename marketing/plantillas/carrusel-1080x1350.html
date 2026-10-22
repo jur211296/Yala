@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Yala · carrusel 1080×1350</title>
+<link rel="stylesheet" href="yala.css">
+<style>
+  body{width:1080px;display:flex;flex-direction:column;gap:40px}
+  .lamina{width:1080px;height:1350px;flex:none}
+  .texto{left:78px;right:78px;top:150px}
+  .titular{font-size:72px;margin-top:40px}
+  .portada .texto{top:50%;transform:translateY(-50%)}
+  .portada .titular{font-size:96px}
+  .sub{font-size:44px;margin-top:28px}
+  .telefono{left:50%;top:600px;width:392px;transform:translateX(-50%)}
+  .contador{position:absolute;right:64px;bottom:72px;font-size:28px;font-weight:700;color:var(--sub);z-index:6}
+  .desliza{position:absolute;left:0;right:0;bottom:220px;text-align:center;font-size:34px;font-weight:700;color:var(--sub);z-index:5}
+</style></head>
+<body>
+<!-- Una .lamina por página. Sin # en la URL se ven todas; con #2 solo la 2 (para exportarla).
+     Lámina 1 = portada, la última = cierre con la llamada a la acción. Ejemplo: Grupos 2.1. -->
+
+<div class="lamina portada" data-acento="teal"
+     data-destellos="62,300,60,azul,12,1; 958,210,82,rosa,-8,1; 1002,900,58,teal,6,.9; 74,1000,72,teal,-15,.85">
+  <div class="halo" style="left:-200px;top:500px"></div>
+  <div class="texto">
+    <span class="pill">Grupos</span>
+    <h1 class="titular">El viaje, sin <u>cuentas</u> pendientes</h1>
+    <p class="sub">Tres cosas nuevas en 2.1.</p>
+  </div>
+  <p class="desliza">Desliza →</p>
+  <img class="logo" src="../screenshots-appstore/generator/public/yala-spark.png" alt="yala"><span class="contador">1/5</span>
+</div>
+
+<div class="lamina" data-acento="rosa" data-destellos="958,210,70,rosa,-8,1; 74,850,64,teal,-15,.85">
+  <div class="halo" style="left:250px;top:415px"></div>
+  <div class="texto"><span class="pill">1 · Tu parte</span>
+    <h1 class="titular">Cada gasto te dice <u>cuánto</u> te toca</h1></div>
+  <div class="telefono"><img src="../screenshots-appstore/generator/public/screenshots/es/grupo-detalle-gastos.png" alt=""></div>
+  <img class="logo" src="../screenshots-appstore/generator/public/yala-spark.png" alt="yala"><span class="contador">2/5</span>
+</div>
+
+<div class="lamina" data-acento="azul" data-destellos="62,300,60,azul,12,1; 1002,770,58,teal,6,.9">
+  <div class="halo" style="left:250px;top:415px"></div>
+  <div class="texto"><span class="pill">2 · Reparto</span>
+    <h1 class="titular">Quién pagó y cómo se divide, en una <u>frase</u></h1></div>
+  <div class="telefono"><img src="../screenshots-appstore/generator/public/screenshots/es/grupo-balances.png" alt=""></div>
+  <img class="logo" src="../screenshots-appstore/generator/public/yala-spark.png" alt="yala"><span class="contador">3/5</span>
+</div>
+
+<div class="lamina" data-acento="violeta" data-destellos="958,210,82,rosa,-8,1; 930,965,66,azul,18,.8">
+  <div class="halo" style="left:250px;top:415px"></div>
+  <div class="texto"><span class="pill">3 · Resumen</span>
+    <h1 class="titular">Manda el resumen del viaje en una <u>imagen</u></h1></div>
+  <div class="telefono"><img src="../screenshots-appstore/generator/public/screenshots/es/grupos-lista.png" alt=""></div>
+  <img class="logo" src="../screenshots-appstore/generator/public/yala-spark.png" alt="yala"><span class="contador">4/5</span>
+</div>
+
+<div class="lamina portada" data-acento="teal"
+     data-destellos="62,300,60,azul,12,1; 958,210,82,rosa,-8,1; 1002,770,58,teal,6,.9; 74,850,72,teal,-15,.85; 930,965,66,azul,18,.8">
+  <div class="halo" style="left:-160px;top:-200px"></div>
+  <div class="texto">
+    <span class="pill">Yala 2.1</span>
+    <h1 class="titular">Actualiza y <u>pruébalo</u></h1>
+    <p class="sub">Enlace en la bio.</p>
+  </div>
+  <img class="logo" src="../screenshots-appstore/generator/public/yala-spark.png" alt="yala"><span class="contador">5/5</span>
+</div>
+
+<script src="destellos.js"></script>
+</body></html>

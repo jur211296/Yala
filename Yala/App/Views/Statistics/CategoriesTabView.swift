@@ -29,6 +29,9 @@ struct CategoriesTabView: View {
     let allSubcategories: [Subcategory]
     let tags: [Tag]
     let allTransactions: [TransactionItem]
+    /// Recargas del store hechas por el contenedor (`DetailContainerViewModel.dataGeneration`). Todo lo que esta
+    /// pestaña precalcula cuelga de él para enterarse de un alta, un borrado o una edición en sitio.
+    let dataGeneration: Int
 
     // MARK: - Scheduled Payments (for Sankey "Planificados" branch)
 
@@ -97,6 +100,48 @@ struct CategoriesTabView: View {
     /// Se actualiza en `calculateData()` para evitar O(N) por render del hero.
     @State private var totalAmount: Double = 0
 
+    /// Saldo del período con la MISMA semántica que el KPI de Balance del Panel
+    /// (stock vivo al TC actual, o saldo histórico si el período está cerrado).
+    /// Solo alimenta el hero cuando `isBalanceMode`; en Ingresos/Gastos el hero
+    /// sigue mostrando el flujo del período (`totalAmount`).
+    ///
+    /// **Opcional a propósito.** `nil` = todavía no se ha calculado, y hay que
+    /// distinguirlo de un saldo de 0: la vista se destruye al cambiar de pestaña
+    /// (`DetailContainerView` es un `switch` en un ViewBuilder), así que el body
+    /// se evalúa una vez antes de `onAppear`. Con un `Double` a 0 el hero pintaba
+    /// «0» y luego rodaba los dígitos hasta el valor real por el
+    /// `contentTransition(.numericText())`.
+    @State private var balanceKPI: BalanceKPICalculator.Result?
+
+    /// Métrica Balance, derivada con la MISMA regla que el Panel
+    /// (`PanelViewModel.enforceTrendLock`): sin chips de naturaleza y sin el modo
+    /// "solo gastos".
+    ///
+    /// Se deriva aquí en vez de leer `viewModel.selectedMetric` porque esa
+    /// propiedad la refresca `enforceMetricLock`, que corre dentro de
+    /// `calculateTrendData` — detrás del debounce de 150 ms del contenedor. Leerla
+    /// dejaría al hero un frame largo con la métrica anterior.
+    private var isBalanceMode: Bool {
+        guard !sessionState.isExpensesOnlyMode else { return false }
+        // Con una dimensión del pie filtrada, el número dejaría de ser un saldo:
+        // sería "el neto histórico de las transacciones de esta categoría", bajo una
+        // etiqueta que dice "Este mes". `enforceMetricLock` del propio
+        // `StatisticsViewModel` ya declara esa condición para decidir la métrica de
+        // esta pantalla (`!hasCategoryFilters`), así que aquí se reusa en vez de
+        // inventar otra. Con filtro dimensional el hero vuelve al flujo del período,
+        // que es lo que el gráfico de debajo está enseñando.
+        guard !viewModel.hasCategoryFilters else { return false }
+        // Ningún chip, o los DOS. El Panel trata la selección mixta con
+        // `else { return }` — conserva la métrica, que sin intervención del usuario
+        // es su default `.balance` (`PanelViewModel.swift:633`, `:1173`). Y tiene
+        // sentido: marcar ingresos Y gastos no filtra nada, igual que no marcar
+        // ninguno. Sin esta rama el hero volvía al flujo justo ahí, que es el bug
+        // que este cambio venía a cerrar. Los dos chips son alcanzables desde el
+        // sheet de filtros, que hace `insert` sin limpiar el set.
+        let natures = viewModel.selectedTransactionNatures
+        return natures.isEmpty || natures.count == TransactionNature.allCases.count
+    }
+
     /// Effective category ID for subcategory filtering (uses first selected category or derives parent from subcategory)
     private var effectiveCategoryID: PersistentIdentifier? {
         if let catID = viewModel.selectedCategories.first {
@@ -163,80 +208,124 @@ struct CategoriesTabView: View {
 
     @ViewBuilder
     private var scrollBody: some View {
+        scrollLifecycle(scrollView)
+    }
+
+    private var scrollView: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: DS.Spacing.md) {
-                heroSummary
-                filterBarPanel
-
-                if hasNoData {
-                    YalaEmptyState(
-                        icon: "chart.pie",
-                        title: L10n.Empty.noData
-                    )
-                    .padding(.top, DS.Spacing.xxxxl)
-                } else {
-                    LazyVStack(spacing: DS.Spacing.xl) {
-                        contentModePill
-
-                        switch contentMode {
-                        case .charts:
-                            chartsSection
-                            sankeyWidget
-                            // Need bars no aplican en income mode (need classification es expense-only)
-                            if !isIncomeMode {
-                                needsLargeSection
-                            }
-                        case .details:
-                            categoriesListSection
-                            if !isIncomeMode {
-                                needsCompactSection
-                            }
-                        }
-
-                        distributionInsightCard
-                    }
-                    .yalaSafeBottomPadding()
-                }
-            }
-            .padding(.top, DS.Spacing.sm)
+            scrollContent
         }
         .scrollViewGlassEdges()
-        .onAppear {
-            calculateData()
-            recomputeSankey()
+    }
+
+    /// Cadena de observers partida del `ScrollView` para que el type-checker
+    /// resuelva cada tramo por separado (mismo molde que `ContentView.body`).
+    private func scrollLifecycle(_ content: some View) -> some View {
+        content
+            .onAppear {
+                calculateData()
+                recomputeSankey()
+            }
+            .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
+            // Datos nuevos: cualquier mutador (alta, borrado, edición del importe, sync) acaba en una recarga del
+            // contenedor, detrás de su debounce, y esa recarga avanza `dataGeneration`. Antes se miraba
+            // `allTransactions.count`, que no ve una edición en sitio y solo recalculaba el Sankey: el hero (saldo y
+            // flujo) seguía con el número viejo hasta tocar un filtro. Sustituye a aquel observador, no se suma: el
+            // array solo cambia dentro de esa recarga, así que el contador cubre todo lo que cubría `.count`.
+            .onChange(of: dataGeneration) { recalculateAfterDataReload() }
+            .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
+            // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
+            // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
+            .modifier(CategoriesFilterRecalcObservers(viewModel: viewModel, onRecalc: { calculateData() }))
+            .onChange(of: viewModel.selectedNeeds) {
+                calculateData()
+                syncNeedFilterToSelection()
+            }
+            .onChange(of: allSubcategories) { calculateData() }
+            .onChange(of: selectedNeed) {
+                syncSelectionToNeedFilter()
+                calculateData()
+            }
+            .onChange(of: sessionState.customDateRange) { calculateData() }
+            // `isBalanceMode` cuelga de este flag, así que sin este observer el hero
+            // podía quedarse con un saldo rancio (o sin calcular) al apagar "solo
+            // gastos" desde el sheet de Ajustes, que se presenta ENCIMA de esta
+            // pestaña y la deja montada. El `didSet` de SessionState limpia
+            // `selectedTransactionNatures` y suele salvarlo de rebote, pero no
+            // cuando ya estaba vacío — que es justo el arranque de un usuario
+            // "solo gastos". La regla de `swiftui-ds.md` pide que todo camino de
+            // mutación llegue al recálculo, no que llegue de rebote.
+            .onChange(of: sessionState.isExpensesOnlyMode) { calculateData() }
+            .onChange(of: sessionState.comparisonMode) {
+                // Recalcula el período actual para pasar las fuentes al recorte WTD/MTD.
+                // El call site anterior (`calculatePreviousPeriodTotals()` sin args) quedó
+                // inválido al exigir currentCategory/Tag/NeedSource y, dentro de este
+                // ViewBuilder, el type-checker expiraba en vez de reportar el mismatch.
+                calculateData()
+            }
+            .onChange(of: sessionState.selectedTransactionNatures) {
+                viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
+                enforceListViewLock()
+                chartsCarouselPosition = isIncomeMode ? "subcategory" : "category"
+                calculateData()
+            }
+            .sheet(isPresented: $showCustomPeriodPicker) {
+                CustomPeriodPickerSheet(
+                    minDate: transactionDateRange.start,
+                    maxDate: transactionDateRange.end,
+                    currentRange: sessionState.customDateRange
+                )
+            }
+    }
+
+    /// Extraído de `scrollBody` para que el type-checker resuelva el árbol del
+    /// `ScrollView` aparte de la cadena de modifiers. Con el VStack + `if`/`switch`
+    /// inline, CI (Xcode 26.6) moría en `CategoriesTabView.swift:166` con
+    /// «unable to type-check this expression in reasonable time».
+    @ViewBuilder
+    private var scrollContent: some View {
+        VStack(spacing: DS.Spacing.md) {
+            heroSummary
+            filterBarPanel
+
+            if hasNoData {
+                YalaEmptyState(
+                    icon: "chart.pie",
+                    title: L10n.Empty.noData
+                )
+                .padding(.top, DS.Spacing.xxxxl)
+            } else {
+                populatedScrollContent
+            }
         }
-        .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
-        .onChange(of: allTransactions.count) { recomputeSankey() }
-        .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
-        // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
-        // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
-        .modifier(CategoriesFilterRecalcObservers(viewModel: viewModel, onRecalc: { calculateData() }))
-        .onChange(of: viewModel.selectedNeeds) {
-            calculateData()
-            syncNeedFilterToSelection()
+        .padding(.top, DS.Spacing.sm)
+    }
+
+    @ViewBuilder
+    private var populatedScrollContent: some View {
+        LazyVStack(spacing: DS.Spacing.xl) {
+            contentModePill
+
+            switch contentMode {
+            case .charts:
+                chartsSection
+                sankeyWidget
+                // Need bars no aplican en income mode (need classification es expense-only)
+                if !isIncomeMode {
+                    needsLargeSection
+                }
+            case .details:
+                categoriesListSection
+                if !isIncomeMode {
+                    needsCompactSection
+                }
+            }
+
+            distributionInsightCard
         }
-        .onChange(of: allSubcategories) { calculateData() }
-        .onChange(of: selectedNeed) {
-            syncSelectionToNeedFilter()
-            calculateData()
-        }
-        .onChange(of: sessionState.customDateRange) { calculateData() }
-        .onChange(of: sessionState.comparisonMode) {
-            calculatePreviousPeriodTotals()
-        }
-        .onChange(of: sessionState.selectedTransactionNatures) {
-            viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
-            enforceListViewLock()
-            chartsCarouselPosition = isIncomeMode ? "subcategory" : "category"
-            calculateData()
-        }
-        .sheet(isPresented: $showCustomPeriodPicker) {
-            CustomPeriodPickerSheet(
-                minDate: transactionDateRange.start,
-                maxDate: transactionDateRange.end,
-                currentRange: sessionState.customDateRange
-            )
-        }
+        // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
+        // por encima de los dos (mismo margen que `RecordsTabView`).
+        .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
     }
 
     /// Date range of all transactions (for custom period picker limits)
@@ -247,13 +336,36 @@ struct CategoriesTabView: View {
         return (start, end)
     }
 
-    // MARK: - Hero Summary (edge-to-edge, paralelo a InsightsTabView/TrendsTabView)
+    // MARK: - Hero Summary (el del Panel: `HeroHeader`, compartido con las otras pestañas)
+    //
+    // Uno solo para todas las subvistas de Distribución —el carrusel categoría / subcategoría / etiquetas y el modo
+    // Gráficas / Detalle—: va encima de las dos ramas de `populatedScrollContent`, y ninguna lo sustituye ni lo oculta.
 
     @ViewBuilder
     private var heroSummary: some View {
+        // El subtítulo describe el pie (categorías/subcategorías/etiquetas), así
+        // que sigue atado al flujo del período aunque el monto pase a ser saldo.
         let hasRecords = totalAmount > 0
+        // En Balance NO vale `> 0`: un saldo negativo o de cero es un dato válido y
+        // condicionarlo escondería el hero justo cuando el usuario está en rojo. Pero
+        // tampoco vale "siempre": sin movimientos en el período el KPI es 0 por
+        // construcción —igual en el Panel— y pintarlo le diría "0" a alguien que
+        // tiene saldo, solo por abrir un mes vacío. Se muestra cuando hay algo que
+        // enseñar, que es lo que el Panel decide con su propio `hasNoTrendData`.
+        let showsAmount = isBalanceMode ? (balanceKPI?.hasDataInPeriod ?? false) : hasRecords
 
-        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+        HeroHeader {
+            // Qué es la cifra. NO es fijo: fuera de `isBalanceMode` este hero
+            // vuelve al flujo del período (decisión del owner 2026-08-26), así
+            // que un rótulo fijo "Saldo de cuentas" mentiría en esos estados.
+            if showsAmount {
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.distribution(
+                    isBalanceMode: isBalanceMode,
+                    natures: viewModel.selectedTransactionNatures
+                ).text)
+                    .accessibilityIdentifier("stats_hero_caption")
+            }
+        } period: {
             TrendsPeriodMenu(
                 selectedPeriod: viewModel.detailPeriod,
                 customDateRange: sessionState.customDateRange,
@@ -261,26 +373,30 @@ struct CategoriesTabView: View {
                 onCustomTapped: { showCustomPeriodPicker = true }
             )
             .equatable()
-
-            if hasRecords {
+        } content: {
+            if showsAmount {
                 AmountText(
-                    value: totalAmount,
+                    value: isBalanceMode ? (balanceKPI?.value ?? 0) : totalAmount,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    // La marca sigue al número, que cambia de fuente con el modo. Fuera de Balance
+                    // el hero es la suma de las tajadas del pie (`TopSpendingCategoriesCalculator`),
+                    // que no acumula calidad de conversión: `fx-category-totals-unmarked`.
+                    isEstimate: isBalanceMode ? (balanceKPI?.isApproximate ?? false) : false
                 )
                 .contentTransition(.numericText())
+                // Lo lee el XCUITest que comprueba que la cifra sigue a un alta (`StatisticsHeroLikePanelUITests`).
+                .accessibilityIdentifier("stats_hero_amount")
             }
 
             if hasRecords, let subtitle = heroDimensionalSubtitle() {
                 Text(subtitle)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, summaryVerticalPadding)
-        .frame(maxWidth: .infinity)
+        // Sin margen lateral propio: el del scroll ya pone el eje izquierdo del resto de la pantalla.
+        .heroVerticalPadding(summaryVerticalPadding)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }
@@ -365,6 +481,9 @@ struct CategoriesTabView: View {
             labelProvider: { $0.label },
             selectedFillColorProvider: { _ in theme.accent }
         )
+        // En el contenedor: los dos segmentos lo heredan, en el orden de `DistributionContentMode` (Gráficas,
+        // Detalle). Lo usa `StatisticsHeroLikePanelUITests` para cambiar de modo sin depender del texto.
+        .accessibilityIdentifier("distribution_content_mode")
     }
 
     // MARK: - Charts Section (analysisHeader + chartsCarousel)
@@ -396,16 +515,19 @@ struct CategoriesTabView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
                     categoryChartCard
+                        .accessibilityIdentifier("distribution_page_category")
                         .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
                         .id("category")
 
                     subcategoryChartCard
+                        .accessibilityIdentifier("distribution_page_subcategory")
                         .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
                         .id("subcategory")
 
                     // Tags Chart - on iPad, tags moves next to need (needsLargeSection HStack)
                     if !isWide {
                         tagChartCard
+                            .accessibilityIdentifier("distribution_page_tags")
                             .containerRelativeFrame(.horizontal)
                             .id("tags")
                     }
@@ -634,7 +756,8 @@ struct CategoriesTabView: View {
             accounts: accounts,
             scheduledPayments: scheduledPayments,
             allTags: allTags,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: defaultCurrencyCode,
+            adjustment: GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
         )
     }
 
@@ -1187,8 +1310,18 @@ struct CategoriesTabView: View {
 
     // MARK: - Data Calculation
 
+    /// Los datos cambiaron (alta, borrado, edición en sitio, sync): todo lo que la pestaña precalcula, una vez.
+    private func recalculateAfterDataReload() {
+        calculateData()
+        recomputeSankey()
+    }
+
     private func calculateData() {
         let interval = viewModel.panelDateInterval
+
+        // Proyección "mi parte" (neto) de gastos de grupo bridgeados, desde el set AMPLIO
+        // (`allTransactions`, con AMBAS hermanas) — cierra el edge account-filter.
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 
         // Build filter criteria for pie charts
         // Include mode: show all categories/subcategories with dim (no filter)
@@ -1255,11 +1388,29 @@ struct CategoriesTabView: View {
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
         let newTotal = newCategorySpending.reduce(0) { $0 + $1.amount }
         if newTotal != totalAmount { totalAmount = newTotal }
+
+        // KPI de Balance: el hero deja de mostrar el gasto del período y pasa a
+        // mostrar el mismo saldo que el Panel. Solo se calcula en modo Balance —
+        // en Ingresos/Gastos el hero sigue siendo flujo y esta pasada sobra.
+        //
+        // Coste medido (5.475 transacciones, 3 años): ~15 ms. NO corre por tecla: el
+        // buscador de esta pantalla escribe en un `@State` local de
+        // `RecordsFiltersView` y solo se vuelca al ViewModel al pulsar "Aplicar".
+        if isBalanceMode {
+            let newBalanceKPI = viewModel.balanceKPI(
+                accounts: accounts,
+                transactions: allTransactions,
+                allTags: allTags,
+                defaultCurrencyCode: defaultCurrencyCode,
+                adjustment: adjustment
+            )
+            if newBalanceKPI != balanceKPI { balanceKPI = newBalanceKPI }
+        }
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]
@@ -1279,7 +1430,7 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         if newSubcategorySpending != subcategorySpending { subcategorySpending = newSubcategorySpending }
 
@@ -1307,7 +1458,8 @@ struct CategoriesTabView: View {
             interval: interval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: adjustment
         )
         if newTagSpending != tagSpending { tagSpending = newTagSpending }
 
@@ -1319,7 +1471,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: interval,
             preferredCurrency: preferredCurrency,
-
+            adjustment: adjustment
         )
         if newNeedTrendPoints != needTrendPoints { needTrendPoints = newNeedTrendPoints }
 
@@ -1327,12 +1479,23 @@ struct CategoriesTabView: View {
         enforceListViewLock()
 
         // Calculate previous period totals for comparison
-        calculatePreviousPeriodTotals()
+        calculatePreviousPeriodTotals(
+            currentCategorySource: pieFiltered,
+            currentTagSource: tagFiltered,
+            currentNeedSource: needFiltered
+        )
     }
 
     // MARK: - Previous Period Calculation
 
-    private func calculatePreviousPeriodTotals() {
+    private func calculatePreviousPeriodTotals(
+        currentCategorySource: [TransactionItem],
+        currentTagSource: [TransactionItem],
+        currentNeedSource: [TransactionItem]
+    ) {
+        // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
+
         // Skip previous period calculation for "All Time" (no meaningful comparison)
         guard viewModel.detailPeriod != .allTime else {
             previousCategoryTotal = nil
@@ -1349,6 +1512,27 @@ struct CategoriesTabView: View {
             mode: sessionState.comparisonMode,
             customRange: sessionState.customDateRange
         )
+        let currentInterval = viewModel.panelDateInterval
+        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
+            ? nil
+            : viewModel.selectedTransactionNatures
+
+        func alignedPrevious(
+            _ previous: [TransactionItem],
+            currentSource: [TransactionItem],
+            natures: Set<TransactionNature>?
+        ) -> [TransactionItem] {
+            DistributionPreviousPeriodCalculator.alignedPrevious(
+                previous,
+                currentDates: DistributionPreviousPeriodCalculator.currentDates(
+                    from: currentSource, in: currentInterval, natures: natures
+                ),
+                currentInterval: currentInterval,
+                previousInterval: previousInterval,
+                period: viewModel.detailPeriod,
+                comparisonMode: sessionState.comparisonMode
+            )
+        }
 
         // Build filter criteria for previous period
         // Include mode: show all (no filter) for comparison
@@ -1371,25 +1555,25 @@ struct CategoriesTabView: View {
             from: allTags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
-        // Filter transactions for previous period
-        let previousFiltered = FilterService.filterForTrends(
-            transactions: allTransactions,
-            accounts: accounts,
-            criteria: criteria
+        // Filter transactions for previous period, then WTD/MTD al weekday/día equivalente
+        let previousFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions,
+                accounts: accounts,
+                criteria: criteria
+            ),
+            currentSource: currentCategorySource,
+            natures: naturesFilter
         )
 
         // Calculate previous period category spending
         // Use same need filter as current period for consistent comparison
-        let naturesFilter: Set<TransactionNature>? = viewModel.selectedTransactionNatures.isEmpty
-            ? nil
-            : viewModel.selectedTransactionNatures
-
         let previousCategorySpending = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: previousFiltered,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         previousCategoryTotal = previousCategorySpending.reduce(0) { $0 + $1.amount }
 
@@ -1418,7 +1602,7 @@ struct CategoriesTabView: View {
             currencyCode: defaultCurrencyCode,
             categoryFilter: nil,
             transactionNatures: naturesFilter,
-
+            adjustment: adjustment
         )
         previousSubcategoryTotal = previousSubcategorySpending.reduce(0) { $0 + $1.amount }
 
@@ -1449,15 +1633,20 @@ struct CategoriesTabView: View {
             searchText: viewModel.searchText,
             dateInterval: previousInterval
         )
-        let prevTagFiltered = FilterService.filterForTrends(
-            transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
+        let prevTagFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
+            ),
+            currentSource: currentTagSource,
+            natures: naturesFilter
         )
         let previousTagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: prevTagFiltered,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
             transactionNatures: naturesFilter,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: adjustment
         )
         previousTagTotal = previousTagSpending.reduce(0) { $0 + $1.amount }
 
@@ -1488,10 +1677,15 @@ struct CategoriesTabView: View {
         prevNeedCriteria.populateTagUUIDs(
             from: allTags.filter { prevNeedCriteria.selectedTags.contains($0.persistentModelID) }
         )
-        let prevNeedFiltered = FilterService.filterForTrends(
-            transactions: allTransactions,
-            accounts: accounts,
-            criteria: prevNeedCriteria
+        // NeedTrendHelper cuenta solo gasto → corte gasto-only (igual que el Panel).
+        let prevNeedFiltered = alignedPrevious(
+            FilterService.filterForTrends(
+                transactions: allTransactions,
+                accounts: accounts,
+                criteria: prevNeedCriteria
+            ),
+            currentSource: currentNeedSource,
+            natures: [.expense]
         )
 
         let preferredCurrency = CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
@@ -1500,7 +1694,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: previousInterval,
             preferredCurrency: preferredCurrency,
-
+            adjustment: adjustment
         )
 
         // Calculate totals by nature for previous period

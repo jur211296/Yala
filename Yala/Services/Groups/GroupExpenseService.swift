@@ -3,7 +3,8 @@
 //  Yala
 //
 //  CRUD for shared expenses, shares, and settlements.
-//  Enqueues changes to CKSyncEngine via SplitSyncManager.
+//  Las escrituras que viajan salen por el drain del canal backend; la Fase 3 se llevó el encolado
+//  directo a CKSyncEngine.
 //
 
 import Foundation
@@ -23,13 +24,20 @@ final class GroupExpenseService {
     private var modelContext: ModelContext?
     private let logger = Logger(subsystem: "com.yala", category: "GroupExpense")
 
+    /// Tras un save local de gasto, pide un ciclo de sync bajo background task. Inyectable para
+    /// afirmar que el ciclo se PIDIÓ, no que iOS concedió tiempo.
+    @ObservationIgnored
+    var requestSyncAfterLocalSave: () -> Void = {
+        GroupsSaveSyncTrigger.shared.requestAfterLocalSave()
+    }
+
     // MARK: - Init
 
     private init() {}
 
     // MARK: - Context Injection
 
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 
@@ -46,6 +54,7 @@ final class GroupExpenseService {
     /// verifican el branch `noContext` deben llamar este helper antes de ejercer el SUT.
     func _testResetContext() {
         self.modelContext = nil
+        requestSyncAfterLocalSave = { GroupsSaveSyncTrigger.shared.requestAfterLocalSave() }
     }
     #endif
 
@@ -93,6 +102,8 @@ final class GroupExpenseService {
             subcategoryName: subcategoryName,
             isOpeningBalance: isOpeningBalance
         )
+        // Autor del cambio = el usuario actual (para atribución + autoexclusión del eco de notifs).
+        expense.lastEditedByMemberID = currentUserMemberID(in: group)
         context.insert(expense)
 
         // Create shares
@@ -104,7 +115,6 @@ final class GroupExpenseService {
                 groupZoneID: group.cloudKitZoneID
             )
             context.insert(splitShare)
-            SplitSyncManager.shared.enqueueSave(modelID: splitShare.id, group: group)
         }
 
         do {
@@ -113,15 +123,8 @@ final class GroupExpenseService {
             throw GroupExpenseServiceError.saveFailed(error)
         }
 
+        requestSyncAfterLocalSave()
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: expense.id, group: group)
-        // Un saldo inicial NO es un gasto normal — su telemetría la dispara `setOpeningBalance`.
-        if !isOpeningBalance {
-            TelemetryService.track(.groupExpenseAdded, parameters: [
-                "splitType": splitType,
-                "memberCount": String(shares.count)
-            ])
-        }
 
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {
@@ -171,7 +174,6 @@ final class GroupExpenseService {
             additionalAllowedMemberIDs: Set(oldShares.map(\.memberID) + [expense.paidByMemberID])
         )
         for oldShare in oldShares {
-            SplitSyncManager.shared.enqueueDeletion(modelID: oldShare.id, group: group)
             context.delete(oldShare)
         }
 
@@ -184,6 +186,8 @@ final class GroupExpenseService {
         expense.paidByMemberID = paidByMemberID
         expense.splitType = splitType
         expense.subcategoryName = subcategoryName
+        // Autor de esta edición = el usuario actual (atribución "X actualizó" + autoexclusión del eco).
+        expense.lastEditedByMemberID = currentUserMemberID(in: group)
 
         // Create new shares
         for share in shares {
@@ -194,7 +198,6 @@ final class GroupExpenseService {
                 groupZoneID: expense.groupZoneID
             )
             context.insert(splitShare)
-            SplitSyncManager.shared.enqueueSave(modelID: splitShare.id, group: group)
         }
 
         do {
@@ -203,8 +206,8 @@ final class GroupExpenseService {
             throw GroupExpenseServiceError.saveFailed(error)
         }
 
+        requestSyncAfterLocalSave()
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: expense.id, group: group)
 
         // Update bridged record
         if GroupTransactionBridge.shared.isReady {
@@ -256,7 +259,6 @@ final class GroupExpenseService {
         // Delete shares first
         let shares = try fetchShares(for: expense)
         for share in shares {
-            SplitSyncManager.shared.enqueueDeletion(modelID: share.id, group: group)
             context.delete(share)
         }
 
@@ -270,7 +272,6 @@ final class GroupExpenseService {
             }
         }
 
-        SplitSyncManager.shared.enqueueDeletion(modelID: expense.id, group: group)
         context.delete(expense)
 
         do {
@@ -313,10 +314,6 @@ final class GroupExpenseService {
             accountForCurrentUser: nil,
             isOpeningBalance: true
         )
-
-        TelemetryService.track(.openingBalanceCreated, parameters: [
-            "sameCurrencyAsGroup": String(currencyCode == group.currencyCode)
-        ])
         return expense
     }
 
@@ -361,6 +358,7 @@ final class GroupExpenseService {
     /// NO usa el guard global de `deleteExpense` (que bloquearía con cualquier liquidación,
     /// porque los saldos van fechados en `group.createdAt`).
     func removeOpeningBalance(_ expense: SplitExpense, in group: SplitGroup) throws {
+        try validateGroupIsWritable(group)   // G6-3: no pasa por validateCurrentUserCanWrite (guard explícito).
         guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
         let context = try requireContext()
 
@@ -371,7 +369,6 @@ final class GroupExpenseService {
         }
 
         try performExpenseDeletion(expense, in: group, context: context)
-        TelemetryService.track(.openingBalanceRemoved, parameters: [:])
     }
 
     /// Guard targeted: `true` si una liquidación confirmada del grupo involucra a alguno de
@@ -421,6 +418,9 @@ final class GroupExpenseService {
             note: note,
             date: date
         )
+        // Quien registra la liquidación = el usuario actual (autoexclusión del eco Caso D: registro
+        // "X me pagó" y no me llega "X te pagó"). La atribución "X te pagó" sigue siendo fromMemberID.
+        settlement.recordedByMemberID = currentUserMemberID(in: group)
         context.insert(settlement)
 
         do {
@@ -430,7 +430,6 @@ final class GroupExpenseService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: settlement.id, group: group)
 
         // A0-Bridge: si settlement nace confirmed Y bridge ready, dispara TX.
         // Settlement nace con isConfirmed=false por default — caller debe confirmar.
@@ -469,7 +468,6 @@ final class GroupExpenseService {
         }
 
         SessionState.shared.incrementDataVersion()
-        SplitSyncManager.shared.enqueueSave(modelID: settlement.id, group: group)
 
         // A0-Bridge: dispara TX bridgeadas (Caso C/D según from/to).
         if GroupTransactionBridge.shared.isReady {
@@ -502,7 +500,6 @@ final class GroupExpenseService {
             }
         }
 
-        SplitSyncManager.shared.enqueueDeletion(modelID: settlement.id, group: group)
         context.delete(settlement)
 
         do {
@@ -574,9 +571,189 @@ final class GroupExpenseService {
         }
     }
 
+    /// G6-3 (C4, FREEZE — RED de correctness): un grupo migrado y CONGELADO (`movedToBackendAt != nil &&
+    /// !isBackendGroup`, con la mitigación #9 del owner reinstall) NO acepta escrituras: sus records irían a la
+    /// zona CloudKit congelada y se perderían (R4). El guard central lo lanza ANTES de cualquier check de
+    /// participación. Punto de inserción óptimo (ajuste #6): al TOP de `validateCurrentUserCanWrite` (cubre
+    /// create/update/deleteExpense/createSettlement/confirmSettlement/deleteSettlement) + `removeOpeningBalance`.
+    /// El trío opening-balance es owner-only ⇒ el freeze es inerte para él (defensa en profundidad).
+    func validateGroupIsWritable(_ group: SplitGroup) throws {
+        if group.isMigratedFrozen { throw GroupExpenseServiceError.movedToBackend }
+    }
+
+    /// `SplitMember.id.uuidString` del usuario actual en el grupo (para atribuir "quién hizo el cambio"
+    /// en las notificaciones y autoexcluir el eco). Resuelto en el contexto del propio servicio
+    /// (`GroupService.fetchMembers`, igual que `validateCurrentUserCanWrite`).
+    ///
+    /// DEBE resolver el MISMO id que el consumidor `GroupNotificationService.currentMemberID(inZone:)`
+    /// (resolución CANÓNICA: entre los members `isCurrentUser`, el de `joinedAt` más antiguo — mismo
+    /// criterio que su `FetchDescriptor` sortBy joinedAt + fetchLimit 1). Un tie-break distinto (p.ej. `first(where:)` sobre el orden de `fetchMembers`
+    /// por displayName) elegiría OTRO id bajo members `isCurrentUser` DUPLICADOS → el write-side y el
+    /// clasificador guardarían/compararían ids distintos y el eco NO se autoexcluiría.
+    ///
+    /// Fallbacks (ventana temprana: 2º device / restore de iCloud, `isCurrentUser` aún no marcado porque es
+    /// device-local y `refreshCurrentUserFlags` no ha corrido): por identidad del canal BACKEND
+    /// (`userID`/`memberKey == sub`) y por identidad iCloud (`cloudKitUserRecordID == cachedRecordName`),
+    /// las MISMAS dos fuentes que `refreshCurrentUserFlags` usa para marcar `isCurrentUser`. Así el eco se
+    /// autoexcluye aunque el flag llegue tarde (sin esto, el owner en esa ventana guardaba nil y recibía
+    /// "otro actualizó" por su propia edición — el bug reportado).
+    /// nil solo si tampoco hay ninguna de las dos identidades (primer arranque sin resolver) ⇒ ahí el
+    /// consumidor tampoco resuelve currentMemberID ⇒ `expenseDecision` skipea (sin notif).
+    private func currentUserMemberID(in group: SplitGroup) -> String? {
+        let members: [SplitMember]
+        do {
+            members = try GroupService.shared.fetchMembers(for: group)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseService: Error resolviendo el miembro actual para atribución: \(error)")
+            #endif
+            return nil
+        }
+        return Self.selectCurrentUserMemberID(
+            from: members,
+            cachedRecordName: GroupUserIdentityService.shared.cachedRecordName,
+            currentUserID: CloudSyncFlags.groupsBackendEnabled ? CloudAuthService.shared.currentUserID : nil
+        )
+    }
+
+    /// Selección pura del `SplitMember.id.uuidString` del usuario actual (extraída para test sin contexto).
+    /// Resolución CANÓNICA — DEBE espejar `GroupNotificationService.currentMemberID(inZone:)` (isCurrentUser
+    /// con `joinedAt` más antiguo). Dos fallbacks para la ventana temprana, en este orden:
+    ///
+    ///  1. **Canal backend** (2.6): `userID`/`memberKey == sub` de la sesión Yala. `GroupsSyncClient
+    ///     .applyMember` NUNCA setea `isCurrentUser` (lo dice `GroupJoinReconciler:115`/`:156`), así que en
+    ///     el canal nuevo el flag solo lo enciende `refreshCurrentUserFlags` DESPUÉS — hasta entonces esta
+    ///     función devolvía nil y el eco de la propia edición no se autoexcluía. Va ANTES que el fallback
+    ///     iCloud porque en un grupo del canal nuevo la identidad autoritativa es el `sub`.
+    ///  2. **Identidad iCloud** (`cloudKitUserRecordID == cachedRecordName`), la MISMA fuente que
+    ///     `refreshCurrentUserFlags` usa para marcar `isCurrentUser` en el canal CloudKit.
+    ///
+    /// `isCurrentUser` conserva la PRIMERA posición a propósito: es lo que mantiene la simetría con
+    /// `currentMemberID(inZone:)`, que resuelve solo por ese flag. Adelantar el match backend divergiría
+    /// de él en una zona con el member legacy Y el backend del mismo humano.
+    ///
+    /// `currentUserID` nil (flag `groupsBackendEnabled` OFF, o sin sesión) ⇒ el paso 1 no matchea NADA y la
+    /// función es byte-idéntica a la de antes. Ver el doc de `currentUserMemberID(in:)` para el resto.
+    static func selectCurrentUserMemberID(
+        from members: [SplitMember],
+        cachedRecordName: String?,
+        currentUserID: String? = nil
+    ) -> String? {
+        selectCurrentUserMember(
+            from: members, cachedRecordName: cachedRecordName, currentUserID: currentUserID
+        )?.id.uuidString
+    }
+
+    /// La PRIMITIVA de la resolución canónica: el mismo orden de criterios y el mismo desempate,
+    /// devolviendo el miembro en vez de su id. `selectCurrentUserMemberID` delega aquí para que las
+    /// dos no puedan divergir — que es exactamente el modo de fallo que esta tanda vino a cerrar:
+    /// once sitios resolviendo identidad de once maneras.
+    ///
+    /// Existe porque casi todos los consumidores necesitan el MIEMBRO (su `memberStatus`, su
+    /// `role`, su `isActive`), no su id, y con solo la variante `...ID` cada uno se fabricaba su
+    /// propio `first { $0.isCurrentUser }` para recuperarlo — volviendo al punto de partida.
+    static func selectCurrentUserMember(
+        from members: [SplitMember],
+        cachedRecordName: String?,
+        currentUserID: String? = nil
+    ) -> SplitMember? {
+        if let current = members.filter({ $0.isCurrentUser }).min(by: { $0.joinedAt < $1.joinedAt }) {
+            return current
+        }
+        if let byBackendIdentity = members.filter({
+            GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                memberUserID: $0.userID, memberKey: $0.memberKey, currentUserID: currentUserID)
+        }).min(by: { $0.joinedAt < $1.joinedAt }) {
+            return byBackendIdentity
+        }
+        if let recordName = cachedRecordName, !recordName.isEmpty,
+           let byIdentity = members.filter({ $0.cloudKitUserRecordID == recordName })
+                                   .min(by: { $0.joinedAt < $1.joinedAt }) {
+            return byIdentity
+        }
+        return nil
+    }
+
+    /// Resolución canónica de identidad para el proceso vivo, con las dos fuentes ya cableadas.
+    /// Es el molde que `GroupSettingsView.hasOutstandingBalance` escribía a mano, extraído para que
+    /// los consumidores no tengan que acordarse del gate de `groupsBackendEnabled` — olvidarlo
+    /// devuelve nil justo en el canal donde hace falta.
+    static func resolveCurrentUserMember(from members: [SplitMember]) -> SplitMember? {
+        selectCurrentUserMember(
+            from: members,
+            cachedRecordName: GroupUserIdentityService.shared.cachedRecordName,
+            currentUserID: CloudSyncFlags.groupsBackendEnabled ? CloudAuthService.shared.currentUserID : nil
+        )
+    }
+
+    /// TODAS mis filas de una zona, sin colapsar. La variante PLURAL de la resolución canónica.
+    ///
+    /// Existe porque no todos los consumidores preguntan lo mismo. La mayoría pregunta «¿cuál es mi
+    /// miembro?» y `resolveCurrentUserMember` contesta con UNO —desempatando por `joinedAt`— para que
+    /// el write-side y el read-side no puedan elegir filas distintas. Pero un par de sitios preguntan
+    /// «¿cuáles son mis filas?», que es POR FILA, y ahí colapsar no es un detalle: en una zona migrada
+    /// el mismo humano tiene su member CloudKit legacy Y el born-backend, y quedarse con uno deja al
+    /// otro sin tocar para siempre.
+    ///
+    /// Mismos tres criterios que `selectCurrentUserMember`, en OR en vez de en cascada. Nunca devuelve
+    /// una fila que no sea mía: los dos fallbacks exigen identidad exacta y no vacía.
+    static func resolveAllCurrentUserMembers(from members: [SplitMember]) -> [SplitMember] {
+        let cachedRecordName = GroupUserIdentityService.shared.cachedRecordName
+        let currentUserID = CloudSyncFlags.groupsBackendEnabled
+            ? CloudAuthService.shared.currentUserID : nil
+        return members.filter { member in
+            if member.isCurrentUser { return true }
+            if GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                memberUserID: member.userID, memberKey: member.memberKey,
+                currentUserID: currentUserID) { return true }
+            if let recordName = cachedRecordName, !recordName.isEmpty,
+               member.cloudKitUserRecordID == recordName { return true }
+            return false
+        }
+    }
+
+    /// La misma resolución canónica, para los consumidores que hasta ahora la escribían como un
+    /// `FetchDescriptor` con `isCurrentUser == true` metido en el `#Predicate`.
+    ///
+    /// Existe porque esa forma NO es convertible: `resolveCurrentUserMember(from:)` lee estado de
+    /// sesión (`sub`) y de iCloud (`recordName`), y SwiftData no puede traducir eso a SQL. Sustituir
+    /// la línea dentro del predicado es imposible, así que cada consumidor tenía que acordarse de
+    /// traerse los members de la zona y resolver en memoria — y ninguno se acordó. El resultado era
+    /// que al recién llegado a un grupo, cuyo `SplitMember` baja del pull con `isCurrentUser`
+    /// APAGADO (`GroupsSyncClient.applyMember` nunca lo escribe, y `refreshCurrentUserFlags` solo
+    /// corre en el arranque), estos consumidores lo daban por no-miembro: su gasto no llegaba a sus
+    /// cuentas, su saldo salía vacío y sus avisos de grupo se descartaban en silencio.
+    ///
+    /// El fetch trae los members de UNA zona (2-10 filas en la práctica), no los del dispositivo:
+    /// esto NO es el `refreshCurrentUserFlags` device-wide, no escribe nada y no arrastra su
+    /// backfill heurístico por `displayName`. Es una lectura.
+    ///
+    /// Propaga el error del fetch en vez de tragárselo: los callers no coinciden en qué hacer con él
+    /// (`ScheduledPaymentDraftService` reintenta, `GroupNotificationService` evita envenenar su
+    /// caché), y decidirlo aquí les quitaría esa distinción.
+    static func resolveCurrentUserMember(
+        inZone zoneID: String,
+        context: ModelContext
+    ) throws -> SplitMember? {
+        // `sortBy` explícito: el desempate de `selectCurrentUserMember` es `min(by: joinedAt)`, y ante
+        // un empate exacto `min` devuelve el primero DEL ARRAY. Sin ordenar, ese primero lo decidía el
+        // orden del store, mientras los demás consumidores canónicos resuelven sobre el array ya
+        // ordenado de `GroupService.fetchMembers`. Con dos filas mías empatadas al milisegundo, eso
+        // bastaba para que el formulario marcara como pagador una fila y el bridge resolviera la otra.
+        let members = try context.fetch(FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID },
+            sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
+        ))
+        return resolveCurrentUserMember(from: members)
+    }
+
     private func validateCurrentUserCanWrite(in group: SplitGroup) throws {
+        try validateGroupIsWritable(group)
         let members = try GroupService.shared.fetchMembers(for: group)
-        guard let current = members.first(where: { $0.isCurrentUser }) else {
+        // Identidad RESUELTA, no el flag pelado: si la UI ya reconoce al usuario y este gate no,
+        // el FAB aparece y el guardado lo rechaza — «ves algo que no funciona», que es peor que no
+        // verlo. Los dos lados tienen que decidir con el mismo criterio.
+        guard let current = Self.resolveCurrentUserMember(from: members) else {
             if group.isOwner { return }
             throw GroupExpenseServiceError.inactiveMember
         }
@@ -639,6 +816,8 @@ enum GroupExpenseServiceError: LocalizedError {
     case notOwner
     /// Un saldo inicial necesita dos miembros distintos (deudor ≠ acreedor).
     case invalidOpeningBalanceMembers
+    /// G6-3: el grupo se migró a la nube de Yala y está congelado en este device — hay que volver a entrar.
+    case movedToBackend
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -665,6 +844,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return L10n.Groups.OpeningBalance.errorNotOwner
         case .invalidOpeningBalanceMembers:
             return L10n.Groups.OpeningBalance.errorSameMember
+        case .movedToBackend:
+            return L10n.Groups.Errors.movedToBackend
         case .saveFailed(let error):
             return "GroupExpenseService: Save failed - \(error.localizedDescription)"
         }

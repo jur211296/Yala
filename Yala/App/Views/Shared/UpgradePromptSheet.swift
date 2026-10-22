@@ -104,13 +104,11 @@ struct UpgradePromptSheet: View {
                 // Buttons
                 VStack(spacing: DS.Spacing.md) {
                     YalaPrimaryButton(L10n.FeatureGate.upgradeToPro) {
-                        TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: source))
                         showSubscription = true
                     }
                     .accessibilityIdentifier("upgrade_prompt_cta")
 
                     Button(L10n.Common.cancel) {
-                        TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: source))
                         dismiss()
                     }
                     .font(DS.Typography.body)
@@ -124,14 +122,10 @@ struct UpgradePromptSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: source))
                         dismiss()
                     }
                 }
             }
-        }
-        .onAppear {
-            TelemetryService.track(.proUpsellShown, parameters: TelemetryService.upsellParameters(source: source))
         }
         .sheet(isPresented: $showSubscription) {
             NavigationStack {

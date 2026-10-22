@@ -50,7 +50,7 @@ final class ChatIntentClassifierService {
         }
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .suggestions)
+            client = try await ProxyClientFactory.makeOpenAI(task: .chatIntent)
         } catch {
             #if DEBUG
             print("ChatIntentClassifierService: proxy no disponible (\(error)) — regex fallback")

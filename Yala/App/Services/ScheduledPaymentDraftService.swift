@@ -47,7 +47,10 @@ struct ScheduledPaymentDraftService {
         }
 
         var draftsCreated = 0
-        var hasChanges = false
+        // Antes de crear nada: los pendientes de una ocurrencia que la persona ya descartó se archivan.
+        var hasChanges = archiveDraftsOfDismissedOccurrences(context: context)
+        // Y los «elige categoría» que dejó aprobar un gasto compartido planificado antes del arreglo.
+        if classifyPointersOfApprovedGroupPlannedExpenses(context: context) { hasChanges = true }
 
         for payment in duePayments {
             // Skip if this date has been pre-skipped by user
@@ -63,6 +66,21 @@ struct ScheduledPaymentDraftService {
                 advanceToNextDueDate(payment: payment)
                 hasChanges = true
                 continue
+            }
+
+            // Gasto de grupo: validar estado del grupo/membresía antes de materializar el draft.
+            // No pausar por una race de sync (grupo aún no importado) — reintentar next launch.
+            if payment.isGroupPayment {
+                switch groupGateDecision(for: payment, context: context) {
+                case .proceed:
+                    break
+                case .retryLater:
+                    continue
+                case .pause:
+                    payment.isActive = false
+                    hasChanges = true
+                    continue
+                }
             }
 
             // Check if draft already exists for this payment (pending or approved)
@@ -98,6 +116,113 @@ struct ScheduledPaymentDraftService {
         }
 
         return draftsCreated
+    }
+
+    // MARK: - Dismissed Occurrences
+
+    /// Archiva (rechaza, no borra) cada borrador PENDIENTE de un pago programado cuya ocurrencia está saltada.
+    ///
+    /// Es el caso de dos dispositivos: el otro teléfono corrió `processDuePayments` antes de enterarse de que la
+    /// persona descartó ese vencimiento aquí, y su borrador llega por el espejo de iCloud o por el pull de la nube
+    /// (o aquí llega el salto y el borrador es el propio). Es la misma ocurrencia que la persona ya descartó, así
+    /// que se archiva como hace Planificación al saltar. «Volver a pendientes» quita la marca
+    /// (`DraftService.returnToPending`), así que un borrador devuelto no vuelve a caer aquí. Devuelve si cambió algo.
+    private static func archiveDraftsOfDismissedOccurrences(context: ModelContext) -> Bool {
+        let drafts: [InboxDraft]
+        let payments: [ScheduledPayment]
+        do {
+            drafts = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceScheduledPaymentID != nil
+            }))
+            guard !drafts.isEmpty else { return false }
+            payments = try context.fetch(FetchDescriptor<ScheduledPayment>())
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching drafts of dismissed occurrences: \(error)")
+            #endif
+            return false
+        }
+        let paymentsByID = Dictionary(payments.map { ($0.id.uuidString, $0) }, uniquingKeysWith: { first, _ in first })
+
+        var changed = false
+        for draft in drafts where ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType) {
+            guard let paymentID = draft.sourceScheduledPaymentID, let payment = paymentsByID[paymentID],
+                  !payment.skippedDatesRaw.isEmpty,
+                  ScheduledDraftOccurrenceLogic.belongsToADismissedOccurrence(
+                    draftDate: draft.date ?? draft.createdAt, schedule: payment.occurrenceSchedule,
+                    isSkipped: payment.isDateSkipped
+                  ) else { continue }
+            DraftService.cacheArchiveDisplayValues(draft)
+            draft.status = .rejected
+            draft.updatedAt = Date.now
+            changed = true
+        }
+        return changed
+    }
+
+    // MARK: - Approved Group Planned Expenses
+
+    /// Resuelve cada borrador PENDIENTE «elige categoría» de un gasto de grupo que nació de aprobar un pago planificado
+    /// de grupo con categoría, como si la persona lo aprobara con esa categoría. Devuelve si cambió algo.
+    ///
+    /// Ticket `shared-scheduled-expense-shows-twice-in-inbox`: hasta el arreglo, el formulario de grupo que abre la
+    /// Bandeja no recibía la categoría del pago, el gasto nacía sin clasificar y el puente dejaba ese borrador del mismo
+    /// gasto (misma nota, importe y fecha). Esto barre los que ya están en los teléfonos. Solo cuando todo lo prueba:
+    /// el borrador pide solo la categoría (ni opt-in ni puntero a otra transacción), la transacción REAL del gasto sigue
+    /// sin categoría y `handleGroupScheduledExpenseApproved` la enlazó a un pago planificado de grupo que tiene una de
+    /// usuario. Con el puente apagado no hay transacción real enlazada al pago y no se toca (residual del ticket).
+    /// Idempotente: resuelto, el borrador ya no existe y la transacción ya tiene categoría, así que el puente tampoco lo
+    /// vuelve a crear.
+    private static func classifyPointersOfApprovedGroupPlannedExpenses(context: ModelContext) -> Bool {
+        let groupExpenseRaw = DraftSourceType.groupExpense.rawValue
+        let pointers: [InboxDraft]
+        do {
+            pointers = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceTypeRaw == groupExpenseRaw && $0.splitExpenseID != nil
+            })).filter {
+                !$0.optInPersonalOnly && $0.targetTransactionID == nil
+                    && $0.needsUserInput == [DraftInputRequirement.subcategory]
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching group category drafts: \(error)")
+            #endif
+            return false
+        }
+        guard !pointers.isEmpty else { return false }
+
+        var changed = false
+        for pointer in pointers {
+            guard let splitID = pointer.splitExpenseID else { continue }
+            let real: TransactionItem
+            let payment: ScheduledPayment
+            do {
+                let txs = try context.fetch(FetchDescriptor<TransactionItem>(
+                    predicate: #Predicate<TransactionItem> { $0.splitExpenseID == splitID }))
+                guard let found = txs.first(where: { $0.account?.isSystemAccount == false }),
+                      found.subcategory == nil,
+                      let paymentID = found.scheduledPaymentID.flatMap(UUID.init(uuidString:)) else { continue }
+                var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentID })
+                descriptor.fetchLimit = 1
+                guard let foundPayment = try context.fetch(descriptor).first else { continue }
+                real = found
+                payment = foundPayment
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentDraftService: Error resolving group category draft: \(error)")
+                #endif
+                continue
+            }
+            guard payment.isGroupPayment, let subcategory = payment.subcategory, !subcategory.isAnySystem else { continue }
+
+            // Lo mismo que aprobar ese borrador desde la Bandeja (`DraftService.approveDraft`, rama del puntero).
+            real.subcategory = subcategory
+            real.category = subcategory.safeCategory
+            InboxRowPruneCoordinator.shared.pruneRow(pointer.persistentModelID)
+            context.delete(pointer)
+            changed = true
+        }
+        return changed
     }
 
     // MARK: - Draft Creation
@@ -161,12 +286,65 @@ struct ScheduledPaymentDraftService {
         }
     }
 
+    /// Evalúa el estado del grupo/membresía de un pago planificado de grupo (fetch concreto + do/catch).
+    /// La decisión (proceder / reintentar / pausar) es pure-logic en `GroupScheduledPaymentGate`.
+    private static func groupGateDecision(for payment: ScheduledPayment, context: ModelContext) -> GroupScheduledPaymentGate.Decision {
+        guard let zone = payment.groupZoneID else { return .proceed }
+
+        let group: SplitGroup?
+        do {
+            var d = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone })
+            d.fetchLimit = 1
+            group = try context.fetch(d).first
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching group for gate: \(error)")
+            #endif
+            return .retryLater
+        }
+
+        let member: SplitMember?
+        do {
+            // Identidad RESUELTA: con el flag pelado, al recién llegado el gate lo trataba como
+            // no-miembro y el borrador del pago programado del grupo no se creaba nunca.
+            let resolved = try GroupExpenseService.resolveCurrentUserMember(inZone: zone, context: context)
+            // Un `pendingApproval` se pasa como AUSENTE a propósito. El gate solo distingue «existe» de
+            // «está activo», y su rama de no-activo es `.pause`, que escribe `payment.isActive = false`:
+            // apagar el pago recurrente de alguien a quien el admin todavía no ha contestado, y que nadie
+            // vuelve a encender cuando lo aprueban. El comentario del propio gate dice qué quiere pausar
+            // —«removido/salido»— y un pendiente no es ninguno de los dos: es el mismo «todavía no se
+            // sabe» que `.retryLater` ya cubre.
+            //
+            // Sin esto, resolver la identidad EMPEORABA justo al usuario que vino a arreglar: antes su
+            // member no se resolvía y el gate reintentaba; ahora se resuelve y le apagaría el pago.
+            member = (resolved?.isPendingApproval == true) ? nil : resolved
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching member for gate: \(error)")
+            #endif
+            return .retryLater
+        }
+
+        return GroupScheduledPaymentGate.decide(
+            groupExists: group != nil,
+            isArchived: group?.isArchived ?? false,
+            isHidden: group?.isHiddenForAll ?? false,
+            memberExists: member != nil,
+            memberIsActive: member?.isActive ?? false
+        )
+    }
+
     /// Create an InboxDraft from a ScheduledPayment
     private static func createDraft(from payment: ScheduledPayment, context: ModelContext) -> InboxDraft {
-        // Determine source type based on payment category
-        let sourceType: DraftSourceType = payment.paymentCategory == PaymentCategory.subscription.rawValue
-            ? .subscription
-            : .scheduledPayment
+        // Determine source type: gasto de grupo recurrente > suscripción > recurrente normal.
+        let sourceType: DraftSourceType
+        if payment.isGroupPayment {
+            sourceType = .groupScheduledExpense
+        } else if payment.paymentCategory == PaymentCategory.subscription.rawValue {
+            sourceType = .subscription
+        } else {
+            sourceType = .scheduledPayment
+        }
 
         // Amount with sign (negative for expenses, positive for income)
         let signedAmount: Double
@@ -196,12 +374,21 @@ struct ScheduledPaymentDraftService {
             confidenceDate: 1.0,
             confidenceMerchant: 1.0,
             confidenceSubcategory: payment.subcategory != nil ? 1.0 : nil,
-            needsUserInput: payment.subcategory == nil ? ["subcategory"] : [],
+            needsUserInput: payment.isGroupPayment
+                ? []
+                : (payment.subcategory == nil ? [DraftInputRequirement.subcategory] : []),
             status: .pending
         )
 
         // Link to the source payment
         draft.sourceScheduledPaymentID = payment.id.uuidString
+
+        // Gasto de grupo recurrente: zona para el routing/fetch rápido en el Inbox.
+        // La config de split (participantes/modo/valores) NO se snapshotea aquí — se lee del
+        // ScheduledPayment vía sourceScheduledPaymentID al abrir el form de grupo (SSOT).
+        if payment.isGroupPayment {
+            draft.splitGroupZoneID = payment.groupZoneID
+        }
 
         return draft
     }
@@ -375,13 +562,80 @@ struct ScheduledPaymentDraftService {
             return
         }
 
-        // Update paid date (use draft's date for retroactive approvals)
-        payment.lastPaidDate = draft.date ?? Date.now
+        // Paid date (use draft's date for retroactive approvals) + advance to next due date. Antes de enlazar la
+        // transacción: la propia no cuenta como «otra que ya cubre la ocurrencia».
+        recordPaidOccurrence(of: draft, on: payment, context: context)
 
         // Link approved transaction to this scheduled payment
         draft.approvedTransaction?.scheduledPaymentID = payment.id.uuidString
 
-        // Advance to next due date
-        advanceToNextDueDate(payment: payment)
+        // Re-plan de las summaries agendadas (la aprobación cambia el conteo de hoy y
+        // la próxima ocurrencia).
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
+    }
+
+    /// Marca pagada la ocurrencia del borrador aprobado y avanza la próxima fecha, salvo que el borrador sea de una
+    /// ocurrencia que la próxima fecha ya dejó atrás sin cubrirla (se rechazó, la app pasó de largo y volvió a
+    /// pendientes desde Archivados): avanzar ahí se comería la ocurrencia siguiente. Una ocurrencia cuenta como
+    /// cubierta si está saltada o tiene OTRA transacción enlazada (la ventana de `hasLinkedTransaction`). La fecha
+    /// de pago nunca retrocede. Llamar ANTES de enlazar la transacción del borrador.
+    private static func recordPaidOccurrence(of draft: InboxDraft, on payment: ScheduledPayment, context: ModelContext) {
+        let paidDate = draft.date ?? Date.now
+        let advances = ScheduledDraftOccurrenceLogic.approvalAdvancesPointer(
+            draftDate: paidDate, schedule: payment.occurrenceSchedule,
+            isAccountedFor: { day in
+                payment.isDateSkipped(day) || hasLinkedTransaction(for: payment, on: day, context: context)
+            }
+        )
+        payment.lastPaidDate = max(payment.lastPaidDate ?? paidDate, paidDate)
+        if advances { advanceToNextDueDate(payment: payment) }
+    }
+
+    /// Cierra el ciclo tras crear el SplitExpense desde un draft `.groupScheduledExpense`
+    /// (F4): marca el pago pagado, avanza la fecha, vincula `scheduledPaymentID` en la TX real
+    /// bridgeada (dedup cross-device D1) y borra el draft. Llamado desde el `onExpenseCreated`
+    /// del form. A diferencia de `handleDraftApproved`, el resultado es un SplitExpense (+ TX
+    /// bridgeadas), no una `approvedTransaction` en el draft.
+    static func handleGroupScheduledExpenseApproved(draft: InboxDraft, expenseID: String, context: ModelContext) {
+        if let paymentIDString = draft.sourceScheduledPaymentID,
+           let paymentUUID = UUID(uuidString: paymentIDString) {
+            var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
+            descriptor.fetchLimit = 1
+            do {
+                if let payment = try context.fetch(descriptor).first {
+                    recordPaidOccurrence(of: draft, on: payment, context: context)
+                }
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentDraftService: error fetching payment for group approval: \(error)")
+                #endif
+            }
+
+            // Vincular scheduledPaymentID en la TX real (no sistema) para el dedup cross-device.
+            let realDescriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == expenseID && $0.account?.isSystemAccount == false }
+            )
+            do {
+                if let realTx = try context.fetch(realDescriptor).first {
+                    realTx.scheduledPaymentID = paymentIDString
+                }
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentDraftService: error linking scheduledPaymentID: \(error)")
+                #endif
+            }
+        }
+
+        context.delete(draft)
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: error saving after group scheduled approval: \(error)")
+            #endif
+        }
+
+        // Re-plan de las summaries agendadas (misma razón que handleDraftApproved).
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
     }
 }

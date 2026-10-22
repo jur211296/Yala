@@ -181,14 +181,6 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Whether this period requires Pro for export
-    var isProExportPeriod: Bool {
-        switch self {
-        case .thisYear, .lastYear, .allTime, .custom: return true
-        default: return false
-        }
-    }
-
     /// Calendar icon for the selector
     var iconName: String { "calendar" }
 
@@ -196,8 +188,14 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     /// - Parameters:
     ///   - customRange: Optional custom date range for .custom period
     ///   - now: Fecha de referencia (por defecto `.now`); inyectable para tests.
-    func dateInterval(customRange: DateInterval? = nil, now: Date = .now) -> DateInterval {
-        let calendar = userConfiguredCalendar()
+    ///   - calendar: Calendario con el que se cortan los límites (por defecto el del usuario,
+    ///     `userConfiguredCalendar()`, en la zona del proceso). Inyectable para que un test fije
+    ///     zona y `firstWeekday` y no dependa de la zona horaria del runner.
+    func dateInterval(
+        customRange: DateInterval? = nil,
+        now: Date = .now,
+        calendar: Calendar = userConfiguredCalendar()
+    ) -> DateInterval {
         let startOfToday = calendar.startOfDay(for: now)
 
         // End of today (start of tomorrow) to include all transactions from today
@@ -226,7 +224,8 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
             let startOfThisMonth = calendar.date(
                 from: calendar.dateComponents([.year, .month], from: now)) ?? startOfToday
             let startOfLastMonth = calendar.date(byAdding: .month, value: -1, to: startOfThisMonth) ?? startOfToday
-            return DateInterval(start: startOfLastMonth, end: startOfThisMonth)
+            let endOfLastMonth = calendar.date(byAdding: .second, value: -1, to: startOfThisMonth) ?? startOfThisMonth
+            return DateInterval(start: startOfLastMonth, end: endOfLastMonth)
 
         case .thisYear:
             let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
@@ -235,7 +234,8 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         case .lastYear:
             let startOfThisYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
             let startOfLastYear = calendar.date(byAdding: .year, value: -1, to: startOfThisYear) ?? startOfToday
-            return DateInterval(start: startOfLastYear, end: startOfThisYear)
+            let endOfLastYear = calendar.date(byAdding: .second, value: -1, to: startOfThisYear) ?? startOfThisYear
+            return DateInterval(start: startOfLastYear, end: endOfLastYear)
 
         case .allTime:
             // Return a very long interval (10 years back to end of today)

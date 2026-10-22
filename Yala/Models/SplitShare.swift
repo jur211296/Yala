@@ -11,12 +11,14 @@ import SwiftData
 
 @Model
 final class SplitShare {
-    var id: UUID = UUID()
+    // `.preserveValueOnDeletion`: G2 usa `id` como sync_id y `groupZoneID` como `group_id` del wire → el
+    // history tombstone debe conservarlos para emitir el borrado (metadata local; groups store `.none`).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
     var expenseID: UUID = UUID()
     var memberID: String = ""
     var amount: Double = 0
     var isPaid: Bool = false
-    var groupZoneID: String = ""
+    @Attribute(.preserveValueOnDeletion) var groupZoneID: String = ""
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
     init(

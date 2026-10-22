@@ -75,17 +75,9 @@ enum PlannedOccurrenceBuilder {
                     let dayKey = calendar.startOfDay(for: date).timeIntervalSinceReferenceDate
                     if paidDays.contains(dayKey) { continue }
 
-                    let amount: Double
-                    if sp.currencyCode == defaultCurrencyCode {
-                        amount = abs(sp.amount)
-                    } else {
-                        let converted = converter.convertWithLatestRate(
-                            Decimal(abs(sp.amount)),
-                            from: sp.currencyCode,
-                            to: defaultCurrencyCode
-                        )
-                        amount = NSDecimalNumber(decimal: converted).doubleValue
-                    }
+                    let amount = ScheduledPaymentAmountConversion.magnitude(
+                        of: sp, in: defaultCurrencyCode, converter: converter
+                    ).amount
                     guard amount.isFinite, amount > 0 else { continue }
 
                     result.append(PlannedOccurrence(

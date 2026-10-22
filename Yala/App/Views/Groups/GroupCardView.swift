@@ -23,9 +23,16 @@ struct GroupCardView: View {
     /// Disparado cuando current user `.rejected` toca la card. El padre
     /// presenta el alert "¿Salir del grupo?" (un solo modal global).
     var onRejectedTap: (() -> Void)?
+    /// Disparado cuando current user `.pendingApproval` toca la card. El padre presenta el aviso
+    /// «solicitud en revisión» — mismo patrón de modal global que `onRejectedTap`.
+    var onPendingTap: (() -> Void)?
+    // C-10: `onMigratedTap` se ELIMINÓ. Un grupo congelado ya no dispara el CTA desde la card: abre el
+    // detalle (vía `action`), que es donde el banner explica el estado y ofrece la salida que este build
+    // pueda cumplir de verdad.
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(
         group: SplitGroup,
@@ -34,7 +41,8 @@ struct GroupCardView: View {
         debts: [GroupsViewModel.DebtRow],
         displayMode: GroupCardDisplayMode = .active,
         action: @escaping () -> Void,
-        onRejectedTap: (() -> Void)? = nil
+        onRejectedTap: (() -> Void)? = nil,
+        onPendingTap: (() -> Void)? = nil
     ) {
         self.group = group
         self.memberCount = memberCount
@@ -43,20 +51,23 @@ struct GroupCardView: View {
         self.displayMode = displayMode
         self.action = action
         self.onRejectedTap = onRejectedTap
+        self.onPendingTap = onPendingTap
     }
 
     var body: some View {
         Button(action: handleTap) {
-            HStack(spacing: DS.Spacing.md) {
+            // A tamaños de accesibilidad las deudas bajan bajo el nombre (`AdaptiveRowStack`): en fila
+            // el importe se cortaba («S/ 190…»). Apilada, icono y nombre quedan juntos en su propia fila.
+            AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
                 // Icon
                 groupIcon
 
                 // Name + member count
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(group.name)
-                        .font(DS.Typography.headline)
+                        .font(DS.Typography.label)
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
 
                     HStack(spacing: DS.Spacing.xs) {
                         Text(L10n.Groups.Member.activeCount(memberCount))
@@ -75,22 +86,63 @@ struct GroupCardView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 }
-
-                Spacer()
-
+            } trailing: {
                 trailingArea
             }
-            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
-            .dsSubtleShadow()
+            .listRowCard()
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .disabled(displayMode == .pendingApproval)
+        .pointerHighlight(cornerRadius: DS.Radius.card)
+        // El `.disabled(displayMode == .pendingApproval)` que vivía aquí se RETIRÓ (2026-09-06). No
+        // protegía nada que `handleTap` no proteja ya —abajo, con su propio `case`— y sí hacía dos
+        // daños: apagaba la card para VoiceOver (un botón deshabilitado no se anuncia como activable)
+        // y dejaba el tap sin destino. La puerta sigue cerrada; ahora dice por qué.
         .accessibilityLabel(accessibilityText)
     }
 
-    @ViewBuilder
+    /// Área derecha con el alto del caso PEOR ya reservado (ver `trailingHeightReserve`),
+    /// para que todas las filas de la lista midan igual.
     private var trailingArea: some View {
+        ZStack(alignment: Alignment(horizontal: .trailingUnlessStacked(dynamicTypeSize), vertical: .center)) {
+            trailingHeightReserve
+            trailingContent
+        }
+    }
+
+    /// Reserva el alto del caso peor —los DOS sentidos de deuda a la vez, cuatro
+    /// líneas— porque sin ella una fila con «te deben» y «debes» mide el doble que
+    /// una con un solo sentido, y la lista queda dispareja (decisión owner: parejas,
+    /// aunque sea al alto del caso peor).
+    ///
+    /// Es un espejo OCULTO de dos `directionBlock`, NO una medida. El máximo es
+    /// conocido y constante: el número de monedas nunca cambia el alto (se unen en
+    /// una sola línea con " + " y overflow «+N más»), sólo lo cambia tener uno o dos
+    /// sentidos. Por eso no hace falta `GeometryReader`/`onGeometryChange` — nada de
+    /// ciclo de layout ni saltos al filtrar la lista. Frente a un `minHeight` en
+    /// puntos gana en que ESCALA con Dynamic Type igual que el contenido real.
+    private var trailingHeightReserve: some View {
+        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
+            reserveBlock
+            reserveBlock
+        }
+        .hidden()
+        .accessibilityHidden(true)
+    }
+
+    /// Un `directionBlock` en hueco: mismas dos líneas y mismas fuentes (label +
+    /// monto), con un glifo cualquiera para que cada línea mida su alto real.
+    private var reserveBlock: some View {
+        VStack(alignment: .trailing, spacing: DS.Spacing.none) {
+            Text(verbatim: "0")
+                .font(DS.Typography.captionSmall)
+            Text(verbatim: "0")
+                .font(DS.Typography.subheadlineEmphasized)
+        }
+    }
+
+    @ViewBuilder
+    private var trailingContent: some View {
         switch displayMode {
         case .pendingApproval:
             StatusChip(
@@ -106,6 +158,29 @@ struct GroupCardView: View {
                 foregroundColor: DS.Semantic.errorForeground,
                 backgroundColor: DS.Semantic.errorBackground
             )
+        case .migratedFrozen:
+            StatusChip(
+                icon: "icloud.and.arrow.up",
+                text: L10n.Groups.Card.movedChip,
+                foregroundColor: DS.Semantic.warningForeground,
+                backgroundColor: DS.Semantic.warningBackground
+            )
+        case .migratedNeedsUpdate:
+            // C-10: el chip NOMBRA la acción real. "Se movió" a secas invita a tocar esperando volver a
+            // entrar, y en un build incapaz eso no lleva a ninguna parte.
+            StatusChip(
+                icon: "arrow.down.circle",
+                text: L10n.Groups.Card.movedUpdateChip,
+                foregroundColor: DS.Semantic.warningForeground,
+                backgroundColor: DS.Semantic.warningBackground
+            )
+        case .migratedPaused:
+            StatusChip(
+                icon: "icloud.and.arrow.up",
+                text: L10n.Groups.Card.movedPausedChip,
+                foregroundColor: DS.Semantic.warningForeground,
+                backgroundColor: DS.Semantic.warningBackground
+            )
         case .active:
             debtsTrailing
         }
@@ -118,7 +193,7 @@ struct GroupCardView: View {
         if grouped.isEmpty {
             EmptyView()
         } else {
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
                 if !grouped.owedToMe.isEmpty {
                     directionBlock(
                         label: L10n.Groups.Summary.owedToMe,
@@ -145,12 +220,14 @@ struct GroupCardView: View {
         overflow: Int,
         color: Color
     ) -> some View {
-        VStack(alignment: .trailing, spacing: 0) {
+        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: 0) {
             Text("\(label):")
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
+            // A tamaños de accesibilidad, sin tope de líneas: con dos monedas («S/ 190.00 + $ 46.67») la suma no
+            // cabe en una línea del iPhone SE y se cortaba el segundo importe (medido el 2026-09-28).
             Text(attributedAmounts(amounts, overflow: overflow, color: color))
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                 .minimumScaleFactor(0.8)
         }
     }
@@ -203,11 +280,18 @@ struct GroupCardView: View {
     private func handleTap() {
         switch displayMode {
         case .pendingApproval:
-            // Defensa-en-profundidad: la card está `.disabled` para pending,
-            // pero si el modifier no aplica (ej. fallback de a11y), no abrir detail.
-            break
+            // La puerta del grupo (decisión owner 2026-09-06). NO abre el detalle: presenta el aviso
+            // de «solicitud en revisión». Si el padre no cablea el closure no pasa nada —igual que
+            // `.rejected`—, así que el grupo sigue sin abrirse pase lo que pase.
+            onPendingTap?()
         case .rejected:
             onRejectedTap?()
+        case .migratedFrozen, .migratedNeedsUpdate, .migratedPaused:
+            // C-10: un grupo congelado SIEMPRE se abre, en los tres estados. Antes el tap disparaba el
+            // CTA de re-join directamente y el grupo era un muro; en un build incapaz, además, un muro
+            // mudo. El detalle es donde hay sitio para explicar y para ofrecer la salida que toque.
+            // Sigue sin poder escribirse: eso lo gobierna `isMigratedFrozen`, que no cambió.
+            action()
         case .active:
             action()
         }
@@ -221,6 +305,12 @@ struct GroupCardView: View {
             parts.append(L10n.Groups.Card.pendingApprovalChip)
         case .rejected:
             parts.append(L10n.Groups.Card.rejectedChip)
+        case .migratedFrozen:
+            parts.append(L10n.Groups.Card.movedChip)
+        case .migratedNeedsUpdate:
+            parts.append(L10n.Groups.Card.movedUpdateChip)
+        case .migratedPaused:
+            parts.append(L10n.Groups.Card.movedPausedChip)
         case .active:
             let grouped = GroupsViewModel.groupDebtsByDirection(debts)
             if !grouped.owedToMe.isEmpty {

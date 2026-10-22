@@ -2,37 +2,513 @@
 //  FullModeActivationView.swift
 //  Yala
 //
-//  Wrapper que reusa OnboardingView para activar Yala completo desde el modo
-//  `.groupInvite`. El flow es idéntico al onboarding fresh excepto los steps
-//  skipeados por prefill (name + currencyName) y categorías skipeadas si el
-//  user ya las sembró vía SubcategorySelectorSheet (Approach J, Bug #21).
+//  «Activar Yala completo» desde una sesión solo-grupos. **Paso 8 del rediseño de sesiones: antes del
+//  onboarding se pregunta dónde van a vivir los datos personales** — el iCloud privado o la cuenta en la
+//  nube que ya usa para grupos (ADR 2026-09-09 §8). Hasta este paso la vista reusaba `OnboardingView` sin más
+//  y lo personal aterrizaba en el store que estuviera montado, sin que nadie preguntara.
+//
+//  La vista es una máquina de pantallas. Lo que decide cada transición, el ORDEN del cierre y lo que deshace
+//  «cancelar» vive en `FullModeActivationFlowLogic`, que tiene test; aquí solo se ejecuta. Todo ocurre DENTRO
+//  de esta sheet —chooser, puerta de iCloud, consentimiento, onboarding y restaurar—, y no es comodidad: cada
+//  presentación nueva colgando del anchor de `ContentView` entraría en la matriz de readiness (regla 3 de
+//  Presentaciones).
+//
+//  Lo que se reusa sin copiarlo: el chooser y su gate (`WelcomeNewChooserView`, `WelcomeNewOptionsGate`), la
+//  puerta de iCloud del paso 4 (`WelcomePrivateICloudGateView`), el terminal y el destino durable del
+//  relanzamiento (`WelcomeMirrorRelaunchView`, `WelcomePendingDestinationStore`), el restore de «Ya tengo
+//  cuenta» (`WelcomeRestoreView`) y el alta born-cloud (`BornCloudSignUpService`), que con la fila ligera de
+//  grupos PROMOCIONA la cuenta en vez de crear otra.
 //
 
 import SwiftData
 import SwiftUI
+import os
 
 struct FullModeActivationView: View {
+    /// El borrado de la zona de iCloud de la puerta privada, SIN tocar lo local. Vive en `ContentView`, que es
+    /// quien tiene la sonda y el `modelContext`.
+    var performICloudZoneWipe: @MainActor () async -> String?
+    /// El borrado de la puerta de «Restaurar → Empezar desde cero»: la zona **y** las filas que el espejo ya
+    /// importó, sin tocar preferencias ni el dominio de Grupos.
+    ///
+    /// **Son dos closures y no uno con parámetro a propósito.** La vista no tiene con qué decidir cuál toca
+    /// —el criterio es si el store espeja, que vive en `SwiftDataConfiguration`— y un parámetro le devolvería
+    /// esa decisión a cada transición futura. Aquí cada pantalla recibe el borrado que le corresponde y el
+    /// compilador obliga a quien la monta a decir cuál es.
+    var performICloudZoneAndImportedRowsWipe: @MainActor () async -> String?
     var onComplete: () -> Void
 
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
+    @Environment(SceneNavigation.self) private var navigation
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @State private var screen: FullModeActivationFlowLogic.Screen
+    /// Lo que TAPA el onboarding al terminar [P]: la pregunta del historial, la promoción y sus desenlaces.
+    @State private var finale: FullModeActivationFinale?
     @State private var prefilledSummary: ICloudAccountSummary?
+    /// El `commit` que entregó `OnboardingView` al terminar [P]. Solo vale mientras el onboarding siga
+    /// montado —lee su `@State`—, y por eso el cierre lo TAPA con `finale` en vez de sustituirlo, y cancelar
+    /// está bloqueado mientras el plan corre.
+    @State private var pendingCommit: (() -> Void)?
+    @State private var pendingSource: FullModeActivationFlowLogic.OnboardingSource?
+    @State private var historyChoice: FullModeActivationFlowLogic.HistoryChoice?
+    /// Un plan a la vez: el doble toque en «Empezar a usar Yala» o en «Reintentar» no puede lanzar dos claims.
+    @State private var isRunningPlan = false
+
+    init(
+        performICloudZoneWipe: @escaping @MainActor () async -> String?,
+        performICloudZoneAndImportedRowsWipe: @escaping @MainActor () async -> String?,
+        onComplete: @escaping () -> Void
+    ) {
+        self.performICloudZoneWipe = performICloudZoneWipe
+        self.performICloudZoneAndImportedRowsWipe = performICloudZoneAndImportedRowsWipe
+        self.onComplete = onComplete
+        let resume = FullModeActivationResumeStore.peek()
+        let isGroupsOnly = !SessionState.shared.hasPrivateSession
+        _screen = State(initialValue: FullModeActivationFlowLogic.initialScreen(
+            isGroupsOnlySession: isGroupsOnly,
+            resume: resume,
+            isLegacyMirroredInstall: FullModeActivationFlowLogic.isLegacyMirroredInstall(
+                isGroupsOnlySession: isGroupsOnly,
+                mountAttachesMirror: SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror,
+                groupsOnlyNeutralArmed: StorageModePersistence.isGroupsOnlyNeutralMountArmed(),
+                hasResume: resume != nil,
+                isUITesting: SwiftDataConfiguration.isUITesting),
+            visibleOptions: WelcomeNewOptionsGate.live))
+    }
 
     var body: some View {
-        OnboardingView(
-            prefilledData: prefilledSummary,
-            backgroundStyle: .themedPanel,
-            mode: .fullActivation,
-            onCancel: { onComplete() },
-            onComplete: { completeFullActivation() }
-        )
+        ZStack {
+            screenView
+                // **Tapado es tapado también para VoiceOver y para el dedo** (review adversarial, 2026-09-11). Una
+                // vista cubierta en un `ZStack` sigue entera en el árbol de accesibilidad: sin esto, un usuario de
+                // VoiceOver llegaba por barrido a la X del onboarding durante «Activando tu cuenta…», cerraba la
+                // sheet, y el plan seguía en su `Task` con el onboarding ya desmontado.
+                .accessibilityHidden(finale != nil)
+                .allowsHitTesting(finale == nil)
+                .transition(.opacity)
+
+            if let finale {
+                FullModeActivationFinaleView(
+                    finale: finale,
+                    onShowHistory: { answerHistory(.showInPersonal) },
+                    onKeepHistoryInGroups: { answerHistory(.keepInGroups) },
+                    onRetry: { runPendingPlan() },
+                    onLeave: { cancelActivation() })
+                .transition(.opacity)
+            }
+        }
+        // Deslizar para cerrar, solo en el chooser: ahí todavía no ha pasado nada. En el resto hay trabajo en
+        // vuelo (la sonda, el borrado, el claim) o un estado que deshacer (el neutro tras relanzar), y eso lo
+        // hacen las salidas explícitas, que son las que saben deshacerlo.
+        .interactiveDismissDisabled(screen != .chooser || finale != nil)
         .onAppear {
-            cleanupResidualGeneralAccount()
             if prefilledSummary == nil { prefilledSummary = buildPrefilledSummary() }
-            TelemetryService.track(.fullModeActivationStarted)
         }
     }
+
+    // MARK: - Pantallas
+
+    @ViewBuilder
+    private var screenView: some View {
+        switch screen {
+        case .chooser:
+            WelcomeNewChooserView(
+                options: WelcomeNewOptionsGate.live,
+                onSelect: { option in go(to: FullModeActivationFlowLogic.screen(for: option)) },
+                onBack: { cancelActivation() },
+                context: .fullActivation)
+        case .privateGate:
+            WelcomePrivateICloudGateView(
+                onProceed: { proceed(to: .fullActivationPrivate, otherwise: .onboarding(.freshPrivate)) },
+                onRestore: { proceed(to: .fullActivationRestore, otherwise: .restore) },
+                onBack: { backFromBranch() },
+                // Re-envuelto y no reenviado: pasar la property directa convierte un valor de función
+                // no-Sendable y avisa (`may introduce data races`). Mismo remedio que `WelcomeFlowContainer`.
+                performWipe: { await performICloudZoneWipe() },
+                // **`nil` a propósito, y es la misma decisión que `clearsResidualPreferencesOnWipe: false`
+                // vista desde el otro lado.** En el Welcome, los datos que ya hay en el teléfono son de
+                // quien lo usó antes y hay que avisarlos antes de borrar nada. Aquí son de la persona que
+                // está activando —sus grupos, sus categorías, el corpus que la activación existe para
+                // conservar— así que ni se pregunta por ellos ni se borran: hacerlo sería el daño
+                // contrario al que la puerta protege.
+                deviceCorpus: nil,
+                clearsResidualPreferencesOnWipe: false,
+                // **Aquí sí se sigue, y es la diferencia con la puerta de abajo.** Quien llega a esta
+                // pantalla acaba de elegir «privado» y no ha pedido borrar nada, así que no hay ningún
+                // borrado que declarar: no poder preguntarle a iCloud jamás bloquea (ADR §9), y el testigo
+                // deja el aviso pendiente para el primer arranque en que se pueda. **Su borrado no es el del
+                // Welcome**: `completeFullActivation` apunta que la sesión nace de aquí, y el aviso borra con
+                // `.importedRows`, sin purgar los grupos (`ICloudWipeScope.lateNotice`).
+                unverifiedExit: .proceedWatchingTheMirror,
+                // **Su borrado es solo de zona, así que nunca deja nada a medias**: con la zona ida ya terminó, y lo
+                // que queda en el teléfono es de quien activa. Salir retira el arm y la marca de la zona, como siempre.
+                halfwayWipe: .nothingLeftBehind)
+        case .restoreDiscardGate:
+            WelcomePrivateICloudGateView(
+                // **Ninguno de los dos relanza, y eso es lo que impide caer al Welcome.** Para estar aquí
+                // hubo relanzamiento, así que el mount ya no es `.neutralNoMirror` y `shouldRelaunch` da
+                // `false`: los dos `proceed` caen por su `otherwise`. Se escriben con el portal de todas
+                // formas —y no con un `go(to:)` directo— porque quien decide eso es `WelcomeMirrorRelaunchLogic`
+                // y no esta vista: el día que el mount de este camino cambie, el portal ya lo sabe.
+                onProceed: {
+                    // **El prefill se RE-MIDE, porque el borrado acaba de invalidarlo.** `prefilledSummary`
+                    // se construye una sola vez en el `.onAppear` de la raíz, y aquí ese `.onAppear` corrió
+                    // DESPUÉS del relanzamiento — o sea con el corpus ya importado, contando sus categorías.
+                    // Con el conteo rancio, `OnboardingStepPlan` salta el paso de categorías
+                    // (`prefilledCategoriesCount > 0`) y la persona se queda sin la pantalla donde podía
+                    // decir que no las quiere. Se recalcula en vez de anularse: el nombre y la divisa se
+                    // releen de las preferencias, que este scope conserva a propósito (2.3A).
+                    prefilledSummary = buildPrefilledSummary()
+                    proceed(to: .fullActivationPrivate, otherwise: .onboarding(.freshPrivate))
+                },
+                // «Traer mis datos»: vuelve a Restaurar. **Retira el arm antes de salir**, que es el
+                // hallazgo nº2 de la review del PR hermano: mientras está puesto,
+                // `ContentView.runLateICloudMirrorCheck` lo reanuda A CIEGAS y con el scope del handover
+                // —preferencias y purga de Grupos incluidas—. El recorrido medido allí: borrado fallido →
+                // «Traer mis datos» → restaurar el histórico → terminar → y el arranque siguiente se lo
+                // lleva entero, sin una sola pregunta.
+                onRestore: {
+                    StorageModePersistence.clearICloudCorpusWipeArm()
+                    proceed(to: .fullActivationRestore, otherwise: .restore)
+                },
+                // **Vuelve a `.restore`, NO a `backFromRestore()`.** Aquel, tras un relanzamiento, es
+                // cancelar la activación entera (`screenBeforeRestore(hasResume: true) == nil`): echaría de
+                // la activación a quien solo se arrepintió de tocar un botón.
+                onBack: { go(to: .restore) },
+                performWipe: { await performICloudZoneAndImportedRowsWipe() },
+                // `nil` por la MISMA razón que arriba, aunque aquí sí se borren filas locales: lo que hay en
+                // el teléfono **vino de iCloud** (el espejo lo bajó), así que no es el corpus de otra persona
+                // del que haya que avisar aparte — se lo lleva este mismo borrado. Preguntar por él con el
+                // espejo montado además exportaría los deletes, que es el daño que `deviceCorpus` evita.
+                deviceCorpus: nil,
+                // 2.3A (decisión de Jürgen, 2026-09-14): el nombre y la divisa son de quien está activando,
+                // no del corpus que descarta. Y son el prefill que el onboarding de detrás le ahorra escribir.
+                clearsResidualPreferencesOnWipe: false,
+                // **Sin respuesta de iCloud, esta puerta VUELVE a Restaurar** (decisión de Jürgen,
+                // 2026-09-14, opción (a)). La persona ya confirmó el borrado dos veces: seguir la dejaría
+                // en el onboarding con las filas importadas enteras en el teléfono, bajo un copy que le
+                // prometió lo contrario. Y el desenlace de arriba, además de no borrar, escribiría el
+                // testigo del espejo tardío — cuyo borrado es `.handover`, o sea que le purgaría el
+                // dominio de Grupos a quien está activando precisamente para conservarlos.
+                unverifiedExit: .returnWithoutClaimingAWipe,
+                // **Un borrado a medias lo termina ESTA puerta, no el aviso tardío** (ticket
+                // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Si falla con la zona ya borrada, las
+                // filas importadas siguen aquí; salir lo deja escrito, y volver a «Empezar desde cero» con iCloud vacío
+                // termina el borrado con `.importedRows` en vez de seguir al onboarding encima de ellas. El remedio del
+                // aviso tardío es `.handover`, y purgaría los grupos que esta activación existe para conservar.
+                halfwayWipe: .finishOnReentry)
+        case .relaunch:
+            WelcomeMirrorRelaunchView()
+        case .consent:
+            CloudConsentView(
+                path: .bornCloud,
+                onAccept: { go(to: .onboarding(.freshCloud)) },
+                onCancel: { backFromBranch() })
+        case .onboarding(let source):
+            onboarding(source)
+        case .restore:
+            WelcomeRestoreView(
+                onContinueWithSummary: { summary in finishRestoreSearch(summary) },
+                // **«Empezar desde cero» va a la PUERTA, igual que en el Welcome** (2026-09-14). Hasta hoy
+                // saltaba directo al onboarding personal y **no borraba nada**: como a esta pantalla solo
+                // se llega tras un relanzamiento, el store ESPEJA, y el corpus que la persona acababa de
+                // decidir no traerse seguía entero y se re-exportaba a iCloud — también al segundo
+                // dispositivo. Un borrado que no borra, bajo un copy que promete lo contrario.
+                //
+                // Va a `.restoreDiscardGate` y no a `.privateGate` porque **el borrado es otro**: allí es
+                // de ZONA (lo local todavía no vino de iCloud), aquí tiene que llevarse además las filas
+                // importadas. El porqué largo, en el docblock del case.
+                //
+                // Lo que la puerta añade y esta pantalla no puede dar: pregunta a CloudKit en vez de contar
+                // filas del store —así que también contesta cuando el `.notFound` de aquí es falso porque el
+                // import no terminó—, enseña las cifras, exige un segundo gesto y sobrevive a un kill.
+                onStartFresh: { go(to: .restoreDiscardGate) },
+                onOpenSettings: { openSettings() },
+                onBack: { backFromRestore() })
+        case .reinstallNotice:
+            FullModeActivationFinaleView(
+                finale: .reinstallRequired,
+                onShowHistory: {},
+                onKeepHistoryInGroups: {},
+                onRetry: {},
+                onLeave: { cancelActivation() })
+        case .legacyOnboarding:
+            OnboardingView(
+                prefilledData: prefilledSummary,
+                backgroundStyle: .themedPanel,
+                mode: .fullActivation,
+                onCancel: { onComplete() },
+                onComplete: { completeFullActivation() })
+            .onAppear { cleanupResidualGeneralAccount() }
+        }
+    }
+
+    /// El onboarding de la activación. **No se monta hasta que hay prefill** (review adversarial): el `init` de
+    /// `OnboardingView` fija su primer paso con el prefill que recibe, y el de Grupos se construye en el
+    /// `.onAppear` de la raíz. Tras un relanzamiento esta es la PRIMERA pantalla, así que sin esperar al
+    /// prefill arrancaba en «Nombre» —que el plan de pasos salta— y perdía la divisa del grupo.
+    @ViewBuilder
+    private func onboarding(_ source: FullModeActivationFlowLogic.OnboardingSource) -> some View {
+        if let prefill = prefill(for: source) {
+            OnboardingView(
+                prefilledData: prefill,
+                backgroundStyle: .themedPanel,
+                mode: .fullActivation,
+                onCancel: { cancelActivation() },
+                beforeCommit: { commit in onboardingFinished(source: source, commit: commit) },
+                onComplete: {
+                    // Vacío a propósito: el cierre lo conduce el plan (`run`), y `commit()` acaba llamando aquí a
+                    // mitad de él. Cerrar la sheet en este punto se saltaría los pasos que van detrás.
+                })
+            .onAppear {
+                // Solo en los onboardings NUEVOS: tras restaurar, una cuenta `.general` vacía puede ser del usuario.
+                if case .restored = source { return }
+                cleanupResidualGeneralAccount()
+            }
+        } else {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    /// El prefill del onboarding. **Tras restaurar gana lo restaurado** (decisión de Jürgen): el nombre y la
+    /// divisa que venían de Grupos se descartan y el onboarding arranca con el resumen de iCloud.
+    private func prefill(for source: FullModeActivationFlowLogic.OnboardingSource) -> ICloudAccountSummary? {
+        switch source {
+        case .freshPrivate, .freshCloud: return prefilledSummary
+        case .restored(let summary): return summary
+        }
+    }
+
+    // MARK: - Transiciones
+
+    private func go(to next: FullModeActivationFlowLogic.Screen) {
+        let animation: Animation? = reduceMotion ? nil : .smooth(duration: 0.4)
+        withAnimation(animation) { screen = next }
+    }
+
+    /// «Volver» desde la puerta privada o desde el consentimiento: al chooser si lo hubo; si no (bypass con una
+    /// sola card), volver es cancelar.
+    private func backFromBranch() {
+        if let origin = FullModeActivationFlowLogic.originScreen(visibleOptions: WelcomeNewOptionsGate.live) {
+            go(to: origin)
+        } else {
+            cancelActivation()
+        }
+    }
+
+    /// «Volver» en Restaurar: a la puerta si no hubo relanzamiento; tras relanzar, cancelar — que para
+    /// Restaurar NO deshace nada (`FullModeActivationFlowLogic.CancelEffect.keepPending`).
+    private func backFromRestore() {
+        let hasResume = FullModeActivationResumeStore.peek() != nil
+        if let previous = FullModeActivationFlowLogic.screenBeforeRestore(hasResume: hasResume) {
+            go(to: previous)
+        } else {
+            cancelActivation()
+        }
+    }
+
+    /// Salir de la puerta privada hacia lo que viene después, relanzando si el espejo no está puesto.
+    ///
+    /// **El orden de las tres escrituras de abajo es el de la kill-safety**, y conviene ser exacto sobre lo que
+    /// cubre: el destino durable va PRIMERO, así que un kill tras él arranca todavía en neutro —la marca sigue
+    /// puesta— y el arranque encuentra el destino y retoma la activación en el paso elegido, pero sin espejo:
+    /// el onboarding privado se completa sobre el store neutro y el espejo se adjunta en el arranque siguiente;
+    /// Restaurar no encuentra nada que importar hasta entonces. Al revés, un kill tras levantar la marca y antes
+    /// del destino dejaría el espejo puesto sobre una sesión solo-grupos sin nada que lo retome. Entre dos
+    /// escrituras síncronas seguidas no hay más atomicidad posible: `UserDefaults` no tiene transacciones.
+    private func proceed(
+        to destination: WelcomeMirrorRelaunchLogic.Destination,
+        otherwise next: FullModeActivationFlowLogic.Screen
+    ) {
+        guard WelcomeMirrorRelaunchLogic.shouldRelaunch(
+            destination: destination,
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) else {
+            // No hay mount neutro que romper (XCUITest; una instalación con el espejo ya puesto no llega aquí,
+            // la para `reinstallNotice`): se sigue en este mismo proceso.
+            go(to: next)
+            return
+        }
+        WelcomePendingDestinationStore.set(destination)
+        // El anti-bucle del neutro R4, el mismo que pone `onNeedsMirrorRelaunch` en el Welcome: con la marca
+        // `neutralMountArmed` puesta (la deja un cierre de sesión) y el chooser sin marcar, el arranque
+        // siguiente volvería a montar neutro y el terminal «reabre Yala» no terminaría nunca.
+        appPreferences.hasShownWelcomeChooser = true
+        // Y se levanta el neutro solo-grupos: **esta es la rama privada**, que es la que el ticket pedía que se
+        // lo llevara (antes lo levantaba la activación entera, sin preguntar nada).
+        StorageModePersistence.clearGroupsOnlyNeutralMount()
+        go(to: .relaunch)
+    }
+
+    private func finishRestoreSearch(_ summary: ICloudAccountSummary) {
+        if summary.isFullyPrefilled {
+            run(FullModeActivationFlowLogic.restoredWithoutOnboardingPlan)
+        } else {
+            go(to: .onboarding(.restored(summary)))
+        }
+    }
+
+    /// Cancelar la activación. Lo que deshace lo decide `FullModeActivationFlowLogic.cancelEffect`.
+    ///
+    /// **Con un plan en vuelo no se cancela**: el claim puede haber contestado ya `created`, y cerrar aquí
+    /// dejaría la cuenta completa en el servidor sin nada personal detrás —lo que la decisión de Jürgen
+    /// prohíbe—, con el `commit` leyendo el `@State` de un onboarding desmontado.
+    private func cancelActivation() {
+        guard !isRunningPlan else { return }
+        switch FullModeActivationFlowLogic.cancelEffect(
+            resume: FullModeActivationResumeStore.peek(),
+            isGroupsOnlySession: !sessionState.hasPrivateSession) {
+        case .nothing, .keepPending:
+            break
+        case .revertToGroupsOnly:
+            // El escritor de la marca retira también la reanudación: volver a solo-grupos es eso entero.
+            StorageModePersistence.armGroupsOnlyNeutralMount()
+            FullModeActivationResumeStore.clear()
+        case .dropStaleMark:
+            FullModeActivationResumeStore.clear()
+        }
+        onComplete()
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    // MARK: - El cierre
+
+    /// [P] terminó. Nada se ha escrito todavía: `commit` es lo que lo escribirá, y aquí se decide qué va antes.
+    private func onboardingFinished(
+        source: FullModeActivationFlowLogic.OnboardingSource,
+        commit: @escaping () -> Void
+    ) {
+        guard finale == nil, !isRunningPlan else { return }
+        pendingCommit = commit
+        pendingSource = source
+        if FullModeActivationFlowLogic.shouldAskHistory(
+            source: source, bridgedGroupExpenseCount: bridgedGroupExpenseCount()) {
+            finale = .history
+        } else {
+            runPendingPlan()
+        }
+    }
+
+    private func answerHistory(_ choice: FullModeActivationFlowLogic.HistoryChoice) {
+        historyChoice = choice
+        runPendingPlan()
+    }
+
+    private func runPendingPlan() {
+        guard let pendingSource else { return }
+        run(FullModeActivationFlowLogic.commitPlan(for: pendingSource))
+    }
+
+    private func run(_ plan: [FullModeActivationFlowLogic.CommitStep]) {
+        guard !isRunningPlan else { return }
+        isRunningPlan = true
+        if FullModeActivationFlowLogic.needsDurableConvergence(plan) {
+            GroupsBridgeRestoreConvergenceStore.markPending()
+        }
+        // Un `Task` no estructurado y no `.task(id:)`, a propósito: cancelar un plan a medias —con el claim ya
+        // contestado `created`— dejaría la cuenta completa en el servidor sin nada personal detrás, que es
+        // exactamente el estado que la decisión de Jürgen prohíbe. Mientras corre, no hay salida que lo corte.
+        Task { @MainActor in
+            await execute(plan)
+            isRunningPlan = false
+        }
+    }
+
+    /// Ejecuta el plan en su orden. La promoción es el único paso que puede parar el plan, y para ANTES de la
+    /// primera escritura local: lo que haya pasado hasta ahí no ha escrito nada.
+    private func execute(_ plan: [FullModeActivationFlowLogic.CommitStep]) async {
+        var promotion: BornCloudSignUpService?
+        for step in plan {
+            switch step {
+            case .promote:
+                finale = .promoting
+                let service = BornCloudSignUpService(session: LiveCloudSessionProvider())
+                let outcome = FullModeActivationFlowLogic.promotionStep(for: await service.signUp())
+                FullModeActivationBreadcrumb.promotion(String(describing: outcome))
+                switch outcome {
+                case .commit:
+                    promotion = service
+                case .blocked(let block):
+                    finale = .blocked(block)
+                    return
+                case .retry:
+                    finale = .failed
+                    return
+                }
+            case .activateCloudStorage:
+                // Inalcanzable sin `promotion`: el plan pone `.promote` delante. Si alguien reordena el plan, lo
+                // seguro es NO escribir el par `.cloud` para una cuenta que no se ha promocionado.
+                guard let promotion else { return }
+                let terminal = promotion.activateBornCloudStorage(
+                    mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision,
+                    context: modelContext)
+                // `.relaunch` solo sale con el espejo ya adjunto, y ese mount no llega a la nube: lo para
+                // `reinstallNotice` antes del chooser. Queda el rastro por si alguien quita esa puerta.
+                FullModeActivationBreadcrumb.cloudStorage(terminal: String(describing: terminal))
+            case .persistOnboarding:
+                pendingCommit?()
+            case .applyHistoryChoice:
+                applyHistoryChoice()
+            case .completeActivation:
+                completeFullActivation()
+            case .convergeGroupsBridge:
+                let context = modelContext
+                Task { @MainActor in await GroupsBridgeRestoreConvergence.runAfterActivation(context: context) }
+            }
+        }
+        if promotion != nil {
+            // El tipo cacheado de la sesión era `groups_only`; el backend ya dice `complete`.
+            Task { _ = await AccountKindService.shared.refresh() }
+        }
+    }
+
+    /// La respuesta a «¿traemos tus gastos de grupo?». **No escribe ni una transacción**: las filas ya existen
+    /// (las creó el bridge de solo-grupos) y lo que se decide es si se ven en lo personal. Sin pregunta —no
+    /// había nada puenteado— no se toca nada.
+    private func applyHistoryChoice() {
+        guard let historyChoice else { return }
+        let visibility = FullModeActivationFlowLogic.groupVisibility(for: historyChoice)
+        appPreferences.includeGroupTransactionsInFeed = visibility.feed
+        appPreferences.includeGroupsInPanelTotal = visibility.panelTotal
+        appPreferences.includeGroupTransactionsInStats = visibility.stats
+        // Los presupuestos no tienen toggle global: cada uno decide si cuenta los gastos compartidos. Los que
+        // existen ahora son los que acaba de crear [P].
+        do {
+            let budgets = try modelContext.fetch(FetchDescriptor<Budget>())
+            for budget in budgets where budget.includeSharedExpenses != visibility.budgets {
+                budget.includeSharedExpenses = visibility.budgets
+            }
+            if modelContext.hasChanges { try modelContext.save() }
+        } catch {
+            #if DEBUG
+            print("FullModeActivationView: Error applying the history choice to budgets: \(error)")
+            #endif
+        }
+    }
+
+    /// Cuántos gastos de grupo tienen ya filas en lo personal. Un fallo de lectura cuenta como cero: sin la
+    /// pregunta, las filas se quedan como están, que es lo que ya pasaba antes de este paso.
+    private func bridgedGroupExpenseCount() -> Int {
+        do {
+            let rows = try modelContext.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID != nil }))
+            return Set(rows.compactMap(\.splitExpenseID)).count
+        } catch {
+            #if DEBUG
+            print("FullModeActivationView: bridged count failed: \(error)")
+            #endif
+            return 0
+        }
+    }
+
+    // MARK: - Prefill y limpieza
 
     /// `fetchCount` para Category es <10ms — invocado una vez en `.onAppear`.
     private func buildPrefilledSummary() -> ICloudAccountSummary {
@@ -49,7 +525,7 @@ struct FullModeActivationView: View {
         }
         return FullModeActivationLogic.buildSummary(
             userName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
-            groupCurrency: SplitSyncManager.shared.mostRecentGroup()?.currencyCode,
+            groupCurrency: GroupService.shared.mostRecentGroup()?.currencyCode,
             defaultCurrency: UserDefaults.standard.string(forKey: AppPreferences.Keys.defaultCurrencyCode),
             userCategoriesCount: categoriesCount
         )
@@ -57,7 +533,14 @@ struct FullModeActivationView: View {
 
     /// Paranoid safeguard para QA con state acumulado de tests previos.
     /// En producción no hay legacy: groups no estaban en producción según decisión [2026-05-05].
+    ///
+    /// **Solo sin espejo adjunto** (review adversarial, 2026-09-11): con el espejo puesto, el store puede traer
+    /// cuentas de iCloud cuyas transacciones todavía no han bajado —la relación llega vacía en la ventana
+    /// lazy—, y este borrado se las llevaría y el espejo exportaría el borrado. XCUITest sigue igual: su store
+    /// no espeja, aunque el testigo del mount diga lo contrario porque allí no se captura.
     private func cleanupResidualGeneralAccount() {
+        guard SwiftDataConfiguration.isUITesting
+            || !SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror else { return }
         let generalType = AccountType.general.rawValue
         let descriptor = FetchDescriptor<Account>(
             predicate: #Predicate {
@@ -82,27 +565,106 @@ struct FullModeActivationView: View {
         }
     }
 
+    // MARK: - El paso final, común a todos los recorridos
+
     /// `OnboardingView.completeOnboarding` ya hizo seeds + account + notifs +
-    /// `hasCompletedOnboarding=true`. Aquí cambiamos al modo `.completed` y
-    /// expandimos el TabBar. Las TX virtuales de gastos pre-existentes ya están
-    /// creadas por el bridge automático (modelo M5) — no requiere import.
+    /// `hasCompletedOnboarding=true` (o el restore trajo los suyos). Aquí cambiamos al modo `.completed` y
+    /// expandimos el TabBar.
     private func completeFullActivation() {
-        let sync = PreferenceSyncService.shared
-        sync.set(string: OnboardingMode.completed.rawValue, forKey: OnboardingMode.userDefaultsKey)
-        sessionState.onboardingMode = .completed
+        // **El orden de las marcas frente al modo es el de la kill-safety.** Las dos que cambian el arranque
+        // siguiente —el borrado de iCloud armado y el neutro solo-grupos— salen ANTES de escribir `.completed`:
+        // con cualquiera de las dos viva y el modo ya completo, ese arranque borraría a ciegas o montaría sin
+        // espejo a quien acaba de elegir. La reanudación sale DESPUÉS (abajo).
+        //
+        // Un borrado de iCloud a medias (review adversarial, 2026-09-11). Si la app murió
+        // durante el borrado de la puerta, su arm sobrevive; mientras la sesión es solo-grupos no se reanuda
+        // (`runLateICloudMirrorCheck` sale antes), pero en cuanto la activación termina el arranque siguiente lo
+        // reanudaría A CIEGAS —con el borrado local incluido— sobre el corpus que la persona acaba de crear o de
+        // restaurar, y la mandaría al Welcome. A estas alturas la persona ya eligió dónde viven sus datos, que es
+        // lo que deja sin efecto una petición de borrado anterior.
+        //
+        // **Si la activación llegó a la nube, se retira igual pero se CUENTA** (ticket
+        // `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`): aquí no hubo diálogo de Ajustes, y el
+        // arranque en la nube ya no encontraría nada que contar. La marca del aviso va antes de retirar, y la lee ese
+        // arranque (`.tellCancelledInCloud`). En la rama privada la persona eligió quedarse en su iCloud y retirar a secas
+        // sigue siendo lo correcto.
+        if CloudSyncFlags.storageMode == .cloud {
+            StorageModePersistence.cancelPendingICloudCorpusWipeInTheCloud()
+        }
+        StorageModePersistence.clearICloudCorpusWipeArm()
+        // **Y el borrado que quedó a medias, por lo mismo y por algo peor** (ticket
+        // `private-gate-leave-after-a-halfway-wipe-forgets-the-zone`). Mientras la sesión es solo-grupos, el aviso tardío
+        // no corre; en cuanto la activación termina, el arranque siguiente preguntaría «El borrado quedó a medias», y su
+        // «Terminar de borrar» es `.handover`: purgaría los grupos que esta activación existe para conservar. La marca
+        // puede venir de «Empezar desde cero», que la termina ella misma al volver, o de un Welcome anterior.
+        StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+        // **Se levanta el neutro durable de solo-grupos** (paso 5 del rediseño). Activar Yala completo ES
+        // «ya elegí dónde viven mis datos personales», y desde el paso 8 esto solo se alcanza DESPUÉS de haberlo
+        // elegido: la rama privada ya lo levantó antes de relanzar, y en la de nube hace falta igual —con
+        // `.cloud` + `mirrorOffArmed` el mount ya es sin espejo, pero si un día vuelve a iCloud («Volver a
+        // iCloud»), una marca superviviente le montaría neutro y el espejo de la reversa no se adjuntaría nunca.
+        //
+        // **Gateado por sesión secundaria, igual que los dos sitios que la ARMAN.** En secundaria el
+        // `UserDefaults` es el del DUEÑO: si él es solo-grupos y la invitada activa Yala completo (que en
+        // secundaria ocurre en memoria, ver el guard de abajo), desarmar aquí le devolvería el espejo al
+        // dueño en su próximo arranque — o sea le causaría el bug de este ticket desde la sesión de otra
+        // persona. La simetría es la regla: quien no arma, no desarma.
+        StorageModePersistence.clearGroupsOnlyNeutralMount()
+
+        // **Y queda escrito de dónde nace la sesión, ANTES del eje** (ticket
+        // `activation-private-gate-leaves-a-late-notice-that-purges-groups`). La puerta privada que no pudo preguntarle a
+        // iCloud deja el testigo del espejo tardío, y ése sí sobrevive a la activación, a propósito: la validación se
+        // aplaza, no se tira. Lo que no puede sobrevivir es su borrado de siempre (`.handover`), que purgaría los grupos
+        // que esta activación existe para conservar. Con la marca, ese aviso borra con `.importedRows`
+        // (`ICloudWipeScope.lateNotice`). Antes del eje por la kill-safety: al revés, un kill entre las dos dejaría una
+        // sesión privada cuyo aviso tardío purga sus grupos.
+        PrivateSessionMark.markBornFromFullActivation()
+
+        // **Lo guardado en local con la puerta cerrada se debe al iCloud-KV del Apple ID**, y la deuda se apunta ANTES
+        // del eje (ticket `full-activation-local-state-never-reaches-the-apple-id-kv`). Solo en la rama privada nueva:
+        // en Restaurar valen las del Apple ID. Apuntarla después dejaría un kill entre las dos en el que el arranque
+        // siguiente, ya con la puerta abierta, aplicaría el remoto sobre lo recién elegido.
+        if FullModeActivationFlowLogic.handsLocalStateToAppleID(pendingSource) {
+            PrivateBirthKeyValueHandover.arm()
+        }
+
+        // El eje 1: «Activar Yala completo» es el nacimiento de la sesión privada de un solo-grupos
+        // (F → D). Asignar al espejo observable PERSISTE la marca y además des-reduce la shell, que es
+        // por qué esta línea va ANTES de `selectMainTab(.panel)`: el guard GC-08 rechazaría `.panel`
+        // mientras el eje siga apagado.
+        sessionState.hasPrivateSession = true
+        // La sesión de Grupos de este solo-grupos pasa a ser la de una sesión privada: se asocia ya, no en el
+        // arranque siguiente (A · C1, 2026-10-19).
+        GroupsAssociationRegistrar.syncFromLiveSessionNow()
+        // Y se paga en cuanto la puerta se abre, que es ahora. Sin deuda apuntada no hace nada; el arranque la paga
+        // si este proceso muere antes.
+        PrivateBirthKeyValueHandover.consumeIfArmed()
+        // La reanudación, fuera — DESPUÉS de la marca, a propósito: un kill entre las dos escrituras deja
+        // la marca puesta, y el arranque retira la reanudación sola (`resolveAtBoot`, fuera de solo-grupos).
+        // Al revés dejaría a quien ya guardó su onboarding en solo-grupos y sin nada que retome la activación.
+        FullModeActivationResumeStore.clear()
 
         UserDefaults.standard.set(
             TabBarConfiguration.default.toJSON(),
             forKey: TabBarConfiguration.storageKey
         )
-        sessionState.selectMainTab(.panel)
-
-        // `.onboardingCompleted` lo dispara `OnboardingView.completeOnboarding`
-        // con el `mode` correcto — invariante: un solo fire por flow.
-        TelemetryService.track(.fullModeActivationCompleted, parameters: [
-            "fromSegment": UserSegmentService.shared.currentSegment.rawValue,
-        ])
+        navigation.selectMainTab(.panel)
 
         onComplete()
+    }
+}
+
+/// Rastro de la activación en producción. Mismo `subsystem`/`category` que `CloudSyncBreadcrumb`, y FUERA de
+/// `#if DEBUG` a propósito: es la única forma de distinguir en un log de device por qué una activación a la
+/// nube no terminó. Sin PII — ni el `sub`, ni el JWT, ni cifras.
+enum FullModeActivationBreadcrumb {
+    private static let logger = Logger(subsystem: "com.yala", category: "CloudSync")
+
+    static func promotion(_ step: String) {
+        logger.notice("FullModeActivation promotion=\(step, privacy: .public)")
+    }
+
+    static func cloudStorage(terminal: String) {
+        logger.notice("FullModeActivation cloudStorage terminal=\(terminal, privacy: .public)")
     }
 }

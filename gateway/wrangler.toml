@@ -7,7 +7,18 @@
 #   - kv id:         `npx wrangler kv namespace create KV`
 #   - APPLE_TEAM_ID: Apple Developer → Membership → Team ID
 # Secrets (NO van aquí): `npx wrangler secret put OPENAI_API_KEY` (y EXCHANGE_RATE_API_KEY,
-#   JWT_SIGNING_SECRET, DEV_SHARED_SECRET, APP_STORE_API_KEY). Ver README.
+#   JWT_SIGNING_SECRET, DEV_SHARED_SECRET, APP_STORE_API_KEY, GROUPS_ENC_KEY). Ver README.
+#   GROUPS_ENC_KEY (G7 pgcrypto): llave simétrica del cifrado at-rest de columnas † de grupos. Viaja como
+#   argumento de request a los RPCs de grupos (p_key) — JAMÁS a URL/query. staging y PROD llevan llaves
+#   DISTINTAS. `npx wrangler secret put GROUPS_ENC_KEY` (staging) / `--env production` (llave de prod del owner).
+#   PUSH_ROLE_JWT (G8-3): JWT de MÁQUINA (HS256, legacy secret, claim role=yala_push) que el fan-out de silent
+#   push usa para llamar get_group_push_tokens / prune_push_token (revocados de authenticated en g8_02). Se
+#   acuña con `node scripts/mint-push-role-jwt.mjs <path-legacy-secret> | npx wrangler secret put PUSH_ROLE_JWT`
+#   (staging) / `--env production`. Ausente → el fan-out es no-op silencioso. Ver README §APNs y g8_02.
+#   SIWA_AUTH_KEY (B1, revoke 5.1.1(v)): PEM de la .p8 de Sign in with Apple (~/Secrets/yala-siwa/). Se sube con
+#   `npx wrangler secret put SIWA_AUTH_KEY < AuthKey_PQ53RQ5D3G.p8` (staging) / `--env production` (ENCADENADO
+#   al runbook del Bloque A — el Worker de prod no existe hasta su primer deploy). Ausente → /account/siwa/*
+#   responde 503 yala_siwa_not_configured. NUNCA commitear la .p8.
 
 name = "yala-gateway-staging"
 main = "src/index.ts"
@@ -23,6 +34,27 @@ APPLE_TEAM_ID = "3WKFFVD66J"
 APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala.dev"
 ATTEST_ENV = "development"
 TRUST_ATTESTED_AS_PRO = "true"   # SOLO staging — QA del chat sin suscripción real. Prod NO lo setea.
+# Modo Nube (I6) — Supabase STAGING. URL + anon key son públicos (no secretos); el JWT del USUARIO
+# viaja en Authorization y RLS es el árbitro. NUNCA service_role.
+SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"
+# APNs (spike G0 Grupos→backend). Key ID de 10 chars (no secreto); vacío = /v1/debug/push responde 503.
+# El secret se sube con:  npx wrangler secret put APNS_AUTH_KEY < AuthKey_<KEYID>.p8
+# (stdin preserva los saltos de línea del PEM; SIN --env: staging es el env default). NUNCA commitear la .p8.
+APNS_KEY_ID = "7H6BUZWKKS"
+# SIWA (B1, revoke 5.1.1(v)). Key ID de la .p8 de Sign in with Apple (no secreto — viaja en el kid del
+# client_secret). El secret par: npx wrangler secret put SIWA_AUTH_KEY < AuthKey_PQ53RQ5D3G.p8
+SIWA_KEY_ID = "PQ53RQ5D3G"
+# Remote-config del cliente (GET /config, DIFERIDOS #34): percents de rollout 0-100, fail-closed
+# (ausente/inválido → 0). STAGING sirve 100 en los 3: el dogfooding/QA DEV no pierde superficie y el
+# e2e ejercita el camino real. Flip sin release del cliente = editar aquí + `npx wrangler deploy`.
+CLOUD_MODE_ROLLOUT_PERCENT = "100"
+CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
+GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
+# Forzado de actualización (min-version): build por debajo del cual el cliente bloquea. 0 = desactivado.
+# STAGING también en 0 a propósito: un valor > 0 BLOQUEARÍA la app de dogfooding/QA (≠ percents, que
+# encienden superficie). Se sube conscientemente al probar el flujo end-to-end.
+MIN_SUPPORTED_BUILD = "0"
 
 [[d1_databases]]
 binding = "DB"
@@ -36,6 +68,12 @@ id = "66bcbb46d628488d97a309f212df3e72"
 [[durable_objects.bindings]]
 name = "RATE_LIMITER"
 class_name = "RateLimiter"
+
+# Telemetría propia mínima (POST /metrics, 2026-07-17): ping diario / registros / canarios.
+# Dataset SEPARADO por env (staging no contamina las series de prod). Retención AE: 90 días.
+[[analytics_engine_datasets]]
+binding = "METRICS"
+dataset = "yala_metrics_staging"
 
 [[migrations]]
 tag = "v1"
@@ -52,6 +90,87 @@ APPLE_TEAM_ID = "3WKFFVD66J"
 APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala"
 ATTEST_ENV = "production"
 TRUST_ATTESTED_AS_PRO = "false"   # EXPLÍCITO: jamás Pro-trust en prod (cierra el trap; prod exige suscripción real)
+# Modo Nube — Supabase PRODUCTION (proyecto kefvaiymtgytemwbltlz, org yala-production plan Pro,
+# us-east-1; creado 2026-07-11, DIFERIDOS #23). URL + anon key son públicos (no secretos); el JWT
+# del USUARIO viaja en Authorization y RLS es el árbitro. NUNCA service_role.
+SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
+# APNs (G8-1, encendido 2026-07-16 gate §12 Bloque A): Auth Key team-wide 7H6BUZWKKS REUSADA de staging
+# (decisión owner — las Auth Keys de APNs sirven sandbox y prod; Apple limita 2 por team). La .p8 vive en
+# ~/Secrets/yala-apns/ y está subida como secret APNS_AUTH_KEY en AMBOS envs.
+APNS_KEY_ID = "7H6BUZWKKS"
+# SIWA (B1): la Key ID es la MISMA que staging (una sola .p8 de SIWA por team). El secret `SIWA_AUTH_KEY`
+# YA está subido a producción (verificado 2026-07-30 con `wrangler secret list --env production`: los 7
+# secrets de staging menos `DEV_SHARED_SECRET`, que es staging-only por diseño) ⇒ el canje y el revoke de
+# SIWA están VIVOS. Si alguna vez faltara, `handleSiwaExchange`/`handleSiwaRevoke` devuelven 503
+# `yala_siwa_not_configured` y se pierde la revocación de 5.1.1(v) al borrar cuenta — no el sign-in, que
+# no depende del canje (`SIWAExchangeCapture.dispatch` es best-effort con tope de 4 s).
+SIWA_KEY_ID = "PQ53RQ5D3G"
+# Remote-config del cliente (GET /config, DIFERIDOS #34).
+# Kill-switch de cualquiera de los tres: volver a "0" + `npm run deploy:production`. Usar el script de
+# npm y no `wrangler` a pelo: su `predeploy` sincroniza el manifest.
+#
+# ⚠️ LOS TRES NO SON IGUALES DE RÁPIDOS, y esto se lee en mitad de un incidente:
+#   · GROUPS_BACKEND → INMEDIATO. Desde el 2026-08-04 las cuatro rutas de `/groups/*` consultan el
+#     percent y rechazan con 403 `yala_groups_disabled` (`src/groups/killSwitch.ts`), así que el deploy
+#     corta el canal para todo el mundo al instante.
+#   · CLOUD_MODE y CLOUD_ONBOARDING_CHOICE → hasta 6 HORAS. Nadie los enforza server-side: solo cambian
+#     lo que publica `GET /config`, y un device que ya tenga el valor viejo cacheado sigue con él hasta
+#     que refresque (`RemoteFlagDecisionLogic.refreshMinInterval = 6 * 60 * 60`). Estos dos siguen
+#     cortando solo ENTRADAS, y con retraso. No los leas por analogía con el de Grupos.
+#
+# CLOUD_MODE en 100 desde el 2026-07-30, y NO es un valor de tránsito: es el estado que exige la
+# decisión de migración de 2.1 —«la migración vive en Ajustes y la usa quien la busque, sin prompt,
+# sin banner, sin campaña»—, que literalmente es este percent al 100. Gatea ENTRADAS, jamás el
+# runtime. Solo lo ven builds que lleven `3c49278c`: en los anteriores `CloudBackendConfig
+# .isConfigured` es `false` COMPILADO, así que sus gates fallan pase lo que pase con el percent.
+CLOUD_MODE_ROLLOUT_PERCENT = "100"
+# EN 100 desde el PR con el que Jürgen subió la elección born-cloud (D-A7) a producción y que después se
+# borró: el gateway se quedó sirviendo 100 y este fichero con el "0" de antes. La deriva se MIDIÓ el
+# 2026-09-09 (`curl` al `/config` de prod) y esta línea la cierra. **No decide el rollout** — lo alinea
+# con lo desplegado. Mientras dijo "0", cualquier `npm run deploy:production` hecho por otro motivo
+# habría apagado la card «Tu cuenta en la nube» del Welcome en todo el parque sin que nadie lo decidiera.
+# Clase de latencia de CLOUD_MODE (hasta 6 h, nadie lo enforza server-side): gatea la ENTRADA al alta
+# born-cloud, nunca el runtime de una cuenta ya creada. `test/config.test.ts` fija los TRES percents
+# vivos leyendo este fichero: moverlos es un diff que rompe un test, no un deploy silencioso.
+CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT = "100"
+# EN 100 desde el 2026-07-31: es el paso 3 de D-R1, la segunda mitad del encendido de Grupos.
+# `CloudSyncFlags.groupsBackendEnabled` es `groupsBackendCompiledDefault && CloudRemoteFlags
+# .groupsBackendEnabled`, así que el flip compilado de `5490544d` era un NO-OP hasta esta línea.
+#
+# **ESTE es el kill-switch de Grupos, y es el único rollback rápido que queda.** Volver a "0" +
+# `npm run deploy:production` apaga el canal y devuelve las creaciones nuevas a CloudKit, sin release.
+# Tras la Fase 3 (que borra el transporte CloudKit) apagarlo dejará Grupos INOPERATIVO: desde entonces es
+# contención, no vuelta atrás — ver §3 de MODO-NUBE-ROLLBACK.
+#
+# **«En segundos» era FALSO hasta el 2026-08-04, y ahora es verdad por una razón concreta.** Este percent
+# lo leían SOLO `config.ts` y `env.ts`: las rutas de grupos no lo consultaban jamás, así que el deploy
+# cambiaba `GET /config` al instante pero un device con el 100 cacheado SEGUÍA usando el canal hasta 6 h
+# (`RemoteFlagDecisionLogic.refreshMinInterval`) y el gateway se lo aceptaba. Medido también al revés el
+# 2026-07-31: un iPhone real siguió con el canal OFF durante horas después de subir el percent a 100, y
+# el invitado abría el enlace y la app no hacía nada. Lo que lo vuelve inmediato es
+# `src/groups/killSwitch.ts`, que rechaza con 403 en `/groups/push|pull|merkle|rpc/:fn`.
+#
+# **El servidor aplica el KILL, no el ROLLOUT:** `0` ⇒ rechaza; CUALQUIER valor > 0 ⇒ no rechaza y decide
+# el cliente con su bucket. No puede ser de otra forma — el seed del bucket es de instalación y jamás
+# sale del device, así que un percent intermedio calculado server-side partiría la cohorte de otra manera
+# que el cliente (split-brain). ⇒ **poner 50 aquí NO frena a nadie en el gateway.**
+#
+# **Y el poder que esto da, dicho donde se ve: un percent mal puesto tumba el canal para TODO el mundo al
+# instante.** Eso es deliberado (es lo que se pedía), pero antes un error de tecleo se notaba despacio y
+# ahora no se nota: se aplica. Dos consecuencias operativas que hay que conocer ANTES de bajarlo:
+#   · CERRAR SESIÓN queda bloqueado mientras el kill esté activo (el sign-out exige drenar el outbox de
+#     grupos por `/groups/push` y jamás descarta filas). Es reintentable y el outbox queda intacto.
+#   · BORRAR LA CUENTA sigue funcionando: `groups_forget_user` está EXENTO del kill a propósito (el
+#     derecho de supresión no se suspende por una decisión de configuración). Ver killSwitch.ts.
+#
+# Alcance real hoy: solo lo ven builds con `5490544d` (el compilado en `true`), y con sesión de nube
+# viva — sin sesión, `startIfEligible` retorna en su primer guard. Es decir, los dos teléfonos del
+# owner en TestFlight.
+GROUPS_BACKEND_ROLLOUT_PERCENT = "100"
+# Forzado de actualización (min-version): 0 = desactivado. Se sube al build mínimo soportado cuando
+# haya que forzar una versión crítica (requiere que /config esté vivo en prod — D9/Modo Nube).
+MIN_SUPPORTED_BUILD = "0"
 
 [[env.production.d1_databases]]
 binding = "DB"
@@ -65,3 +184,7 @@ id = "af4bd87867f043f99db280a6ca30231d"
 [[env.production.durable_objects.bindings]]
 name = "RATE_LIMITER"
 class_name = "RateLimiter"
+
+[[env.production.analytics_engine_datasets]]
+binding = "METRICS"
+dataset = "yala_metrics"

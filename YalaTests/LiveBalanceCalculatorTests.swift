@@ -169,10 +169,113 @@ struct LiveBalanceCalculatorTests {
             accounts: [acc1, acc2],
             transactions: [tx1, tx2],
             preferredCurrencyCode: "USD",
-            selectedAccountID: acc1.persistentModelID,
+            selectedAccountIDs: [acc1.persistentModelID],
             converter: MockCurrencyConverter()
         )
         #expect(result == 100)
+    }
+
+    @Test func liveBalance_twoSelectedAccounts_sumsBoth() {
+        // El filtro de cuentas es un conjunto: con A y B seleccionadas el saldo
+        // suma las dos. Colapsarlo a `.first` mostraba una sola —y cuál, no era
+        // estable—, que es como el Panel y Distribución acababan discrepando.
+        let acc1 = makeAccount(name: "A1", currencyCode: "USD")
+        let acc2 = makeAccount(name: "A2", currencyCode: "USD")
+        let acc3 = makeAccount(name: "A3", currencyCode: "USD")
+        let tx1 = makeTransaction(amount: 10_000, currencyCode: "USD", account: acc1)
+        let tx2 = makeTransaction(amount: 5_000, currencyCode: "USD", account: acc2)
+        let tx3 = makeTransaction(amount: 777, currencyCode: "USD", account: acc3)
+
+        let result = LiveBalanceCalculator.liveBalance(
+            accounts: [acc1, acc2, acc3],
+            transactions: [tx1, tx2, tx3],
+            preferredCurrencyCode: "USD",
+            selectedAccountIDs: [acc1.persistentModelID, acc2.persistentModelID],
+            converter: MockCurrencyConverter()
+        )
+        #expect(result == 15_000)  // ni 10_000 ni 5_000: las dos, y sin la tercera
+    }
+
+    @Test func liveBalance_twoSelectedAccounts_excludeMode_returnsTheRest() {
+        // En modo excluir el saldo es "todas menos las seleccionadas". Sin este
+        // camino, excluir A y B enseñaba justamente el saldo de una de ellas.
+        let acc1 = makeAccount(name: "A1", currencyCode: "USD")
+        let acc2 = makeAccount(name: "A2", currencyCode: "USD")
+        let acc3 = makeAccount(name: "A3", currencyCode: "USD")
+        let tx1 = makeTransaction(amount: 10_000, currencyCode: "USD", account: acc1)
+        let tx2 = makeTransaction(amount: 5_000, currencyCode: "USD", account: acc2)
+        let tx3 = makeTransaction(amount: 777, currencyCode: "USD", account: acc3)
+
+        let result = LiveBalanceCalculator.liveBalance(
+            accounts: [acc1, acc2, acc3],
+            transactions: [tx1, tx2, tx3],
+            preferredCurrencyCode: "USD",
+            selectedAccountIDs: [acc1.persistentModelID, acc2.persistentModelID],
+            isExcludeMode: true,
+            converter: MockCurrencyConverter()
+        )
+        #expect(result == 777)
+    }
+
+    @Test func liveBalance_excludeMode_allAccountsExcluded_isZeroNotTotal() {
+        // El fallback al total es SOLO del modo incluir. Excluir todas debe dar
+        // 0, no el agregado — si no, "excluir" acabaría mostrando el total.
+        let acc1 = makeAccount(name: "A1", currencyCode: "USD")
+        let acc2 = makeAccount(name: "A2", currencyCode: "USD")
+        let tx1 = makeTransaction(amount: 100, currencyCode: "USD", account: acc1)
+        let tx2 = makeTransaction(amount: 500, currencyCode: "USD", account: acc2)
+
+        let result = LiveBalanceCalculator.liveBalance(
+            accounts: [acc1, acc2],
+            transactions: [tx1, tx2],
+            preferredCurrencyCode: "USD",
+            selectedAccountIDs: [acc1.persistentModelID, acc2.persistentModelID],
+            isExcludeMode: true,
+            converter: MockCurrencyConverter()
+        )
+        #expect(result == 0)
+    }
+
+    @Test func liveBalance_twoSelected_oneExcludedFromStats_countsOnlyTheCountable() {
+        // Con dos seleccionadas y una excluida de estadísticas NO hay fallback al
+        // total: la selección sigue resolviendo a una cuenta contable.
+        let good = makeAccount(name: "In", currencyCode: "USD")
+        let excluded = makeAccount(name: "Out", currencyCode: "USD", excludeFromStatistics: true)
+        let other = makeAccount(name: "Other", currencyCode: "USD")
+        let txGood = makeTransaction(amount: 200, currencyCode: "USD", account: good)
+        let txExcluded = makeTransaction(amount: 999, currencyCode: "USD", account: excluded)
+        let txOther = makeTransaction(amount: 333, currencyCode: "USD", account: other)
+
+        let result = LiveBalanceCalculator.liveBalance(
+            accounts: [good, excluded, other],
+            transactions: [txGood, txExcluded, txOther],
+            preferredCurrencyCode: "USD",
+            selectedAccountIDs: [good.persistentModelID, excluded.persistentModelID],
+            converter: MockCurrencyConverter()
+        )
+        #expect(result == 200)  // no 1_199 (excluida) ni 533 (fallback al total)
+    }
+
+    @Test func liveBalance_breakdownWithTwoAccounts_keepsNativeBuckets() {
+        // `liveBalanceBreakdown` bajo selección de cuenta no lo fijaba ningún
+        // test: solo se cubría a través del wrapper que devuelve Double.
+        let usd = makeAccount(name: "USD", currencyCode: "USD")
+        let eur = makeAccount(name: "EUR", currencyCode: "EUR")
+        let ignored = makeAccount(name: "Ignored", currencyCode: "USD")
+        let txUsd = makeTransaction(amount: 100, currencyCode: "USD", account: usd)
+        let txEur = makeTransaction(amount: 50, currencyCode: "EUR", account: eur)
+        let txIgnored = makeTransaction(amount: 900, currencyCode: "USD", account: ignored)
+
+        let breakdown = LiveBalanceCalculator.liveBalanceBreakdown(
+            accounts: [usd, eur, ignored],
+            transactions: [txUsd, txEur, txIgnored],
+            preferredCurrencyCode: "USD",
+            selectedAccountIDs: [usd.persistentModelID, eur.persistentModelID],
+            converter: MockCurrencyConverter()
+        )
+        #expect(breakdown.nativeBalances["USD"] == 100)
+        #expect(breakdown.nativeBalances["EUR"] == 50)
+        #expect(breakdown.nativeBalances.count == 2)
     }
 
     @Test func liveBalance_selectedAccountIDExcluded_fallsBackToTotal() {
@@ -188,7 +291,7 @@ struct LiveBalanceCalculatorTests {
             accounts: [included, excluded],
             transactions: [txIn, txOut],
             preferredCurrencyCode: "USD",
-            selectedAccountID: excluded.persistentModelID,  // excluida → fallback total
+            selectedAccountIDs: [excluded.persistentModelID],  // excluida → fallback total
             converter: MockCurrencyConverter()
         )
         #expect(result == 200)  // solo cuenta la incluida
@@ -269,5 +372,45 @@ struct LiveBalanceCalculatorTests {
             converter: MockCurrencyConverter()
         )
         #expect(result == 100)  // suma 0 + 100, sin error
+    }
+
+    // MARK: - El conjunto de cuentas que viaja al FX P&L
+
+    @Test func breakdown_exposesTheResolvedAccountSet() {
+        // El FX P&L recorre las transacciones por su cuenta para poder hacer FIFO por fecha, así
+        // que necesita EXACTAMENTE las cuentas que este saldo acabó sumando. Si tuviera que
+        // reconstruir la elegibilidad por su lado, el día que cambie una de estas reglas el P&L
+        // seguiría pareciendo plausible y estaría hablando de otro dinero.
+        let visible = makeAccount(name: "Visible", currencyCode: "USD")
+        let excluded = makeAccount(
+            name: "Excluida", currencyCode: "USD", excludeFromStatistics: true
+        )
+        let other = makeAccount(name: "Otra", currencyCode: "USD")
+
+        let breakdown = LiveBalanceCalculator.liveBalanceBreakdown(
+            accounts: [visible, excluded, other],
+            transactions: [],
+            preferredCurrencyCode: "PEN",
+            selectedAccountIDs: [visible.persistentModelID],
+            converter: MockCurrencyConverter()
+        )
+
+        #expect(breakdown.eligibleAccountIDs == [visible.persistentModelID])
+        #expect(!breakdown.eligibleAccountIDs.contains(excluded.persistentModelID))
+        #expect(!breakdown.eligibleAccountIDs.contains(other.persistentModelID))
+    }
+
+    @Test func breakdown_excludedFromStatistics_neverEnterTheEligibleSet() {
+        let a = makeAccount(name: "A", currencyCode: "USD")
+        let excluded = makeAccount(name: "X", currencyCode: "USD", excludeFromStatistics: true)
+
+        let breakdown = LiveBalanceCalculator.liveBalanceBreakdown(
+            accounts: [a, excluded],
+            transactions: [],
+            preferredCurrencyCode: "PEN",
+            converter: MockCurrencyConverter()
+        )
+
+        #expect(breakdown.eligibleAccountIDs == [a.persistentModelID])
     }
 }

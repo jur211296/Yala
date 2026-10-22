@@ -98,9 +98,23 @@ extension View {
         .padding(.vertical, DS.ListRow.paddingV)
         .padding(.horizontal, DS.ListRow.paddingH)
     }
+    /// Resaltado al pasar el puntero (iPad con trackpad o ratón; fase 3 del carril adaptativo). La forma es la de la
+    /// pieza —fila, tarjeta o chip— para que el resaltado y la vista previa del menú contextual la sigan en vez de
+    /// pintar un rectángulo. En un iPhone no hace nada. `nil` = cápsula (chips).
+    func pointerHighlight(cornerRadius: CGFloat?) -> some View {
+        modifier(PointerHighlightModifier(cornerRadius: cornerRadius))
+    }
+
     /// Aplica estilo de card sólido (mismo fondo que widgets del Panel, sin material)
     func solidCard(padding: CGFloat = 0, radius: CGFloat = DS.Card.radius) -> some View {
         modifier(SolidCardModifier(padding: padding, radius: radius))
+    }
+
+    /// Aplica el estilo canónico de **fila de lista densa** (Registros, feed de
+    /// Grupos): hermana de `solidCard` con el padding y el radio de `DS.ListRow`
+    /// y SIN borde. Ver `ListRowCardModifier` para el porqué del borde ausente.
+    func listRowCard(radius: CGFloat = DS.Radius.card) -> some View {
+        modifier(ListRowCardModifier(radius: radius))
     }
 
     /// Aplica el estilo canónico de widget del Panel (padding+radius reducidos
@@ -147,6 +161,41 @@ struct SolidCardModifier: ViewModifier {
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .stroke(theme.cardBorder, lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - List Row Card Modifier (dense list rows)
+
+/// Variante canónica de card para **filas de lista densa** — Registros y el feed
+/// de un grupo. Mismo fondo `.thCard` y mismas esquinas `.continuous` que
+/// `SolidCardModifier`, con tres diferencias deliberadas:
+///
+/// 1. **Sin stroke.** `theme.cardBorder` sobre veinte filas seguidas dibuja una
+///    reja; en una card suelta delimita, en una lista engorda.
+/// 2. **Padding y radio de `DS.ListRow`** (14/12, radio 14) en vez de los de
+///    `DS.Card` — la fila es densa por definición, no un contenedor con aire.
+/// 3. **Sombra propia** (theme-aware, `DS.ListRow.shadowRadius`/`shadowY`), que
+///    es lo que despega la fila del fondo ahora que no hay borde. `solidCard` no
+///    trae sombra porque sus consumidores la eligen aparte.
+///
+/// Regla de reparto: contenedor / widget / card suelta → `.solidCard()`;
+/// fila de lista densa → `.listRowCard()`.
+struct ListRowCardModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    var radius: CGFloat = DS.Radius.card
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.vertical, DS.ListRow.paddingV)
+            .padding(.horizontal, DS.ListRow.paddingH)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .shadow(
+                color: .black.opacity(theme.shadowOpacity),
+                radius: DS.ListRow.shadowRadius,
+                x: 0,
+                y: DS.ListRow.shadowY
             )
     }
 }
@@ -435,10 +484,7 @@ struct YalaAIOnboardingSheetModifier: ViewModifier {
                         onPersistFlag()
                         pendingOpenChat = true
                     case .close:
-                        TelemetryService.track(
-                            .yalaAIOnboardingDismissed,
-                            parameters: ["launcher": launcher.rawValue]
-                        )
+                        break
                     }
                     isPresented = false
                 }
@@ -473,16 +519,33 @@ extension View {
 /// `onPersistFlag` se invoca en `.complete` (CTA Step 3 "Ir a Grupos") — persiste
 /// flag y dispara seed lazy de categorías sistema. En `.close` (X topLeft) no se
 /// invoca, lo que hace que el onboarding reaparezca al próximo tap del tab.
+///
+/// A1 (D-A7): `.completeAndSignIn` (CTA "Iniciar sesión" del cierre, solo sin sesión) persiste
+/// igual —el educativo TERMINÓ— y además pide el sign-in. La petición se emite en el
+/// `onDismiss`, con el sheet YA desmontado: emitirla desde dentro dejaría el intent RETENIDO
+/// por peek-first bajo este mismo sheet (el molde es el comentario de
+/// `GroupsContainerView.requestCreateGroup`), y presentar desde otro anchor con éste todavía
+/// montado es justo la regla (4) de Presentaciones de `.claude/rules/swiftui-ds.md`.
 struct GroupsOnboardingSheetModifier: ViewModifier {
     @Binding var isPresented: Bool
     let onPersistFlag: () -> Void
+    let onRequestSignIn: () -> Void
+
+    @State private var signInRequested = false
 
     func body(content: Content) -> some View {
-        content.sheet(isPresented: $isPresented) {
+        content.sheet(isPresented: $isPresented, onDismiss: {
+            guard signInRequested else { return }
+            signInRequested = false
+            onRequestSignIn()
+        }) {
             GroupsOnboardingView { result in
                 switch result {
                 case .complete:
                     onPersistFlag()
+                case .completeAndSignIn:
+                    onPersistFlag()
+                    signInRequested = true
                 case .close:
                     break
                 }
@@ -495,11 +558,13 @@ struct GroupsOnboardingSheetModifier: ViewModifier {
 extension View {
     func groupsOnboardingSheet(
         isPresented: Binding<Bool>,
-        onPersistFlag: @escaping () -> Void
+        onPersistFlag: @escaping () -> Void,
+        onRequestSignIn: @escaping () -> Void
     ) -> some View {
         modifier(GroupsOnboardingSheetModifier(
             isPresented: isPresented,
-            onPersistFlag: onPersistFlag
+            onPersistFlag: onPersistFlag,
+            onRequestSignIn: onRequestSignIn
         ))
     }
 }
@@ -563,10 +628,14 @@ enum YalaBackgroundVariant {
     case subtle
 
     /// Sin fondo aplicado (desnudo): el sheet muestra su fondo de sistema. Para
-    /// sheets con detent parcial (`.medium`/`.height`/`.fraction`). En iPad el
-    /// detent se fuerza a `.large`, así que esos sheets usan `.subtle` vía
-    /// `DS.Adaptive.usesLargeSheets ? .subtle : .transparent`.
+    /// sheets con detent parcial fijo (`.medium`/`.height`/`.fraction`) que NO
+    /// pasan por `.yalaSheetDetents(_:)`.
     case transparent
+
+    /// Sheet cuyo detent parcial sale de `.yalaSheetDetents(_:)`: `.transparent`
+    /// mientras la ventana deja el detent parcial, `.subtle` cuando lo fuerza a
+    /// `.large` (ventana ancha o Mac). Lo resuelve `\.usesLargeSheets`.
+    case partialSheet
 }
 
 /// Aplica background temático consistente a la vista.
@@ -579,6 +648,7 @@ enum YalaBackgroundVariant {
 /// manualmente — el modifier NO lo hace automático para preservar predictibilidad.
 struct YalaScreenBackgroundModifier: ViewModifier {
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
     let variant: YalaBackgroundVariant
     let ignoredEdges: Edge.Set?
 
@@ -586,9 +656,14 @@ struct YalaScreenBackgroundModifier: ViewModifier {
         ignoredEdges ?? .all
     }
 
+    private var resolvedVariant: YalaBackgroundVariant {
+        guard variant == .partialSheet else { return variant }
+        return usesLargeSheets ? .subtle : .transparent
+    }
+
     @ViewBuilder
     func body(content: Content) -> some View {
-        switch variant {
+        switch resolvedVariant {
         case .panel:
             ZStack {
                 PanelBackgroundView(ignoredEdges: effectiveEdges)
@@ -600,7 +675,7 @@ struct YalaScreenBackgroundModifier: ViewModifier {
                     .ignoresSafeArea(edges: effectiveEdges)
                 content
             }
-        case .transparent:
+        case .transparent, .partialSheet:
             content
         }
     }
@@ -611,7 +686,7 @@ extension View {
     ///
     /// - Parameter variant: `.panel` (gradient, vistas completas), `.subtle`
     ///   (plano, sheets normales/success), `.transparent` (desnudo, sheets con
-    ///   detent parcial).
+    ///   detent parcial fijo), `.partialSheet` (sheets con `.yalaSheetDetents`).
     /// - Parameter ignoredEdges: Si `nil`, usa `.all`. Pasar valor explícito
     ///   (`[.top]`, `[.bottom]`) para coexistir con `safeAreaInset`.
     func yalaScreenBackground(
@@ -619,6 +694,66 @@ extension View {
         ignoredEdges: Edge.Set? = nil
     ) -> some View {
         modifier(YalaScreenBackgroundModifier(variant: variant, ignoredEdges: ignoredEdges))
+    }
+}
+
+// MARK: - Sheet Sizing (por ventana)
+
+extension EnvironmentValues {
+    /// Si las hojas con detent parcial se fuerzan a `.large`. Lo pone la raíz de la ventana con
+    /// `sizesSheetsByWindow()` y llega intacto a toda hoja que cuelgue de ella. Sin raíz (previews),
+    /// el comportamiento de iPhone; en Mac, grandes.
+    @Entry var usesLargeSheets: Bool = DS.Adaptive.usesLargeSheets(windowHorizontalSizeClass: nil)
+}
+
+/// Calcula `\.usesLargeSheets` con el size class de la VENTANA. Se aplica una vez, en la raíz: ahí el
+/// `horizontalSizeClass` es el de la ventana; dentro de una hoja, no tiene por qué serlo.
+private struct WindowSheetSizingModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var windowHorizontalSizeClass
+
+    func body(content: Content) -> some View {
+        content.environment(
+            \.usesLargeSheets,
+            DS.Adaptive.usesLargeSheets(windowHorizontalSizeClass: windowHorizontalSizeClass)
+        )
+    }
+}
+
+/// `.presentationDetents` que fuerza `.large` cuando la ventana pide hojas grandes.
+private struct YalaSheetDetentsModifier: ViewModifier {
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    let detents: Set<PresentationDetent>
+    let selection: Binding<PresentationDetent>?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        let resolved = DS.Adaptive.sheetDetents(detents, usesLargeSheets: usesLargeSheets)
+        if let selection {
+            content.presentationDetents(resolved, selection: selection)
+        } else {
+            content.presentationDetents(resolved)
+        }
+    }
+}
+
+extension View {
+    /// Decide el tamaño de las hojas por el espacio de esta ventana. Solo en la raíz de la escena.
+    func sizesSheetsByWindow() -> some View {
+        modifier(WindowSheetSizingModifier())
+    }
+
+    /// Detents de iPhone en una ventana compacta; `.large` en una ancha o en Mac. Sustituye a
+    /// `.presentationDetents(_:)` en toda hoja con detent parcial. Su fondo: `.yalaScreenBackground(.partialSheet)`.
+    func yalaSheetDetents(_ detents: Set<PresentationDetent>) -> some View {
+        modifier(YalaSheetDetentsModifier(detents: detents, selection: nil))
+    }
+
+    /// Igual, con el detent elegido en `selection`.
+    func yalaSheetDetents(
+        _ detents: Set<PresentationDetent>,
+        selection: Binding<PresentationDetent>
+    ) -> some View {
+        modifier(YalaSheetDetentsModifier(detents: detents, selection: selection))
     }
 }
 
@@ -696,4 +831,23 @@ extension View {
         .yalaFormRow(showChevron: true)
     }
     .background(.thBackground)
+}
+
+/// Ver `View.pointerHighlight(cornerRadius:)`.
+struct PointerHighlightModifier: ViewModifier {
+    let cornerRadius: CGFloat?
+
+    func body(content: Content) -> some View {
+        if let cornerRadius {
+            content
+                .contentShape(.hoverEffect, RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .hoverEffect(.highlight)
+        } else {
+            content
+                .contentShape(.hoverEffect, Capsule())
+                .contentShape(.contextMenuPreview, Capsule())
+                .hoverEffect(.highlight)
+        }
+    }
 }

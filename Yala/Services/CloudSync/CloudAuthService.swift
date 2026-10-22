@@ -1,0 +1,975 @@
+//
+//  CloudAuthService.swift
+//  Yala
+//
+//  Sesión real del Modo Nube (I7c): Sign in with Apple nativo → `signInWithIdToken` de Supabase Auth →
+//  JWT + refresh token en un Keychain propio (via `CloudAuthKeychainStorage`, AfterFirstUnlock). Es el
+//  motor de la sesión que `LiveCloudSessionProvider` expone al `CloudSyncRuntime` (el seam que I9 dejó
+//  con `NoopCloudSessionProvider`).
+//
+//  INSTANCIA ÚNICA process-global (`shared`): el panel DEBUG y `LiveCloudSessionProvider` consumen LA
+//  MISMA — dos `AuthClient` competirían por el mismo storage de Keychain y la rotación del refresh de
+//  uno invalidaría el del otro (AJUSTE review).
+//
+//  GUARD DE CONSTRUCCIÓN (AJUSTE review): sin `CloudBackendConfig.isConfigured` NADA se instancia
+//  (`client == nil`, sin observer de revocación). Desde D-R1 paso 1 producción SÍ construye el
+//  subsistema; lo que lo mantiene quieto ya no es la ausencia de cliente, sino que no hay sesión ni
+//  superficie de sign-in visible (el gateway sirve los percents de entrada en 0).
+//
+//  Cero silencios: errores tipados + breadcrumb `CloudSyncBreadcrumb` (fuera de `#if DEBUG`, sin PII —
+//  JAMÁS se loguea el token, el email ni el `sub` completo).
+//
+
+import AuthenticationServices
+import CryptoKit
+import Foundation
+import UIKit
+
+import Auth
+import GoogleSignIn
+
+/// Decisión PURA de captura del perfil de Apple (email/fullName) — extraída para testear SIN el SDK la
+/// regla anti-sangrado de PII entre cuentas (fix review R2 #1): si el Apple ID entrante DIFIERE del
+/// almacenado, el perfil previo se BORRA y se sobrescribe completo (un cambio de cuenta JAMÁS reusa el
+/// email/nombre de otra persona); si es la misma cuenta (o primer sign-in del device), solo se rellenan
+/// los huecos (Apple entrega email/fullName SOLO en el primer sign-in de esa cuenta).
+nonisolated enum CloudAuthProfileCapture {
+
+    struct Decision: Equatable {
+        /// Borrar email/fullName almacenados ANTES de escribir (cambio de Apple ID).
+        let clearStoredProfile: Bool
+        let writeEmail: Bool
+        let writeFullName: Bool
+    }
+
+    static func decide(
+        storedAppleUserID: String?,
+        incomingAppleUserID: String,
+        hasStoredEmail: Bool,
+        hasStoredFullName: Bool,
+        hasIncomingEmail: Bool,
+        hasIncomingFullName: Bool
+    ) -> Decision {
+        let accountChanged = storedAppleUserID != nil && storedAppleUserID != incomingAppleUserID
+        if accountChanged {
+            // Cuenta DISTINTA: nada del perfil previo sobrevive; se escribe lo que venga (aunque no
+            // venga nada — mejor un perfil vacío que el de otra persona).
+            return Decision(
+                clearStoredProfile: true,
+                writeEmail: hasIncomingEmail,
+                writeFullName: hasIncomingFullName
+            )
+        }
+        // Misma cuenta (o sin perfil previo): solo rellenar huecos, nunca sobrescribir.
+        return Decision(
+            clearStoredProfile: false,
+            writeEmail: hasIncomingEmail && !hasStoredEmail,
+            writeFullName: hasIncomingFullName && !hasStoredFullName
+        )
+    }
+}
+
+/// Lógica post-credencial del canje SIWA (B1, 5.1.1(v)) — extraída para testear SIN instanciar el
+/// delegate de ASAuthorization: decodifica el `authorizationCode` (UTF-8, no vacío) y decide invocar el
+/// hook. Hook `nil` (default — producción sin componer / tests) = no-op ANTES de mirar el code (byte-
+/// idéntico). Hook instalado pero sin code utilizable → canario `siwaExchangeFailed` (Apple no entregó
+/// el code → no habrá token revocable de este sign-in; población cero pre-feature, ver el brief B1).
+@MainActor
+enum SIWAExchangeCapture {
+
+    /// Decodifica el `credential.authorizationCode` (Data UTF-8) a String no vacío. Pura.
+    nonisolated static func code(from data: Data?) -> String? {
+        guard let data, let code = String(data: data, encoding: .utf8), !code.isEmpty else { return nil }
+        return code
+    }
+
+    /// Invoca el hook con el code decodificado + el appleUserID de ESTE sign-in (AJUSTE #1: el par
+    /// viaja junto hasta el Keychain). El sign-in JAMÁS falla ni se retrasa por esto: el hook real
+    /// lanza su propio Task best-effort (composición en `SIWAExchangeSeam`).
+    static func dispatch(
+        hook: (@MainActor (_ authorizationCode: String, _ appleUserID: String) -> Void)?,
+        codeData: Data?,
+        appleUserID: String
+    ) {
+        guard let hook else { return }
+        guard let code = code(from: codeData) else {
+            CloudSyncBreadcrumb.siwaExchangeFailed(reason: "no-code")
+            MetricsService.siwaExchangeFailed(reason: "no-code")
+            return
+        }
+        hook(code, appleUserID)
+    }
+}
+
+/// Errores tipados del flujo de auth (sin PII).
+enum CloudAuthError: Error, Equatable {
+    /// El subsistema no está configurado → no hay `AuthClient`.
+    case notConfigured
+    /// Apple no devolvió un `identityToken` utilizable.
+    case missingIdentityToken
+    /// Un sign-in ya está en vuelo (los taps del panel son idempotentes por-flujo).
+    case signInAlreadyInFlight
+    /// El usuario canceló el sheet de sign-in (Google) — la UI lo consume SIN alert (sesión 2;
+    /// el cancel de SIWA sigue llegando como `ASAuthorizationError` crudo, fuera de alcance).
+    case cancelled
+    /// No hay view controller presentador para el sheet de Google (antes `preconditionFailure` —
+    /// nota 5 post-implementación sesión 1: un throw permite a la UI degradar sin trap).
+    case presentationUnavailable
+}
+
+/// Provider de sign-in del Modo Nube. `rawValue` = string del wire (`profiles.provider` /
+/// body del claim / faro `CloudBeacon`).
+nonisolated enum CloudSignInProvider: String {
+    case apple
+    case google
+}
+
+@MainActor
+final class CloudAuthService: NSObject {
+
+    /// Instancia ÚNICA (lazy). Compartida por el panel DEBUG y `LiveCloudSessionProvider`.
+    static let shared = CloudAuthService()
+
+    /// `nil` cuando `CloudBackendConfig.isConfigured == false` → todo no-op.
+    private let client: AuthClient?
+
+    /// Keychain propio para el perfil capturado (email/fullName) del PRIMER sign-in + el appleUserID
+    /// (para `getCredentialState`). Service dedicado, NO colisiona con la sesión del SDK (otra `account`).
+    private let profileStore = CloudAuthKeychainStorage()
+
+    // Estado del flujo SIWA en vuelo.
+    private var currentNonce: String?
+    private var signInContinuation: CheckedContinuation<Void, Error>?
+    private var authController: ASAuthorizationController?
+
+    /// Sign-in de GOOGLE en vuelo — guard COMPARTIDO con el de SIWA (`signInContinuation`): un
+    /// sign-in Apple y uno Google jamás conviven (los taps del panel son idempotentes por-flujo).
+    private var googleSignInInFlight = false
+
+    private var didRegisterRevocationObserver = false
+
+    /// vb1f · la credencial de Google del último canje y el `sub` de la sesión que abrió. En memoria y nada más: no
+    /// sobrevive al proceso, la olvidan `takeGoogleCredentialForReuse()`, `signOut()` y el comienzo de cualquier otro
+    /// inicio de sesión.
+    private var lastGoogleCredential: (credential: GoogleSignInCredential, sub: String)?
+
+    /// Hook INYECTADO del canje SIWA (B1, AJUSTE #2 del review — layering): la composición de producción
+    /// (`SIWAExchangeSeam.installProductionHook()`, un ÚNICO punto en AppBootstrapper) instala el closure
+    /// real que canjea el `authorizationCode` por el refresh token de Apple vía el Worker y persiste el
+    /// PAR (token, appleUserID) en el Keychain. Default `nil` = no-op (tests byte-idénticos; sin
+    /// dependencia CloudAuthService→CloudAccountClient — molde `deviceTokenProvider` de G8-3).
+    var siwaExchangeHook: (@MainActor (_ authorizationCode: String, _ appleUserID: String) -> Void)?
+
+    // Keys del perfil capturado (accounts dentro del service del `profileStore`).
+    private static let keyCapturedEmail = "cloudauth.captured.email"
+    private static let keyCapturedFullName = "cloudauth.captured.fullName"
+    private static let keyAppleUserID = "cloudauth.appleUserID"
+    /// Provider del ÚLTIMO sign-in exitoso (`"apple"` | `"google"`) — credencial de SESIÓN (se borra
+    /// en `signOut()`, a diferencia de los pares por-provider que sobreviven). Fuente para el
+    /// `provider` del claim (`storedProvider()`).
+    private static let keyProvider = "cloudauth.provider"
+
+    // MARK: - Init
+
+    private override init() {
+        if CloudBackendConfig.isConfigured, let baseURL = CloudBackendConfig.supabaseURL {
+            // `Authorization: Bearer <anon>` como DEFAULT es intencional y benigno (no un olor): es el
+            // mismo par de headers que monta `SupabaseClient` upstream. El SDK SOBRESCRIBE Authorization
+            // con el JWT del usuario en los requests autenticados (refresh/signOut/user); el default solo
+            // aplica a los endpoints pre-sesión (p.ej. el propio token exchange), donde el rol `anon`
+            // (clave PÚBLICA gobernada por RLS) es exactamente lo esperado.
+            let configuration = AuthClient.Configuration(
+                url: baseURL.appendingPathComponent("auth/v1"),
+                headers: [
+                    "Authorization": "Bearer \(CloudBackendConfig.anonKey)",
+                    "apikey": CloudBackendConfig.anonKey,
+                ],
+                storageKey: Self.sessionStorageKey,
+                localStorage: CloudAuthKeychainStorage(),
+                autoRefreshToken: true
+            )
+            self.client = AuthClient(configuration: configuration)
+        } else {
+            self.client = nil
+        }
+        super.init()
+        registerRevocationObserverIfNeeded()
+    }
+
+    // MARK: - Estado de sesión (consumido por LiveCloudSessionProvider + panel)
+
+    var isConfigured: Bool { client != nil }
+
+    /// El `sub` de la sesión (owner-scoping). Formato lowercase (== `uuid` text de Postgres/JWT).
+    /// `nil` = sin sesión. `currentSession` puede estar expirado pero el `user.id` no cambia.
+    var currentUserID: String? {
+        client?.currentSession?.user.id.uuidString.lowercased()
+    }
+
+    /// **Cuántas veces cambió la sesión en este proceso**: sube con cada inicio de sesión que entra y con cada `signOut()`.
+    /// En memoria a propósito —un relanzamiento vuelve a 0— y sin el seam de `hasSession`. Lo lee la tarjeta de «Migrar a la
+    /// nube» para atar un rechazo de la comprobación a la sesión que lo recibió, no solo a la cuenta: cerrar y volver a
+    /// entrar con la misma puede cambiar la respuesta (ticket `migrate-card-keeps-promising-an-account-the-check-refused`).
+    private(set) var sessionEpoch = 0
+
+    /// ¿Hay una sesión almacenada (con refresh token)?
+    ///
+    /// Seam DEBUG-only (`-uitest-fake-cloud-session`): en release el `#if` no existe y el cuerpo es
+    /// byte-idéntico. El override llega SOLO hasta aquí y NO se propaga a `currentUserID` (:200),
+    /// `canRenewSession`, `sessionExpiry` ni `accessToken()` — a propósito: fingir el `sub` volvería
+    /// alcanzables los resolvedores de identidad del canal backend con una identidad que no existe, y
+    /// fabricar un JWT mandaría credenciales basura a un backend real. Con el token todavía `nil`, cada
+    /// cliente del canal lanza en su propio guard antes de tocar la red ⇒ un XCUITest que finge sesión
+    /// sigue haciendo CERO tráfico. Ver `UITestHooks.fakeCloudSession` para el porqué del seam.
+    var hasSession: Bool {
+        #if DEBUG
+        if UITestHooks.fakeCloudSession { return true }
+        #endif
+        return client?.currentSession != nil
+    }
+
+    /// Contrato I7c (preflight de I9): `true` siempre que HAY sesión almacenada — tener sesión implica
+    /// tener refresh token. Cuando el refresh falla terminal, el SDK limpia el storage → `currentSession`
+    /// pasa a `nil` → esto pasa a `false` de forma natural. NUNCA reportar `false` con token vigente
+    /// (bloquearía pushes que habrían tenido éxito).
+    ///
+    /// **Y el contrato inverso, desde el 2026-09-15: NUNCA `true` tras un refresh terminal.** El canal de Grupos
+    /// lo lee cuando el token no llega, para separar «sin conexión» de «sesión caducada»
+    /// (`GroupsSyncClient.sdkRemovedTheSession`), desde el 2026-09-16 también el personal: `SyncPushClient`,
+    /// `SyncPullClient`, `PrefsSyncClient` y `BornCloudSignUpService`, por `LiveCloudSessionProvider`, y desde el
+    /// 2026-09-17 las acciones de Grupos (`GroupsMembershipClient.call`: salir, unirse, crear, aprobar…). Si siguiera en
+    /// `true` con la sesión muerta, esos canales la leerían pasajera y reintentarían con su backoff en vez de pedir
+    /// volver a entrar. Hoy lo garantiza el SDK, que borra
+    /// la sesión antes de lanzar, y lo fija `SupabaseSessionRenewalContractTests`. Sin el seam de `hasSession`, a
+    /// propósito: `-uitest-fake-cloud-session` no lo enciende, así que bajo ese seam vale lo que guarde el Keychain
+    /// del simulador (nada, salvo que alguien firmara allí a mano).
+    var canRenewSession: Bool { client?.currentSession != nil }
+
+    /// Expiración del access token actual (para el panel). `nil` sin sesión.
+    var sessionExpiry: Date? {
+        guard let ts = client?.currentSession?.expiresAt else { return nil }
+        return Date(timeIntervalSince1970: ts)
+    }
+
+    /// JWT de Supabase VIGENTE (el SDK auto-refresca dentro de `session`). `nil` = sin sesión / fallo, y aquí los
+    /// dos casos no se distinguen: quien necesite separarlos pregunta después a `canRenewSession`.
+    func accessToken() async -> String? {
+        guard let client else { return nil }
+        do {
+            return try await client.session.accessToken
+        } catch {
+            CloudSyncBreadcrumb.authAccessTokenUnavailable()
+            return nil
+        }
+    }
+
+    /// FUERZA el refresh del access token (`refreshSession()` canjea el refresh token AHORA) y devuelve el
+    /// JWT nuevo. A diferencia de `accessToken()` — que solo auto-refresca cuando quedan <30s de margen —
+    /// esto siempre rota: el retry-once del 401 del canal de Grupos (H-2026-07-18-4) lo necesita para
+    /// rescatar un 401 disparado en la ventana de expiry (un `accessToken()` normal ahí devolvería el
+    /// MISMO token vencido). `nil` sin config / sin sesión / fallo (do/catch, jamás `try?` silenciador).
+    func forceRefreshAccessToken() async -> String? {
+        guard let client else { return nil }
+        do {
+            let session = try await client.refreshSession()
+            return session.accessToken
+        } catch {
+            CloudSyncBreadcrumb.authAccessTokenUnavailable()
+            return nil
+        }
+    }
+
+    /// appleUserID capturado del último sign-in (para el match del PAR SIWA — AJUSTE #1 del brief B1 —
+    /// y `getCredentialState`). `nil` = nunca hubo sign-in en este device.
+    func storedAppleUserID() -> String? { readProfileString(Self.keyAppleUserID) }
+
+    /// Email capturado en el primer sign-in (para I14). `nil` si Apple nunca lo entregó / sin captura.
+    func capturedEmail() -> String? { readProfileString(Self.keyCapturedEmail) }
+
+    /// Nombre completo capturado en el primer sign-in (para I14).
+    func capturedFullName() -> String? { readProfileString(Self.keyCapturedFullName) }
+
+    /// Provider del último sign-in exitoso (`"apple"` | `"google"`). `nil` = sin sesión firmada en
+    /// este device (o key perdida — los call-sites de claim caen a `?? "apple"` con residual anotado).
+    func storedProvider() -> String? { readProfileString(Self.keyProvider) }
+
+    /// Repone el proveedor de la cuenta de este teléfono tras cerrar una sesión de OTRA cuenta que entró por la puerta de
+    /// «Dónde viven tus datos» (`CloudMigrationController.signInToResumeSync`, ticket
+    /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`). `signOut()` lo borra —es credencial de sesión—, y
+    /// sin él el siguiente intento caería a SIWA para una cuenta de Google. Solo se llama justo después de ese `signOut()`.
+    func restoreStoredProvider(_ provider: CloudSignInProvider) {
+        writeProfileString(provider.rawValue, forKey: Self.keyProvider)
+    }
+
+    // MARK: - Sign in with Apple
+
+    /// Lanza el flujo nativo de Sign in with Apple y, si tiene éxito, crea la sesión de Supabase vía
+    /// `signInWithIdToken`. Nonce: aleatorio seguro → SHA-256 HEX al request de Apple, RAW a Supabase
+    /// (gotcha "Unacceptable audience" si se cruzan). Captura email/fullName SOLO en el primer sign-in.
+    func signInWithApple() async throws {
+        guard client != nil else { throw CloudAuthError.notConfigured }
+        // Guard in-flight BIDIRECCIONAL (fix review adversarial #1): sin `!googleSignInInFlight`, un
+        // SIWA arrancado durante el await del sheet de Google podía aterrizar su exchange entre el
+        // exchange de Google y su reanudación → par (googleUserID_G, sub_APPLE) CRUZADO por valores,
+        // que el clear-before-write del store no puede prevenir.
+        guard signInContinuation == nil, !googleSignInInFlight else {
+            throw CloudAuthError.signInAlreadyInFlight
+        }
+        lastGoogleCredential = nil
+
+        let rawNonce = Self.randomNonceString()
+        currentNonce = rawNonce
+
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = Self.sha256Hex(rawNonce)
+
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        self.authController = controller
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            self.signInContinuation = continuation
+            controller.performRequests()
+        }
+    }
+
+    /// Despacho por provider (sesión 2 — un solo call-site para las vistas parametrizadas).
+    ///
+    /// `reusingGoogleCredential` (vb1f): con Google, se intenta primero esa credencial sin abrir la hoja; si no entra,
+    /// la hoja de siempre. Con Apple se ignora.
+    func signIn(with provider: CloudSignInProvider,
+                reusingGoogleCredential reusable: GoogleSignInCredential? = nil) async throws {
+        switch provider {
+        case .apple: try await signInWithApple()
+        case .google:
+            if let reusable, await signInWithReusedGoogleCredential(reusable) { break }
+            try await signInWithGoogle()
+        }
+        // C-8: el derecho Pro de la cuenta entrante debe estar disponible YA. Sin esto, quien entra
+        // con su cuenta de Yala en un device con otro Apple ID — el caso central del bug — sigue
+        // viendo Free hasta el siguiente ciclo background→foreground. En segundo plano: el sign-in
+        // no puede quedarse esperando a la red del gateway.
+        Task { @MainActor in await AccountEntitlementService.shared.handleSignIn() }
+    }
+
+    // MARK: - Google Sign-In (sesión 1 del brief BRIEF-GOOGLE-SIGNIN-V1)
+
+    /// Lanza el flujo de Google Sign-In (SDK GoogleSignIn-iOS ≥9 con nonce CUSTOM — patrón idéntico a
+    /// SIWA: aleatorio seguro → SHA-256 HEX al SDK, RAW a Supabase; `skip_nonce_check` queda OFF en el
+    /// proyecto Supabase, restricción dura del brief) y, si tiene éxito, crea la sesión de Supabase
+    /// vía `signInWithIdToken(provider: .google)`. El `accessToken` de Google acompaña SIEMPRE
+    /// (GoTrue valida `at_hash` si viene en el id_token).
+    ///
+    /// Cancel del usuario (`GIDSignInError.canceled`) → `CloudAuthError.cancelled` (sesión 2,
+    /// D2): la UI lo consume en silencio (sin alert ni breadcrumb — un cancel no es fallo).
+    func signInWithGoogle() async throws {
+        guard client != nil else { throw CloudAuthError.notConfigured }
+        // Guard in-flight COMPARTIDO con SIWA: un sign-in Apple y uno Google jamás conviven.
+        guard signInContinuation == nil, !googleSignInInFlight else {
+            throw CloudAuthError.signInAlreadyInFlight
+        }
+        googleSignInInFlight = true
+        defer { googleSignInInFlight = false }
+        lastGoogleCredential = nil
+
+        let rawNonce = Self.randomNonceString()
+
+        // Un flujo de sign-in interactivo SIEMPRE corre con la app en foreground (hay un root VC) —
+        // misma premisa que el `presentationAnchor` de SIWA. throw (no trap): la UI degrada a su
+        // path de error normal (nota 5 post-implementación sesión 1).
+        guard let presenter = Self.topPresentingViewController() else {
+            throw CloudAuthError.presentationUnavailable
+        }
+
+        let result: GIDSignInResult
+        do {
+            // Firma verificada contra GIDSignIn.h 9.2.0:
+            // `signInWithPresentingViewController:hint:additionalScopes:nonce:completion:` →
+            // Swift async `signIn(withPresenting:hint:additionalScopes:nonce:)`.
+            result = try await GIDSignIn.sharedInstance.signIn(
+                withPresenting: presenter,
+                hint: nil,
+                additionalScopes: nil,
+                nonce: Self.sha256Hex(rawNonce)
+            )
+        } catch {
+            // Cancel del usuario → tipado limpio, SIN breadcrumb (no es fallo).
+            if Self.isGoogleCancellation(error) {
+                throw CloudAuthError.cancelled
+            }
+            CloudSyncBreadcrumb.authSignInFailed(reason: "google-authorization")
+            throw error
+        }
+
+        guard let idToken = result.user.idToken?.tokenString else {
+            CloudSyncBreadcrumb.authSignInFailed(reason: "google-missing-idtoken")
+            throw CloudAuthError.missingIdentityToken
+        }
+
+        let profile = result.user.profile
+        try await completeGoogleSignIn(GoogleSignInCredential(
+            idToken: idToken,
+            accessToken: result.user.accessToken.tokenString,
+            rawNonce: rawNonce,
+            googleUserID: result.user.userID,
+            email: profile.flatMap { $0.email.isEmpty ? nil : $0.email },
+            fullName: profile.flatMap { $0.name.isEmpty ? nil : $0.name },
+            obtainedAt: Date()))
+    }
+
+    /// **vb1f (opción C) · inicia sesión con una credencial de Google que esta app YA obtuvo, sin abrir la hoja.** La
+    /// pantalla de entrar la recoge con `takeGoogleCredentialForReuse()` antes de soltar la sesión del «otro método», y
+    /// la pasa al alta: así «Registrarse con Google» no vuelve a pedir Google.
+    ///
+    /// Devuelve `false` si el canje no entró, y entonces quien llama abre la hoja de siempre: **lo peor que puede pasar
+    /// es lo de antes**. Que Supabase acepte canjear dos veces el mismo id token de Google dentro de su vigencia NO está
+    /// medido (no se puede desde el simulador); por eso el camino interactivo queda detrás, y el rastro
+    /// `google-reuse-rejected` dice en producción si ese caso existe.
+    private func signInWithReusedGoogleCredential(_ credential: GoogleSignInCredential) async -> Bool {
+        guard client != nil, signInContinuation == nil, !googleSignInInFlight else { return false }
+        googleSignInInFlight = true
+        defer { googleSignInInFlight = false }
+        do {
+            try await completeGoogleSignIn(credential)
+            return true
+        } catch {
+            #if DEBUG
+            print("CloudAuthService: la credencial de Google reusada no entró, se pide otra vez: \(error)")
+            #endif
+            CloudSyncBreadcrumb.authSignInFailed(reason: "google-reuse-rejected")
+            return false
+        }
+    }
+
+    /// El canje de una credencial de Google con Supabase y todo lo que nace con la sesión. **Un solo sitio para el canje
+    /// interactivo y el reusado**: si fueran dos, el registro de sesiones, la época, la marca del adopt o el par de
+    /// Google acabarían divergiendo en uno de ellos.
+    private func completeGoogleSignIn(_ credential: GoogleSignInCredential) async throws {
+        guard let client else { throw CloudAuthError.notConfigured }
+        let idToken = credential.idToken
+        let rawNonce = credential.rawNonce
+
+        // La sesión que había antes del canje: siembra el registro de sesiones si este build aún no lo había visto.
+        let previousUserID = currentUserID
+        do {
+            _ = try await client.signInWithIdToken(
+                credentials: .init(
+                    provider: .google,
+                    idToken: idToken,
+                    accessToken: credential.accessToken,
+                    nonce: rawNonce
+                )
+            )
+        } catch {
+            CloudSyncBreadcrumb.authSignInFailed(reason: "idtoken-exchange")
+            throw error
+        }
+        CloudSyncBreadcrumb.authSignedIn()
+        // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
+        AdoptSessionOwnership.record(nil)
+        sessionEpoch += 1
+        // Cuándo entró esta cuenta: separa los cambios de grupos escritos ANTES —de la cuenta anterior— de los suyos
+        // (`GroupsOutboxOwnershipLogic.owner`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
+        SessionSignInLog.recordSignIn(sub: currentUserID, previousSub: previousUserID, at: Date())
+        writeProfileString("google", forKey: Self.keyProvider)
+
+        // Captura de perfil con la MISMA regla anti-sangrado que SIWA (helper compartido). La
+        // identidad Google almacenada es el `googleUserID` del PAR (leída ANTES de re-escribirlo).
+        // Corre TRAS el exchange exitoso (a diferencia de SIWA, que captura en el delegate): así un
+        // exchange fallido jamás deja perfil capturado SIN par — un perfil huérfano dejaría ciega la
+        // regla anti-sangrado del siguiente sign-in (identidad almacenada nil ⇒ "primer sign-in").
+        // Google re-entrega email/nombre en CADA sign-in, así que no se pierde nada.
+        // Cambio CROSS-provider (fix review adversarial #2): un perfil capturado de proveniencia
+        // APPLE es invisible a la decisión de abajo (compara contra el googleUserID del par) — sin
+        // este pre-clear, el email/nombre del humano SIWA anterior sobreviviría como perfil de esta
+        // sesión Google, y su `keyAppleUserID` residual dejaría la red de revocación de Apple
+        // (`refreshCredentialStateIfNeeded`) apuntando al humano equivocado: si ÉL revocara su
+        // autorización SIWA, cerraría ESTA sesión Google.
+        if storedAppleUserID() != nil {
+            clearCapturedProfile()
+        }
+        let googleUserID = credential.googleUserID
+        if let googleUserID {
+            applyProfileCapture(
+                persistIncomingUserIDToKey: nil,  // la identidad Google se persiste como PAR (abajo)
+                storedUserID: GoogleUserPairStore(storage: profileStore).read()?.googleUserID,
+                incomingUserID: googleUserID,
+                email: credential.email,
+                fullName: credential.fullName
+            )
+        }
+
+        // PAR (googleUserID, sub) — AJUSTE #1 del /review-plan: SOLO con AMBOS presentes
+        // (`GIDGoogleUser.userID` es `String?`); si falta cualquiera ⇒ skip con breadcrumb, jamás un
+        // par incompleto (el `disconnect()` de sesión 3 tiene skip natural sin par).
+        if let googleUserID, let sub = currentUserID {
+            do {
+                try GoogleUserPairStore(storage: profileStore)
+                    .write(.init(googleUserID: googleUserID, sub: sub))
+            } catch {
+                #if DEBUG
+                print("CloudAuthService.signInWithGoogle: pair write failed: \(error)")
+                #endif
+                CloudSyncBreadcrumb.googlePairCaptureSkipped(reason: "keychain")
+            }
+        } else {
+            CloudSyncBreadcrumb.googlePairCaptureSkipped(
+                reason: googleUserID == nil ? "no-google-user-id" : "no-sub")
+        }
+
+        // vb1f: la credencial queda a mano, atada a ESTA sesión, por si la pantalla de entrar la necesita para el alta.
+        lastGoogleCredential = currentUserID.map { (credential, $0) }
+    }
+
+    /// **vb1f · la credencial de Google del último canje, una sola vez.** Solo si la sesión viva es la que nació de ella
+    /// (mismo `sub`) y aún está fresca (`GoogleCredentialReuseLogic`); en cualquier caso la olvida: sirve a UN alta,
+    /// la siguiente. La llama la pantalla de entrar ANTES de soltar la sesión, porque `signOut()` también la olvida.
+    func takeGoogleCredentialForReuse(now: Date = Date()) -> GoogleSignInCredential? {
+        defer { lastGoogleCredential = nil }
+        guard let stored = lastGoogleCredential else { return nil }
+        return GoogleCredentialReuseLogic.reusable(
+            stored.credential, boundToSub: stored.sub, liveSub: currentUserID, now: now)
+    }
+
+    /// ¿Es el error el CANCEL del usuario en el sheet de Google? Por NSError domain+code (AJUSTE #6
+    /// del /review-plan: cubre tanto el enum `GIDSignInError` bridgeado como un NSError crudo del
+    /// SDK — y es fabricable en tests sin el flujo real).
+    nonisolated static func isGoogleCancellation(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == kGIDSignInErrorDomain
+            && nsError.code == GIDSignInError.canceled.rawValue
+    }
+
+    /// Root/topmost view controller del key window — presentador del sheet web de Google (mismo
+    /// criterio de ventana que el `presentationAnchor` de SIWA, devolviendo UIViewController).
+    private static func topPresentingViewController() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow)
+            ?? scenes.flatMap(\.windows).first
+        guard var top = window?.rootViewController else { return nil }
+        while let presented = top.presentedViewController {
+            top = presented
+        }
+        return top
+    }
+
+    /// Cierra la sesión LOCAL (no revoca refresh tokens en el server — es el sign-out del device) y
+    /// BORRA el perfil capturado (email/fullName/appleUserID) del Keychain propio — fix review R2 #1:
+    /// sin este borrado, un usuario B que firme después en el mismo device heredaría el email/nombre
+    /// de A (el guard "solo rellenar huecos" vería datos presentes y los reusaría).
+    ///
+    /// - Returns: `true` si al terminar **no queda sesión guardada**. Es la postcondición, releída del almacén del SDK y no
+    ///   del resultado de la llamada, porque las dos cosas no coinciden (medido en supabase-swift 2.50.0, ticket
+    ///   `detach-does-not-verify-the-cloud-session-actually-closed`): `client.signOut(scope: .local)` borra la sesión ANTES
+    ///   de hablar con el servidor, así que la red caída LANZA con la sesión ya fuera; y el borrado del llavero traga su
+    ///   error, así que un `SecItemDelete` que falla NO lanza y la sesión se queda. Tampoco para el auto-refresco: un
+    ///   refresco en vuelo la repone al terminar, y eso **solo se ve si aterriza antes de esta lectura** — uno que aterrice
+    ///   después no lo ve nadie (ticket `detach-postcondition-misses-a-token-refresh-that-lands-after-it`). **Lo lee el desasociar** (`CloudSessionSignOut.detachGroupsAccount`), que
+    ///   no relanza y se para si esto dice `false`, y desde el 2026-09-26 **también los cierres de sesión** (ticket
+    ///   `sign-out-exits-do-not-verify-the-cloud-session-closed`): los cuatro voluntarios se paran sin armar el borrado y los
+    ///   dos tras borrar la cuenta arman el retiro de la sesión. **No es `hasSession`**: ese lleva el seam
+    ///   `-uitest-fake-cloud-session` y diría «sigue» en todo XCUITest que lo use. Los demás llamadores lo descartan hoy.
+    ///
+    /// `returningToPreviousAccount` (ticket `groups-outbox-rows-without-a-live-session-have-no-exit`): la sesión que se cierra
+    /// fue DE PASO —la abrió un intento que la rechaza, como el «otra cuenta» de la puerta de la nube o la salida del adopt—,
+    /// así que lo que se escriba en grupos a partir de ahora vuelve a ser de la cuenta de antes (`SessionSignInLog.recordSignOut`).
+    /// Solo lo pasa `CloudMigrationController.closeSessionIfOpened`. **Con el default no se apunta nada**, y es el lado
+    /// seguro: tras una revocación de Apple o un cierre sin borrado la persona sigue siendo la que cerró, y en los cierres con
+    /// borrado no queda nada que fechar.
+    @discardableResult
+    func signOut(returningToPreviousAccount: Bool = false) async -> Bool {
+        // ANTES del guard a propósito: el `return` de abajo se dispara cuando el backend no está
+        // configurado (`client == nil`), y entonces todo lo que viene después no corre. El tipo de
+        // cuenta cacheado no depende del backend para ser basura una vez cerrada la sesión, así que
+        // se borra aquí y no se queda a merced de un flag. (g15_01)
+        AccountKindService.shared.handleSignOut()
+        // La marca del adopt describe ESTA sesión (`AdoptSessionOwnership`): muere con ella, también sin backend.
+        AdoptSessionOwnership.record(nil)
+        // Antes del guard y aunque el cierre falle: olvidar un rechazo de más solo cuesta volver a preguntar.
+        sessionEpoch += 1
+        // vb1f: la credencial de Google reusable muere con la sesión, también sin backend.
+        lastGoogleCredential = nil
+        guard let client else { return storedSessionIsGone }
+        // La cuenta que se cierra, antes de cerrarla: el registro de sesiones vuelve a la de antes si se va de verdad.
+        let closingUserID = currentUserID
+        // Higiene Google (H6 del brief): sign-out LOCAL del SDK — jamás `disconnect()` (eso revoca el
+        // grant OAuth entero; es el paso 4b del borrado de cuenta, sesión 3). Sin esto, la sesión del
+        // SDK de la cuenta A quedaría viva al entrar B. No-op si nunca hubo sign-in Google. El PAR
+        // Google NO se borra (paridad con el par SIWA: credencial del provider, no de la sesión).
+        GIDSignIn.sharedInstance.signOut()
+        // C-8: la caché del entitlement de CUENTA muere con la sesión — es estado de la cuenta que
+        // sale, igual que el perfil capturado. Puramente local (jamás toca el backend, a diferencia
+        // de las prefs: aquí no hay LWW que pueda pisar un registro server-side de una cuenta viva).
+        // Vía el servicio (no el store) porque además re-deriva `isProUser`: en los caminos de
+        // cierre que NO relanzan el proceso, el Pro heredado de la cuenta seguiría abierto en la UI
+        // y en el App Group que lee el intent de Siri.
+        await AccountEntitlementService.shared.handleSignOut()
+        do {
+            try await client.signOut(scope: .local)
+            CloudSyncBreadcrumb.authSignedOut(reason: "user")
+        } catch {
+            #if DEBUG
+            print("CloudAuthService.signOut: \(error)")
+            #endif
+            CloudSyncBreadcrumb.authSignOutFailed()
+        }
+        let gone = storedSessionIsGone
+        if gone {
+            // El perfil capturado y el `keyProvider` son de la SESIÓN, así que mueren con ella —y solo cuando se ha ido de
+            // verdad (2026-09-26, ticket `detach-does-not-verify-the-cloud-session-actually-closed`). Hasta ese día se
+            // borraban antes de llamar al SDK: con la sesión superviviente, el registrador de Grupos del arranque
+            // (`GroupsAccountAssociation.syncFromLiveSessionIfNeeded`) reescribía la asociación con proveedor y correo
+            // `nil`, también en el iCloud-KV, y la sección de Almacenamiento se quedaba sin nombre en todos los teléfonos del
+            // Apple ID. Cubre de una vez los caminos de `CloudSessionSignOut` (todos llaman este `signOut()`).
+            clearCapturedProfile()
+            clearStoredProvider()
+            // Una sesión DE PASO que se cierra: lo que se escriba en grupos a partir de ahora vuelve a ser de la cuenta de antes
+            // (`SessionSignInLog.recordSignOut`, ticket `groups-outbox-rows-without-a-live-session-have-no-exit`).
+            if returningToPreviousAccount {
+                SessionSignInLog.recordSignOut(closingSub: closingUserID, at: Date())
+            }
+        } else {
+            CloudSyncBreadcrumb.authSignOutLeftSession()
+        }
+        return gone
+    }
+
+    /// La postcondición de `signOut()`: el llavero ya no guarda sesión. Sin el seam de `hasSession`, a propósito (ver el
+    /// docblock de `signOut()`); con el suyo propio, que solo cambia lo que se DEVUELVE. No es `private` desde el
+    /// 2026-10-02: el desasociar la vuelve a leer, síncrona, justo antes de escribir (la espera de quiescencia que va en
+    /// medio deja volver a entrar).
+    var storedSessionIsGone: Bool {
+        #if DEBUG
+        if UITestHooks.signOutKeepsSession { return false }
+        #endif
+        guard let client else { return true }
+        return Self.sessionIsGone(
+            sdkSeesSession: client.currentSession != nil,
+            read: { try CloudAuthKeychainStorage().retrieve(key: Self.sessionStorageKey) })
+    }
+
+    /// La clave con la que el SDK guarda la sesión en `CloudAuthKeychainStorage`. Una sola vez: la usan la configuración
+    /// del cliente y la postcondición de `signOut()`, y si divergieran la postcondición leería una clave vacía y diría
+    /// siempre «se fue».
+    nonisolated static let sessionStorageKey = "yala.cloudauth.session"
+
+    /// **¿Se fue la sesión?** Falla CERRADO, y por eso no basta con `currentSession`: el SDK convierte un fallo al LEER el
+    /// llavero en `nil` (medido en supabase-swift 2.50.0, `SessionStorage.live`), así que leído solo de ahí diría «se fue»
+    /// justo cuando el llavero falla — que es cuando el borrado tampoco entró. Sigue viva si el SDK la ve, si el llavero no
+    /// se deja leer, o si guarda algo que decodifica como sesión. Algo que no decodifica cuenta como ida: el SDK tampoco
+    /// puede usarlo, y bloquear por ello no tendría salida (su `signOut` sale sin borrar cuando no ve sesión).
+    nonisolated static func sessionIsGone(sdkSeesSession: Bool, read: () throws -> Data?) -> Bool {
+        if sdkSeesSession { return false }
+        let stored: Data?
+        do {
+            stored = try read()
+        } catch {
+            #if DEBUG
+            print("CloudAuthService: el llavero no se dejó leer tras el cierre de sesión: \(error)")
+            #endif
+            return false
+        }
+        guard let stored else { return true }
+        do {
+            _ = try JSONDecoder().decode(Session.self, from: stored)
+            return false
+        } catch {
+            return true
+        }
+    }
+
+    // MARK: - #23 mitigación cliente: revocación de credencial de Apple
+
+    /// Chequea el estado de la credencial de Apple al volver a foreground; si fue revocada / no existe,
+    /// cierra la sesión local. Llamable desde el panel o el ciclo de vida de la app.
+    func refreshCredentialStateIfNeeded() async {
+        guard client != nil, let appleUserID = readProfileString(Self.keyAppleUserID) else { return }
+        let provider = ASAuthorizationAppleIDProvider()
+        let state: ASAuthorizationAppleIDProvider.CredentialState
+        do {
+            state = try await provider.credentialState(forUserID: appleUserID)
+        } catch {
+            return  // transitorio — no tocamos la sesión ante un fallo de consulta
+        }
+        switch state {
+        case .revoked, .notFound:
+            CloudSyncBreadcrumb.authCredentialRevoked()
+            await signOut()
+        case .authorized, .transferred:
+            break
+        @unknown default:
+            break
+        }
+    }
+
+    /// Descripción del estado de la credencial de Apple para el panel DEBUG. `nil` = sin appleUserID
+    /// capturado (nunca hubo sign-in en este device). Sin PII (solo el enum).
+    func credentialStateDescription() async -> String? {
+        guard client != nil, let appleUserID = readProfileString(Self.keyAppleUserID) else { return nil }
+        do {
+            let state = try await ASAuthorizationAppleIDProvider().credentialState(forUserID: appleUserID)
+            switch state {
+            case .authorized: return "authorized"
+            case .revoked: return "revoked"
+            case .notFound: return "notFound"
+            case .transferred: return "transferred"
+            @unknown default: return "unknown"
+            }
+        } catch {
+            return "query failed"
+        }
+    }
+
+    private func registerRevocationObserverIfNeeded() {
+        guard client != nil, !didRegisterRevocationObserver else { return }
+        didRegisterRevocationObserver = true
+        NotificationCenter.default.addObserver(
+            forName: ASAuthorizationAppleIDProvider.credentialRevokedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            MainActor.assumeIsolated {
+                CloudSyncBreadcrumb.authCredentialRevoked()
+                Task { await self.signOut() }
+            }
+        }
+    }
+
+    // MARK: - Nonce (testeable)
+
+    /// Nonce aleatorio criptográficamente seguro (charset URL-safe). `SecRandomCopyBytes`; ante un fallo
+    /// del RNG del sistema hace `preconditionFailure` (jamás un nonce débil). `nonisolated`: función pura.
+    nonisolated static func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remaining = length
+        while remaining > 0 {
+            var random: UInt8 = 0
+            let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+            guard status == errSecSuccess else {
+                preconditionFailure("SecRandomCopyBytes failed: \(status)")
+            }
+            if random < charset.count {
+                result.append(charset[Int(random)])
+                remaining -= 1
+            }
+        }
+        return result
+    }
+
+    /// SHA-256 del input en HEX minúscula (lo que va al request de Apple). `nonisolated`: función pura.
+    nonisolated static func sha256Hex(_ input: String) -> String {
+        SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    // MARK: - Perfil capturado (Keychain propio)
+
+    private func captureProfileIfPresent(_ credential: ASAuthorizationAppleIDCredential) {
+        // Regla anti-sangrado de PII (pura, `CloudAuthProfileCapture.decide`): cuenta distinta →
+        // sobrescribir el perfil completo; misma cuenta → solo rellenar huecos. appleUserID SIEMPRE
+        // (para getCredentialState).
+        let incomingFullName: String? = credential.fullName.flatMap { name in
+            let full = PersonNameComponentsFormatter().string(from: name)
+            return full.isEmpty ? nil : full
+        }
+        // Cambio CROSS-provider simétrico (fix review adversarial #2): perfil capturado de
+        // proveniencia GOOGLE (par presente, sin appleUserID) es invisible a `decide` → pre-clear.
+        // El PAR Google NO se borra (credencial del provider — el match por `sub` de sesión 3 hace
+        // el residuo inofensivo). Byte-idéntico para todo estado pre-Google (par imposible).
+        if readProfileString(Self.keyAppleUserID) == nil,
+           GoogleUserPairStore(storage: profileStore).read() != nil {
+            clearCapturedProfile()
+        }
+        applyProfileCapture(
+            persistIncomingUserIDToKey: Self.keyAppleUserID,
+            storedUserID: readProfileString(Self.keyAppleUserID),
+            incomingUserID: credential.user,
+            email: credential.email,
+            fullName: incomingFullName
+        )
+    }
+
+    /// Trozo COMPARTIDO de la captura de perfil (Apple + Google) — la regla anti-sangrado vive en
+    /// `CloudAuthProfileCapture.decide` (pura, testeada); esto solo la aplica sobre el Keychain.
+    /// `persistIncomingUserIDToKey`: Apple persiste su identidad aquí (`keyAppleUserID`, SIEMPRE —
+    /// para `getCredentialState`); Google pasa `nil` (su identidad se persiste como PAR en el
+    /// call-site, tras el exchange). Extraído con BYTE-IDENTIDAD del path SIWA (ajuste #2).
+    private func applyProfileCapture(
+        persistIncomingUserIDToKey userIDKey: String?,
+        storedUserID: String?,
+        incomingUserID: String,
+        email: String?,
+        fullName: String?
+    ) {
+        let decision = CloudAuthProfileCapture.decide(
+            storedAppleUserID: storedUserID,
+            incomingAppleUserID: incomingUserID,
+            hasStoredEmail: readProfileString(Self.keyCapturedEmail) != nil,
+            hasStoredFullName: readProfileString(Self.keyCapturedFullName) != nil,
+            hasIncomingEmail: email != nil,
+            hasIncomingFullName: fullName != nil
+        )
+        if decision.clearStoredProfile {
+            clearCapturedProfile()
+        }
+        if let userIDKey {
+            writeProfileString(incomingUserID, forKey: userIDKey)
+        }
+        if decision.writeEmail, let email {
+            writeProfileString(email, forKey: Self.keyCapturedEmail)
+        }
+        if decision.writeFullName, let fullName {
+            writeProfileString(fullName, forKey: Self.keyCapturedFullName)
+        }
+    }
+
+    /// Borra `keyProvider` (credencial de sesión) — separado de `clearCapturedProfile` porque el
+    /// clear del perfil también corre a MITAD de un sign-in (cambio de cuenta) donde el provider
+    /// aún no se re-escribió.
+    private func clearStoredProvider() {
+        do {
+            try profileStore.remove(key: Self.keyProvider)
+        } catch {
+            #if DEBUG
+            print("CloudAuthService.clearStoredProvider: \(error)")
+            #endif
+        }
+    }
+
+    /// Borra email/fullName/appleUserID del Keychain propio (sign-out y cambio de cuenta).
+    private func clearCapturedProfile() {
+        for key in [Self.keyCapturedEmail, Self.keyCapturedFullName, Self.keyAppleUserID] {
+            do {
+                try profileStore.remove(key: key)
+            } catch {
+                #if DEBUG
+                print("CloudAuthService.clearCapturedProfile: \(error)")
+                #endif
+            }
+        }
+    }
+
+    private func readProfileString(_ key: String) -> String? {
+        do {
+            guard let data = try profileStore.retrieve(key: key) else { return nil }
+            return String(data: data, encoding: .utf8)
+        } catch {
+            // `retrieve` ya devuelve nil para itemNotFound; llegar aquí = OSStatus real (fix R2 #5 —
+            // simétrico con la ruta de escritura, nada de try? que colapsa el error).
+            #if DEBUG
+            print("CloudAuthService.readProfileString: \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    private func writeProfileString(_ value: String, forKey key: String) {
+        do {
+            try profileStore.store(key: key, value: Data(value.utf8))
+        } catch {
+            #if DEBUG
+            print("CloudAuthService.writeProfileString: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Continuation
+
+    private func finishSignIn(_ result: Result<Void, Error>) {
+        authController = nil
+        currentNonce = nil
+        guard let continuation = signInContinuation else { return }
+        signInContinuation = nil
+        continuation.resume(with: result)
+    }
+}
+
+// MARK: - ASAuthorizationControllerDelegate / PresentationContextProviding
+//
+// Los métodos del delegate NO son `@MainActor` en el SDK, pero se invocan en el main thread → se marcan
+// `nonisolated` y saltan con `MainActor.assumeIsolated` (compila limpio bajo default-MainActor isolation).
+
+extension CloudAuthService: ASAuthorizationControllerDelegate {
+
+    nonisolated func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        MainActor.assumeIsolated {
+            guard
+                let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                let tokenData = credential.identityToken,
+                let idToken = String(data: tokenData, encoding: .utf8),
+                let nonce = currentNonce
+            else {
+                finishSignIn(.failure(CloudAuthError.missingIdentityToken))
+                return
+            }
+            captureProfileIfPresent(credential)
+            // B1 (5.1.1(v)): capturar TAMBIÉN el authorizationCode — es de un solo uso y expira en ~5 min,
+            // por eso el canje corre EN el sign-in (hook best-effort), no al borrar la cuenta.
+            let siwaCodeData = credential.authorizationCode
+            let appleUserID = credential.user
+            Task { @MainActor in
+                // La sesión que había antes del canje (ver el gemelo de Google).
+                let previousUserID = self.currentUserID
+                do {
+                    _ = try await self.client?.signInWithIdToken(
+                        credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
+                    )
+                    CloudSyncBreadcrumb.authSignedIn()
+                    // Sesión nueva: la marca del adopt describía la anterior (`AdoptSessionOwnership`).
+                    AdoptSessionOwnership.record(nil)
+                    self.sessionEpoch += 1
+                    // Cuándo entró esta cuenta, para el dueño de los cambios de grupos (ver el gemelo de Google).
+                    SessionSignInLog.recordSignIn(sub: self.currentUserID, previousSub: previousUserID, at: Date())
+                    // Provider de la sesión (fuente del claim) — espejo del write en signInWithGoogle.
+                    self.writeProfileString("apple", forKey: Self.keyProvider)
+                    // Tras el exchange EXITOSO (hay JWT de Supabase para el Worker). Jamás bloquea/retrasa.
+                    SIWAExchangeCapture.dispatch(
+                        hook: self.siwaExchangeHook, codeData: siwaCodeData, appleUserID: appleUserID
+                    )
+                    self.finishSignIn(.success(()))
+                } catch {
+                    CloudSyncBreadcrumb.authSignInFailed(reason: "idtoken-exchange")
+                    self.finishSignIn(.failure(error))
+                }
+            }
+        }
+    }
+
+    nonisolated func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        MainActor.assumeIsolated {
+            CloudSyncBreadcrumb.authSignInFailed(reason: "apple-authorization")
+            finishSignIn(.failure(error))
+        }
+    }
+}
+
+extension CloudAuthService: ASAuthorizationControllerPresentationContextProviding {
+
+    nonisolated func presentationAnchor(
+        for controller: ASAuthorizationController
+    ) -> ASPresentationAnchor {
+        MainActor.assumeIsolated {
+            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            if let window = scenes.flatMap(\.windows).first(where: \.isKeyWindow)
+                ?? scenes.flatMap(\.windows).first {
+                return window
+            }
+            // Un flujo SIWA interactivo SIEMPRE corre con la app en foreground (hay un window scene).
+            // El único init de `UIWindow` no deprecado en iOS 26 es `init(windowScene:)`.
+            guard let scene = scenes.first else {
+                preconditionFailure("SIWA requires an active UIWindowScene")
+            }
+            return UIWindow(windowScene: scene)
+        }
+    }
+}

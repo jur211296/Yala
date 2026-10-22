@@ -13,6 +13,7 @@ struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let budget: Budget
@@ -61,8 +62,12 @@ struct BudgetDetailView: View {
                         }
                     }
                     .padding(.vertical, DS.Spacing.xxl)
+                    // Ancho legible en la columna de detalle de una ventana ancha; en iPhone no toca nada.
+                    .frame(maxWidth: DS.Adaptive.readableWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .scrollViewGlassEdges()
+                .accessibilityIdentifier("budget_detail")
             } else {
                 Color.clear
             }
@@ -130,8 +135,14 @@ struct BudgetDetailView: View {
 
                 Text(spentText)
                     .font(DS.Typography.largeTitle)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                    // Crece con el texto del sistema y, si un importe largo no cabe en el ancho, se encoge en
+                    // vez de cortarse. Sustituye al tope en AX1, que lo dejaba pequeño a propósito.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                    // Lo lee `AdaptiveNavigationUITests` para comprobar que, al abrir otro presupuesto en la columna
+                    // de detalle, el gastado es el del presupuesto nuevo.
+                    .accessibilityIdentifier("budget_detail_spent")
 
                 Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), limitText))
                     .font(DS.Typography.subheadline)
@@ -159,7 +170,7 @@ struct BudgetDetailView: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(String(format: NSLocalizedString("budgets.days.remaining", comment: ""), "\(summary.daysRemaining)"))
+                    Text(L10n.Budgets.daysRemaining(summary.daysRemaining))
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                 }
@@ -282,7 +293,7 @@ struct BudgetDetailView: View {
                     SubsectionDivider()
 
                     // Alert thresholds
-                    HStack(spacing: DS.Spacing.md) {
+                    AdaptiveRowStack(spacing: DS.Spacing.md) {
                         Image(systemName: "bell.fill")
                             .font(DS.Typography.body)
                             .foregroundStyle(.secondary)
@@ -292,9 +303,7 @@ struct BudgetDetailView: View {
                         Text(L10n.BudgetDetail.alerts)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
-
-                        Spacer()
-
+                    } trailing: {
                         Text(alertThresholdsDescription)
                             .font(DS.Typography.label)
                             .foregroundStyle(.primary)
@@ -331,7 +340,7 @@ struct BudgetDetailView: View {
     // MARK: - Detail Row
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
@@ -341,13 +350,11 @@ struct BudgetDetailView: View {
             Text(label)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
-
-            Spacer()
-
+        } trailing: {
             Text(value)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)

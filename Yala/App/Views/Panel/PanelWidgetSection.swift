@@ -65,6 +65,7 @@ struct PanelWidgetRouter: View {
 // MARK: - Trend
 
 private struct PanelTrendSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let sessionState: SessionState
     let currencyCode: String
@@ -77,7 +78,7 @@ private struct PanelTrendSection: View {
             currencyCode: currencyCode,
             currentBalance: viewModel.currentBalance,
             size: size,
-            onShowMore: { viewModel.navigateToStatistics(.trends) },
+            onShowMore: { viewModel.navigateToStatistics(.trends, in: navigation) },
             headerInfoButton: trendInfoButton
         )
     }
@@ -106,6 +107,7 @@ private struct PanelTrendSection: View {
 // MARK: - Top Categories
 
 private struct PanelCategoriesSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
     let size: WidgetSize
@@ -124,7 +126,7 @@ private struct PanelCategoriesSection: View {
                     viewModel.toggleCategoryFilter(id)
                 }
             },
-            onShowMore: { viewModel.navigateToStatistics(.categories) },
+            onShowMore: { viewModel.navigateToStatistics(.categories, in: navigation) },
             size: mapWidgetSize(size),
             headerInfoButton: topCategoriesInfoButton,
             period: viewModel.selectedPeriod,
@@ -159,6 +161,7 @@ private struct PanelCategoriesSection: View {
 // MARK: - Top Subcategories
 
 private struct PanelSubcategoriesSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     @Bindable var viewModel: PanelViewModel
     let currencyCode: String
     let size: WidgetSize
@@ -179,7 +182,7 @@ private struct PanelSubcategoriesSection: View {
             },
             selectedSubcategoryIDs: viewModel.selectedSubcategoryIDs,
             isExcludeMode: viewModel.isExcludeMode,
-            onShowMore: { viewModel.navigateToStatistics(.categories) },
+            onShowMore: { viewModel.navigateToStatistics(.categories, in: navigation) },
             size: mapWidgetSize(size),
             headerInfoButton: topSubcategoriesInfoButton,
             period: viewModel.selectedPeriod,
@@ -216,6 +219,7 @@ private struct PanelSubcategoriesSection: View {
 // MARK: - Categories Pie
 
 private struct PanelCategoriesPieSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
     let size: WidgetSize
@@ -233,7 +237,7 @@ private struct PanelCategoriesPieSection: View {
                     viewModel.toggleCategoryFilter(id)
                 }
             },
-            onShowDetail: { viewModel.navigateToStatistics(.categories) },
+            onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
             headerInfoButton: categoriesPieInfoButton,
@@ -269,6 +273,7 @@ private struct PanelCategoriesPieSection: View {
 // MARK: - Subcategories Pie
 
 private struct PanelSubcategoriesPieSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
     let size: WidgetSize
@@ -287,7 +292,7 @@ private struct PanelSubcategoriesPieSection: View {
                     viewModel.toggleSubcategoryFilterFromPanel(subcategoryID)
                 }
             },
-            onShowDetail: { viewModel.navigateToStatistics(.categories) },
+            onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
             headerInfoButton: subcategoriesPieInfoButton,
@@ -324,6 +329,7 @@ private struct PanelSubcategoriesPieSection: View {
 // MARK: - Tags Pie (P20-09)
 
 private struct PanelTagsPieSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let sessionState: SessionState
     let currencyCode: String
@@ -342,7 +348,7 @@ private struct PanelTagsPieSection: View {
                     viewModel.toggleTagFilter(id)
                 }
             },
-            onShowDetail: { viewModel.navigateToStatistics(.categories) },
+            onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
             isExcludeMode: viewModel.isExcludeMode,
             size: size,
             headerInfoButton: tagsPieInfoButton,
@@ -380,6 +386,7 @@ private struct PanelTagsPieSection: View {
 // MARK: - Cash Flow
 
 private struct PanelCashFlowSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let sessionState: SessionState
     let size: WidgetSize
@@ -392,7 +399,7 @@ private struct PanelCashFlowSection: View {
                 period: viewModel.selectedPeriod.rawValue,
                 grouping: viewModel.cashFlowGrouping,
                 interval: viewModel.currentInterval,
-                onShowDetail: { viewModel.navigateToStatistics(.trends) },
+                onShowDetail: { viewModel.navigateToStatistics(.trends, in: navigation) },
                 displayMode: viewModel.trendType,
                 previousAmount: viewModel.cashFlowPreviousNet,
                 variationDisplay: .panelCompact,
@@ -436,6 +443,7 @@ private struct PanelCashFlowSection: View {
 // MARK: - Recent Records
 
 private struct PanelRecentRecordsSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
 
@@ -443,7 +451,7 @@ private struct PanelRecentRecordsSection: View {
         RecentRecordsWidget(
             records: viewModel.latestRecords,
             currencyCode: currencyCode,
-            onShowMore: { viewModel.navigateToStatistics(.records) },
+            onShowMore: { viewModel.navigateToStatistics(.records, in: navigation) },
             headerInfoButton: recentRecordsInfoButton
         )
     }
@@ -466,6 +474,7 @@ private struct PanelRecentRecordsSection: View {
 // MARK: - Need Trend
 
 private struct PanelNeedTrendSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
     let size: WidgetSize
@@ -490,7 +499,7 @@ private struct PanelNeedTrendSection: View {
                     viewModel.toggleNeedFilter(need)
                 }
             },
-            onShowDetail: { viewModel.navigateToStatistics(.categories) },
+            onShowDetail: { viewModel.navigateToStatistics(.categories, in: navigation) },
             period: viewModel.selectedPeriod,
             previousTotalAmount: viewModel.previousNeedTotalAmount,
             previousAmountByNeed: viewModel.previousNeedAmounts,
@@ -578,6 +587,7 @@ private struct PanelExchangeRateSection: View {
 private struct PanelBudgetsSection: View {
     let viewModel: PanelViewModel
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     let currencyCode: String
     let size: WidgetSize
     @Binding var showBudgetFavoritesSettings: Bool
@@ -598,7 +608,7 @@ private struct PanelBudgetsSection: View {
             onSelectBudget: { budget in
                 sessionState.applyBudgetFilters(budget, context: modelContext)
             },
-            onShowMore: { sessionState.navigateToBudgets() },
+            onShowMore: { navigation.navigateToBudgets() },
             onEditFavorites: { showBudgetFavoritesSettings = true },
             size: mapBudgetsWidgetSize(size),
             headerInfoButton: budgetsInfoButton(displayCurrency: displayCurrency)
@@ -631,6 +641,7 @@ private struct PanelBudgetsSection: View {
 private struct PanelScheduledPaymentsSection: View {
     @Bindable var viewModel: PanelViewModel
     let sessionState: SessionState
+    @Environment(SceneNavigation.self) private var navigation
     let currencyCode: String
     let size: WidgetSize
 
@@ -640,7 +651,7 @@ private struct PanelScheduledPaymentsSection: View {
             currencyCode: currencyCode,
             size: size,
             filter: $viewModel.scheduledPaymentsWidgetFilter,
-            onShowMore: { sessionState.navigateToScheduledPayments() },
+            onShowMore: { navigation.navigateToScheduledPayments() },
             headerInfoButton: scheduledPaymentsInfoButton
         )
     }
@@ -666,6 +677,7 @@ private struct PanelScheduledPaymentsSection: View {
 // MARK: - Weekday Bar
 
 private struct PanelWeekdayBarSection: View {
+    @Environment(SceneNavigation.self) private var navigation
     let viewModel: PanelViewModel
     let currencyCode: String
     let size: WidgetSize
@@ -675,7 +687,7 @@ private struct PanelWeekdayBarSection: View {
             data: viewModel.weekdayWidget.weekdaySpending,
             currencyCode: currencyCode,
             size: size,
-            onShowMore: { viewModel.navigateToStatistics(.insights) },
+            onShowMore: { viewModel.navigateToStatistics(.insights, in: navigation) },
             headerInfoButton: weekdayBarInfoButton
         )
     }

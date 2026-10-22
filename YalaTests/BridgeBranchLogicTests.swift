@@ -14,27 +14,27 @@ import Testing
 struct BridgeBranchLogicTests {
 
     @Test
-    func groupInvite_alwaysReturnsVirtualPair_regardlessOfEffective() {
-        // .groupInvite tiene prioridad sobre el opt-out: no hay cuentas reales en ese flow.
+    func sesiónSoloGrupos_alwaysReturnsVirtualPair_regardlessOfEffective() {
+        // La sesión solo-grupos tiene prioridad sobre el opt-out: no hay cuentas reales en ese flow.
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: true, effectiveBridgeEnabled: true
-        ) == .groupInviteVirtualPair)
+            isGroupsOnlySession: true, effectiveBridgeEnabled: true
+        ) == .virtualPairWithoutAccounts)
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: true, effectiveBridgeEnabled: false
-        ) == .groupInviteVirtualPair)
+            isGroupsOnlySession: true, effectiveBridgeEnabled: false
+        ) == .virtualPairWithoutAccounts)
     }
 
     @Test
-    func nonGroupInvite_effectiveOff_returnsOptoutVirtualOnly() {
+    func conSesiónPrivada_effectiveOff_returnsOptoutVirtualOnly() {
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: false, effectiveBridgeEnabled: false
+            isGroupsOnlySession: false, effectiveBridgeEnabled: false
         ) == .optoutVirtualOnly)
     }
 
     @Test
-    func nonGroupInvite_effectiveOn_returnsFullPair() {
+    func conSesiónPrivada_effectiveOn_returnsFullPair() {
         #expect(BridgeBranchLogic.decideCaseAPath(
-            isGroupInviteMode: false, effectiveBridgeEnabled: true
+            isGroupsOnlySession: false, effectiveBridgeEnabled: true
         ) == .fullPair)
     }
 
@@ -74,5 +74,90 @@ struct BridgeBranchLogicTests {
         #expect(BridgeBranchLogic.decideVirtualReconciliation(
             hasRealTx: true, lentAmount: -5
         ) == .noVirtual)
+    }
+
+    // MARK: - partitionVirtualTxs (Caso B preserve+update)
+
+    private func shape(
+        nilSub: Bool = false, systemSub: Bool = false, meta: Bool = false,
+        date: Date = Date(timeIntervalSince1970: 1_000), createdAt: Date = Date(timeIntervalSince1970: 1_000)
+    ) -> BridgeBranchLogic.VirtualTxShape {
+        BridgeBranchLogic.VirtualTxShape(
+            subcategoryIsNil: nilSub, subcategoryIsSystem: systemSub,
+            hasUserMetadata: meta, date: date, createdAt: createdAt
+        )
+    }
+
+    @Test
+    func partition_empty_returnsNothing() {
+        let r = BridgeBranchLogic.partitionVirtualTxs([])
+        #expect(r.preservedIndex == nil)
+        #expect(r.deletedIndices.isEmpty)
+    }
+
+    @Test
+    func partition_onlyDerived_preservesNoneDeletesAll() {
+        // Dos derivadas (lent + opening balance): ambas subcat de sistema → nada clasificable.
+        let r = BridgeBranchLogic.partitionVirtualTxs([
+            shape(systemSub: true), shape(systemSub: true),
+        ])
+        #expect(r.preservedIndex == nil)
+        #expect(r.deletedIndices == [0, 1])
+    }
+
+    @Test
+    func partition_oneClassifiable_amongDerived_preservesIt() {
+        // idx1 = myShare clasificable (subcat de usuario); idx0/idx2 derivadas.
+        let r = BridgeBranchLogic.partitionVirtualTxs([
+            shape(systemSub: true),
+            shape(nilSub: false, systemSub: false, meta: true),
+            shape(systemSub: true),
+        ])
+        #expect(r.preservedIndex == 1)
+        #expect(r.deletedIndices == [0, 2])
+    }
+
+    @Test
+    func partition_nilSubcat_isClassifiable() {
+        // Una virtual myShare sin clasificar (subcat nil) SÍ es clasificable (preservable).
+        let r = BridgeBranchLogic.partitionVirtualTxs([shape(nilSub: true)])
+        #expect(r.preservedIndex == 0)
+        #expect(r.deletedIndices.isEmpty)
+    }
+
+    @Test
+    func partition_duplicates_metadataWinsOverBare() {
+        // idx0 sin metadata, idx1 con subcat de usuario/tags → gana idx1.
+        let r = BridgeBranchLogic.partitionVirtualTxs([
+            shape(nilSub: true),                       // clasificable, sin metadata
+            shape(nilSub: false, systemSub: false, meta: true),  // clasificable con metadata
+        ])
+        #expect(r.preservedIndex == 1)
+        #expect(r.deletedIndices == [0])
+    }
+
+    @Test
+    func partition_duplicates_tieByMetadata_oldestWins() {
+        // Ambas con metadata: gana la más antigua por date.
+        let older = Date(timeIntervalSince1970: 100)
+        let newer = Date(timeIntervalSince1970: 500)
+        let r = BridgeBranchLogic.partitionVirtualTxs([
+            shape(meta: true, date: newer),
+            shape(meta: true, date: older),
+        ])
+        #expect(r.preservedIndex == 1)
+        #expect(r.deletedIndices == [0])
+    }
+
+    @Test
+    func partition_duplicates_tieByDate_stableByCreatedAtThenIndex() {
+        // Empate en metadata + date → desempata por createdAt, luego índice (determinista).
+        let d = Date(timeIntervalSince1970: 100)
+        let r = BridgeBranchLogic.partitionVirtualTxs([
+            shape(meta: true, date: d, createdAt: Date(timeIntervalSince1970: 200)),
+            shape(meta: true, date: d, createdAt: Date(timeIntervalSince1970: 150)),
+        ])
+        #expect(r.preservedIndex == 1)  // createdAt más antiguo
+        #expect(r.deletedIndices == [0])
     }
 }

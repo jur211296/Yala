@@ -16,13 +16,26 @@ struct NotificationsSettingsView: View {
 
     @State private var viewModel = NotificationsSettingsViewModel()
 
-    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
 
     /// En solo-grupos solo la notificación de grupos (event-driven); el resto son
-    /// recordatorios/reportes/pagos personales. Regla en `GroupInviteVisibilityPolicy`.
+    /// recordatorios/reportes/pagos personales. Regla en `GroupsOnlyVisibilityPolicy`.
+    /// El maestro de avisos de Grupos (`NotificationItem` de tipo `.groups`).
+    ///
+    /// **Mismo criterio que el gate del servicio** (`GroupSettlementReminderService`
+    /// `isGroupsNotificationActive`), incluido el fail-CERRADO cuando el item no existe: si el
+    /// servicio no va a avisar, la tarjeta no debe dejar encender nada. Si los dos criterios se
+    /// separan, vuelve el estado mentiroso que este cambio vino a cerrar.
+    ///
+    /// Se lee de `viewModel.notifications` —los mismos items que la pantalla ya tiene cargados— y no
+    /// con un fetch propio, para que la tarjeta reaccione al toggle de Grupos en la misma pantalla.
+    private var isGroupsMasterActive: Bool {
+        viewModel.notifications.first { $0.notificationType == .groups }?.isActive ?? false
+    }
+
     private var visibleNotifications: [NotificationItem] {
-        let visibleTypes = Set(GroupInviteVisibilityPolicy.visibleNotificationTypes(
-            NotificationType.allCases, isGroupInvite: isGroupInviteMode))
+        let visibleTypes = Set(GroupsOnlyVisibilityPolicy.visibleNotificationTypes(
+            NotificationType.allCases, isGroupsOnlyShell: isGroupsOnlyShell))
         return viewModel.notifications.filter { visibleTypes.contains($0.notificationType) }
     }
 
@@ -32,8 +45,9 @@ struct NotificationsSettingsView: View {
                     // Notificaciones configurables con budgetAlerts integrado.
                     // En solo-grupos se filtra a la notif de grupos (sin budgetAlerts ni "+").
                     if visibleNotifications.isEmpty {
-                        if !isGroupInviteMode {
-                            // Solo mostrar budgetAlertsSection cuando no hay otras notificaciones
+                        if !isGroupsOnlyShell {
+                            // Solo mostrar estas secciones cuando no hay otras notificaciones
+                            settlementRemindersSection
                             budgetAlertsSection
                             emptyState
                         }
@@ -55,7 +69,7 @@ struct NotificationsSettingsView: View {
                     dismiss()
                 }
             }
-            if !isGroupInviteMode {
+            if !isGroupsOnlyShell {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                         viewModel.isCreatingNew = true
@@ -69,6 +83,7 @@ struct NotificationsSettingsView: View {
                 viewModel.insertNotification(newNotification)
                 Task {
                     await NotificationService.shared.scheduleNotification(for: newNotification)
+                    replanPaymentSummariesIfNeeded(for: newNotification)
                 }
             }
         }
@@ -77,6 +92,9 @@ struct NotificationsSettingsView: View {
                 viewModel.saveContext()
                 Task {
                     await NotificationService.shared.scheduleNotification(for: notification)
+                    // Cambiar la HORA del item mueve el disparo de las summaries agendadas —
+                    // sin re-plan quedarían clavadas a la hora vieja.
+                    replanPaymentSummariesIfNeeded(for: notification)
                 }
             }
         }
@@ -107,7 +125,6 @@ struct NotificationsSettingsView: View {
             if viewModel.permissionStatus == .notDetermined {
                 let granted = await NotificationService.shared.requestPermission()
                 viewModel.permissionStatus = granted ? .authorized : .denied
-                TelemetryService.track(.notificationsPermission, parameters: ["resultado": granted ? "concedido" : "denegado"])
 
                 // If granted, schedule all active notifications
                 if granted {
@@ -121,6 +138,13 @@ struct NotificationsSettingsView: View {
                 await NotificationService.shared.rescheduleAllNotifications(items: viewModel.notifications)
             }
         }
+    }
+
+    /// Re-plan de las summaries diarias agendadas cuando el item tocado es el de pagos
+    /// planificados (toggle u hora). Idempotente; no aplica a los demás tipos.
+    private func replanPaymentSummariesIfNeeded(for notification: NotificationItem) {
+        guard notification.notificationType == .scheduledPayments else { return }
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
     }
 
     // MARK: - Empty State
@@ -146,8 +170,14 @@ struct NotificationsSettingsView: View {
                 notificationCard(for: notification)
             }
 
+            // Recordatorios de deuda: son de GRUPOS, así que se muestran también en modo solo-grupos
+            // — al revés que las alertas de presupuesto, que son de finanzas personales. (En la rama
+            // de lista vacía sí queda dentro del gate, pero ahí tampoco hay `NotificationItem`
+            // `.groups` que encender, así que el toggle no serviría de nada.)
+            settlementRemindersSection
+
             // Alertas de presupuesto: finanzas personales — ocultas en solo-grupos.
-            if !isGroupInviteMode {
+            if !isGroupsOnlyShell {
                 budgetAlertsSection
             }
         }
@@ -191,6 +221,10 @@ struct NotificationsSettingsView: View {
                     } else {
                         await NotificationService.shared.cancelNotification(for: notification)
                     }
+                    // Toggle honesto del item de pagos: ON agenda las summaries diarias,
+                    // OFF las cancela (scheduleNotification es no-op para tipos dinámicos —
+                    // el re-plan es el efecto real de este toggle).
+                    replanPaymentSummariesIfNeeded(for: notification)
                 }
             },
             onTap: notification.notificationType.isEditable ? {
@@ -209,6 +243,63 @@ struct NotificationsSettingsView: View {
             await NotificationService.shared.cancelNotification(for: notification)
         }
         viewModel.deleteNotification(notification)
+    }
+
+    // MARK: - Settlement Reminders Section
+
+    /// Toggle del nudge de deuda parada. Hermano de `budgetAlertsSection`: mismo patrón de tarjeta y
+    /// misma mecánica `@Bindable`.
+    ///
+    /// El COLOR sale del SSOT del tipo `.groups`, para que la tarjeta siga cualquier cambio de
+    /// identidad de Grupos. El ICONO, en cambio, es propio y deliberadamente distinto del suyo
+    /// (`person.2.fill`): la tarjeta de Grupos puede quedar justo encima con el mismo círculo morado, y
+    /// dos filas idénticas que hacen cosas distintas se leen mal.
+    private var settlementRemindersSection: some View {
+        @Bindable var prefs = appPreferences
+        return HStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(Color(hex: NotificationType.groups.defaultColor))
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: "hand.wave.fill")
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.white)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Notifications.settlementRemindersTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+
+                // Con el maestro de Grupos apagado el servicio no entrega NADA, y hasta el
+                // 2026-09-08 eso pasaba en silencio: se podía encender el toggle, verlo en verde y no
+                // recibir nunca un aviso. Decisión de Jürgen: que no se pueda encender, y que diga
+                // por qué — un toggle encendido que no entrega nada es peor que uno apagado.
+                Text(isGroupsMasterActive
+                     ? L10n.Notifications.settlementRemindersHint
+                     : L10n.Notifications.settlementRemindersGroupsOff)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            Toggle(L10n.Notifications.settlementRemindersTitle, isOn: $prefs.groupSettlementRemindersEnabled)
+                .labelsHidden()
+                .disabled(!isGroupsMasterActive)
+
+        }
+        .opacity(isGroupsMasterActive ? 1 : 0.6)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.xl)
+                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+        )
+        .shadow(color: DS.Shadow.subtle.color, radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
     }
 
     // MARK: - Budget Alerts Section

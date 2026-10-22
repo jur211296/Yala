@@ -42,6 +42,8 @@ struct InsightsTabView: View {
     @State private var showInsightsConsentAlert = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+    /// El `ScrollView` tiene poco alto (iPhone girado): la cabecera va en banda (`SummaryHeaderStack`).
+    @State private var isShortContainer = false
 
     // Content split: bento Detalle (stats + commitments + need) vs Observaciones
     @State private var contentMode: InsightsContentMode = .detail
@@ -82,7 +84,10 @@ struct InsightsTabView: View {
                         )
                         .padding(.top, DS.Spacing.xxxxl)
                     } else {
-                        LazyVStack(spacing: DS.Spacing.xl) {
+                        // En ancha, tarjetas en pares: [Salud financiera | Resumen inteligente], el selector a lo
+                        // ancho, [Compromisos | Por necesidad]. Hoy era el iPhone estirado, con barras de 900 pt para
+                        // tres números (ticket `ipad-and-duo-panel-and-statistics-use-the-width`).
+                        PairedCardsStack(rowSpacing: DS.Spacing.xl) {
                             if let score = viewModel.financialScore {
                                 financialScoreSection(score)
                             }
@@ -95,6 +100,7 @@ struct InsightsTabView: View {
 
                             if data.periodSummary.transactionCount >= 5 {
                                 contentModePill
+                                    .spansAllColumns()
 
                                 switch contentMode {
                                 case .detail:
@@ -110,9 +116,13 @@ struct InsightsTabView: View {
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, DS.Spacing.lg)
+                                    .spansAllColumns()
                             }
                         }
-                        .yalaSafeBottomPadding()
+                        .frame(maxWidth: .infinity)
+                        // Yala IA y «+» flotan encima en las cuatro pestañas de Estadísticas: al final del scroll, la última tarjeta sube
+                        // por encima de los dos (mismo margen que `RecordsTabView`).
+                        .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))
                     }
                 }
                 .padding(.top, DS.Spacing.sm)
@@ -121,6 +131,7 @@ struct InsightsTabView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
             }
         }
+        .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
@@ -191,7 +202,11 @@ struct InsightsTabView: View {
         let hasRecords = summary.transactionCount > 0
         let period = trendsViewModel.detailPeriod
 
-        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+        let showsFigure = !sessionState.isExpensesOnlyMode && hasRecords
+
+        // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
+        // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
+        SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
             TrendsPeriodMenu(
                 selectedPeriod: period,
                 customDateRange: sessionState.customDateRange,
@@ -199,15 +214,23 @@ struct InsightsTabView: View {
                 onCustomTapped: { showCustomPeriodPicker = true }
             )
             .equatable()
-
-            if !sessionState.isExpensesOnlyMode && hasRecords {
+        } caption: {
+            // Qué es la cifra. Aquí siempre es el neto: el hero no se pinta en
+            // modo solo-gastos, así que no hay caso de un solo lado.
+            if showsFigure {
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights.text)
+                    .accessibilityIdentifier("stats_hero_caption")
+            }
+        } figure: {
+            if showsFigure {
                 AmountText(
                     value: summary.netBalance,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                    font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                    isEstimate: summary.amountsAreApproximate
                 )
             }
-
+        } detail: {
             incomeExpenseChips(summary)
 
             if let sub = RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
@@ -216,9 +239,6 @@ struct InsightsTabView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, summaryVerticalPadding)
-        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }
@@ -232,9 +252,14 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func incomeExpenseChips(_ summary: PeriodSummary) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        // Con texto de accesibilidad entradas y salidas van en dos líneas (decisión A de Jürgen del
+        // 2026-10-12, `stats-hero-detail-row-truncates-at-accessibility-text`): en una sola, la cifra
+        // de salidas se quedaba en «……» y el chip de variación salía cortado contra el borde. Cada
+        // chip baja además bajo su cifra (`AmountWithChipStack`). A tamaño normal las dos piezas pintan
+        // el mismo `HStack` de siempre; es el molde del hero del Panel y de Registros.
+        AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
             if !sessionState.isExpensesOnlyMode {
-                HStack(spacing: DS.Spacing.xs) {
+                AmountWithChipStack {
                     Image(systemName: "arrow.up.right")
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(Color.incomeGraph)
@@ -243,15 +268,18 @@ struct InsightsTabView: View {
                         value: summary.totalIncome,
                         currencyCode: defaultCurrencyCode,
                         font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary
+                        tint: .secondary,
+                        isEstimate: summary.incomeAmountsAreApproximate
                     )
+                    .accessibilityIdentifier("stats_kpi_income")
+                } chip: {
                     if appPreferences.showVariations {
                         VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
                     }
                 }
             }
 
-            HStack(spacing: DS.Spacing.xs) {
+            AmountWithChipStack {
                 Image(systemName: "arrow.down.right")
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(Color.expenseGraph)
@@ -260,8 +288,11 @@ struct InsightsTabView: View {
                     value: summary.totalExpense,
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
-                    tint: .secondary
+                    tint: .secondary,
+                    isEstimate: summary.expenseAmountsAreApproximate
                 )
+                .accessibilityIdentifier("stats_kpi_expense")
+            } chip: {
                 if appPreferences.showVariations {
                     VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
                 }
@@ -333,12 +364,14 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func proObservationsSection(_ data: InsightData) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+        PairedCardsStack(rowSpacing: DS.Spacing.sm, columnSpacing: DS.Spacing.md) {
             YalaSectionHeader(L10n.Insights.intelligentInsights)
+                .spansAllColumns()
 
             if viewModel.aiActivated {
                 if viewModel.isLoadingAI {
                     AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                        .spansAllColumns()
                 } else if let aiCards = viewModel.aiInsights?.cards, !aiCards.isEmpty {
                     ForEach(Array(aiCards.enumerated()), id: \.offset) { _, card in
                         let sentiment: Sentiment = switch card.sentiment {
@@ -381,8 +414,10 @@ struct InsightsTabView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .panelCard()
+                .spansAllColumns()
             }
         }
+        .spansAllColumns()
     }
 
     // MARK: - Free Observations Section
@@ -416,10 +451,13 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func detailModeContent(_ data: InsightData) -> some View {
         if appPreferences.insightsShowQuickStats {
-            VStack(spacing: DS.Spacing.sm) {
+            // En ancha: [Promedio diario | las cuatro cifras], Suscripciones debajo a la izquierda.
+            PairedCardsStack(rowSpacing: DS.Spacing.sm, columnSpacing: DS.Spacing.md) {
                 detailModeHeader(summary: data.periodSummary)
+                    .spansAllColumns()
                 detailModeBody(stats: data.quickStats, summary: data.periodSummary)
             }
+            .spansAllColumns()
         }
 
         if hasCommitmentsData(data.commitments) {
@@ -544,7 +582,11 @@ struct InsightsTabView: View {
                 AmountText(
                     value: stats.dailyAverage,
                     currencyCode: defaultCurrencyCode,
-                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                    // `dailyAverage` es `cashFlow.totalExpense` dividido entre un entero exacto: el
+                    // cociente aproximado/total que mide `ApproximateMarkThreshold` no cambia al
+                    // dividir, así que la marca del gasto es exactamente la suya.
+                    isEstimate: summary.expenseAmountsAreApproximate
                 )
 
                 // Reserva altura constante: evita salto visual al alternar
@@ -820,13 +862,15 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func textInsightsSection(_ insights: [InsightResult]) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
+        PairedCardsStack(rowSpacing: DS.Spacing.sm, columnSpacing: DS.Spacing.md) {
             YalaSectionHeader(L10n.Insights.intelligentInsights)
+                .spansAllColumns()
 
             ForEach(insights) { insight in
                 InsightCard(insight: insight)
             }
         }
+        .spansAllColumns()
     }
 
     // MARK: - AI Insights Teaser (Free users)
@@ -856,7 +900,6 @@ struct InsightsTabView: View {
             }
 
             Button {
-                TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
                 showUpgradeSheet = true
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
@@ -872,9 +915,6 @@ struct InsightsTabView: View {
             }
         }
         .panelCard()
-        .onAppear {
-            TelemetryService.trackOnce(.proUpsellShown, key: "insightsTeaser", parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
-        }
     }
 
     // MARK: - Locked Fun Fact

@@ -17,6 +17,9 @@ struct WidgetKPI: View {
     let displayFormat: String  // "symbol" or "code"
     let color: Color
     let size: Size
+    /// Antepone «≈» cuando el número salió de alguna tasa que no era la de su día. Default `false`
+    /// en el init: un widget que no muestra dinero convertido no cambia.
+    let isEstimate: Bool
 
     enum Size {
         case large   // For Small widgets
@@ -46,13 +49,15 @@ struct WidgetKPI: View {
         currencyCode: String,
         displayFormat: String = "symbol",
         color: Color = .primary,
-        size: Size = .large
+        size: Size = .large,
+        isEstimate: Bool = false
     ) {
         self.amount = amount
         self.currencyCode = currencyCode
         self.displayFormat = displayFormat
         self.color = color
         self.size = size
+        self.isEstimate = isEstimate
     }
 
     var body: some View {
@@ -63,6 +68,7 @@ struct WidgetKPI: View {
             font: size.font,
             secondaryFont: size.secondaryFont,
             tint: tint,
+            isEstimate: isEstimate,
             fractionDigits: 0
         )
         .widgetAccentable()

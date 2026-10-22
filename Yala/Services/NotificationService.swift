@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import UIKit
 import UserNotifications
 
 // MARK: - NotificationService
@@ -18,8 +19,18 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     private override init() {
         super.init()
-        // Set delegate to show notifications while app is in foreground
-        notificationCenter.delegate = self
+    }
+
+    /// Pone el servicio como delegado del centro de notificaciones: enseña los avisos con la app delante
+    /// (`willPresent`) y recibe el toque (`didReceive`).
+    ///
+    /// **Lo llama `YalaAppDelegate.application(_:didFinishLaunchingWithOptions:)` y nadie más.** Apple pide asignar
+    /// el delegado antes de que termine el lanzamiento: con la app cerrada, el toque que la abre se entrega justo
+    /// después, y sin delegado se pierde. Hasta el 2026-10-11 lo asignaba este `init`, cuyo primer acceso era el paso 1
+    /// de `AppBootstrapper.bootstrap`, en el `.task` de `ContentView`: tarde (ticket
+    /// `notification-delegate-assigned-after-launch`). Por eso el `init` ya no lo asigna: un solo escritor.
+    static func installAsCenterDelegate() {
+        shared.notificationCenter.delegate = shared
     }
 
     // MARK: - UNUserNotificationCenterDelegate
@@ -41,16 +52,31 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let userInfo = response.notification.request.content.userInfo
+        // Con varias ventanas, la notificación tocada trae la escena a la que el sistema la entrega: lo que encole va
+        // sellado a ESA ventana (fase 4 del carril adaptativo).
+        let targetSessionID = response.targetScene?.session.persistentIdentifier
 
-        if let destination = userInfo["deepLink"] as? String,
-           let dest = Self.parseDestination(destination) {
+        if let destination = userInfo["deepLink"] as? String {
             Task { @MainActor in
-                TelemetryService.track(.notificationTapped, parameters: ["destino": destination.hasPrefix("groups/") ? "groups" : destination])
-                RouterEntryGate.shared.submit(.navigate(dest))
+                Self.routeTap(deepLink: destination, targetSessionID: targetSessionID)
             }
         }
 
         completionHandler()
+    }
+
+    /// Lo que hace el toque en una notificación: lleva a su destino por el router. Antes de que el arranque termine,
+    /// `RouterEntryGate` aplaza el `.navigate` en `DeferredIntentBuffer` y el paso 20 del arranque lo drena.
+    ///
+    /// Separado de `didReceive` porque `UNNotificationResponse` no tiene inicializador público: es lo que permite
+    /// probar el camino entero del toque en frío (`NotificationColdLaunchTapTests`).
+    @MainActor
+    static func routeTap(deepLink destination: String, targetSessionID: String?) {
+        guard let dest = parseDestination(destination) else { return }
+        if let targetSessionID {
+            SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
+        }
+        RouterEntryGate.shared.submit(.navigate(dest))
     }
 
     /// Parse deep link string to DeepLinkDestination
@@ -130,6 +156,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Check permission first
         guard await isAuthorized() else { return }
+        // §5.2.1 — choke point: con un wipe personal armado, este `item` pertenece a la cuenta saliente
+        // y su fila muere con el store. Reprogramarlo dejaría un repetitivo huérfano. Ver `isPersonalWipeArmed`.
+        guard !isPersonalWipeArmed else { return }
 
         // Cancel existing notifications for this item first
         await cancelNotification(for: item)
@@ -196,15 +225,13 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     /// Cancel a scheduled notification
     func cancelNotification(for item: NotificationItem) async {
-        // Cancel main request
-        var identifiers = [item.id.uuidString]
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: Self.scheduledRequestIdentifiers(for: item.id))
+    }
 
-        // Also cancel any weekday-specific requests (1-7)
-        for weekday in 1...7 {
-            identifiers.append("\(item.id.uuidString)-\(weekday)")
-        }
-
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
+    /// Los identificadores con los que `scheduleNotification` programa un aviso: el del aviso y uno por día de la semana
+    /// (1-7). Quien borra una fila de `NotificationItem` sin quitarlos deja un aviso repetitivo vivo que nadie apaga.
+    nonisolated static func scheduledRequestIdentifiers(for id: UUID) -> [String] {
+        [id.uuidString] + (1...7).map { "\(id.uuidString)-\($0)" }
     }
 
     /// Send an immediate notification with optional deep link
@@ -212,13 +239,21 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ///   - title: Notification title
     ///   - body: Notification body text
     ///   - deepLink: Optional deep link destination (e.g., "statistics", "planning", "budgets")
-    func sendNotification(title: String, body: String, deepLink: String? = nil) async {
+    /// - Returns: `true` SOLO si iOS aceptó el request (`notificationCenter.add` sin error).
+    ///   Todo caller que deduplique por "ya notifiqué" DEBE marcar su dedup únicamente con `true`:
+    ///   marcar tras un `false` quema la supresión del día sin banner entregado (bug del ticket
+    ///   pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega).
+    @discardableResult
+    func sendNotification(title: String, body: String, deepLink: String? = nil) async -> Bool {
         let settings = await notificationCenter.notificationSettings()
         let authorized = settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
         #if DEBUG
         print("NotifService[#16-debug]: sendNotification title=\"\(title)\" authStatus=\(settings.authorizationStatus.rawValue) authorized=\(authorized) alert=\(settings.alertSetting.rawValue) center=\(settings.notificationCenterSetting.rawValue) lockScreen=\(settings.lockScreenSetting.rawValue)")
         #endif
-        guard authorized else { return }
+        guard authorized else { return false }
+        // §5.2.1 — choke point: con un wipe personal armado, esta entrega llevaría montos y nombres de
+        // la cuenta que acaba de cerrar sesión. Ver `isPersonalWipeArmed`.
+        guard !isPersonalWipeArmed else { return false }
 
         let content = UNMutableNotificationContent()
         content.title = title
@@ -243,10 +278,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             #if DEBUG
             print("NotifService[#16-debug]: notificationCenter.add OK identifier=\(request.identifier)")
             #endif
+            return true
         } catch {
             #if DEBUG
             print("NotifService[#16-debug]: Error sending notification: \(error)")
             #endif
+            return false
         }
     }
 
@@ -255,9 +292,171 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         await sendNotification(title: title, body: body, deepLink: nil)
     }
 
+    // MARK: - Scheduled Payment Daily Summaries (canal AGENDADO del modelo híbrido)
+
+    /// Prefijo de los identifiers de las summaries diarias (`spDailySummary_<yyyyMMdd>`).
+    /// Los wipes de frontera de cuenta no necesitan conocerlo: todos pasan por
+    /// `cancelAllNotifications()`/`deleteAllNotifications` (removeAll pending).
+    static let summaryIdentifierPrefix = "spDailySummary_"
+
+    /// Resultado del replace de summaries — el caller reconcilia sus marcas SOLO con esto.
+    struct SummaryReplaceOutcome {
+        /// dayKeys VERIFICADOS presentes en pending tras los adds (no basta "add no lanzó":
+        /// iOS descarta en silencio sobre el límite de 64 — marcar un día jamás retenido
+        /// suprimiría el fallback oportunista, la clase exacta del bug dedup-sin-entrega).
+        let scheduledDayKeys: [String]
+        /// dayKeys que este replace INTENTÓ agendar (plan efectivo tras el drop de "hoy ya
+        /// disparó") — la base correcta para "planificado-pero-fallido" del reconcile.
+        let attemptedDayKeys: [String]
+        /// dayKeys cuyo pending fue RETIRADO por este replace (estaban vivos ⇒ NO habían
+        /// disparado). Si hoy está aquí y no se re-agendó, su marca miente y debe caer.
+        let removedPendingDayKeys: [String]
+    }
+
+    /// Reemplaza TODAS las summaries agendadas por el plan dado (one-shot por día, a la
+    /// hora configurada).
+    /// - Parameters:
+    ///   - todayKey: dayKey de hoy (`yyyyMMdd`).
+    ///   - todayAlreadyMarked: si el tracker tiene marca de summary para hoy — con marca
+    ///     puesta y SIN pending vivo, la summary de hoy YA DISPARÓ: re-agendar hoy (cambio
+    ///     de hora a más tarde) sería el segundo banner del día.
+    func replaceScheduledPaymentSummaries(
+        _ plans: [ScheduledPaymentSummaryPlanner.DayPlan],
+        todayKey: String,
+        todayAlreadyMarked: Bool
+    ) async -> SummaryReplaceOutcome {
+        let prefix = Self.summaryIdentifierPrefix
+        // Siempre retirar las pendientes del prefijo (también con plan vacío: toggle OFF
+        // o pagos eliminados deben LIMPIAR lo agendado).
+        let removedDayKeys = await pendingSummaryDayKeys()
+        let stale = removedDayKeys.map { prefix + $0 }
+
+        // Anti doble-banner: marca de hoy + ningún pending de hoy vivo ⇒ ya disparó.
+        var effectivePlans = plans
+        if todayAlreadyMarked && !removedDayKeys.contains(todayKey) {
+            effectivePlans.removeAll { $0.dayKey == todayKey }
+        }
+        let attempted = effectivePlans.map(\.dayKey)
+
+        if !stale.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: stale)
+        }
+
+        guard !effectivePlans.isEmpty else {
+            return SummaryReplaceOutcome(scheduledDayKeys: [], attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
+        }
+        guard await isAuthorized() else {
+            return SummaryReplaceOutcome(scheduledDayKeys: [], attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
+        }
+
+        var addedKeys: [String] = []
+        for plan in effectivePlans {
+            // §5.2.1 — mismo choke point que sendNotification, evaluado POR ITERACIÓN (el
+            // invariante de `isPersonalWipeArmed`: "en el instante del add"): un arm que
+            // aterrice a mitad del loop corta las iteraciones restantes.
+            guard !isPersonalWipeArmed else { break }
+            // El `now` del planner envejece durante los round-trips al center: un trigger
+            // con fecha ya pasada es aceptado por add() pero JAMÁS dispara — no agendarlo
+            // (la oportunista dueToday cubre el día como fallback, que es el diseño).
+            guard plan.fireDate > Date.now else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = L10n.Notifications.scheduledPaymentsName
+            content.body = L10n.Notifications.scheduledPaymentsSummaryBody(plan.count)
+            content.sound = .default
+            content.userInfo = ["deepLink": "scheduledPayments"]
+
+            // Componentes CON year: one-shot inequívoco — sin year, un trigger repeats:false
+            // podría re-matchear el mismo día/mes de otro año si sobreviviera.
+            let components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute], from: plan.fireDate
+            )
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: prefix + plan.dayKey,
+                content: content,
+                trigger: trigger
+            )
+
+            do {
+                try await notificationCenter.add(request)
+                addedKeys.append(plan.dayKey)
+            } catch {
+                #if DEBUG
+                print("NotifService: Error scheduling payment summary \(plan.dayKey): \(error)")
+                #endif
+            }
+        }
+
+        // Verificación post-add contra el center (límite 64 silencioso).
+        let retained = Set(await pendingSummaryDayKeys())
+        let scheduledKeys = addedKeys.filter { retained.contains($0) }
+
+        #if DEBUG
+        print("NotifService: payment summaries replaced — removed=\(stale.count) scheduled=\(scheduledKeys.count)/\(effectivePlans.count)")
+        #endif
+        return SummaryReplaceOutcome(scheduledDayKeys: scheduledKeys, attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
+    }
+
+    /// dayKeys de las summaries actualmente pendientes en el center (identifier = prefijo
+    /// + dayKey, biyectivo por construcción).
+    private func pendingSummaryDayKeys() async -> [String] {
+        let pending = await notificationCenter.pendingNotificationRequests()
+        return pending.map(\.identifier)
+            .filter { $0.hasPrefix(Self.summaryIdentifierPrefix) }
+            .map { String($0.dropFirst(Self.summaryIdentifierPrefix.count)) }
+    }
+
+    /// ¿Hay un wipe del store PERSONAL armado (sign-out `.cloud` o salida de sesión secundaria M1)?
+    ///
+    /// Guard del CHOKE POINT (§5.2.1): cancelar las notificaciones al armar el wipe no basta por sí solo
+    /// —`AppBootstrapper.handleBecameActive` lanza un `Task` NO estructurado (`ensureNotificationsScheduled`
+    /// + `sendDueReports`) con decenas de puntos de suspensión, y su guard de arm se evalúa AL LANZARLO. Un
+    /// background→active durante el push-all (fase `.working`, todavía sin arm) deja esa tarea suspendida;
+    /// al reanudar, ya con el wipe armado, reprogramaría los recordatorios de la cuenta saliente y podría
+    /// ENTREGAR un banner con montos suyos sobre el cover de relanzamiento. Evaluarlo aquí, en el instante
+    /// del `add`, cierra la ventana para CUALQUIER productor —presente o futuro— sin rastrear tareas.
+    ///
+    /// NO incluye `groupsOnlyWipeArmed`: en ese camino el store personal sobrevive y sus recordatorios
+    /// siguen siendo válidos (misma asimetría deliberada que en los boot-hooks).
+    private var isPersonalWipeArmed: Bool {
+        StorageModePersistence.isSignOutWipeArmed()
+    }
+
     /// Cancel all notifications
     func cancelAllNotifications() {
         notificationCenter.removeAllPendingNotificationRequests()
+    }
+
+    /// Retira las notificaciones YA ENTREGADAS del Centro de Notificaciones.
+    ///
+    /// SEPARADO de `cancelAllNotifications()` A PROPÓSITO — NO fusionar: aquel corre en
+    /// `rescheduleAllNotifications` (y por tanto en cada toggle de Ajustes y en cada
+    /// `ensureNotificationsScheduled` del foreground), donde borrar el historial entregado del
+    /// usuario sería una regresión visible. Este es exclusivo de las FRONTERAS DE CUENTA
+    /// (boot-cleanup del sign-out `.cloud`, salida/entrada de sesión secundaria M1): los banners
+    /// entregados llevan montos y nombres de comercios de la cuenta saliente y no deben sobrevivirle.
+    func clearDeliveredNotifications() {
+        notificationCenter.removeAllDeliveredNotifications()
+    }
+
+    /// Retira SOLO las notificaciones entregadas del dominio GRUPOS (deep link `groups/<uuid>`,
+    /// `GroupNotificationService`), dejando intactas las personales.
+    ///
+    /// Existe porque el cierre de sesión SOLO-GRUPOS borra el store `YalaGroups` pero CONSERVA el
+    /// personal: un barrido total ahí borraría el historial del usuario que NO se fue. Al tocar una
+    /// entregada huérfana, `GroupsContainerView.openPendingGroupIfAvailable` no encuentra el grupo y
+    /// retorna sin limpiar `pendingGroupID`, suprimiendo el onboarding del tab in-session.
+    ///
+    /// Best-effort: `getDeliveredNotifications` es async, así que el call-site del boot lo invoca
+    /// desde un `Task` desacoplado (no toca SwiftData ni bloquea el arranque).
+    func clearDeliveredGroupNotifications() async {
+        let delivered = await notificationCenter.deliveredNotifications()
+        let groupIDs = delivered
+            .filter { ($0.request.content.userInfo["deepLink"] as? String)?.hasPrefix("groups/") == true }
+            .map(\.request.identifier)
+        guard !groupIDs.isEmpty else { return }
+        notificationCenter.removeDeliveredNotifications(withIdentifiers: groupIDs)
     }
 
     /// Cancel any previously scheduled dynamic notifications (reports)
@@ -292,9 +491,19 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// Reschedule all active notifications
+    ///
+    /// Cancela SOLO lo que NO es summary de pagos (`spDailySummary_*`): este método corre en
+    /// cada toggle de Ajustes de notificaciones y en el reconciler de foreground — un
+    /// `removeAllPendingNotificationRequests` aquí barría el canal agendado de pagos SIN
+    /// re-plan, dejando las marcas del tracker mintiendo ("hay summary") y el día en silencio
+    /// (hallazgo del review adversarial 2026-07-22). `cancelAllNotifications()` queda para las
+    /// FRONTERAS DE CUENTA, que sí deben barrer todo.
     func rescheduleAllNotifications(items: [NotificationItem]) async {
-        // Cancel all existing
-        cancelAllNotifications()
+        let pending = await notificationCenter.pendingNotificationRequests()
+        let nonSummaryIDs = pending.map(\.identifier).filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) }
+        if !nonSummaryIDs.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: nonSummaryIDs)
+        }
 
         // Schedule active ones
         for item in items where item.isActive {
@@ -396,10 +605,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
-    /// Remove duplicate NotificationItems by typeRaw, keeping the one with isActive = true preference.
+    /// Borra los avisos de sistema duplicados y se queda con uno por tipo (el activo, si lo hay). Qué se junta lo decide
+    /// `NotificationDeduplicationLogic`: los recordatorios de la persona (`custom`) no se juntan nunca.
     /// R9: Guards against CloudKit delivering synced notifications between fetch and save in onboarding.
+    ///
+    /// Lo que borra también lo desprograma, tras guardar: sin eso el aviso repetitivo de la fila borrada seguía sonando
+    /// hasta que alguien abriera Ajustes › Notificaciones. `removePendingRequests` es el seam de los tests; en producción,
+    /// el centro de notificaciones.
     @MainActor
-    func deduplicateNotifications(context: ModelContext) {
+    func deduplicateNotifications(context: ModelContext, removePendingRequests: (([String]) -> Void)? = nil) {
         // Gate de quiescencia: save del store personal — diferir durante el import del restore.
         // Dedupe tras la quiescencia ve el estado final del import (mejor que a mitad de camino).
         guard iCloudSyncService.shared.isImportQuiescent else {
@@ -417,48 +631,55 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             return
         }
 
-        let grouped = Dictionary(grouping: all) { $0.typeRaw }
-        var removed = 0
-        for (_, group) in grouped where group.count > 1 {
-            // Keep the active one (or first if both same)
-            let sorted = group.sorted { ($0.isActive ? 1 : 0) > ($1.isActive ? 1 : 0) }
-            for dup in sorted.dropFirst() {
-                context.delete(dup)
-                removed += 1
-            }
+        let candidates = all.map { NotificationDeduplicationLogic.Candidate(typeRaw: $0.typeRaw, isActive: $0.isActive) }
+        let duplicates = NotificationDeduplicationLogic.indicesToDelete(candidates).map { all[$0] }
+        guard !duplicates.isEmpty else { return }
+        let identifiers = duplicates.flatMap { Self.scheduledRequestIdentifiers(for: $0.id) }
+        for duplicate in duplicates {
+            context.delete(duplicate)
         }
-        if removed > 0 {
-            do {
-                SaveBreadcrumb.willSave("NotificationService.dedupe")
-                try context.save()
-                SaveBreadcrumb.didSave("NotificationService.dedupe")
-                #if DEBUG
-                print("NotificationService: Deduplicated \(removed) notification(s)")
-                #endif
-            } catch {
-                #if DEBUG
-                print("NotificationService: Error deduplicating: \(error)")
-                #endif
+        do {
+            SaveBreadcrumb.willSave("NotificationService.dedupe")
+            try context.save()
+            SaveBreadcrumb.didSave("NotificationService.dedupe")
+            let remove = removePendingRequests ?? { [notificationCenter] in
+                notificationCenter.removePendingNotificationRequests(withIdentifiers: $0)
             }
+            remove(identifiers)
+            #if DEBUG
+            print("NotificationService: Deduplicated \(duplicates.count) notification(s)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("NotificationService: Error deduplicating: \(error)")
+            #endif
         }
     }
 
     /// Delete all notifications (used in data wipe)
     @MainActor
     func deleteAllNotifications(context: ModelContext) {
-        cancelAllNotifications()
-
         let descriptor = FetchDescriptor<NotificationItem>()
 
         let items: [NotificationItem]
         do {
             items = try context.fetch(descriptor)
         } catch {
+            cancelAllNotifications()
             #if DEBUG
             print("NotificationService: Error fetching notifications for deletion: \(error)")
             #endif
             return
         }
+        deleteNotifications(items, context: context)
+    }
+
+    /// Borra esas notificaciones y cancela TODO lo programado en el sistema. Lo cancela entero también cuando se quedan
+    /// otras —el borrado reactivo a la señal de otro dispositivo conserva las creadas después—: el arranque siguiente
+    /// reprograma las activas (`AppBootstrapper`), y así no queda viva ninguna de las borradas.
+    @MainActor
+    func deleteNotifications(_ items: [NotificationItem], context: ModelContext) {
+        cancelAllNotifications()
 
         for item in items {
             context.delete(item)

@@ -132,6 +132,31 @@ final class RecordsViewModel: Filterable {
     /// consume este flag para presentar NewTransactionView con la misma TX.
     private var pendingEditAfterDetail = false
 
+    /// Registro abierto en la columna de detalle (ventana ancha). Vive aquí, fuera del
+    /// `NavigationSplitView`, para que sobreviva a un redimensionado: si la ventana se estrecha,
+    /// el split se pliega y lo enseña empujado.
+    var openRecordID: PersistentIdentifier?
+
+    /// `true` cuando la vista que monta este VM tiene columna de detalle y la ventana es ancha.
+    /// Lo escriben, con el size class de la ventana, `RecordsStandaloneView` (columna del split) y
+    /// `DetailContainerView` (panel de Estadísticas › Registros). En compacta, la hoja de siempre.
+    var opensDetailInColumn = false
+
+    /// Menú contextual y teclado (iPad, fase 3): el editor se abre ya en modo «duplicar». Lo limpian los hosts al
+    /// cerrarse el editor, junto con `editingTransaction`.
+    var editorStartsAsDuplicate = false
+
+    /// Menú contextual y ⌫: el registro que espera la confirmación de borrado.
+    var pendingDeleteRecordID: PersistentIdentifier?
+    var isConfirmingSingleDelete = false
+
+    /// Menú contextual: el registro al que se le elige otra categoría.
+    var categoryChangeRecord: TransactionItem?
+
+    /// ↑↓: el día que enseña la vista calendario, si hay uno elegido. Lo escribe `RecordsTabView`, que es quien filtra
+    /// la lista por él (`displayedGroups`); sin él, las flechas abrirían registros que no se ven.
+    var keyboardDayFilter: Date?
+
     /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
     /// la mutación (e.g., subcategoría sobre transferencias).
     var bulkUpdateError: String?
@@ -141,8 +166,30 @@ final class RecordsViewModel: Filterable {
     /// Grouped records by date (pre-computed for performance)
     var groupedRecords: [(date: Date, records: [TransactionItem])] = []
 
-    /// Cached summary (balance, income, expense) - updated when groupedRecords changes
-    var recordsSummary: (balance: Double, income: Double, expense: Double) = (0, 0, 0)
+    /// Proyección "mi parte" (neto) de los gastos de grupo bridgeados, construida en `applyFilters`
+    /// desde el set AMPLIO. La consumen el chip de resumen y el calendario (DailySpendingCalculator).
+    private(set) var statsAdjustment: GroupBridgeStatsAdjustment = .none
+
+    /// Los tres números del resumen de Registros más la marca «≈» de cada uno.
+    ///
+    /// Era una tupla de tres `Double`. Pasa a struct al ganar las señales: seis elementos sin
+    /// nombre en el punto de asignación es donde se cruzan dos campos del mismo tipo sin que
+    /// nada se ponga rojo.
+    struct RecordsSummary: Equatable {
+        var balance: Double = 0
+        var income: Double = 0
+        var expense: Double = 0
+
+        /// Las tres van **por lado**, igual que en `CashFlowSummary` y por el mismo motivo: la
+        /// pantalla pinta los tres números por separado, y una señal única le pondría «≈» al
+        /// total de ingresos por culpa de un gasto mal convertido.
+        var incomeIsApproximate: Bool = false
+        var expenseIsApproximate: Bool = false
+        var balanceIsApproximate: Bool = false
+    }
+
+    /// Cached summary - updated when groupedRecords changes
+    var recordsSummary = RecordsSummary()
 
     /// Total count of filtered records
     var filteredCount: Int {
@@ -201,8 +248,14 @@ final class RecordsViewModel: Filterable {
         transactions: [TransactionItem],
         accounts: [Account],
         categories: [Category],
-        tags: [Tag]
+        tags: [Tag],
+        context: ModelContext,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) {
+        // Proyección "mi parte" desde el set AMPLIO (con AMBAS hermanas del bridge, antes de
+        // cualquier filtro por cuenta/tag) — cierra el edge account-filter.
+        statsAdjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
         // In expenses-only mode, force expense transaction nature filter
         let effectiveTransactionNatures: Set<TransactionNature> =
             SessionState.shared.isExpensesOnlyMode ? [.expense] : selectedTransactionNatures
@@ -281,35 +334,83 @@ final class RecordsViewModel: Filterable {
         }
 
         // Update cached summary (calculated once per filter change, not per render)
-        calculateSummary()
+        calculateSummary(currencyCode: currencyCode, converter: converter)
     }
 
     /// Calculate summary from grouped records (called once when data changes)
     /// Balance = Income - Expense (excludes adjustments and transfers for consistency)
-    private func calculateSummary() {
+    ///
+    /// `currencyCode` es la divisa principal en la que la pantalla pinta los tres números: cada
+    /// importe se lleva a ella antes de sumar, con la misma regla que el Panel
+    /// (`CashFlowCalculator.resolvedAmount`).
+    private func calculateSummary(currencyCode: String, converter: CurrencyConverting) {
         var income: Double = 0
         var expense: Double = 0
+        // Magnitudes sumadas (nunca netos) para el cociente de `ApproximateMarkThreshold`: los
+        // errores de dos conversiones distintas no se cancelan entre sí. Mismo razonamiento que
+        // el `exposedBase` de `FXPnLLogic` y que `CashFlowCalculator`.
+        var incomeApproximateMagnitude: Double = 0
+        var incomeTotalMagnitude: Double = 0
+        var expenseApproximateMagnitude: Double = 0
+        var expenseTotalMagnitude: Double = 0
 
         for group in groupedRecords {
             for record in group.records {
                 guard let account = record.account else { continue }
                 if account.excludeFromStatistics { continue }
+                // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
+                if statsAdjustment.isSuppressed(record) { continue }
 
                 // Exclude balance adjustments and transfers from summary
                 let isBalanceAdjustment = record.balanceAdjustmentType != nil
                 if !isBalanceAdjustment {
-                    let amount = record.amountInPreferredCurrency
-                    if amount > 0 {
+                    // La categoría decide el bucket; acumulación signed (paridad
+                    // con CashFlowCalculator): un monto de signo contrario a su
+                    // categoría reduce el bucket (reembolso), no suma magnitud.
+                    // `statsAdjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
+                    // Paridad con el Panel: el monto guardado solo vale si se guardó en ESTA divisa
+                    // principal; si se guardó en otra (el usuario cambió de divisa y la fila aún no
+                    // se recalculó), se reconvierte desde el nativo. La marca sale de la rama que
+                    // decidió: el flag (vía `statsAdjustment`) o la calidad de la conversión.
+                    let resolved = CashFlowCalculator.resolvedAmount(
+                        record, currencyCode: currencyCode,
+                        adjustment: statsAdjustment, converter: converter
+                    )
+                    let amount = resolved.value
+                    let magnitude = abs(amount)
+                    let approximate = resolved.approximateMagnitude
+                    if TransactionClassificationLogic.isIncome(record) {
                         income += amount
+                        incomeTotalMagnitude += magnitude
+                        incomeApproximateMagnitude += approximate
                     } else {
-                        expense += abs(amount)
+                        expense -= amount
+                        expenseTotalMagnitude += magnitude
+                        expenseApproximateMagnitude += approximate
                     }
                 }
             }
         }
 
         // Balance is simply the difference (cash flow)
-        let newSummary = (income - expense, income, expense)
+        let newSummary = RecordsSummary(
+            balance: income - expense,
+            income: income,
+            expense: expense,
+            incomeIsApproximate: ApproximateMarkThreshold.marks(
+                approximate: incomeApproximateMagnitude, total: incomeTotalMagnitude
+            ),
+            expenseIsApproximate: ApproximateMarkThreshold.marks(
+                approximate: expenseApproximateMagnitude, total: expenseTotalMagnitude
+            ),
+            // El neto necesita su propio cociente y NO el OR de los dos lados: con umbrales por
+            // lado, un ingreso grande con un 4,9 % dudoso y un gasto grande exacto pueden dejar
+            // un neto pequeño con una incertidumbre mayor que él mismo, y saldría sin marca.
+            balanceIsApproximate: ApproximateMarkThreshold.marks(
+                approximate: incomeApproximateMagnitude + expenseApproximateMagnitude,
+                total: income - expense
+            )
+        )
         if newSummary != recordsSummary { recordsSummary = newSummary }
     }
 
@@ -363,11 +464,18 @@ final class RecordsViewModel: Filterable {
 
     /// Delete selected records (including transfer pairs)
     func deleteSelected(context: ModelContext) {
+        deleteRecords(ids: selectedRecordIDs, context: context)
+        exitSelectionMode()
+    }
+
+    /// Borra estos registros y, de las transferencias, también su pareja. Es el borrado del modo selección; el menú
+    /// contextual y ⌫ lo usan con un solo id.
+    func deleteRecords(ids: Set<PersistentIdentifier>, context: ModelContext) {
         // Collect transfer pair IDs from selected records
         var transferPairIDs: Set<String> = []
         var recordsToDelete: [TransactionItem] = []
 
-        for id in selectedRecordIDs {
+        for id in ids {
             guard let record = context.model(for: id) as? TransactionItem else { continue }
             recordsToDelete.append(record)
             if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = record.transferPairID {
@@ -384,7 +492,7 @@ final class RecordsViewModel: Filterable {
                 )
                 do {
                     let pairs = try context.fetch(descriptor)
-                    for pair in pairs where !selectedRecordIDs.contains(pair.persistentModelID) {
+                    for pair in pairs where !ids.contains(pair.persistentModelID) {
                         context.delete(pair)
                     }
                 } catch {
@@ -410,8 +518,38 @@ final class RecordsViewModel: Filterable {
             print("Error deleting records: \(error)")
             #endif
         }
+    }
 
-        exitSelectionMode()
+    // MARK: - Menú contextual y teclado (iPad, fase 3)
+
+    /// Duplicar desde el menú: el editor de siempre, que arranca ya convertido en un registro nuevo con los mismos
+    /// datos y la fecha de hoy (`NewTransactionView(startsAsDuplicate:)`).
+    func duplicateRecord(_ record: TransactionItem) {
+        editorStartsAsDuplicate = true
+        editingTransaction = record
+        showEditTransaction = true
+    }
+
+    /// Eliminar desde el menú o con ⌫: primero la confirmación.
+    func requestDelete(_ record: TransactionItem) {
+        pendingDeleteRecordID = record.persistentModelID
+        isConfirmingSingleDelete = true
+    }
+
+    func confirmPendingDelete(context: ModelContext) {
+        guard let id = pendingDeleteRecordID else { return }
+        pendingDeleteRecordID = nil
+        deleteRecords(ids: [id], context: context)
+    }
+
+    /// ↑↓: abre en la columna el registro vecino del abierto, en el orden de la lista.
+    func openNeighbor(_ direction: KeyboardCommandLogic.Direction) {
+        let groups = keyboardDayFilter.map { day in
+            groupedRecords.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }
+        } ?? groupedRecords
+        let ids = groups.flatMap(\.records).map(\.persistentModelID)
+        guard let next = KeyboardCommandLogic.neighbor(of: openRecordID, in: ids, direction: direction) else { return }
+        openRecordID = next
     }
 
     // MARK: - Filter Actions
@@ -448,8 +586,20 @@ final class RecordsViewModel: Filterable {
     /// Tap de una row: abre el detalle read-only (TransactionDetailSheet);
     /// la edición se alcanza desde ahí con el botón Editar.
     func showRecordDetail(_ record: TransactionItem) {
+        if opensDetailInColumn {
+            openRecordID = record.persistentModelID
+            return
+        }
         editingTransaction = record
         showTransactionDetail = true
+    }
+
+    /// Editar desde la columna de detalle: el registro sigue abierto en su columna y el editor se
+    /// presenta directo, sin el encadenado de la hoja (no hay hoja que cerrar antes).
+    func editOpenRecord(_ record: TransactionItem) {
+        editorStartsAsDuplicate = false
+        editingTransaction = record
+        showEditTransaction = true
     }
 
     /// Botón Editar del detalle: cierra el detalle (slide-down) sin perder la TX.
@@ -517,7 +667,12 @@ final class RecordsViewModel: Filterable {
     /// Update subcategory for all selected transactions.
     /// Bloqueado si la selección contiene transferencias — usan subcat sistema obligatoria.
     func bulkUpdateSubcategory(_ subcategory: Subcategory, context: ModelContext) {
-        let transactions = getSelectedTransactions(context: context)
+        updateSubcategory(subcategory, ids: selectedRecordIDs, context: context)
+    }
+
+    /// El cambio de subcategoría del modo selección, para estos registros. El menú contextual lo usa con uno solo.
+    func updateSubcategory(_ subcategory: Subcategory, ids: Set<PersistentIdentifier>, context: ModelContext) {
+        let transactions = fetchTransactions(ids: ids, context: context)
         if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
             bulkUpdateError = L10n.BulkEdit.cannotEditTransferSubcategory
             return
@@ -735,8 +890,12 @@ final class RecordsViewModel: Filterable {
 
     /// Helper to fetch selected transactions from context
     private func getSelectedTransactions(context: ModelContext) -> [TransactionItem] {
+        fetchTransactions(ids: selectedRecordIDs, context: context)
+    }
+
+    private func fetchTransactions(ids: Set<PersistentIdentifier>, context: ModelContext) -> [TransactionItem] {
         var transactions: [TransactionItem] = []
-        for id in selectedRecordIDs {
+        for id in ids {
             if let transaction = context.model(for: id) as? TransactionItem {
                 transactions.append(transaction)
             }

@@ -23,13 +23,16 @@ final class RouterEntryGate {
     private let logger = Logger(subsystem: "com.yala", category: "RoutingGate")
 
     /// Override hook for testing. Production reads `AppPreferences.Keys.hasCompletedOnboarding`
-    /// + `AppBootstrapper.shared.isInitialized` + `BiometricAuthService.shared.isLocked`.
+    /// + `AppBootstrapper.shared.isInitialized`.
     /// `@MainActor () -> ...` declares the isolation matches the caller (Swift 6 ready).
-    var readinessProvider: @MainActor () -> (hasCompletedOnboarding: Bool, isLocked: Bool, isBootstrapInitialized: Bool) = {
+    var readinessProvider: @MainActor () -> (hasCompletedOnboarding: Bool, isBootstrapInitialized: Bool) = {
+        // Hasta el 2026-09-12, el CAJÓN de la sesión (decisión del owner 2026-09-03): el readiness del
+        // router pregunta por
+        // la persona que está usando la app, no por el teléfono. Con `.standard` un intent de la visita
+        // se aceptaba o se difería según el onboarding de la DUEÑA.
         let onboardingDone = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         let bootstrapped = AppBootstrapper.shared.isInitialized
-        let locked = BiometricAuthService.shared.isLocked
-        return (onboardingDone, locked, bootstrapped)
+        return (onboardingDone, bootstrapped)
     }
 
     private init() {}
@@ -40,14 +43,20 @@ final class RouterEntryGate {
     func submit(_ intent: RouterIntent) {
         // 1. Defer if the app cannot process notifications/deeplinks right now.
         if shouldDefer(intent) {
+            // Canario (fuera de #if DEBUG, sin PII): un intent notification-like que se difiere
+            // pero NO es serializable se PIERDE — `deferIntent` lo descarta en silencio. Cazó el
+            // bug de cold-launch de shared-image; también delataría el mismo hueco en
+            // `.navigate(.groupDetail)`. Ver Bugs/qa_cold-launch-share-image-no-registro.
+            if !DeferredIntentBufferLogic.canSerialize(intent) {
+                logger.notice("RouterEntryGate: DROP non-serializable deferred intent \(intent.id, privacy: .public)")
+            }
             DeferredIntentBuffer.shared.deferIntent(intent)
             let r = readinessProvider()
             let reason = NotificationGateLogic.deferralReason(
                 hasCompletedOnboarding: r.hasCompletedOnboarding,
-                isLocked: r.isLocked,
                 isBootstrapInitialized: r.isBootstrapInitialized
             ) ?? "unknown"
-            TelemetryService.routingIntentDeferred(intentID: intent.id, reason: reason)
+            MetricsService.routingIntentDeferred(intentID: intent.id, reason: reason)
             #if DEBUG
             logger.debug("RouterEntryGate: defer \(intent.id, privacy: .public) — \(reason, privacy: .public)")
             #endif
@@ -59,8 +68,9 @@ final class RouterEntryGate {
         // sheet open would queue a fullScreenCover behind the sheet and
         // surface tardío on dismiss. Drop silently when the sheet is visible
         // (the data is in the sheet already).
+        // Con varias ventanas: basta con que la bandeja esté abierta en una — lo que el aviso contaría ya se ve.
         if case .showInboxAlert = intent,
-           SessionState.shared.isInboxSheetVisible {
+           SceneRegistry.shared.allNavigations.contains(where: \.isInboxSheetVisible) {
             #if DEBUG
             logger.debug("RouterEntryGate: drop \(intent.id, privacy: .public) — inbox sheet already visible")
             #endif
@@ -82,7 +92,7 @@ final class RouterEntryGate {
         if !drops.isEmpty {
             AppRouter.shared.drop { drops.contains($0.id) }
             for dropped in drops {
-                TelemetryService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
+                MetricsService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
             }
         }
         // Monetization-driven supersession (e.g. trialExpired drops trialOffer).
@@ -90,7 +100,7 @@ final class RouterEntryGate {
         if !monetizationDrops.isEmpty {
             AppRouter.shared.drop { monetizationDrops.contains($0.id) }
             for dropped in monetizationDrops {
-                TelemetryService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
+                MetricsService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
             }
         }
 
@@ -128,7 +138,6 @@ final class RouterEntryGate {
         let r = readinessProvider()
         let enqueueNow = NotificationGateLogic.shouldEnqueueNow(
             hasCompletedOnboarding: r.hasCompletedOnboarding,
-            isLocked: r.isLocked,
             isBootstrapInitialized: r.isBootstrapInitialized
         )
         return !enqueueNow

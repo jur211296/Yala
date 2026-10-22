@@ -111,6 +111,10 @@ struct ExchangeRateWidget: View {
                     .accessibilityLabel(L10n.Accessibility.exchangeRateChart)
                     .accessibilityValue(data.chartPoints.isEmpty ? L10n.Accessibility.noData :
                         L10n.Accessibility.currenciesCount(data.currentRates.count))
+                    // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md — Mini/XCUI id on the
+                    // in-app Panel chart (not the WidgetKit extension). Present only when the
+                    // chart has decoded rates.
+                    .accessibilityIdentifier("panel_exchange_rate_widget")
             }
         } else {
             loadingView
@@ -383,7 +387,7 @@ struct ExchangeRateWidget: View {
 
     /// Format rate in a more compact way for inline labels
     private func formatRateCompact(_ value: Double) -> String {
-        String(format: "%.4f", value)
+        ExchangeRateDisplayFormatter.string(value)
     }
 
     // MARK: - Tooltip
@@ -489,7 +493,7 @@ struct ExchangeRateWidget: View {
     // MARK: - Helpers
 
     private func formatRate(_ value: Double) -> String {
-        String(format: "%.4f", value)
+        ExchangeRateDisplayFormatter.string(value)
     }
 
     private static let tooltipDayFormatter: DateFormatter = {

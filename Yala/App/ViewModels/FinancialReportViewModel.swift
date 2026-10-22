@@ -117,18 +117,41 @@ final class FinancialReportViewModel: Filterable {
 
     // MARK: - Data Calculation
 
+    /// Filtro de tipo de transacción del pivot según el modo. En Solo Gastos fuerza
+    /// `.expense` (paridad con `RecordsViewModel`): en arranque en frío
+    /// `SessionState.selectedTransactionNatures` es `[]` (el `didSet` de
+    /// `isExpensesOnlyMode` no corre en `init`), así que sin esto el pivot mostraría
+    /// ingresos. Solo lógica → testeable.
+    static func transactionTypeFilter(expensesOnly: Bool) -> TransactionTypeFilter {
+        expensesOnly ? .expense : .all
+    }
+
     func calculateReport(
         transactions: [TransactionItem],
         accounts: [Account],
         preferredCurrency: String,
-        allTags: [Tag] = []
+        allTags: [Tag] = [],
+        now: Date = .now,
+        period: DetailPeriod? = nil,
+        comparisonMode: ComparisonMode? = nil,
+        expensesOnly: Bool? = nil,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) {
-        let interval = panelDateInterval
-        let comparisonMode = SessionState.shared.comparisonMode
+        // Proyección "mi parte" (neto) desde el set AMPLIO (`transactions` completo, con AMBAS
+        // hermanas del bridge, antes de cualquier filtro por cuenta/etiqueta).
+        // Sin `context` aquí (evita tocar la firma de FinancialReportView, cuyo body está al
+        // límite del type-checker): `build(from:)` cubre los casos comunes; residual conocido —
+        // la rara pata de préstamo SUELTA (payer con parte 0) no se suprime en el informe.
+        let adjustment = GroupBridgeStatsAdjustment.build(from: transactions)
+        let resolvedPeriod = period ?? detailPeriod
+        let resolvedMode = comparisonMode ?? SessionState.shared.comparisonMode
+        let resolvedExpensesOnly = expensesOnly ?? SessionState.shared.isExpensesOnlyMode
+        let interval = resolvedPeriod.dateInterval(customRange: customDateRange, now: now)
         let previousInterval = PreviousPeriodHelper.previousInterval(
-            for: detailPeriod,
-            mode: comparisonMode,
-            customRange: customDateRange
+            for: resolvedPeriod,
+            mode: resolvedMode,
+            customRange: customDateRange,
+            now: now
         )
 
         // Build filter criteria (shared base, only dateInterval differs)
@@ -142,7 +165,7 @@ final class FinancialReportViewModel: Filterable {
                 selectedTransactionNatures: selectedTransactionNatures,
                 selectedCurrencies: selectedCurrencies,
                 isExcludeMode: isExcludeMode,
-                transactionTypeFilter: .all,
+                transactionTypeFilter: Self.transactionTypeFilter(expensesOnly: resolvedExpensesOnly),
                 amountCondition: amountCondition,
                 searchText: searchText,
                 dateInterval: dateInterval
@@ -167,7 +190,16 @@ final class FinancialReportViewModel: Filterable {
 
         // Exclude balance adjustments and transfers from the report
         let currentTxns = currentFiltered.filter { $0.balanceAdjustmentType == nil }
-        let previousTxns = previousFiltered.filter { $0.balanceAdjustmentType == nil }
+        // WTD/MTD/YTD: recorta el previo al span de días del actual (p20-15).
+        // No-op en modo año, cerrados y rodantes (`aggregatePreviousNeedsAlignment`).
+        let previousTxns = DateAlignmentHelper.alignedPreviousItems(
+            previousFiltered.filter { $0.balanceAdjustmentType == nil },
+            currentDates: currentTxns.map(\.date),
+            currentInterval: interval,
+            previousInterval: previousInterval,
+            period: resolvedPeriod,
+            comparisonMode: resolvedMode
+        ) { $0.date }
 
         // Build pivot tree
         let hierarchy = groupingState.activeDimensions
@@ -176,15 +208,30 @@ final class FinancialReportViewModel: Filterable {
             previousTransactions: previousTxns,
             hierarchy: hierarchy,
             preferredCurrency: preferredCurrency,
-            allTags: allTags
+            allTags: allTags,
+            adjustment: adjustment,
+            converter: converter
         )
 
         // Flatten for rendering
         flattenedRows = PivotTableCalculator.flatten(nodes: rootNodes)
 
-        // Calculate net flow from filtered transactions (always in preferred currency)
-        netFlowCurrent = currentTxns.reduce(0) { $0 + $1.amountInPreferredCurrency }
-        netFlowPrevious = previousTxns.isEmpty ? nil : previousTxns.reduce(0) { $0 + $1.amountInPreferredCurrency }
+        // Calculate net flow from filtered transactions (always in preferred currency).
+        // Income-aware: suprime las patas de préstamo derivadas y netea la pata real a `-myShare`.
+        // Cada importe se resuelve con la misma regla que la tabla de debajo
+        // (`CashFlowCalculator.resolvedAmount`): una fila guardada en otra divisa principal se
+        // reconvierte, o el neto y las filas de la tabla (las agrupadas en divisa principal; por
+        // divisa o por cuenta suman el nativo) darían números distintos.
+        let netAmount: (TransactionItem) -> Double = { tx in
+            guard !adjustment.isSuppressed(tx) else { return 0 }
+            return CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: preferredCurrency, adjustment: adjustment, converter: converter
+            ).value
+        }
+        netFlowCurrent = currentTxns.reduce(0.0) { $0 + netAmount($1) }
+        netFlowPrevious = previousTxns.isEmpty
+            ? nil
+            : previousTxns.reduce(0.0) { $0 + netAmount($1) }
         netFlowVariation = netFlowPrevious.flatMap {
             PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }

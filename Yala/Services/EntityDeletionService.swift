@@ -31,7 +31,7 @@ final class EntityDeletionService {
     // MARK: - Context Injection
 
     /// Sets the model context (call this from views that use the service)
-    func setContext(_ context: ModelContext) {
+    func setContext(_ context: ModelContext?) {
         self.modelContext = context
     }
 
@@ -134,10 +134,8 @@ final class EntityDeletionService {
     /// the now-nulified M2M post-delete on a single save.
     ///
     /// Performance: in accounts with thousands of TXs tagged with this Tag the
-    /// re-encode loop can be slow. Telemetría `tagDeleted.duration_bucket`
-    /// detects cohorts above 1s for follow-up (Task background + progress UI).
+    /// re-encode loop can be slow.
     func deleteTag(_ tag: Tag) throws {
-        let started = Date.now
         let context = try requireContext()
         let affectedBudgets = tag.budgets ?? []
         let affectedTXs = tag.transactions ?? []
@@ -171,19 +169,6 @@ final class EntityDeletionService {
         try context.save()
         context.processPendingChanges()
         SessionState.shared.incrementDataVersion()
-
-        let duration = Date.now.timeIntervalSince(started)
-        TelemetryService.track(
-            .tagDeleted,
-            parameters: [
-                "duration_bucket": durationBucket(duration),
-                "txCount": "\(affectedTXs.count)",
-                "draftCount": "\(affectedDrafts.count)",
-                "favoriteCount": "\(affectedFavorites.count)",
-                "scheduledCount": "\(affectedScheduled.count)",
-                "budgetCount": "\(affectedBudgets.count)",
-            ]
-        )
     }
 
     // MARK: - CSV Mirror Cleanup
@@ -208,17 +193,6 @@ final class EntityDeletionService {
         }
     }
 
-    /// Privacy-friendly duration buckets — no exact timings exposed.
-    private func durationBucket(_ seconds: TimeInterval) -> String {
-        switch seconds {
-        case ..<0.5: return "lt_500ms"
-        case ..<1: return "500ms_1s"
-        case ..<3: return "1_3s"
-        case ..<10: return "3_10s"
-        default: return "gt_10s"
-        }
-    }
-
     // MARK: - Budget Deletion
 
     /// Deletes a budget
@@ -237,7 +211,7 @@ final class EntityDeletionService {
 
         // 1. Clean tracker entries (UserDefaults keys: scheduledPaymentNotif_UUID_*)
         let allKeys = UserDefaults.standard.dictionaryRepresentation().keys
-        let trackerKeys = allKeys.filter { $0.hasPrefix("scheduledPaymentNotif_\(paymentID)") }
+        let trackerKeys = allKeys.filter { $0.hasPrefix(ScheduledPaymentNotificationTracker.keyPrefix + paymentID) }
         for key in trackerKeys {
             UserDefaults.standard.removeObject(forKey: key)
         }
@@ -283,6 +257,9 @@ final class EntityDeletionService {
 
         // 4. Delete payment
         try delete(payment)
+
+        // 5. Re-plan de las summaries diarias agendadas (el conteo del día cambió).
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
     }
 
     // MARK: - Transaction Count Check

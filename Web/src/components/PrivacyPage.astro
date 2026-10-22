@@ -9,12 +9,14 @@ interface Props {
 const { lang } = Astro.props;
 const t = getTranslation(lang);
 const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
+// **negrita** → <strong>, como en el resto de secciones.
+const md = (text: string) => text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
 ---
 
 <main class="min-h-screen">
   <div class="max-w-3xl mx-auto px-6 py-24">
     <a href={homeUrl} class="text-yala-indigo hover:text-yala-cyan transition-colors mb-8 inline-flex items-center gap-2">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
       </svg>
       {t.privacyBackHome}
@@ -37,15 +39,15 @@ const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
         <p class="text-neutral-300 leading-relaxed mb-4">{t.privacyDataIntro}</p>
         <ul class="space-y-3 text-neutral-300">
           <li class="flex items-start gap-3">
-            <span class="text-yala-cyan mt-1">●</span>
+            <span class="text-yala-cyan mt-1" aria-hidden="true">●</span>
             <span set:html={t.privacyDataBullet1.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
           <li class="flex items-start gap-3">
-            <span class="text-yala-cyan mt-1">●</span>
+            <span class="text-yala-cyan mt-1" aria-hidden="true">●</span>
             <span set:html={t.privacyDataBullet2.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
           <li class="flex items-start gap-3">
-            <span class="text-yala-cyan mt-1">●</span>
+            <span class="text-yala-cyan mt-1" aria-hidden="true">●</span>
             <span set:html={t.privacyDataBullet3.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
           </li>
         </ul>
@@ -54,67 +56,91 @@ const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
       <!-- 3. iCloud -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyIcloudTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed">{t.privacyIcloudText}</p>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyIcloudText)} />
       </section>
 
-      <!-- 4. Yala AI + Smart Features -->
+      <!-- 4. Cloud account -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyCloudTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyCloudText)} />
+      </section>
+
+      <!-- 5. Groups -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyGroupsTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyGroupsText)} />
+      </section>
+
+      <!-- 6. Yala AI + Smart Features -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyProTitle}</h2>
         <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={t.privacyProText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
       </section>
 
-      <!-- 5. Groups (Beta) -->
-      <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyGroupsTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed" set:html={t.privacyGroupsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
-      </section>
-
-      <!-- 6. Anonymous Analytics -->
+      <!-- 7. Own analytics -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyAnalyticsTitle}</h2>
         <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={t.privacyAnalyticsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
       </section>
 
-      <!-- 6. What we don't do -->
+      <!-- 8. Identifiers -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyIdsTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyIdsText)} />
+      </section>
+
+      <!-- 9. Providers -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyProvidersTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyProvidersText)} />
+      </section>
+
+      <!-- 10. What we don't do -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyNotDoTitle}</h2>
         <ul class="space-y-3 text-neutral-300">
           <li class="flex items-start gap-3">
-            <span class="text-yala-cyan mt-1">●</span>
+            <span class="text-yala-cyan mt-1" aria-hidden="true">●</span>
             <span>{t.privacyNotDoBullet1}</span>
           </li>
           <li class="flex items-start gap-3">
-            <span class="text-yala-cyan mt-1">●</span>
+            <span class="text-yala-cyan mt-1" aria-hidden="true">●</span>
             <span>{t.privacyNotDoBullet2}</span>
           </li>
           <li class="flex items-start gap-3">
-            <span class="text-yala-cyan mt-1">●</span>
+            <span class="text-yala-cyan mt-1" aria-hidden="true">●</span>
             <span>{t.privacyNotDoBullet3}</span>
           </li>
           <li class="flex items-start gap-3">
-            <span class="text-yala-cyan mt-1">●</span>
+            <span class="text-yala-cyan mt-1" aria-hidden="true">●</span>
             <span>{t.privacyNotDoBullet4}</span>
           </li>
         </ul>
       </section>
 
-      <!-- 7. Your Rights -->
+      <!-- 11. Retention -->
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyRightsTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed">{t.privacyRightsText}</p>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyRetentionTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyRetentionText)} />
       </section>
 
-      <!-- 8. Changes -->
+      <!-- 12. Your Rights -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyRightsTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyRightsText)} />
+      </section>
+
+      <!-- 13. Changes -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyChangesTitle}</h2>
         <p class="text-neutral-300 leading-relaxed">{t.privacyChangesText}</p>
       </section>
 
-      <!-- 9. Contact -->
+      <!-- 14. Contact -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyContactTitle}</h2>
         <p class="text-neutral-300 leading-relaxed">
-          {t.privacyContactText} <a href="mailto:admin@yala-app.pe" class="text-yala-cyan hover:text-yala-indigo transition-colors">admin@yala-app.pe</a>
+          {t.privacyContactText} <a href="mailto:admin@yala-app.pe" class="text-yala-cyan hover:text-yala-indigo transition-colors underline underline-offset-2">admin@yala-app.pe</a>
         </p>
       </section>
 
@@ -122,19 +148,19 @@ const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
       <div class="mt-12 pt-8 border-t border-neutral-700">
         <div class="flex flex-wrap gap-6 justify-center text-neutral-400 text-sm">
           <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             <span>{t.privacyTrustBadge1}</span>
           </div>
           <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             <span>{t.privacyTrustBadge2}</span>
           </div>
           <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" class="w-5 h-5 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
             </svg>
             <span>iCloud Sync</span>

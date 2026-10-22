@@ -1,0 +1,21 @@
+node_modules
+dist
+.DS_Store
+*.log
+.env
+
+# Vídeos renderizados: se regeneran con scripts/render-*.sh.
+out
+
+# Tomas crudas del iPhone. NO entran al repo: un .MOV de pantalla pesa
+# decenas de MB y git no los borra nunca.
+#
+# Umbral, para no decidirlo cada día:
+#   < 25 MB  → mp4 curado en public/footage/, se commitea (el piloto pesa 2,3 MB)
+#   ≥ 25 MB  → o se recorta y recomprime por debajo del umbral, o va a Git LFS
+#              (git lfs track "marketing/remotion/public/footage/*.mp4"), o se
+#              queda fuera del repo y copy.ts apunta a un slug sin toma.
+*.mov
+*.MOV
+public/footage/raw/
+public/footage/*.mov

@@ -38,13 +38,13 @@ struct GroupExpenseViewModelM6Tests {
     private func makeVM(
         members: [SplitMember],
         currencyCode: String = "PEN",
-        isGroupInviteOverride: Bool? = false
+        isGroupsOnlyOverride: Bool? = false
     ) -> GroupExpenseViewModel {
         let group = SplitGroup(name: "Test Group", currencyCode: currencyCode)
         let nameLookup = Dictionary(uniqueKeysWithValues: members.map { ($0.id.uuidString, $0.displayName) })
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: nameLookup)
         vm.currencyCode = currencyCode
-        vm.isGroupInviteOverride = isGroupInviteOverride
+        vm.isGroupsOnlyOverride = isGroupsOnlyOverride
         // Setup mínimo para satisfacer otros validators de canSave (los M6 son la matriz target).
         vm.amountString = "100"
         vm.expenseDescription = "Cena"
@@ -88,7 +88,7 @@ struct GroupExpenseViewModelM6Tests {
 
     @Test func canSave_falseWhenCaseAFullModeAndNoAccount() {
         let (current, other) = makeMembers()
-        let vm = makeVM(members: [current, other], isGroupInviteOverride: false)
+        let vm = makeVM(members: [current, other], isGroupsOnlyOverride: false)
         vm.paidByMemberID = current.id.uuidString
         // selectedAccount = nil → bloqueo
         #expect(vm.isAccountRequired == true)
@@ -97,7 +97,7 @@ struct GroupExpenseViewModelM6Tests {
 
     @Test func canSave_trueWhenCaseAFullModeAndCompatibleAccount() {
         let (current, other) = makeMembers()
-        let vm = makeVM(members: [current, other], currencyCode: "PEN", isGroupInviteOverride: false)
+        let vm = makeVM(members: [current, other], currencyCode: "PEN", isGroupsOnlyOverride: false)
         vm.paidByMemberID = current.id.uuidString
         vm.selectedAccount = makeAccount(currency: "PEN")
         #expect(vm.isAccountCompatibleWithCurrency == true)
@@ -106,7 +106,7 @@ struct GroupExpenseViewModelM6Tests {
 
     @Test func canSave_falseWhenCaseACompatibleAccountWrongCurrency() {
         let (current, other) = makeMembers()
-        let vm = makeVM(members: [current, other], currencyCode: "PEN", isGroupInviteOverride: false)
+        let vm = makeVM(members: [current, other], currencyCode: "PEN", isGroupsOnlyOverride: false)
         vm.paidByMemberID = current.id.uuidString
         vm.selectedAccount = makeAccount(currency: "USD")  // mismatch
         #expect(vm.isAccountCompatibleWithCurrency == false)
@@ -115,19 +115,19 @@ struct GroupExpenseViewModelM6Tests {
 
     @Test func canSave_ignoresAccountWhenCaseB() {
         let (current, other) = makeMembers()
-        let vm = makeVM(members: [current, other], isGroupInviteOverride: false)
+        let vm = makeVM(members: [current, other], isGroupsOnlyOverride: false)
         vm.paidByMemberID = other.id.uuidString  // otro pagó
         vm.selectedAccount = nil
         #expect(vm.isAccountRequired == false)
         #expect(vm.canSave == true)
     }
 
-    @Test func canSave_ignoresAccountWhenGroupInviteMode() {
+    @Test func canSave_ignoresAccountWhenGroupsOnlySession() {
         let (current, other) = makeMembers()
-        let vm = makeVM(members: [current, other], isGroupInviteOverride: true)  // groupInvite
+        let vm = makeVM(members: [current, other], isGroupsOnlyOverride: true)  // sesión solo-grupos
         vm.paidByMemberID = current.id.uuidString  // Caso A
         vm.selectedAccount = nil
-        #expect(vm.isAccountRequired == false)  // groupInvite skip
+        #expect(vm.isAccountRequired == false)  // en solo-grupos no hay cuenta que exigir
         #expect(vm.canSave == true)
     }
 

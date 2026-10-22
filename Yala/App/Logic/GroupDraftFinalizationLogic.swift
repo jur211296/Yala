@@ -54,7 +54,7 @@ enum GroupDraftFinalizationLogic {
     }
 
     /// ¿(Re)crear el draft TX-puntero `[.subcategory]` del virtual `-myShare` en los paths
-    /// virtual-only (Caso B, Caso A bridge-OFF, Caso A `.groupInvite`)?
+    /// virtual-only (Caso B, Caso A bridge-OFF, Caso A en sesión solo-grupos)?
     /// False si la subcat resolvió — o si un draft opt-in pendiente ya pide subcategoría
     /// (sheet combinado `[.account, .subcategory]`): el bridge es delete+recreate idempotente
     /// y cada re-bridge (sync round-trip, retry) recrearía el puntero que el opt-in ya cubre,

@@ -50,6 +50,7 @@ struct WeekdaySpendingCalculator {
         transactions: [TransactionItem],
         interval: DateInterval,
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WeekdaySpending] {
         let calendar = Calendar.current
@@ -57,17 +58,19 @@ struct WeekdaySpendingCalculator {
         var counts: [Int: Int] = [:]
 
         for tx in transactions {
+            guard !adjustment.isSuppressed(tx) else { continue }
             guard let category = tx.category, !category.isIncome else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
             let weekday = calendar.component(.weekday, from: tx.date)
 
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
             let amount: Double
-            if tx.preferredCurrencyCode == currencyCode {
-                amount = abs(tx.amountInPreferredCurrency)
+            if CashFlowCalculator.readsStoredAmount(tx, currencyCode: currencyCode, adjustment: adjustment) {
+                amount = abs(adjustment.amountInPreferredCurrency(tx))
             } else {
                 let converted = converter.convert(
-                    Decimal(abs(tx.amount)),
+                    Decimal(abs(adjustment.amount(tx))),
                     from: tx.currencyCode,
                     to: currencyCode,
                     on: tx.date
@@ -96,7 +99,13 @@ struct WeekdaySpendingCalculator {
     static func weekdayOccurrences(in interval: DateInterval) -> [Int: Int] {
         let calendar = Calendar.current
         var occurrences: [Int: Int] = [:]
-        let totalDays = calendar.dateComponents([.day], from: interval.start, to: interval.end).day ?? 0
+        // Contado con el helper: sobre un período CERRADO (`.lastMonth`, `.lastYear`, un rango
+        // personalizado) el intervalo llega con `-1 s` y `dateComponents` a pelo devolvía un día menos.
+        // Aquí no es un promedio, es peor: `totalDays` decide `fullWeeks` y `remainder`, así que el
+        // ÚLTIMO día del período no sumaba su día de la semana. En enero (31 días contados como 30) el
+        // sábado recibía 4 ocurrencias en vez de 5 y su media salía inflada ~25 %, con lo que el KPI
+        // «día más caro» podía señalar un día equivocado.
+        let totalDays = DateIntervalDayCount.days(in: interval, calendar: calendar)
         let fullWeeks = totalDays / 7
         let remainder = totalDays % 7
 

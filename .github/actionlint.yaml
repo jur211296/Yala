@@ -1,0 +1,4 @@
+self-hosted-runner:
+  # Runner propio de la Mini (usuario ci). Ver qa/scripts/ci-runner/instalar.sh.
+  labels:
+    - yala-mini

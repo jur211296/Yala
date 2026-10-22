@@ -45,6 +45,7 @@ struct PeriodNavigationHeader: View {
                     Text(currentLabel)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
+                        .accessibilityIdentifier("period_navigation_label")
 
                     Image(systemName: "chevron.down")
                         .font(DS.Typography.captionSmall)

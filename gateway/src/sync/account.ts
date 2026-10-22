@@ -1,0 +1,329 @@
+/**
+ * Rutas de CUENTA del Modo Nube (I7a): `POST /account/claim` y `GET /account/exists`.
+ *
+ * Son el gate de identidad de §f.1 — corren INMEDIATAMENTE tras un `signInWithIdToken` exitoso y
+ * ANTES de cualquier `save()` de onboarding. Preceden al `/attest/bind` (el device aún no vinculó su
+ * keyId), así que NO exigen App Attest: solo el JWT de usuario (Supabase). RLS es el árbitro final
+ * (se reenvía el MISMO JWT del usuario a PostgREST; jamás `service_role`).
+ *
+ * Invariante de seguridad (§2.3, §f.1): el `sub` SIEMPRE del JWT verificado, NUNCA del body. El RPC
+ * `claim_account` usa `auth.uid()` adentro; cualquier `sub`/`id`/`user_id` del payload se DESCARTA.
+ */
+import type { Context } from "hono";
+import type { Env } from "../env";
+import { errorBody, jsonError } from "../errors";
+import { accountQuotaBucket, forgetAccountQuota, gateRequest } from "../ratelimit";
+import { verifySessionToken, type SessionClaims } from "../attest/session";
+import { bearerToken, callRpc, getRows, verifyUserToken } from "./userauth";
+import { deleteAccountEntitlement } from "../db";
+
+type Ctx = Context<{ Bindings: Env }>;
+
+export interface AuthedUser {
+  sub: string;
+  userJWT: string;
+}
+
+export interface AuthedUserAttest extends AuthedUser {
+  attest: SessionClaims | null;
+}
+
+/**
+ * Auth de las rutas de cuenta: solo el JWT de usuario (Supabase) + rate-limit. A diferencia de las
+ * rutas de sync NO exige App Attest — el claim precede al `/attest/bind`, así que el device todavía
+ * no tiene una sesión de attest. El bucket de rate-limit usa el `sub` (reusa el limiter `sync`, la
+ * categoría existente del Modo Nube; en tests sin Durable Object se omite).
+ *
+ * EXPORTADA (B1 SIWA): `/account/siwa/exchange` reusa esta auth (sin 3ª copia — precedente G8-1 con
+ * el `requireUserAndAttest` de groups/routes).
+ */
+export async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
+  const token = bearerToken(c.req.header("Authorization"));
+  if (!token) return jsonError("yala_attest_required", "Falta el JWT de usuario (Authorization: Bearer).", 401);
+  const user = await verifyUserToken(c.env, token);
+  if (!user) return jsonError("yala_attest_invalid", "JWT de usuario inválido o expirado.", 401);
+
+  if (c.env.RATE_LIMITER) {
+    const claims: SessionClaims = { keyId: accountQuotaBucket(user.sub), tier: "free" };
+    const blocked = await gateRequest(c.env, claims, "sync");
+    if (blocked) return blocked;
+  }
+
+  return { sub: user.sub, userJWT: user.token };
+}
+
+// ----------------------------------------------------------------------------------- /account/claim
+
+/**
+ * Reserva ATÓMICA de la cuenta (§f.1). Body `{device_id, provider, migration?, kind?}`. Descarta cualquier
+ * `sub`/`id`/`user_id` del body (el sub sale del JWT vía `claim_account`→`auth.uid()`). Devuelve el
+ * estado de 3 valores tal cual lo emite el RPC: `created` | `existing_stable` | `claiming_in_progress`.
+ *
+ * `migration` (bool, default false) arma la reserva de LÍDER (`migration_in_progress=true` +
+ * heartbeat) ATÓMICAMENTE en el propio INSERT del RPC (I10-wiring §g.1): sin él, un kill entre el
+ * `created` de la rama migración y un `begin` separado dejaría `mip=false` (el resume re-claimaría →
+ * `existing_stable` → adoptaría una cuenta VACÍA). El default preserva el contrato born-cloud.
+ *
+ * `kind` (opcional, `complete` | `groups_only`; default `complete`) dice qué nace: una cuenta con
+ * finanzas personales o una de solo grupos. Con `groups_only` el RPC NO estampa `personal_claimed_at`
+ * —para lo personal esa cuenta todavía no ha nacido— y crea la misma fila ligera que
+ * `create_group`/`join_group`. Un claim `complete` sobre una fila ligera la PROMOCIONA (g3_02), así que
+ * ésta es también la ruta de «Activar Yala completo → nube». La respuesta lleva `kind` en los tres
+ * estados. ADR 2026-09-09 «Sesiones — dos ejes» §11.
+ *
+ * Idempotencia (g16_01, 2026-09-24): el MISMO `device_id` que creó o promocionó una cuenta `complete` en
+ * la que nadie ha escrito nada personal vuelve a recibir `created` si repite el claim sin `migration` —
+ * es el reintento tras una respuesta perdida. Desde g16_02 deja de hacerlo si otro dispositivo ya entró: el
+ * claim con `migration` (el adopt) de un dispositivo que no es el líder que recibe `existing_stable` estampa
+ * `profiles.personal_adopted_at`. Vive entera en el RPC; este handler no cambia.
+ *
+ * Sin relevo tras el cutover (g16_04, 2026-09-24): con `migrated_at` puesto y el lease del líder vencido, el claim
+ * de otro dispositivo —con o sin `migration`— recibe `existing_stable` y el líder no cambia. El corpus del líder ya
+ * está verificado en la cuenta, así que quien llega entra en ella (adopt) en vez de subir el suyo encima o esperar a
+ * un líder que puede no volver. Ticket `claim-grants-a-takeover-after-the-leader-passed-the-cutover`.
+ */
+export async function handleAccountClaim(c: Ctx): Promise<Response> {
+  const auth = await requireUser(c);
+  if (auth instanceof Response) return auth;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return jsonError("yala_bad_request", "JSON inválido", 400);
+  }
+
+  // El sub SIEMPRE del JWT — cualquier intento de inyectarlo por el body se descarta (metadata-only log).
+  for (const k of ["sub", "id", "user_id"]) {
+    if (k in body) console.log(`[account-claim] descartando '${k}' del payload (se usa el sub del JWT)`);
+  }
+
+  const deviceId = typeof body.device_id === "string" ? body.device_id : "";
+  const provider = typeof body.provider === "string" ? body.provider : "";
+  const migration = body.migration === true;
+  if (!deviceId || !provider) {
+    return jsonError("yala_bad_request", "Se espera { device_id, provider }", 400);
+  }
+
+  // `kind` (opcional): el alta de grupos manda `groups_only` y entonces la cuenta NO reclama lo
+  // personal. Ausente ⇒ `complete`, que es el contrato de todos los llamadores de hoy (born-cloud y
+  // migración) y el default del RPC. Se valida AQUÍ y no solo en el RPC porque un valor fuera del
+  // dominio tiene que ser un 400 legible, no un 502 envuelto en `yala_unavailable`.
+  const kind = body.kind === undefined ? "complete" : body.kind;
+  if (kind !== "complete" && kind !== "groups_only") {
+    return jsonError("yala_bad_request", "kind debe ser 'complete' o 'groups_only'", 400);
+  }
+
+  const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "claim_account", {
+    p_device_id: deviceId,
+    p_provider: provider,
+    p_migration: migration,
+    p_kind: kind,
+  });
+  if (!ok) {
+    console.log(`[account-claim] claim_account upstream ${status}`);
+    return jsonError("yala_unavailable", `claim upstream ${status}`, 502);
+  }
+  return c.json((out ?? {}) as Record<string, unknown>);
+}
+
+// ------------------------------------------------------------------------------- /account/migration
+
+/**
+ * Avance de la migración Y de la reversa (I10-wiring §g.4 + I11-3 §h). Body `{device_id, action}`.
+ * Passthrough al RPC `migration_progress` — TODA la lógica (guards de líder/lease, idempotencia)
+ * vive en el RPC; aquí solo se valida el set de actions. Ida: `cutover` (`migrated_at=now()`,
+ * guard líder, idempotente) y `complete` (`migration_in_progress=false`, guard líder). Reversa:
+ * `reverse_claim` (guard `kind='complete'` O `reverted_at` no nulo — el 2.º device de una cuenta ya
+ * revertida tiene que poder seguirla; si ninguna, `not_complete`; takeover de migración ABANDONADA
+ * con lease expirado >60min; idempotente para el mismo líder), `reverse_freeze` (`reverse_frozen_at=now()`, guard
+ * líder SIN edad de lease, idempotente), `reverse_complete` (`reverse_in_progress=false` +
+ * `reverted_at=now()` + `kind='groups_only'`; `migrated_at` NO se toca — §h.4) y `reverse_abort` (des-congela; acepta
+ * lease expirado — abort de emergencia post-crash). `heartbeat` (I14-pre) refresca SOLO
+ * `migration_updated_at` (lease de 60 min) MIENTRAS un paso largo progresa (upload/drain del líder),
+ * sirviendo a la ida Y a la reversa por `migration_in_progress OR reverse_in_progress` con guard líder
+ * SIN edad de lease; NO toca `migrated_at`/`reverse_frozen_at`/`reverted_at`/`claim_account` (sin run
+ * activo → `not_in_progress`, benigno idempotente). El sub SIEMPRE del JWT (RLS + `auth.uid()`
+ * dentro del RPC). Sin App Attest — precede al bind, como el resto de `/account/*`. Devuelve el
+ * `{ok, reason?}` del RPC tal cual (`other_leader` cuando otro device usurpó el liderazgo).
+ */
+const MIGRATION_ACTIONS = new Set([
+  "cutover",
+  "complete",
+  "reverse_claim",
+  "reverse_freeze",
+  "reverse_complete",
+  "reverse_abort",
+  "heartbeat",
+]);
+
+export async function handleAccountMigration(c: Ctx): Promise<Response> {
+  const auth = await requireUser(c);
+  if (auth instanceof Response) return auth;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return jsonError("yala_bad_request", "JSON inválido", 400);
+  }
+
+  const deviceId = typeof body.device_id === "string" ? body.device_id : "";
+  const action = typeof body.action === "string" ? body.action : "";
+  if (!deviceId || !MIGRATION_ACTIONS.has(action)) {
+    return jsonError(
+      "yala_bad_request",
+      "Se espera { device_id, action: 'cutover'|'complete'|'reverse_claim'|'reverse_freeze'|'reverse_complete'|'reverse_abort'|'heartbeat' }",
+      400,
+    );
+  }
+
+  const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "migration_progress", {
+    p_device_id: deviceId,
+    p_action: action,
+  });
+  if (!ok) {
+    console.log(`[account-migration] migration_progress upstream ${status}`);
+    return jsonError("yala_unavailable", `migration upstream ${status}`, 502);
+  }
+  return c.json((out ?? {}) as Record<string, unknown>);
+}
+
+// ---------------------------------------------------------------------------------- /account/delete
+
+/**
+ * Auth de `/account/delete`: JWT de usuario + **App Attest** + rate-limit. Espejo exacto de
+ * `groups/rpc::requireUserAndAttest` (NO del `requireUser` del resto de `/account/*`).
+ *
+ * ASIMETRÍA DELIBERADA (decisión CONGELADA G5-D1): las demás rutas `/account/*` (claim/exists/migration)
+ * usan `requireUser` — SIN attest — porque el claim PRECEDE al `/attest/bind` (el device aún no tiene una
+ * sesión de attest). `/account/delete` es lo contrario: es la operación MÁS DESTRUCTIVA del canal (hard
+ * delete de todo el corpus personal), la ejecuta un device ya establecido (con sesión de attest viva), y
+ * exigir attest sube la barra contra un JWT robado sin device atestado. En `ENFORCE=observe` el attest
+ * es opcional (igual que las rutas de sync en staging); en `ENFORCE=enforce` es obligatorio.
+ *
+ * EXPORTADA (B1 SIWA): `/account/siwa/revoke` reusa esta auth — mismo molde que `/account/delete`
+ * (ambos son pasos del mismo flujo destructivo de borrado de cuenta).
+ */
+export async function requireUserAndAttest(c: Ctx): Promise<AuthedUserAttest | Response> {
+  const token = bearerToken(c.req.header("Authorization"));
+  if (!token) return jsonError("yala_attest_required", "Falta el JWT de usuario (Authorization: Bearer).", 401);
+  const user = await verifyUserToken(c.env, token);
+  if (!user) return jsonError("yala_attest_invalid", "JWT de usuario inválido o expirado.", 401);
+
+  const attestTok = bearerToken(c.req.header("X-Yala-Attest-Session")) ?? c.req.header("X-Yala-Attest-Session") ?? null;
+  const attest = attestTok ? await verifySessionToken(c.env, attestTok) : null;
+  const enforce = c.env.ENFORCE === "enforce";
+  if (enforce && !attest) {
+    return jsonError("yala_attest_required", "Falta el token de sesión de App Attest.", 401);
+  }
+  if (c.env.RATE_LIMITER) {
+    const claims: SessionClaims = attest ?? { keyId: accountQuotaBucket(user.sub), tier: "free" };
+    const blocked = await gateRequest(c.env, claims, "sync");
+    if (blocked) return blocked;
+  }
+  return { sub: user.sub, userJWT: user.token, attest };
+}
+
+/**
+ * Borrado GDPR del corpus PERSONAL (§15, contraparte de `groups_forget_user`). Passthrough al RPC
+ * `delete_personal_account` (SECURITY DEFINER, `auth.uid()` adentro) — TODA la lógica (hard delete de las
+ * 16 tablas de dominio + prefs + counters + attest_keys + report_claims + la fila profiles, counts por
+ * tabla) vive en el RPC. El JWT del usuario se reenvía VERBATIM a PostgREST; JAMÁS service_role. El `sub`
+ * SIEMPRE del JWT (RLS + `auth.uid()`); no lee body. Errores del RPC (`yala_not_authorized` sanitizado,
+ * errcode P0001) → 400 con el código preservado; cualquier otro fallo upstream → 502 yala_unavailable.
+ *
+ * NO borra las tablas de GRUPOS (el cliente llama `groups_forget_user` APARTE ANTES). Desde g12_01
+ * (gate §12 B2) el RPC TAMBIÉN borra la fila `auth.users` del caller (atado a auth.uid(); cascadas
+ * verificadas; la respuesta gana la key `auth_users`) — ver qa/cloud/g12_01_delete_account_auth_users.sql
+ * (histórico: g5_01_delete_personal_account.sql).
+ */
+export async function handleAccountDelete(c: Ctx): Promise<Response> {
+  const auth = await requireUserAndAttest(c);
+  if (auth instanceof Response) return auth;
+
+  const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "delete_personal_account", {});
+  if (!ok) {
+    const message =
+      out && typeof out === "object" && typeof (out as { message?: unknown }).message === "string"
+        ? ((out as { message: string }).message)
+        : null;
+    // Errores del RPC son constantes yala_* sanitizadas (P0001) → 400 con el código preservado.
+    if (message && /^yala_[a-z_]+$/.test(message)) {
+      console.log(`[account-delete] delete_personal_account rejected: ${message}`);
+      return new Response(JSON.stringify(errorBody("yala_rpc_error", message, message)), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    console.log(`[account-delete] delete_personal_account upstream ${status}`);
+    return jsonError("yala_unavailable", `delete upstream ${status}`, 502);
+  }
+
+  // C-8: el entitlement por cuenta vive en D1 (Cloudflare), no en Supabase — el RPC que borra las
+  // 16 tablas de dominio, las prefs y hasta la fila `auth.users` no lo alcanza. Sin esto, el
+  // borrado GDPR dejaría atrás una fila con el `sub` del usuario y su `original_transaction_id`.
+  // Va DESPUÉS del RPC (si el borrado falla, el derecho debe seguir intacto) y no puede tumbar la
+  // respuesta: la cuenta ya está borrada, y la fila huérfana la reclamaría el siguiente bind.
+  try {
+    await deleteAccountEntitlement(c.env, auth.sub);
+  } catch (e) {
+    console.log(`[account-delete] entitlement cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+
+  // El contador de uso de la CUENTA (Durable Object `sub:<sub>`) tampoco lo alcanza el RPC. Mismo trato que el
+  // derecho: después del borrado y sin tumbar la respuesta. Lo que se queda es del DISPOSITIVO y no de la cuenta: la
+  // fila de `attest_keys` de D1 (por keyId, sin columna de cuenta; el vínculo cuenta↔clave vivía en `attest_keys` de
+  // Supabase, que borra el RPC) y su contador, que guarda el cupo de prueba de la IA (`forgetAccountQuota`). La
+  // política lo dice en «Cuánto tiempo guardamos tus datos». Lo fija `account.delete.test.ts`.
+  if (c.env.RATE_LIMITER) {
+    try {
+      await forgetAccountQuota(c.env, auth.sub);
+    } catch (e) {
+      console.log(`[account-delete] quota cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
+    }
+  }
+
+  return c.json((out ?? {}) as Record<string, unknown>);
+}
+
+// ---------------------------------------------------------------------------------- /account/exists
+
+/**
+ * ¿El `sub` autenticado ya tiene fila en `profiles`? Es un HINT de encaminamiento barato para la UI
+ * (§f.1) — NO la garantía anti-doble-siembra: esa la da la atomicidad de `POST /account/claim`. RLS
+ * filtra a la fila del propio usuario, así que basta con ver si hay una.
+ *
+ * `migration_in_progress` (ADITIVO, 2026-10-09, ticket `settings-migrate-blocks-a-second-device-before-its-marker`):
+ * con la cuenta `complete` y una ida en curso, la puerta de «Migrar a la nube» de OTRO dispositivo del mismo Apple ID
+ * dice «otro de tus dispositivos está llevando tus datos a la nube» en vez de «esa cuenta ya tiene finanzas
+ * personales». Solo lo arma el claim con `migration` (`claim_account`); el alta born-cloud lo deja en `false`. Se emite
+ * solo si la fila existe y el valor es booleano: un cliente anterior lo ignora (decodifica sin claves estrictas) y el de
+ * hoy lee la AUSENCIA como `false`, que cae al aviso de siempre. La columna se lee con el JWT del usuario porque los
+ * grants de `profiles` son a nivel tabla (`qa/cloud/g15_01_account_kind.sql`): no hace falta SQL nuevo.
+ */
+export async function handleAccountExists(c: Ctx): Promise<Response> {
+  const auth = await requireUser(c);
+  if (auth instanceof Response) return auth;
+
+  const { ok, status, rows } = await getRows(
+    c.env,
+    auth.userJWT,
+    "profiles",
+    "select=id,kind,migration_in_progress&limit=1",
+  );
+  if (!ok) return jsonError("yala_unavailable", `exists upstream ${status}`, 502);
+  const row = rows[0] as { kind?: unknown; migration_in_progress?: unknown } | undefined;
+  if (!row) return c.json({ exists: false });
+
+  // `kind` se OMITE si el upstream no lo trae, o trae algo fuera del dominio: el cliente lee la
+  // AUSENCIA como `groups_only` (fail-safe hacia lo menos invasivo, decisión de Jürgen 2026-09-09) y
+  // se corrige en el refresco siguiente. Emitir un valor desconocido sería peor que callar — el
+  // cliente lo guardaría en su caché sellada y no tendría de qué corregirse.
+  const kind = row.kind === "complete" || row.kind === "groups_only" ? row.kind : undefined;
+  const out: { exists: true; kind?: string; migration_in_progress?: boolean } = { exists: true };
+  if (kind) out.kind = kind;
+  // Mismo trato que `kind`: fuera del dominio se omite, y el cliente lo lee como `false`.
+  if (typeof row.migration_in_progress === "boolean") out.migration_in_progress = row.migration_in_progress;
+  return c.json(out);
+}

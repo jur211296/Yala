@@ -36,8 +36,20 @@ struct FeatureGateTests {
         #expect(ProFeature.premiumIcons.isProOnly == true)
     }
 
-    @Test func isProOnly_exportExtendedPeriods_true() {
-        #expect(ProFeature.exportExtendedPeriods.isProOnly == true)
+    // MARK: - Exportar es gratis (2026-10-12)
+
+    /// Exportar todos los datos, de cualquier período y en CSV o Excel, es gratis: es portabilidad y la política de
+    /// privacidad lo promete. Ninguna función Pro puede volver a cerrar la exportación.
+    @Test func noProFeatureGatesExport() {
+        let exportFeatures = ProFeature.allCases.filter { $0.rawValue.localizedCaseInsensitiveContains("export") }
+        #expect(exportFeatures.isEmpty, "La exportación volvió a tener puerta Pro: \(exportFeatures)")
+    }
+
+    /// El tour que se enseña al pasar a Pro no puede venderla como ventaja de Pro.
+    @Test func proTourDoesNotSellExport() {
+        let ids = ProTourSteps.profileSteps.map(\.id)
+        #expect(!ids.contains { $0.localizedCaseInsensitiveContains("export") }, "El tour Pro aún anuncia exportar: \(ids)")
+        #expect(ids == ["settingsAppIcon", "settingsTheme"])
     }
 
     // MARK: - Setup Trial Bypass
@@ -77,21 +89,5 @@ struct FeatureGateTests {
         #expect(gate.setupTrialFeatures.contains(.imageInput))
 
         gate.disableSetupTrial(for: .imageInput)
-    }
-
-    // MARK: - DetailPeriod.isProExportPeriod
-
-    @Test func isProExportPeriod_freePeriods_false() {
-        let freePeriods: [DetailPeriod] = [.thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth]
-        for period in freePeriods {
-            #expect(period.isProExportPeriod == false, "\(period) should be free")
-        }
-    }
-
-    @Test func isProExportPeriod_proPeriods_true() {
-        let proPeriods: [DetailPeriod] = [.thisYear, .lastYear, .allTime, .custom]
-        for period in proPeriods {
-            #expect(period.isProExportPeriod == true, "\(period) should be pro")
-        }
     }
 }

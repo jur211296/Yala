@@ -1,0 +1,227 @@
+//
+//  RemoteWipeNoticeRoutingUITests.swift
+//  YalaUITests
+//
+//  El aviso de «tus datos fueron eliminados de iCloud», por la vía que le corresponde.
+//
+//  **Qué cubre que ningún escáner alcanza** (ticket `remote-wipe-alert-skips-the-router`):
+//   1. Que el aviso se presenta DE VERDAD cuando entra por la cola del router, que la shell sigue
+//      montada debajo y que lo que viaja detrás en la cola ESPERA en vez de apilarse encima. Hasta el
+//      2026-09-14 lo encendía un `@State` desde una tarea de fondo: con el anchor ocupado, SwiftUI
+//      descartaba la presentación en silencio.
+//   1b. Y la vuelta: al contestarlo, el intent retenido presenta. Ese es el aserto que prueba que
+//      contestar suelta la CONDICIÓN VIVA y no sólo el flag del alert — sin eso, el router se queda
+//      retenido con el aviso ya cerrado, que es el brick del ticket por su otra cara.
+//   2. Que la red de presentación efectiva NO lo desarma cuando sí está en pantalla. Esa red existe
+//      para soltar la matriz de readiness si UIKit no llegó a montar el alert, y su sonda contesta
+//      «¿hay algo presentado?» a UIKit. Si esa sonda se equivocara hacia `false` —otra versión de iOS,
+//      otro envoltorio de presentación—, el aviso se iría solo a los ~9 s y nadie se enteraría: el
+//      caso 1 de esta suite espera esa ventana entera con el alert delante.
+//   3. A dónde aterriza cada botón, que es la otra mitad del ticket.
+//   4. El DESARME de esa red: si el aviso no llega a montarse, la red agota su cap y suelta la condición
+//      viva, y lo retenido presenta (ticket `presentation-net-desarm-has-no-automated-net`). Ese caso entra
+//      por un seam propio, `-uitest-remote-wipe-notice-never-mounts`; los demás corren sin él.
+//
+//  **Lo que NO cubre, y tiene ticket propio**: el PRODUCTOR. En producción el aviso lo pide la gracia
+//  de cinco segundos de `ContentView`, que arranca cuando las filas personales desaparecen del store
+//  bajo el proceso vivo, y para eso no hay seam (`remote-wipe-receiver-has-no-behaviour-test`). El hook
+//  `-uitest-remote-wipe-notice` encola el intent; el drenaje re-mide sus tres condiciones vivas igual
+//  que en producción, así que lo que se ejercita de ahí en adelante es el camino real.
+//
+//  Sin seed a propósito: el drenaje exige que no haya vida personal en el store (`hasPersonalData`), que
+//  es precisamente el hecho del que habla el aviso.
+//
+
+import XCTest
+
+final class RemoteWipeNoticeRoutingUITests: XCTestCase {
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+    }
+
+    /// **Se lanza SIEMPRE con la oferta de prueba en cola, y es el instrumento que da valor a la suite.**
+    /// El paywall es `.normal` y el aviso `.high`, así que el orden de drenaje es determinista: el aviso
+    /// primero, el paywall esperando detrás del blocker. Lo que se afirma con él son las dos mitades de
+    /// la matriz — que nada se monta ENCIMA del aviso, y que lo retenido presenta cuando el aviso se
+    /// contesta—, y las dos se pierden si alguien devuelve la matriz al `@State` del alert.
+    ///
+    /// **Con `fakeICloud: true` desde el 2026-10-15** (ticket `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`):
+    /// el simulador no tiene token de iCloud, que es lo mismo que ve un iPhone con iCloud Drive apagado, y ahí el
+    /// drenaje elige el aviso de «iCloud no está disponible». El de borrado solo sale con iCloud disponible.
+    private func launchWithNotice() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, trialOffer: true, fakeICloud: true,
+                            extraArguments: ["-uitest-remote-wipe-notice"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+        return app
+    }
+
+    /// Los dos botones se localizan por POSICIÓN y no por su texto: el alert es nativo y su copy viaja
+    /// en 16 idiomas, así que fijar el literal ataría la suite al idioma del simulador. El orden es el
+    /// del `actions` builder — destructivo primero, cancelar después— y los dos casos de abajo lo
+    /// verifican por su consecuencia: si se invirtiera, los dos fallarían a la vez y por su aterrizaje.
+    private func notice(in app: XCUIApplication) -> XCUIElement {
+        app.alerts.firstMatch
+    }
+
+    func test_notice_presentsOverTheShell_andThePresentationNetLeavesItAlone() {
+        let app = launchWithNotice()
+        let alert = notice(in: app)
+        XCTAssertTrue(alert.waitForExistence(timeout: 30), """
+            El aviso de vaciado remoto no se presentó. Si el intent se drenó igual, mira las tres
+            condiciones vivas del drenaje: store sin vida personal, onboarding completo y el eje de
+            sesión (que el backfill del arranque escribe con el onboarding dado por hecho).
+            """)
+        XCTAssertEqual(alert.buttons.count, 2, "El aviso no trae sus dos ramas.")
+
+        // **Nada se monta ENCIMA**: el paywall que viaja en la misma cola espera detrás del blocker en
+        // vez de apilarse sobre el aviso. Es la mitad de la matriz que se rompe si el blocker vuelve a
+        // colgar del `@State` del alert.
+        XCTAssertFalse(app.buttons["trial_offer_dismiss"].exists, """
+            La oferta de prueba se montó encima del aviso: dos presentaciones del mismo anchor. El
+            blocker de la matriz dejó de retener la cola mientras el aviso está en pantalla.
+            """)
+        // Y la shell sigue montada debajo — control del instrumento más que aserto: con el aviso ya
+        // presentado por la cola, el anchor estaba libre por construcción.
+        XCTAssertTrue(app.buttons["panel_inbox_button"].exists, "La shell no está debajo del aviso.")
+
+        // Y la red de presentación efectiva lo deja en paz. Su cap de ciclo son ~9 s (8 reintentos de
+        // `RelaunchNetLogic` más el primer chequeo); esperar 15 s cubre la ventana entera con margen.
+        // Si la sonda de UIKit dejara de reconocer la presentación, el aviso se desarmaría aquí.
+        let desaparece = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: alert)
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [desaparece], timeout: 15), .timedOut, """
+            La red de presentación desarmó un aviso que SÍ estaba en pantalla. La sonda
+            (`ModalPresentationProbe`) dejó de reconocer la presentación de un `.alert` en este runtime:
+            arréglala antes de que el desarme se coma avisos buenos.
+            """)
+    }
+
+    /// **El DESARME: si el aviso no llega a montarse, la red agota su cap y suelta la condición viva** (ticket
+    /// `presentation-net-desarm-has-no-automated-net`). Hasta el 2026-10-07 esta cura estaba medida solo a mano,
+    /// editando el alert a `.constant(false)`; en el repo quedaba el escáner que fija su forma.
+    ///
+    /// `-uitest-remote-wipe-notice-never-mounts` enciende la condición viva y deja el alert sin montar en el
+    /// drenaje y en cada reintento; la sonda de UIKit, el veredicto de `RelaunchNetLogic` y el desarme son los de
+    /// producción. El caso 1 de esta suite sigue corriendo SIN el seam (regla `L103` de `testing.md`): él prueba
+    /// que la red deja en paz un aviso que sí está en pantalla; éste, que suelta el que no.
+    ///
+    /// Se afirman las dos consecuencias, y las dos con su control:
+    ///  · **mientras la red reintenta, lo retenido espera** — el paywall no está a los 4 s. Si la matriz colgara
+    ///    del `@State` del alert en vez de la condición viva, con el alert sin montar el paywall saldría al
+    ///    instante;
+    ///  · **al agotarse, la condición viva se suelta** — el paywall presenta sin que nadie conteste nada. Medido
+    ///    el 2026-10-07: la red suelta a los ~9,4 s del drenaje; sin el desarme, el paywall no sale nunca.
+    func test_noticeThatNeverMounts_netExhausts_andReleasesTheRouter() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, trialOffer: true, fakeICloud: true, remoteWipeNoticeNeverMounts: true,
+                            extraArguments: ["-uitest-remote-wipe-notice"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let alert = notice(in: app)
+        let offer = app.buttons["trial_offer_dismiss"]
+        let offerAppears = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true"), object: offer)
+        XCTAssertEqual(XCTWaiter().wait(for: [offerAppears], timeout: 4), .timedOut, """
+            El paywall presentó mientras la red del aviso seguía reintentando: la matriz no está retenida por la
+            condición viva (`remoteWipeNoticePending`), o el drenaje dejó de encenderla.
+            """)
+        XCTAssertFalse(alert.exists, """
+            El aviso se montó con `-uitest-remote-wipe-notice-never-mounts`: el seam no alcanza a quien lo enciende
+            y este caso no está midiendo el desarme.
+            """)
+
+        // 45 s como en `test_notice_keepWaiting_…`: el cap son ~9 s, y lo demás es el desmontaje y el drenaje.
+        XCTAssertTrue(offer.waitForExistence(timeout: 45), """
+            Lo retenido no presentó tras agotarse la red: el desarme no soltó la condición viva
+            (`remoteWipeNoticePending`) y el router se quedó retenido por un aviso que nunca se vio — el brick
+            del ticket `remote-wipe-alert-skips-the-router`.
+            """)
+        XCTAssertFalse(alert.exists, "El aviso apareció a la vez que el paywall: se soltó y siguió montándose.")
+
+        // Y la app sigue viva: nada quedó pegado por encima, y el aviso soltado no vuelve.
+        offer.tap()
+        XCTAssertTrue(app.buttons["panel_inbox_button"].waitForExistence(timeout: 10),
+                      "El Panel no quedó accesible tras el desarme y el paywall.")
+        XCTAssertFalse(alert.exists, "El aviso soltado por la red volvió a presentarse.")
+    }
+
+    func test_notice_keepWaiting_leavesTheAppWhereItWas() {
+        let app = launchWithNotice()
+        let alert = notice(in: app)
+        XCTAssertTrue(alert.waitForExistence(timeout: 30), "El aviso de vaciado remoto no se presentó.")
+
+        alert.buttons.element(boundBy: 1).tap()   // «Seguir esperando»
+
+        XCTAssertFalse(alert.waitForExistence(timeout: 3), "El aviso no se cerró al pulsar «Seguir esperando».")
+        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, """
+            Cancelar mandó a la persona al Welcome. Esta rama no navega a ninguna parte: sus datos
+            siguen sin estar, pero la app estaba montada debajo y ahí se queda.
+            """)
+        // **Y el router vuelve a drenar**, que es lo que prueba que contestar el aviso soltó la condición
+        // viva y no sólo el flag del alert: la oferta de prueba llevaba toda la sesión retenida en cola.
+        // Sin ese desarme, el blocker se queda puesto y esto no aparece nunca — el brick del ticket.
+        // 45 s como en `PaywallInboxAlertRoutingUITests`: este paso espera al DESMONTAJE del anterior,
+        // que es la latencia que la app no controla.
+        XCTAssertTrue(app.buttons["trial_offer_dismiss"].waitForExistence(timeout: 45), """
+            El intent retenido no presentó al contestar el aviso: la condición viva
+            (`remoteWipeNoticePending`) se quedó puesta y el router sigue retenido.
+            """)
+        // Y la app responde: nada quedó pegado por encima.
+        app.buttons["trial_offer_dismiss"].tap()
+        XCTAssertTrue(app.buttons["panel_inbox_button"].waitForExistence(timeout: 10),
+                      "El Panel no quedó accesible tras cerrar el aviso y el paywall.")
+    }
+
+    func test_notice_startFresh_landsOnTheWelcomeHero() {
+        let app = launchWithNotice()
+        let alert = notice(in: app)
+        XCTAssertTrue(alert.waitForExistence(timeout: 30), "El aviso de vaciado remoto no se presentó.")
+
+        alert.buttons.element(boundBy: 0).tap()   // «Empezar de cero»
+
+        // El aterrizaje ELEGIDO, y el mismo que el del vaciado que llega por señal: el Hero del
+        // Welcome, con sus tres ramas —entre ellas «Restaurar de iCloud», que es la que sirve a quien
+        // crea que esto fue un error—. Antes de este ticket el destino dependía de lo que quedara en
+        // las preferencias: con el chooser dado por visto, iba directo al formulario del onboarding.
+        XCTAssertTrue(app.buttons["welcome_hero_cta"].waitForExistence(timeout: 30), """
+            «Empezar de cero» no aterrizó en el Hero del Welcome.
+            """)
+    }
+
+    /// **Sin iCloud en el teléfono, el aviso NO dice que los datos se borraron ni ofrece empezar de cero** (ticket
+    /// `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`). El simulador no tiene token de iCloud: es exactamente
+    /// lo que ve un iPhone con iCloud Drive apagado, donde iOS vacía la copia local y las filas caen sin que nadie las
+    /// borrara. Medido el 15-oct en el iPhone de QA: salía «Tus datos fueron eliminados de iCloud» con «Empezar de
+    /// cero», que mezclaba después los datos reales con los del onboarding.
+    ///
+    /// El aviso se distingue por su número de botones (uno, «Entendido», contra los dos del de borrado) y no por su
+    /// texto, por lo mismo que los demás casos: el copy viaja en 16 idiomas. Y se afirma la misma salida que «Seguir
+    /// esperando»: la persona se queda donde estaba y el router vuelve a drenar.
+    func test_withoutICloud_noticeSaysICloudIsUnavailable_andOffersNoWipe() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, trialOffer: true, extraArguments: ["-uitest-remote-wipe-notice"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let alert = notice(in: app)
+        XCTAssertTrue(alert.waitForExistence(timeout: 30), "Sin iCloud no se presentó ningún aviso.")
+        XCTAssertEqual(alert.buttons.count, 1, """
+            Sin iCloud el aviso trae más de un botón: es el de «tus datos fueron eliminados de iCloud», con su \
+            «Empezar de cero», sobre unos datos que siguen en iCloud.
+            """)
+        XCTAssertFalse(app.buttons["trial_offer_dismiss"].exists,
+                       "La oferta de prueba se montó encima del aviso: la condición viva no retiene la cola.")
+
+        alert.buttons.element(boundBy: 0).tap()   // «Entendido»
+
+        XCTAssertFalse(alert.waitForExistence(timeout: 3), "El aviso no se cerró al pulsar «Entendido».")
+        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, "«Entendido» mandó a la persona al Welcome.")
+        XCTAssertTrue(app.buttons["trial_offer_dismiss"].waitForExistence(timeout: 45), """
+            El intent retenido no presentó al contestar el aviso: la condición viva (`remoteWipeNoticePending`) se \
+            quedó puesta y el router sigue retenido.
+            """)
+        app.buttons["trial_offer_dismiss"].tap()
+        XCTAssertTrue(app.buttons["panel_inbox_button"].waitForExistence(timeout: 10),
+                      "El Panel no quedó accesible tras cerrar el aviso y el paywall.")
+    }
+}

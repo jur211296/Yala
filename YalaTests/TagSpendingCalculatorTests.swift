@@ -39,6 +39,9 @@ struct TagSpendingCalculatorTests {
             tags: tags ?? [],
             amountInPreferredCurrency: amount
         )
+        // Guardada en la divisa que piden los casos ("USD"): así pasan por la rama del monto guardado
+        // de `CashFlowCalculator.resolvedAmount`, que es la de un usuario monomoneda.
+        tx.preferredCurrencyCode = "USD"
         tx.balanceAdjustmentType = balanceAdjustmentType
         return tx
     }

@@ -16,6 +16,12 @@ struct AccountFormSheet: Identifiable {
     let account: Account?
 }
 
+/// La ficha de una cuenta, que abre el toque en su tarjeta del Panel.
+struct AccountDetailPresentation: Identifiable {
+    let id = UUID()
+    let account: Account
+}
+
 /// Bundles all sheet-related state for PanelView.
 /// Owned as `@State` in PanelShell — SwiftUI tracks mutations internally,
 /// NOT through ObservationCenter, preventing the infinite render loop.
@@ -23,6 +29,9 @@ struct PanelSheetState {
     // Sheet presentations
     var isPresentingSettings = false
     var accountFormSheet: AccountFormSheet? = nil
+    var accountDetail: AccountDetailPresentation? = nil
+    /// Hoja de filtros (la misma de Estadísticas e Informes), desde la toolbar del Panel.
+    var showFilters = false
     /// Which section's preferences sheet is currently presented (P20-03).
     /// `nil` means no per-section prefs sheet is open. Driven via `.sheet(item:)`
     /// because `PanelSectionKind` conforms to `Identifiable`.
@@ -39,6 +48,8 @@ struct PanelSheetState {
     var showUpgradeForAccounts = false
     var showSubscriptionFromBanner = false
     var subscriptionBannerSource = "direct"
+    /// «Movimientos sin cuenta», desde su aviso del Panel.
+    var showOrphanedRecords = false
 
     // Chat assistant
     var showChatSheet = false
@@ -56,13 +67,54 @@ struct PanelSheetState {
     var pendingAIInput: PendingAIInput = .voice
 
     // Navigation flags (post-dismiss)
-    var navigateToInboxAfterVoice = false
     var switchToImageAfterVoice = false
-    var navigateToInboxAfterImage = false
 
     // Setup trial
     var isVoiceSetupTrial = false
     var isImageSetupTrial = false
     var setupTrialExampleImages: [UIImage]? = nil
     var practiceCleanupItem: PracticeCleanupItem? = nil
+
+    /// True si algún sheet/alert PROPIO del panel ocupa el presentation slot.
+    /// Usado por el guard de drain de `.panel` (RouterConsumerGateLogic): con
+    /// uno visible, drenar otro intent que setee un sheet lo descartaría.
+    /// NO incluye flags de coordinación post-dismiss (
+    /// `switchToImageAfterVoice`, `pendingOpenChatAfterOnboarding`) ni estado
+    /// de setup trial (`isVoiceSetupTrial`, `setupTrialExampleImages`,
+    /// `practiceCleanupItem`) — no presentan nada por sí mismos.
+    /// Al añadir un sheet nuevo a este struct, añadirlo AQUÍ (test tabla en
+    /// PanelSheetStateTests lo documenta).
+    var hasActivePresentation: Bool {
+        isPresentingSettings
+            || accountFormSheet != nil
+            || accountDetail != nil
+            || showFilters
+            || sectionPrefsPresentation != nil
+            || showSectionsConfig
+            || showNewTransaction
+            || showVoiceRecording
+            || showImageSelection
+            || showCustomPeriodPicker
+            || showBudgetFavoritesSettings
+            || showInbox
+            || showUpgradeForVoice
+            || showUpgradeForImage
+            || showUpgradeForAccounts
+            || showSubscriptionFromBanner
+            || showOrphanedRecords
+            || showChatSheet
+            || showUpgradeForChat
+            || showChatConsentAlert
+            || showYalaAIOnboarding
+            || showAIConsentAlert
+    }
+
+    /// `true` si la bandera `sheet` está puesta y es la ÚNICA de `hasActivePresentation`. Lo usa
+    /// `SharedPhotoPanelSheetLogic` para saber qué hoja cerraría una foto compartida: con dos puestas, no se cierra nada.
+    func isOnlyPresenting(_ sheet: WritableKeyPath<PanelSheetState, Bool>) -> Bool {
+        guard self[keyPath: sheet] else { return false }
+        var others = self
+        others[keyPath: sheet] = false
+        return !others.hasActivePresentation
+    }
 }

@@ -34,6 +34,11 @@ struct CashFlowEntry: TimelineEntry {
     let cashFlowPoints: [WidgetCashFlowPoint]
     let isPlaceholder: Bool
     let period: WidgetPeriodOption
+    /// Las marcas «≈», una por número. Van **al final y con default** para que placeholders y
+    /// previews —que muestran cifras inventadas y exactas— no tengan que declararlas.
+    var incomeIsApproximate: Bool = false
+    var expenseIsApproximate: Bool = false
+    var netCashFlowIsApproximate: Bool = false
 
     static var placeholder: CashFlowEntry {
         CashFlowEntry(
@@ -94,7 +99,15 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
             currencyDisplayFormat: displayFormat,
             cashFlowPoints: summary?.cashFlowPoints ?? [],
             isPlaceholder: false,
-            period: configuration.period
+            period: configuration.period,
+            // En Solo Gastos el widget fuerza el ingreso a 0 y el neto a `-gasto`: la marca sigue
+            // al número, así que las tres pasan a ser la del gasto. Marcar el «ingreso» de 0 con la
+            // señal del ingreso real pondría «≈» sobre un cero.
+            incomeIsApproximate: isExpensesOnly ? false : (summary?.incomeIsApproximate ?? false),
+            expenseIsApproximate: summary?.expenseIsApproximate ?? false,
+            netCashFlowIsApproximate: isExpensesOnly
+                ? (summary?.expenseIsApproximate ?? false)
+                : (summary?.netCashFlowIsApproximate ?? false)
         )
     }
 }
@@ -139,7 +152,8 @@ struct SmallCashFlowView: View {
                 currencyCode: entry.currencyCode,
                 displayFormat: entry.currencyDisplayFormat,
                 color: .primary,
-                size: .large
+                size: .large,
+                isEstimate: entry.netCashFlowIsApproximate
             )
 
             // Small income/expense summary (vertical layout to avoid truncation)
@@ -148,14 +162,16 @@ struct SmallCashFlowView: View {
                     summaryRow(
                         icon: "arrow.up",
                         amount: entry.totalIncome,
-                        color: WidgetColors.income
+                        color: WidgetColors.income,
+                        isEstimate: entry.incomeIsApproximate
                     )
                 }
 
                 summaryRow(
                     icon: "arrow.down",
                     amount: entry.totalExpense,
-                    color: WidgetColors.expense
+                    color: WidgetColors.expense,
+                    isEstimate: entry.expenseIsApproximate
                 )
             }
         }
@@ -168,7 +184,9 @@ struct SmallCashFlowView: View {
     /// Compact income/expense summary row con icon + amount jerarquizado.
     /// Reemplaza el Label nativo para tener control sobre los foregroundStyles
     /// internos del WidgetAmountText (symbol/decimal subordinated).
-    private func summaryRow(icon: String, amount: Double, color: Color) -> some View {
+    private func summaryRow(
+        icon: String, amount: Double, color: Color, isEstimate: Bool
+    ) -> some View {
         HStack(spacing: WDS.Spacing.xs) {
             Image(systemName: icon)
                 .font(WDS.Typography.barValue)
@@ -179,7 +197,8 @@ struct SmallCashFlowView: View {
                 displayFormat: entry.currencyDisplayFormat,
                 font: WDS.Typography.tiny,
                 secondaryFont: WDS.Typography.tinySecondary,
-                tint: .color(color)
+                tint: .color(color),
+                isEstimate: isEstimate
             )
         }
         .widgetAccentable()
@@ -215,7 +234,8 @@ struct MediumCashFlowView: View {
                     currencyCode: entry.currencyCode,
                     displayFormat: entry.currencyDisplayFormat,
                     color: .primary,
-                    size: .small
+                    size: .small,
+                    isEstimate: entry.netCashFlowIsApproximate
                 )
             }
 
@@ -237,7 +257,8 @@ struct MediumCashFlowView: View {
                                 displayFormat: entry.currencyDisplayFormat,
                                 font: WDS.Typography.value,
                                 secondaryFont: WDS.Typography.valueSecondary,
-                                tint: .primary
+                                tint: .primary,
+                                isEstimate: entry.incomeIsApproximate
                             )
                         }
                         GeometryReader { geo in
@@ -270,7 +291,8 @@ struct MediumCashFlowView: View {
                             displayFormat: entry.currencyDisplayFormat,
                             font: WDS.Typography.value,
                             secondaryFont: WDS.Typography.valueSecondary,
-                            tint: .primary
+                            tint: .primary,
+                            isEstimate: entry.expenseIsApproximate
                         )
                     }
                     GeometryReader { geo in
@@ -318,7 +340,8 @@ struct LargeCashFlowView: View {
                     currencyCode: entry.currencyCode,
                     displayFormat: entry.currencyDisplayFormat,
                     color: .primary,
-                    size: .small
+                    size: .small,
+                    isEstimate: entry.netCashFlowIsApproximate
                 )
             }
 
@@ -381,6 +404,11 @@ struct LargeCashFlowView: View {
         .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 
+    /// Formateador de la leyenda del `.large`. **Sin marca a propósito, y no por descuido**: no
+    /// imprime divisa —solo la cifra desnuda, junto a un punto de color y la palabra
+    /// «Ingresos»/«Gastos»— y el «≈» del repo se antepone al SÍMBOLO, no al número. Un «≈ 3250»
+    /// suelto, sin divisa al lado, se lee como parte de la cifra. El mismo par de números ya va
+    /// marcado en las barras de arriba, que sí traen divisa.
     private func formatAmount(_ value: Double) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -757,6 +785,7 @@ struct CashFlowWidget: Widget {
             provider: CashFlowWidgetProvider()
         ) { entry in
             CashFlowWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.cashFlow")

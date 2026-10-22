@@ -115,19 +115,10 @@
 
 // MARK: - Panel Hero (PP2-01)
 
-// Chip — saluta per nome; l'emoji dorato vive nell'icona SF Symbol
-"panel.hero.chip.monthStart %@ %@" = "Ciao %1$@ — si parte con %2$@";
-"panel.hero.chip.default %@" = "Ciao %@";
 
 // KPI fallback (aiSubtitle prende lo slot KPI quando disponibile)
 // Il grassetto markdown (**importo**) viene renderizzato via AttributedString(markdown:)
-"panel.hero.kpi.monthStart %@ %d" = "Partiamo con il mese, un passo alla volta.";
-"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Buon ritmo questo mese, continua così.";
-"panel.hero.kpi.neutral %@ %@ %@ %d" = "Il tuo mese in corso — tutto in ordine.";
-"panel.hero.kpi.tight %@ %@ %d" = "Mese stretto ma gestibile, un passo alla volta.";
-"panel.hero.kpi.overBudget %@ %@" = "Domani ripartiamo, tutto a posto.";
 
-"panel.hero.upsellCTA" = "Personalizza il tuo messaggio con IA";
 "panel.hero.availableLabel" = "Disponibile";
 
 // MARK: - Trend Widget
@@ -497,7 +488,7 @@
 "settings.defaultCurrency" = "Valuta predefinita";
 "settings.currentIcon" = "Icona attuale";
 "settings.resetAllData" = "Elimina tutti i tuoi dati";
-"settings.deleteAllData" = "Elimina tutti i tuoi dati";
+"settings.deleteAllData" = "Svuota i miei dati";
 
 // MARK: - Common
 
@@ -511,7 +502,7 @@
 "common.loading" = "Caricamento...";
 "common.error" = "Errore";
 "common.success" = "Successo";
-"common.dataPrivacy" = "I tuoi dati non lasciano mai il tuo dispositivo";
+"common.dataPrivacy" = "Dove si trovano i tuoi dati";
 "common.active" = "Attive";
 "common.hidden" = "Nascoste";
 "common.inactive" = "Inattive";
@@ -747,10 +738,27 @@
 "panel.liveAnchorEducation.todayQuestion" = "Il tuo saldo oggi";
 "panel.liveAnchorEducation.whyQuestion" = "Perché questo importo?";
 "panel.liveAnchorEducation.breakdownToggle" = "Vedi per valuta";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ oggi";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "%@ oggi";
 "panel.liveAnchorEducation.coachTitle" = "Il tuo saldo si muove da solo";
 "panel.liveAnchorEducation.coachMessage" = "Quando hai soldi in altre valute, il loro valore cambia giorno per giorno. Tocca per capire cosa succede.";
 "panel.liveAnchorEducation.dotA11yLabel" = "Saldo di oggi al tasso di cambio attuale. Tocca per vedere i dettagli.";
+
+/* FX P&L card — ganancia/pérdida por tipo de cambio */
+"panel.fxPnL.titleGain" = "Guadagno di cambio";
+"panel.fxPnL.titleLoss" = "Perdita di cambio";
+"panel.fxPnL.sentenceHoldingUpFormat" = "I tuoi %1$@ valgono oggi il %2$@ in più rispetto a quando sono entrati nel tuo conto.";
+"panel.fxPnL.sentenceHoldingDownFormat" = "I tuoi %1$@ valgono oggi il %2$@ in meno rispetto a quando sono entrati nel tuo conto.";
+"panel.fxPnL.sentenceDebtUpFormat" = "Il tuo debito in %1$@ costa oggi il %2$@ in più rispetto a quando l'hai contratto.";
+"panel.fxPnL.sentenceDebtDownFormat" = "Il tuo debito in %1$@ costa oggi il %2$@ in meno rispetto a quando l'hai contratto.";
+"panel.fxPnL.openDetail" = "Vedi il dettaglio per valuta";
+"panel.fxPnL.sheetTitle" = "Effetto del tasso di cambio";
+"panel.fxPnL.totalLabel" = "In totale";
+"panel.fxPnL.sheetIntroFormat" = "Confrontiamo quanto vale oggi in %@ il tuo denaro in altre valute con quanto valeva quando è entrato nei tuoi conti. La differenza è ciò che il tasso di cambio ti ha dato o tolto, senza che tu facessi nulla.";
+"panel.fxPnL.rowRatesFormat" = "Entrato a %1$@ · oggi a %2$@";
+"panel.fxPnL.rowValueTodayFormat" = "= %@";
+"panel.fxPnL.averageNote" = "Il tasso d'ingresso è una media di tutti i tuoi movimenti in quella valuta, non quello di ogni singolo acquisto.";
+"panel.fxPnL.estimatedRateNote" = "Una conversione ha usato un tasso che non era quello di oggi, quindi queste cifre sono approssimative.";
+
 "widget.today" = "Oggi";
 
 // Widget Preferences
@@ -1082,7 +1090,6 @@
 "insights.analyzingData" = "Analizzando i tuoi dati...";
 "insights.activateAITitle" = "Panoramica intelligente disponibile";
 "insights.activateAIBody" = "Attivalo e personalizzalo in Profilo > Funzionalità IA.";
-"insights.activateAIDisclaimer" = "Solo dati riassuntivi vengono inviati a OpenAI (totali, percentuali, tendenze). Le tue spese individuali e i dati personali non vengono mai condivisi.";
 "insights.activate" = "Attivare";
 "insights.goToSettings" = "Vai alle impostazioni";
 "insights.notInterested" = "Non mi interessa";
@@ -1127,25 +1134,6 @@
 "support.messagePlaceholder" = "Raccontaci nel dettaglio...";
 "support.send" = "Invia";
 
-// Biometric
-"biometric.title" = "Sicurezza biometrica";
-"biometric.description" = "Proteggi le tue informazioni finanziarie con l'autenticazione biometrica o il codice del dispositivo.";
-"biometric.enableLock" = "Attiva blocco";
-"biometric.lockAfter" = "Blocca dopo";
-"biometric.timeout.immediate" = "10 secondi";
-"biometric.timeout.oneMinute" = "1 minuto";
-"biometric.timeout.fiveMinutes" = "5 minuti";
-"biometric.timeout.fifteenMinutes" = "15 minuti";
-"biometric.authReason" = "Sblocca Yala per accedere alle tue finanze";
-"biometric.enableReason" = "Verifica la tua identità per attivare il blocco";
-"biometric.authFailed" = "Autenticazione fallita";
-"biometric.authFailedMessage" = "Impossibile verificare la tua identità. Riprova.";
-"biometric.locked" = "Yala è bloccata";
-"biometric.unlockPrompt" = "Tocca il pulsante per sbloccare";
-"biometric.unlock" = "Sblocca";
-"biometric.passcode" = "Codice";
-"biometric.enableLockHint" = "Ti verrà chiesto di verificare la tua identità ogni volta che apri l'app.";
-"biometric.lockAfterHint" = "Scegli per quanto tempo l'app può restare in background prima di bloccarsi.";
 
 "profile.edit" = "Modifica profilo";
 "profile.importSuccess" = "Importazione completata";
@@ -1161,8 +1149,8 @@
 "profile.allowedChars" = "Solo lettere, numeri e underscore";
 "profile.aliasAvailable" = "Alias disponibile";
 "profile.aliasHelper" = "3-20 caratteri. Solo lettere, numeri e underscore.";
-"profile.privacyTitle" = "I tuoi dati non lasciano mai il tuo dispositivo";
-"profile.privacyDesc" = "Yala memorizza i tuoi dati personali solo sul tuo dispositivo. Le funzioni IA (voce, immagine e insights) sono opzionali e elaborano solo dati riassuntivi — mai le tue spese individuali o informazioni personali.";
+"profile.privacyTitle" = "Dove si trovano i tuoi dati";
+"profile.privacyDesc" = "Con il tuo account nel tuo iCloud privato, i tuoi dati sono salvati sul tuo dispositivo e nel tuo iCloud. Con il tuo account nel cloud, sono salvati sui server di Yala. Ciò che aggiungi in un gruppo, insieme al tuo alias, è salvato sui server di Yala perché il gruppo lo veda. Le funzioni IA (voce, immagine e insights) sono opzionali: ciò che invii passa dal nostro server fino a OpenAI, che lo elabora.";
 "profile.aliasFutureNote" = "Nota: La validazione dell'unicita dell'alias sara disponibile quando verra implementata la funzionalita di spese condivise.";
 "profile.proMember" = "Membro PRO";
 "profile.choosePhoto" = "Scegli foto";
@@ -1201,17 +1189,14 @@
 "settings.sunday" = "Domenica";
 "settings.monday" = "Lunedi";
 "settings.resetDataDescription" = "Questa operazione eliminera permanentemente i tuoi conti, transazioni, budget, tassi di cambio, categorie e qualsiasi altro dato associato al tuo profilo Yala. Dopo l'eliminazione, l'app tornera a uno stato simile a quello iniziale.";
-"settings.deleteDataConfirmation" = "Eliminare tutti i tuoi dati?";
-"settings.deleteDataWarning" = "Questa azione e irreversibile. Tutti i tuoi conti, transazioni, budget, tassi di cambio e categorie verranno eliminati. Dopo cio, Yala verra ripristinato a uno stato simile a quello iniziale e non potrai recuperare i tuoi dati.";
-"settings.wipeICloudWarning" = "Questo eliminerà anche i tuoi dati iCloud. Gli altri dispositivi sincronizzati perderanno questi dati.";
-"settings.wipeGroupsExclusionNote" = "Questo non include i tuoi gruppi. Per uscire, vai su Gruppi, salda i conti in sospeso e esci da ognuno.";
+"settings.deleteDataConfirmation" = "Svuotare i tuoi dati?";
 "settings.delete" = "Elimina";
 "settings.cancel" = "Annulla";
 "settings.iconOriginal" = "Originale";
 "settings.iconDark" = "Scuro";
 "settings.iconLight" = "Chiaro";
 "settings.iconNeon" = "Neon";
-"settings.deleteAllDataAction" = "Elimina definitivamente";
+"settings.deleteAllDataAction" = "Svuota definitivamente";
 "settings.deletingData" = "Eliminazione dati...";
 "settings.appIconTitle" = "Icona dell'app";
 "settings.iconNotSupported" = "Questo dispositivo non supporta icone alternative.";
@@ -1423,7 +1408,6 @@
 "subcategory.unassigned" = "Non assegnato";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transazioni verranno eliminate permanentemente. Questa azione non puo essere annullata.";
 
-"account.deleteBalanceError" = "Non puoi eliminare questo conto perche ha un saldo diverso da zero. Regola il saldo a 0 prima di eliminarlo.";
 "account.type.general" = "Generale";
 "account.type.cash" = "Contanti";
 "account.type.current" = "Conto Corrente";
@@ -1697,7 +1681,6 @@
 "accessibility.skipSync" = "Salta l'attesa e continua la configurazione";
 "accessibility.tabLimitReached" = "Limite di schede raggiunto";
 "accessibility.noTransactionsToExport" = "Nessuna transazione da esportare";
-"accessibility.accountCard %@ %@" = "Conto %@, saldo %@";
 "accessibility.editAccount" = "Modifica conto";
 "accessibility.pageIndicator %d %d" = "Pagina %1$d di %2$d";
 "accessibility.accountRow %@ %@" = "Conto %@, valuta %@";
@@ -1845,10 +1828,9 @@
 "onboarding.usageMode.fullControl.desc" = "Includi tutto nel tuo saldo — conti, carte e quello che va e viene con altre persone. Il numero che vedi è quello che è davvero tuo.";
 "onboarding.privacyTitle" = "Tutto pronto";
 "onboarding.privacySubtitle" = "Puoi iniziare a usare Yala";
-"onboarding.privacyLocal" = "I tuoi dati finanziari restano sul tuo dispositivo";
+"onboarding.privacyLocal" = "I tuoi dati finanziari sono salvati nel tuo account";
 "onboarding.privacyNoTracking" = "Nessun tracciamento né pubblicità";
-"onboarding.privacyIcloud" = "Solo tu hai accesso ai tuoi dati";
-"onboarding.privacyNoSharing" = "Le funzioni IA non condividono né archiviano dati sensibili";
+"onboarding.privacyIcloud" = "Accedi ai tuoi dati con il tuo account";
 "onboarding.categoriesDefault" = "Categorie predefinite";
 "onboarding.categoriesCustom" = "Categorie personalizzate";
 "onboarding.privacyTutorialsHint" = "Scopri i tutorial e i consigli di Yala";
@@ -1870,10 +1852,11 @@
 "onboarding.balanceManualOption" = "Conosco il mio saldo";
 "onboarding.balanceManualHint" = "Lo inserisci tu";
 "onboarding.balanceGuidedIncompleteHint" = "Non hai completato il calcolo. Tocca per riprenderlo.";
-"onboarding.privacyLocalShort" = "Dati sul tuo dispositivo";
+"onboarding.privacyLocalShort" = "Dati nel tuo account";
 "onboarding.privacyNoTrackingShort" = "Niente tracciamento né annunci";
-"onboarding.privacyIcloudShort" = "Solo tu accedi";
-"onboarding.privacyNoSharingShort" = "IA sicura";
+"onboarding.privacyIcloudShort" = "Accesso con il tuo account";
+"onboarding.privacyAIShort" = "IA tramite il nostro server";
+"onboarding.privacyAIDetail" = "Decidi tu se usarla";
 "onboarding.accountBalanceGuideTitle" = "Come calcolo il mio saldo?";
 "onboarding.accountBalanceGuideIntro" = "Il tuo saldo iniziale dice a Yala con quanti soldi parti. Non deve essere esatto al centesimo — una stima va benissimo. Ecco come ragionarci in base al tipo di conto che hai scelto.";
 "onboarding.accountBalanceGuideGeneral" = "Se usi un conto generale per raggruppare tutti i tuoi metodi di pagamento in una valuta, il tuo saldo riflette quanti soldi hai disponibili.\n\nPer calcolarlo, somma tutto: conti correnti, risparmi, contanti. Se hai spese in sospeso su carte di credito, puoi sottrarle per un'immagine più precisa — o gestire ogni carta come conto separato in seguito.\n\nQuel numero finale è il tuo saldo iniziale.";
@@ -1991,9 +1974,7 @@
 "bulkEdit.availableTags" = "Disponibili da aggiungere";
 
 // MARK: - Voice Language
-"voiceLanguage.system" = "Sistema";
-"voiceLanguage.spanish" = "Spagnolo";
-"voiceLanguage.english" = "Inglese";
+"voiceLanguage.appLanguage" = "Lingua dell'app";
 
 // MARK: - Voice Input
 "voice.title" = "Nota vocale";
@@ -2171,8 +2152,6 @@
 "tips.filters.detail" = "Usa i filtri per vedere solo ciò che ti interessa: per categoria, etichetta, conto o periodo. Confronta mese per mese.";
 "tips.export.title" = "Esporta i tuoi dati";
 "tips.export.detail" = "Scarica le tue spese in CSV o Excel da Impostazioni > Esporta. Ideale per analisi su foglio di calcolo o per i tuoi archivi.";
-"tips.faceID.title" = "Proteggi con Face ID";
-"tips.faceID.detail" = "Attiva il blocco biometrico in Impostazioni > Sicurezza. Puoi scegliere di attivarlo uscendo dall'app o dopo un tempo.";
 "tips.siri.title" = "Annota spese con la voce";
 "tips.siri.detail" = "Dì: \"Annota una spesa in Yala\" e poi detta il dettaglio";
 "tips.siri.close" = "Chiudi suggerimento Siri";
@@ -2221,12 +2200,10 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Inserimento vocale";
 "tipkit.pro.voiceInput.message" = "Ora puoi dettare le tue spese. Parla e Yala le registra per te.";
-"tipkit.pro.imageInput.title" = "Inserimento con immagine";
+"tipkit.pro.imageInput.title" = "Registrazione con foto o file";
 "tipkit.pro.imageInput.message" = "Allega una foto di qualsiasi ricevuta o fattura e Yala estrae una o più transazioni per te.";
 "tipkit.pro.smartInsights.title" = "Riepilogo intelligente";
 "tipkit.pro.smartInsights.message" = "Attiva questa opzione perché Yala generi osservazioni basate sull'IA sulle tue finanze.";
-"tipkit.pro.exportExtended.title" = "Esportazione illimitata";
-"tipkit.pro.exportExtended.message" = "Esporta i tuoi dati per anno intero, tutto lo storico o un intervallo personalizzato.";
 "tipkit.pro.premiumIcons.title" = "Icone esclusive";
 "tipkit.pro.premiumIcons.message" = "Scegli tra icone premium per personalizzare la tua app.";
 "tipkit.pro.proThemes.title" = "Temi premium";
@@ -2284,10 +2261,10 @@
 "shortcut.voiceEntry.opening" = "Apertura inserimento vocale...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Registra da immagine";
-"shortcut.imageEntry.description" = "Apre il selettore immagini per registrare spese da foto";
-"shortcut.imageEntry.shortTitle" = "Registra da immagine";
-"shortcut.imageEntry.opening" = "Apertura inserimento da immagine...";
+"shortcut.imageEntry.title" = "Registra con foto o file";
+"shortcut.imageEntry.description" = "Registra spese da una foto o da un file, come un PDF";
+"shortcut.imageEntry.shortTitle" = "Foto o file";
+"shortcut.imageEntry.opening" = "Apertura registrazione da foto o file...";
 
 // MARK: - Apple Pay Intent
 
@@ -2334,10 +2311,10 @@
 "control.voiceEntry.intentTitle" = "Apri registrazione vocale";
 "control.voiceEntry.intentDescription" = "Apre Yala in modalità registrazione vocale";
 
-"control.imageEntry.label" = "Registrazione immagine";
-"control.imageEntry.displayName" = "Registrazione immagine";
-"control.imageEntry.description" = "Registra con un'immagine o foto";
-"control.imageEntry.intentTitle" = "Apri registrazione immagine";
+"control.imageEntry.label" = "Foto o file";
+"control.imageEntry.displayName" = "Foto o file";
+"control.imageEntry.description" = "Registra con una foto o un file";
+"control.imageEntry.intentTitle" = "Apri registrazione da foto o file";
 "control.imageEntry.intentDescription" = "Apre Yala in modalità fotocamera per registrare";
 
 // MARK: - Notifications
@@ -2400,13 +2377,16 @@
 
 // Groups
 "notifications.groups.name" = "Gruppi";
+"notifications.groups.remoteActivity" = "Novità nei tuoi gruppi";
+"notifications.groups.remotePendingRequest" = "👋 Qualcuno vuole unirsi a uno dei tuoi gruppi";
+"notifications.groups.remoteMembershipUpdate" = "Ci sono novità sulla tua iscrizione al gruppo";
 "notifications.groups.hint" = "Avvisi quando altri membri aggiungono spese o ti pagano";
-"notifications.groups.newExpense" = "%@ ha aggiunto una spesa di %@: %@";
-"notifications.groups.newExpenseNoDesc" = "%@ ha aggiunto una spesa di %@";
-"notifications.groups.modifiedExpense" = "%@ ha modificato '%@'";
-"notifications.groups.settlement" = "%@ ti ha pagato %@";
-"notifications.groups.newMember" = "%@ si è unito al gruppo";
-"notifications.groups.multipleChanges" = "%d nuove modifiche";
+"notifications.groups.newExpense" = "🧾 %1$@ ha aggiunto '%2$@' — la tua parte: %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ ha aggiunto una spesa — la tua parte: %2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ ha aggiornato '%2$@' — la tua parte: %3$@";
+"notifications.groups.settlement" = "💸 %@ ti ha pagato %@!";
+"notifications.groups.newMember" = "🙌 %@ si è unito al gruppo";
+"notifications.groups.multipleChanges" = "📋 %d novità da rivedere";
 "notifications.groups.fallbackGroup" = "Gruppo";
 "notifications.groups.fallbackMember" = "Qualcuno";
 
@@ -2506,12 +2486,11 @@
 "featureGate.accounts" = "Conti";
 "featureGate.budgets" = "Budget";
 "featureGate.voiceInput" = "Inserimento vocale";
-"featureGate.imageInput" = "Inserimento immagine";
+"featureGate.imageInput" = "Inserimento da foto o file";
 "featureGate.premiumIcons" = "Icone premium";
 "featureGate.proThemes" = "Temi Pro";
 "featureGate.smartInsightsAI" = "Insights intelligenti con IA";
 "featureGate.cashFlowAdvanced" = "Flusso di cassa avanzato";
-"featureGate.exportExtendedPeriods" = "Periodi di esportazione estesi";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite raggiunto";
@@ -2870,7 +2849,7 @@
 "siriShortcuts.all.title" = "Altre scorciatoie";
 "siriShortcuts.shortcut.quick" = "Registrazione rapida";
 "siriShortcuts.shortcut.voice" = "Inserimento vocale";
-"siriShortcuts.shortcut.image" = "Inserimento da immagine";
+"siriShortcuts.shortcut.image" = "Registra con foto o file";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "Automazione";
 "siriShortcuts.desc.quick" = "Apre il modulo di registrazione con un tap.";
@@ -2880,7 +2859,7 @@
 "siriShortcuts.desc.automation" = "Crea registri automatici con le scorciatoie di sistema.";
 "siriShortcuts.phrase.quick" = "Registra in Yala";
 "siriShortcuts.phrase.voice" = "Registra con voce in Yala";
-"siriShortcuts.phrase.image" = "Registra con immagine in Yala";
+"siriShortcuts.phrase.image" = "Registra con foto o file in Yala";
 "siriShortcuts.phrase.applePay" = "Registra Apple Pay in Yala";
 "siriShortcuts.phrase.automation" = "Registra da automazione in Yala";
 "siriShortcuts.faq.title" = "Domande frequenti";
@@ -2907,7 +2886,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Disattivare questa funzione?";
 "aiPrivacy.revokeConfirmMessage" = "Smetteremo di elaborare i tuoi dati IA per questa funzione. Puoi riattivarla quando vuoi.";
 "aiPrivacy.revokeConfirmAction" = "Disattiva";
-"aiPrivacy.footerHint" = "I tuoi dati vengono elaborati solo quando usi Insights, Assistente o registrazioni con voce e immagine. Non condividiamo mai le tue informazioni personali.";
+"aiPrivacy.footerHint" = "I tuoi dati vengono inviati solo quando usi Insights, l'Assistente o le registrazioni con voce e immagine, e arrivano a OpenAI tramite il nostro server. Non li vendiamo né li usiamo per la pubblicità.";
 "aiPrivacy.policyLink" = "Informativa sulla privacy";
 
 // MARK: - AI Consent
@@ -3258,6 +3237,56 @@
 "devseed.stepDeleting" = "Eliminazione dati...";
 "devseed.stepReloading" = "Ricaricamento dati...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "Viaggio a Lisbona";
+"devseed.ficha.groupWeekend" = "Weekend a Porto";
+"devseed.ficha.memberYou" = "Tu";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "Alloggio";
+"devseed.ficha.expenseTour" = "Visita guidata";
+"devseed.ficha.expenseGroupDinner" = "Cena di gruppo";
+"devseed.ficha.expenseAirportTaxi" = "Taxi aeroporto";
+"devseed.ficha.expenseLocalMeal" = "Cena di pesce";
+"devseed.ficha.expenseMuseum" = "Biglietti museo";
+"devseed.ficha.expenseTransport" = "Trasporti";
+"devseed.ficha.expenseGroceries" = "Spesa";
+"devseed.ficha.expenseSouvenirs" = "Souvenir";
+"devseed.ficha.expenseWeekendStay" = "Hotel a Porto";
+"devseed.ficha.expenseWeekendMeal" = "Degustazione di vino";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "Viaggio %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "Ho speso 45 di taxi per l'aeroporto e 120,50 al supermercato";
+"uitestDemo.chat.draftNoteTaxi" = "Taxi per l'aeroporto";
+"uitestDemo.chat.draftNoteGroceries" = "Spesa al supermercato";
+"uitestDemo.chat.suggestionSplit" = "Come si dividono le mie spese tra Casa e Personale?";
+"uitestDemo.chat.suggestionMonth" = "Quanto ho speso in ristoranti e delivery questo mese?";
+"uitestDemo.chat.suggestionBudget" = "Il mio budget per mangiare fuori è bastato?";
+"uitestDemo.chat.pizzaNote" = "Pizza";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "Pranzo 25 con la carta";
+"uitestDemo.voice.lunchNote" = "Pranzo";
+"uitestDemo.voice.twoTranscript" = "Taxi 12 e caffè 8 con la carta";
+"uitestDemo.voice.taxiNote" = "Taxi";
+"uitestDemo.voice.coffeeNote" = "Caffè";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "Trattoria del Borgo";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "Taxi";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "Pagina %ld";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "Primi passi";
@@ -3414,7 +3443,6 @@
 "chat.unavailable" = "Yala IA non è disponibile. Riprova fra qualche minuto.";
 "chat.retry" = "Riprova";
 "chat.noVoiceDetected" = "Non ho rilevato audio. Riprova.";
-"chat.contextMemory" = "Yala IA ricorda %d messaggi";
 
 // MARK: - Chat Draft (Yala IA Registrar)
 "chat.draft.chipExpense" = "Spesa";
@@ -3437,7 +3465,6 @@
 "chat.draft.selectAccount" = "Seleziona conto";
 "chat.draft.selectSubcategory" = "Seleziona sottocategoria";
 "chat.draft.saveButton" = "Salva";
-"chat.draft.editButton" = "Modifica";
 "chat.draft.failedSavingLine" = "Salvataggio non riuscito.";
 "chat.draft.retryButton" = "Riprova";
 "chat.draft.noAccountsBlocking" = "Crea un conto dal profilo prima di registrare.";
@@ -3450,7 +3477,7 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistente finanziario";
-"aiConsent.chatMessage" = "Per rispondere alle tue domande, questa funzione invia a OpenAI un riepilogo della tua situazione finanziaria: saldi e nomi dei tuoi conti, totali per categoria, commercianti frequenti, budget e pagamenti ricorrenti.\n\nI dati vengono usati solo per generare la risposta. OpenAI non li utilizza per addestrare i suoi modelli.";
+"aiConsent.chatMessage" = "Per rispondere alle tue domande, questa funzione invia a OpenAI un riepilogo della tua situazione finanziaria degli ultimi 13 mesi: saldi e nomi dei tuoi conti, totali per categoria, commercianti frequenti, budget e pagamenti ricorrenti.\n\nI dati vengono usati solo per generare la risposta. OpenAI non li utilizza per addestrare i suoi modelli.";
 "aiConsent.inlineHintChat" = "Il riepilogo delle tue finanze viene elaborato da OpenAI per rispondere. Non viene archiviato permanentemente.";
 "aiConsent.inlineHintMultiple" = "Diverse funzioni IA utilizzano OpenAI per elaborare i tuoi dati. Non vengono archiviati permanentemente.";
 
@@ -3512,7 +3539,6 @@
 "groups.bridge.errorTransactionUpdate" = "La modifica non si è riflessa nel tuo registro personale. Riproveremo.";
 "groups.bridge.errorDelete" = "Impossibile eliminare il registro personale della spesa.";
 "groups.bridge.errorNoAccounts" = "Non hai ancora configurato un conto. Creane uno prima.";
-"groups.sync.errorAcceptShare" = "Non siamo riusciti a completare l'adesione al gruppo. Riprova.";
 "groups.sync.errorMemberSetup" = "Sei entrato, ma c'è stato un problema con la tua identità nel gruppo. Riapri l'app.";
 
 // Groups — Reconnect (GC-08)
@@ -3520,7 +3546,7 @@
 "groups.reconnect.subtitle" = "Sei stato invitato in un gruppo condiviso";
 "groups.reconnect.fallbackGroupName" = "questo gruppo";
 "groups.reconnect.archived.title" = "%@ è stato archiviato";
-"groups.reconnect.archived.body" = "L'admin l'ha archiviato e non accetta più modifiche.";
+"groups.reconnect.archived.body" = "L'admin l'ha archiviato e non accetta più nuovi membri.";
 "groups.reconnect.archived.cta" = "Capito";
 "groups.reconnect.alreadyMember.title" = "Sei già in %@";
 "groups.reconnect.alreadyMember.body" = "Ti portiamo al gruppo.";
@@ -4111,23 +4137,23 @@
 "groups.member.rejectConfirm" = "Rifiutare la richiesta di %@? Potrà richiedere di nuovo l'accesso con un altro link.";
 "groups.member.pendingRequestsSection" = "Richieste in sospeso";
 "groups.invite.waitingApproval.title" = "Richiesta inviata";
-"groups.invite.waitingApproval.body" = "L'admin del gruppo deve approvarti prima che tu possa partecipare. Ti avviseremo non appena è pronto.";
+"groups.invite.waitingApproval.body" = "L'admin del gruppo deve approvarti prima che tu possa partecipare. Nell'attesa vedrai il gruppo nella tua lista, ma non puoi ancora aprirlo. Riapri Yala tra un po' per vedere se sei dentro.";
 "groups.invite.waitingApproval.banner" = "In attesa dell'approvazione dell'admin";
 "groups.invite.rejected.title" = "Richiesta rifiutata";
 "groups.invite.rejected.body" = "L'admin non ha approvato la tua richiesta. Chiedigli un nuovo link se vuoi riprovare.";
 "groups.notifications.newPendingRequest" = "👋 %@ vuole unirsi a %@";
-"groups.notifications.newPendingRequestBody" = "Approva o rifiuta da Yala.";
+"groups.notifications.newPendingRequestBody" = "Puoi approvare o rifiutare da Yala.";
 "groups.errors.pendingApproval" = "Non puoi ancora farlo — l'admin deve prima approvare la tua richiesta.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
-"welcome.chooser.title" = "Ciao! Come sei arrivato su Yala?";
-"welcome.chooser.subtitle" = "Dicci come per personalizzare la tua esperienza.";
-"welcome.chooser.optionNew.title" = "Sono nuovo";
+"welcome.chooser.title" = "Ciao! Cosa vuoi fare in Yala?";
+"welcome.chooser.subtitle" = "Scegli il tuo punto di partenza e proseguiamo insieme.";
+"welcome.chooser.optionNew.title" = "È la mia prima volta su Yala";
 "welcome.chooser.optionNew.body" = "Iniziamo da zero. Ti aiuto a configurare tutto passo dopo passo.";
 "welcome.chooser.optionExisting.title" = "Ho già un account";
-"welcome.chooser.optionExisting.body" = "Ho reinstallato Yala e voglio recuperare i miei dati da iCloud.";
-"welcome.chooser.optionInvite.title" = "Mi hanno invitato a un gruppo";
-"welcome.chooser.optionInvite.body" = "Ho un link d'invito e voglio unirmi.";
+"welcome.chooser.optionExisting.body" = "Ho già usato Yala e voglio recuperare i miei dati, da iCloud o dal mio account.";
+"welcome.chooser.optionInvite.title" = "Sono qui per un gruppo";
+"welcome.chooser.optionInvite.body" = "Voglio dividere le spese con gli amici: creare un gruppo o unirmi a uno.";
 
 "welcome.restore.searching" = "Cerco i tuoi dati su iCloud…";
 "welcome.restore.searchingTip" = "Potrebbe richiedere qualche secondo.";
@@ -4169,9 +4195,8 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "Le tue finanze personali,";
 "welcome.hero.titleAccent" = "senza sforzo.";
-"welcome.hero.subtitle" = "Tu cattura. Yala se ne occupa.";
 "welcome.hero.cta" = "Iniziare";
-"welcome.hero.trust" = "100% privato · Le tue info rimangono con te";
+"welcome.hero.trust" = "Niente tracciamento né annunci";
 
 "welcome.hero.cards.capture.title" = "Foto degli scontrini";
 "welcome.hero.cards.capture.body" = "Inquadra. Yala legge.";
@@ -4182,23 +4207,15 @@
 "welcome.hero.cards.budgets.title" = "Budget e obiettivi";
 "welcome.hero.cards.budgets.body" = "Stabilisci limiti. Rispettali.";
 "welcome.hero.cards.multiAndCurrencies.title" = "Conti e valute";
-"welcome.hero.cards.multiAndCurrencies.body" = "Carte, contanti, 48+ valute.";
+"welcome.hero.cards.multiAndCurrencies.body" = "Carte, contanti, 50+ valute.";
 "welcome.hero.cards.import.title" = "Importa il tuo storico";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Fatto.";
 "welcome.hero.cards.icloud.title" = "iCloud privato";
-"welcome.hero.cards.icloud.body" = "I tuoi dati, nel tuo iCloud. Niente server.";
+"welcome.hero.cards.icloud.body" = "I tuoi dati, nel tuo iCloud.";
 "welcome.hero.cards.more.title" = "E molto altro";
 "welcome.hero.cards.more.body" = "Scopriamolo insieme.";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"welcome.detectedData.title" = "Bentornato! Abbiamo trovato il tuo account";
-"welcome.detectedData.message" = "Hai dati salvati nel tuo iCloud. Caricarli su questo dispositivo?";
-"welcome.detectedData.loadMyData" = "Carica i miei dati";
-"welcome.detectedData.startFresh" = "Ricominciare da zero";
-"welcome.offerRestore.title" = "Abbiamo trovato il tuo account";
-"welcome.offerRestore.message" = "Hai dati in iCloud. Caricarli prima di unirti al gruppo?";
-"welcome.offerRestore.loadData" = "Carica i miei dati";
-"welcome.offerRestore.startFresh" = "Ricomincia da capo";
 
 
 // MARK: FreshStart (segunda barrera)
@@ -4216,18 +4233,18 @@
 "yalaAI.onboarding.close" = "Chiudi";
 "yalaAI.onboarding.previewLabel" = "Anteprima";
 "yalaAI.onboarding.progressLabel" = "Passo %1$d di %2$d";
-"yalaAI.onboarding.step1.title" = "Ti presento Yala AI";
+"yalaAI.onboarding.step1.title" = "Ti presento Yala IA";
 "yalaAI.onboarding.step1.subtitle" = "Il tuo braccio destro per le finanze.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Spesi 12 € per il pranzo.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Fatto! Ho registrato il tuo pranzo da 12 €.";
+"yalaAI.onboarding.step1.demoScenario1User" = "Spesi %@ per il pranzo.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Fatto! Ho registrato il tuo pranzo da %@.";
 "yalaAI.onboarding.step1.demoScenario2User" = "Quanto in caffè questo mese?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "Sei a 35 € in caffè questo mese ☕ — il 12% in meno rispetto ad aprile, ma 6 € sopra la tua media abituale.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Sei a %1$@ in caffè questo mese ☕, il 12%% in meno rispetto ad aprile, ma %2$@ sopra la tua media abituale.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Un consiglio?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 I tuoi delivery sono saliti del 20% rispetto al mese scorso. Tornando al ritmo abituale risparmi 60 € al mese — quasi 720 € all'anno.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 I tuoi delivery sono saliti del 20%% rispetto al mese scorso. Tornando al ritmo abituale risparmi %1$@ al mese, cioè %2$@ all'anno.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Pranzo";
-"yalaAI.onboarding.step1.a11yLabel" = "Esempio di chat con Yala AI che registra una spesa";
+"yalaAI.onboarding.step1.a11yLabel" = "Esempio di chat con Yala IA che registra una spesa";
 "yalaAI.onboarding.step2.title" = "Ecco cosa puoi fare";
-"yalaAI.onboarding.step2.subtitle" = "Tre modi per sfruttare al meglio Yala AI.";
+"yalaAI.onboarding.step2.subtitle" = "Tre modi per sfruttare al meglio Yala IA.";
 "yalaAI.onboarding.step2.card1.badge" = "Nuovo";
 "yalaAI.onboarding.step2.card1.title" = "Registra spese all'istante";
 "yalaAI.onboarding.step2.card1.body" = "Per testo o voce, senza moduli. Basta dirlo.";
@@ -4249,11 +4266,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Ti aiuta a tagliare e mettere da parte ogni mese.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Ti avvisa a ogni scostamento per non farti trovare impreparato.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Le entrate coprono le spese del mese. Buon ritmo.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "Riduci i ristoranti del 10%: risparmi 30 € al mese.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "Riduci i ristoranti del 10%%: risparmi %@ al mese.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Attento: stai andando più veloce del mese scorso col delivery.";
 "yalaAI.onboarding.step5.title" = "Tutto pronto!";
 "yalaAI.onboarding.step5.subtitle" = "Quando vuoi, di' a Yala cosa ti serve.";
-"yalaAI.onboarding.step5.tip" = "💡 Prova: \"Registra un caffè da 5 euro\" o \"Quanto ho speso oggi?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Prova: \"Registra un caffè da %@\" o \"Quanto ho speso oggi?\"";
 "yalaAI.onboarding.step5.cta" = "Inizia a chattare";
 
 // MARK: - Stats Records polish
@@ -4311,6 +4328,19 @@
 "stats.trends.insight.stableExpense" = "Le tue spese restano stabili.";
 "stats.trends.insight.stableIncome" = "Le tue entrate restano stabili.";
 "stats.trends.insight.stableBalance" = "Il tuo saldo resta stabile.";
+"stats.trends.insight.sustainedUpExpense %@" = "La tua spesa è in aumento da %@.";
+"stats.trends.insight.sustainedDownExpense %@" = "La tua spesa è in calo da %@.";
+"stats.trends.insight.sustainedUpIncome %@" = "Le tue entrate crescono da %@.";
+"stats.trends.insight.sustainedDownIncome %@" = "Le tue entrate sono in calo da %@.";
+"stats.trends.insight.sustainedUpBalance %@" = "Il tuo saldo cresce da %@.";
+"stats.trends.insight.sustainedDownBalance %@" = "Il tuo saldo è in calo da %@.";
+"stats.trends.insight.durationWeeks %d" = "%d settimane";
+"stats.trends.insight.durationMonths %d" = "%d mesi";
+"stats.trends.insight.durationYears %d" = "%d anni";
+"stats.trends.insight.cashFlowSurplus %d" = "Le tue entrate hanno coperto il %d%% delle spese: hai chiuso in positivo.";
+"stats.trends.insight.cashFlowDeficit %d" = "Le tue entrate hanno coperto il %d%% delle spese: hai speso più di quanto è entrato.";
+"stats.trends.insight.cashFlowNoIncome" = "In questo periodo hai registrato spese ma nessuna entrata.";
+"stats.trends.insight.weekdayPeak %@ %@" = "Giorno più caro: %@, con una spesa media di %@.";
 
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Confronto periodo";
@@ -4351,9 +4381,10 @@
 "groups.onboarding.step2.bridgeAwareness" = "Quando paghi una spesa, la registriamo automaticamente anche nel tuo conto personale, così il tuo saldo riflette sempre la realtà.";
 "groups.onboarding.step3.title" = "La tua privacy prima di tutto";
 "groups.onboarding.step3.subtitle" = "Condividi solo il necessario, niente di più.";
-"groups.onboarding.step3.point1" = "Ogni membro deve avere un account iCloud.";
+"groups.onboarding.step3.point1" = "Ogni membro deve avere un account Yala.";
 "groups.onboarding.step3.point2" = "I tuoi dati personali non si sincronizzano con il gruppo, solo le spese condivise.";
 "groups.onboarding.step3.cta" = "Vai ai gruppi";
+"groups.onboarding.step3.signInCTA" = "Accedi";
 
 "groups.onboarding.step3.bridgeAwareness" = "Puoi cambiare questo comportamento nelle Impostazioni dei Gruppi.";
 
@@ -4418,7 +4449,6 @@
 "settings.resetDataDescriptionGroupsOnly" = "Questa operazione ripristina il tuo profilo e le tue preferenze Yala a uno stato iniziale. I tuoi gruppi non vengono eliminati: gestiscili dalla scheda Gruppi.";
 
 /* Delete-data confirmation warning — groups-only mode */
-"settings.deleteDataWarningGroupsOnly" = "Questa azione e irreversibile. Il tuo profilo e le tue preferenze Yala verranno ripristinati.";
 
 /* Apple Pay automation: failure notification title */
 "shortcut.notification.errorTitle" = "Pagamento non registrato";
@@ -4440,6 +4470,7 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Liquidazione del gruppo %@. Assegna solo un conto; l'importo e la data sono gestiti dal gruppo.";
+"inbox.groupSettlementDraft.alreadyRegistered" = "Questo pagamento è già registrato nei tuoi conti. Puoi eliminare questa bozza.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Assegna conto e sottocategoria";
@@ -4450,11 +4481,19 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Questa spesa condivisa non esiste più nel gruppo.";
 "whatsNew.v20.groups.title" = "Gruppi (Beta)";
-"whatsNew.v20.groups.description" = "Crea gruppi per dividere le spese e Yala calcola chi deve cosa a chi. E tranquillo: tutto viaggia sul tuo iCloud privato, mai sui nostri server.";
+"whatsNew.v20.groups.description" = "Crea gruppi per dividere le spese e Yala calcola chi deve cosa a chi.";
 "whatsNew.v20.ai.title" = "Ti presentiamo Yala IA";
 "whatsNew.v20.ai.description" = "Il tuo assistente finanziario con intelligenza artificiale. Fagli domande sul tuo denaro, chiedigli di registrare le tue spese e ricevi analisi chiare del tuo mese. Come un amico che se ne intende di finanze, a un messaggio di distanza.";
 "whatsNew.v20.redesign.title" = "Tutto un nuovo look";
 "whatsNew.v20.redesign.description" = "Abbiamo ridisegnato Yala da cima a fondo: nuovi widget, riepiloghi più chiari in ogni sezione e la nuova finitura Liquid Glass di iOS in tutta l'app. Inoltre abbiamo corretto molti bug perché tutto sia più fluido.";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "Gruppi";
+"whatsNew.v21.groups.description" = "Dividi le spese con chi vuoi. Invita con un link, registrate insieme e Yala calcola chi deve cosa a chi. Niente conti da fare, niente imbarazzi.";
+"whatsNew.v21.logging.title" = "Registrare non è mai stato così facile";
+"whatsNew.v21.logging.description" = "Parlagli, scatta una foto o scrivigli come a un amico. Yala capisce quanto hai speso e lo registra per te: tenere i conti richiede pochi secondi.";
+"whatsNew.v21.data.title" = "I tuoi dati, le tue regole";
+"whatsNew.v21.data.description" = "Scegli tu dove vivono le tue informazioni: nel tuo iCloud privato o nel cloud di Yala, per averle su tutti i tuoi dispositivi. In più, una Home rinnovata e Yala a schermo intero sul tuo iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4498,24 +4537,6 @@
 "groups.errors.inviteFailed" = "Impossibile creare il link di invito. Controlla la connessione e riprova.";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "Impossibile completare l'azione. Riprova.";
-/* Beta gate (Groups): screen/alert title */
-"groups.beta.gate.title" = "Funzione in beta";
-
-/* Beta gate (Groups): explanation message */
-"groups.beta.gate.message" = "Questa funzione è in versione beta, disponibile solo per alcuni utenti";
-
-/* Beta gate (Groups): button to enter the beta code */
-"groups.beta.gate.haveCode" = "Ho un codice beta";
-
-/* Beta gate (Groups): code entry alert title */
-"groups.beta.gate.codePrompt" = "Inserisci il tuo codice beta";
-
-/* Beta gate (Groups): code field placeholder */
-"groups.beta.gate.placeholder" = "Codice";
-
-/* Beta gate (Groups): wrong code error */
-"groups.beta.gate.wrongCode" = "Codice errato";
-
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "Tutti";
 
@@ -4622,3 +4643,2116 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "Inserisci l'importo della spesa prima di dividerlo tra i membri.";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "Spesa di gruppo pianificata";
+"scheduled.groupExpense.toggle" = "È una spesa condivisa?";
+"scheduled.groupExpense.toggleHelper" = "La registriamo nel tuo gruppo e contiamo solo la tua parte.";
+"scheduled.groupExpense.sectionTitle" = "Spesa condivisa";
+"scheduled.groupExpense.groupRow" = "Gruppo";
+"scheduled.groupExpense.currencyRow" = "Valuta";
+"scheduled.groupExpense.divisionRow" = "Divisione";
+"scheduled.groupExpense.splitSummary" = "Tra %d · %@ · La tua parte %@";
+"scheduled.groupExpense.totalHint" = "Totale della fattura";
+"scheduled.groupExpense.sharedBadge" = "Condivisa";
+
+
+/* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
+"inbox.convertToShared" = "Converti in spesa condivisa";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Proteggi con Face ID";
+"faceIDGuide.title" = "Proteggi Yala con Face ID";
+"faceIDGuide.subtitle" = "Usa il blocco di iOS così solo tu apri l'app";
+"faceIDGuide.step1Title" = "Tieni premuta l'icona di Yala";
+"faceIDGuide.step1Detail" = "Nella schermata Home";
+"faceIDGuide.step2Title" = "Tocca Richiedi Face ID";
+"faceIDGuide.step2Detail" = "Nel menu che appare";
+"faceIDGuide.step3Title" = "Conferma con il tuo volto";
+"faceIDGuide.step3Detail" = "Fatto, la tua app è protetta";
+
+/* Success screen title after creating a group expense */
+"groups.expense.success.titleCreated" = "Spesa aggiunta!";
+
+/* Success screen title after editing a group expense */
+"groups.expense.success.titleUpdated" = "Spesa aggiornata!";
+
+/* Detail row label: the group the expense belongs to */
+"groups.expense.success.group" = "Gruppo";
+
+/* Detail row label: how the expense was split */
+"groups.expense.success.splitLabel" = "Divisione";
+
+/* Section header listing participants and their share */
+"groups.expense.success.participants" = "Partecipanti";
+
+/* Button: create another group expense */
+"groups.expense.success.addAnother" = "Aggiungine un'altra";
+
+/* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
+"storage.title" = "Dove si trovano i tuoi dati";
+"storage.waitingForLeader" = "Un altro dei tuoi dispositivi sta attivando il cloud per questo account. Attendi che finisca.";
+"storage.status.icloudTitle" = "iCloud privato";
+"storage.status.icloudBody" = "I tuoi dati restano sul tuo dispositivo e si sincronizzano tramite il tuo iCloud privato. Nessun altro può leggerli, nemmeno noi.";
+"storage.status.cloudTitle" = "Il tuo account nel cloud";
+"storage.status.cloudBody" = "I tuoi dati vengono salvati nel tuo account Yala e sincronizzati su tutti i tuoi dispositivi.";
+"storage.migrate.title" = "Passa al cloud";
+"storage.migrate.body" = "Crea un account con Apple o Google e accedi ai tuoi dati da qualsiasi dispositivo, anche senza iCloud.";
+"storage.migrate.button" = "Attiva il cloud";
+"storage.migrate.previewButton" = "Vedi cosa verrebbe trasferito";
+"storage.migrate.previewResult" = "%1$d transazioni · %2$d categorie · %3$d conti · %4$d budget";
+"storage.adopt.title" = "Attiva il cloud su questo dispositivo";
+"storage.adopt.body" = "Questo account ha già i tuoi dati nel cloud. Attiviamolo su questo dispositivo.";
+"storage.adopt.button" = "Attiva su questo dispositivo";
+"storage.revert.title" = "Torna a iCloud";
+"storage.revert.body" = "Torna alla modalità privata. I tuoi dati passano sul tuo dispositivo e sul tuo iCloud, senza perdere nulla.";
+"storage.revert.button" = "Torna a iCloud";
+"storage.revert.ineligible" = "Al momento non puoi tornare a iCloud da questo dispositivo.";
+"storage.sync.title" = "Sincronizzazione";
+"storage.sync.upToDate" = "Tutto sincronizzato";
+"storage.sync.needsSignIn" = "Accedi per caricare %d modifiche";
+"storage.sync.signInButton" = "Accedi";
+"storage.progress.migrating" = "Attivazione del cloud…";
+"storage.progress.reverting" = "Ritorno a iCloud…";
+"storage.progress.resume" = "Riprendi";
+"storage.progress.retry" = "Riprova";
+"storage.relaunch.title" = "Ci siamo quasi — riavvia Yala";
+"storage.relaunch.body" = "Chiudi completamente Yala (scorri via nel selettore app) e riaprila per completare.";
+"storage.failed.migration" = "Non siamo riusciti ad attivare il cloud. I tuoi dati sono al sicuro sul dispositivo; puoi riprovare.";
+"storage.failed.reverse" = "Non siamo riusciti a completare il ritorno a iCloud. I tuoi dati sono al sicuro; puoi riprovare.";
+"storage.confirm.migrateTitle" = "Attivare il cloud?";
+"storage.confirm.migrateBody" = "I tuoi dati verranno spostati nel tuo account Yala. È reversibile, ma è un cambiamento importante.";
+"storage.confirm.migrateContinue" = "Continua";
+"storage.confirm.migrate2Title" = "Sei sicuro?";
+"storage.confirm.migrate2Body" = "Il cloud verrà attivato su questo dispositivo.";
+"storage.confirm.migrate2Confirm" = "Sì, attiva il cloud";
+"storage.confirm.revertTitle" = "Tornare a iCloud?";
+"storage.confirm.revertBody" = "I tuoi dati passeranno sul tuo dispositivo e sul tuo iCloud. Non perderai nulla.";
+"storage.confirm.revertContinue" = "Continua";
+"storage.confirm.revert2Title" = "Sei sicuro?";
+"storage.confirm.revert2Body" = "Il cloud verrà disattivato su questo dispositivo.";
+"storage.confirm.revert2Confirm" = "Sì, torna a iCloud";
+"storage.errors.title" = "Qualcosa è andato storto";
+"storage.errors.generic" = "Qualcosa non ha funzionato. Riprova.";
+"storage.errors.adoptOtherAccount" = "Questo non è l’account che stavi attivando su questo dispositivo. Riprova con lo stesso account.";
+"storage.errors.adoptICloudNotSettled" = "Non siamo riusciti ad avviare l’attivazione del cloud: iCloud sta ancora trasferendo dati su questo dispositivo. Riprova tra qualche minuto.";
+"storage.errors.signIn" = "Non siamo riusciti ad accedere. Riprova.";
+"storage.consent.title" = "I tuoi dati nel cloud di Yala";
+"storage.consent.pointServers" = "I tuoi dati sono conservati sui server di Yala e il nostro team può vederli per darti assistenza e funzioni intelligenti. Non usiamo la crittografia end-to-end.";
+"storage.consent.pointPhotos" = "Le foto delle tue ricevute restano solo su questo dispositivo: non vengono salvate nel cloud né viste su altri dispositivi. Se vuoi conservarle, salvale prima di cambiare telefono.";
+"storage.consent.pointAccess" = "In cambio, accedi da qualsiasi dispositivo con il solo accesso Apple o Google, senza dipendere da iCloud. Finché conservi quell’accesso: non c’è recupero via email né password Yala, quindi se perdi l’accesso a quell’account, esporta prima i tuoi dati (Impostazioni → Esporta dati).";
+"storage.consent.footer" = "Puoi tornare alla modalità privata quando vuoi, senza perdere nulla.";
+"storage.consent.accept" = "Ho capito e voglio attivare il cloud";
+"storage.consent.privacyLink" = "Vedi l’informativa sulla privacy";
+
+/* Invite onboarding: spinner title while zone/member sync */
+"groups.invite.joining.title" = "Connessione al tuo gruppo…";
+
+/* Invite onboarding: spinner body */
+"groups.invite.joining.body" = "Stiamo preparando tutto per farti dividere le spese. Potrebbe volerci un momento.";
+
+/* Invite onboarding: soft-timeout state title */
+"groups.invite.slow.title" = "Ci sta mettendo un po' più del solito";
+
+/* Invite onboarding: soft-timeout body, honest copy */
+"groups.invite.slow.body" = "Stiamo ancora connettendo il tuo gruppo in background. Nel frattempo puoi usare Yala: il gruppo apparirà nella scheda Gruppi appena sarà pronto.";
+
+/* Invite onboarding: exit CTA from soft-timeout state */
+"groups.invite.slow.continueButton" = "Continua nell'app";
+
+/* Invite onboarding: join failure title */
+"groups.invite.error.title" = "Non siamo riusciti ad aggiungerti al gruppo";
+
+/* Invite onboarding: join failure body */
+"groups.invite.error.body" = "Controlla la tua connessione a internet e riprova.";
+
+/* Invite onboarding: secondary exit from failure state */
+"groups.invite.error.exitButton" = "Esci per ora";
+
+/* Groups tab banner while join intent syncs in background */
+"groups.invite.syncBanner" = "Connessione al tuo gruppo…";
+
+/* Groups tab banner when join intent TTL expired */
+"groups.invite.expired.banner" = "Non siamo riusciti a connetterci al gruppo. Chiedi all'admin un nuovo link.";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "Esci";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "Uscire dall'account su questo dispositivo?";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "Esci";
+
+/* Sign out dialog message when in cloud storage mode */
+
+/* Sign out dialog message when in private iCloud mode */
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "Non siamo riusciti a disconnetterti";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. Controlla la connessione e riprova.";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.title" = "Ciao di nuovo!";
+"welcome.existing.subtitle" = "Accedi con il tuo account Yala o recupera i tuoi dati da iCloud.";
+"welcome.existing.firstTimeQuestion" = "È la tua prima volta su Yala?";
+"welcome.existing.firstTimeAction" = "Inizia da qui";
+"welcome.form.or" = "o";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "Ripristina da iCloud";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "I tuoi dati salvati con iCloud tornano su questo dispositivo.";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "Accedi con Apple";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "Il tuo account Yala nel cloud, da qualsiasi dispositivo.";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "Accedi al tuo account";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "Usa lo stesso ID Apple con cui hai creato il tuo account cloud.";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "Verifica dell'account…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "Connessione al tuo account…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "Può richiedere qualche minuto. Tieni Yala aperta.";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "Nessun account trovato";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "Non c'è ancora un account Yala nel cloud per l'accesso che hai usato.";
+"welcome.cloud.notFoundCta" = "Crea il mio account";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "Questo dispositivo contiene dati di un altro account";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "Per proteggere quei dati, non possiamo collegare un altro account qui. Il proprietario può accedere di nuovo quando vuole.";
+
+"welcome.cloud.blockedRestoreHint" = "E se fossero tuoi? Se hai appena avviato un ripristino da iCloud, aspetta che finisca e accedi di nuovo.";
+
+"welcome.cloud.blockedBack" = "Indietro";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "Qualcosa non è andato bene";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "Non siamo riusciti a verificare il tuo account. Controlla la connessione e riprova.";
+
+/* Retry button */
+"welcome.cloud.retry" = "Riprova";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "Il tuo account è in configurazione su un altro dispositivo";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "Puoi aspettare qui o continuare nell'app; continueremo a provare.";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "Continua nell'app";
+
+/* Chip shown while the secondary (guest) session pulls its account data after relaunch */
+"welcome.cloud.hydrationBanner" = "Scaricamento dei tuoi dati…";
+"welcome.cloud.cancelAdoptBody" = "Questo dispositivo non ha modificato nulla di ciò che hai nel cloud. Tornerai all’inizio. Quando vuoi, puoi accedere di nuovo al tuo account con «Ho già un account».";
+"welcome.cloud.cancelAdoptEffectBody" = "Ciò che hai su questo dispositivo è ancora qui, come prima. Tornerai all’inizio. Quando vuoi, puoi accedere di nuovo al tuo account con «Ho già un account».";
+
+/* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
+"groups.icloud.gate.title" = "I gruppi hanno bisogno di iCloud";
+
+/* Body of the Groups-needs-iCloud gate; [tu nombre] refers to the user's name row at the top of iOS Settings */
+"groups.icloud.gate.message" = "I tuoi gruppi si condividono e sincronizzano con il tuo account iCloud. Accedi da Impostazioni → [il tuo nome] → iCloud e torna qui.";
+
+/* CTA of the Groups-needs-iCloud gate; opens the app's Settings page (cannot deep-link to iCloud directly) */
+"groups.icloud.gate.openSettings" = "Apri Impostazioni";
+
+/* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
+"storage.relaunch.bodyAutoExit" = "Torna alla schermata Home e riapri Yala: sarà tutto pronto.";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "Gruppi nel cloud";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "I gruppi sono condivisi per natura: vivono nel cloud di Yala perché tutti vedano le stesse spese, sempre aggiornate.";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "Con il gruppo si condivide solo il minimo: il tuo alias e le spese del gruppo. Gli altri membri non vedono la tua email.";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "Le tue finanze personali non si muovono: restano dove hai scelto tu, private come sempre.";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "I dati del gruppo viaggiano e vengono salvati protetti, e puoi uscire da un gruppo quando vuoi.";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "Accetta e continua";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "Collega il tuo account";
+
+/* G4 sign-in body */
+"groups.signin.body" = "Per unirti al gruppo ti serve un account Yala. Accedi con Apple o Google e continua con il tuo invito.";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "Questo sarà il tuo account Yala: se un giorno porterai i tuoi dati personali nel cloud, userai proprio questo.";
+
+/* G4 sign-in error */
+"groups.signin.error" = "Hmm, non siamo riusciti a collegare il tuo account. Riprova.";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "Utente eliminato";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "Elimina il mio account";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Eliminare il tuo account Yala?";
+/* G5-D1b: primer diálogo, modo nube */
+/* G5-D1b: primer diálogo, modo solo-grupos */
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "Continua";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "Questo è definitivo";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "Non si torna indietro: il tuo account e i tuoi dati verranno eliminati completamente.";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "Elimina il mio account";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "Non siamo riusciti a eliminare il tuo account";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "Qualcosa è andato storto e l'eliminazione non è stata completata. I tuoi dati sono ancora intatti. Riprova tra poco.";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "Riprova";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "Includi i miei gruppi";
+"export.includeGroups.description" = "Aggiunge un file separato con le spese, i pagamenti e il tuo saldo di ogni gruppo.";
+"export.groups.header.group" = "Gruppo";
+"export.groups.header.type" = "Tipo";
+"export.groups.header.date" = "Data";
+"export.groups.header.description" = "Descrizione";
+"export.groups.header.from" = "Da";
+"export.groups.header.to" = "A";
+"export.groups.header.paidBy" = "Pagato da";
+"export.groups.header.amount" = "Importo";
+"export.groups.header.myShare" = "La mia quota";
+"export.groups.header.currency" = "Valuta";
+"export.groups.type.expense" = "Spesa";
+"export.groups.type.settlement" = "Pagamento";
+"export.groups.type.balance" = "Il mio saldo";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "Il tuo file personale è stato esportato, ma questa volta non siamo riusciti a includere i tuoi gruppi. Riprova più tardi.";
+
+/* G6-3: freeze error surfaced when writing to a migrated group */
+"groups.errors.movedToBackend" = "Questo gruppo è stato spostato nel cloud di Yala. Accedi di nuovo per continuare a usarlo.";
+
+/* G6-3: card chip for a migrated frozen group */
+"groups.card.movedChip" = "Spostato";
+
+/* G6-3: detail banner title for a migrated group */
+"groups.migrated.bannerTitle" = "Questo gruppo è stato spostato nel cloud di Yala";
+
+/* G6-3: detail banner body for a migrated group */
+"groups.migrated.bannerBody" = "Accedi di nuovo per continuare a vedere e modificare le spese.";
+
+/* G6-3: re-join CTA button on a migrated group */
+"groups.migrated.rejoinCTA" = "Accedi di nuovo";
+
+/* G6-3: settings row to delete the frozen CloudKit copy */
+
+/* G6-3: hint under the delete-copy row */
+
+
+
+
+/* G6-3: progress banner while the owner's groups migrate to backend */
+"groups.migrated.migratingBanner" = "Spostamento dei tuoi gruppi nel cloud di Yala…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Continua con Google";
+"auth.googleButtonSignUp" = "Registrati con Google";
+"auth.googleButtonSignIn" = "Accedi con Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Accedi con Google";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Il tuo account Yala nel cloud, se l'hai creato con il tuo account Google.";
+"welcome.existing.usedOnThisDeviceNote" = "Quella che hai usato su questo iPhone";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Usa lo stesso account Google con cui hai creato il tuo account cloud.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Accedi con lo stesso metodo che hai usato per creare il tuo account: il tuo account Yala è legato a quello.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "Quell'account usa un altro metodo";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "L'account Yala di questo ID Apple è stato creato con %@.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "L'account Yala di questo ID Apple è stato creato con un altro metodo di accesso.";
+
+/* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
+"welcome.cloud.beaconOrigin" = "Con questo ID Apple è già stato creato un account Yala con %@.";
+
+/* Paso 6: same origin line when the beacon does not know the sign-in method */
+"welcome.cloud.beaconOriginGeneric" = "Con questo ID Apple è già stato creato un account Yala.";
+
+/* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
+"welcome.cloud.createAnother" = "Crea un altro account";
+
+/* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
+"storage.progress.waitingImport" = "In attesa che iCloud termini la sincronizzazione…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "Scegli come accedere";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "Per salvare i tuoi dati nel cloud ti serve un account Yala. Accedi con Apple o Google.";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "Il tuo account Yala resta legato al metodo che scegli: usalo ogni volta che accedi di nuovo.";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
+"groups.empty.signedOut.title" = "I tuoi gruppi sono nel tuo account";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: mensaje */
+"groups.empty.signedOut.message" = "Accedi per vedere i gruppi che condividi.";
+
+/* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
+"groups.empty.signedOut.action" = "Accedi";
+
+/* H-2026-07-18-6 — caption while the sign-out saves pending changes */
+"settings.signOutWorking" = "Salvataggio delle modifiche in sospeso…";
+
+/* H-2026-07-18-6 — transient sign-out block alert title */
+"settings.signOutPendingTitle" = "Ancora un momento";
+
+/* H-2026-07-18-6 — transient sign-out block alert message */
+"settings.signOutPendingMessage" = "Stiamo ancora finendo di salvare alcune modifiche. Aspetta qualche secondo e riprova.";
+
+/* H-2026-07-18-6 — groups-only terminal cover body (personal data intact) */
+"storage.relaunch.bodyAutoExitGroupsOnly" = "Sei stato disconnesso dai gruppi. Torna alla schermata Home e riapri Yala; i tuoi dati personali restano su questo dispositivo.";
+
+/* Fase 1 C2: variante Modo Nube de wipeICloudWarning (datos en la cuenta de Yala, no iCloud) */
+
+/* Fase 1 C3: titulo de la segunda confirmacion de Vaciar mis datos */
+"settings.wipeDataSecondConfirmTitle" = "Sicuro? È definitivo.";
+
+/* Fase 1: subtitulo de la fila Exportar datos */
+"settings.exportDataSubtitle" = "Salva una copia in CSV";
+
+/* Fase 1: subtitulo de la fila Vaciar mis datos */
+"settings.wipeDataSubtitle" = "Cancella i tuoi dati. Il tuo account e i tuoi gruppi restano.";
+
+
+/* Fase 1: subtitulo de la fila Eliminar mi cuenta */
+
+/* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
+"settings.deleteAccountCrossReferHint" = "Vuoi solo cancellare i tuoi dati e mantenere l'account? Usa «Svuota i miei dati».";
+
+
+
+
+
+/* D6: confirmation dialog message for 'Salir de Yala' */
+
+/* D6: header title of the group-only export screen */
+"export.groupsOnlyTitle" = "Esporta i tuoi gruppi";
+
+/* D6: description under the group-only export header */
+"export.groupsOnlyDescription" = "Salva un file CSV con le spese, i pagamenti e il tuo saldo di ogni gruppo.";
+
+/* D6: alert title when there are no active groups to export */
+"export.groupsOnlyEmptyTitle" = "Nessun gruppo da esportare";
+
+/* D6: alert message when there are no active groups to export */
+"export.groupsOnlyEmpty" = "Al momento non ci sono gruppi attivi da esportare.";
+
+/* D6: a11y hint when Export row is disabled in group-only mode */
+"accessibility.noGroupsToExport" = "Non ci sono gruppi da esportare";
+
+
+
+
+/* D2 (3.3.3): mensaje del dialogo de 'Salir de Yala' en el split solo-grupos backend */
+
+/* D2 (3.3.3): banner one-shot de re-entrada sobre el empty state H-7 */
+"groups.empty.signedOut.reentryBanner" = "Hai chiuso la sessione dei gruppi. Accedi quando vuoi rivederli.";
+
+/* D5: aviso condicional de saldos pendientes en el diálogo de eliminar cuenta (informa, no bloquea) */
+"settings.deleteAccountDebtWarning" = "Hai saldi in sospeso nei tuoi gruppi. Per gli altri membri resteranno come debito di «Utente eliminato». Se preferisci, saldali prima dalla scheda Gruppi.";
+
+/* D5: botón del diálogo de eliminar cuenta que lleva a la pestaña Grupos para saldar deudas */
+"settings.deleteAccountViewGroups" = "Vedi i miei gruppi";
+
+/* D5: aviso (.cloud) de que la copia iCloud congelada pre-migración sobrevive al borrado de cuenta */
+"settings.deleteAccountFrozenICloudNote" = "La tua vecchia copia su iCloud (di prima del cloud) non viene toccata: se riapri Yala, la vedrai come una nuova installazione.";
+
+/* D5: aviso de huella legacy — el nombre persiste en zonas CloudKit tras el borrado de cuenta */
+"settings.deleteAccountLegacyFootprintNote" = "Nei vecchi gruppi (iCloud) il tuo nome può restare visibile ai loro membri.";
+
+/* D4 hoja de alcance: etiqueta fila dispositivo */
+"settings.scopeDeviceLabel" = "Su questo dispositivo";
+
+/* D4 hoja de alcance: etiqueta fila iCloud (modo privado) */
+"settings.scopeICloudLabel" = "Su iCloud";
+
+/* D4 hoja de alcance: etiqueta fila cuenta de Yala (modo nube) */
+"settings.scopeCloudAccountLabel" = "Nel tuo account Yala";
+
+/* D4 hoja de alcance: etiqueta fila grupos */
+"settings.scopeGroupsLabel" = "Nei tuoi gruppi";
+
+/* D4: detalle fila cuando algo no se ve afectado */
+"settings.scopeUntouchedShort" = "Non vengono toccati";
+
+/* D4: fila grupos al cerrar sesión de grupos */
+"settings.scopeForgetGroups" = "Questo dispositivo dimenticherà i tuoi gruppi (restano nel tuo account)";
+
+/* D4: fila cuando lo personal en iCloud no se toca */
+"settings.scopePersonalInICloud" = "I tuoi dati personali restano su iCloud";
+
+/* D4 Vaciar: fila dispositivo */
+"settings.wipeScopeDevice" = "Vengono eliminati i tuoi conti, movimenti e budget";
+
+/* D4 Vaciar (solo grupos 5a): fila dispositivo */
+"settings.wipeScopeDeviceGroupsOnly" = "Vengono ripristinati il tuo profilo e le tue preferenze";
+
+
+/* D4 Vaciar: fila cuenta de Yala (modo nube) */
+"settings.wipeScopeCloudAccount" = "Vengono eliminati anche dal tuo account; gli altri tuoi dispositivi li perderanno alla sincronizzazione";
+
+/* D4 Vaciar: fila grupos */
+"settings.wipeScopeGroups" = "Non vengono toccati — restano invariati";
+
+/* D4 Vaciar: nota de conservación */
+"settings.wipeScopeConservation" = "Il tuo abbonamento Pro non cambia.";
+
+/* D4 Vaciar (modo nube): residual multi-dispositivo (D9) */
+"settings.wipeScopeMultiDeviceResidual" = "Un dispositivo offline potrebbe riportare modifiche recenti quando si sincronizza.";
+
+/* D4 Eliminar cuenta (nube): fila dispositivo */
+"settings.deleteAccountScopeDeviceCloud" = "I tuoi dati vengono eliminati da questo dispositivo";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
+"settings.deleteAccountScopeDeviceGroupsOnly" = "I tuoi dati personali su questo dispositivo non vengono toccati";
+
+/* D4 Eliminar cuenta (nube): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudCloud" = "Il tuo account e tutti i tuoi dati vengono eliminati, per sempre";
+
+/* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
+"settings.deleteAccountScopeCloudGroupsOnly" = "Il tuo account viene eliminato e uscirai dai tuoi gruppi";
+
+/* D4 Eliminar cuenta: fila grupos */
+"settings.deleteAccountScopeGroups" = "Continuerai ad apparire come «Utente eliminato»";
+
+/* D4 Cerrar sesión (privado): fila dispositivo */
+"settings.signOutScopeDevicePrivate" = "Vengono eliminati da questo dispositivo; prima finiamo di caricarli su iCloud";
+
+/* D4 Cerrar sesión (privado): fila iCloud */
+"settings.signOutScopeCloudPrivate" = "I tuoi dati restano su iCloud";
+
+/* D4 Cerrar sesión (nube): fila dispositivo */
+"settings.signOutScopeDeviceCloud" = "Torni alla schermata iniziale, come appena installato";
+
+/* D4 Cerrar sesión (nube): fila cuenta de Yala */
+"settings.signOutScopeCloudCloud" = "I tuoi dati restano al sicuro; prima carichiamo le modifiche in sospeso";
+
+
+
+
+
+
+/* D4 Cerrar sesión (privado): nota de conservación */
+"settings.signOutScopeConservationPrivate" = "Per recuperarli, scegli «Ripristina da iCloud» quando riapri Yala.";
+
+/* D4 Cerrar sesión (nube): nota de conservación */
+"settings.signOutScopeConservationCloud" = "Puoi accedere di nuovo quando vuoi e recuperare tutto.";
+
+/* D4 Cerrar sesión de grupos / Salir (D2): nota de conservación */
+"settings.signOutScopeConservationGroups" = "Accedi di nuovo quando vuoi per rivedere i tuoi gruppi.";
+"settings.signOutScopeDeviceNoCopy" = "Vengono eliminati per sempre da questo dispositivo";
+"settings.signOutScopeCloudNoCopy" = "Su questo dispositivo iCloud non è attivo: non esiste nessuna copia";
+"settings.signOutNoCopyWarning" = "Se esci, perderai questi dati per sempre.";
+"settings.signOutNoCopyConfirmTitle" = "Eliminare i tuoi dati per sempre?";
+"settings.signOutNoCopyConfirmMessage" = "Non esiste nessuna copia su iCloud né altrove. L'operazione non si può annullare.";
+"settings.signOutNoCopyConfirmAction" = "Esci ed elimina";
+"settings.signOutScopeConservationPrivateWithGroups" = "Per tornare, scegli «Ripristina da iCloud» e accedi di nuovo a Gruppi con il tuo account.";
+"settings.signOutExportPendingTitle" = "Non tutto è ancora su iCloud";
+"settings.signOutExportPendingMessage" = "Modifiche di questo dispositivo non ancora arrivate su iCloud: %d. Se esci ora, andranno perse.";
+"settings.signOutExportPendingMessageUnknown" = "Non siamo riusciti a confermare che le tue ultime modifiche siano arrivate su iCloud. Se esci ora, potrebbero andare perse.";
+"settings.signOutExportDiscardButton" = "Esci comunque";
+
+
+
+
+
+
+/* Vaciar v2: botón para exportar los datos antes de vaciarlos (red de seguridad) */
+"settings.wipeExportBeforeButton" = "Esporta prima";
+
+/* Vaciar v2: caption bajo 'Exportar antes' cuando los datos viven en la cuenta de Yala (.cloud) */
+"settings.wipeExportBeforeCloudCaption" = "In modalità cloud, questa potrebbe essere la tua unica copia";
+
+/* Vaciar v2: fila de grupos de la hoja de alcance cuando el usuario tiene saldos pendientes */
+"settings.wipeScopeGroupsDebt" = "I tuoi gruppi vengono conservati, ma hai saldi in sospeso. Puoi saldarli dalla scheda Gruppi.";
+
+/* D10 batch: secondary action label in the wipe scope sheet */
+"settings.wipeLeaveGroupsButton" = "Esci anche dai miei gruppi";
+
+/* D10 batch: dedicated flow title */
+"settings.batchLeaveTitle" = "Esci dai miei gruppi";
+
+/* D10 batch: progress label */
+"settings.batchLeaveProgress" = "Uscita dai tuoi gruppi…";
+
+/* D10 batch: result headline, all done */
+"settings.batchLeaveAllDone" = "Sei uscito dai tuoi gruppi.";
+
+/* D10 batch: result headline when some need decision */
+"settings.batchLeaveSomeNeedDecision" = "Sei uscito da alcuni gruppi.";
+
+/* D10 batch: stat label for groups left/deleted */
+"settings.batchLeaveStatLeft" = "Usciti";
+
+/* D10 batch: stat label for groups whose ownership was transferred */
+"settings.batchLeaveStatTransferred" = "Trasferiti";
+
+/* D10 batch: section header for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionHeader" = "Richiedono la tua decisione";
+
+/* D10 batch: explanation for groups needing manual attention */
+"settings.batchLeaveNeedsDecisionBody" = "Questi gruppi richiedono un intervento manuale: non puoi uscirne automaticamente.";
+
+/* D10 batch: reason - owner with co-members, cannot auto-leave */
+"settings.batchLeaveReasonManual" = "Sei l'admin e ci sono altri membri.";
+
+/* D10 batch: reason - outstanding debt */
+"settings.batchLeaveReasonDebt" = "Hai saldi in sospeso.";
+
+/* D10 batch: reason - operation failed */
+"settings.batchLeaveReasonFailed" = "Impossibile completare. Riprova.";
+
+/* D10 batch: acknowledge/done button */
+"settings.batchLeaveDone" = "Fatto";
+
+
+
+
+
+
+
+
+/* Fila que abre la pantalla Tu cuenta de Yala (§3.3.5) */
+"settings.yalaAccountRowTitle" = "Il tuo account Yala";
+
+/* Subtítulo de la fila Tu cuenta de Yala */
+"settings.yalaAccountRowSubtitle" = "Metodo di accesso e opzioni del tuo account";
+
+/* Título de la pantalla Tu cuenta de Yala */
+"settings.yalaAccountTitle" = "Il tuo account Yala";
+
+/* Método de entrada: Apple */
+"settings.yalaAccountMethodApple" = "Hai effettuato l'accesso con Apple.";
+
+/* Método de entrada: Google */
+"settings.yalaAccountMethodGoogle" = "Hai effettuato l'accesso con Google.";
+
+/* Método de entrada genérico (sin proveedor conocido) */
+"settings.yalaAccountMethodUnknown" = "Hai un account Yala.";
+
+/* Nota de vínculo Apple/Google (H4) */
+"settings.yalaAccountLinkingNote" = "Se usi la stessa email, Apple e Google aprono questo stesso account.";
+
+/* Título de la sección donde viven los datos */
+"settings.yalaAccountDataLocationTitle" = "Dove si trovano i tuoi dati";
+
+/* Datos en modo nube */
+"settings.yalaAccountDataLocationCloud" = "Nel tuo account Yala, nel cloud.";
+
+/* Datos en solo-grupos (5b) */
+"settings.yalaAccountDataLocationGroupsOnly" = "Su questo dispositivo e nel tuo iCloud privato. Usi il tuo account solo per i Gruppi.";
+"settings.yalaAccountDataLocationGroupsOnlyNoPrivate" = "Il tuo account conserva solo i tuoi gruppi; su questo dispositivo non ci sono dati personali.";
+
+/* Alcance del desenlace Cerrar sesión */
+"settings.yalaAccountSignOutScope" = "Il tuo account resta attivo; torni quando vuoi.";
+
+/* Desenlace Volver a iCloud (la Reversa) */
+"settings.yalaAccountReturnICloud" = "Torna a iCloud";
+
+/* Alcance del desenlace Volver a iCloud */
+"settings.yalaAccountReturnICloudScope" = "I tuoi dati tornano nel tuo iCloud privato; il tuo account resta in pausa.";
+
+/* Alcance del desenlace Eliminar mi cuenta */
+"settings.yalaAccountDeleteScope" = "Viene eliminato tutto, per sempre.";
+
+/* Frase de que la Reversa ES el desenlace funcional (§3.3.5) */
+"storage.revert.desenlaceNote" = "È il modo per scollegare il tuo account da questo dispositivo: resta in pausa nel caso tu voglia tornare.";
+
+/* Header de la subseccion Tu cuenta en Seguridad (§3.2) */
+"settings.accountSubsectionTitle" = "Il tuo account";
+
+/* Subtitulo de Donde viven tus datos, modo iCloud */
+"settings.dataLocationSubtitleICloud" = "iCloud privato";
+
+/* Subtitulo de Donde viven tus datos, modo nube */
+"settings.dataLocationSubtitleCloud" = "Il tuo account nel cloud";
+
+/* D10 batch: stop button (D3) */
+"settings.batchLeaveStop" = "Interrompi";
+
+/* D10 batch: result headline when user stopped (D3) */
+"settings.batchLeaveStopped" = "Hai interrotto l'uscita.";
+
+/* D10 batch: stat label for groups not processed after stop (D3) */
+"settings.batchLeaveStatSkipped" = "Non elaborati";
+
+/* D10 batch: body explaining how to relaunch after stop (D3) */
+"settings.batchLeaveStoppedBody" = "Puoi riprenderla quando vuoi da «Svuota i miei dati».";
+
+/* Feed row title for a confirmed settlement in group records */
+"groups.settlement.entryDescription" = "Liquidazione";
+
+/* Feed row subtitle: payer paid receiver (settlement) */
+"groups.settlement.feedRow" = "%1$@ ha pagato %2$@";
+
+/* Bridge Caso B: banner de edición parcial (subcat/tags sí, cuenta no) */
+"groups.bridge.editPartialBannerCaseB" = "Questa spesa viene dal gruppo. Puoi modificare categoria ed etichette. Il resto si sincronizza con il gruppo.";
+
+/* Panel Health — explicación del sub-score Compromisos en modo Solo Gastos (sin mención a ingresos) */
+"panel.health.bills.sheet.explanation.expensesOnly" = "Mostra se il tuo saldo copre i pagamenti in sospeso del periodo.";
+
+/* Force-update (min-version) blocking screen */
+"appUpdate.force.title" = "Aggiorna per continuare";
+"appUpdate.force.message" = "Questa versione di Yala non è più supportata. Aggiorna per continuare a usare l'app.";
+"appUpdate.force.updateButton" = "Aggiorna ora";
+
+/* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
+"storage.migrate.accountReuseNote" = "Userai il tuo account Yala attuale (%@): così i tuoi dati e i tuoi gruppi restano nello stesso account.";
+
+/* Generic fallback of storage.migrate.accountReuseNote when the sign-in method is unknown */
+"storage.migrate.accountReuseNoteGeneric" = "Userai il tuo account Yala attuale: così i tuoi dati e i tuoi gruppi restano nello stesso account.";
+
+/* Storage migrate card, after the identity check refused the live account: it already has personal finances */
+"storage.migrate.refusedPersonalData" = "Il tuo account Yala attuale ha già delle finanze personali, quindi non può ricevere quelle di questo dispositivo. Per portare i tuoi dati su un altro account, prima scollega questo in “Gruppi”.";
+
+/* Storage migrate card, after the identity check refused the live account: the device's groups use another account */
+"storage.migrate.refusedOtherGroups" = "I tuoi gruppi usano un altro account, e su questo dispositivo può esserci un solo account cloud. Per portare i tuoi dati nel cloud, accedi con l’account dei tuoi gruppi o scollegalo prima in “Gruppi”.";
+
+/* Storage migrate card, after the identity check refused the live account: the account went back to iCloud */
+"storage.migrate.refusedReturned" = "Il tuo account Yala attuale è tornato su iCloud, e tornare al cloud con questo account non è ancora disponibile.";
+
+/* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
+"storage.migrate.refusedFreshStart" = "Il tuo account Yala attuale potrebbe essere di un’altra persona: era già connesso quando qui si è ricominciato da zero. Per scegliere il tuo, scollegalo in “Gruppi” e tocca di nuovo “Attiva il cloud”.";
+"storage.migrate.refusedOtherDevice" = "Un altro dei tuoi dispositivi sta portando i tuoi dati su questo account. Completa l’attivazione lì o, se si è fermata, riprova su quel dispositivo.";
+
+/* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
+"storage.adopt.otherAccountNote" = "Questa copia sul cloud appartiene a un altro account Yala, quello di %@. Esci e accedi con quell'account per continuare.";
+
+/* Generic fallback of storage.adopt.otherAccountNote when the sign-in method is unknown */
+"storage.adopt.otherAccountNoteGeneric" = "Questa copia sul cloud appartiene a un altro account Yala. Esci e accedi con quell'account per continuare.";
+
+/* Cloud cutover failed because iCloud storage is full — data stays intact on this device */
+"storage.failed.migrationICloudFull" = "Non siamo riusciti a completare l’attivazione del cloud: lo spazio su iCloud è esaurito. I tuoi dati sono intatti su questo dispositivo. Libera spazio su iCloud e riprova.";
+
+/* Cloud cutover failed because iCloud is not enabled on this device */
+"storage.failed.migrationICloudOff" = "Non siamo riusciti a completare l’attivazione del cloud: su questo dispositivo iCloud non è attivo. I tuoi dati sono intatti qui. Attiva iCloud nelle Impostazioni e riprova.";
+
+/* Cloud cutover failed because iCloud never confirmed the last export step */
+"storage.failed.migrationICloudStalled" = "Non siamo riusciti a completare l’attivazione del cloud: iCloud non ha confermato l’ultimo passaggio. I tuoi dati sono intatti su questo dispositivo; riprova quando hai una buona connessione.";
+
+/* Caption on the storage progress card while the cutover waits for iCloud to confirm the export */
+"storage.progress.waitingICloudExport" = "In attesa della conferma di iCloud…";
+/* C-10: card chip when the frozen group cannot be rejoined by this build */
+"groups.card.movedUpdateChip" = "Aggiorna l'app";
+
+/* C-10: card chip when the groups backend channel is paused */
+"groups.card.movedPausedChip" = "In pausa";
+
+/* C-10: detail banner body when this build cannot rejoin */
+"groups.migrated.updateBody" = "Aggiorna Yala per accedere di nuovo. Intanto puoi vedere le spese, ma non modificarle.";
+
+/* C-10: detail banner body when the channel is paused */
+"groups.migrated.pausedBody" = "Stiamo finendo di spostare questo gruppo nel cloud di Yala. Riprova tra poco: non perdi nulla.";
+
+/* C-10: read-only staleness note under the migrated banner */
+"groups.migrated.readOnlyNote" = "Quella che vedi è la copia di quando il gruppo è stato spostato, quindi potrebbe non essere aggiornata.";
+
+/* C-10: non-terminal sign-in failure message */
+"groups.signin.retryLater" = "Hmm, non siamo riusciti a collegare il tuo account adesso. Il tuo gruppo è ancora qui e non perdi nulla: riprova più tardi.";
+
+/* Groups > Balances: menu item on a confirmed settlement row (destructive) */
+"groups.settlement.deleteAction" = "Elimina liquidazione";
+
+/* Groups > Balances: title of the delete-settlement confirmation dialog */
+"groups.settlement.deleteTitle" = "Eliminare questa liquidazione?";
+
+/* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
+"groups.settlement.deleteMessage" = "I saldi che ha chiuso torneranno in sospeso. E se ha creato un movimento nei tuoi conti, viene eliminato anche quello.";
+
+/* Groups > Balances: error alert when deleting a confirmed settlement fails */
+"groups.settlement.deleteFailed" = "Non è stato possibile eliminare la liquidazione. Riprova.";
+
+/* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
+"groups.invite.channelUnavailable" = "Non abbiamo potuto aprire questo invito adesso. Abbiamo salvato la tua richiesta: riprova tra un momento.";
+
+/* Welcome > "I'm new" second level (A4 of D-A7, born-cloud): where the personal data lives —
+   privacy-first (iCloud) highlighted on top, cloud account below with the trade-off spelled out. */
+"welcome.new.subtitle" = "Scegli dove vuoi conservare i tuoi dati.";
+"welcome.new.privateTitle" = "Il tuo account nel tuo iCloud privato";
+"welcome.new.privateBody" = "I tuoi dati restano sui dispositivi Apple del tuo ID Apple e si sincronizzano con il tuo iCloud privato. Nessun altro può leggerli, nemmeno noi.";
+"welcome.new.cloudTitle" = "Il tuo account nel cloud";
+"welcome.new.cloudBody" = "I tuoi dati stanno sui nostri server, come nella maggior parte delle tue app. Il nostro team può vederli per darti assistenza e nuove funzioni.";
+
+/* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
+"welcome.bornCloud.title" = "Crea il tuo account Yala";
+"welcome.bornCloud.subtitle" = "Con questo puoi aprire Yala da qualsiasi dispositivo.";
+"welcome.bornCloud.providerNote" = "Il tuo account Yala resterà legato al metodo che scegli.";
+"welcome.bornCloud.creating" = "Stiamo creando il tuo account…";
+
+/* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
+"welcome.mirrorRelaunch.title" = "Un ultimo passo: riapri Yala";
+
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "Apertura del tuo invito…";
+
+/* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
+"welcome.mirrorRelaunch.body" = "Per proteggere i tuoi dati, Yala deve riaprirsi. Torna alla schermata Home e rientra: riprendiamo esattamente da dove eri rimasto.";
+
+/* Welcome · alta born-cloud completada sin relanzamiento (R2) */
+"welcome.bornCloud.readyTitle" = "Il tuo account è pronto!";
+
+/* Welcome · cuerpo del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyBody" = "È tutto pronto. Tutto quello che registri si salverà nel tuo account.";
+
+/* Welcome · CTA del alta born-cloud sin relanzamiento (R2) */
+"welcome.bornCloud.readyCta" = "Iniziamo";
+
+/* Title of the two-paths groups screen in the Welcome flow */
+"welcome.groups.title" = "Come vuoi iniziare con il tuo gruppo?";
+
+/* Subtitle of the two-paths groups screen in the Welcome flow */
+"welcome.groups.subtitle" = "Le due strade portano allo stesso posto.";
+
+/* Card title: the user organizes a new group */
+"welcome.groups.createTitle" = "Creare il mio primo gruppo";
+
+/* Card body: the user creates the group and invites others */
+"welcome.groups.createBody" = "Inviti tu. Registri quello che paga ognuno e Yala tiene i conti.";
+
+/* Card title: the user already received an invitation link */
+"welcome.groups.joinTitle" = "Ho un invito";
+
+/* Card body: paste the invitation link to join */
+"welcome.groups.joinBody" = "Incolla il link che ti hanno mandato ed entri nel gruppo.";
+
+/* G3 gate: mientras se re-mide el canal de Grupos */
+"welcome.groups.checking" = "Controlliamo che sia tutto pronto…";
+
+/* G3 gate: canal de Grupos apagado */
+"welcome.groups.channelOffTitle" = "Al momento non possiamo aprirti i gruppi";
+
+/* G3 gate: cuerpo del canal apagado */
+"welcome.groups.channelOffBody" = "È una cosa nostra e dura poco. Riprova tra un momento: non è stato salvato nulla.";
+
+/* G3 gate: CTA de las pantallas de bloqueo */
+"welcome.groups.gateBack" = "Indietro";
+
+/* G3: pantalla de nombre del organizador */
+"welcome.groups.nameTitle" = "Come ti chiami?";
+
+/* G3: cuerpo de la pantalla de nombre */
+"welcome.groups.nameBody" = "È il nome che gli altri vedranno nel gruppo.";
+
+/* G3: CTA del alta del organizador */
+"welcome.groups.nameCta" = "Crea il mio gruppo";
+
+/* C2 · empty state cuando aún no vio el educativo */
+"groups.empty.needsEducational.title" = "Come funzionano i gruppi?";
+"groups.empty.needsEducational.message" = "In un minuto: cosa puoi fare e dove viene salvata ogni spesa.";
+"groups.empty.needsEducational.action" = "Scopri come funziona";
+
+/* C2 · empty state de quien NUNCA tuvo cuenta (no «vuelve a la tuya») */
+"groups.empty.createAccount.title" = "Crea il tuo account Yala";
+"groups.empty.createAccount.message" = "Le spese di un gruppo vivono nel tuo account, così tutti vedono la stessa cosa, sempre aggiornata.";
+"groups.empty.createAccount.action" = "Crea il mio account";
+
+/* C2 · empty state con sesión viva y sin consent */
+"groups.empty.needsConsent.title" = "Un ultimo passo";
+"groups.empty.needsConsent.message" = "Ti diciamo cosa viene salvato nel cloud di Yala e decidi tu.";
+"groups.empty.needsConsent.action" = "Continua";
+
+/* C2 · el hecho sustantivo, antes de pedir identidad */
+"groups.onboarding.step3.point0" = "Le spese che annoti in un gruppo vengono salvate sui server di Yala, così tutti le vedono aggiornate.";
+
+/* C2 · variante del CTA para quien nunca tuvo cuenta */
+"groups.onboarding.step3.createAccountCTA" = "Crea il mio account";
+
+/* Title of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedTitle" = "Non siamo riusciti a cancellare i tuoi dati";
+
+/* Body of the alert shown when the fresh-start wipe throws */
+"welcome.freshStart.failedMessage" = "I tuoi dati sono ancora qui, quindi ci siamo fermati. Chiudi Yala e riaprila; se succede di nuovo, scrivici.";
+"groups.freshStartPending.title" = "Alcune modifiche dei tuoi gruppi devono ancora essere caricate";
+"groups.freshStartPending.lead" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server (%d) e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.leadUnknown" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.lossSessionExpired" = "Si possono caricare solo con l'account che le ha create, e la sua sessione non è più su questo telefono. Se non rientrerai con quell'account, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossPermanent" = "L'account che le ha create non può più caricarle, e riprovare non risolverà. Puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossAttest" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, quindi non possono essere caricate. Puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossAction" = "Ricomincia da zero e perdile";
+"groups.freshStartPending.lossConfirmTitle" = "Perdere queste modifiche?";
+"groups.freshStartPending.lossConfirmBody" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo telefono. Nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmAction" = "Perdile e ricomincia da zero";
+
+/* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
+"subscription.restoreEmptyTitle" = "Nessun abbonamento";
+
+/* Cuerpo del aviso cuando Restaurar no encuentra una suscripción */
+"subscription.restoreEmpty" = "Non abbiamo trovato Yala Pro su questo account Apple. Se hai appena acquistato, aspetta un momento e riprova.";
+
+/* Apple confirmó la compra pero el derecho Pro no quedó activo */
+"subscription.purchaseNotActivated" = "Il pagamento è confermato, ma Yala Pro non è ancora attivo. Prova Ripristina acquisti.";
+
+/* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
+"panel.aiPill" = "IA";
+
+/* Share-link button: group predates the backend channel — permanent, no link is possible */
+"groups.errors.inviteLegacyGroup" = "Questo gruppo è di una versione precedente di Yala e non supporta i link di invito. Per invitare tramite link, crea un nuovo gruppo.";
+
+/* Share-link button: groups channel is off right now — transient, retry later (NOT the user's connection) */
+"groups.errors.inviteChannelOff" = "Non possiamo creare link di invito in questo momento. Riprova tra poco.";
+
+/* Adopt/sign-up blocked: HTTP 403 on account claim — the account exists but the backend refuses access */
+"welcome.cloud.accountBlockedTitle" = "Il tuo account non è disponibile";
+/* Body for the blocked-account screen; explicitly rules out a network problem */
+"welcome.cloud.accountBlockedBody" = "Non è la tua connessione: al momento non possiamo darti accesso a questo account. Scrivici a %@ e lo verifichiamo insieme.";
+
+/* Sign-out blocked alert, guest session: stay in the app and retry later */
+"settings.signOutWaitButton" = "Aspetta";
+
+/* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
+"settings.signOutExitAnywayButton" = "Esci comunque";
+
+/* Leave group rejected: the server says the current user owns the group */
+"groups.errors.ownerCannotLeave" = "Questo gruppo è tuo, quindi non puoi uscirne: qualcuno deve restare al timone. Se non ti serve più, puoi eliminarlo.";
+/* Leave group failed for a transient/kill-switch reason: retry later, not the user's fault */
+"groups.errors.leaveUnavailable" = "Non siamo riusciti a completare la tua uscita dal gruppo. Riprova tra un momento.";
+/* Groups RPC rejected because the session token expired or is missing */
+"groups.errors.sessionExpired" = "La tua sessione è scaduta. Accedi di nuovo e riprova.";
+/* Botón: el dueño cede el grupo y sale */
+"groups.settings.transferAndLeave" = "Trasferisci ed esci";
+/* Hint bajo el botón Transferir y salir */
+"groups.settings.transferAndLeaveHint" = "Il gruppo resta attivo con i suoi saldi. Tu non ne fai più parte.";
+/* Confirmación con el nombre de quien hereda el grupo */
+"groups.settings.transferAndLeaveConfirm" = "%@ prende in mano il gruppo e tu esci. I saldi in sospeso restano come sono.";
+/* Confirmación cuando no se pudo resolver el nombre de quien hereda */
+"groups.settings.transferAndLeaveConfirmUnknownHeir" = "Il gruppo passa a qualcun altro e tu esci. I saldi in sospeso restano come sono.";
+/* Hint del borrado bloqueado cuando SÍ se puede transferir */
+"groups.settings.deleteGroupDisabledHintTransfer" = "Ci sono saldi in sospeso nel gruppo. Se vuoi andartene, trasferiscilo ed esci.";
+/* El último miembro elegible salió durante la confirmación */
+"groups.errors.transferNoHeir" = "Non c'è più nessuno a cui passare il gruppo.";
+/* Aviso al transferir cuando el usuario tiene saldo propio */
+"groups.settings.transferAndLeaveDebtWarning" = "Attenzione: esci con un saldo in sospeso. L'altra persona continuerà a vedere quel debito.";
+/* Variante del rechazo por ser dueño cuando SÍ hay a quién transferir */
+"groups.errors.ownerCannotLeaveCanTransfer" = "Questo gruppo è tuo, quindi non puoi semplicemente uscire — qualcuno deve restare alla guida. Puoi trasferirlo e uscire.";
+/* Título del aviso al tocar la tarjeta de un grupo en el que sigo pendiente de aprobación */
+"groups.card.pendingNotice.title" = "In attesa di approvazione";
+
+/* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
+"groups.card.pendingNotice.body" = "L'amministratore del gruppo non ha ancora approvato la tua richiesta. Quando lo farà potrai aprire il gruppo e vedere le sue spese. Riprova tra un po'.";
+
+/* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
+"stats.hero.captionAccountsBalance" = "Saldo dei conti";
+
+/* Stats hero caption: the figure is income minus expenses for the period (flow) */
+"stats.hero.captionNetPeriod" = "Netto del periodo";
+
+/* Stats hero caption: the figure is only the income side for the period */
+"stats.hero.captionIncomePeriod" = "Entrate del periodo";
+
+/* Stats hero caption: the figure is only the expense side for the period */
+"stats.hero.captionExpensePeriod" = "Spese del periodo";
+
+/* Stats hero caption: the figure sums income and expense magnitudes (pie total), neither a net nor one side */
+"stats.hero.captionTotalPeriod" = "Totale del periodo";
+
+/* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
+"welcome.restore.cloudPausedTitle" = "Il cloud di Yala è in pausa";
+
+/* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
+"welcome.restore.cloudPausedBody" = "I tuoi dati sono al sicuro nel tuo account Yala. La sincronizzazione è in pausa per ora. Riprova più tardi.";
+
+/* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
+"notifications.groups.settlementReminder" = "👋 Un piccolo promemoria: devi %1$@ a %2$@. Quando puoi, mettiti in pari.";
+
+/* Push: same gentle reminder when the user owes several people in one group (no args). */
+"notifications.groups.settlementReminderMultiple" = "👋 Un piccolo promemoria: hai conti in sospeso con più persone. Quando puoi, mettiti in pari.";
+
+/* Settings toggle title: gentle reminders for idle group debts. */
+"notifications.settlementReminders.title" = "Promemoria dei debiti";
+
+/* Settings toggle hint under notifications.settlementReminders.title. */
+"notifications.settlementReminders.hint" = "Un promemoria gentile quando un debito di gruppo resta fermo per settimane";
+
+/* Shareable group summary: section title in group settings AND nav title of the sheet. */
+"groups.shareableSummary.title" = "Riepilogo del gruppo";
+
+/* Shareable group summary: primary action. NOT the invite link (createShareLink) - this shares a picture of how the accounts ended up. */
+"groups.shareableSummary.action" = "Condividi riepilogo";
+
+/* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
+"groups.shareableSummary.hint" = "Un'immagine con i totali del gruppo e i pagamenti minimi per saldare tutto. Include tutta la cronologia.";
+
+/* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
+"groups.shareableSummary.totalSpent" = "Totale speso";
+
+/* Shareable group summary: heading of the per-member table. */
+"groups.shareableSummary.whoPaid" = "Chi ha pagato cosa";
+
+/* Shareable group summary: column header - what this member put in. Keep it SHORT, it is a narrow column in a fixed-width image. */
+"groups.shareableSummary.paidLabel" = "Ha pagato";
+
+/* Shareable group summary: column header - this member's share of the expenses. Keep it SHORT, narrow column. */
+"groups.shareableSummary.owedLabel" = "Quota";
+
+/* Shareable group summary: heading of the minimum list of transfers needed to settle. */
+"groups.shareableSummary.settleUp" = "Per saldare";
+
+/* Shareable group summary: shown instead of the transfer list when nothing is owed in that currency. Celebratory, not neutral. */
+"groups.shareableSummary.allSettled" = "Tutto saldato!";
+
+/* Shareable group summary: fallback when a member id does not match any member (removed member, half-synced data). */
+"groups.shareableSummary.unknownMember" = "Senza nome";
+
+/* Shareable group summary: footer of the exported image. Soft branding, never an ad. */
+"groups.shareableSummary.footer" = "Fatto con Yala";
+
+/* Shareable group summary: shown when ImageRenderer returns nil. Never blame the user. */
+"groups.shareableSummary.renderFailed" = "Non siamo riusciti a creare l'immagine. Riprova.";
+
+/* G14: título de la sección/tarjeta del presupuesto de grupo */
+"groups.budget.title" = "Budget del gruppo";
+
+/* G14: %@ = código de moneda del grupo */
+"groups.budget.hint" = "Un tetto di spesa per tutto il gruppo, in %@.";
+
+/* G14: el grupo no tiene límite fijado */
+"groups.budget.none" = "Nessun budget";
+
+/* G14: acción para fijar el límite */
+"groups.budget.set" = "Imposta budget";
+
+/* G14: acción para borrar el límite */
+"groups.budget.remove" = "Rimuovi budget";
+
+/* G14: el server exige is_group_admin */
+"groups.budget.adminOnly" = "Solo un amministratore può modificarlo.";
+
+/* G14: %1 = gastado, %2 = tope; ambos ya formateados */
+"groups.budget.spentOfLimit" = "%1$@ di %2$@";
+
+/* G14: %@ = importe restante formateado */
+"groups.budget.remaining" = "Restano %@";
+
+/* G14: %@ = importe excedido formateado */
+"groups.budget.exceededBy" = "Superato di %@";
+
+/* G14: nota del ≈ */
+"groups.budget.convertedNote" = "Include spese in altre valute, convertite al cambio di oggi.";
+
+/* G14: %@ = nombre del grupo */
+"groups.budget.alertTitle" = "Budget di %@";
+
+/* G14: aviso al cruzar 50 */
+"groups.budget.alertBody50" = "Il gruppo ha speso metà del suo budget.";
+
+/* G14: aviso al cruzar 75 */
+"groups.budget.alertBody75" = "Il gruppo ha speso tre quarti del suo budget.";
+
+/* G14: aviso al cruzar 90 */
+"groups.budget.alertBody90" = "Il gruppo sta per esaurire il budget.";
+
+/* G14: aviso al cruzar 100 */
+"groups.budget.alertBody100" = "Il gruppo ha raggiunto il suo budget.";
+
+/* G14: el texto tecleado no era un importe valido */
+"groups.budget.invalidAmount" = "Inserisci un importo maggiore di zero.";
+
+/* G14: confirmacion de quitar el presupuesto */
+"groups.budget.removeConfirm" = "Rimuovere il budget del gruppo? Sparirà per tutti.";
+
+/* Shown instead of the settlement reminders hint when the Groups notification master is off, so the toggle cannot deliver anything. */
+"notifications.settlementReminders.hintGroupsOff" = "Attiva prima le notifiche di Gruppi per riceverli";
+
+/* Delete-blocked hint for a group owner with debt and no heir: points at Archive, which already works with debt. */
+"groups.settings.deleteGroupDisabledHintArchive" = "Ci sono saldi in sospeso nel gruppo. Per toglierlo dalla lista, archivialo: i debiti si conservano.";
+
+/* Account currency locked because history is owned elsewhere */
+"account.currencyChange.blockedTitle" = "La valuta non può essere modificata";
+
+/* %@ = comma-separated list of reasons */
+"account.currencyChange.blockedMessage" = "Questo conto contiene movimenti i cui importi sono gestiti altrove nell'app: %@. Cambiare la valuta qui li renderebbe incoerenti.";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonTransfer" = "trasferimenti tra conti";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupExpense" = "spese di gruppo";
+
+/* Lowercase, used inside a list */
+"account.currencyChange.blockedReasonGroupSettlement" = "saldi di gruppo";
+
+/* %1 old currency, %2 new currency */
+"account.currencyChange.confirmMessage" = "Sono registrati in %1$@ e passeranno a %2$@ con il tasso di cambio della data di ciascuno. Questa azione non può essere annullata.";
+
+/* Confirm button */
+"account.currencyChange.confirmAction" = "Converti";
+
+/* Progress overlay title */
+"account.currencyChange.progressTitle" = "Conversione dei movimenti";
+
+/* Progress overlay subtitle */
+"account.currencyChange.progressSubtitle" = "Applicazione del tasso di cambio di ogni data";
+
+/* Rates could not be fetched */
+"account.currencyChange.ratesUnavailableTitle" = "Impossibile convertire";
+
+/* Body of the rates-unavailable alert */
+"account.currencyChange.ratesUnavailableMessage" = "Mancano i tassi di cambio per alcune date di questo conto. Non è stato modificato nulla: controlla la connessione e riprova.";
+
+/* Bloque [I]: bloqueo al asociar una cuenta que ya lleva finanzas personales */
+"groups.accountIsComplete.title" = "Quell'account ha già Yala completo";
+
+/* Bloque [I]: por qué se bloquea */
+"groups.accountIsComplete.body" = "Quell'account contiene già le finanze di qualcuno nel cloud. Usarlo solo per i tuoi gruppi unirebbe due account in uno, quindi qui non possiamo.";
+
+/* Bloque [I]: CTA para firmar con otra cuenta */
+"groups.accountIsComplete.useAnotherAccount" = "Usa un altro account";
+
+/* Bloque [I]: la otra salida del ADR */
+"groups.accountIsComplete.settingsHint" = "Vuoi che quell'account contenga le tue finanze? Si decide in Impostazioni, in “Dove vivono i tuoi dati”.";
+
+/* Private branch iCloud gate: spinner while probing CloudKit */
+"welcome.privateICloud.checking" = "Controlliamo cosa c'è nel tuo iCloud…";
+
+/* Private branch iCloud gate: spinner while deleting the iCloud corpus */
+"welcome.privateICloud.wiping" = "Stiamo eliminando quello che c'era su iCloud…";
+
+/* Private branch iCloud gate: title when previous data is found in iCloud */
+"welcome.privateICloud.foundTitle" = "Hai già dei dati nel tuo iCloud";
+
+/* Private branch iCloud gate: body explaining the two ways out */
+"welcome.privateICloud.foundBody" = "Li hai salvati con questo stesso account Apple. Puoi recuperarli oppure ricominciare da zero, ma ricominciare li cancella anche da iCloud, non solo da questo telefono, e non si può annullare.";
+
+/* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
+"welcome.privateICloud.foundSince" = "da %@";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap */
+"welcome.privateICloud.foundAtLeast" = "più di %d movimenti";
+
+/* Private branch iCloud gate: primary button, restore from iCloud */
+"welcome.privateICloud.restoreAction" = "Recupera i miei dati";
+
+/* Private branch iCloud gate: destructive button, delete the iCloud data */
+"welcome.privateICloud.wipeAction" = "Ricomincia da zero";
+
+/* Private branch iCloud gate: body of the second confirmation before deleting */
+"welcome.privateICloud.wipeConfirmBody" = "I tuoi movimenti, i conti e i budget spariscono da iCloud. Non resta nessuna copia e dopo non possiamo recuperarli.";
+
+/* Private branch iCloud gate: safe button on the second confirmation */
+"welcome.privateICloud.wipeConfirmKeep" = "Meglio di no";
+
+/* Private branch iCloud gate: title when deleting the iCloud corpus failed */
+"welcome.privateICloud.wipeFailedTitle" = "Non siamo riusciti a eliminare tutto";
+
+/* Private branch iCloud gate: body when deleting failed */
+"welcome.privateICloud.wipeFailedBody" = "I tuoi dati sono ancora su iCloud, intatti. Controlla la connessione e riprova.";
+
+/* Private branch iCloud gate: title when the device has no iCloud account */
+"welcome.privateICloud.noAccountTitle" = "Non abbiamo potuto controllare il tuo iCloud";
+
+/* Private branch iCloud gate: body when there is no iCloud account */
+"welcome.privateICloud.noAccountBody" = "Su questo telefono iCloud è disattivato, quindi non sappiamo se avevi già salvato qualcosa. Puoi andare avanti: per ora i tuoi dati restano qui e, se attivi iCloud, te lo diciamo prima di mescolare niente.";
+
+/* Private branch iCloud gate: continue button when there is no iCloud account */
+"welcome.privateICloud.noAccountCta" = "Vai avanti così";
+
+/* Private branch iCloud gate: title when the CloudKit probe failed */
+"welcome.privateICloud.errorTitle" = "Non siamo riusciti a raggiungere iCloud";
+
+/* Private branch iCloud gate: body when the CloudKit probe failed */
+"welcome.privateICloud.errorBody" = "Potrebbe essere la connessione. Riprova prima di andare avanti, così non ti spuntano dati vecchi senza preavviso.";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "iCloud ci ha messo troppo a rispondere";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "Non siamo riusciti a finire di controllare il tuo iCloud. Riprova prima di andare avanti, così non ti spuntano dati vecchi senza preavviso.";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "Non siamo riusciti a finire di controllare il tuo iCloud, quindi non abbiamo cancellato niente: è tutto come prima. Riprova, oppure torna indietro e decidi quando vuoi.";
+
+/* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
+"welcome.privateICloud.lateTitle" = "Abbiamo trovato dati tuoi su iCloud";
+
+/* Late mirror notice: body with the counts of the previous corpus */
+"welcome.privateICloud.lateBody" = "Attivando iCloud sono comparsi dati che avevi salvato prima con questo account Apple: %@. Si mescoleranno con quello che hai adesso. Puoi lasciare così, oppure ricominciare da zero e cancellarli da iCloud.";
+
+/* Late mirror notice: safe button, both corpora coexist */
+"welcome.privateICloud.lateKeep" = "Lascia così";
+
+/* Private branch iCloud gate: counts line fragment for user categories */
+"welcome.privateICloud.foundCategories" = "%d categorie";
+
+/* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
+"welcome.privateICloud.foundUnknownAmount" = "molti dati salvati";
+
+/* Private branch iCloud gate: secondary button on the wipe-failed screen, gives up the deletion */
+"welcome.privateICloud.wipeFailedBack" = "Lascia stare per ora";
+
+/* Paso 8 · «Activar Yala completo» pregunta dónde viven los datos personales */
+"groups.fullActivation.chooserTitle" = "Dove teniamo le tue finanze?";
+"groups.fullActivation.chooserSubtitle" = "I tuoi gruppi restano come sono. Scegli dove conservare i tuoi dati personali.";
+"groups.fullActivation.cloudBody" = "Useremo lo stesso account che usi già per i tuoi gruppi, non uno nuovo. I tuoi dati stanno sui nostri server e il nostro team può vederli per darti assistenza.";
+"groups.fullActivation.historyTitle" = "Portiamo qui le tue spese di gruppo?";
+"groups.fullActivation.historyBody" = "Le tue spese di gruppo possono comparire anche in Home, in Registri e in Statistiche.";
+"groups.fullActivation.historyShow" = "Sì, mostrale";
+"groups.fullActivation.historyKeepInGroups" = "No, lasciale nei Gruppi";
+"groups.fullActivation.historyFootnote" = "Vale anche per quelle che registrerai dopo. Puoi cambiarlo quando vuoi nelle Impostazioni dei Gruppi.";
+"groups.fullActivation.promoting" = "Attivazione del tuo account…";
+"groups.fullActivation.failedTitle" = "Non siamo riusciti ad attivare il tuo account";
+"groups.fullActivation.failedBody" = "Controlla la connessione e riprova. Non abbiamo ancora cambiato niente.";
+"groups.fullActivation.unavailableBody" = "Il tuo account non è disponibile in questo momento. Non abbiamo ancora cambiato niente.";
+"groups.fullActivation.blockedPersonalDataTitle" = "Il tuo account ha già delle finanze personali";
+"groups.fullActivation.blockedPersonalDataBody" = "Questo account contiene già dati personali, probabilmente da un altro dispositivo. Per usarli qui, esci e rientra con questo account. Non abbiamo cambiato niente.";
+"groups.fullActivation.blockedBusyTitle" = "Un altro dispositivo sta spostando i tuoi dati";
+"groups.fullActivation.blockedBusyBody" = "Aspetta che finisca e riprova tra qualche minuto. Non abbiamo cambiato niente.";
+"groups.fullActivation.blockedSessionTitle" = "La tua sessione è scaduta";
+"groups.fullActivation.blockedSessionBody" = "Accedi di nuovo in Gruppi e attiva di nuovo Yala completo. Non abbiamo cambiato niente.";
+"groups.fullActivation.reinstallTitle" = "Prima reinstalla Yala";
+"groups.fullActivation.reinstallBody" = "Hai iniziato a usare Gruppi su questo dispositivo con una versione precedente di Yala. Per scegliere dove conservare le tue finanze, elimina l'app e reinstallala: i tuoi gruppi restano nel tuo account e i tuoi dati iCloud non vengono toccati.";
+
+/* Vuelta al neutro: progreso mientras se espera al export y se prepara el borrado */
+"welcome.groups.neutralWorking" = "Stiamo caricando le tue ultime modifiche su iCloud e preparando questo telefono per il tuo gruppo…";
+
+/* Vuelta al neutro sin copia: titulo del segundo gesto */
+"welcome.groups.neutralNoBackupTitle" = "Non abbiamo trovato una copia su iCloud";
+
+/* Vuelta al neutro sin copia: cuerpo del segundo gesto */
+"welcome.groups.neutralNoBackupBody" = "Per iniziare il tuo gruppo, questo telefono deve restare vuoto. Quello che c'è qui non è su iCloud: se continui, andrà perso.";
+
+/* Vuelta al neutro sin copia: boton destructivo del segundo gesto */
+"welcome.groups.neutralNoBackupCta" = "Continua ed elimina";
+
+/* Vuelta al neutro: la espera del export se agoto */
+"welcome.groups.neutralStalledTitle" = "Alcune modifiche non sono ancora su iCloud";
+
+/* Vuelta al neutro: cuantos cambios quedan sin subir (%d = numero) */
+"welcome.groups.neutralStalledBody" = "Modifiche di questo dispositivo non ancora su iCloud: %d. Se continui ora, andranno perse.";
+
+/* Vuelta al neutro: la espera se agoto sin poder contar */
+"welcome.groups.neutralStalledBodyUnknown" = "Non abbiamo potuto confermare che le tue ultime modifiche siano arrivate su iCloud. Se continui ora, potrebbero andare perse.";
+
+/* Vuelta al neutro: salida de emergencia tras la espera agotada */
+"welcome.groups.neutralStalledContinue" = "Continua comunque";
+
+/* Vuelta al neutro: seguir esperando al export */
+"welcome.groups.neutralStalledWait" = "Aspetta";
+
+/* Vuelta al neutro bloqueada: outbox de grupos de una sesion caducada */
+"welcome.groups.neutralBlockedTitle" = "Alcune modifiche dei tuoi gruppi devono ancora essere caricate";
+
+/* Vuelta al neutro bloqueada: como desbloquearlo */
+"welcome.groups.neutralBlockedBody" = "Su questo telefono ci sono modifiche di un gruppo non ancora arrivate al server. Accedi di nuovo con quell'account per caricarle e poi potrai iniziare il tuo gruppo qui.";
+
+/* Vuelta al neutro imposible en esta celda: titulo */
+"welcome.groups.neutralUnavailableTitle" = "Al momento non possiamo preparare questo telefono";
+
+/* Vuelta al neutro imposible en esta celda: cuerpo */
+"welcome.groups.neutralUnavailableBody" = "Su questo telefono c'è una sessione aperta che va chiusa dalle Impostazioni prima di iniziare un gruppo qui. Torna indietro: non è stato toccato nulla.";
+
+/* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
+"welcome.groups.neutralMigrationBody" = "Non possiamo ancora confermare che il passaggio dei tuoi dati tra iCloud e il cloud sia terminato, e preparare questo telefono ora potrebbe eliminare ciò che resta da caricare. Torna indietro: non è stato toccato nulla.";
+
+/* Título de la sección Grupos dentro de «Dónde viven tus datos» */
+"storage.groups.title" = "Gruppi";
+
+/* Cuerpo cuando no hay cuenta de grupos asociada */
+"storage.groups.noAccountBody" = "I tuoi gruppi vivono in un account Yala, separato dai dati di questo iPhone.";
+
+/* Botón para asociar una cuenta de grupos */
+"storage.groups.associateButton" = "Collega un account per i gruppi";
+
+/* Cuerpo cuando hay cuenta asociada pero no se sabe su nombre */
+"storage.groups.associatedUnnamedBody" = "I tuoi gruppi usano un account Yala.";
+
+/* Cuerpo en un segundo dispositivo, sin nombre de cuenta */
+"storage.groups.needsSignInUnnamedBody" = "I tuoi gruppi sono nel tuo account Yala. Accedi per vederli su questo iPhone.";
+
+/* Botón para entrar con la cuenta de grupos ya asociada */
+"storage.groups.signInButton" = "Accedi con quell'account";
+
+/* Botón para desasociar la cuenta de grupos */
+"storage.groups.detachButton" = "Scollega";
+
+/* Cuerpo cuando los datos personales ya viven en la cuenta de Yala */
+"storage.groups.sameAccountBody" = "I tuoi gruppi usano questo stesso account.";
+
+/* Título de la confirmación de desasociar */
+"storage.groups.detachTitle" = "Scollegare l'account dei gruppi?";
+
+/* Botón: conservar en el Panel los gastos de grupo */
+"storage.groups.detachKeep" = "Conserva le spese che ho pagato";
+
+/* Botón: quitar del Panel los gastos de grupo */
+"storage.groups.detachRemove" = "Togli tutto da Home";
+
+/* Progreso mientras se desasocia */
+"storage.groups.detachWorking" = "Scollegamento…";
+
+/* Progreso mientras se suben los cambios de grupos */
+"storage.groups.detachWaiting" = "Salvataggio delle tue modifiche in sospeso…";
+
+/* Cuerpo con el nombre de la cuenta de grupos asociada */
+"storage.groups.associatedBody" = "I tuoi gruppi usano %@.";
+
+/* Cuerpo en un segundo dispositivo, con el nombre de la cuenta */
+"storage.groups.needsSignInBody" = "I tuoi gruppi sono nell'account %@. Accedi per vederli su questo iPhone.";
+
+/* Mensaje de la confirmación de desasociar */
+"storage.groups.detachBody" = "I tuoi gruppi escono da questo iPhone e restano nel tuo account: se lo ricolleghi, saranno lì. Le voci di quello che ti devono o che devi spariscono in entrambi i casi; quello che scegli è cosa succede alle spese che hai pagato tu.";
+
+/* Título del aviso cuando el desasociar se bloquea */
+"storage.groups.detachBlockedTitle" = "Non siamo riusciti a scollegare l'account";
+
+/* Aviso: bloqueo temporal al desasociar */
+"storage.groups.detachBlockedTransient" = "Alcune modifiche dei tuoi gruppi non sono ancora state caricate. Riprova tra un momento.";
+
+/* Aviso: bloqueo permanente al desasociar */
+"storage.groups.detachBlockedPermanent" = "Alcune modifiche dei tuoi gruppi non sono ancora state caricate e non siamo riusciti a connetterci. Controlla la connessione e riprova.";
+
+/* Aviso: sesión caducada al desasociar */
+"storage.groups.detachBlockedSession" = "La tua sessione dei gruppi è scaduta. Accedi di nuovo e riprova.";
+"storage.groups.detachBlockedSessionAndCaptureUnfinished" = "La tua sessione dei gruppi è scaduta e non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Non si perde nulla. Accedi di nuovo, chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova.";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, e non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Non si perde nulla. Per prepararle, chiudi e riapri Yala (se continua a succedere, aggiornala).";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Alcune modifiche dei gruppi su questo telefono sono state fatte con un altro account e si possono caricare solo con quell'account. Inoltre, non è stato possibile preparare per il caricamento alcune modifiche dei gruppi. Non si perde nulla. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle di quell'account si caricano solo se accedi con esso.";
+
+/* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
+"welcome.groups.inviteNeutralTitle" = "Prima di unirti, questo telefono riparte da zero";
+
+/* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
+"welcome.groups.inviteNeutralBody" = "Qui ci sono dati salvati che si sincronizzano con un iCloud. Perché le tue spese di gruppo non finiscano lì, li cancelleremo da questo telefono: la copia su iCloud resta intatta. Yala si riavvierà e proseguirai con il tuo invito.";
+
+/* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
+"welcome.groups.inviteNeutralBodyNoBackup" = "Qui ci sono dati salvati e non abbiamo trovato una copia su iCloud. Perché le tue spese di gruppo non si mescolino con essi, vanno cancellati da questo telefono e non si potranno recuperare. Yala si riavvierà e proseguirai con il tuo invito.";
+
+/* Puerta del invitado: CTA destructivo que arranca la vuelta al neutro */
+"welcome.groups.inviteNeutralCta" = "Continua ed elimina";
+
+/* Aviso: el borrado local de los grupos falló al desasociar */
+"storage.groups.detachPurgeFailedTitle" = "Non siamo riusciti a scollegare l'account";
+
+/* Aviso: cuerpo del fallo del borrado al desasociar */
+"storage.groups.detachPurgeFailedBody" = "I tuoi gruppi sono ancora su questo iPhone e l'account non è stato scollegato. Quello che hai scelto per i movimenti del Pannello è già stato applicato e ti abbiamo disconnesso da quell'account. Riprova per finire.";
+
+/* Aviso: el desasociar abortó porque no se pudo leer el puente */
+"storage.groups.detachBlockedBridge" = "Non siamo riusciti a controllare i movimenti dei tuoi gruppi su questo iPhone. Non è stato scollegato nulla. Riprova.";
+"storage.groups.detachBlockedSessionNotClosed" = "Non siamo riusciti a chiudere la sessione del tuo account dei gruppi su questo iPhone. Non è stato scollegato nulla. Riprova.";
+
+/* Botón cuando quedó un desasociar a medias */
+"storage.groups.detachFinishButton" = "Finisci di scollegare l'account";
+
+/* Cuerpo de la sección cuando quedó un desasociar a medias */
+"storage.groups.detachPendingBody" = "È rimasto a metà: i tuoi gruppi sono ancora su questo iPhone e la sessione di quell'account è già chiusa.";
+
+/* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
+"storage.groups.detachBusy" = "Stai uscendo dall'account in questo momento. Finisci prima quello e riprova.";
+
+/* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
+"groups.errors.channelPaused" = "È una cosa nostra: i gruppi sono in pausa. Le tue modifiche restano su questo telefono e non si perde nulla; riprova tra poco.";
+
+/* Private gate: the phone already holds data from a previous stage */
+"welcome.privateICloud.foundDeviceTitle" = "Su questo telefono ci sono già dei dati";
+
+/* Private gate: body of the on-device data notice */
+"welcome.privateICloud.foundDeviceBody" = "Questo telefono ha già dati di prima: quello che si registrava in Yala finora. Se ricominci da zero, vengono tolti da questo telefono così il tuo Yala parte pulito.";
+
+/* Private gate: second confirmation for the on-device wipe */
+"welcome.privateICloud.wipeDeviceConfirmBody" = "Da questo telefono viene tolto tutto: spese, conti, budget, categorie e i tuoi gruppi. Sul telefono non resta nessuna copia.";
+
+/* Private gate: progress while wiping the on-device corpus */
+"welcome.privateICloud.wipingDevice" = "Stiamo eliminando quello che c'era su questo telefono…";
+
+/* Private gate: the on-device wipe failed */
+"welcome.privateICloud.wipeDeviceFailedBody" = "Non siamo riusciti a finire. Una parte dei tuoi dati potrebbe non esserci più e il resto essere ancora qui. Riprova; se fallisce di nuovo, chiudi Yala e riaprila.";
+
+/* Private gate: keep what the phone already has and go back to the chooser */
+"welcome.privateICloud.foundDeviceKeep" = "Lasciare com'è";
+
+/* Private gate: retry a failed wipe (not a re-search) */
+"welcome.privateICloud.wipeRetry" = "Riprova";
+
+/* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
+"groups.errors.uploadRetryLater" = "Le ultime modifiche dei tuoi gruppi non sono arrivate al server. Restano salvate su questo telefono e non si perde nulla; riprova tra poco.";
+
+/* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
+"groups.errors.captureUnfinished" = "Non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Restano salvate su questo telefono e non si perde nulla. Chiudi e riapri Yala; se continua a succedere, aggiornala.";
+
+/* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
+"icloud.appleIDChanged.title" = "Hai cambiato account iCloud";
+
+/* Alert body: que pasa con los datos al cambiar de Apple ID */
+"icloud.appleIDChanged.message" = "I dati di Yala su questo telefono sono dell'account iCloud precedente e restano salvati lì. Per continuare a usare Yala su questo telefono bisogna rimuoverli da qui. Ciò che non è arrivato a quell'account non potrà più essere caricato.";
+
+/* Alert button: confirma el cierre de la sesion privada y el borrado local */
+"icloud.appleIDChanged.confirm" = "Esci e rimuovi";
+
+/* Alert button: pospone el cierre hasta el proximo arranque */
+"icloud.appleIDChanged.later" = "Non ora";
+
+/* Gate de «Empezar desde cero» sin respuesta de iCloud: no se declara un borrado que no ocurrio */
+"welcome.privateICloud.discardUnverifiedBody" = "Non siamo riusciti a collegarci per controllare il tuo iCloud, quindi non abbiamo cancellato niente: è tutto come prima. Riprova, oppure torna indietro e decidi quando vuoi.";
+
+/* Salida del gate de «Empezar desde cero» cuando iCloud no contesto: vuelve a Restaurar */
+"welcome.privateICloud.discardUnverifiedBack" = "Torna indietro";
+
+/* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Su questo telefono iCloud è disattivato, quindi non abbiamo potuto vedere se avevi salvato qualcosa e non abbiamo cancellato niente. Attivalo in Impostazioni e riprova, oppure torna indietro e decidi quando vuoi.";
+
+/* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
+"settings.wipeScopeCloudICloudPersonal" = "Vengono eliminati da iCloud, quindi spariscono dagli altri tuoi dispositivi che tengono lì i tuoi dati personali";
+
+/* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
+"groups.errors.attestUnavailableTitle" = "Questo telefono non può sincronizzare i tuoi gruppi";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"groups.errors.attestUnavailableSignOutLoss" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server. Modifiche dei tuoi gruppi che non sono arrivate: %d. Se esci ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server, e alcune modifiche dei tuoi gruppi non sono arrivate. Se esci ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
+"groups.errors.attestUnavailableSignOutLossButton" = "Esci e perdile";
+
+/* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
+"groups.errors.attestUnavailable" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, quindi le modifiche dei tuoi gruppi non possono essere caricate.";
+
+/* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
+"groups.errors.leaveAttestUnavailable" = "Questo telefono non può sincronizzare i tuoi gruppi, quindi non siamo riusciti a completare la tua uscita dal gruppo.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
+"welcome.groups.neutralAttestLossBody" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server. Modifiche dei tuoi gruppi che non sono arrivate: %d. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
+"welcome.groups.neutralAttestLossBodyUnknown" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server, e alcune modifiche dei tuoi gruppi non sono arrivate. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
+"welcome.groups.neutralAttestLossContinue" = "Continua e perdile";
+
+/* Boton generico para posponer una decision */
+"action.notNow" = "Non ora";
+
+/* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
+"settings.signOutAttestTitle" = "Questo telefono non può sincronizzare i tuoi dati";
+"settings.signOutAttestMessage" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server. Modifiche che non sono arrivate al tuo account nel cloud: %d. Prima di decidere, puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";
+"settings.signOutAttestMessageUnknown" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server, e alcune modifiche non sono arrivate al tuo account nel cloud. Prima di decidere, puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";
+"settings.signOutAttestExportButton" = "Esporta le mie transazioni";
+"settings.signOutAttestLossButton" = "Esci e perdile";
+"settings.signOutAttestBlocked" = "Da più di un giorno questo telefono non riesce a superare la verifica di sicurezza richiesta dal nostro server, quindi le tue modifiche non possono essere caricate sul tuo account nel cloud.";
+"settings.signOutAttestExportEmpty" = "Non hai transazioni da esportare.";
+"settings.signOutAttestExportFailed" = "Non siamo riusciti a creare il file. Riprova.";
+
+/* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
+"groups.attestTerminalBanner" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server. Quello che modifichi qui non arriva al gruppo: usa un altro telefono nel frattempo.";
+
+/* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
+"settings.attestTerminalBanner" = "Da più di un giorno non riesce a superare la verifica di sicurezza richiesta dal nostro server. Quello che registri qui viene salvato su questo telefono, ma non arriva al tuo account nel cloud: usa un altro telefono nel frattempo.";
+
+/* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
+"storage.progress.reverseUploading" = "Caricamento dei tuoi dati su iCloud. Puoi continuare a usare Yala.";
+"storage.progress.reversePending" = "Ancora da caricare: %d";
+"storage.progress.reverseICloudFull" = "iCloud non ha spazio per i tuoi dati. Se il caricamento non avanza entro pochi minuti, resterai nel cloud e potrai riprovare dopo aver liberato spazio.";
+"storage.progress.reverseICloudUnavailable" = "iCloud non è disponibile su questo dispositivo. Se il caricamento non avanza entro pochi minuti, resterai nel cloud e potrai riprovare.";
+"storage.progress.cancelReverse" = "Annulla e resta nel cloud";
+"storage.confirm.cancelReverseTitle" = "Annullare il ritorno a iCloud?";
+"storage.confirm.cancelReverseBody" = "I tuoi dati restano nel cloud di Yala e su questo dispositivo. Yala ti chiederà poi di chiuderla e riaprirla.";
+"storage.confirm.cancelReverseConfirm" = "Sì, resta nel cloud";
+"storage.confirm.cancelReverseKeep" = "Continua ad aspettare";
+"storage.reverseAbort.relaunchTitle" = "I tuoi dati sono ancora nel cloud";
+"storage.reverseAbort.relaunchBody" = "Chiudi completamente Yala (scorri via nel selettore app) e riaprila per continuare a usare il cloud.";
+"storage.reverseAbort.icloudFull" = "Non siamo riusciti a completare il ritorno a iCloud: iCloud aveva esaurito lo spazio. Libera spazio e riprova.";
+"storage.reverseAbort.icloudUnavailable" = "Non siamo riusciti a completare il ritorno a iCloud: iCloud non era disponibile su questo dispositivo. Controlla il tuo account iCloud nelle Impostazioni e riprova.";
+"storage.reverseAbort.stalled" = "Non siamo riusciti a completare il ritorno a iCloud: iCloud non ha ricevuto tutti i tuoi dati. Controlla che iCloud sia attivo su questo dispositivo e riprova con una buona connessione e con Yala aperta durante il caricamento.";
+"storage.reverseAbort.claimRetryLater" = "Non siamo riusciti ad avviare il ritorno a iCloud: i tuoi dati stavano ancora finendo di passare al cloud. Riprova tra un po’.";
+"storage.reverseAbort.claimRefused" = "Non siamo riusciti ad avviare il ritorno a iCloud: il tuo account non lo consentiva. Quel tentativo non ha cambiato nulla. Scrivici a %@ e lo verifichiamo insieme.";
+"storage.reverseAbort.otherDeviceReverting" = "Non siamo riusciti ad avviare il ritorno a iCloud: un altro dei tuoi dispositivi stava già tornando a iCloud. Quando avrà finito, potrai farlo anche su questo.";
+"storage.progress.reverseICloudMaybeOff" = "Se iCloud non è attivo su questo dispositivo, i tuoi dati non possono arrivare su iCloud. Attivalo nelle Impostazioni o annulla per restare nel cloud.";
+/* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
+"storage.progress.reverseLocalFailure" = "Questo dispositivo non è riuscito a preparare i tuoi dati per il caricamento su iCloud. Se non si risolve entro pochi minuti, resterai nel cloud e potrai riprovare.";
+"storage.reverseAbort.localFailure" = "Non siamo riusciti a completare il ritorno a iCloud: questo dispositivo non è riuscito a preparare i tuoi dati per il caricamento. Resti nel cloud; riprova tra poco.";
+"storage.errors.reversePendingExit" = "Non possiamo ancora tornare a iCloud: il tuo cloud deve prima finire di riattivarsi. Riprova tra un momento.";
+
+/* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
+"storage.errors.identityCheck" = "Non siamo riusciti a verificare il tuo account. Riprova tra poco. Non abbiamo cambiato niente.";
+"storage.migrateBlock.personalDataTitle" = "Questo account ha già delle finanze personali";
+"storage.migrateBlock.personalDataBody" = "Non abbiamo cambiato niente. Per portare i tuoi dati nel cloud, usa un altro account. Per usare qui i dati di quell’account, esci e accedi con quell’account.";
+"storage.migrateBlock.personalDataBodyNoSwitch" = "Non abbiamo cambiato niente. Per usare qui i dati di quell’account, esci e accedi con quell’account. Per portare i tuoi dati su un altro account, prima scollega questo in “Gruppi”.";
+"storage.migrateBlock.otherGroupsTitle" = "Usi già un altro account per i tuoi gruppi";
+"storage.migrateBlock.otherGroupsBody" = "Non abbiamo cambiato niente. Su questo dispositivo può esserci un solo account cloud, e i tuoi gruppi ne usano già un altro. Per portare i tuoi dati nel cloud, accedi con l’account dei tuoi gruppi o, se ne preferisci un altro, scollegalo prima in “Gruppi”.";
+"storage.migrateBlock.otherGroupsBodyEmail" = "Non abbiamo cambiato niente. Su questo dispositivo può esserci un solo account cloud, e i tuoi gruppi usano già %@. Per portare i tuoi dati nel cloud, accedi con quell’account o, se ne preferisci un altro, scollegalo prima in “Gruppi”.";
+"storage.migrateBlock.returnedTitle" = "Questo account è tornato su iCloud";
+"storage.migrateBlock.returnedBody" = "Tornare al cloud con questo account non è ancora disponibile. Non abbiamo cambiato niente.";
+"storage.migrateBlock.useAnotherAccount" = "Usa un altro account";
+"storage.migrateBlock.appleSameAccountNote" = "Con Apple, Yala usa sempre l’account di questo dispositivo. Per usarne un altro, scegli Google.";
+"storage.migrateBlock.freshStartSessionTitle" = "Questo account potrebbe essere di un’altra persona";
+"storage.migrateBlock.freshStartSessionBody" = "Non abbiamo cambiato niente. I tuoi gruppi usano un account che era già connesso su questo dispositivo e, visto che qui si è ricominciato da zero, potrebbe essere di un’altra persona. Per portare i tuoi dati nel cloud, scollegalo in “Gruppi” e tocca di nuovo “Attiva il cloud”: potrai scegliere il tuo account.";
+"storage.migrateBlock.otherDeviceTitle" = "Un altro dei tuoi dispositivi sta portando i tuoi dati nel cloud";
+"storage.migrateBlock.otherDeviceBody" = "Non abbiamo cambiato niente. Completa l’attivazione su quel dispositivo o, se si è fermata, riprova lì. Quando sarà finita, potrai attivare il cloud qui.";
+
+/* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedTitle" = "Non siamo riusciti a controllare i tuoi dati";
+
+/* Restaurar: cuerpo del estado sin comprobar — no afirma que falten datos ni que existan (reinstall-without-network-has-no-cloud-door) */
+"welcome.restore.cloudUnverifiedBody" = "Non siamo riusciti a connetterci per verificare se hai dati salvati. Riprova tra un momento.";
+
+/* Caption de la tarjeta de progreso de la vuelta a iCloud cuando la sesión de la nube ya no vale */
+"storage.progress.reverseNeedsSignIn" = "La tua sessione è scaduta. Accedi di nuovo per completare il ritorno a iCloud.";
+"storage.progress.adoptSessionExpired" = "La tua sessione nel cloud non è più valida. Annulla l’attivazione e accedi di nuovo con il tuo account.";
+"storage.progress.adoptAccountUnavailable" = "Al momento non possiamo darti accesso a questo account. Scrivici a %@ e lo verifichiamo insieme.";
+
+/* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
+"storage.errors.reverseSignInOtherAccount" = "Hai effettuato l'accesso con un altro account. Accedi con l'account da cui hai avviato il ritorno a iCloud.";
+"storage.errors.syncSignInOtherAccount" = "Hai effettuato l'accesso con un altro account, quindi non l'abbiamo mantenuto connesso. Accedi con l'account che usi per Yala su questo telefono.";
+
+/* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
+"welcome.restore.importIncompleteTitle" = "Stiamo ancora recuperando i tuoi dati";
+
+/* Restore: cuerpo del estado importIncomplete. Describe lo observado (el import sigue en marcha), no promete un tiempo ni afirma cuántos datos hay. */
+"welcome.restore.importIncompleteBody" = "iCloud sta ancora inviando la tua cronologia. Con molti movimenti o una connessione lenta può volerci qualche minuto. Riprova la ricerca tra poco.";
+
+/* Salida de la vuelta antes de montar el espejo: el servidor no dejó continuar */
+"storage.reverseAbort.preMountRefused" = "Non siamo riusciti a completare il ritorno a iCloud: il tuo account nel cloud non l’ha permesso. I tuoi dati restano nel cloud di Yala. Scrivici a %@ e lo verifichiamo insieme.";
+
+/* Salida de la vuelta antes de montar el espejo: venció el techo largo */
+"storage.reverseAbort.preMountStalled" = "Non siamo riusciti a completare il ritorno a iCloud: non avanzava. I tuoi dati restano nel cloud di Yala e puoi riprovare quando vuoi.";
+
+/* Cuerpo del diálogo de cancelar antes de montar el espejo: no hay relanzamiento */
+"storage.confirm.cancelReverseBeforeMountBody" = "I tuoi dati restano nel cloud di Yala e su questo dispositivo. Puoi riprovare quando vuoi.";
+
+/* Diálogo de cancelar: seguir, antes de montar el espejo */
+"storage.confirm.cancelReverseKeepBeforeMount" = "Continua il ritorno a iCloud";
+
+/* Salida de la vuelta antes de montar el espejo: otro dispositivo tomó el relevo */
+"storage.reverseAbort.preMountOtherDevice" = "Non siamo riusciti a completare il ritorno a iCloud: un altro dei tuoi dispositivi ha preso il posto. Quando avrà finito, potrai farlo su questo.";
+
+/* Techo y cancelación de la subida al activar la nube (ticket snapshot-upload-has-no-ceiling-and-no-way-out) */
+/* Fallo de la activación: 72 h sin subir nada, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.snapshotStalled" = "Non siamo riusciti ad attivare il cloud: il caricamento dei tuoi dati non avanza da giorni. I tuoi dati sono al sicuro sul dispositivo; riprova più tardi.";
+/* Fallo de la activación: el techo corto venció con motivos definitivos turnándose y ninguno llegó solo al plazo (ticket snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling): no nombra un motivo ni un plazo */
+"storage.failed.snapshotMixedCauses" = "Non siamo riusciti ad attivare il cloud: il caricamento dei tuoi dati si è bloccato per un problema che l’attesa non avrebbe risolto. I tuoi dati sono al sicuro sul dispositivo; riprova.";
+/* Fallo de la activación: la sesión caducó durante la subida */
+"storage.failed.snapshotSessionExpired" = "Non siamo riusciti ad attivare il cloud: la tua sessione è scaduta mentre caricavamo i tuoi dati. I tuoi dati sono al sicuro sul dispositivo; riprova ed effettua di nuovo l’accesso.";
+/* Fallo de la activación: la cuenta en la nube no lo permitió (%@ = correo de soporte) */
+"storage.failed.snapshotAccountUnavailable" = "Non siamo riusciti ad attivare il cloud: il tuo account nel cloud non l’ha permesso. I tuoi dati sono al sicuro sul dispositivo. Scrivici a %@ e lo verifichiamo insieme.";
+/* Fallo de la activación: el dispositivo no pudo preparar los datos */
+"storage.failed.snapshotLocalFailure" = "Non siamo riusciti ad attivare il cloud: questo dispositivo non è riuscito a preparare i tuoi dati per il caricamento. I tuoi dati sono ancora qui, invariati; riprova tra poco.";
+/* Fallo de la activación en el claim, la identidad o el cutover: días sin avanzar, con cualquier causa (techo largo): no acusa a nadie */
+"storage.failed.stepStalled" = "Non siamo riusciti ad attivare il cloud: l’attivazione non avanza da giorni. I tuoi dati sono al sicuro sul dispositivo; riprova più tardi.";
+/* Fallo de la activación en el claim o el cutover: la sesión caducó (sin hablar de la subida) */
+"storage.failed.stepSessionExpired" = "Non siamo riusciti ad attivare il cloud: la tua sessione è scaduta prima che finissimo. I tuoi dati sono al sicuro sul dispositivo; riprova ed effettua di nuovo l’accesso.";
+/* Fallo de la activación en el cutover: otro dispositivo de la misma cuenta tomó el relevo de la migración */
+"storage.failed.stepOtherDevice" = "Non siamo riusciti ad attivare il cloud da questo dispositivo: un altro dispositivo con il tuo account ha preso il suo posto. I tuoi dati sono ancora qui, senza modifiche.";
+"storage.failed.adoptStalled" = "Non siamo riusciti a farti accedere al tuo account nel cloud: l’attivazione non avanza da giorni. Questo dispositivo non ha modificato nulla di ciò che hai nel cloud; riprova più tardi.";
+"storage.failed.adoptSessionExpired" = "Non siamo riusciti a farti accedere al tuo account nel cloud: la tua sessione è scaduta. Questo dispositivo non ha modificato nulla di ciò che hai nel cloud; riprova ed effettua di nuovo l’accesso con il tuo account.";
+"storage.failed.adoptAccountUnavailable" = "Non siamo riusciti a farti accedere al tuo account nel cloud: al momento non possiamo darti accesso a questo account. Scrivici a %@ e lo verifichiamo insieme.";
+"storage.failed.adoptEffectLocalFailure" = "Non siamo riusciti a farti accedere al tuo account nel cloud: questo dispositivo non è riuscito a leggere i tuoi dati per unirli a quelli del tuo account. Ciò che hai su questo dispositivo è ancora qui; riprova tra poco.";
+"storage.failed.adoptEffectStalled" = "Non siamo riusciti a farti accedere al tuo account nel cloud: l’attivazione non riesce a concludersi da giorni. Ciò che hai su questo dispositivo è ancora qui; riprova più tardi.";
+"storage.failed.adoptEffectLineageUnproven" = "Non siamo riusciti a farti accedere al tuo account nel cloud: questo dispositivo ha dati che quell’account non ha e non siamo riusciti a verificare che provengano da lì, quindi non li abbiamo uniti. Ciò che hai su questo dispositivo è ancora qui. Se hai portato nel cloud i dati di questo iCloud da un altro dispositivo, controlla di accedere con lo stesso account e aspetta che iCloud finisca di portarli prima di riprovare.";
+/* Botón de la tarjeta de progreso: cancelar la activación de la nube */
+"storage.progress.cancelMigration" = "Annulla l’attivazione";
+/* Título de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationTitle" = "Annullare l’attivazione del cloud?";
+/* Cuerpo de la confirmación de cancelar la activación */
+"storage.confirm.cancelMigrationBody" = "I tuoi dati restano su questo dispositivo, come prima. Ciò che è già stato caricato resta nel tuo account nel cloud. Puoi riprovare quando vuoi.";
+"storage.confirm.cancelAdoptBody" = "Questo dispositivo non ha modificato nulla di ciò che hai nel cloud. Puoi riattivare il cloud su questo dispositivo da qui quando vuoi.";
+"storage.confirm.cancelAdoptEffectBody" = "Ciò che hai su questo dispositivo è ancora qui, come prima. Puoi riattivare il cloud su questo dispositivo da qui quando vuoi.";
+"storage.waiting.stopWaiting" = "Smetti di aspettare";
+"storage.confirm.stopWaitingTitle" = "Smettere di aspettare?";
+"storage.confirm.stopWaitingBody" = "L’altro dispositivo continua ad attivare il cloud. Questo smette di aspettare senza modificare nulla di ciò che hai nel cloud, e puoi riattivare il cloud su questo dispositivo da qui quando vuoi.";
+"storage.confirm.stopWaitingConfirm" = "Sì, smetti di aspettare";
+"storage.confirm.stopWaitingKeep" = "Continua ad aspettare";
+"storage.progress.followerSessionExpired" = "La tua sessione nel cloud non è più valida. Smetti di aspettare e accedi di nuovo con il tuo account.";
+/* Botón que confirma cancelar la activación */
+"storage.confirm.cancelMigrationConfirm" = "Sì, annulla";
+/* Botón que sigue con la activación */
+"storage.confirm.cancelMigrationKeep" = "Continua l’attivazione";
+
+/* Tarjeta de Almacenamiento cuando el registro de la migración no se deja leer */
+"storage.journalUnreadable.message" = "Non siamo riusciti a verificare a che punto sono i tuoi dati. Per ora non puoi trasferirli nel cloud né riportarli su iCloud. Continuiamo a provare; se non si risolve, chiudi Yala e riaprila.";
+
+/* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
+"storage.sync.needsSignInUncounted" = "Accedi per caricare le tue modifiche";
+"storage.sync.waitingForConnectionUncounted" = "Modifiche in attesa di connessione";
+
+/* Ver qué migraría: los conteos no se pudieron leer */
+"storage.migrate.previewUnreadable" = "Non siamo riusciti a contare i tuoi dati. Riprova tra poco.";
+
+/* Storage failure card: another device had already started uploading to this account and this device's data does not share lineage with it */
+"storage.failed.stepLineageUnproven" = "Non siamo riusciti ad attivare il cloud: quell’account ha già dati nel cloud e quelli di questo dispositivo non corrispondono, quindi non li abbiamo uniti. Ciò che hai su questo dispositivo è ancora qui. Controlla di accedere con l’account giusto. Se è il tuo e questo dispositivo usa lo stesso iCloud, aspetta che iCloud finisca di portare i tuoi dati e riprova.";
+"storage.failed.stepLeaderRowsNotArrived" = "Non siamo riusciti ad attivare il cloud: un altro dei tuoi dispositivi ha già caricato una parte dei tuoi dati e iCloud non li ha ancora portati tutti su questo, quindi non abbiamo caricato nulla per non duplicarli. Ciò che hai su questo dispositivo è ancora qui. Apri Yala su quell’altro dispositivo con la connessione attiva, aspetta che iCloud finisca di portare i tuoi dati su questo e riprova.";
+
+/* Sign-out blocked: sync stopped because this build can't read the migration record */
+"settings.signOutSyncStoppedNeedsUpdate" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. Non siamo riusciti a verificare a che punto è il passaggio dei tuoi dati al cloud, quindi per ora non possiamo caricarle. Chiudi completamente Yala e riaprila; se non cambia nulla, aggiornala dall'App Store e riprova.";
+"settings.signOutCaptureUnfinished" = "Non è stato possibile preparare alcune delle tue ultime modifiche per il caricamento nel cloud. Restano salvate su questo telefono e non si perde nulla. Chiudi completamente Yala e riaprila; se non cambia nulla, aggiornala dall'App Store e riprova.";
+
+/* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
+"settings.signOutSyncStoppedMidMigration" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. La sincronizzazione è in pausa perché il passaggio dei tuoi dati tra il cloud e iCloud non è terminato. Apri «Dove si trovano i tuoi dati», qui in Profilo, e completalo da lì (se non è riuscito, tocca «Riprova»); poi riprova.";
+
+/* Sign-out blocked: sync paused until Yala is reopened */
+"settings.signOutSyncStoppedNeedsRelaunch" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. La sincronizzazione è in pausa finché non riapri Yala. Chiudila completamente (scorri via nel selettore app), riaprila e riprova.";
+
+/* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
+"settings.signOutUploadRetryLater" = "Le tue ultime modifiche non sono arrivate al cloud. Restano salvate su questo telefono e non si perde nulla; riprova tra poco.";
+"settings.signOutCloudSessionExpired" = "La tua sessione è scaduta e alcune modifiche non sono ancora state caricate nel cloud. Non si perde nulla: apri «Dove si trovano i tuoi dati», qui in Profilo, tocca «Accedi» e poi riprova.";
+"settings.signOutSessionSurvived" = "Sei ancora connesso su questo iPhone, quindi non è stato eliminato nulla. Riprova.";
+"settings.signOutMigrationInFlight" = "Il passaggio dei tuoi dati tra iCloud e il cloud non è ancora terminato, e uscire ora potrebbe eliminare ciò che resta da caricare, quindi non è stato eliminato nulla. Apri «Dove si trovano i tuoi dati», in Profilo, e completalo da lì (se non è riuscito, tocca «Riprova»); poi riprova.";
+"settings.signOutMigrationUnreadable" = "Non siamo riusciti a verificare a che punto è il passaggio dei tuoi dati tra iCloud e il cloud, e uscire ora potrebbe eliminare ciò che resta da caricare, quindi non è stato eliminato nulla. Chiudi completamente Yala e riaprila; se non cambia nulla, aggiornala dall'App Store e riprova.";
+
+/* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
+"welcome.privateICloud.leftHalfwayTitle" = "L'eliminazione si è fermata a metà";
+
+/* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
+"welcome.privateICloud.leftHalfwayBody" = "Abbiamo già eliminato quello che c'era su iCloud, ma non siamo riusciti a finire su questo telefono: qui potrebbe esserci ancora tutto o parte di quello che avevi. Puoi tenere quello che è rimasto, oppure finire di eliminarlo e ricominciare da zero.";
+
+/* Button: finish the deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayFinish" = "Finisci di eliminare";
+
+/* Confirm body before finishing a deletion that was left halfway */
+"welcome.privateICloud.leftHalfwayConfirmBody" = "Quello che resta su questo telefono viene eliminato, anche ciò che hai creato nel frattempo, e ricominci da capo. Non resta nessuna copia.";
+
+/* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
+"groups.errors.groupsChangesFromAnotherAccount" = "Alcune modifiche dei gruppi su questo telefono sono state fatte con un altro account e si possono caricare solo con quell'account. Non si perde nulla: restano salvate qui finché non accedi con quell'account.";
+
+/* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"groups.errors.noSessionSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"groups.errors.noSessionSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo telefono con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo telefono con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
+"settings.signOutCloudSessionExpiredGroupsLoss" = "La tua sessione è scaduta. Modifiche dei tuoi gruppi non ancora caricate: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "La tua sessione è scaduta e alcune modifiche dei tuoi gruppi non sono ancora state caricate. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+
+/* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
+"welcome.groups.neutralNoSessionLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo telefono con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo telefono con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+
+/* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
+"groups.freshStartPending.lossOtherAccount" = "Si possono caricare solo accedendo con l'account che ha fatto ciascuna, e la sessione aperta su questo telefono è di un altro account. Se non succederà, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Alcune sono state fatte con un altro account e si possono caricare solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non lo farai, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.titleNeutral" = "Alcune modifiche dei gruppi devono ancora essere caricate";
+"groups.freshStartPending.leadNeutral" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server (%d) e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.leadNeutralUnknown" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via.";
+"groups.freshStartPending.leadSplit" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via. Tue: %1$d. Fatte con un altro account: %2$d.";
+"groups.freshStartPending.splitOwnPermanent" = "Il tuo account non può più caricare le tue, e riprovare non risolverà.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Le tue si possono caricare solo con l'account che le ha fatte, e la sua sessione su questo telefono non è più valida.";
+"groups.freshStartPending.splitAnotherAccount" = "Quelle fatte con un altro account si possono caricare solo accedendo con l'account che ha fatto ciascuna; aspettare o riprovare non le carica.";
+"groups.freshStartPending.splitLossTail" = "Puoi ricominciare da zero e perderle tutte: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.splitAfterOwnUpload" = "Se le tue verranno caricate, potrai ricominciare da zero e perdere solo quelle fatte con un altro account.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Modifiche dei gruppi che vanno perse — tue: %1$d; fatte con un altro account: %2$d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo telefono. Nessuno del gruppo le vedrà e non si possono recuperare.";
+
+/* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
+"settings.signOutCloudSessionExpiredPersonalLoss" = "La tua sessione è scaduta. Modifiche che non sono arrivate al tuo account nel cloud: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, prima di decidere puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";
+
+/* Cerrar sesión en la nube con la sesión caducada, sin cifra */
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "La tua sessione è scaduta e alcune modifiche non sono arrivate al tuo account nel cloud. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Profilo, e tocca «Accedi». Se non riesci ad accedere, prima di decidere puoi esportare le tue transazioni in un file. Se esci ora, queste modifiche andranno perse.";
+
+/* iPad/ventana ancha: columna de detalle vacía en Registros */
+"records.detailPlaceholder" = "Scegli una registrazione per vederla qui";
+
+/* iPad/ventana ancha: columna de detalle vacía en Planificación */
+"planning.detailPlaceholder" = "Scegli un budget o un pagamento per vederlo qui";
+"groups.detailPlaceholder" = "Scegli un gruppo per vederlo qui";
+"settings.detailPlaceholder" = "Scegli un'impostazione per vederla qui";
+
+/* Puerta del invitado: el cierre de sesión del teléfono está a medias; se reintenta sola */
+"welcome.groups.inviteRetryBody" = "Non abbiamo toccato nulla e il tuo invito è ancora salvato. Riprova tra un momento; se non succede nulla, chiudi Yala del tutto (trascinala fuori dal selettore delle app) e riaprila.";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: título */
+"welcome.groups.inviteRelaunchTitle" = "Riapri Yala per unirti";
+
+/* Puerta del invitado: la cuenta en la nube termina de prepararse al reabrir: cuerpo */
+"welcome.groups.inviteRelaunchBody" = "Il tuo account nel cloud finisce di prepararsi quando riapri Yala. Chiudila del tutto (trascinala fuori dal selettore delle app) e riaprila: il tuo invito è ancora salvato e riprenderai da lì.";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
+"welcome.groups.inviteCloudSignInTitle" = "Prima, accedi con l'account di questo telefono";
+
+/* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
+"welcome.groups.inviteCloudSignInBody" = "Su questo telefono ci sono i dati di un account nel cloud senza accesso attivo, e le tue spese del gruppo finirebbero lì. Se è tuo, accedi con quell'account da «Ho già un account» e continuerai con il tuo invito. Se non lo è, unisciti dal tuo telefono.";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
+"welcome.groups.wipeFailedTitle" = "Non siamo riusciti a preparare questo telefono";
+
+/* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
+"welcome.groups.wipeFailedBody" = "Alla riapertura di Yala non è stato possibile cancellare ciò che è salvato su questo telefono, quindi non è pronto per il tuo gruppo. Non riproveremo da soli: torna indietro e, se vuoi, riprova più tardi.";
+
+/* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
+"icloud.appleIDChanged.groupsLine" = "Verranno rimossi anche i gruppi su questo telefono.";
+
+/* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
+/* Keyboard menu (iPad, hold Cmd): go to a section */
+"keyboard.menu.go" = "Vai";
+/* Keyboard menu (iPad, hold Cmd): actions on the open record */
+"keyboard.menu.record" = "Registrazione";
+/* Keyboard command Cmd-Shift-N: new shared expense in a group */
+"keyboard.newGroupExpense" = "Nuova spesa di gruppo";
+/* Keyboard command Up arrow: open the previous record in the list */
+"keyboard.previousRecord" = "Registrazione precedente";
+/* Keyboard command Down arrow: open the next record in the list */
+"keyboard.nextRecord" = "Registrazione successiva";
+/* Context menu on a record row: pick another category for it */
+"records.contextMenu.changeCategory" = "Cambia categoria";
+/* Context menu on an account card in the Panel: show only this account */
+"panel.accounts.filterByAccount" = "Filtra per questo conto";
+/* Context menu on a group card: open the group */
+"groups.contextMenu.open" = "Apri gruppo";
+
+/* Menú contextual de grupo o registro */
+"window.openInNewWindow" = "Apri in una nuova finestra";
+
+/* Ventana secundaria mientras la principal pregunta algo */
+"window.follower.title" = "Yala ti aspetta in un'altra finestra";
+
+/* Ventana secundaria: explicación */
+"window.follower.body" = "C'è qualcosa a cui rispondere nell'altra finestra di Yala. Quando hai finito lì, questa torna da sola.";
+
+/* Botón: traer al frente la otra ventana */
+"window.follower.cta" = "Vai a quella finestra";
+
+/* Storage · Grupos: replaces the associate/sign-in button while the groups channel is paused server-side */
+"storage.groups.channelPausedNote" = "I gruppi sono in pausa al momento per una cosa nostra. Quando torneranno, potrai continuare da qui.";
+
+/* Guía por pasos (referencia del 2026-09-15): progreso, salidas y garantías */
+"stepGuide.progress" = "Passo %1$d di %2$d";
+"stepGuide.markDone" = "Completato";
+"stepGuide.stuck" = "Non ci riesco";
+"stepGuide.whatYouWillSee" = "Cosa vedrai";
+"stepGuide.phaseDone" = "Completato";
+"stepGuide.phaseActive" = "Passo attuale";
+"stepGuide.phaseUpcoming" = "In attesa";
+"tutorials.applePay.openShortcuts" = "Apri Comandi Rapidi";
+"tutorials.applePay.guarantee" = "Ogni pagamento arriva come bozza: nulla viene registrato finché non lo approvi.";
+"tutorials.applePay.pendingDrafts" = "Pagamenti Apple Pay nella tua casella: %d";
+"faceIDGuide.guarantee" = "Yala non vede mai il tuo volto: lo verifica iOS.";
+"faceIDGuide.previewAction" = "Richiedi Face ID";
+
+/* Label above the amount on a Panel account card */
+"panel.accounts.card.balance" = "Saldo";
+
+/* Label above the amount on a credit card account with debt */
+"panel.accounts.card.toPay" = "Da pagare";
+
+/* Label above the amount in expenses-only mode; %@ = period name like 'Este mes' */
+"panel.accounts.card.spentInPeriod %@" = "Speso · %@";
+
+/* Account detail sheet: money that came into the account in the period */
+"accountDetail.moneyIn" = "Entrate";
+
+/* Account detail sheet: money that left the account in the period */
+"accountDetail.moneyOut" = "Uscite";
+
+/* Account detail sheet: section with top expense categories */
+"accountDetail.topCategories" = "Dove sono finiti";
+
+/* Account detail sheet: section with latest records */
+"accountDetail.latest" = "Ultimi movimenti";
+
+/* Accessibility label of the balance chart; account name, period name */
+"accountDetail.chartLabel %@ %@" = "Saldo di %@ in %@";
+
+/* Account detail sheet: no records in the period */
+"accountDetail.empty" = "Nessun movimento in questo periodo";
+
+/* Note under Archive toggle when archiving turned on Exclude from statistics */
+"account.archiveExcludedNotice" = "Una volta archiviato, questo conto non conta più nei tuoi totali e nelle statistiche, e i suoi movimenti vengono nascosti in Registri. Per continuare a includerlo, disattiva «Escludi dalle statistiche».";
+
+
+/* Chat draft card (Yala IA) — redesign A */
+"chat.draft.detailsButton" = "Dettagli";
+"chat.draft.detailsTitle" = "Registrazione proposta";
+"chat.draft.openFullForm" = "Apri nel modulo completo";
+"chat.draft.missingSubcategory" = "Manca la sottocategoria";
+"chat.draft.missingAccount" = "Manca il conto";
+"chat.draft.missingAmount" = "Manca l'importo";
+"chat.draft.addTag" = "Tag";
+
+/* Example shown while dictating to Yala AI */
+"chat.voice.hint" = "Prova: «Ho speso 25 per il pranzo con la carta»";
+
+/* Shown while the dictation is transcribed */
+"chat.voice.transcribingHint" = "Controlla il testo prima di inviarlo.";
+
+/* Recorded duration while transcribing, e.g. 0:07 recorded */
+"chat.voice.recorded" = "%@ registrati";
+
+/* VoiceOver: discard the dictation without transcribing */
+"accessibility.discardRecording" = "Elimina registrazione";
+
+/* Voice entry: second processing step, the transcript is being read for amount and category */
+"voice.processing.understanding" = "Sto capendo il tuo registro…";
+
+/* Voice entry: last processing step, the draft is being created */
+"voice.processing.preparing" = "Sto preparando il tuo registro…";
+
+/* Voice entry: button to discard what was understood and record again */
+"voice.recordAgain" = "Registra di nuovo";
+
+/* Voice entry: title above the record understood from the recording */
+"voice.review.title" = "Ecco cosa ho capito";
+
+/* Voice entry: title when several records were understood, e.g. I heard 2 entries */
+"voice.review.titleMany" = "Ho capito %d registri";
+
+/* Voice entry: button that saves several records, e.g. Save 2 */
+"voice.review.saveMany" = "Salva %d";
+
+/* Voice entry: closing without saving leaves the drafts in the Inbox */
+"voice.review.inboxNote" = "Se chiudi senza salvare, lo troverai in Posta in arrivo.";
+
+/* Voice entry failure title: no internet */
+"voice.failure.noConnection.title" = "Nessuna connessione";
+
+/* Voice entry failure title: microphone permission denied */
+"voice.failure.mic.title" = "Yala non può usare il microfono";
+
+/* Voice entry failure title: the recording was empty or too short */
+"voice.failure.noVoice.title" = "Non ti ho sentito";
+
+/* Voice entry failure message: the recording was empty or too short */
+"voice.failure.noVoice.message" = "La registrazione era vuota o troppo breve. Riprova.";
+
+/* Voice entry failure title: no amount was heard */
+"voice.failure.noAmount.title" = "Non ho sentito un importo";
+
+/* Voice entry failure message: ask to say the amount, e.g. 25 */
+"voice.failure.noAmount.message" = "Di’ anche quanto era, per esempio «25».";
+
+/* Voice entry failure title: something went wrong */
+"voice.failure.generic.title" = "Questa volta non ti ho capito";
+
+/* Voice entry failure message: something went wrong, try again */
+"voice.failure.generic.message" = "Qualcosa è andato storto elaborando la tua voce. Riprova tra un momento.";
+"voice.failure.trialUsedUp.title" = "Hai usato le tue note vocali di prova";
+"voice.failure.trialUsedUp.message" = "Con Yala Pro registri le tue spese a voce senza limiti.";
+"ai.trial.seePro" = "Scopri Yala Pro";
+
+/* Registro por imagen (propuesta C, 2026-10-04) */
+/* Image entry sheet title */
+"image.entry.title" = "Registra con foto o file";
+/* Image entry: what the user can bring and what Yala reads */
+"image.entry.subtitle" = "Uno scontrino, uno screenshot della banca o un PDF. Ne ricavo importo, esercente e data.";
+/* Image entry source: take a photo */
+"image.entry.camera" = "Fotocamera";
+/* Image entry source: pick from Photos */
+"image.entry.photos" = "Foto";
+/* Image entry source: pick a file (image or PDF) */
+"image.entry.file" = "File";
+/* Image entry: hint that Photos allows up to 10 at once */
+"image.entry.multipleHint" = "Fino a 10 foto alla volta da Foto";
+/* Image entry: reading one photo */
+"image.entry.readingOne" = "Sto leggendo la tua foto…";
+/* Image entry: reading several photos */
+"image.entry.readingMany" = "Sto leggendo le tue foto…";
+/* Image entry: current reading step */
+"image.entry.readingStep" = "Cerco l’importo";
+/* Image entry: photo %1 of %2 being read */
+"image.entry.readingProgress" = "Foto %1$d di %2$d";
+/* Image entry review title, one entry */
+"image.entry.reviewTitle" = "Ecco cosa ho letto";
+/* Image entry review title, %d entries */
+"image.entry.reviewTitleMany" = "Ho letto %d registri";
+/* Image entry: one photo could not be read */
+"image.entry.photoFailedOne" = "1 foto non si è potuta leggere";
+/* Image entry: %d photos could not be read */
+"image.entry.photoFailedMany" = "%d foto non si sono potute leggere";
+/* Image entry: discard and pick another photo */
+"image.entry.otherPhoto" = "Un’altra foto";
+/* Accessibility: cancel reading the photo */
+"image.entry.cancelReading" = "Interrompi la lettura";
+/* Image entry failure: no amount found */
+"image.entry.failure.noAmount.title" = "Non ho trovato un importo";
+/* Image entry failure: no amount found, what to try */
+"image.entry.failure.noAmount.message" = "Prova con una foto più vicina al totale, o con un’altra immagine.";
+/* Image entry failure: the image could not be opened */
+"image.entry.failure.unreadable.title" = "Non sono riuscito ad aprire questa immagine";
+/* Image entry failure: camera permission denied */
+"image.entry.failure.camera.title" = "Yala non può usare la fotocamera";
+/* Image entry failure: camera permission, how to fix */
+"image.entry.failure.camera.message" = "Consenti l’accesso nelle Impostazioni per fotografare i tuoi scontrini.";
+/* Image entry failure: reading failed */
+"image.entry.failure.generic.title" = "Questa volta non sono riuscito a leggerla";
+/* Image entry failure: reading failed, the photo is fine */
+"image.entry.failure.generic.message" = "La foto va bene: la lettura non è riuscita. Riprova tra un momento.";
+"image.entry.failure.trialUsedUp.title" = "Hai usato le tue foto di prova";
+"image.entry.failure.trialUsedUp.message" = "Con Yala Pro registri le tue ricevute in foto senza limiti.";
+/* Current user's name, no parentheses */
+"groups.member.youName" = "Tu";
+
+/* Header: how much each person puts in a group expense */
+"groups.expense.breakdownTitle" = "Ripartizione";
+
+/* Under the payer's name: Paid <amount> */
+"groups.expense.paidAmount" = "Ha pagato %@";
+
+/* Row title: where this expense landed in your personal records */
+"groups.expense.inYourFinances" = "Nelle tue finanze";
+
+/* Middle of the sentence: Paid by <name> and split <mode> */
+"groups.expense.andDividedLabel" = "e diviso";
+
+/* Current user after a preposition: Paid by <you> */
+"groups.member.youObject" = "te";
+
+/* Dialog title: activating the cloud while an iCloud deletion the user asked for has not finished */
+"storage.pendingICloudWipe.title" = "Hai un'eliminazione non finita";
+
+/* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
+"storage.pendingICloudWipe.body" = "Hai chiesto di ricominciare da zero ed eliminare i tuoi dati da iCloud, e l'eliminazione non è ancora finita. Se attivi il cloud, viene annullata e ciò che non è stato eliminato può finire nel tuo account Yala. Se aspetti, non cambia nulla e l'eliminazione resta in sospeso.";
+
+/* Dialog button: activate the cloud and cancel the pending iCloud deletion */
+"storage.pendingICloudWipe.proceed" = "Attiva il cloud senza eliminare";
+
+/* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
+"storage.pendingICloudWipe.wait" = "Non ora";
+
+/* Sheet title on launch in cloud mode: a pending iCloud deletion was cancelled */
+"welcome.privateICloud.cancelledInCloudTitle" = "Un'eliminazione non è stata completata";
+
+/* Sheet body: the deletion did not finish before the cloud was activated and will not happen */
+"welcome.privateICloud.cancelledInCloudBody" = "Hai chiesto di ricominciare da zero ed eliminare i tuoi dati da iCloud, ma l'eliminazione non era finita quando i tuoi dati sono passati al cloud, e ormai non verrà fatta. Parte di ciò che volevi eliminare può essere ancora in iCloud o essere passata al tuo account Yala.";
+
+/* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
+"inbox.groupSettlementAmountChange.title" = "Importo modificato";
+
+/* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerReceived" = "Il pagamento di %1$@ in «%2$@» è cambiato: era %3$@ e ora è %4$@. In %5$@ hai registrato %6$@.";
+
+/* Notice banner, I paid the other person. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
+"inbox.groupSettlementAmountChange.bannerSent" = "Il tuo pagamento a %1$@ in «%2$@» è cambiato: era %3$@ e ora è %4$@. In %5$@ hai registrato %6$@.";
+
+/* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Questa liquidazione in «%1$@» è cambiata: era %2$@ e ora è %3$@. In %4$@ hai registrato %5$@.";
+
+/* Primary button: set my transaction to the new amount */
+"inbox.groupSettlementAmountChange.adjust" = "Adegua a %@";
+
+/* Secondary button: leave my transaction at its amount */
+"inbox.groupSettlementAmountChange.keep" = "Mantieni %@";
+
+/* Inbox row second line for the notice: account, amount in that account */
+"inbox.groupSettlementAmountChange.rowDetail" = "%2$@ registrati in %1$@";
+
+/* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
+"inbox.groupSettlementAmountChange.transactionGone" = "Questo avviso non si può più applicare: il movimento è cambiato o non è più nei tuoi conti.";
+
+/* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
+"image.entry.failure.unreadableFile.title" = "Non sono riuscito ad aprire questo file";
+
+/* Image entry failure: unreadable file, why and what to try */
+"image.entry.failure.unreadableFile.message" = "Potrebbe essere vuoto o danneggiato. Prova con un’altra foto o un altro PDF dello scontrino.";
+
+/* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
+"account.currencyChange.confirmTitleNoHistory" = "Cambiare la valuta in %@?";
+
+/* Account currency change confirmation: pending inbox drafts converted with their own date's rate. %1$d = count, %2$@ = new currency code */
+"account.currencyChange.draftsLine" = "Bozze in sospeso nella posta in arrivo: %1$d. Passano a %2$@ con il tasso di cambio della loro data.";
+
+/* Account currency change confirmation: header before the list of scheduled payments and favorites converted at today's rate. %@ = new currency code */
+"account.currencyChange.plansHeader" = "Pagamenti programmati e preferiti che passano a %@ con il tasso di cambio di oggi:";
+
+/* Account currency change confirmation: one scheduled payment or favorite. %1$@ = its name, %2$@ = amount before, %3$@ = amount after */
+"account.currencyChange.planItem" = "• %1$@: %2$@ → %3$@";
+
+/* Account currency change confirmation: how many more scheduled payments or favorites are converted beyond the ones listed. %d = count */
+"account.currencyChange.plansMore" = "e altri %d";
+
+/* Account currency change confirmation: closing sentence when there are no movements to convert */
+"account.currencyChange.cannotUndo" = "Questa azione non può essere annullata.";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "Questo PDF ha una password";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "Inseriscila per aprire il file. Si usa solo su questo dispositivo: non viene salvata né inviata.";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "Password del PDF";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "Apri";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "Password errata. Controllala e riprova.";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1 pagina non è stata letta: se ne leggono fino a %d alla volta. Per leggerla, caricala in un altro PDF.";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$d pagine non sono state lette: se ne leggono fino a %2$d alla volta. Per leggerle, caricale in un altro PDF.";
+
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "1 foto non è stata letta: se ne leggono fino a %d alla volta. Per leggerla, condividila a parte.";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "%1$d foto non sono state lette: se ne leggono fino a %2$d alla volta. Per leggerle, condividile a parte.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "Hai usato le tue foto di prova: 1 non è stata letta.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "Hai usato le tue foto di prova: %d non sono state lette.";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "Pagina %1$d di %2$d";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "1 giorno rimanente";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "Ti serve una connessione per generare l'analisi con l'IA.";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "Hai esaurito le analisi con l'IA di oggi. Torna domani.";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "Hai chiesto diverse analisi di fila. Aspetta un momento e riprova.";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "Non siamo riusciti a confermare il tuo Yala Pro. Riprova tra un momento.";
+
+/* Private gate: reading the data already on this phone failed */
+"welcome.privateICloud.deviceUnreadableTitle" = "Non siamo riusciti a controllare questo telefono";
+
+/* Private gate: body when the phone's data could not be read */
+"welcome.privateICloud.deviceUnreadableBody" = "Qualcosa è andato storto controllando cosa c'è già su questo telefono, quindi non sappiamo se contiene dati. Non abbiamo toccato nulla. Riprova tra un momento.";
+
+/* Private gate: secondary button that goes back to the choice */
+"welcome.privateICloud.deviceUnreadableBack" = "Indietro";
+
+/* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
+"welcome.bornCloud.readyExistingAccountTitle" = "Avevi già un account e hai effettuato l'accesso.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "Elimina «%@»";
+"account.removal.intro" = "Prima di eliminarlo, scegli cosa fare con ciò che contiene.";
+"account.removal.countRecords" = "Movimenti";
+"account.removal.countScheduled" = "Pagamenti pianificati";
+"account.removal.countFavorites" = "Pagamenti preferiti";
+"account.removal.countDrafts" = "In attesa nella posta in arrivo";
+"account.removal.choiceHeader" = "Cosa ne facciamo";
+"account.removal.moveTitle" = "Spostarlo su un altro conto";
+"account.removal.moveSubtitle" = "Consigliato. La tua cronologia e il tuo saldo restano.";
+"account.removal.noDestination" = "Non hai un altro conto su cui spostarlo.";
+"account.removal.deleteTitle" = "Eliminare i movimenti";
+"account.removal.deleteSubtitle" = "Vengono eliminati per sempre, insieme al conto.";
+"account.removal.deleteBlockedGroups" = "Contiene movimenti dei tuoi gruppi: si possono solo spostare.";
+"account.removal.destinationHeader" = "Sposta su";
+"account.removal.destinationBlockedCurrency" = "Non disponibile: contiene trasferimenti o movimenti di gruppo che non si possono convertire in questa valuta.";
+"account.removal.convertNote" = "Ciò che è in un'altra valuta passa a %@: i movimenti al tasso di cambio della loro data; i pagamenti pianificati e preferiti al tasso di oggi.";
+"account.removal.collapsedNote" = "I trasferimenti tra «%1$@» e «%2$@» vengono rimossi: all’interno di uno stesso conto non spostano denaro.";
+"account.removal.partnersNote" = "I trasferimenti con altri conti restano in quei conti come movimenti normali.";
+"account.removal.plansNote" = "I pagamenti pianificati, i preferiti e gli elementi in attesa nella posta in arrivo restano senza conto: lo sceglierai quando li userai.";
+"account.removal.moveAction" = "Sposta ed elimina il conto";
+"account.removal.deleteAction" = "Elimina movimenti e conto";
+"account.removal.confirmDeleteTitle" = "Eliminare i movimenti?";
+"account.removal.confirmDeleteCount" = "Movimenti da eliminare";
+"account.removal.confirmDeleteMessage" = "Vengono eliminati per sempre e non si può annullare. Anche il conto viene eliminato.";
+"account.removal.confirmDeleteAction" = "Sì, elimina tutto";
+"account.removal.working" = "Eliminazione del conto…";
+"account.removal.failedTitle" = "Il conto non è stato eliminato";
+"account.removal.failedUnreadable" = "Non siamo riusciti a leggere il contenuto di questo conto. Non è stato modificato nulla.";
+"account.removal.failedChanged" = "Qualcosa è cambiato nel conto nel frattempo. Controllalo e riprova.";
+"account.removal.failedRates" = "Non siamo riusciti a ottenere i tassi di cambio per convertire. Non è stato spostato nulla: riprova con una connessione.";
+"account.removal.noAllowedDestination" = "I tuoi altri conti sono in un'altra valuta, e qui ci sono trasferimenti o elementi di gruppo che non si possono convertire.";
+"account.removal.countBudgets" = "Budget";
+"account.removal.budgetsMovedNote" = "I budget che seguivano questo conto seguiranno «%@».";
+"account.removal.budgetsOnlyNote" = "Alcuni budget seguivano solo questo conto: senza di esso, seguiranno tutti i tuoi conti.";
+"orphanedRecords.title" = "Movimenti senza conto";
+"orphanedRecords.bannerMessage" = "Hanno perso il loro conto quando è stato eliminato un conto e non contano né nel saldo né nelle spese.";
+"orphanedRecords.bannerAction" = "Scegli il conto";
+"orphanedRecords.intro" = "Questi movimenti hanno perso il loro conto quando è stato eliminato un conto. Finché non ne hanno uno, non contano né nel saldo né nelle spese. Scegli su quale conto spostarli.";
+"orphanedRecords.listHeader" = "Quali sono";
+"orphanedRecords.moreNote" = "E altri %d.";
+"orphanedRecords.noDestination" = "Crea un conto per poterli spostare.";
+"orphanedRecords.keptCurrencyNote" = "I trasferimenti in un'altra valuta passano così come sono, senza conversione: così la loro controparte continua a tornare.";
+"orphanedRecords.convertNote" = "Quelli in un'altra valuta passano a %@ con il tasso di cambio della loro data.";
+"orphanedRecords.collapsedNote" = "I trasferimenti che resterebbero all'interno di «%@» vengono rimossi: nello stesso conto non spostano denaro.";
+"orphanedRecords.moveAction" = "Sposta su «%@»";
+"orphanedRecords.moveActionGeneric" = "Sposta";
+"orphanedRecords.working" = "Spostamento…";
+"orphanedRecords.failedTitle" = "Non sono stati spostati";
+"orphanedRecords.failedUnreadable" = "Non siamo riusciti a leggere i movimenti. Non è cambiato nulla.";
+"orphanedRecords.failedChanged" = "Nel frattempo è cambiato qualcosa. Controlla e riprova.";
+"orphanedRecords.untitled" = "Senza descrizione";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud non è disponibile su questo dispositivo";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala conserva i tuoi dati nel tuo iCloud e al momento non riesce a leggerli. Quando iCloud tornerà disponibile, quello che c'è lì ricomparirà. Puoi controllare in Impostazioni, alla voce iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Controllo del tuo iCloud…";
+"storage.revert.prior.title" = "Il tuo iCloud ha già dati di Yala";
+"storage.revert.prior.body" = "L’iCloud di questo telefono ha dati di Yala che non sono nel tuo account: %@. Se li aggiungi, compariranno accanto ai tuoi. Se inizi senza, vengono eliminati dal tuo iCloud.";
+"storage.revert.prior.bodyNoCount" = "L’iCloud di questo telefono ha dati di Yala che non sono nel tuo account. Se li aggiungi, compariranno accanto ai tuoi. Se inizi senza, vengono eliminati dal tuo iCloud.";
+"storage.revert.prior.groupRecords" = "%d registrazioni di gruppi";
+"storage.revert.prior.groupsNote" = "Le registrazioni dei gruppi potrebbero arrivare senza il loro gruppo.";
+"storage.revert.prior.merge" = "Aggiungili ai miei dati";
+"storage.revert.prior.discard" = "Inizia senza";
+"storage.revert.prior.discardConfirmTitle" = "Eliminarli dal tuo iCloud?";
+"storage.revert.prior.discardConfirmBody" = "Vengono eliminati dal tuo iCloud e dai dispositivi che lo usano con questo ID Apple. Non resta nessuna copia e non possiamo recuperarli. Poi inizia il ritorno a iCloud.";
+"storage.revert.prior.discardConfirm" = "Elimina e torna a iCloud";
+"storage.revert.prior.checkFailedTitle" = "Non siamo riusciti a controllare il tuo iCloud";
+"storage.revert.prior.checkFailedBody" = "Prima di tornare controlliamo se il tuo iCloud ha già dati di Yala, per non mescolarli senza avvisarti. Potrebbe essere la connessione: riprova.";
+"storage.revert.prior.wipeFailed" = "Non siamo riusciti a finire di eliminare i dati precedenti dal tuo iCloud, quindi non abbiamo iniziato il ritorno: sei ancora nel cloud. Controlla la connessione e riprova.";
+"storage.revert.prior.wipeStopped" = "Non siamo riusciti a finire di eliminare i dati precedenti dal tuo iCloud, quindi non abbiamo iniziato il ritorno: sei ancora nel cloud. Ciò che è già stato eliminato resta eliminato: riprova e continueremo con il resto.";
+"storage.revert.prior.wiping" = "Eliminazione dei dati precedenti… %d finora";
+"storage.revert.prior.noAccountTitle" = "Accedi a iCloud su questo iPhone";
+"storage.revert.prior.noAccountBody" = "Prima di tornare controlliamo cosa c’è nel tuo iCloud, e questo iPhone non ha effettuato l’accesso a iCloud. Accedi dalle Impostazioni dell’iPhone e riprova.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Rimuovi qui";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Lo rimuove solo su questo telefono. Se arriva il suo gruppo, ricompare.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Le spese di gruppo in un'altra valuta passano così come sono, senza conversione: il loro importo lo decide il gruppo.";

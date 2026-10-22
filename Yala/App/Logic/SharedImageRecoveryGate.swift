@@ -1,0 +1,40 @@
+//
+//  SharedImageRecoveryGate.swift
+//  Yala
+//
+//  Pure-logic: ¿debe la app re-emitir un intent para presentar una imagen compartida
+//  pendiente (share extension → App Group `PendingImages/`)?
+//
+//  El directorio App Group es una cola durable cross-launch (la imagen sobrevive al kill
+//  del proceso). La app la drena en cada "ventana ready" (post-bootstrap y en cada
+//  `handleBecameActive`). `.presentSharedImage` es notification-like: si se `submit`ea mientras la
+//  app aún no puede presentar, `RouterEntryGate` lo difiere. Hasta el 2026-10-10 el buffer lo
+//  descartaba en silencio (cold launch → "no hace nada"); hoy guarda su ruta. Este gate sigue
+//  replicando las condiciones de `NotificationGateLogic.shouldEnqueueNow`: re-emitir contra un gate
+//  que va a diferir solo apilaría entradas en el buffer.
+//
+//  Ver `Bugs/qa_cold-launch-share-image-no-registro`.
+//
+
+import Foundation
+
+enum SharedImageRecoveryGate {
+
+    /// `true` → re-emite el intent de presentación (encolará vía `AppRouter`).
+    /// `false` → no hacer nada; la imagen persiste en `PendingImages/` y se reintenta en la
+    /// próxima ventana ready (siguiente `.active` o cold launch).
+    ///
+    /// Las condiciones de readiness (init + onboarding) espejan
+    /// `NotificationGateLogic.shouldEnqueueNow`: si alguna falla, `RouterEntryGate` diferiría
+    /// el `.presentSharedImage` en vez de encolarlo.
+    static func shouldReEmit(
+        hasPendingImage: Bool,
+        isInitialized: Bool,
+        hasCompletedOnboarding: Bool
+    ) -> Bool {
+        guard hasPendingImage else { return false }
+        guard isInitialized else { return false }
+        guard hasCompletedOnboarding else { return false }
+        return true
+    }
+}

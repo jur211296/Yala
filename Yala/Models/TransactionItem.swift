@@ -94,6 +94,14 @@ final class TransactionItem {
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
     var createdAt: Date = Date.now
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. OPCIONAL SIN DEFAULT a propósito: si fuera `= UUID()` y CloudKit
+    /// entregara un record sin el campo, el default se evaluaría UNA vez y quedaría COMPARTIDO entre
+    /// todas esas filas (gotcha de UUID colapsado, ver CLAUDE.md). Un record sin el campo DEBE verse
+    /// `nil`, no un UUID compartido. Lo puebla `SyncIdentityService` (born-cloud vía hub gateado, o
+    /// backfill de migración). `.preserveValueOnDeletion` lo conserva en el tombstone para sync.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
     var effectiveNeed: SubcategoryNeed {
         if let override = needOverride {
@@ -106,25 +114,61 @@ final class TransactionItem {
 
     /// Recalculates exchangeRate, amountInPreferredCurrency, and preferredCurrencyCode
     /// based on the transaction's current amount and currencyCode.
+    ///
+    /// **Es el punto de paso de la escritura de montos convertidos: 21 llamadas en 5 ficheros**, once
+    /// de ellas del bridge de Grupos. Por eso marca aquí `isExchangeRateProvisional` en vez de dejarlo
+    /// a cada llamador: hasta el 2026-09-03 no lo tocaba ninguno de los 21, así que toda transacción
+    /// que pasara por aquí nacía con el flag en su default `false` —o sea, sellada como definitiva—
+    /// aunque la conversión no hubiera podido hacerse. Y el reparador
+    /// (`TransactionUpdateService`, cuyo `#Predicate` solo busca `== true`) no volvía a mirarla nunca.
+    /// Marcarlo es lo que le devuelve una ruta de auto-cura (`fx-partial-rate-rows-silent-1to1`).
     @MainActor
     func recalculatePreferredCurrency(context: ModelContext) {
         let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = CurrencyConverter.shared.convert(
+        let outcome = CurrencyConverter.shared.convertChecked(
             Decimal(amount),
             from: currencyCode,
             to: preferredCode,
             on: date,
             context: context
         )
+        let amountInPreferred = outcome.amount
         let effectiveRate: Double
         if abs(amount) > 0.0001 {
             effectiveRate = (amountInPreferred as NSDecimalNumber).doubleValue / amount
         } else {
             effectiveRate = 1.0
         }
-        exchangeRate = abs(effectiveRate)
-        amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
-        preferredCurrencyCode = preferredCode
+        // Solo una tasa EXACTA puede sellarse como definitiva. Una arrastrada de otro día o salida de
+        // la tabla estática da un número del orden correcto, pero sigue esperando la tasa real: dejar
+        // el flag en `false` es lo que hacía que un monto aproximado se quedara para siempre.
+        let newProvisional = !outcome.quality.isExact
+        let newRate = abs(effectiveRate)
+        let newAmountInPreferred = (amountInPreferred as NSDecimalNumber).doubleValue
+
+        // **Asignar solo lo que cambia, y lo que ahorra NO es lo que el ticket decía.**
+        //
+        // El ticket daba por hecho que una reescritura idéntica emite al canal nube: las cuatro
+        // columnas están en el grupo de coherencia `money`, y `DeltaEmitter` expande cualquiera de
+        // ellas al grupo entero con un HLC fresco. **Medido el 2026-09-08 y es falso**
+        // (`FXRepairQueueOutboxTests`): asignar el mismo valor deja `context.hasChanges == true`, pero
+        // el drain NO produce fila de outbox — el change-set que el History entrega al motor y el
+        // estado sucio del contexto son señales distintas. Así que no había ni emisión repetida ni
+        // riesgo de pisar por HLC la edición de otro dispositivo por esta vía.
+        //
+        // Lo que sí evita el guard, y basta para justificarlo: que el contexto quede sucio y con él un
+        // `save()` a disco en cada arranque por cada transacción de la cola, más el `hasChanges` que
+        // miente a todo el que lo consulte después.
+        //
+        // Con dos devices, el clobber sigue siendo posible cuando los valores SÍ difieren (cada uno
+        // convierte con su propia escalera de tasas); eso lo acota la salida del reparador
+        // (`FXRepairQueueLogic`), no este guard.
+        if exchangeRate != newRate { exchangeRate = newRate }
+        if amountInPreferredCurrency != newAmountInPreferred {
+            amountInPreferredCurrency = newAmountInPreferred
+        }
+        if preferredCurrencyCode != preferredCode { preferredCurrencyCode = preferredCode }
+        if isExchangeRateProvisional != newProvisional { isExchangeRateProvisional = newProvisional }
     }
 
     init(

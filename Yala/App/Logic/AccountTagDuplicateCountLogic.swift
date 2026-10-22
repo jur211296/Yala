@@ -42,4 +42,15 @@ enum AccountTagDuplicateCountLogic {
             .map { DuplicateGroup(identity: $0.key, count: $0.value.count) }
             .sorted { $0.identity < $1.identity }
     }
+
+    /// Igual que `duplicateGroups` pero devuelve las INSTANCIAS de cada grupo con >1 elemento
+    /// (el merge de I11-4 necesita reparentar+borrar, no solo contar). Orden determinista por
+    /// identity (reproducibilidad del merge). La variante de conteo `duplicateGroups` NO se toca
+    /// (la telemetría read-only de boot y la detección de I11-2 dependen de ella).
+    static func duplicateGroupItems<T>(_ items: [T], identity: (T) -> String) -> [[T]] {
+        Dictionary(grouping: items, by: identity)
+            .filter { $0.value.count > 1 }
+            .sorted { $0.key < $1.key }
+            .map { $0.value }
+    }
 }

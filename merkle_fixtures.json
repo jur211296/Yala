@@ -1,0 +1,40 @@
+{
+  "description": "Mini-golden cross-lenguaje del ENSAMBLADO Merkle (I8f-3, regla A-4 CONGELADA): leaf = sha256(utf8(sync_id_lowercase_36) || sha256(utf8(payload_c1))); entityHash = sha256(concat(leaves ordenados por sync_id bytes UTF-8 asc)); entidad vacia = sha256(''); root = sha256(concat(entityHash en orden UTF-8 asc del nombre de tabla)); leaf2 = sha256(utf8(sync_id) || utf8(hlc) || sha256(utf8(payload_full))). Los digests se concatenan CRUDOS (32 bytes), nunca su hex. Consumido por SyncMerkleTests (Swift) y merkle.unit.test.ts (TS) - si el ensamblado diverge un byte, ambos lados lo ven.",
+  "empty_entity_hash_hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "leaves": [
+    {
+      "sync_id": "c0ffee00-1111-2222-3333-444444444444",
+      "payload": "{\"amount\":\"19.9900\",\"note\":\"café\"}",
+      "leaf_hex": "b62cd9d6455d18f2cb037509702271e95090ecc2d10953da18a525475dbd2b3e"
+    },
+    {
+      "sync_id": "0a0a0a0a-0000-0000-0000-000000000001",
+      "payload": "{\"name\":\"Casa\",\"sort_order\":3}",
+      "leaf_hex": "419cfa09f618c41907df6e015e66268a8771abe6ca44fb0ae73069c548578163"
+    },
+    {
+      "sync_id": "ffffffff-eeee-dddd-cccc-bbbbbbbbbbbb",
+      "payload": "{\"account_ids\":[],\"note\":null}",
+      "leaf_hex": "9f44db5800a3e148da3d5cd76f280a443145b91942c6ce29f7ccea94d80123f2"
+    }
+  ],
+  "entity_case": {
+    "comment": "Los 3 leaves de arriba, dados en ese orden de INPUT (desordenado a proposito): la implementacion DEBE ordenarlos por sync_id bytes UTF-8 asc antes de concatenar.",
+    "entity_hash_hex": "64eaa90fc85dc1c5cf8b274d962049d744e9c52c0a15999cbe4cc1c9a31085e5"
+  },
+  "root_case": {
+    "comment": "root sobre los digests dados (hex -> bytes), tablas en orden UTF-8 asc del nombre.",
+    "entity_hashes_hex": {
+      "alpha_table": "64eaa90fc85dc1c5cf8b274d962049d744e9c52c0a15999cbe4cc1c9a31085e5",
+      "beta_table": "b62cd9d6455d18f2cb037509702271e95090ecc2d10953da18a525475dbd2b3e",
+      "zeta_table": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "root_hex": "ede45253cc56f401f5f3c0b78a6c25b6a7ddb074d2be7d72575acb10fe18f594"
+  },
+  "channel2_case": {
+    "sync_id": "c0ffee00-1111-2222-3333-444444444444",
+    "hlc": "2026-07-08T12:00:00.000Z-0001-0123456789abcdef",
+    "payload": "{\"amount\":\"19.9900\",\"note\":\"café\"}",
+    "leaf2_hex": "0e64d14cc71baa562d40185f62c4ce583518869ee2d95840d17b18ab4b7706f7"
+  }
+}

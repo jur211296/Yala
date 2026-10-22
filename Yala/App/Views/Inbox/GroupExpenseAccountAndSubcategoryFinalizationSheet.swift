@@ -124,6 +124,9 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
         case .remoteCreate:
             let actor = draft.originActorName ?? "?"
             return String(format: L10n.Groups.Bridge.draftReasonRemoteCreate, actor, group)
+        case .settlementAmountChanged:
+            // Solo lo llevan avisos de liquidación, que tienen su hoja (`GroupSettlementAmountChangeSheet`); un gasto no.
+            return ""
         }
     }
 

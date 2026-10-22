@@ -26,7 +26,7 @@ struct PanelFilterControlBar: View {
     var body: some View {
         // Filter chips (Scrollable to the right) — period selector moved to
         // the Hero in PP2-01; this bar is now chips-only.
-        let hasAccountFilter = viewModel.selectedAccountID != nil
+        let hasAccountFilter = !viewModel.selectedAccountIDs.isEmpty
         let hasDateFilter = viewModel.focusedDate != nil
         let hasCategoryFilter = viewModel.selectedCategoryID != nil
         let hasNeedFilter = viewModel.selectedNeed != nil
@@ -66,14 +66,22 @@ struct PanelFilterControlBar: View {
                             .glassEffectID("chip.excludeMode", in: chipNamespace)
                         }
 
-                        // Account Chip
-                        if let selectedID = viewModel.selectedAccountID,
-                            let account = viewModel.accounts.first(where: {
-                                $0.persistentModelID == selectedID
-                            })
-                        {
+                        // Account Chip — «BCP +1» cuando hay varias. Vía
+                        // `buildAccountChips`, el mismo helper que Registros y que
+                        // los chips de categoría y tag de más abajo: nombrar solo
+                        // una de dos era arbitrario (`Set.first` no es estable) y
+                        // etiquetaba el mismo filtro global distinto en cada
+                        // pantalla.
+                        ForEach(
+                            buildAccountChips(
+                                selectedAccounts: viewModel.selectedAccountIDs,
+                                allAccounts: viewModel.accounts
+                            ),
+                            id: \.id
+                        ) { chip in
                             FilterChipView(
-                                accountName: account.name,
+                                accountName: chip.name,
+                                count: chip.count,
                                 onClear: { viewModel.selectedAccountID = nil }
                             )
                             .excludeMode(viewModel.isExcludeMode)

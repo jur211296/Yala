@@ -5,13 +5,18 @@
 //  Pure-logic: codable layer for the DeferredIntentBuffer.
 //
 //  Some RouterIntents arrive when the app cannot present yet (pre-bootstrap,
-//  biometric lock, mid-onboarding). Instead of dropping them, the gate
+//  mid-onboarding). Instead of dropping them, the gate
 //  persists a serializable proxy in UserDefaults. On the next ready window
 //  the buffer drains via the gate.
 //
-//  Not every intent is serializable (`.presentGroupInviteOnboarding(CKShare.Metadata)`
-//  is not — CKShare.Metadata is opaque). For those, we persist only what
-//  identifies the path (the share URL string) and re-resolve at drain time.
+//  Not every intent is serializable (`.presentNewTransactionFromChatDraft` carries a live
+//  prefill, the monetization prompts are re-decided on their own). Those have no proxy:
+//  `serialize` returns nil and the gate drops them with its canary. When a payload DOES have a
+//  stable identity, it gets its own case (`.navigateGroupDetail(groupID:)`).
+//
+//  El buffer tiene un segundo productor desde el 2026-10-11: `AppRouter.resetTransients` aparca aquí, al pasar a
+//  segundo plano, las entradas pedidas desde fuera que aún no se habían presentado (`parksOnBackground`). Sin eso se
+//  tiraban con el resto de transitorios (ticket `widget-and-siri-entries-lost-on-background`).
 //
 
 import Foundation
@@ -37,7 +42,31 @@ struct DeferredEntry: Codable, Equatable {
 /// objects (CKShare.Metadata, fetched accounts/budgets, runtime callbacks).
 enum SerializableIntent: Codable, Equatable {
     case navigate(routerKey: String)
+    /// `.navigate(.groupDetail(groupID:))` needs its own case: `routerKey`
+    /// collapses `groupDetail` to the bare string "groupDetail", dropping the
+    /// groupID. This dedicated case carries the ID across a launch.
+    case navigateGroupDetail(groupID: String)
     case showInboxAlert(scheduledPayments: Int, subscriptions: Int, automations: Int)
+    /// `.presentSharedImage(url)`: la foto compartida es un fichero de `PendingImages/` y su ruta basta para
+    /// reconstruir el intent. Al drenar solo vuelve si el fichero sigue ahí (otra entrada pudo consumirlo). Hasta el
+    /// 2026-10-10 este intent no se serializaba y el aplazamiento lo tiraba en silencio (canario «DROP
+    /// non-serializable deferred intent»); lo recuperaba solo la siguiente ventana lista.
+    case presentSharedImage(path: String)
+    /// Entradas sin payload pedidas desde fuera (widget, Siri, Centro de Control, ⌘N) que seguían en cola al pasar a
+    /// segundo plano. Las aparca `AppRouter.resetTransients`; caducan antes que el resto (`parkedEntryTTL`).
+    case presentVoiceEntry
+    case presentImageEntry
+    case presentNewTransaction
+    /// El consentimiento de IA que pidió una entrada de voz o imagen. `input` es el `rawValue` de `PendingAIInput`: un
+    /// valor que este build no conozca se descarta al drenar.
+    case requestAIConsent(input: String)
+    /// Avisos diferibles que esperaban a que se cerrara una hoja de otra pestaña y no tienen fuente que los vuelva a
+    /// pedir: la respuesta a un enlace de invitación (que no vale, o cuyo grupo está archivado) y el hito de registros,
+    /// que solo se pide al guardar el registro N exacto. Los aparca `AppRouter.resetTransients` (ticket
+    /// `invite-and-app-notices-present-over-other-tab-sheets`).
+    case showInviteError(detail: String)
+    case showGroupArchivedNotice(groupID: String, groupName: String)
+    case presentMilestoneUpgrade(milestone: Int)
 }
 
 enum DeferredIntentBufferLogic {
@@ -49,19 +78,29 @@ enum DeferredIntentBufferLogic {
     }
 
     /// Lossy projection from RouterIntent to SerializableIntent. Returns nil
-    /// for intents without a stable persistent representation, including
-    /// intents whose deserialization cannot recover the original payload:
-    /// - `.navigate(.groupDetail(groupID:))` — groupID is NOT in `routerKey`,
-    ///   so a round-trip would silently lose it. Better refuse to serialize.
-    /// - `.presentSharedImage(url)` — the full URL cannot be reconstructed
-    ///   from `filename` alone. `AppBootstrapper.checkForPendingSharedImage`
-    ///   re-emits this intent on each cold launch from `SharedContainerService`,
-    ///   so deferral via buffer is redundant + lossy.
+    /// for intents without a stable persistent representation:
+    /// - `.navigate(.groupDetail(groupID:))` — serializes through the dedicated
+    ///   `.navigateGroupDetail(groupID:)` case (the generic `.navigate(routerKey:)`
+    ///   proxy would drop the groupID). This lets a group deep link
+    ///   (`yala://groups/<id>`) survive a pre-bootstrap defer and re-emit on
+    ///   drain in cold launch. Ver Bugs/qa_cold-launch-groupdetail-deeplink-no-routing.
+    /// - `.presentSharedImage(url)` — serializa la RUTA del fichero (`.presentSharedImage(path:)`). Antes del
+    ///   2026-10-10 devolvía `nil` y el aplazamiento lo perdía; la recuperación desde `PendingImages/`
+    ///   (`checkForPendingSharedImage`) sigue ahí como segunda red.
     static func serialize(_ intent: RouterIntent) -> SerializableIntent? {
         switch intent {
         case .navigate(let dest):
-            // Reject groupDetail: payload would be silently lost on drain.
-            if case .groupDetail = dest { return nil }
+            // groupDetail carries a groupID that `routerKey` collapses away —
+            // route it through the dedicated case that preserves the ID.
+            if case .groupDetail(let groupID) = dest {
+                return .navigateGroupDetail(groupID: groupID)
+            }
+            // GUARD: any future DeepLinkDestination case with an associated value
+            // needs its OWN SerializableIntent case above (like groupDetail). This
+            // default drops any payload not in `routerKey` SILENTLY — and worse than
+            // the original bug, the RouterEntryGate "DROP non-serializable" canary
+            // won't fire (this returns a valid proxy, not nil), so a cold-launch
+            // defer would lose the payload invisibly. Ver Bugs/qa_cold-launch-groupdetail-deeplink-no-routing.
             return .navigate(routerKey: dest.routerKey)
         case .showInboxAlert(let n):
             return .showInboxAlert(
@@ -69,29 +108,105 @@ enum DeferredIntentBufferLogic {
                 subscriptions: n.subscriptions,
                 automations: n.automations
             )
-        case .presentSharedImage:
-            // Re-emitted from SharedContainerService at every cold launch —
-            // persistence would create stale entries pointing at a filename
-            // we can't re-resolve. Skip.
-            return nil
+        case .presentSharedImage(let url):
+            guard url.isFileURL else { return nil }
+            return .presentSharedImage(path: url.path)
+        case .presentVoiceEntry:
+            return .presentVoiceEntry
+        case .presentImageEntry:
+            return .presentImageEntry
+        case .presentNewTransaction:
+            return .presentNewTransaction
+        case .requestAIConsent(let input):
+            return .requestAIConsent(input: input.rawValue)
+        case .showInviteError(let detail):
+            return .showInviteError(detail: detail)
+        case .showGroupArchivedNotice(let groupID, let groupName):
+            return .showGroupArchivedNotice(groupID: groupID, groupName: groupName)
+        case .presentMilestoneUpgrade(let milestone):
+            return .presentMilestoneUpgrade(milestone: milestone)
         default:
             return nil
         }
     }
 
+    /// Lo que `AppRouter.resetTransients` aparca en el buffer al pasar a segundo plano en vez de tirarlo: las entradas
+    /// que la persona pidió desde fuera y aún no ha visto. No traen datos (abren la hoja de voz, de imagen o de nuevo
+    /// registro), pero sin esto el toque se perdía si había una hoja abierta u otra pestaña delante y la app salía antes
+    /// de presentarlas.
+    ///
+    /// Fuera, a propósito: la hoja de Yala Pro (un paywall que vuelve solo al volver no es lo que la persona pidió), el
+    /// borrador del chat (lo pide la propia app, con un payload vivo) y `.navigate` (otra conversación). La foto
+    /// compartida tampoco: su fuente durable es `PendingImages/`.
+    ///
+    /// Y los avisos diferibles sin fuente que los re-emita (`showInviteError`, `showGroupArchivedNotice`,
+    /// `presentMilestoneUpgrade`): desde que esperan a que se cierre una hoja de otra pestaña pueden seguir en cola al
+    /// salir de la app, y tirarlos ahí los perdía. Los demás diferibles vuelven solos: la invitación desde
+    /// `PendingJoinStore`, la prueba expirada y el downgrade desde sus productores, el aviso de la Bandeja desde los
+    /// borradores, la oferta y Novedades en el arranque siguiente.
+    static func parksOnBackground(_ intent: RouterIntent) -> Bool {
+        switch intent {
+        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent,
+             .showInviteError, .showGroupArchivedNotice, .presentMilestoneUpgrade:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Cuánto puede estar la app fuera con una entrada aparcada. Pasado esto, al volver no se presenta: una hoja de dictar
+    /// que aparece horas después al abrir Yala desde el icono sorprende más que ayuda. El reloj arranca en cada paso a
+    /// segundo plano (`createdAt` es el momento del aparcamiento), así que mide la ausencia, no la edad de la petición.
+    static let parkedEntryTTL: TimeInterval = 15 * 60
+
+    /// La caducidad de `payload`: la de las entradas aparcadas si lo es, y `fallback` (las 24 h del buffer) si no.
+    static func ttl(for payload: SerializableIntent, fallback: TimeInterval) -> TimeInterval {
+        switch payload {
+        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent,
+             .showInviteError, .showGroupArchivedNotice, .presentMilestoneUpgrade:
+            return min(parkedEntryTTL, fallback)
+        case .navigate, .navigateGroupDetail, .showInboxAlert, .presentSharedImage:
+            return fallback
+        }
+    }
+
     /// Inverse of `serialize`. `serialize` rejects unrecoverable cases
     /// up-front, so this function only needs the recoverable subset.
-    static func deserialize(_ s: SerializableIntent) -> RouterIntent? {
+    static func deserialize(
+        _ s: SerializableIntent,
+        fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
+    ) -> RouterIntent? {
         switch s {
         case .navigate(let key):
             guard let dest = deepLinkDestination(from: key) else { return nil }
             return .navigate(dest)
+        case .navigateGroupDetail(let groupID):
+            return .navigate(.groupDetail(groupID: groupID))
         case .showInboxAlert(let sched, let subs, let autos):
             return .showInboxAlert(PendingInboxNotification(
                 scheduledPayments: sched,
                 subscriptions: subs,
                 automations: autos
             ))
+        case .presentSharedImage(let path):
+            // Ya consumida (la hoja la leyó y la borró) o purgada: no hay nada que presentar.
+            guard fileExists(path) else { return nil }
+            return .presentSharedImage(URL(fileURLWithPath: path))
+        case .presentVoiceEntry:
+            return .presentVoiceEntry
+        case .presentImageEntry:
+            return .presentImageEntry
+        case .presentNewTransaction:
+            return .presentNewTransaction
+        case .requestAIConsent(let raw):
+            guard let input = PendingAIInput(rawValue: raw) else { return nil }
+            return .requestAIConsent(input)
+        case .showInviteError(let detail):
+            return .showInviteError(detail)
+        case .showGroupArchivedNotice(let groupID, let groupName):
+            return .showGroupArchivedNotice(groupID: groupID, groupName: groupName)
+        case .presentMilestoneUpgrade(let milestone):
+            return .presentMilestoneUpgrade(milestone)
         }
     }
 
@@ -132,13 +247,14 @@ enum DeferredIntentBufferLogic {
         return entries
     }
 
-    /// Drops entries older than `ttl`. Default TTL = 24h.
+    /// Drops entries older than `ttl`. Default TTL = 24h. Las entradas aparcadas al pasar a segundo plano caducan antes
+    /// (`ttl(for:fallback:)`).
     static func purgeExpired(
         _ entries: [DeferredEntry],
         now: Date,
         ttl: TimeInterval = 24 * 60 * 60
     ) -> [DeferredEntry] {
-        entries.filter { now.timeIntervalSince($0.createdAt) < ttl }
+        entries.filter { now.timeIntervalSince($0.createdAt) < DeferredIntentBufferLogic.ttl(for: $0.payload, fallback: ttl) }
     }
 
     // MARK: - Internals
@@ -146,7 +262,8 @@ enum DeferredIntentBufferLogic {
     /// Reverse-lookup of `DeepLinkDestination.routerKey`. Returns nil if the
     /// key is unknown (forward compatibility — older builds may have
     /// persisted a destination the current build no longer recognises).
-    /// Note: `groupDetail` is excluded — its `groupID` payload is not in `routerKey`.
+    /// Note: `groupDetail` is NOT handled here — it round-trips through the
+    /// dedicated `.navigateGroupDetail(groupID:)` case (its groupID isn't in `routerKey`).
     static func deepLinkDestination(from key: String) -> DeepLinkDestination? {
         switch key {
         case "panel": return .panel

@@ -149,6 +149,10 @@ final class GroupStatsViewModel {
     private(set) var targetCurrency: String = ""
     private var modelContext: ModelContext?
 
+    /// Task de recálculo debounced — coalesce cambios rápidos de período/moneda del carrusel.
+    @ObservationIgnored
+    private var recalculateTask: Task<Void, Never>?
+
     /// Conversor de tasas para el donut del modo "Todas". Inyectable en tests.
     @ObservationIgnored
     var converter: CurrencyConverting = CurrencyConverter.shared
@@ -168,7 +172,14 @@ final class GroupStatsViewModel {
         currencyCode: String,
         preferredCurrency: String? = nil
     ) {
-        self.allExpenses = expenses
+        // Dedup por id: los gastos llegan repetidos por merges del canal de sync (la premisa está en
+        // `GroupBalanceService`). Molde exacto de `GroupBudgetLogic.progress`: dedup y después fuera
+        // los saldos iniciales (en `periodExpenses`). Va AQUÍ, en la única entrada de gastos, y no en
+        // `periodExpenses`: así el total, «quién paga», categorías, tendencia y la lista de monedas
+        // salen todos de la misma lista. Sin esto, «Total gastado» contradice a la barra de
+        // presupuesto de Registros en el mismo grupo.
+        let uniqueExpenses = Dictionary(grouping: expenses, by: \.id).values.compactMap(\.first)
+        self.allExpenses = uniqueExpenses
         self.allShares = shares
         self.allMembers = members
         self.currentUserMemberID = currentUserMemberID
@@ -178,7 +189,7 @@ final class GroupStatsViewModel {
         self.targetCurrency = preferredCurrency.flatMap { $0.isEmpty ? nil : $0 } ?? currencyCode
         // Excluye saldos iniciales (igual que `periodExpenses`): una moneda que solo aparece
         // en un saldo inicial no debe generar una pestaña/donut de stats vacía.
-        availableCurrencies = orderedCurrencies(Set(expenses.filter { !$0.isOpeningBalance }.map(\.currencyCode)))
+        availableCurrencies = orderedCurrencies(Set(uniqueExpenses.filter { !$0.isOpeningBalance }.map(\.currencyCode)))
         // Default: "Todas" cuando hay >1 moneda; con una sola, esa moneda.
         // Preserva la selección previa del usuario si sigue siendo válida.
         currencySelection = resolvedSelection(from: currencySelection)
@@ -195,6 +206,23 @@ final class GroupStatsViewModel {
             recalculateSingleCurrency(period: period)
         }
         recalculateDualTotals(period: period)
+    }
+
+    /// Recálculo debounced (150ms) — coalesce cambios rápidos de período/moneda del carrusel.
+    /// Calc-only: los datos ya están en memoria (inyectados por `loadStats`), NO hay fetch, así que
+    /// no necesita el guard de `applicationState`/background del patrón de Panel.
+    func scheduleRecalculate() {
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            recalculate()
+        }
+    }
+
+    /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
     }
 
     /// Modo `.currency`: una sola moneda (comportamiento clásico).
@@ -257,7 +285,7 @@ final class GroupStatsViewModel {
 
     // MARK: - Helpers
 
-    /// Gastos del período (todas las monedas). Excluye saldos iniciales: son deuda
+    /// Gastos del período (todas las monedas), ya deduplicados por id en `loadStats`. Excluye saldos iniciales: son deuda
     /// arrastrada, no gasto — contarlos distorsionaría los totales/categorías. (Sí
     /// cuentan en balances/deudas, que se calculan aparte en `GroupBalanceService`.)
     private func periodExpenses() -> [SplitExpense] {
@@ -278,7 +306,7 @@ final class GroupStatsViewModel {
     /// Gasto total pagado por cada miembro, descendente.
     private func computeMemberSpending(from expenses: [SplitExpense]) -> [MemberSpending] {
         let memberNameLookup = Dictionary(
-            allMembers.map { ($0.id.uuidString, $0.displayName) },
+            allMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
         let grouped = Dictionary(grouping: expenses, by: \.paidByMemberID)
@@ -325,13 +353,20 @@ final class GroupStatsViewModel {
             .map { (name: $0.key, total: $0.value) }
             .sorted { $0.total > $1.total }
             .map { entry -> GroupCategoryBreakdown in
-                let resolved = lookup[entry.name]
+                // Stats no tiene bridge personal (icono per-user): resuelve por NOMBRE, con el mismo
+                // lookup/regla que el feed (`GroupExpenseIconResolver`). Genérico → paleta de fallback.
+                let resolved = GroupExpenseIconResolver.resolve(
+                    bridgeIcon: nil,
+                    subcategoryName: entry.name,
+                    nameLookup: lookup,
+                    fallbackIconName: "tag.fill"
+                )
                 return GroupCategoryBreakdown(
                     subcategoryName: entry.name,
                     amount: entry.total,
                     percentage: (entry.total / safeGrandTotal) * 100,
-                    iconName: resolved?.icon ?? "tag.fill",
-                    colorHex: resolved?.colorHex ?? fallbackColor(for: entry.name, assigned: &fallbackColors)
+                    iconName: resolved.iconName,
+                    colorHex: resolved.colorHex ?? fallbackColor(for: entry.name, assigned: &fallbackColors)
                 )
             }
         return (breakdown, wasConverted)
@@ -368,18 +403,14 @@ final class GroupStatsViewModel {
         }
     }
 
-    /// Lookup `[nombre de subcategoría: (icono, colorHex)]` desde las subcategorías locales,
-    /// para colorear el donut con los mismos iconos/colores que el resto de la app.
-    private func subcategoryLookup() -> [String: (icon: String, colorHex: String)] {
+    /// Lookup `[nombre normalizado de subcategoría: (icono, colorHex)]` desde las subcategorías
+    /// locales, para colorear el donut con los mismos iconos/colores que el resto de la app.
+    /// SSOT de la regla icono/color por nombre — compartida con el feed vía `GroupExpenseIconResolver`.
+    private func subcategoryLookup() -> [String: (iconName: String, colorHex: String)] {
         guard let ctx = modelContext else { return [:] }
         do {
             let subs = try ctx.fetch(FetchDescriptor<Subcategory>())
-            var dict: [String: (icon: String, colorHex: String)] = [:]
-            for sub in subs where dict[sub.name] == nil {
-                let icon = sub.iconName ?? sub.safeCategory.iconName ?? "tag.fill"
-                dict[sub.name] = (icon, sub.colorHex ?? sub.safeCategory.colorHex)
-            }
-            return dict
+            return GroupExpenseIconResolver.buildNameLookup(from: subs)
         } catch {
             #if DEBUG
             print("GroupStatsViewModel: error fetching subcategories: \(error)")

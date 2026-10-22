@@ -68,6 +68,7 @@ final class ChatAssistantService {
     ///
     /// - `forceIntent`: si está presente, salta el classifier (usado por quick-reply
     ///   chips de ambiguous para no reclasificar el mismo texto retórico).
+    /// - `includeGroupsInTotal`: el ajuste «Grupos en el total» del Panel; el saldo total del contexto lo sigue.
     ///
     /// Retorna `ChatAssistantResponse` con `text` + `attachments` opcionales (drafts
     /// para `register`, quick-replies para `ambiguous`).
@@ -77,12 +78,13 @@ final class ChatAssistantService {
         modelContext: ModelContext,
         currencyCode: String,
         converter: CurrencyConverting,
+        includeGroupsInTotal: Bool,
         forceIntent: ChatIntent? = nil
     ) async throws -> ChatAssistantResponse {
         // === Common guards (apply to all 3 paths) ===
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(category: .chat)
+            client = try await ProxyClientFactory.makeOpenAI(task: .chatAnswer)
         } catch {
             throw ChatAssistantError.networkError(error)
         }
@@ -116,6 +118,7 @@ final class ChatAssistantService {
                 modelContext: modelContext,
                 currencyCode: currencyCode,
                 converter: converter,
+                includeGroupsInTotal: includeGroupsInTotal,
                 client: client
             )
             return ChatAssistantResponse(text: text, attachments: nil, intent: .ask)
@@ -140,6 +143,7 @@ final class ChatAssistantService {
         modelContext: ModelContext,
         currencyCode: String,
         converter: CurrencyConverting,
+        includeGroupsInTotal: Bool,
         client: OpenAI
     ) async throws -> String {
         let needsAnomalies = AnomalyKeywords.matches(question)
@@ -161,7 +165,13 @@ final class ChatAssistantService {
             converter: converter,
             language: language,
             country: country,
-            includeAnomalies: needsAnomalies
+            includeAnomalies: needsAnomalies,
+            includeGroupsInTotal: includeGroupsInTotal,
+            // El interruptor «Incluir gastos de grupo en estadísticas», leído como las sugerencias del chat y
+            // el Panel (default ON): apagado, los movimientos de grupo no cuentan en lo que ve Yala IA.
+            includeGroupTransactionsInStats: (UserDefaults.standard.object(
+                forKey: AppPreferences.Keys.includeGroupTransactionsInStats
+            ) as? Bool) ?? true
         )
 
         let systemPrompt = buildSystemPrompt(
@@ -233,7 +243,11 @@ final class ChatAssistantService {
             parsed = try await TranscriptionParserService.shared.parseMultiple(
                 text: question,
                 expenseSubcategories: expenseNames,
-                incomeSubcategories: incomeNames
+                incomeSubcategories: incomeNames,
+                currency: ParserCurrencyContext(
+                    mainCurrency: currencyCode,
+                    accountCurrencies: accounts.filter { !$0.isSystemAccount }.map(\.currencyCode)
+                )
             )
         } catch let parserError as ParserError {
             switch parserError {
@@ -409,15 +423,7 @@ final class ChatAssistantService {
         // (es-AR → es uses tuteo en system prompt; el voseo se maneja en el bundle de strings,
         // no aquí). Si una variante necesita registro distinto en el futuro, añadir case explícito.
         let baseLanguage = SupportedLocale.from(language)?.code ?? String(language.prefix(2))
-        let register: String
-        switch baseLanguage {
-        case "es": register = "tuteo (tú)"
-        case "de": register = "du"
-        case "fr": register = "tu"
-        case "it": register = "tu"
-        case "pt": register = "você"
-        default: register = "informal you"
-        }
+        let register = AIPromptLanguage.informalRegister(forBaseLanguage: baseLanguage)
 
         return """
         Eres el asistente financiero de Yala. Ayudas al usuario a entender sus finanzas respondiendo preguntas sobre gastos, ingresos, presupuestos, cuentas, patrones y proyecciones.
@@ -430,6 +436,7 @@ final class ChatAssistantService {
         5. Negritas para cifras importantes (**\(currencyDisplay)45.50**).
         6. Máximo 3-4 oraciones. Sé conciso pero informativo.
         7. Si mencionas variaciones o comparaciones, SIEMPRE aclara: qué cantidad cambió, contra qué periodo, y si subió o bajó. Ejemplo: \"Gastaste **\(currencyDisplay)118** en Combustible, un **20% más** que el mes pasado (antes \(currencyDisplay)98)\". NUNCA digas solo un porcentaje sin explicar qué significa.
+        7b. MES EN CURSO: `periods.current_month` y los `total_current_month` cubren solo lo que va de este mes. Para compararlos con el mes pasado usa `periods.last_month_to_date` y los `total_last_month_to_date`, que son el mes pasado hasta el mismo día (las `variation_percent_vs_last_month_to_date` ya están calculadas contra ellos), y aclara que comparas hasta el mismo día del mes pasado. `periods.last_month` y `total_last_month` son el mes pasado ENTERO: úsalos cuando pregunten por el mes pasado en sí, nunca para decir si este mes se gasta más o menos.
         8. NUNCA des consejos de inversión ni recomendaciones de productos financieros.
         9. Registro: \(register).
         10. Si la pregunta NO es sobre finanzas personales, responde amablemente que solo puedes ayudar con temas financieros.
@@ -437,8 +444,10 @@ final class ChatAssistantService {
         12. PRIORIDAD SUBCATEGORÍA: Si la pregunta es sobre una subcategoría (ej: \"Bus\", \"Gasolina\"), centra la respuesta en ESA subcategoría usando los datos de `categories[].subcategories[]` del JSON. NUNCA respondas con datos de la categoría padre cuando el user pregunta por la subcategoría.
         13. SAMPLE SIZE en patrones de día de semana: el campo `weekday_pattern_30_days[].sample_size` indica cuántas tx hay en ese weekday durante los 30 días. Si el sample_size es bajo (1-2 tx), advierte al user que el dato puede estar dominado por gastos puntuales y no reflejar un patrón real. NUNCA presentes un weekday total como \"patrón\" si solo se basa en 1-2 tx.
         14. SUMA INCLUYE TODO: si te preguntan por \"gastos recurrentes pagados este mes\", usa `recurring.paid_this_month` (lista con fechas y montos). Para pendientes, usa `recurring.pending_next_30_days`.
-        \(toneInstruction.isEmpty ? "" : "15. Tono: \(toneInstruction)")
-        \(focusInstruction.isEmpty ? "" : "16. Enfoque: \(focusInstruction)")
+        15. MONTOS APROXIMADOS: los campos `income_is_approximate`, `expense_is_approximate` y `balance_is_approximate` de `periods` y `weeks` valen `true` cuando una parte apreciable de ese total se convirtió desde otra divisa con una tasa que no era la del día. Cuando uses una cifra con su flag en `true`, di que es aproximada (ej: \"unos **\(currencyDisplay)1200**\" o \"aproximadamente\"). Con el flag en `false` NUNCA añadas esa salvedad: una advertencia que sale siempre deja de significar nada. Los flags NO cambian el número, solo cómo lo presentas.
+        15b. SALDO TOTAL: `balances.total_balance` es el saldo total que el usuario ve en el Panel. Con `balances.total_includes_groups` en `false` el usuario apagó el ajuste «Incluir grupos en saldo total»: las cuentas de `balances.accounts` con `type` \"system\" (las de Grupos) aparecen en la lista pero NO están sumadas en el total; dilo si las mencionas y NUNCA las sumes tú. Con `true` sí están sumadas.
+        \(toneInstruction.isEmpty ? "" : "16. Tono: \(toneInstruction)")
+        \(focusInstruction.isEmpty ? "" : "17. Enfoque: \(focusInstruction)")
 
         MANEJO DE CONTEXTO MULTI-TURNO:
         - El historial puede tener varios turnos sobre temas distintos. Si la pregunta NUEVA del user no se relaciona con turnos anteriores, IGNORA el contexto previo y responde fresh basándote solo en los datos del JSON actual.
@@ -454,8 +463,8 @@ final class ChatAssistantService {
 
         EJEMPLO 2 — Pregunta sobre subcategoría específica:
         User: \"¿Cómo se comparan mis gastos en bus con meses anteriores?\"
-        Datos relevantes: categories incluye \"Transporte\" con subcategories[] que tiene \"Bus\" con total_current_month=120, total_last_month=180, total_two_months_ago=200.
-        Respuesta esperada: \"En **Bus** llevas **\(currencyDisplay)120** este mes, **33% menos** que el pasado (**\(currencyDisplay)180**) y bastante por debajo de los **\(currencyDisplay)200** de hace 2 meses.\" — NO mezcles con totales de \"Transporte\".
+        Datos relevantes: categories incluye \"Transporte\" con subcategories[] que tiene \"Bus\" con total_current_month=120, total_last_month_to_date=150, total_last_month=180, total_two_months_ago=200.
+        Respuesta esperada: \"En **Bus** llevas **\(currencyDisplay)120** este mes, **20% menos** que el mes pasado a estas alturas (**\(currencyDisplay)150**); el mes pasado entero cerró en **\(currencyDisplay)180** y hace 2 meses en **\(currencyDisplay)200**.\" — NO mezcles con totales de \"Transporte\".
 
         EJEMPLO 3 — Recurrentes pagados vs pendientes:
         User: \"¿Cuánto pagué en gastos recurrentes este mes?\"

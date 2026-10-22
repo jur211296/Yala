@@ -85,6 +85,8 @@ final class FavoriteEditorViewModel {
                 currencyCode: account?.currencyCode,
                 displayOrder: existingFavoritesCount
             )
+            // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+            SyncIdentityService.captureIfEnabled(newFavorite)
             context.insert(newFavorite)
         }
 
