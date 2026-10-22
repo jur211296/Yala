@@ -251,7 +251,10 @@ struct InsightsCalculator {
         // contra completo. Quién entra lo decide
         // `DateAlignmentHelper.aggregatePreviousNeedsAlignment`, no esta lista.
         // `prevInterval` COMPLETO se conserva SOLO para el label.
-        let prevInterval = PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: customRange)
+        // Con el `now` inyectado, como el intervalo actual: sin él, un test con otra fecha comparaba con el mes anterior
+        // al de HOY y no al de su `now`.
+        let prevInterval = PreviousPeriodHelper.previousInterval(
+            for: period, mode: comparisonMode, customRange: customRange, now: now)
         let alignedPrevInterval = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: interval,
             previousInterval: prevInterval,

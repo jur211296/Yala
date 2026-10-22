@@ -786,7 +786,10 @@ struct GroupsOrganizerWiringTests {
         // abre desde el Welcome, así que el alta solo se escribe detrás de su pantalla del nombre.
         // Desde UX 2.2 · L12-12 (2026-10-21) ese único sitio es el formulario del primer grupo: el nombre de la persona
         // va dentro de él y «¿Cómo te llamas?» se retiró.
-        #expect(Set(callSites) == Set(["GroupFormView.swift"]), """
+        // Y desde el 2026-10-22, el caso `.presentName` del router otra vez, pero solo para quien vuelve con la misma cuenta
+        // y ya está en sus grupos con nombre: no se le pide rellenar el formulario del primer grupo
+        // (`ReturningGroupsMemberLogic`). Va detrás de la cadena entera, como el formulario.
+        #expect(Set(callSites) == Set(["GroupFormView.swift", "ContentView.swift"]), """
             el alta se escribe detrás de la cadena y en ningún otro sitio. Un call-site nuevo es, con casi
             total seguridad, una escritura del trío adelantada. Que la cadena tenga una sola ENTRADA lo fija
             `GroupsGateWiringTests.organizerBranchHasOneEntry`. Encontrado: \(callSites)

@@ -1,10 +1,10 @@
 ---
 id: chat-microphone-sends-audio-with-the-chat-consent
-status: backlog
+status: done
 priority: medium
 area: yala-ia, privacidad
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-22
 source: revisión de Yala IA 2.2 (docs/ai/revision-ia-2-2.md §1)
 ---
 
@@ -28,3 +28,9 @@ Quien acepta el permiso de Yala IA y nunca aceptó el de voz y foto puede dictar
 Card a jurgen. A) el micrófono del chat pide además el permiso de voz y foto (recomendada: es el que habla de audio);
 B) el texto del permiso del chat pasa a decir que, si dictas, el audio se transcribe con un servicio de IA (16 idiomas);
 C) dejarlo.
+
+## Cerrado (2026-10-22) — decisión A de Jürgen
+
+El micrófono del chat pide el permiso de voz y foto (el mismo aviso que Voz y Foto del Panel) antes de grabar; con él
+aceptado graba como antes (`ChatVoiceInputGateLogic`). Registrar desde el chat con texto sigue con el permiso del
+chat: no entró en la decisión. Tests: `ChatVoiceInputGateTests`.

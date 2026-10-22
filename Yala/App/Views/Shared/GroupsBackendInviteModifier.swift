@@ -75,6 +75,10 @@ struct GroupsBackendInviteModifier: ViewModifier {
     @State private var blockRetriesSignIn = false
     /// [I] · el destino que decidió la tabla, armado junto a `signInAuthenticated` y consumido con él.
     @State private var signInDestination: CloudIdentityRoutingLogic.Destination?
+    /// La lectura del consentimiento de la cuenta que lanza el sign-in. El `onDismiss` la espera (con techo) antes de
+    /// decidir la puerta: decidida con la caché local, que un cierre de sesión borra, la persona que vuelve con la
+    /// misma cuenta veía otra vez «Grupos en la nube» (`ReturningGroupsMemberLogic`).
+    @State private var consentRefresh: Task<Void, Never>?
     @State private var consentAccepted = false
     /// C2 · el mismo molde para el educativo. Sin él, cerrar con la «X» —que NO marca la preferencia, por
     /// diseño del educativo— haría que `GroupsGateLogic` devolviera `.presentEducational` otra vez, y otra:
@@ -118,7 +122,22 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 signInAuthenticated = false
                 let destino = signInDestination
                 signInDestination = nil
-                routeIdentityDestination(destino)
+                let refresh = consentRefresh
+                consentRefresh = nil
+                // El bloqueo y la adopción presentan en el acto, como siempre: no deciden nada con el consentimiento y
+                // una presentación que llegara tras una espera asíncrona podría chocar con otra en el mismo ancla.
+                guard GroupsSignInSettle.waitsBeforeRouting(destino) else {
+                    return routeIdentityDestination(destino)
+                }
+                // Antes de seguir la cadena: lo que la cuenta ya sabe (su consentimiento y, si viene a crear, sus
+                // grupos con su nombre). Con techo: sin red se decide con lo que haya, como antes. Lo que viene después
+                // pasa por el router (`continueFlow`).
+                let pullsGroups = groupsOrganizerFlowActive
+                    && GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino)
+                Task { @MainActor in
+                    await GroupsSignInSettle.wait(consentRefresh: refresh, pullsGroups: pullsGroups)
+                    routeIdentityDestination(destino)
+                }
             }) {
                 GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? "").isEmpty) { destino, origen in
                     signInAuthenticated = true
@@ -184,7 +203,7 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     // por fin tiene cuenta a la que atribuirse, (b) el consent LEGACY de este device —el
                     // que vivía en el iKV del Apple ID y nunca llegó a Yala— se sella y se registra, y (c)
                     // el consent que esta persona ya dio en OTRO device baja y evita volver a preguntarle.
-                    Task { @MainActor in await GroupsConsentRegistrar.shared.handleSignIn() }
+                    consentRefresh = Task { @MainActor in await GroupsConsentRegistrar.shared.handleSignIn() }
                 }
                 .environment(SessionState.shared)
             }

@@ -1,11 +1,11 @@
 ---
 id: hoja-del-saldo-vivo-ignora-los-filtros-de-sesion
-status: backlog
+status: done
 priority: medium
 area: panel/currency
 created: 2026-09-07
 source: review adversarial de fx-pnl-education-card (2026-09-07)
-updated: 2026-10-16
+updated: 2026-10-22
 ---
 
 # La hoja «Tu saldo hoy» y el saldo del Panel suman cuentas distintas
@@ -58,3 +58,13 @@ Lo encontró la review de `panel-balance-chart-contradicts-its-own-figure`, sin 
 de las transacciones SIN filtrar y la curva de las FILTRADAS. Con un filtro de categoría, etiqueta, divisa o
 búsqueda, el último punto de la curva deja de ser la cifra. Ya pasaba antes de ese ticket; él solo alinea las dos
 sin filtros. Misma familia que lo de arriba: decidir qué filtros mueven un saldo.
+
+## Cerrado (2026-10-22) — decisión de Jürgen: «saldo = lo que hay»
+
+El saldo de arriba, la curva de saldo y la hoja «¿Cuánto tienes hoy?» suman las mismas cuentas (filtro de cuentas +
+interruptor de Grupos) con todos sus movimientos; los chips de etiqueta, categoría, divisa, búsqueda e importe ya no
+mueven un saldo (`PanelBalanceScopeLogic`, `PanelCalculationContext.balanceAccounts`). Tests: `PanelBalanceScopeTests`.
+
+**Queda fuera, a propósito:** Estadísticas › Tendencias (la cifra viva sin filtrar y la curva filtrada, sección de
+arriba) y el KPI de Distribución siguen pasando por los chips. La decisión se tomó para el Panel; aplicarla a
+Estadísticas es otra pregunta para Jürgen.

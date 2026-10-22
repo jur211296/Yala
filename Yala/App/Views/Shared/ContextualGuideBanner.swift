@@ -7,6 +7,7 @@
 //  Dismissible permanently with "Entendido".
 //
 
+import SwiftData
 import SwiftUI
 
 struct ContextualGuideBanner: View {
@@ -20,6 +21,7 @@ struct ContextualGuideBanner: View {
 
     @AppStorage private var dismissed: Bool
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - Init
 
@@ -43,6 +45,9 @@ struct ContextualGuideBanner: View {
         if !UITestHooks.isActive, !isDismissible || !dismissed {
             if isDismissible {
                 guideCard
+                    // Quien volvió por «Ya tengo una cuenta» y ya tiene aquí sus datos no ve la guía de principiante:
+                    // si se resuelve ahora, `dismissed` cambia y la guía se retira (`ReturningUserBeginnerTips`).
+                    .task { ReturningUserBeginnerTips.settleIfPending(context: modelContext) }
             } else {
                 infoCard
             }

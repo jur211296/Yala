@@ -1369,12 +1369,12 @@ final class DataWipeService {
         removeRowDerivedKeys(from: defaults)
 
         // --- Contextual Guides ---
-        let guideIDs = ["panel", "trends", "categories", "records", "budgets", "scheduled",
-                        "accounts", "transaction", "comparative", "cashflow", "insights", "inbox",
-                        "budgetEditor", "scheduledEditor"]
-        for guideID in guideIDs {
+        // La lista vive con la regla de quien vuelve con datos, que marca las mismas como vistas.
+        for guideID in ReturningUserBeginnerTips.guideIDs {
             defaults.removeObject(forKey: "guide.\(guideID).dismissed")
         }
+        // Una entrada por «Ya tengo una cuenta» sin resolver no sobrevive al borrado: era de la vida anterior.
+        defaults.removeObject(forKey: ReturningUserBeginnerTips.pendingKey)
 
         // --- Seed guards ---
         // **Delegados, no enumerados aquí**: los necesita también el borrado que NO resetea

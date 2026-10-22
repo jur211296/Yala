@@ -24,3 +24,8 @@ repetible). Antes de `--enlace`, `tablero ver <id>` y repite los que ya tenía.
 **Y el formato tiene dos trampas que no avisan hasta el final (2026-10-18):** `--enlace` va como `"titulo|url"` (con `—`
 lo rechaza, y `mover`/`asignar` de la misma línea sí se aplican: la tarjeta queda a medias), y `--agente frank` va DETRÁS
 del subcomando (`tablero editar <id> --agente frank …`); delante, `tablero` lo lee como comando y falla.
+
+**Y un script que parsee `ver` tampoco lo ve (2026-10-22):** el segundo párrafo de la nota sale a columna 0, sin la
+sangría de 14 espacios de las continuaciones de campo; un parser que solo acepta líneas sangradas lo descarta. Se perdió
+la decisión B de Jürgen en `ldqu` y se repuso. Para leer la nota en un script: todo lo que va entre `note` y la
+siguiente línea que empiece por un nombre de campo conocido (`contexto`, `siguientePaso`, `hechaCuando`, `origin`…).

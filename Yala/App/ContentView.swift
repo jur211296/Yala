@@ -1569,6 +1569,14 @@ struct ContentView: View {
             pendingGroupsJoinZone = nil
             showGroupsConsent = true
         case .presentName:
+            // Quien vuelve con la misma cuenta y ya está en sus grupos no rellena el formulario del primer grupo: el alta
+            // se completa con el nombre que ya tiene allí y aterriza en Grupos (`ReturningGroupsMemberLogic`).
+            if let name = returningGroupsMemberName() {
+                GroupsOrganizerOnboarding.completeSetup(displayName: name, context: modelContext)
+                groupsOrganizerFlowActive = false
+                navigation.selectedMainTab = .groups
+                return
+            }
             navigation.isWelcomeGroupFormOpen = true
             showGroupsOrganizerName = true
         case .presentGroupForm:
@@ -1579,6 +1587,28 @@ struct ContentView: View {
             navigation.selectedMainTab = .groups
             navigation.pendingNewGroupForm = true
         }
+    }
+
+    /// El nombre con el que la cuenta de la sesión ya está en sus grupos, si el canal ya los bajó. `nil` = se pregunta.
+    @MainActor
+    private func returningGroupsMemberName() -> String? {
+        let members: [SplitMember]
+        do {
+            members = try modelContext.fetch(FetchDescriptor<SplitMember>())
+        } catch {
+            #if DEBUG
+            print("ContentView: Error leyendo los miembros de grupos: \(error)")
+            #endif
+            return nil
+        }
+        return ReturningGroupsMemberLogic.returningName(
+            members: members.map {
+                ReturningGroupsMemberLogic.Member(
+                    userID: $0.userID, memberKey: $0.memberKey, status: $0.status,
+                    displayName: $0.displayName, joinedAt: $0.joinedAt)
+            },
+            currentUserID: CloudAuthService.shared.currentUserID
+        )
     }
 
     /// **Bloque [I]** · la cuenta que firmó en la puerta de Grupos lleva Yala completo y no hay sesión
@@ -3769,6 +3799,9 @@ fileprivate func applyEntryOnboardingEffects(_ kind: AppEntryKind) {
 /// en la ventana en la que la app se ve vacía porque sus datos todavía están bajando.
 fileprivate func completeOnboardingAsRestoreSkip() {
     applyEntryOnboardingEffects(.reentry)
+    // Quien vuelve con datos no ve los tips de principiante (decisión de Jürgen, 2026-10-22). Sus datos pueden estar
+    // todavía bajando: se apunta la entrada y se resuelve cuando lleguen (`ReturningUserBeginnerTips`).
+    ReturningUserBeginnerTips.armOnReentry()
     // Hasta el 2026-09-12, el CAJÓN de la sesión, por el mismo motivo que su gemelo de `OnboardingView.completeOnboarding`
     // (decisión del owner 2026-09-03): es el MISMO hecho —«esta persona ya no tiene onboarding
     // pendiente»— escrito por el otro camino, el de la restauración. Fuera de sesión secundaria la

@@ -50,6 +50,8 @@ struct ProfileView: View {
     // Import result - shown as alert after ImportIntroSheet dismisses
     @State private var importResult: ImportResult?
     @State private var showImportResult: Bool = false
+    /// Hay un resultado de importar esperando a que la hoja termine de cerrarse para enseñarse.
+    @State private var importResultAwaitingDismiss: Bool = false
 
     // Permission denied alert
 
@@ -802,7 +804,15 @@ struct ProfileView: View {
                     }
                 }
             }
-            .sheet(item: $activeSheet) { item in
+            .sheet(item: $activeSheet, onDismiss: {
+                // El resultado de importar sale cuando la hoja YA se fue: con un retardo fijo de 200 ms, en un iPhone
+                // real la animación de cierre duraba más y SwiftUI descartaba el aviso, así que «Importación
+                // completada» salía unas veces sí y otras no (ticket `import-completed-alert-is-sometimes-lost`).
+                if importResultAwaitingDismiss {
+                    importResultAwaitingDismiss = false
+                    showImportResult = true
+                }
+            }) { item in
                 switch item {
                 case .personalDetails:
                     PersonalDetailsView()
@@ -811,14 +821,10 @@ struct ProfileView: View {
                         accounts: viewModel.accounts,
                         categories: viewModel.categories,
                         onImportCompleted: { result in
-                            // Store result and show alert after sheet animation completes
-                            activeSheet = nil
+                            // El aviso se pide en el `onDismiss` de esta hoja, no aquí.
                             importResult = result
-                            // Small delay to ensure sheet is fully dismissed
-                            Task {
-                                try? await Task.sleep(for: .milliseconds(200))
-                                showImportResult = true
-                            }
+                            importResultAwaitingDismiss = true
+                            activeSheet = nil
                         }
                     )
                 case .exportWizard:
@@ -1135,6 +1141,8 @@ struct ProfileView: View {
             // de primer uso (F1c). También en solo-grupos: varios anclajes apuntan a
             // filas (Cuentas, Categorías…) ocultas en ese modo.
             guard !UITestHooks.isActive, !isGroupsOnlyShell else { return }
+            // Quien volvió por «Ya tengo una cuenta» con sus datos no ve el tour de principiante.
+            ReturningUserBeginnerTips.settleIfPending(context: modelContext)
             if !appPreferences.hasSeenSettingsTour {
                 do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
                 if !appPreferences.hasSeenSettingsTour {

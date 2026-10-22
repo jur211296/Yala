@@ -89,7 +89,7 @@ struct BalanceCalculatorSheet: View {
     // MARK: - Computed Balances
 
     private func parseAmount(_ text: String) -> Double {
-        Double(text.replacing(",", with: ".")) ?? 0
+        BalanceCalculatorInputLogic.parse(text)
     }
 
     /// Los términos de la cuenta, con su signo (UX 2.2 · L1UI-3). El total y la cuenta que se enseña debajo salen de
