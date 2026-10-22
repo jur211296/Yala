@@ -43,8 +43,11 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1021)
+## Index (1026)
 
+| cloud-progress-shows-real-steps-and-counts | backlog | tickets/backlog/cloud-progress-shows-real-steps-and-counts.md |
+| cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in | qa | tickets/qa/cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in.md |
+| first-photo-after-install-fails-on-a-shared-burst-limit | qa | tickets/qa/first-photo-after-install-fails-on-a-shared-burst-limit.md |
 | groups-notifications-permission-skipped-when-the-group-arrives-another-way | backlog | tickets/backlog/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
 | invite-neutral-gate-forgets-the-group-card-answer | backlog | tickets/backlog/invite-neutral-gate-forgets-the-group-card-answer.md |
 | groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed | backlog | tickets/backlog/groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed.md |
@@ -797,6 +800,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | remote-wipe-signal-honored-by-any-session | done | tickets/done/remote-wipe-signal-honored-by-any-session.md |
 | remote-wipe-signal-is-burned-even-when-the-session-ignores-it | backlog | tickets/backlog/remote-wipe-signal-is-burned-even-when-the-session-ignores-it.md |
 | remove-device-data-row-leads-to-alerts-that-say-sign-out | backlog | tickets/backlog/remove-device-data-row-leads-to-alerts-that-say-sign-out.md |
+| reopen-yala-only-for-private-icloud | backlog | tickets/backlog/reopen-yala-only-for-private-icloud.md |
 | reopened-balance-calculator-reads-a-grouped-amount-as-zero | backlog | tickets/backlog/reopened-balance-calculator-reads-a-grouped-amount-as-zero.md |
 | repair-queue-has-no-exit-for-partial-rate-rows | done | tickets/done/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | done | tickets/done/reparacion-de-tasas-no-avisa-al-panel.md |
@@ -833,6 +837,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
 | reverse-exit-on-a-reverted-account-rejects-the-retry | qa | tickets/qa/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
+| reverse-ineligible-copy-says-right-now-for-a-permanent-case | done | tickets/done/reverse-ineligible-copy-says-right-now-for-a-permanent-case.md |
 | reverse-leaves-dangling-refs-it-can-no-longer-resolve | backlog | tickets/backlog/reverse-leaves-dangling-refs-it-can-no-longer-resolve.md |
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
 | reverse-of-a-migrated-account-sums-records-written-after-the-migration | backlog | tickets/backlog/reverse-of-a-migrated-account-sums-records-written-after-the-migration.md |
