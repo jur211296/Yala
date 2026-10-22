@@ -133,6 +133,14 @@ struct SupportFormSheet: View {
                         .accessibilityIdentifier("support_send_button")
                         .disabled(!canSend)
                         .opacity(canSend ? 1 : 0.5)
+
+                        // UX 2.2 · L16-18: qué pasa al tocar «Enviar», a dónde va y qué se adjunta (lo que de verdad lleva
+                        // el correo: `supportMailBody`).
+                        Text(L10n.UXL15.supportSendFooter(AppConstants.supportEmail))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("support_send_footer")
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.xxl)

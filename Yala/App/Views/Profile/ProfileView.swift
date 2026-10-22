@@ -21,7 +21,6 @@ struct ProfileView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @Environment(\.requestReview) private var requestReview
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.yalaTheme) private var theme
@@ -61,6 +60,8 @@ struct ProfileView: View {
     @State private var showSupportSheet = false
     /// Ajustes › Ayuda › Novedades (UX 2.2 · L5-15).
     @State private var showWhatsNewSheet = false
+    /// Privacidad o términos, en la hoja de Safari dentro de Yala (UX 2.2 · L16-19).
+    @State private var legalPage: InAppWebPage?
     private static var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     }
@@ -111,11 +112,20 @@ struct ProfileView: View {
     /// Paso 9 · segundo gesto del cierre privado SIN copia en iCloud (confirmación reforzada). Es un alert
     /// que encadena el `onDismiss` de la hoja: contenedores distintos, sin carrera en el mismo anchor.
     @State private var showSignOutNoCopyConfirm = false
+    /// El mismo segundo gesto en la celda sin cuenta de Yala, con el verbo de su fila: «Quitar y borrar» (decisión A de
+    /// Jürgen, 2026-10-19). Alerta APARTE y no un texto según el estado: el `actions` de un `.alert` no lo admite.
+    @State private var showRemoveDataNoCopyConfirm = false
     /// El camino que confirmó la hoja sin copia, para que el segundo gesto ejecute ESE y no otro.
     @State private var pendingNoCopyPath: CloudSignOutFlowLogic.Path?
     /// Paso 9 · el aviso de la espera del export agotada, con su salida de emergencia. Alert DEDICADO con
     /// botones literales: el `actions` de un `.alert` no admite labels que dependan del estado.
     @State private var showSignOutExportAlert = false
+    /// El aviso de los 45 s en la celda sin cuenta: «Quitar mis datos igualmente» (decisión A, 2026-10-19).
+    @State private var showRemoveDataExportAlert = false
+    /// Si la salida EN CURSO es la de «Quitar mis datos», fijado al confirmarla con su camino. No se recalcula al enseñar
+    /// el aviso: a mitad de un cierre de la celda D se sueltan las credenciales y el camino del momento ya sería el de la
+    /// celda C, y el re-aviso le hablaría de quitar datos a quien pidió cerrar sesión (review del lote decidido 15).
+    @State private var exitInProgressRemovesDeviceData: Bool?
     /// Cuántos cambios no llegaron a iCloud en el bloqueo que se está mostrando (0 = no se pudo contar).
     @State private var signOutExportPending = 0
     /// El aviso del teléfono sin App Attest que ofrece cerrar sesión perdiendo los cambios de grupos (2026-09-15). Alert
@@ -196,6 +206,7 @@ struct ProfileView: View {
         showSignOutPendingAlert = false
         showSignOutBlockedAlert = false
         showSignOutExportAlert = false
+        showRemoveDataExportAlert = false
         showSignOutAttestLossAlert = false
         showSignOutPersonalAttestAlert = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -280,7 +291,14 @@ struct ProfileView: View {
             // propio de `GroupsAssociationSection` existe para evitar. Quien los enseña es esa sección,
             // por el veredicto de retorno, no por la fase. `.sessionNotClosed` (2026-09-26) es el tercero, y por lo mismo.
             case .bridgeUnreadable, .detachBusy, .sessionNotClosed: break
-            case .exportUnconfirmed: showSignOutExportAlert = true
+            case .exportUnconfirmed:
+                // Sin cuenta de Yala la fila dice «Quitar mis datos»: su aviso habla de quitar, no de cerrar sesión. Decide
+                // el camino que se confirmó, no el de ahora.
+                if exitInProgressRemovesDeviceData ?? signOutRowRemovesDeviceData {
+                    showRemoveDataExportAlert = true
+                } else {
+                    showSignOutExportAlert = true
+                }
             }
         }
     }
@@ -564,6 +582,24 @@ struct ProfileView: View {
         }
     }
 
+    /// El segundo gesto del cierre sin copia en iCloud, el mismo con «Cerrar sesión y borrar» o «Quitar y borrar».
+    private func confirmNoCopySignOut() {
+        let path = pendingNoCopyPath
+        pendingNoCopyPath = nil
+        // La celda pudo cambiar con el aviso abierto (una sesión que caduca): se enseña su hoja —un
+        // turno después, para no presentar mientras este aviso se desmonta— en vez de no hacer nada.
+        let live = makeSignOutScope()
+        guard live.path == path, DestructiveScopeLogic.requiresNoCopyConfirmation(live.operation) else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { signOutScope = live }
+            return
+        }
+        exitInProgressRemovesDeviceData = path.map { DestructiveScopeLogic.signOutRemovesDeviceData(path: $0) }
+        Task {
+            await CloudSessionSignOut.shared.signOut(
+                context: modelContext, confirmedPath: path, confirmedWithoutICloudCopy: true)
+        }
+    }
+
     /// UX 2.2 · L20-6: sin cuenta de Yala (celda C) la fila de salida se llama «Quitar mis datos de este iPhone» y va en su
     /// propia tarjeta al final de Ajustes, separada de «Calificar». La regla vive en `DestructiveScopeLogic`, y la hoja que
     /// abre la lee del MISMO camino (`SignOutScope.path`).
@@ -721,6 +757,46 @@ struct ProfileView: View {
                     }
             }
         }
+    }
+
+    /// «Hacerlo ahora» al terminar un tutorial (UX 2.2 · L16-16): lo de Ajustes se abre aquí mismo, en el sitio de la
+    /// pila donde estaba el tutorial; lo de fuera cierra Ajustes y va por el router, que retiene el intent hasta que esta
+    /// hoja se haya ido (`RouterConsumerGateLogic`, el mismo camino que «Primeros pasos»).
+    private func doTutorialNow(_ tutorial: Tutorial) {
+        let isWide = horizontalSizeClass == .regular
+        switch TutorialDoItNowLogic.target(for: tutorial) {
+        case .settings(let destination):
+            if isWide {
+                detailPath = [destination]
+            } else {
+                var path = NavigationPath()
+                path.append(destination)
+                navigationPath = path
+            }
+        case .importFile:
+            // La hoja de importar se pide sin tocar la pila: vaciarla y presentar a la vez pedía la hoja en plena
+            // animación de volver atrás (review del lote decidido 15). Al cerrarla se vuelve al cierre del tutorial.
+            activeSheet = .importIntro
+        case .newRecord:
+            // Las hojas de nuevo registro y de la Bandeja las drena el Panel, y solo con el Panel delante: se va al Panel
+            // primero, como las demás entradas (`YalaCommands`, el aviso de la Bandeja).
+            leaveSettings(then: [.navigate(.panel), .presentNewTransaction])
+        case .newBudget:
+            // La pantalla, sin abrir el editor encima: el editor lo drena Planificación en cuanto llega, y si Ajustes se
+            // abrió desde Planificación su hoja aún se está cerrando en el mismo anchor.
+            leaveSettings(then: [.navigate(.budgets)])
+        case .newScheduledPayment:
+            leaveSettings(then: [.navigate(.scheduledPayments)])
+        case .panel:
+            leaveSettings(then: [.navigate(.panel)])
+        case .inbox:
+            leaveSettings(then: [.navigate(.panel), .presentInboxSheet])
+        }
+    }
+
+    private func leaveSettings(then intents: [RouterIntent]) {
+        dismiss()
+        for intent in intents { RouterEntryGate.shared.submit(intent) }
     }
 
     /// Una fila que abre un ajuste: en compacta empuja (`NavigationLink`, como siempre); en ancha lo pone en la
@@ -899,8 +975,13 @@ struct ProfileView: View {
             }
             if DestructiveScopeLogic.requiresNoCopyConfirmation(scope.operation) {
                 pendingNoCopyPath = scope.path
-                showSignOutNoCopyConfirm = true
+                if DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path) {
+                    showRemoveDataNoCopyConfirm = true
+                } else {
+                    showSignOutNoCopyConfirm = true
+                }
             } else {
+                exitInProgressRemovesDeviceData = DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)
                 Task { await CloudSessionSignOut.shared.signOut(context: modelContext, confirmedPath: scope.path) }
             }
         }) { scope in
@@ -925,22 +1006,17 @@ struct ProfileView: View {
         }
         // Paso 9 · el segundo gesto del cierre privado sin copia en iCloud: no se bloquea, se avisa.
         .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showSignOutNoCopyConfirm) {
-            Button(L10n.Settings.signOutNoCopyConfirmAction, role: .destructive) {
-                let path = pendingNoCopyPath
-                pendingNoCopyPath = nil
-                // La celda pudo cambiar con el aviso abierto (una sesión que caduca): se enseña su hoja —un
-                // turno después, para no presentar mientras este aviso se desmonta— en vez de no hacer nada.
-                let live = makeSignOutScope()
-                guard live.path == path, DestructiveScopeLogic.requiresNoCopyConfirmation(live.operation) else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { signOutScope = live }
-                    return
-                }
-                Task {
-                    await CloudSessionSignOut.shared.signOut(
-                        context: modelContext, confirmedPath: path, confirmedWithoutICloudCopy: true)
-                }
-            }
-            .accessibilityIdentifier("signout_no_copy_confirm")
+            Button(L10n.Settings.signOutNoCopyConfirmAction, role: .destructive) { confirmNoCopySignOut() }
+                .accessibilityIdentifier("signout_no_copy_confirm")
+            Button(L10n.Common.cancel, role: .cancel) { pendingNoCopyPath = nil }
+                .accessibilityIdentifier("signout_no_copy_cancel")
+        } message: {
+            Text(L10n.Settings.signOutNoCopyConfirmMessage)
+        }
+        // Decisión A de Jürgen (2026-10-19): sin cuenta de Yala, el segundo gesto usa el verbo de la fila.
+        .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showRemoveDataNoCopyConfirm) {
+            Button(L10n.UXL15.removeDataNoCopyConfirm, role: .destructive) { confirmNoCopySignOut() }
+                .accessibilityIdentifier("signout_no_copy_confirm")
             Button(L10n.Common.cancel, role: .cancel) { pendingNoCopyPath = nil }
                 .accessibilityIdentifier("signout_no_copy_cancel")
         } message: {
@@ -976,6 +1052,26 @@ struct ProfileView: View {
             Text(signOutExportPending > 0
                  ? L10n.Settings.signOutExportPendingMessage(signOutExportPending)
                  : L10n.Settings.signOutExportPendingMessageUnknown)
+        }
+        // El mismo aviso en la celda sin cuenta de Yala (decisión A de Jürgen, 2026-10-19): «Quitar mis datos igualmente»
+        // y «Si los quitas ahora…». Mismos botones y mismo orden que el de arriba (L20-7), con el verbo de la fila.
+        .alert(L10n.Settings.signOutExportPendingTitle, isPresented: $showRemoveDataExportAlert) {
+            Button(L10n.Settings.signOutAttestExportButton) {
+                exportEverythingBeforeLosingIt(returningTo: .signOutExportNotice)
+            }
+            .accessibilityIdentifier("signout_export_export")
+            Button(L10n.Settings.signOutWaitButton) {
+                Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_wait")
+            Button(L10n.UXL15.removeDataExportDiscard, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_discard")
+        } message: {
+            Text(signOutExportPending > 0
+                 ? L10n.UXL15.removeDataExportPendingMessage(signOutExportPending)
+                 : L10n.UXL15.removeDataExportPendingMessageUnknown)
         }
         // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
         // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
@@ -1109,7 +1205,10 @@ struct ProfileView: View {
     /// a lado y otras mide 810 pt y la lista flota sobre el ajuste (ticket
     /// `ipad-settings-sheet-size-depends-on-where-it-opens`).
     var body: some View {
-        deleteAccountPresentations(signOutPresentations(settingsContainer))
+        deleteAccountPresentations(signOutPresentations(
+            settingsContainer
+                // UX 2.2 · L16-16: «Hacerlo ahora» del cierre de un tutorial, que vive dentro de esta pila.
+                .environment(\.tutorialDoItNow, TutorialDoItNowAction { doTutorialNow($0) })))
         .coachMarkOverlay(
             steps: SettingsTourSteps.steps,
             isPresented: $showSettingsTour,
@@ -1169,9 +1268,7 @@ struct ProfileView: View {
             case .tags:
                 TagsSettingsListView()
             case .themes:
-                ThemeSettingsView {
-                    dismiss()
-                }
+                ThemeSettingsView()
             case .personalization:
                 PersonalizationSettingsView()
             case .currency:
@@ -1202,6 +1299,8 @@ struct ProfileView: View {
                 SiriShortcutsView()
             case .aiPrivacy:
                 AIPrivacySettingsView()
+            case .permissions:
+                PermissionsSettingsView()
             case .storageMode:
                 // Paso 10 · el CTA de asociar cierra ESTE sheet y emite el intent: el sheet del
                 // sign-in de Grupos tiene dueño único (`GroupsBackendInviteModifier`, anclado en
@@ -1629,16 +1728,12 @@ struct ProfileView: View {
                         iconColor: .blue, destination: .siriShortcuts)
                 }
                 SubsectionDivider()
-                Button {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        openURL(url)
-                    }
-                } label: {
-                    settingsRowContent(
-                        icon: "lock.shield.fill", title: L10n.Settings.permissions,
-                        iconColor: .blue)
-                }
-                .buttonStyle(.plain)
+                // UX 2.2 · L16-14: una pantalla propia con el estado de cada permiso. Antes saltaba a Configuración de iOS
+                // con el mismo chevron que las pantallas de dentro, sin avisar.
+                profileRow(
+                    icon: "lock.shield.fill", title: L10n.Settings.permissions,
+                    iconColor: .blue, destination: .permissions)
+                .accessibilityIdentifier("profile_permissions")
                 // Privacidad IA (chat) y Suscripción Pro: ligadas a finanzas personales.
                 // En solo-grupos el upgrade fluye por "Activar Yala completo".
                 if !isGroupsOnlyShell {
@@ -1656,14 +1751,26 @@ struct ProfileView: View {
                 }
                 #endif
                 SubsectionDivider()
+                // UX 2.2 · L16-15: «Valorar Yala» abre «Escribir una reseña» en la App Store. `requestReview()` lo decide
+                // Apple (unas pocas veces al año) y casi siempre el toque no hacía nada.
                 Button {
-                    requestReview()
+                    openURL(AppStoreLinks.writeReviewURL)
                 } label: {
                     settingsRowContent(
                         icon: "star.bubble.fill", title: L10n.Settings.rateApp,
                         iconColor: .yellow)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_rate_app")
+                SubsectionDivider()
+                // Y «Recomendar Yala» comparte el enlace de la App Store, que es la otra mitad de lo que la fila decía.
+                ShareLink(item: AppStoreLinks.listingURL, message: Text(L10n.UXL15.recommendMessage)) {
+                    settingsRowContent(
+                        icon: "square.and.arrow.up.fill", title: L10n.UXL15.recommendYala,
+                        iconColor: .green)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_recommend_app")
                 // §3.2: subsección "Tu cuenta" — SOLO con sesión backend viva. Para VIVO sin sesión (TODO
                 // device prod) nada se inserta. Agrupa «Tu cuenta de Yala →» (mapa/explainer, §3.3.5), que
                 // desde el paso 9 es también la puerta de «Eliminar mi cuenta»; «Cerrar sesión» sigue debajo.
@@ -1865,26 +1972,31 @@ struct ProfileView: View {
     private var legalSection: some View {
         SectionBox(title: L10n.Settings.legal) {
             VStack(spacing: DS.Spacing.none) {
+                // UX 2.2 · L16-19: dentro de Yala, en la hoja de Safari con «Listo». Con `openURL` se acababa en Safari y
+                // la vuelta era el «◂ Yala» de la barra de estado.
                 Button {
-                    openURL(AppConstants.privacyURL)
+                    legalPage = InAppWebPage(url: AppConstants.privacyURL)
                 } label: {
                     settingsRowContent(
                         icon: "hand.raised.fill", title: L10n.Settings.privacy,
                         iconColor: .gray)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_legal_privacy")
                 SubsectionDivider()
                 Button {
-                    openURL(AppConstants.termsURL)
+                    legalPage = InAppWebPage(url: AppConstants.termsURL)
                 } label: {
                     settingsRowContent(
                         icon: "doc.text.fill", title: L10n.Settings.terms,
                         iconColor: .gray)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_legal_terms")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
+        .inAppSafari($legalPage)
     }
 
 

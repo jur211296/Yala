@@ -45,6 +45,13 @@ enum PaywallPricingLogic {
         }
     }
 
+    /// Si la prueba se anuncia como «1 mes» y no como «30 días» (decisión B de Jürgen, 2026-10-21): cuando la oferta es de
+    /// un mes de calendario (`P1M`, la de `Configuration.storekit` y App Store Connect). Un mes no son 30 días: si la prueba
+    /// empieza en febrero, la fecha de cobro cae a 28 días y la pantalla decía «30 días gratis» junto a esa fecha.
+    static func trialIsOneMonth(periodUnit: Product.SubscriptionPeriod.Unit?, periodValue: Int) -> Bool {
+        periodUnit == .month && periodValue == 1
+    }
+
     /// El día en que se cobraría por primera vez si la prueba empieza `start`: el final del periodo de la oferta
     /// introductoria (L17-2, «Así funciona la prueba»). Con unidades de calendario, no `días × 30`: un mes de prueba
     /// que empieza el 15 de octubre termina el 15 de noviembre.

@@ -3926,6 +3926,8 @@ struct MainTabView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     /// D1: leído reactivamente para reducir la tab bar cuando el usuario elige «Solo mis grupos».
     @Environment(AppPreferences.self) private var appPreferences
+    /// El tema elegido, para decidir si la hoja de fin de Pro avisa de que vuelve a Liquid Glass.
+    @Environment(ThemeManager.self) private var themeManager
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     /// Gate "Grupos necesita iCloud" (§i.8(c)2): singleton observado — leer `status`
@@ -3939,6 +3941,8 @@ struct MainTabView: View {
     @State private var showDowngradeResolution = false
     /// La hoja de fin de Pro avisa y devuelve el icono de Pro al original (UX 2.2 · L16-11).
     @State private var downgradeIconWillReset = false
+    /// Y el tema de Pro a Liquid Glass (decisión B de Jürgen, 2026-10-21).
+    @State private var downgradeThemeWillReset = false
     @State private var showTrialExpired = false
     /// Milestone number for the upgrade sheet — also drives sheet
     /// presentation (non-nil → shown). Carried by .presentMilestoneUpgrade.
@@ -4081,7 +4085,8 @@ struct MainTabView: View {
                 DowngradeResolutionSheet(
                     accounts: downgradeAccounts,
                     budgets: downgradeBudgets,
-                    iconWillReset: downgradeIconWillReset
+                    iconWillReset: downgradeIconWillReset,
+                    themeWillReset: downgradeThemeWillReset
                 ) {
                     showDowngradeResolution = false
                 }
@@ -4137,7 +4142,7 @@ struct MainTabView: View {
     /// Lo que enseñaría la hoja de fin de Pro, o `nil` si no hay nada que decir: ni cuentas o presupuestos de más que
     /// elegir, ni un icono de Pro que devolver al original (UX 2.2 · L17-6 y L16-11). Con un fetch fallido tampoco: no
     /// se presenta con datos parciales, y el productor re-encola en el arranque siguiente mientras dure el downgrade.
-    private func endOfProSheetContent() -> (accounts: [Account], budgets: [Budget], iconWillReset: Bool)? {
+    private func endOfProSheetContent() -> (accounts: [Account], budgets: [Budget], iconWillReset: Bool, themeWillReset: Bool)? {
         do {
             let accounts = try modelContext.fetch(FetchDescriptor<Account>())
             let budgets = try modelContext.fetch(
@@ -4146,10 +4151,13 @@ struct MainTabView: View {
             let hasExcess = accounts.billableUserAccounts.count > (ProFeature.accounts.freeLimit ?? Int.max)
                 || budgets.count > (ProFeature.budgets.freeLimit ?? Int.max)
             let iconWillReset = !FeatureGateService.shared.isProUser && UIApplication.shared.alternateIconName != nil
-            guard ProPlanStatusLogic.endedSheetIsNeeded(hasExcess: hasExcess, iconWillReset: iconWillReset) else {
+            let themeWillReset = ProPlanStatusLogic.themeWillReset(
+                isProUser: FeatureGateService.shared.isProUser, currentTheme: themeManager.userChoice)
+            guard ProPlanStatusLogic.endedSheetIsNeeded(
+                hasExcess: hasExcess, iconWillReset: iconWillReset, themeWillReset: themeWillReset) else {
                 return nil
             }
-            return (accounts, budgets, iconWillReset)
+            return (accounts, budgets, iconWillReset, themeWillReset)
         } catch {
             #if DEBUG
             print("ContentView: fetch downgrade falló: \(error)")
@@ -4310,6 +4318,7 @@ struct MainTabView: View {
             downgradeAccounts = ended.accounts
             downgradeBudgets = ended.budgets
             downgradeIconWillReset = ended.iconWillReset
+            downgradeThemeWillReset = ended.themeWillReset
             showDowngradeResolution = true
         case .presentTrialExpired:
             // Una sola hoja al acabarse Pro (UX 2.2 · L17-6): si la de fin de Pro ya salió (quema este aviso al

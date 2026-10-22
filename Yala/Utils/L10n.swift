@@ -6110,10 +6110,6 @@ enum L10n {
         enum BornCloud {
             static var title: String { ls("welcome.bornCloud.title", comment: "") }
             static var subtitle: String { ls("welcome.bornCloud.subtitle", comment: "") }
-            /// W4 (decisión del owner 2026-08-11, punto 16): la nota del alta dice SOLO que la cuenta
-            /// queda ligada al método. La de `Cloud.providerNote` empieza por «entra con el mismo método
-            /// que usaste», que aquí no significa nada: el usuario no ha usado ninguno todavía.
-            static var providerNote: String { ls("welcome.bornCloud.providerNote", comment: "") }
             /// Progreso del claim: la cuenta se está CREANDO, no verificando.
             static var creating: String { ls("welcome.bornCloud.creating", comment: "") }
             /// R2 · el alta terminó SIN relanzamiento (el proceso montó el store neutro). Copy propio y no
@@ -6156,13 +6152,19 @@ enum L10n {
             // Sesión 2 Google: subtitle del intro con provider .google + nota §13 (ambos
             // providers) + pantalla R9 de provider-mismatch (sub-first, H4).
             static var subtitleGoogle: String { ls("welcome.cloud.subtitleGoogle", comment: "") }
-            static var providerNote: String { ls("welcome.cloud.providerNote", comment: "") }
-            static var providerMismatchTitle: String { ls("welcome.cloud.providerMismatchTitle", comment: "") }
+            /// UX 2.2 · lote decidido 15 (QA de 2.1, 19-oct): el aviso dice que en este iPhone ya se usó OTRA cuenta de Yala.
+            /// «Esa cuenta usa otro método» sonaba a que la cuenta de Google ya estaba en uso. Keys nuevas: el cuerpo pasa
+            /// de uno a dos argumentos, y una traducción vieja con un solo `%@` no puede quedar viva.
+            static var providerMismatchTitle: String { ls("welcome.cloud.otherAccountUsedTitle", comment: "") }
             /// Body con el nombre VISIBLE del método conocido ("Apple"/"Google").
-            static func providerMismatchBody(_ providerName: String) -> String {
-                String(format: ls("welcome.cloud.providerMismatchBody", comment: ""), providerName)
+            /// `accountProvider`: con qué método se creó la cuenta usada en este iPhone. `chosenProvider`: el que se acaba de
+            /// elegir.
+            static func providerMismatchBody(accountProvider: String, chosenProvider: String) -> String {
+                String(format: ls("welcome.cloud.otherAccountUsedBody", comment: ""), accountProvider, chosenProvider)
             }
-            static var providerMismatchBodyGeneric: String { ls("welcome.cloud.providerMismatchBodyGeneric", comment: "") }
+            static func providerMismatchBodyGeneric(chosenProvider: String) -> String {
+                String(format: ls("welcome.cloud.otherAccountUsedBodyGeneric", comment: ""), chosenProvider)
+            }
             /// Paso 6 · el intro al que encamina el faro dice de dónde viene. Solo el nombre VISIBLE del
             /// método («Apple»/«Google»), nunca un correo (decisión de Jürgen, 2026-09-09).
             static func beaconOrigin(_ providerName: String) -> String {

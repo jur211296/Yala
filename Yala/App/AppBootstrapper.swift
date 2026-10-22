@@ -3078,28 +3078,15 @@ final class AppBootstrapper {
         print("AppBootstrapper: Detected downgrade from Pro to Free")
         #endif
 
-        // El tema de Pro vuelve al de siempre. El icono de Pro, no: lo avisa y lo devuelve la hoja de fin de Pro
-        // (UX 2.2 · L16-11); aquí volvía en silencio y solo se enteraba quien veía la alerta de iOS.
-        resetProThemeIfNeeded()
+        // El tema y el icono de Pro ya NO vuelven aquí: los avisa y los devuelve la hoja de fin de Pro al confirmar
+        // (UX 2.2 · L16-11 para el icono; el tema, decisión B de Jürgen del 2026-10-21). Antes el tema volvía en silencio
+        // al arrancar y la app cambiaba de aspecto sin explicación.
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
         // (suprimido en UITest — ver nota en refreshSubscriptionStatus).
         if !UITestHooks.isActive {
             RouterEntryGate.shared.submit(.presentDowngradeResolution)
-        }
-    }
-
-    /// Reset Pro theme to System if user downgraded from Pro
-    private func resetProThemeIfNeeded() {
-        guard !FeatureGateService.shared.isProUser else { return }
-
-        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
-        if currentTheme.isPro {
-            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
-            #if DEBUG
-            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
-            #endif
         }
     }
 

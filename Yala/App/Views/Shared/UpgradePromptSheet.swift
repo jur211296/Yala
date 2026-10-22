@@ -272,6 +272,7 @@ struct UpgradePromptSheet: View {
     private var ctaTitle: String {
         if store.isPurchasing { return L10n.Subscription.processing }
         let selected = store.planOffers.first { $0.id == selectedPlan } ?? store.planOffers.first
+        if selected?.trialDays != nil, selected?.trialIsOneMonth == true { return L10n.UXL15.gateStartTrialOneMonth }
         if let days = selected?.trialDays { return L10n.UXPro.gateStartTrialDays(days) }
         return L10n.UXPro.switchToPro
     }

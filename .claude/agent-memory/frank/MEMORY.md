@@ -122,6 +122,7 @@
 - [Tras un mutante, la app instalada es el mutante](feedback_tras_un_mutante_la_app_instalada_es_el_mutante.md) — recompila antes de capturar; axe type, no type_text.
 - [La gráfica se queda el gesto](feedback_la_grafica_se_queda_el_gesto.md) — swipe por x=8, despacio; el banner, en ráfaga.
 - [El vídeo del simulador salta pantallas cortas](feedback_el_video_del_simulador_salta_pantallas_cortas.md) — el «después» breve se conduce a mano y screenshot.
+- [El vídeo del simulador no casa con el reloj](feedback_el_video_del_simulador_no_casa_con_el_reloj.md) — solo escribe al cambiar la pantalla: graba el tramo con apretón de manos.
 - [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
 - [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.
 - [SPM sin red en el sandbox](reference_spm_sin_red_en_el_sandbox.md) — el build se cuelga resolviendo paquetes; copia de SourcePackages + `-clonedSourcePackagesDirPath`.
