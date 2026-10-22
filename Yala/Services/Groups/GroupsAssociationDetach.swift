@@ -628,6 +628,39 @@ enum GroupsAssociationDetach {
         }
     }
 
+    /// Lo que «Dejar en mis cuentas lo que pagué» dejaría en el Panel (auditoría UX 2.2 · L19-14, decisión C de
+    /// Jürgen: las dos salidas con su efecto y su cifra). Cuenta los GASTOS cuya pata es de cuenta real —lo que
+    /// pagaste tú—, con el total por divisa. Lee lo mismo que `detachBridge`, sin escribir nada: las zonas del canal
+    /// backend y la clasificación común de la pata (`GroupLegEvidence`). Las liquidaciones también se quedan, pero el
+    /// texto habla de gastos y no las cuenta. `nil` si no se pudo leer: el diálogo sale sin cifra.
+    struct KeepPreview: Equatable {
+        let expenseCount: Int
+        let amountsByCurrency: [String: Double]
+    }
+
+    static func keepPreview(context: ModelContext) -> KeepPreview? {
+        do {
+            let zones = try Self.backendChannelZones(context: context)
+            let txs = try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID != nil }))
+                .filter { zones.contains($0.splitGroupZoneID ?? "") }
+            let evidence = GroupLegEvidence.read(for: txs, context: context)
+            var count = 0
+            var amounts: [String: Double] = [:]
+            for tx in txs where action(leg: evidence.kind(of: tx), choice: .keep) == .releasePointers {
+                count += 1
+                let value = tx.amount.isFinite ? abs(tx.amount) : 0
+                amounts[tx.currencyCode, default: 0] += value
+            }
+            return KeepPreview(expenseCount: count, amountsByCurrency: amounts)
+        } catch {
+            #if DEBUG
+            print("GroupsAssociationDetach: keepPreview no pudo leer el puente: \(error)")
+            #endif
+            return nil
+        }
+    }
+
     /// Suelta el puente personal de TODAS las zonas antes de que el store de grupos se vacíe.
     ///
     /// **Corre ANTES de `DataWipeService.wipeLocalGroupsDomain`**, y el orden es load-bearing por dos

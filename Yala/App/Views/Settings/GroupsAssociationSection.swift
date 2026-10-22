@@ -29,6 +29,8 @@ struct GroupsAssociationSection: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var confirmDetach = false
+    /// L19-14: lo que «Dejar en mis cuentas lo que pagué» dejaría, leído al tocar «Desasociar».
+    @State private var detachKeepPreview: GroupsAssociationDetach.KeepPreview?
     /// El aviso de bloqueo de ESTE gesto. **Propio y no el de `ProfileView`**: aquel dice «No pudimos
     /// cerrar tu sesión», que es otra cosa y en una secundaria llega a ofrecer salir de la sesión entera a
     /// quien solo pidió soltar una cuenta de grupos. **El motivo llega por el retorno del gesto, y cerrar el
@@ -130,16 +132,18 @@ struct GroupsAssociationSection: View {
                 // Las DOS salidas son botones de la MISMA hoja, y el orden no es casual: conservar va
                 // primero porque es la que no destruye nada. Ninguna de las dos es `.destructive` a
                 // secas — quitar sí lo es, conservar no lo es en absoluto.
-                Button(L10n.Storage.Groups.detachKeep) { detach(.keep) }
+                // L19-14 (decisión C de Jürgen): cada salida dice su efecto. Las etiquetas van fijas; la cifra, en el
+                // mensaje (los botones de una presentación no admiten texto que dependa del estado).
+                Button(L10n.UXL19.detachKeep) { detach(.keep) }
                     .accessibilityIdentifier("storage_groups_detach_keep")
-                Button(L10n.Storage.Groups.detachRemove, role: .destructive) { detach(.remove) }
+                Button(L10n.UXL19.detachRemove, role: .destructive) { detach(.remove) }
                     .accessibilityIdentifier("storage_groups_detach_remove")
                 // Sin `role: .cancel`: con él, el diálogo (globo anclado en iOS 26) no pinta la salida de no hacer
                 // nada (medido en el lote 19 de la auditoría UX; molde del lote 13).
                 Button(L10n.Common.cancel) {}
                     .accessibilityIdentifier("storage_groups_detach_cancel")
             } message: {
-                Text(L10n.Storage.Groups.detachBody)
+                Text(detachMessage)
             }
             .alert(
                 L10n.Storage.Groups.detachBlockedTitle,
@@ -390,6 +394,7 @@ struct GroupsAssociationSection: View {
                 .accessibilityIdentifier("storage_groups_detach_finish_button")
             } else if GroupsAssociationLogic.offersDetach(state) {
                 Button {
+                    detachKeepPreview = GroupsAssociationDetach.keepPreview(context: modelContext)
                     confirmDetach = true
                 } label: {
                     Text(L10n.Storage.Groups.detachButton)
@@ -417,6 +422,20 @@ struct GroupsAssociationSection: View {
     /// en `.idle` —es verdad: no está haciendo nada— así que mirar `phase` no lo distinguiría del éxito.
     /// Es exactamente la confusión que este ticket arregla, y leerla aquí la reintroduciría en la única
     /// pantalla que la sufre.
+    /// «Tus grupos se van de este iPhone; siguen en tu cuenta y vuelven si la conectas otra vez.» y, debajo, el efecto
+    /// de cada salida con su cifra: «Gastos que pagaste y se quedan en tus cuentas: 12 (S/ 840.00)».
+    private var detachMessage: String {
+        var lines = [L10n.UXL19.detachBody]
+        if let preview = detachKeepPreview, preview.expenseCount > 0 {
+            let amounts = GroupDebtCopyLogic.amounts(
+                preview.amountsByCurrency.map { ($0.value, $0.key) },
+                money: { appPreferences.currency($0, currencyCode: $1) })
+            lines.append(L10n.UXL19.detachKeepCount(preview.expenseCount, amounts))
+            lines.append(L10n.UXL19.detachRemoveEffect)
+        }
+        return lines.joined(separator: "\n\n")
+    }
+
     private func detach(_ choice: GroupsAssociationDetach.BridgedRowsChoice) {
         Task { @MainActor in
             apply(await signOutCoordinator.detachGroupsAccount(context: modelContext, choice: choice))

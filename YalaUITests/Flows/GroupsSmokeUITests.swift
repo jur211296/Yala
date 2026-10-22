@@ -440,6 +440,13 @@ final class GroupsSmokeUITests: XCTestCase {
         gear.tap()
 
         let shareRow = app.buttons["group_settings_share_summary_button"]
+        // Desde el lote 19 decidido, Ajustes del grupo es una lista agrupada: solo monta las filas visibles, y el
+        // resumen queda por debajo de las opciones. Se baja hasta él.
+        var swipes = 0
+        while !shareRow.exists && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(
             shareRow.waitForExistence(timeout: 10),
             "GroupSettingsView no ofreció «Compartir resumen» con un grupo que tiene gastos."

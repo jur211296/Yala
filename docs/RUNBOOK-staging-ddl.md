@@ -583,6 +583,68 @@ entorno, va primero (su sección, arriba).
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
 
+## `g22_01_set_member_role.sql` — hacer o quitar administrador en un grupo de la nube (PENDIENTE en los dos entornos, 2026-10-21)
+
+**Ni staging ni producción.** La sesión que lo escribió no tocó ninguna base, a propósito: el encargo lo deja en local
+(banco y migración) y el despliegue es de Jürgen (ticket `groups-set-member-role-deploy`).
+
+Qué es: un RPC nuevo, `public.set_member_role(text, text, text)`, que un admin activo usa para hacer admin a otro miembro
+activo o quitárselo, y dos RPC redefinidos: `remove_member` y `leave_group` dejan además `role = 'member'` (quien sale
+deja de ser admin, también si vuelve a entrar) y `remove_member` toma el mismo candado que `set_member_role`. No toca
+tablas ni columnas. Va con el Worker que lo tiene en la allowlist (`gateway/src/groups/rpc.ts`) y con la app 2.2 que lo
+llama. El detalle de las reglas y del banco, en `qa/cloud/README.md` (entrada g22_01).
+
+**La migración trae una guarda por md5** sobre los dos cuerpos que redefine, y sus md5 de partida salen del DDL del repo
+(medidos en el banco), **no de staging ni de producción**: si el cuerpo vivo difiere aunque sea en un espacio, la
+migración aborta sin tocar nada. Por eso el paso 1 los mide.
+
+**Sin dependencias de otras migraciones pendientes**: lee `group_members`, `split_groups`, `is_group_admin` y
+`server_hlc`, que están en los dos entornos desde el 2026-07-16.
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select p.proname, p.prosecdef, p.proconfig,
+          has_function_privilege('anon', p.oid, 'EXECUTE') as anon_puede,
+          has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_puede
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'set_member_role';
+   ```
+   Tiene que salir vacío. Si ya sale una fila, está aplicada: salta al paso 3. Y los dos cuerpos que se redefinen:
+   ```sql
+   select p.proname, md5(p.prosrc)
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname in ('remove_member', 'leave_group');
+   ```
+   Tienen que salir `remove_member e716f203c405437c95c82e47deae61b5` y `leave_group a4bbcff1bca1ac1cec09f372d577d1cc`
+   (o, si ya está aplicada, `efce7084cb5cb5c902948f156c09f148` y `f4820b999e862b2f0ee6192855982318`). **Si sale otro,
+   para y avisa a Frank**: el cuerpo vivo no es el del molde, la guarda abortaría, y hay que exportar el vivo
+   (`select pg_get_functiondef('public.remove_member(text,text)'::regprocedure)`) para rehacer la migración sobre él.
+2. **Aplicar.** *New query* → pega `qa/cloud/g22_01_set_member_role.sql` entero → *Run*. El fichero no trae
+   `begin;`/`commit;`: el *SQL Editor* lo envuelve en una transacción, igual que `apply_migration` del conector. Con
+   `psql`, `psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g22_01_set_member_role.sql "$..._DB_URL"`. Tiene que salir el aviso
+   `g22_01 OK · set_member_role creada; remove_member y leave_group dejan role = member; grants intactos`. Con un
+   error no se aplicó nada: para y avisa a Frank.
+3. **Comprobar.** Repite las dos consultas del paso 1: una fila con `prosecdef = true`, `proconfig = {search_path=public}`,
+   `anon_puede = false` y `authenticated_puede = true`, y los md5 nuevos (`efce7084…`, `f4820b99…`).
+4. **Desplegar el Worker, SOLO después del paso 3**, desde `2.2` con el PR de L19-3 mergeado: `cd gateway && npm ci &&
+   npm run deploy:staging` (staging) o `npm run deploy:production`. Apunta el `Current Version ID` que imprime y el
+   anterior (`npx wrangler deployments list`, con `--env production` en producción). Ese deploy lleva también lo que
+   `gateway/RUNBOOK.md` y las secciones de arriba tengan pendiente para ese entorno: el Worker de `2.2` es el de
+   `manifest_version: 3`, así que **si g18_01 o g21_01 siguen sin aplicar en ese entorno, van antes** (sus secciones,
+   arriba), o el Merkle de los teléfonos 2.2 da 502.
+5. **Comprobar el Worker** con un build de `Yala Dev` contra staging (en producción, con un build 2.2 de TestFlight): en
+   un grupo de la nube con otra persona, hazla administradora y quítaselo; en su teléfono, tras sincronizar, la insignia
+   cambia. `npx wrangler tail` no debe enseñar `[groups-rpc] set_member_role upstream 404` (DDL sin aplicar) ni
+   `rejected: yala_bad_input` (la app manda un rol que el RPC no conoce).
+
+**Marcha atrás.** Primero el Worker: `npx wrangler rollback <id anterior>` (con `--env production` en producción). Después
+la función: `qa/cloud/g22_01_rollback.sql`, idempotente y con su propia guarda: borra `set_member_role` y devuelve
+`remove_member` y `leave_group` a su cuerpo del DDL (md5 de partida). Los roles que ya se cambiaron se quedan como
+están: son el estado real del grupo. Con la función retirada y la app 2.2 instalada, hacer o quitar administrador en un grupo de la nube da el
+error genérico hasta que vuelva.
+
 ## Referencias
 
 - Detalle por migración y su historia: `qa/cloud/README.md` (la entrada de `g14_01` está en

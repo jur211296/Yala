@@ -8133,3 +8133,131 @@
 "welcome.cloud.otherAccountUsedTitle" = "このiPhoneでは別のアカウントが使われています";
 "welcome.cloud.otherAccountUsedBody" = "このiPhoneでは、%1$@で作成したYalaのアカウントがすでに使われています。%2$@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、%1$@でサインインしてください。";
 "welcome.cloud.otherAccountUsedBodyGeneric" = "このiPhoneでは、別の方法で作成したYalaのアカウントがすでに使われています。%@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、前回と同じ方法でサインインしてください。";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "管理者";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "管理者にする";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "管理者から外す";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "%@を管理者にしますか？";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@は参加リクエストの承認・拒否、メンバーの削除、グループ名と予算の変更、アーカイブ、ほかの人を管理者にすることができるようになります。";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "%@を管理者から外しますか？";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@はグループに残りますが、リクエストの承認、メンバーの削除、名前と予算の変更、グループのアーカイブはできなくなります。";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "グループから外す";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "%@をグループから外しますか？";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@はグループを見られなくなります。記録した支出は残ります。";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "%@をグループから外すと、未精算の分は精算されないまま残ります。";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "先に精算する";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@はあなたに%2$@の借りがあります。";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "あなたは%1$@に%2$@の借りがあります。";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@は%3$@に%2$@の借りがあります。";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@が%2$@未払い";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "あなたが%@未払い";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "退出すると、このグループとその借りは表示されなくなります。%@には引き続き表示されます。";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "退出すると、このグループとそれらの借りは表示されなくなります。ほかのメンバーには引き続き表示されます。";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "全員のグループから消えます。あなたの口座に記録した分は残ります。";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "アーカイブまたは削除";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "アーカイブ";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "グループ全員のアーカイブ済みに移ります。支出と借りは保存され、いつでも元に戻せます。";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "支出と借りはそのままで、全員のリストに戻ります。";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "全員のグループから消え、元に戻せません。";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "すべて精算されると削除できます。";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "抜けたい場合は、譲渡して退出してください。";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "リストから外したいだけなら、アーカイブしてください。借りは保存されます。";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "残高を見る";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "アーカイブ済みに移動しました";
+/* Deshacer el archivado */
+"groups.l19.undo" = "取り消す";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "アーカイブ済みのグループ";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "アーカイブを解除できるのは管理者だけです。";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "アーカイブ解除";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ アーカイブ済みのグループで貸している%@";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ アーカイブ済みのグループで借りている%@";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "最大でいくら使いますか？";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "現在の支出：%@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "グループにはまだ支出がありません。";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "すでに%@超えています";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "残り%@";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "あなただけでなく、グループ全員に表示されます。";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "半分、4分の3、上限間近、上限に達したときに全員にお知らせします。";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "精算の回数を減らす";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "アナがあなたに、あなたがベトに借りがある場合、アナがベトに直接払います。";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "借りを1つの通貨で表示";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "これを変更できるのはグループを作成した人だけです。";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "新しい支出の分け方";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "あなたの口座";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "ここで払った分を自分の口座に記録";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "グループ設定と同じです。";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "あなたに借り";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "あなたが借り";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "あなたが作成したグループで、まだほかに引き継げる人がいません。開いてアーカイブするか削除してください。";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "設定を開く";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "グループはこの iPhone から消えますが、アカウントには残り、もう一度接続すると戻ります。";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "払った分を自分の口座に残す";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "それも自分の口座から消す";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "残す場合、あなたが払った支出は口座に残ります：%1$d件（%2$@）。";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "消す場合、口座からも消えます。";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "グループを作成した人は常に管理者のため、その役割は外せません。";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "グループには少なくとも1人の管理者が必要です。";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "この人が管理者になるには、まず自分のアカウントでグループに入り直す必要があります。";

@@ -41,6 +41,9 @@ final class GroupsViewModel {
     private(set) var membersByGroup: [String: [SplitMember]] = [:]       // zoneID → members
     private(set) var balancesByGroup: [String: [MemberBalance]] = [:]    // zoneID → balances
     private(set) var globalSummary: GroupGlobalSummary?
+    /// Lo que te deben y debes en los grupos ARCHIVADOS (auditoría UX 2.2 · L19-9): archivar no salda nada, y la línea
+    /// bajo el total lo dice («+ S/ 190.00 que te deben en grupos archivados»). `nil` sin grupos archivados.
+    private(set) var archivedSummary: GroupGlobalSummary?
 
     /// M6 D3: cached fuentes para recalcular `currentUserDebts(for:)` on-demand.
     /// Pobladas en `loadData()` para evitar fetch repetido por cada card render.
@@ -142,8 +145,8 @@ final class GroupsViewModel {
                 let members = try GroupService.shared.fetchMembers(for: group)
                 membersByGroup[group.cloudKitZoneID] = members
 
-                // Skip heavy data loading for archived groups
-                guard !group.isArchived else { continue }
+                // L19-9: los archivados también se cargan. Su deuda sigue viva y la lista la enseña bajo el total; antes
+                // se saltaban aquí y «Te deben» bajaba al archivar como si te hubieran pagado.
 
                 // M6 D3: cache para recalcular debts on-demand (currentUserDebts) + para `recalculate()`.
                 expensesByGroup[group.cloudKitZoneID] = try GroupExpenseService.shared.fetchExpenses(for: group)
@@ -168,6 +171,10 @@ final class GroupsViewModel {
         var currentUserMemberIDs = Set<String>()
         var newBalancesByGroup: [String: [MemberBalance]] = [:]
         var newDebtsByGroup: [String: [DebtRow]] = [:]
+        var archivedExpenses: [SplitExpense] = []
+        var archivedShares: [SplitShare] = []
+        var archivedSettlements: [SplitSettlement] = []
+        var archivedMemberIDs = Set<String>()
 
         for group in groups {
             let zoneID = group.cloudKitZoneID
@@ -180,7 +187,20 @@ final class GroupsViewModel {
             // Saltárselo aquí cambiaría lo que ve el usuario, que no es lo que vengo a tocar.
             if let rows = computeDebts(for: group) { newDebtsByGroup[zoneID] = rows }
 
-            guard !group.isArchived else { continue }
+            if group.isArchived {
+                // L19-9: la deuda de los archivados va a su propio resumen, con la misma identidad resuelta.
+                guard !group.isHiddenForAll else { continue }
+                archivedExpenses.append(contentsOf: expensesByGroup[zoneID] ?? [])
+                archivedShares.append(contentsOf: sharesByGroup[zoneID] ?? [])
+                archivedSettlements.append(contentsOf: settlementsByGroup[zoneID] ?? [])
+                for member in members where member.isCurrentUser && member.isActive {
+                    archivedMemberIDs.insert(member.id.uuidString)
+                }
+                if let resolved = GroupExpenseService.resolveCurrentUserMember(from: members.filter(\.isActive)) {
+                    archivedMemberIDs.insert(resolved.id.uuidString)
+                }
+                continue
+            }
 
             let expenses = expensesByGroup[zoneID] ?? []
             let shares = sharesByGroup[zoneID] ?? []
@@ -229,6 +249,14 @@ final class GroupsViewModel {
             newSummary = nil
         }
         if newSummary != globalSummary { globalSummary = newSummary }
+
+        let newArchivedSummary: GroupGlobalSummary? = archivedExpenses.isEmpty ? nil : GroupBalanceService.globalSummary(
+            allExpenses: archivedExpenses,
+            allShares: archivedShares,
+            allSettlements: archivedSettlements,
+            currentUserMemberIDs: archivedMemberIDs
+        )
+        if newArchivedSummary != archivedSummary { archivedSummary = newArchivedSummary }
     }
 
     /// Fuerza un fetch remoto y recarga la lista (refresh acotado a Grupos, no un bump global de

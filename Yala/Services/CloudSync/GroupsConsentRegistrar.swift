@@ -165,8 +165,10 @@ final class GroupsConsentRegistrar {
         // `.groupArchived` por exhaustividad: `record_groups_consent` es un hecho de la CUENTA y no mira
         // grupos, así que no puede devolverlo. Si algún día lo hiciera, «rechazo permanente» es la
         // clasificación correcta — el consent no se pierde, se conserva y se hace ruido.
+        // Y los tres de `set_member_role` (g22_01), por la misma exhaustividad: no miran el consent.
         case .badInput, .notAuthorized, .permanentRejected, .invalidInvite, .groupDeleted, .groupArchived,
-             .groupExists, .invalidGroupID, .memberNotFound, .cannotRemoveOwner, .ownerCannotLeave:
+             .groupExists, .invalidGroupID, .memberNotFound, .cannotRemoveOwner, .ownerCannotLeave,
+             .cannotChangeOwnerRole, .lastAdmin, .memberNotEligible:
             // Un rechazo permanente sobre un registro LEGAL es un bug nuestro, no una razón para tirar la
             // prueba: se CONSERVA y se hace ruido. El backoff impide que el bucle cueste batería.
             MetricsService.canary(.groupsConsentRegistrationRejected, detail: "\(rpcError)")

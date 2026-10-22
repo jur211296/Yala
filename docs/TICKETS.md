@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1032)
+## Index (1034)
 
 | cloud-progress-shows-real-steps-and-counts | backlog | tickets/backlog/cloud-progress-shows-real-steps-and-counts.md |
 | cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in | qa | tickets/qa/cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in.md |
@@ -504,6 +504,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | done | tickets/done/groups-outbox-rows-without-a-live-session-have-no-exit.md |
 | groups-outbox-rows-without-a-provable-owner-never-upload | backlog | tickets/backlog/groups-outbox-rows-without-a-provable-owner-never-upload.md |
+| groups-own-debt-checks-still-count-rounding-residue | backlog | tickets/backlog/groups-own-debt-checks-still-count-rounding-residue.md |
 | groups-owner-debt-no-heir-dead-end | done | tickets/done/groups-owner-debt-no-heir-dead-end.md |
 | groups-owner-transfer-and-leave | done | tickets/done/groups-owner-transfer-and-leave.md |
 | groups-pending-member-can-open-group | done | tickets/done/groups-pending-member-can-open-group.md |
@@ -516,6 +517,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-reassociation-does-not-restore-the-bridge-link | backlog | tickets/backlog/groups-reassociation-does-not-restore-the-bridge-link.md |
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
 | groups-reject-can-expel-a-member-approved-elsewhere | backlog | tickets/backlog/groups-reject-can-expel-a-member-approved-elsewhere.md |
+| groups-set-member-role-deploy | backlog | tickets/backlog/groups-set-member-role-deploy.md |
 | groups-settlement-reminder | done | tickets/done/groups-settlement-reminder.md |
 | groups-settlement-reminder-discoverability | done | tickets/done/groups-settlement-reminder-discoverability.md |
 | groups-settlement-reminder-stale-clock | backlog | tickets/backlog/groups-settlement-reminder-stale-clock.md |
