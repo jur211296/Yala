@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: cash-flow-plan
 created: 2026-10-16
-updated: 2026-10-21
+updated: 2026-10-22
 qa-status: needs-testing
 qa-notes: dos iPhone con el campo ya desplegado en CloudKit - cambio desde el mes siguiente en A y el B lo ve sin tocar el pasado
 source: auditoría UX 2.2, lote 18 (Reportes) — medido en el simulador
@@ -66,5 +66,5 @@ por el Modo Nube (columna `amount_changes_raw`, manifest v3). Fijado en `CashFlo
 `CashFlowAmountFromMonthViewModelTests`, `CashFlowAmountChangeSyncTests` y el XCUITest
 `CashFlowPlanUITests#test_amountFromThisMonthOn_changesTheComingMonths_andLeavesThePastAlone`.
 
-Queda: desplegar el campo a CloudKit (card de Lola), el DDL g21_01 y el Worker v3 (card de Jürgen), y probarlo con dos
-iPhone. Límites aceptados: `cashflow-amount-changes-from-two-phones-overwrite-each-other`.
+El DDL g21_01 y el Worker v3 están desplegados en staging y producción desde el 2026-10-22. Queda: desplegar el campo a
+CloudKit (pasos en `docs/despliegue-cloudkit-2-2.md`, de Jürgen) y probarlo con dos iPhone. Límites aceptados: `cashflow-amount-changes-from-two-phones-overwrite-each-other`.

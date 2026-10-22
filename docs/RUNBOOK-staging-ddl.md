@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-12
+updated: 2026-10-22
 tags: [runbook, staging, ddl, owner]
 ---
 
@@ -487,7 +487,12 @@ La app nueva sin el campo cae al aviso de siempre, que sigue bloqueando.
 
 ---
 
-## `g18_01_account_parent_account_id.sql` — tarjeta con varias divisas (staging 2026-10-18, producción PENDIENTE)
+## `g18_01_account_parent_account_id.sql` — tarjeta con varias divisas (staging 2026-10-18, producción 2026-10-22)
+
+> **Producción: aplicada el 2026-10-22** (Frank, con el token de gestión por `/database/query`, rol `postgres`). Antes:
+> backup físico del día `2037455155` (07:50 UTC) y foto de `accounts` (0 filas). Después: la consulta del paso 1 da `1`,
+> `authenticated` hereda UPDATE, y PostgREST sirve la columna (`select=parent_account_id` → 200; una columna inventada →
+> 400). Worker de producción `ea8206c8` → `2e2c05c4` (manifest v3, que incluye v2). Lo de abajo queda como registro.
 
 **Staging: aplicada el 2026-10-18** (`fostjbbwstyuunmmefuk`, con el token de gestión, que esta vez sí respondía 200) y
 re-aplicada para comprobar que es idempotente. Worker de staging desplegado el mismo día: `914f5402` → `0207e3eb` →
@@ -529,7 +534,18 @@ entera (`unknown_column`); el teléfono la aparta para siempre, también lo que 
 `predeploy` lo impide (`gateway/scripts/check-manifest-not-older.mjs`), pero **2.1 no trae ese guard hasta que se mezcle
 2.2 en 2.1**: hasta entonces, el Worker de producción no se despliega desde 2.1.
 
-## `g21_01_cashflow_line_amount_changes.sql` — cambios «desde este mes» del flujo de caja (PENDIENTE en los dos entornos, 2026-10-21)
+## `g21_01_cashflow_line_amount_changes.sql` — cambios «desde este mes» del flujo de caja (aplicada en los dos entornos el 2026-10-22)
+
+> **Aplicada el 2026-10-22 en staging y producción** (Frank, misma vía que g18_01), re-aplicada en staging para comprobar
+> que es idempotente. Staging: Worker `af424141` → `043cdff6`, `/config` anuncia `manifestVersion 3`, sonda g21 de un
+> solo uso **10/10** (push v3 entra; pull v3 baja la columna; pull v1/v2 la podan; Merkle 200 en v1/v2/v3; un push v2 no
+> la borra) y goldens `test/sync.goldens.test.ts` **13/13**. Producción: DDL tras g18_01, Worker `ea8206c8` →
+> `2e2c05c4` con `manifestVersion 3`, PostgREST sirve la columna. **Sin medir con tráfico real**: en 3 min de
+> `wrangler tail` no entró ninguna petición de teléfonos. Marcha atrás de producción: `npx wrangler rollback ea8206c8
+> --env production` **solo** junto con los dos `*_rollback.sql` (ver el guard de manifest).
+>
+> **La sonda `qa/cloud/g18_01-staging-probe.sh` da ahora 7/10 en staging, y no es un fallo:** sus tres rojos son la
+> aserción literal `manifest_version == 2`, y el Worker anuncia 3. Las siete comprobaciones funcionales pasan.
 
 **Ni staging ni producción.** La sesión que lo escribió no lo aplicó en staging a propósito: con el Worker de staging en
 `manifest_version: 2`, el DDL solo es inocuo, pero desplegar ahí el Worker v3 que lo necesita habría cambiado lo que
