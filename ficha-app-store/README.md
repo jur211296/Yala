@@ -101,6 +101,21 @@ cae desplazado, se fija a mano en `"toques"` de la escena.
   `grabar.sh` congela el último fotograma hasta el tiempo real de la grabación.
 - **`axe` tarda en tocar** (~1-2 s por llamada): las marcas se apuntan después del toque.
 - **`axe type` no escribe tildes ni «ñ»**: las frases del chat van sin ellas.
+- **Material público de lanzamiento (20-oct-2026): `YALA_FICHA_MARKETING=1`.** Siembra con `-uitest-seed-marketing`:
+  los grupos son «Depa compartido» y «Almuerzos de la oficina» (en inglés «Shared apartment» y «Office lunches»), sin
+  viajes, y el presupuesto de mascota sin nombre propio. `video/grabar.sh` añade entonces a Grupos el toque en
+  Balances, para que la escena se mueva hasta el final. Los textos de `textos/` siguen hablando del viaje: son de Lola.
+- **Con el reloj del molde, Yala IA de verdad falla** («Something went wrong»): el gateway de staging rechaza la hora
+  desplazada al 13-oct. El vídeo de la ficha no lo nota porque finge la respuesta (`-uitest-chat-reply pizza`); para
+  grabar una pregunta con respuesta real, lanza la app sin `DYLD_INSERT_LIBRARIES` (Yala Dev y
+  `SIMCTL_CHILD_YALA_DEV_SHARED_SECRET`).
+- **En el Panel, la cifra «Disponible» es un botón: abre Estadísticas.** El toque «inocuo» que se pierde tras arrancar
+  no puede ir ahí; va a la barra de estado (`-x 300 -y 12`), que solo sube al principio.
+- **La acción «Registrar pago de Apple Pay» desde Atajos deja el borrador en la Bandeja, pero el simulador no entregó
+  el banner** (iOS 27.0, con el permiso concedido desde Notificaciones de la app lanzada sin `-uitest`). El borrador sí
+  es real: con el ícono de Apple Pay y «Missing data».
+- **`comun.sh` usa `BASH_SOURCE`**: sourcearlo desde zsh deja `MOLDE` mal y el segundo `source` sale con `exit 1`.
+  Desde zsh, llama a los scripts; no los sourcees.
 - Las capturas en español son las de v2 (`~/Claude/propuestas/capturas-app-store-final-v2-2026-10-13/capturas/`), sin
   recapturar; el molde las renderiza igual (`capturas/render.sh es`). El vídeo en español sigue siendo el de
   `~/Claude/propuestas/assets-asc-2.1-2026-10-13/`: no hay `video/cortes/es.json` porque no se regrabó con el molde.
