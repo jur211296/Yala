@@ -145,6 +145,9 @@ struct WelcomeCloudSignInView: View {
     /// del DUEÑO. Se consume al escribir (una sola vez — el epoch conserva su T0 aunque el flujo
     /// reintente).
     @State private var consentPendingPersistence = false
+    /// La persona aceptó el consentimiento EN ESTA PANTALLA (esta pasada). Si después pasa de entrar a crear la cuenta, no
+    /// se le vuelve a pedir (`CloudConsentRegistrationLogic.signUpSwitch`).
+    @State private var consentAcceptedThisPass = false
     /// A5: el método que el usuario tapeó en el intro del ALTA (en `.reentry` no se usa — ahí el
     /// provider lo trae el `Entry`). Se fija ANTES de abrir el consent y de ahí sale el `provider`
     /// que ve `CloudAuthService`.
@@ -215,6 +218,7 @@ struct WelcomeCloudSignInView: View {
             CloudConsentView(path: consentPath, persistsOnAccept: persistsConsentOnAccept, onAccept: {
                 showConsent = false
                 consentBackArmed = false
+                consentAcceptedThisPass = true
                 consentPendingPersistence = !persistsConsentOnAccept
                 launchFlow { await runFlowAfterConsent() }
             }, onCancel: {
@@ -572,7 +576,9 @@ struct WelcomeCloudSignInView: View {
                 .frame(height: WelcomeFormLayout.buttonHeight)
                 .accessibilityIdentifier("welcome_borncloud_signup_google")
 
-                Text(L10n.Welcome.BornCloud.providerNote)
+                // Decisión A de Jürgen (2026-10-19): la misma frase y key que Ajustes. La cuenta no queda «ligada al método»:
+                // con el mismo correo, Apple y Google abren la misma cuenta (medido en el backend, L20-9).
+                Text(L10n.Settings.yalaAccountLinkingNote)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -620,9 +626,9 @@ struct WelcomeCloudSignInView: View {
                     .frame(height: WelcomeFormLayout.buttonHeight)
                     .accessibilityIdentifier("welcome_cloud_signin_button_google")
                 }
-                // Nota §13 del primer sign-in (AMBOS providers): entra con el método que usaste, y la
-                // cuenta queda ligada a él. La primera mitad es lo que la separa de la del alta (W4).
-                Text(L10n.Welcome.Cloud.providerNote)
+                // Nota §13 del primer sign-in (AMBOS providers). Desde la decisión A de Jürgen (2026-10-19), la frase de
+                // Ajustes: con el mismo correo, Apple y Google abren la misma cuenta.
+                Text(L10n.Settings.yalaAccountLinkingNote)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -698,7 +704,7 @@ struct WelcomeCloudSignInView: View {
             messageContent(
                 icon: "person.crop.circle.badge.exclamationmark",
                 title: L10n.Welcome.Cloud.providerMismatchTitle,
-                body: providerMismatchBody(accountProvider: exits.accountProvider))
+                body: providerMismatchBody(exits))
                 .accessibilityIdentifier("welcome_cloud_provider_mismatch")
             VStack(spacing: DS.Spacing.md) {
                 // Las acciones toman el método de `exits` y no un literal por `case`: así un botón no puede firmar
@@ -746,11 +752,13 @@ struct WelcomeCloudSignInView: View {
 
     /// Body del mismatch R9: con provider CONOCIDO interpola su nombre visible; nil o
     /// desconocido → copy genérico (jamás interpolar un rawValue del wire en UI).
-    private func providerMismatchBody(accountProvider: CloudSignInProvider?) -> String {
-        if let name = ProviderMismatchLogic.displayName(forProvider: accountProvider?.rawValue) {
-            return L10n.Welcome.Cloud.providerMismatchBody(name)
+    private func providerMismatchBody(_ exits: ProviderMismatchLogic.Exits) -> String {
+        // El método elegido es siempre uno de los dos conocidos (`createWith` sale de la sesión que se acaba de firmar).
+        let chosen = exits.createWith == .apple ? "Apple" : "Google"
+        if let name = ProviderMismatchLogic.displayName(forProvider: exits.accountProvider?.rawValue) {
+            return L10n.Welcome.Cloud.providerMismatchBody(accountProvider: name, chosenProvider: chosen)
         }
-        return L10n.Welcome.Cloud.providerMismatchBodyGeneric
+        return L10n.Welcome.Cloud.providerMismatchBodyGeneric(chosenProvider: chosen)
     }
 
     /// «Iniciar sesión con <método del faro>», desde el mismatch. **Sin volver a pedir el consentimiento**
@@ -798,14 +806,27 @@ struct WelcomeCloudSignInView: View {
     /// botones, y no otra vez en la pantalla de la que se sale.
     ///
     /// **vb1f (opción C): con Google, viaja también la credencial** (`pendingGoogleCredential`, recogida antes de soltar
-    /// la sesión). El consentimiento se sigue pidiendo; lo que no se repite es la hoja de Google. No hace falta tocarla
-    /// aquí: `ensureSignedIn` la gasta en el siguiente inicio de sesión y solo si es de Google, así que si la persona
-    /// cierra el consentimiento y elige Apple en el intro del alta, se descarta sin usarse.
+    /// la sesión): lo que no se repite es la hoja de Google. No hace falta tocarla aquí: `ensureSignedIn` la gasta en el
+    /// siguiente inicio de sesión y solo si es de Google, así que si la persona cierra el consentimiento y elige Apple en
+    /// el intro del alta, se descarta sin usarse.
+    ///
+    /// **Y el consentimiento tampoco se repite si ya se aceptó en esta pasada** (lote decidido 2.2 · 15): es el mismo texto
+    /// que la persona aceptó hace un momento antes de «Entrar con…». Se registra para el alta en este punto —la regla
+    /// vive en `CloudConsentRegistrationLogic`— y el alta arranca sin pasar por el intro.
     private func switchToSignUp(with signUpProvider: CloudSignInProvider) {
         chosenProvider = signUpProvider
         entryOverride = .bornCloud
         phase = .intro
-        showConsent = true
+        switch CloudConsentRegistrationLogic.signUpSwitch(consentAcceptedThisPass: consentAcceptedThisPass) {
+        case .askConsent:
+            showConsent = true
+        case .alreadyAccepted:
+            CloudConsentRegistrationLogic.persistForSignUpSwitch(pending: &consentPendingPersistence) {
+                CloudConsentRegistrar.register()
+            }
+            MetricsService.cloudConsentAccepted(path: CloudMigrationController.ConsentPath.bornCloud.rawValue)
+            launchFlow { await runBornCloudFlow() }
+        }
     }
 
     private func progressContent(_ text: String, hint: String?) -> some View {

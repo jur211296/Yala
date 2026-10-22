@@ -268,7 +268,7 @@
 "exchangeRate.updated" = "更新済み";
 "exchangeRate.loadError" = "為替レートを取得できませんでした。少ししてからもう一度お試しください。";
 "exchangeRate.noSecondaryCurrenciesHint" = "次の場所で副通貨を選択できます";
-"exchangeRate.noSecondaryCurrenciesPath" = "プロフィール > 通貨と為替";
+"exchangeRate.noSecondaryCurrenciesPath" = "設定 > 通貨と為替";
 
 // MARK: - Empty States
 
@@ -453,9 +453,9 @@
 "settings.budgetsFavoritesReorder" = "お気に入りを並び替え";
 "budgets.favorites.previewTitle" = "ホームでの表示";
 "budgets.favorites.previewEmpty" = "プレビューを見るにはお気に入りを選択してください";
-"settings.tabBarConfig" = "ナビゲーションをカスタマイズ";
-"settings.tabBarConfigInfo" = "下部バーに表示するセクションを選んでください。最小1、最大3。";
-"settings.tabBarConfigActive" = "アクティブなタブ";
+"settings.tabBarConfig" = "下部のタブ";
+"settings.tabBarConfigInfo" = "下に表示するタブと順番を選んでください。";
+"settings.tabBarConfigActive" = "バーに表示中";
 "settings.tabBarConfigAvailable" = "利用可能";
 "settings.tabBarConfigReorderHint" = "長押しで並び替え";
 "settings.tabBarConfigMinWarning" = "少なくとも1つのセクションが必要です";
@@ -534,7 +534,7 @@
 "budgets.alerts.message.75" = "「%1$@」の75%%を使用 — %3$@中%2$@";
 "budgets.alerts.message.90" = "「%1$@」の残りが少なくなりました — %3$@中%2$@を使用";
 "budgets.alerts.message.100" = "「%1$@」の上限に到達しました — %3$@中%2$@";
-"budgets.alerts.globalDisabledHint" = "予算アラートを受け取るには、プロフィール > 通知で有効化してください";
+"budgets.alerts.globalDisabledHint" = "予算アラートを受け取るには、設定 > 通知で有効化してください";
 "budgets.alerts.custom" = "カスタム";
 "budgets.alerts.addThreshold" = "追加";
 "budgets.new" = "新規予算";
@@ -607,7 +607,7 @@
 
 // MARK: - Profile
 
-"profile.title" = "プロフィール";
+"profile.title" = "設定";
 "profile.defaultName" = "ユーザー";
 "profile.personalDetails" = "個人情報";
 "profile.dataManagement" = "データ管理";
@@ -1070,7 +1070,7 @@
 "insights.ofTotal" = "合計に対して";
 "insights.analyzingData" = "データを分析中...";
 "insights.activateAITitle" = "AIサマリーを利用できます";
-"insights.activateAIBody" = "プロフィール > AI機能で有効化・カスタマイズできます。";
+"insights.activateAIBody" = "設定 > AI機能で有効化・カスタマイズできます。";
 "insights.activate" = "有効化";
 "insights.goToSettings" = "設定に移動";
 "insights.notInterested" = "興味なし";
@@ -1094,7 +1094,7 @@
 "settings.permissions" = "権限";
 "settings.aiPrivacy" = "AIプライバシーとデータ";
 "settings.subscriptions" = "サブスクリプションを管理";
-"settings.rateApp" = "評価とおすすめ";
+"settings.rateApp" = "Yalaを評価";
 "settings.tutorials" = "チュートリアル";
 "settings.faq" = "よくある質問";
 "settings.contact" = "お問い合わせ";
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "指標";
 "settings.sectionFormat" = "数値の形式";
 "settings.defaultPeriod" = "既定の期間";
-"settings.defaultPeriodDescription" = "アプリを開いたときに既定で適用される期間です。期間セレクタからいつでも一時的に変更できます。";
+"settings.defaultPeriodDescription" = "ホーム、記録、統計を開いたときの期間です。期間セレクタで一時的に変更できます。";
 "settings.colorfulIcons" = "カラフルアイコン";
 "settings.colorfulIconsDescription" = "プロフィールセクションにiOS設定アプリ風のカラーアイコンを表示します。";
 "settings.colorfulIconsDisabledByTheme" = "現在のテーマにより自動的に無効になっています。";
@@ -1699,19 +1699,19 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "ヘルプヒント";
-"settings.widgetHintsDescription" = "各グラフの説明を表示するインフォボタンをウィジェットに表示します。";
-"settings.showVariations" = "比較";
-"settings.showVariationsDescription" = "前期間との比較や変動率を表示します。";
-"settings.averageLine" = "平均線";
+"settings.widgetHintsDescription" = "グラフの横に「?」ボタンを表示し、各グラフの説明を確認できます。ホーム、統計、計画で表示されます。";
+"settings.showVariations" = "前の期間と比較";
+"settings.showVariationsDescription" = "各数値が前の期間からどれだけ増減したかを表示します。ホーム、統計、レポートで表示されます。";
+"settings.averageLine" = "グラフの平均線";
 "settings.averageLineDescription" = "棒グラフに平均線を表示します。";
-"settings.averageLine.off" = "オフ";
-"settings.averageLine.total" = "合計";
-"settings.averageLine.segmented" = "セグメント";
-"settings.averageLine.offDescription" = "グラフに平均線を表示しません。";
-"settings.averageLine.totalDescription" = "全体平均を示す水平線。";
-"settings.averageLine.segmentedDescription" = "期間ごとに区切り、変動率を表示します。";
+"settings.averageLine.off" = "なし";
+"settings.averageLine.total" = "1本";
+"settings.averageLine.segmented" = "区間ごと";
+"settings.averageLine.offDescription" = "平均線を表示しません。";
+"settings.averageLine.totalDescription" = "期間全体の平均を1本の線で表示します。";
+"settings.averageLine.segmentedDescription" = "区間ごとに線を引き、前の区間からどれだけ増減したかを表示します。";
 "settings.decimalPlaces" = "小数点以下の桁数";
-"settings.decimalPlacesDescription" = "合計とグラフにのみ適用されます。個別の記録は常に小数点2桁で表示されます。";
+"settings.decimalPlacesDescription" = "合計とグラフに反映されます。各記録は常に小数点以下2桁で表示されます。";
 "settings.decimalsNone" = "小数なし";
 "settings.decimalsOne" = "1桁";
 "settings.decimalsTwo" = "2桁";
@@ -1719,22 +1719,22 @@
 "settings.currencyFormatDescription" = "通貨コード(USD)とシンボル($)のどちらを表示するか選択します。";
 "settings.currencyCode" = "コード(PEN、USD)";
 "settings.currencySymbol" = "シンボル(S/、$)";
-"settings.autoFocusField" = "オートフォーカス項目";
-"settings.autoFocusFieldDescription" = "新規の手動記録を作成すると、選択した項目に自動でキーボードが開きます。";
+"settings.autoFocusField" = "キーボードを開く項目";
+"settings.autoFocusFieldDescription" = "手動で記録するとき、この項目でキーボードが開きます。";
 "settings.autoFocusAmount" = "金額";
 "settings.autoFocusNote" = "説明";
-"settings.autoFocusNone" = "なし";
+"settings.autoFocusNone" = "開かない";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "使い方モード";
 "settings.expensesOnlyMode" = "支出のみ";
-"settings.expensesOnlyModeDescription" = "収入、振替、残高を非表示にします。データは削除されず、表示されないだけです。";
+"settings.expensesOnlyModeDescription" = "アプリ全体で収入、振替、残高を非表示にします。データは削除されません。";
 "settings.expensesOnlyActivateTitle" = "支出のみモードを有効にしますか？";
 "settings.expensesOnlyActivateMessage" = "アプリ全体で収入、振替、残高が非表示になります。いつでも元に戻せます。";
-"settings.expensesOnlyActivateConfirm" = "はい、有効にする";
+"settings.expensesOnlyActivateConfirm" = "有効にする";
 "settings.expensesOnlyDeactivateTitle" = "支出のみモードを無効にしますか？";
 "settings.expensesOnlyDeactivateMessage" = "収入、振替、残高が再び表示されます。";
-"settings.expensesOnlyDeactivateConfirm" = "はい、無効にする";
+"settings.expensesOnlyDeactivateConfirm" = "無効にする";
 "settings.expensesOnlyActive" = "有効";
 "settings.categoryHidden" = "(非表示)";
 
@@ -1773,7 +1773,7 @@
 "onboarding.categoriesYes" = "このカテゴリーで始める";
 "onboarding.categoriesNo" = "カテゴリなしで、自分で作る";
 "onboarding.categoriesRecommended" = "おすすめ";
-"onboarding.categoriesInfo" = "各カテゴリーには詳細なサブカテゴリーが含まれます。プロフィール > カテゴリーで確認・カスタマイズできます。";
+"onboarding.categoriesInfo" = "各カテゴリーには詳細なサブカテゴリーが含まれます。設定 > カテゴリーで確認・カスタマイズできます。";
 "onboarding.notificationsTitle" = "お知らせを受け取りますか？";
 "onboarding.notificationsSubtitle" = "役立つリマインダーを有効にしましょう。いつでも変更できます。";
 "onboarding.notificationsSkip" = "今はやめておきます";
@@ -1781,7 +1781,7 @@
 "onboarding.notificationsDeselectAll" = "すべて無効";
 "onboarding.recommended" = "おすすめ";
 "onboarding.languageTitle" = "言語を選択";
-"onboarding.languageSubtitle" = "Yala はまだお使いの端末の言語に対応していません。1つ選んでください。あとから「プロフィール > パーソナライズ」でいつでも変更できます。";
+"onboarding.languageSubtitle" = "Yala はまだお使いの端末の言語に対応していません。1つ選んでください。あとから「設定 > パーソナライズ」でいつでも変更できます。";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "Yalaをどう使いますか？";
@@ -1887,7 +1887,7 @@
 "onboarding.calc.balanceLabelChecking" = "口座のお金";
 "onboarding.calc.balanceLabelSavings" = "貯めている金額";
 "onboarding.calc.balanceLabelCash" = "現金の額";
-"onboarding.accountImportTip" = "プロフィール > インポートから、好きな口座に記録をインポートできます。";
+"onboarding.accountImportTip" = "設定 > インポートから、好きな口座に記録をインポートできます。";
 "onboarding.accountMoreTip" = "口座はいつでも追加できます。複数通貨を使う場合は通貨ごとに最低1つ作成しましょう。";
 "onboarding.budgetTitle" = "今月どれくらい使う予定ですか？";
 "onboarding.budgetSubtitle" = "予算は設定額に近づいたらお知らせします。カテゴリーと月額の目安を選んでください。";
@@ -2187,19 +2187,19 @@
 "faq.howToRecord.q" = "支出はどう記録する？";
 "faq.howToRecord.a" = "ホームで「新規記録」をタップして金額を入力するか、「音声」か「写真」で口述やレシートの読み取りができます。詳細はYalaが埋めてくれます。";
 "faq.multiCurrency.q" = "複数通貨は使える？";
-"faq.multiCurrency.a" = "はい。Yalaは7通貨(PEN、USD、EUR、MXN、COP、BRL、GBP)に対応。設定 > 通貨でメイン通貨を設定し、副通貨を追加できます。";
+"faq.multiCurrency.a" = "はい。Yalaは54通貨に対応しています。口座ごとに通貨を設定でき、合計はメイン通貨に換算されます。メイン通貨と、比較用の副通貨（最大2つ）は「設定 > 通貨と為替」で選べます。";
 "faq.changeCategory.q" = "支出のカテゴリーはどう変更する？";
 "faq.changeCategory.a" = "記録を開いて「編集」をタップし、カテゴリーを変更します。もっと早く：一覧で記録を長押しして「カテゴリーを変更」を選びます。複数をまとめて変更するには、記録で ··· をタップし、「選択」を選んで対象にチェックを付け、鉛筆をタップします。";
 "faq.importData.q" = "データをインポートできる？";
-"faq.importData.a" = "はい。設定 > インポートからCSVまたはExcelファイルをアップロード。Yalaが列を自動検出し、通貨ごとに口座を割り当てられます。";
+"faq.importData.a" = "はい。設定 > ファイルをインポートからCSVまたはExcelファイルをアップロード。Yalaが列を自動検出し、通貨ごとに口座を割り当てられます。";
 "faq.exportData.q" = "データはどうエクスポートする？";
-"faq.exportData.a" = "設定 > エクスポートからCSVまたはExcel形式を選択。すべての記録をダウンロードして表計算分析やバックアップに利用できます。";
+"faq.exportData.a" = "設定 > 記録をエクスポートからCSVまたはExcel形式を選択。すべての記録をダウンロードして表計算分析やバックアップに利用できます。";
 "faq.deleteData.q" = "すべてのデータを削除できる？";
 "faq.deleteData.a" = "はい。設定 > データを消去ですべての情報を削除できます。この操作は取り消せないため、先にバックアップのエクスポートをおすすめします。";
 "faq.whatIsPro.q" = "Yala Proには何が含まれる？";
-"faq.whatIsPro.a" = "Yala Proは音声入力、カメラでのレシート読み取り、限定テーマなどのプレミアム機能を解放します。設定 > サブスクリプションですべての特典を確認できます。";
+"faq.whatIsPro.a" = "Yala Proでは、話したり写真を撮ったりして記録でき、Yala AIに質問もできます。口座と予算は無制限になり、テーマやアイコンも使えます。詳しくは「設定 > Yala Pro」で確認できます。";
 "faq.cancelSub.q" = "サブスクリプションはどうキャンセルする？";
-"faq.cancelSub.a" = "設定 > サブスクリプション > App Storeで管理から、いつでも管理・キャンセルできます。Proアクセスは支払い済み期間の終了まで継続します。";
+"faq.cancelSub.a" = "「設定 > Yala Pro > 管理・キャンセル」から、いつでも管理・キャンセルできます。支払い済みの期間が終わるまでProを使えます。";
 
 // MARK: - Shortcuts (App Intents)
 "shortcut.quickExpense.title" = "新規入力";
@@ -2597,10 +2597,10 @@
 "tutorials.createAccount.intro.title" = "口座とは？";
 "tutorials.createAccount.intro.desc" = "銀行、財布、カードを設定して、お金がどこにあるかを管理します。";
 "tutorials.createAccount.step0.title" = "新規口座を作成";
-"tutorials.createAccount.step1.title" = "またはパネルから作成";
+"tutorials.createAccount.step1.title" = "またはホームから作成";
 "tutorials.createAccount.step2.title" = "詳細を入力";
-"tutorials.createAccount.completion.title" = "口座の準備ができました！";
-"tutorials.createAccount.completion.desc" = "口座を整理して分けておくことは、資産管理に不可欠です。各口座でデータをフィルターでき、推移を可視化しやすくなります。いつでも編集して初期残高を変更したり、現在の残高を調整できます。";
+"tutorials.createAccount.completion.title" = "口座の作り方がわかりました";
+"tutorials.createAccount.completion.desc" = "お金を口座（銀行、現金、カード）に分けると、それぞれにいくらあるかがわかります。いつでも編集できます。";
 
 // 2. createCategories (4 steps)
 "tutorials.createCategories.title" = "カテゴリーを作成";
@@ -2610,8 +2610,8 @@
 "tutorials.createCategories.step1.title" = "サブカテゴリーを追加";
 "tutorials.createCategories.step2.title" = "サブカテゴリーを作成";
 "tutorials.createCategories.step3.title" = "カテゴリーをカスタマイズ";
-"tutorials.createCategories.completion.title" = "カテゴリーを作成しました！";
-"tutorials.createCategories.completion.desc" = "良いカテゴリー設計はレポートをより役立つものにします。いつでも編集や追加ができます。";
+"tutorials.createCategories.completion.title" = "カテゴリーの作り方がわかりました";
+"tutorials.createCategories.completion.desc" = "カテゴリーを上手に分けると、お金の行き先が見えてきます。いつでも編集や追加ができます。";
 
 // 3. createTags (2 steps)
 "tutorials.createTags.title" = "タグを作成";
@@ -2619,8 +2619,8 @@
 "tutorials.createTags.intro.desc" = "カテゴリーをまたいで支出をまとめます。例: 食事、交通、ホテルを「旅行」タグでグループ化。";
 "tutorials.createTags.step0.title" = "タグへ移動";
 "tutorials.createTags.step1.title" = "タグをカスタマイズ";
-"tutorials.createTags.completion.title" = "タグを作成しました！";
-"tutorials.createTags.completion.desc" = "プロジェクト、旅行、イベントなどでタグを使って支出をまとめましょう。カテゴリーを超えた分析に最適です。";
+"tutorials.createTags.completion.title" = "タグの作り方がわかりました";
+"tutorials.createTags.completion.desc" = "タグを使えば、旅行やプロジェクト、イベントの支出を、カテゴリーが違ってもまとめられます。";
 
 // 4. createRecord (4 steps)
 "tutorials.createRecord.title" = "支出を記録";
@@ -2630,17 +2630,17 @@
 "tutorials.createRecord.step1.title" = "記録の種類を選択";
 "tutorials.createRecord.step2.title" = "項目を入力";
 "tutorials.createRecord.step3.title" = "クイックショートカットを使う";
-"tutorials.createRecord.completion.title" = "支出を記録しました！";
-"tutorials.createRecord.completion.desc" = "その瞬間に支出を記録することが大切です。記録するほど、分析やレポートが資産状況の理解に役立ちます。";
+"tutorials.createRecord.completion.title" = "支出の記録方法がわかりました";
+"tutorials.createRecord.completion.desc" = "支出は早く記録するほど、お金の使い道がはっきり見えてきます。";
 
 // 5. importData (2 steps)
 "tutorials.importData.title" = "データをインポート";
 "tutorials.importData.intro.title" = "データをインポート";
 "tutorials.importData.intro.desc" = "表計算や他のアプリから支出を数秒で取り込みます。";
-"tutorials.importData.step0.title" = "データインポートを選択";
+"tutorials.importData.step0.title" = "「ファイルをインポート」をタップ";
 "tutorials.importData.step1.title" = "ファイルをインポート";
-"tutorials.importData.completion.title" = "データをインポートしました！";
-"tutorials.importData.completion.desc" = "履歴がYalaに反映されました。エラーがあれば詳細メッセージが表示され、なければ成功メッセージが出ます。記録を確認して、すべて正しく取り込まれたか確認しましょう。";
+"tutorials.importData.completion.title" = "データのインポート方法がわかりました";
+"tutorials.importData.completion.desc" = "インポートすると、取り込めたものとそうでないものをYalaが知らせます。あとで記録を見て確認しましょう。";
 
 // 6. createBudgets (4 steps)
 "tutorials.createBudgets.title" = "予算を作成";
@@ -2648,22 +2648,22 @@
 "tutorials.createBudgets.intro.desc" = "支出の上限を設定し、近づいたら通知を受け取れます。";
 "tutorials.createBudgets.step0.title" = "計画を開く";
 "tutorials.createBudgets.step1.title" = "予算を設定";
-"tutorials.createBudgets.step2.title" = "お気に入りに追加";
+"tutorials.createBudgets.step2.title" = "ホームに表示";
 "tutorials.createBudgets.step3.title" = "いつでも編集";
-"tutorials.createBudgets.completion.title" = "予算が有効になりました！";
-"tutorials.createBudgets.completion.desc" = "リアルタイムで支出状況が見え、続けるかどうかの判断材料になります。こまめに確認して管理を続けましょう。";
+"tutorials.createBudgets.completion.title" = "予算の作り方がわかりました";
+"tutorials.createBudgets.completion.desc" = "予算があれば、あといくら使えるかがすぐわかります。上限に近づくとYalaがお知らせします。";
 
 // 7. createScheduledPayments (5 steps)
 "tutorials.createScheduledPayments.title" = "予定支払い";
 "tutorials.createScheduledPayments.intro.title" = "予定支払いとは？";
-"tutorials.createScheduledPayments.intro.desc" = "家賃、公共料金、サブスクリプションを自動化 — Yalaが代わりに記録します。";
+"tutorials.createScheduledPayments.intro.desc" = "家賃、公共料金、サブスクリプションは一度登録するだけ。支払日が来るたびに、Yalaが受信箱に支払いを届けるので承認してください。";
 "tutorials.createScheduledPayments.step0.title" = "計画を開く";
 "tutorials.createScheduledPayments.step1.title" = "詳細を入力";
 "tutorials.createScheduledPayments.step2.title" = "繰り返しを定義";
 "tutorials.createScheduledPayments.step3.title" = "サブスクリプションかをマーク";
 "tutorials.createScheduledPayments.step4.title" = "支払いを管理";
-"tutorials.createScheduledPayments.completion.title" = "支払いをスケジュールしました！";
-"tutorials.createScheduledPayments.completion.desc" = "定期支払いが自動で記録されます。実行のたびに通知が届きます。";
+"tutorials.createScheduledPayments.completion.title" = "支払いの予定の立て方がわかりました";
+"tutorials.createScheduledPayments.completion.desc" = "当日になると、Yalaが各支払いを受信箱に入れ、承認できる状態にします。";
 
 // 8. createFavorites (2 steps)
 "tutorials.createFavorites.title" = "お気に入りの支払い";
@@ -2671,8 +2671,8 @@
 "tutorials.createFavorites.intro.desc" = "頻繁な支出をショートカットとして保存し、1タップで記録できます。";
 "tutorials.createFavorites.step0.title" = "お気に入りを作成";
 "tutorials.createFavorites.step1.title" = "すばやく使う";
-"tutorials.createFavorites.completion.title" = "お気に入りを保存しました！";
-"tutorials.createFavorites.completion.desc" = "お気に入りで繰り返しの支出にかかる時間を短縮できます。いくつでも作成可能で、いつでも編集できます。";
+"tutorials.createFavorites.completion.title" = "お気に入りの使い方がわかりました";
+"tutorials.createFavorites.completion.desc" = "お気に入りを使えば、繰り返す支出をワンタップで記録できます。いくつでも作れます。";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "パネルをカスタマイズ";
@@ -2681,8 +2681,8 @@
 "tutorials.editPanel.step0.title" = "パネルを開く";
 "tutorials.editPanel.step1.title" = "ウィジェットをカスタマイズ";
 "tutorials.editPanel.step2.title" = "必要ならリセット";
-"tutorials.editPanel.completion.title" = "パネルをカスタマイズしました！";
-"tutorials.editPanel.completion.desc" = "必要な情報だけが表示されるパネルになりました。管理スタイルに合わせていつでも変更できます。";
+"tutorials.editPanel.completion.title" = "ホームのカスタマイズ方法がわかりました";
+"tutorials.editPanel.completion.desc" = "ホームには、選んだものを好きな順番で表示できます。いつでも変更できます。";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "パネルのフィルター";
@@ -2693,19 +2693,19 @@
 "tutorials.panelFiltering.step2.title" = "各ビューでフィルター";
 "tutorials.panelFiltering.step3.title" = "ビュー間でフィルターを共有";
 "tutorials.panelFiltering.step4.title" = "クイックフィルターボタンを使う";
-"tutorials.panelFiltering.completion.title" = "フィルターをマスターしました！";
-"tutorials.panelFiltering.completion.desc" = "フィルターは資産状況を深く理解する最良のツールです。組み合わせると、より精密な分析ができます。";
+"tutorials.panelFiltering.completion.title" = "フィルターの使い方がわかりました";
+"tutorials.panelFiltering.completion.desc" = "フィルターを組み合わせると、探しているものだけを表示できます。フィルターはすべての画面に同時に適用されます。";
 
 // 11. inboxApproval (4 steps)
 "tutorials.inboxApproval.title" = "受信箱";
 "tutorials.inboxApproval.intro.title" = "スマートな受信箱";
-"tutorials.inboxApproval.intro.desc" = "Apple Pay、音声、カメラからの自動支出を確認・承認します。";
-"tutorials.inboxApproval.step0.title" = "音声や画像で記録";
+"tutorials.inboxApproval.intro.desc" = "話した内容や撮った写真、Apple Payの支払い、期日の支払いなど、Yalaが代わりに記録したものを確認して保存します。";
+"tutorials.inboxApproval.step0.title" = "受信箱に届くもの";
 "tutorials.inboxApproval.step1.title" = "情報を補完して承認";
-"tutorials.inboxApproval.step2.title" = "複数まとめて記録";
+"tutorials.inboxApproval.step2.title" = "まとめて保存";
 "tutorials.inboxApproval.step3.title" = "受信箱を管理";
-"tutorials.inboxApproval.completion.title" = "受信箱をマスターしました！";
-"tutorials.inboxApproval.completion.desc" = "受信箱の記録には期限がなく、いつでも承認・却下できます。ドラフトは承認するまで合計に影響しません。";
+"tutorials.inboxApproval.completion.title" = "受信箱の使い方がわかりました";
+"tutorials.inboxApproval.completion.desc" = "受信箱の内容は、承認するまで合計に含まれません。期限もありません。";
 
 // 12. applePay (4 steps)
 "tutorials.applePay.title" = "Apple Payで記録";
@@ -2717,44 +2717,44 @@
 "tutorials.applePay.step3.title" = "パラメータを設定";
 
 // Tutorial step descriptions (re-expanded)
-"tutorials.createAccount.step0.desc" = "プロフィールで口座セクションを選び、タップして新規口座を作成します。";
-"tutorials.createAccount.step1.desc" = "パネルから直接、新しい口座を追加するカードをタップして口座を作成できます。";
+"tutorials.createAccount.step0.desc" = "設定で「口座」を開き、+をタップして新しい口座を作成します。";
+"tutorials.createAccount.step1.desc" = "ホームの「資産状況」で口座を最後までスワイプし、「追加」をタップします。";
 "tutorials.createAccount.step2.desc" = "新しい口座の詳細を入力し、保存をタップします。";
-"tutorials.createCategories.step0.desc" = "プロフィールでカテゴリーセクションを選び、新規カテゴリーを作成します。";
+"tutorials.createCategories.step0.desc" = "設定で「カテゴリー」を開き、+をタップして新しいカテゴリーを作成します。";
 "tutorials.createCategories.step1.desc" = "カテゴリーを作成するには、必ずサブカテゴリーが関連付けられている必要があります。";
 "tutorials.createCategories.step2.desc" = "サブカテゴリーの作成はカテゴリーと同じくらい簡単: 名前を付け、性質を選び、必要に応じてアイコンを変更します。";
 "tutorials.createCategories.step3.desc" = "カテゴリーのアイコンと色をいつでも好みにカスタマイズできます。";
-"tutorials.createTags.step0.desc" = "プロフィールでタグセクションを選び、新規タグを作成します。";
+"tutorials.createTags.step0.desc" = "設定で「タグ」を開き、+をタップして新しいタグを作成します。";
 "tutorials.createTags.step1.desc" = "タグを好みにカスタマイズ: 名前、アイコン、色を設定します。";
 "tutorials.createRecord.step0.desc" = "ホームで「新規記録」をタップ。音声入力やレシートの読み取りは「音声」か「写真」から。";
 "tutorials.createRecord.step1.desc" = "支出、収入、口座間振替を記録できます。為替レートはリアルタイムで自動計算されます。";
 "tutorials.createRecord.step2.desc" = "必須項目を入力: 金額、口座、サブカテゴリー。説明やタグも追加できます。";
 "tutorials.createRecord.step3.desc" = "クイックショートカット: @で口座、!でカテゴリー、#でタグ。各ショートカット内で入力すると検索が絞り込まれます。";
-"tutorials.importData.step0.desc" = "プロフィールでデータインポートセクションを選択します。";
+"tutorials.importData.step0.desc" = "設定の「データ」で「ファイルをインポート」をタップします。";
 "tutorials.importData.step1.desc" = "デフォルトテンプレート(ここからダウンロード可能)に沿って、CSVやExcelを何度でもインポートできます。複数通貨のデータがある場合は通貨ごとに口座を選択するよう求められます。";
 "tutorials.createBudgets.step0.desc" = "メニューで計画を選び、予算タブで+ボタンを使って新規作成します。";
-"tutorials.createBudgets.step1.desc" = "名前、金額、期間(日次・月次・年次・1回限り、旅行やイベントなど)を設定。追跡する口座、カテゴリー、タグ、性質をカスタマイズ。閾値で通知を受けたい場合は通知をオンにします。";
-"tutorials.createBudgets.step2.desc" = "予算をお気に入りに追加するとパネルウィジェットに表示されます。最大3件まで好きな順序で選択できます。";
+"tutorials.createBudgets.step1.desc" = "名前、金額、期間(日次・月次・年次・1回限り、旅行やイベントなど)を設定。追跡したい口座、カテゴリー、タグ、性質を選択。閾値で通知を受けたい場合は通知をオンにします。";
+"tutorials.createBudgets.step2.desc" = "「ウィジェットに表示」をオンにすると、ホームの予算ウィジェットに表示されます。";
 "tutorials.createBudgets.step3.desc" = "予算をタップすればいつでも編集に戻れます。";
 "tutorials.createScheduledPayments.step0.desc" = "メニューで計画を選び、予定支払いタブで+ボタンを使って新規作成します。";
 "tutorials.createScheduledPayments.step1.desc" = "支払い名、金額、メモ(任意)、口座、サブカテゴリー、タグ(任意)を入力します。";
 "tutorials.createScheduledPayments.step2.desc" = "支払日と頻度を選択。最初の支払日を選び、当日や数日前に通知を受けたい場合は通知をオンにします。";
-"tutorials.createScheduledPayments.step3.desc" = "定期サブスクリプションの場合は、サブスクリプショントグルをオンにすることをお忘れなく。";
+"tutorials.createScheduledPayments.step3.desc" = "「その他のオプション」で、サブスクリプションの場合は「サブスクリプションですか？」をオンにします。";
 "tutorials.createScheduledPayments.step4.desc" = "予定支払いをタップすると、今後の支払い、すでに完了した支払いの確認、いつでも編集ができます。";
-"tutorials.createFavorites.step0.desc" = "新規記録画面の上部にある星をタップして、新しいお気に入りを作成します。";
-"tutorials.createFavorites.step1.desc" = "事前入力したい項目を入力します。次回はお気に入りをタップするだけで、すべての項目が自動で埋まります。";
+"tutorials.createFavorites.step0.desc" = "新規記録で金額の下にある「お気に入り」をタップすると、入力中の内容をお気に入りとして保存できます。";
+"tutorials.createFavorites.step1.desc" = "次回は上部の星をタップしてお気に入りを選ぶと、保存した項目が自動で入力されます。";
 "tutorials.editPanel.step0.desc" = "メイン画面に移動すると、利用可能なすべてのウィジェットで支出のサマリーが表示されます。";
-"tutorials.editPanel.step1.desc" = "パネルのカスタマイズボタンをタップすると、表示するウィジェットと順序を変更できます。";
+"tutorials.editPanel.step1.desc" = "ホームの各セクションの横にある四角いボタンをタップすると、表示するウィジェットと順番を選べます。";
 "tutorials.editPanel.step2.desc" = "カスタマイズ内の「リセット」をタップすればいつでも既定の順序に戻せます。";
 "tutorials.panelFiltering.step0.desc" = "Yalaのインタラクティブグラフを最大限活用しましょう。ほぼすべてのパネルがカテゴリーや性質でフィルター可能です。色々試して、自分に合うものを見つけてください。";
 "tutorials.panelFiltering.step1.desc" = "フィルターバーで適用中のフィルターをすべて確認できます。個別または一括でいつでも削除可能です。";
 "tutorials.panelFiltering.step2.desc" = "アプリの各ビューで、グラフを使って好みにフィルターできることが分かります。";
 "tutorials.panelFiltering.step3.desc" = "フィルターはすべてのビューに伝播するので、フィルターしたい対象のあらゆる指標を確認できます。";
 "tutorials.panelFiltering.step4.desc" = "一部のビューでは上部にフィルターセクションがあり、好みにフィルターしたり、1ボタンですべて削除できます。";
-"tutorials.inboxApproval.step0.desc" = "Yala Proユーザーが音声や画像で記録すると、自動的にドラフト画面が表示されます。「Apple Payの支払いを記録」ショートカットを使った場合も同様です。";
+"tutorials.inboxApproval.step0.desc" = "受信箱には、Yalaが代わりに記録したものが届きます。話した内容や撮った写真、ショートカットで記録したApple Payの支払い、期日を迎えた予定支払いです。確認するまではドラフトのままです。";
 "tutorials.inboxApproval.step1.desc" = "必須項目を入力して承認するだけ。通常通り記録が作成されます。";
-"tutorials.inboxApproval.step2.desc" = "音声や画像で複数の記録をまとめて登録することもできます。作成されたドラフトの数を案内し、受信箱で確認できます。";
-"tutorials.inboxApproval.step3.desc" = "受信箱では記録を承認、あとで承認、または直接却下できます。";
+"tutorials.inboxApproval.step2.desc" = "入力が揃ったドラフトが複数あれば、「準備できたものを保存」をタップすると、まとめて記録に移ります。";
+"tutorials.inboxApproval.step3.desc" = "ドラフトをスワイプすると破棄できます。開けば、好きなときに入力を済ませて承認できます。";
 "tutorials.applePay.step0.desc" = "ショートカットアプリを開いて「オートメーション」へ。下に見当たらない場合は「ライブラリ」の中にあります。";
 "tutorials.applePay.step1.desc" = "「+」をタップし、「Wallet」を選んで使うカードを選択します。表示されたら「すぐに実行」を選びます。";
 "tutorials.applePay.step2.desc" = "求められたら「新規ショートカットを作成」をタップ。Yalaを検索して「Apple Payの支払いを記録」ショートカットを選びます。";
@@ -2904,7 +2904,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "副通貨";
-"account.secondaryCurrency.message" = "%@の口座を追加しました。%@ → %@の為替レートを表示しますか？プロフィール > 通貨と為替で変更できます。";
+"account.secondaryCurrency.message" = "%@の口座を追加しました。%@ → %@の為替レートを表示しますか？設定 > 通貨と為替で変更できます。";
 "account.secondaryCurrency.accept" = "追加";
 "account.secondaryCurrency.reject" = "結構です";
 
@@ -2915,7 +2915,7 @@
 "notificationPrimer.benefit3" = "予算上限に近づいたときのアラート";
 "notificationPrimer.accept" = "通知を有効化";
 "notificationPrimer.reject" = "あとで";
-"notificationPrimer.hint" = "プロフィール > 通知で有効化できます";
+"notificationPrimer.hint" = "設定 > 通知で有効化できます";
 
 // MARK: - What's New
 "whatsNew.title" = "Yalaの新機能";
@@ -4299,7 +4299,7 @@
 "more.subtitle.cashFlow" = "これからの数か月、お金は足りる？";
 "more.subtitle.records" = "すべての記録をひとつに";
 "more.subtitle.groups" = "割り勘を手軽に共有";
-"more.subtitle.profile" = "アカウントと設定";
+"more.subtitle.profile" = "プロフィールと設定";
 "more.toolsSection" = "その他の機能";
 
 
@@ -4874,17 +4874,9 @@
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
 
-/* Note under sign-in buttons: account is tied to the sign-in method */
-"welcome.cloud.providerNote" = "アカウントを作成したときと同じ方法でサインインしてください。Yalaアカウントはその方法に紐づいています。";
 
-/* R9 provider mismatch screen title */
-"welcome.cloud.providerMismatchTitle" = "このアカウントは別の方法を使っています";
 
-/* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "このApple IDのYalaアカウントは%@で作成されています。";
 
-/* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "このApple IDのYalaアカウントは別の方法で作成されています。";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
 "welcome.cloud.beaconOrigin" = "%@で作成されています。そのアカウントにサインインするか、別のアカウントを作成できます。";
@@ -5297,7 +5289,6 @@
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Yalaのアカウントを作る";
 "welcome.bornCloud.subtitle" = "アカウントがあれば、どのデバイスからでもYalaを開けます。";
-"welcome.bornCloud.providerNote" = "Yala のアカウントは、選んだ方法にひも付きます。";
 "welcome.bornCloud.creating" = "アカウントを作成しています…";
 
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
@@ -5382,7 +5373,7 @@
 "groups.freshStartPending.leadUnknown" = "何も消去していません。グループの変更の一部がまだサーバーに届いておらず、最初からやり直すとそれらも失われます。";
 "groups.freshStartPending.lossSessionExpired" = "これらは作成したアカウントでしかアップロードできませんが、そのアカウントのセッションはもうこの端末にありません。そのアカウントで再度サインインしないなら、変更を失って最初からやり直せます。グループの誰にも表示されません。";
 "groups.freshStartPending.lossPermanent" = "作成したアカウントではもうアップロードできず、再試行しても解決しません。変更を失って最初からやり直せます。グループの誰にも表示されません。";
-"groups.freshStartPending.lossAttest" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、アップロードできません。変更を失って最初からやり直せます。グループの誰にも表示されません。";
+"groups.freshStartPending.lossAttest" = "この端末は1日前からグループに変更を送信できないため、アップロードできません。変更を失って最初からやり直せます。グループの誰にも表示されません。";
 "groups.freshStartPending.lossAction" = "変更が失われても最初からやり直す";
 "groups.freshStartPending.lossConfirmTitle" = "これらの変更を失いますか？";
 "groups.freshStartPending.lossConfirmBody" = "失われるグループの変更：%d件。サーバーに届かないままこの端末から消去され、グループの誰にも表示されず、復元もできません。";
@@ -5826,7 +5817,7 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "グループのセッションの有効期限が切れました。もう一度サインインしてお試しください。";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "グループのセッションの有効期限が切れ、グループの最近の変更の一部をアップロード用に準備できませんでした。変更は失われません。再度サインインし、Yala を閉じて開き直してから（解決しない場合はアップデート）、もう一度お試しください。";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できておらず、グループの最近の変更の一部もアップロード用に準備できませんでした。変更は失われません。準備するには、Yala を閉じて開き直してください（解決しない場合はアップデート）。";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "この端末は1日前からグループに変更を送信できず、最近の変更の一部もアップロード用に準備できませんでした。変更は失われません。準備するには、Yala を閉じて開き直してください（解決しない場合はアップデート）。";
 "storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "この端末には、別のアカウントで作成されたグループの変更があり、そのアカウントでしかアップロードできません。さらに、グループの変更の一部はアップロード用に準備できませんでした。変更は失われません。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。そのアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
@@ -5918,25 +5909,25 @@
 "groups.errors.attestUnavailableTitle" = "この端末ではグループを同期できません";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。届かなかったグループの変更：%d件。今サインアウトすると失われ、グループの誰にも表示されません。";
+"groups.errors.attestUnavailableSignOutLoss" = "この端末は1日前からグループに変更を送信できません。届かなかった変更：%d件。今サインアウトすると失われ、グループの誰にも表示されません。";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "1日以上、サーバーが求めるセキュリティ確認を通過できておらず、届かなかったグループの変更があります。今サインアウトすると失われ、グループの誰にも表示されません。";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "この端末は1日前からグループに変更を送信できず、届かなかった変更があります。今サインアウトすると失われ、グループの誰にも表示されません。";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "変更が失われてもサインアウト";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、グループの変更をアップロードできません。";
+"groups.errors.attestUnavailable" = "この端末は1日前からグループに変更を送信できないため、変更してもグループに届きません。当面は別の端末をお使いください。";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
 "groups.errors.leaveAttestUnavailable" = "この端末ではグループを同期できないため、グループからの退出を完了できませんでした。";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。届かなかったグループの変更：%d件。今続けると失われ、グループの誰にも表示されません。";
+"welcome.groups.neutralAttestLossBody" = "この端末は1日前からグループに変更を送信できません。届かなかった変更：%d件。今続けると失われ、グループの誰にも表示されません。";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "1日以上、サーバーが求めるセキュリティ確認を通過できておらず、届かなかったグループの変更があります。今続けると失われ、グループの誰にも表示されません。";
+"welcome.groups.neutralAttestLossBodyUnknown" = "この端末は1日前からグループに変更を送信できず、届かなかった変更があります。今続けると失われ、グループの誰にも表示されません。";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "変更が失われても続ける";
@@ -5946,11 +5937,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "この端末ではデータを同期できません";
-"settings.signOutAttestMessage" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。クラウドのアカウントに届かなかった変更：%d件。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
-"settings.signOutAttestMessageUnknown" = "1日以上、サーバーが求めるセキュリティ確認を通過できておらず、クラウドのアカウントに届かなかった変更があります。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessage" = "この端末は1日前からクラウドのアカウントに変更を送信できません。届かなかった変更：%d件。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutAttestMessageUnknown" = "この端末は1日前からクラウドのアカウントに変更を送信できず、届かなかった変更があります。決める前に、記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 "settings.signOutAttestExportButton" = "記録をエクスポート";
 "settings.signOutAttestLossButton" = "変更が失われてもサインアウト";
-"settings.signOutAttestBlocked" = "この端末は1日以上、サーバーが求めるセキュリティ確認を通過できていないため、変更をクラウドのアカウントにアップロードできません。";
+"settings.signOutAttestBlocked" = "この端末は1日前からクラウドのアカウントに変更を送信できないため、変更をアップロードできません。";
 "settings.signOutAttestExportEmpty" = "エクスポートできる記録がありません。";
 "settings.signOutAttestExportFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
 
@@ -5958,7 +5949,7 @@
 "groups.attestTerminalBanner" = "この端末は1日前からグループに変更を送信できません。ここで記録した内容はグループの誰にも表示されないため、別の端末をお使いください。";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。この端末で記録した内容は端末内には残りますが、クラウドのアカウントには届きません。当面は別の端末をお使いください。";
+"settings.attestTerminalBanner" = "この端末は1日前からクラウドのアカウントに変更を送信できません。ここで記録した内容は端末内には残りますが、アカウントには届きません。当面は別の端末をお使いください。";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "データを iCloud にアップロードしています。Yala はそのままお使いいただけます。";
@@ -6098,16 +6089,16 @@
 "settings.signOutCaptureUnfinished" = "最近の変更の一部を、クラウドへのアップロード用に準備できませんでした。変更はこの端末に残っていて失われません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "まだクラウドにアップロードされていない変更があります。クラウドと iCloud の間のデータ移行が完了していないため、同期は一時停止しています。このプロフィール画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+"settings.signOutSyncStoppedMidMigration" = "まだクラウドにアップロードされていない変更があります。クラウドと iCloud の間のデータ移行が完了していないため、同期は一時停止しています。この設定画面の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "まだクラウドにアップロードされていない変更があります。Yala をもう一度開くまで、同期は一時停止しています。Yala を完全に終了し（アプリスイッチャーでスワイプして閉じる）、もう一度開いてからお試しください。";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
-"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。このプロフィール画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
+"settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。この設定画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
 "settings.signOutSessionSurvived" = "この iPhone ではまだサインインしたままのため、何も削除されていません。もう一度お試しください。";
-"settings.signOutMigrationInFlight" = "iCloud とクラウドの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。プロフィールの「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
+"settings.signOutMigrationInFlight" = "iCloud とクラウドの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。設定の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
 "settings.signOutMigrationUnreadable" = "iCloud とクラウドの間のデータ移行の状況を確認できませんでした。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
@@ -6134,10 +6125,10 @@
 "groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "まだアップロードされていないグループの変更があります。一部はこの端末で別のアカウントで作成されたもので、そのアカウントでしかアップロードできません。また、一部はアップロード用に準備できませんでした。Yala を閉じて開き直し（解決しない場合はアップデート）、もう一度お試しください。別のアカウントの変更は、そのアカウントでサインインした場合にのみアップロードされます。できない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
-"settings.signOutCloudSessionExpiredGroupsLoss" = "セッションの有効期限が切れました。未アップロードのグループの変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+"settings.signOutCloudSessionExpiredGroupsLoss" = "セッションの有効期限が切れました。未アップロードのグループの変更：%d件。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "セッションの有効期限が切れ、まだアップロードされていないグループの変更があります。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "セッションの有効期限が切れ、まだアップロードされていないグループの変更があります。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合はこのままサインアウトできますが、変更は失われ、グループの誰にも表示されません。";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
 "welcome.groups.neutralNoSessionLossBody" = "未アップロードのグループの変更：%d件。これらは作成したアカウントでしかアップロードできず、そのアカウントのセッションはこの端末で開かれていません。今続けると失われ、グループの誰にも表示されません。";
@@ -6164,10 +6155,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "サーバーに届かなかったグループの変更はこの端末から消去されます。グループの誰にも表示されず、復元もできません。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。クラウドのアカウントに届かなかった変更：%d件。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "セッションの有効期限が切れました。クラウドのアカウントに届かなかった変更：%d件。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "セッションの有効期限が切れ、クラウドのアカウントに届かなかった変更があります。アップロードするには、このプロフィール画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "セッションの有効期限が切れ、クラウドのアカウントに届かなかった変更があります。アップロードするには、この設定画面の「データの保存先」を開いて「サインイン」をタップしてください。サインインできない場合は、決める前に記録をファイルにエクスポートできます。今サインアウトすると、これらの変更は失われます。";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "記録を選ぶとここに表示されます";
@@ -6551,7 +6542,7 @@
 "welcome.mirrorRelaunch.privacyNote" = "これで Yala があなただけの iCloud につながり、データはずっと非公開のままです。ほかの誰も読めません。私たちも読めません。";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
-"onboarding.purpose.changeLaterHint" = "あとから「プロフィール > パーソナライズ」でいつでも変更できます。";
+"onboarding.purpose.changeLaterHint" = "あとから「設定 > パーソナライズ」でいつでも変更できます。";
 
 /* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
 "onboarding.currencyName.titleExpenses" = "どの通貨で支払いますか？";
@@ -6906,7 +6897,7 @@
 "inbox.stillPending" = "未完了：%d件";
 
 /* UX 2.2 · lote 5: primeros días, guías y tips */
-"setup.step5.title.trial" = "Yala Proを30日間無料で試す";
+"setup.step5.title.trial" = "Yala Proを1か月無料で試す";
 "setup.step5.title.knowPro" = "Yala Proを見る";
 "setup.step5.title.alreadyPro" = "Yala Proをご利用中です";
 "setup.step.skipped" = "スキップしました。タップして試せます";
@@ -8081,3 +8072,64 @@
 
 /* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
 "image.entry.dailyLimitLeftOutMany" = "本日の上限に達しました。%d枚を読み取れませんでした。";
+
+/* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
+"l15.personal.dataNote" = "選んだ方法に応じて、iCloudまたはクラウドのアカウントに保存されます。グループで記録した内容はグループのメンバーに表示されます。";
+"l15.personal.moreAboutData" = "データについて詳しく";
+"l15.rates.search" = "通貨を検索";
+"l15.personalization.voiceLanguageFooter" = "音声で記録するときに、Yalaに話しかける言語です。";
+"l15.personalization.colorfulIconsFooter" = "設定と「もっと見る」のアイコンに反映されます。";
+"l15.personalization.averageLineFooter" = "ホームのグラフに表示されます。";
+"l15.personalization.currencyFormatFooter" = "アプリ全体での金額の表記です。記号（S/）かコード（PEN）を選べます。";
+"l15.tabBar.rules" = "ホームは常に先頭です。ほかに3つと、「もっと見る」「検索」を置けます。";
+"l15.permissions.title" = "Yalaの権限";
+"l15.permissions.footer" = "Yalaは、各権限が必要な機能を初めて使うときに許可を求めます。";
+"l15.permissions.notAskedHint" = "初めて使うときに許可をお願いします。";
+"l15.permissions.changeInSettings" = "設定で変更";
+"l15.permissions.notifications" = "通知";
+"l15.permissions.notificationsDetail" = "リマインダー、支払期日、グループからのお知らせ。";
+"l15.permissions.camera" = "カメラ";
+"l15.permissions.cameraDetail" = "レシートの写真から支出を記録するため。";
+"l15.permissions.microphone" = "マイク";
+"l15.permissions.microphoneDetail" = "話して支出を記録するため。";
+"l15.permissions.photos" = "写真";
+"l15.permissions.photosDetail" = "選んだグループのまとめを「写真」に保存するため。";
+"l15.permissions.status.allowed" = "許可済み";
+"l15.permissions.status.limited" = "一部の写真";
+"l15.permissions.status.saveOnly" = "追加のみ";
+"l15.permissions.status.denied" = "未許可";
+"l15.permissions.status.notAsked" = "未確認";
+"l15.recommend.row" = "Yalaをすすめる";
+"l15.recommend.message" = "家計の記録にYalaを使っています。おすすめです：";
+"l15.tutorials.doItNow" = "今すぐやってみる";
+"l15.tutorials.done" = "完了";
+"l15.faq.section.currencies" = "通貨";
+"l15.faq.section.groups" = "グループ";
+"l15.faq.notHere" = "お探しの質問が見つかりませんか？";
+"l15.faq.writeToUs" = "お問い合わせ";
+"l15.faq.exchangeRate.q" = "為替レートはどこから？";
+"l15.faq.exchangeRate.a" = "Yalaは為替レートを更新し、各記録を記録した日のレートで換算します。レートと更新日時は「設定 > 通貨と為替 > すべて表示」で確認できます。";
+"l15.faq.groups.q" = "グループの仕組みは？";
+"l15.faq.groups.a" = "旅行、住まい、お出かけなど、ほかの人と支出を分け合うための機能です。各自が支払った分を記録すると、誰が誰にいくら払うかをYalaが計算します。グループの支出はクラウドに保存され、全員が最新の状態を見られるため、Yalaのアカウントが必要です。";
+"l15.faq.yalaAI.q" = "Yala AIとは？";
+"l15.faq.yalaAI.a" = "Yala Proのアシスタントです。お金のことを質問したり（「今月コーヒーにいくら使った？」）、支出を伝えて記録してもらったりできます。回答のために必要な情報をAIサービスに送信します。これは「設定 > AIプライバシーとデータ」で決められます。";
+"l15.faq.whereData.q" = "データはどこに保存される？";
+"l15.faq.whereData.a" = "プライベートなiCloudを選んだ場合は、iPhoneとiCloudに保存され、Yalaからは見えません。クラウドのアカウントを使う場合はYalaのサーバーに保存され、別のiPhoneからもAppleまたはGoogleでサインインできます。グループで記録した内容は、グループで見られるようクラウドに保存されます。";
+"l15.faq.faceID.q" = "Face IDでYalaを保護できる？";
+"l15.faq.faceID.a" = "はい、iOSのロック機能を使います。ホーム画面でYalaのアイコンを長押しし、「Face IDを要求」をタップします。Yalaがあなたの顔を見ることはなく、確認はiOSが行います。手順は「設定 > Face IDで保護」にあります。";
+"l15.faq.widgets.q" = "Yalaのウィジェットを追加するには？";
+"l15.faq.widgets.a" = "ホーム画面の何もないところを長押しし、「編集」>「ウィジェットを追加」をタップしてYalaを検索します。残高、支出、カテゴリー、月のまとめ、最近の記録のウィジェットがあり、ロック画面用もあります。";
+"l15.support.sendFooter" = "メールが開き、%@ 宛てに送信します。より的確にサポートするため、YalaとiOSのバージョン、iPhoneの機種、テーマ、言語が添えられます。";
+"l15.removeData.noCopyConfirm" = "取り除いて削除";
+"l15.removeData.exportDiscard" = "それでもデータを削除";
+"l15.removeData.exportPending" = "まだiCloudに届いていないこのiPhoneの変更：%d件。今データを削除すると、失われます。";
+"l15.removeData.exportPendingUnknown" = "最近の変更がiCloudに届いたか確認できませんでした。今データを削除すると、失われるおそれがあります。";
+"l15.pro.themeResetNote" = "テーマはLiquid Glassに戻ります。";
+"l15.pro.oneMonthThenYearly" = "1か月無料、その後は年額%@";
+"l15.pro.oneMonthThenMonthly" = "1か月無料、その後は月額%@";
+"l15.pro.startTrialOneMonth" = "1か月無料で試す";
+"l15.pro.gateStartTrialOneMonth" = "Proを1か月無料で試す";
+"l15.pro.settingsFreeWithTrialOneMonth" = "無料・1か月の無料トライアル";
+"welcome.cloud.otherAccountUsedTitle" = "このiPhoneでは別のアカウントが使われています";
+"welcome.cloud.otherAccountUsedBody" = "このiPhoneでは、%1$@で作成したYalaのアカウントがすでに使われています。%2$@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、%1$@でサインインしてください。";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "このiPhoneでは、別の方法で作成したYalaのアカウントがすでに使われています。%@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、前回と同じ方法でサインインしてください。";

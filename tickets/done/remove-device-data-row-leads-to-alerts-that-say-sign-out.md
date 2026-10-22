@@ -1,10 +1,10 @@
 ---
 id: remove-device-data-row-leads-to-alerts-that-say-sign-out
-status: backlog
+status: done
 priority: low
 area: "sesiones, ajustes, copy"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-22
 source: "lote decidido 2.2 · 04 (L20-6 + L20-7)"
 ---
 
@@ -26,3 +26,7 @@ decisión, así que se deja la pregunta.
 - **A.** En la celda sin cuenta, el mismo verbo en los avisos de después: «Quitar mis datos igualmente», «Si los quitas
   ahora…», «Quitar y borrar». ← recomendada: la persona no cambia de verbo a mitad del gesto.
 - **B.** Dejarlo: «Cerrar sesión» es el verbo de la app para salir, y el aviso solo sale si iCloud tarda.
+
+## Hecho (2026-10-22, lote decidido 2.2 · 15)
+
+Implementada la opción que eligió Jürgen. Red: `YalaTests/UXAudit22Decidido15Tests` y `YalaUITests/Flows/SettingsLote15UITests`.

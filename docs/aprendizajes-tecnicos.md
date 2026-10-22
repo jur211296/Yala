@@ -627,3 +627,14 @@ deja de entregarle toques); el de Yala con `.allowsHitTesting(false)` y, para Vo
 botón y sin acción propia, que al activarse toca en su centro. Molde: `ShortcutsPageButtonOverlay`
 (`Yala/App/Views/Settings/ShortcutsPageOpener.swift`). Lo fija `SiriShortcutsScreenUITests`, que espera a Atajos en
 primer plano con la página de Yala.
+
+### El idioma por app de iOS solo sale si el iPhone tiene más de un idioma (2026-10-22)
+
+La auditoría de 2.2 (L16-5, opción C) propuso que la fila «Idioma de la app» llevara al idioma por app de los Ajustes
+de iOS. Medido en el simulador (iOS 27.0): con un solo idioma en General › Idioma y región, la página de Yala en los
+Ajustes de iOS **no tiene fila «Idioma»** (solo Siri, Buscar, Actualización en 2.º plano, Datos celulares); con dos
+idiomas (`es-PE` y `en-US`) aparece «Idioma · Español (Latinoamérica)». Quien tiene un solo idioma —la mayoría, y
+justo quien eligió idioma en el onboarding porque el suyo no está entre los 16— no tendría dónde cambiarlo.
+⇒ no mandes a nadie a los Ajustes de iOS a cambiar el idioma sin una salida para quien tiene uno solo. Saber cuántos
+idiomas tiene el iPhone desde la app (`Locale.preferredLanguages`) es inferido, no medido.
+Capturas: `~/Claude/entregas/Yala--lote-decidido-2-2-15-ajustes-ayuda-y-preferencias/capturas/L16-5-*.png`.

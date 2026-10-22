@@ -87,7 +87,8 @@ struct WelcomeExistingChooserView: View {
                         }
                         // UX 2.2 · L6-3: la nota del método vivía en la pantalla intermedia «Entra a tu cuenta», que ya no
                         // se enseña (estos botones abren directamente el consentimiento). Es aquí donde se elige el método.
-                        Text(L10n.Welcome.Cloud.providerNote)
+                        // Decisión A de Jürgen (2026-10-19): la frase y key de Ajustes.
+                        Text(L10n.Settings.yalaAccountLinkingNote)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.white.opacity(0.7))
                             .fixedSize(horizontal: false, vertical: true)

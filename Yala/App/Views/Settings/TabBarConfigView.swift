@@ -109,6 +109,15 @@ struct TabBarConfigView: View {
             .solidCard()
             .environment(\.editMode, .constant(.active))
 
+            // UX 2.2 · L16-13: las dos reglas de la barra, con las palabras de la pantalla. Antes solo se veía el candado de
+            // Panel y un «Máximo 3» en naranja al chocar con el tope.
+            Text(L10n.UXL15.tabBarRules)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Chip.paddingV)
+                .accessibilityIdentifier("tabconfig_rules_footer")
+
             // Validation message
             if !canDeactivate {
                 validationMessage(L10n.Settings.tabBarConfigMinWarning, icon: "exclamationmark.circle")

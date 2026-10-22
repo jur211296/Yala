@@ -14,6 +14,7 @@ struct TutorialCompletionView: View {
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.tutorialDoItNow) private var doItNow
 
     @State private var showHero = false
     @State private var showCheckmark = false
@@ -110,8 +111,26 @@ struct TutorialCompletionView: View {
                 Spacer()
 
                 // Action buttons
+                // UX 2.2 · L16-16: el cierre convierte lo aprendido en acción. «Hacerlo ahora» lleva a la pantalla donde se
+                // hace; «Entendido» sigue siendo la salida.
                 VStack(spacing: DS.Spacing.md) {
-                    YalaPrimaryButton(L10n.Tutorials.understood, action: onDismiss)
+                    if let doItNow {
+                        YalaPrimaryButton(L10n.UXL15.tutorialDoItNow) {
+                            doItNow.perform(tutorial)
+                        }
+                        .accessibilityIdentifier("tutorial_do_it_now")
+                        Button {
+                            onDismiss()
+                        } label: {
+                            Text(L10n.Tutorials.understood)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .accessibilityIdentifier("tutorial_understood")
+                    } else {
+                        YalaPrimaryButton(L10n.Tutorials.understood, action: onDismiss)
+                    }
 
                     if let next = tutorial.nextTutorial, let onNext = onNextTutorial {
                         Button {
@@ -178,5 +197,24 @@ struct TutorialCompletionView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - «Hacerlo ahora» (UX 2.2 · L16-16)
+
+/// Lo que hace «Hacerlo ahora» al terminar un tutorial. Lo pone `ProfileView`, que es quien sabe empujar una pantalla de
+/// Ajustes o cerrarse para que el router abra lo de fuera. `nil` fuera de Ajustes: entonces el botón no sale.
+struct TutorialDoItNowAction {
+    let perform: @MainActor (Tutorial) -> Void
+}
+
+private struct TutorialDoItNowKey: EnvironmentKey {
+    static let defaultValue: TutorialDoItNowAction? = nil
+}
+
+extension EnvironmentValues {
+    var tutorialDoItNow: TutorialDoItNowAction? {
+        get { self[TutorialDoItNowKey.self] }
+        set { self[TutorialDoItNowKey.self] = newValue }
     }
 }

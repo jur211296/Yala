@@ -37,6 +37,8 @@ nonisolated struct ProPlanOffer: Equatable, Identifiable, Sendable {
     let trialDays: Int?
     /// Cuándo se cobraría por primera vez si la prueba empieza hoy. `nil` sin prueba.
     let firstChargeDate: Date?
+    /// La prueba es de un mes de calendario: se anuncia «1 mes gratis», no «30 días» (decisión B de Jürgen, 2026-10-21).
+    var trialIsOneMonth: Bool = false
 }
 
 enum ProPlanStatusLogic {
@@ -125,9 +127,15 @@ enum ProPlanStatusLogic {
         lastActiveWasTrial ?? everWasInTrial
     }
 
-    /// La hoja de fin de Pro sale si hay algo que elegir o un icono que devolver; si no, no hay nada que decir.
-    static func endedSheetIsNeeded(hasExcess: Bool, iconWillReset: Bool) -> Bool {
-        hasExcess || iconWillReset
+    /// La hoja de fin de Pro sale si hay algo que elegir, un icono que devolver o, desde el lote decidido 2.2 · 15, un tema
+    /// de Pro que vuelve a Liquid Glass; si no, no hay nada que decir.
+    static func endedSheetIsNeeded(hasExcess: Bool, iconWillReset: Bool, themeWillReset: Bool = false) -> Bool {
+        hasExcess || iconWillReset || themeWillReset
+    }
+
+    /// El tema vuelve a Liquid Glass solo si el elegido es de Pro y Pro ya no está (decisión B de Jürgen, 2026-10-21).
+    static func themeWillReset(isProUser: Bool, currentTheme: AppTheme) -> Bool {
+        !isProUser && currentTheme.isPro
     }
 
     /// «Prueba terminada» no sale si ya salió (la hoja de fin de Pro también lo marca al aparecer) ni si la hoja de fin

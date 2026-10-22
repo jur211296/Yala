@@ -104,6 +104,11 @@ final class StoreKitManager {
         planOffers.compactMap(\.trialDays).first
     }
 
+    /// Si la prueba que se le puede prometer es de un mes (la del primer plan que la tiene): «1 mes», no «30 días».
+    var offeredTrialIsOneMonth: Bool {
+        planOffers.first { $0.trialDays != nil }?.trialIsOneMonth ?? false
+    }
+
     // MARK: - Downgrade Detection
 
     private let wasProUserKey = "yala.wasProUser"
@@ -565,7 +570,9 @@ final class StoreKitManager {
             displayPrice: product.displayPrice,
             monthlyEquivalent: monthlyEquivalent(for: product),
             trialDays: days,
-            firstChargeDate: chargeDate
+            firstChargeDate: chargeDate,
+            trialIsOneMonth: days != nil && PaywallPricingLogic.trialIsOneMonth(
+                periodUnit: intro?.period.unit, periodValue: intro?.period.value ?? 0)
         )
     }
 
@@ -750,9 +757,9 @@ final class StoreKitManager {
         let charge = trialAvailable ? Calendar.current.date(byAdding: .month, value: 1, to: .now) : nil
         return [
             ProPlanOffer(id: proYearlyID, isYearly: true, displayPrice: "$29.99", monthlyEquivalent: "$2.50",
-                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge),
+                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge, trialIsOneMonth: trialAvailable),
             ProPlanOffer(id: proMonthlyID, isYearly: false, displayPrice: "$4.99", monthlyEquivalent: nil,
-                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge),
+                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge, trialIsOneMonth: trialAvailable),
         ]
     }
 

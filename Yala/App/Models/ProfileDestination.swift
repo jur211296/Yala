@@ -29,6 +29,8 @@ enum ProfileDestination: Hashable {
     case iCloudSync
     case siriShortcuts
     case aiPrivacy
+    /// «Permisos de Yala» (UX 2.2 · L16-14): estado de cada permiso y un botón por permiso a Configuración.
+    case permissions
     /// Modo Nube (I14): elección/gestión de almacenamiento (iCloud privado ↔ nube). Su fila la gobierna
     /// `StorageRowGateLogic`; en producción sigue oculta por el flag remoto (percent 0), no por
     /// `CloudBackendConfig.isConfigured`, que está abierto desde D-R1 paso 1.

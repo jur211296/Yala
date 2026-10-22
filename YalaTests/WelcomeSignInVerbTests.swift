@@ -177,17 +177,23 @@ struct WelcomeSignInVerbTests {
         }
     }
 
-    // MARK: - Punto 16 · la nota por contexto
+    // MARK: - Punto 16, superado: una sola nota (decisión A de Jürgen, 2026-10-19)
 
-    @Test("cada intro lleva SU nota, y la del alta no es la de la re-entrada")
-    func eachIntro_carriesItsOwnProviderNote() throws {
+    /// Las dos notas del Welcome decían que la cuenta queda «ligada a un método», y no es así: con el mismo correo, Apple y
+    /// Google abren la misma cuenta (medido en el backend, L20-9). Desde el lote decidido 2.2 · 15 las dos intros y el
+    /// selector de «Ya tengo una cuenta» dicen la frase de Ajustes, con su misma key.
+    @Test("las intros del Welcome y el selector dicen la nota de Ajustes, no las del método ligado")
+    func welcomeNotes_useTheSettingsLinkingNote() throws {
         let src = try Self.code(Self.welcomePath)
         let born = try Self.member("private var bornCloudIntro: some View {", in: src)
         let reentry = try Self.member("private var reentryIntro: some View {", in: src)
-        #expect(born.contains("L10n.Welcome.BornCloud.providerNote"))
-        #expect(!born.contains("L10n.Welcome.Cloud.providerNote"),
-                "el alta volvió a la nota de la re-entrada: «entra con el mismo método que usaste» no dice nada a quien no ha usado ninguno")
-        #expect(reentry.contains("L10n.Welcome.Cloud.providerNote"))
+        for (nombre, cuerpo) in [("alta", born), ("re-entrada", reentry)] {
+            #expect(cuerpo.contains("L10n.Settings.yalaAccountLinkingNote"), "la intro de \(nombre) no dice la nota de Ajustes")
+            #expect(!cuerpo.contains("providerNote"), "la intro de \(nombre) volvió a la nota del método ligado")
+        }
+        let chooser = try Self.code("Yala/App/Views/Onboarding/WelcomeExistingChooserView.swift")
+        #expect(chooser.contains("L10n.Settings.yalaAccountLinkingNote"))
+        #expect(!chooser.contains("providerNote"))
     }
 
     // MARK: - Las traducciones
@@ -210,18 +216,16 @@ struct WelcomeSignInVerbTests {
         #expect(scanned == 16, "se esperaban 16 locales con strings, se leyeron \(scanned)")
     }
 
-    @Test("las dos notas de método son distintas en los 16 locales")
-    func providerNotes_differPerLocale() {
+    @Test("las keys de la nota del método ligado ya no existen en ningún locale")
+    func providerNoteKeys_areGone() {
         var scanned = 0
         for locale in SupportedLocale.allCases {
             let strings = StringsFileParser.parseStrings(forLocale: locale.code)
             guard !strings.isEmpty else { continue }
             scanned += 1
-            let reentry = strings["welcome.cloud.providerNote"] ?? ""
-            let born = strings["welcome.bornCloud.providerNote"] ?? ""
-            #expect(!born.isEmpty, "falta la nota del alta en \(locale.code)")
-            #expect(born != reentry,
-                    "las dos notas volvieron a ser la misma en \(locale.code): el punto 16 se deshizo en la traducción")
+            #expect(strings["welcome.cloud.providerNote"] == nil, "sigue la nota vieja de la re-entrada en \(locale.code)")
+            #expect(strings["welcome.bornCloud.providerNote"] == nil, "sigue la nota vieja del alta en \(locale.code)")
+            #expect(!(strings["settings.yalaAccountLinkingNote"] ?? "").isEmpty, "falta la nota de Ajustes en \(locale.code)")
         }
         #expect(scanned == 16, "se esperaban 16 locales con strings, se leyeron \(scanned)")
     }

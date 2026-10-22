@@ -157,6 +157,14 @@ paths:
 
 - **El botón destacado de un `.alert` (`.keyboardShortcut(.defaultAction)`) toma el RELLENO del `AccentColor` del catálogo y el TEXTO del tinte de SwiftUI de quien presenta la alerta; si los dos coinciden, el texto sale NEGRO (medido en píxeles el 2026-10-17, iOS 27.0, claro y oscuro).** No elige por contraste: sobre `#3D36B3` también salía negro. Ignora `.tint` y `foregroundStyle` en el propio botón (y `role: .confirm` no cambia nada), y el mismo tinte colorea el texto de los demás botones de la alerta. ⇒ para cambiar ese texto, presenta la alerta desde un ancla con su propio tinte (`content.background { Color.clear.alert(…).tint(…) }`, sin teñir la pantalla de debajo) y recuerda que ese tinte pinta también «Cancelar». Molde: `AIConsentAlertModifier` + `Color.alertActionTint` (blanco en oscuro; en claro, el relleno, así que sale negro: blanco dejaría los otros botones ilegibles sobre el cristal claro). El catálogo y el token están atados por `AlertActionIndigoParityTests`. Ticket: pulido del 2026-10-17 («Activar» con texto oscuro).
 
+- **El molde del ancla propia (`content.background { Color.clear.alert(…).tint(…) }`) NO vale para los avisos de
+  `ShellDataAlertsModifier` (medido el 2026-10-22, iOS 27.0, lote decidido 2.2 · 15).** Para que «Seguir esperando» de
+  «Datos no disponibles» saliera relleno y legible se colgó el aviso de un ancla propia con `alertActionTint`, en
+  `.background`, en `.overlay` y como hermano 1×1 en un `ZStack`: con las tres el aviso **dejó de presentarse** y
+  `RemoteWipeNoticeRoutingUITests` cayó 4 de 5 (también el de «sin iCloud», que no se había tocado); con el ancla de
+  siempre, 5 de 5 verde. Solo con `.keyboardShortcut(.defaultAction)` el relleno sale, pero con el texto del mismo índigo
+  que el fondo. ⇒ en esos avisos el relleno legible no cabe en un `.alert`; si hace falta, es otra presentación.
+
 - **Un `.alert` con tres botones no admite cualquier orden (medido el 2026-10-19, iOS 27.0, lote decidido 2.2 · 04).** El
   botón con `role: .cancel` va SIEMPRE al final, lo declares donde lo declares; y si ninguno lleva `.cancel`, SwiftUI añade
   un «Cancelar» propio al final, que cierra la alerta sin ejecutar nada. Con «Exportar · Esperar · Cerrar sesión

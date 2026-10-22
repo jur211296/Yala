@@ -27,7 +27,7 @@
 "devseed.notePhonePlan" = "Plan móvil";
 
 // === Alquiler (España) vs renta (LatAm) ===
-"tutorials.createScheduledPayments.intro.desc" = "Automatiza alquiler, servicios y suscripciones — Yala los registra por ti.";
+"tutorials.createScheduledPayments.intro.desc" = "Apunta una vez el alquiler, los servicios y las suscripciones: cada vez que toque, Yala te deja el pago en la Bandeja para aprobarlo.";
 
 // === "Haz una foto" suena natural en España; "Toma foto" suena LatAm ===
 "tips.camera.detail" = "Haz una foto de tu recibo o captura del banco. Yala extrae los importes y crea borradores automáticamente.";
@@ -510,7 +510,7 @@
 "more.subtitle.cashFlow" = "¿Te va a alcanzar los próximos meses?";
 "more.subtitle.records" = "Todos tus registros en un lugar";
 "more.subtitle.groups" = "Comparte gastos sin enredos";
-"more.subtitle.profile" = "Tu cuenta y preferencias";
+"more.subtitle.profile" = "Tu perfil y tus preferencias";
 "more.toolsSection" = "Más herramientas";
 "more.editor.title" = "Personalizar";
 "more.editor.sectionsHeader" = "Orden de las secciones";
@@ -658,7 +658,7 @@
 "account.newBalance" = "Nuevo saldo";
 "account.positive" = "Positivo";
 "account.secondaryCurrency.accept" = "Agregar";
-"account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Quieres ver el tipo de cambio %@ → %@? Puedes cambiarlo en Perfil > Moneda y tipo de cambio.";
+"account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Quieres ver el tipo de cambio %@ → %@? Puedes cambiarlo en Ajustes > Moneda y tipo de cambio.";
 "account.secondaryCurrency.reject" = "No, gracias";
 "account.secondaryCurrency.title" = "Moneda secundaria";
 "account.selectAccount" = "Seleccionar cuenta";
@@ -747,7 +747,7 @@
 "budgets.alerts.addThreshold" = "Agregar";
 "budgets.alerts.custom" = "Personalizar";
 "budgets.alerts.enable" = "Notificar al alcanzar límite";
-"budgets.alerts.globalDisabledHint" = "Activa las alertas de presupuesto en Perfil > Notificaciones para recibirlas";
+"budgets.alerts.globalDisabledHint" = "Activa las alertas de presupuesto en Ajustes > Notificaciones para recibirlas";
 "budgets.alerts.message.100" = "Llegaste al límite de \"%1$@\" — %2$@ de %3$@";
 "budgets.alerts.message.50" = "Vas a la mitad en \"%1$@\" — %2$@ de %3$@ usados";
 "budgets.alerts.message.75" = "Ya llevas el 75%% de \"%1$@\" — %2$@ de %3$@";
@@ -1398,7 +1398,7 @@
 "empty.tagsDescription" = "Crea etiquetas para organizar tus registros de forma flexible.";
 "exchangeRate.loadError" = "No pudimos obtener el tipo de cambio. Intenta de nuevo en un momento.";
 "exchangeRate.noSecondaryCurrenciesHint" = "Puedes seleccionar monedas secundarias en";
-"exchangeRate.noSecondaryCurrenciesPath" = "Perfil > Moneda y tipo de cambio";
+"exchangeRate.noSecondaryCurrenciesPath" = "Ajustes > Moneda y tipo de cambio";
 "exchangeRate.title" = "Tipo de Cambio";
 "exchangeRate.updated" = "Actualizado";
 "export.accountsSelected" = "%d seleccionadas";
@@ -1448,25 +1448,25 @@
 "export.selectSingleCurrency" = "Selecciona una única moneda para filtrar por monto.";
 "export.summary" = "Resumen";
 "export.title" = "Exportar";
-"faq.cancelSub.a" = "Puedes administrar o cancelar tu suscripción en cualquier momento desde Ajustes > Suscripción > Administrar en App Store. Tu acceso Pro continúa hasta el final del periodo pagado.";
+"faq.cancelSub.a" = "Puedes gestionar o cancelar tu suscripción cuando quieras en Ajustes > Yala Pro > Gestionar o cancelar. Sigues con Pro hasta el final del período pagado.";
 "faq.cancelSub.q" = "¿Cómo cancelo mi suscripción?";
 "faq.changeCategory.a" = "Abre el registro, toca «Editar» y cambia la categoría. Más rápido: mantén pulsado el registro en la lista y elige «Cambiar categoría». Para cambiar varios a la vez, toca ··· en Registros, elige «Seleccionar», marca los que quieras y toca el lápiz.";
 "faq.changeCategory.q" = "¿Cómo cambio la categoría de un gasto?";
 "faq.deleteData.a" = "Sí. En Ajustes > Vaciar datos puedes eliminar toda tu información. Esta acción no se puede deshacer, así que te recomendamos exportar un respaldo antes.";
 "faq.deleteData.q" = "¿Puedo borrar todos mis datos?";
-"faq.exportData.a" = "Ve a Ajustes > Exportar y elige formato CSV o Excel. Puedes descargar todos tus registros para analizarlos en una hoja de cálculo o guardarlos como respaldo.";
+"faq.exportData.a" = "Ve a Ajustes > Exportar registros y elige formato CSV o Excel. Puedes descargar todos tus registros para analizarlos en una hoja de cálculo o guardarlos como respaldo.";
 "faq.exportData.q" = "¿Cómo exporto mis datos?";
 "faq.howToRecord.a" = "En el Panel, toca Nuevo registro para escribir el monto, o Voz o Foto para dictarlo o leer un recibo. Yala completa los detalles por ti.";
 "faq.howToRecord.q" = "¿Cómo registro un gasto?";
-"faq.importData.a" = "Sí. Ve a Ajustes > Importar y sube un archivo CSV o Excel. Yala detecta las columnas automáticamente y te deja asignar cuentas por moneda.";
+"faq.importData.a" = "Sí. Ve a Ajustes > Importar archivo y sube un archivo CSV o Excel. Yala detecta las columnas automáticamente y te deja asignar cuentas por moneda.";
 "faq.importData.q" = "¿Puedo importar mis datos?";
-"faq.multiCurrency.a" = "Sí. Yala soporta 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP). Configura tu moneda principal y agrega monedas secundarias en Ajustes > Moneda.";
+"faq.multiCurrency.a" = "Sí. Yala tiene 54 monedas. Cada cuenta va en la suya y Yala convierte los totales a tu moneda principal. Eliges la principal, y hasta 2 secundarias para comparar, en Ajustes > Moneda y tipo de cambio.";
 "faq.multiCurrency.q" = "¿Puedo usar varias monedas?";
 "faq.section.data" = "Tus datos";
 "faq.section.general" = "General";
 "faq.section.pro" = "Yala Pro";
 "faq.subtitle" = "Respuestas a las dudas más comunes";
-"faq.whatIsPro.a" = "Yala Pro desbloquea funciones premium como entrada por voz, escaneo de recibos con cámara, temas exclusivos y más. Puedes ver todos los beneficios en Ajustes > Suscripción.";
+"faq.whatIsPro.a" = "Yala Pro te deja apuntar hablando y con una foto, preguntarle a Yala IA, tener cuentas y presupuestos sin límite, y usar temas e iconos. Lo ves todo en Ajustes > Yala Pro.";
 "faq.whatIsPro.q" = "¿Qué incluye Yala Pro?";
 "faq.whatIsYala.a" = "Yala es tu app de finanzas personales. Te ayuda a registrar gastos e ingresos, organizar tu dinero por categorías y etiquetas, crear presupuestos y ver reportes claros de cómo va tu economía.";
 "faq.whatIsYala.q" = "¿Qué es Yala?";
@@ -1777,7 +1777,7 @@
 "inbox.transactionsCreated" = "registros guardados";
 "inbox.viewInRecords" = "Ver en registros";
 "insights.activate" = "Activar";
-"insights.activateAIBody" = "Actívalo y personalízalo en Perfil > Funcionalidades con IA.";
+"insights.activateAIBody" = "Actívalo y personalízalo en Ajustes > Funcionalidades con IA.";
 "insights.activateAITitle" = "Resumen con IA disponible";
 "insights.activeSubscriptions" = "Suscripciones activas";
 "insights.aiSectionTitle" = "Inteligencia Artificial";
@@ -1892,7 +1892,7 @@
 "notificationPrimer.benefit1" = "Reportes diarios de tus finanzas";
 "notificationPrimer.benefit2" = "Recordatorios de pagos planificados";
 "notificationPrimer.benefit3" = "Alertas cuando te acerques al límite de un presupuesto";
-"notificationPrimer.hint" = "Puedes activarlas en Perfil > Notificaciones";
+"notificationPrimer.hint" = "Puedes activarlas en Ajustes > Notificaciones";
 "notificationPrimer.reject" = "Ahora no";
 "notificationPrimer.title" = "¿Activar notificaciones?";
 "notifications.active" = "Activa";
@@ -1998,7 +1998,7 @@
 "onboarding.accountBalanceLearnMore" = "Calculemos tu saldo juntos";
 "onboarding.accountBalanceSkipHint" = "Si no lo sabes, déjalo en 0 y ajústalo después en la cuenta.";
 "onboarding.accountCurrencyLabel" = "Moneda de la cuenta";
-"onboarding.accountImportTip" = "En Perfil > Importar puedes importar registros a cualquiera de tus cuentas.";
+"onboarding.accountImportTip" = "En Ajustes > Importar puedes importar registros a cualquiera de tus cuentas.";
 "onboarding.accountMoreTip" = "Puedes agregar más cuentas cuando quieras. Crea al menos una por moneda si manejas varias.";
 "onboarding.accountNameLabel" = "Nombre de la cuenta";
 "onboarding.accountNamePlaceholder" = "Ej: Mi cuenta principal";
@@ -2066,7 +2066,7 @@
 "onboarding.categories.viewSubs" = "Ver subcategorías";
 "onboarding.categoriesCustom" = "Categorías personalizadas";
 "onboarding.categoriesDefault" = "Categorías predeterminadas";
-"onboarding.categoriesInfo" = "Cada categoría incluye subcategorías más detalladas. Podrás verlas y personalizarlas en Perfil > Categorías.";
+"onboarding.categoriesInfo" = "Cada categoría incluye subcategorías más detalladas. Podrás verlas y personalizarlas en Ajustes > Categorías.";
 "onboarding.categoriesNo" = "Sin categorías, las creo yo";
 "onboarding.categoriesRecommended" = "Recomendado";
 "onboarding.categoriesSubtitle" = "Te preparamos categorías comunes para organizar tus gastos desde el primer día.";
@@ -2093,7 +2093,7 @@
 "onboarding.expensesOnlySubtitle" = "Elige cómo quieres organizar tu dinero. Puedes cambiar esto después en Ajustes.";
 "onboarding.expensesOnlyTitle" = "¿Cómo quieres usar Yala?";
 "onboarding.finish" = "Empezar";
-"onboarding.languageSubtitle" = "Yala aún no está en el idioma de tu dispositivo. Elige uno: puedes cambiarlo cuando quieras en Perfil > Personalización.";
+"onboarding.languageSubtitle" = "Yala aún no está en el idioma de tu dispositivo. Elige uno: puedes cambiarlo cuando quieras en Ajustes > Personalización.";
 "onboarding.languageTitle" = "Elige tu idioma";
 "onboarding.nameHint" = "Puede ser tu nombre, apodo o como prefieras";
 "onboarding.nameLabel" = "¿Cómo quieres que te llamemos?";
@@ -2468,7 +2468,7 @@
 "profile.privacyTitle" = "Dónde viven tus datos";
 "profile.proMember" = "Miembro PRO";
 "profile.removeAvatar" = "Quitar";
-"profile.title" = "Perfil";
+"profile.title" = "Ajustes";
 "profile.yourName" = "Tu nombre";
 "records.latest" = "Últimos registros";
 "records.noRecords" = "Sin registros en este periodo";
@@ -2633,17 +2633,17 @@
 "settings.appIconTitle" = "Icono de aplicación";
 "settings.appLanguage" = "Idioma de la app";
 "settings.autoFocusAmount" = "Monto";
-"settings.autoFocusField" = "Campo con enfoque automático";
-"settings.autoFocusFieldDescription" = "Al crear un nuevo registro manual, el teclado se abrirá automáticamente en el campo seleccionado.";
-"settings.autoFocusNone" = "Ninguno";
+"settings.autoFocusField" = "Abrir el teclado en";
+"settings.autoFocusFieldDescription" = "Al apuntar un registro a mano, el teclado se abre en este campo.";
+"settings.autoFocusNone" = "No abrir";
 "settings.autoFocusNote" = "Descripción";
-"settings.averageLine" = "Línea promedio";
-"settings.averageLine.off" = "Desactivada";
-"settings.averageLine.offDescription" = "Sin línea de promedio en las gráficas.";
-"settings.averageLine.segmented" = "Fragmentada";
-"settings.averageLine.segmentedDescription" = "Segmentos por periodo con variación porcentual.";
-"settings.averageLine.total" = "Total";
-"settings.averageLine.totalDescription" = "Una línea horizontal con el promedio general.";
+"settings.averageLine" = "Línea de promedio en las gráficas";
+"settings.averageLine.off" = "Ninguna";
+"settings.averageLine.offDescription" = "Sin línea de promedio.";
+"settings.averageLine.segmented" = "Por tramos";
+"settings.averageLine.segmentedDescription" = "Una línea por tramo, con cuánto ha subido o bajado frente al anterior.";
+"settings.averageLine.total" = "Una";
+"settings.averageLine.totalDescription" = "Una línea con el promedio de todo el período.";
 "settings.averageLineDescription" = "Muestra una línea de promedio en las gráficas de barras.";
 "settings.budgets" = "Presupuestos";
 "settings.budgetsFavorites" = "Presupuestos favoritos";
@@ -2671,13 +2671,13 @@
 "settings.dark" = "Oscuro";
 "settings.data" = "Datos";
 "settings.decimalPlaces" = "Decimales";
-"settings.decimalPlacesDescription" = "Se aplica solo a totales y gráficas. Los registros individuales siempre muestran 2 decimales.";
+"settings.decimalPlacesDescription" = "Lo ves en los totales y las gráficas. Cada registro muestra siempre 2 decimales.";
 "settings.decimalsNone" = "Sin decimales";
 "settings.decimalsOne" = "1 decimal";
 "settings.decimalsTwo" = "2 decimales";
 "settings.defaultCurrency" = "Moneda predeterminada";
 "settings.defaultPeriod" = "Período predeterminado";
-"settings.defaultPeriodDescription" = "Este período se aplicará por defecto cada vez que abras la app. Puedes cambiarlo temporalmente desde el selector de período en cualquier momento.";
+"settings.defaultPeriodDescription" = "Es el período con el que se abren el Panel, Registros y Estadísticas. Puedes cambiarlo un rato desde el selector de período.";
 "settings.delete" = "Eliminar";
 "settings.deleteAllData" = "Vaciar mis datos";
 "settings.deleteAllDataAction" = "Vaciar definitivamente";
@@ -2686,15 +2686,15 @@
 "settings.deleteDataUnknownError" = "Algo salió mal al eliminar los datos. Intenta de nuevo.";
 "settings.deletingData" = "Eliminando datos...";
 "settings.exchangeRate" = "Tipo de cambio";
-"settings.expensesOnlyActivateConfirm" = "Sí, activar";
+"settings.expensesOnlyActivateConfirm" = "Activar";
 "settings.expensesOnlyActivateMessage" = "Se ocultarán los ingresos, transferencias y saldos en toda la app. Puedes revertirlo en cualquier momento.";
 "settings.expensesOnlyActivateTitle" = "¿Activar modo solo gastos?";
 "settings.expensesOnlyActive" = "Activo";
-"settings.expensesOnlyDeactivateConfirm" = "Sí, desactivar";
+"settings.expensesOnlyDeactivateConfirm" = "Desactivar";
 "settings.expensesOnlyDeactivateMessage" = "Se volverán a mostrar los ingresos, transferencias y saldos.";
 "settings.expensesOnlyDeactivateTitle" = "¿Desactivar modo solo gastos?";
 "settings.expensesOnlyMode" = "Solo gastos";
-"settings.expensesOnlyModeDescription" = "Oculta ingresos, transferencias y saldos. Tus datos no se eliminan, solo se ocultan.";
+"settings.expensesOnlyModeDescription" = "Oculta ingresos, transferencias y saldos en toda la app. Tus datos no se borran.";
 "settings.exportData" = "Exportar datos";
 "settings.faceId" = "Face ID";
 "settings.faq" = "Preguntas frecuentes";
@@ -2722,7 +2722,7 @@
 "settings.preferences" = "Preferencias";
 "settings.preferredCurrency" = "Moneda principal";
 "settings.privacy" = "Política de privacidad";
-"settings.rateApp" = "Calificar y recomendar";
+"settings.rateApp" = "Valorar Yala";
 "settings.recommendedCurrencies" = "Recomendadas";
 "settings.resetData" = "Vaciar datos";
 "settings.scheduled.payments" = "Pagos recurrentes";
@@ -2735,16 +2735,16 @@
 "settings.sectionUsageMode" = "Modo de uso";
 "settings.security" = "Seguridad y cuenta";
 "settings.showMoreCurrencies" = "Ver más monedas";
-"settings.showVariations" = "Comparativas";
-"settings.showVariationsDescription" = "Muestra variaciones porcentuales y gráficas comparativas vs el periodo anterior.";
+"settings.showVariations" = "Comparar con el período anterior";
+"settings.showVariationsDescription" = "Muestra cuánto ha subido o bajado cada cifra frente al período anterior. Lo ves en el Panel, en Estadísticas y en los reportes.";
 "settings.siriShortcuts" = "Siri y Atajos";
 "settings.subscriptions" = "Administrar suscripciones";
 "settings.sunday" = "Domingo";
 "settings.system" = "Sistema";
-"settings.tabBarConfig" = "Personalizar navegación";
-"settings.tabBarConfigActive" = "Tabs activos";
+"settings.tabBarConfig" = "Pestañas de abajo";
+"settings.tabBarConfigActive" = "En la barra";
 "settings.tabBarConfigAvailable" = "Disponibles";
-"settings.tabBarConfigInfo" = "Elige qué secciones mostrar en la barra inferior. Mínimo 1, máximo 3.";
+"settings.tabBarConfigInfo" = "Elige qué pestañas ves abajo y en qué orden.";
 "settings.tabBarConfigMaxWarning" = "Máximo 3 secciones";
 "settings.tabBarConfigMinWarning" = "Debes tener al menos una sección";
 "settings.tabBarConfigReorderHint" = "Mantén presionado para reordenar";
@@ -2765,7 +2765,7 @@
 "settings.voiceInputEnabled" = "Entrada con voz";
 "settings.voiceLanguage" = "Idioma de voz";
 "settings.widgetHints" = "Textos de ayuda";
-"settings.widgetHintsDescription" = "Muestra botones de info en los widgets con explicaciones sobre cada gráfica.";
+"settings.widgetHintsDescription" = "Muestra el botón «?» junto a las gráficas, con lo que explica cada una. Lo ves en el Panel, en Estadísticas y en Planificación.";
 "settings.wipeData" = "Vaciar datos";
 "setup.collapse" = "Minimizar";
 "setup.complete.subtitle" = "Completaste todos los pasos. Yala está lista para ti.";
@@ -3281,35 +3281,35 @@
 "tutorials.category.gettingStarted" = "Primeros pasos";
 "tutorials.category.personalization" = "Personalización";
 "tutorials.category.powerUser" = "Usuario experto";
-"tutorials.createAccount.completion.desc" = "Mantener tus cuentas ordenadas y bien separadas es fundamental para organizar tus finanzas. Cada cuenta te permite filtrar tus datos y visualizar mejor tus tendencias. Puedes editarlas cuando quieras y modificar su saldo inicial o hacer un ajuste del saldo actual.";
-"tutorials.createAccount.completion.title" = "¡Tu cuenta está lista!";
+"tutorials.createAccount.completion.desc" = "Separa tu dinero en cuentas (banco, efectivo, tarjeta) para ver cuánto hay en cada una. Puedes editarlas cuando quieras.";
+"tutorials.createAccount.completion.title" = "Ya sabes cómo crear una cuenta";
 "tutorials.createAccount.intro.desc" = "Configura tu banco, billetera o tarjeta para saber dónde está tu dinero.";
 "tutorials.createAccount.intro.title" = "¿Qué es una cuenta?";
-"tutorials.createAccount.step0.desc" = "En tu perfil, selecciona la sección de Cuentas y toca crear nueva cuenta.";
+"tutorials.createAccount.step0.desc" = "En Ajustes, entra en Cuentas y toca + para crear una nueva.";
 "tutorials.createAccount.step0.title" = "Crea una nueva cuenta";
-"tutorials.createAccount.step1.desc" = "Puedes crear una cuenta directamente desde el Panel tocando la caja de Agregar nueva cuenta.";
-"tutorials.createAccount.step1.title" = "O crea desde el Panel";
+"tutorials.createAccount.step1.desc" = "En el Panel, dentro de Tus finanzas, desliza tus cuentas hasta el final y toca Añadir.";
+"tutorials.createAccount.step1.title" = "O créala desde el Panel";
 "tutorials.createAccount.step2.desc" = "Completa los datos para tu nueva cuenta y toca Guardar.";
 "tutorials.createAccount.step2.title" = "Completa los datos";
 "tutorials.createAccount.title" = "Crear una cuenta";
-"tutorials.createBudgets.completion.desc" = "Ahora verás en tiempo real cómo va tu consumo y podrás decidir mejor si seguir haciendo esos gastos o no. Revísalo seguido para mantener el control.";
-"tutorials.createBudgets.completion.title" = "¡Presupuesto activo!";
+"tutorials.createBudgets.completion.desc" = "Con un presupuesto ves al momento cuánto te queda para gastar, y Yala te avisa si te acercas al límite.";
+"tutorials.createBudgets.completion.title" = "Ya sabes cómo crear un presupuesto";
 "tutorials.createBudgets.intro.desc" = "Pon límites de gasto y recibe alertas cuando estés cerca.";
 "tutorials.createBudgets.intro.title" = "¿Qué es un presupuesto?";
 "tutorials.createBudgets.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Presupuestos. Usa el botón + para crear uno nuevo.";
 "tutorials.createBudgets.step0.title" = "Abre Planificación";
-"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: diario, mensual, anual o único (para un viaje, evento, etc). Personaliza qué cuentas, categorías, etiquetas y naturalezas quieres trackear. Activa las notificaciones si quieres avisos en ciertos umbrales.";
+"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: diario, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y naturalezas quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
 "tutorials.createBudgets.step1.title" = "Configura tu presupuesto";
-"tutorials.createBudgets.step2.desc" = "Puedes añadir presupuestos a Favoritos para visualizarlos en el widget del Panel. Elige hasta 3 en el orden que prefieras.";
-"tutorials.createBudgets.step2.title" = "Añádelo a Favoritos";
+"tutorials.createBudgets.step2.desc" = "Activa «Mostrar en el widget» para verlo en el widget de Presupuestos del Panel.";
+"tutorials.createBudgets.step2.title" = "Muéstralo en el Panel";
 "tutorials.createBudgets.step3.desc" = "Recuerda que siempre podrás volver para editar tu presupuesto tocándolo.";
 "tutorials.createBudgets.step3.title" = "Edítalo cuando quieras";
 "tutorials.createBudgets.title" = "Crear presupuestos";
-"tutorials.createCategories.completion.desc" = "Unas buenas categorías hacen que tus reportes sean mucho más útiles. Puedes editarlas o agregar más en cualquier momento.";
-"tutorials.createCategories.completion.title" = "¡Categoría creada!";
+"tutorials.createCategories.completion.desc" = "Con buenas categorías ves a dónde va tu dinero. Puedes editarlas o crear más cuando quieras.";
+"tutorials.createCategories.completion.title" = "Ya sabes cómo crear categorías";
 "tutorials.createCategories.intro.desc" = "Organiza tus gastos por tipo para ver a dónde va tu dinero.";
 "tutorials.createCategories.intro.title" = "¿Qué son las categorías?";
-"tutorials.createCategories.step0.desc" = "En tu perfil, selecciona la sección de Categorías y crea una nueva categoría.";
+"tutorials.createCategories.step0.desc" = "En Ajustes, entra en Categorías y toca + para crear una nueva.";
 "tutorials.createCategories.step0.title" = "Ve a Categorías";
 "tutorials.createCategories.step1.desc" = "Recuerda que siempre debe haber subcategorías asociadas a una categoría para poder crearla.";
 "tutorials.createCategories.step1.title" = "Agrega subcategorías";
@@ -3318,17 +3318,17 @@
 "tutorials.createCategories.step3.desc" = "Personaliza a tu gusto el icono y color de tu categoría cuando quieras.";
 "tutorials.createCategories.step3.title" = "Personaliza tu categoría";
 "tutorials.createCategories.title" = "Crear categorías";
-"tutorials.createFavorites.completion.desc" = "Los favoritos te ahorran tiempo en gastos repetitivos. Puedes tener tantos como quieras y editarlos cuando necesites.";
-"tutorials.createFavorites.completion.title" = "¡Favorito guardado!";
+"tutorials.createFavorites.completion.desc" = "Un favorito apunta en un toque los gastos que repites. Puedes tener los que quieras.";
+"tutorials.createFavorites.completion.title" = "Ya sabes cómo usar favoritos";
 "tutorials.createFavorites.intro.desc" = "Guarda gastos frecuentes como atajos y regístralos con un toque.";
 "tutorials.createFavorites.intro.title" = "¿Qué son los favoritos?";
-"tutorials.createFavorites.step0.desc" = "Ve a la pantalla de nuevo registro y toca la estrella en la parte superior para crear un nuevo favorito.";
+"tutorials.createFavorites.step0.desc" = "En Nuevo registro, toca «Favorito», debajo del monto, para guardar como favorito lo que llevas escrito.";
 "tutorials.createFavorites.step0.title" = "Crea un favorito";
-"tutorials.createFavorites.step1.desc" = "Completa los campos que quieras que se pre-llenen. La próxima vez, simplemente toca el favorito y verás cómo se completan todos los campos automáticamente.";
+"tutorials.createFavorites.step1.desc" = "La próxima vez, toca la estrella de arriba y elige el favorito: los campos que has guardado se rellenan solos.";
 "tutorials.createFavorites.step1.title" = "Úsalo rápidamente";
 "tutorials.createFavorites.title" = "Pagos favoritos";
-"tutorials.createRecord.completion.desc" = "Registrar gastos al momento es la clave. Cuanto más registres, mejores serán tus análisis y reportes para entender tus finanzas.";
-"tutorials.createRecord.completion.title" = "¡Gasto registrado!";
+"tutorials.createRecord.completion.desc" = "Cuanto antes apuntes cada gasto, más claro verás en qué se va tu dinero.";
+"tutorials.createRecord.completion.title" = "Ya sabes cómo registrar un gasto";
 "tutorials.createRecord.intro.desc" = "Cada gasto que registras te ayuda a entender mejor tus finanzas.";
 "tutorials.createRecord.intro.title" = "Registro manual";
 "tutorials.createRecord.step0.desc" = "En el Panel, toca Nuevo registro. Para dictar o leer un recibo, toca Voz o Foto.";
@@ -3340,8 +3340,8 @@
 "tutorials.createRecord.step3.desc" = "Usa los atajos rápidos: @ para cuenta, ! para categoría y # para etiqueta. Empieza a escribir para afinar la búsqueda dentro de cada atajo.";
 "tutorials.createRecord.step3.title" = "Usa atajos rápidos";
 "tutorials.createRecord.title" = "Registrar un gasto";
-"tutorials.createScheduledPayments.completion.desc" = "Tus pagos recurrentes ahora se registran solos. Recibirás una notificación cada vez que uno se ejecute.";
-"tutorials.createScheduledPayments.completion.title" = "¡Pago planificado!";
+"tutorials.createScheduledPayments.completion.desc" = "El día que toca, Yala deja cada pago en la Bandeja, listo para que lo apruebes.";
+"tutorials.createScheduledPayments.completion.title" = "Ya sabes cómo planificar un pago";
 "tutorials.createScheduledPayments.intro.title" = "¿Qué son los pagos planificados?";
 "tutorials.createScheduledPayments.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Pagos Planificados. Usa el botón + para crear uno nuevo.";
 "tutorials.createScheduledPayments.step0.title" = "Abre Planificación";
@@ -3349,58 +3349,58 @@
 "tutorials.createScheduledPayments.step1.title" = "Completa los datos";
 "tutorials.createScheduledPayments.step2.desc" = "Selecciona el día del pago y la periodicidad. Elige cuándo será el primer pago y activa las notificaciones si quieres que te avise el mismo día o días antes.";
 "tutorials.createScheduledPayments.step2.title" = "Define la recurrencia";
-"tutorials.createScheduledPayments.step3.desc" = "No olvides activar el toggle de suscripción si se trata de una suscripción recurrente.";
+"tutorials.createScheduledPayments.step3.desc" = "En «Más opciones», activa «¿Es una suscripción?» si lo es.";
 "tutorials.createScheduledPayments.step3.title" = "Marca si es suscripción";
 "tutorials.createScheduledPayments.step4.desc" = "Al tocar un pago planificado podrás ver los futuros pagos, los ya realizados y editarlo cuando quieras.";
 "tutorials.createScheduledPayments.step4.title" = "Gestiona tus pagos";
 "tutorials.createScheduledPayments.title" = "Pagos planificados";
-"tutorials.createTags.completion.desc" = "Usa etiquetas para agrupar gastos de proyectos, viajes o eventos. Son perfectas para análisis que van más allá de las categorías.";
-"tutorials.createTags.completion.title" = "¡Etiqueta creada!";
+"tutorials.createTags.completion.desc" = "Usa etiquetas para juntar los gastos de un viaje, un proyecto o un evento, aunque sean de categorías distintas.";
+"tutorials.createTags.completion.title" = "Ya sabes cómo crear etiquetas";
 "tutorials.createTags.intro.desc" = "Agrupa gastos de distintas categorías — como \"Vacaciones\" para comida, transporte y hotel.";
 "tutorials.createTags.intro.title" = "¿Qué son las etiquetas?";
-"tutorials.createTags.step0.desc" = "En tu perfil, selecciona la sección de Etiquetas y crea una nueva etiqueta.";
+"tutorials.createTags.step0.desc" = "En Ajustes, entra en Etiquetas y toca + para crear una nueva.";
 "tutorials.createTags.step0.title" = "Ve a Etiquetas";
 "tutorials.createTags.step1.desc" = "Personaliza a tu gusto la etiqueta: ponle nombre, icono y color.";
 "tutorials.createTags.step1.title" = "Personaliza tu etiqueta";
 "tutorials.createTags.title" = "Crear etiquetas";
 "tutorials.done" = "Listo";
-"tutorials.editPanel.completion.desc" = "Tu panel ahora muestra exactamente lo que necesitas. Puedes cambiarlo en cualquier momento para adaptarlo a tu forma de gestionar.";
-"tutorials.editPanel.completion.title" = "¡Panel personalizado!";
+"tutorials.editPanel.completion.desc" = "Tu Panel muestra lo que elijas, en el orden que quieras. Puedes cambiarlo cuando quieras.";
+"tutorials.editPanel.completion.title" = "Ya sabes cómo personalizar el Panel";
 "tutorials.editPanel.intro.desc" = "Personaliza qué widgets aparecen en tu panel.";
 "tutorials.editPanel.intro.title" = "Tu panel, a tu manera";
 "tutorials.editPanel.step0.desc" = "Ve a la pantalla principal donde ves tu resumen de gastos con todos los widgets disponibles.";
 "tutorials.editPanel.step0.title" = "Abre el panel";
-"tutorials.editPanel.step1.desc" = "Puedes modificar qué widgets ver y en qué orden tocando el botón de personalización en el panel.";
+"tutorials.editPanel.step1.desc" = "Toca el botón de cuadraditos junto a cada sección del Panel para elegir qué widgets ver y en qué orden.";
 "tutorials.editPanel.step1.title" = "Personaliza los widgets";
 "tutorials.editPanel.step2.desc" = "Recuerda que siempre puedes volver al orden predeterminado tocando \"Restablecer\" dentro de la personalización.";
 "tutorials.editPanel.step2.title" = "Restablece si quieres";
 "tutorials.editPanel.title" = "Personalizar el panel";
-"tutorials.importData.completion.desc" = "Tu historial ya está en Yala. Si hubo errores recibirás un mensaje claro con el detalle, sino verás el mensaje de éxito. Revisa tus registros para confirmar que todo se importó correctamente.";
-"tutorials.importData.completion.title" = "¡Datos importados!";
+"tutorials.importData.completion.desc" = "Al importar, Yala te dice qué entró y qué no. Revisa tus registros después para confirmarlo.";
+"tutorials.importData.completion.title" = "Ya sabes cómo importar tus datos";
 "tutorials.importData.intro.desc" = "Trae tus gastos de una hoja de cálculo u otra app en segundos.";
 "tutorials.importData.intro.title" = "Importa tus datos";
-"tutorials.importData.step0.desc" = "En tu perfil, selecciona la sección Importar datos.";
-"tutorials.importData.step0.title" = "Selecciona Importar datos";
+"tutorials.importData.step0.desc" = "En Ajustes, dentro de Datos, toca Importar archivo.";
+"tutorials.importData.step0.title" = "Toca Importar archivo";
 "tutorials.importData.step1.desc" = "Puedes importar CSV o Excel cuantas veces quieras siguiendo la plantilla predeterminada, que puedes descargar ahí mismo. Si hay datos en varias monedas, te pedirá seleccionar las cuentas para cada una.";
 "tutorials.importData.step1.title" = "Importa tu archivo";
 "tutorials.importData.title" = "Importar datos";
-"tutorials.inboxApproval.completion.desc" = "Tus registros en bandeja no tienen fecha de expiración, podrás aprobarlos o rechazarlos cuando quieras. Los borradores no afectan tus totales hasta que los apruebes.";
-"tutorials.inboxApproval.completion.title" = "¡Bandeja dominada!";
-"tutorials.inboxApproval.intro.desc" = "Revisa y aprueba gastos automáticos de Apple Pay, voz o cámara.";
+"tutorials.inboxApproval.completion.desc" = "Lo que está en la Bandeja no cuenta en tus totales hasta que lo apruebas, y no caduca.";
+"tutorials.inboxApproval.completion.title" = "Ya sabes cómo usar la Bandeja";
+"tutorials.inboxApproval.intro.desc" = "Revisa y guarda lo que Yala apuntó por ti: lo que dictas o fotografías, los pagos de Apple Pay y los pagos que vencen.";
 "tutorials.inboxApproval.intro.title" = "Tu bandeja inteligente";
-"tutorials.inboxApproval.step0.desc" = "Si eres usuario Yala Pro, cuando hagas un registro por voz o imagen, automáticamente te llevará al borrador. Lo mismo si usaste el atajo «Registrar pago de Apple Pay».";
-"tutorials.inboxApproval.step0.title" = "Registra con voz o imagen";
+"tutorials.inboxApproval.step0.desc" = "A la Bandeja llega lo que Yala apuntó por ti: lo que dictas o fotografías, los pagos de Apple Pay que registra el atajo y los pagos planificados que vencen. Se quedan como borradores hasta que los revisas.";
+"tutorials.inboxApproval.step0.title" = "Lo que llega a la Bandeja";
 "tutorials.inboxApproval.step1.desc" = "Simplemente completa los campos obligatorios y aprueba. Se creará el registro con normalidad.";
 "tutorials.inboxApproval.step1.title" = "Completa y aprueba";
-"tutorials.inboxApproval.step2.desc" = "También puedes dictar o fotografiar varios registros a la vez. Te dirá cuántos borradores se crearon y te guiará a la bandeja para revisarlos.";
-"tutorials.inboxApproval.step2.title" = "Registra varios a la vez";
-"tutorials.inboxApproval.step3.desc" = "En tu bandeja podrás aprobar registros, seleccionar Aprobar luego para verlos después o rechazarlos directamente.";
+"tutorials.inboxApproval.step2.desc" = "Si varios borradores ya están completos, toca «Guardar los listos» y pasan a tus registros de una vez.";
+"tutorials.inboxApproval.step2.title" = "Guarda varios a la vez";
+"tutorials.inboxApproval.step3.desc" = "Desliza un borrador para descartarlo, o ábrelo para completarlo y aprobarlo cuando quieras.";
 "tutorials.inboxApproval.step3.title" = "Gestiona tu bandeja";
 "tutorials.inboxApproval.title" = "Bandeja de entrada";
 "tutorials.next" = "Siguiente";
 "tutorials.nextTutorial" = "Siguiente tutorial";
-"tutorials.panelFiltering.completion.desc" = "Los filtros son tu mejor herramienta para entender tus finanzas en profundidad. Combínalos para obtener análisis cada vez más precisos.";
-"tutorials.panelFiltering.completion.title" = "¡Filtros dominados!";
+"tutorials.panelFiltering.completion.desc" = "Combina filtros para ver justo lo que buscas. Se aplican en todas las pantallas a la vez.";
+"tutorials.panelFiltering.completion.title" = "Ya sabes cómo filtrar";
 "tutorials.panelFiltering.intro.desc" = "Filtra por cuenta, categoría, etiqueta o periodo para análisis detallado.";
 "tutorials.panelFiltering.intro.title" = "Filtra para encontrar";
 "tutorials.panelFiltering.step0.desc" = "Saca el máximo provecho a los gráficos interactivos de Yala. Casi todos los paneles son filtrables por categoría, naturaleza, entre otros. Juega con ellos y encuentra lo que más te sirva.";
@@ -4155,17 +4155,9 @@
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Usa la misma cuenta de Google con la que creaste tu cuenta de la nube.";
 
-/* Note under sign-in buttons: account is tied to the sign-in method */
-"welcome.cloud.providerNote" = "Entra con el mismo método que usaste al crear tu cuenta: tu cuenta de Yala queda ligada a él.";
 
-/* R9 provider mismatch screen title */
-"welcome.cloud.providerMismatchTitle" = "Esa cuenta usa otro método";
 
-/* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "La cuenta de Yala de este Apple ID se creó con %@.";
 
-/* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "La cuenta de Yala de este Apple ID se creó con otro método de acceso.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
 "welcome.cloud.beaconOrigin" = "Se creó con %@. Puedes entrar en ella o crear otra.";
@@ -4578,7 +4570,6 @@
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Crea tu cuenta de Yala";
 "welcome.bornCloud.subtitle" = "Con ella podrás abrir Yala desde cualquier dispositivo.";
-"welcome.bornCloud.providerNote" = "Tu cuenta de Yala quedará ligada al método que elijas.";
 "welcome.bornCloud.creating" = "Creando tu cuenta…";
 
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
@@ -4663,7 +4654,7 @@
 "groups.freshStartPending.leadUnknown" = "No borramos nada: hay cambios de tus grupos que aún no llegaron al servidor y empezar de cero se los llevaría.";
 "groups.freshStartPending.lossSessionExpired" = "Solo pueden subir con la cuenta que los apuntó, y su sesión ya no está en este teléfono. Si no vas a volver a entrar con esa cuenta, puedes empezar de cero y perderlos: nadie del grupo los verá.";
 "groups.freshStartPending.lossPermanent" = "La cuenta que los apuntó ya no puede subirlos, y volver a intentarlo no lo va a arreglar. Puedes empezar de cero y perderlos: nadie del grupo los verá.";
-"groups.freshStartPending.lossAttest" = "Este teléfono lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, así que no pueden subir. Puedes empezar de cero y perderlos: nadie del grupo los verá.";
+"groups.freshStartPending.lossAttest" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día, así que no pueden subir. Puedes empezar de cero y perderlos: nadie del grupo los verá.";
 "groups.freshStartPending.lossAction" = "Empezar de cero y perderlos";
 "groups.freshStartPending.lossConfirmTitle" = "¿Perder estos cambios?";
 "groups.freshStartPending.lossConfirmBody" = "Cambios de tus grupos que se pierden: %d. Se borran de este teléfono sin llegar al servidor, nadie del grupo los verá y no se pueden recuperar.";
@@ -5120,7 +5111,7 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "Tu sesión de grupos caducó. Entra otra vez y vuelve a intentarlo.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Tu sesión de grupos ha caducado y algunos de los últimos cambios de tus grupos no se han podido preparar para subirlos. No se pierden. Entra otra vez, cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo.";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Este teléfono lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, y algunos de los últimos cambios de tus grupos no se han podido preparar para subirlos. No se pierden. Para que se preparen, cierra y vuelve a abrir Yala (si sigue pasando, actualízala).";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día, y algunos de los últimos no se han podido preparar para subirlos. No se pierden. Para que se preparen, cierra y vuelve a abrir Yala (si sigue pasando, actualízala).";
 "storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Hay cambios de grupos que se apuntaron en este teléfono con otra cuenta, y solo se pueden subir con ella. Además, algunos cambios de grupos no se han podido preparar para subirlos. No se pierden. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo; los de esa cuenta solo suben si entras con ella.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
@@ -5212,25 +5203,25 @@
 "groups.errors.attestUnavailableTitle" = "Este teléfono no puede sincronizar tus grupos";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Cambios de tus grupos que no han llegado: %d. Si cierras sesión ahora, se pierden y nadie del grupo los verá.";
+"groups.errors.attestUnavailableSignOutLoss" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día. Cambios que no han llegado: %d. Si cierras sesión ahora, se pierden y nadie del grupo los verá.";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, y hay cambios de tus grupos que no han llegado. Si cierras sesión ahora, se pierden y nadie del grupo los verá.";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día, y hay cambios que no han llegado. Si cierras sesión ahora, se pierden y nadie del grupo los verá.";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "Cerrar sesión y perderlos";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "Este teléfono lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, así que tus cambios de grupos no pueden subir.";
+"groups.errors.attestUnavailable" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día, así que lo que cambies no llega al grupo. Usa otro teléfono mientras tanto.";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
 "groups.errors.leaveAttestUnavailable" = "Este teléfono no puede sincronizar tus grupos, así que no hemos podido completar tu salida del grupo.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Cambios de tus grupos que no han llegado: %d. Si continúas ahora, se pierden y nadie del grupo los verá.";
+"welcome.groups.neutralAttestLossBody" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día. Cambios que no han llegado: %d. Si continúas ahora, se pierden y nadie del grupo los verá.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, y hay cambios de tus grupos que no han llegado. Si continúas ahora, se pierden y nadie del grupo los verá.";
+"welcome.groups.neutralAttestLossBodyUnknown" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día, y hay cambios que no han llegado. Si continúas ahora, se pierden y nadie del grupo los verá.";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "Continuar y perderlos";
@@ -5240,11 +5231,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "Este teléfono no puede sincronizar tus datos";
-"settings.signOutAttestMessage" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Cambios que no han llegado a tu cuenta en la nube: %d. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
-"settings.signOutAttestMessageUnknown" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, y hay cambios que no han llegado a tu cuenta en la nube. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutAttestMessage" = "Este teléfono no puede enviar cambios a tu cuenta en la nube desde hace un día. Cambios que no han llegado: %d. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutAttestMessageUnknown" = "Este teléfono no puede enviar cambios a tu cuenta en la nube desde hace un día, y hay cambios que no han llegado. Antes de decidir, puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
 "settings.signOutAttestExportButton" = "Exportar mis registros";
 "settings.signOutAttestLossButton" = "Cerrar sesión y perderlos";
-"settings.signOutAttestBlocked" = "Este teléfono lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor, así que tus cambios no pueden subir a tu cuenta en la nube.";
+"settings.signOutAttestBlocked" = "Este teléfono no puede enviar cambios a tu cuenta en la nube desde hace un día, así que tus cambios no pueden subir.";
 "settings.signOutAttestExportEmpty" = "No tienes registros que exportar.";
 "settings.signOutAttestExportFailed" = "No hemos podido generar el archivo. Inténtalo de nuevo.";
 
@@ -5252,7 +5243,7 @@
 "groups.attestTerminalBanner" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día. Lo que apuntes aquí no lo verá nadie del grupo: usa otro teléfono.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Lo que apuntes aquí se guarda en este teléfono, pero no llega a tu cuenta en la nube: usa otro teléfono mientras tanto.";
+"settings.attestTerminalBanner" = "Este teléfono no puede enviar cambios a tu cuenta en la nube desde hace un día. Lo que apuntes aquí se guarda en el teléfono, pero no llega a tu cuenta: usa otro teléfono mientras tanto.";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "Subiendo tus datos a iCloud. Puedes seguir usando Yala.";
@@ -5393,16 +5384,16 @@
 "settings.signOutCaptureUnfinished" = "Algunos de tus últimos cambios no se han podido preparar para subir a la nube. Siguen guardados en este teléfono y no se pierden. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa porque el paso de tus datos entre la nube e iCloud no ha terminado. Abre «Dónde viven tus datos», aquí en Perfil, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
+"settings.signOutSyncStoppedMidMigration" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa porque el paso de tus datos entre la nube e iCloud no ha terminado. Abre «Dónde viven tus datos», aquí en Ajustes, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "Hay cambios sin subir a la nube y no queremos que pierdas nada. La sincronización está en pausa hasta que vuelvas a abrir Yala. Ciérrala del todo (deslízala fuera del selector de apps), vuelve a abrirla e inténtalo de nuevo.";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Tus últimos cambios no llegaron a la nube. Siguen guardados en este teléfono y no se pierden; inténtalo de nuevo en un rato.";
-"settings.signOutCloudSessionExpired" = "Tu sesión ha caducado y hay cambios sin subir a la nube. No se pierden: abre «Dónde viven tus datos», aquí en Perfil, toca «Iniciar sesión» y después vuelve a intentarlo.";
+"settings.signOutCloudSessionExpired" = "Tu sesión ha caducado y hay cambios sin subir a la nube. No se pierden: abre «Dónde viven tus datos», aquí en Ajustes, toca «Iniciar sesión» y después vuelve a intentarlo.";
 "settings.signOutSessionSurvived" = "Tu sesión sigue abierta en este iPhone, así que no se ha borrado nada. Vuelve a intentarlo.";
-"settings.signOutMigrationInFlight" = "El paso de tus datos entre iCloud y la nube todavía no ha terminado, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Abre «Dónde viven tus datos», en Perfil, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
+"settings.signOutMigrationInFlight" = "El paso de tus datos entre iCloud y la nube todavía no ha terminado, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Abre «Dónde viven tus datos», en Ajustes, y termínalo desde ahí (si ha fallado, toca «Reintentar»); después vuelve a intentarlo.";
 "settings.signOutMigrationUnreadable" = "No hemos podido comprobar en qué punto va el paso de tus datos entre iCloud y la nube, y cerrar sesión ahora podría borrar lo que falta por subir, así que no se ha borrado nada. Cierra Yala del todo y vuelve a abrirla; si sigue igual, actualízala desde la App Store y vuelve a intentarlo.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
@@ -5429,10 +5420,10 @@
 "groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Hay cambios de grupos sin subir. Algunos se apuntaron en este teléfono con otra cuenta y solo se suben con ella, y algunos no se han podido preparar para subirlos. Cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo; los de la otra cuenta solo suben si entras con ella. Si no puedes, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
-"settings.signOutCloudSessionExpiredGroupsLoss" = "Tu sesión ha caducado. Cambios de tus grupos sin subir: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Tu sesión ha caducado. Cambios de tus grupos sin subir: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Tu sesión ha caducado y hay cambios de tus grupos sin subir. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Tu sesión ha caducado y hay cambios de tus grupos sin subir. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, cierra sesión igualmente y se perderán; nadie del grupo los verá.";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
 "welcome.groups.neutralNoSessionLossBody" = "Cambios de grupos sin subir: %d. Solo se suben con la cuenta que los apuntó, y su sesión no está abierta en este teléfono. Si continúas ahora, se perderán y nadie del grupo los verá.";
@@ -5459,10 +5450,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Los cambios de grupos que no han llegado al servidor se borran de este teléfono. Nadie del grupo los verá y no se pueden recuperar.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "Tu sesión ha caducado. Cambios que no han llegado a tu cuenta en la nube: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Tu sesión ha caducado. Cambios que no han llegado a tu cuenta en la nube: %d. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Tu sesión ha caducado y hay cambios que no han llegado a tu cuenta en la nube. Para subirlos, abre «Dónde viven tus datos», aquí en Perfil, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Tu sesión ha caducado y hay cambios que no han llegado a tu cuenta en la nube. Para subirlos, abre «Dónde viven tus datos», aquí en Ajustes, y toca «Iniciar sesión». Si no puedes entrar, antes de decidir puedes exportar tus registros a un archivo. Si cierras sesión ahora, esos cambios se pierden.";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Elige un registro para verlo aquí";
@@ -5846,7 +5837,7 @@
 "welcome.mirrorRelaunch.privacyNote" = "Así Yala se conecta a tu iCloud privado y tus datos quedan siempre privados: nadie más puede leerlos, ni siquiera nosotros.";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
-"onboarding.purpose.changeLaterHint" = "Puedes cambiarlo cuando quieras en Perfil > Personalización.";
+"onboarding.purpose.changeLaterHint" = "Puedes cambiarlo cuando quieras en Ajustes > Personalización.";
 
 /* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
 "onboarding.currencyName.titleExpenses" = "¿En qué moneda gastas?";
@@ -6208,7 +6199,7 @@
 "inbox.stillPending" = "Quedan pendientes: %d";
 
 /* UX 2.2 · lote 5: primeros días, guías y tips */
-"setup.step5.title.trial" = "Prueba Yala Pro gratis 30 días";
+"setup.step5.title.trial" = "Prueba Yala Pro gratis 1 mes";
 "setup.step5.title.knowPro" = "Conoce Yala Pro";
 "setup.step5.title.alreadyPro" = "Ya tienes Yala Pro";
 "setup.step.skipped" = "Lo saltaste. Toca para probarlo";
@@ -7407,3 +7398,64 @@
 
 /* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
 "image.entry.dailyLimitLeftOutMany" = "Has llegado al límite de hoy: han quedado %d sin leer.";
+
+/* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
+"l15.personal.dataNote" = "Se guardan en tu iCloud o en tu cuenta en la nube, según lo que hayas elegido. Lo que apuntas en un grupo lo ve el grupo.";
+"l15.personal.moreAboutData" = "Más sobre tus datos";
+"l15.rates.search" = "Buscar moneda";
+"l15.personalization.voiceLanguageFooter" = "El idioma en que le hablas a Yala cuando apuntas con la voz.";
+"l15.personalization.colorfulIconsFooter" = "Lo ves en los iconos de Ajustes y de Más.";
+"l15.personalization.averageLineFooter" = "Lo ves en las gráficas del Panel.";
+"l15.personalization.currencyFormatFooter" = "Cómo se escriben los importes en toda la app: con el símbolo (S/) o con el código (PEN).";
+"l15.tabBar.rules" = "Panel va siempre primero. Caben 3 más Más y Buscar.";
+"l15.permissions.title" = "Permisos de Yala";
+"l15.permissions.footer" = "Yala te pide cada permiso la primera vez que usas lo que lo necesita.";
+"l15.permissions.notAskedHint" = "Te lo pediremos la primera vez que lo uses.";
+"l15.permissions.changeInSettings" = "Cambiar en Ajustes";
+"l15.permissions.notifications" = "Notificaciones";
+"l15.permissions.notificationsDetail" = "Recordatorios, pagos que vencen y avisos de tus grupos.";
+"l15.permissions.camera" = "Cámara";
+"l15.permissions.cameraDetail" = "Para apuntar un gasto con la foto de un recibo.";
+"l15.permissions.microphone" = "Micrófono";
+"l15.permissions.microphoneDetail" = "Para apuntar un gasto hablando.";
+"l15.permissions.photos" = "Fotos";
+"l15.permissions.photosDetail" = "Para guardar en Fotos los resúmenes de grupo que elijas.";
+"l15.permissions.status.allowed" = "Permitido";
+"l15.permissions.status.limited" = "Algunas fotos";
+"l15.permissions.status.saveOnly" = "Solo guardar";
+"l15.permissions.status.denied" = "No permitido";
+"l15.permissions.status.notAsked" = "Sin pedir";
+"l15.recommend.row" = "Recomendar Yala";
+"l15.recommend.message" = "Yo apunto mis gastos con Yala. Te la recomiendo:";
+"l15.tutorials.doItNow" = "Hacerlo ahora";
+"l15.tutorials.done" = "Hecho";
+"l15.faq.section.currencies" = "Monedas";
+"l15.faq.section.groups" = "Grupos";
+"l15.faq.notHere" = "¿No está tu pregunta?";
+"l15.faq.writeToUs" = "Escríbenos";
+"l15.faq.exchangeRate.q" = "¿De dónde sale el tipo de cambio?";
+"l15.faq.exchangeRate.a" = "Yala actualiza los tipos de cambio y convierte cada registro con el del día en que lo apuntaste. Las tasas y cuándo se actualizaron están en Ajustes > Moneda y tipo de cambio > Ver todas.";
+"l15.faq.groups.q" = "¿Cómo funcionan los grupos?";
+"l15.faq.groups.a" = "Sirven para compartir gastos con otras personas: un viaje, la casa o una salida. Cada uno apunta lo que pagó y Yala calcula quién le debe a quién. Necesitas una cuenta de Yala, porque los gastos del grupo se guardan en la nube para que todos los vean al día.";
+"l15.faq.yalaAI.q" = "¿Qué es Yala IA?";
+"l15.faq.yalaAI.a" = "Es el asistente de Yala Pro. Le preguntas por tus finanzas («¿cuánto he gastado en café este mes?») o le cuentas un gasto y lo apunta por ti. Para responder, envía lo necesario a un servicio de IA; lo decides en Ajustes > Privacidad y datos IA.";
+"l15.faq.whereData.q" = "¿Dónde se guardan mis datos?";
+"l15.faq.whereData.a" = "Si has elegido tu iCloud privado, en tu iPhone y en tu iCloud: Yala no los ve. Si tienes una cuenta en la nube, en los servidores de Yala, y entras desde otro iPhone con Apple o Google. Lo que apuntas en un grupo se guarda en la nube para que el grupo lo vea.";
+"l15.faq.faceID.q" = "¿Puedo proteger Yala con Face ID?";
+"l15.faq.faceID.a" = "Sí, con el bloqueo de iOS: mantén pulsado el icono de Yala en tu pantalla de inicio y toca «Requerir Face ID». Yala nunca ve tu cara: lo comprueba iOS. Tienes la guía en Ajustes > Proteger con Face ID.";
+"l15.faq.widgets.q" = "¿Cómo añado un widget de Yala?";
+"l15.faq.widgets.a" = "Mantén pulsado un espacio vacío de tu pantalla de inicio, toca «Editar» > «Añadir widget» y busca Yala. Hay widgets de saldo, gastos, categorías, resumen del mes y últimos registros, y también para la pantalla bloqueada.";
+"l15.support.sendFooter" = "Se abre tu correo para enviarlo a %@. Va con la versión de Yala y de iOS, el modelo de tu iPhone, el tema y el idioma, para ayudarte mejor.";
+"l15.removeData.noCopyConfirm" = "Quitar y borrar";
+"l15.removeData.exportDiscard" = "Quitar mis datos igualmente";
+"l15.removeData.exportPending" = "Cambios de este iPhone que aún no han llegado a iCloud: %d. Si quitas tus datos ahora, se perderán.";
+"l15.removeData.exportPendingUnknown" = "No hemos podido confirmar que tus últimos cambios hayan llegado a iCloud. Si quitas tus datos ahora, podrían perderse.";
+"l15.pro.themeResetNote" = "Tu tema vuelve a Liquid Glass.";
+"l15.pro.oneMonthThenYearly" = "1 mes gratis, luego %@ al año";
+"l15.pro.oneMonthThenMonthly" = "1 mes gratis, luego %@ al mes";
+"l15.pro.startTrialOneMonth" = "Probar gratis 1 mes";
+"l15.pro.gateStartTrialOneMonth" = "Probar Pro gratis 1 mes";
+"l15.pro.settingsFreeWithTrialOneMonth" = "Gratis · prueba 1 mes gratis";
+"welcome.cloud.otherAccountUsedTitle" = "Este iPhone ya ha usado otra cuenta";
+"welcome.cloud.otherAccountUsedBody" = "En este iPhone ya se ha usado una cuenta de Yala creada con %1$@, y la de %2$@ es otra. ¿Seguro que quieres usar una cuenta distinta? Para seguir con la de siempre, entra con %1$@.";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "En este iPhone ya se ha usado una cuenta de Yala creada con otro método, y la de %@ es otra. ¿Seguro que quieres usar una cuenta distinta? Para seguir con la de siempre, entra con el método de entonces.";

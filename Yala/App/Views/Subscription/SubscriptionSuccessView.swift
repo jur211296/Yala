@@ -102,42 +102,11 @@ struct SubscriptionSuccessView: View {
         }
     }
 
+    /// Decisión B de Jürgen (2026-10-21): las mismas fichas de «Qué incluye Pro» que el paywall (`ProIncludedGrid`). La
+    /// lista de antes tenía los nombres viejos («Registro por voz ilimitado»…) y decía lo mismo con otras palabras.
     private var unlockedFeaturesList: some View {
-        VStack(spacing: DS.Spacing.md) {
-            unlockedFeatureRow(icon: "infinity", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
-            unlockedFeatureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
-            unlockedFeatureRow(icon: "waveform", text: L10n.Subscription.featureVoice, color: .hotPink)
-            unlockedFeatureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
-            unlockedFeatureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
-            unlockedFeatureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
-            unlockedFeatureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-    }
-
-    private func unlockedFeatureRow(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(DS.Typography.iconMedium)
-                .foregroundStyle(.white)
-                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-                .background(
-                    RoundedRectangle(cornerRadius: DS.Radius.sm)
-                        .fill(color)
-                )
-                .accessibilityHidden(true)
-
-            Text(text)
-                .font(DS.Typography.body)
-                .foregroundStyle(.thPrimaryText)
-
-            Spacer()
-
-            Image(systemName: "checkmark.circle.fill")
-                .font(DS.Typography.title)
-                .foregroundStyle(DS.Semantic.successForeground)
-                .accessibilityHidden(true)
-        }
+        ProIncludedGrid()
+            .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Animation

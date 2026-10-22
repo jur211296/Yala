@@ -1,10 +1,10 @@
 ---
 id: trial-says-30-days-for-a-one-month-offer
-status: backlog
+status: done
 priority: low
 area: pro, paywall, copy
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-22
 source: lote decidido 2.2 · 06 — Yala Pro (encargo 2026-10-19-lote-decidido-2-2-06-yala-pro, PR #561)
 ---
 
@@ -20,3 +20,7 @@ source: lote decidido 2.2 · 06 — Yala Pro (encargo 2026-10-19-lote-decidido-2
 - B. Decir «1 mes gratis» cuando la unidad de la oferta es el mes. ← recomendada: lo que se promete coincide con lo que cobra Apple.
 
 Afecta a la ficha de la App Store (de Lola) si se cambia el término.
+
+## Hecho (2026-10-22, lote decidido 2.2 · 15)
+
+Implementada la opción que eligió Jürgen. Red: `YalaTests/UXAudit22Decidido15Tests` y `YalaUITests/Flows/SettingsLote15UITests`.

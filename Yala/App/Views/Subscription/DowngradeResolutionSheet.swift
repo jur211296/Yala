@@ -18,6 +18,7 @@ struct DowngradeResolutionSheet: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(ThemeManager.self) private var themeManager
 
     // MARK: - Properties
 
@@ -25,6 +26,8 @@ struct DowngradeResolutionSheet: View {
     let budgets: [Budget]
     /// El icono de la app es de Pro y vuelve al original al confirmar (L16-11).
     var iconWillReset: Bool = false
+    /// El tema elegido es de Pro y vuelve a Liquid Glass al confirmar (decisión B de Jürgen, 2026-10-21).
+    var themeWillReset: Bool = false
     let onComplete: () -> Void
 
     // MARK: - Computed
@@ -186,6 +189,10 @@ struct DowngradeResolutionSheet: View {
 
             if iconWillReset {
                 note(icon: "app.fill", text: L10n.UXPro.iconResetNote, identifier: "downgrade_icon_note")
+            }
+
+            if themeWillReset {
+                note(icon: "paintpalette.fill", text: L10n.UXL15.themeResetNote, identifier: "downgrade_theme_note")
             }
         }
     }
@@ -384,11 +391,22 @@ struct DowngradeResolutionSheet: View {
         if iconWillReset {
             resetPremiumIcon()
         }
+        if themeWillReset {
+            resetProTheme()
+        }
         // El downgrade queda resuelto también si solo había un icono que devolver: sin esto, `justDowngraded` seguía en
         // `true` y la hoja se volvía a pedir en cada arranque (review del lote decidido 06). Con exceso ya lo hace
         // `archiveExcessItems`.
         StoreKitManager.shared.wasProUser = false
         onComplete()
+    }
+
+    /// El tema vuelve a Liquid Glass DESPUÉS de avisarlo aquí, como el icono. Por `ThemeManager` y no escribiendo la key a
+    /// pelo: así la app cambia de aspecto en el acto y no al arrancar la próxima vez.
+    private func resetProTheme() {
+        guard ProPlanStatusLogic.themeWillReset(
+            isProUser: FeatureGateService.shared.isProUser, currentTheme: themeManager.userChoice) else { return }
+        themeManager.userChoice = .liquidGlass
     }
 
     /// El icono vuelve al original DESPUÉS de avisarlo aquí (L16-11). Antes volvía en silencio al arrancar.
@@ -484,4 +502,5 @@ extension L10n.Subscription {
         accounts: [],
         budgets: []
     ) {}
+    .environment(ThemeManager())
 }

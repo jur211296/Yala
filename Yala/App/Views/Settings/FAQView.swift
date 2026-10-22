@@ -11,6 +11,8 @@ struct FAQView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expandedItem: FAQItem?
+    /// «¿No está tu pregunta? Escríbenos» abre el formulario de soporte (UX 2.2 · L16-17).
+    @State private var showSupport = false
 
     var body: some View {
         ScrollView {
@@ -40,6 +42,20 @@ struct FAQView: View {
                         items: FAQItem.general
                     )
 
+                    // UX 2.2 · L16-17: lo nuevo de 2.x también tiene respuesta (monedas, grupos, Yala IA, nube o iCloud,
+                    // Face ID, widgets), y la lista termina con una salida a soporte.
+                    faqSection(
+                        title: L10n.UXL15.faqSectionCurrencies,
+                        icon: "dollarsign.circle.fill",
+                        items: FAQItem.currencies
+                    )
+
+                    faqSection(
+                        title: L10n.UXL15.faqSectionGroups,
+                        icon: "person.2.fill",
+                        items: FAQItem.groupItems
+                    )
+
                     faqSection(
                         title: L10n.FAQ.sectionData,
                         icon: "externaldrive.fill",
@@ -51,11 +67,16 @@ struct FAQView: View {
                         icon: "crown.fill",
                         items: FAQItem.pro
                     )
+
+                    askUsFooter
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
         .yalaScreenBackground(.subtle)
+        .sheet(isPresented: $showSupport) {
+            SupportFormSheet()
+        }
         .navigationTitle(L10n.Settings.faq)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -66,6 +87,28 @@ struct FAQView: View {
                 }
             }
         }
+    }
+
+    // MARK: - ¿No está tu pregunta?
+
+    private var askUsFooter: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            Text(L10n.UXL15.faqNotHereTitle)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thPrimaryText)
+                .multilineTextAlignment(.center)
+            Button {
+                showSupport = true
+            } label: {
+                Label(L10n.UXL15.faqWriteToUs, systemImage: "envelope.fill")
+                    .font(DS.Typography.bodyBold)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .accessibilityIdentifier("faq_write_to_us")
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, DS.Spacing.sm)
     }
 
     // MARK: - Section
@@ -139,6 +182,7 @@ struct FAQView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("faq_row_\(String(describing: item))")
     }
 }
 
@@ -154,6 +198,13 @@ enum FAQItem: Hashable {
     case deleteData
     case whatIsPro
     case cancelSub
+    // UX 2.2 · L16-17
+    case exchangeRate
+    case groups
+    case yalaAI
+    case whereData
+    case faceID
+    case widgets
 
     var question: String {
         switch self {
@@ -166,6 +217,12 @@ enum FAQItem: Hashable {
         case .deleteData: return L10n.FAQ.deleteDataQ
         case .whatIsPro: return L10n.FAQ.whatIsProQ
         case .cancelSub: return L10n.FAQ.cancelSubQ
+        case .exchangeRate: return L10n.UXL15.faqExchangeRateQ
+        case .groups: return L10n.UXL15.faqGroupsQ
+        case .yalaAI: return L10n.UXL15.faqYalaAIQ
+        case .whereData: return L10n.UXL15.faqWhereDataQ
+        case .faceID: return L10n.UXL15.faqFaceIDQ
+        case .widgets: return L10n.UXL15.faqWidgetsQ
         }
     }
 
@@ -180,10 +237,18 @@ enum FAQItem: Hashable {
         case .deleteData: return L10n.FAQ.deleteDataA
         case .whatIsPro: return L10n.FAQ.whatIsProA
         case .cancelSub: return L10n.FAQ.cancelSubA
+        case .exchangeRate: return L10n.UXL15.faqExchangeRateA
+        case .groups: return L10n.UXL15.faqGroupsA
+        case .yalaAI: return L10n.UXL15.faqYalaAIA
+        case .whereData: return L10n.UXL15.faqWhereDataA
+        case .faceID: return L10n.UXL15.faqFaceIDA
+        case .widgets: return L10n.UXL15.faqWidgetsA
         }
     }
 
-    static var general: [FAQItem] { [.whatIsYala, .howToRecord, .multiCurrency, .changeCategory] }
-    static var data: [FAQItem] { [.importData, .exportData, .deleteData] }
-    static var pro: [FAQItem] { [.whatIsPro, .cancelSub] }
+    static var general: [FAQItem] { [.whatIsYala, .howToRecord, .changeCategory, .widgets, .faceID] }
+    static var currencies: [FAQItem] { [.multiCurrency, .exchangeRate] }
+    static var groupItems: [FAQItem] { [.groups] }
+    static var data: [FAQItem] { [.whereData, .importData, .exportData, .deleteData] }
+    static var pro: [FAQItem] { [.whatIsPro, .yalaAI, .cancelSub] }
 }
