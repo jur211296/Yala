@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (90 entradas)
+## Índice (91 entradas)
 
-> **No hace falta leer este fichero entero** — son 259 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 264 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-10-21` [Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relle](#2026-10-21-formulario-de-registro-22--la-cuenta-viene-puesta-guardar-no-saca-del-flujo-y-lo-elegido-va-relleno)
 - `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
 - `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
 - `2026-10-07` [IA — el gateway elige el modelo de cada tarea, por calidad medida](#2026-10-07-ia--el-gateway-elige-el-modelo-de-cada-tarea-por-calidad-medida)
@@ -116,6 +117,52 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-10-21] Formulario de registro 2.2 — la cuenta viene puesta, guardar no saca del flujo y lo elegido va relleno
+
+**Contexto.** El formulario de registro es la pantalla más usada de Yala, y cerrarlo es un hito de 2.2 (ROADMAP). La
+auditoría UX dejó 22 cards (lote 2, L2-1 a L2-22) con opciones A/B/C, y Jürgen eligió la opción de cada una el 14-oct.
+El 21-oct se cerraron los detalles que esas opciones dejaban abiertos, contrastados con el código de 2.2.
+
+**Decisión** (Jürgen, 2026-10-14 y 2026-10-21).
+
+- **La cuenta viene puesta.** Primero, la cuenta del Panel si está filtrado por una sola. Si no, la última usada, salvo
+  que el filtro la deje fuera. Si no, la única que haya. Nunca se precarga una cuenta excluida ni una elegida al azar.
+- **«Guardar» dice qué falta.** Lo dice una línea viva sobre el botón, y los chips que faltan llevan borde.
+- **Lo escrito no se pierde.** Con datos, el gesto no cierra el formulario y la X pregunta antes de descartar.
+- **Guardar no saca del flujo.** La pantalla «¡Listo!» sale entera solo con los 3 primeros registros. Después, el
+  formulario se cierra y sale un aviso de 5 s con Editar · Deshacer, el mismo de la Bandeja.
+- **«Categoría», no «Subcategoría»,** en todo sitio donde se elige. Las pantallas que muestran los dos niveles juntos
+  conservan los dos nombres. La hoja trae buscador, que mira también el nombre del grupo.
+- **Favoritos,** con ese nombre, en una fila de chips arriba del formulario: un toque lo rellena. La estrella solo
+  guarda. El favorito de transferencia recuerda el origen y el destino, lo que es un cambio de esquema que va en la
+  ventana de las tarjetas. Favoritos y pagos planificados guardan la divisa del importe, sin convertir.
+- **«Recurrente»** abre una hoja corta (semana, mes o año, más «Más opciones…»). La hoja dice lo que de verdad pasa:
+  los siguientes llegan a la Bandeja el día que toca.
+- **«Mi parte»** se abre en «Iguales» la primera vez y luego recuerda el modo. El resultado enseña la fórmula y la barra
+  de reparto.
+- **Divisas:** la equivalencia y el tipo de cambio editable se ven también al crear. Se respeta la preferencia de
+  símbolo o código y desaparece «TC».
+- **Jerarquía sobre el glass:** lo elegido va relleno y cada acción lleva su color. «Guardar» se rellena de acento
+  cuando está listo, y elegir se nota con un rebote y una vibración ligera. Las hojas a media altura usan un material
+  más grueso. **Sin brillo, sin glow y sin degradados.**
+- **Tres cards de backlog entran en el lote** porque tocan el mismo código: favorito y recurrente en dólares, la cuenta
+  con varias filtradas y el orden de las etiquetas.
+
+**Razones.** Cada opción quita un paso o una duda sin añadir pasos (la regla de fondo de la auditoría: instruido, nunca
+perdido). Donde ya había mecanismo —la última cuenta usada, el contador de registros, el aviso con Deshacer, la memoria
+del modo de reparto— se reutiliza en vez de inventar otro. «Favoritos» y no «Atajos», porque en iOS «Atajos» ya es la
+app de Siri y en el formulario también lo son @ ! #. El favorito no convierte la divisa porque una plantilla con la tasa
+de un día queda mal al siguiente.
+
+**Consecuencias.** Se implementa en dos sesiones en serie, porque las dos tocan el mismo formulario: A, flujo y datos, y
+después B, textos y visual. El brief está en `~/Claude/tmp-frank/lote-decidido-2-2-02-formulario-registro.md` y la
+decisión fina de cada card, en su nota del tablero. L2-14 añade un campo a `FavoritePayment`, y desplegar ese esquema
+en CloudKit Production es de Jürgen.
+
+**Estado:** Activa.
+
+---
 
 ### [2026-10-21] Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas
 
