@@ -11,7 +11,9 @@ T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 
 # xcrun falso. Cada llamada a `simctl list -j` consume el siguiente fichero `lista.N`;
-# cuando se acaban, repite el último. `create` deja constancia y devuelve un UDID fijo.
+# cuando se acaban, repite el último. `create` deja constancia y devuelve `CREADO-<runtime>`;
+# si el runtime está en `incompatibles`, contesta como el runner del 2026-10-23 (403,
+# «Incompatible device»), y si existe `falla-una`, falla una vez con otro error.
 cat > "$T/xcrun" <<'FAKE'
 #!/usr/bin/env bash
 D="$ESCENARIO"
@@ -21,7 +23,14 @@ case "$*" in
     n=$(cat "$D/n" 2>/dev/null || echo 0); n=$((n+1)); echo "$n" > "$D/n"
     f="$D/lista.$n"; [ -f "$f" ] || f="$(ls "$D"/lista.* | sort -t. -k2 -n | tail -1)"
     cat "$f" ;;
-  simctl\ create*) echo "$*" >> "$D/creados"; echo "CREADO-0000" ;;
+  simctl\ create*)
+    echo "$*" >> "$D/creados"; rt="${@: -1}"
+    if grep -qx "$rt" "$D/incompatibles" 2>/dev/null; then
+      echo "An error was encountered processing the command (domain=com.apple.CoreSimulator.SimError, code=403):" >&2
+      echo "Incompatible device" >&2; exit 1
+    fi
+    if [ -f "$D/falla-una" ]; then rm -f "$D/falla-una"; echo "Unable to boot CoreSimulator" >&2; exit 1; fi
+    echo "CREADO-${rt##*.}" ;;
   "simctl list runtimes") echo "(sin runtimes)" ;;
   "simctl list devices") echo "lista de devices" ;;
   *) echo "xcrun falso: llamada inesperada: $*" >&2; exit 9 ;;
@@ -40,6 +49,13 @@ chmod +x "$T/xcrun" "$T/killall" "$T/xcodebuild"
 RT26_5='{"identifier":"com.apple.CoreSimulator.SimRuntime.iOS-26-5","version":"26.5","platform":"iOS","isAvailable":true}'
 RT26_4='{"identifier":"com.apple.CoreSimulator.SimRuntime.iOS-26-4","version":"26.4","platform":"iOS","isAvailable":true}'
 RT27_0='{"identifier":"com.apple.CoreSimulator.SimRuntime.iOS-27-0","version":"27.0","platform":"iOS","isAvailable":true}'
+# Los dos runtimes de la imagen xcode-27-arm64 20261022.0305, con su `supportedDeviceTypes`:
+# el 27.1 (24A94425) solo trae el iPhone Duo; el 27.0 admite el iPhone 17 Pro.
+TIPO='{"identifier":"com.apple.CoreSimulator.SimDeviceType.'
+RT27_1_DUO='{"identifier":"com.apple.CoreSimulator.SimRuntime.iOS-27-1","version":"27.1","platform":"iOS","isAvailable":true,"supportedDeviceTypes":['"$TIPO"'iPhone-Duo"}]}'
+RT27_0_17PRO='{"identifier":"com.apple.CoreSimulator.SimRuntime.iOS-27-0","version":"27.0","platform":"iOS","isAvailable":true,"supportedDeviceTypes":['"$TIPO"'iPhone-17"},'"$TIPO"'iPhone-17-Pro"}]}'
+# El mismo 27.1 sin la clave: solo el 403 de `create` delata que no admite el modelo.
+RT27_1='{"identifier":"com.apple.CoreSimulator.SimRuntime.iOS-27-1","version":"27.1","platform":"iOS","isAvailable":true}'
 dev() { echo "{\"name\":\"$1\",\"udid\":\"$2\",\"isAvailable\":${3:-true}}"; }
 VACIO='{"devicetypes":[],"runtimes":[],"devices":{}}'
 
@@ -50,6 +66,7 @@ caso() {
   local d="$T/$nombre"; mkdir -p "$d"; echo "$sdk" > "$d/sdk"
   local i=0; for l in "$@"; do i=$((i+1)); echo "$l" > "$d/lista.$i"; done
   : > "$d/out"; : > "$d/reinicios"; : > "$d/creados"; : > "$d/descargas"
+  printf '%s\n' ${INCOMPATIBLES:-} > "$d/incompatibles"; [ -z "${FALLA_UNA:-}" ] || : > "$d/falla-una"
   ESCENARIO="$d" XCRUN="$T/xcrun" KILLALL="$T/killall" XCODEBUILD="$T/xcodebuild" GITHUB_OUTPUT="$d/out" \
     SIM_INTENTOS=4 SIM_DESCARGA_TRAS=2 SIM_ESPERA=0 bash "$SCRIPT" > "$d/log" 2>&1
   local ex=$? udid; udid="$(sed -n 's/^udid=//p' "$d/out")"; [ -n "$udid" ] || udid="-"
@@ -73,7 +90,7 @@ caso gana-el-del-sdk 26.5 0 SDK 0 0 0 \
 caso sin-sdk-el-mas-nuevo 26.5 0 NUEVO 0 0 0 \
   "{\"runtimes\":[$RT26_4,$RT27_0],\"devices\":{\"com.apple.CoreSimulator.SimRuntime.iOS-26-4\":[$(dev 'iPhone 17 Pro' VIEJO)],\"com.apple.CoreSimulator.SimRuntime.iOS-27-0\":[$(dev 'iPhone 17 Pro' NUEVO)]}}"
 # 4. Hay runtime pero no device (o solo uno no disponible, u otro modelo): se crea.
-caso crea-por-tipo 26.5 0 CREADO-0000 0 1 0 \
+caso crea-por-tipo 26.5 0 CREADO-iOS-26-5 0 1 0 \
   "{\"runtimes\":[$RT26_5],\"devices\":{\"com.apple.CoreSimulator.SimRuntime.iOS-26-5\":[$(dev 'iPhone 17 Pro' ROTO false),$(dev 'iPhone 17' OTRO)]}}"
 # 5. La caída real: CoreSimulator vacío dos veces y luego responde. Dos reinicios, y
 #    a la segunda vacía (SIM_DESCARGA_TRAS=2) descarga la plataforma una vez.
@@ -89,6 +106,23 @@ caso un-vacio-no-descarga 26.5 0 PRONTO 1 0 0 \
   "{\"runtimes\":[$RT26_5],\"devices\":{\"com.apple.CoreSimulator.SimRuntime.iOS-26-5\":[$(dev 'iPhone 17 Pro' PRONTO)]}}"
 # 7. Salida rota de simctl (no JSON): cuenta como vacío, no revienta el script.
 caso json-roto 26.5 1 - 3 0 1 "esto no es json"
+# 9. La caída del 2026-10-23: el runtime que casa con el SDK (27.1) solo admite el iPhone
+#    Duo. Se descarta por `supportedDeviceTypes` y se crea en el 27.0, a la primera.
+caso sdk-solo-duo-se-descarta 27.1 0 CREADO-iOS-27-0 0 1 0 \
+  "{\"runtimes\":[$RT27_1_DUO,$RT27_0_17PRO],\"devices\":{}}"
+# 10. Mismo runtime sin `supportedDeviceTypes`: el `create` en 27.1 da 403 «Incompatible
+#     device», se excluye y la vuelta siguiente crea en el 27.0, sin reiniciar CoreSimulator.
+INCOMPATIBLES=com.apple.CoreSimulator.SimRuntime.iOS-27-1 \
+caso incompatible-se-excluye 27.1 0 CREADO-iOS-27-0 0 2 0 \
+  "{\"runtimes\":[$RT27_1,$RT27_0],\"devices\":{}}"
+# 11. Solo hay el runtime del Duo: cuenta como vacía (reinicia y descarga una vez) y falla
+#     con exit 1 sin intentar un `create` que no puede salir.
+caso solo-runtime-incompatible 27.1 1 - 3 0 1 \
+  "{\"runtimes\":[$RT27_1_DUO],\"devices\":{}}"
+# 12. Otro fallo de `create` no excluye el runtime: se reinicia y se reintenta en el mismo.
+FALLA_UNA=si \
+caso otro-fallo-reintenta-mismo 26.5 0 CREADO-iOS-26-5 1 2 0 \
+  "{\"runtimes\":[$RT26_5],\"devices\":{}}"
 
 echo
-if [ "$fallos" -eq 0 ]; then echo "ci-simulador: 8/8 verdes"; else echo "ci-simulador: $fallos en rojo"; exit 1; fi
+if [ "$fallos" -eq 0 ]; then echo "ci-simulador: 12/12 verdes"; else echo "ci-simulador: $fallos en rojo"; exit 1; fi
