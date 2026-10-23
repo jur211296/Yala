@@ -155,6 +155,14 @@ enum MetricsCanary: String {
     /// (ticket `cloud-activation-waits-for-icloud-with-no-way-out`): con 6 movimientos la espera pasó de 5 min y la causa
     /// quedó inferida.
     case cloudMigrationImportNotSettled
+    /// «Activar la nube» o «Volver a iCloud» cambió de paso (ticket `cloud-progress-shows-real-steps-and-counts`, card
+    /// ppxk). `detail` = `<de>><a>` con las fases de `CloudMigrationTimelineLogic.label`; `x` = segundos que duró el paso
+    /// que se deja, o -1 si empezó en otro proceso. Con la hora del servidor, la serie de un teléfono dice dónde se va el
+    /// tiempo: hasta este canario el TF19 pasó 9 min sin un solo evento entre el claim y el corte.
+    case cloudMigrationStep
+    /// Terminó una espera a que iCloud termine de traer datos. `detail` = `<preWait|runner>|<settled|cut|cap>`; `x` =
+    /// segundos esperados. Solo si hubo espera (con iCloud quieto no sale).
+    case cloudMigrationImportWaited
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected
@@ -656,6 +664,16 @@ extension MetricsService {
     /// El marcador del cutover sigue sin exportar. Se emite en CADA observación: un valor sostenido y alto
     /// aquí es la señal de un atasco SISTÉMICO (p.ej. el record type sin desplegar a CloudKit Production),
     /// visible mucho antes de que ningún device agote su presupuesto.
+    /// Un cambio de paso de la ida o la vuelta (`cloudMigrationStep`).
+    static func cloudMigrationStep(from: String, to: String, previousStepSeconds: Double?) {
+        canary(.cloudMigrationStep, detail: "\(from)>\(to)", value: previousStepSeconds ?? -1)
+    }
+
+    /// Una espera a iCloud que terminó (`cloudMigrationImportWaited`).
+    static func cloudMigrationImportWaited(stage: String, outcome: String, seconds: Double) {
+        canary(.cloudMigrationImportWaited, detail: "\(stage)|\(outcome)", value: seconds)
+    }
+
     static func cloudCutoverMarkerStalled(verdict: String) {
         canary(.cloudCutoverMarkerStalled, detail: verdict)
     }

@@ -79,7 +79,10 @@ struct MigrationImportWaitWiringTests {
         let loop = try #require(body.firstIndex(of: "while waited < hardCap {"))
         #expect(body[loop + 1] == "if preWaitCutRequested {")
         #expect(body[loop + 2] == "preWaitCutRequested = false")
-        #expect(body[loop + 3] == "return false")
+        // Desde `cloud-progress-shows-real-steps-and-counts` el corte deja también lo que duró la espera (canario
+        // `cloudMigrationImportWaited`), y solo después sale.
+        #expect(body[loop + 3] == "MetricsService.cloudMigrationImportWaited(stage: \"preWait\", outcome: \"cut\", seconds: waited)")
+        #expect(body[loop + 4] == "return false")
     }
 
     @Test("El refresco de 1 s de Almacenamiento no espera al re-kick")
@@ -88,7 +91,10 @@ struct MigrationImportWaitWiringTests {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent()
         let text = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
-        #expect(text.contains("if tick % 30 == 0, let controller { Task { await controller.rekickIfParked() } }"))
-        #expect(!text.contains("if tick % 30 == 0 { await controller?.rekickIfParked() }"))
+        // La cadencia la elige la fase desde `cloud-progress-shows-real-steps-and-counts` (5 s en las esperas locales de
+        // iCloud, 30 s en el resto); lo que este test protege sigue igual: el re-kick va en un `Task`, sin `await`.
+        #expect(text.contains(
+            "if let controller, tick % controller.screenRekickSeconds == 0 { Task { await controller.rekickIfParked() } }"))
+        #expect(!text.contains("await controller?.rekickIfParked() }"))
     }
 }

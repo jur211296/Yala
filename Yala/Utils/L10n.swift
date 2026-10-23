@@ -8210,6 +8210,39 @@ enum L10n {
             static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
         }
 
+        /// Los pasos con su cifra de «Activar la nube» y «Volver a iCloud» (opción B, ticket
+        /// `cloud-progress-shows-real-steps-and-counts`).
+        enum Steps {
+            static var forwardTitle: String { ls("storage.steps.forwardTitle", comment: "") }
+            static var reverseTitle: String { ls("storage.steps.reverseTitle", comment: "") }
+            static var connect: String { ls("storage.steps.connect", comment: "") }
+            static var prepare: String { ls("storage.steps.prepare", comment: "") }
+            static var upload: String { ls("storage.steps.upload", comment: "") }
+            static var confirm: String { ls("storage.steps.confirm", comment: "") }
+            static var waitICloud: String { ls("storage.steps.waitICloud", comment: "") }
+            static var waitICloudDetail: String { ls("storage.steps.waitICloudDetail", comment: "") }
+            static var keepOpen: String { ls("storage.steps.keepOpen", comment: "") }
+            static var wipePrior: String { ls("storage.steps.wipePrior", comment: "") }
+            static var bring: String { ls("storage.steps.bring", comment: "") }
+            static var review: String { ls("storage.steps.review", comment: "") }
+            static var reviewDetail: String { ls("storage.steps.reviewDetail", comment: "") }
+            static var uploadToICloud: String { ls("storage.steps.uploadToICloud", comment: "") }
+            static var keepUsing: String { ls("storage.steps.keepUsing", comment: "") }
+            /// «650 de 1.537». Las cifras llegan ya formateadas con el idioma de la app.
+            static func uploadedCount(_ done: Int, of total: Int) -> String {
+                String(format: ls("storage.steps.uploadedCount", comment: ""), number(done), number(total))
+            }
+            static func pendingCount(_ count: Int) -> String {
+                String(format: ls("storage.steps.pendingCount", comment: ""), number(count))
+            }
+            static func wipedCount(_ count: Int) -> String {
+                String(format: ls("storage.steps.wipedCount", comment: ""), number(count))
+            }
+            private static func number(_ value: Int) -> String {
+                value.formatted(.number.locale(AppLocale.current))
+            }
+        }
+
         enum Progress {
             static var migrating: String { ls("storage.progress.migrating", comment: "") }
             static var reverting: String { ls("storage.progress.reverting", comment: "") }

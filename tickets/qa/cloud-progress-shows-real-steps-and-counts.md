@@ -1,10 +1,10 @@
 ---
 id: cloud-progress-shows-real-steps-and-counts
-status: backlog
+status: qa
 priority: high
 area: "modo-nube, settings, ux"
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 source: "tablero igt9 (barra quieta en ~60 %), ppxk (6 movimientos, más de 5 min) y 27z3 (la vuelta no dice que trabaja) — QA guiado 2026-10-19/20"
 ---
 
@@ -39,9 +39,37 @@ Mientras se activa la nube o se vuelve a iCloud, la tarjeta enseña una barra qu
 - **C · Contador + tiempo que queda:** porcentaje real y «Quedan unos 2 min» calculado con el ritmo. Más preciso a la
   vista, pero el ritmo de iCloud no se mide y el tiempo podría mentir en las esperas.
 
-Espera la elección de Jürgen. Tras elegir: textos en los 16 idiomas y capturas en el simulador para aprobar.
+Jürgen eligió la **B** el 2026-10-22 (05:42).
 
 ## Lo que no se arregla con diseño
 
 El tiempo de la espera a iCloud en un teléfono recién instalado depende de cuánto tiene que bajar el espejo. Con una
 zona sana y pocos datos debería ser corto; el canario nuevo dice cuánto pesa en la flota.
+
+## Hecho (2026-10-23, Frank)
+
+- **Opción B tal cual el lienzo**, en `CloudProgressStepsView` + `CloudProgressStepsLogic` (pura): la ida son cuatro pasos
+  (Conectar · Preparar · Subir con «X de N» y su barra · Confirmar con iCloud) y la vuelta tres (Traer de la nube · iCloud
+  revisa lo que ya tiene · Subir a iCloud con «N por subir»). «Esperar a iCloud» sale con su explicación cuando la app espera
+  el import (pre-espera del controller **o** la del runner, que antes era muda). «Borrar y volver a iCloud» empieza por el
+  paso del borrado con su cifra, y la tarjeta de pasos sale desde el «Sí» aunque el journal siga en «nube activa». Sin
+  «Retomar». Textos en los 16 idiomas.
+- **Asumido**: la cifra de la subida cuenta TODAS las filas («650 de 1.537», sin «movimientos»): con pocos movimientos lo
+  que más sube pueden ser tipos de cambio y cuentas, y «0 de 5 movimientos» se habría quedado quieto minutos. «Este iPhone»
+  del lienzo pasa a «este dispositivo» (iPad).
+- **La cifra se mueve**: la subida avisa por cada trozo de 50 que el servidor confirma (`SyncPushClient.push(onChunkConfirmed:)`);
+  la vuelta relee los pendientes en cada re-empuje, que en las esperas locales de iCloud pasa de 30 s a 5 s.
+- **Menos espera de la app**: el paso del marcador espera su export dentro de la pasada (1 s, hasta 30 s) en vez de aparcar
+  hasta el siguiente re-empuje. La espera al import de iCloud **se queda** (guardar durante el import tumba la app y subir con
+  el import a medias sube un corpus incompleto).
+- **Medición en la flota**: `cloudMigrationStep` (de qué paso a cuál, con lo que duró el anterior) y
+  `cloudMigrationImportWaited` (cuánto se esperó a iCloud y cómo acabó).
+
+## Guion de QA en iPhone (Yala Dev contra staging, luego TF)
+
+1. Activar la nube con pocos datos: ver Conectar → (Esperar a iCloud si toca) → Preparar → Subir con su cifra → Confirmar.
+   Anotar la hora de inicio y de «Nube activa».
+2. Con miles de movimientos: la cifra de «Subir tus datos» cambia cada pocos segundos.
+3. Volver a iCloud (y «Borrar y volver a iCloud» con datos de antes): desde el «Sí» la tarjeta dice qué hace; «iCloud revisa
+   lo que ya tiene» hasta que la cifra empieza a bajar; luego «Subir a iCloud» con lo que falta.
+4. Mirar en Analytics Engine la serie `cloudMigrationStep` de esa instalación: dice qué paso se llevó el tiempo.

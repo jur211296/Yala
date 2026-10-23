@@ -294,7 +294,14 @@ final class SyncPushClient {
     /// la migración lo usa para no mandar un trozo más si la confirmación del lease ya no vale —la app congelada entre dos
     /// trozos más de lo que dura el lease—. Con `false` corta igual que un chunk fallido: lo confirmado se entrega, y sin nada
     /// confirmado es `.transient`. `nil` (el motor normal) no corta nunca.
-    func push(_ rows: [SyncOutbox], continueWhile: (@MainActor () -> Bool)? = nil) async -> PushOutcome {
+    ///
+    /// **`onChunkConfirmed` recibe cuántos deltas confirmó cada trozo**, en cuanto vuelve (ticket
+    /// `cloud-progress-shows-real-steps-and-counts`): la subida de «Activar la nube» lo usa para mover su cifra cada ~50
+    /// filas y no cada página. Solo informa: lo que se purga lo sigue decidiendo `applyResults` con el resultado entero.
+    func push(
+        _ rows: [SyncOutbox], continueWhile: (@MainActor () -> Bool)? = nil,
+        onChunkConfirmed: (@MainActor (Int) -> Void)? = nil
+    ) async -> PushOutcome {
         lastPushFailedAtServer = false
         guard !rows.isEmpty else { return .completed([]) }
         // En orden de HLC: con el reloj adelantado, el servidor solo conserva el orden propio si los cambios LLEGAN en
@@ -347,6 +354,7 @@ final class SyncPushClient {
             case .completed(let results):
                 confirmed.append(contentsOf: results)
                 index = upper
+                onChunkConfirmed?(results.count)
             case .sessionExpired, .accountUnavailable, .transient:
                 // Progreso parcial: lo confirmado se entrega para purgarse; sin nada confirmado, el
                 // outcome del chunk fallido sube tal cual (conserva la clasificación 401/403/transient).

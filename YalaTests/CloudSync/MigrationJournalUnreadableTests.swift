@@ -427,6 +427,8 @@ struct MigrationJournalUnreadableWiringTests {
             "#if DEBUG",
             "if UITestHooks.migrationJournalUnreadable { throw MigrationJournalSeamError.fetchFailed }",
             "if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }",
+            // `-uitest-cloud-progress` (ticket `cloud-progress-shows-real-steps-and-counts`): el mismo molde, otra fase.
+            "if let seeded = UITestHooks.fakeCloudProgressJournalRow { return seeded }",
             "#endif",
             "var descriptor = FetchDescriptor<MigrationState>()",
             "descriptor.fetchLimit = 1",
@@ -597,6 +599,15 @@ struct MigrationJournalUnreadableWiringTests {
             "claimDefinitiveCause = _runner?.lastClaimDefinitiveCause",
             "reverseUploadSample = _runner?.lastReverseUploadSample",
             "reverseSessionExpiry = _runner?.lastReverseSessionExpiry",
+            // Los pasos con su cifra (ticket `cloud-progress-shows-real-steps-and-counts`): lo que el runner publica, el seam
+            // de XCUITest y la primera muestra de la vuelta.
+            "uploadProgress = _runner?.snapshotUploadProgress",
+            "runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false",
+            "#if DEBUG",
+            "if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }",
+            "#endif",
+            "reverseFirstPending = CloudProgressStepsLogic.firstPending(",
+            "previous: reverseFirstPending, phase: journaledPhase, pending: reverseUploadSample?.pending)",
             "readLiveSession()",
             "refreshSyncBanner()",
             // Desde `cloud-sync-status-says-all-synced-with-changes-still-pending`: ¿completó el motor su último ciclo?

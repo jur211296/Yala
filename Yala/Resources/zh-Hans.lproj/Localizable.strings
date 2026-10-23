@@ -8350,3 +8350,23 @@
 "l2d.split.formula.exact" = "%2$@ 中的 %1$@";
 "l2d.split.bar.you" = "你 %@";
 "l2d.split.bar.others" = "其他人 %@";
+
+/* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
+"storage.steps.forwardTitle" = "正在启用云端";
+"storage.steps.reverseTitle" = "正在返回 iCloud";
+"storage.steps.connect" = "连接你的账户";
+"storage.steps.prepare" = "准备你的数据";
+"storage.steps.upload" = "上传你的数据";
+"storage.steps.confirm" = "与 iCloud 确认";
+"storage.steps.waitICloud" = "等待 iCloud";
+"storage.steps.waitICloudDetail" = "iCloud 仍在把你的数据传到这台设备。完成后我们会自动继续。";
+"storage.steps.keepOpen" = "完成前请保持 Yala 打开。";
+"storage.steps.wipePrior" = "删除以前的数据";
+"storage.steps.wipedCount" = "已删除 %@ 条";
+"storage.steps.bring" = "从云端取回你的数据";
+"storage.steps.review" = "iCloud 检查已有的内容";
+"storage.steps.reviewDetail" = "上传前，iCloud 会查看它保存的这台设备的内容，可能需要几分钟。";
+"storage.steps.uploadToICloud" = "上传到 iCloud";
+"storage.steps.pendingCount" = "还剩 %@ 条待上传";
+"storage.steps.keepUsing" = "在此期间你可以继续使用 Yala。";
+"storage.steps.uploadedCount" = "%1$@ / %2$@";

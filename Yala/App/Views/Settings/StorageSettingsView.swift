@@ -139,7 +139,9 @@ struct StorageSettingsView: View {
                 // Sin `await` (2026-10-19, ticket `cloud-activation-waits-for-icloud-with-no-way-out`): el re-kick puede
                 // quedarse hasta 300 s en la pre-espera del import, y esperándolo este bucle dejaba de refrescar —la
                 // pantalla congelada en el paso viejo—. `rekickIfParked` ya no hace nada con trabajo en vuelo.
-                if tick % 30 == 0, let controller { Task { await controller.rekickIfParked() } }
+                // La cadencia sale de la fase (`screenRekickSeconds`): 5 s donde solo falta observar algo local de iCloud
+                // —la cifra de la vuelta se relee así—, 30 s en el resto (ticket `cloud-progress-shows-real-steps-and-counts`).
+                if let controller, tick % controller.screenRekickSeconds == 0 { Task { await controller.rekickIfParked() } }
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
@@ -254,7 +256,11 @@ struct StorageSettingsView: View {
             // ofrece desasociar: ADR §4.
             GroupsAssociationSection(onAssociate: onAssociateGroupsAccount)
             syncStatusSection(controller)
-            revertCard(controller)
+            if controller.showsReverseStepsBeforeJournal {
+                reverseStartingCard(controller)
+            } else {
+                revertCard(controller)
+            }
         case .migrating(let step):
             progressCard(controller, step: step, reverse: false)
             // El efecto del adopt que se reintenta sale del journal y puede durar hasta su techo de 72 h (ticket
@@ -700,20 +706,16 @@ struct StorageSettingsView: View {
     // MARK: - Progress card (transitional)
 
     private func progressCard(_ controller: CloudMigrationController, step: MigrationUIStep, reverse: Bool) -> some View {
-        VStack(spacing: DS.Spacing.lg) {
-            ProgressView(value: step.fraction)
-                .tint(DS.Semantic.infoForeground)
-            Text(reverse ? L10n.Storage.Progress.reverting : L10n.Storage.Progress.migrating)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-            // #36 (H1): estado honesto mientras el resume espera la quiescencia del import (pre-espera
-            // 300s) o quedó aparcado tras vencer el tope — antes se aparcaba EN SILENCIO.
-            // **La sesión caducada va PRIMERA, y lo decidió una medición, no el orden natural.** La rama de abajo
-            // (`resumeWaitingForImport`) no depende de la fase y su tope de 300 s la DEJA encendida a propósito: con
-            // ella delante, una vuelta parada por la sesión enseñaba «esperando a que iCloud termine…» —falso— y
-            // dejaba debajo un botón de firmar sin nada que lo explicara, para siempre si el tope venció. De las dos
-            // cosas ciertas a la vez, manda la que la persona puede desatascar.
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            // Opción B del lienzo (decisión de Jürgen del 2026-10-22, ticket `cloud-progress-shows-real-steps-and-counts`):
+            // pasos con su cifra en vez de una barra por fases que se quedaba quieta minutos. Lo que espera a iCloud —el
+            // import o la revisión de la vuelta— lo dice el propio paso, con su explicación; lo que queda aquí debajo son
+            // los avisos que la persona puede desatascar.
+            CloudProgressStepsView(
+                title: reverse ? L10n.Storage.Steps.reverseTitle : L10n.Storage.Steps.forwardTitle,
+                steps: reverse ? controller.reverseProgressSteps : controller.forwardProgressSteps)
+            // **La sesión caducada va PRIMERA, y lo decidió una medición, no el orden natural.** De las dos cosas ciertas a
+            // la vez, manda la que la persona puede desatascar.
             if controller.reverseNeedsSignIn {
                 // La vuelta a iCloud se paró porque la sesión de la nube ya no vale, antes de montar el espejo: la
                 // barra parada al 15/30/50/62 % del ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
@@ -724,69 +726,73 @@ struct StorageSettingsView: View {
                 Text(L10n.Storage.Progress.reverseNeedsSignIn)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
                     .accessibilityIdentifier("storage_reverse_needs_signin_caption")
             } else if let notice = controller.adoptClaimNotice {
                 // El claim de un adopt aparcado por un motivo que esperar no arregla (ticket
                 // `adopt-claim-stays-parked-with-no-ceiling`): se dice YA, como hace el Welcome, y no a los 15 min del
-                // techo. Va antes que la espera del import por lo mismo que la sesión de la vuelta: de las dos cosas
-                // ciertas a la vez, manda la que la persona puede desatascar, y aquí la salida es «Cancelar».
+                // techo.
                 Text(adoptClaimNoticeText(notice))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
                     .accessibilityIdentifier("storage_adopt_claim_notice")
-            } else if controller.resumeWaitingForImport {
-                Text(L10n.Storage.Progress.waitingImport)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("storage_waiting_import_caption")
-            } else if controller.isWaitingICloudExport {
-                // C-1: el paso 4 espera la confirmación de iCloud. Antes esto era una barra clavada al 89 %
-                // sin una palabra — el usuario no podía saber si seguía trabajando o estaba colgada.
-                Text(L10n.Storage.Progress.waitingICloudExport)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("storage_waiting_icloud_export_caption")
             } else if reverse && controller.isWaitingReverseUpload {
-                // La vuelta a iCloud espera a que el mirror suba los datos: la barra al 95 % muda del ticket
-                // `reverse-upload-has-no-ceiling-and-no-exit`. Cuántos faltan, o por qué no pueden llegar.
+                // La vuelta espera a que el espejo suba los datos y algo lo frena (iCloud lleno, sin iCloud, avería
+                // local): el porqué, que la cifra sola no dice. «Subiendo» ya lo dice el paso, así que no se repite.
                 reverseUploadCaption(controller)
             }
+            Text(reverse ? L10n.Storage.Steps.keepUsing : L10n.Storage.Steps.keepOpen)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("storage_steps_footer")
             if controller.reverseNeedsSignIn {
-                // Va ANTES de «Retomar» y con peso de botón primario: es lo único que desatasca. «Retomar» se queda
-                // debajo y no miente — si la sesión revivió por otra entrada, sigue funcionando.
+                // Lo único que desatasca, con peso de botón primario.
                 YalaPrimaryButton(L10n.Storage.Sync.signInButton, icon: "person.crop.circle.badge.checkmark",
                                   isDisabled: controller.isWorking) {
                     Task { await controller.signInToResumeReverse() }
                 }
                 .accessibilityIdentifier("storage_reverse_signin_button")
             }
-            Button {
-                Task { await controller.resume() }
-            } label: {
-                Text(L10n.Storage.Progress.resume)
-                    .font(DS.Typography.caption.weight(.medium))
-                    .foregroundStyle(DS.Semantic.infoForeground)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(controller.isWorking)
-            .accessibilityIdentifier("storage_resume_button")
+            // Sin «Retomar»: el lienzo B no lo lleva y la pantalla re-empuja sola (cada 5 s en las esperas de iCloud, cada
+            // 30 s en el resto, `CloudProgressStepsLogic.screenRekickSeconds`).
             if reverse && controller.canCancelReverse {
                 cancelReverseButton(controller)
+                    .frame(maxWidth: .infinity)
             }
             // Sin término `reverse`: la fase la decide el controller (`ForwardCancelScope`), y sus cuatro fases solo se
             // pintan en la ida. Repetirlo aquí sería la misma condición dos veces, y un mutante en la del controller
             // saldría verde.
             if controller.canCancelMigration {
                 cancelMigrationButton(controller)
+                    .frame(maxWidth: .infinity)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
+        // `.contain`: sin él, el id de la tarjeta pisa el de cada paso y el de sus botones (`testing.md`, regla del
+        // identificador en un contenedor).
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("storage_progress_card")
+    }
+
+    /// La tarjeta de pasos de la vuelta mientras el journal aún dice «nube activa»: se borra lo de antes de iCloud
+    /// («Borrar y volver a iCloud») o la vuelta recién confirmada espera su primer guardado (card 27z3: hasta este ticket la
+    /// pantalla se quedaba con «Volver a iCloud» apagado y nada más durante minutos). Sin botones: aquí todavía no hay nada
+    /// que cancelar, y el borrado no tiene vuelta.
+    private func reverseStartingCard(_ controller: CloudMigrationController) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            CloudProgressStepsView(title: L10n.Storage.Steps.reverseTitle, steps: controller.reverseProgressSteps)
+            Text(L10n.Storage.Steps.keepUsing)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("storage_steps_footer")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .storageCardStyle()
+        // `.contain`: sin él, el id de la tarjeta pisa el de cada paso y el de sus botones (`testing.md`, regla del
+        // identificador en un contenedor).
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("storage_progress_card")
     }
 
@@ -801,23 +807,18 @@ struct StorageSettingsView: View {
     /// El texto de la espera de la vuelta a iCloud (`ReverseUploadWaitingCopyLogic`): el mensaje y, si ya se observó,
     /// cuántas filas faltan. En `.secondary` como el resto de captions de la tarjeta: `warningForeground` como TEXTO
     /// sobre la tarjeta blanca da 2,2:1 (`.claude/rules/swiftui-ds.md`).
+    @ViewBuilder
     private func reverseUploadCaption(_ controller: CloudMigrationController) -> some View {
+        // Desde la opción B (ticket `cloud-progress-shows-real-steps-and-counts`) «subiendo» y la cifra los dice el paso
+        // «Subir a iCloud»; aquí solo queda el porqué cuando algo frena la subida.
         let copy = ReverseUploadWaitingCopyLogic.waitingCopy(sample: controller.reverseUploadSample)
-        return VStack(spacing: DS.Spacing.xxs) {
+        if copy.message != .uploading {
             Text(reverseUploadMessage(copy.message))
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("storage_reverse_waiting_message")
-            if let pending = copy.pending {
-                Text(L10n.Storage.Progress.reversePending(pending))
-                    .font(DS.Typography.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("storage_reverse_pending_count")
-            }
         }
-        .accessibilityIdentifier("storage_reverse_waiting_caption")
     }
 
     private func reverseUploadMessage(_ message: ReverseUploadWaitingCopyLogic.Message) -> String {

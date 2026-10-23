@@ -80,6 +80,13 @@ final class MigrationSnapshotUploader {
     /// Especificaciones de las 16 entidades, en orden de tabla UTF-8 asc (fijado en `init`).
     private lazy var specs: [SnapshotEntitySpec] = buildSpecs()
 
+    /// Cuántas filas de las 16 tablas confirmó ya el servidor, de cuántas hay (ticket
+    /// `cloud-progress-shows-real-steps-and-counts`, card igt9). Lo lee la pantalla de «Activar la nube» para su cifra y su
+    /// barra. Se recalcula desde el cursor al empezar cada página —así vale también tras relanzar— y avanza por cada trozo
+    /// de 50 que el servidor confirma, no por página de 200: con ~17 filas por segundo, una página son ~12 s quietos.
+    /// `nil` = aún no se sabe (o un recuento falló: la cifra no se inventa). Solo informa: nada decide con ella.
+    private(set) var progress: CloudProgressStepsLogic.UploadProgress?
+
     init(
         engine: CloudSyncEngine,
         pushClient: SyncPushClient,
@@ -164,7 +171,17 @@ final class MigrationSnapshotUploader {
 
         guard let page else {
             // No quedan páginas → drenar y subir el residual (incrementales tardíos) y cerrar.
-            return await finishResidual()
+            let outcome = await finishResidual()
+            if outcome == .completed, let total = progress?.total ?? countAllRows() {
+                progress = .init(done: total, total: total)
+            }
+            return outcome
+        }
+        let doneBeforePage = rowsConfirmedBefore(page)
+        if let doneBeforePage, let total = countAllRows() {
+            progress = .init(done: doneBeforePage, total: total)
+        } else {
+            progress = nil
         }
 
         // Encolar la página (full-row) en el outbox vía el seam del motor. Dos familias de fallo, y cada una elige su
@@ -189,9 +206,20 @@ final class MigrationSnapshotUploader {
         }
 
         // Push: capturar incrementales pendientes + subir TODO lo vivo (página + incrementales).
-        switch await drainPushConfirm() {
+        // Cada trozo que el servidor confirma suma a la cifra, con techo en el final de la página: el outbox puede llevar
+        // incrementales que no son de la página, y contarlos haría pasar la cifra de lo que hay.
+        var confirmedInPage = 0
+        let onChunkConfirmed: @MainActor (Int) -> Void = { [weak self] rows in
+            guard let self, let doneBeforePage, let current = self.progress else { return }
+            confirmedInPage = min(confirmedInPage + rows, page.inputs.count)
+            self.progress = .init(done: min(doneBeforePage + confirmedInPage, current.total), total: current.total)
+        }
+        switch await drainPushConfirm(onChunkConfirmed: onChunkConfirmed) {
         case .confirmed:
             CloudSyncBreadcrumb.migrationSnapshotPageConfirmed(table: page.cursor.table, rows: page.inputs.count)
+            if let doneBeforePage, let current = progress {
+                progress = .init(done: min(doneBeforePage + page.inputs.count, current.total), total: current.total)
+            }
             return .pageConfirmed(cursor: encodeCursor(page.cursor))
         case .notConfirmed:
             return .transient
@@ -226,6 +254,41 @@ final class MigrationSnapshotUploader {
     private struct BuiltPage {
         let inputs: [SnapshotRowInput]
         let cursor: SnapshotCursor
+        /// La tabla de la página (índice en `specs`) y cuántas de sus filas van antes del cursor: ya subidas.
+        let tableIndex: Int
+        let doneInTable: Int
+    }
+
+    /// Filas ya confirmadas antes de esta página: las tablas anteriores enteras y, en la suya, las de antes del cursor.
+    /// `nil` si un recuento no se deja hacer.
+    private func rowsConfirmedBefore(_ page: BuiltPage) -> Int? {
+        var done = page.doneInTable
+        for spec in specs.prefix(page.tableIndex) {
+            guard let rows = countRows(spec) else { return nil }
+            done += rows
+        }
+        return done
+    }
+
+    /// Filas de las 16 tablas. `nil` si un recuento no se deja hacer.
+    private func countAllRows() -> Int? {
+        var total = 0
+        for spec in specs {
+            guard let rows = countRows(spec) else { return nil }
+            total += rows
+        }
+        return total
+    }
+
+    private func countRows(_ spec: SnapshotEntitySpec) -> Int? {
+        do {
+            return try spec.count()
+        } catch {
+            #if DEBUG
+            print("MigrationSnapshotUploader: recuento de \(spec.table) falló (la cifra se queda sin saber): \(error)")
+            #endif
+            return nil
+        }
     }
 
     /// Primera página NO vacía desde `fromTableIndex`/`afterSyncID`, saltando tablas agotadas. `nil` = no
@@ -243,7 +306,7 @@ final class MigrationSnapshotUploader {
             }
             let cursor = SnapshotCursor(table: specs[idx].table,
                                         afterSyncID: result.lastSyncID?.uuidString.lowercased())
-            return BuiltPage(inputs: result.inputs, cursor: cursor)
+            return BuiltPage(inputs: result.inputs, cursor: cursor, tableIndex: idx, doneInTable: result.doneBefore)
         }
         return nil
     }
@@ -253,7 +316,7 @@ final class MigrationSnapshotUploader {
     /// Drena incrementales, sube TODAS las filas vivas del outbox y aplica resultados. `.confirmed` si el outbox
     /// vivo quedó VACÍO tras el push (página confirmada); `.notConfirmed` si quedan filas vivas o el push falló por
     /// red; `.blocked` si esperar no lo arregla.
-    private func drainPushConfirm() async -> PushConfirmation {
+    private func drainPushConfirm(onChunkConfirmed: (@MainActor (Int) -> Void)? = nil) async -> PushConfirmation {
         // Un drain que no terminó deja cambios fuera del outbox: «vacío» no probaría nada (ticket
         // `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read`). Es una avería LOCAL, como el outbox ilegible.
         guard engine.drainOnce(context: context) else { return .blocked(.localFailure) }
@@ -276,7 +339,7 @@ final class MigrationSnapshotUploader {
         engine.deadLetterPoison(poison, context: context, now: now())
         guard !buildable.isEmpty else { return liveOutboxState(step: "snapshot-page-poison") }  // solo poison → dead-lettereado → puede avanzar
 
-        switch await pushClient.push(buildable, continueWhile: leaseStillConfirmed) {
+        switch await pushClient.push(buildable, continueWhile: leaseStillConfirmed, onChunkConfirmed: onChunkConfirmed) {
         case .completed(let results):
             await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
             // Confirmada SOLO si no quedan filas VIVAS (los dead-letters no son vivos → la página avanza y
@@ -380,8 +443,11 @@ final class MigrationSnapshotUploader {
     /// identidad y construye los `SnapshotRowInput` de la página.
     private struct SnapshotEntitySpec {
         let table: String
-        /// `(afterSyncID, limit) -> (inputs, lastSyncID de la página, hasMore)`. LANZA si el `fetch` de la tabla falla.
-        let page: (UUID?, Int) throws -> (inputs: [SnapshotRowInput], lastSyncID: UUID?, hasMore: Bool)
+        /// `(afterSyncID, limit) -> (inputs, lastSyncID de la página, hasMore, filas antes del cursor)`. LANZA si el
+        /// `fetch` de la tabla falla.
+        let page: (UUID?, Int) throws -> (inputs: [SnapshotRowInput], lastSyncID: UUID?, hasMore: Bool, doneBefore: Int)
+        /// Cuántas filas tiene la tabla (para la cifra de la pantalla). LANZA si el recuento falla.
+        let count: () throws -> Int
     }
 
     /// Las 16 especificaciones en orden de tabla UTF-8 asc (mismo criterio que Merkle A-4).
@@ -471,7 +537,11 @@ final class MigrationSnapshotUploader {
                                                  emission: emission, className: className, calendar: calendar)
             }
             let lastSyncID = pageSlice.last.flatMap { UUID(uuidString: $0.id) }
-            return (inputs, lastSyncID, filtered.count > pageSlice.count)
+            // Las filas con identidad que quedan antes del cursor: las que ya subieron. Las que no tienen identidad no
+            // suben nunca (`identityGap`), y por eso al terminar la cifra se da por completa.
+            return (inputs, lastSyncID, filtered.count > pageSlice.count, pairs.count - filtered.count)
+        } count: { [context] in
+            try context.fetchCount(FetchDescriptor<M>())
         }
     }
 
