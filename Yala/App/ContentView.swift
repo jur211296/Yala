@@ -4308,6 +4308,8 @@ struct MainTabView: View {
                         let selection = period.selection()
                         sessionState.applyVisitPeriod(selection.period, customRange: selection.customRange)
                     }
+                    // La parte de la pestaña que el widget amplía (UX 2.2 · L15-3).
+                    navigation.pendingStatisticsFocus = request.focus
                 }
                 navigation.selectMainTab(.statistics)
             case .records:

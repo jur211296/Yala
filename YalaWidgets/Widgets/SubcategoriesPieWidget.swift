@@ -194,7 +194,7 @@ struct SubcategoriesPieWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "statistics/categories"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.subcategories))
     }
 
 }
@@ -211,6 +211,7 @@ struct SubcategoriesPieWidget: Widget {
             provider: SubcategoriesPieWidgetProvider()
         ) { entry in
             SubcategoriesPieWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

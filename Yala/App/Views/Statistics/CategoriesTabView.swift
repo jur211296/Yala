@@ -218,6 +218,14 @@ struct CategoriesTabView: View {
             scrollContent
         }
         .scrollViewGlassEdges()
+        // Los widgets de subcategorías abren Distribución con las subcategorías a la vista (UX 2.2 · L15-3).
+        .modifier(StatisticsFocusHandler(focus: .subcategories) { showSubcategoriesFromLink() })
+    }
+
+    /// La gráfica y la lista pasan a subcategorías, como si la persona las hubiera elegido.
+    private func showSubcategoriesFromLink() {
+        dsWithAnimation(reduceMotion) { chartsCarouselPosition = "subcategory" }
+        setListViewManually(.subcategories)
     }
 
     /// Cadena de observers partida del `ScrollView` para que el type-checker

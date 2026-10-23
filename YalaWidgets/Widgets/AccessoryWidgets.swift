@@ -110,7 +110,7 @@ struct AccessoryBalanceWidgetView: View {
                 .widgetAccentable()
             Text(entry.isExpensesOnly
                  ? String(localized: "widget.ui.expenses", bundle: .main)
-                 : String(localized: "widget.ui.balance", bundle: .main))
+                 : String(localized: "widget.ui.available", bundle: .main))
                 .font(.system(.caption2))
                 .foregroundStyle(.secondary)
         }
@@ -124,6 +124,7 @@ struct AccessoryBalanceWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryBalanceIntent.self, provider: AccessoryBalanceProvider()) { entry in
             AccessoryBalanceWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder, message: "widget.empty.openYalaBalance")
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }
@@ -188,7 +189,7 @@ struct AccessoryExpenseWidgetView: View {
                 .font(.system(.caption2))
                 .foregroundStyle(.secondary)
         }
-        .widgetURL(WidgetURLHelper.url(for: "statistics"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.expenses))
     }
 }
 
@@ -198,6 +199,7 @@ struct AccessoryExpenseWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: AccessoryExpenseIntent.self, provider: AccessoryExpenseProvider()) { entry in
             AccessoryExpenseWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }
@@ -266,8 +268,11 @@ struct AccessoryBudgetWidgetView: View {
                     .foregroundStyle(.secondary)
             }
         } else {
-            Text(String(localized: "widget.ui.noBudgets", bundle: .main))
+            // Ninguno creado: lo dice y el toque abre uno nuevo (UX 2.2 · L15-2).
+            Text(String(localized: "widget.empty.noBudgetsYet", bundle: .main))
                 .font(.headline)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
                 .foregroundStyle(.secondary)
         }
     }
@@ -281,7 +286,9 @@ struct AccessoryBudgetWidget: Widget {
             AccessoryBudgetWidgetView(entry: entry)
                 // El enlace va DENTRO del modificador: en solo grupos la invitación lo sustituye por el suyo, y dos
                 // `widgetURL` en la misma jerarquía no tienen comportamiento definido.
-                .widgetURL(WidgetURLHelper.url(for: "budgets"))
+                .widgetURL(WidgetURLHelper.url(
+                    for: entry.budgetName == nil && !entry.isPlaceholder ? WidgetDeepLink.newBudget : "budgets"))
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }
@@ -386,8 +393,11 @@ struct AccessoryNextPaymentWidgetView: View {
                 }
             }
         } else {
-            Text(String(localized: "widget.ui.noPayments", bundle: .main))
+            // Ninguno creado: «Sin pagos pendientes» se leía como «estás al día» (UX 2.2 · L15-2).
+            Text(String(localized: "widget.empty.noPaymentsYet", bundle: .main))
                 .font(.headline)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
                 .foregroundStyle(.secondary)
         }
     }
@@ -401,7 +411,10 @@ struct AccessoryNextPaymentWidget: Widget {
             AccessoryNextPaymentWidgetView(entry: entry)
                 // El enlace va DENTRO del modificador: en solo grupos la invitación lo sustituye por el suyo, y dos
                 // `widgetURL` en la misma jerarquía no tienen comportamiento definido.
-                .widgetURL(WidgetURLHelper.url(for: "planning/scheduled-payments"))
+                .widgetURL(WidgetURLHelper.url(
+                    for: entry.paymentName == nil && !entry.isPlaceholder
+                        ? WidgetDeepLink.newScheduledPayment : "planning/scheduled-payments"))
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }

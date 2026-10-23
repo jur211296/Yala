@@ -159,7 +159,7 @@
 
 // MARK: - Cash Flow
 
-"cashFlow.title" = "Flux de Tresorerie";
+"cashFlow.title" = "Entrées et sorties";
 "cashFlow.income" = "Revenus";
 "cashFlow.expense" = "Depenses";
 "cashFlow.net" = "Net";
@@ -434,7 +434,7 @@
 
 // MARK: - Settings
 
-"settings.title" = "Parametres";
+"settings.title" = "Réglages";
 "settings.theme" = "Themes";
 "settings.currency" = "Devise";
 "settings.appIcon" = "Icone de l'application";
@@ -750,7 +750,7 @@
 "widgetType.trend" = "Tendances";
 "widgetType.topSpending" = "Top categories";
 "widgetType.topSubcategories" = "Top sous-categories";
-"widgetType.cashFlow" = "Flux de tresorerie";
+"widgetType.cashFlow" = "Entrées et sorties";
 "widgetType.categoriesPie" = "Catégories";
 "widgetType.subcategoriesPie" = "Sous-catégories";
 "widgetType.latestRecords" = "Derniers enregistrements";
@@ -3520,7 +3520,7 @@
 "panel.widgetInfo.addToPanel" = "Ajouter au tableau";
 
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
-"panel.widgetInfo.cashFlow.title" = "Flux de trésorerie";
+"panel.widgetInfo.cashFlow.title" = "Entrées et sorties";
 
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Revenus";
@@ -7681,6 +7681,14 @@
 "uxpro.welcome.theme" = "Tu peux maintenant utiliser ce thème.";
 "uxpro.welcome.icon" = "Tu peux maintenant utiliser cette icône.";
 "uxpro.welcome.cashFlow" = "Tu peux maintenant utiliser le flux de trésorerie avancé.";
+
+/* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
+"window.busy.signingOutElsewhere" = "Déconnexion en cours dans l'autre fenêtre…";
+"window.busy.signingOut" = "Déconnexion en cours…";
+"window.busy.wiping" = "Suppression de tes données…";
+"window.busy.starting" = "Yala s'ouvre…";
+"records.l15.deleteFromGroup" = "Se supprime depuis le groupe";
+"records.l15.undoSeconds" = "Tu auras quelques secondes pour l'annuler.";
 
 /* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
 "chat.l14d.conversationDeleted" = "Conversation supprimée";

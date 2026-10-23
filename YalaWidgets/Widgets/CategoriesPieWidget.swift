@@ -210,6 +210,7 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

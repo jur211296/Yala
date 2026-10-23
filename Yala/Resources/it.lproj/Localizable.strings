@@ -159,7 +159,7 @@
 
 // MARK: - Cash Flow
 
-"cashFlow.title" = "Flusso di Cassa";
+"cashFlow.title" = "Entrate e uscite";
 "cashFlow.income" = "Entrate";
 "cashFlow.expense" = "Spese";
 "cashFlow.net" = "Netto";
@@ -750,7 +750,7 @@
 "widgetType.trend" = "Tendenze";
 "widgetType.topSpending" = "Top categorie";
 "widgetType.topSubcategories" = "Top sottocategorie";
-"widgetType.cashFlow" = "Flusso di cassa";
+"widgetType.cashFlow" = "Entrate e uscite";
 "widgetType.categoriesPie" = "Categorie";
 "widgetType.subcategoriesPie" = "Sottocategorie";
 "widgetType.latestRecords" = "Ultime registrazioni";
@@ -3528,7 +3528,7 @@
 "panel.widgetInfo.addToPanel" = "Aggiungi al Pannello";
 
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
-"panel.widgetInfo.cashFlow.title" = "Flusso di cassa";
+"panel.widgetInfo.cashFlow.title" = "Entrate e uscite";
 
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Entrate";
@@ -7690,6 +7690,14 @@
 "uxpro.welcome.theme" = "Ora puoi usare questo tema.";
 "uxpro.welcome.icon" = "Ora puoi usare questa icona.";
 "uxpro.welcome.cashFlow" = "Ora puoi usare il flusso di cassa avanzato.";
+
+/* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
+"window.busy.signingOutElsewhere" = "Chiusura della sessione nell'altra finestra…";
+"window.busy.signingOut" = "Chiusura della sessione…";
+"window.busy.wiping" = "Eliminazione dei tuoi dati…";
+"window.busy.starting" = "Yala si sta aprendo…";
+"records.l15.deleteFromGroup" = "Si elimina dal gruppo";
+"records.l15.undoSeconds" = "Avrai qualche secondo per annullarlo.";
 
 /* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
 "chat.l14d.conversationDeleted" = "Conversazione eliminata";

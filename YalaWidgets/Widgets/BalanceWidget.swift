@@ -168,7 +168,7 @@ struct SmallBalanceView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
             WidgetHeader(
-                title: String(localized: "widget.ui.balance", bundle: .main),
+                title: String(localized: "widget.ui.available", bundle: .main),
                 subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                 icon: "creditcard.fill"
             )
@@ -258,7 +258,7 @@ struct MediumBalanceView: View {
             // Header row: title+subtitle left, KPI right
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                    Text("widget.ui.balance", bundle: .main)
+                    Text("widget.ui.available", bundle: .main)
                         .font(WDS.Typography.title)
                         .foregroundStyle(.primary)
                     Text(entry.period.toWidgetPeriod.localizedDisplayName)
@@ -367,6 +367,7 @@ struct BalanceWidget: Widget {
             provider: BalanceWidgetProvider()
         ) { entry in
             BalanceWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder, message: "widget.empty.openYalaBalance")
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

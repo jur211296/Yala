@@ -46,7 +46,7 @@ enum SceneBusyWindows {
             let previousKey = scene.keyWindow
             let window = UIWindow(windowScene: scene)
             window.windowLevel = .alert + 1
-            let host = UIHostingController(rootView: WindowBusyView())
+            let host = UIHostingController(rootView: WindowBusyView(windowID: id))
             host.view.backgroundColor = .systemBackground
             window.rootViewController = host
             // Key y no solo visible: con un teclado físico, un campo de texto de debajo seguiría recibiendo lo que se

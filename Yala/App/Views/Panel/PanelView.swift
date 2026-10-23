@@ -26,6 +26,9 @@ struct PanelView: View {
     let viewModel: PanelViewModel
     @Binding var sheets: PanelSheetState
 
+    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
+    @State private var fabShortContainer = false
+
     /// **El veredicto de App Attest de ESTE teléfono.** Es lo único del aviso que no se puede leer reactivamente:
     /// sale de `UserDefaults` y depende del reloj. Lo mantiene al día `cloudAttestVerdictWatcher`; las otras dos
     /// condiciones las lee `CloudAttestNotice.isShowing` vivas, en el body (ticket
@@ -724,6 +727,7 @@ struct PanelView: View {
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                             chatFABVisible: appPreferences.chatFABVisible,
+                            isShortContainer: fabShortContainer,
                             onVoiceTap: { sheets.showVoiceRecording = true },
                             onImageTap: { sheets.showImageSelection = true },
                             onManualTap: { sheets.showNewTransaction = true },
@@ -738,6 +742,8 @@ struct PanelView: View {
                         )
                     }
                 }
+                // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                .measuresShortContainer($fabShortContainer)
                 .transition(.opacity)
             }
         }

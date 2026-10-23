@@ -161,7 +161,7 @@
 
 // MARK: - Cash Flow
 
-"cashFlow.title" = "现金流";
+"cashFlow.title" = "收入与支出";
 "cashFlow.income" = "收入";
 "cashFlow.expense" = "支出";
 "cashFlow.net" = "净额";
@@ -752,7 +752,7 @@
 "widgetType.trend" = "趋势";
 "widgetType.topSpending" = "热门类别";
 "widgetType.topSubcategories" = "热门子类别";
-"widgetType.cashFlow" = "现金流";
+"widgetType.cashFlow" = "收入与支出";
 "widgetType.categoriesPie" = "类别";
 "widgetType.subcategoriesPie" = "子类别";
 "widgetType.latestRecords" = "最新记录";
@@ -3530,7 +3530,7 @@
 "panel.widgetInfo.addToPanel" = "添加到面板";
 
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
-"panel.widgetInfo.cashFlow.title" = "现金流";
+"panel.widgetInfo.cashFlow.title" = "收入与支出";
 
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "收入";
@@ -7692,6 +7692,14 @@
 "uxpro.welcome.theme" = "现在可以使用这个主题了。";
 "uxpro.welcome.icon" = "现在可以使用这个图标了。";
 "uxpro.welcome.cashFlow" = "现在可以使用进阶现金流了。";
+
+/* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
+"window.busy.signingOutElsewhere" = "正在另一个窗口中退出登录…";
+"window.busy.signingOut" = "正在退出登录…";
+"window.busy.wiping" = "正在删除你的数据…";
+"window.busy.starting" = "Yala 正在打开…";
+"records.l15.deleteFromGroup" = "请在群组中删除";
+"records.l15.undoSeconds" = "你有几秒钟可以撤销。";
 
 /* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
 "chat.l14d.conversationDeleted" = "对话已删除";

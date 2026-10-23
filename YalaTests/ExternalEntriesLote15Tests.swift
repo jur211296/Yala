@@ -169,7 +169,9 @@ struct PaymentsWidgetURLTests {
     @Test(arguments: ["YalaWidgets/Widgets/ScheduledPaymentsWidget.swift", "YalaWidgets/Widgets/AccessoryWidgets.swift"])
     func elWidgetPideLaSubPestanaDePagos(_ path: String) throws {
         let source = Repo.codeOnly(try Repo.text(path))
-        #expect(source.contains("WidgetURLHelper.url(for: \"planning/scheduled-payments\")"))
+        // Desde UX 2.2 · L15-2, sin ningún pago el toque abre el editor de uno nuevo (`WidgetDeepLink.newScheduledPayment`);
+        // con pagos, la sub-pestaña de siempre.
+        #expect(source.contains(": \"planning/scheduled-payments\")"))
         #expect(!source.contains("WidgetURLHelper.url(for: \"planning\")"),
                 "Un widget de pagos vuelve a abrir Planificación sin elegir la sub-pestaña (cae en Presupuestos).")
     }

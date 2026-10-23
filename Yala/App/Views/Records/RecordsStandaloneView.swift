@@ -26,6 +26,9 @@ struct RecordsStandaloneView: View {
 
     // MARK: - ViewModels
 
+    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
+    @State private var fabShortContainer = false
+
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel = RecordsViewModel()
 
@@ -166,7 +169,10 @@ struct RecordsStandaloneView: View {
     /// objeto aunque ya no exista).
     private var openRecord: TransactionItem? {
         guard let id = recordsViewModel.openRecordID else { return nil }
-        return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+        // Lo que espera su borrado con «Deshacer» ya no se enseña (UX 2.2 · L15-13).
+        return dataViewModel.allTransactions.first {
+            $0.persistentModelID == id && !RecordPendingDeletion.shared.hides(id, transferPairID: $0.transferPairID)
+        }
     }
 
     /// ⌘E, ⌫ y ↑↓ (iPad con teclado): solo con Registros delante, la ventana ancha y fuera del modo selección. Ahí el
@@ -182,6 +188,7 @@ struct RecordsStandaloneView: View {
         return RecordCommandActions(
             hasOpenRecord: record != nil,
             canDeleteOpenRecord: record.map { RecordContextActionLogic.actions(.init(record: $0)).canDelete } ?? false,
+            openRecordIsFromGroup: record.map { $0.splitExpenseID != nil || $0.splitSettlementID != nil } ?? false,
             editOpenRecord: {
                 guard let record, RootCommandPerformer.keyboardMayAct(navigation) else { return }
                 viewModel.editOpenRecord(record)
@@ -217,7 +224,10 @@ struct RecordsStandaloneView: View {
                 presentation: .column,
                 onEdit: { recordsViewModel.editOpenRecord(record) },
                 onDuplicate: { recordsViewModel.duplicateRecord(record) },
-                onDelete: { recordsViewModel.deleteOpenRecord(record, context: modelContext) }
+                onDelete: { recordsViewModel.deleteOpenRecord(
+                    record, context: modelContext,
+                    undoName: RecordDeleteConfirmationText.undoName(for: record, preferences: appPreferences)) },
+                deleteIsUndoable: true
             )
             .announcesShownInDetailColumn()
             .id(record.persistentModelID)
@@ -254,6 +264,7 @@ struct RecordsStandaloneView: View {
                                     isImageLocked: isImageLocked,
                                     isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                                     chatFABVisible: appPreferences.chatFABVisible,
+                                    isShortContainer: fabShortContainer,
                                     onVoiceTap: { showVoiceRecording = true },
                                     onImageTap: { showImageSelection = true },
                                     onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -273,6 +284,8 @@ struct RecordsStandaloneView: View {
                                 )
                             }
                         }
+                        // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                        .measuresShortContainer($fabShortContainer)
                     }
 
                     // Modo selección: qué hacer y, con algo elegido, Eliminar y Editar (L8-12).
@@ -513,7 +526,10 @@ private struct RecordsStandaloneSheets: ViewModifier {
                         transaction: transaction,
                         onEdit: { recordsViewModel.requestEditFromDetail() },
                         onDuplicate: { recordsViewModel.requestDuplicateFromDetail() },
-                        onDelete: { recordsViewModel.requestDeleteFromDetail(transaction) }
+                        onDelete: { recordsViewModel.requestDeleteFromDetail(
+                            transaction,
+                            undoName: RecordDeleteConfirmationText.undoName(for: transaction, preferences: appPreferences)) },
+                        deleteIsUndoable: true
                     )
                 }
             }

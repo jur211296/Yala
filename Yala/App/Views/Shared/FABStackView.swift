@@ -18,6 +18,9 @@ struct FABStackView: View {
     let isImageLocked: Bool
     let isChatLocked: Bool
     let chatFABVisible: Bool
+    /// El contenedor tiene poco alto (iPhone girado, ventana baja): Yala IA y «+» van en fila abajo a la derecha en vez
+    /// de uno encima del otro (UX 2.2 · L15-14, opción B). Lo mide quien monta los botones (`measuresShortContainer`).
+    var isShortContainer: Bool = false
 
     // MARK: - Callbacks
 
@@ -76,11 +79,15 @@ struct FABStackView: View {
                     menuButtons
                 }
 
-                if chatFABVisible && !showFABMenu {
-                    aiFAB.transition(Self.fabScaleTransition)
-                }
+                // Con poco alto, en fila: uno encima del otro subían hasta la cabecera y tapaban el selector de
+                // Registros y el importe de la primera fila (UX 2.2 · L15-14). Mismos hijos en las dos formas.
+                fabLayout {
+                    if chatFABVisible && !showFABMenu {
+                        aiFAB.transition(Self.fabScaleTransition)
+                    }
 
-                transactionFAB(background: fabBackground)
+                    transactionFAB(background: fabBackground)
+                }
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
@@ -108,6 +115,12 @@ struct FABStackView: View {
         } else {
             disabledFAB(background: fabBackground)
         }
+    }
+
+    private var fabLayout: AnyLayout {
+        isShortContainer
+            ? AnyLayout(HStackLayout(alignment: .bottom, spacing: DS.Spacing.md))
+            : AnyLayout(VStackLayout(alignment: .trailing, spacing: DS.Spacing.md))
     }
 
     // MARK: - AI FAB

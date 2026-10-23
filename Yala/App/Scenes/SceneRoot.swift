@@ -93,6 +93,7 @@ extension SceneNavigation {
         pendingCreatedGroupInviteID = nil
         isWelcomeGroupFormOpen = false
         pendingKeyboardPanelRequest = nil
+        pendingStatisticsFocus = nil
         pendingSharedImageURL = nil
         pendingImageEntryFailure = nil
         pendingChatDraftPrefill = nil

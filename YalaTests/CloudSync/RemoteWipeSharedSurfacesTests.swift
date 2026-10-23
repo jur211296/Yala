@@ -288,7 +288,13 @@ struct WidgetGroupsOnlyInviteParityTests {
                        "ScheduledPayments", "SubcategoriesPie", "TopCategories", "TopSubcategories"]
         for name in widgets {
             let src = try Self.code("YalaWidgets/Widgets/\(name)Widget.swift")
-            #expect(src.contains("\(name)WidgetView(entry: entry)\n.invitesToActivateFullWhenGroupsOnly()\n.containerBackground("),
+            // Desde UX 2.2 · L15-2 va detrás la invitación a abrir Yala sin datos; la de solo grupos sigue fuera, la última
+            // antes del fondo, para que gane.
+            let chain = try #require(src.range(of: "\(name)WidgetView(entry: entry)\n"))
+            let tail = String(src[chain.upperBound...].prefix(220))
+            #expect(tail.hasPrefix(".invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder"),
+                    "\(name)Widget no invita a abrir Yala sin datos.")
+            #expect(tail.contains(")\n.invitesToActivateFullWhenGroupsOnly()\n.containerBackground("),
                     "\(name)Widget no invita en solo grupos.")
         }
         let accessory = try Self.code("YalaWidgets/Widgets/AccessoryWidgets.swift")

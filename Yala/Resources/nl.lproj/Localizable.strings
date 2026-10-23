@@ -161,7 +161,7 @@
 
 // MARK: - Cash Flow
 
-"cashFlow.title" = "Kasstroom";
+"cashFlow.title" = "In en uit";
 "cashFlow.income" = "Inkomsten";
 "cashFlow.expense" = "Uitgaven";
 "cashFlow.net" = "Netto";
@@ -752,7 +752,7 @@
 "widgetType.trend" = "Trends";
 "widgetType.topSpending" = "Topcategorieën";
 "widgetType.topSubcategories" = "Topsubcategorieën";
-"widgetType.cashFlow" = "Kasstroom";
+"widgetType.cashFlow" = "In en uit";
 "widgetType.categoriesPie" = "Categorieën";
 "widgetType.subcategoriesPie" = "Subcategorieën";
 "widgetType.latestRecords" = "Laatste boekingen";
@@ -3530,7 +3530,7 @@
 "panel.widgetInfo.addToPanel" = "Toevoegen aan paneel";
 
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
-"panel.widgetInfo.cashFlow.title" = "Cashflow";
+"panel.widgetInfo.cashFlow.title" = "In en uit";
 
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "Inkomsten";
@@ -7692,6 +7692,14 @@
 "uxpro.welcome.theme" = "Je kunt dit thema nu gebruiken.";
 "uxpro.welcome.icon" = "Je kunt dit icoon nu gebruiken.";
 "uxpro.welcome.cashFlow" = "Je kunt nu de uitgebreide kasstroom gebruiken.";
+
+/* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
+"window.busy.signingOutElsewhere" = "Je wordt afgemeld in het andere venster…";
+"window.busy.signingOut" = "Je wordt afgemeld…";
+"window.busy.wiping" = "Je gegevens worden verwijderd…";
+"window.busy.starting" = "Yala wordt geopend…";
+"records.l15.deleteFromGroup" = "Verwijder het in de groep";
+"records.l15.undoSeconds" = "Je hebt een paar seconden om het ongedaan te maken.";
 
 /* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
 "chat.l14d.conversationDeleted" = "Gesprek verwijderd";

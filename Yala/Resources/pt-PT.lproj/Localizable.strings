@@ -811,7 +811,7 @@
 "cashFlow.income" = "Receitas";
 "cashFlow.net" = "Líquido";
 "cashFlow.netFlow" = "Fluxo líquido";
-"cashFlow.title" = "Fluxo de Caixa";
+"cashFlow.title" = "Entradas e saídas";
 "cashFlowPlan.accumulated" = "Acumulado";
 "cashFlowPlan.accumulatedBalance" = "Saldo acumulado";
 "cashFlowPlan.accumulatedHintMessage" = "Seu saldo total desde o início do plano. Soma o disponível de cada mês.";
@@ -2280,7 +2280,7 @@
 "panel.widgetInfo.cashFlow.mediumWhatQ" = "O que você está vendo?";
 "panel.widgetInfo.cashFlow.smallWhatA" = "Seu saldo do período: a diferença entre o que entrou e o que saiu, com duas barras comparando os dois totais.";
 "panel.widgetInfo.cashFlow.smallWhatQ" = "O que você está vendo?";
-"panel.widgetInfo.cashFlow.title" = "Fluxo de caixa";
+"panel.widgetInfo.cashFlow.title" = "Entradas e saídas";
 "panel.widgetInfo.categoriesPie.chip1" = "Categorias";
 "panel.widgetInfo.categoriesPie.chip2" = "Período atual";
 "panel.widgetInfo.categoriesPie.chip3" = "Podes tocar";
@@ -2759,7 +2759,7 @@
 "settings.theme.teal" = "Teal";
 "settings.theme.translucent" = "Translúcido";
 "settings.themeDescription" = "Escolha como você quer que o Yala apareça.";
-"settings.title" = "Configurações";
+"settings.title" = "Definições";
 "settings.tutorials" = "Tutoriais";
 "settings.version" = "Versão";
 "settings.versionInfo" = "Versão %1$@ (Build %2$@)";
@@ -3545,7 +3545,7 @@
 "widget.total" = "Total";
 "widget.visible" = "Visível";
 "widgetType.budgets" = "Orçamentos";
-"widgetType.cashFlow" = "Fluxo de caixa";
+"widgetType.cashFlow" = "Entradas e saídas";
 "widgetType.categoriesPie" = "Categorias";
 "widgetType.exchangeRate" = "Taxa de câmbio";
 "widgetType.expensesByNeed" = "Necessidades";
@@ -7008,6 +7008,14 @@
 "uxpro.welcome.theme" = "Já podes usar este tema.";
 "uxpro.welcome.icon" = "Já podes usar este ícone.";
 "uxpro.welcome.cashFlow" = "Já podes usar o fluxo de caixa avançado.";
+
+/* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
+"window.busy.signingOutElsewhere" = "A terminar a tua sessão na outra janela…";
+"window.busy.signingOut" = "A terminar a tua sessão…";
+"window.busy.wiping" = "A apagar os teus dados…";
+"window.busy.starting" = "O Yala está a abrir…";
+"records.l15.deleteFromGroup" = "Apaga-se a partir do grupo";
+"records.l15.undoSeconds" = "Vais ter alguns segundos para desfazer.";
 
 /* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
 "chat.l14d.conversationDeleted" = "Conversa apagada";

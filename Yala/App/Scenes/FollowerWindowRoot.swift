@@ -76,7 +76,7 @@ struct FollowerWindowRoot: View {
                 .id(languageVersion)
                 .accessibilityIdentifier("follower_window_root")
         case .busy:
-            WindowBusyView()
+            WindowBusyView(windowID: navigation.id)
         case .signOutRelaunch:
             SignOutRelaunchView()
                 .yalaScreenBackground(.subtle)
@@ -97,14 +97,75 @@ struct FollowerWindowRoot: View {
     }
 }
 
-/// Fondo con progreso, sin nada que tocar.
+/// Una ventana que no puede operar mientras otra hace algo: el progreso, qué pasa y, si hay a dónde ir, «Ir a esa
+/// ventana» (UX 2.2 · L15-11, opción C). Antes era solo una ruedita: con dos ventanas, cerrar la sesión en una dejaba la
+/// otra girando sin texto ni salida, y parecía colgada. El molde es «Yala te espera en otra ventana», de al lado.
+///
+/// Se monta en la seguidora (`FollowerWindowRoot`) y en la `UIWindow` que tapa la líder (`SceneBusyWindows`), que no
+/// tiene el entorno de la app: por eso recibe la ventana a mano y solo lee singletons y valores de entorno por defecto.
 struct WindowBusyView: View {
+    let windowID: UUID
+
     var body: some View {
-        ProgressView()
-            .controlSize(.large)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .yalaScreenBackground(.panel)
-            .accessibilityIdentifier("follower_window_busy")
+        let registry = SceneRegistry.shared
+        let reason = WindowBusyLogic.reason(
+            isWipingData: SessionState.shared.isWipingData,
+            signOutWorking: CloudSessionSignOut.shared.phase == .working)
+        let target = WindowBusyLogic.target(
+            for: reason, windowID: windowID, signOutDriverID: registry.signOutDriverID,
+            leaderID: registry.leaderID, aliveIDs: registry.aliveIDs)
+
+        VStack(spacing: DS.Spacing.lg) {
+            Spacer()
+            ProgressView()
+                .controlSize(.large)
+                .accessibilityHidden(true)
+            Text(WindowBusyLogic.text(for: reason, hasTarget: target != nil).string)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("follower_window_busy_reason")
+            Spacer()
+            if let target {
+                YalaPrimaryButton(L10n.Window.followerCta, icon: "arrow.up.forward.app") {
+                    SceneActivation.bringToFront(target)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xl)
+                .accessibilityIdentifier("follower_window_busy_show_other")
+            }
+        }
+        .frame(maxWidth: DS.Adaptive.readableWidth)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .yalaScreenBackground(.panel)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("follower_window_busy")
+    }
+}
+
+private extension WindowBusyLogic.Text {
+    var string: String {
+        switch self {
+        case .signingOutElsewhere: return L10n.UXL08D.busySigningOutElsewhere
+        case .signingOut: return L10n.UXL08D.busySigningOut
+        case .wiping: return L10n.UXL08D.busyWiping
+        case .starting: return L10n.UXL08D.busyStarting
+        }
+    }
+}
+
+/// Traer al frente otra ventana de Yala. Si el sistema no puede (la escena ya no existe), no hay nada que hacer: la
+/// espera se resuelve sola cuando esa ventana termina o se cierra.
+@MainActor
+enum SceneActivation {
+    static func bringToFront(_ id: UUID) {
+        guard let session = SceneRegistry.shared.windowScene(for: id)?.session else { return }
+        UIApplication.shared.activateSceneSession(for: UISceneSessionActivationRequest(session: session)) { error in
+            #if DEBUG
+            print("SceneActivation: Error: no se pudo traer la ventana: \(error)")
+            #endif
+        }
     }
 }
 

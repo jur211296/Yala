@@ -161,7 +161,7 @@
 
 // MARK: - Cash Flow
 
-"cashFlow.title" = "キャッシュフロー";
+"cashFlow.title" = "入金と出金";
 "cashFlow.income" = "収入";
 "cashFlow.expense" = "支出";
 "cashFlow.net" = "純額";
@@ -752,7 +752,7 @@
 "widgetType.trend" = "推移";
 "widgetType.topSpending" = "トップカテゴリー";
 "widgetType.topSubcategories" = "トップサブカテゴリー";
-"widgetType.cashFlow" = "キャッシュフロー";
+"widgetType.cashFlow" = "入金と出金";
 "widgetType.categoriesPie" = "カテゴリー";
 "widgetType.subcategoriesPie" = "サブカテゴリー";
 "widgetType.latestRecords" = "最新の記録";
@@ -3530,7 +3530,7 @@
 "panel.widgetInfo.addToPanel" = "パネルに追加";
 
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
-"panel.widgetInfo.cashFlow.title" = "キャッシュフロー";
+"panel.widgetInfo.cashFlow.title" = "入金と出金";
 
 /* Panel Polish #2 — Chip 1 CashFlow */
 "panel.widgetInfo.cashFlow.chip1" = "収入";
@@ -7692,6 +7692,14 @@
 "uxpro.welcome.theme" = "このテーマが使えるようになりました。";
 "uxpro.welcome.icon" = "このアイコンが使えるようになりました。";
 "uxpro.welcome.cashFlow" = "高度なキャッシュフローが使えるようになりました。";
+
+/* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
+"window.busy.signingOutElsewhere" = "もう一方のウインドウでサインアウトしています…";
+"window.busy.signingOut" = "サインアウトしています…";
+"window.busy.wiping" = "データを削除しています…";
+"window.busy.starting" = "Yalaを開いています…";
+"records.l15.deleteFromGroup" = "グループから削除します";
+"records.l15.undoSeconds" = "数秒間は取り消せます。";
 
 /* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
 "chat.l14d.conversationDeleted" = "会話を削除しました";

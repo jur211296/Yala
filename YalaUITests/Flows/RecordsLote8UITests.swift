@@ -32,10 +32,6 @@ final class RecordsLote8UITests: XCTestCase {
         app.buttons.matching(identifier: "record_row").firstMatch
     }
 
-    private func rowCount(_ app: XCUIApplication) -> Int {
-        app.buttons.matching(identifier: "record_row").count
-    }
-
     // MARK: - L8-1
 
     func test_more_recordsCardSitsRightUnderPanel() {
@@ -59,7 +55,7 @@ final class RecordsLote8UITests: XCTestCase {
 
     func test_detail_deleteAsksNamingTheRecord_cancelKeepsIt_deleteRemovesIt() {
         let app = launchInRecords()
-        let before = rowCount(app)
+        let label = firstRow(app).label
         firstRow(app).tap()
 
         let delete = app.buttons["transaction_detail_delete"]
@@ -78,11 +74,14 @@ final class RecordsLote8UITests: XCTestCase {
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         alert.buttons["Eliminar"].firstMatch.tap()
         XCTAssertTrue(delete.waitForNonExistence(timeout: 5), "El detalle no se cerró tras eliminar.")
+        // Por su etiqueta y no contando filas: la lista es perezosa y, al salir una, entra la siguiente (desde UX 2.2 ·
+        // L15-13 el registro sale de la lista en el acto y se borra al terminar el aviso con «Deshacer»).
+        let gone = app.buttons.matching(identifier: "record_row").matching(NSPredicate(format: "label == %@", label))
         let deadline = Date().addingTimeInterval(5)
-        while rowCount(app) >= before, Date() < deadline {
+        while gone.firstMatch.exists, Date() < deadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.2))
         }
-        XCTAssertLessThan(rowCount(app), before, "El registro sigue en la lista.")
+        XCTAssertFalse(gone.firstMatch.exists, "El registro sigue en la lista.")
     }
 
     // MARK: - L8-4 / L8-8

@@ -235,6 +235,7 @@ struct TopCategoriesWidget: Widget {
             provider: TopCategoriesWidgetProvider()
         ) { entry in
             TopCategoriesWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

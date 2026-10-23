@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TutorialsListView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
     /// Los tutoriales hechos, releídos cada vez que la lista aparece (UX 2.2 · L16-16). `Tutorial.isCompleted` lee
     /// `UserDefaults` y nadie observa ese cambio: al volver de terminar uno, el ✓ no salía hasta reabrir Ajustes.
     @State private var completed: Set<Tutorial> = []
@@ -52,9 +53,12 @@ struct TutorialsListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                    dismiss()
+            // Con la lista de Ajustes al lado, la lista es la vuelta (UX 2.2 · L16-20).
+            if !settingsListIsAlongside {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        dismiss()
+                    }
                 }
             }
         }

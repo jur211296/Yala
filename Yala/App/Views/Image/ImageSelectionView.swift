@@ -56,6 +56,9 @@ struct ImageSelectionView: View {
     @State private var sharedPhotosLeftOut = 0
     /// Los ficheros de Archivo (o el PDF soltado) mientras se abren; se detiene en un PDF con contraseña.
     @State private var fileBatch: ImageFileBatch?
+    /// Archivos soltados que no entraron por el tope de la tanda, cuando la tanda trae un PDF y va por `openFiles`
+    /// (UX 2.2 · L15-12): el aviso de los que no entraron sale igual que en una tanda de fotos.
+    @State private var sharedFilesLeftOut = 0
     /// La contraseña que se está escribiendo. Solo vive aquí: se borra al usarla y al cerrar la hoja.
     @State private var pdfPassword = ""
     @State private var readTask: Task<Void, Never>?
@@ -875,7 +878,7 @@ struct ImageSelectionView: View {
         }
     }
 
-    private static func isPDF(_ url: URL) -> Bool {
+    nonisolated private static func isPDF(_ url: URL) -> Bool {
         UTType(filenameExtension: url.pathExtension)?.conforms(to: .pdf) == true
     }
 
@@ -919,6 +922,8 @@ struct ImageSelectionView: View {
     private func finishFileBatch(_ batch: ImageFileBatch) {
         fileBatch = nil
         pdfPassword = ""
+        let sharedLeftOut = sharedFilesLeftOut
+        sharedFilesLeftOut = 0
         guard !batch.images.isEmpty else {
             // Solo se saltó la contraseña: no falló nada, se vuelve a elegir.
             if batch.unreadableFiles == 0, batch.skippedLockedFiles > 0 {
@@ -928,7 +933,9 @@ struct ImageSelectionView: View {
             }
             return
         }
-        startReading(batch.images, documentPages: batch.documentPages, pagesLeftOut: batch.pagesLeftOut)
+        startReading(
+            batch.images, documentPages: batch.documentPages, pagesLeftOut: batch.pagesLeftOut,
+            sharedPhotosLeftOut: sharedLeftOut)
     }
 
     /// Una foto compartida desde otra app (o soltada en el iPad) llega ya elegida: se lee directamente. Varias compartidas
@@ -946,6 +953,12 @@ struct ImageSelectionView: View {
         let batch = SharedContainerService.pendingImageBatch(containing: url)
         guard batch.count > 1 else {
             readSharedFile(url)
+            return
+        }
+        // Varios archivos soltados en el iPad pueden traer PDFs (UX 2.2 · L15-12): esos se leen como los de Archivo, cada
+        // página una foto, hasta el tope de la tanda. Las fotos compartidas desde otra app siguen el camino de abajo.
+        if batch.contains(where: { Self.isPDF($0) }) {
+            readSharedFiles(batch)
             return
         }
         var loaded: [UIImage] = []
@@ -967,6 +980,24 @@ struct ImageSelectionView: View {
             return
         }
         startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
+    }
+
+    /// Una tanda soltada con algún PDF: fotos y PDF juntos, por el mismo camino que varios archivos elegidos en Archivo.
+    private func readSharedFiles(_ urls: [URL]) {
+        var files: [ImageFileBatch.File] = []
+        for member in urls {
+            do {
+                let data = try Data(contentsOf: member)
+                files.append(Self.isPDF(member) ? .pdf(data) : .image(data))
+            } catch {
+                #if DEBUG
+                print("ImageSelectionView: Error loading dropped file \(member.lastPathComponent): \(error)")
+                #endif
+            }
+            SharedContainerService.removePendingImage(at: member)
+        }
+        sharedFilesLeftOut = urls.first.map(SharedImageBatch.leftOutCount(for:)) ?? 0
+        openFiles(files)
     }
 
     /// Un solo fichero compartido o soltado: una foto, o un PDF que se trocea aquí.

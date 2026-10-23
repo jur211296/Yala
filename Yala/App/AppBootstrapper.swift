@@ -2701,12 +2701,21 @@ final class AppBootstrapper {
             // sub-pestaña, Planificación abría la última vista, de fábrica Presupuestos (auditoría UX 2.2, lote 15).
             if url.pathComponents.contains("scheduled-payments") {
                 setOrDeferDeepLink(.scheduledPayments)
+                // «Aún no tienes pagos planificados · Toca para crear uno» del widget (UX 2.2 · L15-2): el editor de un pago
+                // nuevo, por el mismo camino que el paso de «Primeros pasos».
+                if url.pathComponents.contains("new"), widgetMayOpenAnEditor() {
+                    RouterEntryGate.shared.submit(.autoOpenScheduledEditor)
+                }
             } else {
                 setOrDeferDeepLink(.planning)
             }
 
         case "budgets":
             setOrDeferDeepLink(.budgets)
+            // «Aún no tienes presupuestos · Toca para crear uno» del widget (UX 2.2 · L15-2).
+            if url.pathComponents.contains("new"), widgetMayOpenAnEditor() {
+                RouterEntryGate.shared.submit(.autoOpenBudgetEditor)
+            }
 
         case "records":
             setOrDeferDeepLink(.recordsStandalone)
@@ -2736,6 +2745,17 @@ final class AppBootstrapper {
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")
             #endif
         }
+    }
+
+    /// «Toca para crear uno» de un widget abre el editor solo si la ventana no tiene nada delante: el consumidor de
+    /// Planificación no espera a que se cierre una hoja, y encender el editor con el anchor ocupado lo deja pegado (o
+    /// cambia una edición abierta por un pago en blanco). Con algo delante, el toque lleva a la pantalla y nada más
+    /// (review adversarial del 2026-10-20).
+    private func widgetMayOpenAnEditor() -> Bool {
+        let navigation = SceneRegistry.shared.routingNavigation
+        guard navigation?.shellModalBlocker == nil else { return false }
+        let scene = SceneRegistry.shared.routingTargetID.flatMap { SceneRegistry.shared.windowScene(for: $0) }
+        return !ModalPresentationProbe.isAnythingPresented(in: scene)
     }
 
     // MARK: - Invite Link Handling

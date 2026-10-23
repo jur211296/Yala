@@ -802,17 +802,28 @@ struct ProfileView: View {
     }
 
     /// Una fila que abre un ajuste: en compacta empuja (`NavigationLink`, como siempre); en ancha lo pone en la
-    /// columna de detalle, sustituyendo al que hubiera.
+    /// columna de detalle, sustituyendo al que hubiera. En ancha, la fila del ajuste abierto va rellena, con el mismo
+    /// relleno que lo elegido en Personalización (UX 2.2 · L16-20, opción C; relleno de L16-9).
     @ViewBuilder
     private func settingsLink<Label: View>(
         _ destination: ProfileDestination,
         @ViewBuilder label: () -> Label
     ) -> some View {
         if horizontalSizeClass == .regular {
-            Button { detailPath = [destination] } label: { label() }
+            let isOpen = detailPath.first == destination
+            Button { detailPath = [destination] } label: {
+                label()
+                    .selectedOptionFill(isOpen, radius: DS.Radius.md)
+            }
+            .accessibilityAddTraits(isOpen ? .isSelected : [])
         } else {
             NavigationLink(value: destination) { label() }
         }
+    }
+
+    /// ¿Es el ajuste abierto directamente desde la lista, con la lista al lado?
+    private func isRootOfDetailColumn(_ destination: ProfileDestination) -> Bool {
+        horizontalSizeClass == .regular && detailPath.count == 1 && detailPath.first == destination
     }
 
     /// La lista de Ajustes: la columna de lista del split en ancha, la raíz de la pila en compacta.
@@ -1345,6 +1356,11 @@ struct ProfileView: View {
             }
         }
         .announcesShownInDetailColumn()
+        // Con la lista al lado, el primer ajuste del detalle no lleva «‹»: la lista ya es la vuelta (UX 2.2 · L16-20).
+        // Lo que ese ajuste empuje sí la lleva. El «‹» del sistema se oculta aquí; el propio de cada pantalla, con el
+        // valor de entorno.
+        .navigationBarBackButtonHidden(isRootOfDetailColumn(destination))
+        .environment(\.settingsListIsAlongside, isRootOfDetailColumn(destination))
     }
 
     // MARK: - Header

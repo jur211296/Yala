@@ -6,65 +6,65 @@
 */
 
 // MARK: - Gallery (widget gallery names and descriptions)
-"widget.gallery.scheduledPayments" = "Pagamentos Futuros";
-"widget.gallery.scheduledPayments.desc" = "Seus próximos pagamentos e assinaturas";
-"widget.gallery.quickManual" = "Novo Registro";
-"widget.gallery.quickManual.desc" = "Registre uma despesa ou receita manualmente";
-"widget.gallery.quickVoice" = "Registro por Voz";
-"widget.gallery.quickVoice.desc" = "Dite sua despesa ou receita";
-"widget.gallery.quickImage" = "Escanear Recibo";
-"widget.gallery.quickImage.desc" = "Registre a partir de uma foto ou recibo";
-"widget.gallery.cashFlow" = "Fluxo de Caixa";
-"widget.gallery.cashFlow.desc" = "Seu fluxo de caixa líquido";
-"widget.gallery.balance" = "Saldo";
-"widget.gallery.balance.desc" = "Seu saldo total com tendência";
+"widget.gallery.scheduledPayments" = "Pagamentos agendados";
+"widget.gallery.scheduledPayments.desc" = "Seus próximos pagamentos e assinaturas. Toque para ver Pagamentos agendados.";
+"widget.gallery.quickManual" = "Novo registro";
+"widget.gallery.quickManual.desc" = "Registre um gasto ou receita à mão. Toque para abrir Novo registro.";
+"widget.gallery.quickVoice" = "Registrar por voz";
+"widget.gallery.quickVoice.desc" = "Dite seu gasto ou receita. Toque para começar a ditar.";
+"widget.gallery.quickImage" = "Foto ou arquivo";
+"widget.gallery.quickImage.desc" = "Registre a partir de uma foto ou arquivo. Toque para escolher.";
+"widget.gallery.cashFlow" = "Entradas e saídas";
+"widget.gallery.cashFlow.desc" = "O que entrou e saiu no período. Toque para ver em Tendências.";
+"widget.gallery.balance" = "Disponível";
+"widget.gallery.balance.desc" = "Seu dinheiro disponível e a tendência. Toque para ver o Início.";
 "widget.gallery.budgets" = "Orçamentos";
-"widget.gallery.budgets.desc" = "Seu progresso de orçamento";
+"widget.gallery.budgets.desc" = "Como vão seus orçamentos. Toque para ver Orçamentos.";
 "widget.gallery.latestRecords" = "Últimos Registros";
-"widget.gallery.latestRecords.desc" = "Seus registros mais recentes";
+"widget.gallery.latestRecords.desc" = "Seus registros mais recentes. Toque para ver Registros.";
 "widget.gallery.expense" = "Despesas";
-"widget.gallery.expense.desc" = "Suas despesas totais do período";
-"widget.gallery.categoriesPie" = "Categorias (Pizza)";
-"widget.gallery.categoriesPie.desc" = "Distribuição de despesas por categoria";
-"widget.gallery.subcategoriesPie" = "Subcategorias (Pizza)";
-"widget.gallery.subcategoriesPie.desc" = "Distribuição de despesas por subcategoria";
-"widget.gallery.topCategories" = "Top Categorias";
-"widget.gallery.topCategories.desc" = "Suas categorias com mais despesas";
-"widget.gallery.topSubcategories" = "Top Subcategorias";
-"widget.gallery.topSubcategories.desc" = "Suas subcategorias com mais despesas";
+"widget.gallery.expense.desc" = "Seus gastos do período. Toque para ver o Resumo de Estatísticas.";
+"widget.gallery.categoriesPie" = "Categorias em círculo";
+"widget.gallery.categoriesPie.desc" = "Em quais categorias vai seu dinheiro. Toque para ver Distribuição.";
+"widget.gallery.subcategoriesPie" = "Subcategorias em círculo";
+"widget.gallery.subcategoriesPie.desc" = "Em quais subcategorias vai seu dinheiro. Toque para ver Distribuição por subcategoria.";
+"widget.gallery.topCategories" = "Categorias com mais gastos";
+"widget.gallery.topCategories.desc" = "Suas categorias com mais gastos. Toque para ver Distribuição.";
+"widget.gallery.topSubcategories" = "Subcategorias com mais gastos";
+"widget.gallery.topSubcategories.desc" = "Suas subcategorias com mais gastos. Toque para ver Distribuição por subcategoria.";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "Saldo";
-"widget.gallery.accessoryBalance.desc" = "Seu saldo na tela de bloqueio";
+"widget.gallery.accessoryBalance" = "Disponível";
+"widget.gallery.accessoryBalance.desc" = "Seu dinheiro disponível na tela bloqueada. Toque para ver o Início.";
 "widget.gallery.accessoryExpense" = "Despesas";
-"widget.gallery.accessoryExpense.desc" = "Suas despesas na tela de bloqueio";
+"widget.gallery.accessoryExpense.desc" = "Seus gastos na tela bloqueada. Toque para ver o Resumo de Estatísticas.";
 "widget.gallery.accessoryBudget" = "Orçamento";
-"widget.gallery.accessoryBudget.desc" = "Seu orçamento mais utilizado";
+"widget.gallery.accessoryBudget.desc" = "Seu orçamento mais usado. Toque para ver Orçamentos.";
 "widget.gallery.accessoryPayment" = "Próximo pagamento";
-"widget.gallery.accessoryPayment.desc" = "Seu próximo pagamento agendado";
+"widget.gallery.accessoryPayment.desc" = "Seu próximo pagamento agendado. Toque para ver Pagamentos agendados.";
 
 // MARK: - Intent titles and descriptions
-"widget.intent.cashFlow.title" = "Fluxo de Caixa";
-"widget.intent.cashFlow.desc" = "Mostra seu fluxo de caixa líquido";
-"widget.intent.balance.title" = "Saldo";
-"widget.intent.balance.desc" = "Mostra seu saldo total";
+"widget.intent.cashFlow.title" = "Entradas e saídas";
+"widget.intent.cashFlow.desc" = "Mostra o que entrou e saiu no período";
+"widget.intent.balance.title" = "Disponível";
+"widget.intent.balance.desc" = "Mostra seu dinheiro disponível";
 "widget.intent.expense.title" = "Despesas";
 "widget.intent.expense.desc" = "Mostra suas despesas totais";
-"widget.intent.categoriesPie.title" = "Categorias (Pizza)";
+"widget.intent.categoriesPie.title" = "Categorias em círculo";
 "widget.intent.categoriesPie.desc" = "Distribuição de despesas por categoria";
-"widget.intent.subcategoriesPie.title" = "Subcategorias (Pizza)";
+"widget.intent.subcategoriesPie.title" = "Subcategorias em círculo";
 "widget.intent.subcategoriesPie.desc" = "Distribuição de despesas por subcategoria";
-"widget.intent.topCategories.title" = "Top Categorias";
+"widget.intent.topCategories.title" = "Categorias com mais gastos";
 "widget.intent.topCategories.desc" = "Mostra suas categorias com mais despesas";
-"widget.intent.topSubcategories.title" = "Top Subcategorias";
+"widget.intent.topSubcategories.title" = "Subcategorias com mais gastos";
 "widget.intent.topSubcategories.desc" = "Mostra suas subcategorias com mais despesas";
 "widget.intent.budgets.title" = "Orçamentos";
 "widget.intent.budgets.desc" = "Mostra seu progresso de orçamento";
-"widget.intent.scheduledPayments.title" = "Pagamentos Futuros";
+"widget.intent.scheduledPayments.title" = "Pagamentos agendados";
 "widget.intent.scheduledPayments.desc" = "Mostra seus próximos pagamentos agendados";
 "widget.intent.latestRecords.title" = "Últimos Registros";
 "widget.intent.latestRecords.desc" = "Mostra seus registros mais recentes";
-"widget.intent.accessoryBalance.title" = "Saldo";
+"widget.intent.accessoryBalance.title" = "Disponível";
 "widget.intent.accessoryBalance.desc" = "Saldo do período";
 "widget.intent.accessoryExpense.title" = "Despesas";
 "widget.intent.accessoryExpense.desc" = "Despesas do período";
@@ -72,7 +72,7 @@
 "widget.intent.accessoryBudget.desc" = "Orçamento mais utilizado";
 "widget.intent.accessoryPayment.title" = "Próximo pagamento";
 "widget.intent.accessoryPayment.desc" = "Próximo pagamento agendado";
-"widget.intent.quickEntry.title" = "Registro rápido";
+"widget.intent.quickEntry.title" = "Novo registro";
 "widget.intent.quickEntry.desc" = "Configure widgets de ação rápida para adicionar registros";
 
 // MARK: - Selection Mode
@@ -99,19 +99,19 @@
 "widget.ui.expenses" = "Despesas";
 "widget.ui.balance" = "Saldo";
 "widget.ui.netFlow" = "Fluxo Líquido";
-"widget.ui.cashFlow" = "Fluxo de Caixa";
+"widget.ui.cashFlow" = "Entradas e saídas";
 "widget.ui.total" = "Total";
 "widget.ui.ofLimit" = "de %@";
-"widget.ui.newRecord" = "Registro rápido";
-"widget.ui.voiceRecord" = "Registro por voz";
+"widget.ui.newRecord" = "Novo registro";
+"widget.ui.voiceRecord" = "Registrar por voz";
 "widget.ui.scanReceipt" = "Foto ou arquivo";
-"widget.ui.upcomingPayments" = "Pagamentos Futuros";
+"widget.ui.upcomingPayments" = "Pagamentos agendados";
 "widget.ui.budgets" = "Orçamentos";
 "widget.ui.latestRecords" = "Últimos Registros";
 "widget.ui.categories" = "Categorias";
 "widget.ui.subcategories" = "Subcategorias";
-"widget.ui.topCategories" = "Top Categorias";
-"widget.ui.topSubcategories" = "Top Subcategorias";
+"widget.ui.topCategories" = "Categorias com mais gastos";
+"widget.ui.topSubcategories" = "Subcategorias com mais gastos";
 "widget.ui.noNote" = "Sem nota";
 
 // MARK: - Date labels
@@ -137,7 +137,7 @@
 "widget.paymentCategory.subscription" = "Assinaturas";
 
 // MARK: - Control Widgets
-"widget.control.voiceExpense" = "Registro por voz";
+"widget.control.voiceExpense" = "Registrar por voz";
 "widget.control.voiceExpense.desc" = "Dite seu registro para o Yala";
 "widget.control.photoExpense" = "Foto ou arquivo";
 "widget.control.photoExpense.desc" = "Registre com uma foto ou um arquivo no Yala";
@@ -147,7 +147,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "Resumo do mês";
-"widget.gallery.monthSummary.desc" = "Seu saldo, despesas por categoria e orçamentos do mês";
+"widget.gallery.monthSummary.desc" = "Seu saldo, gastos por categoria e orçamentos do mês. Toque para ver o Início.";
 "widget.ui.monthSummary" = "Resumo do mês";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
@@ -155,3 +155,12 @@
 
 /* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
 "widget.groupsOnly.cta" = "Ativar Yala completo";
+
+/* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
+"widget.ui.available" = "Disponível";
+"widget.empty.openYalaBalance" = "Abra o Yala para ver seu saldo";
+"widget.empty.openYala" = "Abra o Yala para ver seus dados";
+"widget.empty.openYalaShort" = "Abra o Yala";
+"widget.empty.noPaymentsYet" = "Você ainda não tem pagamentos agendados";
+"widget.empty.noBudgetsYet" = "Você ainda não tem orçamentos";
+"widget.empty.createOne" = "Toque para criar um";

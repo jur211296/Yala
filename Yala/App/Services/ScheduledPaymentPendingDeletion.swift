@@ -42,7 +42,8 @@ final class ScheduledPaymentPendingDeletion {
             systemImage: "trash",
             undoTitle: L10n.Inbox.undoDiscard,
             noticeIdentifier: "scheduled_deleted_notice",
-            undoIdentifier: "scheduled_deleted_undo"
+            undoIdentifier: "scheduled_deleted_undo",
+            undoesDeletion: true
         ) { [weak self] in
             self?.undo(paymentID)
         }

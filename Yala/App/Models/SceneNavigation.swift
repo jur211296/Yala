@@ -169,6 +169,11 @@ final class SceneNavigation: Identifiable {
     /// L10-13). Lo pone `ContentView.handleMainTabIntent` y lo consume `ScheduledPaymentsView`.
     var pendingScheduledPaymentID: UUID?
 
+    /// La parte de Estadísticas que esta ventana debe poner a la vista al llegar (UX 2.2 · L15-3: «Entradas y salidas»
+    /// en Tendencias, las subcategorías en Distribución). Lo pone `ContentView.handleMainTabIntent` y lo consume la
+    /// pestaña de esa parte (`TrendsTabView`, `CategoriesTabView`).
+    var pendingStatisticsFocus: StatisticsDeepLink.Focus?
+
     /// Cuenta (`shortcutID`) cuya ficha debe abrir el Panel de esta ventana: la tarjeta del aviso de pago (L10-14). Lo
     /// pone `ContentView.handleMainTabIntent` y lo consume `PanelView`.
     var pendingAccountID: UUID?
