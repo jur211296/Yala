@@ -231,6 +231,12 @@ final class SceneNavigation: Identifiable {
     /// tiene Yala IA y Ajustes en una hoja propia; `RootCommandPerformer` lo pone junto con la selección del Panel.
     var pendingKeyboardPanelRequest: KeyboardPanelRequest?
 
+    /// UX 2.2 · L16-5 (opción B de Jürgen, 2026-10-23): el ajuste al que vuelve Ajustes tras cambiar el idioma con el
+    /// selector de Yala. Cambiar el idioma reconstruye la app (`.languageDidChange`) y cierra la hoja de Ajustes; el
+    /// Panel recién montado la reabre aquí (`PanelSettingsReturnOpening`). Solo lo consume un Panel que APARECE o queda
+    /// delante, no uno que ya lo estaba: ése tiene la hoja de Ajustes encima.
+    var pendingSettingsReturn: ProfileDestination?
+
     /// ⌘F: cada pulsación lo incrementa y `GlobalSearchView` enfoca su campo. Un contador y no un flag: la segunda
     /// pulsación con Buscar ya delante también tiene que enfocar.
     var keyboardSearchRequest: Int = 0

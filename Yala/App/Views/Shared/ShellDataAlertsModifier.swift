@@ -5,6 +5,9 @@
 //  Los CUATRO alerts de DATOS del shell — wipe remoto detectado, el espejo de iCloud que llegó tarde,
 //  «empiezo de cero» del Welcome y el aviso de que ese borrado falló.
 //
+//  (Desde el 2026-10-23 el primero, «Datos no disponibles», es una hoja con su propio modificador,
+//  `RemoteWipeNoticeSheetModifier`: L20-15, opción B de Jürgen. Aquí quedan sus dos salidas, que son las de siempre.)
+//
 //  (Fueron cinco del 2026-09-14 al 2026-09-15. El quinto, el cierre de la sesión privada por cambio de
 //  Apple ID, salió de aquí y es una hoja con fases, `AppleIDCloseNoticeModifier`: como `.alert`, su cierre
 //  podía bloquearse sin que nadie lo enseñara, y encadenarle un segundo `.alert` es el molde de brick de
@@ -50,11 +53,6 @@ struct ShellDataAlertsModifier: ViewModifier {
     /// wipes DELIBERADOS tienen que cancelar esa gracia antes de bajar `hasPersonalData`, o el true→false
     /// se lee como wipe REMOTO y apila un alert sobre el onboarding que ellos mismos están abriendo.
     var onCancelWipeGrace: () -> Void
-    /// **«Empezar de cero» del aviso de vaciado remoto.** El aterrizaje vive en `ContentView` y no aquí
-    /// por lo mismo que `onCancelWipeGrace`: necesita estado que no viaja por `@Binding` (los dos
-    /// `@AppStorage` del Welcome) y tiene que quedar al lado del camino hermano —el vaciado que llega
-    /// por señal— para que se lea de un vistazo que los dos aterrizan en el mismo sitio.
-    var onRemoteWipeStartFresh: () -> Void
     /// **«Ahora no» del aviso de vaciado remoto.** Apaga el aviso y su condición viva; la persona se
     /// queda donde estaba.
     var onRemoteWipeDismiss: () -> Void
@@ -80,19 +78,10 @@ struct ShellDataAlertsModifier: ViewModifier {
             // el anchor libre — debajo sigue estando la shell de la app. Sus vecinos reabren el Welcome
             // porque el suyo se encendía sobre un cover y lo desmontaba.
             //
-            // **UX 2.2 · L20-15: el texto dice de dónde viene el vaciado; el ORDEN de los botones está en espera de Jürgen.**
-            // «Seguir esperando» primero no cabe en un `.alert`: con `role: .cancel` iOS lo baja al final, y sin él SwiftUI
-            // añade un «Cancelar» propio (medido en el simulador el 2026-10-19: tres botones). Las propuestas están en la card.
-            .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
-                Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
-                    onRemoteWipeStartFresh()
-                }
-                Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {
-                    onRemoteWipeDismiss()
-                }
-            } message: {
-                Text(L10n.iCloud.remoteWipeMessage)
-            }
+            // **UX 2.2 · L20-15: el aviso de borrado ya no vive aquí**: es una hoja con su propio modificador
+            // (`RemoteWipeNoticeSheetModifier`, en `ContentView` junto a la del cambio de Apple ID). Colgada de ESTE
+            // modificador, ni ella ni el aviso de iCloud de abajo llegaban a presentarse (medido el 2026-10-23:
+            // `RemoteWipeNoticeRoutingUITests` 1 de 5; con el aviso viejo, 5 de 5).
             // **El mismo aviso cuando las filas faltan porque iCloud no está disponible** (iCloud Drive apagado, sin
             // sesión de iCloud; ticket `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`). iOS vació la copia
             // local, nadie borró nada, y los datos vuelven solos al volver iCloud: por eso no hay «Empezar de cero»,

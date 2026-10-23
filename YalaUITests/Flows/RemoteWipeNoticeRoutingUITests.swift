@@ -57,11 +57,18 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         return app
     }
 
-    /// Los dos botones se localizan por POSICIÓN y no por su texto: el alert es nativo y su copy viaja
-    /// en 16 idiomas, así que fijar el literal ataría la suite al idioma del simulador. El orden es el
-    /// del `actions` builder — destructivo primero, cancelar después— y los dos casos de abajo lo
-    /// verifican por su consecuencia: si se invirtiera, los dos fallarían a la vez y por su aterrizaje.
+    /// **El aviso de borrado es una hoja desde el 2026-10-23** (L20-15, opción B de Jürgen): se localiza por su cabecera y
+    /// sus dos botones por identificador, que no dependen del idioma del simulador. El de «iCloud no disponible» sigue
+    /// siendo un aviso del sistema: `iCloudUnavailableNotice(in:)`.
     private func notice(in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any)["remote_wipe_notice"]
+    }
+
+    private func keepWaiting(in app: XCUIApplication) -> XCUIElement { app.buttons["remote_wipe_keep_waiting"] }
+    private func startFresh(in app: XCUIApplication) -> XCUIElement { app.buttons["remote_wipe_start_fresh"] }
+
+    /// El aviso nativo de «iCloud no disponible»: su copy viaja en 16 idiomas, así que su botón va por posición.
+    private func iCloudUnavailableNotice(in app: XCUIApplication) -> XCUIElement {
         app.alerts.firstMatch
     }
 
@@ -73,7 +80,10 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
             condiciones vivas del drenaje: store sin vida personal, onboarding completo y el eje de
             sesión (que el backfill del arranque escribe con el onboarding dado por hecho).
             """)
-        XCTAssertEqual(alert.buttons.count, 2, "El aviso no trae sus dos ramas.")
+        XCTAssertTrue(keepWaiting(in: app).exists && startFresh(in: app).exists, "El aviso no trae sus dos ramas.")
+        // L20-15: la salida que no borra va ARRIBA.
+        XCTAssertLessThan(keepWaiting(in: app).frame.minY, startFresh(in: app).frame.minY,
+                          "«Seguir esperando» no va por encima de «Empezar de cero».")
 
         // **Nada se monta ENCIMA**: el paywall que viaja en la misma cola espera detrás del blocker en
         // vez de apilarse sobre el aviso. Es la mitad de la matriz que se rompe si el blocker vuelve a
@@ -93,7 +103,7 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         XCTAssertEqual(
             XCTWaiter().wait(for: [desaparece], timeout: 15), .timedOut, """
             La red de presentación desarmó un aviso que SÍ estaba en pantalla. La sonda
-            (`ModalPresentationProbe`) dejó de reconocer la presentación de un `.alert` en este runtime:
+            (`ModalPresentationProbe`) dejó de reconocer la presentación de una hoja en este runtime:
             arréglala antes de que el desarme se coma avisos buenos.
             """)
     }
@@ -151,7 +161,7 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         let alert = notice(in: app)
         XCTAssertTrue(alert.waitForExistence(timeout: 30), "El aviso de vaciado remoto no se presentó.")
 
-        alert.buttons.element(boundBy: 1).tap()   // «Seguir esperando»
+        keepWaiting(in: app).tap()
 
         XCTAssertFalse(alert.waitForExistence(timeout: 3), "El aviso no se cerró al pulsar «Seguir esperando».")
         XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, """
@@ -178,7 +188,7 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         let alert = notice(in: app)
         XCTAssertTrue(alert.waitForExistence(timeout: 30), "El aviso de vaciado remoto no se presentó.")
 
-        alert.buttons.element(boundBy: 0).tap()   // «Empezar de cero»
+        startFresh(in: app).tap()
 
         // El aterrizaje ELEGIDO, y el mismo que el del vaciado que llega por señal: el Hero del
         // Welcome, con sus tres ramas —entre ellas «Restaurar de iCloud», que es la que sirve a quien
@@ -203,7 +213,7 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         app.launchForUITest(seed: nil, trialOffer: true, extraArguments: ["-uitest-remote-wipe-notice"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
 
-        let alert = notice(in: app)
+        let alert = iCloudUnavailableNotice(in: app)
         XCTAssertTrue(alert.waitForExistence(timeout: 30), "Sin iCloud no se presentó ningún aviso.")
         XCTAssertEqual(alert.buttons.count, 1, """
             Sin iCloud el aviso trae más de un botón: es el de «tus datos fueron eliminados de iCloud», con su \

@@ -36,6 +36,7 @@
 - [Lo que llega en vivo se encola](feedback_alcance_que_llega_en_vivo_se_encola.md) — decisión grande a mitad de lote: a su card lista para lanzar; «widget» = ¿inicio o Panel?
 - [Planificar con él es iterar](feedback_planificar_con_el_es_iterar.md) — acepta lo recomendado y vuelve con ideas; re-pregunta «¿bueno?».
 - [Tablero: una tanda a la vez](feedback_tablero_una_tanda_a_la_vez.md) — dos tandas se pisan (409); ajustes en pasada final.
+- [Encargo sin simulador y el gate](feedback_encargo_sin_simulador_y_el_gate.md) — el gate lo necesita: se pregunta; aprobó usarlo solo para el gate, en cola.
 ## Cómo mido y cómo entrego
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.

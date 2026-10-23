@@ -37,6 +37,22 @@ enum GroupNotificationsOptInLogic {
 
     /// La tarjeta se enseña solo si al abrir la pantalla faltaba algo: a quien ya los tiene no se le pregunta nada.
     static func showsCard(initialState: State) -> Bool { initialState != .enabled }
+
+    /// Card fptw (opción B de Jürgen, 2026-10-23): en la lista de Grupos la tarjeta sale UNA vez, a quien tiene grupos y
+    /// nunca la vio en ninguna pantalla (`AppPreferences.hasSeenGroupsNotificationPrompt`, el mismo flag que llevaba la
+    /// alerta suelta retirada en L12-8). En «está listo», «Ya estás en», «Solicitud enviada» y el formulario de gasto de
+    /// L13-8 sale siempre que falte algo: son el momento de la pregunta.
+    static func showsCard(initialState: State, onlyIfNeverSeen: Bool, hasSeenPrompt: Bool) -> Bool {
+        guard showsCard(initialState: initialState) else { return false }
+        return !(onlyIfNeverSeen && hasSeenPrompt)
+    }
+
+    /// ¿Monta la lista de Grupos su tarjeta de una vez? No mientras otra pantalla está a punto de hacer la pregunta: el
+    /// formulario de la bienvenida (L12-12) o la hoja «está listo» que sigue al alta (`groupAwaitingInviteSheet` se apunta
+    /// ANTES de que el grupo llegue a la lista). Sin esto, el alta de un primer grupo enseñaba la tarjeta dos veces.
+    static func listMountsCard(isWelcomeGroupFormOpen: Bool, inviteSheetPending: Bool) -> Bool {
+        !isWelcomeGroupFormOpen && !inviteSheetPending
+    }
 }
 
 // MARK: - L12-20 · El aviso al ser aprobado sustituye al genérico del servidor

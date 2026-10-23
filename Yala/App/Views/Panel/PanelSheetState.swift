@@ -34,6 +34,8 @@ struct PanelRecordPresentation: Identifiable {
 struct PanelSheetState {
     // Sheet presentations
     var isPresentingSettings = false
+    /// L16-5: el ajuste en el que se abre Ajustes (volver a Personalización tras cambiar el idioma). `nil` = la lista.
+    var settingsInitialDestination: ProfileDestination? = nil
     var accountFormSheet: AccountFormSheet? = nil
     var accountDetail: AccountDetailPresentation? = nil
     /// El detalle de un registro de «Últimos registros» y, si se toca Editar, el editor que lo sustituye al cerrarse

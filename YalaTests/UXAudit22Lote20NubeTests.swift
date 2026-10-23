@@ -274,17 +274,56 @@ struct UXAudit22Lote20NubeWiringTests {
         #expect(!modifier.contains(where: { $0.contains("role: .cancel") }))
     }
 
-    /// L20-15: el orden de los botones está en espera de Jürgen (sin `role: .cancel` SwiftUI añade un tercer «Cancelar»,
-    /// medido el 2026-10-19). Hasta que decida, cada botón hace lo de siempre y «Seguir esperando» conserva su rol.
-    @Test("L20-15: cada botón del aviso de vaciado hace lo de siempre; «Seguir esperando» con su rol de cancelar")
-    func remoteWipe_buttonsKeepTheirActions() throws {
-        let src = try Self.code(Self.alerts)
-        let alert = try Self.body(of: ".alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {", in: src)
-        let wait = try #require(alert.firstIndex(of: "Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {"))
-        let fresh = try #require(alert.firstIndex(of: "Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {"))
-        #expect(alert[wait + 1] == "onRemoteWipeDismiss()", "«Seguir esperando» dejó de hacer lo de siempre")
-        #expect(alert[fresh + 1] == "onRemoteWipeStartFresh()")
-        #expect(alert.filter { $0.hasPrefix("Button(") }.count == 2, "el aviso no trae sus dos botones")
+    /// L20-15 (opción B de Jürgen, 2026-10-23): «Datos no disponibles» es una hoja, con «Seguir esperando» ARRIBA y relleno
+    /// y «Empezar de cero» debajo, en rojo. Cada elección corre su salida de siempre, en el `onDismiss` de la hoja.
+    @Test("L20-15: la hoja pone «Seguir esperando» primero y relleno; cada elección corre su salida de siempre al cerrarse")
+    func remoteWipe_sheetOrderAndActions() throws {
+        let alerts = try Self.code(Self.alerts)
+        #expect(!alerts.contains(".alert(L10n.iCloud.remoteWipeTitle"), "volvió el aviso del sistema")
+        #expect(!alerts.contains(".sheet("), "la hoja volvió a `ShellDataAlertsModifier`, donde no llega a presentarse")
+
+        let view = try Self.code("Yala/App/ContentView.swift")
+        #expect(view.contains("""
+            .modifier(RemoteWipeNoticeSheetModifier(
+                        isPresented: $showRemoteWipeAlert,
+                        noticePending: remoteWipeNoticePending,
+                        onAnswered: { answerRemoteWipeNotice() },
+                        onStartFreshChosen: { startFreshAfterRemoteWipeNotice() },
+                        onKeepWaitingChosen: { dismissRemoteWipeNotice() }))
+            """))
+
+        let sheet = try Self.code("Yala/App/Views/Shared/RemoteWipeNoticeSheet.swift")
+        let run = try Self.body(of: "private func runChoice() {", in: sheet)
+        let guardLine = try #require(run.firstIndex(of: "guard noticePending else { return }"))
+        let switchLine = try #require(run.firstIndex(of: "switch picked {"))
+        #expect(guardLine < switchLine, "con la condición ya soltada (la señal llegó antes del cierre) no corre ninguna salida")
+        #expect(run.contains("case .startFresh: onStartFreshChosen()"))
+        #expect(run.contains("case .keepWaiting: onKeepWaitingChosen()"))
+        #expect(run.contains("case nil: break"), "sin elección, el cierre no debe ejecutar ninguna salida")
+        let choose = try Self.body(of: "private func choose(_ picked: RemoteWipeNoticeSheet.Choice) {", in: sheet)
+        #expect(choose == ["guard choice == nil else { return }", "choice = picked", "onAnswered()"],
+                "tocar un botón apunta la PRIMERA elección y cierra la hoja, nada más")
+
+        let keep = try #require(sheet.range(of: "YalaPrimaryButton(L10n.iCloud.remoteWipeCancel) { onChoose(.keepWaiting) }"))
+        let startFresh = try #require(sheet.range(of: "onChoose(.startFresh)"))
+        #expect(keep.lowerBound < startFresh.lowerBound, "«Seguir esperando» dejó de ir primero")
+        #expect(sheet.contains("Button(role: .destructive) {"), "«Empezar de cero» dejó de ir en rojo")
+        #expect(sheet.contains(".interactiveDismissDisabled()"), "un deslizamiento no dice cuál de las dos salidas era")
+    }
+
+    /// Al tocar, la hoja se cierra y la red de presentación se para, pero la condición viva SIGUE puesta hasta el
+    /// `onDismiss`: si se soltara al tocar, el router drenaría otra presentación al mismo ancla mientras la hoja se va.
+    @Test("L20-15: contestar la hoja cierra y para la red sin soltar la condición viva, con respaldo si no hay onDismiss")
+    func remoteWipe_answerKeepsTheMatrixUntilDismiss() throws {
+        let view = try Self.code("Yala/App/ContentView.swift")
+        let answer = try Self.body(of: "private func answerRemoteWipeNotice() {", in: view)
+        #expect(answer.first == "remoteWipeNoticeNetTask?.cancel()")
+        #expect(answer.last == "showRemoteWipeAlert = false")
+        #expect(!answer.contains("remoteWipeNoticePending = false"), "contestar soltó la condición viva antes del onDismiss")
+        // El respaldo: si el `onDismiss` no llega, se suelta como «Seguir esperando» (no borra), con su canario.
+        #expect(answer.contains("guard remoteWipeNoticePending, !ModalPresentationProbe.isAnythingPresented else { return }"))
+        #expect(answer.contains("dismissRemoteWipeNotice()"))
+        #expect(!answer.contains("startFreshAfterRemoteWipeNotice()"), "el respaldo nunca puede borrar")
     }
 
     @Test("L20-16: «Exportar mis registros» va entre «Ahora no» y «Cerrar sesión y quitarlos», y no cierra nada")

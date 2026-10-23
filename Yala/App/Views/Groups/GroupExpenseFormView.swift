@@ -225,6 +225,10 @@ struct GroupExpenseFormView: View {
                     if let notice {
                         noticeBanner(notice)
                             .padding(.horizontal, DS.Spacing.lg)
+                        // Card fptw (opción B de Jürgen, 2026-10-23): quien crea su primer grupo desde «Grupo» del Panel
+                        // (L13-8) llega aquí en vez de a «está listo», y ésa era la pantalla que pedía los avisos.
+                        GroupNotificationsOptInCard()
+                            .padding(.horizontal, DS.Spacing.lg)
                     }
 
                     centralContent

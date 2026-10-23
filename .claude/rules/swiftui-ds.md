@@ -169,6 +169,13 @@ paths:
   `RemoteWipeNoticeRoutingUITests` cayó 4 de 5 (también el de «sin iCloud», que no se había tocado); con el ancla de
   siempre, 5 de 5 verde. Solo con `.keyboardShortcut(.defaultAction)` el relleno sale, pero con el texto del mismo índigo
   que el fondo. ⇒ en esos avisos el relleno legible no cabe en un `.alert`; si hace falta, es otra presentación.
+  **Y esa otra presentación tampoco cabe DENTRO de `ShellDataAlertsModifier` (medido el 2026-10-23, L20-15).** Con
+  «Datos no disponibles» pasado a `.sheet` en ese mismo modificador, ni la hoja ni el aviso de «iCloud no disponible»
+  (que no se había tocado) llegaron a presentarse: `RemoteWipeNoticeRoutingUITests` 1 de 5, y 5 de 5 con el código de
+  antes como control. Con la hoja en su PROPIO modificador colgado de la cadena de `ContentView`
+  (`RemoteWipeNoticeSheetModifier`, junto a `AppleIDCloseNoticeModifier`), 5 de 5. Causa sin aislar. ⇒ una
+  presentación nueva del ancla de `ContentView` va en su propio modificador, y se mide con su XCUITest antes de darla
+  por buena: el síntoma es «no sale», sin nada en el log.
 
 - **Un `.alert` con tres botones no admite cualquier orden (medido el 2026-10-19, iOS 27.0, lote decidido 2.2 · 04).** El
   botón con `role: .cancel` va SIEMPRE al final, lo declares donde lo declares; y si ninguno lleva `.cancel`, SwiftUI añade

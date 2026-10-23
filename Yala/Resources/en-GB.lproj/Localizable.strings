@@ -2755,7 +2755,7 @@
 "settings.sectionIndicators" = "Indicators";
 "settings.sectionInterface" = "Interface";
 "settings.sectionUsageMode" = "Usage mode";
-"settings.security" = "Security & Account";
+"settings.security" = "Security & Privacy";
 "settings.showMoreCurrencies" = "Show more currencies";
 "settings.showVariations" = "Compare with previous period";
 "settings.showVariationsDescription" = "Shows how much each figure went up or down compared with the previous period. You'll see it on Home, in Statistics and in reports.";
@@ -7682,3 +7682,9 @@
 "storage.steps.pendingCount" = "%@ still to upload";
 "storage.steps.keepUsing" = "You can keep using Yala in the meantime.";
 "storage.steps.uploadedCount" = "%1$@ of %2$@";
+
+/* Pendientes de Jürgen 2.2 (2026-10-23): idioma híbrido (L16-5) y Face ID en Permisos (L16-14) */
+"pj22.language.inIOSFooter" = "Opens iPhone Settings, where “Search” and dates change too.";
+"pj22.permissions.faceID" = "Face ID";
+"pj22.permissions.faceIDDetail" = "iOS turns it on so only you can open Yala.";
+"pj22.permissions.faceIDSeeHow" = "See how";

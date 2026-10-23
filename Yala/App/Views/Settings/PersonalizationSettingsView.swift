@@ -14,6 +14,8 @@ struct PersonalizationSettingsView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.openURL) private var openURL
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
@@ -61,9 +63,35 @@ struct PersonalizationSettingsView: View {
         appPreferences.currencyDisplayFormat == .symbol ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
     }
 
+    /// UX 2.2 · L16-5 (B): el idioma en que se ve Yala ahora, elegido en Yala o heredado del iPhone.
+    private var currentLanguageCode: String {
+        AppLanguageRowLogic.currentCode(
+            overrideLanguage: LanguageManager.overrideLanguage,
+            preferredLanguages: Locale.preferredLanguages,
+            region: Locale.current.region?.identifier)
+    }
+
     private var currentLanguageDisplayName: String {
-        guard let code = LanguageManager.overrideLanguage else { return "" }
+        let code = currentLanguageCode
         return LanguageManager.supportedLanguages.first { $0.code == code }?.nativeName ?? code
+    }
+
+    private var languageRoute: AppLanguageRowLogic.Route {
+        AppLanguageRowLogic.route(
+            overrideLanguage: LanguageManager.overrideLanguage,
+            preferredLanguages: Locale.preferredLanguages)
+    }
+
+    /// Con varios idiomas en el iPhone, a la página de Yala en los Ajustes de iOS (donde está «Idioma»); con uno solo o
+    /// con un idioma elegido en Yala, el selector de Yala.
+    private func openAppLanguage() {
+        switch languageRoute {
+        case .iOSSettings:
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            openURL(url)
+        case .yalaPicker:
+            showingLanguagePicker = true
+        }
     }
 
 
@@ -115,20 +143,19 @@ struct PersonalizationSettingsView: View {
             }
 
             // MARK: - Interfaz
-            // El idioma de la app (solo con override activo) lleva su propia ayuda: va en su bloque, con la
-            // cabecera; si no está, la cabecera pasa al bloque siguiente.
-            if LanguageManager.overrideLanguage != nil {
-                YalaSettingsSection(L10n.Settings.sectionInterface) {
-                    YalaSettingsValueRow(L10n.Settings.appLanguage, value: currentLanguageDisplayName) {
-                        showingLanguagePicker = true
-                    }
-                    .accessibilityIdentifier("personalization_row_app_language")
-                } footer: {
-                    Text(L10n.Settings.appLanguageAppliesNow)
+            // UX 2.2 · L16-5 (opción B de Jürgen, 2026-10-23): la fila sale SIEMPRE. Antes solo existía si en la bienvenida
+            // se había elegido idioma, y no había otra forma de cambiarlo. Lleva su propia ayuda: va en su bloque, con la
+            // cabecera.
+            YalaSettingsSection(L10n.Settings.sectionInterface) {
+                YalaSettingsValueRow(L10n.Settings.appLanguage, value: currentLanguageDisplayName) {
+                    openAppLanguage()
                 }
+                .accessibilityIdentifier("personalization_row_app_language")
+            } footer: {
+                Text(languageRoute == .iOSSettings ? L10n.PJ22.appLanguageInIOSFooter : L10n.Settings.appLanguageAppliesNow)
             }
 
-            YalaSettingsSection(LanguageManager.overrideLanguage == nil ? L10n.Settings.sectionInterface : nil) {
+            YalaSettingsSection {
                 Menu {
                     ForEach(VoiceLanguage.allCases) { language in
                         Button {
@@ -357,8 +384,17 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingLanguagePicker) {
             LanguagePickerSheet(
-                selectedLanguage: LanguageManager.overrideLanguage ?? "en",
+                selectedLanguage: currentLanguageCode,
                 onSelect: { code in
+                    // L16-5 (B): cambiar el idioma reconstruye la app y cierra Ajustes; el Panel la reabre aquí, en
+                    // Personalización (`PanelSettingsReturnOpening`). Se apunta ANTES de cambiarlo: la reconstrucción
+                    // ocurre en la misma vuelta. Si es el que ya se ve, no hay nada que reconstruir ni que reabrir.
+                    guard code != currentLanguageCode else {
+                        showingLanguagePicker = false
+                        return
+                    }
+                    navigation.pendingSettingsReturn = .personalization
+                    navigation.selectMainTab(.panel)
                     LanguageManager.overrideLanguage = code
                     // Las summaries diarias de pagos se agendan con el body YA localizado
                     // (contenido congelado): sin re-plan quedarían en el idioma viejo.
@@ -984,6 +1020,7 @@ private struct AutoFocusPickerSheet: View {
     NavigationStack {
         PersonalizationSettingsView()
             .environment(SessionState())
+            .environment(SceneNavigation())
             .previewAppPreferences()
     }
 }

@@ -301,8 +301,10 @@ struct RemoteWipeSignalWiringTests {
         // drenaje y el reintento de la red (1) —desde el 2026-10-07, para que el seam del XCUITest del
         // desarme los alcance a los dos—; la red lo apaga antes de re-encenderlo (1); el desarme del cap
         // lo apaga (1); y lo apagan las tres salidas —«Empezar de cero», «Ahora no» y la llegada de la
-        // señal explícita— (3).
-        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 6, """
+        // señal explícita— (3). Y desde el 2026-10-23 (L20-15, el aviso pasa a hoja) un SÉPTIMO, que solo apaga:
+        // `answerRemoteWipeNotice()`, al tocar un botón de la hoja, la cierra sin soltar la condición viva; la salida
+        // elegida corre en su `onDismiss`.
+        #expect(try Self.countInProduction("showRemoteWipeAlert = ") == 7, """
             las asignaciones al flag del aviso cambiaron de número en `Yala/`. Si añadiste un escritor,
             pregúntate primero si debería ser un `submit(.presentRemoteWipeNotice)`: quien enciende este
             aviso desde fuera del drenaje se salta la matriz de readiness y desmonta lo que el anchor

@@ -3582,6 +3582,30 @@
       "coverage": "xcuitest:YalaUITests/SettingsLote15UITests + unit:YalaTests/UXAudit22Decidido15Tests (lógica, cableado por source-scan y textos en 16 locales) — 2026-10-22 (lote decidido 2.2 · 15): la hoja se llama Ajustes (L16-1); Detalles personales con el campo vacío, «Listo» y «Más sobre tus datos» (L16-2); tasas débiles invertidas y buscador (L16-4); «Solo gastos» con «Activar» y «Cancelar» (L16-6); Personalización en palabras de usuario con su pie (L16-7); Temas no cierra Ajustes (L16-10); «Pestañas de abajo» con sus reglas (L16-13); pantalla «Permisos de Yala» (L16-14); Valorar y Recomendar (L16-15); cierre de tutoriales «Ya sabes cómo…» con «Hacerlo ahora» y ✓ (L16-16); preguntas nuevas y «Escríbenos» (L16-17); pie de soporte (L16-18); privacidad y términos en la hoja de Safari (L16-19); el tema de Pro vuelve al confirmar la hoja de fin de Pro; la bienvenida a Pro con las fichas del paywall; «1 mes gratis»; avisos de App Attest con el molde de L19-18; «Quitar mis datos» en los avisos de la celda sin cuenta (UXAudit22Lote04UITests); el consentimiento de la nube no se pide dos veces al pasar de entrar a crear la cuenta (unit, cableado y lógica; el mismatch no se monta en simulador: device-QA en la card).",
       "owner": "",
       "lastVerified": "2026-10-22"
+    },
+    {
+      "area": "pendientes-jurgen-2-2-decisiones",
+      "codeGlobs": [
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Settings/PermissionsSettingsView.swift",
+        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+        "Yala/App/Logic/AppLanguageRowLogic.swift",
+        "Yala/App/Models/SceneNavigation.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Panel/PanelSheetState.swift",
+        "Yala/App/Views/Panel/PanelSheetsModifier.swift",
+        "Yala/App/Views/Groups/GroupNotificationsOptInCard.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Logic/GroupsJoinD14Logic.swift",
+        "Yala/App/Views/Shared/RemoteWipeNoticeSheet.swift",
+        "Yala/App/Views/Shared/ShellDataAlertsModifier.swift",
+        "Yala/App/ContentView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "2026-10-23 (sesión «Pendientes de Jürgen 2.2», sin simulador por encargo): D23 Ajustes en «Seguridad y privacidad» + «Tu cuenta» (Siri a Preferencias, Valorar/Recomendar a Ayuda); L16-14 fila Face ID con «Ver cómo» a la guía; L16-5 idioma híbrido (iOS con varios idiomas, selector de Yala con uno o con override; vuelve a Personalización por `SceneNavigation.pendingSettingsReturn`); fptw tarjeta de avisos en el gasto de L13-8 y una vez en la lista de Grupos; L20-15 «Datos no disponibles» como hoja. unit:YalaTests/PendientesJurgen22Tests + UXAudit22Lote20NubeTests (remoteWipe_*) + RemoteWipeSignalWiringTests. xcuitest actualizado sin correr en local: YalaUITests/Flows/RemoteWipeNoticeRoutingUITests (lo corre el CI). Device-QA pendiente con guion en las cards.",
+      "lastVerified": "2026-10-23"
     }
   ]
 }

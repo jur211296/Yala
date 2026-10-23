@@ -120,7 +120,8 @@ struct UXAudit22Lote04WiringTests {
     @Test func signOutRow_oneConstruction_twoPlaces() throws {
         let src = try Self.source(Self.profile)
         #expect(src.components(separatedBy: "\"profile_security_signout\"").count - 1 == 1)
-        #expect(src.contains("if !signOutRowRemovesDeviceData {\n                    SubsectionDivider()\n                    signOutRow"))
+        // D23 (2026-10-23): «Cerrar sesión» vive en su bloque «Tu cuenta»; el divisor solo va si hay fila de cuenta encima.
+        #expect(src.contains("if !signOutRowRemovesDeviceData {\n                    if showsYalaAccountRow { SubsectionDivider() }\n                    signOutRow"))
         #expect(src.contains("if signOutRowRemovesDeviceData {\n                                removeDeviceDataSection"))
         #expect(src.contains("removesDeviceData: DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)"))
     }

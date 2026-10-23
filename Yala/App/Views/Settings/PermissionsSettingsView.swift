@@ -6,8 +6,10 @@
 //  permiso y un botón por permiso a Configuración. Antes la fila «Permisos» saltaba a Configuración de iOS sin avisar,
 //  y en el simulador caía en la raíz, sin la página de Yala.
 //
-//  Face ID no está aquí a propósito: Yala no pide permiso de Face ID (la protección es «Requerir Face ID» de iOS, que no
-//  le dice a la app si está puesta). Qué hacer con esa fila está en espera de Jürgen.
+//  Face ID (L16-14, opción A de Jürgen, 2026-10-23): fila sin estado y con «Ver cómo», que abre la guía «Proteger con
+//  Face ID». Yala no pide permiso de Face ID —la protección es «Requerir Face ID» de iOS, que no le dice a la app si está
+//  puesta, y en Configuración no hay interruptor de Face ID para Yala—, así que no hay estado que enseñar ni página a la
+//  que llevar; sí hay quien lo busca entre los permisos.
 //
 
 import AVFoundation
@@ -37,6 +39,7 @@ struct PermissionsSettingsView: View {
                 ForEach(Kind.allCases) { kind in
                     row(kind)
                 }
+                faceIDRow
             } footer: {
                 Text(L10n.UXL15.permissionsFooter)
             }
@@ -104,6 +107,36 @@ struct PermissionsSettingsView: View {
         }
         .padding(.vertical, DS.Spacing.xs)
         // Sin `accessibilityIdentifier` en el contenedor: pisaría el de su estado y su botón (`testing.md`).
+    }
+
+    /// Sin estado: iOS no le cuenta a Yala si «Requerir Face ID» está puesto. El destino lo registran las dos pilas de
+    /// Ajustes (`ProfileView.settingsContainer`), así que empuja la guía en compacta y en la columna de detalle.
+    private var faceIDRow: some View {
+        NavigationLink(value: ProfileDestination.faceIDProtectionGuide) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
+                Image(systemName: "faceid")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.PJ22.permissionFaceID)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                    Text(L10n.PJ22.permissionFaceIDDetail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                Text(L10n.PJ22.permissionFaceIDSeeHow)
+                    .font(DS.Typography.subheadline.weight(.semibold))
+                    .foregroundStyle(.tint)
+            }
+            .padding(.vertical, DS.Spacing.xs)
+            .contentShape(Rectangle())
+        }
+        .accessibilityIdentifier("permission_faceid_see_how")
     }
 
     // MARK: - Datos

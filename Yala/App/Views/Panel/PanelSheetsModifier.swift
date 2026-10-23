@@ -75,9 +75,10 @@ struct PanelSheetsModifier: ViewModifier {
                 RecordsFiltersView(recordsViewModel: panelFilters)
             }
             .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
+                sheets.settingsInitialDestination = nil
                 viewModel.reloadAndRecalculate()
             }) {
-                ProfileView()
+                ProfileView(initialDestination: sheets.settingsInitialDestination)
             }
             .sheet(isPresented: $sheets.showSectionsConfig) {
                 PanelSectionsConfigView()
