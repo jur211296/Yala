@@ -114,6 +114,9 @@ final class StoreKitManager {
     private let wasProUserKey = "yala.wasProUser"
     private let lastVerifiedProductIDKey = "yala.lastVerifiedProProductID"
     private let lastVerifiedExpirationKey = "yala.lastVerifiedProExpiresAt"
+    /// El `originalID` del derecho guardado, como texto (es un `UInt64`). Sin él, una transacción caducada listada vuelve
+    /// a mandar sobre lo guardado (`ProSubscriptionActivationLogic.isSupersededExpiredListing`).
+    private let lastVerifiedOriginalIDKey = "yala.lastVerifiedProOriginalID"
     private let lastActivePlanWasTrialKey = "yala.lastActiveProPlanWasTrial"
 
     /// Whether user was previously a Pro user (persisted)
@@ -599,7 +602,8 @@ final class StoreKitManager {
             productID: transaction.productID,
             productTypeIsAutoRenewable: transaction.productType == .autoRenewable,
             revocationDate: transaction.revocationDate,
-            expirationDate: transaction.expirationDate
+            expirationDate: transaction.expirationDate,
+            originalID: transaction.originalID
         )
     }
 
@@ -615,7 +619,8 @@ final class StoreKitManager {
         }
         return ProSubscriptionActivationLogic.LastVerifiedLocal(
             productID: productID,
-            expirationDate: expiration
+            expirationDate: expiration,
+            originalID: UserDefaults.standard.string(forKey: lastVerifiedOriginalIDKey).flatMap { UInt64($0) }
         )
     }
 
@@ -627,9 +632,15 @@ final class StoreKitManager {
             } else {
                 UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
             }
+            if let originalID = last.originalID {
+                UserDefaults.standard.set(String(originalID), forKey: lastVerifiedOriginalIDKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: lastVerifiedOriginalIDKey)
+            }
         } else {
             UserDefaults.standard.removeObject(forKey: lastVerifiedProductIDKey)
             UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
+            UserDefaults.standard.removeObject(forKey: lastVerifiedOriginalIDKey)
         }
     }
 
