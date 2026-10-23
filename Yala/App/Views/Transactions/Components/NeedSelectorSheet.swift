@@ -14,10 +14,34 @@ struct NeedSelectorSheet: View {
     @Environment(\.yalaTheme) private var theme
     @Binding var selectedNeed: SubcategoryNeed
 
+    /// Desde el formulario de registro abre con `SelectorSheetSizing` (UX 2.2 · L2-22): material grueso a media altura, el
+    /// mismo criterio que cuenta, categoría y etiquetas. `nil` = quien presenta pone los detents, como antes.
+    var sizing: SelectorSheetSizing?
+    @State private var selectedDetent: PresentationDetent = .medium
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var sheetBackground: YalaBackgroundVariant {
+        guard let sizing else { return .partialSheet }
+        return sizing.background(
+            selectedDetent: selectedDetent,
+            usesLargeSheets: usesLargeSheets,
+            dynamicTypeSize: dynamicTypeSize
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: DS.Spacing.md) {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    // El para qué (UX 2.2 · L2-9): la hoja no decía qué cambia al elegir.
+                    Text(L10n.UXL2B.needPurpose)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .accessibilityIdentifier("need_selector_purpose")
+
                     ForEach(SubcategoryNeed.allCases) { need in
                         NeedOptionRow(
                             need: need,
@@ -39,7 +63,23 @@ struct NeedSelectorSheet: View {
                     }
                 }
             }
-            .yalaScreenBackground(.partialSheet, ignoredEdges: [])
+            .yalaScreenBackground(sheetBackground, ignoredEdges: [])
+        }
+        .modifier(OptionalSelectorSheetSizing(sizing: sizing, selectedDetent: $selectedDetent))
+    }
+}
+
+/// `selectorSheetSizing` solo si hay `sizing`.
+private struct OptionalSelectorSheetSizing: ViewModifier {
+    let sizing: SelectorSheetSizing?
+    @Binding var selectedDetent: PresentationDetent
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let sizing {
+            content.selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
+        } else {
+            content
         }
     }
 }
@@ -74,24 +114,28 @@ private struct NeedOptionRow: View {
 
                 Spacer()
 
-                // Checkmark
+                // Lo elegido, tintado y con ✓ relleno (UX 2.2 · L2-19), como la rejilla de categorías.
                 if isSelected {
-                    Image(systemName: "checkmark")
+                    Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(Color.selectedFill(need.color))
+                        .accessibilityHidden(true)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .fill(isSelected ? need.color.opacity(0.1) : theme.card)
+                    .fill(isSelected ? need.color.opacity(0.22) : theme.card)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .stroke(isSelected ? need.color.opacity(0.3) : Color.clear, lineWidth: 1)
+                    .stroke(isSelected ? need.color.opacity(0.5) : Color.clear, lineWidth: 1)
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("need_selector_row_\(need.rawValue)")
     }
 }

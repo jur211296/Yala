@@ -46,8 +46,9 @@ final class NewTransactionViewModel {
         }
     }
 
-    /// Monto como string para el teclado numérico
-    var amountString: String = "0.00" {
+    /// Monto como string para el teclado numérico. Vacío = nada escrito: el campo enseña el «0.00» gris de ejemplo
+    /// (UX 2.2 · L2-16). Antes arrancaba en «0.00» escrito, en el color del tipo, y parecía ya puesto.
+    var amountString: String = "" {
         didSet {
             // Update destination amount if we have a valid transfer context
             if needsExchangeRate {
@@ -85,13 +86,15 @@ final class NewTransactionViewModel {
 
     // MARK: - Transfer Exchange Rate
 
-    /// Tipo de cambio para transferencias entre divisas
+    /// Tipo de cambio para transferencias entre divisas, y en un gasto o ingreso en otra divisa, de la del importe a la
+    /// preferida (UX 2.2 · L2-11).
     var exchangeRate: Double = 1.0
 
     /// Monto en divisa destino (calculado o editado manualmente)
     var destinationAmount: Double = 0.0
 
-    /// Indica si el tipo de cambio fue editado manualmente
+    /// Indica si el tipo de cambio fue editado manualmente. En un gasto o ingreso en otra divisa, la tasa editada es la
+    /// que se guarda (L2-11): el importe convertido sale de monto × tasa.
     var isExchangeRateManual: Bool = false
 
     // MARK: - Sheet States
@@ -702,6 +705,54 @@ final class NewTransactionViewModel {
         }
     }
 
+    // MARK: - Tipo de cambio de un gasto o ingreso en otra divisa (UX 2.2 · L2-11)
+
+    /// ¿El importe está en una divisa que no es la preferida? Entonces el formulario enseña la equivalencia y la tasa.
+    var showsForeignEquivalence: Bool {
+        !isTransfer && effectiveAccount != nil
+            && normalizeCurrencyCode(amountCurrencyCode) != normalizeCurrencyCode(CurrencyDefaults.currentPreferred)
+    }
+
+    /// Carga la tasa de la divisa del importe a la preferida para la fecha del registro, también al crear (antes solo se
+    /// cargaba al editar, y una cuenta en dólares no enseñaba cuánto era en soles). Una tasa escrita a mano se respeta si
+    /// `keepManual`; al cambiar de cuenta se descarta.
+    ///
+    /// Al editar sin cambiar de cuenta ni de día se queda la tasa guardada en el registro, la que ya enseñaba.
+    func loadForeignExchangeRate(context: ModelContext, keepManual: Bool) async {
+        guard showsForeignEquivalence else { return }
+        if keepManual && isExchangeRateManual { return }
+        if let editing = editingTransaction,
+           editing.account?.persistentModelID == selectedAccount?.persistentModelID,
+           Calendar.current.isDate(editing.date, inSameDayAs: transactionDate),
+           editing.exchangeRate != 1.0 {
+            exchangeRate = editing.exchangeRate
+            isExchangeRateManual = false
+            return
+        }
+        let from = amountCurrencyCode
+        let to = CurrencyDefaults.currentPreferred
+        let date = transactionDate
+        if Calendar.current.isDateInToday(date) {
+            await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
+        }
+        await ExchangeRateService.shared.ensureRates(for: DateInterval(start: date, duration: 0), context: context)
+        // Mientras llegaba la tasa la persona pudo cambiar de cuenta o de fecha: solo vale si sigue siendo la misma pregunta.
+        guard showsForeignEquivalence, amountCurrencyCode == from, transactionDate == date,
+              !(keepManual && isExchangeRateManual) else { return }
+        if let rate = CurrencyConverter.shared.getDisplayRate(from: from, to: to, date: date, context: context),
+           CurrencyConverter.isUsableRate(rate) {
+            exchangeRate = rate
+            isExchangeRateManual = false
+        }
+    }
+
+    /// La tasa escrita a mano en la cápsula (L2-11).
+    func setManualForeignRate(_ rate: Double) {
+        guard rate > 0, rate.isFinite else { return }
+        exchangeRate = rate
+        isExchangeRateManual = true
+    }
+
     // MARK: - Editing State
 
     /// Transaction being edited (if any)
@@ -808,14 +859,31 @@ final class NewTransactionViewModel {
 
         // `convertChecked`: el flujo principal de la app PERSISTE este número. `convert` tira la
         // calidad de la tasa, así que una conversión aproximada nacía sellada como definitiva.
-        let outcome = CurrencyConverter.shared.convertChecked(
-            Decimal(finalAmount),
-            from: stampedCurrency,
-            to: preferredCode,
-            on: transactionDate,
-            context: context
-        )
-        let amountInPreferred = outcome.amount
+        //
+        // Con la tasa escrita a mano en la cápsula (UX 2.2 · L2-11) manda esa: es la que usó su banco y la que la persona
+        // vio en la equivalencia. Es exacta por definición.
+        let amountInPreferred: Decimal
+        let isExactConversion: Bool
+        if let manualRate = ForeignManualRateLogic.manualRate(
+            isManual: isExchangeRateManual,
+            isTransfer: isTransfer,
+            rate: exchangeRate,
+            amountCurrency: stampedCurrency,
+            preferredCurrency: preferredCode
+        ) {
+            amountInPreferred = ForeignManualRateLogic.converted(finalAmount, rate: manualRate)
+            isExactConversion = true
+        } else {
+            let outcome = CurrencyConverter.shared.convertChecked(
+                Decimal(finalAmount),
+                from: stampedCurrency,
+                to: preferredCode,
+                on: transactionDate,
+                context: context
+            )
+            amountInPreferred = outcome.amount
+            isExactConversion = outcome.quality.isExact
+        }
 
         let effectiveRate: Double
         if abs(finalAmount) > 0.0001 {
@@ -852,7 +920,7 @@ final class NewTransactionViewModel {
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
-            transaction.isExchangeRateProvisional = !outcome.quality.isExact
+            transaction.isExchangeRateProvisional = !isExactConversion
             // Save need override if different from subcategory's need
             transaction.needOverride = selectedNeed?.rawValue
         } else {
@@ -868,7 +936,7 @@ final class NewTransactionViewModel {
                 exchangeRate: abs(effectiveRate),
                 amountInPreferredCurrency: (amountInPreferred as NSDecimalNumber).doubleValue,
                 preferredCurrencyCode: preferredCode,
-                isExchangeRateProvisional: !outcome.quality.isExact
+                isExchangeRateProvisional: !isExactConversion
             )
             // Save need override for new transactions
             transaction.needOverride = selectedNeed?.rawValue
@@ -1186,31 +1254,13 @@ final class NewTransactionViewModel {
         splitTotalAmount != nil && splitType != nil
     }
 
-    /// Snapshot intencional: `forceFullPrecision: true` ignora `decimalPlaces` (siempre 2),
-    /// así que este callsite es inmune al bug de reactividad. YalaFormatter deprecated permitido.
-    var splitDescription: String? {
-        guard let type = splitType, let total = splitTotalAmount else { return nil }
-        let formattedTotal = YalaFormatterStatic.number(value: total, forceFullPrecision: true)
-        switch type {
-        case .percentage:
-            if let pct = splitMyValue {
-                let pctStr = pct == pct.rounded() ? String(Int(pct)) : String(format: "%.1f", pct)
-                return L10n.Split.descPercentage(pctStr, formattedTotal)
-            }
-        case .equal:
-            if let people = splitMyValue {
-                return L10n.Split.descEqual(Int(people))
-            }
-        case .shares:
-            if let my = splitMyValue, let totalShares = splitDivisor {
-                return L10n.Split.descShares(Int(my), Int(totalShares))
-            }
-        case .exact:
-            if let exact = splitMyValue {
-                return L10n.Split.descExact(YalaFormatterStatic.number(value: exact, forceFullPrecision: true))
-            }
-        }
-        return nil
+    /// El chip del formulario tras «Mi parte» (UX 2.2 · L2-12): «Tu parte de S/ 120.00 · ÷ 3 personas», «· 60 %»,
+    /// «· 2 de 5 partes», «· monto exacto». `format` pone la moneda (la vista, con la preferencia de símbolo o código).
+    /// Antes decía «% ÷ 3 personas», sin el total del que salía.
+    func splitChipText(format: (Double) -> String) -> String? {
+        guard let type = splitType, let total = splitTotalAmount, let myValue = splitMyValue else { return nil }
+        if type == .shares, splitDivisor == nil { return nil }
+        return SplitSummaryLogic.chipText(type: type, total: total, myValue: myValue, divisor: splitDivisor, format: format)
     }
 
     func applySplitResult(amount: Double, splitType: SplitType, totalAmount: Double, myValue: Double, divisor: Double?) {
@@ -1249,7 +1299,7 @@ final class NewTransactionViewModel {
     /// Resetea el formulario a valores iniciales
     func reset() {
         transactionType = .expense
-        amountString = "0"
+        amountString = ""
         selectedAccount = nil
         sourceAccount = nil
         destinationAccount = nil

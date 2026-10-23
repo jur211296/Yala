@@ -127,7 +127,7 @@
 "trend.balance.title" = "余额趋势";
 "trend.income.title" = "收入趋势";
 "trend.expense.title" = "支出趋势";
-"trend.filterBlockedMessage" = "请先移除类别或性质筛选";
+"trend.filterBlockedMessage" = "请先移除类别或需求筛选";
 "trend.filterBlockedTitle" = "选项不可用";
 
 // MARK: - Periods
@@ -295,7 +295,7 @@
 "transaction.tags" = "标签";
 "transaction.addTags" = "添加标签";
 "transaction.category" = "类别";
-"transaction.subcategory" = "子类别";
+"transaction.subcategory" = "类别";
 "transaction.select" = "选择";
 "transaction.total" = "总计";
 "transaction.income" = "收入";
@@ -1003,8 +1003,8 @@
 "need.optional" = "可选";
 "need.unclassified" = "未分类";
 "need.essential.desc" = "必须支付的：房租、电费、餐食。";
-"need.priority.desc" = "值得花，但可以调整。";
-"need.optional.desc" = "享受和小奢侈。";
+"need.priority.desc" = "值得花，但可以调整：健身房、网络。";
+"need.optional.desc" = "享受和小奢侈：外出、外卖。";
 "need.unclassified.desc" = "尚未决定。";
 
 
@@ -1447,7 +1447,7 @@
 "validation.selectDestinationAccount" = "选择目标账户";
 "validation.accountsMustBeDifferent" = "账户必须不同";
 "validation.selectAccount" = "选择一个账户";
-"validation.selectSubcategory" = "选择一个子类别";
+"validation.selectSubcategory" = "选择一个类别";
 "validation.completeFieldsFirst" = "请先填写金额、账户和类别";
 "validation.futureDateTitle" = "不允许未来日期";
 "validation.futureDateMessage" = "你不能保存未来日期的记录。请使用「计划付款」处理周期性支出。";
@@ -1506,7 +1506,7 @@
 "scheduled.editor.payment.category" = "付款类别";
 "scheduled.editor.classification" = "分类";
 "scheduled.editor.account" = "账户";
-"scheduled.editor.subcategory" = "子类别";
+"scheduled.editor.subcategory" = "类别";
 "scheduled.editor.recurrence" = "周期";
 "scheduled.help.title" = "什么是计划付款?";
 "scheduled.help.message" = "跟踪重复出现的付款 — 比如订阅、租金或账单。Yala 会在到期时提醒你,并保留你已支付的历史记录。";
@@ -1517,7 +1517,7 @@
 "scheduled.editor.preview" = "即将到来的日期";
 "scheduled.notify.on.due" = "到期日通知";
 "scheduled.notify.days.before" = "到期前几天通知";
-"scheduled.select.subcategory" = "选择子类别";
+"scheduled.select.subcategory" = "选择类别";
 "scheduled.is.subscription" = "这是订阅吗?";
 
 // Variable amount
@@ -1940,7 +1940,7 @@
 "bulkEdit.currencyWarning" = "更改账户会更新所选记录的货币。";
 "bulkEdit.editCount" = "编辑 %d 条记录";
 "bulkEdit.successMessage" = "记录已更新";
-"bulkEdit.cannotEditTransferSubcategory" = "无法更改转账的子分类。请单独编辑每一笔。";
+"bulkEdit.cannotEditTransferSubcategory" = "无法更改转账的类别。请单独编辑每一笔。";
 "bulkEdit.cannotEditTransferAccount" = "无法更改转账的账户。请单独编辑每一笔。";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "无法批量编辑跨货币转账的金额。请单独编辑以保留汇率。";
 "bulkEdit.commonTags" = "在所有所选中";
@@ -1987,7 +1987,7 @@
 "inbox.noAmount" = "无金额";
 "inbox.missingLabel" = "缺少数据";
 "inbox.needsAccount" = "选择账户";
-"inbox.needsSubcategory" = "选择子类别";
+"inbox.needsSubcategory" = "选择类别";
 "inbox.approve" = "保存";
 "inbox.delete" = "删除";
 "inbox.noPending" = "没有待处理草稿";
@@ -2016,7 +2016,7 @@
 "inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "你必须选择一个账户";
 "inbox.errorNoAmount" = "你必须指定金额";
-"inbox.errorNoSubcategory" = "你必须选择一个子类别";
+"inbox.errorNoSubcategory" = "你必须选择一个类别";
 "inbox.errorArchivedAccount" = "此账户已归档。请编辑草稿并选择其他账户后再保存。";
 "inbox.errorFutureDate" = "无法保存未来日期的记录";
 "inbox.duplicateWarningTitle" = "可能重复";
@@ -2722,7 +2722,7 @@
 "tutorials.createAccount.step2.desc" = "填写新账户的详情然后点击保存。";
 "tutorials.createCategories.step0.desc" = "在设置中进入“类别”，点按 + 新建一个。";
 "tutorials.createCategories.step1.desc" = "记住:类别必须始终关联子类别才能创建。";
-"tutorials.createCategories.step2.desc" = "创建子类别和创建类别一样简单:取个名字、选择性质,可选地修改图标。";
+"tutorials.createCategories.step2.desc" = "创建子类别和创建类别一样简单:取个名字、选择需求,可选地修改图标。";
 "tutorials.createCategories.step3.desc" = "随时按你喜好自定义类别的图标和颜色。";
 "tutorials.createTags.step0.desc" = "在设置中进入“标签”，点按 + 新建一个。";
 "tutorials.createTags.step1.desc" = "按你的喜好自定义标签:取名字、图标和颜色。";
@@ -3294,7 +3294,7 @@
 "guide.budgetFilter.subcategories" = "在子类别 %@";
 "guide.budgetFilter.tag" = "标记 %@";
 "guide.budgetFilter.tags" = "标记 %@";
-"guide.budgetFilter.needs" = "%@ 性质";
+"guide.budgetFilter.needs" = "%@ 需求";
 "guide.budgetFilter.andMore" = "另外 %lld 个";
 "guide.budgetFilter.conjunction" = "和";
 "guide.accountForm.title" = "关于此账户";
@@ -3348,7 +3348,7 @@
 "chat.draft.chipIncome" = "收入";
 "chat.draft.amountPlaceholder" = "金额";
 "chat.draft.accountLabel" = "账户";
-"chat.draft.subcategoryLabel" = "子类别";
+"chat.draft.subcategoryLabel" = "类别";
 "chat.draft.dateLabel" = "日期";
 "chat.draft.noteLabel" = "备注";
 "chat.draft.tagsLabel" = "标签";
@@ -3357,12 +3357,12 @@
 "chat.draft.discardedBadge" = "已丢弃";
 "chat.draft.saveFailedGeneric" = "无法保存。请重试。";
 "chat.draft.saveFailedAccount" = "无法保存:账户已不存在。请编辑此条目。";
-"chat.draft.saveFailedSubcategory" = "无法保存:子类别已不存在。请编辑此条目。";
+"chat.draft.saveFailedSubcategory" = "无法保存:类别已不存在。请编辑此条目。";
 "chat.draft.saveFailedAmount" = "无法保存:金额无效。";
 "chat.draft.viewRecordsButton" = "查看已保存条目";
 "chat.draft.discardButton" = "丢弃";
 "chat.draft.selectAccount" = "选择账户";
-"chat.draft.selectSubcategory" = "选择子类别";
+"chat.draft.selectSubcategory" = "选择类别";
 "chat.draft.saveButton" = "保存";
 "chat.draft.failedSavingLine" = "无法保存。";
 "chat.draft.retryButton" = "重试";
@@ -3957,7 +3957,7 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "此支出有后续付款。请先删除或调整这些付款，再移除它。";
 "groups.bridge.editFromGroup" = "此记录与一个群组同步。请从共享支出处编辑。";
-"groups.bridge.assignFromInbox" = "请在收件箱中分配子分类以完成它。";
+"groups.bridge.assignFromInbox" = "请在收件箱中分配类别以完成它。";
 "groups.bridge.editSettlementInGroup" = "此记录来自群组付款。请在群组中编辑。";
 "groups.bridge.editPartialBanner" = "这笔支出来自群组。你可以编辑账户、分类和标签。金额和日期与群组同步。";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@在%2$@中记录了这笔支出。选择一个账户将其纳入你的记录。";
@@ -4021,8 +4021,8 @@
 "groups.settlement.fromAccountNone" = "无 — 稍后完成";
 "inbox.openInbox" = "打开收件箱";
 "groups.detail.openGroup" = "打开群组";
-"inbox.groupExpenseDraft.title" = "选择子类别";
-"inbox.groupExpenseDraft.assignSubcategory" = "子类别";
+"inbox.groupExpenseDraft.title" = "选择类别";
+"inbox.groupExpenseDraft.assignSubcategory" = "类别";
 "inbox.groupSettlementDraft.title" = "选择账户";
 "inbox.groupSettlementDraft.assignAccount" = "目标账户";
 "inbox.groupDraft.finalize" = "完成";
@@ -4353,7 +4353,7 @@
 "inbox.groupSettlementDraft.alreadyRegistered" = "这笔付款已记录在你的账户中。你可以放弃此草稿。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "选择账户和子类别";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "选择账户和类别";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "来自群组「%@」。";
@@ -6274,7 +6274,7 @@
 "chat.draft.detailsButton" = "详情";
 "chat.draft.detailsTitle" = "建议的条目";
 "chat.draft.openFullForm" = "在完整表单中打开";
-"chat.draft.missingSubcategory" = "缺少子类别";
+"chat.draft.missingSubcategory" = "缺少类别";
 "chat.draft.missingAccount" = "缺少账户";
 "chat.draft.missingAmount" = "缺少金额";
 "chat.draft.addTag" = "标签";
@@ -7039,7 +7039,7 @@
 "records.l8.owedToYou" = "别人欠你";
 "records.l8.duplicateTitle" = "复制记录";
 "records.l8.duplicateReady" = "副本已就绪，日期为今天。请检查后保存。";
-"records.l8.changeSubcategoryTitle" = "更改子类别";
+"records.l8.changeSubcategoryTitle" = "更改类别";
 "records.l8.current" = "当前";
 "records.l8.changedTo" = "已改为%@";
 "records.l8.changedToWithNeed" = "已改为%1$@（%2$@ · %3$@）";
@@ -7084,7 +7084,7 @@
 "records.l8b.duplicates.emptyNoCriteria" = "请在「匹配条件」中选择需要一致的项目。";
 "records.l8b.duplicates.field.amount" = "金额";
 "records.l8b.duplicates.field.note" = "备注";
-"records.l8b.duplicates.field.subcategory" = "子类别";
+"records.l8b.duplicates.field.subcategory" = "类别";
 "records.l8b.duplicates.field.date" = "日期";
 "records.l8b.bulk.today" = "当前：%@";
 "records.l8b.bulk.distinctNotes" = "备注各不相同";
@@ -8292,3 +8292,31 @@
 "l2d.recurring.monthly" = "每月%d日";
 "l2d.recurring.yearly" = "每年%@";
 "l2d.recurring.moreOptions" = "更多选项…";
+
+/* Lote decidido 2.2 · 02, sesión B: textos y visual del formulario de registro */
+"l2d.category.searchEmpty" = "没有包含“%@”的类别";
+"l2d.note.example" = "例如:和小雨吃午饭";
+"l2d.hint.category" = "输入 ! 即可在这里直接选择类别";
+"l2d.hint.tag" = "输入 # 即可添加标签";
+"l2d.hint.account" = "输入 @ 即可更换账户";
+"l2d.need.purpose" = "帮你看清支出中有多少是必不可少的";
+"l2d.tag.create" = "创建";
+"l2d.rate.today" = "今日汇率";
+"l2d.rate.onDate" = "%@的汇率";
+"l2d.rate.withHint" = "%@ · 若银行用的是别的汇率,点一下修改";
+"l2d.rate.editHint" = "点按即可修改";
+"l2d.split.button" = "我的份额";
+"l2d.split.chip.equal" = "%1$@ 中你的份额 · ÷ %2$d 人";
+"l2d.split.chip.percentage" = "%1$@ 中你的份额 · %2$@%%";
+"l2d.split.chip.shares" = "%1$@ 中你的份额 · %3$d 份中的 %2$d 份";
+"l2d.split.chip.exact" = "%@ 中你的份额 · 指定金额";
+"l2d.amount.question.expense" = "你花了多少?";
+"l2d.amount.question.income" = "你收到了多少?";
+"l2d.amount.question.transfer" = "你要转多少?";
+"l2d.split.youPay" = "你需要付";
+"l2d.split.formula.equal" = "%1$@ ÷ %2$d 人 = 每人 %3$@";
+"l2d.split.formula.percentage" = "%2$@ 的 %1$@%%";
+"l2d.split.formula.shares" = "%3$@ 的 %2$d 份中的 %1$d 份";
+"l2d.split.formula.exact" = "%2$@ 中的 %1$@";
+"l2d.split.bar.you" = "你 %@";
+"l2d.split.bar.others" = "其他人 %@";

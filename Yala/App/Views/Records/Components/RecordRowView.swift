@@ -81,7 +81,7 @@ struct RecordRowView: View {
                     }
 
                     // Line 4: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
-                    let resolvedTags = TagDisplayResolver.tags(for: record, catalog: tagCatalog)
+                    let resolvedTags = TagDisplayResolver.tags(for: record, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
                     if !resolvedTags.isEmpty {
                         tagsRow(resolvedTags)
                     }

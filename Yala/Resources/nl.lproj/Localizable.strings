@@ -127,7 +127,7 @@
 "trend.balance.title" = "Saldotrend";
 "trend.income.title" = "Inkomstentrend";
 "trend.expense.title" = "Uitgaventrend";
-"trend.filterBlockedMessage" = "Verwijder eerst categorie- of typefilters";
+"trend.filterBlockedMessage" = "Verwijder eerst categorie- of behoeftefilters";
 "trend.filterBlockedTitle" = "Optie niet beschikbaar";
 
 // MARK: - Periods
@@ -295,7 +295,7 @@
 "transaction.tags" = "Labels";
 "transaction.addTags" = "Labels toevoegen";
 "transaction.category" = "Categorie";
-"transaction.subcategory" = "Subcategorie";
+"transaction.subcategory" = "Categorie";
 "transaction.select" = "Selecteren";
 "transaction.total" = "Totaal";
 "transaction.income" = "Inkomsten";
@@ -1003,8 +1003,8 @@
 "need.optional" = "Optioneel";
 "need.unclassified" = "Niet ingedeeld";
 "need.essential.desc" = "Wat je altijd moet betalen: huur, stroom, eten.";
-"need.priority.desc" = "Handig, maar je kunt het aanpassen.";
-"need.optional.desc" = "Extraatjes en verwennerij.";
+"need.priority.desc" = "Handig, maar je kunt het aanpassen: sportschool, internet.";
+"need.optional.desc" = "Extraatjes en verwennerij: uitgaan, bezorgmaaltijden.";
 "need.unclassified.desc" = "Nog niet besloten.";
 
 
@@ -1405,7 +1405,7 @@
 "iconPicker.education" = "Onderwijs";
 "iconPicker.work" = "Werk";
 "iconPicker.pets" = "Huisdieren";
-"iconPicker.need" = "Aard";
+"iconPicker.need" = "Behoefte";
 "iconPicker.tech" = "Technologie";
 "iconPicker.travel" = "Reizen";
 "iconPicker.communication" = "Communicatie";
@@ -1447,7 +1447,7 @@
 "validation.selectDestinationAccount" = "Selecteer een bestemmingsrekening";
 "validation.accountsMustBeDifferent" = "Rekeningen moeten verschillend zijn";
 "validation.selectAccount" = "Selecteer een rekening";
-"validation.selectSubcategory" = "Selecteer een subcategorie";
+"validation.selectSubcategory" = "Selecteer een categorie";
 "validation.completeFieldsFirst" = "Vul eerst bedrag, rekening en categorie in";
 "validation.futureDateTitle" = "Toekomstige datum niet toegestaan";
 "validation.futureDateMessage" = "Je kunt geen boekingen met een toekomstige datum opslaan. Gebruik Geplande betalingen voor terugkerende uitgaven.";
@@ -1506,7 +1506,7 @@
 "scheduled.editor.payment.category" = "Soort betaling";
 "scheduled.editor.classification" = "Indeling";
 "scheduled.editor.account" = "Rekening";
-"scheduled.editor.subcategory" = "Subcategorie";
+"scheduled.editor.subcategory" = "Categorie";
 "scheduled.editor.recurrence" = "Herhaling";
 "scheduled.help.title" = "Wat is een geplande betaling?";
 "scheduled.help.message" = "Houd betalingen bij die zich herhalen — zoals abonnementen, huur of rekeningen. Yala herinnert je wanneer ze vervallen en bewaart een geschiedenis van wat je hebt betaald.";
@@ -1517,7 +1517,7 @@
 "scheduled.editor.preview" = "Aankomende data";
 "scheduled.notify.on.due" = "Melden op vervaldatum";
 "scheduled.notify.days.before" = "Aantal dagen vooraf melden";
-"scheduled.select.subcategory" = "Selecteer subcategorie";
+"scheduled.select.subcategory" = "Selecteer categorie";
 "scheduled.is.subscription" = "Is dit een abonnement?";
 
 // Variable amount
@@ -1940,7 +1940,7 @@
 "bulkEdit.currencyWarning" = "Wijziging van rekening past de valuta van de geselecteerde boekingen aan.";
 "bulkEdit.editCount" = "%d boekingen bewerken";
 "bulkEdit.successMessage" = "Boekingen bijgewerkt";
-"bulkEdit.cannotEditTransferSubcategory" = "Kan de subcategorie van overboekingen niet wijzigen. Bewerk ze afzonderlijk.";
+"bulkEdit.cannotEditTransferSubcategory" = "Kan de categorie van overboekingen niet wijzigen. Bewerk ze afzonderlijk.";
 "bulkEdit.cannotEditTransferAccount" = "Kan de rekening van overboekingen niet wijzigen. Bewerk ze afzonderlijk.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Bedragen van overboekingen tussen verschillende valuta's kunnen niet in bulk worden bewerkt. Bewerk ze afzonderlijk om de wisselkoers te behouden.";
 "bulkEdit.commonTags" = "In alle geselecteerde";
@@ -1987,7 +1987,7 @@
 "inbox.noAmount" = "Geen bedrag";
 "inbox.missingLabel" = "Ontbrekende gegevens";
 "inbox.needsAccount" = "Selecteer rekening";
-"inbox.needsSubcategory" = "Selecteer subcategorie";
+"inbox.needsSubcategory" = "Selecteer categorie";
 "inbox.approve" = "Opslaan";
 "inbox.delete" = "Verwijderen";
 "inbox.noPending" = "Geen openstaande concepten";
@@ -2016,7 +2016,7 @@
 "inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Je moet een rekening selecteren";
 "inbox.errorNoAmount" = "Je moet een bedrag opgeven";
-"inbox.errorNoSubcategory" = "Je moet een subcategorie selecteren";
+"inbox.errorNoSubcategory" = "Je moet een categorie selecteren";
 "inbox.errorArchivedAccount" = "Deze rekening is gearchiveerd. Bewerk het concept en kies een andere rekening om het op te slaan.";
 "inbox.errorFutureDate" = "Registraties met een datum in de toekomst kunnen niet worden opgeslagen";
 "inbox.duplicateWarningTitle" = "Mogelijk duplicaat";
@@ -2722,7 +2722,7 @@
 "tutorials.createAccount.step2.desc" = "Vul de gegevens van je nieuwe rekening in en tik op Opslaan.";
 "tutorials.createCategories.step0.desc" = "Ga in Instellingen naar Categorieën en tik op + om een nieuwe aan te maken.";
 "tutorials.createCategories.step1.desc" = "Onthoud dat er altijd subcategorieën aan een categorie gekoppeld moeten zijn om hem aan te maken.";
-"tutorials.createCategories.step2.desc" = "Subcategorieën maken werkt net zoals categorieën: geef hem een naam, selecteer de aard en pas optioneel het icoon aan.";
+"tutorials.createCategories.step2.desc" = "Subcategorieën maken werkt net zoals categorieën: geef hem een naam, kies de behoefte en pas optioneel het icoon aan.";
 "tutorials.createCategories.step3.desc" = "Pas het icoon en de kleur van je categorie aan zoals jij wilt, wanneer je maar wilt.";
 "tutorials.createTags.step0.desc" = "Ga in Instellingen naar Labels en tik op + om een nieuw label aan te maken.";
 "tutorials.createTags.step1.desc" = "Pas je label aan naar jouw smaak: geef het een naam, icoon en kleur.";
@@ -2733,7 +2733,7 @@
 "tutorials.importData.step0.desc" = "Tik in Instellingen, bij Gegevens, op Bestand importeren.";
 "tutorials.importData.step1.desc" = "Je kunt zo vaak je wilt CSV of Excel importeren met het standaardsjabloon, dat je daar kunt downloaden. Bij gegevens in meerdere valuta's vraagt de app je per valuta een rekening te kiezen.";
 "tutorials.createBudgets.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Budgetten staat. Gebruik de +-knop om er een nieuw aan te maken.";
-"tutorials.createBudgets.step1.desc" = "Geef hem een naam, bedrag en bepaal de periode: dagelijks, maandelijks, jaarlijks of eenmalig (voor een reis, evenement, enz.). Kies welke rekeningen, categorieën, labels en aarden je wilt volgen. Zet meldingen aan voor waarschuwingen bij bepaalde drempels.";
+"tutorials.createBudgets.step1.desc" = "Geef hem een naam, bedrag en bepaal de periode: dagelijks, maandelijks, jaarlijks of eenmalig (voor een reis, evenement, enz.). Kies welke rekeningen, categorieën, labels en behoeften je wilt volgen. Zet meldingen aan voor waarschuwingen bij bepaalde drempels.";
 "tutorials.createBudgets.step2.desc" = "Zet ‘In widget tonen’ aan om het in de Budgetten-widget op Start te zien.";
 "tutorials.createBudgets.step3.desc" = "Onthoud dat je altijd kunt terugkomen om je budget te bewerken door erop te tikken.";
 "tutorials.createScheduledPayments.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Geplande betalingen staat. Gebruik de +-knop om er een nieuwe aan te maken.";
@@ -2746,7 +2746,7 @@
 "tutorials.editPanel.step0.desc" = "Ga naar het hoofdscherm waar je je uitgavenoverzicht ziet met alle beschikbare widgets.";
 "tutorials.editPanel.step1.desc" = "Tik op de knop met vierkantjes naast elke sectie op Start om te kiezen welke widgets je ziet en in welke volgorde.";
 "tutorials.editPanel.step2.desc" = "Onthoud dat je altijd kunt terugkeren naar de standaardvolgorde door binnen 'Aanpassen' op \"Reset\" te tikken.";
-"tutorials.panelFiltering.step0.desc" = "Haal het beste uit Yala's interactieve grafieken. Bijna alle panelen zijn filterbaar per categorie, aard en meer. Speel ermee en vind wat voor jou werkt.";
+"tutorials.panelFiltering.step0.desc" = "Haal het beste uit Yala's interactieve grafieken. Bijna alle panelen zijn filterbaar per categorie, behoefte en meer. Speel ermee en vind wat voor jou werkt.";
 "tutorials.panelFiltering.step1.desc" = "Je hebt een filterbalk waarin je alle toegepaste filters ziet. Je kunt ze individueel of allemaal tegelijk verwijderen wanneer je wilt.";
 "tutorials.panelFiltering.step2.desc" = "In de verschillende weergaven van de app zie je dat je naar wens kunt filteren met de grafieken.";
 "tutorials.panelFiltering.step3.desc" = "Filters worden gelijkmatig op alle weergaven toegepast, zodat je allerlei statistieken ziet voor wat je ook wilt filteren.";
@@ -3294,7 +3294,7 @@
 "guide.budgetFilter.subcategories" = "in subcategorieën %@";
 "guide.budgetFilter.tag" = "met label %@";
 "guide.budgetFilter.tags" = "met labels %@";
-"guide.budgetFilter.needs" = "van aard %@";
+"guide.budgetFilter.needs" = "met behoefte %@";
 "guide.budgetFilter.andMore" = "%lld meer";
 "guide.budgetFilter.conjunction" = "en";
 "guide.accountForm.title" = "Over deze rekening";
@@ -3348,7 +3348,7 @@
 "chat.draft.chipIncome" = "Inkomsten";
 "chat.draft.amountPlaceholder" = "Bedrag";
 "chat.draft.accountLabel" = "Rekening";
-"chat.draft.subcategoryLabel" = "Subcategorie";
+"chat.draft.subcategoryLabel" = "Categorie";
 "chat.draft.dateLabel" = "Datum";
 "chat.draft.noteLabel" = "Notitie";
 "chat.draft.tagsLabel" = "Labels";
@@ -3357,12 +3357,12 @@
 "chat.draft.discardedBadge" = "Genegeerd";
 "chat.draft.saveFailedGeneric" = "Opslaan lukte niet. Probeer het opnieuw.";
 "chat.draft.saveFailedAccount" = "Opslaan lukte niet: de rekening bestaat niet meer. Bewerk de boeking.";
-"chat.draft.saveFailedSubcategory" = "Opslaan lukte niet: de subcategorie bestaat niet meer. Bewerk de boeking.";
+"chat.draft.saveFailedSubcategory" = "Opslaan lukte niet: de categorie bestaat niet meer. Bewerk de boeking.";
 "chat.draft.saveFailedAmount" = "Opslaan lukte niet: het bedrag is ongeldig.";
 "chat.draft.viewRecordsButton" = "Opgeslagen boekingen bekijken";
 "chat.draft.discardButton" = "Negeren";
 "chat.draft.selectAccount" = "Selecteer rekening";
-"chat.draft.selectSubcategory" = "Selecteer subcategorie";
+"chat.draft.selectSubcategory" = "Selecteer categorie";
 "chat.draft.saveButton" = "Opslaan";
 "chat.draft.failedSavingLine" = "Opslaan lukte niet.";
 "chat.draft.retryButton" = "Opnieuw proberen";
@@ -3957,7 +3957,7 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Deze uitgave heeft latere betalingen. Verwijder of pas die betalingen eerst aan voordat je haar verwijdert.";
 "groups.bridge.editFromGroup" = "Deze boeking synchroniseert met een groep. Bewerk haar vanuit de gedeelde uitgave.";
-"groups.bridge.assignFromInbox" = "Wijs een subcategorie toe vanuit je Inbox om deze af te ronden.";
+"groups.bridge.assignFromInbox" = "Wijs een categorie toe vanuit je Inbox om deze af te ronden.";
 "groups.bridge.editSettlementInGroup" = "Deze boeking komt uit een groepsbetaling. Bewerk haar in de groep.";
 "groups.bridge.editPartialBanner" = "Deze uitgave komt uit de groep. Je kunt rekening, categorie en tags bewerken. Bedrag en datum synchroniseren met de groep.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ heeft deze uitgave geregistreerd in %2$@. Kies een rekening om het in je administratie bij te houden.";
@@ -4021,8 +4021,8 @@
 "groups.settlement.fromAccountNone" = "Geen — later afronden";
 "inbox.openInbox" = "Inbox openen";
 "groups.detail.openGroup" = "Groep openen";
-"inbox.groupExpenseDraft.title" = "Kies de subcategorie";
-"inbox.groupExpenseDraft.assignSubcategory" = "Subcategorie";
+"inbox.groupExpenseDraft.title" = "Kies de categorie";
+"inbox.groupExpenseDraft.assignSubcategory" = "Categorie";
 "inbox.groupSettlementDraft.title" = "Kies de rekening";
 "inbox.groupSettlementDraft.assignAccount" = "Doelrekening";
 "inbox.groupDraft.finalize" = "Afronden";
@@ -4353,7 +4353,7 @@
 "inbox.groupSettlementDraft.alreadyRegistered" = "Deze betaling staat al in je rekeningen. Je kunt dit concept verwijderen.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "Kies de rekening en subcategorie";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Kies de rekening en categorie";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "Uit de groep ‘%@’.";
@@ -6274,7 +6274,7 @@
 "chat.draft.detailsButton" = "Details";
 "chat.draft.detailsTitle" = "Voorgestelde boeking";
 "chat.draft.openFullForm" = "Openen in het volledige formulier";
-"chat.draft.missingSubcategory" = "Subcategorie ontbreekt";
+"chat.draft.missingSubcategory" = "Categorie ontbreekt";
 "chat.draft.missingAccount" = "Rekening ontbreekt";
 "chat.draft.missingAmount" = "Bedrag ontbreekt";
 "chat.draft.addTag" = "Label";
@@ -7039,7 +7039,7 @@
 "records.l8.owedToYou" = "Jij krijgt nog";
 "records.l8.duplicateTitle" = "Boeking dupliceren";
 "records.l8.duplicateReady" = "Kopie klaar, met de datum van vandaag. Controleer en sla op.";
-"records.l8.changeSubcategoryTitle" = "Subcategorie wijzigen";
+"records.l8.changeSubcategoryTitle" = "Categorie wijzigen";
 "records.l8.current" = "Huidig";
 "records.l8.changedTo" = "Nu: %@";
 "records.l8.changedToWithNeed" = "Nu: %1$@ (%2$@ · %3$@)";
@@ -7084,7 +7084,7 @@
 "records.l8b.duplicates.emptyNoCriteria" = "Kies bij ‘Vergelijken op’ wat moet overeenkomen.";
 "records.l8b.duplicates.field.amount" = "bedrag";
 "records.l8b.duplicates.field.note" = "notitie";
-"records.l8b.duplicates.field.subcategory" = "subcategorie";
+"records.l8b.duplicates.field.subcategory" = "categorie";
 "records.l8b.duplicates.field.date" = "datum";
 "records.l8b.bulk.today" = "Nu: %@";
 "records.l8b.bulk.distinctNotes" = "Verschillende notities";
@@ -8292,3 +8292,31 @@
 "l2d.recurring.monthly" = "Elke maand, op dag %d";
 "l2d.recurring.yearly" = "Elk jaar, op %@";
 "l2d.recurring.moreOptions" = "Meer opties…";
+
+/* Lote decidido 2.2 · 02, sesión B: textos y visual del formulario de registro */
+"l2d.category.searchEmpty" = "Geen categorie met ‘%@’";
+"l2d.note.example" = "Bijv. lunch met Sanne";
+"l2d.hint.category" = "Typ ! en kies de categorie zonder dit scherm te verlaten";
+"l2d.hint.tag" = "Typ # om een label toe te voegen";
+"l2d.hint.account" = "Typ @ om de rekening te wijzigen";
+"l2d.need.purpose" = "Helpt je zien hoeveel van je uitgaven onmisbaar is";
+"l2d.tag.create" = "Maken";
+"l2d.rate.today" = "Wisselkoers van vandaag";
+"l2d.rate.onDate" = "Wisselkoers van %@";
+"l2d.rate.withHint" = "%@ · tik erop als je bank een andere gebruikte";
+"l2d.rate.editHint" = "Tik om te wijzigen";
+"l2d.split.button" = "Mijn deel";
+"l2d.split.chip.equal" = "Jouw deel van %1$@ · ÷ %2$d personen";
+"l2d.split.chip.percentage" = "Jouw deel van %1$@ · %2$@%%";
+"l2d.split.chip.shares" = "Jouw deel van %1$@ · %2$d van %3$d delen";
+"l2d.split.chip.exact" = "Jouw deel van %@ · exact bedrag";
+"l2d.amount.question.expense" = "Hoeveel heb je uitgegeven?";
+"l2d.amount.question.income" = "Hoeveel heb je ontvangen?";
+"l2d.amount.question.transfer" = "Hoeveel ga je overboeken?";
+"l2d.split.youPay" = "Jij betaalt";
+"l2d.split.formula.equal" = "%1$@ ÷ %2$d personen = %3$@ per persoon";
+"l2d.split.formula.percentage" = "%1$@%% van %2$@";
+"l2d.split.formula.shares" = "%1$d van %2$d delen van %3$@";
+"l2d.split.formula.exact" = "%1$@ van %2$@";
+"l2d.split.bar.you" = "Jij %@";
+"l2d.split.bar.others" = "De anderen %@";

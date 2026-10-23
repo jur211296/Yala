@@ -236,16 +236,20 @@ struct AccountSelectorRow: View {
 
                 Spacer()
 
+                // Lo elegido, tintado y con ✓ relleno del color de la cuenta (UX 2.2 · L2-19), como la rejilla de
+                // categorías. Antes, solo un ✓ pequeño.
                 if isSelected {
-                    Image(systemName: "checkmark")
+                    Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(Color.selectedFill(hex: account.colorHex))
+                        .accessibilityHidden(true)
                 }
             }
             // Sangría fija: atada al icono escalado, con texto grande partía el nombre de la línea en dos.
             .padding(.leading, isNestedLine ? DS.Spacing.lg + DS.Spacing.xxl : DS.Spacing.lg)
             .padding(.trailing, DS.Spacing.lg)
             .padding(.vertical, isNestedLine ? DS.Spacing.sm : DS.Spacing.md)
+            .background(isSelected ? Color(hex: account.colorHex).opacity(0.22) : Color.clear)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -15,6 +15,7 @@ struct NewTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(EntityDeletionService.self) private var deletionService
@@ -75,6 +76,18 @@ struct NewTransactionView: View {
     /// al cerrarse, sigue el cierre con su aviso.
     @State private var primerBeforeClosing = false
     @State private var closeAfterPrimer: (() -> Void)?
+
+    // MARK: Lote decidido 2.2 · 02, sesión B (textos y visual)
+
+    /// La pista de los atajos de esta apertura (L2-8): rota entre ! # @ y desaparece tras 6 aperturas o al usar uno.
+    @State private var descriptionHint: DescriptionShortcutHintLogic.Shortcut?
+    /// «Guardar» crece un instante al quedar completo (L2-21).
+    @State private var saveButtonPulse = false
+    /// Con el teclado puesto, «Guardar» vuelve dentro del scroll (ver `saveArea`).
+    @State private var isKeyboardVisible = false
+    /// Poco alto (un iPhone SE): menos aire entre bloques. Se mide sin contar el teclado, para que el formulario no se
+    /// apriete al escribir en un iPhone grande.
+    @State private var isCompactHeight = false
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -335,6 +348,9 @@ struct NewTransactionView: View {
                     }
                     applyAccountPrefillRule(to: newViewModel)
                     viewModel = newViewModel
+                    // «Registrar otro» empieza la calculadora de cero (L2-12): antes arrastraba la del registro anterior.
+                    splitFieldState.reset()
+                    descriptionHint = DescriptionShortcutHintLogic.registerOpening()
                     // El formulario nuevo vuelve a empezar vacío: su foto es la de ahora (L2-4).
                     formBaseline = newViewModel.formSnapshot
                     isCreatingAnother = true
@@ -405,7 +421,7 @@ struct NewTransactionView: View {
 
                             // Central content area: campos del grupo (monto/fecha/tipo) — always
                             // disabled si bridged (M5 + M6 Caso A: el grupo es la fuente de verdad).
-                            centralContent
+                            centralContent(compact: isCompactHeight)
                                 .disabled(isBridgedReadOnly)
                                 .opacity(isBridgedReadOnly ? 0.5 : 1.0)
 
@@ -418,24 +434,27 @@ struct NewTransactionView: View {
                             bottomChips
                                 .padding(.bottom, DS.Spacing.lg)
 
-                            // Register button: habilitado si algún campo personal es editable
-                            // (Caso A y Caso B clasificable). Solo toca campos personales en
-                            // SwiftData, no invoca service del grupo.
-                            // Lo que falta para guardar (UX 2.2 · L2-2).
-                            saveBlockedLine
-
-                            registerButton
-                                .disabled(!canSaveBridged)
-                                .opacity(canSaveBridged ? 1.0 : 0.5)
-                                .overlay(alignment: .top) { savedToast }
-                                .padding(.horizontal, DS.Spacing.xl)
-                                .padding(.bottom, DS.Spacing.xxl)
+                            // Con el teclado puesto, «Guardar» va con el contenido, como siempre: fijo encima del teclado
+                            // tapaba los chips de cuenta y categoría justo después de escribir el monto.
+                            if isKeyboardVisible {
+                                saveArea
+                            }
                         }
                     }
                     .frame(minHeight: proxy.size.height)
                 }
                 .scrollBounceBehavior(.basedOnSize)
             }
+            // «Guardar» y lo que falta para guardar (UX 2.2 · L2-2) van FUERA del scroll mientras no hay teclado, como los
+            // botones de salida de las pantallas de éxito (`swiftui-ds.md`): con la equivalencia, la tasa, la pregunta del
+            // monto, la pista y los chips en dos filas (lote decidido 2.2 · 02, sesión B), un gasto en dólares con
+            // favoritos dejaba «Guardar» bajo el borde de un iPhone 17 Pro y su toque se perdía (medido en
+            // `QuickActionsFavoritesUITests`). Cuando todo cabe se ve igual que antes: los `Spacer`s ya lo dejaban abajo.
+            .modifier(SaveAreaPlacement(
+                isKeyboardVisible: $isKeyboardVisible,
+                isCompactHeight: $isCompactHeight,
+                saveArea: saveArea
+            ))
             .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
             .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
             .dismissKeyboardOnTap()
@@ -464,11 +483,6 @@ struct NewTransactionView: View {
                     routingCurrency: isBridgedCasoA ? transactionToEdit?.currencyCode : viewModel.currencyCode,
                     sizing: .mediumFirst
                 )
-                .onChange(of: viewModel.selectedAccount) { _, newAccount in
-                    if let account = newAccount {
-                        viewModel.currencyCode = account.currencyCode
-                    }
-                }
             }
             .sheet(isPresented: $viewModel.showSourceAccountSelector) {
                 AccountSelectorSheet(
@@ -507,6 +521,7 @@ struct NewTransactionView: View {
                     .onChange(of: viewModel.transactionDate) { _, _ in
                         Task {
                             await viewModel.loadExchangeRate(context: modelContext)
+                            await viewModel.loadForeignExchangeRate(context: modelContext, keepManual: true)
                         }
                     }
             }
@@ -518,9 +533,9 @@ struct NewTransactionView: View {
                                 ?? .unclassified
                         },
                         set: { viewModel.selectedNeed = $0 }
-                    )
+                    ),
+                    sizing: .mediumFirst
                 )
-                .yalaSheetDetents([.medium])
             }
             .onChange(of: viewModel.showAccountSelector) { _, isPresenting in
                 if isPresenting {
@@ -644,9 +659,14 @@ struct NewTransactionView: View {
             if sessionState.isExpensesOnlyMode {
                 viewModel.transactionType = .expense
             }
-            // La foto de lo precargado, una vez: el `onAppear` vuelve a correr al cerrarse una hoja encima (L2-4).
+            // La foto de lo precargado, una vez: el `onAppear` vuelve a correr al cerrarse una hoja encima (L2-4). Es
+            // también la primera aparición: ahí cuenta la apertura para la pista de los atajos (L2-8), solo en uno nuevo.
             if formBaseline == nil {
                 formBaseline = viewModel.formSnapshot
+                if transactionToEdit == nil {
+                    descriptionHint = DescriptionShortcutHintLogic.registerOpening()
+                }
+                Task { await viewModel.loadForeignExchangeRate(context: modelContext, keepManual: true) }
             }
             // Auto-focus field based on user preference (only for new transactions)
             if transactionToEdit == nil, appPreferences.autoFocusField != .none {
@@ -665,6 +685,16 @@ struct NewTransactionView: View {
                 await viewModel.loadExchangeRate(context: modelContext)
             }
         }
+        // La divisa y la tasa siguen a la cuenta desde el formulario, no desde la hoja (L2-11): colgado de la hoja, su
+        // `onChange` no corría si la hoja ya se había cerrado, y el formulario se quedaba en la divisa vieja.
+        .modifier(NewTransactionFormFollowers(
+            account: viewModel.selectedAccount?.persistentModelID,
+            canSave: viewModel.canSave,
+            type: viewModel.transactionType,
+            onAccountChange: followSelectedAccount,
+            onCanSaveChange: celebrateCompleteIfNeeded,
+            onTypeChange: reloadForeignRate
+        ))
         .onChange(of: viewModel.destinationAccount) { _, _ in
             Task {
                 await viewModel.loadExchangeRate(context: modelContext)
@@ -708,8 +738,11 @@ struct NewTransactionView: View {
 
     // MARK: - Central Content
 
-    private var centralContent: some View {
-        VStack(spacing: DS.Spacing.xxl) {
+    /// - Parameter compact: con poco alto (un iPhone SE) el aire entre bloques baja de `xxl` a `md`, para que la pregunta
+    ///   del monto, la pista y los chips en dos filas (lote decidido 2.2 · 02, sesión B) quepan sin desplazar: la card de
+    ///   L2-10 pide «Etiquetas» a la vista sin deslizar también en el SE. En un iPhone normal no cambia nada.
+    private func centralContent(compact: Bool) -> some View {
+        VStack(spacing: compact ? DS.Spacing.md : DS.Spacing.xxl) {
             // Date chip - above description
             Button {
                 viewModel.showDatePicker = true
@@ -733,7 +766,8 @@ struct NewTransactionView: View {
 
             // Note field with mention detection and popover autocomplete
             VStack(spacing: DS.Spacing.xs) {
-                TextField(L10n.Transaction.description, text: $viewModel.note)
+                // El campo da un ejemplo (UX 2.2 · L2-8): antes decía solo «Descripción».
+                TextField(L10n.Transaction.description, text: $viewModel.note, prompt: Text(L10n.UXL2B.noteExample))
                     .font(DS.Typography.title)
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
@@ -758,32 +792,39 @@ struct NewTransactionView: View {
                             .presentationCompactAdaptation(.popover)
                     }
 
-                // Shortcut hint (hidden for transfers)
-                if !viewModel.isTransfer {
-                    Text(L10n.Transaction.descriptionHint)
+                // La pista de los atajos, en palabras llanas y una por apertura (L2-8). No en transferencias.
+                if !viewModel.isTransfer, let descriptionHint {
+                    Text(descriptionHint.hint)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .accessibilityIdentifier("new_transaction_shortcut_hint")
                 }
             }
 
-            // Amount display (Standard or Transfer)
-            if viewModel.needsExchangeRate {
-                transferAmountDisplay
-            } else {
-                amountDisplay
+            // Amount display (Standard or Transfer), con la pregunta según el tipo encima (L2-16).
+            VStack(spacing: DS.Spacing.sm) {
+                Text(AmountQuestionLogic.question(for: viewModel.transactionType))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("new_transaction_amount_question")
+                if viewModel.needsExchangeRate {
+                    transferAmountDisplay
+                } else {
+                    amountDisplay
+                }
             }
 
-            // Exchange rate chip (shown when currency differs from preferred, not for transfers)
-            // Use viewModel.currencyCode (transaction's currency), NOT effectiveCurrencyCode (account's currency)
-            // This handles cases where transaction is in USD but account is in PEN
-            if !viewModel.isTransfer,
-               viewModel.currencyCode != appPreferences.defaultCurrencyCode.rawValue,
-               viewModel.exchangeRate != 1.0 {
-                exchangeRateChip
+            // La equivalencia en la divisa preferida y la tasa en cápsula, también al crear (L2-11). Usa la divisa del
+            // IMPORTE (`amountCurrencyCode`), no la de la cuenta: 50 USD en una cuenta en soles siguen siendo dólares.
+            if viewModel.showsForeignEquivalence, viewModel.exchangeRate != 1.0 {
+                foreignEquivalence
             }
 
-            // Split indicator chip
-            if viewModel.hasSplitData, let desc = viewModel.splitDescription {
+            // Split indicator chip, con el total del que sale tu parte (L2-12).
+            if viewModel.hasSplitData, let desc = viewModel.splitChipText(format: { formattedAmount($0) }) {
                 Button { viewModel.showSplitCalculator = true } label: {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "percent")
@@ -823,8 +864,10 @@ struct NewTransactionView: View {
                     )
 
                     if viewModel.transactionType != .income {
+                        // La necesidad elegida, rellena (L2-19). El chip de la categoría, a su izquierda, no (C no elegida).
                         NeedEditChip(
-                            need: viewModel.selectedNeed ?? subcategory.need
+                            need: viewModel.selectedNeed ?? subcategory.need,
+                            filled: true
                         ) {
                             viewModel.showNeedSelector = true
                         }
@@ -846,7 +889,7 @@ struct NewTransactionView: View {
 
             // Quick actions bar
             quickActionsBar
-                .padding(.top, DS.Spacing.lg)
+                .padding(.top, compact ? DS.Spacing.none : DS.Spacing.lg)
         }
         .onChange(of: viewModel.selectedSubcategory) { _, newSubcategory in
             // Sync nature when subcategory changes
@@ -881,7 +924,8 @@ struct NewTransactionView: View {
                     .contentTransition(.numericText())
             }
 
-            TextField("0.00", text: $viewModel.amountString)
+            // «0.00» gris de ejemplo, no un monto escrito; al escribir toma el color del tipo (L2-16).
+            TextField("", text: $viewModel.amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(viewModel.amountColor)
                 .multilineTextAlignment(.center)
@@ -898,8 +942,8 @@ struct NewTransactionView: View {
                     }
                     // When field loses focus
                     if !isFocused {
-                        if viewModel.amountString.isEmpty {
-                            viewModel.amountString = "0.00"
+                        if viewModel.amountString.isEmpty || viewModel.amount == 0 {
+                            viewModel.amountString = ""
                         } else {
                             viewModel.amountString = AmountInputHelper.formatWithGrouping(viewModel.amount)
                         }
@@ -924,37 +968,43 @@ struct NewTransactionView: View {
         AmountInputHelper.filterAmountInput(input)
     }
 
-    /// Currency display for amount field - respects user preference (code vs symbol)
-    private var currencySymbol: String? {
-        guard viewModel.effectiveAccount != nil else { return nil }
-        return appPreferences.currencyIdentifier(for: viewModel.amountCurrencyCode)
+    /// La divisa del monto, siempre (L2-16): la de la cuenta, o la principal si aún no hay. Símbolo o código según la
+    /// preferencia de formato de moneda. Antes, sin cuenta no había símbolo.
+    private var displayCurrencyCode: String {
+        viewModel.effectiveAccount != nil ? viewModel.amountCurrencyCode : appPreferences.defaultCurrencyCode.rawValue
     }
 
-    /// Exchange rate chip showing the converted amount and rate: "≈ S/ 4,437.50 (TC: 3.55)" en español,
-    /// "≈ S/ 4,437.50 (Rate: 3.55)" en inglés. Mismo formato que la fila de tipo de cambio de
-    /// `TransactionDetailSheet`: el monto con la preferencia de símbolo/código y separador de miles, y el
-    /// rótulo del tipo de cambio traducido. Hasta 2.2 el «TC:» iba fijo en los 16 idiomas y el monto salía
-    /// sin separador («4437.50»), distinto del monto de encima («1,250.00»). Auditoría UX 2.2, lote 2, B1.
-    private var exchangeRateChip: some View {
-        let rate = viewModel.exchangeRate
-        let convertedAmount = viewModel.amount * rate
+    private var currencySymbol: String? {
+        appPreferences.currencyIdentifier(for: displayCurrencyCode)
+    }
 
-        let formattedAmount = appPreferences.currency(
-            convertedAmount,
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            forceFullPrecision: true
-        )
-        let formattedRate = L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(rate))
+    /// Un importe con la divisa del formulario y la preferencia de símbolo o código.
+    private func formattedAmount(_ value: Double) -> String {
+        appPreferences.currency(value, currencyCode: displayCurrencyCode, forceFullPrecision: true)
+    }
 
-        return Text("≈ \(formattedAmount) (\(formattedRate))")
-            .font(DS.Typography.labelSmall)
-            .foregroundStyle(.thSecondaryText)
-            .padding(.horizontal, DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.xs)
-            .background(
-                Capsule().fill(.thSecondaryText.opacity(0.1))
-            )
-            .padding(.top, DS.Spacing.sm)
+    /// «≈ S/ 44.38» bajo el monto y la cápsula «Tipo de cambio de hoy: 1 US$ = S/ 3.55 ✎» (L2-11), el mismo componente que
+    /// la transferencia (L2-18). Sustituye al chip «≈ S/ 44.38 (TC: 3.55)», que solo salía al editar y decía «TC».
+    private var foreignEquivalence: some View {
+        let preferred = appPreferences.defaultCurrencyCode.rawValue
+        let converted = viewModel.amount * viewModel.exchangeRate
+        return VStack(spacing: DS.Spacing.xs) {
+            Text("≈ \(appPreferences.currency(converted, currencyCode: preferred, forceFullPrecision: true))")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
+                .accessibilityIdentifier("new_transaction_equivalence")
+            ExchangeRateCapsule(
+                caption: ExchangeRateCaptionLogic.caption(for: viewModel.transactionDate),
+                captionInside: true,
+                fromCurrency: viewModel.amountCurrencyCode,
+                toCurrency: preferred,
+                rate: viewModel.exchangeRate
+            ) { newRate in
+                viewModel.setManualForeignRate(newRate)
+            }
+        }
+        .padding(.top, DS.Spacing.sm)
     }
 
     // MARK: - Quick Actions Bar
@@ -990,11 +1040,12 @@ struct NewTransactionView: View {
                 .accessibilityIdentifier("new_transaction_delete_action")
             }
 
-            // Split calculator (only for expenses)
+            // «Mi parte» (L2-12; antes «Calcular», que no decía qué calculaba). Solo en gastos.
             if viewModel.transactionType == .expense {
                 quickActionButton(
                     icon: "percent",
-                    label: L10n.Action.calculate
+                    label: L10n.UXL2B.splitButton,
+                    fill: DS.FormAction.split
                 ) {
                     viewModel.showSplitCalculator = true
                 }
@@ -1004,7 +1055,8 @@ struct NewTransactionView: View {
             // Save as favorite
             quickActionButton(
                 icon: "star",
-                label: L10n.Action.favorite
+                label: L10n.Action.favorite,
+                fill: DS.FormAction.favorite
             ) {
                 viewModel.showSaveAsFavoriteSheet = true
             }
@@ -1019,7 +1071,8 @@ struct NewTransactionView: View {
             if !viewModel.isTransfer && !isBridgedReadOnly {
                 quickActionButton(
                     icon: "repeat",
-                    label: L10n.Action.recurring
+                    label: L10n.Action.recurring,
+                    fill: DS.FormAction.recurring
                 ) {
                     if viewModel.canSave {
                         // La hoja corta «Hacer recurrente» (UX 2.2 · L2-15); el editor completo, desde «Más opciones…».
@@ -1034,21 +1087,24 @@ struct NewTransactionView: View {
         }
     }
 
+    /// Una acción del formulario. Con `fill`, ficha rellena de su color e icono blanco (L2-20): «Mi parte», «Favorito» y
+    /// «Recurrente» dejan de ser tres círculos grises iguales. Duplicar y Eliminar (al editar) siguen grises.
     private func quickActionButton(
         icon: String,
         label: String,
+        fill: Color? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             VStack(spacing: DS.Spacing.xs) {
                 Image(systemName: icon)
                     .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(fill == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.white))
                     .frame(width: 48, height: 48)
                     .background(
                         Circle()
-                            .fill(.thCard)
-                            .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                            .fill(fill.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.thCard))
+                            .shadow(color: .black.opacity(fill == nil ? 0.08 : 0), radius: 4, y: 2)
                     )
                 Text(label)
                     .font(DS.Typography.captionSmall)
@@ -1102,9 +1158,8 @@ struct NewTransactionView: View {
 
     private var splitCalculatorSheetContent: some View {
         SplitCalculatorSheet(
-            currencySymbol: viewModel.effectiveAccount != nil
-                ? CurrencyCode(rawValue: viewModel.amountCurrencyCode)?.symbol ?? viewModel.amountCurrencyCode
-                : nil,
+            // Con moneda siempre: la de la cuenta o la principal (L2-17).
+            currencyCode: displayCurrencyCode,
             fieldState: splitFieldState,
             onUseSplit: { amount, splitType, totalAmount, myValue, divisor in
                 viewModel.applySplitResult(
@@ -1130,20 +1185,18 @@ struct NewTransactionView: View {
                     myValue: myValue,
                     divisor: viewModel.splitDivisor
                 )
-            } else if viewModel.amount > 0 && !viewModel.hasSplitData {
+            } else if !viewModel.hasSplitData {
                 // Prefill total from current amount for new splits
                 splitFieldState.prefillTotal(viewModel.amount)
-                // Apply last used defaults
-                if let lastType = UserDefaults.standard.string(forKey: "lastSplitType"),
-                   let type = SplitType(rawValue: lastType) {
-                    splitFieldState.splitType = type
-                    if type == .percentage {
-                        let lastPct = UserDefaults.standard.double(forKey: "lastSplitPercentage")
-                        if lastPct > 0 {
-                            splitFieldState.percentageText = lastPct == lastPct.rounded()
-                                ? String(Int(lastPct))
-                                : String(format: "%.1f", lastPct)
-                        }
+                // «Iguales» la primera vez y, después, el último modo usado (L2-12). Antes abría en «Porcentaje».
+                let type = SplitSummaryLogic.initialType(lastUsedRaw: UserDefaults.standard.string(forKey: "lastSplitType"))
+                splitFieldState.splitType = type
+                if type == .percentage {
+                    let lastPct = UserDefaults.standard.double(forKey: "lastSplitPercentage")
+                    if lastPct > 0 {
+                        splitFieldState.percentageText = lastPct == lastPct.rounded()
+                            ? String(Int(lastPct))
+                            : String(format: "%.1f", lastPct)
                     }
                 }
             }
@@ -1152,9 +1205,10 @@ struct NewTransactionView: View {
 
     // MARK: - Bottom Chips
 
+    /// Los chips fluyen en dos filas en vez de hacer scroll horizontal (L2-10): «Etiquetas» siempre a la vista. Lo elegido
+    /// va relleno con su color y texto blanco (L2-19), con rebote y relleno animado (L2-21).
     private var bottomChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
+        FlowLayout(spacing: DS.Spacing.sm) {
                 // Account chip (or source/dest for transfers). En Caso B/derivadas/settlement la
                 // cuenta es de sistema por diseño → bloqueada; transfers no son bridgeadas.
                 Group {
@@ -1165,7 +1219,8 @@ struct NewTransactionView: View {
                             text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
                             isSelected: viewModel.sourceAccount != nil,
                             color: viewModel.sourceAccount != nil ? Color.hotPink : nil,
-                            isMissing: viewModel.marksMissing(.sourceAccount)
+                            isMissing: viewModel.marksMissing(.sourceAccount),
+                            fillsWhenSelected: true
                         ) {
                             dismissKeyboard()
                             viewModel.showSourceAccountSelector = true
@@ -1178,7 +1233,8 @@ struct NewTransactionView: View {
                             text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
                             isSelected: viewModel.destinationAccount != nil,
                             color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil,
-                            isMissing: viewModel.marksMissing(.destinationAccount)
+                            isMissing: viewModel.marksMissing(.destinationAccount),
+                            fillsWhenSelected: true
                         ) {
                             dismissKeyboard()
                             viewModel.showDestinationAccountSelector = true
@@ -1197,7 +1253,8 @@ struct NewTransactionView: View {
                             text: cardMembers.first?.name ?? viewModel.selectedAccount?.name ?? L10n.Transaction.account,
                             isSelected: viewModel.selectedAccount != nil,
                             color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) },
-                            isMissing: viewModel.marksMissing(.account)
+                            isMissing: viewModel.marksMissing(.account),
+                            fillsWhenSelected: true
                         ) {
                             dismissKeyboard()
                             viewModel.showAccountSelector = true
@@ -1210,7 +1267,8 @@ struct NewTransactionView: View {
                                 icon: "banknote",
                                 text: member.currencyCode,
                                 isSelected: isChosen,
-                                color: isChosen ? Color(hex: member.colorHex) : nil
+                                color: isChosen ? Color(hex: member.colorHex) : nil,
+                                fillsWhenSelected: true
                             ) {
                                 viewModel.selectCardMember(member)
                             }
@@ -1230,7 +1288,8 @@ struct NewTransactionView: View {
                         text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
                         isSelected: viewModel.selectedSubcategory != nil,
                         color: subcategoryChipColor,
-                        isMissing: viewModel.marksMissing(.category)
+                        isMissing: viewModel.marksMissing(.category),
+                        fillsWhenSelected: true
                     ) {
                         dismissKeyboard()
                         viewModel.showSubcategorySelector = true
@@ -1288,25 +1347,24 @@ struct NewTransactionView: View {
                                 .buttonStyle(.plain)
                                 .accessibilityLabel(L10n.Accessibility.deleteTag)
                             }
-                            .foregroundStyle(.thTagChip)
+                            // Puesta, rellena con el color de la etiqueta y texto blanco (L2-19).
+                            .foregroundStyle(Color.white)
                             .padding(.horizontal, DS.FormRow.paddingV)
                             .padding(.vertical, DS.Spacing.sm)
                             .background(
-                                Capsule().fill(.thTagChip.opacity(0.12))
+                                Capsule().fill(Color.selectedFill(hex: tag.colorHex))
                             )
-                            .overlay(
-                                Capsule()
-                                    .stroke(.thTagChip.opacity(0.3), lineWidth: 1)
-                            )
+                            .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                         }
                     }
                     }
                     .disabled(!canEditBridgedSubcategoryAndTags)
                     .opacity(canEditBridgedSubcategoryAndTags ? 1.0 : 0.5)
                 }
-            }
-            .padding(.horizontal, DS.Spacing.xl)
         }
+        .padding(.horizontal, DS.Spacing.xl)
+        .animation(reduceMotion ? .easeInOut(duration: DS.Animation.fast) : .spring(response: 0.3, dampingFraction: 0.75),
+                   value: viewModel.selectedTags.map(\.persistentModelID))
     }
 
     private static let shortDateFormatter: DateFormatter = {
@@ -1462,6 +1520,9 @@ struct NewTransactionView: View {
 
         viewModel.note = newNote
         currentMentionState = nil
+        // Usó un atajo: la pista ya no hace falta (L2-8).
+        DescriptionShortcutHintLogic.markShortcutUsed()
+        descriptionHint = nil
 
         // Apply the selection based on type
         switch suggestion.type {
@@ -1519,17 +1580,38 @@ struct NewTransactionView: View {
 
     // MARK: - Register Button
 
+    /// La línea de lo que falta (L2-2) y «Guardar».
+    private var saveArea: some View {
+        VStack(spacing: DS.Spacing.none) {
+            saveBlockedLine
+
+            // Register button: habilitado si algún campo personal es editable
+            // (Caso A y Caso B clasificable). Solo toca campos personales en
+            // SwiftData, no invoca service del grupo.
+            registerButton
+                .disabled(!canSaveBridged)
+                .opacity(canSaveBridged ? 1.0 : 0.5)
+                .overlay(alignment: .top) { savedToast }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.xxl)
+        }
+    }
+
+    /// Apagado en gris; completo, relleno del acento con el blanco encima ≥ 4,5:1 (L2-20), y crece un instante al quedar
+    /// completo (L2-21, `celebrateCompleteIfNeeded`). Sin brillo.
     private var registerButton: some View {
         YalaPrimaryButton(
             L10n.Action.save,
             icon: "checkmark.circle.fill",
             isDisabled: !viewModel.canSave || viewModel.isSaving,
             isLoading: viewModel.isSaving,
-            disabledHint: !viewModel.canSave ? L10n.Accessibility.completeFormHint : nil
+            disabledHint: !viewModel.canSave ? L10n.Accessibility.completeFormHint : nil,
+            enabledFill: Color.selectedFill(theme.accent)
         ) {
             saveTransaction()
         }
         .accessibilityIdentifier("new_transaction_save")
+        .scaleEffect(saveButtonPulse ? 1.03 : 1)
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
 
@@ -1876,6 +1958,41 @@ struct NewTransactionView: View {
         model.applyAccountPrefillRule()
     }
 
+    // MARK: - La cuenta, la tasa y «Guardar» (lote decidido 2.2 · 02, sesión B)
+
+    /// La divisa sigue a la cuenta elegida y la tasa se carga de nuevo (L2-11). Una tasa escrita a mano era de la cuenta
+    /// anterior: se descarta.
+    private func followSelectedAccount() {
+        if let account = viewModel.selectedAccount {
+            viewModel.currencyCode = account.currencyCode
+        }
+        viewModel.isExchangeRateManual = false
+        reloadForeignRate()
+    }
+
+    private func reloadForeignRate() {
+        Task { await viewModel.loadForeignExchangeRate(context: modelContext, keepManual: false) }
+    }
+
+    /// Al pasar de incompleto a completo, «Guardar» crece un instante con una vibración ligera (L2-21). Con «Reducir
+    /// movimiento», sin escala: solo el fundido de color de siempre, y la vibración se queda. No celebra lo que ya venía
+    /// completo al abrir (editar un registro).
+    private func celebrateCompleteIfNeeded(was: Bool, isNow: Bool) {
+        guard !was, isNow, viewModel.formSnapshot != formBaseline else { return }
+        DS.Haptic.light()
+        guard !reduceMotion else { return }
+        withAnimation(.spring(response: 0.18, dampingFraction: 0.6)) { saveButtonPulse = true }
+        Task {
+            do {
+                try await Task.sleep(for: .milliseconds(180))
+            } catch {
+                saveButtonPulse = false  // Cancelada: sin animación, pero sin quedarse grande.
+                return
+            }
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) { saveButtonPulse = false }
+        }
+    }
+
     // MARK: - Cerrar con algo escrito (UX 2.2 · L2-4)
 
     /// Hay algo escrito o elegido a mano: lo de ahora no es lo que se precargó al abrir. Lo que viene de un grupo no se
@@ -2219,6 +2336,87 @@ struct NewTransactionView: View {
         Task {
             await viewModel.loadExchangeRate(context: modelContext)
         }
+    }
+}
+
+/// Cuándo el formulario va con poco alto (lote decidido 2.2 · 02, sesión B). El alto es el del formulario bajo la barra
+/// de navegación, «Guardar» incluido y sin contar el teclado (estimado en las capturas: ~580 pt en un iPhone SE, ~715 en
+/// un 17 Pro).
+enum NewTransactionFormLayout {
+    static let compactHeightThreshold: CGFloat = 650
+
+    static func isCompact(height: CGFloat) -> Bool {
+        height > 0 && height < compactHeightThreshold
+    }
+}
+
+/// «Guardar» abajo, fuera del scroll, mientras no hay teclado; el teclado visto por sus notificaciones; y el alto del
+/// formulario sin contar el teclado (`NewTransactionFormLayout`). En su propio modificador: en la cadena del `body` el
+/// compilador tardaba 1,4 s en tipar la expresión (medido con `-warn-long-expression-type-checking`).
+private struct SaveAreaPlacement<SaveArea: View>: ViewModifier {
+    @Binding var isKeyboardVisible: Bool
+    @Binding var isCompactHeight: Bool
+    let saveArea: SaveArea
+
+    func body(content: Content) -> some View {
+        content
+            .safeAreaInset(edge: .bottom, spacing: DS.Spacing.none) { inset }
+            .modifier(KeyboardVisibilityReader(isVisible: $isKeyboardVisible))
+            // Poco alto (un iPhone SE): se mide el contenedor ignorando el teclado, así que escribir no lo cambia.
+            .background { heightProbe }
+    }
+
+    @ViewBuilder
+    private var inset: some View {
+        if !isKeyboardVisible {
+            saveArea
+        }
+    }
+
+    private var heightProbe: some View {
+        Color.clear
+            .ignoresSafeArea(.keyboard)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                isCompactHeight = NewTransactionFormLayout.isCompact(height: height)
+            }
+    }
+}
+
+/// Si el teclado está en pantalla, por sus notificaciones: cubre todos los campos (monto, descripción, destino de una
+/// transferencia, la tasa de la cápsula), que no comparten un `FocusState`. Sin animación: el cambio de sitio de «Guardar»
+/// ya va dentro de la del teclado.
+private struct KeyboardVisibilityReader: ViewModifier {
+    @Binding var isVisible: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in set(true) }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in set(false) }
+    }
+
+    private func set(_ visible: Bool) {
+        guard isVisible != visible else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { isVisible = visible }
+    }
+}
+
+/// Lo que el formulario observa además de lo de siempre (lote decidido 2.2 · 02, sesión B). En su propio modificador y con
+/// cierres de una línea: el compilador del CI (Xcode 26.6) no tipa más `onChange` en la cadena del `body`.
+private struct NewTransactionFormFollowers: ViewModifier {
+    let account: PersistentIdentifier?
+    let canSave: Bool
+    let type: TransactionType
+    let onAccountChange: () -> Void
+    let onCanSaveChange: (Bool, Bool) -> Void
+    let onTypeChange: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: account) { _, _ in onAccountChange() }
+            .onChange(of: canSave) { was, isNow in onCanSaveChange(was, isNow) }
+            .onChange(of: type) { _, _ in onTypeChange() }
     }
 }
 

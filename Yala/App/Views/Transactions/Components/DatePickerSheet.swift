@@ -127,7 +127,17 @@ struct DatePickerSheet: View {
                 Button {
                     choose(date)
                 } label: {
-                    Text(shortcut.title)
+                    // El atajo elegido, relleno y con ✓ (UX 2.2 · L2-19).
+                    HStack(spacing: DS.Spacing.xs) {
+                        if isChosen {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(DS.Typography.labelSmall)
+                                .accessibilityHidden(true)
+                        }
+                        Text(shortcut.title)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
                         .font(DS.Typography.label)
                         .foregroundStyle(isChosen ? Color.white : Color.primary)
                         .padding(.horizontal, DS.Spacing.lg)
