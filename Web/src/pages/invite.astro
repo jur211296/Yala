@@ -40,7 +40,17 @@ const groupColor = `#${colorHex}`;
 
 // Deep link scheme parametrized via env var (yaladev for dev/preview, yala for production).
 const scheme = import.meta.env.PUBLIC_DEEP_LINK_SCHEME || 'yala';
-const appDeepLink = shareParam ? `${scheme}://invite?s=${shareParam}` : null;
+// L12-15 · «Abrir en Yala» lleva también el nombre, el icono, el color, los miembros y quién invita: la app enseña la
+// tarjeta del grupo ANTES de pedir cuenta (L12-17), y sin esto quien llega por aquí la vería genérica. `s` sigue siendo
+// lo único que la app necesita para unirse; lo demás es lo mismo que ya pinta esta página.
+// Codificado con `encodeURIComponent` y no con `URLSearchParams`: éste escribe los espacios como `+`, y la app lee la
+// query con `URLComponents`, que deja el `+` tal cual («Depa+Miraflores»).
+const deepLinkQuery = [['s', shareParam], ...['n', 'i', 'c', 'm', 'u'].map((key) => [key, url.searchParams.get(key) || ''])]
+  .filter(([, value]) => value)
+  .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+  .join('&');
+const appDeepLink = shareParam ? `${scheme}://invite?${deepLinkQuery}` : null;
+const invitedByLine = inviterName ? t.inviteInvitedBy.replace('{inviter}', inviterName) : null;
 
 // SF Symbol → SVG path mapping (Lucide-inspired, 24x24 viewBox)
 const sfSymbolSVGs: Record<string, string> = {
@@ -168,6 +178,11 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
       <!-- Group Name -->
       <h1 class="text-xl font-bold text-white mb-1">{groupName}</h1>
 
+      <!-- L12-15 · quién invita, en la tarjeta (antes solo salía en el título de la pestaña) -->
+      {invitedByLine && (
+        <p class="text-sm text-neutral-300 mb-4">{invitedByLine}</p>
+      )}
+
       <!-- Members -->
       {members.length > 0 && (
         <div class="mb-5">
@@ -187,19 +202,33 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
         <p class="text-sm text-neutral-400 mb-5">{t.inviteInvitedFallback}</p>
       )}
 
-      <!-- CTA Buttons -->
+      <!-- L12-15 · qué hacer: dos pasos. Sin la app, «Abrir en Yala» no lleva a ningún sitio, así que primero se descarga -->
+      {appDeepLink && (
+        <ol class="text-left space-y-2 mb-5">
+          <li class="flex items-center gap-3 text-sm text-neutral-200">
+            <span class="flex-none w-6 h-6 rounded-full bg-yala-indigo text-white text-xs font-bold flex items-center justify-center" aria-hidden="true">1</span>
+            <span>{t.inviteStep1}</span>
+          </li>
+          <li class="flex items-center gap-3 text-sm text-neutral-200">
+            <span class="flex-none w-6 h-6 rounded-full bg-yala-indigo text-white text-xs font-bold flex items-center justify-center" aria-hidden="true">2</span>
+            <span>{t.inviteStep2}</span>
+          </li>
+        </ol>
+      )}
+
+      <!-- CTA Buttons: descargar primero, «Abrir en Yala» como segundo botón -->
       <div class="space-y-3">
+        <a href={appStoreURL} target="_blank" rel="noopener"
+           class="block w-full px-6 py-3 rounded-xl font-semibold bg-yala-indigo text-white text-center transition-all duration-300 hover:shadow-yala hover:scale-[1.02] active:scale-[0.98]">
+          {t.inviteDownloadAppStore}
+        </a>
+
         {appDeepLink && (
           <a href={appDeepLink}
-             class="block w-full px-6 py-3 rounded-xl font-semibold bg-yala-indigo text-white text-center transition-all duration-300 hover:shadow-yala hover:scale-[1.02] active:scale-[0.98]">
+             class="block w-full text-center btn-secondary">
             {t.inviteOpenInYala}
           </a>
         )}
-
-        <a href={appStoreURL} target="_blank" rel="noopener"
-           class="block w-full text-center btn-secondary">
-          {t.inviteDownloadAppStore}
-        </a>
       </div>
     </div>
 
