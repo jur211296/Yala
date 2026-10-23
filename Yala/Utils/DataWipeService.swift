@@ -1158,6 +1158,8 @@ final class DataWipeService {
         defaults.removeObject(forKey: InboxGroupDraftsHiddenHere.key)   // Gastos de grupo quitados de la Bandeja solo aquí
         defaults.removeObject(forKey: "lastSplitType")            // Memoria del split del formulario de TX
         defaults.removeObject(forKey: "lastSplitPercentage")
+        defaults.removeObject(forKey: DescriptionShortcutHintLogic.openingsKey) // Pista de los atajos del formulario (L2-8)
+        defaults.removeObject(forKey: DescriptionShortcutHintLogic.usedKey)
 
         // El estado del servicio de tipos de cambio. Sin esto, `preloadHistoricalIfNeeded` se salta el
         // histórico hasta 30 días después —la key la acaba de escribir el arranque que importó el corpus—

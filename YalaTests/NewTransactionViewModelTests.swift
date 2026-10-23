@@ -13,8 +13,8 @@ import Testing
 struct NewTransactionViewModelTests {
 
     // MARK: - Numeric Keypad: Basic Input
-    // Note: Tests call clearAmount() first because ViewModel initializes with "0.00"
-    // and the append logic checks for "0" specifically
+    // Note: Tests call clearAmount() first because the append logic checks for "0" specifically (the ViewModel starts
+    // empty since UX 2.2 · L2-16)
 
     @MainActor
     @Test("Append digit replaces initial zero")
@@ -191,7 +191,7 @@ struct NewTransactionViewModelTests {
     @Test("Initial amount is zero")
     func initialAmountIsZero() async {
         let vm = NewTransactionViewModel()
-        // Initial is "0.00" which parses to 0.0
+        // Initial is "" (nothing typed, UX 2.2 · L2-16), which parses to 0.0
         #expect(vm.amount == 0.0)
     }
 
@@ -371,8 +371,8 @@ struct NewTransactionViewModelTests {
         // Reset
         vm.reset()
 
-        // Verify all cleared
-        #expect(vm.amountString == "0")
+        // Verify all cleared. El monto vuelve a vacío, el estado de «nada escrito» (UX 2.2 · L2-16).
+        #expect(vm.amountString.isEmpty)
         #expect(vm.transactionType == .expense)
         #expect(vm.note == "")
         #expect(vm.exchangeRate == 1.0)
@@ -458,37 +458,27 @@ struct NewTransactionViewModelTests {
         #expect(vm.hasSplitData == false)
     }
 
+    // El chip de «Mi parte» (UX 2.2 · L2-12) lleva el total: lo cubre `UXAudit22Decidido02BLogicTests`. Aquí, que el
+    // ViewModel pasa sus datos sin intercambiarlos. Se compara contra el texto LOCALIZADO, no contra un literal: el CI
+    // arranca en inglés y la Mac del owner en español.
+
     @MainActor
-    @Test("splitDescription for percentage type")
-    func splitDescriptionPercentage() async {
+    @Test("splitChipText for percentage type")
+    func splitChipTextPercentage() async {
         let vm = NewTransactionViewModel()
         vm.applySplitResult(amount: 100, splitType: .percentage, totalAmount: 125, myValue: 80, divisor: 100)
-        #expect(vm.splitDescription?.contains("80%") == true)
+        #expect(vm.splitChipText(format: { String(format: "%.2f", $0) })
+            == L10n.UXL2B.splitChipPercentage(total: "125.00", percent: SplitSummaryLogic.percentText(80)))
     }
 
     @MainActor
-    @Test("splitDescription for equal type")
-    func splitDescriptionEqual() async {
-        let vm = NewTransactionViewModel()
-        vm.applySplitResult(amount: 40, splitType: .equal, totalAmount: 120, myValue: 3, divisor: 3)
-        #expect(vm.splitDescription?.contains("3") == true)
-    }
-
-    @MainActor
-    @Test("splitDescription for shares type")
-    func splitDescriptionShares() async {
+    @Test("splitChipText for shares type keeps mine and total apart")
+    func splitChipTextShares() async {
         let vm = NewTransactionViewModel()
         vm.applySplitResult(amount: 200, splitType: .shares, totalAmount: 500, myValue: 2, divisor: 5)
-        // Se compara contra el string LOCALIZADO, no contra el literal español "2 de 5". `ls()`
-        // resuelve por `Bundle.main` (`L10n.swift:181-197` vía `LanguageManager.resolved`), o sea
-        // el idioma del simulador: en la Mac del owner sale "2 de 5 partes" y en el runner de CI,
-        // que arranca en inglés, "2 of 5 shares". Este test llevaba rojo en CI desde siempre por
-        // pinnear una traducción, no la lógica — y que el string exista en los 16 idiomas ya lo
-        // cubre la batería de l10n, que es su sitio.
-        #expect(vm.splitDescription == L10n.Split.descShares(2, 5))
-        // Lo único que el literal sí protegía y aquí se conserva: que `myValue` y `divisor` no
-        // viajen intercambiados. Invertidos tienen que dar otro texto.
-        #expect(vm.splitDescription != L10n.Split.descShares(5, 2))
+        let format: (Double) -> String = { String(format: "%.2f", $0) }
+        #expect(vm.splitChipText(format: format) == L10n.UXL2B.splitChipShares(total: "500.00", mine: 2, of: 5))
+        #expect(vm.splitChipText(format: format) != L10n.UXL2B.splitChipShares(total: "500.00", mine: 5, of: 2))
     }
 
     @MainActor

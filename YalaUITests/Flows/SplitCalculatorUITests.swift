@@ -4,8 +4,8 @@
 //
 //  Cobertura XCUITest del área `split-calculator` (escenarios 52.x): la calculadora
 //  que divide el monto de un gasto. Reusa el form de transacción (FAB → fab_manual).
-//  2 tests: (a) abrir la calculadora con un gasto de 100, aplicar el preset 50%
-//  (modo porcentaje, default) y verificar que calcula la porción (50) y habilita
+//  2 tests: (a) abrir la calculadora con un gasto de 100, pasar a porcentaje (desde UX 2.2 · L2-12 abre en «Iguales»),
+//  aplicar el preset 50% y verificar que calcula la porción (50) y habilita
 //  el botón Usar; (b) aplicar la división y verificar el chip de split en el form.
 //  La calculadora no usa Swift Charts → árbol de accesibilidad ligero. Seed `minimal`.
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
@@ -19,8 +19,8 @@ final class SplitCalculatorUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Abre el form de gasto con monto 100, lanza la calculadora y aplica el preset
-    /// 50% (modo porcentaje por defecto). Deja el sheet abierto con el resultado.
+    /// Abre el form de gasto con monto 100, lanza la calculadora, pasa a porcentaje y aplica el preset 50%. Deja el sheet
+    /// abierto con el resultado.
     private func openSplitWith50Percent(_ app: XCUIApplication) {
         app.revealPanelFAB().tap()
         let manual = app.buttons["fab_manual"]
@@ -38,7 +38,11 @@ final class SplitCalculatorUITests: XCTestCase {
         XCTAssertTrue(splitAction.waitForExistence(timeout: 5), "No apareció la acción de dividir.")
         splitAction.tap()
 
-        // Modo porcentaje (default) + preset 50%.
+        // La primera vez abre en «Iguales» (UX 2.2 · L2-12): se pasa a porcentaje (segundo segmento) + preset 50%.
+        let picker = app.segmentedControls.firstMatch
+        XCTAssertTrue(picker.waitForExistence(timeout: 5), "No se montó SplitCalculatorSheet (selector de modo).")
+        XCTAssertTrue(picker.buttons.element(boundBy: 0).isSelected, "La primera vez abre en «Iguales».")
+        picker.buttons.element(boundBy: 1).tap()
         let preset = app.buttons["split_calc_preset_50"]
         XCTAssertTrue(preset.waitForExistence(timeout: 5), "No se montó SplitCalculatorSheet (preset 50%).")
         preset.tap()

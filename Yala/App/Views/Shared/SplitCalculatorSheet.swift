@@ -12,7 +12,8 @@ import SwiftUI
 @MainActor @Observable
 final class SplitCalculatorFieldState {
     var totalAmountText: String = ""
-    var splitType: SplitType = .percentage
+    /// «Iguales» de serie (UX 2.2 · L2-12): es lo común; antes abría en «Porcentaje».
+    var splitType: SplitType = .equal
     var percentageText: String = ""
     var participantsText: String = ""
     var exactAmountText: String = ""
@@ -21,7 +22,7 @@ final class SplitCalculatorFieldState {
 
     func reset() {
         totalAmountText = ""
-        splitType = .percentage
+        splitType = .equal
         percentageText = ""
         participantsText = ""
         exactAmountText = ""
@@ -63,13 +64,21 @@ final class SplitCalculatorFieldState {
 // MARK: - Split Calculator Sheet
 
 struct SplitCalculatorSheet: View {
-    let currencySymbol: String?
+    /// La divisa del cálculo, siempre: la de la cuenta o la principal (UX 2.2 · L2-17). Símbolo o código según la
+    /// preferencia de formato de moneda.
+    let currencyCode: String
     @Bindable var fieldState: SplitCalculatorFieldState
     let onUseSplit: (Double, SplitType, Double, Double, Double?) -> Void
     let onDismiss: () -> Void
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+
+    private var currencySymbol: String? { appPreferences.currencyIdentifier(for: currencyCode) }
+
+    private func format(_ value: Double) -> String {
+        appPreferences.currency(value, currencyCode: currencyCode, forceFullPrecision: true)
+    }
 
     @FocusState private var focusedField: CalcField?
 
@@ -149,9 +158,9 @@ struct SplitCalculatorSheet: View {
                         percentagePresets
                     }
 
-                    // Result
+                    // Result: «Te toca pagar», la fórmula y la barra tú / los demás (L2-17).
                     if let result = calculatedResult {
-                        resultRow(label: L10n.Split.yourPortion, amount: result)
+                        resultCard(mine: result)
                     }
 
                     // Tip
@@ -385,20 +394,59 @@ struct SplitCalculatorSheet: View {
         )
     }
 
-    // MARK: - Result Row
+    // MARK: - Result (UX 2.2 · L2-17)
 
-    private func resultRow(label: String, amount: Double) -> some View {
-        HStack {
-            Text(label)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-            Spacer()
-            Text("\(currencySymbol.map { "\($0) " } ?? "")\(appPreferences.number(amount, forceFullPrecision: true))")
-                .font(DS.Typography.title2)
-                .foregroundStyle(Color.hotPink)
-                .accessibilityIdentifier("split_calc_result")
+    /// «Te toca pagar» con el monto grande y con moneda; debajo, la barra de reparto («Tú S/ 40.00 · Los demás S/ 80.00»)
+    /// y la fórmula del modo («S/ 120.00 ÷ 3 personas = S/ 40.00 cada una»). Antes, una fila «Tu parte 40.00». Sin
+    /// nombres de personas (C no elegida) y sin brillo.
+    private func resultCard(mine: Double) -> some View {
+        let (myValue, divisor) = currentMyValueAndDivisor()
+        let others = SplitSummaryLogic.othersAmount(total: totalAmount, mine: mine)
+        let fraction = SplitSummaryLogic.myFraction(total: totalAmount, mine: mine)
+        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                Text(L10n.UXL2B.splitYouPay)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                Spacer(minLength: DS.Spacing.sm)
+                Text(format(mine))
+                    .font(DS.Typography.title)
+                    .fontWeight(.bold)
+                    .foregroundStyle(Color.emphasisPinkText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .contentTransition(.numericText())
+                    .accessibilityIdentifier("split_calc_result")
+            }
+
+            SplitShareBar(fraction: fraction)
+                .accessibilityHidden(true)
+
+            HStack(spacing: DS.Spacing.sm) {
+                Text(L10n.UXL2B.splitBarYou(format(mine)))
+                    .foregroundStyle(Color.emphasisPinkText)
+                Spacer(minLength: DS.Spacing.sm)
+                Text(L10n.UXL2B.splitBarOthers(format(others)))
+                    .foregroundStyle(.secondary)
+            }
+            .font(DS.Typography.caption)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("split_calc_bar_labels")
+
+            Text(SplitSummaryLogic.formula(
+                type: fieldState.splitType,
+                total: totalAmount,
+                mine: mine,
+                myValue: myValue,
+                divisor: divisor,
+                format: format
+            ))
+            .font(DS.Typography.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("split_calc_formula")
         }
-        .padding(DS.Spacing.md)
+        .padding(DS.Spacing.lg)
         .background(Color.hotPink.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
@@ -419,5 +467,27 @@ struct SplitCalculatorSheet: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.hotPink.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+}
+
+/// La barra de reparto de «Mi parte»: tu tramo en rosa sólido y el de los demás en gris. Sin brillo ni degradado.
+private struct SplitShareBar: View {
+    let fraction: Double
+    @ScaledMetric(relativeTo: .caption) private var height: CGFloat = 8
+
+    var body: some View {
+        GeometryReader { proxy in
+            let gap = DS.Spacing.xxs
+            let usable = max(proxy.size.width - gap, 0)
+            let mine = usable * fraction
+            HStack(spacing: gap) {
+                Capsule()
+                    .fill(Color.hotPink)
+                    .frame(width: max(mine, fraction > 0 ? height : 0))
+                Capsule()
+                    .fill(Color.secondary.opacity(0.3))
+            }
+        }
+        .frame(height: height)
     }
 }

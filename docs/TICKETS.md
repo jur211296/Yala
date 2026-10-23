@@ -977,7 +977,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sync-rpcs-accept-a-malformed-hlc | done | tickets/done/sync-rpcs-accept-a-malformed-hlc.md |
 | sync-runtime-safety-note-assumes-every-prod-device-is-icloud | backlog | tickets/backlog/sync-runtime-safety-note-assumes-every-prod-device-is-icloud.md |
 | synced-prefs-outside-prefsynckey | discarded | tickets/discarded/synced-prefs-outside-prefsynckey.md |
-| tag-chips-change-order-on-every-launch | backlog | tickets/backlog/tag-chips-change-order-on-every-launch.md |
+| tag-chips-change-order-on-every-launch | done | tickets/done/tag-chips-change-order-on-every-launch.md |
+| tag-sheet-new-name-field-never-idles-in-xcuitest | backlog | tickets/backlog/tag-sheet-new-name-field-never-idles-in-xcuitest.md |
 | tags-none-label-has-the-wrong-gender | backlog | tickets/backlog/tags-none-label-has-the-wrong-gender.md |
 | tests-borran-el-store-sqlite-abierto | backlog | tickets/backlog/tests-borran-el-store-sqlite-abierto.md |
 | the-gate-destination-no-longer-resolves-on-this-mac | discarded | tickets/discarded/the-gate-destination-no-longer-resolves-on-this-mac.md |

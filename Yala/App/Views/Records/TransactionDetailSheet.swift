@@ -339,7 +339,7 @@ struct TransactionDetailSheet: View {
     }
 
     private var resolvedTags: [Tag] {
-        TagDisplayResolver.tags(for: transaction, catalog: tagCatalog)
+        TagDisplayResolver.tags(for: transaction, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
     }
 
     private func resolveTransferPartner() {

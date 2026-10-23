@@ -11,13 +11,10 @@ import SwiftUI
 
 struct TransferAmountInputView: View {
     @Bindable var viewModel: NewTransactionViewModel
+    @Environment(AppPreferences.self) private var appPreferences
 
-    // Local state for destination amount text
-    @State private var destinationAmountString: String = "0.00"
-
-    // Local state for exchange rate display
-    @State private var exchangeRateString: String = "1.0000"
-    @State private var isRateInverted: Bool = false
+    // Local state for destination amount text. Vacío = el «0.00» gris de ejemplo (UX 2.2 · L2-16).
+    @State private var destinationAmountString: String = ""
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .title) private var currencyLabelSize: CGFloat = 20
@@ -25,7 +22,16 @@ struct TransferAmountInputView: View {
     // Focus states
     @FocusState private var isAmountFieldFocused: Bool
     @FocusState private var isDestFieldFocused: Bool
-    @FocusState private var isRateFieldFocused: Bool
+
+    /// Símbolo o código según la preferencia de formato de moneda (UX 2.2 · L2-18): antes, siempre el código.
+    private func currencyLabel(_ account: Account?) -> String {
+        guard let account else { return "" }
+        return appPreferences.currencyIdentifier(for: account.currencyCode)
+    }
+
+    private static func isEmptyAmount(_ text: String) -> Bool {
+        text.isEmpty || text == "0" || text == "0.00" || text == "0,00"
+    }
 
     var body: some View {
         VStack(spacing: DS.Spacing.lg) {
@@ -49,11 +55,11 @@ struct TransferAmountInputView: View {
 
     private var sourceAmountField: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-            Text(viewModel.sourceAccount?.currencyCode ?? "")
+            Text(currencyLabel(viewModel.sourceAccount))
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.hotPink.opacity(0.7))
 
-            TextField("0.00", text: $viewModel.amountString)
+            TextField("", text: $viewModel.amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .accessibilityLabel(L10n.Accessibility.sourceAmount)
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.hotPink)
@@ -63,14 +69,13 @@ struct TransferAmountInputView: View {
                 .frame(minWidth: 100)
                 .fixedSize(horizontal: true, vertical: false)
                 .onChange(of: isAmountFieldFocused) { _, isFocused in
-                    if isFocused
-                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00" || viewModel.amountString == "0,00")
-                    {
+                    if isFocused && Self.isEmptyAmount(viewModel.amountString) {
                         viewModel.amountString = ""
                     }
                     if !isFocused {
-                        if viewModel.amountString.isEmpty {
-                            viewModel.amountString = "0.00"
+                        if Self.isEmptyAmount(viewModel.amountString) {
+                            // Vacío se queda vacío: el «0.00» gris es de ejemplo, no un monto escrito (L2-16).
+                            viewModel.amountString = ""
                         } else {
                             let amount = AmountInputHelper.parseDecimal(viewModel.amountString)
                             viewModel.amountString = AmountInputHelper.formatWithGrouping(amount)
@@ -90,11 +95,11 @@ struct TransferAmountInputView: View {
 
     private var destinationAmountField: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-            Text(viewModel.destinationAccount?.currencyCode ?? "")
+            Text(currencyLabel(viewModel.destinationAccount))
                 .font(.system(size: currencyLabelSize, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.electricIndigo.opacity(0.7))
 
-            TextField("0.00", text: $destinationAmountString)
+            TextField("", text: $destinationAmountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .accessibilityLabel(L10n.Accessibility.destinationAmount)
                 .font(.system(size: heroAmountSize, weight: .bold, design: .rounded))
                 .foregroundStyle(Color.electricIndigo)
@@ -104,20 +109,17 @@ struct TransferAmountInputView: View {
                 .frame(minWidth: 100)
                 .fixedSize(horizontal: true, vertical: false)
                 .onAppear {
-                    destinationAmountString = AmountInputHelper.formatWithGrouping(
-                        viewModel.destinationAmount)
+                    destinationAmountString = Self.destinationText(viewModel.destinationAmount)
                 }
                 .onChange(of: isDestFieldFocused) { _, isFocused in
                     // Same clear-on-focus behavior as Source Amount
-                    if isFocused
-                        && (destinationAmountString == "0.00" || destinationAmountString == "0" || destinationAmountString == "0,00")
-                    {
+                    if isFocused && Self.isEmptyAmount(destinationAmountString) {
                         destinationAmountString = ""
                     }
                     // Format on blur
                     if !isFocused {
-                        if destinationAmountString.isEmpty {
-                            destinationAmountString = "0.00"
+                        if Self.isEmptyAmount(destinationAmountString) {
+                            destinationAmountString = ""
                         } else {
                             let amount = AmountInputHelper.parseDecimal(destinationAmountString)
                             destinationAmountString = AmountInputHelper.formatWithGrouping(amount)
@@ -127,7 +129,7 @@ struct TransferAmountInputView: View {
                 .onChange(of: viewModel.destinationAmount) { _, newValue in
                     // Only update string if USER is NOT editing it
                     if !isDestFieldFocused {
-                        destinationAmountString = AmountInputHelper.formatWithGrouping(newValue)
+                        destinationAmountString = Self.destinationText(newValue)
                     }
                 }
                 .onChange(of: destinationAmountString) { _, newValue in
@@ -143,13 +145,6 @@ struct TransferAmountInputView: View {
                         {
                             viewModel.destinationAmount = amount
                             viewModel.updateExchangeRateFromDestination()
-
-                            isRateInverted =
-                                viewModel.exchangeRate < 1.0 && viewModel.exchangeRate > 0
-                            let displayRate =
-                                isRateInverted
-                                ? (1.0 / viewModel.exchangeRate) : viewModel.exchangeRate
-                            exchangeRateString = String(format: "%.4f", displayRate)
                         }
                     }
                 }
@@ -158,59 +153,27 @@ struct TransferAmountInputView: View {
 
     // MARK: - Exchange Rate Field
 
+    /// La cápsula con lápiz y «Tipo de cambio de hoy · tócalo si tu banco usó otro» (UX 2.2 · L2-18), el mismo
+    /// componente que el gasto en otra divisa (L2-11). Editar la tasa recalcula el destino, como antes.
+    @ViewBuilder
     private var exchangeRateField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-            if let source = viewModel.sourceAccount, let dest = viewModel.destinationAccount {
-                // Explicit label format: "1 DEST ="
-                Text("1 \(isRateInverted ? dest.currencyCode : source.currencyCode) =")
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.secondary)
+        if let source = viewModel.sourceAccount, let dest = viewModel.destinationAccount {
+            ExchangeRateCapsule(
+                caption: L10n.UXL2B.rateWithHint(ExchangeRateCaptionLogic.caption(for: viewModel.transactionDate)),
+                fromCurrency: source.currencyCode,
+                toCurrency: dest.currencyCode,
+                rate: viewModel.exchangeRate
+            ) { newRate in
+                viewModel.exchangeRate = newRate
+                viewModel.isExchangeRateManual = true
+                viewModel.updateDestinationAmount()
+            }
+        }
+    }
 
-                TextField("Rate", text: $exchangeRateString)
-                    .accessibilityLabel(L10n.Accessibility.exchangeRate)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .keyboardType(.decimalPad)
-                    .focused($isRateFieldFocused)  // Bind focus
-                    .fixedSize(horizontal: true, vertical: false)
-                    .multilineTextAlignment(.leading)  // Align with label
-
-                // Trailing currency code for completeness: "X SOURCE"
-                Text(isRateInverted ? source.currencyCode : dest.currencyCode)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        // Tope con motivo, medido el 2026-09-28: sin él, a AX5 en un iPhone SE la fila no cabe y el tipo de cambio
-        // se corta («1 U… 3.6600 PEN»), porque el campo de la tasa va con `fixedSize` y es el texto el que cede.
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-        .onChange(of: exchangeRateString) { _, newValue in
-            // Only sync to model if USER IS editing it
-            if isRateFieldFocused {
-                let rateInput = AmountInputHelper.parseDecimal(newValue)
-                if rateInput > 0
-                {
-                    let internalRate = isRateInverted ? (1.0 / rateInput) : rateInput
-                    viewModel.exchangeRate = internalRate
-                    viewModel.updateDestinationAmount()
-                }
-            }
-        }
-        .onChange(of: viewModel.exchangeRate) { _, newRate in
-            // Sync from model if USER is NOT editing it
-            if !isRateFieldFocused {
-                isRateInverted = newRate < 1.0 && newRate > 0
-                let displayRate = isRateInverted ? (1.0 / newRate) : newRate
-                exchangeRateString = String(format: "%.4f", displayRate)
-            }
-        }
-        .onAppear {
-            // Sync exchange rate from viewModel when view appears
-            let rate = viewModel.exchangeRate
-            isRateInverted = rate < 1.0 && rate > 0
-            let displayRate = isRateInverted ? (1.0 / rate) : rate
-            exchangeRateString = String(format: "%.4f", displayRate)
-        }
+    /// El destino como texto: vacío si es 0 (el «0.00» gris de ejemplo).
+    private static func destinationText(_ amount: Double) -> String {
+        amount > 0 ? AmountInputHelper.formatWithGrouping(amount) : ""
     }
 
     // MARK: - Helper Methods

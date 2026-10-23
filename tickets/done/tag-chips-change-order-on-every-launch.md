@@ -1,11 +1,11 @@
 ---
 id: tag-chips-change-order-on-every-launch
-status: backlog
+status: done
 priority: low
 area: "records, tags"
 created: 2026-09-30
 source: "diff al píxel del iPhone en `ipad-and-duo-panel-and-statistics-use-the-width` (capturas antes/después)"
-updated: 2026-10-08
+updated: 2026-10-22
 ---
 
 # Las etiquetas de un registro cambian de orden en cada arranque
@@ -37,3 +37,12 @@ siguiente. Con más de tres, cuáles se ven y cuáles van al «+N» también cam
 - `TagDisplayResolver.resolve(ids:catalog:limit:)` sigue haciendo `ids.compactMap { catalog[$0] }` sobre un `Set<UUID>` y luego `prefix(limit)`, sin ordenar. Su docblock incluso dice «display order is not guaranteed». El fichero no tiene commits desde el 2026-09-30.
 
 Triage 2026-10-08: abierto · low → low · sigue pasando (Set sin ordenar en TagDisplayResolver); es incómodo y cambia qué etiquetas se ven, pero no toca ningún dato.
+
+## Hecho (2026-10-22, lote decidido 2.2 · 02, sesión B)
+
+Decisión de Jürgen del 21-oct: el orden del catálogo de Ajustes › Etiquetas si la persona lo ordenó
+(`AppPreferences.tagsSortOrderNames`); si no, alfabético (`localizedStandardCompare`), con el `id` de desempate.
+`TagDisplayResolver.resolve(ids:catalog:order:limit:)` ordena antes del `prefix(limit)`, así que con más de tres se
+enseñan siempre las mismas. Los cuatro sitios que lo usan (filas de Registros, detalle, Bandeja y favoritos) le pasan el
+orden. Tests: `UXAudit22Decidido02BLogicTests` (`etiquetas_ordenPropioPrimero_yLuegoAlfabetico`,
+`etiquetas_conLimite_siempreLasMismas`, este último con 20 `Set` barajados).

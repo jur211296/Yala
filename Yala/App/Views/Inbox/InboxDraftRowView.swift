@@ -124,7 +124,7 @@ struct InboxDraftRowView: View {
 
         // Line 3: Tags (if any) - only for pending drafts (archived may have invalid tag references)
         if draft.status == .pending {
-            let resolvedTags = TagDisplayResolver.tags(for: draft, catalog: tagCatalog)
+            let resolvedTags = TagDisplayResolver.tags(for: draft, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
             if !resolvedTags.isEmpty {
                 tagsRow(resolvedTags)
             }

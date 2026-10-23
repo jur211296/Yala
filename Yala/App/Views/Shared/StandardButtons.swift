@@ -73,13 +73,25 @@ struct YalaPrimaryButton: View {
     var isLoading: Bool = false
 
     var disabledHint: String?
+    /// El relleno activo, si no es el acento tal cual (el formulario de registro lo oscurece para que el blanco dé AA,
+    /// UX 2.2 · L2-20). `nil` = `theme.accent`.
+    var enabledFill: Color?
 
-    init(_ title: String, icon: String? = nil, isDisabled: Bool = false, isLoading: Bool = false, disabledHint: String? = nil, action: @escaping () -> Void) {
+    init(
+        _ title: String,
+        icon: String? = nil,
+        isDisabled: Bool = false,
+        isLoading: Bool = false,
+        disabledHint: String? = nil,
+        enabledFill: Color? = nil,
+        action: @escaping () -> Void
+    ) {
         self.title = title
         self.icon = icon
         self.isDisabled = isDisabled
         self.isLoading = isLoading
         self.disabledHint = disabledHint
+        self.enabledFill = enabledFill
         self.action = action
     }
 
@@ -100,7 +112,7 @@ struct YalaPrimaryButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 50)
             .foregroundStyle(.white)
-            .background(isDisabled ? DS.Semantic.disabledForeground : theme.accent)
+            .background(isDisabled ? DS.Semantic.disabledForeground : (enabledFill ?? theme.accent))
             .clipShape(Capsule())
         }
         .disabled(isDisabled || isLoading)

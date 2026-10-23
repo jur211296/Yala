@@ -37,7 +37,7 @@ struct FavoriteRowView: View {
                     secondaryLine
 
                     // Line 3: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
-                    let resolvedTags = TagDisplayResolver.tags(for: favorite, catalog: tagCatalog)
+                    let resolvedTags = TagDisplayResolver.tags(for: favorite, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
                     if !resolvedTags.isEmpty {
                         tagsRow(resolvedTags)
                     }

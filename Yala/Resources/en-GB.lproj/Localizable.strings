@@ -91,7 +91,7 @@
 "tutorials.editPanel.completion.title" = "Now you know how to customise Home";
 "tutorials.createCategories.step3.desc" = "Customise your category's icon and colour to your liking whenever you want.";
 "tutorials.createTags.step1.desc" = "Customise your tag to your liking: give it a name, icon, and colour.";
-"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and natures you want to track. Turn on notifications if you want alerts at certain thresholds.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
 "tutorials.createBudgets.step2.desc" = "Turn on ‘Show in widget’ to see it in the Budgets widget on Home.";
 "tutorials.createFavorites.step0.desc" = "In New Record, tap ‘Favourite’ below the amount to save what you’ve entered so far as a favourite.";
 "tutorials.createFavorites.step1.desc" = "Next time, tap the favourite in the row at the top of the form: the fields you saved fill in automatically.";
@@ -115,7 +115,7 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "This expense has later payments linked to it. Delete or adjust those payments first to remove it.";
 "groups.bridge.editFromGroup" = "This record syncs with a group. Edit it from the shared expense.";
-"groups.bridge.assignFromInbox" = "Assign a subcategory from your Inbox to finalize it.";
+"groups.bridge.assignFromInbox" = "Assign a category from your Inbox to finalize it.";
 "groups.bridge.editSettlementInGroup" = "This record comes from a group payment. Edit it from the group.";
 "groups.bridge.activateTitle" = "Show in your accounts";
 "groups.bridge.activateBody" = "From now on, shared expenses will show up in your personal accounts. Previous expenses in your groups: %d. What should we do with them?";
@@ -152,8 +152,8 @@
 "groups.settlement.fromAccountNone" = "None — finish later";
 "inbox.openInbox" = "Open Inbox";
 "groups.detail.openGroup" = "Open group";
-"inbox.groupExpenseDraft.title" = "Choose the subcategory";
-"inbox.groupExpenseDraft.assignSubcategory" = "Subcategory";
+"inbox.groupExpenseDraft.title" = "Choose the category";
+"inbox.groupExpenseDraft.assignSubcategory" = "Category";
 "inbox.groupSettlementDraft.title" = "Choose the account";
 "inbox.groupSettlementDraft.assignAccount" = "Destination account";
 "inbox.groupDraft.finalize" = "Finalise";
@@ -304,7 +304,7 @@
 
 // MARK: GroupsOnboarding-keys
 
-"bulkEdit.cannotEditTransferSubcategory" = "Can't change the subcategory of transfers. Edit each one individually.";
+"bulkEdit.cannotEditTransferSubcategory" = "Can't change the category of transfers. Edit each one individually.";
 "bulkEdit.cannotEditTransferAccount" = "Can't change the account of transfers. Edit each one individually.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Can't bulk-edit amounts of cross-currency transfers. Edit each individually to preserve the exchange rate.";
 
@@ -1101,11 +1101,11 @@
 "chat.draft.saveFailedAccount" = "Couldn't save: the account no longer exists. Edit the entry.";
 "chat.draft.saveFailedAmount" = "Couldn't save: the amount isn't valid.";
 "chat.draft.saveFailedGeneric" = "Couldn't save. Please try again.";
-"chat.draft.saveFailedSubcategory" = "Couldn't save: the subcategory no longer exists. Edit the entry.";
+"chat.draft.saveFailedSubcategory" = "Couldn't save: the category no longer exists. Edit the entry.";
 "chat.draft.savedBadge" = "Saved";
 "chat.draft.selectAccount" = "Select account";
-"chat.draft.selectSubcategory" = "Select subcategory";
-"chat.draft.subcategoryLabel" = "Subcategory";
+"chat.draft.selectSubcategory" = "Select category";
+"chat.draft.subcategoryLabel" = "Category";
 "chat.draft.tagsLabel" = "Tags";
 "chat.draft.tagsNone" = "None";
 "chat.draft.viewRecordsButton" = "View saved entries";
@@ -1585,7 +1585,7 @@
 "guide.budgetFilter.allExpenses" = "All your expenses";
 "guide.budgetFilter.andMore" = "%lld more";
 "guide.budgetFilter.conjunction" = "and";
-"guide.budgetFilter.needs" = "of %@ nature";
+"guide.budgetFilter.needs" = "with %@ need";
 "guide.budgetFilter.prefix" = "Expenses";
 "guide.budgetFilter.subcategories" = "in subcategories %@";
 "guide.budgetFilter.subcategory" = "in subcategory %@";
@@ -1660,7 +1660,7 @@
 "iconPicker.food" = "Food";
 "iconPicker.health" = "Health";
 "iconPicker.home" = "Home";
-"iconPicker.need" = "Nature";
+"iconPicker.need" = "Need";
 "iconPicker.other" = "Other";
 "iconPicker.personalCare" = "Personal Care";
 "iconPicker.pets" = "Pets";
@@ -1772,13 +1772,13 @@
 "inbox.errorFutureDate" = "Records with a future date can’t be saved";
 "inbox.errorNoAccount" = "You must select an account";
 "inbox.errorNoAmount" = "You must specify an amount";
-"inbox.errorNoSubcategory" = "You must select a subcategory";
+"inbox.errorNoSubcategory" = "You must select a category";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Source account";
 "inbox.groupExpenseAccountDraft.title" = "Choose the account";
 "inbox.keepEditing" = "Keep editing";
 "inbox.missingLabel" = "Missing data";
 "inbox.needsAccount" = "Select account";
-"inbox.needsSubcategory" = "Select subcategory";
+"inbox.needsSubcategory" = "Select category";
 "inbox.newTag" = "New";
 "inbox.noAmount" = "No amount";
 "inbox.noArchived" = "No archived drafts";
@@ -1914,9 +1914,9 @@
 "need.expensesByNeed" = "Expenses by Need";
 "need.incomeNotApplicable" = "Need classification only applies to expenses";
 "need.optional" = "Optional";
-"need.optional.desc" = "Treats and splurges.";
+"need.optional.desc" = "Treats and splurges: nights out, takeaway.";
 "need.priority" = "Priority";
-"need.priority.desc" = "Worth it, but you can adjust it.";
+"need.priority.desc" = "Worth it, but you can adjust it: gym, internet.";
 "need.title" = "Spending need";
 "need.unclassified" = "Unclassified";
 "need.unclassified.desc" = "Not decided yet.";
@@ -2569,7 +2569,7 @@
 "scheduled.editor.payment.category" = "Payment category";
 "scheduled.editor.preview" = "Upcoming Dates";
 "scheduled.editor.recurrence" = "Recurrence";
-"scheduled.editor.subcategory" = "Subcategory";
+"scheduled.editor.subcategory" = "Category";
 "scheduled.editor.type" = "Record type";
 "scheduled.empty.message" = "Create reminders for your recurring payments and subscriptions";
 "scheduled.empty.settings.hint" = "Create recurring payments to remember your regular expenses and income.";
@@ -2610,7 +2610,7 @@
 "scheduled.recurrence.yearly" = "Yearly";
 "scheduled.recurrence.years" = "Years";
 "scheduled.saveDescription" = "Create a scheduled payment to remind you of this recurring expense or income. You'll find it in the Scheduled Payments section in your profile, where you can edit, activate, or deactivate it anytime.";
-"scheduled.select.subcategory" = "Select subcategory";
+"scheduled.select.subcategory" = "Select category";
 "scheduled.skip" = "Skip";
 "scheduled.skip.undo" = "Don’t skip";
 "scheduled.start.date" = "Start date";
@@ -3255,7 +3255,7 @@
 "transaction.recents" = "Recents";
 "transaction.select" = "Select";
 "transaction.sourceAccount" = "Source Account";
-"transaction.subcategory" = "Subcategory";
+"transaction.subcategory" = "Category";
 "transaction.successTitle" = "Done!";
 "transaction.tags" = "Tags";
 "transaction.total" = "Total";
@@ -3270,7 +3270,7 @@
 "transfer.transferTo" = "Transfer to %@";
 "trend.balance.title" = "Balance Trend";
 "trend.expense.title" = "Expense Trend";
-"trend.filterBlockedMessage" = "First remove category or nature filters";
+"trend.filterBlockedMessage" = "First remove category or need filters";
 "trend.filterBlockedTitle" = "Option not available";
 "trend.income.title" = "Income Trend";
 "trend.title" = "Trends";
@@ -3322,7 +3322,7 @@
 "tutorials.createCategories.step0.title" = "Go to Categories";
 "tutorials.createCategories.step1.desc" = "Remember that there must always be subcategories associated with a category to be able to create it.";
 "tutorials.createCategories.step1.title" = "Add subcategories";
-"tutorials.createCategories.step2.desc" = "Creating subcategories is as easy as creating categories: give it a name, select its nature, and optionally modify its icon.";
+"tutorials.createCategories.step2.desc" = "Creating subcategories is as easy as creating categories: give it a name, choose its need, and optionally change its icon.";
 "tutorials.createCategories.step2.title" = "Create subcategories";
 "tutorials.createCategories.title" = "Create categories";
 "tutorials.createFavorites.intro.desc" = "Save frequent expenses as shortcuts and record them with one tap.";
@@ -3398,7 +3398,7 @@
 "tutorials.panelFiltering.completion.title" = "Now you know how to filter";
 "tutorials.panelFiltering.intro.desc" = "Filter by account, category, tag, or period for detailed analysis.";
 "tutorials.panelFiltering.intro.title" = "Filter to find";
-"tutorials.panelFiltering.step0.desc" = "Get the most out of Yala's interactive charts. Almost all panels are filterable by category, nature, among others. Play with them and find what works best for you.";
+"tutorials.panelFiltering.step0.desc" = "Get the most out of Yala's interactive charts. Almost all panels are filterable by category, need, among others. Play with them and find what works best for you.";
 "tutorials.panelFiltering.step0.title" = "Tap charts to filter";
 "tutorials.panelFiltering.step1.desc" = "You have a filter bar where you'll see all the applied filters. You can remove them individually or all at once whenever you want.";
 "tutorials.panelFiltering.step1.title" = "Check the filter bar";
@@ -3422,7 +3422,7 @@
 "validation.selectAccount" = "Select an account";
 "validation.selectDestinationAccount" = "Select a destination account";
 "validation.selectSourceAccount" = "Select a source account";
-"validation.selectSubcategory" = "Select a subcategory";
+"validation.selectSubcategory" = "Select a category";
 "voice.analyzing" = "Analyzing...";
 "voice.errorMicPermission" = "Microphone permission denied. Enable it in Settings.";
 "voice.errorNoAmount" = "Could not detect amount. Try again.";
@@ -3624,7 +3624,7 @@
 "inbox.groupSettlementDraft.alreadyRegistered" = "This payment is already recorded in your accounts. You can dismiss this draft.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "Choose the account and subcategory";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Choose the account and category";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "From the group “%@”.";
@@ -5551,7 +5551,7 @@
 "chat.draft.detailsButton" = "Details";
 "chat.draft.detailsTitle" = "Proposed entry";
 "chat.draft.openFullForm" = "Open in the full form";
-"chat.draft.missingSubcategory" = "Subcategory missing";
+"chat.draft.missingSubcategory" = "Category missing";
 "chat.draft.missingAccount" = "Account missing";
 "chat.draft.missingAmount" = "Amount missing";
 "chat.draft.addTag" = "Tag";
@@ -6331,7 +6331,7 @@
 "records.l8.owedToYou" = "Owed to you";
 "records.l8.duplicateTitle" = "Duplicate Record";
 "records.l8.duplicateReady" = "Copy ready, dated today. Check it and save.";
-"records.l8.changeSubcategoryTitle" = "Change Subcategory";
+"records.l8.changeSubcategoryTitle" = "Change Category";
 "records.l8.current" = "Current";
 "records.l8.changedTo" = "Now it’s %@";
 "records.l8.changedToWithNeed" = "Now it’s %1$@ (%2$@ · %3$@)";
@@ -6376,7 +6376,7 @@
 "records.l8b.duplicates.emptyNoCriteria" = "Choose in “Match by” what has to match.";
 "records.l8b.duplicates.field.amount" = "amount";
 "records.l8b.duplicates.field.note" = "note";
-"records.l8b.duplicates.field.subcategory" = "subcategory";
+"records.l8b.duplicates.field.subcategory" = "category";
 "records.l8b.duplicates.field.date" = "date";
 "records.l8b.bulk.today" = "Currently: %@";
 "records.l8b.bulk.distinctNotes" = "Different notes";
@@ -7626,3 +7626,31 @@
 "l2d.recurring.monthly" = "Every month, on day %d";
 "l2d.recurring.yearly" = "Every year, on %@";
 "l2d.recurring.moreOptions" = "More options…";
+
+/* Lote decidido 2.2 · 02, sesión B: textos y visual del formulario de registro */
+"l2d.category.searchEmpty" = "No category matches ‘%@’";
+"l2d.note.example" = "E.g. lunch with Emma";
+"l2d.hint.category" = "Type ! to pick the category without leaving this screen";
+"l2d.hint.tag" = "Type # to add a tag";
+"l2d.hint.account" = "Type @ to change the account";
+"l2d.need.purpose" = "Helps you see how much of your spending you can't do without";
+"l2d.tag.create" = "Create";
+"l2d.rate.today" = "Today's exchange rate";
+"l2d.rate.onDate" = "Exchange rate on %@";
+"l2d.rate.withHint" = "%@ · tap it if your bank used another";
+"l2d.rate.editHint" = "Tap to change it";
+"l2d.split.button" = "My share";
+"l2d.split.chip.equal" = "Your share of %1$@ · ÷ %2$d people";
+"l2d.split.chip.percentage" = "Your share of %1$@ · %2$@%%";
+"l2d.split.chip.shares" = "Your share of %1$@ · %2$d of %3$d parts";
+"l2d.split.chip.exact" = "Your share of %@ · exact amount";
+"l2d.amount.question.expense" = "How much did you spend?";
+"l2d.amount.question.income" = "How much did you receive?";
+"l2d.amount.question.transfer" = "How much are you moving?";
+"l2d.split.youPay" = "You pay";
+"l2d.split.formula.equal" = "%1$@ ÷ %2$d people = %3$@ each";
+"l2d.split.formula.percentage" = "%1$@%% of %2$@";
+"l2d.split.formula.shares" = "%1$d of %2$d parts of %3$@";
+"l2d.split.formula.exact" = "%1$@ of %2$@";
+"l2d.split.bar.you" = "You %@";
+"l2d.split.bar.others" = "Everyone else %@";

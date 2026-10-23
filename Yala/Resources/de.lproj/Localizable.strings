@@ -293,7 +293,7 @@
 "transaction.tags" = "Tags";
 "transaction.addTags" = "Tags hinzufügen";
 "transaction.category" = "Kategorie";
-"transaction.subcategory" = "Unterkategorie";
+"transaction.subcategory" = "Kategorie";
 "transaction.select" = "Auswählen";
 "transaction.total" = "Gesamt";
 "transaction.income" = "Einnahmen";
@@ -1001,8 +1001,8 @@
 "need.optional" = "Optional";
 "need.unclassified" = "Nicht klassifiziert";
 "need.essential.desc" = "Was du immer zahlen musst: Miete, Strom, Essen.";
-"need.priority.desc" = "Lohnt sich, lässt sich aber anpassen.";
-"need.optional.desc" = "Genuss und Extras.";
+"need.priority.desc" = "Lohnt sich, lässt sich aber anpassen: Fitnessstudio, Internet.";
+"need.optional.desc" = "Genuss und Extras: Ausgehen, Lieferdienst.";
 "need.unclassified.desc" = "Noch nicht entschieden.";
 
 
@@ -1075,7 +1075,7 @@
 "insights.offlineCached" = "Offline. Letzte Analyse wird angezeigt.";
 "insights.offlineNoCache" = "Offline. Personalisierte Insights sind bei Verbindung verfügbar.";
 
-"trend.filterBlockedMessage" = "Entferne zuerst Kategorie- oder Naturfilter";
+"trend.filterBlockedMessage" = "Entferne zuerst Kategorie- oder Bedarfsfilter";
 "trend.filterBlockedTitle" = "Option nicht verfügbar";
 "need.incomeNotApplicable" = "Die Bedarfsklassifizierung gilt nur für Ausgaben";
 
@@ -1407,7 +1407,7 @@
 "iconPicker.education" = "Bildung";
 "iconPicker.work" = "Arbeit";
 "iconPicker.pets" = "Haustiere";
-"iconPicker.need" = "Natur";
+"iconPicker.need" = "Bedarf";
 "iconPicker.tech" = "Technologie";
 "iconPicker.travel" = "Reisen";
 "iconPicker.communication" = "Kommunikation";
@@ -1448,7 +1448,7 @@
 "validation.selectDestinationAccount" = "Wähle ein Zielkonto";
 "validation.accountsMustBeDifferent" = "Die Konten müssen unterschiedlich sein";
 "validation.selectAccount" = "Wähle ein Konto";
-"validation.selectSubcategory" = "Wähle eine Unterkategorie";
+"validation.selectSubcategory" = "Wähle eine Kategorie";
 "validation.completeFieldsFirst" = "Betrag, Konto und Kategorie zuerst ausfüllen";
 "validation.futureDateTitle" = "Zukünftiges Datum nicht erlaubt";
 "validation.futureDateMessage" = "Du kannst keine Einträge mit einem zukünftigen Datum erfassen. Verwende geplante Zahlungen für wiederkehrende Ausgaben.";
@@ -1507,7 +1507,7 @@
 "scheduled.editor.payment.category" = "Zahlungskategorie";
 "scheduled.editor.classification" = "Klassifizierung";
 "scheduled.editor.account" = "Konto";
-"scheduled.editor.subcategory" = "Unterkategorie";
+"scheduled.editor.subcategory" = "Kategorie";
 "scheduled.editor.recurrence" = "Wiederholung";
 "scheduled.help.title" = "Was ist eine geplante Zahlung?";
 "scheduled.help.message" = "Verfolge wiederkehrende Zahlungen wie Abos, Miete oder Rechnungen. Yala erinnert dich bei Fälligkeit und speichert den Zahlungsverlauf.";
@@ -1518,7 +1518,7 @@
 "scheduled.editor.preview" = "Kommende Termine";
 "scheduled.notify.on.due" = "Am Fälligkeitstag benachrichtigen";
 "scheduled.notify.days.before" = "Tage vorher benachrichtigen";
-"scheduled.select.subcategory" = "Unterkategorie auswählen";
+"scheduled.select.subcategory" = "Kategorie auswählen";
 "scheduled.is.subscription" = "Ist dies ein Abonnement?";
 
 // Variable amount
@@ -1936,7 +1936,7 @@
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Einträge aktualisiert.";
 "bulkEdit.editCount" = "%d Einträge bearbeiten";
 "bulkEdit.successMessage" = "Einträge aktualisiert";
-"bulkEdit.cannotEditTransferSubcategory" = "Die Unterkategorie von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
+"bulkEdit.cannotEditTransferSubcategory" = "Die Kategorie von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
 "bulkEdit.cannotEditTransferAccount" = "Das Konto von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Beträge von Überweisungen zwischen verschiedenen Währungen können nicht gemeinsam bearbeitet werden. Bearbeite sie einzeln, um den Wechselkurs zu erhalten.";
 "bulkEdit.commonTags" = "In allen ausgewählten";
@@ -1983,7 +1983,7 @@
 "inbox.noAmount" = "Kein Betrag";
 "inbox.missingLabel" = "Fehlende Daten";
 "inbox.needsAccount" = "Konto auswählen";
-"inbox.needsSubcategory" = "Unterkategorie auswählen";
+"inbox.needsSubcategory" = "Kategorie auswählen";
 "inbox.approve" = "Speichern";
 "inbox.delete" = "Löschen";
 "inbox.noPending" = "Keine ausstehenden Entwürfe";
@@ -2012,7 +2012,7 @@
 "inbox.sourceSiri" = "Siri";
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
-"inbox.errorNoSubcategory" = "Select subcategory";
+"inbox.errorNoSubcategory" = "Wähle eine Kategorie aus";
 "inbox.errorArchivedAccount" = "Dieses Konto ist archiviert. Bearbeite den Entwurf und wähle ein anderes Konto, um ihn zu speichern.";
 "inbox.errorFutureDate" = "Einträge mit einem Datum in der Zukunft können nicht gespeichert werden";
 "inbox.duplicateWarningTitle" = "Mögliches Duplikat";
@@ -2704,7 +2704,7 @@
 "tutorials.createAccount.step2.desc" = "Fülle die Daten für dein neues Konto aus und tippe auf Speichern.";
 "tutorials.createCategories.step0.desc" = "Öffne in den Einstellungen Kategorien und tippe auf +, um eine neue zu erstellen.";
 "tutorials.createCategories.step1.desc" = "Denke daran, dass einer Kategorie immer Unterkategorien zugeordnet sein müssen, um sie erstellen zu können.";
-"tutorials.createCategories.step2.desc" = "Unterkategorien zu erstellen ist genauso einfach wie Kategorien zu erstellen: gib einen Namen ein, wähle die Art und ändere bei Bedarf das Symbol.";
+"tutorials.createCategories.step2.desc" = "Unterkategorien zu erstellen ist genauso einfach wie Kategorien zu erstellen: gib einen Namen ein, wähle den Bedarf und ändere bei Bedarf das Symbol.";
 "tutorials.createCategories.step3.desc" = "Passe Symbol und Farbe deiner Kategorie nach Belieben an, wann immer du möchtest.";
 "tutorials.createTags.step0.desc" = "Öffne in den Einstellungen Tags und tippe auf +, um ein neues zu erstellen.";
 "tutorials.createTags.step1.desc" = "Passe das Tag nach Belieben an: gib einen Namen, ein Symbol und eine Farbe ein.";
@@ -2715,7 +2715,7 @@
 "tutorials.importData.step0.desc" = "Tippe in den Einstellungen unter Daten auf Datei importieren.";
 "tutorials.importData.step1.desc" = "Du kannst CSV oder Excel so oft importieren, wie du möchtest, indem du der Standardvorlage folgst, die du dort herunterladen kannst. Wenn es Daten in verschiedenen Währungen gibt, wirst du aufgefordert, die Konten für jede auszuwählen.";
 "tutorials.createBudgets.step0.desc" = "Wähle im Menü Planung und stelle sicher, dass du auf dem Tab Budgets bist. Nutze die Schaltfläche +, um ein neues zu erstellen.";
-"tutorials.createBudgets.step1.desc" = "Gib einen Namen, Betrag und den Zeitraum ein: täglich, monatlich, jährlich oder einmalig (für eine Reise, Event, etc.). Wähle, welche Konten, Kategorien, Tags und Arten du verfolgen möchtest. Aktiviere Benachrichtigungen, wenn du bei bestimmten Schwellenwerten benachrichtigt werden möchtest.";
+"tutorials.createBudgets.step1.desc" = "Gib einen Namen, Betrag und den Zeitraum ein: täglich, monatlich, jährlich oder einmalig (für eine Reise, Event, etc.). Wähle, welche Konten, Kategorien, Tags und Bedarfe du verfolgen möchtest. Aktiviere Benachrichtigungen, wenn du bei bestimmten Schwellenwerten benachrichtigt werden möchtest.";
 "tutorials.createBudgets.step2.desc" = "Aktiviere „Im Widget zeigen“, um es im Budgets-Widget der Übersicht zu sehen.";
 "tutorials.createBudgets.step3.desc" = "Denke daran, dass du jederzeit zurückkehren kannst, um dein Budget zu bearbeiten, indem du darauf tippst.";
 "tutorials.createScheduledPayments.step0.desc" = "Wähle im Menü Planung und stelle sicher, dass du auf dem Tab Geplante Zahlungen bist. Nutze die Schaltfläche +, um eine neue zu erstellen.";
@@ -2728,7 +2728,7 @@
 "tutorials.editPanel.step0.desc" = "Gehe zum Hauptbildschirm, wo du deine Ausgabenübersicht mit allen verfügbaren Widgets siehst.";
 "tutorials.editPanel.step1.desc" = "Tippe auf die Kästchen-Schaltfläche neben jedem Bereich der Übersicht, um zu wählen, welche Widgets du siehst und in welcher Reihenfolge.";
 "tutorials.editPanel.step2.desc" = "Denke daran, dass du jederzeit zur Standardreihenfolge zurückkehren kannst, indem du innerhalb der Anpassung auf \"Zurücksetzen\" tippst.";
-"tutorials.panelFiltering.step0.desc" = "Hol das Beste aus den interaktiven Diagrammen von Yala heraus. Fast alle Panels können nach Kategorie, Art und mehr gefiltert werden. Spiele mit ihnen und finde heraus, was dir am meisten nützt.";
+"tutorials.panelFiltering.step0.desc" = "Hol das Beste aus den interaktiven Diagrammen von Yala heraus. Fast alle Panels können nach Kategorie, Bedarf und mehr gefiltert werden. Spiele mit ihnen und finde heraus, was dir am meisten nützt.";
 "tutorials.panelFiltering.step1.desc" = "Du hast eine Filterleiste, in der du alle angewendeten Filter sehen wirst. Du kannst sie einzeln oder alle auf einmal entfernen, wann immer du möchtest.";
 "tutorials.panelFiltering.step2.desc" = "In den verschiedenen Ansichten der App wirst du sehen, dass du nach Belieben mit den Diagrammen filtern kannst.";
 "tutorials.panelFiltering.step3.desc" = "Die Filter breiten sich gleichermaßen auf alle Ansichten aus, sodass du alle Arten von Metriken für alles sehen kannst, was du filtern möchtest.";
@@ -3281,7 +3281,7 @@
 "guide.budgetFilter.subcategories" = "in den Unterkategorien %@";
 "guide.budgetFilter.tag" = "mit dem Tag %@";
 "guide.budgetFilter.tags" = "mit den Tags %@";
-"guide.budgetFilter.needs" = "der Art %@";
+"guide.budgetFilter.needs" = "mit Bedarf %@";
 "guide.budgetFilter.andMore" = "%lld weitere";
 "guide.budgetFilter.conjunction" = "und";
 "guide.accountForm.title" = "Über dieses Konto";
@@ -3334,7 +3334,7 @@
 "chat.draft.chipIncome" = "Einnahme";
 "chat.draft.amountPlaceholder" = "Betrag";
 "chat.draft.accountLabel" = "Konto";
-"chat.draft.subcategoryLabel" = "Unterkategorie";
+"chat.draft.subcategoryLabel" = "Kategorie";
 "chat.draft.dateLabel" = "Datum";
 "chat.draft.noteLabel" = "Notiz";
 "chat.draft.tagsLabel" = "Tags";
@@ -3343,12 +3343,12 @@
 "chat.draft.discardedBadge" = "Verworfen";
 "chat.draft.saveFailedGeneric" = "Speichern fehlgeschlagen. Bitte erneut versuchen.";
 "chat.draft.saveFailedAccount" = "Speichern fehlgeschlagen: Das Konto existiert nicht mehr. Bearbeite den Eintrag.";
-"chat.draft.saveFailedSubcategory" = "Speichern fehlgeschlagen: Die Unterkategorie existiert nicht mehr. Bearbeite den Eintrag.";
+"chat.draft.saveFailedSubcategory" = "Speichern fehlgeschlagen: Die Kategorie existiert nicht mehr. Bearbeite den Eintrag.";
 "chat.draft.saveFailedAmount" = "Speichern fehlgeschlagen: Der Betrag ist ungültig.";
 "chat.draft.viewRecordsButton" = "Gespeicherte Einträge anzeigen";
 "chat.draft.discardButton" = "Verwerfen";
 "chat.draft.selectAccount" = "Konto auswählen";
-"chat.draft.selectSubcategory" = "Unterkategorie auswählen";
+"chat.draft.selectSubcategory" = "Kategorie auswählen";
 "chat.draft.saveButton" = "Speichern";
 "chat.draft.failedSavingLine" = "Speichern fehlgeschlagen.";
 "chat.draft.retryButton" = "Erneut versuchen";
@@ -3942,7 +3942,7 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Diese Ausgabe hat spätere Zahlungen. Löschen oder passen Sie diese Zahlungen zuerst an, bevor Sie sie entfernen.";
 "groups.bridge.editFromGroup" = "Dieser Eintrag synchronisiert mit einer Gruppe. Bearbeite ihn in der geteilten Ausgabe.";
-"groups.bridge.assignFromInbox" = "Weisen Sie im Posteingang eine Unterkategorie zu, um sie abzuschließen.";
+"groups.bridge.assignFromInbox" = "Weisen Sie im Posteingang eine Kategorie zu, um sie abzuschließen.";
 "groups.bridge.editSettlementInGroup" = "Dieser Eintrag stammt aus einer Gruppenzahlung. Bearbeite ihn in der Gruppe.";
 "groups.bridge.editPartialBanner" = "Diese Ausgabe stammt aus der Gruppe. Sie können Konto, Kategorie und Tags bearbeiten. Betrag und Datum werden mit der Gruppe synchronisiert.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ hat diese Ausgabe in %2$@ erfasst. Wählen Sie ein Konto, um sie in Ihren Aufzeichnungen zu führen.";
@@ -3985,8 +3985,8 @@
 "groups.settlement.fromAccountNone" = "Keines — später abschließen";
 "inbox.openInbox" = "Posteingang öffnen";
 "groups.detail.openGroup" = "Gruppe öffnen";
-"inbox.groupExpenseDraft.title" = "Unterkategorie wählen";
-"inbox.groupExpenseDraft.assignSubcategory" = "Unterkategorie";
+"inbox.groupExpenseDraft.title" = "Kategorie wählen";
+"inbox.groupExpenseDraft.assignSubcategory" = "Kategorie";
 "inbox.groupSettlementDraft.title" = "Konto wählen";
 "inbox.groupSettlementDraft.assignAccount" = "Zielkonto";
 "inbox.groupDraft.finalize" = "Abschließen";
@@ -4337,7 +4337,7 @@
 "inbox.groupSettlementDraft.alreadyRegistered" = "Diese Zahlung ist bereits in Ihren Konten erfasst. Sie können diesen Entwurf verwerfen.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "Konto und Unterkategorie wählen";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Konto und Kategorie wählen";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "Aus der Gruppe „%@“.";
@@ -6258,7 +6258,7 @@
 "chat.draft.detailsButton" = "Details";
 "chat.draft.detailsTitle" = "Vorgeschlagener Eintrag";
 "chat.draft.openFullForm" = "Im vollständigen Formular öffnen";
-"chat.draft.missingSubcategory" = "Unterkategorie fehlt";
+"chat.draft.missingSubcategory" = "Kategorie fehlt";
 "chat.draft.missingAccount" = "Konto fehlt";
 "chat.draft.missingAmount" = "Betrag fehlt";
 "chat.draft.addTag" = "Tag";
@@ -7023,7 +7023,7 @@
 "records.l8.owedToYou" = "Man schuldet dir";
 "records.l8.duplicateTitle" = "Eintrag duplizieren";
 "records.l8.duplicateReady" = "Kopie fertig, mit heutigem Datum. Prüfe sie und speichere.";
-"records.l8.changeSubcategoryTitle" = "Unterkategorie ändern";
+"records.l8.changeSubcategoryTitle" = "Kategorie ändern";
 "records.l8.current" = "Aktuell";
 "records.l8.changedTo" = "Jetzt: %@";
 "records.l8.changedToWithNeed" = "Jetzt: %1$@ (%2$@ · %3$@)";
@@ -7068,7 +7068,7 @@
 "records.l8b.duplicates.emptyNoCriteria" = "Wähle unter „Abgleichen nach“, was übereinstimmen soll.";
 "records.l8b.duplicates.field.amount" = "Betrag";
 "records.l8b.duplicates.field.note" = "Notiz";
-"records.l8b.duplicates.field.subcategory" = "Unterkategorie";
+"records.l8b.duplicates.field.subcategory" = "Kategorie";
 "records.l8b.duplicates.field.date" = "Datum";
 "records.l8b.bulk.today" = "Aktuell: %@";
 "records.l8b.bulk.distinctNotes" = "Verschiedene Notizen";
@@ -8302,3 +8302,31 @@
 "l2d.recurring.monthly" = "Jeden Monat, am %d.";
 "l2d.recurring.yearly" = "Jedes Jahr, am %@";
 "l2d.recurring.moreOptions" = "Weitere Optionen…";
+
+/* Lote decidido 2.2 · 02, sesión B: textos y visual del formulario de registro */
+"l2d.category.searchEmpty" = "Keine Kategorie mit „%@“";
+"l2d.note.example" = "Z. B. Mittagessen mit Lena";
+"l2d.hint.category" = "Tippe ! und wähle die Kategorie, ohne den Bildschirm zu verlassen";
+"l2d.hint.tag" = "Tippe #, um ein Etikett hinzuzufügen";
+"l2d.hint.account" = "Tippe @, um das Konto zu ändern";
+"l2d.need.purpose" = "Zeigt dir, wie viel deiner Ausgaben unverzichtbar ist";
+"l2d.tag.create" = "Erstellen";
+"l2d.rate.today" = "Heutiger Wechselkurs";
+"l2d.rate.onDate" = "Wechselkurs vom %@";
+"l2d.rate.withHint" = "%@ · tippe darauf, wenn deine Bank einen anderen nahm";
+"l2d.rate.editHint" = "Zum Ändern tippen";
+"l2d.split.button" = "Mein Anteil";
+"l2d.split.chip.equal" = "Dein Anteil an %1$@ · ÷ %2$d Personen";
+"l2d.split.chip.percentage" = "Dein Anteil an %1$@ · %2$@ %%";
+"l2d.split.chip.shares" = "Dein Anteil an %1$@ · %2$d von %3$d Teilen";
+"l2d.split.chip.exact" = "Dein Anteil an %@ · genauer Betrag";
+"l2d.amount.question.expense" = "Wie viel hast du ausgegeben?";
+"l2d.amount.question.income" = "Wie viel hast du erhalten?";
+"l2d.amount.question.transfer" = "Wie viel möchtest du verschieben?";
+"l2d.split.youPay" = "Du zahlst";
+"l2d.split.formula.equal" = "%1$@ ÷ %2$d Personen = %3$@ pro Person";
+"l2d.split.formula.percentage" = "%1$@ %% von %2$@";
+"l2d.split.formula.shares" = "%1$d von %2$d Teilen von %3$@";
+"l2d.split.formula.exact" = "%1$@ von %2$@";
+"l2d.split.bar.you" = "Du %@";
+"l2d.split.bar.others" = "Die anderen %@";

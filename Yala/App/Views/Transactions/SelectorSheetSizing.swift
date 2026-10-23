@@ -8,7 +8,11 @@
 //  como estaba: `.large`, que no declara detent y deja decidir a quien presenta.
 //
 //  Mismo patrón que el formulario de cuenta (`AccountFormView`): `[.medium, .large]` con `.yalaSheetDetents`,
-//  grande en ventana ancha y con texto de accesibilidad, y fondo transparente a media altura.
+//  grande en ventana ancha y con texto de accesibilidad.
+//
+//  A media altura la hoja va en material grueso (UX 2.2 · L2-22, decidido por Jürgen el 14-oct): con el vidrio
+//  transparente se leía detrás el monto rosa del formulario. En grande se queda como estaba (`.subtle` pinta encima).
+//  Un solo criterio para las cuatro hojas del formulario: cuenta, categoría, etiquetas y necesidad.
 //
 
 import SwiftUI
@@ -30,7 +34,10 @@ enum SelectorSheetSizing {
         }
     }
 
-    /// Fondo de la hoja: transparente mientras está a media altura, `.subtle` cuando se ve grande —porque el usuario
+    /// El material de la hoja a media altura (L2-22). Debajo de `.subtle` en grande no se ve.
+    static let mediumHeightMaterial: Material = .thickMaterial
+
+    /// Fondo de la hoja: transparente (deja ver `mediumHeightMaterial`) mientras está a media altura, `.subtle` cuando se ve grande —porque el usuario
     /// la estiró, porque la ventana ancha la fuerza a `.large` o porque no hay medium que mostrar—.
     func background(
         selectedDetent: PresentationDetent,
@@ -54,7 +61,9 @@ private struct SelectorSheetSizingModifier: ViewModifier {
         if detents.isEmpty {
             content
         } else {
-            content.yalaSheetDetents(detents, selection: $selectedDetent)
+            content
+                .yalaSheetDetents(detents, selection: $selectedDetent)
+                .presentationBackground(SelectorSheetSizing.mediumHeightMaterial)
         }
     }
 }

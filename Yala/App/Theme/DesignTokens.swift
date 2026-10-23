@@ -206,6 +206,24 @@ enum DS {
         static let imageAccent = Color.teal
     }
 
+    // MARK: - Acciones del formulario de registro (UX 2.2 · L2-20)
+
+    /// Las tres acciones del formulario, cada una con su color: ficha rellena e icono blanco encima, sin degradados ni
+    /// brillo (decisión de Jürgen, 21-oct). Los tonos son los de la maqueta, oscurecidos para que el blanco dé ≥ 4,5:1
+    /// (`UXAudit22Decidido02BLogicTests`).
+    enum FormAction {
+        /// «Mi parte»: turquesa (#0E7490, 5,4:1).
+        static let splitHex = "0E7490"
+        /// «Favorito»: naranja (#C2410C, 5,2:1).
+        static let favoriteHex = "C2410C"
+        /// «Recurrente»: violeta (#6D28D9, 7,1:1).
+        static let recurringHex = "6D28D9"
+
+        static let split = Color(hex: splitHex)
+        static let favorite = Color(hex: favoriteHex)
+        static let recurring = Color(hex: recurringHex)
+    }
+
     // MARK: - Shadow
 
     /// Pre-configured shadow styles.

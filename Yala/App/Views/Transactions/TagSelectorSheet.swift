@@ -17,6 +17,8 @@ struct TagSelectorSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var viewModel = TagSelectorViewModel()
+    @FocusState private var isNewTagFieldFocused: Bool
+    @Environment(\.yalaTheme) private var theme
 
     @Binding var selectedTags: [Tag]
 
@@ -62,30 +64,10 @@ struct TagSelectorSheet: View {
                     YalaSaveButton(action: { dismiss() })
                 }
             }
-            .sheet(isPresented: $viewModel.showNewTagSheet, onDismiss: {
-                selectNewlyCreatedTag()
-                viewModel.closeNewTagSheet()
-            }) {
-                TagFormView(existingTags: viewModel.tags)
-            }
         }
         .selectorSheetSizing(sizing, selectedDetent: $selectedDetent)
         .onAppear {
             viewModel.setContext(modelContext)
-        }
-    }
-
-    /// Selecciona automáticamente la etiqueta recién creada
-    private func selectNewlyCreatedTag() {
-        viewModel.loadTags()
-        let currentCount = viewModel.activeTags.count
-        if currentCount > viewModel.tagCountBeforeSheet {
-            // Hay una nueva etiqueta, seleccionar la última creada (ordenada por nombre)
-            if let newTag = viewModel.activeTags.last(where: { tag in
-                !selectedTags.contains { $0.persistentModelID == tag.persistentModelID }
-            }) {
-                selectedTags.append(newTag)
-            }
         }
     }
 
@@ -125,24 +107,47 @@ struct TagSelectorSheet: View {
         }
     }
 
+    /// «Nueva etiqueta» es un campo con «Crear» (UX 2.2 · L2-10, decidido por Jürgen el 14-oct): solo el nombre, con el
+    /// icono y el color automáticos, y queda puesta. Antes abría el editor entero (icono, 16 colores, un código hexadecimal
+    /// y «Estado»), que sigue en Ajustes › Etiquetas.
     private var addTagButton: some View {
         SectionBox(title: "") {
-            Button {
-                viewModel.prepareForNewTag()
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(.thAccent)
-                    Text(L10n.Tag.newTag)
-                        .foregroundStyle(.primary)
-                    Spacer()
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "plus.circle.fill")
+                    .foregroundStyle(.thAccent)
+                    .accessibilityHidden(true)
+                TextField(L10n.Tag.newTag, text: $viewModel.newTagName)
+                    .font(DS.Typography.body)
+                    .textInputAutocapitalization(.sentences)
+                    .submitLabel(.done)
+                    .focused($isNewTagFieldFocused)
+                    .onSubmit(createTag)
+                    .onChange(of: viewModel.newTagName) { _, newValue in
+                        if newValue.count > TagQuickCreateLogic.maxNameLength {
+                            viewModel.newTagName = String(newValue.prefix(TagQuickCreateLogic.maxNameLength))
+                        }
+                    }
+                    .accessibilityIdentifier("tag_selector_new_name")
+                Button(L10n.UXL2B.createTag, action: createTag)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(viewModel.canCreateTag ? theme.accent : DS.Semantic.disabledForeground)
+                    .disabled(!viewModel.canCreateTag)
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("tag_selector_create")
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.FormRow.paddingV)
         }
+    }
+
+    private func createTag() {
+        guard let tag = viewModel.createOrPickTag() else { return }
+        dsWithAnimation(reduceMotion) {
+            if !isSelected(tag) {
+                selectedTags.append(tag)
+            }
+        }
+        isNewTagFieldFocused = false
     }
 
     private func isSelected(_ tag: Tag) -> Bool {
