@@ -155,4 +155,28 @@ final class GroupsEmptyStateUITests: XCTestCase {
         )
         XCTAssertFalse(consentCTA.exists, "«Un último paso» sigue en pantalla tras aceptar.")
     }
+
+    /// **Conectar la cuenta cambia la pestaña en el acto** (card nve0, reporte de Jürgen del 22-oct en producción). La
+    /// pestaña leía la sesión de `CloudAuthService`, que no es observable: al cerrarse la hoja de cuenta nada la repintaba,
+    /// y «Crea tu cuenta de Yala» seguía más de 10 s, hasta que otra cosa movía la vista. Ahora el servicio avisa de cada
+    /// cambio de sesión y la pestaña se re-decide.
+    ///
+    /// El simulador no puede iniciar sesión de verdad, así que `-uitest-fake-cloud-session-after 6` hace aparecer la
+    /// sesión fingida seis segundos después de que se monte «Crea tu cuenta», con la pestaña delante: el mismo cambio que
+    /// deja la hoja de cuenta al cerrarse. Sin el aviso, la tarjeta no cambia nunca en esta corrida. Seis y no menos: la
+    /// tarjeta se monta debajo del splash del arranque, y con 2 s cambiaba antes de que el test llegara a verla (medido).
+    func test_sessionArrivingWithTheTabOpen_turnsCreateAccountIntoTheConsentStepRightAway() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, groupInvite: true, cloudSessionAfterSeconds: 6)
+
+        let createAccount = app.descendants(matching: .any)["groups_empty_state_create_account"].firstMatch
+        XCTAssertTrue(createAccount.waitForExistence(timeout: 30), "Sin sesión, la pestaña debe empezar en «Crea tu cuenta».")
+
+        // Los 6 s de la sesión, como mucho, más margen: el criterio de la card es «al instante», y antes no llegaba nunca.
+        let consent = app.descendants(matching: .any)["groups_empty_state_consent"].firstMatch
+        XCTAssertTrue(
+            consent.waitForExistence(timeout: 10),
+            "Con la sesión ya conectada, la pestaña debe pasar a «Acepta cómo se guardan tus grupos» sin esperar.")
+        XCTAssertFalse(createAccount.exists, "«Crea tu cuenta de Yala» sigue en pantalla con la sesión ya conectada.")
+    }
 }

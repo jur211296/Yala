@@ -1150,6 +1150,9 @@ struct WelcomeCloudSignInView: View {
         let service = BornCloudSignUpService(session: LiveCloudSessionProvider())
         switch BornCloudSignUpFlow.step(for: await service.signUp()) {
         case .activateStorageAndRelaunch:
+            // m387 · el alta creó la cuenta de quien está delante, y desde R2 sobre un montaje neutro no relanza: sin
+            // esto, el consentimiento de Grupos esperaba a la pestaña o a un arranque.
+            GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
             // El par se escribe ANTES de sembrar nada — en born-cloud es trivialmente cierto porque
             // no hay nada pre-relanzamiento que sembrar. La primitiva DEVUELVE la fase terminal;
             // jamás mata el proceso.
@@ -1262,6 +1265,8 @@ struct WelcomeCloudSignInView: View {
                 // sabe pedir lo que falte en este dispositivo. Los dos destinos comparten rama porque van al
                 // mismo sitio; lo único que los separa es la oferta de «Activar Yala completo» al terminar
                 // (paso 8), y viaja como argumento.
+                // m387 · la puerta acepta la sesión: es la de quien sigue a Grupos.
+                GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
                 onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation, sessionOpenedHere)
                 return
             // `.adoptAsComplete` es el destino NORMAL de esta puerta: sigue al guard cross-cuenta y al

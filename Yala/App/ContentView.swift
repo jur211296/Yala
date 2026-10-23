@@ -235,6 +235,18 @@ struct ContentView: View {
                     .modifier(TagCatalogProvider())
                     .id(languageVersion) // re-render on .languageDidChange
                     .accessibilityIdentifier(UITestHooks.shared.rootIdentifier)
+            } else if ShellWaitingLogic.showsBrandedWaiting(
+                groupsOrganizerFlowActive: groupsOrganizerFlowActive,
+                chainPresentationUp: showGroupsEducational || showGroupsSignIn || showGroupsConsent
+                    || showGroupsAccountIsCompleteBlock || showGroupsOrganizerName,
+                isBootstrapSettled: SessionState.shared.isBootstrapSettled) {
+                // Card apsn · sin shell y con la cadena de Grupos de la bienvenida en marcha, o con el arranque todavía
+                // reteniendo lo que viene (`bootstrapPending`), lo que se ve entre una presentación y la siguiente es ESTO
+                // y no el fondo vacío: medido el 21-oct, ~10 s de pantalla negra tras «Vengo por un grupo». Es la pantalla
+                // de carga que la app ya tiene, con su marca; ninguna decisión visual nueva.
+                SplashScreenView()
+                    .ignoresSafeArea()
+                    .accessibilityIdentifier("shell_waiting_brand")
             } else {
                 theme.background
                     .ignoresSafeArea()
@@ -2926,6 +2938,11 @@ struct ContentView: View {
     /// Routing único para presentar la siguiente pantalla del flow inicial.
     /// Si Chooser no se ha visto, presenta el flow Welcome (Hero+Chooser unificado).
     private func presentNextOnboardingScreen() {
+        // Card ypit · con un cierre que espera relanzar, el cover terminal es lo único que va en pantalla. Pasa tras un
+        // cambio en caliente que abortó con el contenedor vivo: se repone y este `ContentView` se monta otra vez. Seguir
+        // aquí consumiría el destino que el arranque siguiente necesita (la persona aterrizaba en la portada en vez de
+        // volver a crear el grupo o a la invitación) y presentaría el Welcome contra el cover (lo cazó la review).
+        guard CloudSessionSignOut.shared.phase != .awaitingRelaunch else { return }
         #if DEBUG
         // uitest: ir directo al OnboardingView (salta Welcome Hero/Chooser) para
         // testear el flujo de onboarding aislado.
@@ -3299,19 +3316,18 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // solo se comprueba—: entre el arm del borrado y este callback hay una entrega de
                         // SwiftUI, y en el camino del swap in-process la jerarquía se desmonta en la misma
                         // vuelta del arm, así que escribirlo aquí lo dejaba fuera de la ventana.
-                        if let groupID = purpose.invitedGroupID {
-                            // Sin sobre no hay join que retomar, así que tampoco se persiste un destino que
-                            // llevaría a una puerta sin nada detrás: el arranque siguiente cae en el
-                            // recorrido normal, que es lo honesto cuando la invitación ya no está.
-                            if GroupInviteResumeStore.peek()?.groupID == groupID {
-                                WelcomePendingDestinationStore.set(.groupsInvite)
-                            } else {
-                                #if DEBUG
-                                print("ContentView: invite neutral return armed without a live envelope — nothing to resume")
-                                #endif
-                            }
+                        //
+                        // Sin sobre no hay join que retomar, así que tampoco se persiste un destino que llevaría a una
+                        // puerta sin nada detrás: el arranque siguiente cae en el recorrido normal, que es lo honesto
+                        // cuando la invitación ya no está. La regla vive en `Purpose.destinationAfterNeutralReturn`, que
+                        // el coordinador usa también para escribirlo pegado al arm (card ypit): con el cambio en caliente
+                        // esta entrega puede no llegar, y aquí queda de respaldo.
+                        if let destination = purpose.destinationAfterNeutralReturn {
+                            WelcomePendingDestinationStore.set(destination)
                         } else {
-                            WelcomePendingDestinationStore.set(.groupsOrganizer)
+                            #if DEBUG
+                            print("ContentView: invite neutral return armed without a live envelope — nothing to resume")
+                            #endif
                         }
                         // El cover del Welcome y el terminal del cierre de sesión cuelgan del MISMO body,
                         // así que UIKit presenta uno solo. Cerrar éste es lo que deja presentarse al otro,
@@ -3630,6 +3646,10 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
             }
             .onChange(of: phase) { _, newPhase in
                 if newPhase == .awaitingRelaunch { arm() }
+                // Card ypit · de `.awaitingRelaunch` solo se vuelve a reposo cuando el cierre se consumó en caliente
+                // (`PersonalContainerSwap`): ya no hay nada que reabrir, y un cover terminal que se quedara puesto
+                // bloquearía la matriz y la app entera (lo cazó la review: este modificador solo sabía armarse).
+                if newPhase == .idle { standDown() }
             }
             // Ciclo FRESCO al volver a foreground con la condición armada y sin cover
             // (el cap de intentos es por-ciclo, no de por vida).
@@ -3656,6 +3676,9 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
     }
 
     private func arm() {
+        // Con el remonte en caliente en curso, la fase sigue en `.awaitingRelaunch` unos segundos (el re-bootstrap) y el
+        // `ContentView` nuevo la ve al aparecer: no se arma, porque al terminar el cierre vuelve a `.idle` sin reabrir.
+        guard !PersonalContainerSwap.inPlaceRemountInFlight else { return }
         showRelaunchCover = true
         // Cancel-before-start: un solo verify loop vivo — dos loops togglando el mismo
         // binding reproducirían la carrera que este fix mata.
@@ -3666,6 +3689,13 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
             coverDidAppear: { coverDidAppear },
             setCover: { showRelaunchCover = $0 }
         )
+    }
+
+    /// Retira el cover terminal y su red. Solo cuando el cierre ya no espera relanzamiento.
+    private func standDown() {
+        verifyTask?.cancel()
+        verifyTask = nil
+        showRelaunchCover = false
     }
 }
 

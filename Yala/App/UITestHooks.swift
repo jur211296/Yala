@@ -208,6 +208,37 @@ final class UITestHooks {
     /// JWT mandaría credenciales basura a un backend real. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var fakeCloudSession: Bool { hasArg("-uitest-fake-cloud-session") }
 
+    /// `-uitest-fake-cloud-session-after <segundos>` (card nve0): la sesión fingida de arriba, pero que APARECE con la
+    /// pestaña Grupos delante, como al cerrarse la hoja de cuenta tras un inicio de sesión. El reloj lo arma
+    /// `CloudAuthService.armUITestDelayedFakeSession()` cuando la pestaña pinta «Crea tu cuenta»; al vencer, `hasSession`
+    /// pasa a `true` y la sesión cambia como en un inicio de sesión real (`sessionEpoch`). Mismo alcance que su vecino: no
+    /// toca `currentUserID` ni el token, así que tampoco hay tráfico. Un valor que no es un número se ignora. Solo DEBUG.
+    /// `-uitest-slow-bootstrap <segundos>` (card apsn): el arranque tarda N segundos más en asentar, como en un iPhone
+    /// recién instalado que atesta y baja tasas de verdad (en el simulador, sin App Attest, acaba en ~1 s y la espera no se
+    /// ve). Con él se mide qué pinta la app mientras el bloqueo `bootstrapPending` retiene la cadena de Grupos. No escribe
+    /// nada. Solo DEBUG.
+    nonisolated static var slowBootstrapSeconds: Double? {
+        #if DEBUG
+        guard isActive,
+              let raw = parseValue(after: "-uitest-slow-bootstrap", from: ProcessInfo.processInfo.arguments)
+        else { return nil }
+        return Double(raw)
+        #else
+        return nil
+        #endif
+    }
+
+    nonisolated static var fakeCloudSessionDelaySeconds: Double? {
+        #if DEBUG
+        guard isActive,
+              let raw = parseValue(after: "-uitest-fake-cloud-session-after", from: ProcessInfo.processInfo.arguments)
+        else { return nil }
+        return Double(raw)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-sign-out-keeps-session`: `CloudAuthService.signOut()` devuelve «la sesión sigue guardada», como si el
     /// llavero no la hubiera borrado o un refresco del token en vuelo la hubiera repuesto (ticket
     /// `detach-does-not-verify-the-cloud-session-actually-closed`). En el simulador no hay forma de provocar ninguna de las

@@ -69,6 +69,10 @@ struct GroupsContainerView: View {
     /// Sube cuando el consent de Grupos cambia en disco (`GroupsConsentState.didChangeNotification`). El estado vacío lo
     /// lee para volver a decidirse: `GroupsConsentState.isAccepted` es `UserDefaults` y no repinta nada por sí solo.
     @State private var consentRevision = 0
+    /// Card nve0 · sube con cada cambio de sesión (`CloudAuthService.sessionDidChangeNotification`). El estado vacío y el
+    /// aviso del attest leen `CloudAuthService.shared.hasSession`, que no repinta nada por sí solo: sin esto, conectar la
+    /// cuenta desde la hoja (que se cierra en sitio, sin `onAppear`) dejaba «Crea tu cuenta de Yala» en pantalla.
+    @State private var sessionRevision = 0
     /// L12-10 · el grupo que el formulario acaba de crear, apuntado ANTES de que la hoja se cierre. Al cerrarse pasa a
     /// `groupReadyToInvite` (encadenado por su `onDismiss`: dos hojas del mismo ancla a la vez no se presentan).
     @State private var groupAwaitingInviteSheet: SplitGroup?
@@ -222,9 +226,10 @@ struct GroupsContainerView: View {
                 for: GroupsAttestStreakStore.didChangeNotification)) { _ in
                 refreshAttestTerminalNotice()
             }
-            // Aceptar el consent desde «Un último paso» cierra la hoja en sitio: sin onAppear ni nada observable que cambie.
-            .onReceive(NotificationCenter.default.publisher(
-                for: GroupsConsentState.didChangeNotification)) { _ in consentRevision &+= 1 }
+            // Aceptar el consent desde «Un último paso» y conectar la cuenta cierran su hoja en sitio: sin onAppear ni nada
+            // observable que cambie. Los dos avisos, en un modificador propio por el presupuesto del type-checker del CI.
+            .modifier(GroupsIdentityRevisionObservers(
+                consentRevision: $consentRevision, sessionRevision: $sessionRevision))
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
@@ -491,8 +496,10 @@ struct GroupsContainerView: View {
     /// busque el id declarado en `YalaEmptyState` no lo encuentra en el árbol.
     @ViewBuilder
     private func emptyState(standardAccessibilityID: String?, hasArchivedGroups: Bool) -> some View {
-        // Dependencia explícita del consent: sin esta lectura el `switch` no se re-evalúa al aceptarlo.
+        // Dependencia explícita del consent y de la sesión: sin estas lecturas el `switch` no se re-evalúa al aceptarlo
+        // ni al conectar la cuenta.
         let _ = consentRevision
+        let _ = sessionRevision
         let kind = GroupsEmptyStateLogic.decide(
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSeenEducational: hasSeenGroupsEducational,
@@ -559,6 +566,10 @@ struct GroupsContainerView: View {
                 actionTitle: L10n.Groups.Empty.CreateAccount.action
             ) { requestGroupsSignIn() }
                 .accessibilityIdentifier("groups_empty_state_create_account")
+                #if DEBUG
+                // Seam de la card nve0: el reloj de la sesión que llega tarde arranca con «Crea tu cuenta» delante.
+                .onAppear { CloudAuthService.shared.armUITestDelayedFakeSession() }
+                #endif
         case .needsConsent:
             GroupsEmptyStepsCard(
                 card: card,
@@ -976,6 +987,8 @@ struct GroupsContainerView: View {
     /// `refreshAttestTerminalNotice`.
     @ViewBuilder
     private var groupsAttestTerminalBanner: some View {
+        // La sesión es una de sus condiciones vivas: sin esta lectura, iniciar o cerrar sesión no lo re-evalúa (nve0).
+        let _ = sessionRevision
         if showsAttestTerminalNotice {
             HStack(alignment: .top, spacing: DS.Spacing.sm) {
                 Image(systemName: "exclamationmark.triangle")
@@ -1169,6 +1182,22 @@ private struct ExpenseComposerPayload: Identifiable {
     let initialGroup: SplitGroup
     /// L13-8 · aviso arriba del gasto («Ahora apunta el gasto») cuando se abre justo después de crear el grupo.
     var notice: String? = nil
+}
+
+/// Card nve0 · los dos avisos que re-deciden el estado vacío: el consentimiento que cambia en disco y la sesión que entra o
+/// sale. Aparte del `body` por el presupuesto del type-checker del CI (`swiftui-ds.md`: como mucho tres modificadores por
+/// `ViewModifier`, cierres de una línea).
+private struct GroupsIdentityRevisionObservers: ViewModifier {
+    @Binding var consentRevision: Int
+    @Binding var sessionRevision: Int
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(
+                for: GroupsConsentState.didChangeNotification)) { _ in consentRevision &+= 1 }
+            .onReceive(NotificationCenter.default.publisher(
+                for: CloudAuthService.sessionDidChangeNotification)) { _ in sessionRevision &+= 1 }
+    }
 }
 
 /// L12-12 · los dos observadores de la hoja de invitar que pidió el formulario de la bienvenida, aparte del `body` por el

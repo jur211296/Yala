@@ -1,10 +1,10 @@
 ---
 id: reopen-yala-only-for-private-icloud
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, onboarding, grupos"
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 source: "tablero-reabre-yala-solo-cuando-la-persona-entra-ypit (QA guiado TF19, 2026-10-20)"
 ---
 
@@ -40,7 +40,7 @@ mismo: apagar el espejo con la app abierta.
 **Ya resuelto antes de este inventario:** «Tengo una invitación» en una instalación limpia dejó de pedir el espejo el
 2026-10-20 (`WelcomeMirrorRelaunchLogic`).
 
-## Propuesta (espera la decisión de Jürgen)
+## Propuesta (aprobada por Jürgen el 2026-10-22, 05:42)
 
 1. **Barato, sin riesgo nuevo** — los tres caminos cuyo montaje ya va sin espejo pasan por el cambio en caliente que ya
    usa el cierre de sesión en la nube: la celda solo-grupos del 8 y los dos «Borrar mi cuenta» del 9
@@ -54,3 +54,41 @@ mismo: apagar el espejo con la app abierta.
 ## Hecha cuando
 
 Solo entrar en el iCloud privado pide reabrir; o cada excepción de las 4-7 tiene la aprobación de Jürgen.
+
+## Hecho (2026-10-23)
+
+**Los dos «barato, sin riesgo nuevo»**, con el cambio en caliente del cierre de sesión en la nube y la misma red (el
+borrado se arma ANTES; si el cambio no puede, el arranque siguiente hace lo de siempre):
+
+- **La celda solo-grupos del cierre de sesión** (fila 8, y el mismo camino desde Ajustes): `armAfterCredentials`, solo con
+  `kind == .groupsOnly`. El destino del Welcome (crear el grupo o seguir con la invitación) lo escribe ahora el
+  coordinador pegado al arm (`destinationOnArm`), porque con el cambio en caliente la jerarquía se desmonta en la misma
+  vuelta y la entrega de SwiftUI que lo escribía en `ContentView` puede no llegar. Va también en el cierre en la nube, que
+  ya cambiaba en caliente y tenía el mismo hueco (inferido, sin medir en device).
+- **«Borrar mi cuenta» en la nube y en solo-grupos sin sesión privada** (fila 9): `closeLocalAfterAccountDeletionCloud`
+  devuelve si cerró en caliente y `AccountDeletionService` vuelve a `.idle` en ese caso (con `.awaitingRelaunch` el
+  `onAppear` de Perfil la cerraría al abrirla y un borrado nuevo no arrancaría). El borrado solo-grupos CON sesión privada
+  monta el espejo y se queda con el relanzamiento, a propósito.
+
+Lo fijan `ReopenOnlyForPrivateICloudWiringTests` (el orden contra el arm, en los tres sitios), `WelcomeGroupsGateDestinationTests`
+y los dos casos nuevos de `AccountDeletionServiceTests`. El cambio en sí no se puede ejercitar en el simulador: pide una
+sesión real y soltar el contenedor de verdad. **Device-QA, guion abajo.**
+
+**Los cuatro que apagan el espejo con la app abierta (4, 5, 6 y 7) no se tocan.** El simulador no tiene iCloud ni exporta
+a CloudKit, así que no puede demostrar que soltar el espejo en caliente no escribe nada después (el spike R3 midió 5
+eventos en los 10 s posteriores al release). Siguen en `reopen-yala-mirror-off-in-place-needs-an-iphone-measurement`.
+
+## Device-QA (iPhone de QA, Yala Dev de este PR, contra staging)
+
+**A · Borrar la cuenta sin reabrir**
+1. Con una cuenta de la nube de prueba ya abierta en Yala Dev: Perfil → Tu cuenta de Yala → Eliminar mi cuenta → Continuar
+   → Eliminar.
+2. Esperado: tras «Eliminando…», Yala vuelve sola a la bienvenida, **sin** «Ya casi está · Cierra Yala y vuelve a abrirla».
+   Si sale esa pantalla, anótalo y reabre: es la red de siempre, no una pérdida de datos.
+3. Bienvenida → Ya tengo una cuenta → la misma cuenta → tiene que decir que no existe.
+
+**B · Cerrar la sesión solo-grupos sin reabrir**
+1. Instalación limpia → Vengo por un grupo → Crear mi primer grupo → crea la cuenta y un grupo «QA».
+2. Perfil → Cerrar sesión → confirma.
+3. Esperado: vuelve a la bienvenida **sin** pedir reabrir.
+4. Vengo por un grupo → entra con la misma cuenta → el grupo «QA» sigue ahí.

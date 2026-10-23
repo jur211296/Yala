@@ -472,7 +472,10 @@ struct GroupsOrganizerWiringTests {
         let armed = try #require(Self.bodyOf("onGroupsGateNeutralReturnArmed: {", in: content), """
             `ContentView` dejó de cablear el aviso de la vuelta al neutro.
             """)
-        #expect(armed.contains("WelcomePendingDestinationStore.set(.groupsOrganizer)"), """
+        // Desde la card ypit el destino sale de `Purpose.destinationAfterNeutralReturn`, que para el organizador es
+        // siempre `.groupsOrganizer` (`WelcomeGroupsGateDestinationTests`), y el coordinador lo escribe además pegado al arm.
+        #expect(armed.contains("if let destination = purpose.destinationAfterNeutralReturn {")
+                && armed.contains("WelcomePendingDestinationStore.set(destination)"), """
             sin persistir el destino, quien vuelve a abrir la app aterriza en el chooser y tiene que volver
             a elegir «Vengo por un grupo» — el camino muerto, movido un paso más adelante.
             """)

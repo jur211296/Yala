@@ -419,7 +419,9 @@ struct PrivateSignOutMigrationWiringTests {
         #expect(grupos.upperBound <= puerta.lowerBound)
         #expect(puerta.upperBound <= marcador.lowerBound)
         #expect(!fn[puerta.upperBound..<arm.lowerBound].contains("await"), "hay un `await` entre la puerta y el arm")
-        let ultimoAwait = try #require(fn.range(of: "await ", options: .backwards))
+        // El último `await` ANTES del arm: detrás del arm va, desde la card ypit, el cambio en caliente de la celda solo-grupos,
+        // que ya no puede dejar nada sin contar (el borrado está armado).
+        let ultimoAwait = try #require(fn.range(of: "await ", options: .backwards, range: fn.startIndex..<arm.lowerBound))
         #expect(ultimoAwait.upperBound <= puerta.lowerBound, "la puerta tiene que ir DESPUÉS del último `await` del cierre")
     }
 

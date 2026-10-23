@@ -20,6 +20,10 @@ struct SplashScreenView: View {
     @State private var particles: [Particle] = []
     @State private var isPulsing = false
     @State private var particleTimer: Timer?
+    /// La entrada que arranca las animaciones continuas a los 800 ms. Se cancela al desaparecer: si la vista se iba antes,
+    /// la tarea creaba igual un temporizador de 20 Hz que nadie invalidaba (card apsn, review; desde entonces la vista se
+    /// monta también como pantalla de espera y puede durar menos de 800 ms).
+    @State private var entranceTask: Task<Void, Never>?
 
     // Particle model
     struct Particle: Identifiable {
@@ -90,13 +94,20 @@ struct SplashScreenView: View {
                 }
 
                 // Start continuous animations after entrance
-                Task {
-                    try? await Task.sleep(for: .milliseconds(800))
+                entranceTask?.cancel()
+                entranceTask = Task {
+                    do {
+                        try await Task.sleep(for: .milliseconds(800))
+                    } catch {
+                        return  // Cancelada: la vista ya no está.
+                    }
                     startPulseAnimation()
                     startParticleAnimation(in: geometry.size)
                 }
             }
             .onDisappear {
+                entranceTask?.cancel()
+                entranceTask = nil
                 particleTimer?.invalidate()
                 particleTimer = nil
             }

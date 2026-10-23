@@ -872,8 +872,17 @@ final class CloudMigrationController {
         await r.submit(.signInSucceeded)         // authenticating → claimingMigration → drive
         await announceForwardClaimRefusal(since: refusalBefore)
         refresh()
-        guard migrationAttempt != nil,
-              [.notStarted, .consent, .authenticating].contains(journaledPhase) else { return }
+        // Un claim rechazado limpia `migrationAttempt` y cierra la sesión que abrió (`announceForwardClaimRefusal`).
+        guard migrationAttempt != nil else { return }
+        guard [.notStarted, .consent, .authenticating].contains(journaledPhase) else {
+            // m387 · «Migrar» pasó la puerta de identidad y el claim CONTESTÓ: esta cuenta es la de la persona. Con el claim
+            // aparcado (`claimingMigration`: red, 403, sesión caducada) todavía puede rechazarla al reintentar
+            // (`announceForwardClaimRefusal` cierra la sesión), así que ahí no se sella: lo hará la pestaña o el arranque.
+            if journaledPhase != .claimingMigration {
+                GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
+            }
+            return
+        }
         migrationAttempt = nil
         _ = await closeSessionIfOpened(openedSession)
         lastError = L10n.Storage.Errors.generic
@@ -2045,6 +2054,8 @@ final class CloudMigrationController {
                 ownerUserID: runtime?.ownerUserID, signedInUserID: signedIn,
                 signedInIsClaimed: signedIn.map { CloudClaimActionStore.shared.action(forUserID: $0) != nil } ?? false) {
             case .resume:
+                // m387 · volvió a entrar la cuenta dueña de este teléfono.
+                GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
                 // Parado en este proceso, la cadencia se re-despierta; arrancado sin sesión tras relanzar
                 // (`.idleSignedOut`), `handleBecameActive` no hace nada y hay que arrancarlo, por la puerta de siempre
                 // (`startRuntimeIfStable` → `start`, con su gate de identidad).

@@ -30,6 +30,8 @@ struct AccountDeletionServiceTests {
         var isCloud = true
         var hasPrivateSession = true
         var deleteMarkerThrows = false
+        /// Card ypit · el cierre local de la nube cerró en caliente (sin relanzar).
+        var closedInPlace = false
     }
 
     private func makeService(_ c: Ctrl) -> AccountDeletionService {
@@ -46,7 +48,7 @@ struct AccountDeletionServiceTests {
             deletePersonalAccount: { c.events.append("delete"); return c.deleteOutcome },
             revokeSIWA: { c.events.append("siwa") },
             revokeGoogle: { c.events.append("google") },
-            closeLocalCloud: { c.events.append("closeCloud") },
+            closeLocalCloud: { c.events.append("closeCloud"); return c.closedInPlace },
             closeLocalGroupsOnly: { _ in c.events.append("closeGroupsOnly"); return c.closeGroupsResult },
             clearCloudBeacon: { c.events.append("clearBeacon") },
             deleteCloudKitMarker: { _ in
@@ -280,6 +282,32 @@ struct AccountDeletionServiceTests {
         try AccountDeletionService.Dependencies.live.deleteCloudKitMarker(ctx)
 
         #expect(try ctx.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    // MARK: - Card ypit · «Borrar mi cuenta» sin reabrir
+
+    /// Cerrado en caliente, la app ya está en el Welcome: la fase vuelve a reposo. Con `.awaitingRelaunch` el `onAppear` de
+    /// Perfil cerraría la hoja al abrirla y un borrado nuevo no arrancaría (`deleteAccount` sale con esa fase).
+    @Test(arguments: [true, false])
+    func closedInPlace_returnsToIdle_otherwiseWaitsForTheRelaunch(isCloud: Bool) async throws {
+        let ctx = try makeTestContext()
+        let c = Ctrl(); c.isCloud = isCloud; c.hasPrivateSession = false; c.closedInPlace = true
+        let sut = makeService(c)
+
+        await sut.deleteAccount(context: ctx)
+
+        #expect(c.events.last == "closeCloud")
+        #expect(sut.phase == .idle)
+    }
+
+    @Test func notClosedInPlace_waitsForTheRelaunch() async throws {
+        let ctx = try makeTestContext()
+        let c = Ctrl(); c.isCloud = true; c.closedInPlace = false
+        let sut = makeService(c)
+
+        await sut.deleteAccount(context: ctx)
+
+        #expect(sut.phase == .awaitingRelaunch)
     }
 }
 

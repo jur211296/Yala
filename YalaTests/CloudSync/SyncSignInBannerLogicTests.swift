@@ -340,6 +340,7 @@ struct SyncSignInBannerLogicTests {
             ownerUserID: runtime?.ownerUserID, signedInUserID: signedIn,
             signedInIsClaimed: signedIn.map { CloudClaimActionStore.shared.action(forUserID: $0) != nil } ?? false) {
             case .resume:
+            GroupsConsentRegistrar.shared.sealAfterSessionAccepted()
             if runtime?.state == .stoppedUntilSignIn {
             runtime?.handleBecameActive()
             } else {
