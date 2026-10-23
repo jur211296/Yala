@@ -428,7 +428,9 @@ jobs:
       # Se elige con `xcode-select` y no con `setup-xcode`: la ruta es la del README de la imagen y
       # el paso falla si el build no es el esperado, en vez de caer en silencio al 27.0 por defecto.
       # El simulador sigue siendo un iPhone 17 Pro: la imagen no lo trae, y `ci-simulador.sh` lo
-      # crea en el runtime iOS 27.0, el unico que lleva. La rama 2.1 sigue en `macos-26` con 26.6.
+      # crea en el runtime iOS 27.0. Desde la imagen 20261022 hay tambien un runtime iOS 27.1,
+      # pero solo admite el iPhone Duo; el script lo descarta (2026-10-23, ver su cabecera).
+      # La rama 2.1 sigue en `macos-26` con 26.6.
       - name: Seleccionar Xcode 27.1
         run: bash qa/scripts/ci-xcode.sh
       # Secrets.xcconfig está gitignored (API keys); sin él el build falla. El template
