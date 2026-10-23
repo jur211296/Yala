@@ -447,6 +447,71 @@ final class UITestHooks {
         return state
     }
 
+    /// `-uitest-cloud-progress <escenario>`: «Dónde viven tus datos» con la activación o la vuelta a iCloud a medias, en un
+    /// paso y con una cifra fijos (ticket `cloud-progress-shows-real-steps-and-counts`). El simulador no tiene iCloud ni
+    /// puede llevar una migración real hasta ahí. **Finge la ENTRADA, no la decisión**, molde de `-uitest-migration-failed`:
+    /// la fase sale de la lectura del journal del controller (no se inserta ninguna fila, así que el runner no la ve) y la
+    /// cifra y la espera de lo que el runner publicaría; qué pasos se pintan lo sigue decidiendo `CloudProgressStepsLogic`.
+    /// Solo DEBUG.
+    nonisolated static var fakeCloudProgress: FakeCloudProgress? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-cloud-progress", from: ProcessInfo.processInfo.arguments)
+            .flatMap(FakeCloudProgress.init(rawValue:))
+        #else
+        return nil
+        #endif
+    }
+
+    enum FakeCloudProgress: String {
+        /// La ida subiendo: 650 de 1.537 (la cifra del QA guiado del 19-oct).
+        case upload
+        /// La ida esperando a que iCloud termine de traer datos, antes de preparar.
+        case waitingICloud
+        /// La vuelta en su último paso, con iCloud revisando lo que ya tiene: 448 por subir y aún sin bajar.
+        case reverseReview
+        /// La vuelta subiendo: de 448 quedan 212.
+        case reverseUpload
+        /// «Volver a iCloud» recién confirmado, con la app esperando a iCloud antes de empezar.
+        case reverseStarting
+
+        nonisolated var phase: MigrationPhase {
+            switch self {
+            case .upload:          return .uploadingSnapshot
+            case .waitingICloud:   return .assigningIdentity
+            case .reverseReview, .reverseUpload: return .reverseUpload
+            case .reverseStarting: return .done
+            }
+        }
+
+        nonisolated var upload: CloudProgressStepsLogic.UploadProgress? {
+            self == .upload ? .init(done: 650, total: 1_537) : nil
+        }
+
+        nonisolated var waitingForICloud: Bool { self == .waitingICloud || self == .reverseStarting }
+
+        nonisolated var reversePending: Int? {
+            switch self {
+            case .reverseReview: return 448
+            case .reverseUpload: return 212
+            default:             return nil
+            }
+        }
+
+        nonisolated var reverseFirstPending: Int? { reversePending == nil ? nil : 448 }
+
+        nonisolated var startingReverse: Bool { self == .reverseStarting }
+    }
+
+    /// La fila que devuelve el fetch del journal del controller con `-uitest-cloud-progress`, o `nil` sin él.
+    static var fakeCloudProgressJournalRow: MigrationState? {
+        guard let fake = fakeCloudProgress else { return nil }
+        let state = MigrationState()
+        state.setPhase(fake.phase)
+        state.setPendingEffects([])
+        return state
+    }
+
     /// `-uitest-icloud-identity`: siembra la identidad iCloud de Grupos con un recordName fijo
     /// (`uitestICloudRecordName`), síncrono y SIN red — `GroupICloudIdentitySeed.adopt` no toca
     /// CloudKit.

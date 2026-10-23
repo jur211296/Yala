@@ -8338,3 +8338,23 @@
 "l2d.split.formula.exact" = "%1$@ de %2$@";
 "l2d.split.bar.you" = "Você %@";
 "l2d.split.bar.others" = "Os demais %@";
+
+/* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
+"storage.steps.forwardTitle" = "Ativando a nuvem";
+"storage.steps.reverseTitle" = "Voltando para o iCloud";
+"storage.steps.connect" = "Conectar à sua conta";
+"storage.steps.prepare" = "Preparar seus dados";
+"storage.steps.upload" = "Enviar seus dados";
+"storage.steps.confirm" = "Confirmar com o iCloud";
+"storage.steps.waitICloud" = "Aguardar o iCloud";
+"storage.steps.waitICloudDetail" = "O iCloud ainda está trazendo seus dados para este dispositivo. Assim que terminar, seguimos sozinhos.";
+"storage.steps.keepOpen" = "Mantenha o Yala aberto até terminar.";
+"storage.steps.wipePrior" = "Apagar os dados antigos";
+"storage.steps.wipedCount" = "%@ apagados até agora";
+"storage.steps.bring" = "Trazer seus dados da nuvem";
+"storage.steps.review" = "O iCloud revisa o que já tem";
+"storage.steps.reviewDetail" = "Antes de enviar, o iCloud olha o que guarda deste dispositivo. Pode levar alguns minutos.";
+"storage.steps.uploadToICloud" = "Enviar para o iCloud";
+"storage.steps.pendingCount" = "%@ para enviar";
+"storage.steps.keepUsing" = "Você pode continuar usando o Yala enquanto isso.";
+"storage.steps.uploadedCount" = "%1$@ de %2$@";

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1040)
+## Index (1043)
 
 | id | status | path |
 |---|---|---|
@@ -230,6 +230,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
 | cloud-activation-stalls-without-uploading-until-relaunch | done | tickets/done/cloud-activation-stalls-without-uploading-until-relaunch.md |
+| cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover | backlog | tickets/backlog/cloud-activation-time-is-unmeasured-between-the-claim-and-the-cutover.md |
 | cloud-activation-verify-loops-on-accounts | qa | tickets/qa/cloud-activation-verify-loops-on-accounts.md |
 | cloud-activation-waits-for-icloud-with-no-way-out | qa | tickets/qa/cloud-activation-waits-for-icloud-with-no-way-out.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
@@ -244,7 +245,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | done | tickets/done/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | done | tickets/done/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | done | tickets/done/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
-| cloud-progress-shows-real-steps-and-counts | backlog | tickets/backlog/cloud-progress-shows-real-steps-and-counts.md |
+| cloud-progress-shows-real-steps-and-counts | qa | tickets/qa/cloud-progress-shows-real-steps-and-counts.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | done | tickets/done/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
 | cloud-sign-in-discovers-account-kind | done | tickets/done/cloud-sign-in-discovers-account-kind.md |

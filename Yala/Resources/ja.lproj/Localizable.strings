@@ -8350,3 +8350,23 @@
 "l2d.split.formula.exact" = "%2$@ のうち%1$@";
 "l2d.split.bar.you" = "あなた %@";
 "l2d.split.bar.others" = "ほかの人 %@";
+
+/* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
+"storage.steps.forwardTitle" = "クラウドを有効化しています";
+"storage.steps.reverseTitle" = "iCloud に戻しています";
+"storage.steps.connect" = "アカウントに接続";
+"storage.steps.prepare" = "データを準備";
+"storage.steps.upload" = "データをアップロード";
+"storage.steps.confirm" = "iCloud で確認";
+"storage.steps.waitICloud" = "iCloud を待っています";
+"storage.steps.waitICloudDetail" = "iCloud がまだこのデバイスにデータを取り込んでいます。終わり次第、自動で続けます。";
+"storage.steps.keepOpen" = "完了するまで Yala を開いたままにしてください。";
+"storage.steps.wipePrior" = "以前のデータを削除";
+"storage.steps.wipedCount" = "%@ 件削除済み";
+"storage.steps.bring" = "クラウドからデータを取得";
+"storage.steps.review" = "iCloud が保存済みの内容を確認";
+"storage.steps.reviewDetail" = "アップロードの前に、iCloud がこのデバイスの保存内容を確認します。数分かかることがあります。";
+"storage.steps.uploadToICloud" = "iCloud にアップロード";
+"storage.steps.pendingCount" = "残り %@ 件";
+"storage.steps.keepUsing" = "その間も Yala を使い続けられます。";
+"storage.steps.uploadedCount" = "%2$@ 件中 %1$@ 件";

@@ -858,6 +858,9 @@ protocol MigrationWorkExecuting: AnyObject {
     /// Gate de EXPORT del marcador (§g.4, entre paso 3 y 4): ¿el `CloudMigrationMarker` LLEGÓ a CloudKit?
     /// El save del marcador exporta ASYNC; apagar el mirror antes lo perdería. `false` = aún sin exportar.
     func isMarkerExported() -> Bool
+    /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay (la cifra de «Subir tus datos»). Solo
+    /// informa. Default `nil` en la extensión: los fakes no la modelan.
+    var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { get }
 
     // MARK: Reversa (§h, I11-2). El server-side (claim/freeze) queda notWired hasta I11-3.
 
@@ -917,6 +920,8 @@ protocol MigrationWorkExecuting: AnyObject {
 }
 
 extension MigrationWorkExecuting {
+    var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { nil }
+
     /// Defaults del linaje de la ida (ticket `migration-takeover-uploads-without-a-lineage-check`): un conformador que no lo
     /// modela —los fakes de las suites de antes— recorre la identidad como antes del ticket. El ejecutor real los override.
     func lastClaimReportedPersonalWrites() -> Bool? { nil }
@@ -1000,6 +1005,25 @@ final class MigrationRunner {
     /// está, en vez de una barra al 95 % muda.
     private(set) var lastReverseUploadSample: ReverseUploadSample?
 
+    /// La entrada en curso espera a que iCloud termine de importar (`awaitQuiescence`). La lee la pantalla para decir
+    /// «Esperar a iCloud» también en esta espera, no solo en la pre-espera del controller (ticket
+    /// `cloud-progress-shows-real-steps-and-counts`): con ella muda, tras confirmar «Volver a iCloud» la tarjeta no decía
+    /// nada durante hasta 120 s (card 27z3).
+    private(set) var isAwaitingImportQuiescence = false
+
+    /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay. Del uploader, a través del executor.
+    var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { executor.snapshotUploadProgress }
+
+    /// Cuándo cambió de paso la última vez, para el canario `cloudMigrationStep`. En memoria: tras relanzar, el primer
+    /// cambio sale sin duración.
+    private var lastStepChangeAt: Date?
+
+    /// Cuánto espera el paso del marcador DENTRO de la pasada a que llegue a iCloud antes de aparcar (ticket
+    /// `cloud-progress-shows-real-steps-and-counts`, card ppxk). Medido el 20-oct: los exports del espejo salían cada ~4 s
+    /// en cuanto iCloud se soltaba, y aparcado el paso solo se re-empujaba cada 30 s. Con esta espera el corte sigue en
+    /// cuanto el marcador llega. `0` = el comportamiento de antes (aparcar en la primera observación).
+    private let markerExportInPassWaitSeconds: Double
+
     /// La última salida del claim de la reversa en este proceso (`nil` = ninguna). En memoria, molde de
     /// `lastClaimBlocker`: la nota que dura vive en el journal (`reverseAbortReasonRaw`); esto solo decide la alerta.
     private(set) var lastReverseClaimExit: ReverseClaimExit?
@@ -1059,7 +1083,9 @@ final class MigrationRunner {
         quiescenceTimeoutSeconds: Double = 120,
         quiescenceTickSeconds: Double = 0.5,
         wipeDefaults: UserDefaults = .standard,
-        onQuiescenceTimeout: @escaping () -> Void = {}
+        markerExportInPassWaitSeconds: Double = 30,
+        onQuiescenceTimeout: @escaping () -> Void = {},
+        onQuiescenceWaited: @escaping (_ seconds: Double, _ settled: Bool) -> Void = { _, _ in }
     ) {
         self.context = context
         self.executor = executor
@@ -1071,8 +1097,14 @@ final class MigrationRunner {
         self.quiescenceTimeoutSeconds = quiescenceTimeoutSeconds
         self.quiescenceTickSeconds = quiescenceTickSeconds
         self.wipeDefaults = wipeDefaults
+        self.markerExportInPassWaitSeconds = max(0, markerExportInPassWaitSeconds)
         self.onQuiescenceTimeout = onQuiescenceTimeout
+        self.onQuiescenceWaited = onQuiescenceWaited
     }
+
+    /// Termina una espera a iCloud que sí esperó (no el atajo de iCloud ya quieto): segundos y si se asentó. Producción emite
+    /// `cloudMigrationImportWaited` (card ppxk).
+    private let onQuiescenceWaited: (_ seconds: Double, _ settled: Bool) -> Void
 
     /// Se llama cada vez que una entrada agota la espera a que iCloud termine de importar (`awaitQuiescence`). Producción
     /// emite ahí el canario `cloudMigrationImportNotSettled` (card ppxk del QA guiado del 2026-10-20: «Activar la nube»
@@ -1519,8 +1551,18 @@ final class MigrationRunner {
             state.updatedAt = now()
             try context.save()
             CloudSyncBreadcrumb.migrationJournaled(phase: "\(next)")
+            if next != current { reportStepChange(from: current, to: next) }
             try await drainPendingEffects(isResume: false)
         }
+    }
+
+    /// El canario de la línea de tiempo (`cloudMigrationStep`): de qué fase a cuál y cuánto duró la que se deja.
+    private func reportStepChange(from current: MigrationPhase, to next: MigrationPhase) {
+        let changedAt = now()
+        MetricsService.cloudMigrationStep(
+            from: CloudMigrationTimelineLogic.label(current), to: CloudMigrationTimelineLogic.label(next),
+            previousStepSeconds: CloudMigrationTimelineLogic.previousStepSeconds(since: lastStepChangeAt, now: changedAt))
+        lastStepChangeAt = changedAt
     }
 
     /// Drena los efectos journaleados PENDIENTES en orden, con save por efecto completado. En `resume`,
@@ -2263,7 +2305,7 @@ final class MigrationRunner {
             // marcador LLEGÓ a CloudKit. El save del marcador exporta ASYNC — apagarlo antes lo perdería
             // para siempre (los 2º devices jamás se auto-bloquearían = divergencia silenciosa, el punto
             // entero del paso 3).
-            if executor.isMarkerExported() {
+            if await awaitMarkerExportInPass() {
                 try await handle(.mirrorDisabled)          // efecto: disableMirrorAndRelaunch (persiste flag; NO mata el proceso)
                 return true
             }
@@ -3207,17 +3249,39 @@ final class MigrationRunner {
         }
     }
 
+    /// ¿Llegó el marcador a iCloud? Mira ya y, si no, sigue mirando cada segundo hasta `markerExportInPassWaitSeconds`
+    /// (ticket `cloud-progress-shows-real-steps-and-counts`). Solo LEE: el gate es el mismo `isMarkerExported()` de
+    /// siempre, y lo que pasa si no llega (sondeo del canal, reloj del tope, aparcar) no cambia.
+    private func awaitMarkerExportInPass() async -> Bool {
+        if executor.isMarkerExported() { return true }
+        let ticks = Int(markerExportInPassWaitSeconds.rounded(.up))
+        for _ in 0..<ticks {
+            await sleeper(1)
+            if executor.isMarkerExported() { return true }
+        }
+        return false
+    }
+
     // MARK: - Quiescencia (estilo SpikeS6, tope + tick INYECTABLES para determinismo en tests)
 
     /// Espera `quiescenceSignal()` en ticks deterministas (`maxTicks = ceil(tope/tick)`). Devuelve si se
     /// alcanzó. NO escribe nada del journal (ni un `save()`) mientras espera.
     private func awaitQuiescence() async -> Bool {
         if quiescenceSignal() { return true }
+        isAwaitingImportQuiescence = true
+        defer { isAwaitingImportQuiescence = false }
         let maxTicks = max(1, Int((quiescenceTimeoutSeconds / quiescenceTickSeconds).rounded(.up)))
+        var waited: Double = 0
         for _ in 0..<maxTicks {
             await sleeper(quiescenceTickSeconds)
-            if quiescenceSignal() { return true }
+            waited += quiescenceTickSeconds
+            if quiescenceSignal() {
+                onQuiescenceWaited(waited, true)
+                return true
+            }
         }
-        return quiescenceSignal()
+        let settled = quiescenceSignal()
+        onQuiescenceWaited(waited, settled)
+        return settled
     }
 }

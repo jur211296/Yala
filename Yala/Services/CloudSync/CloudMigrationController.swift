@@ -497,6 +497,46 @@ final class CloudMigrationController {
     /// filas faltan y por qué no drena. `nil` = aún no observada; la pantalla dice entonces solo que está subiendo.
     private(set) var reverseUploadSample: ReverseUploadSample?
 
+    // MARK: Pasos con su cifra (opción B, ticket `cloud-progress-shows-real-steps-and-counts`)
+
+    /// Cuántas filas de la subida de la ida confirmó el servidor, de cuántas hay (`MigrationRunner.snapshotUploadProgress`).
+    private(set) var uploadProgress: CloudProgressStepsLogic.UploadProgress?
+
+    /// La entrada del runner en curso espera a que iCloud termine de importar (`MigrationRunner.isAwaitingImportQuiescence`).
+    private(set) var runnerAwaitingImport = false
+
+    /// «Volver a iCloud» se confirmó y el journal todavía no lo recoge: la entrada del runner espera a iCloud antes de su
+    /// primer guardado. Hasta este ticket la pantalla seguía en «nube activa» con el botón apagado y nada más (card 27z3).
+    private(set) var isStartingReverse = false
+
+    /// La primera muestra de pendientes de esta subida de la vuelta. Mientras la cifra no baje de aquí, iCloud aún no subió
+    /// nada: está revisando lo que ya tiene (lienzo B3). En memoria: tras relanzar empieza en la primera muestra nueva.
+    private(set) var reverseFirstPending: Int?
+
+    /// La app espera a que iCloud termine de traer datos, en la pre-espera del controller o en la del runner.
+    var isWaitingForICloudImport: Bool { resumeWaitingForImport || runnerAwaitingImport }
+
+    /// Los pasos de «Activar la nube» para la tarjeta.
+    var forwardProgressSteps: [CloudProgressStepsLogic.Step] {
+        CloudProgressStepsLogic.forwardSteps(
+            phase: journaledPhase, adoptEffectPending: isAdoptEffectPending,
+            waitingForICloud: isWaitingForICloudImport, upload: uploadProgress)
+    }
+
+    /// Los pasos de «Volver a iCloud» (y de «Borrar y volver a iCloud») para la tarjeta.
+    var reverseProgressSteps: [CloudProgressStepsLogic.Step] {
+        CloudProgressStepsLogic.reverseSteps(
+            phase: journaledPhase, waitingForICloud: isWaitingForICloudImport, wipingDeleted: priorICloudWipeDeleted,
+            startingReverse: isStartingReverse, pending: reverseUploadSample?.pending, firstPending: reverseFirstPending)
+    }
+
+    /// ¿La pantalla enseña ya los pasos de la vuelta aunque el journal siga en «nube activa»? Mientras se borra lo de antes
+    /// y mientras la vuelta recién confirmada espera su primer guardado.
+    var showsReverseStepsBeforeJournal: Bool { priorICloudWipeDeleted != nil || isStartingReverse }
+
+    /// Cada cuántos segundos re-empuja la pantalla la migración aparcada (`CloudProgressStepsLogic.screenRekickSeconds`).
+    var screenRekickSeconds: Int { CloudProgressStepsLogic.screenRekickSeconds(phase: journaledPhase) }
+
     /// La vuelta a iCloud se paró porque la sesión de la nube ya no vale, en una fase anterior al montaje del espejo
     /// (`MigrationRunner.lastReverseSessionExpiry`). `nil` = no se paró por eso.
     ///
@@ -700,6 +740,10 @@ final class CloudMigrationController {
                     .cloudMigrationImportNotSettled, key: "runner",
                     detail: MigrationImportWaitLogic.runnerStallDetail(
                         stillImporting: iCloudSyncService.shared.status == .syncing(kind: .importing)))
+            },
+            onQuiescenceWaited: { seconds, settled in
+                MetricsService.cloudMigrationImportWaited(
+                    stage: "runner", outcome: settled ? "settled" : "cap", seconds: seconds.rounded())
             })
         _runner = r
         return r
@@ -1307,6 +1351,9 @@ final class CloudMigrationController {
 
     /// Volver a iCloud (reversa §h). El gate `ReverseEligibility` ya lo validó la vista (diálogos-primero);
     /// se emiten `reverseActivated` + `reverseConfirmed` JUNTOS (un kill entre ambos lo normaliza `resume`).
+    /// Tras su guard, `isStartingReverse` hace que la pantalla enseñe los pasos de la vuelta aunque el journal siga en «nube
+    /// activa»: la entrada del runner espera a iCloud antes de su primer guardado (ticket
+    /// `cloud-progress-shows-real-steps-and-counts`, card 27z3).
     func startReverse() async {
         isWorking = true
         defer { isWorking = false }
@@ -1317,6 +1364,8 @@ final class CloudMigrationController {
             refresh()
             return
         }
+        isStartingReverse = true
+        defer { isStartingReverse = false }
         cancelReverseRequested = false
         let r = runner
         let claimExitBefore = r.lastReverseClaimExit
@@ -1778,6 +1827,7 @@ final class CloudMigrationController {
         while waited < hardCap {
             if preWaitCutRequested {
                 preWaitCutRequested = false
+                MetricsService.cloudMigrationImportWaited(stage: "preWait", outcome: "cut", seconds: waited)
                 return false
             }
             do {
@@ -1791,6 +1841,7 @@ final class CloudMigrationController {
             waited += pollInterval
             if iCloudSyncService.shared.isImportQuiescent {
                 resumeWaitingForImport = false
+                MetricsService.cloudMigrationImportWaited(stage: "preWait", outcome: "settled", seconds: waited)
                 return true
             }
             let seen = iCloudSyncService.shared.lastSuccessfulImportDate
@@ -1800,6 +1851,7 @@ final class CloudMigrationController {
             }
         }
         CloudSyncBreadcrumb.migrationResumeDeferredAwaitingImport()
+        MetricsService.cloudMigrationImportWaited(stage: "preWait", outcome: "cap", seconds: waited)
         MetricsService.canaryOnce(
             .cloudMigrationImportNotSettled, key: "preWait",
             detail: MigrationImportWaitLogic.stallDetail(
@@ -1882,6 +1934,20 @@ final class CloudMigrationController {
 
     // MARK: - Refresh (journal vivo → estado derivado)
 
+    #if DEBUG
+    /// `-uitest-cloud-progress`: la cifra y la espera que el simulador no puede producir (sin iCloud ni backend). La fase la
+    /// finge la lectura del journal (`UITestHooks.fakeCloudProgressJournalRow`).
+    private func applyFakeCloudProgress(_ fake: UITestHooks.FakeCloudProgress) {
+        uploadProgress = fake.upload
+        runnerAwaitingImport = fake.waitingForICloud
+        if let pending = fake.reversePending {
+            reverseUploadSample = ReverseUploadSample(pending: pending, blocker: .unknown)
+            reverseFirstPending = fake.reverseFirstPending
+        }
+        if fake.startingReverse { isStartingReverse = true }
+    }
+    #endif
+
     /// Re-lee el journal + testigos de mount (sin mutar) y recalcula `uiState`. Molde del panel DEBUG.
     func refresh() {
         isQuiescent = iCloudSyncService.shared.isImportQuiescent
@@ -1910,6 +1976,13 @@ final class CloudMigrationController {
         claimDefinitiveCause = _runner?.lastClaimDefinitiveCause
         reverseUploadSample = _runner?.lastReverseUploadSample
         reverseSessionExpiry = _runner?.lastReverseSessionExpiry
+        uploadProgress = _runner?.snapshotUploadProgress
+        runnerAwaitingImport = _runner?.isAwaitingImportQuiescence ?? false
+        #if DEBUG
+        if let fake = UITestHooks.fakeCloudProgress { applyFakeCloudProgress(fake) }
+        #endif
+        reverseFirstPending = CloudProgressStepsLogic.firstPending(
+            previous: reverseFirstPending, phase: journaledPhase, pending: reverseUploadSample?.pending)
         readLiveSession()
 
         refreshSyncBanner()
@@ -2102,6 +2175,7 @@ final class CloudMigrationController {
             #if DEBUG
             if UITestHooks.migrationJournalUnreadable { throw MigrationJournalSeamError.fetchFailed }
             if let seeded = UITestHooks.failedMigrationJournalRow { return seeded }
+            if let seeded = UITestHooks.fakeCloudProgressJournalRow { return seeded }
             #endif
             var descriptor = FetchDescriptor<MigrationState>()
             descriptor.fetchLimit = 1

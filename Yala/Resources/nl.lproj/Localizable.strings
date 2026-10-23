@@ -8350,3 +8350,23 @@
 "l2d.split.formula.exact" = "%1$@ van %2$@";
 "l2d.split.bar.you" = "Jij %@";
 "l2d.split.bar.others" = "De anderen %@";
+
+/* Pasos con su cifra de «Activar la nube» y «Volver a iCloud» (cloud-progress-shows-real-steps-and-counts) */
+"storage.steps.forwardTitle" = "Cloud wordt ingeschakeld";
+"storage.steps.reverseTitle" = "Terug naar iCloud";
+"storage.steps.connect" = "Verbinden met je account";
+"storage.steps.prepare" = "Je gegevens voorbereiden";
+"storage.steps.upload" = "Je gegevens uploaden";
+"storage.steps.confirm" = "Bevestigen met iCloud";
+"storage.steps.waitICloud" = "Wachten op iCloud";
+"storage.steps.waitICloudDetail" = "iCloud haalt je gegevens nog naar dit apparaat. Zodra dat klaar is, gaan we vanzelf verder.";
+"storage.steps.keepOpen" = "Houd Yala open tot het klaar is.";
+"storage.steps.wipePrior" = "Oude gegevens verwijderen";
+"storage.steps.wipedCount" = "%@ verwijderd tot nu toe";
+"storage.steps.bring" = "Je gegevens uit de cloud halen";
+"storage.steps.review" = "iCloud controleert wat het al heeft";
+"storage.steps.reviewDetail" = "Voor het uploaden kijkt iCloud wat het van dit apparaat bewaart. Dat kan een paar minuten duren.";
+"storage.steps.uploadToICloud" = "Uploaden naar iCloud";
+"storage.steps.pendingCount" = "Nog %@ te uploaden";
+"storage.steps.keepUsing" = "Je kunt Yala intussen gewoon blijven gebruiken.";
+"storage.steps.uploadedCount" = "%1$@ van %2$@";

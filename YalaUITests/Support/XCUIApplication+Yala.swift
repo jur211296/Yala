@@ -74,6 +74,7 @@ extension XCUIApplication {
         adoptedCloudStorage: Bool = false,
         reversePriorICloud: String? = nil,
         reversePriorICloudWipe: String? = nil,
+        cloudProgress: String? = nil,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
@@ -289,6 +290,13 @@ extension XCUIApplication {
         if let reversePriorICloudWipe {
             args.append("-uitest-reverse-prior-icloud-wipe")
             args.append(reversePriorICloudWipe)
+        }
+        // La activación o la vuelta a iCloud a medias, con su paso y su cifra (`UITestHooks.fakeCloudProgress`): `upload`,
+        // `waitingICloud`, `reverseReview`, `reverseUpload` o `reverseStarting`. NOMBRADO por lo mismo que sus vecinos: un
+        // typo dejaría la pantalla en «Migrar a la nube» y el rojo culparía a la tarjeta de pasos.
+        if let cloudProgress {
+            args.append("-uitest-cloud-progress")
+            args.append(cloudProgress)
         }
         // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
         // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de

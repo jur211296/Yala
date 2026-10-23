@@ -896,6 +896,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// paginado va por `afterSyncID`, y una fila ya subida que cambia a una identidad mayor que el cursor se subiría otra
     /// vez. Entre la restauración y la lectura de la página no hay `await` —`uploadPage` es del mismo actor y lee antes de
     /// su primer push—, así que el import no cabe en medio.
+    /// La cifra de la subida (`MigrationSnapshotUploader.progress`).
+    var snapshotUploadProgress: CloudProgressStepsLogic.UploadProgress? { uploader.progress }
+
     func uploadSnapshot(cursor: String?) async -> SnapshotStepOutcome {
         do {
             try restoreRelayIdentities()

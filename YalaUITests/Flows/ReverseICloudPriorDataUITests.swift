@@ -184,12 +184,21 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
         let app = tapRevert(prior: "found", wipe: "progress")
         discardAndConfirm(app)
 
-        // El texto vive dentro del botón de la tarjeta, que tiene su propio id: se lee en su etiqueta.
-        let button = app.buttons["storage_revert_button"]
-        let wiping = NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "Borrando los datos de antes", "1197")
-        expectation(for: wiping, evaluatedWith: button)
+        // Desde la opción B (ticket `cloud-progress-shows-real-steps-and-counts`, card 27z3) el borrado es el primer paso
+        // de la vuelta, con su cifra, y la tarjeta de «Volver a iCloud» se sustituye por los pasos: no hay botón que tocar
+        // otra vez.
+        let wipeStep = app.descendants(matching: .any)["storage_step_wipePrior_active"]
+        XCTAssertTrue(wipeStep.waitForExistence(timeout: 5), "Mientras borra, la pantalla no dice que está borrando.")
+        let count = app.staticTexts["storage_step_count"].firstMatch
+        let wiped = NSPredicate(format: "label CONTAINS %@", "197")
+        expectation(for: wiped, evaluatedWith: count)
         waitForExpectations(timeout: 5)
-        XCTAssertFalse(button.isEnabled, "Mientras borra, «Volver a iCloud» se puede volver a tocar.")
+        XCTAssertTrue(app.descendants(matching: .any)["storage_step_bring_pending"].exists, "falta lo que viene después")
+        XCTAssertFalse(app.buttons["storage_revert_button"].exists, "Mientras borra, «Volver a iCloud» se puede volver a tocar.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-6-borrar-y-volver"
+        shot.lifetime = .keepAlways
+        add(shot)
     }
 
     /// Sin cuenta de iCloud la vuelta tampoco empieza: se quedaría esperando a que la persona abra iCloud, y entonces el

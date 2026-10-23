@@ -212,7 +212,15 @@ private final class FakeExecutor: MigrationWorkExecuting {
     }
 
     func isMirrorConfirmedOff() -> Bool { mirrorOff }
-    func isMarkerExported() -> Bool { markerExported }
+    /// El marcador llega a iCloud a la N-ésima comprobación (ticket `cloud-progress-shows-real-steps-and-counts`: la espera
+    /// dentro de la pasada). `nil` = manda `markerExported`.
+    var markerExportedAtCheck: Int?
+    private(set) var markerChecks = 0
+    func isMarkerExported() -> Bool {
+        markerChecks += 1
+        if let n = markerExportedAtCheck { return markerChecks >= n }
+        return markerExported
+    }
 
     // MARK: Canal iCloud (C-1)
     func probeICloudChannel() async -> ICloudChannelVerdict {
@@ -342,12 +350,16 @@ struct MigrationRunnerTests {
         now: (() -> Date)? = nil,
         // El borrado pendiente del iCloud privado que `resetAfterRollback` marca: AISLADO por defecto, para que ningún
         // test escriba en el `UserDefaults.standard` del simulador.
-        wipeDefaults: UserDefaults = makeIsolatedDefaults(prefix: "mrunner")
+        wipeDefaults: UserDefaults = makeIsolatedDefaults(prefix: "mrunner"),
+        sleeper: @escaping (Double) async -> Void = { _ in },
+        markerExportInPassWaitSeconds: Double = 30,
+        onQuiescenceWaited: @escaping (Double, Bool) -> Void = { _, _ in }
     ) -> MigrationRunner {
         MigrationRunner(
             context: context, executor: executor, deviceID: deviceID, policy: policy,
-            quiescenceSignal: quiescence, now: now ?? { self.fixedNow }, sleeper: { _ in },
-            quiescenceTimeoutSeconds: timeout, quiescenceTickSeconds: tick, wipeDefaults: wipeDefaults)
+            quiescenceSignal: quiescence, now: now ?? { self.fixedNow }, sleeper: sleeper,
+            quiescenceTimeoutSeconds: timeout, quiescenceTickSeconds: tick, wipeDefaults: wipeDefaults,
+            markerExportInPassWaitSeconds: markerExportInPassWaitSeconds, onQuiescenceWaited: onQuiescenceWaited)
     }
 
     @discardableResult
@@ -895,6 +907,96 @@ struct MigrationRunnerTests {
     /// peligrosa —`.cloud` + mirror-off desarmado— antes de que nada más pueda fallar), que el mirror NUNCA se
     /// apagó, y que el veredicto SOBREVIVE al terminal (sin él la UI del fallo solo podría decir un genérico
     /// en vez de "iCloud se quedó sin espacio").
+    /// El marcador que llega a iCloud a los pocos segundos ya no espera al re-empuje de la pantalla (ticket
+    /// `cloud-progress-shows-real-steps-and-counts`, card ppxk): la misma pasada lo ve llegar y sigue al apagado del espejo.
+    /// Mutante: con la espera a 0 la pasada aparca en `markerWritten` (el comportamiento de antes) y esto cae.
+    @Test func markerWritten_arrivingWithinThePass_continuesWithoutParking() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.markerExportedAtCheck = 4                // llega en la cuarta mirada: tres segundos después
+        try seedJournal(context, phase: .cutover(.markerWritten), leaderDeviceID: deviceID, markerWrittenSince: fixedNow)
+        var sleeps: [Double] = []
+        await makeRunner(context, fake, sleeper: { sleeps.append($0) }).resume()
+
+        #expect(try journal(context).readPhase().phase == .done, "la pasada siguió hasta el final sin aparcar")
+        #expect(fake.count(.disableMirrorAndRelaunch) == 1)
+        #expect(sleeps == [1, 1, 1], "mira cada segundo y para en cuanto llega")
+        #expect(fake.icloudProbeCallCount == 0, "con el marcador llegado no se pregunta por el canal")
+    }
+
+    /// Si no llega dentro de la espera, todo sigue como antes: sondeo del canal, observación del tope y aparcar. La espera
+    /// tiene techo (30 s): una pasada no se queda mirando para siempre.
+    @Test func markerWritten_notArrivingWithinThePass_parksAsBefore() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.markerExported = false
+        try seedJournal(context, phase: .cutover(.markerWritten), leaderDeviceID: deviceID, markerWrittenSince: fixedNow)
+        var sleeps = 0
+        await makeRunner(context, fake, sleeper: { _ in sleeps += 1 }).resume()
+
+        #expect(try journal(context).readPhase().phase == .cutover(.markerWritten))
+        #expect(sleeps == 30)
+        #expect(fake.markerChecks == 31)
+        #expect(fake.icloudProbeCallCount == 1)
+        #expect(fake.count(.disableMirrorAndRelaunch) == 0)
+    }
+
+    /// La espera a que iCloud termine de importar es visible mientras dura (la pantalla dice «Esperar a iCloud») y cuenta
+    /// lo que duró al terminar, se asiente o no (canario `cloudMigrationImportWaited`, card ppxk).
+    @Test func quiescenceWait_isVisibleWhileItLasts_andReportsItsDuration() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
+        final class Box { var runner: MigrationRunner?; var seenWaiting: [Bool] = [] }
+        let box = Box()
+        var ticks = 0
+        var waited: [(Double, Bool)] = []
+        let runner = makeRunner(context, fake, quiescence: { ticks >= 3 }, timeout: 10, tick: 1,
+                                sleeper: { _ in
+                                    ticks += 1
+                                    box.seenWaiting.append(box.runner?.isAwaitingImportQuiescence ?? false)
+                                },
+                                onQuiescenceWaited: { waited.append(($0, $1)) })
+        box.runner = runner
+        #expect(!runner.isAwaitingImportQuiescence)
+        await runner.resume()
+
+        #expect(box.seenWaiting == [true, true, true])
+        #expect(!runner.isAwaitingImportQuiescence, "al terminar la espera deja de decirlo")
+        #expect(waited.count == 1)
+        #expect(waited.first?.0 == 3)
+        #expect(waited.first?.1 == true)
+    }
+
+    /// iCloud ya quieto: ni espera visible ni canario (el atajo no cuenta como espera).
+    @Test func quiescenceWait_alreadySettled_reportsNothing() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
+        var waited = 0
+        await makeRunner(context, fake, onQuiescenceWaited: { _, _ in waited += 1 }).resume()
+        #expect(waited == 0)
+    }
+
+    /// La espera que vence también se cuenta, como no asentada.
+    @Test func quiescenceWait_hittingTheCap_reportsNotSettled() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
+        var waited: [(Double, Bool)] = []
+        await makeRunner(context, fake, quiescence: { false }, timeout: 5, tick: 1,
+                         onQuiescenceWaited: { waited.append(($0, $1)) }).resume()
+        #expect(waited.count == 1)
+        #expect(waited.first?.0 == 5)
+        #expect(waited.first?.1 == false)
+        #expect(try journal(context).readPhase().phase == .uploadingSnapshot, "sin quiescencia no se toca nada")
+    }
+
     @Test func markerBudget_quotaExceeded_abortsToICloud_withoutTurningMirrorOff() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
