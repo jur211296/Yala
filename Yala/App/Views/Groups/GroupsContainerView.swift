@@ -163,6 +163,16 @@ struct GroupsContainerView: View {
                                 )
                             }
 
+                            // Card fptw (opción B de Jürgen, 2026-10-23): quien llegó a sus grupos sin pasar por «está
+                            // listo», «Ya estás en» ni «Solicitud enviada» (sincronización, otro iPhone, «Está tardando»)
+                            // ve la tarjeta de avisos una vez, aquí. La tarjeta decide si sale y se marca como vista.
+                            if GroupNotificationsOptInLogic.listMountsCard(
+                                isWelcomeGroupFormOpen: navigation.isWelcomeGroupFormOpen,
+                                inviteSheetPending: groupAwaitingInviteSheet != nil || groupReadyToInvite != nil) {
+                                GroupNotificationsOptInCard(onlyIfNeverSeen: true)
+                                    .padding(.horizontal, DS.Spacing.lg)
+                            }
+
                             // LazyVStack sólo alrededor de las TARJETAS: con VStack, SwiftUI
                             // construye la de todos los grupos aunque no quepan en pantalla, y las
                             // rehace enteras en cada invalidación del body — una por tecla del

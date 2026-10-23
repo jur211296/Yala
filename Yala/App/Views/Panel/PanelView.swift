@@ -415,6 +415,10 @@ struct PanelView: View {
             reconcileAccountsSortOrder()
         }
         .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
+        .modifier(PanelSettingsReturnOpening(isPresentingSettings: sheets.isPresentingSettings) { destination in
+            sheets.settingsInitialDestination = destination
+            sheets.isPresentingSettings = true
+        })
         .modifier(PanelAccountAlertOpening { sheets.accountDetail = AccountDetailPresentation(account: $0) })
     }
 
@@ -782,6 +786,30 @@ private struct PanelKeyboardRequestObserver: ViewModifier {
         guard navigation.selectedMainTab == .panel, let request = navigation.pendingKeyboardPanelRequest else { return }
         navigation.pendingKeyboardPanelRequest = nil
         open(request)
+    }
+}
+
+/// UX 2.2 · L16-5: tras cambiar el idioma con el selector de Yala, la app se reconstruye y la hoja de Ajustes se cierra;
+/// este Panel, recién montado, la reabre en el ajuste de donde se salió (`SceneNavigation.pendingSettingsReturn`). Solo
+/// al APARECER o al quedar delante: el Panel de antes del cambio ya está delante y con la hoja encima, así que no abre
+/// una segunda. Una vuelta del main actor después: una presentación pedida en el primer `onAppear` de una vista que se
+/// está montando puede perderse (`swiftui-ds.md`).
+private struct PanelSettingsReturnOpening: ViewModifier {
+    @Environment(SceneNavigation.self) private var navigation
+    let isPresentingSettings: Bool
+    let open: (ProfileDestination) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { openIfFront() }
+            .onChange(of: navigation.selectedMainTab) { _, _ in openIfFront() }
+    }
+
+    private func openIfFront() {
+        guard navigation.selectedMainTab == .panel, !isPresentingSettings,
+              let destination = navigation.pendingSettingsReturn else { return }
+        navigation.pendingSettingsReturn = nil
+        Task { @MainActor in open(destination) }
     }
 }
 

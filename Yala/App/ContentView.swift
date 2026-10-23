@@ -321,6 +321,10 @@ struct ContentView: View {
             await requestColdStartICloudNoticeAfterBootstrap()
         }
         .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
+            // L16-5: la hoja de Ajustes que abre el banner de sincronización cuelga de AQUÍ, fuera del `.id`, y la
+            // reconstrucción no la cierra: quien cambió el idioma sigue en Personalización y el Panel no debe abrir otra
+            // debajo (con el ancla tapada no saldría, y su botón de Ajustes quedaría muerto). Review del 2026-10-23.
+            if showSyncSettingsSheet { navigation.pendingSettingsReturn = nil }
             languageVersion &+= 1
         }
         .onChange(of: SessionState.shared.dataVersion) { _, _ in
@@ -575,7 +579,6 @@ struct ContentView: View {
             showOnboarding: $showOnboarding,
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
             onCancelWipeGrace: { cancelWipeGrace() },
-            onRemoteWipeStartFresh: { startFreshAfterRemoteWipeNotice() },
             onRemoteWipeDismiss: { dismissRemoteWipeNotice() },
             onSettleSignalsAfterWipeKeepingGroups: { settleSignalsAfterDeliberateWipe() }
         ))
@@ -583,6 +586,14 @@ struct ContentView: View {
         // cierre se bloquea, lo enseña con su motivo. El modifier es el dueño de la presentación y de su red;
         // la condición viva (`appleIDCloseNotice`) vive aquí porque la matriz de readiness la lee.
         .modifier(AppleIDCloseNoticeModifier(notice: $appleIDCloseNotice))
+        // L20-15 (opción B de Jürgen, 2026-10-23): «Datos no disponibles» como hoja, en su propio modificador. Sus dos
+        // salidas son las de siempre; la red de presentación sigue siendo `armRemoteWipeNoticePresentationNet`.
+        .modifier(RemoteWipeNoticeSheetModifier(
+            isPresented: $showRemoteWipeAlert,
+            noticePending: remoteWipeNoticePending,
+            onAnswered: { answerRemoteWipeNotice() },
+            onStartFreshChosen: { startFreshAfterRemoteWipeNotice() },
+            onKeepWaitingChosen: { dismissRemoteWipeNotice() }))
         // Paso 4 · el aviso del espejo tardío. Sheet y no alert: lleva dos gestos, un progreso y un
         // fallo, y encadenar presentaciones desde este anchor es la carrera medida del 2026-09-03.
         .sheet(item: $lateICloudNotice) { notice in
@@ -2135,6 +2146,35 @@ struct ContentView: View {
         remoteWipeNoticeNetTask?.cancel()
         remoteWipeNoticeNetTask = nil
     }
+
+    /// **Se tocó un botón de la hoja de «Datos no disponibles»** (L20-15, ahora una hoja). Cierra la hoja y para la red
+    /// —que si no la vería cerrarse y la re-presentaría—, pero deja puesta la CONDICIÓN VIVA: la matriz sigue reteniendo
+    /// la cola mientras la hoja se va. La salida elegida (`startFreshAfterRemoteWipeNotice` o `dismissRemoteWipeNotice`)
+    /// la ejecuta el `onDismiss` de la hoja, y ésas sí sueltan la condición.
+    ///
+    /// **Y un respaldo, porque sin él esto podía brickear** (review adversarial del 2026-10-23): con la red parada, lo
+    /// único que suelta la condición viva es el `onDismiss`. Si UIKit tumbara la hoja sin correrlo, el router quedaba
+    /// retenido hasta matar la app. A los `answeredSheetFallback` la condición sigue puesta y no hay nada presentado:
+    /// se suelta como «Seguir esperando», que no borra nada, con el canario de siempre. El `onDismiss` normal llega
+    /// mucho antes y lo cancela (las dos salidas cancelan `remoteWipeNoticeNetTask`).
+    @MainActor
+    private func answerRemoteWipeNotice() {
+        remoteWipeNoticeNetTask?.cancel()
+        remoteWipeNoticeNetTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: Self.answeredSheetFallback)
+            } catch {
+                return
+            }
+            guard remoteWipeNoticePending, !ModalPresentationProbe.isAnythingPresented else { return }
+            MetricsService.canary(.remoteWipeNoticeNotPresented, detail: "answeredSheetWithoutDismiss")
+            dismissRemoteWipeNotice()
+        }
+        showRemoteWipeAlert = false
+    }
+
+    /// Lo que se espera al `onDismiss` de la hoja contestada antes de soltar la condición viva por las malas.
+    private static let answeredSheetFallback: Duration = .seconds(3)
 
     private func handleRemoteWipeSignal(onboardingAlreadyDone: Bool) {
         let remoteWipe = NSUbiquitousKeyValueStore.default.double(forKey: "lastWipeTimestamp")

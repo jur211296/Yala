@@ -850,6 +850,9 @@ struct ProfileView: View {
                             preferenciasSection
                             datosSection
                             seguridadSection
+                            if showsAccountSection {
+                                cuentaSection
+                            }
                             ayudaSection
                             legalSection
 
@@ -1620,6 +1623,15 @@ struct ProfileView: View {
                     destination: .themes)
                 .accessibilityIdentifier("profile_theme")
                 .coachMarkAnchor("settingsTheme")
+                // D23: «Siri y Atajos» es una preferencia de cómo registras, no seguridad. Registra gastos personales: fuera
+                // de alcance en solo-grupos.
+                if !isGroupsOnlyShell {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
+                        iconColor: .blue, destination: .siriShortcuts)
+                    .accessibilityIdentifier("profile_siri_shortcuts")
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -1735,6 +1747,9 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
+    /// D23 (decisión de Jürgen, 2026-10-23, opción B): «Seguridad y cuenta» se parte en dos bloques que dicen lo que tienen.
+    /// Aquí solo lo que protege y controla —Face ID, Permisos, Privacidad y datos IA—; la cuenta va en `cuentaSection`,
+    /// «Siri y Atajos» en Preferencias y «Valorar / Recomendar Yala» al final de «¿Necesitas ayuda?».
     private var seguridadSection: some View {
         SectionBox(title: L10n.Settings.security) {
             VStack(spacing: DS.Spacing.none) {
@@ -1744,13 +1759,6 @@ struct ProfileView: View {
                     iconColor: DS.Semantic.successForeground,
                     destination: .faceIDProtectionGuide)
                     .accessibilityIdentifier("profile_security_faceid")
-                // Atajos de Siri: registran gastos personales — fuera de alcance en solo-grupos.
-                if !isGroupsOnlyShell {
-                    SubsectionDivider()
-                    profileRow(
-                        icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
-                        iconColor: .blue, destination: .siriShortcuts)
-                }
                 SubsectionDivider()
                 // UX 2.2 · L16-14: una pantalla propia con el estado de cada permiso. Antes saltaba a Configuración de iOS
                 // con el mismo chevron que las pantallas de dentro, sin avisar.
@@ -1758,8 +1766,8 @@ struct ProfileView: View {
                     icon: "lock.shield.fill", title: L10n.Settings.permissions,
                     iconColor: .blue, destination: .permissions)
                 .accessibilityIdentifier("profile_permissions")
-                // Privacidad IA (chat) y Suscripción Pro: ligadas a finanzas personales.
-                // En solo-grupos el upgrade fluye por "Activar Yala completo".
+                // Privacidad IA (chat): ligada a finanzas personales. En solo-grupos el upgrade fluye por
+                // "Activar Yala completo".
                 if !isGroupsOnlyShell {
                     SubsectionDivider()
                     profileRow(
@@ -1775,40 +1783,23 @@ struct ProfileView: View {
                     devSeedDataRow
                 }
                 #endif
-                SubsectionDivider()
-                // UX 2.2 · L16-15: «Valorar Yala» abre «Escribir una reseña» en la App Store. `requestReview()` lo decide
-                // Apple (unas pocas veces al año) y casi siempre el toque no hacía nada.
-                Button {
-                    openURL(AppStoreLinks.writeReviewURL)
-                } label: {
-                    settingsRowContent(
-                        icon: "star.bubble.fill", title: L10n.Settings.rateApp,
-                        iconColor: .yellow)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("profile_rate_app")
-                SubsectionDivider()
-                // Y «Recomendar Yala» comparte el enlace de la App Store, que es la otra mitad de lo que la fila decía.
-                ShareLink(item: AppStoreLinks.listingURL, message: Text(L10n.UXL15.recommendMessage)) {
-                    settingsRowContent(
-                        icon: "square.and.arrow.up.fill", title: L10n.UXL15.recommendYala,
-                        iconColor: .green)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("profile_recommend_app")
-                // §3.2: subsección "Tu cuenta" — SOLO con sesión backend viva. Para VIVO sin sesión (TODO
-                // device prod) nada se inserta. Agrupa «Tu cuenta de Yala →» (mapa/explainer, §3.3.5), que
-                // desde el paso 9 es también la puerta de «Eliminar mi cuenta»; «Cerrar sesión» sigue debajo.
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// D23 · «Tu cuenta», su propio bloque (antes una subsección al final de la seguridad). Sale solo si tiene alguna fila:
+    /// «Tu cuenta de Yala» con sesión backend viva y «Cerrar sesión» cuando no se fue a su tarjeta propia (L20-6).
+    private var showsAccountSection: Bool {
+        showsYalaAccountRow || !signOutRowRemovesDeviceData
+    }
+
+    private var cuentaSection: some View {
+        SectionBox(title: L10n.Settings.accountSubsectionTitle) {
+            VStack(spacing: DS.Spacing.none) {
+                // §3.2: «Tu cuenta de Yala →» (mapa/explainer, §3.3.5) — SOLO con sesión backend viva. Desde el paso 9
+                // es también la puerta de «Eliminar mi cuenta»; «Cerrar sesión» sigue debajo.
                 if showsYalaAccountRow {
-                    SubsectionDivider()
-                    Text(L10n.Settings.accountSubsectionTitle)
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.md)
-                        .padding(.bottom, DS.Spacing.xs)
-                        .accessibilityAddTraits(.isHeader)
                     settingsLink(ProfileDestination.yalaAccount) {
                         settingsRowContent(
                             icon: "person.crop.circle.badge.checkmark",
@@ -1825,7 +1816,7 @@ struct ProfileView: View {
                 // dentro de «Tu cuenta de Yala» (a dos toques), como pide la App Store 5.1.1(v).
                 // UX 2.2 · L20-6: sin cuenta de Yala la fila se va a su propia tarjeta, al final de Ajustes.
                 if !signOutRowRemovesDeviceData {
-                    SubsectionDivider()
+                    if showsYalaAccountRow { SubsectionDivider() }
                     signOutRow
                 }
             }
@@ -1989,6 +1980,28 @@ struct ProfileView: View {
                 .sheet(isPresented: $showSupportSheet) {
                     SupportFormSheet()
                 }
+                // D23: «Valorar» y «Recomendar» cierran «¿Necesitas ayuda?»; bajo «Seguridad» no decían lo que eran.
+                SubsectionDivider()
+                // UX 2.2 · L16-15: «Valorar Yala» abre «Escribir una reseña» en la App Store. `requestReview()` lo decide
+                // Apple (unas pocas veces al año) y casi siempre el toque no hacía nada.
+                Button {
+                    openURL(AppStoreLinks.writeReviewURL)
+                } label: {
+                    settingsRowContent(
+                        icon: "star.bubble.fill", title: L10n.Settings.rateApp,
+                        iconColor: .yellow)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_rate_app")
+                SubsectionDivider()
+                // Y «Recomendar Yala» comparte el enlace de la App Store, que es la otra mitad de lo que la fila decía.
+                ShareLink(item: AppStoreLinks.listingURL, message: Text(L10n.UXL15.recommendMessage)) {
+                    settingsRowContent(
+                        icon: "square.and.arrow.up.fill", title: L10n.UXL15.recommendYala,
+                        iconColor: .green)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_recommend_app")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

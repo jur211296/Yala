@@ -16,7 +16,11 @@ import UserNotifications
 
 struct GroupNotificationsOptInCard: View {
 
+    /// Card fptw: en la lista de Grupos, solo a quien nunca vio la tarjeta (`GroupNotificationsOptInLogic`).
+    var onlyIfNeverSeen: Bool = false
+
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.openURL) private var openURL
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
@@ -117,7 +121,14 @@ struct GroupNotificationsOptInCard: View {
         let measured = GroupNotificationsOptInLogic.state(
             itemActive: groupsItem()?.isActive ?? false,
             authorization: await authorization())
-        if initial { showsCard = GroupNotificationsOptInLogic.showsCard(initialState: measured) }
+        if initial {
+            showsCard = GroupNotificationsOptInLogic.showsCard(
+                initialState: measured,
+                onlyIfNeverSeen: onlyIfNeverSeen,
+                hasSeenPrompt: appPreferences.hasSeenGroupsNotificationPrompt)
+            // Card fptw: vista en cualquier pantalla cuenta, para que la lista no la repita después.
+            if showsCard { appPreferences.hasSeenGroupsNotificationPrompt = true }
+        }
         state = measured
     }
 

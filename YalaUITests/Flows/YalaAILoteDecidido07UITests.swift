@@ -170,9 +170,24 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
         XCTAssertTrue(fab.exists, "Con Pro también se tiene que poder ocultar el botón de Yala IA.")
         XCTAssertTrue(fab.label.hasPrefix("Yala IA"), "El interruptor se llama «\(fab.label)».")
 
+        // «Qué sale en el resumen» y «Tono» van ENCIMA del interruptor al que se bajó arriba. Desde el 2026-10-23 (L16-5) la
+        // sección «Interfaz» sale siempre y la lista es más larga: la fila podía quedar bajo la barra de navegación y el
+        // toque caía en ella (5 de 8 frente a 6 de 6 en la base). Se baja cada fila a la vista antes de tocarla; el marco,
+        // no `isHittable`, que lanza con el elemento entero fuera (`testing.md`).
+        let navBarBottom = app.navigationBars.firstMatch.frame.maxY
+        func bringBelowTheBar(_ row: XCUIElement) {
+            var pulls = 0
+            while row.frame.minY < navBarBottom + 8 && pulls < 4 {
+                list.swipeDown()
+                pulls += 1
+            }
+            XCTAssertGreaterThan(row.frame.minY, navBarBottom, "«\(row.label)» sigue bajo la barra de navegación.")
+        }
+
         let summary = app.buttons["personalization_row_ai_summary"]
         XCTAssertTrue(summary.waitForExistence(timeout: 5))
         XCTAssertEqual(summary.label, "Qué sale en el resumen")
+        bringBelowTheBar(summary)
         summary.tap()
         let where_ = app.descendants(matching: .any)["ai_summary_where"]
         XCTAssertTrue(where_.waitForExistence(timeout: 10), "La hoja no dice dónde se ve el resumen.")
@@ -183,6 +198,7 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
         let tone = app.buttons["personalization_row_ai_tone"]
         XCTAssertTrue(tone.waitForExistence(timeout: 10), "Falta «Tono de Yala IA» en Personalización.")
         XCTAssertEqual(tone.label, "Tono de Yala IA")
+        bringBelowTheBar(tone)
         tone.tap()
         XCTAssertTrue(app.buttons["yala_ai_onboarding_tone_normal"].waitForExistence(timeout: 10),
                       "La hoja de tono no reusa las opciones de la presentación.")

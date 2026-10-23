@@ -1083,7 +1083,7 @@
 "settings.customizeAISummary" = "概要に表示する項目";
 "settings.customizeAISummaryHint" = "スマート概要に表示する指標やグラフを選んでください。";
 "settings.data" = "データ";
-"settings.security" = "セキュリティとアカウント";
+"settings.security" = "セキュリティとプライバシー";
 "settings.help" = "ヘルプが必要ですか？";
 "settings.legal" = "法的情報";
 
@@ -8370,3 +8370,9 @@
 "storage.steps.pendingCount" = "残り %@ 件";
 "storage.steps.keepUsing" = "その間も Yala を使い続けられます。";
 "storage.steps.uploadedCount" = "%2$@ 件中 %1$@ 件";
+
+/* Pendientes de Jürgen 2.2 (2026-10-23): idioma híbrido (L16-5) y Face ID en Permisos (L16-14) */
+"pj22.language.inIOSFooter" = "iPhoneの設定が開きます。「検索」と日付の表示も一緒に変わります。";
+"pj22.permissions.faceID" = "Face ID";
+"pj22.permissions.faceIDDetail" = "iOSで設定すると、あなただけがYalaを開けるようになります。";
+"pj22.permissions.faceIDSeeHow" = "方法を見る";

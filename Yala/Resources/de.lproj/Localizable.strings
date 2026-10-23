@@ -1085,7 +1085,7 @@
 "settings.customizeAISummary" = "Was im Überblick steht";
 "settings.customizeAISummaryHint" = "Wähle, welche Metriken und Diagramme in deinem smarten Überblick erscheinen.";
 "settings.data" = "Daten";
-"settings.security" = "Sicherheit und Konto";
+"settings.security" = "Sicherheit und Datenschutz";
 "settings.help" = "Benötigst du Hilfe?";
 "settings.legal" = "Rechtliches";
 
@@ -8358,3 +8358,9 @@
 "storage.steps.pendingCount" = "Noch %@ hochzuladen";
 "storage.steps.keepUsing" = "Du kannst Yala in der Zwischenzeit weiter nutzen.";
 "storage.steps.uploadedCount" = "%1$@ von %2$@";
+
+/* Pendientes de Jürgen 2.2 (2026-10-23): idioma híbrido (L16-5) y Face ID en Permisos (L16-14) */
+"pj22.language.inIOSFooter" = "Öffnet die iPhone-Einstellungen. Dort ändern sich auch „Suchen“ und die Datumsangaben.";
+"pj22.permissions.faceID" = "Face ID";
+"pj22.permissions.faceIDDetail" = "iOS schaltet es ein, damit nur du Yala öffnen kannst.";
+"pj22.permissions.faceIDSeeHow" = "So geht’s";
