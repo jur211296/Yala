@@ -1,10 +1,10 @@
 ---
 id: cashflow-amount-changes-from-two-phones-overwrite-each-other
-status: backlog
+status: discarded
 priority: low
 area: cash-flow-plan
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-23
 source: review adversarial de L18-8 (lote decidido 2.2 · 10, flujo de caja y reportes)
 ---
 
@@ -32,3 +32,8 @@ source: review adversarial de L18-8 (lote decidido 2.2 · 10, flujo de caja y re
 
 Si basta con esto (recomendado mientras 2.1 conviva poco con 2.2), o si los cambios pasan a una fila por mes (modelo
 nuevo, esquema de CloudKit y columna del backend nuevos).
+
+## Decisión de Jürgen (2026-10-23)
+
+**Se acepta el límite y no se arregla.** Hace falta editar la misma línea en dos teléfonos casi a la vez, solo toca
+montos planeados (nunca movimientos) y lo de 2.1 desaparece cuando todos actualicen. Card del tablero cerrada.
