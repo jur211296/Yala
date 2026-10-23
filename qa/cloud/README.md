@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (37 entradas)
+## Índice (40 entradas)
 
-> **No hace falta leer este fichero entero** — son 147 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 156 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,9 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-10-21` [g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-1](#g2101--cashflowlinesamountchangesraw-los-cambios-desde-este-mes-del-flujo-de-caja-2026-10-21)
+- `2026-10-21` [g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)](#g2201--setmemberrole-hacer-o-quitar-administrador-en-un-grupo-de-la-nube-2026-10-21)
+- `2026-10-18` [g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)](#g1801--accountsparentaccountid-la-tarjeta-con-varias-divisas-2026-10-18)
 - `2026-10-12` [Corpus de Grupos de staging: relevo al custodio (2026-10-12)](#corpus-de-grupos-de-staging-relevo-al-custodio-2026-10-12)
 - `2026-10-09` [g17_01 — el claim de la vuelta conserva `reverted_at` en una cuenta que ya volvió (2026-10-09)](#g1701--el-claim-de-la-vuelta-conserva-revertedat-en-una-cuenta-que-ya-volvi-2026-10-09)
 - `2026-10-07` [hlc01 — tope a un HLC del futuro, canal personal + Grupos (2026-10-07)](#hlc01--tope-a-un-hlc-del-futuro-canal-personal--grupos-2026-10-07)
@@ -1758,6 +1761,81 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`; ticket
+`groups-set-member-role-deploy`, de Jürgen). Fichero: `qa/cloud/g22_01_set_member_role.sql`; marcha atrás
+`qa/cloud/g22_01_rollback.sql`; banco local `bash qa/cloud/g22_01-local-test.sh`. Lote decidido UX 2.2 · L19-3, decisión
+B de Jürgen. Pasó por una review adversarial de servidor, cuyos hallazgos ya están dentro.
+
+**§1 · `set_member_role(p_group_id, p_member_key, p_role) returns jsonb`, nuevo.** SECURITY DEFINER con
+`search_path = public`, molde de `remove_member`. Lo llama un admin ACTIVO (`is_group_admin`) sobre un miembro ACTIVO del
+grupo; `p_role ∈ {admin, member}`. Rechaza con constantes P0001: `yala_not_authorized`, `yala_bad_input`,
+`yala_member_not_found`, `yala_cannot_change_owner_role` (al creador, comparado por `user_id` como `remove_member`, no se
+le quita el admin), `yala_member_not_eligible` (un hueco sin reclamar, `user_id` nulo, no puede ser admin) y
+`yala_last_admin` (tiene que quedar otro admin activo CON CUENTA: los huecos admin de un grupo migrado no cuentan). Pedir
+el rol que ya tiene es un no-op con `changed: false`. Escribe `role`, `hlc = server_hlc()`, `updated_at` y
+`field_hlcs.membership` (la unidad en la que ya escribe el rol `transfer_group_ownership`). Sin columnas † (fuera de
+`RPC_NEEDS_ENC_KEY`) y sin push.
+
+**§2 · `remove_member` y `leave_group`, redefinidas.** Sobre su cuerpo del DDL (§2 de `supabase-groups-staging.ddl`;
+ninguna migración de esta carpeta las había tocado), con el cambio mínimo: las dos escriben además `role = 'member'`.
+Hasta aquí un admin expulsado o que se iba conservaba `role = 'admin'`, y como la re-entrada (`join_group`, también el
+rebind legacy) deja `pendingApproval` sin tocar el rol, al aprobarlo volvía a ser admin sin que nadie lo decidiera. La
+fila del creador nunca llega a esa escritura (`yala_cannot_remove_owner`, `yala_owner_cannot_leave`). `remove_member`
+toma además el mismo candado que `set_member_role` y vuelve a mirar que quien llama sigue siendo admin.
+
+**La guarda**: antes de redefinir, el `md5(prosrc)` de cada una tiene que ser el del cuerpo del DDL (`remove_member`
+`e716f203c405437c95c82e47deae61b5`, `leave_group` `a4bbcff1bca1ac1cec09f372d577d1cc`) o el de g22_01 (`efce7084…` y
+`f4820b99…`, re-aplicar). Si no, aborta sin tocar nada; el rollback lleva la gemela. **Los md5 de partida salen del DDL
+cargado en el banco, no de una lectura de staging o producción**: si el cuerpo vivo difiere del molde aunque sea en un
+espacio (lo que le pasó a g17_01), la guarda aborta, y por eso el runbook los mide antes.
+
+**El candado**: una sola sentencia bloquea (`for update`, ordenada por `member_key`) las filas de los admins activos
+del grupo Y la del objetivo, y la regla del admin se mira otra vez después. Dos admins que se quitan el admin el uno al
+otro a la vez: el segundo espera y sale con `yala_not_authorized`. Que no haya ciclo depende de que cada llamada pida
+todas sus filas de `group_members` en esa única sentencia; es un razonamiento sobre el código, no una medición.
+
+**El banco** levanta un Postgres 17 desechable con el DDL real de Grupos entero (g22_01 no se teje en
+`supabase-groups-staging.ddl` hasta que esté aplicada: ese molde describe solo lo aplicado) y llama a los RPC como
+PostgREST, con `role authenticated` y el `sub` en los claims. 80 comprobaciones: cada regla con su control, la guarda en
+los dos sentidos, idempotencia sin escritura, la forma exacta de la respuesta, grants, las dos carreras, salir/expulsar/
+re-entrar (`join_group` y `approve_member` reales) y la marcha atrás. Y ocho mutantes, cada uno cazado por SU caso: sin
+la regla del creador, sin la del hueco, sin la del último admin, la del último admin contando huecos, sin cada uno de
+los dos candados y sin cada uno de los dos resets de rol. Una trampa que el banco ya se sabe: un `select … where false`
+alrededor del `set_config` de los claims no lo evalúa y la llamada sale sin sesión; con eso los mutantes «morían» por el
+mismo rojo de todo.
+
+**Residuales** (también en el ticket): la carrera con `transfer_group_ownership` / `groups_forget_user` (eligen al
+heredero sin candado; si a la vez se le quita el admin, el grupo puede quedar con un creador que no es admin); las filas
+que salieron siendo admin ANTES de g22_01 conservan el rol (sin backfill); `leave_group` no mira si quedan admins; y en el
+teléfono de otro admin la app ofrece quitarle el admin al creador (el servidor lo rechaza).
+
+**El orden: g22_01 → Worker con `set_member_role` en la allowlist → app.** Al revés no se escribe nada: sin DDL, el
+gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app enseña en los dos el error genérico. El
+§2 no depende del orden: no cambia la forma de ninguna respuesta.
+
+## g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-10-21)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`). Fichero:
+`qa/cloud/g21_01_cashflow_line_amount_changes.sql`; marcha atrás `qa/cloud/g21_01_rollback.sql` (idempotente, solo sin
+cambios, bajo lock). Lote decidido 2.2 · L18-8.
+
+Qué cambia: una columna `text` nullable con los cambios de monto de una línea del plan, `yyyy-MM=monto,…` (lógica en
+`Yala/App/Logic/CashFlowAmountChangeLogic.swift`). Hasta aquí «este mes y los siguientes» pasaba la línea a monto fijo y
+reescribía también los meses ya cerrados; ahora el monto cambia desde ese mes y los anteriores quedan como estaban.
+
+**Segundo `since` del manifest**: la columna lleva `"since": 3` y el manifest `manifest_version: 3`, con el mismo
+mecanismo de g18_01 (proyección por versión, anuncio y subida con reemisión de lo apuntado,
+`SyncCapability.noteSuppressedCashFlowAmountChange`). **Lo que cambió en la subida**: desde la v3 la subida se pide al
+cruzar CUALQUIER versión (antes solo la de los enlaces) y el «antes» es lo que el teléfono declaró la última vez
+(`cloudSync.lastDeclaredLevel`), porque la versión también sube al actualizar la app sin que el Worker cambie (lo cazó la
+review). Lo fijan `CashFlowAmountChangeSyncTests` y `gateway/test/manifest.capability.test.ts`.
+
+**El orden: g18_01 → g21_01 → Worker v3 → app.** El Worker v3 sirve las columnas de la v2 y de la v3. Una sola columna
+para toda la cadena: dos teléfonos que cambian meses distintos de la misma línea a la vez se pisan por LWW (el mismo trato
+que `custom_months_raw`).
 
 ## g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)
 

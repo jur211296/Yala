@@ -58,7 +58,8 @@ final class UXAudit22Lote04UITests: XCTestCase {
     // MARK: - L20-7 · la espera se ve, y el aviso ofrece exportar primero
 
     /// En el simulador no hay espejo de iCloud, así que la espera del export se agota: primero la tarjeta de progreso, a
-    /// los 45 s el aviso. Sus tres botones van en el orden decidido: Exportar · Esperar · Cerrar sesión igualmente.
+    /// los 45 s el aviso. Sus tres botones van en el orden decidido: Exportar · Esperar · Quitar mis datos igualmente (en
+    /// esta celda, sin cuenta de Yala, el verbo es el de su fila: decisión A de Jürgen, 2026-10-19).
     func test_privateSignOut_waitShowsTheUploadCard_andTheNoticeOffersExportFirst() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal")
@@ -84,12 +85,14 @@ final class UXAudit22Lote04UITests: XCTestCase {
 
         let export = app.alerts.buttons["Exportar mis registros"].firstMatch
         let wait = app.alerts.buttons["Esperar"].firstMatch
-        let discard = app.alerts.buttons["Cerrar sesión igualmente"].firstMatch
+        let discard = app.alerts.buttons["Quitar mis datos igualmente"].firstMatch
         XCTAssertTrue(export.exists, "El aviso no ofrece exportar antes de perder nada.")
         XCTAssertTrue(wait.exists)
         XCTAssertTrue(discard.exists)
         XCTAssertLessThan(export.frame.minY, wait.frame.minY, "«Exportar mis registros» no va primero.")
-        XCTAssertLessThan(wait.frame.minY, discard.frame.minY, "«Cerrar sesión igualmente» no va al final.")
+        XCTAssertLessThan(wait.frame.minY, discard.frame.minY, "«Quitar mis datos igualmente» no va al final.")
+        XCTAssertFalse(app.alerts.buttons["Cerrar sesión igualmente"].exists,
+                       "Sin cuenta de Yala el aviso vuelve a decir «Cerrar sesión igualmente».")
 
         wait.tap()
         XCTAssertTrue(card.waitForExistence(timeout: 10), "«Esperar» no volvió a la espera con su tarjeta.")

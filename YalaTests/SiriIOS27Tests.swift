@@ -442,10 +442,12 @@ struct IntentSpeechTests {
     /// Las cuatro respuestas de error y la pregunta pasan por `IntentSpeech`.
     @Test func lasCuatroRespuestasYLaPregunta_vanPorIntentSpeech() throws {
         let source = SiriRepo.codeOnly(try SiriRepo.text("Yala/App/Intents/QuickExpenseIntent.swift"))
-        for key in ["shortcut.siriNatural.error.noText", "shortcut.siriNatural.error.proRequired",
-                    "shortcut.error.noAccount", "shortcut.siriNatural.error.parsingFailedHelp"] {
+        for key in ["shortcut.siriNatural.error.noText", "shortcut.error.noAccount",
+                    "shortcut.siriNatural.error.parsingFailedHelp"] {
             #expect(source.contains("dialog: IntentSpeech.dialog(\"\(key)\")"), "\(key) no pasa por IntentSpeech.")
         }
+        // Sin Pro, Siri lo dice y abre Yala (auditoría UX 2.2, L15-6): el aviso es el diálogo de `continueInForeground`.
+        #expect(source.contains("let dialog = IntentSpeech.dialog(\"shortcut.siriNatural.error.proRequired\")"))
         #expect(source.contains("$text.requestValue(IntentSpeech.dialog(\"shortcut.siriNatural.dialog.askText\"))"))
     }
 
@@ -519,8 +521,11 @@ private enum SiriTraining {
     }
 }
 
-@Suite("Siri · las frases que la app enseña en portugués existen en Siri")
+@Suite("Siri · las frases que la app enseña existen en Siri, en cada idioma con traducción")
 struct SiriPhrasesPortugueseTests {
+
+    /// Los idiomas con `AppShortcuts.strings` propio: portugués (#552) y los siete de la auditoría UX 2.2 (L15-5).
+    static let translatedLanguages = ["pt", "pt-BR", "pt-PT", "de", "fr", "it", "ja", "nl", "pl", "zh-Hans"]
 
     /// Cada frase que enseña la app (Ajustes › Siri y Atajos y el consejo de Siri), con la acción a la que va.
     static let shown: [(key: String, intent: String)] = [
@@ -534,36 +539,63 @@ struct SiriPhrasesPortugueseTests {
         ("siriShortcuts.phrase.applePay", "ApplePayTransactionIntent")
     ]
 
-    @Test(arguments: ["pt", "pt-BR", "pt-PT"])
+    /// Lo que va entre comillas en un consejo como «Sage: "…" und diktiere dann den Betrag» (comillas rectas, „“ o 「」);
+    /// sin comillas, el texto entero.
+    static func phrase(in value: String) -> String {
+        let straight = value.components(separatedBy: "\"")
+        if straight.count >= 3 { return straight[1] }
+        for (open, close) in [("„", "”"), ("「", "」")] {
+            let parts = value.components(separatedBy: open)
+            if parts.count >= 2, let end = parts[1].range(of: close) { return String(parts[1][..<end.lowerBound]) }
+        }
+        return value
+    }
+
+    @Test(arguments: translatedLanguages)
     func cadaFraseQueEnsenaLaApp_laEntrenaSiri(_ lang: String) throws {
         #expect(SiriTraining.translations(lang) != nil, "La app no trae \(lang).lproj/AppShortcuts.strings.")
         for (key, intent) in Self.shown {
             let value = try #require(try SiriRepo.string(key, lang: lang), "Falta \(key) en \(lang).")
-            let phrase = SiriTraining.quoted(value)
+            let phrase = Self.phrase(in: value)
             let trained = try SiriTraining.phrases(intent, lang: lang)
             #expect(trained.contains(phrase), "\(lang) · \(key): la app enseña «\(phrase)» y Siri entrena \(trained).")
         }
     }
 
     /// Cada traducción del catálogo es de una frase que existe en el código: una clave huérfana no se entrena nunca.
-    @Test(arguments: ["pt", "pt-BR", "pt-PT"])
+    @Test(arguments: translatedLanguages)
     func cadaTraduccion_esDeUnaFraseDelCodigo(_ lang: String) throws {
         let keys = Set(try SiriTraining.keysByIntent().values.flatMap { $0 })
         let table = try #require(SiriTraining.translations(lang))
         for key in table.keys { #expect(keys.contains(key), "\(lang): «\(key)» no es una frase de AppShortcutsProvider.") }
     }
 
-    /// Las preguntas nuevas también se pueden decir en portugués.
+    /// Cada acción con frase se puede decir en cada idioma traducido: un idioma con catálogo entrena SOLO lo traducido, así
+    /// que una acción sin ninguna traducción se queda sin voz en ese idioma.
+    @Test(arguments: translatedLanguages)
+    func cadaAccion_tieneFraseEnElIdioma(_ lang: String) throws {
+        for intent in try SiriTraining.keysByIntent().keys {
+            #expect(try !SiriTraining.phrases(intent, lang: lang).isEmpty, "\(lang): «\(intent)» no tiene ninguna frase.")
+        }
+    }
+
+    /// Dos acciones con la misma frase en un idioma: Siri no sabría cuál abrir.
+    @Test(arguments: translatedLanguages)
+    func ningunaFrase_seRepiteEnElIdioma(_ lang: String) throws {
+        let all = try SiriTraining.keysByIntent().keys.flatMap { try SiriTraining.phrases($0, lang: lang) }
+        #expect(Set(all).count == all.count, "\(lang) repite frases: \(all).")
+    }
+
+    /// Las preguntas también se pueden decir en portugués.
     @Test(arguments: ["pt", "pt-BR", "pt-PT"])
     func lasPreguntas_tienenFraseEnPortugues(_ lang: String) throws {
         #expect(try SiriTraining.phrases("SpendingQueryIntent", lang: lang).contains("Quanto gastei no Yala"))
         #expect(try SiriTraining.phrases("BalanceQueryIntent", lang: lang).contains("Quanto tenho no Yala"))
     }
 
-    /// El catálogo no cambia lo que entrena el resto: en español, inglés y los siete idiomas de L15-5 siguen las frases
-    /// del código (español e inglés), como antes de este cambio.
-    @Test(arguments: ["es", "es-419", "en", "de", "fr", "it", "ja", "nl", "pl", "zh-Hans"])
-    func losDemasIdiomas_siguenConLasFrasesDelCodigo(_ lang: String) throws {
+    /// En español e inglés (y sus variantes) Siri entrena las frases del código tal cual: el catálogo no las toca.
+    @Test(arguments: ["es", "es-419", "es-ES", "es-AR", "en", "en-GB"])
+    func espanolEIngles_siguenConLasFrasesDelCodigo(_ lang: String) throws {
         #expect(SiriTraining.translations(lang) == nil, "\(lang) trae AppShortcuts.strings: dejaría de entrenar las frases del código.")
         let natural = try SiriTraining.phrases("SiriNaturalEntryIntent", lang: lang)
         #expect(natural.contains("Anota un gasto en Yala") && natural.contains("Note an expense in Yala"),

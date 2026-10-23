@@ -76,13 +76,86 @@ nonisolated enum GroupInviteNeutralGateLogic {
     ///     terminado, la puerta sigue en TODAS las celdas. El espejo sí sigue mandando: en el arranque que
     ///     acaba de pasar a la nube el store aún lo lleva adjunto hasta reabrir, y lo escrito ahí se iría al
     ///     iCloud del teléfono. Sin valor por defecto, por lo mismo que `mountAttachesMirror`.
+    ///   - signUpStartedOnCleanStore: el alta de ESTA invitación empezó aquí sobre un store sin datos de nadie
+    ///     (`PendingJoinEntry.signUpOnCleanStoreAt`, card t2q8 del QA guiado del TF19, 2026-10-20). **Solo apaga el
+    ///     término del corpus, nunca el del espejo**, como el término de la nube. Existe porque el CTA de la hoja del
+    ///     invitado siembra sus categorías (`performSilentSetup`) y la puerta, que vuelve a medir justo después en el
+    ///     `drive(.userAction)` y en cada relanzamiento, las tomaba por el corpus de otra persona: el join no salía
+    ///     («Conectando con tu grupo…» para siempre) y al reabrir pedía dejar el teléfono en blanco. La marca la mide
+    ///     el propio CTA ANTES de sembrar, así que no puede cubrir un corpus que ya estaba. Sin valor por defecto.
     static func decide(hasCompletedPersonalOnboarding: Bool,
                        hasExistingData: Bool,
                        mountAttachesMirror: Bool,
-                       personalDataLivesInLiveCloudAccount: Bool) -> Decision {
+                       personalDataLivesInLiveCloudAccount: Bool,
+                       signUpStartedOnCleanStore: Bool) -> Decision {
         guard !hasCompletedPersonalOnboarding else { return .proceed }
         if mountAttachesMirror { return .returnsToNeutral }
-        return (hasExistingData && !personalDataLivesInLiveCloudAccount) ? .returnsToNeutral : .proceed
+        let corpusIsSomeoneElses = hasExistingData && !personalDataLivesInLiveCloudAccount && !signUpStartedOnCleanStore
+        return corpusIsSomeoneElses ? .returnsToNeutral : .proceed
+    }
+
+    /// **¿El CTA de la hoja apunta que el alta empieza sobre un store limpio?** Lo mide `performSilentSetup` ANTES de
+    /// sembrar nada: sin datos de nadie (`hasExistingData`, el detector del Welcome) y sin espejo. Si el store ya tenía
+    /// algo, o el espejo está montado, no se apunta y la puerta decide como siempre.
+    static func marksSignUpOnCleanStore(hasExistingData: Bool, mountAttachesMirror: Bool) -> Bool {
+        !hasExistingData && !mountAttachesMirror
+    }
+
+    /// **¿Apunta el sign-in del invitado que los grupos que baje son de quien entra?** (card t2q8.) Con una cuenta
+    /// solo-grupos, la hoja de Grupos arranca el canal al firmar y baja sus grupos; un relanzamiento antes del CTA los
+    /// encontraba en el store y la puerta los contaba como de otra persona. Es la misma marca que deja
+    /// `onEnterGroupsOnly` (`LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet`, que además solo la escribe sin
+    /// grupos aquí) y con las mismas dos condiciones: la sesión se abrió en ESTE sign-in (una del llavero puede ser de la
+    /// persona anterior) y el teléfono no tiene el onboarding hecho (con él, la marca no describe a nadie). Y una tercera:
+    /// **solo si el canal arranca al firmar** (`GroupsSignInChannelStartLogic`). Con una cuenta completa no arranca —su
+    /// alta pasa por el guard cross-cuenta— y la marca alcanzaría de más a quien luego vuelve a «Es mi primera vez»
+    /// (review del 2026-10-20).
+    static func vouchesForGroupsAtSignIn(sessionOpenedHere: Bool,
+                                         hasCompletedPersonalOnboarding: Bool,
+                                         channelStartsAtSignIn: Bool) -> Bool {
+        sessionOpenedHere && !hasCompletedPersonalOnboarding && channelStartsAtSignIn
+    }
+
+    /// **¿Se arma el neutro durable al entrar por una invitación?** (2026-10-19, ticket
+    /// `invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch`.)
+    ///
+    /// El primer arranque de una instalación nueva monta el store NEUTRO, por la puerta que sea (Welcome o enlace). Pero ese
+    /// neutro dura UN proceso: el propio montaje crea el archivo del store, y en el arranque siguiente, sin nada armado, la
+    /// tabla de montajes adjunta el espejo de iCloud. El recorrido del invitado es largo —firmar, consentir, a veces volver a
+    /// firmar con otra cuenta— y un relanzamiento a mitad (MEDIDO en el iPad del QA guiado del 19-oct: el espejo exportaba a
+    /// las 21:39, cinco minutos después del primer arranque, con la misma instalación) bajaba los datos privados del Apple ID
+    /// del aparato al store, y la puerta del invitado pedía borrarlos. ⇒ si ESTE proceso montó neutro y la persona todavía no
+    /// ha elegido nada, el enlace arma el neutro durable del cierre de sesión (`neutralMountArmed`), que caduca solo con
+    /// `hasShownWelcomeChooser`: el mismo trato que un teléfono recién vaciado.
+    ///
+    /// Los dos `false` del resto son los que el arranque viejo sí hacía bien: con el espejo ya montado no hay neutro que
+    /// conservar (lo decide `decide`, que devuelve a la persona al neutro), y quien ya terminó el onboarding o eligió en el
+    /// Welcome monta lo que su elección pide.
+    static func armsDurableNeutralOnEntry(mounted: SwiftDataConfiguration.PersonalStoreDecision,
+                                          hasCompletedPersonalOnboarding: Bool,
+                                          hasShownWelcomeChooser: Bool) -> Bool {
+        mounted == .neutralNoMirror && !hasCompletedPersonalOnboarding && !hasShownWelcomeChooser
+    }
+}
+
+/// **¿Arranca el canal de Grupos en el instante en que la hoja de Grupos firma?** (2026-10-19, ticket
+/// `invite-sign-in-with-a-complete-account-blocks-on-its-own-groups`.)
+///
+/// Con una cuenta COMPLETA el destino es `.adoptAsCompleteAndOpenGroups`: la persona sigue por el alta de la nube del
+/// Welcome, cuyo guard cross-cuenta (`CrossAccountEntryGuardLogic`) cuenta lo que hay en el store —también `SplitGroup`—
+/// antes de dejarla entrar. Arrancar el canal aquí bajaba los grupos de ESA cuenta antes de que el guard contara, y el guard
+/// los tomaba por «datos de otra cuenta» (MEDIDO en el QA guiado del 19-oct: el iPad recién instalado, «Unirme al grupo» con
+/// una cuenta completa, «Este dispositivo tiene datos de otra cuenta»). «Ya tengo una cuenta» no arranca ningún canal antes
+/// de su guard, y por eso entraba. ⇒ con ese destino, el canal lo arranca quien termina el alta (el arranque, el primer
+/// plano o el motor de la nube), no la hoja.
+nonisolated enum GroupsSignInChannelStartLogic {
+    static func startsChannelAtSignIn(_ destino: CloudIdentityRoutingLogic.Destination?) -> Bool {
+        switch destino {
+        case .adoptAsCompleteAndOpenGroups, .blockedAccountIsComplete:
+            return false
+        default:
+            return true
+        }
     }
 }
 

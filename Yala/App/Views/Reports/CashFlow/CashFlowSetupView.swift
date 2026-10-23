@@ -4,6 +4,15 @@
 //
 //  Setup view for creating a cash flow plan from suggested lines.
 //
+//  Auditoría UX 2.2 · lote 18 decidido:
+//  - L18-5 (opción C, variante 2) + L18-10 (C): arriba, «¿Con cuánto empiezas?» con lo que la persona tiene hoy en sus
+//    cuentas ya puesto (el plan ya no nace en S/ 0); la lista se parte en lo que entra, lo que sale cada mes (a la vista)
+//    y «Gastos que cambian» (plegados), y debajo cuánto sobra al mes.
+//  - L18-6 (C): una sola explicación en esta pantalla, el aviso con el texto corregido; la guía de 4 pasos se fue.
+//  - Alineación con el resto de la app (lienzo «Una sola Yala», sin pregunta): la cifra grande de arriba es la de los
+//    heros, los títulos de sección van sin mayúsculas («Lo que entra», «Lo que sale»), icono de 40 y montos en blanco
+//    salvo lo que entra.
+//
 
 import SwiftUI
 import SwiftData
@@ -16,20 +25,32 @@ struct CashFlowSetupView: View {
     let transactions: [TransactionItem]
     let scheduledPayments: [ScheduledPayment]
     let categories: [Category]
+    let accounts: [Account]
     let currencyCode: String
 
-    @State private var startingBalance: String = ""
+    /// El saldo con el que nace el plan. `nil` = el de las cuentas (lo de hoy); un número = lo que escribió la persona.
+    @State private var typedStartingBalance: Double?
+    @State private var showStartingBalanceSheet = false
+    @State private var showVariableLines = false
     @State private var editingLine: SuggestedLine?
 
-    // Tour
     @Environment(AppPreferences.self) private var appPreferences
-    @State private var showTour = false
-    @State private var tourIndex = 0
-    @State private var setupScrollProxy: ScrollViewProxy?
-
     @Environment(\.yalaTheme) private var theme
 
     // MARK: - Computed
+
+    /// Lo de hoy en las cuentas. Se calcula al aparecer y cuando cambian los movimientos, no en cada repintado: recorre
+    /// todos los movimientos.
+    @State private var todayBalance = CashFlowSetupLogic.TodayBalance(amount: 0, accountCount: 0, isApproximate: false)
+
+    private func refreshTodayBalance() {
+        todayBalance = CashFlowSetupLogic.todayBalance(
+            accounts: accounts, transactions: transactions, currencyCode: currencyCode,
+            includeGroups: appPreferences.includeGroupsInPanelTotal
+        )
+    }
+
+    private var startingBalance: Double { typedStartingBalance ?? todayBalance.amount }
 
     private var selectedIncome: Double {
         viewModel.suggestedLines
@@ -53,67 +74,44 @@ struct CashFlowSetupView: View {
         viewModel.suggestedLines.filter(\.isIncome)
     }
 
-    private var expenseLines: [SuggestedLine] {
-        viewModel.suggestedLines.filter { !$0.isIncome }
+    private var recurringExpenseLines: [SuggestedLine] {
+        viewModel.suggestedLines.filter { !$0.isIncome && $0.isRecurring }
+    }
+
+    private var variableExpenseLines: [SuggestedLine] {
+        viewModel.suggestedLines.filter { !$0.isIncome && !$0.isRecurring }
     }
 
     // MARK: - Body
 
     var body: some View {
-        ScrollViewReader { scrollProxy in
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: DS.Spacing.xl) {
-                    headerSection
-                    if viewModel.suggestedLines.isEmpty {
-                        emptyState
-                    } else {
-                        bannerSection
-                            .coachMarkAnchor("cfSetupBanner")
-                        if !allSelected {
-                            selectAllButton
-                        }
-                        if !incomeLines.isEmpty {
-                            lineSection(
-                                title: L10n.CashFlowPlan.incomeSection,
-                                lines: incomeLines,
-                                isIncome: true
-                            )
-                            .coachMarkAnchor("cfSetupLine")
-                        }
-                        // Sin ingresos, el paso «Tus ingresos y gastos» de la guía se ancla a los gastos. Sin ancla,
-                        // la guía se quedaba invisible a medio camino con el scroll bloqueado (`scrollDisabled(showTour)`):
-                        // «Crear mi plan» quedaba fuera de la pantalla y la guía volvía a empezar en cada visita
-                        // (medido el 2026-10-14 con un plan de un solo pago planificado).
-                        if !expenseLines.isEmpty, incomeLines.isEmpty {
-                            lineSection(
-                                title: L10n.CashFlowPlan.expenseSection,
-                                lines: expenseLines,
-                                isIncome: false
-                            )
-                            .coachMarkAnchor("cfSetupLine")
-                        } else if !expenseLines.isEmpty {
-                            lineSection(
-                                title: L10n.CashFlowPlan.expenseSection,
-                                lines: expenseLines,
-                                isIncome: false
-                            )
-                        }
-                        startingBalanceSection
-                            .coachMarkAnchor("cfSetupStarting")
-                        summarySection
-                        createButton
-                            .coachMarkAnchor("cfSetupCreate")
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                startingBalanceHero
+                bannerSection
+                if viewModel.suggestedLines.isEmpty {
+                    emptyState
+                } else {
+                    if !allSelected {
+                        selectAllButton
                     }
+                    if !incomeLines.isEmpty {
+                        lineSection(title: L10n.UXL18.sectionIn, lines: incomeLines)
+                    }
+                    if !recurringExpenseLines.isEmpty || !variableExpenseLines.isEmpty {
+                        expenseSection
+                    }
+                    summarySection
+                    createButton
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.sm)
-                .yalaSafeBottomPadding()
-                .dismissKeyboardOnTap()
             }
-            .scrollDisabled(showTour)
-            .onAppear { setupScrollProxy = scrollProxy }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.sm)
+            .yalaSafeBottomPadding()
         }
+        .onChange(of: transactions.count) { _, _ in refreshTodayBalance() }
         .onAppear {
+            refreshTodayBalance()
             viewModel.generateSuggestions(
                 transactions: transactions,
                 scheduledPayments: scheduledPayments,
@@ -128,55 +126,91 @@ struct CashFlowSetupView: View {
                 viewModel: viewModel
             )
         }
-        .coachMarkOverlay(
-            steps: CashFlowSetupTourSteps.steps,
-            isPresented: $showTour,
-            currentIndex: $tourIndex,
-            scrollProxy: setupScrollProxy
-        ) {
-            appPreferences.hasSeenCashFlowSetupTour = true
-        }
-        .task {
-            do { try await Task.sleep(for: .seconds(1)) } catch { return }
-            if !viewModel.suggestedLines.isEmpty && !appPreferences.hasSeenCashFlowSetupTour {
-                showTour = true
+        .sheet(isPresented: $showStartingBalanceSheet) {
+            CashFlowStartingBalanceSheet(
+                title: L10n.UXL18.startTitle,
+                initialAmount: startingBalance,
+                initialDate: nil,
+                todayBalance: todayBalance.accountCount > 0 ? todayBalance : nil,
+                currencyCode: currencyCode,
+                showsDate: false
+            ) { amount, _ in
+                typedStartingBalance = amount
             }
         }
     }
 
-    // MARK: - Header
+    // MARK: - ¿Con cuánto empiezas? (L18-5 / L18-10)
 
-    private var headerSection: some View {
-        Text(L10n.CashFlowPlan.title)
-            .font(DS.Typography.title2)
-            .fontWeight(.bold)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityIdentifier("cashflow_setup_view")
+    private var startingBalanceCaption: String {
+        if typedStartingBalance != nil { return L10n.UXL18.startCaptionTyped }
+        switch todayBalance.accountCount {
+        case 0: return L10n.UXL18.startCaptionNone
+        case 1: return L10n.UXL18.startCaptionOne
+        default: return L10n.UXL18.startCaption(todayBalance.accountCount)
+        }
     }
 
-    // MARK: - Banner
+    private var startingBalanceHero: some View {
+        HeroHeader {
+            HeroHeaderLabel(text: L10n.UXL18.startTitle)
+                .accessibilityIdentifier("cashflow_setup_view")
+        } period: {
+            EmptyView()
+        } content: {
+            AmountText(
+                value: startingBalance,
+                currencyCode: currencyCode,
+                font: DS.Typography.panelHeroAmount,
+                secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                isEstimate: typedStartingBalance == nil && todayBalance.isApproximate
+            )
+            .accessibilityIdentifier("cashflow_setup_starting_amount")
+            HStack(spacing: DS.Spacing.xs) {
+                Text(startingBalanceCaption)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                Button {
+                    showStartingBalanceSheet = true
+                } label: {
+                    Text(L10n.UXL18.startChange)
+                        .font(DS.Typography.caption.weight(.semibold))
+                        .foregroundStyle(theme.accent)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("cashflow_setup_change_starting")
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    // MARK: - Aviso (L18-6: la única explicación de esta pantalla)
 
     private var bannerSection: some View {
         HStack(alignment: .top, spacing: DS.Spacing.md) {
             Image(systemName: "lightbulb.fill")
-                .foregroundStyle(theme.accent)
                 .font(DS.Typography.headline)
+                .foregroundStyle(theme.accent)
+                .frame(width: 36, height: 36)
+                .background(theme.accent.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.CashFlowPlan.bannerTitle)
-                    .font(DS.Typography.subheadline)
-                    .fontWeight(.semibold)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
                 Text(L10n.CashFlowPlan.bannerBody)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.thSecondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(DS.Semantic.infoBackground)
-        )
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("cashflow_setup_banner")
     }
 
     // MARK: - Empty State
@@ -209,27 +243,82 @@ struct CashFlowSetupView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Line Section
+    // MARK: - Secciones
 
-    private func lineSection(title: String, lines: [SuggestedLine], isIncome: Bool) -> some View {
+    private func sectionTitle(_ title: String) -> some View {
+        Text(title)
+            .font(DS.Typography.title3.weight(.bold))
+            .foregroundStyle(.primary)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private func lineSection(title: String, lines: [SuggestedLine]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            sectionTitle(title)
+            linesCard(lines)
+        }
+    }
+
+    private func linesCard(_ lines: [SuggestedLine]) -> some View {
         VStack(spacing: DS.Spacing.none) {
-            Text(title.uppercased())
-                .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, DS.Spacing.sm)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(lines) { line in
-                    suggestedLineRow(line)
-                    if line.id != lines.last?.id {
-                        Divider()
-                            .padding(.leading, DS.Spacing.xxl)
-                    }
+            ForEach(lines) { line in
+                suggestedLineRow(line)
+                if line.id != lines.last?.id {
+                    Divider()
+                        .padding(.leading, DS.Spacing.lg + 40 + DS.Spacing.md)
                 }
             }
-            .solidCard()
         }
+        .solidCard()
+    }
+
+    /// «Lo que sale»: lo que se repite a la vista y los gastos que cambian, plegados en una fila que se despliega.
+    private var expenseSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            sectionTitle(L10n.UXL18.sectionOut)
+            if !recurringExpenseLines.isEmpty {
+                linesCard(recurringExpenseLines)
+            }
+            if !variableExpenseLines.isEmpty {
+                variableLinesRow
+                if showVariableLines {
+                    linesCard(variableExpenseLines)
+                        .transition(.opacity)
+                }
+            }
+        }
+    }
+
+    private var variableLinesRow: some View {
+        Button {
+            withAnimation(.easeInOut(duration: DS.Animation.fast)) {
+                showVariableLines.toggle()
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.UXL18.variableTitle(variableExpenseLines.count))
+                        .font(DS.Typography.label.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(L10n.UXL18.variableCaption(
+                        CashFlowSetupLogic.variableExamples(variableExpenseLines.map(\.name))
+                    ))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                Text(showVariableLines ? L10n.UXL18.variableHide : L10n.UXL18.variableShow)
+                    .font(DS.Typography.label.weight(.semibold))
+                    .foregroundStyle(theme.accent)
+            }
+            .padding(DS.Spacing.lg)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .solidCard()
+        .accessibilityIdentifier("cashflow_setup_variable_toggle")
     }
 
     // MARK: - Line Row
@@ -250,49 +339,45 @@ struct CashFlowSetupView: View {
                     .font(DS.Typography.headline)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(line.name)
+            .accessibilityAddTraits(line.isSelected ? .isSelected : [])
 
             ZStack {
                 Circle()
                     .fill(Color(hex: colorHex))
-                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                    .frame(width: 40, height: 40)
                 Image(systemName: iconName)
-                    .font(.system(size: DS.Icon.sizeSmall, weight: .semibold))
+                    .font(DS.Typography.label)
                     .foregroundStyle(.white)
             }
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(line.name)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
-                if line.scheduledPayment != nil {
-                    Text(L10n.CashFlowPlan.scheduled)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
-                } else {
-                    Text(L10n.CashFlowPlan.suggestedSource(line.monthsWithActivity))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
-                }
+                    .lineLimit(2)
+                Text(line.scheduledPayment != nil
+                     ? L10n.CashFlowPlan.scheduled
+                     : L10n.CashFlowPlan.suggestedSource(line.monthsWithActivity))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            Spacer(minLength: DS.Spacing.xs)
 
             AmountText(
                 value: line.suggestedAmount,
                 currencyCode: currencyCode,
                 font: DS.Typography.body.monospacedDigit(),
-                tint: line.isIncome ? .color(Color.electricIndigo) : .primary,
+                tint: .color(Color.amountTint(isIncome: line.isIncome)),
                 isEstimate: line.isApproximate
             )
 
-            Button {
-                editingLine = line
-            } label: {
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.tertiary)
-                    .font(DS.Typography.caption)
-            }
-            .buttonStyle(.plain)
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.tertiary)
+                .font(DS.Typography.caption)
+                .accessibilityHidden(true)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -300,27 +385,31 @@ struct CashFlowSetupView: View {
         .onTapGesture {
             editingLine = line
         }
+        .accessibilityIdentifier("cashflow_setup_line")
     }
 
     // MARK: - Summary
 
     private var summarySection: some View {
         VStack(spacing: DS.Spacing.sm) {
-            summaryRow(label: L10n.CashFlow.income, amount: selectedIncome, color: Color.electricIndigo)
-            summaryRow(label: L10n.CashFlow.expense, amount: -selectedExpense, color: Color.hotPink)
+            summaryRow(label: L10n.UXL18.summaryIncome, amount: selectedIncome,
+                       tint: Color.amountTint(isIncome: true))
+            summaryRow(label: L10n.UXL18.summaryExpense, amount: selectedExpense, tint: .primary)
             Divider()
             summaryRow(
-                label: L10n.CashFlowPlan.available,
-                amount: netFlow,
-                color: netFlow >= 0 ? Color.electricIndigo : Color.hotPink,
+                label: netFlow >= 0 ? L10n.UXL18.summarySurplus : L10n.UXL18.summaryShortfall,
+                amount: abs(netFlow),
+                tint: .primary,
                 isBold: true
             )
         }
         .padding(DS.Spacing.lg)
         .solidCard()
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("cashflow_setup_summary")
     }
 
-    private func summaryRow(label: String, amount: Double, color: Color, isBold: Bool = false) -> some View {
+    private func summaryRow(label: String, amount: Double, tint: Color, isBold: Bool = false) -> some View {
         HStack {
             Text(label)
                 .font(isBold ? DS.Typography.headline : DS.Typography.body)
@@ -329,30 +418,8 @@ struct CashFlowSetupView: View {
                 value: amount,
                 currencyCode: currencyCode,
                 font: (isBold ? DS.Typography.headline : DS.Typography.body).monospacedDigit(),
-                tint: .color(color)
+                tint: .color(tint)
             )
-        }
-    }
-
-    // MARK: - Starting Balance
-
-    private var startingBalanceSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.CashFlowPlan.startingBalance)
-                .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
-            TextField("0", text: $startingBalance)
-                .keyboardType(.decimalPad)
-                .font(DS.Typography.headline)
-                .monospacedDigit()
-                .padding(DS.Spacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                        .fill(.thCard)
-                )
-            Text(L10n.CashFlowPlan.startingBalanceHelper)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
         }
     }
 
@@ -364,18 +431,21 @@ struct CashFlowSetupView: View {
             icon: "plus.circle.fill",
             isDisabled: viewModel.suggestedLines.filter(\.isSelected).isEmpty
         ) {
-            let balance = AmountInputHelper.parseDecimal(startingBalance)
-            viewModel.createPlan(startingBalance: balance)
+            viewModel.createPlan(startingBalance: startingBalance)
         }
     }
 }
 
 // MARK: - Method Picker Sheet
 
+/// El selector de cómo se calcula una línea. Lo usa crear el plan (sobre una sugerencia) y, desde L18-7, «Cómo se calcula ·
+/// Cambiar» del detalle de una línea ya creada (`onApply`), en lugar de la hoja de configuración que se retiró en marzo.
 struct CashFlowMethodPickerSheet: View {
     let line: SuggestedLine
     let currencyCode: String
     @Bindable var viewModel: CashFlowPlanViewModel
+    /// Con una línea ya creada: qué hacer con lo elegido. `nil` = una sugerencia del asistente.
+    var onApply: ((EstimationMethod, Double?) -> Void)? = nil
 
     @State private var selectedMethod: EstimationMethod
     @State private var manualAmountText: String = ""
@@ -386,14 +456,19 @@ struct CashFlowMethodPickerSheet: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
 
-    init(line: SuggestedLine, currencyCode: String, viewModel: CashFlowPlanViewModel) {
+    init(
+        line: SuggestedLine, currencyCode: String, viewModel: CashFlowPlanViewModel,
+        onApply: ((EstimationMethod, Double?) -> Void)? = nil
+    ) {
         self.line = line
         self.currencyCode = currencyCode
         self.viewModel = viewModel
+        self.onApply = onApply
         self._selectedMethod = State(initialValue: line.estimationMethod)
         self._previewAmount = State(initialValue: line.suggestedAmount)
         if line.estimationMethod == .manual {
-            self._manualAmountText = State(initialValue: String(format: "%.0f", line.suggestedAmount))
+            // Con sus decimales: la hoja abre también líneas ya creadas, y redondear aquí cambiaba el monto al guardar.
+            self._manualAmountText = State(initialValue: CashFlowStartingBalanceSheet.editableText(line.suggestedAmount))
         }
     }
 
@@ -465,7 +540,11 @@ struct CashFlowMethodPickerSheet: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: { applyAndDismiss() })
+                    // «Monto fijo» sin cifra dejaría la línea en 0 en todos los meses.
+                    YalaSaveButton(
+                        action: { applyAndDismiss() },
+                        isDisabled: selectedMethod == .manual && AmountInputHelper.parseDecimal(manualAmountText) <= 0
+                    )
                 }
             }
         }
@@ -478,6 +557,10 @@ struct CashFlowMethodPickerSheet: View {
         var methods: [EstimationMethod] = [.average6m, .average3m, .lastMonth, .manual]
         if line.scheduledPayment != nil {
             methods.insert(.scheduled, at: 0)
+        }
+        // Una línea antigua con un método que esta lista ya no ofrece lo conserva a la vista, elegido.
+        if !methods.contains(line.estimationMethod) {
+            methods.insert(line.estimationMethod, at: 0)
         }
         return methods
     }
@@ -525,7 +608,11 @@ struct CashFlowMethodPickerSheet: View {
 
     private func applyAndDismiss() {
         let manualAmount: Double? = manualAmountText.isEmpty ? nil : AmountInputHelper.parseDecimal(manualAmountText)
-        viewModel.updateEstimationMethod(for: line.id, to: selectedMethod, manualAmount: manualAmount)
+        if let onApply {
+            onApply(selectedMethod, manualAmount)
+        } else {
+            viewModel.updateEstimationMethod(for: line.id, to: selectedMethod, manualAmount: manualAmount)
+        }
         dismiss()
     }
 }

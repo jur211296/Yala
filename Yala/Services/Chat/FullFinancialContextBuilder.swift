@@ -437,13 +437,9 @@ final class FullFinancialContextBuilder {
     /// febrero), que da el mes pasado completo. El intervalo actual se le pasa hasta el inicio de
     /// mañana, como en el hero: con `now` justo a medianoche su guard daría el mes entero.
     ///
-    /// **La corrección del -1 s es de aquí y no del helper.** El helper cierra en la medianoche del día
-    /// siguiente al equivalente y `DateInterval.contains` es cerrado en los dos extremos, así que una
-    /// transacción de ese día siguiente fechada a medianoche (lo que guarda el `DatePicker` de fecha)
-    /// contaría en el mes pasado «hasta hoy». Se resta un segundo salvo cuando el `end` es el clamp al
-    /// final del mes pasado, que ya llega restado (`CLAUDE.md`, «Cálculos con fechas»). Los dos heros
-    /// que usan el helper con `.contains` tienen ese borde abierto: ticket
-    /// `aligned-previous-interval-counts-the-next-midnight`.
+    /// **El -1 s lo pone el helper desde el 2026-10-22** (ticket `aligned-previous-interval-counts-the-next-midnight`):
+    /// cierra el día equivalente en 23:59:59 y deja el clamp al final del mes pasado como llega. Hasta ese día lo
+    /// restaba esta función por su cuenta; restarlo aquí también le quitaría un segundo real al día equivalente.
     static func lastMonthToDateInterval(
         monthStart: Date,
         lastMonth: DateInterval,
@@ -452,7 +448,7 @@ final class FullFinancialContextBuilder {
     ) -> DateInterval {
         let startOfToday = calendar.startOfDay(for: now)
         let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
-        let aligned = DateAlignmentHelper.alignedPreviousInterval(
+        return DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: DateInterval(start: monthStart, end: startOfTomorrow),
             previousInterval: lastMonth,
             asOf: now,
@@ -460,9 +456,6 @@ final class FullFinancialContextBuilder {
             comparisonMode: .month,
             calendar: calendar
         )
-        guard aligned.end < lastMonth.end else { return aligned }
-        let end = calendar.date(byAdding: .second, value: -1, to: aligned.end) ?? aligned.end
-        return DateInterval(start: aligned.start, end: end)
     }
 
     /// El mes más caro y el más barato de la historia, y las medias. `nil` sin historia.

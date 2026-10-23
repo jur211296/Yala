@@ -143,6 +143,42 @@ struct AccountRemovalServiceTests {
         #expect(abs(moved.amount - -25) < 0.0001)
     }
 
+    /// UX 2.2 · L2-14: el favorito de transferencia que llevaba dinero A la cuenta que se va pasa a llevarlo a la que
+    /// la recibe; y el que iba de ella a la que la recibe se queda sin destino (origen y destino serían la misma).
+    @Test func mover_llevaElDestinoDeLosFavoritosDeTransferencia() async throws {
+        let f = try makeFixture()
+        let toSource = FavoritePayment(
+            name: "Ahorro", transactionType: "transfer", amount: 50, account: f.bank, destinationAccount: f.source)
+        let sourceToBank = FavoritePayment(
+            name: "Pago", transactionType: "transfer", amount: 20, account: f.source, destinationAccount: f.bank)
+        f.context.insert(toSource)
+        f.context.insert(sourceToBank)
+        try f.context.save()
+
+        try await AccountRemovalService.move(
+            f.source, to: f.bank, context: f.context, deleteAccount: deleteAccount(f.context))
+
+        #expect(sourceToBank.account?.name == "Banco")
+        #expect(sourceToBank.destinationAccount == nil)
+        // «Banco → Banco» tampoco: el de «Banco → la que se va» se queda sin destino.
+        #expect(toSource.account?.name == "Banco")
+        #expect(toSource.destinationAccount == nil)
+    }
+
+    @Test func mover_aOtraCuenta_elDestinoPasaALaQueLaRecibe() async throws {
+        let f = try makeFixture()
+        let toSource = FavoritePayment(
+            name: "Ahorro", transactionType: "transfer", amount: 50, account: f.bank, destinationAccount: f.source)
+        f.context.insert(toSource)
+        try f.context.save()
+
+        try await AccountRemovalService.move(
+            f.source, to: f.usd, context: f.context, deleteAccount: deleteAccount(f.context))
+
+        #expect(toSource.account?.name == "Banco")
+        #expect(toSource.destinationAccount?.name == "Dólares")
+    }
+
     /// Programados, favoritos y borradores pendientes se mueven con la cuenta, y con otra divisa se convierten.
     @Test func mover_otraDivisa_llevaProgramadosFavoritosYBorradores() async throws {
         let f = try makeFixture()

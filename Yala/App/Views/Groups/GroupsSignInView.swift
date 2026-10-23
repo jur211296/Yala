@@ -92,6 +92,7 @@ struct GroupsSignInView: View {
                             .font(DS.Typography.title2)
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
+                            .accessibilityAddTraits(.isHeader)
                         Text(isForInvitation ? L10n.Groups.SignIn.body : L10n.Groups.SignIn.bodyNoInvite)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
@@ -139,6 +140,15 @@ struct GroupsSignInView: View {
                             .accessibilityIdentifier("groups_signin_button_google")
                         }
                         .padding(.horizontal, DS.Spacing.xl)
+
+                        // UX 2.2 · L12-7 (decisión B de Jürgen, 2026-10-18): los dos botones entran si hay cuenta y la
+                        // crean si no; esta línea quita la duda de cuál le toca a cada uno.
+                        Text(L10n.GroupsCreate.signInEitherWay)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .accessibilityIdentifier("groups_signin_either_way")
                     }
 
                     // Invariante R9: esta será LA cuenta si algún día migra lo personal.
@@ -153,7 +163,7 @@ struct GroupsSignInView: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
             .yalaScreenBackground(.subtle)
-            .navigationTitle(L10n.Groups.SignIn.title)
+            // L12-7: un solo título, el de dentro (antes salía también en la barra).
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

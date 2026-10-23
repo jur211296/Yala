@@ -264,6 +264,8 @@ final class AppBootstrapper {
             // hay cuentas). Read-only (no save) → seguro aunque el import de CloudKit siga en curso;
             // converge en cada foreground.
             SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+            // La moneda que pondrá el borrador de un pago de Apple Pay, para que su notificación diga la misma (L15-8).
+            ApplePayDraftService.refreshCurrencyHint(context: context)
         }
 
         // 5. Check for pending inbox drafts and notify user
@@ -617,8 +619,25 @@ final class AppBootstrapper {
         // materializó tarde). El save del ensure comitea el mainContext compartido
         // → gated por quiescencia (patrón retryPendingBridges). Idempotente: si no
         // asienta, el propio reconciler difiere y reintenta en foreground/fetch.
+        //
+        // **Salvo con un enlace en este arranque y sin espejo montado** (card z81w, 2026-10-20): ahí no hay import que
+        // pueda chocar con ese guardado, y la espera (`forceFetchAndWait(timeout: 15)` de un import que no va a llegar) era
+        // lo que dejaba la bienvenida 10-15 s delante de «Conecta tu cuenta».
+        let routesInviteNow = InviteOpeningLogic.routesWithoutImportWait(
+            mountAttachesMirror: CloudSessionSignOut.personalMountAttachesMirror,
+            storageMode: CloudSyncFlags.storageMode,
+            tappedBackendInviteThisLaunch: PendingJoinStore.all().contains {
+                guard let groupID = $0.backendGroupID else { return false }
+                return GroupBackendInviteEntryHandler.isInviteTapArmed(groupID: groupID)
+            })
         Task { @MainActor in
-            guard await awaitPersonalStoreReady() else {
+            let storeReady: Bool
+            if routesInviteNow {
+                storeReady = true
+            } else {
+                storeReady = await awaitPersonalStoreReady()
+            }
+            guard storeReady else {
                 SaveBreadcrumb.deferred("AppBootstrapper.groupJoinReconcile", "import not quiescent")
                 return
             }
@@ -799,6 +818,9 @@ final class AppBootstrapper {
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
             // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
             UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
+            // El avance guardado de las guías por pasos (L15-10): un test que deja una a medias la abriría a medias en
+            // el siguiente.
+            StepGuideProgressStore.guideIDs.forEach { StepGuideProgressStore.clear($0) }
             // Mismo motivo (UserDefaults sobrevive al wipe): limpiar flags de uitest que
             // contaminarían corridas posteriores con fallos engañosos:
             //  · `expensesOnlyMode` oculta el chip de Ingresos (InsightsTabView) → rompería el
@@ -1000,6 +1022,19 @@ final class AppBootstrapper {
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
             UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
         }
+        // La oferta de prueba pendiente que deja la 2.0.4 tras «Restaurar» (`UITestHooks.pendingTrialOffer`). Y con
+        // `-uitest-reset` sin el seam, la de la memoria se baja también: `SessionState` la leyó de `UserDefaults` al
+        // construirse, ANTES de que el reset borrara la clave, así que una oferta que un test anterior dejó sin presentar
+        // (el seam, o un onboarding que la arma y termina antes de drenarla) tapaba el siguiente test entero (medido en el
+        // gate del 2026-10-19: once XCUITest con la oferta encima del avatar de Perfil).
+        // Desde la 2.2 la oferta armada solo vuelve a salir al arrancar si su momento ya llegó (UX 2.2 · L1-12), así que
+        // el seam deja las DOS marcas: es el caso en que Novedades y la oferta compiten por el mismo arranque. Sin el
+        // seam, la bajada en memoria con `-uitest-reset` ya la hace el bloque de reset de arriba, que respeta
+        // `-uitest-trial-offer-armed`: bajarla aquí otra vez desarmaría ese seam.
+        if UITestHooks.pendingTrialOffer {
+            SessionState.shared.needsPostOnboardingTrial = true
+            SessionState.shared.trialOfferMomentReached = true
+        }
 
         // Adopción del dominio Grupos dada por hecha en uitest: los XCUITests prueban la
         // funcionalidad de Grupos, no el acto de adoptarla, y con el sello del handover puesto un
@@ -1095,6 +1130,10 @@ final class AppBootstrapper {
             // con `-uitest-seed` las dos se quedaban vacías hasta el primer cambio, cosa que en un arranque real con
             // datos no pasa. Medido el 2026-10-18 con `SiriIntentsUITests` (Siri no veía ninguna cuenta).
             WidgetDataCache.updateCache(context: context)
+            // Lo mismo con la caché que lee «Anotar con Siri» (cuentas y subcategorías): el arranque bajo `-uitest` no la
+            // escribe, y la del arranque anterior decía «sin cuentas» y el intent salía sin encolar. Medido el
+            // 2026-10-21 con `SiriOnDeviceEntryUITests` (verde a solas, rojo detrás de otro caso).
+            SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
             UITestHooks.shared.markReady()
         }
         // Excluyente con `-uitest-seed-desync`: el seed aleatorio del perfil contaminaría los
@@ -1108,6 +1147,20 @@ final class AppBootstrapper {
             // Ticket: Bugs/qa_cloud-fx-rates-blob-dos-caras.md (F1 Mini QA).
             Self.restoreUITestSecondaryCurrencies(into: UserDefaults.standard)
             SessionState.shared.needsExchangeRateWidgetRefresh = true
+        }
+        // Registros que la persona ya lleva (UX 2.2 · L2-5): con 3 o más, guardar cierra con el aviso breve en vez de la
+        // pantalla completa. Tras el reset, que borra el contador.
+        if let saved = UITestHooks.transactionsSavedCount {
+            UserDefaults.standard.set(saved, forKey: NotificationPrimerMoments.savedRecordsKey)
+            // Quien ya lleva esos registros ya pasó por el respaldo del permiso de notificaciones (sale en el tercero):
+            // sin esto, la hoja del permiso saldría al guardar, antes del aviso.
+            if saved >= NotificationPrimerMomentLogic.recordsThreshold {
+                UserDefaults.standard.set(true, forKey: NotificationPrimerMoments.seenKey)
+            }
+            // Y por el primer gasto: sin esto, «¿Era de prueba?» saldría sobre el aviso del cuarto registro.
+            if saved > 0 {
+                SetupChecklistManager.shared.markCompleted(.firstExpense)
+            }
         }
         // Seed desync AISLADO (excluyente con `-uitest-seed`): 4 TX con signo↔categoría
         // desincronizada para el XCUI de clasificación income/expense por categoría.
@@ -1193,10 +1246,8 @@ final class AppBootstrapper {
         // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
         // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
         // testear el modal sin depender de un evento de CloudKit.
-        if UITestHooks.showInboxAlert {
-            RouterEntryGate.shared.submit(.showInboxAlert(
-                PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
-            ))
+        if let notification = UITestHooks.inboxAlertPayload {
+            RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
         // ProTrialOfferSheet simulado en uitest (escenario paywall + alert en cola).
         if UITestHooks.showTrialOffer {
@@ -2161,6 +2212,9 @@ final class AppBootstrapper {
         // rehace para que lo que llegó a su fecha entre.
         WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
 
+        // Quien volvió por «Ya tengo una cuenta»: si sus datos ya llegaron, los tips de principiante se dan por vistos.
+        ReturningUserBeginnerTips.settleIfPending(context: context)
+
         // Modo Nube runtime (I9, DARK): dispara un ciclo inmediato / re-evalúa stop-states. Inerte con
         // el flag apagado (y sin `shared` asignado, que solo lo pone el wiring del paso 14.7).
         if CloudSyncFlags.syncRuntimeEnabled {
@@ -2218,16 +2272,15 @@ final class AppBootstrapper {
         }
         // Refrescar la caché de contexto del intent de Siri (subcategorías/divisa/cuentas).
         SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+        ApplePayDraftService.refreshCurrencyHint(context: context)
         // Espeja el gate de bootstrap (paso del check inicial): en UITest el
         // alert de inbox solo se dispara vía el hook explícito -uitest-inbox-alert.
         // La re-emisión del hook aquí es load-bearing: el intent es transient y
         // la emisión temprana del bootstrap puede caer en un blip de scenePhase
         // (resetTransients) antes del primer drain — dedup por id cubre duplicados.
         if UITestHooks.isActive {
-            if UITestHooks.showInboxAlert {
-                RouterEntryGate.shared.submit(.showInboxAlert(
-                    PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
-                ))
+            if let notification = UITestHooks.inboxAlertPayload {
+                RouterEntryGate.shared.submit(.showInboxAlert(notification))
             }
             if UITestHooks.showTrialOffer {
                 RouterEntryGate.shared.submit(.presentTrialOffer)
@@ -2711,11 +2764,24 @@ final class AppBootstrapper {
         // con la app cerrada, que cae en el `!isInitialized` de abajo.
         let branded = InviteLinkService.extractMetadata(from: url)
 
-        switch GroupInviteChannelRoutingLogic.route(
+        let route = GroupInviteChannelRoutingLogic.route(
             isBackendLink: backendInvite != nil,
             flagEnabled: CloudSyncFlags.groupsBackendEnabled,
             didRefreshFlags: didRefreshFlags
-        ) {
+        )
+        // «Abriendo tu invitación…» desde el primer instante (card z81w): con la bienvenida delante, un enlace que se va a
+        // encaminar la tapa hasta que la cadena del invitado la releve; uno que no se puede abrir la devuelve.
+        switch route {
+        case .backend, .refreshFlagsThenRetry:
+            if InviteOpeningLogic.showsOpeningScreen(
+                hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)) {
+                InviteOpeningState.shared.begin(origin: isInitialized ? "warm" : "cold")
+            }
+        case .ckShare, .backendUnavailable:
+            InviteOpeningState.shared.finish(.linkFailed)
+        }
+
+        switch route {
         case .ckShare:
             // **Fase 3: este canal ya no existe.** Un link de CKShare no puede unir a nadie —el transporte
             // que aceptaba el share se borró—, así que la rama INFORMA en vez de quedarse muda. Un apagón
@@ -3029,28 +3095,15 @@ final class AppBootstrapper {
         print("AppBootstrapper: Detected downgrade from Pro to Free")
         #endif
 
-        // El tema de Pro vuelve al de siempre. El icono de Pro, no: lo avisa y lo devuelve la hoja de fin de Pro
-        // (UX 2.2 · L16-11); aquí volvía en silencio y solo se enteraba quien veía la alerta de iOS.
-        resetProThemeIfNeeded()
+        // El tema y el icono de Pro ya NO vuelven aquí: los avisa y los devuelve la hoja de fin de Pro al confirmar
+        // (UX 2.2 · L16-11 para el icono; el tema, decisión B de Jürgen del 2026-10-21). Antes el tema volvía en silencio
+        // al arrancar y la app cambiaba de aspecto sin explicación.
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
         // (suprimido en UITest — ver nota en refreshSubscriptionStatus).
         if !UITestHooks.isActive {
             RouterEntryGate.shared.submit(.presentDowngradeResolution)
-        }
-    }
-
-    /// Reset Pro theme to System if user downgraded from Pro
-    private func resetProThemeIfNeeded() {
-        guard !FeatureGateService.shared.isProUser else { return }
-
-        let currentTheme = AppTheme(rawValue: UserDefaults.standard.integer(forKey: "userTheme")) ?? .liquidGlass
-        if currentTheme.isPro {
-            UserDefaults.standard.set(AppTheme.liquidGlass.rawValue, forKey: "userTheme")
-            #if DEBUG
-            print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
-            #endif
         }
     }
 
@@ -3108,16 +3161,7 @@ final class AppBootstrapper {
                 guard !processed.contains(sig) else { continue }
                 processed.insert(sig)
                 newSignatures.append(sig)
-                switch draft.sourceTypeRaw {
-                case "scheduledPayment":
-                    notification.scheduledPayments += 1
-                case "subscription":
-                    notification.subscriptions += 1
-                case "applePay", "automation":
-                    notification.automations += 1
-                default:
-                    break
-                }
+                notification.count(sourceTypeRaw: draft.sourceTypeRaw)
             }
         } catch {
             #if DEBUG

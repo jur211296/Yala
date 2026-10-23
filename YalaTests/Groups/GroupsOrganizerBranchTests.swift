@@ -373,7 +373,8 @@ struct GroupsOrganizerWiringTests {
     }
 
     private static let gateView = "Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift"
-    private static let nameView = "Yala/App/Views/Groups/GroupsOrganizerNameView.swift"
+    /// Desde UX 2.2 · L12-12 el alta la escribe el formulario del primer grupo, que sustituyó a «¿Cómo te llamas?».
+    private static let nameView = "Yala/App/Views/Groups/GroupFormView.swift"
     private static func count(_ needle: String, in haystack: String) -> Int {
         haystack.components(separatedBy: needle).count - 1
     }
@@ -783,7 +784,12 @@ struct GroupsOrganizerWiringTests {
         // UNO desde el 2026-09-10. Hubo un segundo —el caso `.presentName` del router, por donde entraba la
         // card «Solo grupos» del onboarding (C2)— y se retiró con la card (ADR 2026-09-09 §7): solo-grupos se
         // abre desde el Welcome, así que el alta solo se escribe detrás de su pantalla del nombre.
-        #expect(Set(callSites) == Set(["GroupsOrganizerNameView.swift"]), """
+        // Desde UX 2.2 · L12-12 (2026-10-21) ese único sitio es el formulario del primer grupo: el nombre de la persona
+        // va dentro de él y «¿Cómo te llamas?» se retiró.
+        // Y desde el 2026-10-22, el caso `.presentName` del router otra vez, pero solo para quien vuelve con la misma cuenta
+        // y ya está en sus grupos con nombre: no se le pide rellenar el formulario del primer grupo
+        // (`ReturningGroupsMemberLogic`). Va detrás de la cadena entera, como el formulario.
+        #expect(Set(callSites) == Set(["GroupFormView.swift", "ContentView.swift"]), """
             el alta se escribe detrás de la cadena y en ningún otro sitio. Un call-site nuevo es, con casi
             total seguridad, una escritura del trío adelantada. Que la cadena tenga una sola ENTRADA lo fija
             `GroupsGateWiringTests.organizerBranchHasOneEntry`. Encontrado: \(callSites)
@@ -881,7 +887,10 @@ struct GroupsOrganizerWiringTests {
     func nameViewCompletesTheSetup() throws {
         let code = try Self.code(Self.nameView)
         #expect(code.contains("GroupsOrganizerOnboarding.completeSetup("),
-                "el CTA del nombre es lo que escribe el trío")
+                "el formulario del primer grupo es lo que escribe el trío")
+        // Y solo en esa rama: el formulario de la pestaña no puede escribir el alta de nadie.
+        #expect(code.contains("if isFirstGroupSetup && !setupWritten {"),
+                "el alta va detrás de la rama del primer grupo y una sola vez por presentación")
     }
 
     /// **C3 · `completeSetup` tiene que RESPETAR el veredicto del alta.** Sin el `guard`, los seeds y el

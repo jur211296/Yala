@@ -441,6 +441,47 @@ el export.
 Que una línea viaje entre dos iPhone por iCloud: ninguna pantalla la crea hasta la entrega 2. Ese QA va en el ticket de
 la entrega 2.
 
+## El campo de los cambios «desde este mes» del flujo de caja (PENDIENTE de desplegar, 2026-10-21)
+
+**Lo despliega Lola, con Jürgen en copia** (card «Desplegar CD_amountChangesRaw a Production en CloudKit»). Ninguna
+sesión despliega esquema a Production. **Requisito antes de subir a TestFlight cualquier build de 2.2 que lo lleve**,
+no solo antes de publicar: TestFlight también usa el entorno Production de CloudKit.
+
+### Qué cambia
+
+| Contenedor | Record type | Campo nuevo | Tipo | Qué se hace |
+|---|---|---|---|---|
+| `iCloud.com.jurgenschmidt.yala` (scheme `Yala`, App Store y TestFlight) | `CD_CashFlowLine` | `CD_amountChangesRaw` | STRING | **Añadir** en Development y desplegar a Production |
+| `iCloud.com.jurgenschmidt.yala.dev` (scheme `Yala Dev`) | `CD_CashFlowLine` | `CD_amountChangesRaw` | STRING | Lo mismo |
+
+**Solo una alta.** Es `CashFlowLine.amountChangesRaw` (`String?`): los cambios de monto «este mes y los siguientes» de
+una línea del flujo de caja, como `yyyy-MM=monto,…` (UX 2.2 · L18-8). Los cuatro `.ckdb` del repo ya lo llevan y
+`PersonalCloudKitSchemaParityTests` pasa con él.
+
+**Aquí sí hay prisa, a diferencia del enlace de la tarjeta.** Esta build ESCRIBE el campo en cuanto alguien elige «Ese
+mes y los siguientes» al ajustar un monto del plan. Si Production no lo conoce, iCloud rechaza el registro de esa línea
+sin avisar: el cambio no llega a sus otros dispositivos, y tampoco nada más de esa línea mientras lleve el campo.
+
+### Los pasos
+
+Los mismos A a E de la sección anterior, con estas tres sustituciones:
+
+- record type `CD_CashFlowLine` en vez de `CD_Account`;
+- campo `CD_amountChangesRaw`, tipo **String**, sin índices (por `cktool`, la línea `CD_amountChangesRaw STRING,`
+  arriba del todo dentro de `RECORD TYPE CD_CashFlowLine`);
+- en el paso C, `awk '/RECORD TYPE CD_CashFlowLine \(/,/\);/' … | grep CD_amountChangesRaw` tiene que sacar
+  `CD_amountChangesRaw STRING`.
+
+Si los dos campos (`CD_parentAccountID` y este) siguen pendientes, se hacen en la misma pasada: la lista de «Deploy
+Schema Changes…» tiene que traer las dos altas y nada más.
+
+### Comprobar la sync en dos iPhone (tras el despliegue y con la build nueva en los dos)
+
+1. En el iPhone A: Reportes → Flujo de caja → toca una línea del mes en curso → «Ajustar monto» → otra cifra → Guardar
+   → «Ese mes y los siguientes».
+2. En el iPhone B, al rato: la misma línea en el mes siguiente dice «Desde <mes>» y la cifra nueva; la del mes pasado
+   no cambió.
+
 ## Para el siguiente campo nuevo
 
 Un campo nuevo en un `@Model` del store personal pone rojo `PersonalCloudKitSchemaParityTests` hasta que se

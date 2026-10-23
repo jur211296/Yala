@@ -2165,6 +2165,8 @@ enum L10n {
         enum Stats {
             static var totalSpent: String { ls("groups.stats.totalSpent", comment: "") }
             static var myPortion: String { ls("groups.stats.myPortion", comment: "") }
+            /// UX 2.2 · L13-13: bajo «Mi parte», qué mide («lo que te tocaba»).
+            static var myPortionHint: String { ls("groups.stats.myPortionHint", comment: "") }
             static var whoMadeMostPayments: String { ls("groups.stats.whoMadeMostPayments", comment: "") }
             static var categories: String { ls("groups.stats.categories", comment: "") }
             static var monthlyTrend: String { ls("groups.stats.monthlyTrend", comment: "") }
@@ -2186,6 +2188,8 @@ enum L10n {
         // MARK: - Bridge (A0-Bridge)
 
         enum OpeningBalance {
+            /// UX 2.2 · L13-10: línea de ayuda bajo el título del formulario.
+            static var formHelp: String { ls("groups.openingBalance.formHelp", comment: "") }
             /// Descripción del SplitExpense de saldo inicial (también label base del feed).
             static var entryDescription: String { ls("groups.openingBalance.entryDescription", comment: "") }
             /// Fila del feed: "%1$@ le debe a %2$@".
@@ -2248,6 +2252,12 @@ enum L10n {
             static var deactivateOptionKeep: String { ls("groups.bridge.deactivateOptionKeep", comment: "") }
             // Deactivation sheet (F5)
             static var deactivationSheetTitle: String { ls("groups.bridge.deactivationSheetTitle", comment: "") }
+            /// UX 2.2 · L13-14: confirmación de «Eliminar de mis cuentas». El cuerpo lleva el número entre los dos puntos y el
+            /// punto, sin concordancia de plural a propósito.
+            static var deleteConfirmTitle: String { ls("groups.bridge.deleteConfirmTitle", comment: "") }
+            static func deleteConfirmMessage(_ count: Int) -> String {
+                String(format: ls("groups.bridge.deleteConfirmMessage", comment: ""), count)
+            }
             static var deactivationSheetBody: String { ls("groups.bridge.deactivationSheetBody", comment: "") }
             static var deactivationOptionFreeze: String { ls("groups.bridge.deactivationOptionFreeze", comment: "") }
             static var deactivationOptionDelete: String { ls("groups.bridge.deactivationOptionDelete", comment: "") }
@@ -2378,6 +2388,8 @@ enum L10n {
             static var personalIntegrationHintInheritOn: String { ls("groups.settings.personalIntegrationHintInheritOn", comment: "") }
             static var personalIntegrationHintLocalOff: String { ls("groups.settings.personalIntegrationHintLocalOff", comment: "") }
             static var personalIntegrationHintBlockedByGlobal: String { ls("groups.settings.personalIntegrationHintBlockedByGlobal", comment: "") }
+            /// UX 2.2 · L13-14: enlace bajo el aviso, abre Ajustes de Grupos.
+            static var openGroupsSettings: String { ls("groups.settings.openGroupsSettings", comment: "") }
         }
 
         enum Errors {
@@ -2734,6 +2746,20 @@ enum L10n {
             static var remaining: String { ls("groups.expense.remaining", comment: "") }
             static func remainingAmount(_ amount: String) -> String { String(format: ls("groups.expense.remainingAmount", comment: ""), amount) }
             static var balanced: String { ls("groups.expense.balanced", comment: "") }
+            /// UX 2.2 · L13-4: «¿Eliminar «Mercado»?» y su alcance.
+            static func deleteTitle(_ name: String) -> String {
+                name.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? ls("groups.expense.deleteTitleUnnamed", comment: "")
+                    : String(format: ls("groups.expense.deleteTitle", comment: ""), name)
+            }
+            static var deleteMessage: String { ls("groups.expense.deleteMessage", comment: "") }
+            /// UX 2.2 · L13-9: la línea sobre «Guardar» con lo que falta.
+            static var missingDescription: String { ls("groups.expense.missingDescription", comment: "") }
+            static var missingAmount: String { ls("groups.expense.missingAmount", comment: "") }
+            static var missingPayer: String { ls("groups.expense.missingPayer", comment: "") }
+            static var missingParticipants: String { ls("groups.expense.missingParticipants", comment: "") }
+            static var missingSplit: String { ls("groups.expense.missingSplit", comment: "") }
+            static var missingAccount: String { ls("groups.expense.missingAccount", comment: "") }
             static var eachPays: String { ls("groups.expense.eachPays", comment: "") }
         }
 
@@ -2987,15 +3013,6 @@ enum L10n {
             static var step2BridgeAwareness: String { ls("groups.onboarding.step2.bridgeAwareness", comment: "") }
 
             // Step 3 — Privacy + CTA
-            static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
-            static var step3Subtitle: String { ls("groups.onboarding.step3.subtitle", comment: "") }
-            /// C2 · el HECHO sustantivo, y va el primero. Los otros dos puntos tranquilizan («tu privacidad,
-            /// primero») sin decir nunca DÓNDE se guardan los gastos del grupo; el consent sí lo dice, pero
-            /// llega después de pedir identidad. Sin promesa de cifrado, a propósito: `GroupsConsentView`
-            /// evita esa palabra por lo mismo (G7 no aterrizó — «protegidos» es lo honesto).
-            static var step3Point0: String { ls("groups.onboarding.step3.point0", comment: "") }
-            static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
-            static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
             static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
             /// A1 (D-A7): CTA de sign-in del cierre. Solo se pinta sin sesión Yala viva
             /// (`GroupsOnboardingLogic.shouldShowSignInCTA`).
@@ -3003,8 +3020,6 @@ enum L10n {
             /// C2 · la variante del mismo CTA para quien NUNCA tuvo cuenta. «Iniciar sesión» le pide volver
             /// a un sitio donde no ha estado; el hecho es que se le está creando una cuenta de Yala.
             static var step3CreateAccountCTA: String { ls("groups.onboarding.step3.createAccountCTA", comment: "") }
-            /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
-            static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
         }
     }
 
@@ -3238,6 +3253,8 @@ enum L10n {
         static var newPayment: String { ls("accessibility.newPayment", comment: "") }
         static var importingHint: String { ls("accessibility.importingHint", comment: "") }
         static func variationIncrease(_ value: String) -> String { String(format: ls("accessibility.variationIncrease %@", comment: ""), value) }
+        /// Un cambio que redondea a cero (UX 2.2 · L18-4): «Sin cambio», no «Aumento +0 %».
+        static var variationNoChange: String { ls("accessibility.variationNoChange", comment: "") }
         static func variationDecrease(_ value: String) -> String { String(format: ls("accessibility.variationDecrease %@", comment: ""), value) }
         static var processing: String { ls("accessibility.processing", comment: "") }
         static func removeTab(_ name: String) -> String { String(format: ls("accessibility.removeTab %@", comment: ""), name) }
@@ -5862,6 +5879,10 @@ enum L10n {
             static var noAccountCta: String { ls("welcome.privateICloud.noAccountCta", comment: "") }
             static var errorTitle: String { ls("welcome.privateICloud.errorTitle", comment: "") }
             static var errorBody: String { ls("welcome.privateICloud.errorBody", comment: "") }
+            /// La revisión de iCloud se quedó sin avanzar (card blqa): no culpa a la conexión.
+            static var stalledTitle: String { ls("welcome.privateICloud.stalledTitle", comment: "") }
+            static var stalledBody: String { ls("welcome.privateICloud.stalledBody", comment: "") }
+            static var discardStalledBody: String { ls("welcome.privateICloud.discardStalledBody", comment: "") }
             /// **El cuerpo de `.unreachable` cuando la puerta VUELVE atrás en vez de seguir** (decisión de
             /// Jürgen, 2026-09-14). `errorBody` no sirve ahí: dice «Inténtalo otra vez **antes de
             /// seguir**», y en esa puerta no se ofrece ningún «seguir». Nombra el reintento igual que él,
@@ -6078,10 +6099,7 @@ enum L10n {
             static var neutralMigrationBody: String { ls("welcome.groups.neutralMigrationBody", comment: "") }
             /// CTA de las pantallas con una sola salida: vuelta al step con las otras vías intactas.
             static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
-            /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).
-            static var nameTitle: String { ls("welcome.groups.nameTitle", comment: "") }
             static var nameBody: String { ls("welcome.groups.nameBody", comment: "") }
-            static var nameCta: String { ls("welcome.groups.nameCta", comment: "") }
         }
 
         /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:
@@ -6090,10 +6108,6 @@ enum L10n {
         enum BornCloud {
             static var title: String { ls("welcome.bornCloud.title", comment: "") }
             static var subtitle: String { ls("welcome.bornCloud.subtitle", comment: "") }
-            /// W4 (decisión del owner 2026-08-11, punto 16): la nota del alta dice SOLO que la cuenta
-            /// queda ligada al método. La de `Cloud.providerNote` empieza por «entra con el mismo método
-            /// que usaste», que aquí no significa nada: el usuario no ha usado ninguno todavía.
-            static var providerNote: String { ls("welcome.bornCloud.providerNote", comment: "") }
             /// Progreso del claim: la cuenta se está CREANDO, no verificando.
             static var creating: String { ls("welcome.bornCloud.creating", comment: "") }
             /// R2 · el alta terminó SIN relanzamiento (el proceso montó el store neutro). Copy propio y no
@@ -6109,6 +6123,11 @@ enum L10n {
         /// R2 · terminal del Welcome cuando el destino elegido necesita el espejo de iCloud y este proceso
         /// montó el store NEUTRO. Copy propio y NO `Storage.Relaunch.*`: aquel describe una migración de un
         /// corpus que ya existe; aquí el usuario acaba de elegir y todavía no tiene datos.
+        /// «Abriendo tu invitación…» (card z81w): la bienvenida mientras se abre un enlace en una instalación nueva.
+        enum InviteOpening {
+            static var title: String { ls("welcome.inviteOpening.title", comment: "") }
+        }
+
         enum MirrorRelaunch {
             static var title: String { ls("welcome.mirrorRelaunch.title", comment: "") }
             /// Por qué hay que reabrir (UX 2.2 · L1-4, decisión de Jürgen: el reinicio se queda y se explica).
@@ -6131,13 +6150,19 @@ enum L10n {
             // Sesión 2 Google: subtitle del intro con provider .google + nota §13 (ambos
             // providers) + pantalla R9 de provider-mismatch (sub-first, H4).
             static var subtitleGoogle: String { ls("welcome.cloud.subtitleGoogle", comment: "") }
-            static var providerNote: String { ls("welcome.cloud.providerNote", comment: "") }
-            static var providerMismatchTitle: String { ls("welcome.cloud.providerMismatchTitle", comment: "") }
+            /// UX 2.2 · lote decidido 15 (QA de 2.1, 19-oct): el aviso dice que en este iPhone ya se usó OTRA cuenta de Yala.
+            /// «Esa cuenta usa otro método» sonaba a que la cuenta de Google ya estaba en uso. Keys nuevas: el cuerpo pasa
+            /// de uno a dos argumentos, y una traducción vieja con un solo `%@` no puede quedar viva.
+            static var providerMismatchTitle: String { ls("welcome.cloud.otherAccountUsedTitle", comment: "") }
             /// Body con el nombre VISIBLE del método conocido ("Apple"/"Google").
-            static func providerMismatchBody(_ providerName: String) -> String {
-                String(format: ls("welcome.cloud.providerMismatchBody", comment: ""), providerName)
+            /// `accountProvider`: con qué método se creó la cuenta usada en este iPhone. `chosenProvider`: el que se acaba de
+            /// elegir.
+            static func providerMismatchBody(accountProvider: String, chosenProvider: String) -> String {
+                String(format: ls("welcome.cloud.otherAccountUsedBody", comment: ""), accountProvider, chosenProvider)
             }
-            static var providerMismatchBodyGeneric: String { ls("welcome.cloud.providerMismatchBodyGeneric", comment: "") }
+            static func providerMismatchBodyGeneric(chosenProvider: String) -> String {
+                String(format: ls("welcome.cloud.otherAccountUsedBodyGeneric", comment: ""), chosenProvider)
+            }
             /// Paso 6 · el intro al que encamina el faro dice de dónde viene. Solo el nombre VISIBLE del
             /// método («Apple»/«Google»), nunca un correo (decisión de Jürgen, 2026-09-09).
             static func beaconOrigin(_ providerName: String) -> String {
@@ -6647,6 +6672,13 @@ enum L10n {
             static var banner: String { ls("inbox.groupSettlementDraft.banner", comment: "") }
             /// Error al finalizar el borrador de una liquidación cuyo pago ya está registrado (hay marca de aprobación).
             static var alreadyRegistered: String { ls("inbox.groupSettlementDraft.alreadyRegistered", comment: "") }
+            /// UX 2.2 · L13-12: el borrador de un pago, con nombre. «Pago a Ana · Viaje a Cusco» / «Pago de Ana · …».
+            static func paidTo(_ name: String, group: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.paidTo", comment: ""), name, group)
+            }
+            static func paidBy(_ name: String, group: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.paidBy", comment: ""), name, group)
+            }
         }
 
         /// Aviso de que cambió el importe de una liquidación ya aprobada a una cuenta real (ticket
@@ -6704,6 +6736,10 @@ enum L10n {
         enum GroupDraft {
             static var finalize: String { ls("inbox.groupDraft.finalize", comment: "") }
             static var fromGroup: String { ls("inbox.groupDraft.fromGroup", comment: "") }
+            /// UX 2.2 · L13-15: «¿Ya lo apuntaste?» con los movimientos parecidos del día.
+            static var linkTitle: String { ls("inbox.groupDraft.linkTitle", comment: "") }
+            static var linkHint: String { ls("inbox.groupDraft.linkHint", comment: "") }
+            static var linkRowHint: String { ls("inbox.groupDraft.linkRowHint", comment: "") }
         }
         static var pending: String {
             ls("inbox.pending", comment: "")
@@ -6873,6 +6909,11 @@ enum L10n {
         static var deleteForever: String { ls("inbox.draft.deleteForever", comment: "Draft editor menu — deletes the draft for good") }
         /// Aviso tras descartar desde el editor, con su botón para deshacerlo.
         static var movedToArchived: String { ls("inbox.draft.movedToArchived", comment: "Toast after discarding a draft") }
+        /// UX 2.2 · L13-11: aviso tras convertir un borrador en gasto de grupo, con «Ver».
+        static func movedToGroup(_ group: String) -> String {
+            String(format: ls("inbox.movedToGroup", comment: ""), group)
+        }
+        static var movedToGroupView: String { ls("inbox.movedToGroupView", comment: "") }
         static var undoDiscard: String { ls("inbox.draft.undo", comment: "Toast button — undo the discard") }
         /// Editor de un descartado: «Lo descartaste el 13 oct.» (UX 2.2 · L4-9).
         static func discardedOn(_ date: String) -> String {
@@ -6950,6 +6991,11 @@ enum L10n {
                 static var mixed: String {
                     ls("inbox.alert.title.mixed", comment: "")
                 }
+            }
+
+            /// «Borradores de Siri: 2», en su propia línea del aviso (auditoría UX 2.2, L15-7).
+            static func siriDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.alert.siriDrafts", comment: ""), count)
             }
 
             enum Message {
@@ -7090,6 +7136,10 @@ enum L10n {
         /// El plan free probó la voz con su cupo de prueba entero (lo decide el gateway: `yala_trial_exhausted`).
         static var failureTrialUsedUpTitle: String { ls("voice.failure.trialUsedUp.title", comment: "Free plan used up its trial voice notes") }
         static var failureTrialUsedUpMessage: String { ls("voice.failure.trialUsedUp.message", comment: "Free plan used up its trial voice notes: Pro has no limit") }
+        static var failureBusyTitle: String { ls("voice.failure.busy.title", comment: "Gateway burst limit (429): wait a minute") }
+        static var failureBusyMessage: String { ls("voice.failure.busy.message", comment: "Gateway burst limit (429): wait a minute") }
+        static var failureDailyLimitTitle: String { ls("voice.failure.dailyLimit.title", comment: "Daily voice quota reached (429)") }
+        static var failureDailyLimitMessage: String { ls("voice.failure.dailyLimit.message", comment: "Daily voice quota reached (429)") }
         /// Botón que abre la hoja de Yala Pro desde el cupo de prueba agotado (voz y foto).
         static var trialSeePro: String { ls("ai.trial.seePro", comment: "Button that opens Yala Pro when the trial is used up") }
     }
@@ -7250,6 +7300,10 @@ enum L10n {
             /// El plan free probó la foto con su cupo de prueba entero (`yala_trial_exhausted` del gateway).
             static var failureTrialUsedUpTitle: String { ls("image.entry.failure.trialUsedUp.title", comment: "Free plan used up its trial photos") }
             static var failureTrialUsedUpMessage: String { ls("image.entry.failure.trialUsedUp.message", comment: "Free plan used up its trial photos: Pro has no limit") }
+            static var failureBusyTitle: String { ls("image.entry.failure.busy.title", comment: "Gateway burst limit (429): wait a minute") }
+            static var failureBusyMessage: String { ls("image.entry.failure.busy.message", comment: "Gateway burst limit (429): wait a minute") }
+            static var failureDailyLimitTitle: String { ls("image.entry.failure.dailyLimit.title", comment: "Daily photo quota reached (429)") }
+            static var failureDailyLimitMessage: String { ls("image.entry.failure.dailyLimit.message", comment: "Daily photo quota reached (429)") }
 
             // Un PDF página a página (ticket pdf-statement-reads-only-the-first-page, 2026-10-08).
             static func readingPageProgress(_ current: Int, _ total: Int) -> String {
@@ -7278,6 +7332,11 @@ enum L10n {
                     ? ls("image.entry.trialLeftOutOne", comment: "")
                     : String(format: ls("image.entry.trialLeftOutMany", comment: ""), count)
             }
+            static func dailyLimitLeftOut(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.dailyLimitLeftOutOne", comment: "")
+                    : String(format: ls("image.entry.dailyLimitLeftOutMany", comment: ""), count)
+            }
         }
     }
 
@@ -7303,6 +7362,10 @@ enum L10n {
             String(format: ls("stepGuide.progress", comment: ""), current, total)
         }
         static var markDone: String { ls("stepGuide.markDone", comment: "") }
+        /// «Te faltan 2 pasos · tu avance se guarda» (plural en el `.stringsdict`; L15-10).
+        static func remaining(_ count: Int) -> String {
+            String(format: ls("stepGuide.remaining", comment: ""), count)
+        }
         static var stuck: String { ls("stepGuide.stuck", comment: "") }
         static var whatYouWillSee: String { ls("stepGuide.whatYouWillSee", comment: "") }
         static var phaseDone: String { ls("stepGuide.phaseDone", comment: "") }
@@ -8092,6 +8155,8 @@ enum L10n {
             static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
+            /// `ReverseEligibility.degradedNoMap`: no es pasajero, así que no dice «ahora mismo» (card i9qh del QA del 19-oct).
+            static var ineligibleOtherDevice: String { ls("storage.revert.ineligibleOtherDevice", comment: "") }
 
             /// El aviso de datos previos en iCloud antes de volver (ticket
             /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`).
@@ -8114,6 +8179,10 @@ enum L10n {
                 static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
                 static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
                 static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
+                static var wipeStopped: String { ls("storage.revert.prior.wipeStopped", comment: "") }
+                static func wiping(_ deleted: Int) -> String {
+                    String(format: ls("storage.revert.prior.wiping", comment: ""), deleted)
+                }
                 static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
                 static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
             }
@@ -8488,14 +8557,16 @@ enum L10n {
         }
 
         enum Notification {
-            static var title: String { ls("shortcut.notification.title", comment: "") }
-            static var expense: String { ls("shortcut.notification.expense", comment: "") }
-            static var income: String { ls("shortcut.notification.income", comment: "") }
             static var errorTitle: String { ls("shortcut.notification.errorTitle", comment: "") }
             static var errorBody: String { ls("shortcut.notification.errorBody", comment: "") }
-            static func body(_ type: String, _ amount: String, _ note: String) -> String {
-                String(format: ls("shortcut.notification.body", comment: ""), type, amount, note)
+            /// «Pago de S/ 25,90 en Tambo por revisar» (sin comercio, «Pago de S/ 25,90 por revisar»). Auditoría UX 2.2,
+            /// L15-8: hasta entonces decía «Se ha registrado un gasto», y era un borrador por aprobar.
+            static func applePayTitle(amount: String, merchant: String) -> String {
+                merchant.isEmpty
+                    ? String(format: ls("shortcut.applePay.notification.titleNoMerchant", comment: ""), amount)
+                    : String(format: ls("shortcut.applePay.notification.title", comment: ""), amount, merchant)
             }
+            static var applePayBody: String { ls("shortcut.applePay.notification.body", comment: "") }
         }
     }
 

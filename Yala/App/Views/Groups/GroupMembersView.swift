@@ -7,6 +7,11 @@
 //  Separada de GroupSettingsView para que cada botón del toolbar tenga un significado
 //  nítido: personas (este) vs configuración del grupo (engranaje).
 //
+//  Desde el lote 19 decidido de la auditoría UX 2.2 es la lista agrupada de Ajustes (lienzo «Una sola Yala»), cada
+//  persona lleva a la derecha lo que se deben contigo, el rol se cambia con «Hacer/Quitar como administrador»
+//  y una confirmación que dice qué podrá hacer (L19-3), y quitar a alguien que debe dice cuánto y a quién, con
+//  «Saldar primero» (L19-4).
+//
 
 import SwiftUI
 import SwiftData
@@ -42,9 +47,19 @@ struct GroupMembersView: View {
     @State private var showShareError = false
     @State private var shareErrorMessage: String = ""
 
-    // Remove member
+    // Remove member. Dos diálogos y no uno con un botón condicional: los botones de una presentación no admiten
+    // contenido que dependa del estado (regla medida el 2026-09-06). Con deuda lleva «Saldar primero» (L19-4).
     @State private var showRemoveMemberConfirm = false
+    @State private var showRemoveWithDebtConfirm = false
     @State private var memberToRemove: SplitMember?
+
+    // Cambiar el rol (L19-3). Un diálogo por sentido, por lo mismo.
+    @State private var roleChangeMember: SplitMember?
+    /// El rol que se preguntó, fijado al abrir la confirmación: si el pull cambia el rol con el diálogo abierto, confirmar
+    /// «Hacer administrador» no puede acabar degradando (review adversarial del 21-oct).
+    @State private var roleChangeTarget: String?
+    @State private var showMakeAdminConfirm = false
+    @State private var showRemoveAdminConfirm = false
 
     // Approve / reject (A3)
     @State private var pendingActionMember: SplitMember?
@@ -68,19 +83,32 @@ struct GroupMembersView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    membersSection
-
-                    // Saldos iniciales (deuda de apertura) — owner-only.
-                    if group.isOwner {
-                        openingBalanceSection
+            YalaSettingsList {
+                // L19-1 · las solicitudes van arriba, una tarjeta por persona, con su consecuencia y sus dos botones.
+                if canActAsAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+                    Section {
+                        joinRequestsSection
                     }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xl)
+
+                // L12-13: invitar es lo primero que se ve tras las solicitudes, y es la única tarjeta destacada de la hoja.
+                if group.isOwner && canActAsAdmin {
+                    Section {
+                        inviteCard
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                }
+
+                membersSection
+
+                // Saldos iniciales (deuda de apertura) — owner-only.
+                if group.isOwner {
+                    openingBalanceSection
+                }
             }
-            .scrollContentBackground(.hidden)
             .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Groups.Settings.members)
             .navigationBarTitleDisplayMode(.inline)
@@ -92,7 +120,12 @@ struct GroupMembersView: View {
                 }
             }
             .sheet(item: $shareItem) { item in
-                ActivityView(activityItems: [item.url])
+                // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
+                ActivityView(activityItems: [GroupInviteShareMessage.text(
+                    inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+                    defaultName: L10n.Profile.defaultName,
+                    groupName: group.name,
+                    url: item.url)])
             }
             .sheet(isPresented: $showOpeningBalanceEditor, onDismiss: { viewModel.loadData() }) {
                 GroupOpeningBalanceFormView(
@@ -116,6 +149,7 @@ struct GroupMembersView: View {
                     openingBalanceToEdit = nil
                     showOpeningBalanceEditor = true
                 }
+                .accessibilityIdentifier("opening_balance_prompt_add")
                 Button(L10n.Groups.OpeningBalance.approvalPromptSkip) {
                     openingBalancePrefillDebtor = nil
                 }
@@ -124,28 +158,50 @@ struct GroupMembersView: View {
                 Text(L10n.Groups.OpeningBalance.approvalPromptBody)
             }
             .confirmationDialog(
-                L10n.Groups.Member.remove,
+                memberToRemove.map { L10n.UXL19.removeTitle($0.resolvedDisplayName) } ?? "",
                 isPresented: $showRemoveMemberConfirm,
                 titleVisibility: .visible
             ) {
-                Button(L10n.Groups.Member.remove, role: .destructive) {
+                Button(L10n.UXL19.removeMember, role: .destructive) {
                     removeMember()
                 }
+                .accessibilityIdentifier("group_member_remove_confirm")
                 Button(L10n.Common.cancel) { memberToRemove = nil }
                     .accessibilityIdentifier("group_member_remove_cancel")
             } message: {
-                if memberToRemoveHasDebt {
-                    Text(L10n.Groups.Member.removeWithDebtWarning)
-                } else {
-                    Text(L10n.Groups.Member.removeConfirm)
-                }
+                Text(memberToRemove.map { L10n.UXL19.removeBody($0.resolvedDisplayName) } ?? "")
             }
             .confirmationDialog(
-                pendingActionMember.map { L10n.Groups.Member.approveConfirm($0.displayName) } ?? "",
+                memberToRemove.map { L10n.UXL19.removeTitle($0.resolvedDisplayName) } ?? "",
+                isPresented: $showRemoveWithDebtConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.UXL19.removeMember, role: .destructive) {
+                    removeMember()
+                }
+                .accessibilityIdentifier("group_member_remove_confirm")
+                Button(L10n.UXL19.settleFirst) { settleFirstWithMemberToRemove() }
+                    .accessibilityIdentifier("group_member_remove_settle_first")
+                Button(L10n.Common.cancel) { memberToRemove = nil }
+                    .accessibilityIdentifier("group_member_remove_with_debt_cancel")
+            } message: {
+                Text(removeWithDebtMessage)
+            }
+            .modifier(RoleChangePresentations(
+                memberName: roleChangeMember?.resolvedDisplayName ?? "",
+                showMakeAdminConfirm: $showMakeAdminConfirm,
+                showRemoveAdminConfirm: $showRemoveAdminConfirm,
+                onConfirm: { performRoleChange() },
+                onCancel: { roleChangeMember = nil; roleChangeTarget = nil }
+            ))
+            // L19-1 · el mismo verbo que la tarjeta («Aceptar»): «Aprobar» en la confirmación eran dos palabras para un gesto.
+            .confirmationDialog(
+                pendingActionMember.map { L10n.UXD14.requestsAcceptConfirm($0.displayName) } ?? "",
                 isPresented: $showApproveConfirm,
                 titleVisibility: .visible
             ) {
-                Button(L10n.Groups.Member.approve) { performApprove() }
+                Button(L10n.UXD14.requestsAccept) { performApprove() }
+                    .accessibilityIdentifier("group_member_approve_confirm")
                 Button(L10n.Common.cancel) { pendingActionMember = nil }
                     .accessibilityIdentifier("group_member_approve_cancel")
             }
@@ -173,6 +229,15 @@ struct GroupMembersView: View {
             } message: {
                 Text(actionErrorMessage)
             }
+            #if DEBUG
+            .onAppear {
+                // L19-2 · la pregunta que sigue a aceptar, sin el servidor que la aceptación necesita (XCUITest y capturas).
+                if UITestHooks.openingBalancePrompt, !showOpeningBalanceApprovalPrompt {
+                    approvedMemberName = "Carla"
+                    showOpeningBalanceApprovalPrompt = true
+                }
+            }
+            #endif
         }
     }
 
@@ -186,54 +251,96 @@ struct GroupMembersView: View {
     private var canActAsAdmin: Bool { viewModel.isCurrentUserAdmin && !group.isMigratedFrozen }
 
     private var membersSection: some View {
-        // Una vez por render y no por fila: con el canal backend encendido, la pregunta hace un fetch de la zona.
-        let offersRoleChange = GroupService.shared.offersRoleChange(in: group)
-        return SectionBox(title: L10n.Groups.Settings.members) {
-            VStack(spacing: DS.Spacing.none) {
-                // L12-13 (decisión de Jürgen del 15-oct, variante 2): invitar es lo primero que se ve al abrir
-                // Miembros, con lo que pasa al tocar. Antes era la última fila, en texto, con un aviso de un «acceso por
-                // enlace» que no se puede apagar en ningún sitio.
-                if group.isOwner && canActAsAdmin {
-                    inviteCard
-                }
+        YalaSettingsSection(L10n.Groups.Settings.members) {
+            ForEach(listedMembers, id: \.id) { member in
+                GroupMemberRow(
+                    member: member,
+                    groupColorHex: group.colorHex,
+                    isCurrentUserAdmin: canActAsAdmin,
+                    // El flag O la identidad resuelta: la unión de los dos criterios, nunca uno
+                    // solo. Una zona MIGRADA puede tener DOS filas del mismo humano con el flag
+                    // puesto —`refreshCurrentUserFlags` conserva el de la fila legacy
+                    // (GroupService:1136) y enciende el de la born-backend por `sub`—, y el
+                    // resolvedor devuelve UNA (la de `min(joinedAt)`). Comparar solo contra ella
+                    // dejaría la otra fila propia con «quitar» y «cambiar rol» a la vista, que es
+                    // justo la regresión que este parámetro venía a evitar.
+                    isSelf: member.isCurrentUser
+                        || member.id.uuidString == viewModel.currentMemberID,
+                    roleChangeOffer: GroupService.shared.roleChangeOffer(for: member, in: group),
+                    relation: relation(with: member),
+                    onChangeRole: { askRoleChange(member) },
+                    onRemove: { askRemove(member) },
+                    onApprove: canActAsAdmin && member.isPendingApproval ? {
+                        pendingActionMember = member
+                        showApproveConfirm = true
+                    } : nil,
+                    onReject: canActAsAdmin && member.isPendingApproval ? {
+                        pendingActionMember = member
+                        showRejectConfirm = true
+                    } : nil
+                )
+            }
+        }
+    }
 
-                ForEach(viewModel.visibleMembers, id: \.id) { member in
-                    GroupMemberRow(
-                        member: member,
-                        groupColorHex: group.colorHex,
-                        isCurrentUserAdmin: canActAsAdmin,
-                        // El flag O la identidad resuelta: la unión de los dos criterios, nunca uno
-                        // solo. Una zona MIGRADA puede tener DOS filas del mismo humano con el flag
-                        // puesto —`refreshCurrentUserFlags` conserva el de la fila legacy
-                        // (GroupService:1136) y enciende el de la born-backend por `sub`—, y el
-                        // resolvedor devuelve UNA (la de `min(joinedAt)`). Comparar solo contra ella
-                        // dejaría la otra fila propia con «quitar» y «cambiar rol» a la vista, que es
-                        // justo la regresión que este parámetro venía a evitar.
-                        isSelf: member.isCurrentUser
-                            || member.id.uuidString == viewModel.currentMemberID,
-                        offersRoleChange: offersRoleChange,
-                        onChangeRole: { changeRole(member) },
-                        onRemove: {
-                            memberToRemove = member
-                            showRemoveMemberConfirm = true
-                        },
-                        onApprove: canActAsAdmin && member.isPendingApproval ? {
+    /// La lista de Miembros. Para quien puede aceptar, sin las solicitudes: esas ya tienen su tarjeta arriba (L19-1), y
+    /// repetirlas abajo con dos iconos sería el mismo gesto en dos sitios.
+    private var listedMembers: [SplitMember] {
+        canActAsAdmin ? viewModel.visibleMembers.filter { !$0.isPendingApproval } : viewModel.visibleMembers
+    }
+
+    /// L19-1 · «Quieren unirse (N)»: una tarjeta por solicitud. Aceptar y rechazar pasan por las mismas confirmaciones de
+    /// siempre.
+    private var joinRequestsSection: some View {
+        let pending = viewModel.pendingApprovalMembers.sorted { $0.joinedAt < $1.joinedAt }
+        // La cabecera imita la de las secciones de la lista (letra, color y sangría de «Miembros»); el cuerpo no, porque
+        // cada solicitud ya es su propia tarjeta y dentro de otra quedaría una tarjeta en una tarjeta.
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.UXD14.requestsSection(pending.count))
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thSecondaryText)
+                .padding(.leading, DS.Spacing.lg)
+                .accessibilityAddTraits(.isHeader)
+            VStack(spacing: DS.Spacing.md) {
+                ForEach(pending, id: \.id) { member in
+                    GroupJoinRequestCard(
+                        name: member.resolvedDisplayName,
+                        idName: member.displayName,
+                        requestedAt: member.joinedAt,
+                        onAccept: {
                             pendingActionMember = member
                             showApproveConfirm = true
-                        } : nil,
-                        onReject: canActAsAdmin && member.isPendingApproval ? {
+                        },
+                        onReject: {
                             pendingActionMember = member
                             showRejectConfirm = true
-                        } : nil
+                        }
                     )
-
-                    if member.id != viewModel.members.last?.id {
-                        Divider()
-                            .padding(.leading, DS.FormRow.paddingH)
-                    }
                 }
             }
         }
+        .accessibilityIdentifier("group_join_requests_section")
+    }
+
+    /// Lo que esta persona y tú se deben, de las deudas que enseña el grupo (respeta «simplificar» y «moneda única»).
+    private func relation(with member: SplitMember) -> GroupMemberRow.Relation? {
+        guard let me = viewModel.currentMemberID, member.id.uuidString != me else { return nil }
+        let them = member.id.uuidString
+        let mine = viewModel.debts.filter {
+            ($0.fromMemberID == them && $0.toMemberID == me) || ($0.fromMemberID == me && $0.toMemberID == them)
+        }
+        let owesYou = mine.filter { $0.fromMemberID == them }
+        let youOwe = mine.filter { $0.fromMemberID == me }
+        let money: (Double, String) -> String = { appPreferences.currency($0, currencyCode: $1) }
+        if !owesYou.isEmpty {
+            return .init(direction: .owesYou,
+                         amountText: GroupDebtCopyLogic.amounts(owesYou.map { ($0.amount, $0.currencyCode) }, money: money))
+        }
+        if !youOwe.isEmpty {
+            return .init(direction: .youOwe,
+                         amountText: GroupDebtCopyLogic.amounts(youOwe.map { ($0.amount, $0.currencyCode) }, money: money))
+        }
+        return nil
     }
 
     /// L12-13 · la tarjeta de invitar: pregunta, qué pasa al tocar y un solo botón relleno.
@@ -266,7 +373,6 @@ struct GroupMembersView: View {
         .padding(DS.Spacing.lg)
         .background(Color.electricIndigo.opacity(0.16), in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-        .padding(DS.FormRow.paddingH)
     }
 
     // MARK: - A3: Pending Approval Actions
@@ -299,9 +405,10 @@ struct GroupMembersView: View {
         }
     }
 
+    /// `rejectMember` es `async` desde que el grupo de la nube rechaza en el servidor (card 840m): mismo molde que
+    /// `performApprove`. Con el canal de CloudKit no suspende.
     private func performReject() {
         guard let member = pendingActionMember else { return }
-        // `rejectMember` es `async` desde el lote 19: en un grupo del canal backend va al servidor (`remove_member`).
         Task {
             do {
                 try await GroupService.shared.rejectMember(member, in: group)
@@ -355,48 +462,38 @@ struct GroupMembersView: View {
     }
 
     private var openingBalanceSection: some View {
-        SectionBox(title: L10n.Groups.OpeningBalance.sectionTitle) {
-            VStack(spacing: DS.Spacing.md) {
-                let rows = rollupRows
-                if !rows.isEmpty {
-                    VStack(spacing: DS.Spacing.xs) {
-                        ForEach(rows) { row in
-                            rollupRow(memberID: row.memberID, net: row.net, currencyCode: row.currencyCode)
-                        }
+        YalaSettingsSection(L10n.Groups.OpeningBalance.sectionTitle) {
+            let rows = rollupRows
+            if !rows.isEmpty {
+                VStack(spacing: DS.Spacing.xs) {
+                    ForEach(rows) { row in
+                        rollupRow(memberID: row.memberID, net: row.net, currencyCode: row.currencyCode)
                     }
                 }
-
-                if openingExpenses.isEmpty {
-                    Text(L10n.Groups.OpeningBalance.emptyState)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(openingExpenses, id: \.id) { expense in
-                            edgeRow(expense)
-                            if expense.id != openingExpenses.last?.id {
-                                Divider()
-                            }
-                        }
-                    }
-                }
-
-                Button {
-                    openingBalanceToEdit = nil
-                    openingBalancePrefillDebtor = nil
-                    showOpeningBalanceEditor = true
-                } label: {
-                    Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
-                        .font(DS.Typography.label)
-                        .foregroundStyle(theme.accent)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("opening_balance_add")
+                .padding(.vertical, DS.Spacing.xxs)
             }
-            .padding(DS.Spacing.lg)
+
+            ForEach(openingExpenses, id: \.id) { expense in
+                edgeRow(expense)
+            }
+
+            Button {
+                openingBalanceToEdit = nil
+                openingBalancePrefillDebtor = nil
+                showOpeningBalanceEditor = true
+            } label: {
+                Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
+                    .font(DS.Typography.label)
+                    .foregroundStyle(theme.accent)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("opening_balance_add")
+        } footer: {
+            if openingExpenses.isEmpty {
+                Text(L10n.Groups.OpeningBalance.emptyState)
+            }
         }
     }
 
@@ -436,27 +533,92 @@ struct GroupMembersView: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
             }
-            .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("opening_balance_edge_\(expense.id)")
     }
 
-    // MARK: - Balance helpers
+    // MARK: - Quitar a alguien (L19-4)
 
-    /// Duplicado intencional de GroupSettingsView.hasNonZeroBalance: el dialog de remover lo
-    /// necesita aquí, pero GroupSettingsView lo conserva para leave/archive. Son 3 líneas
-    /// sobre `viewModel.balances` — más limpio que moverlo al VM solo por esto.
-    private func hasNonZeroBalance(for memberID: String) -> Bool {
-        viewModel.balances
-            .filter { $0.memberID == memberID }
-            .contains { abs($0.netBalance) > 0.01 }
+    /// ¿La persona tiene deuda en el grupo? Las de persona a persona que enseña Saldos, no el saldo neto: el residuo de
+    /// redondeo no es una deuda que avisar (`GroupRoundingResidueLogic`, L19-10).
+    private func hasOutstandingBalance(_ member: SplitMember) -> Bool {
+        GroupRoundingResidueLogic.hasOutstanding(debts: viewModel.debts, memberID: member.id.uuidString)
     }
 
-    private var memberToRemoveHasDebt: Bool {
-        guard let member = memberToRemove else { return false }
-        return hasNonZeroBalance(for: member.id.uuidString)
+    private func askRemove(_ member: SplitMember) {
+        memberToRemove = member
+        if hasOutstandingBalance(member) {
+            showRemoveWithDebtConfirm = true
+        } else {
+            showRemoveMemberConfirm = true
+        }
+    }
+
+    /// «Ana te debe S/ 80.00. Si la quitas, deja el grupo y esa deuda queda sin saldar.»
+    private var removeWithDebtMessage: String {
+        guard let member = memberToRemove else { return "" }
+        let sentences = GroupDebtCopyLogic.relationSentences(
+            about: member.id.uuidString,
+            debts: viewModel.debts,
+            currentMemberID: viewModel.currentMemberID,
+            name: { viewModel.memberName(for: $0) },
+            money: { appPreferences.currency($0, currencyCode: $1) }
+        )
+        guard !sentences.isEmpty else { return L10n.Groups.Member.removeWithDebtWarning }
+        return (sentences + [L10n.UXL19.removeDebtTail(member.resolvedDisplayName)]).joined(separator: " ")
+    }
+
+    /// «Saldar primero»: con una deuda entre esa persona y tú, «Saldar» con ella; si lo que debe es a otros, Saldos.
+    private func settleFirstWithMemberToRemove() {
+        guard let member = memberToRemove else { return }
+        memberToRemove = nil
+        let them = member.id.uuidString
+        let me = viewModel.currentMemberID
+        let withMe = viewModel.debts.first {
+            ($0.fromMemberID == them && $0.toMemberID == me) || ($0.fromMemberID == me && $0.toMemberID == them)
+        }
+        if let withMe {
+            viewModel.requestAfterSheetDismiss(.settle(withMe))
+        } else {
+            viewModel.requestAfterSheetDismiss(.showBalances)
+        }
+    }
+
+    // MARK: - Cambiar el rol (L19-3)
+
+    private func askRoleChange(_ member: SplitMember) {
+        guard let offer = GroupService.shared.roleChangeOffer(for: member, in: group) else { return }
+        roleChangeMember = member
+        roleChangeTarget = offer == .makeAdmin ? "admin" : "member"
+        switch offer {
+        case .makeAdmin: showMakeAdminConfirm = true
+        case .removeAdmin: showRemoveAdminConfirm = true
+        }
+    }
+
+    /// El cambio va al servidor primero en un grupo de la nube (`GroupService.changeRole`, RPC `set_member_role`).
+    private func performRoleChange() {
+        guard let member = roleChangeMember, let newRole = roleChangeTarget else {
+            roleChangeMember = nil
+            roleChangeTarget = nil
+            return
+        }
+        roleChangeMember = nil
+        roleChangeTarget = nil
+        // Ya tiene ese rol (lo cambió otro administrador mientras se preguntaba): no hay nada que hacer.
+        guard member.role != newRole else { return }
+        Task {
+            do {
+                try await GroupService.shared.changeRole(member, to: newRole, in: group)
+                viewModel.loadData()
+                DS.Haptic.success()
+            } catch {
+                actionErrorMessage = GroupActionErrorLogic.message(for: error)
+                showActionError = true
+            }
+        }
     }
 
     // MARK: - Actions
@@ -487,17 +649,6 @@ struct GroupMembersView: View {
     }
 
 
-    private func changeRole(_ member: SplitMember) {
-        let newRole = member.role == "admin" ? "member" : "admin"
-        do {
-            try GroupService.shared.changeRole(member, to: newRole, in: group)
-            viewModel.loadData()
-        } catch {
-            actionErrorMessage = GroupActionErrorLogic.message(for: error)
-            showActionError = true
-        }
-    }
-
     private func removeMember() {
         guard let member = memberToRemove else { return }
         memberToRemove = nil
@@ -512,5 +663,45 @@ struct GroupMembersView: View {
                 showActionError = true
             }
         }
+    }
+}
+
+// MARK: - Confirmar el cambio de rol (L19-3)
+
+/// «¿Hacer administrador a Ana?» con lo que podrá hacer, y su contrario. Dos diálogos con botones fijos, en su propio
+/// modificador para no alargar la cadena del `body`.
+private struct RoleChangePresentations: ViewModifier {
+    let memberName: String
+    @Binding var showMakeAdminConfirm: Bool
+    @Binding var showRemoveAdminConfirm: Bool
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                L10n.UXL19.makeAdminTitle(memberName),
+                isPresented: $showMakeAdminConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.UXL19.makeAdmin) { onConfirm() }
+                    .accessibilityIdentifier("group_member_make_admin_confirm")
+                Button(L10n.Common.cancel) { onCancel() }
+                    .accessibilityIdentifier("group_member_make_admin_cancel")
+            } message: {
+                Text(L10n.UXL19.makeAdminBody(memberName))
+            }
+            .confirmationDialog(
+                L10n.UXL19.removeAdminTitle(memberName),
+                isPresented: $showRemoveAdminConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.UXL19.removeAdmin, role: .destructive) { onConfirm() }
+                    .accessibilityIdentifier("group_member_remove_admin_confirm")
+                Button(L10n.Common.cancel) { onCancel() }
+                    .accessibilityIdentifier("group_member_remove_admin_cancel")
+            } message: {
+                Text(L10n.UXL19.removeAdminBody(memberName))
+            }
     }
 }

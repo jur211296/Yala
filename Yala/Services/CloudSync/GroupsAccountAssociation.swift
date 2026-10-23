@@ -333,6 +333,25 @@ enum GroupsAssociationRegistrar {
         }
     }
 
+    /// El registrador con el estado vivo de este proceso. Lo llaman los NACIMIENTOS de la sesión privada en caliente
+    /// (restaurar desde el Welcome, terminar el onboarding personal, «Activar Yala completo»): el arranque solo corre
+    /// una vez por proceso, y si la sesión privada nace con la app abierta y la de Grupos ya estaba viva —entrar por
+    /// «Ya tengo una cuenta» con una cuenta solo-grupos y seguir por «Es mi primera vez → privado»—, la asociación no
+    /// se escribía hasta el arranque siguiente. Mientras tanto `read()` caía al iCloud-KV del Apple ID, que podía traer
+    /// la cuenta de grupos de OTRA persona: «Dónde viven tus datos» la nombraba y «Activar la nube» se bloqueaba con
+    /// `.anotherGroupsAccountAssociated` (QA guiado del 2026-10-19, A · C1). Mismas guardas que el arranque: decide
+    /// `syncFromLiveSessionIfNeeded`. El `kind` es el que haya en memoria; el arranque siguiente lo corrige.
+    static func syncFromLiveSessionNow() {
+        syncFromLiveSessionIfNeeded(
+            deviceState: CloudIdentityRoutingLogic.deviceState(
+                hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
+                storageMode: StorageModePersistence.read(),
+                hasPrivateSession: PrivateSessionMark.hasPrivateSession()),
+            identity: .live(CloudAuthService.shared),
+            kind: AccountKindService.shared.current,
+            store: GroupsAccountAssociation.shared)
+    }
+
     static func syncFromLiveSessionIfNeeded(
         deviceState: CloudIdentityRoutingLogic.DeviceSessionState,
         identity: LiveIdentity,
@@ -349,6 +368,12 @@ enum GroupsAssociationRegistrar {
         // SIGUIENTE volvería a escribir la asociación del ANTERIOR, deshaciendo en silencio el barrido del
         // handover. Es el mismo sello que cierra el bridge por la misma razón.
         guard !defaults.bool(forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart) else { return }
+        // **Con el retiro de la sesión de la persona anterior pendiente, tampoco** (review adversarial del
+        // 2026-10-19). «Es mi primera vez» arma `CloudSessionRetirement` y lo ejecuta en un `Task` sin sellar el
+        // dominio; si la sesión privada nace en el mismo proceso antes de que el retiro termine —o con un retiro que
+        // falló y sigue armado—, la sesión viva es de OTRA persona y asociarla escribiría su correo en el iCloud-KV
+        // del Apple ID. En el arranque el retiro corre antes del montaje, y si falló este guard lo cubre también.
+        guard !defaults.bool(forKey: CloudSessionRetirement.armedKey) else { return }
         // **Un desasociar explícito no se deshace en un arranque.** El tombstone viaja por el iCloud-KV
         // del Apple ID, así que este guard vale también para el OTRO dispositivo, que es justo donde
         // estaba el agujero: el que no desasoció seguía con su sesión viva y reponía las keys.

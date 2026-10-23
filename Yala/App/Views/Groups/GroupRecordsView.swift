@@ -131,7 +131,7 @@ struct GroupRecordsView: View {
             .scrollViewGlassEdges()
             .refreshable { await onRefresh?() }
             .confirmationDialog(
-                L10n.Action.delete,
+                L10n.Groups.Expense.deleteTitle(expenseToDelete?.expenseDescription ?? ""),
                 isPresented: Binding(
                     get: { expenseToDelete != nil },
                     set: { if !$0 { expenseToDelete = nil } }
@@ -147,6 +147,9 @@ struct GroupRecordsView: View {
                 // Lote 13: sin esta salida el diálogo solo se cerraba tocando fuera. Sin `role: .cancel`: con él,
                 // el diálogo (sale como popover en iOS 26) no la pinta (.claude/rules/swiftui-ds.md).
                 Button(L10n.Common.cancel) { expenseToDelete = nil }
+            } message: {
+                // UX 2.2 · L13-4: el mismo aviso que desde el formulario.
+                Text(L10n.Groups.Expense.deleteMessage)
             }
         }
     }

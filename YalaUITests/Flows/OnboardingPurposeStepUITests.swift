@@ -112,7 +112,7 @@ final class OnboardingPurposeStepUITests: XCTestCase {
         let app = launchAtPurposeStep()
         XCTAssertTrue(
             app.staticTexts["onboarding_purpose_change_later_hint"].waitForExistence(timeout: 10),
-            "El paso Propósito ya no dice que el modo se cambia en Perfil > Personalización."
+            "El paso Propósito ya no dice que el modo se cambia en Ajustes > Personalización."
         )
     }
 

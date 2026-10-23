@@ -65,7 +65,7 @@ const TEXTOS = {
     t1:     {acento: "rosa",    pill: "Photo · Pro",   lineas: ["Snap a <u>photo</u>", "of the receipt"]},
     t2:     {acento: "teal",    pill: "Voice · Pro",   lineas: ["<u>Say</u> it", "your way"]},
     t3:     {acento: "violeta", pill: "Groups · Free", lineas: ["Trip costs,", "all <u>square</u>"]},
-    cierre: {acento: "rosa",    pill: null,            lineas: ["Your finances,", "<u>effortless</u>."]},
+    cierre: {acento: "rosa",    pill: null,            lineas: ["Your finances,", "<u>effortlessly</u>."]},
   },
 };
 if (typeof module !== "undefined" && module.exports) module.exports = TEXTOS;

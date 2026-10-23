@@ -165,11 +165,11 @@ struct GroupExpensePersonalOutcomeTests {
 
     private func outcome(
         caseA: Bool, groupsOnly: Bool = false, bridge: Bool = true, account: String? = "Cuenta Principal",
-        creation: Bool = true, optIn: Bool? = nil, myShare: Double = 50
+        creation: Bool = true, optIn: GroupExpenseOptInResolution? = nil, myShare: Double = 50
     ) -> GroupExpensePersonalOutcome {
         GroupExpenseSuccessLogic.personalOutcome(
             isCaseA: caseA, isGroupsOnlySession: groupsOnly, bridgeEnabled: bridge, accountName: account,
-            isCreation: creation, optInDraftCreated: optIn, myShare: myShare)
+            isCreation: creation, optIn: optIn, myShare: myShare)
     }
 
     @Test func paidByMe_withTheBridge_chargesTheAccount() {
@@ -180,11 +180,15 @@ struct GroupExpensePersonalOutcomeTests {
     }
 
     @Test func paidByMe_bridgeOff_dependsOnTheAnswer() {
-        #expect(outcome(caseA: true, bridge: false, optIn: true) == .waitingInInbox)
-        #expect(outcome(caseA: true, bridge: false, optIn: false) == .shareAsGroupExpense(amount: 50))
+        // L13-7: «Sí, registrar» pide la cuenta ahí mismo; elegida, el gasto está en esa cuenta.
+        #expect(outcome(caseA: true, bridge: false, optIn: .registered(accountName: "Ahorros"))
+                == .chargedToAccount(accountName: "Ahorros"))
+        // Cerró sin elegir: el borrador espera en la Bandeja.
+        #expect(outcome(caseA: true, bridge: false, optIn: .waitingInInbox) == .waitingInInbox)
+        #expect(outcome(caseA: true, bridge: false, optIn: .declined) == .shareAsGroupExpense(amount: 50))
         #expect(outcome(caseA: true, bridge: false, optIn: nil) == .none)
         // En una edición no se sabe si queda la transacción real de un «Sí» anterior.
-        #expect(outcome(caseA: true, bridge: false, creation: false, optIn: false) == .none)
+        #expect(outcome(caseA: true, bridge: false, creation: false, optIn: .declined) == .none)
     }
 
     @Test func paidBySomeoneElse_isYourShare() {
@@ -242,8 +246,14 @@ struct UXAudit22Lote12y13WiringTests {
         // Si la persona cerró el formulario mientras se guardaba, su `onDismiss` ya pasó: la hoja se abre en el acto.
         let receive = try #require(tab.components(separatedBy: "private func receiveCreatedGroup(_ group: SplitGroup) {").dropFirst().first)
         let receiveBody = receive.components(separatedBy: "\n    }").first ?? ""
-        #expect(receiveBody.contains("if viewModel.showCreateGroup {"))
-        #expect(receiveBody.contains("groupReadyToInvite = group"))
+        // Desde L13-8 (2026-10-21) la decisión entre la hoja de invitar y el gasto que esperaba al grupo vive en UN sitio,
+        // `presentCreatedGroupInviteIfPending`: el formulario apunta el grupo y, si ya se cerró, se decide en el acto.
+        #expect(receiveBody.contains("groupAwaitingInviteSheet = group"))
+        #expect(receiveBody.contains("if !viewModel.showCreateGroup {"))
+        #expect(receiveBody.contains("presentCreatedGroupInviteIfPending()"))
+        let present = try #require(tab.components(separatedBy: "private func presentCreatedGroupInviteIfPending() {").dropFirst().first)
+        let presentBody = present.components(separatedBy: "\n    }").first ?? ""
+        #expect(presentBody.contains("groupReadyToInvite = created"))
         let formSheet = try #require(tab.components(separatedBy: ".sheet(isPresented: $viewModel.showCreateGroup, onDismiss: {").dropFirst().first)
         let onDismissBody = formSheet.components(separatedBy: "}) {").first ?? ""
         #expect(onDismissBody.contains("presentCreatedGroupInviteIfPending()"))
@@ -251,13 +261,12 @@ struct UXAudit22Lote12y13WiringTests {
         #expect(tab.contains("GroupCreatedInviteSheet(group: group"))
     }
 
-    /// El aviso de notificaciones (salta con el primer grupo) espera a la hoja «está listo».
-    @Test func notificationPrompt_waitsForTheInviteSheet() throws {
+    /// L12-8 (lote decidido 2.2 · 14) SUSTITUYE el contrato de L12-10 sobre el aviso de notificaciones: ya no hay alerta
+    /// suelta que espere a la hoja «está listo», porque el permiso se pide DENTRO de ella. Lo fija
+    /// `UXAudit22Decidido14WiringTests.notificationsPermission_livesInsideTheScreensNotInALooseAlert`.
+    @Test func notificationPrompt_isNoLongerALooseAlertOnTheList() throws {
         let tab = try Self.source("Yala/App/Views/Groups/GroupsContainerView.swift")
-        let fn = try #require(tab.components(separatedBy: "private func maybeShowGroupsNotificationPrompt() {").dropFirst().first)
-        let guardBlock = fn.components(separatedBy: "else { return }").first ?? ""
-        #expect(guardBlock.contains("groupAwaitingInviteSheet == nil"))
-        #expect(guardBlock.contains("groupReadyToInvite == nil"))
+        #expect(!tab.contains("maybeShowGroupsNotificationPrompt"), "vuelve la alerta suelta de avisos en la lista")
     }
 
     /// L13-1: «Saldar» solo en las deudas tuyas.
@@ -292,7 +301,8 @@ struct UXAudit22Lote12y13WiringTests {
     @Test func groupsEmptyStates_useTheStepsCard() throws {
         let tab = try Self.source("Yala/App/Views/Groups/GroupsContainerView.swift")
         #expect(!tab.contains("YalaEmptyState."))
-        #expect(tab.components(separatedBy: "GroupsEmptyStepsCard(").count - 1 == 5)
+        // Los cinco de L12-2 más «Tu grupo está en camino» (lote decidido 2.2 · 14, L12-19), que usa la misma tarjeta.
+        #expect(tab.components(separatedBy: "GroupsEmptyStepsCard(").count - 1 == 6)
     }
 
     /// L12-13: el aviso del «acceso por enlace» que no se puede apagar ya no sale en Miembros.

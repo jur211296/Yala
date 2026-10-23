@@ -142,11 +142,24 @@ final class SceneNavigation: Identifiable {
         selectMainTab(.groups)
     }
 
+    /// L13-8 · «Crear grupo» de la hoja «Para dividir un gasto, primero crea un grupo»: el formulario de grupo en la
+    /// pestaña y, al crearlo, el gasto.
+    func navigateToGroupsAndCreateGroupForExpense() {
+        pendingExpenseAfterNewGroup = true
+        pendingNewGroupForm = true
+        selectMainTab(.groups)
+    }
+
     // MARK: - Destinos pendientes
 
     /// Pending group ID for deep link navigation to specific group.
     /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?
+
+    /// Zona del grupo cuyos AJUSTES debe abrir esta ventana: el botón de cada grupo que «necesita tu decisión» al
+    /// salir de varios grupos (auditoría UX 2.2 · L19-13). Lo consume `GroupsContainerView` (abre el detalle) y el
+    /// detalle de ese grupo (abre sus ajustes).
+    var pendingGroupSettingsZoneID: String?
 
     /// Presupuesto que esta ventana debe abrir al llegar a Presupuestos: el de la alerta tocada (UX 2.2 · L9-5). Lo pone
     /// `ContentView.handleMainTabIntent` al drenar `.navigate(.budgets)` y lo consume `BudgetsListView`.
@@ -169,11 +182,45 @@ final class SceneNavigation: Identifiable {
     /// elegible (espeja el patrón de `pendingGroupID`).
     var pendingNewGroupExpense: Bool = false
 
+    /// El grupo con el que debe abrirse ese composer (UX 2.2 · L12-18: «Apuntar un gasto» al entrar en un grupo). `nil` =
+    /// el primero elegible, como el FAB del Panel. Lo consume `GroupsContainerView` junto con `pendingNewGroupExpense`.
+    var pendingNewGroupExpenseGroupID: UUID?
+
+    /// L12-18 · lo que pidió «Ya estás en «X»» al cerrarse: apuntar un gasto en ese grupo o abrirlo. Lo deja la hoja de
+    /// invitación y lo aplica el `onDismiss` de su cover (`ContentView`), cuando el ancla ya está libre: pedir el
+    /// formulario de gasto con el cover aún bajando son dos presentaciones a la vez (review adversarial del 2026-10-21).
+    var pendingInviteFollowUp: InviteFollowUp?
+
+    enum InviteFollowUp: Equatable {
+        case addExpense(groupID: UUID)
+        case viewGroup(groupID: UUID)
+    }
+
     /// G3 · último paso de la rama organizador del Welcome: abrir el FORMULARIO de grupo nuevo al aterrizar
     /// en el tab. Espeja `pendingNewGroupExpense` —mismo molde, mismo consumidor— pero es su hermano y no
     /// el mismo flag: aquel exige un grupo elegible para consumirse y este existe precisamente porque
     /// todavía no hay ninguno. Lo consume `GroupsContainerView` al montar.
     var pendingNewGroupForm: Bool = false
+
+    /// UX 2.2 · L12-11 (decisión B de Jürgen): la persona tocó «Crear grupo» y antes hubo que mandarla a la cuenta o al
+    /// consentimiento. Lo arma `GroupsContainerView.requestCreateGroup` al ceder el anchor y lo consume la cadena de
+    /// `GroupsBackendInviteModifier` al terminar, que vuelve a pedir el formulario; cancelar cualquier paso lo retira.
+    /// Sin esto la cadena terminaba en la pestaña y la persona creía que algo había fallado.
+    var pendingCreateGroupAfterIdentity: Bool = false
+
+    /// UX 2.2 · L13-8 (decisión B de Jürgen): «Grupo» del botón + sin ningún grupo pidió crear uno PARA apuntar un gasto.
+    /// Al crearlo, la pestaña abre el gasto con el aviso «Ahora apunta el gasto»; cancelar el formulario lo retira, para
+    /// que el gasto no salte horas después. Distinto de `pendingNewGroupExpense`, que espera a un grupo que ya existe.
+    var pendingExpenseAfterNewGroup: Bool = false
+
+    /// UX 2.2 · L12-12: el grupo (su id) que acaba de crear el formulario de la rama «Crear mi primer grupo» de la
+    /// bienvenida, para que la pestaña proponga invitar al aterrizar (L12-10), como tras crear desde ella misma.
+    var pendingCreatedGroupInviteID: String?
+
+    /// L12-12 · el formulario de la rama de bienvenida está encima de todo. Mientras lo esté, la pestaña (que ya se montó
+    /// debajo al escribirse el alta) no presenta nada propio: ni la hoja de invitar ni el aviso de notificaciones, que
+    /// chocarían con el cover y entre sí. Lo pone y lo quita `ContentView`.
+    var isWelcomeGroupFormOpen: Bool = false
 
     /// ⌘K y ⌘, (iPad con teclado): lo que el Panel debe abrir al estar delante. Lo consume `PanelView`, que es quien
     /// tiene Yala IA y Ajustes en una hoja propia; `RootCommandPerformer` lo pone junto con la selección del Panel.

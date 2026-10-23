@@ -34,6 +34,7 @@ extension XCUIApplication {
         seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
+        inboxAlertSiri: Bool = false,
         trialOffer: Bool = false,
         trialOfferArmed: Bool = false,
         forceUpdate: Bool = false,
@@ -46,6 +47,9 @@ extension XCUIApplication {
         groupsConsent: Bool = false,
         groupsEducativo: Bool = false,
         inviteOnboarding: Bool = false,
+        inviteBranded: Bool = false,
+        // L19-2: la pregunta de cuentas pendientes sale al abrir Miembros (aceptar de verdad pide el servidor).
+        openingBalancePrompt: Bool = false,
         icloudIdentity: Bool = false,
         joinPhase: String? = nil,
         joinSoftTimeout: String? = nil,
@@ -62,8 +66,10 @@ extension XCUIApplication {
         // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
         // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
         bornCloudStorage: Bool = false,
+        // `-uitest-adopted-cloud-storage`: la nube, pero la cuenta llegó desde otro dispositivo (card i9qh).
+        adoptedCloudStorage: Bool = false,
         reversePriorICloud: String? = nil,
-        reversePriorICloudWipeFails: Bool = false,
+        reversePriorICloudWipe: String? = nil,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
@@ -81,11 +87,24 @@ extension XCUIApplication {
         // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
         // esa lectura del teléfono fingida e iCloud «sin cuenta» (ticket `private-gate-device-notice-has-no-forward-exit`).
         privateGateDeviceReading: String? = nil,
+        // `-uitest-private-gate-probe-stalled`: la revisión de iCloud de esa puerta contesta «se quedó sin avanzar» (card
+        // blqa). `-uitest-invite-opening`: el arranque enciende «Abriendo tu invitación…» (card z81w). NOMBRADOS por lo
+        // mismo que sus vecinos: un typo dejaría la pantalla normal y el rojo culparía a la vista.
+        privateGateProbeStalled: Bool = false,
+        inviteOpening: Bool = false,
         scheduledSeedDay: Int? = nil,
         // `-uitest-last-seen-version <versión|none|keep>`: la última versión cuyas Novedades «vio» el dispositivo
         // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
         // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
         lastSeenAppVersion: String? = nil,
+        // `-uitest-pending-trial-offer`: la oferta de prueba queda pendiente, como la deja la 2.0.4 tras «Restaurar»
+        // (`UITestHooks.pendingTrialOffer`). NOMBRADO por lo mismo que sus vecinos.
+        pendingTrialOffer: Bool = false,
+        // `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de «iCloud
+        // no está disponible» (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). El simulador nunca tiene token de
+        // iCloud, así que sin el seam ese chequeo saldría en todo arranque sin seed. NOMBRADO por lo mismo que sus vecinos: un
+        // typo dejaría el caso positivo sin aviso y los controles en verde sin haber medido nada.
+        coldStartICloudCheck: Bool = false,
         // Idioma y región de la corrida. El default es el de toda la suite (ver abajo); solo lo cambia un test que
         // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
         // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
@@ -127,6 +146,7 @@ extension XCUIApplication {
         // pondría verde el control y rojo el caso, culpando al Welcome.
         if lateNoticeKeptGroups { args.append("-uitest-late-notice-kept-groups") }
         if welcomeAfterAdoptExit { args.append("-uitest-welcome-after-adopt-exit") }
+        if coldStartICloudCheck { args.append("-uitest-cold-start-icloud-check") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)
@@ -152,6 +172,7 @@ extension XCUIApplication {
         }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
+        if inboxAlertSiri { args.append("-uitest-inbox-alert-siri") }
         if trialOffer { args.append("-uitest-trial-offer") }
         if fakePricesTrialUsed {
             args.append(contentsOf: ["-uitest-fake-prices", "trial-used"])
@@ -183,6 +204,9 @@ extension XCUIApplication {
         // de Grupos, que es justo por lo que ese early-return existe.
         if groupsEducativo { args.append("-uitest-groups-educativo") }
         if inviteOnboarding { args.append("-uitest-invite-onboarding") }
+        // La marca de un enlace real en esa hoja (L12-17/18). NOMBRADO por lo mismo que sus vecinos.
+        if inviteBranded { args.append("-uitest-invite-branded") }
+        if openingBalancePrompt { args.append("-uitest-opening-balance-prompt") }
         // Siembra la identidad iCloud de Grupos. Va NOMBRADO, no por `extraArguments:`, por la
         // misma razón que sus vecinos y con una de propina: este seam decide QUIÉN ERES, así que un
         // typo que lo dejara fuera no da rojo — da un VERDE que prueba el camino del flag creyendo
@@ -246,11 +270,16 @@ extension XCUIApplication {
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
         if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
+        if adoptedCloudStorage { args.append("-uitest-adopted-cloud-storage") }
         if let reversePriorICloud {
             args.append("-uitest-reverse-prior-icloud")
             args.append(reversePriorICloud)
         }
-        if reversePriorICloudWipeFails { args.append("-uitest-reverse-prior-icloud-wipe-fails") }
+        // El borrado de «Empezar sin ellos» fingido: `network`, `stalled` o `progress` (`UITestHooks.fakeReverseForeignWipe`).
+        if let reversePriorICloudWipe {
+            args.append("-uitest-reverse-prior-icloud-wipe")
+            args.append(reversePriorICloudWipe)
+        }
         // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
         // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
         // verdad, la comprobación no podría (sin sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la
@@ -259,6 +288,8 @@ extension XCUIApplication {
             args.append("-uitest-private-gate-device-reading")
             args.append(privateGateDeviceReading)
         }
+        if privateGateProbeStalled { args.append("-uitest-private-gate-probe-stalled") }
+        if inviteOpening { args.append("-uitest-invite-opening") }
         if let fakeMigrationIdentity {
             args.append("-uitest-fake-migration-identity")
             args.append(fakeMigrationIdentity)
@@ -290,6 +321,7 @@ extension XCUIApplication {
             args.append("-uitest-last-seen-version")
             args.append(lastSeenAppVersion)
         }
+        if pendingTrialOffer { args.append("-uitest-pending-trial-offer") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado
@@ -424,6 +456,19 @@ extension XCUIApplication {
             "La pantalla de éxito no se cerró tras tocar «Aceptar» — el sheet sigue tapando el Panel."
         )
         return self
+    }
+
+    // MARK: - Cerrar el formulario de registro
+
+    /// Cierra «Nuevo registro» con su X. Con algo escrito, la X pregunta «¿Descartar este registro?» (UX 2.2 · L2-4): se
+    /// confirma. Vacío, cierra sin preguntar y no hay nada que confirmar.
+    func closeNewTransactionDiscarding(timeout: TimeInterval = 5, file: StaticString = #filePath, line: UInt = #line) {
+        let close = buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: timeout),
+                      "Falta la X de Nuevo registro (new_transaction_close).", file: file, line: line)
+        close.tap()
+        let discard = alerts.buttons["new_transaction_discard_confirm"].firstMatch
+        if discard.waitForExistence(timeout: 2) { discard.tap() }
     }
 
     // MARK: - Selectores (cuenta, subcategoría, etiquetas)

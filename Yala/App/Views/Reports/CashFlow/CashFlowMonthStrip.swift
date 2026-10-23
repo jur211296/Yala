@@ -12,7 +12,6 @@ struct CashFlowMonthStrip: View {
     let months: [CashFlowMonth]
     @Binding var selectedMonthKey: String
     let currencyCode: String
-    let showAccumulatedBalance: Bool
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -27,8 +26,7 @@ struct CashFlowMonthStrip: View {
                             CashFlowMonthCapsule(
                                 month: month,
                                 isSelected: month.monthKey == selectedMonthKey,
-                                currencyCode: currencyCode,
-                                showAccumulatedBalance: showAccumulatedBalance
+                                currencyCode: currencyCode
                             )
                         }
                         .buttonStyle(.plain)

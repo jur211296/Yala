@@ -206,6 +206,7 @@ struct GroupStatsView: View {
 
             summaryCard(
                 title: L10n.Groups.Stats.myPortion,
+                hint: L10n.Groups.Stats.myPortionHint,
                 amounts: viewModel.myPortionsByCurrency.map { (currencyCode: $0.currencyCode, total: $0.amount) },
                 color: theme.accent
             )
@@ -213,11 +214,21 @@ struct GroupStatsView: View {
     }
 
     /// Tarjeta de resumen: un monto por moneda apilado (todas las monedas del período).
-    private func summaryCard(title: String, amounts: [(currencyCode: String, total: Double)], color: Color) -> some View {
+    /// - Parameter hint: UX 2.2 · L13-13 — bajo «Mi parte», «lo que te tocaba»: no es lo que pagaste.
+    private func summaryCard(
+        title: String, hint: String? = nil, amounts: [(currencyCode: String, total: Double)], color: Color
+    ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(title)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                Text(title)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                if let hint {
+                    Text(hint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.tertiary)
+                }
+            }
 
             if amounts.isEmpty {
                 Text(appPreferences.currency(0, currencyCode: viewModel.activeCurrencyCode))

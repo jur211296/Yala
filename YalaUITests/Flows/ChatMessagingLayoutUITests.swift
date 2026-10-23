@@ -191,4 +191,27 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         XCTAssertFalse(none.staticTexts["chat_question_counter"].exists, "La línea del contador repetiría el aviso.")
         XCTAssertFalse(none.buttons["chat_topics"].isEnabled, "Con el tope, Temas tampoco puede enviar nada.")
     }
+
+    /// Ticket `chat-microphone-sends-audio-with-the-chat-consent`, decisión A: con el permiso del chat pero sin el de voz
+    /// y foto, el micrófono pide ese permiso (el mismo aviso que Voz y Foto del Panel) y no empieza a grabar. «Cancelar»
+    /// lo deja todo como estaba. El seam del chat concede solo el permiso del chat.
+    func test_mic_withoutVoiceAndPhotoConsent_asksForItFirst() {
+        let app = openChat()
+        let mic = app.buttons["chat_mic"]
+        XCTAssertTrue(mic.waitForExistence(timeout: 10), "Sin texto, la píldora lleva el micro.")
+        mic.tap()
+
+        let alert = app.alerts.matching(NSPredicate(format: "label IN %@", ["Yala lo apunta por ti", "Yala records it for you"])).firstMatch
+        let asked = alert.waitForExistence(timeout: 5)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "chat-microfono-permiso"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(asked, "El micrófono del chat empezó sin pedir el permiso de voz y foto.")
+
+        alert.buttons.matching(NSPredicate(format: "label IN %@", ["Cancelar", "Cancel"])).firstMatch.tap()
+        XCTAssertTrue(alert.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["chat_mic"].waitForExistence(timeout: 5),
+                      "Tras cancelar, el chat sigue con el micro: no empezó a grabar.")
+    }
 }

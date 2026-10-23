@@ -2,12 +2,24 @@
 //  GroupMemberRow.swift
 //  Yala
 //
-//  Fila de miembro de grupo — avatar, nombre, rol, acciones de admin.
+//  Fila de miembro de grupo — avatar, nombre, rol, saldo contigo y acciones de admin.
+//
+//  Desde el lote 19 decidido (auditoría UX 2.2) vive en la lista agrupada de Miembros: el rol se llama
+//  «Administrador» en todas partes (L19-3), el menú ofrece «Hacer administrador» o «Quitar como administrador»
+//  cuando el servidor puede cambiarlo, y a la derecha va lo que esa persona y tú se deben (lienzo «Una sola Yala»:
+//  en el color de la app, turquesa si te debe).
 //
 
 import SwiftUI
 
 struct GroupMemberRow: View {
+
+    /// Lo que esta persona y quien mira se deben, ya formateado. `nil` si nada.
+    struct Relation: Equatable {
+        enum Direction: Equatable { case owesYou, youOwe }
+        let direction: Direction
+        let amountText: String
+    }
 
     let member: SplitMember
     let groupColorHex: String
@@ -21,10 +33,10 @@ struct GroupMemberRow: View {
     /// leyendo el flag, su PROPIA fila mostraba «quitar» y «cambiar rol» — y el botón funciona:
     /// llama al RPC. Se podía echar de su propio grupo.
     let isSelf: Bool
-    /// `false` en un grupo del canal backend: el servidor no cambia roles y el botón fallaría siempre
-    /// (`GroupService.offersRoleChange`).
-    var offersRoleChange: Bool = true
-    let onChangeRole: () -> Void
+    /// Qué cambio de rol se ofrece (`GroupService.roleChangeOffer`), o `nil` si ninguno.
+    var roleChangeOffer: GroupService.RoleChangeOffer? = nil
+    var relation: Relation? = nil
+    var onChangeRole: () -> Void = {}
     let onRemove: () -> Void
     var onApprove: (() -> Void)? = nil
     var onReject: (() -> Void)? = nil
@@ -57,7 +69,11 @@ struct GroupMemberRow: View {
                 statusBadge
             }
 
-            Spacer()
+            Spacer(minLength: DS.Spacing.sm)
+
+            if let relation {
+                relationView(relation)
+            }
 
             // Admin actions
             if isCurrentUserAdmin && !isSelf && !member.isGroupOwner {
@@ -89,18 +105,23 @@ struct GroupMemberRow: View {
                     }
                 } else if member.isActive {
                     Menu {
-                        if offersRoleChange {
+                        if let roleChangeOffer {
                             Button {
                                 onChangeRole()
                             } label: {
-                                Label(L10n.Groups.Member.changeRole, systemImage: "arrow.left.arrow.right")
+                                switch roleChangeOffer {
+                                case .makeAdmin:
+                                    Label(L10n.UXL19.makeAdmin, systemImage: "person.badge.shield.checkmark")
+                                case .removeAdmin:
+                                    Label(L10n.UXL19.removeAdmin, systemImage: "person.badge.minus")
+                                }
                             }
                         }
 
                         Button(role: .destructive) {
                             onRemove()
                         } label: {
-                            Label(L10n.Groups.Member.remove, systemImage: "person.badge.minus")
+                            Label(L10n.UXL19.removeMember, systemImage: "person.crop.circle.badge.xmark")
                         }
                     } label: {
                         Image(systemName: "ellipsis")
@@ -109,6 +130,7 @@ struct GroupMemberRow: View {
                             .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                             .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel(L10n.Groups.Member.actions)
                     // El id lleva el nombre dentro para poder afirmar de QUIÉN es el control. Es lo
                     // que permite el test de la auto-expulsión: que exista el de otro miembro y NO
@@ -117,8 +139,7 @@ struct GroupMemberRow: View {
                 }
             }
         }
-        .padding(.horizontal, DS.FormRow.paddingH)
-        .padding(.vertical, DS.FormRow.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
         // Pending mantiene opacity 1.0 para que los botones inline aprobar/rechazar
         // del admin sean visibles. Solo estados terminales se dimean.
         .opacity(member.isVisible ? 1 : 0.72)
@@ -136,10 +157,11 @@ struct GroupMemberRow: View {
                 .font(DS.Typography.label)
                 .foregroundStyle(Color(hex: groupColorHex))
         }
+        .accessibilityHidden(true)
     }
 
     private var adminBadge: some View {
-        Text(L10n.Groups.Member.admin)
+        Text(L10n.UXL19.roleAdmin)
             .font(DS.Typography.captionSmall)
             .foregroundStyle(.thAccent)
             .padding(.horizontal, DS.Spacing.sm)
@@ -147,6 +169,23 @@ struct GroupMemberRow: View {
             .background(
                 Capsule().fill(.thAccent.opacity(0.12))
             )
+    }
+
+    /// «Te debe / S/ 80.00» con la cifra en turquesa (lo que entra), o «Le debes / S/ 40.00» en el color del texto:
+    /// la regla de color de la app (solo lo que entra lleva color).
+    private func relationView(_ relation: Relation) -> some View {
+        VStack(alignment: .trailing, spacing: DS.Spacing.none) {
+            Text(relation.direction == .owesYou ? L10n.UXL19.owesYouShort : L10n.UXL19.youOweShort)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
+            Text(relation.amountText)
+                .font(DS.Typography.amountSmall)
+                .foregroundStyle(Color.amountTint(isIncome: relation.direction == .owesYou))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_member_balance_\(member.displayName)")
     }
 
     @ViewBuilder

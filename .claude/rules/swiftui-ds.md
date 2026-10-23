@@ -41,6 +41,11 @@ paths:
   valor de antes. Con un `@Observable` (Registros, `RecordsViewModel`) el mismo molde funciona. ⇒ **para presentar UN
   objeto, `.sheet(item:)`**; si hace falta encadenar otra presentación al cerrar, guarda el objeto en un estado aparte
   (`recordAwaitingEditor`) antes de vaciar el `item`. Pin: `UXAudit22Lote8CWiringTests`.
+- **Un `.task` (o un `onAppear`) colgado de un `Group` cuyo contenido es un `if` falso no corre nunca (medido el
+  2026-10-21, iOS 27.0, lote decidido 14).** Los modificadores de un `Group` se reparten entre sus hijos; sin hijos no
+  hay vista que aparezca. La tarjeta de avisos de grupo medía su estado en ese `.task` y no salía jamás. ⇒ **lo que mide
+  antes de decidir si se pinta cuelga de un marcador propio que solo existe hasta tener respuesta**
+  (`Color.clear.frame(width: 1, height: 1).task { … }`, molde de `GroupNotificationsOptInCard`).
 - **El `onAppear` de un `ViewModifier` puede correr ANTES que el de la vista que lo lleva (medido el 2026-10-17, iOS 27.0,
   lote 9).** `BudgetAlertOpening` (abrir el presupuesto de una alerta) buscaba en `viewModel.allBudgets` desde su
   `onAppear`, y el `onAppear` de `BudgetsListView` —el que hace `setContext`— aún no había corrido: lista vacía, el
@@ -98,6 +103,14 @@ paths:
   siguiente bump: `wipeAllUserData` no bumpea `dataVersion`, así que quien borra re-mide
   (`settleSignalsAfterDeliberateWipe`).
 
+- **Una decisión del arranque que lea el eje de sesión NO puede tomarse en el splash (medido el 2026-10-19).**
+  `checkInitialSyncState` corre en paralelo a `AppBootstrapper.bootstrap`, y el eje (`PrivateSessionMark`) lo escribe
+  el backfill del bootstrap: decidido en el splash, el aviso en frío de «iCloud no está disponible» no salía en ningún
+  XCUITest con `-uitest-reset` (y en un iPhone, en el primer arranque tras actualizar). ⇒ espera con
+  `waitForBootstrap()` y RE-MIDE lo que leyó el splash, al final del `.task` del arranque para no retrasar el splash
+  (`requestColdStartICloudNoticeAfterBootstrap`). Y su estado va en un tipo del PROCESO, no en `@State`: con varias
+  ventanas la líder se remonta (ver «Varias ventanas»).
+
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
 - **`YalaFormatter` no auto-refresca prefs** — lee `UserDefaults` directo. Vista que lo use con `decimalPlaces` o `currencyDisplayFormat` debe inyectar `@Environment(AppPreferences.self)` y leer `let _ = appPreferences.X` en body para registrar dependencia.
@@ -143,6 +156,14 @@ paths:
 - **Y al revés: lo que el manejador de un drenaje ENCIENDE tiene que bloquear en esa misma vuelta, no en la del observador (medido el 2026-10-13, CI en iOS 26.5).** `drainNext` sube la `revision`; si el bloqueo que el manejador acaba de encender solo llega a la matriz por un `onChange` de `ReadinessGateObservers`, en 26.5 el `onChange(of: revision)` corre ANTES y drena el siguiente con el consumidor aún listo: la oferta salía encima del aviso de vaciado o del de bandeja en 8 de ~60 arranques, y una de las dos presentaciones se perdía. ⇒ **`drainContentViewIntents` termina con `defer { updateContentViewReadiness() }`**; un consumidor nuevo cuyo manejador encienda un bloqueo publicado por otro hace lo mismo. En iOS 27.0 el orden era el otro y no se reproducía ni con la máquina cargada: un rojo de cola que solo sale en el CI se mide ALLÍ, con `NSLog` y la consola de la app que trae el `.xcresult` (`xcresulttool export diagnostics`). Ticket: `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`.
 
 - **El botón destacado de un `.alert` (`.keyboardShortcut(.defaultAction)`) toma el RELLENO del `AccentColor` del catálogo y el TEXTO del tinte de SwiftUI de quien presenta la alerta; si los dos coinciden, el texto sale NEGRO (medido en píxeles el 2026-10-17, iOS 27.0, claro y oscuro).** No elige por contraste: sobre `#3D36B3` también salía negro. Ignora `.tint` y `foregroundStyle` en el propio botón (y `role: .confirm` no cambia nada), y el mismo tinte colorea el texto de los demás botones de la alerta. ⇒ para cambiar ese texto, presenta la alerta desde un ancla con su propio tinte (`content.background { Color.clear.alert(…).tint(…) }`, sin teñir la pantalla de debajo) y recuerda que ese tinte pinta también «Cancelar». Molde: `AIConsentAlertModifier` + `Color.alertActionTint` (blanco en oscuro; en claro, el relleno, así que sale negro: blanco dejaría los otros botones ilegibles sobre el cristal claro). El catálogo y el token están atados por `AlertActionIndigoParityTests`. Ticket: pulido del 2026-10-17 («Activar» con texto oscuro).
+
+- **El molde del ancla propia (`content.background { Color.clear.alert(…).tint(…) }`) NO vale para los avisos de
+  `ShellDataAlertsModifier` (medido el 2026-10-22, iOS 27.0, lote decidido 2.2 · 15).** Para que «Seguir esperando» de
+  «Datos no disponibles» saliera relleno y legible se colgó el aviso de un ancla propia con `alertActionTint`, en
+  `.background`, en `.overlay` y como hermano 1×1 en un `ZStack`: con las tres el aviso **dejó de presentarse** y
+  `RemoteWipeNoticeRoutingUITests` cayó 4 de 5 (también el de «sin iCloud», que no se había tocado); con el ancla de
+  siempre, 5 de 5 verde. Solo con `.keyboardShortcut(.defaultAction)` el relleno sale, pero con el texto del mismo índigo
+  que el fondo. ⇒ en esos avisos el relleno legible no cabe en un `.alert`; si hace falta, es otra presentación.
 
 - **Un `.alert` con tres botones no admite cualquier orden (medido el 2026-10-19, iOS 27.0, lote decidido 2.2 · 04).** El
   botón con `role: .cancel` va SIEMPRE al final, lo declares donde lo declares; y si ninguno lleva `.cancel`, SwiftUI añade

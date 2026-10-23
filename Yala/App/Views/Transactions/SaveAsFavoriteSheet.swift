@@ -21,6 +21,8 @@ struct SaveAsFavoriteSheet: View {
     let initialAmount: Double
     let initialNote: String
     let initialAccount: Account?
+    /// El destino de una transferencia (UX 2.2 · L2-14). `initialAccount` es el origen.
+    let initialDestination: Account?
     let initialSubcategory: Subcategory?
     let initialTags: [Tag]
     let needOverride: SubcategoryNeed?
@@ -32,6 +34,8 @@ struct SaveAsFavoriteSheet: View {
     // Editable state
     @State private var name: String = ""
     @State private var selectedAccount: Account?
+    @State private var selectedDestination: Account?
+    @State private var showDestinationSelector = false
     @State private var selectedSubcategory: Subcategory?
     @State private var selectedTags: Set<PersistentIdentifier> = []
     @State private var amount: Double = 0
@@ -51,6 +55,7 @@ struct SaveAsFavoriteSheet: View {
         amount: Double,
         note: String,
         account: Account?,
+        destinationAccount: Account? = nil,
         subcategory: Subcategory?,
         tags: [Tag],
         needOverride: SubcategoryNeed?,
@@ -61,6 +66,7 @@ struct SaveAsFavoriteSheet: View {
         self.initialAmount = amount
         self.initialNote = note
         self.initialAccount = account
+        self.initialDestination = destinationAccount
         self.initialSubcategory = subcategory
         self.initialTags = tags
         self.needOverride = needOverride
@@ -69,6 +75,7 @@ struct SaveAsFavoriteSheet: View {
 
         self._name = State(initialValue: note)
         self._selectedAccount = State(initialValue: account)
+        self._selectedDestination = State(initialValue: destinationAccount)
         self._selectedSubcategory = State(initialValue: subcategory)
         self._selectedTags = State(initialValue: Set(tags.map { $0.persistentModelID }))
         self._amount = State(initialValue: amount)
@@ -87,8 +94,8 @@ struct SaveAsFavoriteSheet: View {
                     // Fields Section
                     fieldsSection
 
-                    // Info text
-                    Text(L10n.Favorites.saveDescription)
+                    // Info text. La de transferencia habla de transferencias (L2-14).
+                    Text(transactionType == .transfer ? L10n.UXL2.transferFavoriteHelp : L10n.Favorites.saveDescription)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -119,7 +126,18 @@ struct SaveAsFavoriteSheet: View {
                 }
             }
             .sheet(isPresented: $showAccountSelector) {
-                AccountSelectorSheet(selectedAccount: $selectedAccount)
+                AccountSelectorSheet(
+                    selectedAccount: $selectedAccount,
+                    title: isTransfer ? L10n.Transaction.sourceAccount : nil,
+                    excludeAccount: isTransfer ? selectedDestination : nil
+                )
+            }
+            .sheet(isPresented: $showDestinationSelector) {
+                AccountSelectorSheet(
+                    selectedAccount: $selectedDestination,
+                    title: L10n.Transaction.destinationAccount,
+                    excludeAccount: selectedAccount
+                )
             }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
@@ -160,8 +178,49 @@ struct SaveAsFavoriteSheet: View {
 
     // MARK: - Fields Section
 
+    private var isTransfer: Bool { transactionType == .transfer }
+
     private var fieldsSection: some View {
         SectionBox(title: L10n.Common.details) {
+            if isTransfer {
+                transferFields
+            } else {
+                regularFields
+            }
+        }
+    }
+
+    /// Un favorito de transferencia guarda origen, destino y monto (L2-14): sin categoría ni etiquetas, que una
+    /// transferencia no lleva.
+    private var transferFields: some View {
+        VStack(spacing: DS.Spacing.none) {
+            fieldRow(
+                icon: "arrow.up.circle",
+                label: L10n.Transaction.sourceAccount,
+                value: selectedAccount?.name,
+                color: selectedAccount.map { Color(hex: $0.colorHex) },
+                onTap: { showAccountSelector = true },
+                onClear: { selectedAccount = nil }
+            )
+            SubsectionDivider()
+            fieldRow(
+                icon: "arrow.down.circle",
+                label: L10n.Transaction.destinationAccount,
+                value: selectedDestination?.name,
+                color: selectedDestination.map { Color(hex: $0.colorHex) },
+                onTap: { showDestinationSelector = true },
+                onClear: { selectedDestination = nil }
+            )
+            SubsectionDivider()
+            amountRow
+            if includeNote || !note.isEmpty {
+                SubsectionDivider()
+                noteRow
+            }
+        }
+    }
+
+    private var regularFields: some View {
             VStack(spacing: DS.Spacing.none) {
                 // Account
                 fieldRow(
@@ -200,7 +259,6 @@ struct SaveAsFavoriteSheet: View {
                     noteRow
                 }
             }
-        }
     }
 
     private func fieldRow(
@@ -442,8 +500,9 @@ struct SaveAsFavoriteSheet: View {
                 amount: includeAmount && amount > 0 ? amount : nil,
                 note: includeNote && !note.isEmpty ? note : nil,
                 account: selectedAccount,
-                subcategory: selectedSubcategory,
-                selectedTagIDs: selectedTags,
+                destinationAccount: isTransfer ? selectedDestination : nil,
+                subcategory: isTransfer ? nil : selectedSubcategory,
+                selectedTagIDs: isTransfer ? [] : selectedTags,
                 needOverride: needOverride,
                 currencyCode: currencyCode
             )

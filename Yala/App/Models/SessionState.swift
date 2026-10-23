@@ -17,9 +17,29 @@ struct PendingInboxNotification: Equatable {
     var scheduledPayments: Int = 0
     var subscriptions: Int = 0
     var automations: Int = 0  // applePay + automation
+    /// Dictados de «Anotar con Siri», que pasan fuera de la app: van en su propia línea del aviso, «Borradores de Siri:
+    /// N» (auditoría UX 2.2, lote 15, L15-7, opción C). La voz y la foto de DENTRO de la app no cuentan: ya los estás
+    /// viendo. No deciden el tipo del aviso (`notificationType`): solos, el aviso es el genérico de la Bandeja.
+    var siriDrafts: Int = 0
 
-    var total: Int { scheduledPayments + subscriptions + automations }
+    var total: Int { scheduledPayments + subscriptions + automations + siriDrafts }
     var isEmpty: Bool { total == 0 }
+
+    /// Suma un borrador nuevo según de dónde vino. Los que no se avisan (voz, foto, grupos…) no cuentan.
+    mutating func count(sourceTypeRaw: String) {
+        switch sourceTypeRaw {
+        case DraftSourceType.scheduledPayment.rawValue:
+            scheduledPayments += 1
+        case DraftSourceType.subscription.rawValue:
+            subscriptions += 1
+        case DraftSourceType.applePay.rawValue, DraftSourceType.automation.rawValue:
+            automations += 1
+        case DraftSourceType.siri.rawValue:
+            siriDrafts += 1
+        default:
+            break
+        }
+    }
 
     /// Builds breakdown message for mixed type
     /// Example: "2 pagos, 1 suscripción y 3 registros automáticos"

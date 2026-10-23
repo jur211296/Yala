@@ -13,6 +13,7 @@
 
 import Foundation
 import SwiftData
+import UserNotifications
 
 // MARK: - RemoteChangeSet
 
@@ -24,11 +25,13 @@ struct RemoteChangeSet {
     var newMembers: [(id: UUID, groupID: UUID)] = []
     /// members nuevos con status `pendingApproval`. Solo se appendea cuando current user es admin del grupo.
     var newPendingMembers: [(id: UUID, groupID: UUID)] = []
+    /// L12-20 · grupos donde el admin acaba de aprobar a ESTA persona (su miembro pasó de pendiente a activo).
+    var selfApprovedGroups: [UUID] = []
 
     var isEmpty: Bool {
         newExpenses.isEmpty && modifiedExpenses.isEmpty
             && newSettlements.isEmpty && newMembers.isEmpty
-            && newPendingMembers.isEmpty
+            && newPendingMembers.isEmpty && selfApprovedGroups.isEmpty
     }
 }
 
@@ -87,6 +90,13 @@ final class GroupNotificationService {
         #endif
         guard let item, item.isActive else { return }
 
+        // L12-20 · «Ya estás en «X»». Va antes que el resto y sin el límite de 5 min: es un aviso por persona y grupo
+        // que llega una sola vez, y lo que la aprobación trae detrás (el re-pull entero del grupo) sí queda dentro del
+        // límite, porque este aviso estampa la hora del grupo — si no, la persona recibiría también «N gastos nuevos».
+        for groupID in Set(changes.selfApprovedGroups) {
+            notifySelfApproved(groupID: groupID)
+        }
+
         // Group RAW ids by group first (cheap, no fetch). We only pay for the
         // per-record fetches (participation filter) on groups that pass the
         // rate-limit — an initial history import would otherwise trigger N×2
@@ -127,6 +137,37 @@ final class GroupNotificationService {
                     )
                 }
             }
+        }
+    }
+
+    /// L12-20 · el aviso al ser aprobado. Sin nombre de grupo legible (la fila aún no bajó), el título genérico.
+    private func notifySelfApproved(groupID: UUID) {
+        guard let modelContext else { return }
+        let name: String?
+        do {
+            var descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })
+            descriptor.fetchLimit = 1
+            name = try modelContext.fetch(descriptor).first?.name
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error fetching approved group: \(error)")
+            #endif
+            name = nil
+        }
+        let title = name.map { L10n.UXD14.readyTitle($0) } ?? L10n.UXD14.readyTitleNoName
+        let deepLink = "groups/\(groupID.uuidString)"
+        lastNotifiedDates[groupID] = Date.now
+        persistTimestamp(for: groupID)
+        Task {
+            // El servidor ya avisó con su texto genérico; este es el rico que lo sustituye, no un segundo aviso.
+            let center = UNUserNotificationCenter.current()
+            let generic = await center.deliveredNotifications()
+                .filter { GroupApprovalNoticeLogic.isServerMembershipNotice($0.request.content.userInfo) }
+                .map(\.request.identifier)
+            if !generic.isEmpty { center.removeDeliveredNotifications(withIdentifiers: generic) }
+            await NotificationService.shared.sendNotification(
+                title: title, body: L10n.UXD14.approvedBody, deepLink: deepLink
+            )
         }
     }
 

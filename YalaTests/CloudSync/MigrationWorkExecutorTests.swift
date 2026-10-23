@@ -38,7 +38,18 @@ private final class FakeSession: CloudSyncSessionProviding {
     /// `true` con `token = nil` es el caso nuevo: la renovación no volvió, pero la sesión sigue guardada.
     var canRenewSessionOverride: Bool?
     var canRenewSession: Bool { canRenewSessionOverride ?? (token != nil) }
-    func attestToken() async throws -> String? { nil }
+    /// Tokens de App Attest que irá dando, en orden (el último se repite). Vacío = `nil`, el trato de siempre.
+    var attestTokens: [String] = []
+    /// Si no es `nil`, `attestToken()` lanza esto (el teléfono no consigue token).
+    var attestError: Error?
+    private(set) var attestCallCount = 0
+    func attestToken() async throws -> String? {
+        attestCallCount += 1
+        if let attestError { throw attestError }
+        guard let first = attestTokens.first else { return nil }
+        if attestTokens.count > 1 { attestTokens.removeFirst() }
+        return first
+    }
 }
 
 /// El SDK BORRA la sesión dentro de la renovación, antes de devolver `nil`: el testigo solo dice la verdad leído DESPUÉS
@@ -151,6 +162,12 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var onPushRequest: (() -> Void)?
     private(set) var pushCallCount = 0
     var pushStatus = 200
+    /// Statuses del push en orden, por delante de `pushStatus` (se consumen; vacía = `pushStatus`).
+    var pushStatusQueue: [Int] = []
+    /// Cuerpo de la respuesta del push cuando no es 200 (el envelope del gateway separa los dos 401).
+    var pushErrorBody = Data()
+    /// La cabecera `X-Yala-Attest-Session` de cada push, en orden (`nil` = sin cabecera).
+    private(set) var pushAttestHeaders: [String?] = []
     /// 401 aquí = sesión caducada del pull, que es la mitad que `reverseDrainOnce` y `verify` no podían separar
     /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
     var pullStatus = 200
@@ -204,8 +221,10 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
         }
         if path.contains("sync/push") {
             pushCallCount += 1
+            pushAttestHeaders.append(request.value(forHTTPHeaderField: "X-Yala-Attest-Session"))
             onPushRequest?()
-            if pushStatus != 200 { return (Data(), resp(pushStatus)) }
+            let status = pushStatusQueue.isEmpty ? pushStatus : pushStatusQueue.removeFirst()
+            if status != 200 { return (pushErrorBody, resp(status)) }
             var results: [[String: Any]] = []
             if let json = try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any],
                let deltas = json["deltas"] as? [[String: Any]] {
@@ -297,11 +316,12 @@ struct MigrationWorkExecutorTests {
         icloudMirrorReportedNotAuthenticated: (@MainActor () -> Bool)? = nil,
         icloudLastExportErrorAt: (@MainActor () -> Date?)? = nil,
         icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil,
-        snapshotPageSize: Int = 200
+        snapshotPageSize: Int = 200,
+        attest: @escaping () async -> String? = { nil }
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
-        let push = SyncPushClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
+        let push = SyncPushClient(baseURL: workerURL, tokenProvider: token, attestProvider: attest, urlSession: stub)
         let pull = SyncPullClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
         let merkle = SyncMerkleClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
         // El registro fila → identidad vive junto al store del test, y el motor lee el mismo: con el de producción, dos tests
@@ -2182,6 +2202,78 @@ struct MigrationWorkExecutorTests {
         #expect(!stub.pushedSyncIDs.isEmpty, "control: con la confirmación la página sube")
     }
 
+    // MARK: - App Attest de la migración (ticket `cloud-activation-stalls-without-uploading-until-relaunch`)
+
+    /// El executor con el proveedor de attest de PRODUCCIÓN (`CloudMigrationController.migrationAttestProvider`) sobre
+    /// `session`, y el lease ya confirmado: la página está lista para subir.
+    private func attestExecutor(
+        _ stub: RoutingStub, session: FakeSession
+    ) async throws -> (MigrationWorkExecutor, ModelContext, URL) {
+        let dir = freshDir()
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    leaseClock: MutableLeaseClock(),
+                                    attest: CloudMigrationController.migrationAttestProvider(session: session))
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        try SyncIdentityService.backfillIdentities(context: context)
+        #expect(await executor.confirmMigrationLease() == .held)
+        return (executor, context, dir)
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_required` de la subida hace olvidar el token que viajó, y el reintento lleva otro")
+    func snapshot401AttestRequired_discardsTheSentToken_andTheRetryCarriesANewOne() async throws {
+        var rejected: [String?] = []
+        AttestSessionProvider.rejectionSink = { rejected.append($0) }
+        defer { AttestSessionProvider.rejectionSink = AttestSessionProvider.defaultRejectionSink }
+        let stub = RoutingStub()
+        stub.pushStatusQueue = [401]
+        stub.pushErrorBody = Data(#"{"error":{"type":"yala_attest_required","message":"x"}}"#.utf8)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestTokens = ["tokA", "tokB"]
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        let first = await executor.uploadSnapshot(cursor: nil)
+        #expect(first != .completed)
+        #expect(stub.pushedSyncIDs.isEmpty, "el gateway no aceptó nada")
+        #expect(rejected == ["tokA"], "se olvida exactamente el token que viajó")
+        #expect(stub.pushAttestHeaders == ["Bearer tokA"])
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushAttestHeaders == ["Bearer tokA", "Bearer tokB"], "el reintento pide un token nuevo")
+        #expect(!stub.pushedSyncIDs.isEmpty, "y con él la página sube")
+    }
+
+    @Test("Control: el 401 `yala_attest_invalid` (sesión caducada) NO toca el token de attest")
+    func snapshot401AttestInvalid_leavesTheAttestTokenAlone() async throws {
+        var rejected: [String?] = []
+        AttestSessionProvider.rejectionSink = { rejected.append($0) }
+        defer { AttestSessionProvider.rejectionSink = AttestSessionProvider.defaultRejectionSink }
+        let stub = RoutingStub()
+        stub.pushStatusQueue = [401]
+        stub.pushErrorBody = Data(#"{"error":{"type":"yala_attest_invalid","message":"x"}}"#.utf8)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestTokens = ["tokA"]
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushAttestHeaders == ["Bearer tokA"], "control del escenario: el push salió con el token")
+        #expect(rejected.isEmpty)
+    }
+
+    @Test("Sin token de attest la migración no se para ni lanza: la página sale sin cabecera")
+    func migrationAttestProvider_withoutAToken_sendsWithoutTheHeader() async throws {
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestError = AppAttestError.unavailable
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(session.attestCallCount >= 1, "el proveedor sí preguntó")
+        #expect(stub.pushAttestHeaders == [nil], "sin token, sin cabecera: el contrato «cabecera o nada»")
+    }
+
     // MARK: - Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK)
 
     /// Helper: crea una categoría con un syncID PRE-asignado (fila con identidad estable ya presente).
@@ -2668,6 +2760,90 @@ struct MigrationWorkExecutorTests {
                                        tombstoneSource: backend())
         let userRowOutcome = await withUserRow.runAdoptOrphanReconcile()
         #expect(userRowOutcome == .lineageUnproven)
+    }
+
+    /// **Los tipos de cambio que la cuenta ya tiene no suben: toman su identidad** (card hov2 del QA guiado del 19-oct). Cada
+    /// «Entrar con mi cuenta» de la flota subía 366 antes de dejar pasar. El de la cuenta para la misma fecha y base es el
+    /// mismo dato: con varios (teléfonos que entraron antes), el de menor `syncID`; uno BORRADO en la cuenta no se
+    /// resucita, y una fecha que la cuenta no tiene sigue subiendo.
+    @Test("runAdoptOrphanReconcile: el tipo de cambio que la cuenta ya tiene toma su identidad y no sube")
+    func adoptReconcile_exchangeRatesTheAccountHas_takeItsIdentity() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1, "exchange_rates": 2])
+        let ids = [UUID(), UUID()].sorted { $0.uuidString < $1.uuidString }
+        let deletedThere = UUID()
+        let fx: (String) -> [String: WireValue] = { day in ["date_key": .string(day), "base": .string("USD")] }
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [
+            upsertDelta(table: "categories", syncID: UUID(), seq: 1),
+            upsertDelta(table: "exchange_rates", syncID: ids[1], seq: 2, fields: fx("2026-09-23")),
+            upsertDelta(table: "exchange_rates", syncID: ids[0], seq: 3, fields: fx("2026-09-23")),
+            upsertDelta(table: "exchange_rates", syncID: deletedThere, seq: 4, fields: fx("2026-09-24")),
+            tombstone(table: "exchange_rates", syncID: deletedThere, seq: 5),
+        ], maxServerSeq: 5)]
+        var local: [String: ExchangeRate] = [:]
+        for day in ["2026-09-23", "2026-09-24", "2026-09-25"] {
+            let rate = try ExchangeRate(dateKey: day, base: "USD", ratesDictionary: ["PEN": 3.7])
+            context.insert(rate)
+            local[day] = rate
+        }
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        let outcome = await executor.runAdoptOrphanReconcile()
+
+        // El 23 casa con el menor de los dos; el 24 (borrado en la cuenta) y el 25 (que la cuenta no tiene) suben.
+        #expect(outcome == .completed(uploaded: 2, identityAssigned: 2))
+        #expect(local["2026-09-23"]?.syncID == ids[0])
+        #expect(local["2026-09-24"]?.syncID != deletedThere)
+        let pushed = Set(stub.pushedSyncIDs.map { $0.lowercased() })
+        #expect(!pushed.contains(ids[0].uuidString.lowercased()))
+        #expect(!pushed.contains(ids[1].uuidString.lowercased()))
+        // Control: lo que no casó sí viajó.
+        let orphanIDs = [local["2026-09-24"]?.syncID, local["2026-09-25"]?.syncID].compactMap { $0?.uuidString.lowercased() }
+        #expect(orphanIDs.count == 2)
+        #expect(Set(orphanIDs).isSubset(of: pushed))
+        // Y el backfill le escribió el testigo con la identidad de la cuenta.
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        #expect(witnesses.contains { $0.syncID == ids[0] && $0.entityType == SyncEntityType.exchangeRate })
+    }
+
+    /// Los dos controles del casado (review del 2026-10-21): con el espejo de iCloud adjunto, la fila del líder puede llegar
+    /// después con la identidad del backend, así que no se casa nada; y con dos filas locales del mismo día, tampoco.
+    @Test("runAdoptOrphanReconcile: con el espejo adjunto o con dos filas del mismo día, los tipos de cambio suben como antes")
+    func adoptReconcile_exchangeRates_notReboundWithTheMirrorOrADuplicateDay() async throws {
+        for mirror in [true, false] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let stub = RoutingStub()
+            stub.merkleBody = try makeMerkleBody(["categories": 1, "exchange_rates": 1])
+            let accountsRate = UUID()
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: [
+                upsertDelta(table: "categories", syncID: UUID(), seq: 1),
+                upsertDelta(table: "exchange_rates", syncID: accountsRate, seq: 2,
+                            fields: ["date_key": .string("2026-09-23"), "base": .string("USD")]),
+            ], maxServerSeq: 2)]
+            let days = mirror ? ["2026-09-23"] : ["2026-09-23", "2026-09-23"]
+            var rows: [ExchangeRate] = []
+            for day in days {
+                let rate = try ExchangeRate(dateKey: day, base: "USD", ratesDictionary: ["PEN": 3.7])
+                context.insert(rate)
+                rows.append(rate)
+            }
+            try context.save()
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source, adoptMirrorAttached: { mirror },
+                                        adoptICloudCorpusCheck: { .none })
+            let outcome = await executor.runAdoptOrphanReconcile()
+            #expect(outcome == .completed(uploaded: days.count, identityAssigned: days.count), "espejo=\(mirror)")
+            #expect(rows.allSatisfy { $0.syncID != nil && $0.syncID != accountsRate }, "espejo=\(mirror)")
+        }
     }
 
     /// **La guarda mira también el plan DEFINITIVO, que es el que sube** (hallazgo de la review). Una fila que el import

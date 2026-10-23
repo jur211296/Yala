@@ -27,6 +27,13 @@ struct AccountSelectorSheet: View {
 
     /// Cómo abre la hoja (`SelectorSheetSizing`): `.mediumFirst` desde un registro nuevo, `.large` en el resto.
     var sizing: SelectorSheetSizing = .large
+    /// El destino de una transferencia (UX 2.2 · L2-6): sin otra cuenta a la que pasar dinero, la hoja lo dice y ofrece
+    /// «Crear otra cuenta», que vuelve con la cuenta nueva ya puesta. Antes decía «Aún no tienes cuentas» con una puesta.
+    var offersCreatingAccount: Bool = false
+    @State private var showsAccountForm = false
+    @State private var showsUpgradeForAccounts = false
+    /// Las cuentas que había al abrir el formulario de cuenta: la nueva es la que no estaba.
+    @State private var accountIDsBeforeCreating: Set<PersistentIdentifier> = []
     @State private var selectedDetent: PresentationDetent = .medium
     @Environment(\.usesLargeSheets) private var usesLargeSheets
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -46,7 +53,8 @@ struct AccountSelectorSheet: View {
         excludeAccount: Account? = nil,
         currencyFilter: String? = nil,
         routingCurrency: String? = nil,
-        sizing: SelectorSheetSizing = .large
+        sizing: SelectorSheetSizing = .large,
+        offersCreatingAccount: Bool = false
     ) {
         _selectedAccount = selectedAccount
         self.title = title ?? L10n.Account.selectAccount
@@ -54,6 +62,7 @@ struct AccountSelectorSheet: View {
         self.currencyFilter = currencyFilter
         self.routingCurrency = routingCurrency
         self.sizing = sizing
+        self.offersCreatingAccount = offersCreatingAccount
     }
 
     var body: some View {
@@ -71,7 +80,16 @@ struct AccountSelectorSheet: View {
                         return true
                     }
 
-                    if filteredAccounts.isEmpty {
+                    if filteredAccounts.isEmpty, offersCreatingAccount {
+                        YalaEmptyState(
+                            icon: "arrow.left.arrow.right",
+                            title: L10n.UXL2.needsAnotherAccount,
+                            message: nil,
+                            actionTitle: L10n.UXL2.createAnotherAccount,
+                            action: startCreatingAccount,
+                            actionAccessibilityIdentifier: "account_selector_create_another"
+                        )
+                    } else if filteredAccounts.isEmpty {
                         YalaEmptyState.noAccounts()
                     } else {
                         // Con divisa fija (gastos de grupo, liquidaciones) la lista es plana: solo caben cuentas de esa
@@ -130,6 +148,35 @@ struct AccountSelectorSheet: View {
         .onAppear {
             viewModel.setContext(modelContext)
         }
+        .sheet(isPresented: $showsAccountForm, onDismiss: pickCreatedAccount) {
+            AccountFormView(existingNames: viewModel.accounts.map(\.name))
+        }
+        // Al límite del plan gratis, la hoja de Pro de siempre; si compra, sigue al formulario de cuenta.
+        .proUpgradeSheet(isPresented: $showsUpgradeForAccounts, feature: .accounts, context: .limitReached) {
+            showsAccountForm = true
+        }
+    }
+
+    // MARK: - Crear otra cuenta (L2-6)
+
+    private func startCreatingAccount() {
+        accountIDsBeforeCreating = Set(viewModel.accounts.map(\.persistentModelID))
+        let activeCount = viewModel.accounts.billableUserAccounts.count
+        if FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount) {
+            showsAccountForm = true
+        } else {
+            showsUpgradeForAccounts = true
+        }
+    }
+
+    /// Al cerrarse el formulario de cuenta: si se creó una, queda como destino y la hoja se cierra.
+    private func pickCreatedAccount() {
+        viewModel.setContext(modelContext)
+        guard let created = viewModel.activeAccounts.first(where: {
+            !accountIDsBeforeCreating.contains($0.persistentModelID)
+        }) else { return }
+        selectedAccount = created
+        dismiss()
     }
 
     /// Una línea tocada a propósito se guarda tal cual; la tarjeta se enruta por la divisa del importe.

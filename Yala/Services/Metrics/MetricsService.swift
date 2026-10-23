@@ -134,6 +134,27 @@ enum MetricsCanary: String {
     /// a la racha del teléfono (`GroupsAttestStreakStore`). Nació el 2026-09-16 para que esa regresión no pase un día sin
     /// contarse.
     case cloudSyncAttestRequired
+    /// Un refresh del token de App Attest no volvió en 90 s y se abandonó (`AppAttestClient`, `AttestSessionTokenLogic`).
+    /// `detail` = el paso en el que se quedó (`assert-challenge`, `generateAssertion`, `assert-storekit`, `attestKey`,
+    /// `register-post`…). Nació el 2026-10-19 (ticket `cloud-activation-stalls-without-uploading-until-relaunch`): la causa de
+    /// «Activar la nube» parada al 55 % quedó INFERIDA —el push nunca salió y el único `await` sin techo era este—, y este
+    /// canario es lo que la confirma o la refuta en la flota. Distinto de cero = había teléfonos que se quedaban esperando
+    /// para siempre a un token.
+    case attestRefreshAbandoned
+    /// Una lectura de foto o de nota de voz que falló EN EL CAMINO al gateway (card vv0k del QA guiado del 2026-10-19: la
+    /// primera foto tras instalar falló al instante y no llegó ningún canario, porque ese camino no emitía nada). `detail` =
+    /// `<photo|voice-transcribe|voice-parse>|<tipo>`: el `error.type` del gateway (`yala_quota_burst`, `yala_attest_invalid`…)
+    /// o la familia local (`attest`, `url:<código>`, `decoding`, `invalidResponse`, `other`), sin datos de la persona
+    /// (`ProxyErrorMapper.failureKind`). Una vez por proceso y tipo (`canaryOnce`): una tanda de diez fotos con el mismo
+    /// fallo no llena el spool. El cupo de prueba agotado no sale: es el desenlace esperado del plan free, no una avería.
+    case aiEntryReadFailed
+    /// «Activar la nube» venció los 300 s de pre-espera a que iCloud termine de importar
+    /// (`CloudMigrationController.awaitImportQuiescenceForResume`). Una vez por proceso. `detail` =
+    /// `<importing|recentImport>|<0|1-10|11-50|gt50>`: si al vencer seguía un import en curso o habían terminado imports
+    /// recientes, y cuántos terminaron durante la espera (`MigrationImportWaitLogic.stallDetail`). Nació el 2026-10-19
+    /// (ticket `cloud-activation-waits-for-icloud-with-no-way-out`): con 6 movimientos la espera pasó de 5 min y la causa
+    /// quedó inferida.
+    case cloudMigrationImportNotSettled
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected
@@ -303,6 +324,10 @@ enum MetricsCanary: String {
     case routingReadinessBlocked
     case routingDrainHoldSustained
     case routingWelcomeChainSuperseded
+    /// «Abriendo tu invitación…» (card z81w, 2026-10-20) llegó a su techo de 20 s sin que la cadena del invitado
+    /// relevara a la bienvenida, y volvió la bienvenida normal. `detail` = cómo se abrió (`cold`/`warm`). >0 sostenido =
+    /// algo vuelve a retrasar el encaminamiento de la invitación en el arranque.
+    case inviteOpeningCeilingReached
     case inviteReEmittedFromStore
     case invitePendingExpired
 
@@ -411,6 +436,16 @@ enum MetricsCanary: String {
     /// El cierre siguió sin subir esos cambios personales, con la persona conforme: se pierden con el borrado del arranque.
     /// `detail` = `cause=noSession pending=N`. Frente al primero, cuántos eligieron salir sin volver a entrar.
     case cloudSignOutPersonalLossDiscarded
+
+    // «Anotar con Siri» (auditoría UX 2.2, L15-6: el modelo del iPhone para quien no tiene Pro, encendido el 2026-10-21)
+    /// Cada invocación del atajo: qué camino eligió el gate. `detail` = `route=<server|onDevice|upgrade> model=<estado>`
+    /// (`SiriOnDeviceModelState`), sin PII. Cuenta INVOCACIONES, no personas. `upgrade` es la hoja de Pro; sostenido con
+    /// `model=available` = el gate no enciende el camino del teléfono (antes de esto, el gate Pro de Siri no dejaba
+    /// señal: así pasó desapercibido el bug de abril que decía «necesitas Pro» a usuarios Pro).
+    case siriEntryRoute
+    /// Una lectura del dictado con el modelo del iPhone. `detail` = `ok` | `noAmount` (leyó, pero sin importe) |
+    /// `failed:<tipo>#<código>`; `value` = milisegundos que tardó. Sin el texto, nunca.
+    case siriOnDeviceParse
 }
 
 // MARK: - Servicio
@@ -509,6 +544,18 @@ enum MetricsService {
         #endif
         MetricsSpool.enqueue(.canary(name: name.rawValue, detail: detail, value: value), defaults: defaults)
         kickDrain()
+    }
+
+    /// Canario desde un App Intent. El sistema puede lanzar Yala solo para el intent, sin el arranque que pone en marcha
+    /// el servicio: entonces el evento va directo al spool (`.standard`, el mismo que lee `start()`) y sale en el
+    /// siguiente arranque o primer plano. Bajo `-uitest` y en tests, nada.
+    static func canaryFromIntent(_ name: MetricsCanary, detail: String?, value: Double = 1) {
+        if isStarted {
+            canary(name, detail: detail, value: value)
+            return
+        }
+        guard !UITestHooks.isActive, !SwiftDataConfiguration.isRunningTests else { return }
+        MetricsSpool.enqueue(.canary(name: name.rawValue, detail: detail, value: value), defaults: .standard)
     }
 
     /// Canario dedupeado por sesión de proceso (clave compuesta) — paridad `trackOnce`.

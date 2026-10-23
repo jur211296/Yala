@@ -123,7 +123,11 @@ final class GroupDetailViewModel {
 
     // MARK: - UI State
 
-    var activeSheet: GroupSheet?
+    var activeSheet: GroupSheet? {
+        // Una hoja nueva retira lo que pidió la anterior al cerrarse: si ese cierre no llegó a pasar, la petición no
+        // puede quedarse pegada y dispararse al cerrar otra hoja (review adversarial del 21-oct, L19-4/L19-11).
+        didSet { if activeSheet != nil { pendingAfterSheetDismiss = nil } }
+    }
 
     /// Gasto pendiente de editar tras cerrar el detalle (reemplazo de sheet: el
     /// detalle baja en medium, el editor sube en large). Espejo de RecordsViewModel.
@@ -338,6 +342,28 @@ final class GroupDetailViewModel {
         activeSheet = nil
     }
 
+    /// Qué hace el detalle al cerrarse la hoja de Ajustes o de Miembros (auditoría UX 2.2 · L19-4, L19-10 y L19-11):
+    /// «Saldar primero» abre «Saldar» con esa deuda y «Ver los saldos» lleva a la pestaña Saldos. Mismo molde que
+    /// `requestEditFromDetail`: cambiar `activeSheet` de una hoja a otra mientras la primera se va puede perder la
+    /// segunda, así que la hoja se cierra y el padre decide en su `onDismiss`.
+    enum AfterSheetDismiss: Equatable {
+        case settle(Debt)
+        case showBalances
+    }
+
+    private var pendingAfterSheetDismiss: AfterSheetDismiss?
+
+    func requestAfterSheetDismiss(_ next: AfterSheetDismiss) {
+        pendingAfterSheetDismiss = next
+        activeSheet = nil
+    }
+
+    /// One-shot, como `consumePendingEditFromDetail`.
+    func consumeAfterSheetDismiss() -> AfterSheetDismiss? {
+        defer { pendingAfterSheetDismiss = nil }
+        return pendingAfterSheetDismiss
+    }
+
     /// Consume (one-shot) el gasto pendiente de edición. Lo invoca el padre en el
     /// `onDismiss` del sheet para decidir entre presentar el editor o recargar.
     func consumePendingEditFromDetail() -> SplitExpense? {
@@ -527,6 +553,8 @@ enum GroupSheet: Identifiable {
     case editExpense(SplitExpense)
     case openingBalanceDetail(SplitExpense)
     case editOpeningBalance(SplitExpense)
+    /// UX 2.2 · L13-10: «Añadir saldo inicial» desde Saldos.
+    case newOpeningBalance
     case settlement(Debt)
 
     var id: String {
@@ -538,6 +566,7 @@ enum GroupSheet: Identifiable {
         case .editExpense(let e): "editExpense-\(e.id)"
         case .openingBalanceDetail(let e): "openingBalanceDetail-\(e.id)"
         case .editOpeningBalance(let e): "editOpeningBalance-\(e.id)"
+        case .newOpeningBalance: "newOpeningBalance"
         case .settlement(let d): "settlement-\(d.id)"
         }
     }

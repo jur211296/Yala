@@ -120,12 +120,13 @@ enum GroupBackendInviteEntryHandler {
 
     /// El veredicto de la puerta con los cuatro términos VIVOS. Internal para que el test pueda
     /// llamarla con los providers fingidos sin tocar `drive`.
-    static func neutralGateDecision() -> GroupInviteNeutralGateLogic.Decision {
+    static func neutralGateDecision(groupID: String) -> GroupInviteNeutralGateLogic.Decision {
         GroupInviteNeutralGateLogic.decide(
             hasCompletedPersonalOnboarding: hasCompletedPersonalOnboardingProvider(),
             hasExistingData: hasLocalDataProvider(),
             mountAttachesMirror: mountAttachesMirrorProvider(),
-            personalDataLivesInLiveCloudAccount: personalDataLivesInLiveCloudAccountProvider())
+            personalDataLivesInLiveCloudAccount: personalDataLivesInLiveCloudAccountProvider(),
+            signUpStartedOnCleanStore: PendingJoinStore.entry(zoneName: groupID)?.signUpStartedOnCleanStore ?? false)
     }
     // `hasCompletedOnboardingProvider` se RETIRÓ el 2026-09-05 y aquí queda su lápida, porque su ausencia
     // es el arreglo. Alimentaba el único término que decidía si el invitado veía la hoja, y respondía a la
@@ -196,6 +197,15 @@ enum GroupBackendInviteEntryHandler {
         // intent en `.correctAndClear` —el member residual `rejected` sigue local— y nunca llamaba a
         // `join_group`, así que el enlace nuevo no hacía nada con la app cerrada.
         armInviteTap(groupID: groupID)
+        // Una instalación nueva que entra por el enlace conserva su montaje neutro aunque se relance a mitad del recorrido:
+        // sin esto, el arranque siguiente adjuntaba el espejo y bajaba los datos privados del iCloud del aparato
+        // (`GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry`).
+        if GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry(
+            mounted: SwiftDataConfiguration.personalStoreMountedDecision,
+            hasCompletedPersonalOnboarding: UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"),
+            hasShownWelcomeChooser: UserDefaults.standard.bool(forKey: "hasShownWelcomeChooser")) {
+            StorageModePersistence.armNeutralMountIfUnarmed()
+        }
         let existing = PendingJoinStore.entry(zoneName: groupID)
         var legacyMemberKey: String?
         if let group = GroupService.shared.group(for: groupID),
@@ -223,7 +233,12 @@ enum GroupBackendInviteEntryHandler {
             //    estando ya en «esperando aprobación», y a repetir un sí que ya había dado: `step(…)` no
             //    mira la fase hasta que se tapea el CTA (`GroupInviteOnboardingLogic:87`), así que pintaba
             //    `.welcome` con el join en vuelo.
-            inviteConfirmedAt: (existing?.inviteToken == token) ? existing?.inviteConfirmedAt : nil
+            inviteConfirmedAt: (existing?.inviteToken == token) ? existing?.inviteConfirmedAt : nil,
+            // Lo mismo para la marca del alta sobre un store limpio: es de ESTA invitación, y un token nuevo empieza sin ella.
+            signUpOnCleanStoreAt: (existing?.inviteToken == token) ? existing?.signUpOnCleanStoreAt : nil,
+            // Y lo mismo para el «Unirme» de la tarjeta del grupo (L12-17): re-tocar el MISMO enlace mientras se hace la
+            // cuenta no vuelve a enseñarla; un enlace nuevo, sí.
+            groupCardAcceptedAt: (existing?.inviteToken == token) ? existing?.groupCardAcceptedAt : nil
         ))
     }
 
@@ -351,7 +366,24 @@ enum GroupBackendInviteEntryHandler {
         // No borra ni escribe: SUBMITEA la pantalla, que es la que informa y pide el gesto. Por eso el
         // trigger `.boot` del reconciler puede llamar a este método sin que nada se pierda, que es el
         // criterio nº 2 del ticket.
-        if neutralGateDecision() == .returnsToNeutral {
+        // **L12-17 · la tarjeta del grupo va ANTES que la cuenta, el consentimiento y la puerta del neutro.** Sin cuenta o
+        // sin consentimiento, lo primero que se ve de una invitación es a qué grupo te unes, quién invita y quién está; su
+        // «Unirme» apunta la marca (`markGroupCardAccepted`) y vuelve aquí por `continueFlow`, que ya no la enseña. Va
+        // delante de la puerta del neutro porque la tarjeta no escribe nada que esa puerta tenga que proteger: solo
+        // enseña lo que trae el enlace.
+        let pendingEntry = PendingJoinStore.entry(zoneName: groupID)
+        if GroupInviteGroupFirstLogic.showsGroupBeforeAccount(
+            hasSession: hasSessionProvider(),
+            isConsented: isConsentedProvider(),
+            hasConfirmedInvite: pendingEntry?.isInviteConfirmed ?? false,
+            hasAcceptedGroupCard: pendingEntry?.hasAcceptedGroupCard ?? false,
+            canPresentOnboarding: source != .userAction && pendingEntry != nil
+        ) {
+            RouterEntryGate.shared.submit(.presentGroupBackendInviteOnboarding(pendingJoin: groupID))
+            logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: group card before account for \(groupID, privacy: .public)")
+            return
+        }
+        if neutralGateDecision(groupID: groupID) == .returnsToNeutral {
             RouterEntryGate.shared.submit(.presentGroupsInviteNeutralGate(pendingJoin: groupID))
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: mirrored/occupied store → neutral return gate for \(groupID, privacy: .public)")
             return
@@ -379,6 +411,8 @@ enum GroupBackendInviteEntryHandler {
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: invite unconfirmed → present invite onboarding for \(groupID, privacy: .public)")
         case .join:
             await attemptJoin(groupID: groupID, token: token, source: source)
+            // Sin pantalla que relevar a la bienvenida: «Abriendo tu invitación…» termina con el intento (card z81w).
+            InviteOpeningState.shared.finish(.joinAttempted)
         }
     }
 

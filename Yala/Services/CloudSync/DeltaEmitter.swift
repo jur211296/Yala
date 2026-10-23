@@ -59,6 +59,11 @@ enum DeltaEmitter {
            let account = model as? Account, account.parentAccountID != nil {
             SyncCapability.noteSuppressedAccountLink(account.shortcutID)
         }
+        // Lo mismo con los cambios de monto «desde este mes» de una línea del flujo de caja (v3, UX 2.2 · L18-8).
+        if capabilityLevel < SyncCapability.cashFlowAmountChangesSince, changedColumns.contains("amount_changes_raw"),
+           let line = model as? CashFlowLine, line.amountChangesRaw != nil {
+            SyncCapability.noteSuppressedCashFlowAmountChange(line.id)
+        }
         // 1) Índices de grupo desde los emisores: group_key → [columnas], y columna → group_key.
         var columnsByGroup: [String: [String]] = [:]
         var groupByColumn: [String: String] = [:]

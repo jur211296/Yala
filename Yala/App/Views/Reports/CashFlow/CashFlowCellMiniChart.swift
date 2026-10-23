@@ -42,6 +42,7 @@ struct CashFlowCellMiniChart: View {
             Text(L10n.CashFlowPlan.cellDetailDailyProgress)
                 .font(DS.Typography.headline)
 
+            AdaptiveChartHeight(base: 160) { chartHeight in
             Chart {
                 ForEach(data, id: \.day) { point in
                     LineMark(
@@ -63,11 +64,25 @@ struct CashFlowCellMiniChart: View {
                     )
                 }
 
+                // «Hoy», como la tarjeta de Tendencias (lienzo «Una sola Yala»): solo en el mes en curso.
+                if month.isCurrent {
+                    RuleMark(x: .value(L10n.Widget.today, Calendar.current.component(.day, from: .now)))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                        .foregroundStyle(.thSecondaryText.opacity(0.5))
+                        .annotation(position: .top, alignment: .center) {
+                            Text(L10n.Widget.today)
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.thSecondaryText)
+                        }
+                }
+
                 // Goal line (dashed)
                 RuleMark(y: .value("Goal", plannedAmount))
                     .foregroundStyle(Color.secondary.opacity(0.5))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 3]))
-                    .annotation(position: .topTrailing) {
+                    // A la izquierda y DENTRO de la gráfica: a la derecha se pisaba con la etiqueta del eje cuando el
+                    // estimado cae cerca de una (1,951 sobre 2,000), y con `.topLeading` se salía por la izquierda.
+                    .annotation(position: .top, alignment: .leading) {
                         Text(YalaFormatter.amountCompactTable(value: plannedAmount))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.tertiary)
@@ -140,7 +155,8 @@ struct CashFlowCellMiniChart: View {
             .accessibilityChartDescriptor(CashFlowMiniChartDescriptor(
                 data: data, plannedAmount: plannedAmount, currencyCode: currencyCode
             ))
-            .frame(height: 160)
+            .frame(height: chartHeight)
+            }
 
             // Legend
             HStack(spacing: DS.Spacing.lg) {

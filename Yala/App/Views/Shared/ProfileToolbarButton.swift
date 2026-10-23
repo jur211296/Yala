@@ -51,7 +51,8 @@ struct ProfileToolbarButton: View {
                     .offset(x: 4, y: 4)
             }
         }
-        .accessibilityLabel(L10n.Accessibility.profile)
+        // UX 2.2 · L16-1: el avatar abre Ajustes, y así se llama la hoja que abre.
+        .accessibilityLabel(L10n.Profile.title)
         .accessibilityIdentifier("profile_avatar")
     }
 

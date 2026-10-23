@@ -26,6 +26,10 @@ struct PanelShell: View {
                 viewModel: viewModel
             ))
             .modifier(PanelRecordSheetsModifier(sheets: $sheets, viewModel: viewModel))
+            // «Editar» del aviso tras guardar abre el registro con la misma hoja de editar del Panel (UX 2.2 · L2-5).
+            .environment(\.savedRecordEditorOpener, SavedRecordEditorOpener { record in
+                sheets.recordToEdit = PanelRecordPresentation(record: record)
+            })
             .modifier(PanelDataObservers(
                 viewModel: viewModel,
                 sessionState: sessionState

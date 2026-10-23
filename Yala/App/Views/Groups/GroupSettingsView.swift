@@ -2,7 +2,13 @@
 //  GroupSettingsView.swift
 //  Yala
 //
-//  Sheet de ajustes del grupo — info, miembros, opciones, acciones destructivas.
+//  Hoja de ajustes del grupo — info, opciones, presupuesto, resumen, salir, archivar y eliminar.
+//
+//  Desde el lote 19 decidido de la auditoría UX 2.2 (Jürgen, 18 y 19-oct) es una lista agrupada como «Ajustes de
+//  Grupos» (`YalaSettingsList`, lienzo «Una sola Yala»): un bloque por sección y la ayuda en el pie del bloque. Las
+//  opciones se explican con un ejemplo (L19-7), el presupuesto se fija en su hoja (L19-6), archivar y eliminar van
+//  en una tarjeta con dos pesos (L19-5) y el bloqueo de eliminar dice quién debe y cuánto (L19-10). Salir y eliminar
+//  dicen qué pasa con el dinero (L19-11).
 //
 
 import SwiftUI
@@ -35,10 +41,9 @@ struct GroupSettingsView: View {
     @State private var showCurrencyPicker: Bool = false
     @State private var defaultSplitType: SplitType = .equal
 
-    /// Presupuesto del grupo (G14). `budgetInput` es texto porque el importe se teclea y se parsea con
+    /// Presupuesto del grupo (G14). La hoja (L19-6) devuelve lo tecleado como texto y lo parsea
     /// `AmountInputHelper.parseDecimal`, que respeta el separador decimal de la locale.
-    @State private var showBudgetEditor: Bool = false
-    @State private var budgetInput: String = ""
+    @State private var showBudgetSheet: Bool = false
     @State private var showBudgetRemoveConfirm: Bool = false
 
     /// Resumen compartible («cierre del viaje»).
@@ -48,13 +53,16 @@ struct GroupSettingsView: View {
 
     @State private var showArchiveConfirm = false
 
-    /// Cache del check `anyMemberHasOutstandingBalance` para evitar 4 fetches SwiftData
-    /// por cada re-evaluación del body de SwiftUI. Se recalcula en `.onAppear` y tras cada recálculo
-    /// con freno del detalle (`viewModel.coalescedReloadRevision`).
+    /// Cache de «¿queda alguna deuda en el grupo?» para no hacer cuatro fetches por cada evaluación del body. Se
+    /// recalcula en `.onAppear` y tras cada recálculo con freno del detalle (`viewModel.coalescedReloadRevision`).
+    /// Desde L19-10 no cuenta el residuo de redondeo (`GroupRoundingResidueLogic`): solo las deudas de persona a persona.
     @State private var hasOutstandingDebt: Bool = false
+    /// Las deudas que cuentan, del mismo cálculo: nombran a quién bloquea eliminar (L19-10).
+    @State private var outstandingDebts: [Debt] = []
 
     // Leave group
     @State private var showLeaveGroupConfirm = false
+    @State private var showLeaveWithDebtConfirm = false
     @State private var isLeavingGroup = false
     @State private var showLeaveError = false
     @State private var leaveErrorMessage: String = ""
@@ -80,7 +88,6 @@ struct GroupSettingsView: View {
     /// ofrecer la transferencia y a nombrar al mismo heredero fantasma, en bucle.
     @State private var transferRefusedByServer = false
 
-
     // MARK: - Qué salida se ofrece
 
     /// El offer cacheado, o —antes del primer cálculo— exactamente lo que esta pantalla ofrecía
@@ -96,22 +103,33 @@ struct GroupSettingsView: View {
             deleteHint: hasOutstandingDebt ? .debtNoTransferAvailable : nil)
     }
 
-    /// Copy del bloqueo de «Eliminar», según qué salida le quede al dueño.
+    /// Lo que el bloqueo de «Eliminar» añade, según qué salida le quede al dueño (L19-5 y L19-10).
     ///
-    /// Pedirle «liquida las deudas» a un dueño al que lo que le frena es un saldo ENTRE TERCEROS le
-    /// manda a hacer algo que no puede hacer. Con heredero se le apunta a «Transferir y salir»; sin
-    /// heredero y con el grupo aún sin archivar, a «Archivar grupo» —que está justo encima en esta
-    /// misma pantalla y ya funciona con deuda (2026-09-08)—; y si ya está archivado no queda nada que
-    /// ofrecerle, así que se constata el hecho y no se le pide nada.
-    ///
-    /// El `switch` es exhaustivo a propósito: un caso nuevo en `DeleteHint` tiene que romper aquí,
-    /// que es donde se decide qué lee el usuario.
-    private func deleteHintText(_ hint: GroupOwnerExitLogic.DeleteHint) -> String {
-        switch hint {
-        case .debtTransferInstead:     return L10n.Groups.Settings.deleteGroupDisabledHintTransfer
-        case .debtArchiveInstead:      return L10n.Groups.Settings.deleteGroupDisabledHintArchive
-        case .debtNoTransferAvailable: return L10n.Groups.Settings.deleteGroupDisabledHint
+    /// Primero QUIÉN debe y CUÁNTO («Beto debe $ 30.00»), que es lo que faltaba; después la condición («Cuando las
+    /// cuentas queden en cero podrás eliminarlo») y, si el dueño tiene otra salida, cuál: con heredero, «Transferir y
+    /// salir»; sin heredero y sin archivar, «Archivar», que está en la misma tarjeta. El `switch` es exhaustivo a
+    /// propósito: un caso nuevo en `DeleteHint` tiene que romper aquí, que es donde se decide qué lee el usuario.
+    private func deleteBlockedText(_ hint: GroupOwnerExitLogic.DeleteHint) -> String {
+        var parts: [String] = []
+        // Quién debe y cuánto, con las MISMAS deudas que enseña Saldos (respetan «simplificar» y «moneda única»): con
+        // las simplificadas de `outstandingDebts`, el texto decía «Ana debe S/ 50» y Saldos «Ana paga S/ 80 a Tú».
+        // Si las del detalle aún no están cargadas, las simplificadas.
+        let shownDebts = viewModel.debts.isEmpty ? outstandingDebts : viewModel.debts
+        if let debtors = GroupDebtCopyLogic.debtorsSentence(
+            debts: shownDebts,
+            currentMemberID: viewModel.currentMemberID,
+            name: { viewModel.memberName(for: $0) },
+            money: { appPreferences.currency($0, currencyCode: $1) }
+        ) {
+            parts.append(debtors)
         }
+        parts.append(L10n.UXL19.deleteBlockedTail)
+        switch hint {
+        case .debtTransferInstead:     parts.append(L10n.UXL19.deleteTransferInstead)
+        case .debtArchiveInstead:      parts.append(L10n.UXL19.deleteArchiveInstead)
+        case .debtNoTransferAvailable: break
+        }
+        return parts.joined(separator: " ")
     }
 
     /// Mensaje de la confirmación de «Transferir y salir»: quién hereda, y —si el usuario tiene saldo
@@ -121,10 +139,10 @@ struct GroupSettingsView: View {
     /// concatenarlos dentro de una sola clave obligaría a cuatro variantes (con/sin nombre ×
     /// con/sin deuda) en dieciséis idiomas.
     ///
-    /// Que exista es lo que iguala esta salida con las otras dos: «Salir del grupo» avisa con
-    /// `leaveGroupWithDebtWarning` y «Archivar» con `archiveWithDebtWarning`. Ésta era la única que
-    /// callaba, y encima es la que borra el histórico local del grupo al salir — el usuario perdía
-    /// de vista quién le debía sin que nadie se lo hubiera dicho.
+    /// Que exista es lo que iguala esta salida con las otras dos: «Salir del grupo» avisa con la cifra y
+    /// «Archivar» con `archiveWithDebtWarning`. Ésta era la única que callaba, y encima es la que borra el
+    /// histórico local del grupo al salir — el usuario perdía de vista quién le debía sin que nadie se lo
+    /// hubiera dicho.
     private var transferConfirmMessage: String {
         // La llamada va explícita y no como referencia a función (`.map(L10n…transferAndLeaveConfirm)`):
         // pasarla como valor la saca del contexto `@MainActor` y el compilador avisa.
@@ -142,59 +160,46 @@ struct GroupSettingsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    // Info section
-                    infoSection
+            YalaSettingsList {
+                infoSection
 
-                    // Group options section — visible para todos los miembros activos.
-                    // simplify/split los edita cualquiera; moneda única queda owner-only (dimmed).
-                    if viewModel.canCurrentUserParticipate {
-                        optionsSection
-                    }
-
-                    // Integración personal (F4): visible solo para members .isActive.
-                    if viewModel.canCurrentUserParticipate {
-                        personalIntegrationSection
-                    }
-
-                    // Resumen compartible («cierre del viaje»). Va FUERA de la guarda de
-                    // participación a propósito: es de solo lectura y no enseña nada que quien abre
-                    // esta pantalla no esté viendo ya en el detalle, así que quien salió del grupo
-                    // conserva la foto de cómo quedaron las cuentas.
-                    if hasShareableSummary {
-                        shareableSummarySection
-                    }
-
-                    // Leave group (non-owner)
-                    if currentOffer.showsLeave {
-                        leaveGroupSection
-                    }
-
-                    // Danger zone (archive)
-                    if viewModel.isCurrentUserAdmin {
-                        dangerZoneSection
-                    }
-
-                    // Transferir y salir — la salida del DUEÑO. Va antes de «Eliminar» a propósito:
-                    // es la acción reversible para el grupo (sigue vivo, con sus saldos), y el hint
-                    // del borrado bloqueado apunta aquí arriba.
-                    if currentOffer.showsTransferAndLeave {
-                        transferAndLeaveSection
-                    }
-
-                    // FU-02: soft-delete (owner-only).
-                    if currentOffer.showsDelete {
-                        deleteGroupSection
-                    }
-
+                // Opciones — visibles para todos los miembros activos. Simplificar y el reparto los cambia
+                // cualquiera; la moneda única, quien creó el grupo; el presupuesto, un administrador.
+                if viewModel.canCurrentUserParticipate {
+                    optionsSections
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xl)
-                .dismissKeyboardOnTap()
+
+                // Integración personal (F4): visible solo para members .isActive.
+                if viewModel.canCurrentUserParticipate {
+                    personalIntegrationSection
+                }
+
+                // Resumen compartible («cierre del viaje»). Va FUERA de la guarda de participación a propósito:
+                // es de solo lectura y no enseña nada que quien abre esta pantalla no esté viendo ya en el
+                // detalle, así que quien salió del grupo conserva la foto de cómo quedaron las cuentas.
+                if hasShareableSummary {
+                    shareableSummarySection
+                }
+
+                // Leave group (non-owner)
+                if currentOffer.showsLeave {
+                    leaveGroupSection
+                }
+
+                // Transferir y salir — la salida del DUEÑO. Va antes de «Archivar o eliminar» a propósito: es la
+                // acción reversible para el grupo (sigue vivo, con sus saldos), y el bloqueo de eliminar apunta aquí.
+                if currentOffer.showsTransferAndLeave {
+                    transferAndLeaveSection
+                }
+
+                // L19-5: archivar y eliminar en una tarjeta, cada una con el peso de lo que hace.
+                if viewModel.isCurrentUserAdmin || currentOffer.showsDelete {
+                    exitsSection
+                }
             }
+            // `dismissKeyboardOnTap()` no va aquí: su `onTapGesture` sobre una `List` se come los toques de las filas.
+            // El teclado del nombre baja al arrastrar y con «Listo».
             .scrollDismissesKeyboard(.interactively)
-            .scrollContentBackground(.hidden)
             .yalaScreenBackground(.subtle)
             .onDisappear { saveIdentity() }
             .onAppear {
@@ -231,23 +236,24 @@ struct GroupSettingsView: View {
             .sheet(isPresented: $showShareableSummary) {
                 GroupShareableSummarySheet(group: group, viewModel: viewModel)
             }
-            .confirmationDialog(
-                L10n.Groups.Settings.leaveGroup,
-                isPresented: $showLeaveGroupConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Groups.Settings.leaveGroup, role: .destructive) {
-                    Task { await leaveGroup() }
-                }
-                Button(L10n.Common.cancel) {}
-                    .accessibilityIdentifier("group_settings_leave_cancel")
-            } message: {
-                if hasOutstandingBalance {
-                    Text(L10n.Groups.Settings.leaveGroupWithDebtWarning)
-                } else {
-                    Text(L10n.Groups.Settings.leaveGroupConfirm)
-                }
+            // L19-6: el presupuesto se fija en su hoja, no en una alerta. Cuelga del stack por lo mismo que el resumen.
+            .sheet(isPresented: $showBudgetSheet) {
+                GroupBudgetSheet(
+                    group: group,
+                    expenses: viewModel.expenses,
+                    initialInput: budgetInputSeed(),
+                    onSave: { saveBudgetLimitFromInput($0) }
+                )
+                .yalaSheetDetents([.large])
+                .presentationDragIndicator(.visible)
             }
+            .modifier(LeavePresentations(
+                showLeaveGroupConfirm: $showLeaveGroupConfirm,
+                showLeaveWithDebtConfirm: $showLeaveWithDebtConfirm,
+                leaveWithDebtMessage: leaveWithDebtMessage,
+                onLeave: { Task { await leaveGroup() } },
+                onSettleFirst: { settleFirstFromLeave() }
+            ))
             .confirmationDialog(
                 L10n.Groups.Settings.archive,
                 isPresented: $showArchiveConfirm,
@@ -275,21 +281,6 @@ struct GroupSettingsView: View {
             } message: {
                 Text(actionErrorMessage)
             }
-            // Presupuesto del grupo (G14).
-            //
-            // DOS botones FIJOS y ningún `if` dentro del builder: el `actions` de un `.alert` no admite
-            // contenido dependiente del estado, y lo que rompe no es la alerta sino un flujo cualquiera
-            // de la app, en una pantalla sin relación (regla medida el 2026-09-06 en `swiftui-ds.md`,
-            // con `TransactionSuccessView` como víctima de una alerta de invitación). Por eso «quitar»
-            // NO vive aquí: tiene su propia fila, más abajo, con su confirmación.
-            .alert(L10n.Groups.Budget.title, isPresented: $showBudgetEditor) {
-                TextField(appPreferences.currencyDisplayFormat.label(for: group.currencyCode), text: $budgetInput)
-                    .keyboardType(.decimalPad)
-                Button(L10n.Action.save) { saveBudgetLimitFromInput() }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Groups.Budget.hint(appPreferences.currencyDisplayFormat.label(for: group.currencyCode)))
-            }
             .confirmationDialog(
                 L10n.Groups.Budget.removeConfirm,
                 isPresented: $showBudgetRemoveConfirm,
@@ -310,7 +301,9 @@ struct GroupSettingsView: View {
                 Button(L10n.Common.cancel) {}
                     .accessibilityIdentifier("group_settings_delete_cancel")
             } message: {
-                Text(L10n.Groups.Settings.deleteGroupFinalConfirm)
+                // L19-11: qué pasa con tu dinero. Lo que el puente apuntó en tus cuentas reales se queda
+                // (`GroupTransactionBridge.freezeForSoftDelete` libera las transacciones de cuenta real).
+                Text(L10n.UXL19.deleteBody)
             }
             .confirmationDialog(
                 L10n.Groups.Settings.transferAndLeave,
@@ -334,7 +327,7 @@ struct GroupSettingsView: View {
     // MARK: - Info Section
 
     private var infoSection: some View {
-        SectionBox(title: L10n.Groups.Settings.info) {
+        YalaSettingsSection(L10n.Groups.Settings.info) {
             HStack(spacing: DS.Spacing.md) {
                 if viewModel.isCurrentUserAdmin {
                     // Group icon — tappable to change (admin only)
@@ -361,10 +354,18 @@ struct GroupSettingsView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel(L10n.Groups.Form.icon)
 
-                    // Group name — editable inline (admin only)
+                    // Group name — editable inline (admin only). L19-7: el lápiz al lado dice que se puede tocar;
+                    // antes era un campo sin borde que se leía como un título.
                     TextField(L10n.Groups.Form.namePlaceholder, text: $editName)
                         .font(DS.Typography.headline)
+                        .submitLabel(.done)
                         .onSubmit { saveIdentity() }
+                        .accessibilityIdentifier("group_settings_name_field")
+
+                    Image(systemName: "pencil")
+                        .font(DS.Typography.body)
+                        .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                        .accessibilityHidden(true)
                 } else {
                     // Group icon — static (non-admin)
                     ZStack {
@@ -383,8 +384,7 @@ struct GroupSettingsView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
+            .padding(.vertical, DS.Spacing.xxs)
         }
         .onAppear {
             editName = group.name
@@ -401,212 +401,129 @@ struct GroupSettingsView: View {
         }
     }
 
-    // MARK: - Options Section
+    // MARK: - Options (L19-7: cada opción con su ejemplo, en el pie de su bloque)
 
-    private var optionsSection: some View {
-        SectionBox(title: L10n.Groups.Settings.options) {
-            VStack(spacing: DS.Spacing.none) {
-                // Simplify Debts — cualquier miembro activo
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.simplifyDebts, isOn: $simplifyDebts)
-                        .font(DS.Typography.body)
-
-                    Text(L10n.Groups.Form.simplifyDebtsHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: simplifyDebts) { _, newValue in
-                    // Guard de igualdad: el `.onAppear` siembra el @State desde el group, lo que
-                    // dispararía un save+sync espurio en cada apertura sin este check.
-                    guard newValue != group.simplifyDebts else { return }
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        updateMemberOption { $0.simplifyDebts = newValue }
-                    }
-                }
-
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
-
-                // Show debts in single currency — owner-only (visible para todos, dimmed si no-owner)
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
-                        .font(DS.Typography.body)
-
-                    Text(L10n.Groups.Form.showDebtsInSingleCurrencyHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-
-                    if showDebtsInSingleCurrency {
-                        Button {
-                            showCurrencyPicker = true
-                        } label: {
-                            HStack(spacing: DS.Spacing.md) {
-                                let info = currencyInfo(for: selectedCurrency)
-                                Text(info.flag)
-                                    .font(DS.Typography.body)
-
-                                Text(info.code)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.primary)
-
-                                Spacer()
-
-                                Text(info.name.capitalized)
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
-
-                                Image(systemName: "chevron.right")
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, DS.Spacing.sm)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if !group.isOwner {
-                        Text(L10n.Groups.Options.ownerOnlyHint)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .disabled(!group.isOwner)
-                .opacity(group.isOwner ? 1 : 0.5)
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: showDebtsInSingleCurrency) { _, newValue in
-                    guard newValue != group.showDebtsInSingleCurrency else { return }
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        updateGroupOption { group in
-                            group.showDebtsInSingleCurrency = newValue
-                            if !newValue {
-                                group.currencyCode = appPreferences.defaultCurrencyCode.rawValue
-                            }
-                        }
-                        if !newValue {
-                            selectedCurrency = appPreferences.defaultCurrencyCode
-                        }
-                    }
-                }
-                .onChange(of: selectedCurrency) { _, newValue in
-                    guard newValue.rawValue != group.currencyCode else { return }
-                    updateGroupOption { $0.currencyCode = newValue.rawValue }
-                }
-
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
-
-                // Default split type — cualquier miembro activo
-                HStack {
-                    Text(L10n.Groups.Form.defaultSplitType)
-                        .font(DS.Typography.body)
-
-                    Spacer()
-
-                    Picker("", selection: $defaultSplitType) {
-                        ForEach(SplitType.allCases) { type in
-                            Text(type.displayName).tag(type)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: defaultSplitType) { _, newValue in
-                    guard newValue.rawValue != group.defaultSplitType else { return }
-                    updateMemberOption { $0.defaultSplitType = newValue.rawValue }
-                }
-
-                Divider()
-                    .padding(.leading, DS.FormRow.paddingH)
-
-                // Presupuesto del grupo (G14) — ADMIN-only, y no por criterio de la app: la policy
-                // `split_groups_update` del backend exige `is_group_admin`, así que ofrecérselo a un
-                // miembro normal sería ofrecer un cambio que el server descarta y que se quedaría solo
-                // en su teléfono. Mismo tratamiento visual que el bloque owner-only de arriba.
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Button {
-                        budgetInput = budgetInputSeed()
-                        showBudgetEditor = true
-                    } label: {
-                        HStack(spacing: DS.Spacing.md) {
-                            Text(L10n.Groups.Budget.title)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-
-                            Spacer()
-
-                            if let limit = group.budgetLimitAmount {
-                                AmountText(
-                                    value: limit,
-                                    currencyCode: group.currencyCode,
-                                    font: DS.Typography.body,
-                                    tint: .secondary
-                                )
-                            } else {
-                                Text(L10n.Groups.Budget.none)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            Image(systemName: "chevron.right")
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-
-                    Text(L10n.Groups.Budget.hint(appPreferences.currencyDisplayFormat.label(for: group.currencyCode)))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-
-                    if !viewModel.isCurrentUserAdmin {
-                        Text(L10n.Groups.Budget.adminOnly)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    // «Quitar» vive AQUÍ y no dentro del alert por dos razones que se juntan: el
-                    // `actions` de un `.alert` no admite un botón condicional (ver el alert), y quitar
-                    // es destructivo — junto al de guardar invitaba a borrar sin querer.
-                    if group.budgetLimitAmount != nil {
-                        Button(role: .destructive) {
-                            showBudgetRemoveConfirm = true
-                        } label: {
-                            Text(L10n.Groups.Budget.remove)
-                                .font(DS.Typography.captionSmall)
-                                .padding(.vertical, DS.Spacing.sm)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    }
-                }
-                // El grupo CONGELADO se gatea igual que en el resto de Grupos (FAB, miembros, form de
-                // gasto, resumen compartible): `setBudgetLimit` llama a `validateGroupIsWritable` ANTES
-                // que al guard de admin, así que sin esto la fila se vería activa y el guardado la
-                // rechazaría — «ves algo que no funciona», que es peor que no verlo.
-                .disabled(!canEditBudget)
-                .opacity(canEditBudget ? 1 : 0.5)
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
+    @ViewBuilder
+    private var optionsSections: some View {
+        // Menos pagos entre ustedes — cualquier miembro activo.
+        YalaSettingsSection(L10n.Groups.Settings.options) {
+            YalaSettingsToggleRow(L10n.UXL19.simplify, isOn: $simplifyDebts)
+                .accessibilityIdentifier("group_settings_simplify_toggle")
+        } footer: {
+            Text(L10n.UXL19.simplifyExample)
+        }
+        .onChange(of: simplifyDebts) { _, newValue in
+            // Guard de igualdad: el `.onAppear` siembra el @State desde el group, lo que
+            // dispararía un save+sync espurio en cada apertura sin este check.
+            guard newValue != group.simplifyDebts else { return }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                updateMemberOption { $0.simplifyDebts = newValue }
             }
         }
-        .onAppear {
-            simplifyDebts = group.simplifyDebts
-            showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
-            selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
-            defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
+
+        // Ver las deudas en una sola moneda — solo quien creó el grupo (visible para todos, apagado si no).
+        YalaSettingsSection {
+            YalaSettingsToggleRow(L10n.UXL19.singleCurrency, isOn: $showDebtsInSingleCurrency, isDisabled: !group.isOwner)
+            if showDebtsInSingleCurrency {
+                Button {
+                    showCurrencyPicker = true
+                } label: {
+                    let info = currencyInfo(for: selectedCurrency)
+                    YalaSettingsRowLabel(title: L10n.Groups.Form.currency, value: "\(info.flag) \(info.code)")
+                }
+                .disabled(!group.isOwner)
+            }
+        } footer: {
+            Text(group.isOwner
+                 ? L10n.Groups.Form.showDebtsInSingleCurrencyHint
+                 : L10n.Groups.Form.showDebtsInSingleCurrencyHint + " " + L10n.UXL19.ownerOnly)
         }
+        .onChange(of: showDebtsInSingleCurrency) { _, newValue in
+            guard newValue != group.showDebtsInSingleCurrency else { return }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                updateGroupOption { group in
+                    group.showDebtsInSingleCurrency = newValue
+                    if !newValue {
+                        group.currencyCode = appPreferences.defaultCurrencyCode.rawValue
+                    }
+                }
+                if !newValue {
+                    selectedCurrency = appPreferences.defaultCurrencyCode
+                }
+            }
+        }
+        .onChange(of: selectedCurrency) { _, newValue in
+            guard newValue.rawValue != group.currencyCode else { return }
+            updateGroupOption { $0.currencyCode = newValue.rawValue }
+        }
+
+        // Cómo se reparte un gasto nuevo — cualquier miembro activo.
+        YalaSettingsSection {
+            Picker(L10n.UXL19.splitType, selection: $defaultSplitType) {
+                ForEach(SplitType.allCases) { type in
+                    Text(type.displayName).tag(type)
+                }
+            }
+            .pickerStyle(.menu)
+        }
+        .onChange(of: defaultSplitType) { _, newValue in
+            guard newValue.rawValue != group.defaultSplitType else { return }
+            updateMemberOption { $0.defaultSplitType = newValue.rawValue }
+        }
+
+        budgetSection
+            .onAppear {
+                simplifyDebts = group.simplifyDebts
+                showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
+                selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
+                defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
+            }
+    }
+
+    /// Presupuesto del grupo (G14) — ADMIN-only, y no por criterio de la app: la policy `split_groups_update` del
+    /// backend exige `is_group_admin`, así que ofrecérselo a un miembro normal sería ofrecer un cambio que el server
+    /// descarta y que se quedaría solo en su teléfono. Y el grupo CONGELADO se gatea igual que en el resto de Grupos:
+    /// `setBudgetLimit` llama a `validateGroupIsWritable` ANTES que al guard de admin (`canEditBudget`).
+    private var budgetSection: some View {
+        YalaSettingsSection {
+            Button {
+                showBudgetSheet = true
+            } label: {
+                YalaSettingsRowLabel(title: L10n.Groups.Budget.title, value: budgetValueText)
+            }
+            .disabled(!canEditBudget)
+            .accessibilityIdentifier("group_settings_budget_row")
+
+            // «Quitar» tiene su fila y su confirmación: junto al de guardar invitaba a borrar sin querer.
+            if group.budgetLimitAmount != nil && canEditBudget {
+                Button(role: .destructive) {
+                    showBudgetRemoveConfirm = true
+                } label: {
+                    Text(L10n.Groups.Budget.remove)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                }
+                .accessibilityIdentifier("group_settings_budget_remove")
+            }
+        } footer: {
+            Text(budgetFooterText)
+        }
+    }
+
+    private var budgetValueText: String {
+        guard let limit = group.budgetLimitAmount else { return L10n.Groups.Budget.none }
+        return appPreferences.currency(limit, currencyCode: group.currencyCode)
+    }
+
+    private var budgetFooterText: String {
+        let hint = L10n.Groups.Budget.hint(appPreferences.currencyDisplayFormat.label(for: group.currencyCode))
+        return viewModel.isCurrentUserAdmin ? hint : hint + " " + L10n.Groups.Budget.adminOnly
     }
 
     // MARK: - Personal Integration (Bridge Override per-grupo, F4)
 
     @State private var showPerGroupDeactivationSheet: Bool = false
+    @State private var showGroupsGlobalSettings: Bool = false
 
     private var personalIntegrationState: OverrideStateLogic.UIState {
         OverrideStateLogic.compute(
@@ -653,21 +570,26 @@ struct GroupSettingsView: View {
     private var personalIntegrationSection: some View {
         let state = personalIntegrationState
         if state != .hiddenSection {
-            SectionBox(title: L10n.Groups.Settings.personalIntegrationSectionTitle) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(
-                        L10n.Groups.Settings.personalIntegrationToggleLabel,
-                        isOn: personalIntegrationToggle
-                    )
+            YalaSettingsSection(L10n.UXL19.personalSection) {
+                YalaSettingsToggleRow(
+                    L10n.UXL19.personalToggle,
+                    isOn: personalIntegrationToggle,
+                    isDisabled: state == .disabledOff
+                )
+                // UX 2.2 · L13-14: el aviso manda a Ajustes de Grupos; ahora lleva el camino.
+                if state == .disabledOff {
+                    Button(L10n.Groups.Settings.openGroupsSettings) {
+                        showGroupsGlobalSettings = true
+                    }
                     .font(DS.Typography.body)
-                    .disabled(state == .disabledOff)
-
-                    Text(personalIntegrationHint(for: state))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.accent)
+                    .accessibilityIdentifier("group_settings_open_groups_settings")
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
+            } footer: {
+                Text(personalIntegrationHint(for: state))
+            }
+            .sheet(isPresented: $showGroupsGlobalSettings) {
+                GroupsGlobalSettingsView()
             }
             .sheet(isPresented: $showPerGroupDeactivationSheet) {
                 BridgeDeactivationSheet(
@@ -714,7 +636,7 @@ struct GroupSettingsView: View {
         switch state {
         case .hiddenSection: return ""
         case .disabledOff: return L10n.Groups.Settings.personalIntegrationHintBlockedByGlobal
-        case .enabledOnInheriting, .enabledOnLocal: return L10n.Groups.Settings.personalIntegrationHintInheritOn
+        case .enabledOnInheriting, .enabledOnLocal: return L10n.UXL19.personalInherit
         case .enabledOffLocal: return L10n.Groups.Settings.personalIntegrationHintLocalOff
         }
     }
@@ -755,76 +677,36 @@ struct GroupSettingsView: View {
     }
 
     private var shareableSummarySection: some View {
-        SectionBox(title: L10n.Groups.ShareableSummary.title) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Button {
-                    showShareableSummary = true
-                } label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundStyle(.thAccent)
-
-                        Text(L10n.Groups.ShareableSummary.action)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.vertical, DS.FormRow.paddingV)
-                    // DENTRO del label y tras el padding: el label tiene `Spacer()` y no lleva fondo
-                    // relleno, así que colgado del `Button` dejaría muerto el centro de la fila —
-                    // justo donde caen el dedo y el tap de XCUITest (regla de DS, medida el
-                    // 2026-08-07 en la fila de divisa de `GroupFormView`).
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("group_settings_share_summary_button")
-
-                Text(L10n.Groups.ShareableSummary.hint)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.bottom, DS.FormRow.paddingV)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
-    // MARK: - Danger Zone (Archive)
-
-    private var dangerZoneSection: some View {
-        VStack(spacing: DS.Spacing.none) {
+        YalaSettingsSection(L10n.Groups.ShareableSummary.title) {
             Button {
-                toggleArchive()
+                showShareableSummary = true
             } label: {
                 HStack {
-                    Image(systemName: group.isArchived ? "archivebox.fill" : "archivebox")
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundStyle(.thAccent)
+                    Text(L10n.Groups.ShareableSummary.action)
                         .font(DS.Typography.body)
-                        .foregroundStyle(DS.Semantic.errorForeground)
+                        .foregroundStyle(.thPrimaryText)
                     Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.labelSmall.weight(.medium))
+                        .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                        .accessibilityHidden(true)
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .accessibilityIdentifier("group_settings_share_summary_button")
+        } footer: {
+            Text(L10n.Groups.ShareableSummary.hint)
         }
-        .solidCard(radius: DS.Radius.card)
     }
 
     // MARK: - Leave Group
 
     private var leaveGroupSection: some View {
-        VStack(spacing: DS.Spacing.xs) {
+        YalaSettingsSection {
             Button {
-                showLeaveGroupConfirm = true
+                openLeaveConfirmation()
             } label: {
                 HStack {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -837,24 +719,67 @@ struct GroupSettingsView: View {
                         ProgressView()
                     }
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
             .disabled(isLeavingGroup)
+            .accessibilityIdentifier("group_settings_leave")
         }
-        .solidCard(radius: DS.Radius.card)
+    }
+
+    /// L19-11: con deuda propia, el aviso con la cifra y «Saldar primero»; sin ella, la confirmación de siempre.
+    private func openLeaveConfirmation() {
+        if hasOutstandingBalance {
+            showLeaveWithDebtConfirm = true
+        } else {
+            showLeaveGroupConfirm = true
+        }
+    }
+
+    /// Las deudas en las que estoy, tal como las enseña el grupo (respeta «simplificar» y «moneda única»).
+    private var myDebts: [Debt] {
+        guard let me = viewModel.currentMemberID else { return [] }
+        return GroupDebtCopyLogic.debts(involving: me, in: viewModel.debts)
+    }
+
+    /// «Debes S/ 270.00 a Ana. Si sales, dejas de ver este grupo y esa deuda; Ana la seguirá viendo.» (L19-11).
+    private var leaveWithDebtMessage: String {
+        guard let me = viewModel.currentMemberID, !myDebts.isEmpty else {
+            return L10n.Groups.Settings.leaveGroupWithDebtWarning
+        }
+        let sentences = GroupDebtCopyLogic.relationSentences(
+            about: me,
+            debts: viewModel.debts,
+            currentMemberID: me,
+            name: { viewModel.memberName(for: $0) },
+            money: { appPreferences.currency($0, currencyCode: $1) }
+        )
+        let counterparts = Set(myDebts.map { $0.fromMemberID == me ? $0.toMemberID : $0.fromMemberID })
+        let tail: String
+        if counterparts.count == 1, let other = counterparts.first {
+            tail = L10n.UXL19.leaveDebtTailOne(viewModel.memberName(for: other))
+        } else {
+            tail = L10n.UXL19.leaveDebtTailMany
+        }
+        return (sentences + [tail]).joined(separator: " ")
+    }
+
+    /// «Saldar primero» al salir: con una sola deuda, «Saldar» con ella; con varias, Saldos.
+    private func settleFirstFromLeave() {
+        let debts = myDebts
+        if debts.count == 1, let debt = debts.first {
+            viewModel.requestAfterSheetDismiss(.settle(debt))
+        } else {
+            viewModel.requestAfterSheetDismiss(.showBalances)
+        }
     }
 
     // MARK: - Transferir y salir (owner con heredero, canal backend)
 
     private var transferAndLeaveSection: some View {
-        VStack(spacing: DS.Spacing.xs) {
+        YalaSettingsSection {
             Button {
-                // Refresca antes de abrir el diálogo — simétrico con `deleteGroupSection` y
-                // `toggleArchive`. Aquí importa doble: si el sync trajo la salida del último
-                // co-member, el heredero que íbamos a nombrar ya no existe.
+                // Refresca antes de abrir el diálogo — simétrico con «Eliminar» y `toggleArchive`. Aquí importa
+                // doble: si el sync trajo la salida del último co-member, el heredero que íbamos a nombrar ya no existe.
                 recomputeOwnerExit()
                 guard currentOffer.showsTransferAndLeave else { return }
                 showTransferConfirm = true
@@ -870,21 +795,13 @@ struct GroupSettingsView: View {
                         ProgressView()
                     }
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
             .disabled(isTransferring || isDeleting)
-
+            .accessibilityIdentifier("group_settings_transfer")
+        } footer: {
             Text(L10n.Groups.Settings.transferAndLeaveHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.bottom, DS.FormRow.paddingV)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .solidCard(radius: DS.Radius.card)
     }
 
     private func transferAndLeave() async {
@@ -917,46 +834,115 @@ struct GroupSettingsView: View {
         }
     }
 
-    // MARK: - FU-02 Soft-delete (owner-only)
+    // MARK: - L19-5 · Archivar o eliminar, cada uno con su peso
 
-    private var deleteGroupSection: some View {
-        VStack(spacing: DS.Spacing.xs) {
+    private var exitsSection: some View {
+        let showsArchive = viewModel.isCurrentUserAdmin
+        let showsDelete = currentOffer.showsDelete
+        return YalaSettingsSection(showsArchive && showsDelete ? L10n.UXL19.exitsSectionBoth : L10n.UXL19.exitsSectionArchive) {
+            if showsArchive {
+                archiveRow
+            }
+            if showsDelete {
+                deleteRow
+            }
+        }
+    }
+
+    /// Archivar se deshace con un toque: va en el color de la app, no en rojo. Desarchivar, igual.
+    private var archiveRow: some View {
+        Button {
+            toggleArchive()
+        } label: {
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: group.isArchived ? "tray.and.arrow.up" : "archivebox")
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.thAccent)
+                    .frame(width: 28, alignment: .center) // A11Y-DT: columna de icono de la fila
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(group.isArchived ? L10n.Groups.Settings.unarchive : L10n.Groups.Settings.archive)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thPrimaryText)
+                    Text(group.isArchived ? L10n.UXL19.unarchiveBody : L10n.UXL19.archiveBody)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelSmall.weight(.medium))
+                    .foregroundStyle(Color(uiColor: .tertiaryLabel))
+                    .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_settings_archive")
+    }
+
+    /// Eliminar no se deshace: rojo. Bloqueado, rojo apagado, con quién debe y cuánto y «Ver los saldos» (L19-10).
+    private var deleteRow: some View {
+        let offer = currentOffer
+        let blocked = !offer.deleteEnabled
+        let red = DS.Semantic.errorForeground.opacity(blocked ? 0.5 : 1)
+        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Button {
-                // Refresh cache antes de mostrar el dialog — simétrico con toggleArchive,
-                // evita falsos negativos si el sync trajo deuda después del último
-                // onAppear/dataVersion change.
+                // Refresh cache antes de mostrar el dialog — simétrico con toggleArchive, evita falsos negativos si
+                // el sync trajo deuda después del último onAppear/dataVersion change.
                 recomputeOwnerExit()
                 guard currentOffer.deleteEnabled else { return }
                 showDeleteConfirm = true
             } label: {
-                HStack {
-                    Image(systemName: "trash.fill")
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    Text(L10n.Groups.Settings.deleteGroup)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                    Spacer()
+                HStack(alignment: .top, spacing: DS.Spacing.md) {
+                    Image(systemName: "trash")
+                        .font(DS.Typography.title3)
+                        .foregroundStyle(red)
+                        .frame(width: 28, alignment: .center) // A11Y-DT: columna de icono de la fila
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(L10n.Groups.Settings.deleteGroup)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(red)
+                        Text(deleteRowBody(offer))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("group_settings_delete_body")
+                    }
+                    Spacer(minLength: 0)
                     if isDeleting {
                         ProgressView()
                     }
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(!currentOffer.deleteEnabled || isDeleting || isTransferring)
+            .disabled(blocked || isDeleting || isTransferring)
+            .accessibilityIdentifier("group_settings_delete")
 
-            if let hint = currentOffer.deleteHint {
-                Text(deleteHintText(hint))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(DS.Semantic.errorForeground)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.bottom, DS.FormRow.paddingV)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if blocked {
+                Button {
+                    viewModel.requestAfterSheetDismiss(.showBalances)
+                } label: {
+                    // El área táctil va DENTRO del label: con el `frame` colgado del botón medía 13 pt de alto.
+                    Text(L10n.UXL19.seeBalances)
+                        .font(DS.Typography.captionSmall.weight(.semibold))
+                        .foregroundStyle(.thAccent)
+                        .frame(minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 28 + DS.Spacing.md) // A11Y-DT: alineado con el texto de la fila
+                .accessibilityIdentifier("group_settings_see_balances")
             }
         }
-        .solidCard(radius: DS.Radius.card)
+    }
+
+    private func deleteRowBody(_ offer: GroupOwnerExitLogic.Offer) -> String {
+        guard !offer.deleteEnabled, let hint = offer.deleteHint else { return L10n.UXL19.deleteRowBody }
+        return L10n.UXL19.deleteRowBody + " " + deleteBlockedText(hint)
     }
 
     private func performSoftDelete() async {
@@ -971,33 +957,29 @@ struct GroupSettingsView: View {
         } catch {
             // El copy de `ownerCannotLeave` manda AQUÍ («…puedes eliminarlo»), así que este camino no
             // puede seguir pintando la dev-string en inglés de `GroupServiceError` («GroupService: Only
-            // the group owner…»): sería mandar al usuario a un callejón con cartel técnico. Las otras
-            // cuatro acciones de esta pantalla (renombrar, archivar, opciones) tienen el mismo defecto y
-            // se dejan a propósito: no las nombra este cambio. Anotadas en el ticket.
+            // the group owner…»): sería mandar al usuario a un callejón con cartel técnico.
             actionErrorMessage = GroupLeaveErrorLogic.classify(
                 error, attestUnavailable: GroupsAttestStreakStore.isTerminal()).localizedMessage
             showActionError = true
         }
     }
 
-    private func hasNonZeroBalance(for memberID: String) -> Bool {
-        viewModel.balances
-            .filter { $0.memberID == memberID }
-            .contains { abs($0.netBalance) > 0.01 }
-    }
+    // MARK: - Deuda
 
     /// 2.6 — una sola resolución de identidad, la canónica del write-side. La versión anterior probaba
     /// PRIMERO el `cachedRecordName` de iCloud y, si no casaba ningún member, devolvía nil SIN caer al
     /// fallback: en un grupo del canal backend eso da siempre nil (`cloudKitUserRecordID` está vacío por
     /// diseño, pero el recordName de iCloud SÍ existe) ⇒ el usuario aparecía sin deuda aunque debiera
     /// dinero, y esta propiedad es la que decide si se le deja archivar o salir del grupo.
+    ///
+    /// L19-10: el residuo de redondeo no cuenta (`GroupRoundingResidueLogic`).
     private var hasOutstandingBalance: Bool {
         guard let memberID = GroupExpenseService.selectCurrentUserMemberID(
             from: viewModel.members,
             cachedRecordName: GroupUserIdentityService.shared.cachedRecordName,
             currentUserID: CloudSyncFlags.groupsBackendEnabled ? CloudAuthService.shared.currentUserID : nil
         ) else { return false }
-        return hasNonZeroBalance(for: memberID)
+        return GroupRoundingResidueLogic.hasOutstanding(debts: viewModel.debts, memberID: memberID)
     }
 
     /// Alcance global: cualquier miembro con balance pendiente. Cubre cross-currency
@@ -1020,6 +1002,7 @@ struct GroupSettingsView: View {
             ))
             guard expensesCount > 0 else {
                 hasOutstandingDebt = false
+                outstandingDebts = []
                 return
             }
 
@@ -1041,12 +1024,16 @@ struct GroupSettingsView: View {
                 members: members,
                 settlements: settlements
             )
-            hasOutstandingDebt = balances.contains { abs($0.netBalance) > 0.01 }
+            outstandingDebts = GroupRoundingResidueLogic.outstandingDebts(
+                expenses: expenses, shares: shares, settlements: settlements)
+            hasOutstandingDebt = GroupRoundingResidueLogic.hasOutstanding(debts: outstandingDebts, balances: balances)
         } catch {
             #if DEBUG
             print("GroupSettingsView: recomputeOutstandingDebt fetch error \(error), fallback to cache")
             #endif
-            hasOutstandingDebt = viewModel.balances.contains { abs($0.netBalance) > 0.01 }
+            // Las deudas del detalle pueden venir convertidas («moneda única»); para decidir si hay deuda da igual.
+            outstandingDebts = viewModel.debts
+            hasOutstandingDebt = GroupRoundingResidueLogic.hasOutstanding(debts: viewModel.debts, balances: viewModel.balances)
         }
     }
 
@@ -1060,7 +1047,7 @@ struct GroupSettingsView: View {
 
     /// Recalcula la deuda del grupo Y, con ella, qué salida se le ofrece al dueño. Van juntos porque
     /// el offer DEPENDE de la deuda: calcularlos por separado dejaría un frame en el que el botón de
-    /// eliminar y su hint discrepan sobre si hay saldos.
+    /// eliminar y su texto discrepan sobre si hay saldos.
     private func recomputeOwnerExit() {
         recomputeOutstandingDebt()
         do {
@@ -1150,8 +1137,8 @@ struct GroupSettingsView: View {
         // Refresca el cache antes del check para evitar valor stale si el sync trajo
         // data después del último onAppear/dataVersion change. Tiene que ser `recomputeOwnerExit`
         // y no solo la deuda: desde que «Eliminar» lee `currentOffer` en vez del `@State` vivo,
-        // refrescar únicamente `hasOutstandingDebt` deja el botón habilitado y sin hint mientras el
-        // diálogo de archivar, en la misma pantalla, ya avisa de que hay deudas.
+        // refrescar únicamente `hasOutstandingDebt` deja el botón habilitado y sin texto de bloqueo
+        // mientras el diálogo de archivar, en la misma pantalla, ya avisa de que hay deudas.
         if willArchive { recomputeOwnerExit() }
         if willArchive && hasOutstandingDebt {
             showArchiveConfirm = true
@@ -1167,10 +1154,34 @@ struct GroupSettingsView: View {
             viewModel.loadData()
             if group.isArchived {
                 dismiss()
+                announceArchived()
             }
         } catch {
             actionErrorMessage = GroupActionErrorLogic.message(for: error)
             showActionError = true
+        }
+    }
+
+    /// L19-8 (decisión B de Jürgen): al archivar, «Lo moviste a Archivados · Deshacer», como en la Bandeja. Antes el
+    /// grupo desaparecía de la lista sin decir dónde había ido. El aviso vive en su propia ventana
+    /// (`DraftDiscardUndoNotice`): esta hoja y el detalle se cierran al archivar.
+    private func announceArchived() {
+        let archived = group
+        DraftDiscardUndoNotice.show(
+            message: L10n.UXL19.archivedNotice,
+            systemImage: "archivebox",
+            undoTitle: L10n.UXL19.undo,
+            noticeIdentifier: "group_archived_notice",
+            undoIdentifier: "group_archived_undo"
+        ) {
+            do {
+                try GroupService.shared.setArchived(archived, isArchived: false)
+                DS.Haptic.success()
+            } catch {
+                #if DEBUG
+                print("GroupSettingsView: deshacer el archivado falló: \(error)")
+                #endif
+            }
         }
     }
 
@@ -1203,8 +1214,8 @@ struct GroupSettingsView: View {
     /// presupuesto de todo el grupo. El usuario que abre el editor para subir el tope, lo deja en blanco
     /// un momento y toca Guardar no está pidiendo eso; para quitarlo hay una fila propia con
     /// confirmación. Así que aquí lo ilegible se contesta con un aviso, no con un borrado.
-    private func saveBudgetLimitFromInput() {
-        let amount = AmountInputHelper.parseDecimal(budgetInput)
+    private func saveBudgetLimitFromInput(_ input: String) {
+        let amount = AmountInputHelper.parseDecimal(input)
         guard amount.isFinite, amount > 0, amount < GroupService.maxBudgetLimitAmount else {
             actionErrorMessage = L10n.Groups.Budget.invalidAmount
             showActionError = true
@@ -1221,8 +1232,7 @@ struct GroupSettingsView: View {
         } catch {
             // Localizado, no `error.localizedDescription`: los dos errores que este camino puede lanzar
             // —`.adminRequired` e `.inactiveMember`— devuelven dev-strings en inglés («GroupService:
-            // Only group admins can perform this action»), y esta fila es código nuevo, así que no
-            // hereda el permiso que el resto del fichero se dio para dejarlo estar.
+            // Only group admins can perform this action»).
             actionErrorMessage = GroupLeaveErrorLogic.classify(
                 error, attestUnavailable: GroupsAttestStreakStore.isTerminal()).localizedMessage
             showActionError = true
@@ -1268,4 +1278,46 @@ struct GroupSettingsView: View {
         }
     }
 
+}
+
+// MARK: - Salir del grupo (L19-11)
+
+/// Las dos confirmaciones de salir, en su propio modificador para no alargar la cadena del `body` (el compilador del
+/// CI tipa peor que el de 27: `swiftui-ds.md`). Son DOS diálogos y no uno con un botón condicional: los botones de
+/// una presentación no admiten contenido que dependa del estado (regla medida el 2026-09-06).
+private struct LeavePresentations: ViewModifier {
+    @Binding var showLeaveGroupConfirm: Bool
+    @Binding var showLeaveWithDebtConfirm: Bool
+    let leaveWithDebtMessage: String
+    let onLeave: () -> Void
+    let onSettleFirst: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(
+                L10n.Groups.Settings.leaveGroup,
+                isPresented: $showLeaveGroupConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Settings.leaveGroup, role: .destructive) { onLeave() }
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("group_settings_leave_cancel")
+            } message: {
+                Text(L10n.Groups.Settings.leaveGroupConfirm)
+            }
+            .confirmationDialog(
+                L10n.Groups.Settings.leaveGroup,
+                isPresented: $showLeaveWithDebtConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Settings.leaveGroup, role: .destructive) { onLeave() }
+                    .accessibilityIdentifier("group_settings_leave_confirm")
+                Button(L10n.UXL19.settleFirst) { onSettleFirst() }
+                    .accessibilityIdentifier("group_settings_leave_settle_first")
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("group_settings_leave_with_debt_cancel")
+            } message: {
+                Text(leaveWithDebtMessage)
+            }
+    }
 }

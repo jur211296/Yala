@@ -268,7 +268,7 @@
 "exchangeRate.updated" = "Updated";
 "exchangeRate.loadError" = "We couldn't get the exchange rate. Try again in a moment.";
 "exchangeRate.noSecondaryCurrenciesHint" = "You can select secondary currencies in";
-"exchangeRate.noSecondaryCurrenciesPath" = "Profile > Currency & exchange";
+"exchangeRate.noSecondaryCurrenciesPath" = "Settings > Currency & exchange";
 
 // MARK: - Empty States
 
@@ -400,7 +400,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "Favorite Payments";
+"favorites.title" = "Favorites";
 "favorites.new" = "New Favorite";
 "favorites.edit" = "Edit Favorite";
 "favorites.noFavorites" = "You don't have any favorites yet";
@@ -410,7 +410,7 @@
 "favorites.namePlaceholder" = "Favorite name";
 "favorites.notConfigured" = "Not configured";
 "favorites.descriptionPlaceholder" = "Description (optional)";
-"favorites.saveDescription" = "Save this payment as a favorite to quickly record similar expenses in the future. You'll find it in the ⭐ at the top right when creating or editing any record. You can always edit it from Favorite Payments in your profile.";
+"favorites.saveDescription" = "Your usual expenses, one tap away.";
 
 // MARK: - Scheduled
 
@@ -445,7 +445,7 @@
 "settings.categories" = "Categories";
 "settings.tags" = "Tags";
 "settings.notifications" = "Notifications";
-"settings.favorites" = "Favorite Payments";
+"settings.favorites" = "Favorites";
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Favorite Budgets";
 "settings.budgetsFavoritesInfo" = "Favorite budgets appear in the Budgets card on the Home tab (3 in medium, 5 in large).";
@@ -453,9 +453,9 @@
 "settings.budgetsFavoritesReorder" = "Reorder favorites";
 "budgets.favorites.previewTitle" = "This is how it will look on the Home tab";
 "budgets.favorites.previewEmpty" = "Select favorites to see the preview";
-"settings.tabBarConfig" = "Customize Navigation";
-"settings.tabBarConfigInfo" = "Choose which sections to show in the bottom bar. Minimum 1, maximum 3.";
-"settings.tabBarConfigActive" = "Active tabs";
+"settings.tabBarConfig" = "Bottom tabs";
+"settings.tabBarConfigInfo" = "Choose which tabs you see at the bottom and in what order.";
+"settings.tabBarConfigActive" = "In the bar";
 "settings.tabBarConfigAvailable" = "Available";
 "settings.tabBarConfigReorderHint" = "Long press to reorder";
 "settings.tabBarConfigMinWarning" = "You must have at least one section";
@@ -534,7 +534,7 @@
 "budgets.alerts.message.75" = "75%% of \"%1$@\" used — %2$@ of %3$@";
 "budgets.alerts.message.90" = "\"%1$@\" is running low — %2$@ of %3$@ used";
 "budgets.alerts.message.100" = "You've hit the limit on \"%1$@\" — %2$@ of %3$@";
-"budgets.alerts.globalDisabledHint" = "Enable budget alerts in Profile > Notifications to receive them";
+"budgets.alerts.globalDisabledHint" = "Enable budget alerts in Settings > Notifications to receive them";
 "budgets.alerts.custom" = "Custom";
 "budgets.alerts.addThreshold" = "Add";
 "budgets.new" = "New Budget";
@@ -607,7 +607,7 @@
 
 // MARK: - Profile
 
-"profile.title" = "Profile";
+"profile.title" = "Settings";
 "profile.defaultName" = "User";
 "profile.personalDetails" = "Personal Details";
 "profile.dataManagement" = "Data Management";
@@ -677,14 +677,14 @@
 "report.noSubcategory" = "No subcategory";
 "report.noTag" = "No tag";
 "report.noAccount" = "No account";
-"report.grouping.type" = "Type";
+"report.grouping.type" = "Income and expenses";
 "report.grouping.category" = "Category";
 "report.grouping.subcategory" = "Subcategory";
 "report.grouping.tag" = "Tag";
 "report.grouping.account" = "Account";
 "report.grouping.currency" = "Currency";
-"report.grouping.nature" = "Nature";
-"report.grouping.drillDown" = "Drill down";
+"report.grouping.nature" = "Need";
+"report.grouping.drillDown" = "Break down";
 "report.grouping.hint" = "Add levels to see more detail. Drag to reorder priority.";
 "report.grouping.active" = "Active";
 "report.grouping.available" = "Available";
@@ -834,7 +834,7 @@
 "cashFlowPlan.monthsActive" = "months";
 "cashFlowPlan.suggestedSource" = "Based on %d months of activity";
 "cashFlowPlan.bannerTitle" = "What is cash flow?";
-"cashFlowPlan.bannerBody" = "It's your month-by-month plan for income and expenses. It shows you if your money will stretch or if you need to adjust something.";
+"cashFlowPlan.bannerBody" = "See month by month whether what you earn covers what you spend.";
 "cashFlowPlan.available" = "Available";
 "cashFlowPlan.accumulated" = "Accumulated";
 "cashFlowPlan.accumulatedShort" = "Accum";
@@ -903,7 +903,7 @@
 "cashFlowPlan.monthSummaryOnTrack" = "You've spent %d%% of your estimated expenses this month";
 "cashFlowPlan.monthSummaryOver" = "You're %d%% over your estimate this month";
 "cashFlowPlan.monthSummaryUnder" = "Only %d%% spent — you're doing great this month";
-"cashFlowPlan.configureHorizon" = "Configure horizon";
+"cashFlowPlan.configureHorizon" = "How many months to show";
 "cashFlowPlan.monthsAhead" = "Months ahead";
 "cashFlowPlan.monthsBack" = "Months back";
 "cashFlowPlan.showAccumulatedBalance" = "Show accumulated";
@@ -1070,7 +1070,7 @@
 "insights.ofTotal" = "of total";
 "insights.analyzingData" = "Analyzing your data...";
 "insights.activateAITitle" = "AI summary available";
-"insights.activateAIBody" = "Enable and customize it in Profile > AI Features.";
+"insights.activateAIBody" = "Enable and customize it in Settings > AI Features.";
 "insights.activate" = "Activate";
 "insights.goToSettings" = "Go to settings";
 "insights.notInterested" = "Not interested";
@@ -1094,7 +1094,7 @@
 "settings.permissions" = "Permissions";
 "settings.aiPrivacy" = "AI Privacy & Data";
 "settings.subscriptions" = "Manage Subscriptions";
-"settings.rateApp" = "Rate & Recommend";
+"settings.rateApp" = "Rate Yala";
 "settings.tutorials" = "Tutorials";
 "settings.faq" = "FAQ";
 "settings.contact" = "Contact Us";
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "Indicators";
 "settings.sectionFormat" = "Number Format";
 "settings.defaultPeriod" = "Default Period";
-"settings.defaultPeriodDescription" = "This period will be applied by default every time you open the app. You can temporarily change it from the period selector at any time.";
+"settings.defaultPeriodDescription" = "The period Home, Records and Statistics open with. You can change it for a while from the period selector.";
 "settings.colorfulIcons" = "Colorful Icons";
 "settings.colorfulIconsDescription" = "Show colored icons in the profile section, iOS Settings style.";
 "settings.colorfulIconsDisabledByTheme" = "Automatically disabled by the current theme.";
@@ -1699,19 +1699,19 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Help hints";
-"settings.widgetHintsDescription" = "Show info buttons on widgets with explanations about each chart.";
-"settings.showVariations" = "Comparisons";
-"settings.showVariationsDescription" = "Show percentage variations and comparison charts vs the previous period.";
-"settings.averageLine" = "Average line";
+"settings.widgetHintsDescription" = "Shows the “?” button next to charts, explaining each one. You'll see it on Home, in Statistics and in Planning.";
+"settings.showVariations" = "Compare with previous period";
+"settings.showVariationsDescription" = "Shows how much each figure went up or down compared with the previous period. You'll see it on Home, in Statistics and in reports.";
+"settings.averageLine" = "Average line on charts";
 "settings.averageLineDescription" = "Show an average line on bar charts.";
-"settings.averageLine.off" = "Off";
-"settings.averageLine.total" = "Total";
-"settings.averageLine.segmented" = "Segmented";
-"settings.averageLine.offDescription" = "No average line on charts.";
-"settings.averageLine.totalDescription" = "A horizontal line showing the overall average.";
-"settings.averageLine.segmentedDescription" = "Segments by period with percentage variation.";
+"settings.averageLine.off" = "None";
+"settings.averageLine.total" = "One";
+"settings.averageLine.segmented" = "By segment";
+"settings.averageLine.offDescription" = "No average line.";
+"settings.averageLine.totalDescription" = "One line with the average for the whole period.";
+"settings.averageLine.segmentedDescription" = "One line per segment, showing how much it went up or down from the previous one.";
 "settings.decimalPlaces" = "Decimal places";
-"settings.decimalPlacesDescription" = "Applies only to totals and charts. Individual records always show 2 decimals.";
+"settings.decimalPlacesDescription" = "You'll see it in totals and charts. Each record always shows 2 decimals.";
 "settings.decimalsNone" = "No decimals";
 "settings.decimalsOne" = "1 decimal";
 "settings.decimalsTwo" = "2 decimals";
@@ -1719,22 +1719,22 @@
 "settings.currencyFormatDescription" = "Choose whether to show the currency code (USD) or symbol ($).";
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbol (S/, $)";
-"settings.autoFocusField" = "Auto-focus field";
-"settings.autoFocusFieldDescription" = "When creating a new manual record, the keyboard will automatically open on the selected field.";
+"settings.autoFocusField" = "Open keyboard on";
+"settings.autoFocusFieldDescription" = "When you add a record by hand, the keyboard opens on this field.";
 "settings.autoFocusAmount" = "Amount";
 "settings.autoFocusNote" = "Description";
-"settings.autoFocusNone" = "None";
+"settings.autoFocusNone" = "Don't open";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Usage mode";
 "settings.expensesOnlyMode" = "Expenses only";
-"settings.expensesOnlyModeDescription" = "Hides income, transfers and balances. Your data is not deleted, only hidden.";
+"settings.expensesOnlyModeDescription" = "Hides income, transfers and balances throughout the app. Your data isn't deleted.";
 "settings.expensesOnlyActivateTitle" = "Enable expenses only mode?";
 "settings.expensesOnlyActivateMessage" = "Income, transfers and balances will be hidden throughout the app. You can revert this at any time.";
-"settings.expensesOnlyActivateConfirm" = "Yes, enable";
+"settings.expensesOnlyActivateConfirm" = "Enable";
 "settings.expensesOnlyDeactivateTitle" = "Disable expenses only mode?";
 "settings.expensesOnlyDeactivateMessage" = "Income, transfers and balances will be shown again.";
-"settings.expensesOnlyDeactivateConfirm" = "Yes, disable";
+"settings.expensesOnlyDeactivateConfirm" = "Disable";
 "settings.expensesOnlyActive" = "Active";
 "settings.categoryHidden" = "(hidden)";
 
@@ -1773,7 +1773,7 @@
 "onboarding.categoriesYes" = "Start with these categories";
 "onboarding.categoriesNo" = "No categories, I'll make my own";
 "onboarding.categoriesRecommended" = "Recommended";
-"onboarding.categoriesInfo" = "Each category includes more detailed subcategories. You can view and customize them in Profile > Categories.";
+"onboarding.categoriesInfo" = "Each category includes more detailed subcategories. You can view and customize them in Settings > Categories.";
 "onboarding.notificationsTitle" = "Stay in the loop?";
 "onboarding.notificationsSubtitle" = "Turn on the reminders that help you. You can change them anytime.";
 "onboarding.notificationsSkip" = "Not now, thanks";
@@ -1781,7 +1781,7 @@
 "onboarding.notificationsDeselectAll" = "Disable all";
 "onboarding.recommended" = "Recommended";
 "onboarding.languageTitle" = "Choose your language";
-"onboarding.languageSubtitle" = "Yala isn't available in your device's language yet. Pick one: you can change it anytime in Profile > Personalization.";
+"onboarding.languageSubtitle" = "Yala isn't available in your device's language yet. Pick one: you can change it anytime in Settings > Personalization.";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "How do you want to use Yala?";
@@ -1887,7 +1887,7 @@
 "onboarding.calc.balanceLabelChecking" = "Money in your account";
 "onboarding.calc.balanceLabelSavings" = "Amount saved";
 "onboarding.calc.balanceLabelCash" = "Cash you have";
-"onboarding.accountImportTip" = "In Profile > Import you can import records to any of your accounts.";
+"onboarding.accountImportTip" = "In Settings > Import you can import records to any of your accounts.";
 "onboarding.accountMoreTip" = "You can add more accounts anytime. Create at least one per currency if you use multiple.";
 "onboarding.budgetTitle" = "How much do you expect to spend?";
 "onboarding.budgetSubtitle" = "A budget lets you know when you're getting close to the amount you set. Pick a category and a monthly reference amount.";
@@ -2187,19 +2187,19 @@
 "faq.howToRecord.q" = "How do I record an expense?";
 "faq.howToRecord.a" = "On Home, tap New record to type the amount, or Voice or Photo to dictate it or read a receipt. Yala fills in the details for you.";
 "faq.multiCurrency.q" = "Can I use multiple currencies?";
-"faq.multiCurrency.a" = "Yes. Yala supports 7 currencies (PEN, USD, EUR, MXN, COP, BRL, GBP). Set your main currency and add secondary currencies in Settings > Currency.";
+"faq.multiCurrency.a" = "Yes. Yala has 54 currencies. Each account uses its own, and Yala converts totals to your main currency. Choose your main currency, and up to 2 secondary ones to compare, in Settings > Currency & Exchange.";
 "faq.changeCategory.q" = "How do I change an expense's category?";
 "faq.changeCategory.a" = "Open the record, tap “Edit” and change the category. Faster: touch and hold the record in the list and choose “Change category”. To change several at once, tap ··· in Records, choose “Select”, mark the ones you want and tap the pencil.";
 "faq.importData.q" = "Can I import my data?";
-"faq.importData.a" = "Yes. Go to Settings > Import and upload a CSV or Excel file. Yala detects the columns automatically and lets you assign accounts by currency.";
+"faq.importData.a" = "Yes. Go to Settings > Import File and upload a CSV or Excel file. Yala detects the columns automatically and lets you assign accounts by currency.";
 "faq.exportData.q" = "How do I export my data?";
-"faq.exportData.a" = "Go to Settings > Export and choose CSV or Excel format. You can download all your records to analyze in a spreadsheet or keep as a backup.";
+"faq.exportData.a" = "Go to Settings > Export records and choose CSV or Excel format. You can download all your records to analyze in a spreadsheet or keep as a backup.";
 "faq.deleteData.q" = "Can I delete all my data?";
 "faq.deleteData.a" = "Yes. In Settings > Wipe Data you can delete all your information. This action cannot be undone, so we recommend exporting a backup first.";
 "faq.whatIsPro.q" = "What does Yala Pro include?";
-"faq.whatIsPro.a" = "Yala Pro unlocks premium features like voice input, receipt scanning with camera, exclusive themes, and more. You can see all benefits in Settings > Subscription.";
+"faq.whatIsPro.a" = "Yala Pro lets you log by speaking or with a photo, ask Yala AI, have unlimited accounts and budgets, and use themes and icons. You'll see it all in Settings > Yala Pro.";
 "faq.cancelSub.q" = "How do I cancel my subscription?";
-"faq.cancelSub.a" = "You can manage or cancel your subscription anytime from Settings > Subscription > Manage in App Store. Your Pro access continues until the end of the paid period.";
+"faq.cancelSub.a" = "You can manage or cancel your subscription anytime in Settings > Yala Pro > Manage or cancel. You keep Pro until the end of the paid period.";
 
 // MARK: - Shortcuts (App Intents)
 "shortcut.quickExpense.title" = "New entry";
@@ -2495,10 +2495,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "New automatic record";
-"shortcut.notification.expense" = "expense";
-"shortcut.notification.income" = "income";
-"shortcut.notification.body" = "A %@ of %@%@ was noted. Open Yala to review and save it.";
 
 // MARK: - Category Seeds
 
@@ -2588,14 +2584,14 @@
 "filters.includeGroupTransactionsHint" = "When on, records created from shared expenses appear in your list.";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "This expense has settlements after its date. Delete or reconcile the settlements first before removing it.";
+"groups.bridge.deleteExpenseBlocked" = "This expense has later payments linked to it. Delete or adjust those payments first to remove it.";
 "groups.bridge.editFromGroup" = "This record syncs with a group. Edit it from the shared expense.";
 "groups.bridge.assignFromInbox" = "Assign a subcategory from your Inbox to finalize it.";
-"groups.bridge.editSettlementInGroup" = "This record comes from a settlement. Edit it from the group.";
+"groups.bridge.editSettlementInGroup" = "This record comes from a group payment. Edit it from the group.";
 "groups.bridge.editPartialBanner" = "This expense comes from the group. You can edit the account, category and tags. Amount and date sync with the group.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registered this expense in %2$@. Choose an account to track it in your records.";
 "groups.bridge.draftReasonCurrencyChanged" = "The currency of the expense in %@ changed. Choose an account to record your share.";
-"groups.bridge.activateTitle" = "Enable automatic records";
+"groups.bridge.activateTitle" = "Show in your accounts";
 "groups.bridge.activateBody" = "From now on, shared expenses will show up in your personal accounts. Previous expenses in your groups: %d. What should we do with them?";
 "groups.bridge.activateOptionFromNow" = "Start from now";
 "groups.bridge.activateOptionFromNowHint" = "Only new expenses will be reflected.";
@@ -2621,7 +2617,7 @@
 "subcategory.system.settlementSent" = "Settlement sent";
 "subcategory.system.settlementReceived" = "Settlement received";
 "inbox.sourceGroupExpense" = "Shared expense";
-"inbox.sourceGroupSettlement" = "Settlement";
+"inbox.sourceGroupSettlement" = "Group payment";
 "inbox.sourceManual" = "Manual";
 "inbox.groupDraftCannotDelete" = "This record can only be removed from its group.";
 
@@ -2648,10 +2644,10 @@
 "tutorials.createAccount.intro.title" = "What is an account?";
 "tutorials.createAccount.intro.desc" = "Set up your bank, wallet, or card to track where your money lives.";
 "tutorials.createAccount.step0.title" = "Create a new account";
-"tutorials.createAccount.step1.title" = "Or create from the Panel";
+"tutorials.createAccount.step1.title" = "Or create it from Home";
 "tutorials.createAccount.step2.title" = "Fill in the details";
-"tutorials.createAccount.completion.title" = "Your account is ready!";
-"tutorials.createAccount.completion.desc" = "Keeping your accounts organized and well separated is essential for managing your finances. Each account lets you filter your data and better visualize your trends. You can edit them anytime and modify their initial balance or adjust the current balance.";
+"tutorials.createAccount.completion.title" = "Now you know how to create an account";
+"tutorials.createAccount.completion.desc" = "Split your money into accounts (bank, cash, card) to see how much is in each one. You can edit them anytime.";
 
 // 2. createCategories (4 steps)
 "tutorials.createCategories.title" = "Create categories";
@@ -2661,8 +2657,8 @@
 "tutorials.createCategories.step1.title" = "Add subcategories";
 "tutorials.createCategories.step2.title" = "Create subcategories";
 "tutorials.createCategories.step3.title" = "Customize your category";
-"tutorials.createCategories.completion.title" = "Category created!";
-"tutorials.createCategories.completion.desc" = "Good categories make your reports much more useful. You can edit them or add more at any time.";
+"tutorials.createCategories.completion.title" = "Now you know how to create categories";
+"tutorials.createCategories.completion.desc" = "Good categories show you where your money goes. You can edit them or create more anytime.";
 
 // 3. createTags (2 steps)
 "tutorials.createTags.title" = "Create tags";
@@ -2670,8 +2666,8 @@
 "tutorials.createTags.intro.desc" = "Group expenses across categories — like \"Vacation\" for food, transport, and hotel.";
 "tutorials.createTags.step0.title" = "Go to Tags";
 "tutorials.createTags.step1.title" = "Customize your tag";
-"tutorials.createTags.completion.title" = "Tag created!";
-"tutorials.createTags.completion.desc" = "Use tags to group expenses for projects, trips, or events. They're perfect for analysis that goes beyond categories.";
+"tutorials.createTags.completion.title" = "Now you know how to create tags";
+"tutorials.createTags.completion.desc" = "Use tags to bring together the expenses of a trip, a project or an event, even if they're in different categories.";
 
 // 4. createRecord (4 steps)
 "tutorials.createRecord.title" = "Record an expense";
@@ -2681,17 +2677,17 @@
 "tutorials.createRecord.step1.title" = "Choose the record type";
 "tutorials.createRecord.step2.title" = "Fill in the fields";
 "tutorials.createRecord.step3.title" = "Use quick shortcuts";
-"tutorials.createRecord.completion.title" = "Expense recorded!";
-"tutorials.createRecord.completion.desc" = "Recording expenses in the moment is key. The more you record, the better your analysis and reports will be for understanding your finances.";
+"tutorials.createRecord.completion.title" = "Now you know how to record an expense";
+"tutorials.createRecord.completion.desc" = "The sooner you log each expense, the more clearly you'll see where your money goes.";
 
 // 5. importData (2 steps)
 "tutorials.importData.title" = "Import data";
 "tutorials.importData.intro.title" = "Import your data";
 "tutorials.importData.intro.desc" = "Bring your expenses from a spreadsheet or another app in seconds.";
-"tutorials.importData.step0.title" = "Select Import data";
+"tutorials.importData.step0.title" = "Tap Import File";
 "tutorials.importData.step1.title" = "Import your file";
-"tutorials.importData.completion.title" = "Data imported!";
-"tutorials.importData.completion.desc" = "Your history is now in Yala. If there were errors, you'll receive a clear message with details; otherwise, you'll see the success message. Review your records to confirm everything imported correctly.";
+"tutorials.importData.completion.title" = "Now you know how to import your data";
+"tutorials.importData.completion.desc" = "When you import, Yala tells you what came in and what didn't. Check your records afterwards to confirm.";
 
 // 6. createBudgets (4 steps)
 "tutorials.createBudgets.title" = "Create budgets";
@@ -2699,31 +2695,31 @@
 "tutorials.createBudgets.intro.desc" = "Set spending limits and get notified when you're close.";
 "tutorials.createBudgets.step0.title" = "Open Planning";
 "tutorials.createBudgets.step1.title" = "Configure your budget";
-"tutorials.createBudgets.step2.title" = "Add it to Favorites";
+"tutorials.createBudgets.step2.title" = "Show it on Home";
 "tutorials.createBudgets.step3.title" = "Edit it whenever";
-"tutorials.createBudgets.completion.title" = "Budget is active!";
-"tutorials.createBudgets.completion.desc" = "Now you'll see in real time how your spending is going and you can make better decisions about whether to continue making those expenses or not. Check it often to stay in control.";
+"tutorials.createBudgets.completion.title" = "Now you know how to create a budget";
+"tutorials.createBudgets.completion.desc" = "With a budget, you see right away how much you have left to spend, and Yala lets you know when you're getting close to the limit.";
 
 // 7. createScheduledPayments (5 steps)
 "tutorials.createScheduledPayments.title" = "Scheduled payments";
 "tutorials.createScheduledPayments.intro.title" = "What are scheduled payments?";
-"tutorials.createScheduledPayments.intro.desc" = "Automate rent, utilities, and subscriptions — Yala records them for you.";
+"tutorials.createScheduledPayments.intro.desc" = "Enter rent, utilities, and subscriptions once: each time one is due, Yala leaves the payment in your Inbox to approve.";
 "tutorials.createScheduledPayments.step0.title" = "Open Planning";
 "tutorials.createScheduledPayments.step1.title" = "Fill in the details";
 "tutorials.createScheduledPayments.step2.title" = "Define the recurrence";
 "tutorials.createScheduledPayments.step3.title" = "Mark if it's a subscription";
 "tutorials.createScheduledPayments.step4.title" = "Manage your payments";
-"tutorials.createScheduledPayments.completion.title" = "Payment scheduled!";
-"tutorials.createScheduledPayments.completion.desc" = "Your recurring payments now record themselves. You'll receive a notification each time one runs.";
+"tutorials.createScheduledPayments.completion.title" = "Now you know how to schedule a payment";
+"tutorials.createScheduledPayments.completion.desc" = "On the due date, Yala puts each payment in the Inbox, ready for you to approve.";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "Favorite payments";
+"tutorials.createFavorites.title" = "Favorites";
 "tutorials.createFavorites.intro.title" = "What are favorites?";
 "tutorials.createFavorites.intro.desc" = "Save frequent expenses as shortcuts and record them with one tap.";
 "tutorials.createFavorites.step0.title" = "Create a favorite";
 "tutorials.createFavorites.step1.title" = "Use it quickly";
-"tutorials.createFavorites.completion.title" = "Favorite saved!";
-"tutorials.createFavorites.completion.desc" = "Favorites save you time on repetitive expenses. You can have as many as you want and edit them whenever you need.";
+"tutorials.createFavorites.completion.title" = "Now you know how to use favorites";
+"tutorials.createFavorites.completion.desc" = "A favorite logs the expenses you repeat in one tap. You can have as many as you like.";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Customize the panel";
@@ -2732,8 +2728,8 @@
 "tutorials.editPanel.step0.title" = "Open the panel";
 "tutorials.editPanel.step1.title" = "Customize the widgets";
 "tutorials.editPanel.step2.title" = "Reset if you want";
-"tutorials.editPanel.completion.title" = "Panel customized!";
-"tutorials.editPanel.completion.desc" = "Your panel now shows exactly what you need. You can change it anytime to adapt it to your way of managing.";
+"tutorials.editPanel.completion.title" = "Now you know how to customize Home";
+"tutorials.editPanel.completion.desc" = "Home shows what you choose, in the order you want. You can change it anytime.";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "Panel filters";
@@ -2744,19 +2740,19 @@
 "tutorials.panelFiltering.step2.title" = "Filter in each view";
 "tutorials.panelFiltering.step3.title" = "See filters across views";
 "tutorials.panelFiltering.step4.title" = "Use quick filter buttons";
-"tutorials.panelFiltering.completion.title" = "Filters mastered!";
-"tutorials.panelFiltering.completion.desc" = "Filters are your best tool for understanding your finances in depth. Combine them to get increasingly precise analysis.";
+"tutorials.panelFiltering.completion.title" = "Now you know how to filter";
+"tutorials.panelFiltering.completion.desc" = "Combine filters to see exactly what you're looking for. They apply to every screen at once.";
 
 // 11. inboxApproval (4 steps)
 "tutorials.inboxApproval.title" = "Inbox";
 "tutorials.inboxApproval.intro.title" = "Your smart inbox";
-"tutorials.inboxApproval.intro.desc" = "Review and approve automatic expenses from Apple Pay, voice, or camera.";
-"tutorials.inboxApproval.step0.title" = "Record by voice or image";
+"tutorials.inboxApproval.intro.desc" = "Review and save what Yala recorded for you: what you dictate or photograph, Apple Pay payments, and payments falling due.";
+"tutorials.inboxApproval.step0.title" = "What lands in the Inbox";
 "tutorials.inboxApproval.step1.title" = "Complete and approve";
-"tutorials.inboxApproval.step2.title" = "Record multiple at once";
+"tutorials.inboxApproval.step2.title" = "Save several at once";
 "tutorials.inboxApproval.step3.title" = "Manage your inbox";
-"tutorials.inboxApproval.completion.title" = "Inbox mastered!";
-"tutorials.inboxApproval.completion.desc" = "Your records in the inbox don't have an expiration date, you can approve or reject them whenever you want. Drafts don't affect your totals until you approve them.";
+"tutorials.inboxApproval.completion.title" = "Now you know how to use the Inbox";
+"tutorials.inboxApproval.completion.desc" = "What's in the Inbox doesn't count toward your totals until you approve it, and it doesn't expire.";
 
 // 12. applePay (4 steps)
 "tutorials.applePay.title" = "Record with Apple Pay";
@@ -2768,49 +2764,48 @@
 "tutorials.applePay.step3.title" = "Configure the parameters";
 
 // Tutorial step descriptions (re-expanded)
-"tutorials.createAccount.step0.desc" = "In your profile, select the Accounts section and tap to create a new account.";
-"tutorials.createAccount.step1.desc" = "You can create an account directly from the Panel by tapping the Add new account card.";
+"tutorials.createAccount.step0.desc" = "In Settings, go to Accounts and tap + to create a new one.";
+"tutorials.createAccount.step1.desc" = "On Home, under Your finances, swipe through your accounts to the end and tap Add.";
 "tutorials.createAccount.step2.desc" = "Fill in the details for your new account and tap Save.";
-"tutorials.createCategories.step0.desc" = "In your profile, select the Categories section and create a new category.";
+"tutorials.createCategories.step0.desc" = "In Settings, go to Categories and tap + to create a new one.";
 "tutorials.createCategories.step1.desc" = "Remember that there must always be subcategories associated with a category to be able to create it.";
 "tutorials.createCategories.step2.desc" = "Creating subcategories is as easy as creating categories: give it a name, select its nature, and optionally modify its icon.";
 "tutorials.createCategories.step3.desc" = "Customize your category's icon and color to your liking whenever you want.";
-"tutorials.createTags.step0.desc" = "In your profile, select the Tags section and create a new tag.";
+"tutorials.createTags.step0.desc" = "In Settings, go to Tags and tap + to create a new one.";
 "tutorials.createTags.step1.desc" = "Customize your tag to your liking: give it a name, icon, and color.";
 "tutorials.createRecord.step0.desc" = "On Home, tap New record. To dictate or read a receipt, tap Voice or Photo.";
 "tutorials.createRecord.step1.desc" = "You can record expenses, income, and even transfers between accounts. Exchange rates are calculated automatically in real time.";
 "tutorials.createRecord.step2.desc" = "Fill in the required fields: amount, account, and subcategory. You can also add a description and any tags you want.";
 "tutorials.createRecord.step3.desc" = "Use quick shortcuts: @ for account, ! for category, and # for tag. Start typing to refine your search within each shortcut.";
-"tutorials.importData.step0.desc" = "In your profile, select the Import data section.";
+"tutorials.importData.step0.desc" = "In Settings, under Data, tap Import File.";
 "tutorials.importData.step1.desc" = "You can import CSV or Excel as many times as you want following the default template, which you can download right there. If there's data in various currencies, it will ask you to select the accounts for each one.";
 "tutorials.createBudgets.step0.desc" = "In the menu select Planning and make sure you're on the Budgets tab. Use the + button to create a new one.";
-"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Customize which accounts, categories, tags, and natures you want to track. Turn on notifications if you want alerts at certain thresholds.";
-"tutorials.createBudgets.step2.desc" = "You can add budgets to Favorites to display them in the Panel widget. Choose up to 3 in your preferred order.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and natures you want to track. Turn on notifications if you want alerts at certain thresholds.";
+"tutorials.createBudgets.step2.desc" = "Turn on “Show in widget” to see it in the Budgets widget on Home.";
 "tutorials.createBudgets.step3.desc" = "Remember you can always come back to edit your budget by tapping it.";
 "tutorials.createScheduledPayments.step0.desc" = "In the menu select Planning and make sure you're on the Scheduled Payments tab. Use the + button to create a new one.";
 "tutorials.createScheduledPayments.step1.desc" = "Fill in your payment name, amount, note (optional), account, subcategory, and tags (optional).";
 "tutorials.createScheduledPayments.step2.desc" = "Select the payment day and frequency. Choose when the first payment will be and turn on notifications if you want to be notified on the same day or days before.";
-"tutorials.createScheduledPayments.step3.desc" = "Don't forget to turn on the subscription toggle if it's a recurring subscription.";
+"tutorials.createScheduledPayments.step3.desc" = "In “More options”, turn on “Is this a subscription?” if it is one.";
 "tutorials.createScheduledPayments.step4.desc" = "By tapping a scheduled payment you can see upcoming payments, those already made, and edit it whenever you want.";
-"tutorials.createFavorites.step0.desc" = "Go to the new record screen and tap the star at the top to create a new favorite.";
-"tutorials.createFavorites.step1.desc" = "Fill in the fields you want to be pre-filled. Next time, simply tap the favorite and watch all the fields fill in automatically.";
+"tutorials.createFavorites.step0.desc" = "In New Record, tap “Favorite” below the amount to save what you’ve entered so far as a favorite.";
+"tutorials.createFavorites.step1.desc" = "Next time, tap the favorite in the row at the top of the form: the fields you saved fill in automatically.";
 "tutorials.editPanel.step0.desc" = "Go to the main screen where you see your expense summary with all available widgets.";
-"tutorials.editPanel.step1.desc" = "You can modify which widgets to see and in what order by tapping the customization button on the panel.";
+"tutorials.editPanel.step1.desc" = "Tap the grid button next to each Home section to choose which widgets to see and in what order.";
 "tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset\" within customization.";
 "tutorials.panelFiltering.step0.desc" = "Get the most out of Yala's interactive charts. Almost all panels are filterable by category, nature, among others. Play with them and find what works best for you.";
 "tutorials.panelFiltering.step1.desc" = "You have a filter bar where you'll see all the applied filters. You can remove them individually or all at once whenever you want.";
 "tutorials.panelFiltering.step2.desc" = "In the different views of the app you'll see you can filter to your liking with the charts.";
 "tutorials.panelFiltering.step3.desc" = "Filters propagate to all views equally, so you can see all kinds of metrics for whatever you want to filter.";
 "tutorials.panelFiltering.step4.desc" = "In some views you'll also have a filters section at the top so you can filter to your liking or remove all with a single button.";
-"tutorials.inboxApproval.step0.desc" = "If you're a Yala Pro user, when you make a record by voice or image, it will automatically take you to the draft. The same if you used the “Record Apple Pay payment” shortcut.";
+"tutorials.inboxApproval.step0.desc" = "The Inbox collects what Yala recorded for you: what you dictate or photograph, Apple Pay payments recorded by the shortcut, and scheduled payments falling due. They stay as drafts until you review them.";
 "tutorials.inboxApproval.step1.desc" = "Simply fill in the required fields and approve. The record will be created normally.";
-"tutorials.inboxApproval.step2.desc" = "You can also dictate or photograph several records at once. It will tell you how many drafts were created and guide you to the inbox to review them.";
-"tutorials.inboxApproval.step3.desc" = "In your inbox you can approve records, select Approve later to see them later, or reject them directly.";
-"tutorials.applePay.step0.desc" = "Open the Shortcuts app and go to the Automations section.";
-"tutorials.applePay.step1.desc" = "Tap New automation, select the Wallet option, choose the cards you want to use, and select Run Immediately.";
-"tutorials.applePay.step2.desc" = "Select Create new shortcut and search for Yala at the very bottom. In Yala select the “Record Apple Pay payment” shortcut.";
-"tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. Turn off the \"Show When Run\" toggle.";
-
+"tutorials.inboxApproval.step2.desc" = "If several drafts are already complete, tap “Save the ready ones” and they move to your records in one go.";
+"tutorials.inboxApproval.step3.desc" = "Swipe a draft to discard it, or open it to complete and approve it whenever you like.";
+"tutorials.applePay.step0.desc" = "Open the Shortcuts app and go to Automation. If you don't see it at the bottom, it's in Library.";
+"tutorials.applePay.step1.desc" = "Tap +, choose Wallet and select the cards you use. If offered, choose Run Immediately.";
+"tutorials.applePay.step2.desc" = "If asked, tap Create New Shortcut. Search for Yala and choose the “Record Apple Pay payment” shortcut.";
+"tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. If you see “Show When Run”, turn it off.";
 "tutorials.applePay.completion.title" = "Apple Pay connected!";
 "tutorials.applePay.completion.desc" = "With this you'll now have automatic records every time you use Apple Pay with the selected cards. Each payment will create a draft in your inbox.";
 
@@ -2835,21 +2830,16 @@
 "settings.siriShortcuts" = "Siri & Shortcuts";
 "siriShortcuts.title" = "Siri & Shortcuts";
 "siriShortcuts.subtitle" = "Use your voice or quick shortcuts to record expenses instantly.";
-"siriShortcuts.siri.title" = "Record with Siri";
 "siriShortcuts.siri.description" = "Dictate your expense and a draft will be created in your inbox.";
 "siriShortcuts.siri.proNote" = "Requires Yala Pro";
 "siriShortcuts.siri.phrase" = "Note an expense in Yala";
-"siriShortcuts.siri.alt1" = "You can also say: \"Log an expense in Yala\"";
-"siriShortcuts.siri.alt2" = "Or: \"Record with Siri in Yala\"";
+"siriShortcuts.siri.alt1" = "Log an expense in Yala";
+"siriShortcuts.siri.alt2" = "Record with Siri in Yala";
 "siriShortcuts.all.title" = "Other shortcuts";
-"siriShortcuts.shortcut.quick" = "Quick record";
-"siriShortcuts.shortcut.voice" = "Voice input";
-"siriShortcuts.shortcut.image" = "Add with a photo or file";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "Opens the record form with a single tap.";
-"siriShortcuts.desc.voice" = "Dictate the amount and description with your voice.";
-"siriShortcuts.desc.image" = "Scan a receipt or ticket with your camera.";
-"siriShortcuts.desc.applePay" = "Log a payment made with Apple Pay.";
+"siriShortcuts.desc.quick" = "Opens the form to log an expense or income.";
+"siriShortcuts.desc.voice" = "Dictate the amount and description.";
+"siriShortcuts.desc.image" = "A receipt, a screenshot or a PDF.";
+"siriShortcuts.desc.applePay" = "Used by the Wallet automation.";
 "siriShortcuts.phrase.quick" = "Record in Yala";
 "siriShortcuts.phrase.voice" = "Record with voice in Yala";
 "siriShortcuts.phrase.image" = "Record with photo or file in Yala";
@@ -2959,7 +2949,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Secondary Currency";
-"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency & Exchange.";
+"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Settings > Currency & Exchange.";
 "account.secondaryCurrency.accept" = "Add";
 "account.secondaryCurrency.reject" = "No, thanks";
 
@@ -2970,7 +2960,7 @@
 "notificationPrimer.benefit3" = "Alerts when approaching budget limits";
 "notificationPrimer.accept" = "Enable notifications";
 "notificationPrimer.reject" = "Not now";
-"notificationPrimer.hint" = "You can enable them in Profile > Notifications";
+"notificationPrimer.hint" = "You can enable them in Settings > Notifications";
 
 // MARK: - What's New
 "whatsNew.title" = "What's new in Yala";
@@ -3103,7 +3093,7 @@
 "groups.balance.title" = "Balances";
 "groups.balance.noDebts" = "All settled up!";
 "groups.balance.pendingDebts" = "Pending debts";
-"groups.balance.settlements" = "Settlements";
+"groups.balance.settlements" = "Payments";
 "groups.balance.confirmed" = "Confirmed";
 "groups.balance.pending" = "Pending";
 "groups.expense.noExpenses" = "No expenses";
@@ -3454,13 +3444,13 @@
 "groups.expense.eachPays" = "Each pays";
 
 // GC-05: Settlements
-"groups.settlement.title" = "Record payment";
+"groups.settlement.title" = "Log payment";
 "groups.settlement.payTo" = "pays to";
-"groups.settlement.registerPayment" = "Record payment";
+"groups.settlement.registerPayment" = "Log payment";
 "groups.settlement.confirm" = "Confirm";
 "groups.settlement.reject" = "Reject";
 "groups.settlement.settle" = "Settle";
-"groups.settlement.settleHint" = "Opens the form to register this payment";
+"groups.settlement.settleHint" = "Opens the form to log this payment";
 "groups.settlement.confirmQuestion" = "Mark this payment as confirmed?";
 "groups.settlement.rejectQuestion" = "Reject this payment?";
 
@@ -3478,7 +3468,7 @@
 "groups.invite.ready" = "All set!";
 "groups.invite.goToGroup" = "Go to group";
 "groups.invite.linkInvalidTitle" = "Invalid link";
-"groups.invite.linkInvalidDetail" = "This link is no longer valid or has expired. Ask the admin to generate a new one.";
+"groups.invite.linkInvalidDetail" = "This link is no longer valid or has expired. Ask whoever invited you for a new link.";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Group sync issue";
@@ -3996,11 +3986,11 @@
 "groups.settlement.fromAccountNone" = "None — finish later";
 "inbox.openInbox" = "Open Inbox";
 "groups.detail.openGroup" = "Open group";
-"inbox.groupExpenseDraft.title" = "Assign subcategory";
+"inbox.groupExpenseDraft.title" = "Choose the subcategory";
 "inbox.groupExpenseDraft.assignSubcategory" = "Subcategory";
-"inbox.groupSettlementDraft.title" = "Assign account";
+"inbox.groupSettlementDraft.title" = "Choose the account";
 "inbox.groupSettlementDraft.assignAccount" = "Destination account";
-"inbox.groupExpenseAccountDraft.title" = "Assign account";
+"inbox.groupExpenseAccountDraft.title" = "Choose the account";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Source account";
 "inbox.groupDraft.finalize" = "Finalize";
 "inbox.groupDraft.fromGroup" = "Group: %@";
@@ -4015,7 +4005,7 @@
 "groups.member.rejectConfirm" = "Reject %@'s request? They can request access again with another link.";
 "groups.member.pendingRequestsSection" = "Pending requests";
 "groups.invite.waitingApproval.title" = "Request sent";
-"groups.invite.waitingApproval.body" = "The group admin has to approve you before you can take part. While you wait you'll see the group in your list, but you can't open it yet. Open Yala again in a while to see if you're in.";
+"groups.invite.waitingApproval.body" = "The group admin has to approve you before you can take part. While you wait you'll see the group in your list, but you can't open it yet. We'll let you know when you're approved.";
 "groups.invite.waitingApproval.banner" = "Waiting for admin approval";
 "groups.invite.rejected.title" = "Request rejected";
 "groups.invite.rejected.body" = "The admin didn't approve your request. Ask them for a new link if you'd like to try again.";
@@ -4243,10 +4233,6 @@
 "groups.onboarding.step2.card2.body" = "Choose how each expense splits. Yala calculates who owes what.";
 "groups.onboarding.step2.card3.title" = "Settle debts in a couple of taps";
 "groups.onboarding.step2.card3.body" = "Clear payments and reset to zero. No arguments, no Excel.";
-"groups.onboarding.step3.title" = "Your privacy comes first";
-"groups.onboarding.step3.subtitle" = "You only share what's necessary, nothing more.";
-"groups.onboarding.step3.point1" = "Every member signs in with their own Yala account.";
-"groups.onboarding.step3.point2" = "Your personal data isn't synced with the group, only shared expenses.";
 "groups.onboarding.step3.cta" = "Go to Groups";
 "groups.onboarding.step3.signInCTA" = "Sign in";
 
@@ -4260,24 +4246,23 @@
 "groups.bridge.optoutAlertBody" = "You can create a personal record in your account to reflect this expense, or keep it only inside the group.";
 "groups.bridge.optoutAlertYes" = "Yes, log it";
 "groups.bridge.optoutAlertNo" = "Group only";
-"groups.bridge.deactivationSheetTitle" = "Disable personal integration";
+"groups.bridge.deactivationSheetTitle" = "Stop showing in your accounts";
 "groups.bridge.deactivationSheetBody" = "You already have records created automatically in your accounts. Choose what to do with them.";
 "groups.bridge.deactivationOptionFreeze" = "Keep as historical";
 "groups.bridge.deactivationOptionDelete" = "Delete from my accounts";
 "groups.globalSettings.title" = "Groups Settings";
-"groups.globalSettings.bridgeSectionTitle" = "Personal Yala integration";
+"groups.globalSettings.bridgeSectionTitle" = "Show in your accounts";
 "groups.globalSettings.bridgeToggleLabel" = "Log group expenses in my personal accounts";
 "groups.globalSettings.bridgeCaption" = "When on, every expense you pay or settle is also logged in the personal account you choose. Your balance reflects reality.";
 "groups.globalSettings.visibilitySectionTitle" = "Visibility";
 "groups.globalSettings.visibilityCaption" = "Choose whether group records appear in your Panel, Statistics and Records.";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Include group records in Records";
-"groups.settings.personalIntegrationSectionTitle" = "Personal integration";
+"groups.settings.personalIntegrationSectionTitle" = "Show in your accounts";
 "groups.settings.personalIntegrationToggleLabel" = "Log this group's expenses in my personal accounts";
 "groups.settings.personalIntegrationHintInheritOn" = "Inheriting your general setting (Enabled).";
 "groups.settings.personalIntegrationHintLocalOff" = "Only in this group: disabled.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "To enable this here, first enable it in Groups Settings.";
 "groups.onboarding.step2.bridgeAwareness" = "When you pay an expense we also log it in your personal account automatically — so your balance always reflects reality.";
-"groups.onboarding.step3.bridgeAwareness" = "You can change this behavior in Groups Settings.";
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Back to start";
@@ -4300,11 +4285,11 @@
 "more.subtitle.distribution" = "Find out where your money goes";
 "more.subtitle.budgets" = "Set limits and track your pace";
 "more.subtitle.scheduledPayments" = "What's coming: bills and subscriptions";
-"more.subtitle.comparative" = "Compare your periods side by side";
-"more.subtitle.cashFlow" = "What comes in and what goes out";
+"more.subtitle.comparative" = "Did you spend more or less than last month?";
+"more.subtitle.cashFlow" = "Will your money last the coming months?";
 "more.subtitle.records" = "All your activity in one place";
 "more.subtitle.groups" = "Share expenses without the hassle";
-"more.subtitle.profile" = "Your account and preferences";
+"more.subtitle.profile" = "Your profile and preferences";
 "more.toolsSection" = "More tools";
 
 
@@ -4348,20 +4333,20 @@
 "groups.card.youOwe" = "You owe %@";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
-"inbox.groupExpenseAccountDraft.banner" = "Expense from group %@. Just assign the account the money came from; the amount and date are managed by the group.";
+"inbox.groupExpenseAccountDraft.banner" = "From the group “%@”.";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
-"inbox.groupExpenseDraft.banner" = "Expense from group %@. Just pick a subcategory to classify it; the amount and date are managed by the group.";
+"inbox.groupExpenseDraft.banner" = "From the group “%@”.";
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
-"inbox.groupSettlementDraft.banner" = "Settlement from group %@. Just assign an account; the amount and date are managed by the group.";
+"inbox.groupSettlementDraft.banner" = "From the group “%@”.";
 "inbox.groupSettlementDraft.alreadyRegistered" = "This payment is already recorded in your accounts. You can dismiss this draft.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "Assign account and subcategory";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Choose the account and subcategory";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
-"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Expense from group %@. Assign the account the money came from and pick a subcategory to classify it; the amount and date are managed by the group.";
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "From the group “%@”.";
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "This shared expense no longer exists in the group.";
@@ -4450,7 +4435,7 @@
 "groups.expense.splitSheet.sharesHint" = "Assign shares to each person; the total splits proportionally.";
 
 /* Header del gráfico de quién pagó más en el grupo */
-"groups.stats.whoMadeMostPayments" = "Who's paid the most?";
+"groups.stats.whoMadeMostPayments" = "Who put in the most?";
 
 /* Stats de grupo (modo Todas): nota bajo el donut indicando la moneda a la que se convirtió */
 "groups.stats.convertedToNote" = "≈ converted to %@";
@@ -4478,10 +4463,10 @@
 "groups.openingBalance.emptyState" = "No opening balances yet.";
 "groups.openingBalance.rollupOwes" = "owes";
 "groups.openingBalance.rollupOwed" = "is owed";
-"groups.openingBalance.approvalPromptTitle" = "Does %@ start with a balance?";
-"groups.openingBalance.approvalPromptBody" = "Record what they owe or are owed from before.";
-"groups.openingBalance.approvalPromptAdd" = "Add opening balance";
-"groups.openingBalance.approvalPromptSkip" = "Not now";
+"groups.openingBalance.approvalPromptTitle" = "Did %@ already have anything to settle with the group?";
+"groups.openingBalance.approvalPromptBody" = "If they already owed something before joining, or were owed, add it so the balances add up.";
+"groups.openingBalance.approvalPromptAdd" = "Yes, add it";
+"groups.openingBalance.approvalPromptSkip" = "No, start at zero";
 "groups.openingBalance.errorNotOwner" = "Only the group creator can manage opening balances.";
 "groups.openingBalance.errorSameMember" = "Choose two different members.";
 
@@ -4771,7 +4756,7 @@
 "groups.consent.point1" = "Groups are shared by nature: they live in Yala's cloud so everyone sees the same expenses, up to date.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Only the minimum is shared with the group: your alias and the group's expenses. Other members don't see your email.";
+"groups.consent.point2" = "Only the minimum is shared with the group: your name and the group's expenses. Other members don't see your email.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Your personal finances don't move: they stay where you chose, private as always.";
@@ -4879,17 +4864,9 @@
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Use the same Google account you used to create your cloud account.";
 
-/* Note under sign-in buttons: account is tied to the sign-in method */
-"welcome.cloud.providerNote" = "Sign in with the same method you used when you created your account — your Yala account is tied to it.";
 
-/* R9 provider mismatch screen title */
-"welcome.cloud.providerMismatchTitle" = "That account uses a different sign-in method";
 
-/* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "The Yala account on this Apple ID was created with %@.";
 
-/* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "The Yala account on this Apple ID was created with a different sign-in method.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
 "welcome.cloud.beaconOrigin" = "It was created with %@. You can sign in to it or create another one.";
@@ -5206,7 +5183,7 @@
 "settings.batchLeaveStoppedBody" = "You can pick it up again anytime from “Clear Data”.";
 
 /* Feed row title for a confirmed settlement in group records */
-"groups.settlement.entryDescription" = "Settlement";
+"groups.settlement.entryDescription" = "Payment";
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@ paid %2$@";
@@ -5277,16 +5254,16 @@
 "groups.signin.retryLater" = "Hmm, we couldn't connect your account right now. Your group is still here and you won't lose anything — try again later.";
 
 /* Groups > Balances: menu item on a confirmed settlement row (destructive) */
-"groups.settlement.deleteAction" = "Delete settlement";
+"groups.settlement.deleteAction" = "Delete payment";
 
 /* Groups > Balances: title of the delete-settlement confirmation dialog */
-"groups.settlement.deleteTitle" = "Delete this settlement?";
+"groups.settlement.deleteTitle" = "Delete this payment?";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
 "groups.settlement.deleteMessage" = "The balances it cleared will be pending again. And if it created a record in your accounts, that one goes too.";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
-"groups.settlement.deleteFailed" = "We couldn't delete the settlement. Please try again.";
+"groups.settlement.deleteFailed" = "We couldn't delete the payment. Please try again.";
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "We couldn't open this invitation right now. We saved your request — try again in a moment.";
@@ -5302,11 +5279,13 @@
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Create your Yala account";
 "welcome.bornCloud.subtitle" = "With it you can open Yala from any device.";
-"welcome.bornCloud.providerNote" = "Your Yala account will be linked to the method you choose.";
 "welcome.bornCloud.creating" = "Creating your account…";
 
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
 "welcome.mirrorRelaunch.title" = "One last step: reopen Yala";
+
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "Opening your invitation…";
 
 /* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
 "welcome.mirrorRelaunch.body" = "To keep your data safe, Yala needs to open again. Go to your Home Screen and come back in — we'll pick up right where you left off.";
@@ -5350,14 +5329,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "Back";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "What's your name?";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "It's the name everyone else will see in the group.";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "Create my group";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "How do groups work?";
@@ -5370,12 +5345,10 @@
 "groups.empty.createAccount.action" = "Create my account";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "One last step";
+"groups.empty.needsConsent.title" = "Accept how your groups are stored";
 "groups.empty.needsConsent.message" = "We'll tell you what gets stored in the Yala cloud, and you decide.";
-"groups.empty.needsConsent.action" = "Continue";
+"groups.empty.needsConsent.action" = "Review and accept";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "Expenses you add to a group are stored on Yala's servers, so everyone sees them up to date.";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Create my account";
@@ -5390,7 +5363,7 @@
 "groups.freshStartPending.leadUnknown" = "We didn't erase anything: some of your group changes haven't reached our server yet, and starting from scratch would take them with it.";
 "groups.freshStartPending.lossSessionExpired" = "They can only upload with the account that made them, and its session is no longer on this phone. If you're not going to sign back in with that account, you can start from scratch and lose them: no one in the group will see them.";
 "groups.freshStartPending.lossPermanent" = "The account that made them can no longer upload them, and trying again won't fix it. You can start from scratch and lose them: no one in the group will see them.";
-"groups.freshStartPending.lossAttest" = "This phone has gone more than a day without passing the security check our server requires, so they can't be uploaded. You can start from scratch and lose them: no one in the group will see them.";
+"groups.freshStartPending.lossAttest" = "This phone hasn't been able to send changes to your groups for a day, so they can't be uploaded. You can start from scratch and lose them: no one in the group will see them.";
 "groups.freshStartPending.lossAction" = "Start from scratch and lose them";
 "groups.freshStartPending.lossConfirmTitle" = "Lose these changes?";
 "groups.freshStartPending.lossConfirmBody" = "Group changes that will be lost: %d. They're erased from this phone without reaching the server, no one in the group will see them, and they can't be recovered.";
@@ -5460,7 +5433,7 @@
 "groups.card.pendingNotice.title" = "Waiting for approval";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "The group admin hasn't approved your request yet. Once they do, you'll be able to open the group and see its expenses. Check back in a little while.";
+"groups.card.pendingNotice.body" = "The group admin hasn't approved your request yet. Once they do, you'll be able to open the group and see its expenses. We'll let you know when you're approved.";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "Account balance";
@@ -5502,7 +5475,7 @@
 "groups.shareableSummary.action" = "Share summary";
 
 /* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
-"groups.shareableSummary.hint" = "An image with the group totals and the fewest payments needed to settle up. Covers the whole history.";
+"groups.shareableSummary.hint" = "An image with the group totals and the payments needed to settle up. Covers the whole history.";
 
 /* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
 "groups.shareableSummary.totalSpent" = "Total spent";
@@ -5601,7 +5574,7 @@
 "account.currencyChange.blockedReasonGroupExpense" = "group expenses";
 
 /* Lowercase, used inside a list */
-"account.currencyChange.blockedReasonGroupSettlement" = "group settlements";
+"account.currencyChange.blockedReasonGroupSettlement" = "group payments";
 
 /* %1 old currency, %2 new currency */
 "account.currencyChange.confirmMessage" = "They're recorded in %1$@ and will move to %2$@ using the exchange rate from each one's date. This can't be undone.";
@@ -5683,6 +5656,15 @@
 
 /* Private branch iCloud gate: body when the CloudKit probe failed */
 "welcome.privateICloud.errorBody" = "It might be your connection. Try again before carrying on — that way old data won't show up without warning.";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "iCloud took too long to respond";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "We couldn't finish checking your iCloud. Try again before carrying on — that way old data won't show up without warning.";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "We couldn't finish checking your iCloud, so we didn't delete anything: everything is exactly as it was. Try again, or go back and decide later.";
 
 /* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
 "welcome.privateICloud.lateTitle" = "We found data of yours in iCloud";
@@ -5825,7 +5807,7 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "Your groups session expired. Sign in again and give it another try.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Your groups session expired and some of your latest group changes couldn't be prepared for upload. Nothing is lost. Sign in again, close Yala and open it again (if it keeps happening, update it), and give it another try.";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "This phone has gone more than a day without passing the security check our server requires, and some of your latest group changes couldn't be prepared for upload. Nothing is lost. To get them ready, close Yala and open it again (if it keeps happening, update it).";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "This phone hasn't been able to send changes to your groups for a day, and some of the latest ones couldn't be prepared for upload. Nothing is lost. To get them ready, close Yala and open it again (if it keeps happening, update it).";
 "storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Some group changes on this phone were made with another account, and they can only upload with that account. On top of that, some group changes couldn't be prepared for upload. Nothing is lost. Close Yala and open it again (if it keeps happening, update it) and try again; that account's changes only upload if you sign in with it.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
@@ -5917,25 +5899,25 @@
 "groups.errors.attestUnavailableTitle" = "This phone can't sync your groups";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "This phone has gone more than a day without passing the security check our server requires. Group changes that didn't get through: %d. If you sign out now, they'll be lost and no one in the group will see them.";
+"groups.errors.attestUnavailableSignOutLoss" = "This phone hasn't been able to send changes to your groups for a day. Changes that didn't get through: %d. If you sign out now, they'll be lost and no one in the group will see them.";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "This phone has gone more than a day without passing the security check our server requires, and some group changes didn't get through. If you sign out now, they'll be lost and no one in the group will see them.";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "This phone hasn't been able to send changes to your groups for a day, and some changes didn't get through. If you sign out now, they'll be lost and no one in the group will see them.";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "Sign out and lose them";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "This phone has gone more than a day without passing the security check our server requires, so your group changes can't be uploaded.";
+"groups.errors.attestUnavailable" = "This phone hasn't been able to send changes to your groups for a day, so what you change doesn't reach the group. Use another phone in the meantime.";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
 "groups.errors.leaveAttestUnavailable" = "This phone can't sync your groups, so we couldn't complete your exit from the group.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "This phone has gone more than a day without passing the security check our server requires. Group changes that didn't get through: %d. If you continue now, they'll be lost and no one in the group will see them.";
+"welcome.groups.neutralAttestLossBody" = "This phone hasn't been able to send changes to your groups for a day. Changes that didn't get through: %d. If you continue now, they'll be lost and no one in the group will see them.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "This phone has gone more than a day without passing the security check our server requires, and some group changes didn't get through. If you continue now, they'll be lost and no one in the group will see them.";
+"welcome.groups.neutralAttestLossBodyUnknown" = "This phone hasn't been able to send changes to your groups for a day, and some changes didn't get through. If you continue now, they'll be lost and no one in the group will see them.";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "Continue and lose them";
@@ -5945,11 +5927,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "This phone can't sync your data";
-"settings.signOutAttestMessage" = "This phone has gone more than a day without passing the security check our server requires. Changes that didn't reach your account in the cloud: %d. Before you decide, you can export your records to a file. If you sign out now, those changes will be lost.";
-"settings.signOutAttestMessageUnknown" = "This phone has gone more than a day without passing the security check our server requires, and some changes didn't reach your account in the cloud. Before you decide, you can export your records to a file. If you sign out now, those changes will be lost.";
+"settings.signOutAttestMessage" = "This phone hasn't been able to send changes to your cloud account for a day. Changes that didn't get through: %d. Before you decide, you can export your records to a file. If you sign out now, those changes will be lost.";
+"settings.signOutAttestMessageUnknown" = "This phone hasn't been able to send changes to your cloud account for a day, and some changes didn't get through. Before you decide, you can export your records to a file. If you sign out now, those changes will be lost.";
 "settings.signOutAttestExportButton" = "Export my records";
 "settings.signOutAttestLossButton" = "Sign out and lose them";
-"settings.signOutAttestBlocked" = "This phone has gone more than a day without passing the security check our server requires, so your changes can't be uploaded to your account in the cloud.";
+"settings.signOutAttestBlocked" = "This phone hasn't been able to send changes to your cloud account for a day, so your changes can't be uploaded.";
 "settings.signOutAttestExportEmpty" = "You don't have any records to export.";
 "settings.signOutAttestExportFailed" = "We couldn't create the file. Please try again.";
 
@@ -5957,7 +5939,7 @@
 "groups.attestTerminalBanner" = "This phone hasn't been able to send changes to your groups for a day. No one in the group will see what you add here — use another phone.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "It's gone more than a day without passing the security check our server requires. Anything you add here is saved on this phone, but it doesn't reach your cloud account — use another phone in the meantime.";
+"settings.attestTerminalBanner" = "This phone hasn't been able to send changes to your cloud account for a day. Anything you add here is saved on the phone, but it doesn't reach your account — use another phone in the meantime.";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "Uploading your data to iCloud. You can keep using Yala.";
@@ -6097,16 +6079,16 @@
 "settings.signOutCaptureUnfinished" = "Some of your latest changes couldn't be prepared for upload to the cloud. They're still saved on this phone and nothing is lost. Fully close Yala and open it again; if nothing changes, update it from the App Store and try again.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "Some changes haven't been uploaded to the cloud yet and we don't want you to lose anything. Syncing is paused because moving your data between the cloud and iCloud didn't finish. Open “Where your data lives”, here in Profile, and finish it from there (if it failed, tap “Try again”); then try again.";
+"settings.signOutSyncStoppedMidMigration" = "Some changes haven't been uploaded to the cloud yet and we don't want you to lose anything. Syncing is paused because moving your data between the cloud and iCloud didn't finish. Open “Where your data lives”, here in Settings, and finish it from there (if it failed, tap “Try again”); then try again.";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "Some changes haven't been uploaded to the cloud yet and we don't want you to lose anything. Syncing is paused until you open Yala again. Fully close it (swipe it away in the app switcher), open it again and try once more.";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Your latest changes didn't reach the cloud. They're still saved on this phone and nothing is lost — try again in a little while.";
-"settings.signOutCloudSessionExpired" = "Your session expired and some changes haven't been uploaded to the cloud yet. Nothing is lost: open “Where your data lives”, here in Profile, tap “Sign in”, then try again.";
+"settings.signOutCloudSessionExpired" = "Your session expired and some changes haven't been uploaded to the cloud yet. Nothing is lost: open “Where your data lives”, here in Settings, tap “Sign in”, then try again.";
 "settings.signOutSessionSurvived" = "You're still signed in on this iPhone, so nothing was deleted. Try again.";
-"settings.signOutMigrationInFlight" = "Moving your data between iCloud and the cloud hasn't finished yet, and signing out now could delete what's still left to upload, so nothing was deleted. Open “Where your data lives”, in Profile, and finish it from there (if it failed, tap “Try again”); then try again.";
+"settings.signOutMigrationInFlight" = "Moving your data between iCloud and the cloud hasn't finished yet, and signing out now could delete what's still left to upload, so nothing was deleted. Open “Where your data lives”, in Settings, and finish it from there (if it failed, tap “Try again”); then try again.";
 "settings.signOutMigrationUnreadable" = "We couldn't check where moving your data between iCloud and the cloud stands, and signing out now could delete what's still left to upload, so nothing was deleted. Fully close Yala and open it again; if nothing changes, update it from the App Store and try again.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
@@ -6133,10 +6115,10 @@
 "groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "There are group changes that haven't been uploaded yet. Some were made on this phone with another account and only upload with that account, and some couldn't be prepared for upload. Close Yala and open it again (if it keeps happening, update it) and try again; the other account's changes only upload if you sign in with it. If you can't, sign out anyway and they'll be lost; no one in the group will see them.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
-"settings.signOutCloudSessionExpiredGroupsLoss" = "Your session expired. Group changes not uploaded yet: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, sign out anyway and they'll be lost; no one in the group will see them.";
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Your session expired. Group changes not uploaded yet: %d. To upload them, open “Where your data lives”, here in Settings, and tap “Sign in”. If you can't sign in, sign out anyway and they'll be lost; no one in the group will see them.";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Your session expired and some group changes haven't been uploaded yet. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, sign out anyway and they'll be lost; no one in the group will see them.";
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Your session expired and some group changes haven't been uploaded yet. To upload them, open “Where your data lives”, here in Settings, and tap “Sign in”. If you can't sign in, sign out anyway and they'll be lost; no one in the group will see them.";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
 "welcome.groups.neutralNoSessionLossBody" = "Group changes not uploaded yet: %d. They only upload with the account that made them, and its session isn't open on this phone. If you continue now, they'll be lost and no one in the group will see them.";
@@ -6163,10 +6145,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "The group changes that didn't reach the server are erased from this phone. No one in the group will see them, and they can't be recovered.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "Your session expired. Changes that didn't reach your account in the cloud: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your records to a file before you decide. If you sign out now, those changes will be lost.";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Your session expired. Changes that didn't reach your account in the cloud: %d. To upload them, open “Where your data lives”, here in Settings, and tap “Sign in”. If you can't sign in, you can export your records to a file before you decide. If you sign out now, those changes will be lost.";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Your session expired and some changes didn't reach your account in the cloud. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your records to a file before you decide. If you sign out now, those changes will be lost.";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Your session expired and some changes didn't reach your account in the cloud. To upload them, open “Where your data lives”, here in Settings, and tap “Sign in”. If you can't sign in, you can export your records to a file before you decide. If you sign out now, those changes will be lost.";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Choose a record to see it here";
@@ -6442,7 +6424,7 @@
 "inbox.groupSettlementAmountChange.bannerSent" = "Your payment to %1$@ in “%2$@” changed: it was %3$@ and is now %4$@. You have %6$@ recorded in %5$@.";
 
 /* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
-"inbox.groupSettlementAmountChange.bannerUnnamed" = "This settlement in “%1$@” changed: it was %2$@ and is now %3$@. You have %5$@ recorded in %4$@.";
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "This payment in “%1$@” changed: it was %2$@ and is now %3$@. You have %5$@ recorded in %4$@.";
 
 /* Primary button: set my transaction to the new amount */
 "inbox.groupSettlementAmountChange.adjust" = "Adjust to %@";
@@ -6550,7 +6532,7 @@
 "welcome.mirrorRelaunch.privacyNote" = "That's how Yala connects to your private iCloud and keeps your data private: nobody else can read it, not even us.";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
-"onboarding.purpose.changeLaterHint" = "You can change this anytime in Profile > Personalization.";
+"onboarding.purpose.changeLaterHint" = "You can change this anytime in Settings > Personalization.";
 
 /* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
 "onboarding.currencyName.titleExpenses" = "What currency do you spend in?";
@@ -6695,6 +6677,8 @@
 "storage.revert.prior.checkFailedTitle" = "We couldn’t check your iCloud";
 "storage.revert.prior.checkFailedBody" = "Before returning, we check whether your iCloud already has Yala data, so we don’t mix it in without telling you. It might be your connection: try again.";
 "storage.revert.prior.wipeFailed" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. Check your connection and try again.";
+"storage.revert.prior.wipeStopped" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. What’s already deleted stays deleted: try again and we’ll carry on with the rest.";
+"storage.revert.prior.wiping" = "Deleting the earlier data… %d so far";
 "storage.revert.prior.noAccountTitle" = "Sign in to iCloud on this iPhone";
 "storage.revert.prior.noAccountBody" = "Before returning, we check what’s in your iCloud, and this iPhone isn’t signed in to iCloud. Sign in from the iPhone’s Settings and try again.";
 
@@ -6903,7 +6887,7 @@
 "inbox.stillPending" = "Still pending: %d";
 
 /* UX 2.2 · lote 5: primeros días, guías y tips */
-"setup.step5.title.trial" = "Try Yala Pro free for 30 days";
+"setup.step5.title.trial" = "Try Yala Pro free for 1 month";
 "setup.step5.title.knowPro" = "See what Yala Pro adds";
 "setup.step5.title.alreadyPro" = "You already have Yala Pro";
 "setup.step.skipped" = "Skipped. Tap to try it";
@@ -7728,3 +7712,599 @@
 "aiPrivacy.l14d.cloudExploreLine" = "Yala AI also checks your cloud account when a question needs it.";
 "aiPrivacy.l14d.revokeTitle" = "Turn off %@?";
 "settings.l14d.summaryWhere" = "You'll see it in %@.";
+"siriShortcuts.siri.alsoSay" = "Also: %1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "“%@”";
+"siriShortcuts.openShortcuts" = "Open my Yala shortcuts";
+"inbox.alert.siriDrafts" = "Siri drafts: %d";
+"shortcut.applePay.notification.title" = "%1$@ payment at %2$@ to review";
+"shortcut.applePay.notification.titleNoMerchant" = "%@ payment to review";
+"shortcut.applePay.notification.body" = "Tap to approve it.";
+
+/* VoiceOver: el cambio entre dos períodos redondea a cero */
+"accessibility.variationNoChange" = "No change";
+/* Comparativa en «Todo el tiempo»: tarjeta que invita a elegir un período */
+"report.l18.allTime.title" = "To compare, pick a month or a year";
+/* Comparativa: qué se compara con qué; %1$@ = «Octubre», %2$@ = «septiembre» */
+"report.l18.heading" = "%1$@ compared with %2$@";
+/* Comparativa: igual, con un tramo de días; %1$@ = «Octubre», %2$@ = «1–21 de septiembre» */
+"report.l18.headingRange" = "%1$@ compared with %2$@";
+/* Comparativa: chip para comparar con el mes anterior */
+"report.l18.chip.previousMonth" = "With last month";
+/* Comparativa: chip para comparar con la semana anterior */
+"report.l18.chip.previousWeek" = "With last week";
+/* Comparativa: chip para comparar con los 7 días anteriores */
+"report.l18.chip.previous7Days" = "With the previous 7 days";
+/* Comparativa: chip para comparar con los 30 días anteriores */
+"report.l18.chip.previous30Days" = "With the previous 30 days";
+/* Comparativa: chip para comparar con el período anterior */
+"report.l18.chip.previousPeriod" = "With the previous period";
+/* Comparativa: chip para comparar con el mismo período del año pasado; %@ = «octubre de 2025» */
+"report.l18.chip.yearAgo" = "With %@";
+/* Comparativa: cabecera de la columna del cambio */
+"report.l18.column.change" = "Change";
+/* Comparativa: ingresos menos gastos cuando sobra */
+"report.l18.net.gain" = "Left over";
+/* Comparativa: ingresos menos gastos cuando falta */
+"report.l18.net.loss" = "Short by";
+/* Comparativa: qué es «Te quedó» */
+"report.l18.net.caption" = "Income minus expenses.";
+/* Comparativa: qué es «Te quedó» y cuánto quedó antes; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionGainBefore" = "Income minus expenses. In %1$@ you had %2$@ left over.";
+/* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionLossBefore" = "Income minus expenses. In %1$@ you were short by %2$@.";
+/* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
+"report.l18.row.amountsA11y" = "%1$@ in %2$@, %3$@ in %4$@";
+/* Desglosar: título del ejemplo de cómo quedará la tabla */
+"report.l18.example.title" = "Your table will look like this";
+/* Desglosar, ejemplo: el nivel de ingresos y gastos */
+"report.l18.example.expenses" = "Expenses";
+/* Desglosar, ejemplo: una categoría */
+"report.l18.example.category" = "Food";
+/* Desglosar, ejemplo: una subcategoría */
+"report.l18.example.subcategory" = "Groceries";
+/* Desglosar, ejemplo: una etiqueta */
+"report.l18.example.tag" = "Trip";
+/* Desglosar, ejemplo: una cuenta */
+"report.l18.example.account" = "Card";
+/* Desglosar, ejemplo: una divisa */
+"report.l18.example.currency" = "Dollars";
+/* Desglosar, ejemplo: una necesidad */
+"report.l18.example.need" = "Essential";
+/* Desglosar: sin niveles elegidos, la tabla solo separa ingresos y gastos */
+"report.l18.onlyIncomeAndExpenses" = "Just income and expenses. Add a level below.";
+/* Crear el plan: rótulo del saldo con el que empieza el plan */
+"cashflow.l18.start.title" = "How much are you starting with?";
+/* Crear el plan: de dónde sale el saldo (una cuenta) */
+"cashflow.l18.start.captionOne" = "What you have today in your account";
+/* Crear el plan: de dónde sale el saldo; %d = número de cuentas (2 o más) */
+"cashflow.l18.start.caption" = "What you have today in your %d accounts";
+/* Crear el plan: sin cuentas que sumen, el saldo se escribe a mano */
+"cashflow.l18.start.captionNone" = "Enter how much you're starting with";
+/* Crear el plan: el saldo lo escribió la persona */
+"cashflow.l18.start.captionTyped" = "The amount you entered";
+/* Crear el plan: enlace para cambiar el saldo inicial */
+"cashflow.l18.start.change" = "Change amount";
+/* Crear el plan: título de la sección de ingresos */
+"cashflow.l18.section.in" = "Money in";
+/* Crear el plan: título de la sección de gastos */
+"cashflow.l18.section.out" = "Money out";
+/* Crear el plan: fila plegada con los gastos que cambian; %d = cuántos */
+"cashflow.l18.variable.title" = "Expenses that vary · %d";
+/* Crear el plan: qué son los gastos que cambian; %@ = ejemplos («Restaurantes, Taxis») */
+"cashflow.l18.variable.caption" = "%@… We add them as an average.";
+/* Crear el plan: desplegar los gastos que cambian */
+"cashflow.l18.variable.show" = "Show";
+/* Crear el plan: plegar los gastos que cambian */
+"cashflow.l18.variable.hide" = "Hide";
+/* Crear el plan: total de ingresos al mes */
+"cashflow.l18.summary.income" = "Income per month";
+/* Crear el plan: total de gastos al mes */
+"cashflow.l18.summary.expense" = "Expenses per month";
+/* Crear el plan: lo que sobra al mes */
+"cashflow.l18.summary.surplus" = "Left over each month";
+/* Crear el plan: lo que falta al mes */
+"cashflow.l18.summary.shortfall" = "Short each month";
+/* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
+"cashflow.l18.sheet.todayBalance" = "Today you have %@ in your accounts";
+/* Hoja del saldo inicial: usar el saldo de hoy */
+"cashflow.l18.sheet.useThisAmount" = "Use this amount";
+/* Flujo de caja: con cuánto empezó el plan; %@ = monto */
+"cashflow.l18.startedWith" = "You started with %@";
+/* Flujo de caja: botón para cambiar algo (el saldo inicial, cómo se calcula una línea) */
+"cashflow.l18.change" = "Change";
+/* Detalle de una línea: rótulo de cómo se calcula el monto */
+"cashflow.l18.detail.howItsCalculated" = "How it's calculated";
+/* Detalle de una línea: monto nuevo desde un mes; %1$@ = «noviembre», %2$@ = monto */
+"cashflow.l18.detail.changeFrom" = "From %1$@: %2$@ a month";
+/* Ajustar monto: rótulo del campo; %@ = «noviembre» */
+"cashflow.l18.detail.amountFor" = "Amount for %@";
+/* Ajustar monto: a qué meses se aplica; %1$@ y %2$@ = el mismo mes («noviembre») */
+"cashflow.l18.scope.question" = "Just %1$@, or %2$@ and the months after?";
+/* Ajustar monto: solo el mes elegido */
+"cashflow.l18.scope.onlyThatMonth" = "Just that month";
+/* Ajustar monto: el mes elegido y los siguientes */
+"cashflow.l18.scope.alsoFollowing" = "That month and the ones after";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
+"cashflow.l18.hero.surplusThisMonth" = "This month you have left over";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
+"cashflow.l18.hero.shortfallThisMonth" = "This month you're short by";
+/* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
+"cashflow.l18.hero.surplusFuture" = "In %@ you'd have left over";
+/* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
+"cashflow.l18.hero.shortfallFuture" = "In %@ you'd be short by";
+/* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
+"cashflow.l18.hero.surplusPast" = "In %@ you had left over";
+/* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
+"cashflow.l18.hero.shortfallPast" = "In %@ you were short by";
+/* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
+"cashflow.l18.hero.projectedEnd" = "If things stay like this, by the end of %1$@ you'd have %2$@";
+/* Flujo de caja: cuánto se lleva gastado del plan del mes; %d = porcentaje */
+"cashflow.l18.month.spentShare" = "You've spent %d%% of what you planned";
+/* Flujo de caja: en un ingreso, lo que falta recibir */
+"cashflow.l18.row.toReceive" = "Still to receive";
+/* Flujo de caja: en un ingreso, lo recibido de más */
+"cashflow.l18.row.receivedExtra" = "Received extra";
+/* Flujo de caja: una línea con un monto nuevo desde un mes; %@ = «noviembre» */
+"cashflow.l18.row.fromMonth" = "From %@";
+/* Gráficas: el período; %1$@ = «agosto», %2$@ = «febrero de 2027» */
+"cashflow.l18.chart.periodRange" = "%1$@ to %2$@";
+/* Gráficas: de qué es la cifra de la proyección; %@ = «febrero» */
+"cashflow.l18.chart.projectionKPI" = "Balance at the end of %@";
+/* Gráficas: de qué es la cifra del ahorro; %1$d = meses, %2$@ = «De agosto a octubre» */
+"cashflow.l18.chart.savingsKPI" = "Average of %1$d months · %2$@";
+/* Gráficas: el período de «Gastos por revisar»; %@ = «De agosto a octubre» */
+"cashflow.l18.chart.deviationPeriod" = "Monthly average. %@. That's why it doesn't match a single month's detail.";
+/* Gráficas: gastado frente a lo planeado al mes; %1$@ = gastado, %2$@ = planeado */
+"cashflow.l18.chart.deviationLine" = "%1$@ of %2$@ a month";
+/* Agregar línea: ejemplo del camino «Desde mis gastos» */
+"cashflow.l18.add.historyExpense" = "Uses what you spent these months, like groceries";
+/* Agregar línea: ejemplo del camino «Desde mis ingresos» */
+"cashflow.l18.add.historyIncome" = "Uses what you received these months, like your salary";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (gasto) */
+"cashflow.l18.add.scheduledExpense" = "A planned payment you already have, like rent";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (ingreso) */
+"cashflow.l18.add.scheduledIncome" = "A planned income you already have, like your salary";
+/* Agregar línea: ejemplo del camino «Línea personalizada» */
+"cashflow.l18.add.custom" = "Something you don't track yet, like savings or a trip";
+/* Agregar línea: lo que movió una categoría en 6 meses; %@ = monto */
+"cashflow.l18.add.inSixMonths" = "%@ in 6 months";
+
+/* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
+"report.l18.inPeriod" = "in %@";
+
+/* Título del diálogo de borrar un gasto de grupo. %@ = descripción del gasto. */
+"groups.expense.deleteTitle" = "Delete “%@”?";
+
+/* Mensaje del diálogo de borrar un gasto de grupo: alcance del borrado. */
+"groups.expense.deleteMessage" = "It's deleted for the whole group and balances are recalculated. If it's in your accounts, it's removed there too.";
+
+/* Línea sobre «Guardar» cuando falta la descripción del gasto. */
+"groups.expense.missingDescription" = "Add a description";
+
+/* Línea sobre «Guardar» cuando falta el monto. */
+"groups.expense.missingAmount" = "Add the amount";
+
+/* Línea sobre «Guardar» cuando no se eligió quién pagó. */
+"groups.expense.missingPayer" = "Choose who paid";
+
+/* Línea sobre «Guardar» cuando nadie participa del gasto. */
+"groups.expense.missingParticipants" = "Choose who's in";
+
+/* Línea sobre «Guardar» cuando el reparto no suma el monto. */
+"groups.expense.missingSplit" = "The split doesn't add up to the amount";
+
+/* Línea sobre «Guardar» cuando pagaste tú y falta la cuenta. */
+"groups.expense.missingAccount" = "Choose the account it came from";
+
+/* Línea de ayuda bajo el título del formulario de saldo inicial. */
+"groups.openingBalance.formHelp" = "What someone already owed before using Yala";
+
+/* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
+"inbox.movedToGroup" = "Moved to “%@”";
+
+/* Botón del aviso «Movido a…»: abre el grupo. */
+"inbox.movedToGroupView" = "View";
+
+/* Nombre del borrador de un pago que hiciste. %1$@ = a quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidTo" = "Payment to %1$@ · %2$@";
+
+/* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidBy" = "Payment from %1$@ · %2$@";
+
+/* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
+"groups.stats.myPortionHint" = "what was yours to pay";
+
+/* Confirmación de «Eliminar de mis cuentas» al dejar de reflejar los gastos de grupo. */
+"groups.bridge.deleteConfirmTitle" = "Delete from your accounts?";
+
+/* Cuerpo de la confirmación. %d = movimientos que se borran (sin concordancia de plural a propósito). */
+"groups.bridge.deleteConfirmMessage" = "Records to delete: %d. This can't be undone.";
+
+/* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
+"groups.settings.openGroupsSettings" = "Open Groups Settings";
+
+/* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
+"inbox.groupDraft.linkTitle" = "Already logged it?";
+
+/* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
+"inbox.groupDraft.linkHint" = "Tap the record and we'll link it to this expense, without duplicating it.";
+
+/* Pista de VoiceOver de cada movimiento parecido. */
+"inbox.groupDraft.linkRowHint" = "Links it to the group expense";
+
+/* Título del diálogo de borrar un gasto de grupo sin descripción. */
+"groups.expense.deleteTitleUnnamed" = "Delete this expense?";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "If you don't want this, turn it off in Groups Settings.";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "If you already have an account, you'll sign in; if not, one is created.";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "E.g. Trip to Cusco";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "Fewer payments between you";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yala combines debts so there are fewer transfers.";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "Everything in one currency";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "How you usually split";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "Your name in the group";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "To split an expense, first create a group";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "Now add the expense";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "Group notifications";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "We'll let you know when someone adds an expense or pays you.";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "Turn on notifications";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "Notifications on";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Yala notifications are off in Settings.";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@ is inviting you to “%2$@” on Yala to split expenses. Tap the link to join; if you don't have Yala, download it and tap the link again.";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "You're invited to “%@” on Yala to split expenses. Tap the link to join; if you don't have Yala, download it and tap the link again.";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@ is inviting you";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "You've been invited to this group";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "Next, you'll choose which account to sign in with.";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "You're in “%@”";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "You're in the group";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "With %@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "Add an expense";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "View group";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "Your group is on its way";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "It'll show up here as soon as it's ready.";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "You've been approved: you can now see its expenses and add yours.";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@ wants to join";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "Several people want to join";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "Accept their request so they can see and add expenses.";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "Accept their requests so they can see and add expenses.";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "Review";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "Want to join (%d)";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "Opened your invite link today";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "Opened your invite link yesterday";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "Opened your invite link on %@";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "If you accept, they'll see the group's expenses and can add their own. If you reject, they won't see anything.";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "Accept";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "Accept %@ into the group?";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "Your account moved to the cloud from another device, so going back to iCloud happens from that one, if it still has Yala. Here you can keep using the cloud.";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "One moment";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "Lots of requests came from this phone in a row. Wait a minute and try again: the photo is fine.";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "You’ve reached today’s limit";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "There are no more photo reads left for today. They renew every day; meanwhile, you can enter it manually.";
+
+/* card vv0k */
+"voice.failure.busy.title" = "One moment";
+
+/* card vv0k */
+"voice.failure.busy.message" = "Lots of requests came from this phone in a row. Wait a minute and try again with the same note.";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "You’ve reached today’s limit";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "There are no more voice reads left for today. They renew every day; meanwhile, you can enter it manually.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "You’ve reached today’s limit: 1 wasn’t read.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "You’ve reached today’s limit: %d weren’t read.";
+
+/* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
+"l15.personal.dataNote" = "It's stored in your iCloud or in your cloud account, depending on what you chose. Anything you add in a group, the group can see.";
+"l15.personal.moreAboutData" = "More about your data";
+"l15.rates.search" = "Search currency";
+"l15.personalization.voiceLanguageFooter" = "The language you speak to Yala in when you log by voice.";
+"l15.personalization.colorfulIconsFooter" = "You'll see them in the icons in Settings and More.";
+"l15.personalization.averageLineFooter" = "You'll see it in the charts on Home.";
+"l15.personalization.currencyFormatFooter" = "How amounts are written throughout the app: with the symbol (S/) or the code (PEN).";
+"l15.tabBar.rules" = "Home always comes first. There's room for 3 more, plus More and Search.";
+"l15.permissions.title" = "Yala permissions";
+"l15.permissions.footer" = "Yala asks for each permission the first time you use something that needs it.";
+"l15.permissions.notAskedHint" = "We'll ask the first time you use it.";
+"l15.permissions.changeInSettings" = "Change in Settings";
+"l15.permissions.notifications" = "Notifications";
+"l15.permissions.notificationsDetail" = "Reminders, payments coming due and alerts from your groups.";
+"l15.permissions.camera" = "Camera";
+"l15.permissions.cameraDetail" = "To log an expense with a photo of a receipt.";
+"l15.permissions.microphone" = "Microphone";
+"l15.permissions.microphoneDetail" = "To log an expense by speaking.";
+"l15.permissions.photos" = "Photos";
+"l15.permissions.photosDetail" = "To save the group summaries you choose to Photos.";
+"l15.permissions.status.allowed" = "Allowed";
+"l15.permissions.status.limited" = "Some photos";
+"l15.permissions.status.saveOnly" = "Save only";
+"l15.permissions.status.denied" = "Not allowed";
+"l15.permissions.status.notAsked" = "Not asked yet";
+"l15.recommend.row" = "Recommend Yala";
+"l15.recommend.message" = "I track my spending with Yala. I recommend it:";
+"l15.tutorials.doItNow" = "Do it now";
+"l15.tutorials.done" = "Done";
+"l15.faq.section.currencies" = "Currencies";
+"l15.faq.section.groups" = "Groups";
+"l15.faq.notHere" = "Can't find your question?";
+"l15.faq.writeToUs" = "Write to us";
+"l15.faq.exchangeRate.q" = "Where does the exchange rate come from?";
+"l15.faq.exchangeRate.a" = "Yala updates exchange rates and converts each record with the rate from the day you logged it. You'll find the rates, and when they were updated, in Settings > Currency & Exchange > See all.";
+"l15.faq.groups.q" = "How do groups work?";
+"l15.faq.groups.a" = "They let you share expenses with other people: a trip, your home or a night out. Everyone logs what they paid and Yala works out who owes whom. You need a Yala account, because group expenses are stored in the cloud so everyone sees them up to date.";
+"l15.faq.yalaAI.q" = "What is Yala AI?";
+"l15.faq.yalaAI.a" = "It's the Yala Pro assistant. Ask it about your finances (“how much did I spend on coffee this month?”) or tell it about an expense and it logs it for you. To answer, it sends what it needs to an AI service; you decide in Settings > AI Privacy & Data.";
+"l15.faq.whereData.q" = "Where is my data stored?";
+"l15.faq.whereData.a" = "If you chose your private iCloud, it's on your iPhone and in your iCloud: Yala can't see it. If you have a cloud account, it's on Yala's servers, and you can sign in from another iPhone with Apple or Google. Anything you add in a group is stored in the cloud so the group can see it.";
+"l15.faq.faceID.q" = "Can I protect Yala with Face ID?";
+"l15.faq.faceID.a" = "Yes, with the iOS lock: touch and hold the Yala icon on your Home Screen and tap “Require Face ID”. Yala never sees your face: iOS checks it. You'll find the guide in Settings > Protect with Face ID.";
+"l15.faq.widgets.q" = "How do I add a Yala widget?";
+"l15.faq.widgets.a" = "Touch and hold an empty area of your Home Screen, tap “Edit” > “Add Widget” and search for Yala. There are widgets for balance, expenses, categories, monthly summary and latest records, and also for the Lock Screen.";
+"l15.support.sendFooter" = "Your email app opens to send it to %@. It includes your Yala and iOS version, your iPhone model, theme and language, so we can help you better.";
+"l15.removeData.noCopyConfirm" = "Remove and delete";
+"l15.removeData.exportDiscard" = "Remove my data anyway";
+"l15.removeData.exportPending" = "Changes from this iPhone that haven't reached iCloud yet: %d. If you remove your data now, they'll be lost.";
+"l15.removeData.exportPendingUnknown" = "We couldn't confirm that your latest changes reached iCloud. If you remove your data now, they could be lost.";
+"l15.pro.themeResetNote" = "Your theme goes back to Liquid Glass.";
+"l15.pro.oneMonthThenYearly" = "1 month free, then %@ a year";
+"l15.pro.oneMonthThenMonthly" = "1 month free, then %@ a month";
+"l15.pro.startTrialOneMonth" = "Try free for 1 month";
+"l15.pro.gateStartTrialOneMonth" = "Try Pro free for 1 month";
+"l15.pro.settingsFreeWithTrialOneMonth" = "Free · try 1 month free";
+"welcome.cloud.otherAccountUsedTitle" = "This iPhone has already used another account";
+"welcome.cloud.otherAccountUsedBody" = "This iPhone has already used a Yala account created with %1$@, and the %2$@ one is a different account. Are you sure you want to use a different account? To keep using your usual one, sign in with %1$@.";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "This iPhone has already used a Yala account created with another method, and the %@ one is a different account. Are you sure you want to use a different account? To keep using your usual one, sign in with the method you used before.";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "Admin";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "Make admin";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "Remove as admin";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "Make %@ an admin?";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@ will be able to accept or decline join requests, remove members, change the group’s name and budget, archive it and make others admins.";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "Remove %@ as admin?";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@ stays in the group but can no longer accept requests, remove members, change the name and budget, or archive the group.";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "Remove from group";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "Remove %@ from the group?";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@ will no longer see the group. The expenses they added stay.";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "If you remove %@ from the group, what’s pending stays unsettled.";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "Settle up first";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@ owes you %2$@.";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "You owe %1$@ %2$@.";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@ owes %3$@ %2$@.";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@ owes %2$@";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "You owe %@";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "If you leave, you’ll stop seeing this group and that debt; %@ will still see it.";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "If you leave, you’ll stop seeing this group and those debts; the others will still see them.";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "It disappears for everyone. What you recorded in your accounts stays.";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "Archive or delete";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "Archive";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "It moves to Archived for the whole group. Expenses and debts are kept, and you can bring it back whenever you like.";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "It goes back to everyone’s list, with its expenses and debts.";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "It disappears for everyone and can’t be undone.";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "You can delete it once everything is settled.";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "If you want to leave, transfer it and leave.";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "If you just want it off the list, archive it: the debts are kept.";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "See balances";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "Moved to Archived";
+/* Deshacer el archivado */
+"groups.l19.undo" = "Undo";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "Archived group";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "Only an admin can unarchive it.";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "Unarchive";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ %@ owed to you in archived groups";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ %@ you owe in archived groups";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "What’s the most you all want to spend?";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "Spent so far: %@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "No expenses in the group yet.";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "You’d already be %@ over";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "%@ left";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "The whole group sees it, not just you.";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "We let everyone know at half, three quarters, almost at the limit and at the limit.";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "Fewer payments between you";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "If Ana owes you and you owe Beto, Ana pays Beto directly.";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "Show debts in one currency";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "Only the person who created the group can change this.";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "How a new expense is split";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "In your accounts";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "Record what I pay here in my accounts";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "Same as in Groups Settings.";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "Owes you";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "You owe";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "You created it and nobody else can take it over yet. Open it to archive or delete it.";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "Open its settings";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "Your groups leave this iPhone; they stay in your account and come back if you connect it again.";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "Keep what I paid in my accounts";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "Remove that from my accounts too";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "If you keep it, the expenses you paid stay in your accounts: %1$d (%2$@).";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "If you remove it, they leave your accounts too.";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "Whoever created the group is always an admin, so that role can’t be removed.";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "The group needs at least one admin.";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "This person needs to rejoin the group with their account before they can be an admin.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "To save, you still need %@";
+"l2d.missing.amount" = "the amount";
+"l2d.missing.account" = "the account";
+"l2d.missing.category" = "the category";
+"l2d.missing.sourceAccount" = "the account it comes from";
+"l2d.missing.destinationAccount" = "the account it goes to";
+"l2d.missing.twoDifferentAccounts" = "Choose two different accounts";
+"l2d.missing.chipValue" = "Missing";
+"l2d.discard.title" = "Discard this record?";
+"l2d.saved.expense" = "Expense saved · %@";
+"l2d.saved.income" = "Income saved · %@";
+"l2d.saved.transfer" = "Transfer saved · %@";
+"l2d.saved.changes" = "Changes saved";
+"l2d.saved.repeatsWeekly" = "Saved · repeats every week";
+"l2d.saved.repeatsMonthly" = "Saved · repeats every month";
+"l2d.saved.repeatsYearly" = "Saved · repeats every year";
+"l2d.transfer.needsAnotherAccount" = "To move money, you need another account";
+"l2d.transfer.createAnotherAccount" = "Create another account";
+"l2d.date.dayBeforeYesterday" = "2 days ago";
+"l2d.date.futureDaysNote" = "Upcoming days are grayed out. For a payment that hasn't happened yet, use [Scheduled payments](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "See all";
+"l2d.favorites.use" = "Use favorite %@";
+"l2d.favorites.transferHelp" = "Your usual transfers, one tap away.";
+"l2d.recurring.title" = "Make recurring";
+"l2d.recurring.header" = "We'll save today's. The next ones will land in your Inbox on the day they're due, for you to confirm. You'll find them in Scheduled payments.";
+"l2d.recurring.weekly" = "Every week, on %@";
+"l2d.recurring.monthly" = "Every month, on day %d";
+"l2d.recurring.yearly" = "Every year, on %@";
+"l2d.recurring.moreOptions" = "More options…";

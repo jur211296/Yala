@@ -15,6 +15,8 @@ struct SelectionChip: View {
     let text: String
     let isSelected: Bool
     var color: Color? = nil
+    /// Falta para poder guardar (UX 2.2 · L2-2): borde del color de acento.
+    var isMissing: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -40,13 +42,14 @@ struct SelectionChip: View {
             .overlay(
                 Capsule()
                     .stroke(
-                        isSelected ? (color ?? theme.accent).opacity(0.3) : Color.clear,
-                        lineWidth: 1
+                        isMissing ? theme.accent : (isSelected ? (color ?? theme.accent).opacity(0.3) : Color.clear),
+                        lineWidth: isMissing ? 1.5 : 1
                     )
             )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(text)
+        .accessibilityValue(isMissing ? L10n.UXL2.missingChipValue : "")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

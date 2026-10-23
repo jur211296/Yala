@@ -152,6 +152,7 @@ final class PrefsSyncClient {
                 return .transient
             }
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            AttestSessionProvider.reportRejected(sentIn: request)
             noteAttestRequired(edge: "prefs-push")
             return .transient
         case 401: return .sessionExpired
@@ -202,6 +203,7 @@ final class PrefsSyncClient {
                 return .transient
             }
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            AttestSessionProvider.reportRejected(sentIn: request)
             noteAttestRequired(edge: "prefs-pull")
             return .transient
         case 401: return .sessionExpired

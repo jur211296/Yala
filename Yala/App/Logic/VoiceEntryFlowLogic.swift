@@ -22,13 +22,17 @@ enum VoiceEntryFailure: Equatable {
     case generic
     /// El plan free ya usó su cupo de prueba de notas de voz: la salida es Yala Pro (no se repone esperando).
     case trialUsedUp
+    /// El gateway frenó la petición por ráfaga (429 `yala_quota_burst`): esperar un minuto lo arregla (card vv0k).
+    case busy
+    /// Se acabó el cupo de notas de hoy (429 `yala_quota_daily`): vuelve mañana.
+    case dailyLimit
 
     /// Si tiene sentido volver a mandar el MISMO audio. Con la conexión caída o sin clave, repetir falla igual; sin
     /// voz o sin importe, el audio es el problema y hay que grabar otra vez.
     var retriesSameAudio: Bool {
         switch self {
-        case .generic, .saveFailed: true
-        case .noConnection, .micPermission, .noVoice, .noAmount, .serviceUnavailable, .trialUsedUp: false
+        case .generic, .saveFailed, .busy: true
+        case .noConnection, .micPermission, .noVoice, .noAmount, .serviceUnavailable, .trialUsedUp, .dailyLimit: false
         }
     }
 }
@@ -63,7 +67,7 @@ enum VoiceEntryFlowLogic {
         switch error {
         case .noAPIKey: .serviceUnavailable
         case .emptyAudio: .noVoice
-        case .networkError(let inner): ProxyErrorMapper.isTrialExhausted(inner) ? .trialUsedUp : (isConnected ? .generic : .noConnection)
+        case .networkError(let inner): failure(forNetworkError: inner, isConnected: isConnected)
         case .transcriptionFailed: .generic
         }
     }
@@ -72,8 +76,34 @@ enum VoiceEntryFlowLogic {
         switch error {
         case .noAPIKey: .serviceUnavailable
         case .emptyText: .noVoice
-        case .networkError(let inner): ProxyErrorMapper.isTrialExhausted(inner) ? .trialUsedUp : (isConnected ? .generic : .noConnection)
+        case .networkError(let inner): failure(forNetworkError: inner, isConnected: isConnected)
         case .parsingFailed, .invalidResponse: .generic
+        }
+    }
+
+    /// Lo que el gateway contestó con nombre propio va con su texto; lo demás, sin red o «inténtalo otra vez».
+    static func failure(forNetworkError inner: Error, isConnected: Bool) -> VoiceEntryFailure {
+        if ProxyErrorMapper.isTrialExhausted(inner) { return .trialUsedUp }
+        if ProxyErrorMapper.isDailyLimitReached(inner) { return .dailyLimit }
+        if ProxyErrorMapper.isBurstLimited(inner) { return .busy }
+        return isConnected ? .generic : .noConnection
+    }
+
+    /// El detalle del canario `aiEntryReadFailed`, o `nil` si el error no habla del camino al gateway.
+    static func canaryDetail(for error: TranscriptionError) -> String? {
+        switch error {
+        case .networkError(let inner):
+            ProxyErrorMapper.isTrialExhausted(inner) ? nil : "voice-transcribe|\(ProxyErrorMapper.failureKind(inner))"
+        case .noAPIKey, .emptyAudio, .transcriptionFailed: nil
+        }
+    }
+
+    static func canaryDetail(for error: ParserError) -> String? {
+        switch error {
+        case .networkError(let inner):
+            ProxyErrorMapper.isTrialExhausted(inner) ? nil : "voice-parse|\(ProxyErrorMapper.failureKind(inner))"
+        case .invalidResponse: "voice-parse|invalidResponse"
+        case .noAPIKey, .emptyText, .parsingFailed: nil
         }
     }
 

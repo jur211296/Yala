@@ -6,6 +6,7 @@
 //  Used by PanelView, DetailContainerView, and RecordsStandaloneView.
 //
 
+import SwiftData
 import SwiftUI
 
 struct FABStackView: View {
@@ -33,6 +34,11 @@ struct FABStackView: View {
     @State private var showFABMenu = false
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
+    /// L13-8 · «Grupo» sin ningún grupo: la hoja que explica el paso que falta.
+    @State private var showGroupNeeded = false
+    /// L13-8 · «Crear grupo» de esa hoja; se lleva a cabo en su `onDismiss`, con la hoja ya fuera.
+    @State private var createGroupAfterSheet = false
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - Environment
 
@@ -81,6 +87,17 @@ struct FABStackView: View {
             .onChange(of: navigation.selectedMainTab) { _, _ in
                 guard showFABMenu else { return }
                 dismissMenu()
+            }
+            .sheet(isPresented: $showGroupNeeded, onDismiss: {
+                guard createGroupAfterSheet else { return }
+                createGroupAfterSheet = false
+                navigation.navigateToGroupsAndCreateGroupForExpense()
+            }) {
+                GroupNeededForExpenseSheet {
+                    createGroupAfterSheet = true
+                    showGroupNeeded = false
+                }
+                .yalaSheetDetents([.medium])
             }
             .aiConsentAlert(isPresented: $showAIConsentAlert, pendingInput: $pendingAIInput) { input in
                 switch input {
@@ -178,7 +195,14 @@ struct FABStackView: View {
             // siempre.
             fabMenuButton(icon: "person.2.fill", text: L10n.Panel.fabGroup, color: .priorityNeedNew) {
                 dismissMenu()
-                navigation.navigateToGroupsAndComposeExpense()
+                // UX 2.2 · L13-8 (decisión B de Jürgen): sin ningún grupo, una hoja dice que primero hay que crear uno.
+                // Antes llevaba al estado vacío de Grupos sin explicarlo y dejaba el gasto pedido para cuando hubiera
+                // grupo, aunque fuera horas después.
+                if hasNoActiveGroups() {
+                    showGroupNeeded = true
+                } else {
+                    navigation.navigateToGroupsAndComposeExpense()
+                }
             }
             .accessibilityIdentifier("panel_fab_group")
 
@@ -215,6 +239,22 @@ struct FABStackView: View {
             .accessibilityIdentifier("fab_manual")
         }
         .transition(Self.fabScaleTransition)
+    }
+
+    /// ¿No hay ningún grupo vivo (ni archivado ni borrado para todos)? Un fetch que falla cuenta como «hay»: así el toque
+    /// hace lo de siempre en vez de afirmar algo que no se pudo leer.
+    private func hasNoActiveGroups() -> Bool {
+        var descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate<SplitGroup> { !$0.isArchived && !$0.isHiddenForAll })
+        descriptor.fetchLimit = 1
+        do {
+            return try modelContext.fetchCount(descriptor) == 0
+        } catch {
+            #if DEBUG
+            print("FABStackView: Error contando grupos: \(error)")
+            #endif
+            return false
+        }
     }
 
     // MARK: - Disabled FAB

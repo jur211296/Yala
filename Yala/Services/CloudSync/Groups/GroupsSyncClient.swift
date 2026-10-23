@@ -2108,6 +2108,7 @@ final class GroupsSyncClient {
                     return .transient
                 }
             case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                AttestSessionProvider.reportRejected(sentIn: request)
                 // App Attest ausente con el JWT bueno: la guard solo llega a este código tras verificar el JWT, y
                 // este cliente no manda nada sin él. Ni volver a entrar ni un JWT nuevo lo arreglan, así que no es
                 // sesión caducada ni pasa por el refresh de abajo: pasajero, con su backoff y con su rastro
@@ -2440,6 +2441,7 @@ final class GroupsSyncClient {
                     return .transient
                 }
             case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                AttestSessionProvider.reportRejected(sentIn: request)
                 // Mismo criterio que el push (ver allí): App Attest ausente con el JWT bueno → pasajero, sin refresh, y
                 // cuenta en la racha con su testigo.
                 GroupsSyncBreadcrumb.groupsAttestRequired(edge: "pull")
@@ -2846,6 +2848,9 @@ final class GroupsSyncClient {
         var newSettlements: [(id: UUID, zone: String)] = []
         var newMembers: [(id: UUID, zone: String)] = []
         var newPendingMembers: [(id: UUID, zone: String)] = []
+        /// L12-20 · zonas donde el miembro PROPIO pasó de `pendingApproval` a `active` en esta página: el admin acaba de
+        /// aprobar a esta persona. Las rellena `applyMember`, en la misma rama que resetea el cursor del grupo.
+        var selfApprovedZones: [String] = []
         /// Caches por-página de la clasificación de membership (2.2) — evitan re-fetchear por cada miembro
         /// del mismo grupo. Seguros por página: el baseline solo puede moverse HACIA `initialImport` (un
         /// `GroupMeta` insertado a media página), nunca al revés.
@@ -2993,6 +2998,7 @@ final class GroupsSyncClient {
         set.newSettlements = mapped(pending.newSettlements)
         set.newMembers = mapped(pending.newMembers)
         set.newPendingMembers = mapped(pending.newPendingMembers)
+        set.selfApprovedGroups = pending.selfApprovedZones.compactMap { groupID($0) }
         return set
     }
 
@@ -3374,6 +3380,10 @@ final class GroupsSyncClient {
             // contenido de una vez (priorStatus nil NO matchea) y NO debe resetear.
             if priorStatus == SplitMemberStatus.pendingApproval.rawValue {
                 cursorResetGroupIDs.insert(delta.groupID)
+                // L12-20 · «Te avisaremos cuando te aprueben»: la misma transición que el reset es la que se avisa. Solo
+                // la de `pendingApproval` (un born-remote `nil`→active es el creador o quien entra sin aprobación, y
+                // no espera nada).
+                notify.selfApprovedZones.append(delta.groupID)
             }
         }
     }

@@ -2,7 +2,7 @@
 id: groups-consent-door-spec
 status: qa
 created: 2026-08-11
-updated: 2026-10-15
+updated: 2026-10-19
 source: YalaWiki/Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md
 ---
 
@@ -1259,3 +1259,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (A · C6): necesita un inicio de sesión real y mirar la fila en staging; los flags del simulador no escriben ninguna. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+QA guiado 2026-10-19: una sola fila de consentimiento en staging (bien), pero al volver a entrar con la misma cuenta se pide otra vez el consentimiento y el nombre: card tablero-al-volver-a-entrar-por-vengo-por-un-grup-ewvm. Falta repetir el paso 4 de A · C6 tras ese arreglo.

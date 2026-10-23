@@ -268,7 +268,7 @@
 "exchangeRate.updated" = "已更新";
 "exchangeRate.loadError" = "无法获取汇率。请稍后再试。";
 "exchangeRate.noSecondaryCurrenciesHint" = "你可以选择次要货币,在";
-"exchangeRate.noSecondaryCurrenciesPath" = "个人资料 > 货币与汇率";
+"exchangeRate.noSecondaryCurrenciesPath" = "设置 > 货币与汇率";
 
 // MARK: - Empty States
 
@@ -400,7 +400,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "收藏付款";
+"favorites.title" = "收藏";
 "favorites.new" = "新建收藏";
 "favorites.edit" = "编辑收藏";
 "favorites.noFavorites" = "你还没有任何收藏";
@@ -410,7 +410,7 @@
 "favorites.namePlaceholder" = "收藏名称";
 "favorites.notConfigured" = "未配置";
 "favorites.descriptionPlaceholder" = "描述(可选)";
-"favorites.saveDescription" = "把此付款保存为收藏,以便日后快速记录类似支出。在创建或编辑任何记录时,你会在右上角的 ⭐ 中找到它。你随时可以在个人资料中的「收藏付款」编辑它。";
+"favorites.saveDescription" = "常用支出，一键完成。";
 
 // MARK: - Scheduled
 
@@ -445,7 +445,7 @@
 "settings.categories" = "类别";
 "settings.tags" = "标签";
 "settings.notifications" = "通知";
-"settings.favorites" = "收藏付款";
+"settings.favorites" = "收藏";
 "settings.budgets" = "预算";
 "settings.budgetsFavorites" = "收藏的预算";
 "settings.budgetsFavoritesInfo" = "收藏的预算会显示在首页的预算卡片中（中等显示 3 个，大显示 5 个）。";
@@ -453,9 +453,9 @@
 "settings.budgetsFavoritesReorder" = "重新排序收藏";
 "budgets.favorites.previewTitle" = "在首页中将显示成这样";
 "budgets.favorites.previewEmpty" = "选择收藏以查看预览";
-"settings.tabBarConfig" = "自定义导航";
-"settings.tabBarConfigInfo" = "选择在底部栏显示哪些版块。最少 1 个,最多 3 个。";
-"settings.tabBarConfigActive" = "活跃标签";
+"settings.tabBarConfig" = "底部标签页";
+"settings.tabBarConfigInfo" = "选择底部显示哪些标签页及其顺序。";
+"settings.tabBarConfigActive" = "在栏中";
 "settings.tabBarConfigAvailable" = "可用";
 "settings.tabBarConfigReorderHint" = "长按以重新排序";
 "settings.tabBarConfigMinWarning" = "你必须至少有一个版块";
@@ -534,7 +534,7 @@
 "budgets.alerts.message.75" = "「%1$@」已用 75%% — %3$@ 中的 %2$@";
 "budgets.alerts.message.90" = "「%1$@」即将用完 — %3$@ 中的 %2$@";
 "budgets.alerts.message.100" = "你已用完「%1$@」的额度 — %3$@ 中的 %2$@";
-"budgets.alerts.globalDisabledHint" = "在「个人资料 > 通知」中启用预算提醒以接收";
+"budgets.alerts.globalDisabledHint" = "在「设置 > 通知」中启用预算提醒以接收";
 "budgets.alerts.custom" = "自定义";
 "budgets.alerts.addThreshold" = "添加";
 "budgets.new" = "新建预算";
@@ -607,7 +607,7 @@
 
 // MARK: - Profile
 
-"profile.title" = "个人资料";
+"profile.title" = "设置";
 "profile.defaultName" = "用户";
 "profile.personalDetails" = "个人详情";
 "profile.dataManagement" = "数据管理";
@@ -677,14 +677,14 @@
 "report.noSubcategory" = "无子类别";
 "report.noTag" = "无标签";
 "report.noAccount" = "无账户";
-"report.grouping.type" = "类型";
+"report.grouping.type" = "收入和支出";
 "report.grouping.category" = "类别";
 "report.grouping.subcategory" = "子类别";
 "report.grouping.tag" = "标签";
 "report.grouping.account" = "账户";
 "report.grouping.currency" = "货币";
 "report.grouping.nature" = "需求";
-"report.grouping.drillDown" = "深入查看";
+"report.grouping.drillDown" = "细分";
 "report.grouping.hint" = "添加层级以查看更多详情。拖动以重新排序优先级。";
 "report.grouping.active" = "活跃";
 "report.grouping.available" = "可用";
@@ -834,7 +834,7 @@
 "cashFlowPlan.monthsActive" = "个月";
 "cashFlowPlan.suggestedSource" = "基于 %d 个月的活动";
 "cashFlowPlan.bannerTitle" = "什么是现金流?";
-"cashFlowPlan.bannerBody" = "这是你逐月的收入和支出计划。它告诉你钱是否够用,或是需要做些调整。";
+"cashFlowPlan.bannerBody" = "逐月查看你的收入能否覆盖支出。";
 "cashFlowPlan.available" = "可用";
 "cashFlowPlan.accumulated" = "累计";
 "cashFlowPlan.accumulatedShort" = "累计";
@@ -903,7 +903,7 @@
 "cashFlowPlan.monthSummaryOnTrack" = "本月你已支出预估的 %d%%";
 "cashFlowPlan.monthSummaryOver" = "本月你超出预估 %d%%";
 "cashFlowPlan.monthSummaryUnder" = "只支出了 %d%% — 本月你做得很棒";
-"cashFlowPlan.configureHorizon" = "配置时间范围";
+"cashFlowPlan.configureHorizon" = "显示几个月";
 "cashFlowPlan.monthsAhead" = "向后月数";
 "cashFlowPlan.monthsBack" = "向前月数";
 "cashFlowPlan.showAccumulatedBalance" = "显示累计";
@@ -1070,7 +1070,7 @@
 "insights.ofTotal" = "占总额";
 "insights.analyzingData" = "正在分析你的数据...";
 "insights.activateAITitle" = "AI 总结可用";
-"insights.activateAIBody" = "在「个人资料 > AI 功能」中启用并自定义。";
+"insights.activateAIBody" = "在「设置 > AI 功能」中启用并自定义。";
 "insights.activate" = "启用";
 "insights.goToSettings" = "前往设置";
 "insights.notInterested" = "不感兴趣";
@@ -1094,7 +1094,7 @@
 "settings.permissions" = "权限";
 "settings.aiPrivacy" = "AI 隐私与数据";
 "settings.subscriptions" = "管理订阅";
-"settings.rateApp" = "评分与推荐";
+"settings.rateApp" = "给 Yala 评分";
 "settings.tutorials" = "教程";
 "settings.faq" = "常见问题";
 "settings.contact" = "联系我们";
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "指标";
 "settings.sectionFormat" = "数字格式";
 "settings.defaultPeriod" = "默认时段";
-"settings.defaultPeriodDescription" = "每次打开应用时默认使用此时段。你可以随时通过时段选择器临时更改。";
+"settings.defaultPeriodDescription" = "首页、记录和统计打开时使用的时段。你可以通过时段选择器临时更改。";
 "settings.colorfulIcons" = "彩色图标";
 "settings.colorfulIconsDescription" = "在个人资料版块中显示彩色图标,类似 iOS 设置的风格。";
 "settings.colorfulIconsDisabledByTheme" = "已被当前主题自动禁用。";
@@ -1699,19 +1699,19 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "帮助提示";
-"settings.widgetHintsDescription" = "在小组件上显示信息按钮,解释每个图表的含义。";
-"settings.showVariations" = "对比";
-"settings.showVariationsDescription" = "显示与上一时段的百分比变化和对比图表。";
-"settings.averageLine" = "平均线";
+"settings.widgetHintsDescription" = "在图表旁显示“?”按钮，说明每张图表的含义。在首页、统计和计划中可见。";
+"settings.showVariations" = "与上一时段对比";
+"settings.showVariationsDescription" = "显示每个数字比上一时段升降了多少。在首页、统计和报表中可见。";
+"settings.averageLine" = "图表平均线";
 "settings.averageLineDescription" = "在柱状图上显示平均线。";
-"settings.averageLine.off" = "关闭";
-"settings.averageLine.total" = "总计";
+"settings.averageLine.off" = "无";
+"settings.averageLine.total" = "一条";
 "settings.averageLine.segmented" = "分段";
-"settings.averageLine.offDescription" = "图表上不显示平均线。";
-"settings.averageLine.totalDescription" = "显示整体平均的横线。";
-"settings.averageLine.segmentedDescription" = "按时段分段并显示百分比变化。";
+"settings.averageLine.offDescription" = "不显示平均线。";
+"settings.averageLine.totalDescription" = "用一条线显示整个时段的平均值。";
+"settings.averageLine.segmentedDescription" = "每段一条线，并显示比上一段升降了多少。";
 "settings.decimalPlaces" = "小数位数";
-"settings.decimalPlacesDescription" = "仅适用于总计和图表。单笔记录始终显示 2 位小数。";
+"settings.decimalPlacesDescription" = "用于总计和图表。每笔记录始终显示 2 位小数。";
 "settings.decimalsNone" = "无小数";
 "settings.decimalsOne" = "1 位小数";
 "settings.decimalsTwo" = "2 位小数";
@@ -1719,22 +1719,22 @@
 "settings.currencyFormatDescription" = "选择显示货币代码 (USD) 或符号 ($)。";
 "settings.currencyCode" = "代码 (PEN、USD)";
 "settings.currencySymbol" = "符号 (S/、$)";
-"settings.autoFocusField" = "自动聚焦字段";
-"settings.autoFocusFieldDescription" = "创建新手动记录时,键盘会自动在所选字段上打开。";
+"settings.autoFocusField" = "打开键盘的字段";
+"settings.autoFocusFieldDescription" = "手动记一笔时，键盘会在这个字段打开。";
 "settings.autoFocusAmount" = "金额";
 "settings.autoFocusNote" = "描述";
-"settings.autoFocusNone" = "无";
+"settings.autoFocusNone" = "不打开";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "使用模式";
 "settings.expensesOnlyMode" = "仅支出";
-"settings.expensesOnlyModeDescription" = "隐藏收入、转账和余额。你的数据不会被删除,只是被隐藏。";
+"settings.expensesOnlyModeDescription" = "在整个应用中隐藏收入、转账和余额。你的数据不会被删除。";
 "settings.expensesOnlyActivateTitle" = "启用「仅支出」模式?";
 "settings.expensesOnlyActivateMessage" = "收入、转账和余额将在整个应用中被隐藏。你随时可以撤销。";
-"settings.expensesOnlyActivateConfirm" = "好,启用";
+"settings.expensesOnlyActivateConfirm" = "启用";
 "settings.expensesOnlyDeactivateTitle" = "禁用「仅支出」模式?";
 "settings.expensesOnlyDeactivateMessage" = "收入、转账和余额将再次显示。";
-"settings.expensesOnlyDeactivateConfirm" = "好,禁用";
+"settings.expensesOnlyDeactivateConfirm" = "禁用";
 "settings.expensesOnlyActive" = "已启用";
 "settings.categoryHidden" = "(已隐藏)";
 
@@ -1773,7 +1773,7 @@
 "onboarding.categoriesYes" = "使用这些类别开始";
 "onboarding.categoriesNo" = "不要预设分类，我自己建";
 "onboarding.categoriesRecommended" = "推荐";
-"onboarding.categoriesInfo" = "每个类别都包含更细的子类别。你可以在「个人资料 > 类别」中查看和自定义。";
+"onboarding.categoriesInfo" = "每个类别都包含更细的子类别。你可以在「设置 > 类别」中查看和自定义。";
 "onboarding.notificationsTitle" = "想保持联系吗?";
 "onboarding.notificationsSubtitle" = "打开对你有帮助的提醒。你随时可以更改。";
 "onboarding.notificationsSkip" = "暂时不用,谢谢";
@@ -1781,7 +1781,7 @@
 "onboarding.notificationsDeselectAll" = "全部禁用";
 "onboarding.recommended" = "推荐";
 "onboarding.languageTitle" = "选择你的语言";
-"onboarding.languageSubtitle" = "Yala 暂时还没有你设备所用的语言。先选一个吧，之后随时可以在“个人资料 > 个性化”中更改。";
+"onboarding.languageSubtitle" = "Yala 暂时还没有你设备所用的语言。先选一个吧，之后随时可以在“设置 > 个性化”中更改。";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "你想怎么使用 Yala?";
@@ -1887,7 +1887,7 @@
 "onboarding.calc.balanceLabelChecking" = "账户里的钱";
 "onboarding.calc.balanceLabelSavings" = "已存金额";
 "onboarding.calc.balanceLabelCash" = "你的现金";
-"onboarding.accountImportTip" = "在「个人资料 > 导入」中,你可以把记录导入到任意账户。";
+"onboarding.accountImportTip" = "在「设置 > 导入」中,你可以把记录导入到任意账户。";
 "onboarding.accountMoreTip" = "你随时可以添加更多账户。如果使用多种货币,每种至少创建一个。";
 "onboarding.budgetTitle" = "你打算花多少?";
 "onboarding.budgetSubtitle" = "预算让你知道何时接近你设的金额。挑一个类别和一个月度参考金额。";
@@ -2187,19 +2187,19 @@
 "faq.howToRecord.q" = "我怎么记录一笔支出?";
 "faq.howToRecord.a" = "在首页点按“新记录”输入金额，或点按“语音”“照片”口述或识别收据。Yala 会替你填好详情。";
 "faq.multiCurrency.q" = "我可以使用多种货币吗?";
-"faq.multiCurrency.a" = "可以。Yala 支持 7 种货币 (PEN、USD、EUR、MXN、COP、BRL、GBP)。在「设置 > 货币」中设置主货币并添加次要货币。";
+"faq.multiCurrency.a" = "可以。Yala 支持 54 种货币。每个账户使用自己的货币，Yala 会把总计换算成你的主货币。你可以在「设置 > 货币与汇率」中选择主货币，以及最多 2 种用于对比的次要货币。";
 "faq.changeCategory.q" = "我怎么更改一笔支出的类别?";
 "faq.changeCategory.a" = "打开记录，点击“编辑”并更改类别。更快的方法：在列表中长按该记录，选择“更改类别”。要一次更改多条，在记录中点击 ···，选择“选择”，勾选要改的记录，然后点击铅笔。";
 "faq.importData.q" = "我可以导入数据吗?";
-"faq.importData.a" = "可以。前往「设置 > 导入」上传 CSV 或 Excel 文件。Yala 会自动检测列并允许你按货币分配账户。";
+"faq.importData.a" = "可以。前往「设置 > 导入文件」上传 CSV 或 Excel 文件。Yala 会自动检测列并允许你按货币分配账户。";
 "faq.exportData.q" = "我怎么导出数据?";
-"faq.exportData.a" = "前往「设置 > 导出」选择 CSV 或 Excel 格式。你可以下载所有记录用于电子表格分析或备份。";
+"faq.exportData.a" = "前往「设置 > 导出记录」选择 CSV 或 Excel 格式。你可以下载所有记录用于电子表格分析或备份。";
 "faq.deleteData.q" = "我可以删除所有数据吗?";
 "faq.deleteData.a" = "可以。在「设置 > 清除数据」中可以删除所有信息。此操作无法撤销,建议先导出备份。";
 "faq.whatIsPro.q" = "Yala Pro 包含什么?";
-"faq.whatIsPro.a" = "Yala Pro 解锁高级功能如语音输入、相机收据扫描、专属主题等。所有福利可在「设置 > 订阅」查看。";
+"faq.whatIsPro.a" = "有了 Yala Pro，你可以用语音和照片记账、向 Yala AI 提问、不限数量地创建账户和预算，还能使用主题和图标。详情请见「设置 > Yala Pro」。";
 "faq.cancelSub.q" = "我怎么取消订阅?";
-"faq.cancelSub.a" = "你可以随时在「设置 > 订阅 > 在 App Store 管理」中管理或取消订阅。Pro 权限将持续到付费周期结束。";
+"faq.cancelSub.a" = "你可以随时在「设置 > Yala Pro > 管理或取消」中管理或取消订阅。在已付费周期结束前，你仍可使用 Pro。";
 
 // MARK: - Shortcuts (App Intents)
 "shortcut.quickExpense.title" = "新条目";
@@ -2495,10 +2495,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "新自动记录";
-"shortcut.notification.expense" = "支出";
-"shortcut.notification.income" = "收入";
-"shortcut.notification.body" = "已记下一笔 %@，金额 %@%@。打开 Yala 检查并保存。";
 
 // MARK: - Category Seeds
 
@@ -2601,10 +2597,10 @@
 "tutorials.createAccount.intro.title" = "什么是账户?";
 "tutorials.createAccount.intro.desc" = "设置你的银行、钱包或卡片以跟踪钱在哪里。";
 "tutorials.createAccount.step0.title" = "创建一个新账户";
-"tutorials.createAccount.step1.title" = "或从面板创建";
+"tutorials.createAccount.step1.title" = "或在首页创建";
 "tutorials.createAccount.step2.title" = "填写详情";
-"tutorials.createAccount.completion.title" = "你的账户已就绪!";
-"tutorials.createAccount.completion.desc" = "保持账户井然有序、清晰分隔对管理财务至关重要。每个账户让你筛选数据并更好地查看趋势。你可以随时编辑、修改初始余额或调整当前余额。";
+"tutorials.createAccount.completion.title" = "现在你知道怎么创建账户了";
+"tutorials.createAccount.completion.desc" = "把钱分到不同账户（银行、现金、卡），就能看到每个账户里有多少。你可以随时编辑它们。";
 
 // 2. createCategories (4 steps)
 "tutorials.createCategories.title" = "创建类别";
@@ -2614,8 +2610,8 @@
 "tutorials.createCategories.step1.title" = "添加子类别";
 "tutorials.createCategories.step2.title" = "创建子类别";
 "tutorials.createCategories.step3.title" = "自定义你的类别";
-"tutorials.createCategories.completion.title" = "类别已创建!";
-"tutorials.createCategories.completion.desc" = "好的类别让你的报表更有用。你随时可以编辑或添加更多。";
+"tutorials.createCategories.completion.title" = "现在你知道怎么创建类别了";
+"tutorials.createCategories.completion.desc" = "类别分得好，就能看清钱花到哪里去了。你随时可以编辑或新建更多。";
 
 // 3. createTags (2 steps)
 "tutorials.createTags.title" = "创建标签";
@@ -2623,8 +2619,8 @@
 "tutorials.createTags.intro.desc" = "把跨类别的支出归到一起 — 比如「假期」涵盖餐饮、交通和酒店。";
 "tutorials.createTags.step0.title" = "前往标签";
 "tutorials.createTags.step1.title" = "自定义你的标签";
-"tutorials.createTags.completion.title" = "标签已创建!";
-"tutorials.createTags.completion.desc" = "用标签按项目、旅行或活动分组支出。它们对超越类别的分析非常完美。";
+"tutorials.createTags.completion.title" = "现在你知道怎么创建标签了";
+"tutorials.createTags.completion.desc" = "用标签把一次旅行、一个项目或一场活动的支出归到一起，即使它们属于不同类别。";
 
 // 4. createRecord (4 steps)
 "tutorials.createRecord.title" = "记录一笔支出";
@@ -2634,17 +2630,17 @@
 "tutorials.createRecord.step1.title" = "选择记录类型";
 "tutorials.createRecord.step2.title" = "填写各字段";
 "tutorials.createRecord.step3.title" = "使用快捷键";
-"tutorials.createRecord.completion.title" = "支出已记录!";
-"tutorials.createRecord.completion.desc" = "及时记录支出是关键。记录得越多,你的分析和报表越能帮你理解财务。";
+"tutorials.createRecord.completion.title" = "现在你知道怎么记录支出了";
+"tutorials.createRecord.completion.desc" = "每笔支出记得越及时，你就越清楚钱花在了哪里。";
 
 // 5. importData (2 steps)
 "tutorials.importData.title" = "导入数据";
 "tutorials.importData.intro.title" = "导入你的数据";
 "tutorials.importData.intro.desc" = "几秒就能从电子表格或其他应用导入支出。";
-"tutorials.importData.step0.title" = "选择「导入数据」";
+"tutorials.importData.step0.title" = "点按“导入文件”";
 "tutorials.importData.step1.title" = "导入你的文件";
-"tutorials.importData.completion.title" = "数据已导入!";
-"tutorials.importData.completion.desc" = "你的历史数据已在 Yala 中。如有错误,你会收到含详情的清晰提示;否则会看到成功消息。请查看记录确认全部正确导入。";
+"tutorials.importData.completion.title" = "现在你知道怎么导入数据了";
+"tutorials.importData.completion.desc" = "导入时，Yala 会告诉你哪些导入了、哪些没有。之后查看你的记录确认一下。";
 
 // 6. createBudgets (4 steps)
 "tutorials.createBudgets.title" = "创建预算";
@@ -2652,31 +2648,31 @@
 "tutorials.createBudgets.intro.desc" = "设置支出上限,在接近时获得通知。";
 "tutorials.createBudgets.step0.title" = "打开「计划」";
 "tutorials.createBudgets.step1.title" = "配置你的预算";
-"tutorials.createBudgets.step2.title" = "添加到收藏";
+"tutorials.createBudgets.step2.title" = "在首页显示";
 "tutorials.createBudgets.step3.title" = "随时编辑";
-"tutorials.createBudgets.completion.title" = "预算已启用!";
-"tutorials.createBudgets.completion.desc" = "现在你可以实时看到支出情况,并对是否继续花钱做出更好的判断。常常查看以保持掌控。";
+"tutorials.createBudgets.completion.title" = "现在你知道怎么创建预算了";
+"tutorials.createBudgets.completion.desc" = "有了预算，你能随时看到还能花多少，接近上限时 Yala 会提醒你。";
 
 // 7. createScheduledPayments (5 steps)
 "tutorials.createScheduledPayments.title" = "计划付款";
 "tutorials.createScheduledPayments.intro.title" = "什么是计划付款?";
-"tutorials.createScheduledPayments.intro.desc" = "自动化租金、水电、订阅 — Yala 替你记录。";
+"tutorials.createScheduledPayments.intro.desc" = "租金、水电和订阅只需记一次：每到付款日，Yala 都会把付款放进收件箱，等你审批。";
 "tutorials.createScheduledPayments.step0.title" = "打开「计划」";
 "tutorials.createScheduledPayments.step1.title" = "填写详情";
 "tutorials.createScheduledPayments.step2.title" = "定义周期";
 "tutorials.createScheduledPayments.step3.title" = "标记是否为订阅";
 "tutorials.createScheduledPayments.step4.title" = "管理你的付款";
-"tutorials.createScheduledPayments.completion.title" = "付款已计划!";
-"tutorials.createScheduledPayments.completion.desc" = "你的周期付款现在会自动记录。每次执行你都会收到通知。";
+"tutorials.createScheduledPayments.completion.title" = "现在你知道怎么计划付款了";
+"tutorials.createScheduledPayments.completion.desc" = "到了日子，Yala 会把每笔付款放进收件箱，等你审批。";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "收藏付款";
+"tutorials.createFavorites.title" = "收藏";
 "tutorials.createFavorites.intro.title" = "什么是收藏?";
 "tutorials.createFavorites.intro.desc" = "把常用支出存为快捷,一键记录。";
 "tutorials.createFavorites.step0.title" = "创建一个收藏";
 "tutorials.createFavorites.step1.title" = "快速使用";
-"tutorials.createFavorites.completion.title" = "收藏已保存!";
-"tutorials.createFavorites.completion.desc" = "收藏帮你节省重复支出的时间。你可以拥有任意多个并随时编辑。";
+"tutorials.createFavorites.completion.title" = "现在你知道怎么使用收藏了";
+"tutorials.createFavorites.completion.desc" = "收藏能一键记下你经常重复的支出。想建多少个都可以。";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "自定义面板";
@@ -2685,8 +2681,8 @@
 "tutorials.editPanel.step0.title" = "打开面板";
 "tutorials.editPanel.step1.title" = "自定义小组件";
 "tutorials.editPanel.step2.title" = "需要时重置";
-"tutorials.editPanel.completion.title" = "面板已自定义!";
-"tutorials.editPanel.completion.desc" = "你的面板现在精准展示你需要的。你随时可以更改以适应你的管理方式。";
+"tutorials.editPanel.completion.title" = "现在你知道怎么自定义首页了";
+"tutorials.editPanel.completion.desc" = "首页会按你想要的顺序显示你选择的内容。你随时可以更改。";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "面板筛选";
@@ -2697,19 +2693,19 @@
 "tutorials.panelFiltering.step2.title" = "在每个视图中筛选";
 "tutorials.panelFiltering.step3.title" = "看筛选跨视图传递";
 "tutorials.panelFiltering.step4.title" = "使用快速筛选按钮";
-"tutorials.panelFiltering.completion.title" = "筛选已掌握!";
-"tutorials.panelFiltering.completion.desc" = "筛选是深入理解财务的最佳工具。组合使用可以获得越来越精准的分析。";
+"tutorials.panelFiltering.completion.title" = "现在你知道怎么筛选了";
+"tutorials.panelFiltering.completion.desc" = "组合筛选条件，就能只看你想找的内容。筛选会同时作用于所有页面。";
 
 // 11. inboxApproval (4 steps)
 "tutorials.inboxApproval.title" = "收件箱";
 "tutorials.inboxApproval.intro.title" = "你的智能收件箱";
-"tutorials.inboxApproval.intro.desc" = "查看并审批来自 Apple Pay、语音或相机的自动支出。";
-"tutorials.inboxApproval.step0.title" = "用语音或图片记录";
+"tutorials.inboxApproval.intro.desc" = "查看并保存 Yala 替你记下的内容：你口述或拍下的内容、Apple Pay 付款，以及到期付款。";
+"tutorials.inboxApproval.step0.title" = "收件箱里会有什么";
 "tutorials.inboxApproval.step1.title" = "完成并审批";
-"tutorials.inboxApproval.step2.title" = "一次记录多笔";
+"tutorials.inboxApproval.step2.title" = "一次保存多笔";
 "tutorials.inboxApproval.step3.title" = "管理你的收件箱";
-"tutorials.inboxApproval.completion.title" = "收件箱已掌握!";
-"tutorials.inboxApproval.completion.desc" = "收件箱中的记录没有过期日期,你可以随时审批或拒绝。在你审批之前,草稿不会影响你的总计。";
+"tutorials.inboxApproval.completion.title" = "现在你知道怎么使用收件箱了";
+"tutorials.inboxApproval.completion.desc" = "收件箱里的内容在你审批之前不计入总计，也不会过期。";
 
 // 12. applePay (4 steps)
 "tutorials.applePay.title" = "用 Apple Pay 记录";
@@ -2721,49 +2717,48 @@
 "tutorials.applePay.step3.title" = "配置参数";
 
 // Tutorial step descriptions (re-expanded)
-"tutorials.createAccount.step0.desc" = "在你的个人资料中,选择「账户」版块然后点击创建一个新账户。";
-"tutorials.createAccount.step1.desc" = "你也可以直接从面板的「添加新账户」卡片创建账户。";
+"tutorials.createAccount.step0.desc" = "在设置中进入“账户”，点按 + 新建一个。";
+"tutorials.createAccount.step1.desc" = "在首页的“你的财务”中，把账户滑到最后，点按“添加”。";
 "tutorials.createAccount.step2.desc" = "填写新账户的详情然后点击保存。";
-"tutorials.createCategories.step0.desc" = "在你的个人资料中,选择「类别」版块然后创建一个新类别。";
+"tutorials.createCategories.step0.desc" = "在设置中进入“类别”，点按 + 新建一个。";
 "tutorials.createCategories.step1.desc" = "记住:类别必须始终关联子类别才能创建。";
 "tutorials.createCategories.step2.desc" = "创建子类别和创建类别一样简单:取个名字、选择性质,可选地修改图标。";
 "tutorials.createCategories.step3.desc" = "随时按你喜好自定义类别的图标和颜色。";
-"tutorials.createTags.step0.desc" = "在你的个人资料中,选择「标签」版块然后创建一个新标签。";
+"tutorials.createTags.step0.desc" = "在设置中进入“标签”，点按 + 新建一个。";
 "tutorials.createTags.step1.desc" = "按你的喜好自定义标签:取名字、图标和颜色。";
 "tutorials.createRecord.step0.desc" = "在首页点按“新记录”。要口述或识别收据，点按“语音”或“照片”。";
 "tutorials.createRecord.step1.desc" = "你可以记录支出、收入,甚至账户间转账。汇率会实时自动计算。";
 "tutorials.createRecord.step2.desc" = "填写必填字段:金额、账户、子类别。你也可以添加描述和任意标签。";
 "tutorials.createRecord.step3.desc" = "使用快捷键:@ 是账户、! 是类别、# 是标签。开始输入即可在每个快捷范围内细化搜索。";
-"tutorials.importData.step0.desc" = "在你的个人资料中,选择「导入数据」版块。";
+"tutorials.importData.step0.desc" = "在设置的“数据”中，点按“导入文件”。";
 "tutorials.importData.step1.desc" = "你可以按默认模板多次导入 CSV 或 Excel,模板可以在那里下载。如果数据涉及多种货币,会请你为每种货币选择账户。";
 "tutorials.createBudgets.step0.desc" = "在菜单选择「计划」并切到「预算」标签。用 + 按钮创建一个新预算。";
-"tutorials.createBudgets.step1.desc" = "为它命名、设金额并定义周期:每日、每月、每年或一次性(用于旅行、活动等)。自定义要跟踪的账户、类别、标签和需求。如果想在某些进度获得提醒,打开通知。";
-"tutorials.createBudgets.step2.desc" = "你可以把预算加到「收藏」并显示在面板小组件中。按你喜欢的顺序选择最多 3 个。";
+"tutorials.createBudgets.step1.desc" = "为它命名、设金额并定义周期:每日、每月、每年或一次性(用于旅行、活动等)。选择要跟踪的账户、类别、标签和需求。如果想在某些进度获得提醒,打开通知。";
+"tutorials.createBudgets.step2.desc" = "打开「在小组件中显示」，即可在首页的预算小组件中看到它。";
 "tutorials.createBudgets.step3.desc" = "记住你随时可以点击预算回来编辑。";
 "tutorials.createScheduledPayments.step0.desc" = "在菜单选择「计划」并切到「计划付款」标签。用 + 按钮创建一个新付款。";
 "tutorials.createScheduledPayments.step1.desc" = "填写付款名称、金额、备注(可选)、账户、子类别和标签(可选)。";
 "tutorials.createScheduledPayments.step2.desc" = "选择付款日和频率。选择第一次付款时间,如果想在当天或前几天通知,打开通知。";
-"tutorials.createScheduledPayments.step3.desc" = "如果是周期性订阅,别忘了打开「订阅」开关。";
+"tutorials.createScheduledPayments.step3.desc" = "在「更多选项」中，如果是订阅，请打开「这是订阅吗?」。";
 "tutorials.createScheduledPayments.step4.desc" = "点击一笔计划付款可查看即将到来的付款、已付款,以及随时编辑。";
-"tutorials.createFavorites.step0.desc" = "前往新记录页面,点击顶部的星标创建一个新收藏。";
-"tutorials.createFavorites.step1.desc" = "填写你想预填的字段。下次只需点击收藏即可看到所有字段自动填好。";
+"tutorials.createFavorites.step0.desc" = "在新记录中，点击金额下方的「收藏」，即可将已填写的内容保存为收藏。";
+"tutorials.createFavorites.step1.desc" = "下次在表单顶部的那一行点击收藏，已保存的字段会自动填好。";
 "tutorials.editPanel.step0.desc" = "前往主屏幕,看到所有可用小组件的支出摘要。";
-"tutorials.editPanel.step1.desc" = "点击面板上的自定义按钮即可修改要显示的小组件及其顺序。";
+"tutorials.editPanel.step1.desc" = "点按首页每个版块旁的方格按钮，选择要显示的小组件及其顺序。";
 "tutorials.editPanel.step2.desc" = "记住:在自定义中点击「重置」即可恢复默认顺序。";
 "tutorials.panelFiltering.step0.desc" = "充分利用 Yala 的交互式图表。几乎所有面板都可按类别、需求等筛选。多多尝试,找到最适合你的。";
 "tutorials.panelFiltering.step1.desc" = "你有一个筛选栏显示所有已应用的筛选。你随时可以单个移除或一次清除全部。";
 "tutorials.panelFiltering.step2.desc" = "在应用的不同视图中,你都可以通过图表按你的喜好筛选。";
 "tutorials.panelFiltering.step3.desc" = "筛选会等同地传递到所有视图,因此你可以为任意筛选目标看到各种指标。";
 "tutorials.panelFiltering.step4.desc" = "在某些视图中,顶部还会有一个筛选版块,让你按喜好筛选或一键清除全部。";
-"tutorials.inboxApproval.step0.desc" = "如果你是 Yala Pro 用户,用语音或图片记录时会自动跳转到草稿。使用「记录 Apple Pay 付款」快捷指令时也是。";
+"tutorials.inboxApproval.step0.desc" = "收件箱会收到 Yala 替你记下的内容：你口述或拍下的内容、快捷指令记录的 Apple Pay 付款，以及到期的计划付款。在你查看之前，它们都是草稿。";
 "tutorials.inboxApproval.step1.desc" = "只需填写必填字段并审批。记录将正常创建。";
-"tutorials.inboxApproval.step2.desc" = "你也可以用语音或图片一次记录多条记录。它会告诉你创建了多少草稿,并引导你到收件箱查看。";
-"tutorials.inboxApproval.step3.desc" = "在收件箱中你可以审批记录、选择「稍后审批」延后查看,或直接拒绝。";
-"tutorials.applePay.step0.desc" = "打开「快捷指令」应用,前往「自动化」版块。";
-"tutorials.applePay.step1.desc" = "点击「新建自动化」,选择 Wallet 选项,选择要使用的卡片,然后选择「立即运行」。";
-"tutorials.applePay.step2.desc" = "选择「创建新快捷指令」,在最底部搜索 Yala。在 Yala 中选择「记录 Apple Pay 付款」快捷指令。";
-"tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家和名称分别同样处理。关闭「运行时显示」开关。";
-
+"tutorials.inboxApproval.step2.desc" = "如果多条草稿已经填写完整，轻点「保存已就绪的」，它们会一次性进入你的记录。";
+"tutorials.inboxApproval.step3.desc" = "滑动草稿即可丢弃，也可以打开它，随时补全并审批。";
+"tutorials.applePay.step0.desc" = "打开「快捷指令」应用，进入「自动化」。如果底部没有，它在「资源库」里。";
+"tutorials.applePay.step1.desc" = "轻点「+」，选择 Wallet 并勾选你使用的卡片。如果出现，选择「立即运行」。";
+"tutorials.applePay.step2.desc" = "如有提示，轻点「创建新快捷指令」。搜索 Yala，选择「记录 Apple Pay 付款」快捷指令。";
+"tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家和名称分别同样处理。如果有「运行时显示」，将其关闭。";
 "tutorials.applePay.completion.title" = "Apple Pay 已连接!";
 "tutorials.applePay.completion.desc" = "这样,每次用所选卡片使用 Apple Pay 都会自动记录。每笔付款都会在你的收件箱创建一个草稿。";
 
@@ -2788,21 +2783,16 @@
 "settings.siriShortcuts" = "Siri 与快捷指令";
 "siriShortcuts.title" = "Siri 与快捷指令";
 "siriShortcuts.subtitle" = "用语音或快捷指令即时记录支出。";
-"siriShortcuts.siri.title" = "用 Siri 记录";
 "siriShortcuts.siri.description" = "口述你的支出,会在你的收件箱创建一个草稿。";
 "siriShortcuts.siri.proNote" = "需要 Yala Pro";
 "siriShortcuts.siri.phrase" = "在 Yala 中创建一条记录";
-"siriShortcuts.siri.alt1" = "你也可以说:「在 Yala 备注一笔支出」";
-"siriShortcuts.siri.alt2" = "或:「在 Yala 保存一笔支出」";
+"siriShortcuts.siri.alt1" = "在 Yala 备注一笔支出";
+"siriShortcuts.siri.alt2" = "在 Yala 保存一笔支出";
 "siriShortcuts.all.title" = "其他快捷指令";
-"siriShortcuts.shortcut.quick" = "快速记录";
-"siriShortcuts.shortcut.voice" = "语音输入";
-"siriShortcuts.shortcut.image" = "用照片或文件记账";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "一键打开记录表单。";
-"siriShortcuts.desc.voice" = "用语音口述金额和描述。";
-"siriShortcuts.desc.image" = "用相机扫描收据或票据。";
-"siriShortcuts.desc.applePay" = "记录一笔 Apple Pay 付款。";
+"siriShortcuts.desc.quick" = "打开表单，记录一笔支出或收入。";
+"siriShortcuts.desc.voice" = "口述金额和描述。";
+"siriShortcuts.desc.image" = "收据、截图或 PDF。";
+"siriShortcuts.desc.applePay" = "供 Wallet 自动化使用。";
 "siriShortcuts.phrase.quick" = "在 Yala 中记录";
 "siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
 "siriShortcuts.phrase.image" = "用照片或文件在 Yala 中记录";
@@ -2912,7 +2902,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "次要货币";
-"account.secondaryCurrency.message" = "你添加了一个 %@ 账户。想看 %@ → %@ 汇率吗?可以在「个人资料 > 货币与汇率」中更改。";
+"account.secondaryCurrency.message" = "你添加了一个 %@ 账户。想看 %@ → %@ 汇率吗?可以在「设置 > 货币与汇率」中更改。";
 "account.secondaryCurrency.accept" = "添加";
 "account.secondaryCurrency.reject" = "不用,谢谢";
 
@@ -2923,7 +2913,7 @@
 "notificationPrimer.benefit3" = "接近预算上限时提醒";
 "notificationPrimer.accept" = "启用通知";
 "notificationPrimer.reject" = "暂时不用";
-"notificationPrimer.hint" = "你可以在「个人资料 > 通知」中启用";
+"notificationPrimer.hint" = "你可以在「设置 > 通知」中启用";
 
 // MARK: - What's New
 "whatsNew.title" = "Yala 新功能";
@@ -3045,7 +3035,7 @@
 "groups.settings.dangerZone" = "危险区";
 
 // Bridge personal integration (per-group override)
-"groups.settings.personalIntegrationSectionTitle" = "个人集成";
+"groups.settings.personalIntegrationSectionTitle" = "同步到你的账户";
 "groups.settings.personalIntegrationToggleLabel" = "将此群组的支出记录到我的个人账户";
 "groups.settings.personalIntegrationHintInheritOn" = "继承你的通用设置（已开启）。";
 "groups.settings.personalIntegrationHintLocalOff" = "仅在此群组:已关闭。";
@@ -3063,7 +3053,7 @@
 "groups.balance.title" = "余额";
 "groups.balance.noDebts" = "全部已结清!";
 "groups.balance.pendingDebts" = "待结债务";
-"groups.balance.settlements" = "结算";
+"groups.balance.settlements" = "付款";
 "groups.balance.confirmed" = "已确认";
 "groups.balance.pending" = "待处理";
 "groups.expense.noExpenses" = "无支出";
@@ -3438,7 +3428,7 @@
 "groups.invite.ready" = "全部就绪!";
 "groups.invite.goToGroup" = "前往群组";
 "groups.invite.linkInvalidTitle" = "链接无效";
-"groups.invite.linkInvalidDetail" = "此链接已无效或已过期。请管理员生成新链接。";
+"groups.invite.linkInvalidDetail" = "此链接已无效或已过期。请向邀请你的人要一个新链接。";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "群组同步出现问题";
@@ -3961,17 +3951,17 @@
 "filters.includeGroupTransactionsHint" = "开启时,由共享支出生成的动态会出现在你的列表中。";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "此支出有后续结算。请先删除或调整结算后再移除。";
+"groups.bridge.deleteExpenseBlocked" = "此支出有后续付款。请先删除或调整这些付款，再移除它。";
 "groups.bridge.editFromGroup" = "此记录与一个群组同步。请从共享支出处编辑。";
 "groups.bridge.assignFromInbox" = "请在收件箱中分配子分类以完成它。";
-"groups.bridge.editSettlementInGroup" = "此记录来自结算。请在群组中编辑。";
+"groups.bridge.editSettlementInGroup" = "此记录来自群组付款。请在群组中编辑。";
 "groups.bridge.editPartialBanner" = "这笔支出来自群组。你可以编辑账户、分类和标签。金额和日期与群组同步。";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@在%2$@中记录了这笔支出。选择一个账户将其纳入你的记录。";
 "groups.bridge.draftReasonCurrencyChanged" = "%@中支出的货币已更改。选择一个账户来记录你的份额。";
 "groups.card.moreDebts" = "+%d 更多";
-"inbox.groupExpenseAccountDraft.title" = "分配账户";
+"inbox.groupExpenseAccountDraft.title" = "选择账户";
 "inbox.groupExpenseAccountDraft.assignAccount" = "来源账户";
-"groups.bridge.activateTitle" = "启用自动记录";
+"groups.bridge.activateTitle" = "同步到你的账户";
 "groups.bridge.activateBody" = "从现在起，共享支出将显示在你的个人账户中。你的群组中之前的支出：%d 笔。要怎么处理它们？";
 "groups.bridge.activateOptionFromNow" = "从现在开始";
 "groups.bridge.activateOptionFromNowHint" = "只有新支出会被反映。";
@@ -3993,14 +3983,14 @@
 "groups.bridge.optoutAlertNo" = "仅群组";
 
 // Bridge deactivation sheet (F5)
-"groups.bridge.deactivationSheetTitle" = "禁用个人集成";
+"groups.bridge.deactivationSheetTitle" = "停止同步到你的账户";
 "groups.bridge.deactivationSheetBody" = "你的账户中已有自动创建的记录。请选择如何处理它们。";
 "groups.bridge.deactivationOptionFreeze" = "保留为历史记录";
 "groups.bridge.deactivationOptionDelete" = "从我的账户中删除";
 
 // Groups Global Settings sheet (F3a)
 "groups.globalSettings.title" = "群组设置";
-"groups.globalSettings.bridgeSectionTitle" = "与你的个人 Yala 集成";
+"groups.globalSettings.bridgeSectionTitle" = "同步到你的账户";
 "groups.globalSettings.bridgeToggleLabel" = "将群组支出记录到我的个人账户";
 "groups.globalSettings.bridgeCaption" = "开启后,你支付或结算的每笔支出也会记录到你选择的个人账户中。你的余额将反映真实情况。";
 "groups.globalSettings.visibilitySectionTitle" = "可见性";
@@ -4018,7 +4008,7 @@
 "subcategory.system.settlementSent" = "结算已发送";
 "subcategory.system.settlementReceived" = "结算已收到";
 "inbox.sourceGroupExpense" = "共享支出";
-"inbox.sourceGroupSettlement" = "结算";
+"inbox.sourceGroupSettlement" = "群组付款";
 "inbox.sourceManual" = "手动";
 "inbox.groupDraftCannotDelete" = "此记录只能从源群组中删除。";
 
@@ -4027,9 +4017,9 @@
 "groups.settlement.fromAccountNone" = "无 — 稍后完成";
 "inbox.openInbox" = "打开收件箱";
 "groups.detail.openGroup" = "打开群组";
-"inbox.groupExpenseDraft.title" = "分配子类别";
+"inbox.groupExpenseDraft.title" = "选择子类别";
 "inbox.groupExpenseDraft.assignSubcategory" = "子类别";
-"inbox.groupSettlementDraft.title" = "分配账户";
+"inbox.groupSettlementDraft.title" = "选择账户";
 "inbox.groupSettlementDraft.assignAccount" = "目标账户";
 "inbox.groupDraft.finalize" = "完成";
 "inbox.groupDraft.fromGroup" = "群组：%@";
@@ -4044,7 +4034,7 @@
 "groups.member.rejectConfirm" = "拒绝 %@ 的请求吗？对方可以使用其他链接重新申请加入。";
 "groups.member.pendingRequestsSection" = "待处理的请求";
 "groups.invite.waitingApproval.title" = "请求已发送";
-"groups.invite.waitingApproval.body" = "群组管理员批准后你才能参与。在此期间群组会显示在你的列表里，但还无法打开。过一会儿再打开 Yala，看看是否已经通过。";
+"groups.invite.waitingApproval.body" = "群组管理员批准后你才能参与。在此期间群组会显示在你的列表里，但还无法打开。获批后我们会通知你。";
 "groups.invite.waitingApproval.banner" = "等待管理员批准";
 "groups.invite.rejected.title" = "请求被拒绝";
 "groups.invite.rejected.body" = "管理员没有批准你的请求。如果你想再次尝试，可以请管理员发送新的链接。";
@@ -4271,14 +4261,9 @@
 "groups.onboarding.step2.card3.body" = "完成付款,清零开始。不用争论,不用 Excel。";
 
 "groups.onboarding.step2.bridgeAwareness" = "当你支付一笔支出时,我们也会自动将其记录到你的个人账户,让你的余额始终反映真实情况。";
-"groups.onboarding.step3.title" = "隐私优先";
-"groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
-"groups.onboarding.step3.point1" = "每位成员都需要一个 Yala 账户。";
-"groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
 "groups.onboarding.step3.cta" = "前往群组";
 "groups.onboarding.step3.signInCTA" = "登录";
 
-"groups.onboarding.step3.bridgeAwareness" = "你可以在群组设置中更改此行为。";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ 已被删除";
@@ -4306,11 +4291,11 @@
 "more.subtitle.distribution" = "了解你的钱花在哪里";
 "more.subtitle.budgets" = "设定限额，掌握节奏";
 "more.subtitle.scheduledPayments" = "即将到来：账单和订阅";
-"more.subtitle.comparative" = "并排比较各个周期";
-"more.subtitle.cashFlow" = "进账与出账一目了然";
+"more.subtitle.comparative" = "比上个月花得多还是少?";
+"more.subtitle.cashFlow" = "接下来几个月钱够用吗?";
 "more.subtitle.records" = "所有记录尽在一处";
 "more.subtitle.groups" = "轻松分摊共同支出";
-"more.subtitle.profile" = "你的账户与偏好";
+"more.subtitle.profile" = "你的个人资料与偏好";
 "more.toolsSection" = "更多功能";
 
 
@@ -4354,20 +4339,20 @@
 "groups.card.youOwe" = "你欠 %@";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
-"inbox.groupExpenseAccountDraft.banner" = "群组「%@」的支出。只需指定资金来源的账户；金额和日期由群组管理。";
+"inbox.groupExpenseAccountDraft.banner" = "来自群组「%@」。";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
-"inbox.groupExpenseDraft.banner" = "群组「%@」的支出。只需选择一个子分类；金额和日期由群组管理。";
+"inbox.groupExpenseDraft.banner" = "来自群组「%@」。";
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
-"inbox.groupSettlementDraft.banner" = "群组「%@」的结算。只需指定一个账户；金额和日期由群组管理。";
+"inbox.groupSettlementDraft.banner" = "来自群组「%@」。";
 "inbox.groupSettlementDraft.alreadyRegistered" = "这笔付款已记录在你的账户中。你可以放弃此草稿。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "分配账户和子类别";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "选择账户和子类别";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
-"inbox.groupExpenseAccountSubcategoryDraft.banner" = "群组「%@」的支出。请指定资金来源的账户并选择一个子类别；金额和日期由群组管理。";
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "来自群组「%@」。";
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "此共享支出在群组中已不存在。";
@@ -4484,10 +4469,10 @@
 "groups.openingBalance.emptyState" = "暂无初始余额。";
 "groups.openingBalance.rollupOwes" = "欠";
 "groups.openingBalance.rollupOwed" = "应收";
-"groups.openingBalance.approvalPromptTitle" = "%@ 加入时是否有余额？";
-"groups.openingBalance.approvalPromptBody" = "记录之前的欠款或应收款。";
-"groups.openingBalance.approvalPromptAdd" = "添加初始余额";
-"groups.openingBalance.approvalPromptSkip" = "暂不";
+"groups.openingBalance.approvalPromptTitle" = "%@ 和群组之间是否已有未结清的账？";
+"groups.openingBalance.approvalPromptBody" = "如果对方加入前就欠了钱或被欠钱，请记下来，让余额对得上。";
+"groups.openingBalance.approvalPromptAdd" = "是，记下来";
+"groups.openingBalance.approvalPromptSkip" = "否，从零开始";
 "groups.openingBalance.errorNotOwner" = "只有群组创建者可以管理初始余额。";
 "groups.openingBalance.errorSameMember" = "请选择两位不同的成员。";
 
@@ -4777,7 +4762,7 @@
 "groups.consent.point1" = "群组天生就是共享的：它们保存在 Yala 云端，让每个成员都能看到同样的最新支出。";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "与群组分享的只有最少的信息：你的昵称和群组的支出。其他成员看不到你的邮箱。";
+"groups.consent.point2" = "与群组分享的只有最少的信息：你的名字和群组的支出。其他成员看不到你的邮箱。";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "你的个人财务不会移动：它们留在你选择的地方，一如既往地私密。";
@@ -4885,17 +4870,9 @@
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "请使用创建云端账户时的同一个 Google 账号。";
 
-/* Note under sign-in buttons: account is tied to the sign-in method */
-"welcome.cloud.providerNote" = "请用创建账户时的同一登录方式登录——你的 Yala 账户与该方式绑定。";
 
-/* R9 provider mismatch screen title */
-"welcome.cloud.providerMismatchTitle" = "该账户使用其他登录方式";
 
-/* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "此 Apple ID 的 Yala 账户是通过%@创建的。";
 
-/* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "此 Apple ID 的 Yala 账户是通过其他方式创建的。";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
 "welcome.cloud.beaconOrigin" = "它是通过%@创建的。你可以登录该账户，或创建另一个。";
@@ -5212,7 +5189,7 @@
 "settings.batchLeaveStoppedBody" = "你可以随时在「清除数据」中继续。";
 
 /* Feed row title for a confirmed settlement in group records */
-"groups.settlement.entryDescription" = "结算";
+"groups.settlement.entryDescription" = "付款";
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@ 付给了 %2$@";
@@ -5283,16 +5260,16 @@
 "groups.signin.retryLater" = "嗯，我们暂时没能关联你的账户。你的群组还在，不会丢失任何内容，稍后再试试吧。";
 
 /* Groups > Balances: menu item on a confirmed settlement row (destructive) */
-"groups.settlement.deleteAction" = "删除结算";
+"groups.settlement.deleteAction" = "删除付款";
 
 /* Groups > Balances: title of the delete-settlement confirmation dialog */
-"groups.settlement.deleteTitle" = "删除此结算？";
+"groups.settlement.deleteTitle" = "删除这笔付款？";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
 "groups.settlement.deleteMessage" = "它结清的余额将重新变为待处理。如果它在你的账户中创建了记录，该记录也会被删除。";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
-"groups.settlement.deleteFailed" = "无法删除结算。请重试。";
+"groups.settlement.deleteFailed" = "无法删除这笔付款。请重试。";
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "暂时无法打开这个邀请。我们已保存你的请求，请稍后再试。";
@@ -5308,11 +5285,13 @@
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "创建你的 Yala 账户";
 "welcome.bornCloud.subtitle" = "有了它，你可以在任何设备上打开 Yala。";
-"welcome.bornCloud.providerNote" = "你的 Yala 账户将与所选的登录方式绑定。";
 "welcome.bornCloud.creating" = "正在创建你的账户…";
 
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
 "welcome.mirrorRelaunch.title" = "还差一步：请重新打开 Yala";
+
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "正在打开你的邀请…";
 
 /* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
 "welcome.mirrorRelaunch.body" = "为了妥善保管你的数据，Yala 需要重新启动。请返回主屏幕，然后重新打开——回来后会从你离开的地方继续。";
@@ -5356,14 +5335,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "返回";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "你叫什么名字？";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "群组里的其他人会看到这个名字。";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "创建我的群组";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "群组是怎么用的？";
@@ -5376,12 +5351,10 @@
 "groups.empty.createAccount.action" = "创建我的账户";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "最后一步";
+"groups.empty.needsConsent.title" = "同意群组的保存方式";
 "groups.empty.needsConsent.message" = "我们会告诉你哪些内容会保存在 Yala 云端，由你决定。";
-"groups.empty.needsConsent.action" = "继续";
+"groups.empty.needsConsent.action" = "查看并同意";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "你记在群组里的支出会保存在 Yala 的服务器上，让所有人都能看到最新的内容。";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "创建我的账户";
@@ -5396,7 +5369,7 @@
 "groups.freshStartPending.leadUnknown" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器，从头开始会把它们一起清除。";
 "groups.freshStartPending.lossSessionExpired" = "这些更改只能用创建它们的账户上传，而该账户的会话已不在这台手机上。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.lossPermanent" = "创建这些更改的账户已无法上传它们，重试也解决不了。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
-"groups.freshStartPending.lossAttest" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以它们无法上传。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossAttest" = "这台手机已经一天无法向你的群组发送更改，所以它们无法上传。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.lossAction" = "从头开始并丢失更改";
 "groups.freshStartPending.lossConfirmTitle" = "要丢失这些更改吗？";
 "groups.freshStartPending.lossConfirmBody" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
@@ -5466,7 +5439,7 @@
 "groups.card.pendingNotice.title" = "等待批准";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "群组管理员尚未批准你的申请。批准后，你就可以打开该群组并查看它的支出。请稍后再来看看。";
+"groups.card.pendingNotice.body" = "群组管理员尚未批准你的申请。批准后，你就可以打开该群组并查看它的支出。获批后我们会通知你。";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "账户余额";
@@ -5508,7 +5481,7 @@
 "groups.shareableSummary.action" = "分享摘要";
 
 /* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
-"groups.shareableSummary.hint" = "一张图片，包含群组总额和结清所需的最少笔付款。涵盖全部记录。";
+"groups.shareableSummary.hint" = "一张图片，包含群组总额和结清所需的付款。涵盖全部记录。";
 
 /* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
 "groups.shareableSummary.totalSpent" = "总支出";
@@ -5607,7 +5580,7 @@
 "account.currencyChange.blockedReasonGroupExpense" = "群组支出";
 
 /* Lowercase, used inside a list */
-"account.currencyChange.blockedReasonGroupSettlement" = "群组结算";
+"account.currencyChange.blockedReasonGroupSettlement" = "群组付款";
 
 /* %1 old currency, %2 new currency */
 "account.currencyChange.confirmMessage" = "它们以 %1$@ 记录，将按各自日期的汇率换算为 %2$@。此操作无法撤销。";
@@ -5689,6 +5662,15 @@
 
 /* Private branch iCloud gate: body when the CloudKit probe failed */
 "welcome.privateICloud.errorBody" = "可能是网络问题。继续之前再试一次——这样旧数据就不会毫无预警地冒出来。";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "iCloud 响应时间太长";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "我们没能查完你的 iCloud。继续之前再试一次——这样旧数据就不会毫无预警地冒出来。";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "我们没能查完你的 iCloud，所以什么都没有删除：一切都保持原样。可以再试一次，或者返回，想好了再决定。";
 
 /* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
 "welcome.privateICloud.lateTitle" = "我们在 iCloud 里找到了你的数据";
@@ -5831,14 +5813,14 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "你的群组登录已过期。请重新登录后再试。";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "你的群组登录已过期，而且你最近的部分群组更改无法准备好上传。更改不会丢失。请重新登录，关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次。";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，而且你最近的部分群组更改无法准备好上传。更改不会丢失。要准备这些更改，请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala）。";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "这台手机已经一天无法向你的群组发送更改，而且最近的部分更改无法准备好上传。更改不会丢失。要准备这些更改，请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala）。";
 "storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。此外，有些群组更改无法准备好上传。这些更改不会丢失。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；那个账户的更改只有用它登录后才会上传。";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "加入之前，这部手机会被清空";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "这里保存着与某个 iCloud 同步的数据。为了让你的群组支出不会进到那里，我们会把它从这部手机上删除：iCloud 中的副本保持不变。Yala 会重新启动，然后你继续完成邀请。";
+"welcome.groups.inviteNeutralBody" = "这里保存着与某个 iCloud 账户同步的数据。为了让你的群组支出不会进到那里，我们会把它从这部手机上删除：iCloud 中的副本保持不变。Yala 会重新启动，然后你继续完成邀请。";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
 "welcome.groups.inviteNeutralBodyNoBackup" = "这里保存着数据，而且我们没有在 iCloud 中找到副本。为了让你的群组支出不与它们混在一起，必须把它从这部手机上删除，并且无法恢复。Yala 会重新启动，然后你继续完成邀请。";
@@ -5923,25 +5905,25 @@
 "groups.errors.attestUnavailableTitle" = "这台手机无法同步你的群组";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到服务器的群组更改：%d 项。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.attestUnavailableSignOutLoss" = "这台手机已经一天无法向你的群组发送更改。没有传上去的更改：%d 项。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些群组更改没有传到服务器。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "这台手机已经一天无法向你的群组发送更改，有些更改没有传上去。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "退出登录并丢失更改";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以你的群组更改无法上传。";
+"groups.errors.attestUnavailable" = "这台手机已经一天无法向你的群组发送更改，所以你做的更改不会同步到群组。暂时请换一台手机使用。";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
 "groups.errors.leaveAttestUnavailable" = "这台手机无法同步你的群组，所以未能完成退出群组。";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到服务器的群组更改：%d 项。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralAttestLossBody" = "这台手机已经一天无法向你的群组发送更改。没有传上去的更改：%d 项。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些群组更改没有传到服务器。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralAttestLossBodyUnknown" = "这台手机已经一天无法向你的群组发送更改，有些更改没有传上去。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "继续并丢失更改";
@@ -5951,11 +5933,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "这台手机无法同步你的数据";
-"settings.signOutAttestMessage" = "已经超过一天没能通过我们服务器要求的安全验证。没有传到你云端账户的更改：%d 项。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
-"settings.signOutAttestMessageUnknown" = "已经超过一天没能通过我们服务器要求的安全验证，而且有些更改没有传到你的云端账户。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutAttestMessage" = "这台手机已经一天无法向你的云端账户发送更改。没有传上去的更改：%d 项。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutAttestMessageUnknown" = "这台手机已经一天无法向你的云端账户发送更改，有些更改没有传上去。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
 "settings.signOutAttestExportButton" = "导出我的记录";
 "settings.signOutAttestLossButton" = "退出登录并丢失更改";
-"settings.signOutAttestBlocked" = "这台手机已经超过一天没能通过我们服务器要求的安全验证，所以你的更改无法上传到云端账户。";
+"settings.signOutAttestBlocked" = "这台手机已经一天无法向你的云端账户发送更改，所以你的更改无法上传。";
 "settings.signOutAttestExportEmpty" = "你没有可以导出的记录。";
 "settings.signOutAttestExportFailed" = "无法生成文件，请重试。";
 
@@ -5963,7 +5945,7 @@
 "groups.attestTerminalBanner" = "这台手机已经一天无法向你的群组发送更改。你在这里记下的内容群组里没人能看到，请换一台手机。";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "它已经超过一天没能通过我们服务器要求的安全验证。你在这里记的账会存在这台手机上，但不会同步到云端账户，暂时请换一台手机使用。";
+"settings.attestTerminalBanner" = "这台手机已经一天无法向你的云端账户发送更改。你在这里记的账会存在手机上，但不会同步到你的账户，暂时请换一台手机使用。";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "正在将您的数据上传到 iCloud。您可以继续使用 Yala。";
@@ -6103,16 +6085,16 @@
 "settings.signOutCaptureUnfinished" = "你最近的部分更改无法准备好上传到云端。更改还在这台手机上，不会丢失。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。由于你的数据在云端与 iCloud 之间的迁移尚未完成，同步已暂停。请打开本页“个人资料”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
+"settings.signOutSyncStoppedMidMigration" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。由于你的数据在云端与 iCloud 之间的迁移尚未完成，同步已暂停。请打开本页“设置”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。在你重新打开 Yala 之前，同步会保持暂停。请彻底关闭 Yala（在应用切换器中划走），重新打开后再试一次。";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台手机上，不会丢失，过一会儿再试试。";
-"settings.signOutCloudSessionExpired" = "你的登录已过期，还有更改尚未上传到云端。这些更改不会丢失：请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”，然后再试一次。";
+"settings.signOutCloudSessionExpired" = "你的登录已过期，还有更改尚未上传到云端。这些更改不会丢失：请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”，然后再试一次。";
 "settings.signOutSessionSurvived" = "你在这台 iPhone 上仍处于登录状态，因此没有删除任何内容。请再试一次。";
-"settings.signOutMigrationInFlight" = "你的数据在 iCloud 与云端之间的迁移尚未完成，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请打开“个人资料”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
+"settings.signOutMigrationInFlight" = "你的数据在 iCloud 与云端之间的迁移尚未完成，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请打开“设置”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
 "settings.signOutMigrationUnreadable" = "我们无法确认你的数据在 iCloud 与云端之间的迁移进度，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
@@ -6139,10 +6121,10 @@
 "groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
-"settings.signOutCloudSessionExpiredGroupsLoss" = "你的登录已过期。尚未上传的群组更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"settings.signOutCloudSessionExpiredGroupsLoss" = "你的登录已过期。尚未上传的群组更改：%d 项。要上传它们，请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "你的登录已过期，还有尚未上传的群组更改。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "你的登录已过期，还有尚未上传的群组更改。要上传它们，请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
 "welcome.groups.neutralNoSessionLossBody" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
@@ -6169,10 +6151,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "未到达服务器的群组更改会从这台手机上删除。群组里的人都不会看到，也无法恢复。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "你的登录已过期。没有传到你云端账户的更改：%d 项。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "你的登录已过期。没有传到你云端账户的更改：%d 项。要上传它们，请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "你的登录已过期，而且有些更改没有传到你的云端账户。要上传它们，请打开本页“个人资料”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "你的登录已过期，而且有些更改没有传到你的云端账户。要上传它们，请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "选择一条记录，在这里查看";
@@ -6448,7 +6430,7 @@
 "inbox.groupSettlementAmountChange.bannerSent" = "「%2$@」中你付给 %1$@ 的款项已更改：原为 %3$@，现为 %4$@。%5$@ 中记录的是 %6$@。";
 
 /* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
-"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」中的这笔结算已更改：原为 %2$@，现为 %3$@。%4$@ 中记录的是 %5$@。";
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」中的这笔付款已更改：原为 %2$@，现为 %3$@。%4$@ 中记录的是 %5$@。";
 
 /* Primary button: set my transaction to the new amount */
 "inbox.groupSettlementAmountChange.adjust" = "调整为 %@";
@@ -6556,7 +6538,7 @@
 "welcome.mirrorRelaunch.privacyNote" = "这样 Yala 才能连接你的私人 iCloud，让你的数据始终保持私密：其他人都读不到，我们也一样。";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
-"onboarding.purpose.changeLaterHint" = "之后随时可以在“个人资料 > 个性化”中更改。";
+"onboarding.purpose.changeLaterHint" = "之后随时可以在“设置 > 个性化”中更改。";
 
 /* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
 "onboarding.currencyName.titleExpenses" = "你平时用哪种货币花钱？";
@@ -6701,6 +6683,8 @@
 "storage.revert.prior.checkFailedTitle" = "无法检查你的 iCloud";
 "storage.revert.prior.checkFailedBody" = "返回之前，我们会检查你的 iCloud 里是否已有 Yala 数据，以免在不告诉你的情况下混在一起。可能是网络问题：请再试一次。";
 "storage.revert.prior.wipeFailed" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。请检查网络后再试一次。";
+"storage.revert.prior.wipeStopped" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。已删除的数据不会恢复：再试一次，我们会继续删除剩下的部分。";
+"storage.revert.prior.wiping" = "正在删除以前的数据…已删除 %d 条";
 "storage.revert.prior.noAccountTitle" = "请在这部 iPhone 上登录 iCloud";
 "storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这部 iPhone 没有登录 iCloud。请在 iPhone 的“设置”中登录后再试一次。";
 
@@ -6909,7 +6893,7 @@
 "inbox.stillPending" = "仍待处理：%d";
 
 /* UX 2.2 · lote 5: primeros días, guías y tips */
-"setup.step5.title.trial" = "免费试用 Yala Pro 30 天";
+"setup.step5.title.trial" = "免费试用 Yala Pro 1 个月";
 "setup.step5.title.knowPro" = "了解 Yala Pro";
 "setup.step5.title.alreadyPro" = "你已拥有 Yala Pro";
 "setup.step.skipped" = "已跳过。点按即可试用";
@@ -7734,3 +7718,599 @@
 "aiPrivacy.l14d.cloudExploreLine" = "问题需要时，Yala AI 也会查看你的云端账户。";
 "aiPrivacy.l14d.revokeTitle" = "要关闭%@吗？";
 "settings.l14d.summaryWhere" = "显示在 %@。";
+"siriShortcuts.siri.alsoSay" = "也可以说：%1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "“%@”";
+"siriShortcuts.openShortcuts" = "打开我的 Yala 快捷指令";
+"inbox.alert.siriDrafts" = "Siri 草稿：%d 条";
+"shortcut.applePay.notification.title" = "%2$@ 的 %1$@ 付款待审核";
+"shortcut.applePay.notification.titleNoMerchant" = "%@ 付款待审核";
+"shortcut.applePay.notification.body" = "轻点以批准。";
+
+/* VoiceOver: el cambio entre dos períodos redondea a cero */
+"accessibility.variationNoChange" = "没有变化";
+/* Comparativa en «Todo el tiempo»: tarjeta que invita a elegir un período */
+"report.l18.allTime.title" = "要比较,请选择一个月或一年";
+/* Comparativa: qué se compara con qué; %1$@ = «Octubre», %2$@ = «septiembre» */
+"report.l18.heading" = "%1$@与%2$@对比";
+/* Comparativa: igual, con un tramo de días; %1$@ = «Octubre», %2$@ = «1–21 de septiembre» */
+"report.l18.headingRange" = "%1$@与%2$@对比";
+/* Comparativa: chip para comparar con el mes anterior */
+"report.l18.chip.previousMonth" = "与上个月比";
+/* Comparativa: chip para comparar con la semana anterior */
+"report.l18.chip.previousWeek" = "与上周比";
+/* Comparativa: chip para comparar con los 7 días anteriores */
+"report.l18.chip.previous7Days" = "与前7天比";
+/* Comparativa: chip para comparar con los 30 días anteriores */
+"report.l18.chip.previous30Days" = "与前30天比";
+/* Comparativa: chip para comparar con el período anterior */
+"report.l18.chip.previousPeriod" = "与上一期比";
+/* Comparativa: chip para comparar con el mismo período del año pasado; %@ = «octubre de 2025» */
+"report.l18.chip.yearAgo" = "与%@比";
+/* Comparativa: cabecera de la columna del cambio */
+"report.l18.column.change" = "变化";
+/* Comparativa: ingresos menos gastos cuando sobra */
+"report.l18.net.gain" = "结余";
+/* Comparativa: ingresos menos gastos cuando falta */
+"report.l18.net.loss" = "缺口";
+/* Comparativa: qué es «Te quedó» */
+"report.l18.net.caption" = "收入减去支出。";
+/* Comparativa: qué es «Te quedó» y cuánto quedó antes; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionGainBefore" = "收入减去支出。%1$@结余%2$@。";
+/* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionLossBefore" = "收入减去支出。%1$@缺口%2$@。";
+/* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
+"report.l18.row.amountsA11y" = "%2$@ %1$@,%4$@ %3$@";
+/* Desglosar: título del ejemplo de cómo quedará la tabla */
+"report.l18.example.title" = "表格会是这样";
+/* Desglosar, ejemplo: el nivel de ingresos y gastos */
+"report.l18.example.expenses" = "支出";
+/* Desglosar, ejemplo: una categoría */
+"report.l18.example.category" = "餐饮";
+/* Desglosar, ejemplo: una subcategoría */
+"report.l18.example.subcategory" = "超市";
+/* Desglosar, ejemplo: una etiqueta */
+"report.l18.example.tag" = "旅行";
+/* Desglosar, ejemplo: una cuenta */
+"report.l18.example.account" = "银行卡";
+/* Desglosar, ejemplo: una divisa */
+"report.l18.example.currency" = "人民币";
+/* Desglosar, ejemplo: una necesidad */
+"report.l18.example.need" = "必需";
+/* Desglosar: sin niveles elegidos, la tabla solo separa ingresos y gastos */
+"report.l18.onlyIncomeAndExpenses" = "只有收入和支出。在下方添加一个层级。";
+/* Crear el plan: rótulo del saldo con el que empieza el plan */
+"cashflow.l18.start.title" = "你从多少钱开始?";
+/* Crear el plan: de dónde sale el saldo (una cuenta) */
+"cashflow.l18.start.captionOne" = "你今天账户里的钱";
+/* Crear el plan: de dónde sale el saldo; %d = número de cuentas (2 o más) */
+"cashflow.l18.start.caption" = "你今天%d个账户里的钱";
+/* Crear el plan: sin cuentas que sumen, el saldo se escribe a mano */
+"cashflow.l18.start.captionNone" = "输入你的起始金额";
+/* Crear el plan: el saldo lo escribió la persona */
+"cashflow.l18.start.captionTyped" = "你输入的金额";
+/* Crear el plan: enlace para cambiar el saldo inicial */
+"cashflow.l18.start.change" = "修改金额";
+/* Crear el plan: título de la sección de ingresos */
+"cashflow.l18.section.in" = "进账";
+/* Crear el plan: título de la sección de gastos */
+"cashflow.l18.section.out" = "出账";
+/* Crear el plan: fila plegada con los gastos que cambian; %d = cuántos */
+"cashflow.l18.variable.title" = "变动支出 · %d";
+/* Crear el plan: qué son los gastos que cambian; %@ = ejemplos («Restaurantes, Taxis») */
+"cashflow.l18.variable.caption" = "%@……我们按平均值计入。";
+/* Crear el plan: desplegar los gastos que cambian */
+"cashflow.l18.variable.show" = "查看";
+/* Crear el plan: plegar los gastos que cambian */
+"cashflow.l18.variable.hide" = "收起";
+/* Crear el plan: total de ingresos al mes */
+"cashflow.l18.summary.income" = "每月收入";
+/* Crear el plan: total de gastos al mes */
+"cashflow.l18.summary.expense" = "每月支出";
+/* Crear el plan: lo que sobra al mes */
+"cashflow.l18.summary.surplus" = "每月结余";
+/* Crear el plan: lo que falta al mes */
+"cashflow.l18.summary.shortfall" = "每月缺口";
+/* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
+"cashflow.l18.sheet.todayBalance" = "你今天账户里有%@";
+/* Hoja del saldo inicial: usar el saldo de hoy */
+"cashflow.l18.sheet.useThisAmount" = "使用这个金额";
+/* Flujo de caja: con cuánto empezó el plan; %@ = monto */
+"cashflow.l18.startedWith" = "起始金额:%@";
+/* Flujo de caja: botón para cambiar algo (el saldo inicial, cómo se calcula una línea) */
+"cashflow.l18.change" = "修改";
+/* Detalle de una línea: rótulo de cómo se calcula el monto */
+"cashflow.l18.detail.howItsCalculated" = "计算方式";
+/* Detalle de una línea: monto nuevo desde un mes; %1$@ = «noviembre», %2$@ = monto */
+"cashflow.l18.detail.changeFrom" = "从%1$@起:每月%2$@";
+/* Ajustar monto: rótulo del campo; %@ = «noviembre» */
+"cashflow.l18.detail.amountFor" = "%@的金额";
+/* Ajustar monto: a qué meses se aplica; %1$@ y %2$@ = el mismo mes («noviembre») */
+"cashflow.l18.scope.question" = "只改%1$@,还是%2$@及之后的月份?";
+/* Ajustar monto: solo el mes elegido */
+"cashflow.l18.scope.onlyThatMonth" = "只改那个月";
+/* Ajustar monto: el mes elegido y los siguientes */
+"cashflow.l18.scope.alsoFollowing" = "那个月及之后";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
+"cashflow.l18.hero.surplusThisMonth" = "本月结余";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
+"cashflow.l18.hero.shortfallThisMonth" = "本月缺口";
+/* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
+"cashflow.l18.hero.surplusFuture" = "%@预计结余";
+/* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
+"cashflow.l18.hero.shortfallFuture" = "%@预计缺口";
+/* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
+"cashflow.l18.hero.surplusPast" = "%@结余";
+/* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
+"cashflow.l18.hero.shortfallPast" = "%@缺口";
+/* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
+"cashflow.l18.hero.projectedEnd" = "照这样下去,%1$@底你会有%2$@";
+/* Flujo de caja: cuánto se lleva gastado del plan del mes; %d = porcentaje */
+"cashflow.l18.month.spentShare" = "已花掉计划的%d%%";
+/* Flujo de caja: en un ingreso, lo que falta recibir */
+"cashflow.l18.row.toReceive" = "待收入";
+/* Flujo de caja: en un ingreso, lo recibido de más */
+"cashflow.l18.row.receivedExtra" = "多收到";
+/* Flujo de caja: una línea con un monto nuevo desde un mes; %@ = «noviembre» */
+"cashflow.l18.row.fromMonth" = "从%@起";
+/* Gráficas: el período; %1$@ = «agosto», %2$@ = «febrero de 2027» */
+"cashflow.l18.chart.periodRange" = "%1$@至%2$@";
+/* Gráficas: de qué es la cifra de la proyección; %@ = «febrero» */
+"cashflow.l18.chart.projectionKPI" = "%@底余额";
+/* Gráficas: de qué es la cifra del ahorro; %1$d = meses, %2$@ = «De agosto a octubre» */
+"cashflow.l18.chart.savingsKPI" = "%1$d个月的平均(%2$@)";
+/* Gráficas: el período de «Gastos por revisar»; %@ = «De agosto a octubre» */
+"cashflow.l18.chart.deviationPeriod" = "月平均。%@。所以与单月明细不一致。";
+/* Gráficas: gastado frente a lo planeado al mes; %1$@ = gastado, %2$@ = planeado */
+"cashflow.l18.chart.deviationLine" = "每月%2$@中的%1$@";
+/* Agregar línea: ejemplo del camino «Desde mis gastos» */
+"cashflow.l18.add.historyExpense" = "用你这几个月的支出,比如超市";
+/* Agregar línea: ejemplo del camino «Desde mis ingresos» */
+"cashflow.l18.add.historyIncome" = "用你这几个月的收入,比如工资";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (gasto) */
+"cashflow.l18.add.scheduledExpense" = "你已设好的计划付款,比如房租";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (ingreso) */
+"cashflow.l18.add.scheduledIncome" = "你已设好的计划收款,比如工资";
+/* Agregar línea: ejemplo del camino «Línea personalizada» */
+"cashflow.l18.add.custom" = "你还没记录的,比如储蓄或旅行";
+/* Agregar línea: lo que movió una categoría en 6 meses; %@ = monto */
+"cashflow.l18.add.inSixMonths" = "6个月共%@";
+
+/* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
+"report.l18.inPeriod" = "%@";
+
+/* Título del diálogo de borrar un gasto de grupo. %@ = descripción del gasto. */
+"groups.expense.deleteTitle" = "删除「%@」？";
+
+/* Mensaje del diálogo de borrar un gasto de grupo: alcance del borrado. */
+"groups.expense.deleteMessage" = "它会从整个群组中删除，余额会重新计算。如果它在你的账户里，也会一并移除。";
+
+/* Línea sobre «Guardar» cuando falta la descripción del gasto. */
+"groups.expense.missingDescription" = "请填写描述";
+
+/* Línea sobre «Guardar» cuando falta el monto. */
+"groups.expense.missingAmount" = "请填写金额";
+
+/* Línea sobre «Guardar» cuando no se eligió quién pagó. */
+"groups.expense.missingPayer" = "请选择付款人";
+
+/* Línea sobre «Guardar» cuando nadie participa del gasto. */
+"groups.expense.missingParticipants" = "请选择参与者";
+
+/* Línea sobre «Guardar» cuando el reparto no suma el monto. */
+"groups.expense.missingSplit" = "分摊总额与金额不符";
+
+/* Línea sobre «Guardar» cuando pagaste tú y falta la cuenta. */
+"groups.expense.missingAccount" = "请选择从哪个账户支出";
+
+/* Línea de ayuda bajo el título del formulario de saldo inicial. */
+"groups.openingBalance.formHelp" = "使用 Yala 之前就欠下的款项";
+
+/* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
+"inbox.movedToGroup" = "已移至「%@」";
+
+/* Botón del aviso «Movido a…»: abre el grupo. */
+"inbox.movedToGroupView" = "查看";
+
+/* Nombre del borrador de un pago que hiciste. %1$@ = a quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidTo" = "付给 %1$@ · %2$@";
+
+/* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidBy" = "来自 %1$@ 的付款 · %2$@";
+
+/* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
+"groups.stats.myPortionHint" = "你应承担的部分";
+
+/* Confirmación de «Eliminar de mis cuentas» al dejar de reflejar los gastos de grupo. */
+"groups.bridge.deleteConfirmTitle" = "从你的账户中删除？";
+
+/* Cuerpo de la confirmación. %d = movimientos que se borran (sin concordancia de plural a propósito). */
+"groups.bridge.deleteConfirmMessage" = "将删除的记录：%d 条。无法撤销。";
+
+/* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
+"groups.settings.openGroupsSettings" = "打开群组设置";
+
+/* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
+"inbox.groupDraft.linkTitle" = "已经记过了？";
+
+/* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
+"inbox.groupDraft.linkHint" = "点按这条记录，我们会把它与此支出关联，不会重复。";
+
+/* Pista de VoiceOver de cada movimiento parecido. */
+"inbox.groupDraft.linkRowHint" = "将其关联到群组支出";
+
+/* Título del diálogo de borrar un gasto de grupo sin descripción. */
+"groups.expense.deleteTitleUnnamed" = "删除这笔支出？";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "如果不需要，可以在群组设置中关闭。";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "如果你已有账户就直接登录，没有的话会为你创建。";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "例如：库斯科之旅";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "减少你们之间的付款";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yala 会合并欠款，减少转账次数。";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "全部用一种货币";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "通常怎么分摊";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "你在群组里的名字";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "要分摊一笔支出，请先创建一个群组";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "现在记下这笔支出";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "群组通知";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "有人记了一笔支出或付款给你时，我们会通知你。";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "开启通知";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "通知已开启";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Yala 的通知已在设置中关闭。";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@ 邀请你加入 Yala 中的“%2$@”，一起分摊费用。点按链接即可加入；如果你还没有 Yala，请先下载，然后再点按一次链接。";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "你受邀加入 Yala 中的“%@”，一起分摊费用。点按链接即可加入；如果你还没有 Yala，请先下载，然后再点按一次链接。";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@ 邀请你";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "你受邀加入这个群组";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "接下来，你可以选择用哪个账户登录。";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "你已加入“%@”";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "你已加入群组";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "成员：%@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "记一笔支出";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "查看群组";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "你的群组正在路上";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "准备好后会显示在这里。";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "你已获批准：现在可以查看支出并记录你的支出。";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@ 想加入";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "有几个人想加入";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "接受请求后，对方就能查看和记录支出。";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "接受请求后，他们就能查看和记录支出。";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "查看";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "想加入（%d）";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "今天打开了你的邀请链接";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "昨天打开了你的邀请链接";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "%@ 打开了你的邀请链接";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "如果接受，对方将能看到群组的支出并记录自己的支出。如果拒绝，对方什么都看不到。";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "接受";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "接受 %@ 加入群组？";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "你的账户是从另一台设备转到云端的，因此需要在那台设备上返回 iCloud（如果它仍装有 Yala）。在这台设备上，你可以继续使用云端。";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "请稍候";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "这台手机连续发出了很多请求。请等一分钟再试：照片没有问题。";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "已达今日上限";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "今天的照片识别次数已用完。每天都会更新；在此期间，你可以手动记录。";
+
+/* card vv0k */
+"voice.failure.busy.title" = "请稍候";
+
+/* card vv0k */
+"voice.failure.busy.message" = "这台手机连续发出了很多请求。请等一分钟，再用同一条语音重试。";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "已达今日上限";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "今天的语音识别次数已用完。每天都会更新；在此期间，你可以手动记录。";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "已达今日上限：有 1 张未读取。";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "已达今日上限：有 %d 张未读取。";
+
+/* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
+"l15.personal.dataNote" = "根据你的选择，保存在你的 iCloud 或你的云端账户中。你在群组里记下的内容，群组成员都能看到。";
+"l15.personal.moreAboutData" = "进一步了解你的数据";
+"l15.rates.search" = "搜索货币";
+"l15.personalization.voiceLanguageFooter" = "你用语音记账时对 Yala 说的语言。";
+"l15.personalization.colorfulIconsFooter" = "用于“设置”和“更多”中的图标。";
+"l15.personalization.averageLineFooter" = "显示在首页的图表中。";
+"l15.personalization.currencyFormatFooter" = "整个应用中金额的写法：用符号（S/）或代码（PEN）。";
+"l15.tabBar.rules" = "首页始终排在第一位。另外还能放 3 个，加上“更多”和“搜索”。";
+"l15.permissions.title" = "Yala 的权限";
+"l15.permissions.footer" = "你第一次使用需要某项权限的功能时，Yala 才会请求该权限。";
+"l15.permissions.notAskedHint" = "你第一次使用时我们会请求。";
+"l15.permissions.changeInSettings" = "在设置中更改";
+"l15.permissions.notifications" = "通知";
+"l15.permissions.notificationsDetail" = "提醒、到期付款和群组通知。";
+"l15.permissions.camera" = "相机";
+"l15.permissions.cameraDetail" = "用于拍收据照片记一笔支出。";
+"l15.permissions.microphone" = "麦克风";
+"l15.permissions.microphoneDetail" = "用于语音记一笔支出。";
+"l15.permissions.photos" = "照片";
+"l15.permissions.photosDetail" = "用于把你选择的群组摘要保存到“照片”。";
+"l15.permissions.status.allowed" = "已允许";
+"l15.permissions.status.limited" = "部分照片";
+"l15.permissions.status.saveOnly" = "仅添加";
+"l15.permissions.status.denied" = "未允许";
+"l15.permissions.status.notAsked" = "尚未请求";
+"l15.recommend.row" = "推荐 Yala";
+"l15.recommend.message" = "我用 Yala 记账，推荐给你：";
+"l15.tutorials.doItNow" = "现在就去做";
+"l15.tutorials.done" = "已完成";
+"l15.faq.section.currencies" = "货币";
+"l15.faq.section.groups" = "群组";
+"l15.faq.notHere" = "没有找到你的问题？";
+"l15.faq.writeToUs" = "联系我们";
+"l15.faq.exchangeRate.q" = "汇率是从哪里来的？";
+"l15.faq.exchangeRate.a" = "Yala 会更新汇率，并按你记录当天的汇率换算每笔记录。汇率及其更新时间可在「设置 > 货币与汇率 > 查看全部」中查看。";
+"l15.faq.groups.q" = "群组怎么用？";
+"l15.faq.groups.a" = "群组用来和别人分摊支出：一次旅行、合住的家或一次聚会。每个人记下自己付的钱，Yala 会算出谁欠谁。你需要一个 Yala 账户，因为群组支出保存在云端，让大家随时看到最新情况。";
+"l15.faq.yalaAI.q" = "Yala AI 是什么？";
+"l15.faq.yalaAI.a" = "它是 Yala Pro 的助手。你可以问它关于财务的问题（“这个月我在咖啡上花了多少？”），或告诉它一笔支出，它会替你记下来。为了回答，它会把必要的信息发送给一项 AI 服务；你可以在「设置 > AI 隐私与数据」中决定。";
+"l15.faq.whereData.q" = "我的数据保存在哪里？";
+"l15.faq.whereData.a" = "如果你选择了私人 iCloud，数据保存在你的 iPhone 和你的 iCloud 中：Yala 看不到。如果你有云端账户，数据保存在 Yala 的服务器上，你可以在另一台 iPhone 上用 Apple 或 Google 登录。你在群组里记下的内容会保存在云端，让群组成员看到。";
+"l15.faq.faceID.q" = "可以用面容 ID 保护 Yala 吗？";
+"l15.faq.faceID.a" = "可以，使用 iOS 的锁定功能：在主屏幕上按住 Yala 图标，然后点按“需要面容 ID”。Yala 永远看不到你的面容：由 iOS 进行验证。操作指南在「设置 > 用面容 ID 保护」中。";
+"l15.faq.widgets.q" = "怎么添加 Yala 小组件？";
+"l15.faq.widgets.a" = "在主屏幕的空白处按住，点按“编辑”>“添加小组件”，然后搜索 Yala。有余额、支出、类别、月度摘要和最近记录小组件，也有适用于锁定屏幕的小组件。";
+"l15.support.sendFooter" = "将打开你的邮件，发送到 %@。邮件会附上 Yala 和 iOS 的版本、你的 iPhone 型号、主题和语言，方便我们更好地帮你。";
+"l15.removeData.noCopyConfirm" = "移除并删除";
+"l15.removeData.exportDiscard" = "仍然移除我的数据";
+"l15.removeData.exportPending" = "这台 iPhone 上尚未同步到 iCloud 的更改：%d 项。如果现在移除你的数据，这些更改会丢失。";
+"l15.removeData.exportPendingUnknown" = "我们无法确认你最近的更改已同步到 iCloud。如果现在移除你的数据，这些更改可能会丢失。";
+"l15.pro.themeResetNote" = "你的主题会恢复为 Liquid Glass。";
+"l15.pro.oneMonthThenYearly" = "免费 1 个月，之后每年 %@";
+"l15.pro.oneMonthThenMonthly" = "免费 1 个月，之后每月 %@";
+"l15.pro.startTrialOneMonth" = "免费试用 1 个月";
+"l15.pro.gateStartTrialOneMonth" = "免费试用 Pro 1 个月";
+"l15.pro.settingsFreeWithTrialOneMonth" = "免费 · 可免费试用 1 个月";
+"welcome.cloud.otherAccountUsedTitle" = "这台 iPhone 已使用过另一个账户";
+"welcome.cloud.otherAccountUsedBody" = "这台 iPhone 上已使用过一个通过 %1$@ 创建的 Yala 账户，而 %2$@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请通过 %1$@ 登录。";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "这台 iPhone 上已使用过一个通过其他方式创建的 Yala 账户，而 %@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请用当时的方式登录。";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "管理员";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "设为管理员";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "取消管理员";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "将%@设为管理员？";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@将可以同意或拒绝加入请求、移除成员、修改群组名称和预算、归档群组，并把其他人设为管理员。";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "取消%@的管理员身份？";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@仍在群组中，但不能再同意请求、移除成员、修改名称和预算或归档群组。";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "移出群组";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "将%@移出群组？";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@将看不到这个群组，已记的支出会保留。";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "如果把%@移出群组，未结清的部分将不会结清。";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "先结清";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@欠你%2$@。";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "你欠%1$@%2$@。";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@欠%3$@%2$@。";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@欠%2$@";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "你欠%@";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "退出后你将看不到这个群组和这笔欠款，%@仍会看到。";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "退出后你将看不到这个群组和这些欠款，其他人仍会看到。";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "群组将对所有人消失。你在自己账户里记下的内容会保留。";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "归档或删除";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "归档";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "群组会为所有人移到已归档。支出和欠款都会保留，你随时可以恢复。";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "群组会带着支出和欠款回到所有人的列表。";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "群组将对所有人消失，且无法撤销。";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "所有账结清后即可删除。";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "如果想离开，请转让后退出。";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "如果只想把它移出列表，请归档：欠款会保留。";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "查看余额";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "已移到已归档";
+/* Deshacer el archivado */
+"groups.l19.undo" = "撤销";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "已归档的群组";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "只有管理员可以取消归档。";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "取消归档";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ 已归档群组中别人欠你的%@";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ 你在已归档群组中欠的%@";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "你们最多想花多少？";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "目前已花：%@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "群组里还没有支出。";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "已经超出%@";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "还剩%@";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "整个群组都能看到，不只是你。";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "达到一半、四分之三、接近上限和到达上限时，我们会通知所有人。";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "减少彼此间的转账";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "如果 Ana 欠你，你又欠 Beto，Ana 会直接付给 Beto。";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "用一种货币显示欠款";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "只有创建群组的人可以更改。";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "新支出的分摊方式";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "你的账户";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "把我在这里付的钱记到我的账户";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "与群组设置相同。";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "欠你";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "你欠";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "群组是你创建的，暂时还没有其他人能接手。打开群组即可归档或删除。";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "打开群组设置";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "你的群组会从这台 iPhone 上移除；它们仍保留在你的账户中，重新连接后就会回来。";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "把我付的钱留在我的账户里";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "也从我的账户里删除";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "如果保留，你付过的支出会留在你的账户里：%1$d 笔（%2$@）。";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "如果删除，它们也会从你的账户中移除。";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "创建群组的人始终是管理员，无法取消这个身份。";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "群组至少需要一名管理员。";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "此人需要先用自己的账户重新加入群组，才能成为管理员。";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "保存前还需要%@";
+"l2d.missing.amount" = "金额";
+"l2d.missing.account" = "账户";
+"l2d.missing.category" = "分类";
+"l2d.missing.sourceAccount" = "转出账户";
+"l2d.missing.destinationAccount" = "转入账户";
+"l2d.missing.twoDifferentAccounts" = "请选择两个不同的账户";
+"l2d.missing.chipValue" = "未填写";
+"l2d.discard.title" = "要丢弃这条记录吗？";
+"l2d.saved.expense" = "支出已保存 · %@";
+"l2d.saved.income" = "收入已保存 · %@";
+"l2d.saved.transfer" = "转账已保存 · %@";
+"l2d.saved.changes" = "更改已保存";
+"l2d.saved.repeatsWeekly" = "已保存 · 每周重复";
+"l2d.saved.repeatsMonthly" = "已保存 · 每月重复";
+"l2d.saved.repeatsYearly" = "已保存 · 每年重复";
+"l2d.transfer.needsAnotherAccount" = "转账需要另一个账户";
+"l2d.transfer.createAnotherAccount" = "创建另一个账户";
+"l2d.date.dayBeforeYesterday" = "前天";
+"l2d.date.futureDaysNote" = "未来的日期显示为灰色。尚未发生的付款，请使用[计划付款](yala-form://scheduled)。";
+"l2d.favorites.seeAll" = "查看全部";
+"l2d.favorites.use" = "使用收藏“%@”";
+"l2d.favorites.transferHelp" = "常用转账，一键完成。";
+"l2d.recurring.title" = "设为重复";
+"l2d.recurring.header" = "我们会保存今天这笔。之后的会在到期当天进入你的收件箱，等你确认。你可以在计划付款中查看。";
+"l2d.recurring.weekly" = "每周%@";
+"l2d.recurring.monthly" = "每月%d日";
+"l2d.recurring.yearly" = "每年%@";
+"l2d.recurring.moreOptions" = "更多选项…";

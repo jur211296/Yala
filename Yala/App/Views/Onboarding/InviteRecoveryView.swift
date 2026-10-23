@@ -23,10 +23,9 @@ struct InviteRecoveryView: View {
     var onSuccess: (URL) -> Void
     var onBack: () -> Void
 
+    /// L12-16 · el enlace de Yala se saca de cualquier texto: el mensaje entero de WhatsApp vale.
     private var validatedURL: URL? {
-        let trimmed = linkText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, let url = URL(string: trimmed) else { return nil }
-        return InviteLinkService.isInviteLink(url) ? url : nil
+        InviteLinkTextExtraction.firstInviteLink(in: linkText)
     }
 
     var body: some View {
@@ -82,6 +81,17 @@ struct InviteRecoveryView: View {
                                     updateValidation(for: newValue)
                                 }
 
+                            // L12-16 · «Pegar» del sistema: un toque, sin el gesto escondido de mantener pulsado, y sin
+                            // el aviso de iOS de «accedió al portapapeles» (lo pega la persona, no la app).
+                            PasteButton(payloadType: String.self) { strings in
+                                guard let pasted = strings.first else { return }
+                                Task { @MainActor in applyPastedText(pasted) }
+                            }
+                            .buttonBorderShape(.capsule)
+                            .labelStyle(.titleAndIcon)
+                            .tint(theme.accent)
+                            .accessibilityIdentifier("invite_recovery_paste")
+
                             if let error = validationError {
                                 Text(error)
                                     .font(DS.Typography.caption)
@@ -126,10 +136,25 @@ struct InviteRecoveryView: View {
     private func updateValidation(for text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { validationError = nil; return }
-        if let url = URL(string: trimmed), InviteLinkService.isInviteLink(url) {
+        if let url = InviteLinkTextExtraction.firstInviteLink(in: trimmed) {
             validationError = nil
+            // El campo se queda con el enlace limpio: se ve qué se va a abrir. Reescribirlo vuelve a pasar por aquí con el
+            // mismo texto, así que no hay bucle.
+            if trimmed != url.absoluteString { linkText = url.absoluteString }
         } else {
             validationError = L10n.Welcome.Invite.invalidLink
+        }
+    }
+
+    /// Lo que entra por «Pegar»: si trae un enlace de Yala, el campo se queda con él; si no, con el texto, y el aviso dice
+    /// que no parece de Yala.
+    private func applyPastedText(_ text: String) {
+        if let url = InviteLinkTextExtraction.firstInviteLink(in: text) {
+            linkText = url.absoluteString
+            validationError = nil
+        } else {
+            linkText = text
+            updateValidation(for: text)
         }
     }
 

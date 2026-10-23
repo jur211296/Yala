@@ -92,8 +92,12 @@ struct ApplePayGuideNamesTests {
         let title = try #require(try Repo.string("shortcut.applePay.title", lang: lang))
         let step = try #require(try Repo.string("tutorials.applePay.step2.desc", lang: lang))
         #expect(step.contains(title), "\(lang): el paso 3 no dice «\(title)», que es como se llama en Atajos.")
+        // Desde el lote decidido 2.2 · 15 (D11) el tutorial de la Bandeja habla de «el atajo» sin nombrarlo. Lo que no
+        // puede volver es que nombre, entre comillas, una acción que no es la que enseña Atajos.
         let inbox = try #require(try Repo.string("tutorials.inboxApproval.step0.desc", lang: lang))
-        #expect(inbox.contains(title), "\(lang): el tutorial de la Bandeja nombra otra acción que no es «\(title)».")
+        let quotes: Set<Character> = ["«", "»", "“", "”", "„", "「", "」", "『", "』", "\""]
+        #expect(inbox.contains(title) || !inbox.contains(where: { quotes.contains($0) }),
+                "\(lang): el tutorial de la Bandeja nombra otra acción que no es «\(title)».")
     }
 
     /// El paso 4 empieza por el campo de la acción de Yala donde va el importe: el nombre del parámetro.
@@ -152,7 +156,8 @@ struct SiriNaturalEntryConsentTests {
         let source = Repo.codeOnly(try Repo.text("Yala/App/Intents/QuickExpenseIntent.swift"))
         #expect(source.contains(
             "let aiConsentAccepted = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted)"))
-        #expect(source.contains("consentAccepted: aiConsentAccepted"))
+        // En el teléfono (`.onDevice`, L15-6, apagado) el texto no sale de él y no hace falta el consentimiento.
+        #expect(source.contains("consentAccepted: route == .onDevice || aiConsentAccepted"))
         #expect(source.components(separatedBy: "TranscriptionParserService.shared.parseMultiple(").count == 2,
                 "El intent llama a la IA por otro camino que no pasa por el consentimiento.")
     }

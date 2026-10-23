@@ -91,12 +91,35 @@ struct PendingJoinEntry: Codable, Equatable {
     /// confirmación, nunca el que se une solo.
     var inviteConfirmedAt: Date?
 
+    /// Cuándo empezó el alta de ESTA invitación sobre un store sin datos de nadie: lo apunta el CTA de la hoja
+    /// (`GroupInviteOnboardingView.performSilentSetup`) ANTES de sembrar las categorías, solo si el detector del Welcome
+    /// no ve nada y no hay espejo (`GroupInviteNeutralGateLogic.marksSignUpOnCleanStore`). Lo lee la puerta del
+    /// invitado: lo que hay en el store desde entonces lo puso esta alta, no otra persona (card t2q8, 2026-10-20).
+    ///
+    /// Vive en el intent por lo mismo que `inviteConfirmedAt`: muere con él (member materializado, TTL, frontera de
+    /// persona por `PendingJoinStore.clearAll`) y un enlace con otro token vuelve a empezar sin él. Opcional Codable
+    /// back-compat: un JSON anterior decodifica a `nil`, que es el lado que no deja pasar nada nuevo.
+    var signUpOnCleanStoreAt: Date?
+
+    /// L12-17 · cuándo la persona dijo «Unirme» en la TARJETA del grupo, la que se enseña antes de pedir cuenta y
+    /// consentimiento. NO es la confirmación del join (`inviteConfirmedAt`, que sigue sellando el toque que une de verdad):
+    /// solo dice que la tarjeta ya se vio y aceptó, para que la cadena siga a cuenta y consentimiento sin volver a
+    /// enseñarla y la unión arranque sola al volver. Muere con el intent, como sus vecinas; un token nuevo empieza sin
+    /// ella. Opcional Codable back-compat: un JSON anterior decodifica a `nil` ⇒ se enseña la tarjeta.
+    var groupCardAcceptedAt: Date?
+
     /// `true` si esta entry es un join backend por token (contrato C3). El discriminador
     /// backend↔CloudKit del reconciler tiene PRIORIDAD sobre el flag (R5).
     var isBackendJoin: Bool { inviteToken != nil }
 
     /// ¿La persona ya confirmó esta invitación? Ver `inviteConfirmedAt`.
     var isInviteConfirmed: Bool { inviteConfirmedAt != nil }
+
+    /// ¿El alta de esta invitación empezó aquí sobre un store limpio? Ver `signUpOnCleanStoreAt`.
+    var signUpStartedOnCleanStore: Bool { signUpOnCleanStoreAt != nil }
+
+    /// ¿Dijo «Unirme» en la tarjeta del grupo? Ver `groupCardAcceptedAt`.
+    var hasAcceptedGroupCard: Bool { groupCardAcceptedAt != nil }
 
     init(
         zoneName: String,
@@ -108,7 +131,9 @@ struct PendingJoinEntry: Codable, Equatable {
         inviteToken: String? = nil,
         legacyMemberKey: String? = nil,
         branded: InviteLinkService.BrandedMetadata? = nil,
-        inviteConfirmedAt: Date? = nil
+        inviteConfirmedAt: Date? = nil,
+        signUpOnCleanStoreAt: Date? = nil,
+        groupCardAcceptedAt: Date? = nil
     ) {
         self.zoneName = zoneName
         self.zoneOwnerName = zoneOwnerName
@@ -120,6 +145,8 @@ struct PendingJoinEntry: Codable, Equatable {
         self.legacyMemberKey = legacyMemberKey
         self.branded = branded
         self.inviteConfirmedAt = inviteConfirmedAt
+        self.signUpOnCleanStoreAt = signUpOnCleanStoreAt
+        self.groupCardAcceptedAt = groupCardAcceptedAt
     }
 }
 
@@ -196,6 +223,26 @@ enum PendingJoinStore {
         var entries = load()
         guard var entry = entries[zoneName], entry.inviteConfirmedAt == nil else { return }
         entry.inviteConfirmedAt = date
+        entries[zoneName] = entry
+        persist(entries)
+    }
+
+    /// L12-17 · apunta que la persona dijo «Unirme» en la tarjeta del grupo de ESTA invitación. Idempotente: conserva la
+    /// primera fecha. Sin entry no hace nada.
+    static func markGroupCardAccepted(zoneName: String, at date: Date = .now) {
+        var entries = load()
+        guard var entry = entries[zoneName], entry.groupCardAcceptedAt == nil else { return }
+        entry.groupCardAcceptedAt = date
+        entries[zoneName] = entry
+        persist(entries)
+    }
+
+    /// Apunta que el alta de esta invitación empieza sobre un store limpio (ver `PendingJoinEntry.signUpOnCleanStoreAt`).
+    /// Idempotente: conserva la primera fecha. Sin entry no hace nada.
+    static func markSignUpStartedOnCleanStore(zoneName: String, at date: Date = .now) {
+        var entries = load()
+        guard var entry = entries[zoneName], entry.signUpOnCleanStoreAt == nil else { return }
+        entry.signUpOnCleanStoreAt = date
         entries[zoneName] = entry
         persist(entries)
     }

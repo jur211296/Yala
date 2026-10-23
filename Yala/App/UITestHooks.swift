@@ -246,6 +246,28 @@ final class UITestHooks {
     /// —bajo XCUITest la puerta no mide y el mount nunca es neutro—, así que sin esto no hay XCUITest ni capturas.
     /// **Finge la entrada, no la decisión**: lo que se pinta lo decide `WelcomePrivateICloudGateLogic.decide`. No toca la
     /// red ni persiste nada. Un valor desconocido se ignora. Solo DEBUG.
+    /// `-uitest-private-gate-probe-stalled`: la revisión de iCloud de la puerta privada contesta «se quedó sin avanzar»
+    /// (`ICloudZoneScanEnd.stalledReason`) sin tocar CloudKit, para el XCUITest y las capturas del texto que no culpa a la
+    /// conexión (card blqa). **Finge la entrada, no la decisión**: lo que se pinta lo decide la tabla de producción. Solo
+    /// DEBUG.
+    nonisolated static var privateGateProbeStalled: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-probe-stalled")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-uitest-invite-opening`: al presentar la bienvenida se enciende «Abriendo tu invitación…» como si acabara de llegar
+    /// un enlace (card z81w), sin enlace ni red. Lo apagan el techo o la cadena del invitado, como en producción. Solo DEBUG.
+    nonisolated static var inviteOpening: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-invite-opening")
+        #else
+        return false
+        #endif
+    }
+
     nonisolated static var privateGateDeviceReading: WelcomePrivateICloudGateLogic.DeviceDataReading? {
         #if DEBUG
         guard isActive else { return nil }
@@ -287,6 +309,12 @@ final class UITestHooks {
     /// `ReverseEligibility`. No persiste nada. Solo DEBUG.
     nonisolated static var fakeBornCloudStorage: Bool { hasArg("-uitest-born-cloud-storage") }
 
+    /// `-uitest-adopted-cloud-storage`: como `-uitest-born-cloud-storage`, pero la cuenta NO nació aquí (el teléfono entró
+    /// con «Ya tengo una cuenta»). Sin mapa de CloudKit en el simulador, `ReverseEligibility` decide `.degradedNoMap`: la
+    /// tarjeta de la vuelta enseña por qué no se puede desde este dispositivo (card i9qh del QA del 19-oct). Finge la
+    /// ENTRADA, no la decisión, y no persiste nada. Solo DEBUG.
+    nonisolated static var fakeAdoptedCloudStorage: Bool { hasArg("-uitest-adopted-cloud-storage") }
+
     /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|noAccount>`: lo que contesta la pregunta a iCloud antes
     /// de «Volver a iCloud» (`ICloudPersonalCorpusProbe.foreignCorpusForReverse`), que en el simulador no tiene CloudKit.
     /// `found`: 12 registros, 2 cuentas y 1 presupuesto ajenos; `foundGroups`: solo 9 registros de grupos, el caso del QA
@@ -314,9 +342,52 @@ final class UITestHooks {
         #endif
     }
 
-    /// `-uitest-reverse-prior-icloud-wipe-fails`: el borrado de «Empezar sin ellos» falla. Solo el fallo: un borrado que
-    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Solo DEBUG.
-    nonisolated static var fakeReverseForeignWipeFails: Bool { hasArg("-uitest-reverse-prior-icloud-wipe-fails") }
+    /// `-uitest-reverse-prior-icloud-wipe <network|stalled|progress>`: el borrado de «Empezar sin ellos» fingido. Sin
+    /// red, parado sin avanzar, o borrando sin terminar (para ver el progreso). Nunca termina bien: un borrado que
+    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Un valor desconocido se ignora. Solo
+    /// DEBUG.
+    nonisolated static var fakeReverseForeignWipe: FakeReverseForeignWipe? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-reverse-prior-icloud-wipe", from: ProcessInfo.processInfo.arguments) {
+        case "network":  return .network
+        case "stalled":  return .stalled
+        case "progress": return .progress
+        default:         return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Lo que finge `fakeReverseForeignWipe`. La cifra es la del QA guiado del 2026-10-19: el primer intento borró unos
+    /// 1.200 registros antes de cortarse.
+    enum FakeReverseForeignWipe {
+        case network, stalled, progress
+
+        static let deletedSoFar = 1_197
+
+        @MainActor
+        func run(_ onProgress: @MainActor (Int) -> Void) async -> ForeignWipeOutcome {
+            switch self {
+            case .network:
+                return .failed("uitest", network: true)
+            case .stalled:
+                onProgress(Self.deletedSoFar)
+                return .stalled
+            case .progress:
+                onProgress(Self.deletedSoFar)
+                // Se queda borrando: la tarjeta enseña el progreso hasta que el test termina.
+                while true {
+                    do {
+                        try await Task.sleep(for: .seconds(3_600))
+                    } catch {
+                        return .stalled
+                    }
+                }
+            }
+        }
+    }
 
     /// `-uitest-migration-journal-unreadable`: el fetch del journal de la migración que hace `CloudMigrationController` LANZA
     /// (ticket `an-unreadable-migration-journal-reads-as-never-started`). Existe para el XCUITest de la pantalla de
@@ -444,6 +515,33 @@ final class UITestHooks {
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
 
+    /// `-uitest-inbox-alert-siri`: añade dos borradores de Siri al aviso de la Bandeja (auditoría UX 2.2, L15-7). Solo,
+    /// el aviso trae SOLO borradores de Siri; con `-uitest-inbox-alert`, la muestra de siempre y la línea de Siri.
+    nonisolated static var showInboxAlertSiri: Bool { hasArg("-uitest-inbox-alert-siri") }
+
+    /// `-uitest-siri-model <available|deviceNotEligible|appleIntelligenceNotEnabled|modelNotReady|languageNotSupported>`:
+    /// finge el estado del modelo del iPhone para «Anotar con Siri» sin Pro (L15-6, encendido el 2026-10-21). El
+    /// simulador no tiene el modelo de Apple: con `available` la lectura del dictado es un stub fijo
+    /// (`SiriOnDeviceEntry.parse`). La decisión del gate se prueba sin este seam, en `SiriEntryRouteTests`.
+    nonisolated static var siriModelOverride: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-siri-model", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Lo que encola el aviso de la Bandeja simulado, o `nil` sin ninguno de los dos args.
+    static var inboxAlertPayload: PendingInboxNotification? {
+        guard showInboxAlert || showInboxAlertSiri else { return nil }
+        var notification = showInboxAlert
+            ? PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
+            : PendingInboxNotification()
+        if showInboxAlertSiri { notification.siriDrafts = 2 }
+        return notification
+    }
+
     /// `-uitest-remote-wipe-notice`: tras el seed, encola `.presentRemoteWipeNotice` — el aviso de «tus
     /// datos fueron eliminados de iCloud».
     ///
@@ -459,6 +557,14 @@ final class UITestHooks {
     /// (`-uitest-skip-onboarding`), el backfill del arranque ya escribe la marca privada por el camino de
     /// producción. Y el store arranca vacío con `-uitest-reset`, que es la otra condición viva.
     nonisolated static var showRemoteWipeNotice: Bool { hasArg("-uitest-remote-wipe-notice") }
+
+    /// `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de
+    /// «iCloud no está disponible» (`ContentView.requestColdStartICloudNoticeIfNeeded`, card
+    /// `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). **Habilita al productor, no fuerza la decisión**: el
+    /// simulador nunca tiene token de iCloud, así que sin este flag el chequeo saldría en todo XCUITest que arranca sin
+    /// seed y con el onboarding hecho. Con él puesto, deciden el eje, la medida del store, el onboarding y la cuenta de
+    /// iCloud de producción. Fuera de `-uitest` el chequeo corre siempre. Solo DEBUG.
+    nonisolated static var coldStartICloudCheck: Bool { hasArg("-uitest-cold-start-icloud-check") }
 
     /// `-uitest-remote-wipe-notice-never-mounts`: el aviso de vaciado remoto «no llega a montarse» — la
     /// condición viva se enciende igual, pero su RED VISUAL (`showRemoteWipeAlert`) no, ni en el drenaje ni
@@ -523,6 +629,12 @@ final class UITestHooks {
     /// ella el veredicto es cierto y la frase sería mentira (`GroupsAttestTabNoticeLogic`). Los dos args son
     /// ortogonales a propósito — el caso «racha sí, sesión no» es justo el que prueba esa mitad.
     nonisolated static var groupsAttestTerminal: Bool { hasArg("-uitest-groups-attest-terminal") }
+
+    /// `-uitest-pending-trial-offer`: el arranque deja la oferta de prueba PENDIENTE (`needsPostOnboardingTrial`), como la
+    /// deja la 2.0.4 tras un alta por «Restaurar» con destino directo a la app. No encola nada: decide el arranque del usuario
+    /// que vuelve (`WhatsNewLaunchLogic.returningUserSheet`). Lo usa `WhatsNewLaunchUITests` (ticket
+    /// `whats-new-yields-to-a-pending-trial-offer-after-updating`).
+    nonisolated static var pendingTrialOffer: Bool { hasArg("-uitest-pending-trial-offer") }
 
     /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
     /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —
@@ -610,8 +722,9 @@ final class UITestHooks {
         #endif
     }
 
-    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|pages|pages-trial>`: el registro por imagen no abre
-    /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|busy|daily-limit|pages|pages-trial>`: el registro por imagen no abre
+    /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó; `busy` y
+    /// `daily-limit`: un 429 por ráfaga o por el cupo del día). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
     /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
     /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe · `pages`: un gasto distinto por
     /// página de PDF · `pages-trial`: la primera página se lee y en las demás se acaba el cupo de prueba). El selector de Fotos es de
@@ -656,6 +769,15 @@ final class UITestHooks {
     /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.
     nonisolated static var startAtInviteOnboarding: Bool { hasArg("-uitest-invite-onboarding") }
+
+    /// `-uitest-invite-branded` (con `-uitest-invite-onboarding`): la hoja recibe la marca de un enlace real —«Depa
+    /// Miraflores», «Lucía te invita», Ana y Beto— para ver la tarjeta del grupo (L12-17) y «Ya estás en «X»» (L12-18) sin
+    /// pasar por el enlace.
+    nonisolated static var inviteBranded: Bool { hasArg("-uitest-invite-branded") }
+
+    /// `-uitest-opening-balance-prompt`: al abrir Miembros sale la pregunta que sigue a aceptar a alguien («¿Carla ya
+    /// tenía cuentas pendientes con el grupo?», L19-2). Aceptar de verdad pide el servidor, que en el simulador no está.
+    nonisolated static var openingBalancePrompt: Bool { hasArg("-uitest-opening-balance-prompt") }
 
     /// Valor de `-uitest-join-phase <waitingForZone|creatingMember|pendingApproval|active|failed>`:
     /// congela la fase del tracker para los XCUI del onboarding de invitación.
@@ -769,6 +891,17 @@ final class UITestHooks {
     @MainActor
     static var shouldFailWipeNow: Bool {
         hasArg("-uitest-fail-wipe") && shared.isReady
+    }
+
+    /// Valor de `-uitest-transactions-saved <n>`: los registros que la persona ya lleva guardados
+    /// (`transactionsSavedCount`). Con 3 o más, guardar cierra el formulario con el aviso breve (UX 2.2 · L2-5).
+    nonisolated static var transactionsSavedCount: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-transactions-saved", from: ProcessInfo.processInfo.arguments).flatMap(Int.init)
+        #else
+        return nil
+        #endif
     }
 
     /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado", "dead-pointer"). Nil si ausente.
@@ -924,6 +1057,11 @@ final class UITestHooks {
         let value = args[i + 1]
         return value.hasPrefix("-") ? nil : value
     }
+
+    /// `-uitest-seed-marketing`: la semilla `ficha` para material público de lanzamiento. Los grupos son los de casa
+    /// («Depa compartido», «Almuerzos de la oficina») en vez de los viajes, y el presupuesto de mascota no lleva nombre
+    /// propio. Ver `DevSeedGroups.FichaCasa`.
+    nonisolated static var marketingSeed: Bool { hasArg("-uitest-seed-marketing") }
 
     nonisolated private static func hasArg(_ flag: String) -> Bool {
         #if DEBUG

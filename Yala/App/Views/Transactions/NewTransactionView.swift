@@ -17,6 +17,9 @@ struct NewTransactionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(EntityDeletionService.self) private var deletionService
+    /// Quién abre el registro cuando se toca «Editar» en el aviso tras guardar (UX 2.2 · L2-5).
+    @Environment(\.savedRecordEditorOpener) private var savedRecordEditorOpener
 
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
@@ -54,6 +57,24 @@ struct NewTransactionView: View {
 
     // Notification primer
     @State private var showingNotificationPrimer = false
+
+    // MARK: Lote decidido 2.2 · 02 (formulario de registro)
+
+    /// La foto del formulario al abrirse, ya con lo precargado (UX 2.2 · L2-4): si lo de ahora es distinto, hay algo
+    /// escrito o elegido a mano y cerrar pregunta.
+    @State private var formBaseline: NewTransactionViewModel.FormSnapshot?
+    @State private var showDiscardAlert = false
+    /// «Hacer recurrente» (L2-15): la hoja corta, y si se pidió el editor completo al cerrarla.
+    @State private var showRecurringQuickSheet = false
+    @State private var opensFullRecurringEditor = false
+    /// La frecuencia tocada en la hoja corta: se crea al cerrarse la hoja, con el formulario ya delante.
+    @State private var pendingRecurrence: RecurrenceType?
+    /// El cierre con aviso tras el editor completo: espera a que su hoja se cierre (puede pedir antes las notificaciones).
+    @State private var closeAfterRecurringEditor: (() -> Void)?
+    /// El permiso de notificaciones cuando el formulario se cierra con el aviso breve (L2-5): sale sobre el formulario y,
+    /// al cerrarse, sigue el cierre con su aviso.
+    @State private var primerBeforeClosing = false
+    @State private var closeAfterPrimer: (() -> Void)?
 
     // Prefill parameters
     let prefillAccountID: PersistentIdentifier?
@@ -301,7 +322,7 @@ struct NewTransactionView: View {
                     // Reset form for new transaction
                     let newViewModel = NewTransactionViewModel()
                     newViewModel.setContext(modelContext)
-                    // Re-apply prefill account so "create another" keeps the same account context
+                    // «Registrar otro» repite la regla de la cuenta precargada (UX 2.2 · L2-1): antes la vaciaba.
                     if let accountID = prefillAccountID {
                         let allSubs = newViewModel.categories.flatMap { $0.subcategories ?? [] }
                         newViewModel.prefill(
@@ -312,7 +333,10 @@ struct NewTransactionView: View {
                             subcategories: allSubs
                         )
                     }
+                    applyAccountPrefillRule(to: newViewModel)
                     viewModel = newViewModel
+                    // El formulario nuevo vuelve a empezar vacío: su foto es la de ahora (L2-4).
+                    formBaseline = newViewModel.formSnapshot
                     isCreatingAnother = true
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
@@ -322,6 +346,8 @@ struct NewTransactionView: View {
                 onEdit: {
                     // Go back to form with current data (flag prevents prefillFromContext from resetting)
                     isEditingFromSuccess = true
+                    // Ya es la edición de un registro guardado: cerrar sin cambios no pregunta (L2-4).
+                    formBaseline = viewModel.formSnapshot
                     dsWithAnimation(reduceMotion) {
                         showSuccessScreen = false
                         successData = nil
@@ -352,6 +378,15 @@ struct NewTransactionView: View {
                         if !isBridgedReadOnly {
                             transactionTypeSelector
                                 .padding(.top, DS.Spacing.sm)
+                        }
+
+                        // Favoritos a un toque (UX 2.2 · L2-13). En edición no salen.
+                        if !isEditingSavedRecord && !isBridgedReadOnly && viewModel.editingTransaction == nil {
+                            FavoriteChipsRow(
+                                onSelect: { prefillFromFavorite($0) },
+                                onSeeAll: { viewModel.showFavoritesSheet = true }
+                            )
+                            .padding(.top, DS.Spacing.md)
                         }
 
                         // P1-3: banner CTA contextual cuando la TX es bridgeada.
@@ -386,6 +421,9 @@ struct NewTransactionView: View {
                             // Register button: habilitado si algún campo personal es editable
                             // (Caso A y Caso B clasificable). Solo toca campos personales en
                             // SwiftData, no invoca service del grupo.
+                            // Lo que falta para guardar (UX 2.2 · L2-2).
+                            saveBlockedLine
+
                             registerButton
                                 .disabled(!canSaveBridged)
                                 .opacity(canSaveBridged ? 1.0 : 0.5)
@@ -406,25 +444,12 @@ struct NewTransactionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
+                    // Con algo escrito, la X pregunta (UX 2.2 · L2-4). La ★ de usar favoritos ya no está: la estrella
+                    // solo significa guardar, y los favoritos se usan desde su fila (L2-13).
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        closeOrAskToDiscard()
                     }
                     .accessibilityIdentifier("new_transaction_close")
-                }
-
-                if !isBridgedReadOnly {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            viewModel.showFavoritesSheet = true
-                        } label: {
-                            Image(systemName: "star.fill")
-                                .font(DS.Typography.body)
-                                .foregroundStyle(Color.primary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
-                        .tint(Color.primary)
-                    }
                 }
             }
             .sheet(isPresented: $viewModel.showAccountSelector) {
@@ -458,7 +483,8 @@ struct NewTransactionView: View {
                     selectedAccount: $viewModel.destinationAccount,
                     title: L10n.Transaction.destinationAccount,
                     excludeAccount: viewModel.sourceAccount,
-                    sizing: .mediumFirst
+                    sizing: .mediumFirst,
+                    offersCreatingAccount: true
                 )
             }
             .sheet(isPresented: $viewModel.showSubcategorySelector) {
@@ -477,7 +503,7 @@ struct NewTransactionView: View {
                 }
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
-                DatePickerSheet(selectedDate: $viewModel.transactionDate)
+                DatePickerSheet(selectedDate: $viewModel.transactionDate, quickPick: true)
                     .onChange(of: viewModel.transactionDate) { _, _ in
                         Task {
                             await viewModel.loadExchangeRate(context: modelContext)
@@ -578,11 +604,31 @@ struct NewTransactionView: View {
             .sheet(isPresented: $viewModel.showSaveAsFavoriteSheet) {
                 favoriteSheetContent
             }
-            .sheet(isPresented: $viewModel.showSaveAsRecurringSheet) {
+            .sheet(isPresented: $viewModel.showSaveAsRecurringSheet, onDismiss: closeAfterRecurringEditorIfPending) {
                 recurringSheetContent
             }
             .sheet(isPresented: $viewModel.showSplitCalculator) {
                 splitCalculatorSheetContent
+            }
+            .modifier(NewTransactionClosePresentations(
+                hasUnsavedInput: hasUnsavedInput,
+                showDiscardAlert: $showDiscardAlert,
+                showPrimer: $primerBeforeClosing,
+                onDiscard: { dismiss() },
+                onPrimerClosed: finishAfterPrimer
+            ))
+            .sheet(isPresented: $showRecurringQuickSheet, onDismiss: openFullRecurringEditorIfAsked) {
+                RecurringQuickSheet(
+                    transactionDate: viewModel.transactionDate,
+                    onPick: { recurrence in
+                        pendingRecurrence = recurrence
+                        showRecurringQuickSheet = false
+                    },
+                    onMoreOptions: {
+                        opensFullRecurringEditor = true
+                        showRecurringQuickSheet = false
+                    }
+                )
             }
         }
 
@@ -597,6 +643,10 @@ struct NewTransactionView: View {
             // Force expense type in expenses-only mode
             if sessionState.isExpensesOnlyMode {
                 viewModel.transactionType = .expense
+            }
+            // La foto de lo precargado, una vez: el `onAppear` vuelve a correr al cerrarse una hoja encima (L2-4).
+            if formBaseline == nil {
+                formBaseline = viewModel.formSnapshot
             }
             // Auto-focus field based on user preference (only for new transactions)
             if transactionToEdit == nil, appPreferences.autoFocusField != .none {
@@ -679,6 +729,7 @@ struct NewTransactionView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("new_transaction_date_chip")
 
             // Note field with mention detection and popover autocomplete
             VStack(spacing: DS.Spacing.xs) {
@@ -689,6 +740,7 @@ struct NewTransactionView: View {
                     .textContentType(.none)
                     .autocorrectionDisabled(false)
                     .focused($isNoteFieldFocused)
+                    .accessibilityIdentifier("new_transaction_note")
                     .frame(maxWidth: 280)
                     .tint(Color.primary)
                     .onChange(of: viewModel.note) { _, newValue in
@@ -970,7 +1022,8 @@ struct NewTransactionView: View {
                     label: L10n.Action.recurring
                 ) {
                     if viewModel.canSave {
-                        viewModel.showSaveAsRecurringSheet = true
+                        // La hoja corta «Hacer recurrente» (UX 2.2 · L2-15); el editor completo, desde «Más opciones…».
+                        showRecurringQuickSheet = true
                     } else {
                         viewModel.showValidationErrors = true
                         showToast(L10n.Validation.completeFieldsFirst)
@@ -1012,11 +1065,14 @@ struct NewTransactionView: View {
             transactionType: viewModel.transactionType,
             amount: viewModel.amount,
             note: viewModel.note,
-            account: viewModel.selectedAccount,
+            // De una transferencia, origen y destino (UX 2.2 · L2-14).
+            account: viewModel.isTransfer ? viewModel.sourceAccount : viewModel.selectedAccount,
+            destinationAccount: viewModel.isTransfer ? viewModel.destinationAccount : nil,
             subcategory: viewModel.selectedSubcategory,
             tags: viewModel.selectedTags,
             needOverride: viewModel.selectedNeed,
-            currencyCode: viewModel.effectiveCurrencyCode,
+            // La divisa del importe, la que enseña la pantalla, no la de la cuenta (card 4k2q): sin convertir.
+            currencyCode: viewModel.amountCurrencyCode,
             onSaved: { message in
                 showToast(message)
             }
@@ -1034,11 +1090,12 @@ struct NewTransactionView: View {
                 subcategory: viewModel.selectedSubcategory,
                 tagIDs: Set(viewModel.selectedTags.map { $0.persistentModelID }),
                 needOverride: viewModel.selectedNeed,
-                currencyCode: viewModel.effectiveCurrencyCode,
+                // La divisa del importe, sin convertir (card 4k2q).
+                currencyCode: viewModel.amountCurrencyCode,
                 transactionDate: viewModel.transactionDate
             ),
             onSaved: { paymentID in
-                handleRecurringSaved(paymentID: paymentID)
+                handleRecurringSaved(paymentID: paymentID, fromFullEditor: true)
             }
         )
     }
@@ -1107,29 +1164,28 @@ struct NewTransactionView: View {
                             icon: "arrow.up.circle",
                             text: viewModel.sourceAccount?.name ?? L10n.Transaction.origin,
                             isSelected: viewModel.sourceAccount != nil,
-                            color: viewModel.sourceAccount != nil ? Color.hotPink : nil
+                            color: viewModel.sourceAccount != nil ? Color.hotPink : nil,
+                            isMissing: viewModel.marksMissing(.sourceAccount)
                         ) {
                             dismissKeyboard()
                             viewModel.showSourceAccountSelector = true
                         }
+                        .accessibilityIdentifier("new_transaction_source_chip")
 
                         // Destination account chip - purple
                         SelectionChip(
                             icon: "arrow.down.circle",
                             text: viewModel.destinationAccount?.name ?? L10n.Transaction.destination,
                             isSelected: viewModel.destinationAccount != nil,
-                            color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil
+                            color: viewModel.destinationAccount != nil ? Color.electricIndigo : nil,
+                            isMissing: viewModel.marksMissing(.destinationAccount)
                         ) {
                             dismissKeyboard()
                             viewModel.showDestinationAccountSelector = true
                         }
+                        .accessibilityIdentifier("new_transaction_destination_chip")
 
-                        // Transfer accounts validation message
-                        if case .invalid(let message) = viewModel.accountValidation {
-                            Text(message)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                        }
+                        // El aviso de cuentas iguales vive ahora en la línea de encima de «Guardar» (L2-2).
                     } else {
                         // Tarjeta con varias divisas (entrega 3): la pastilla dice la tarjeta, y al lado van sus divisas.
                         // En un gasto de grupo (Caso A) la divisa es la del grupo y no se cambia desde aquí (el selector ya se
@@ -1140,7 +1196,8 @@ struct NewTransactionView: View {
                             icon: "creditcard",
                             text: cardMembers.first?.name ?? viewModel.selectedAccount?.name ?? L10n.Transaction.account,
                             isSelected: viewModel.selectedAccount != nil,
-                            color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
+                            color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) },
+                            isMissing: viewModel.marksMissing(.account)
                         ) {
                             dismissKeyboard()
                             viewModel.showAccountSelector = true
@@ -1172,7 +1229,8 @@ struct NewTransactionView: View {
                         icon: "tag",
                         text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
                         isSelected: viewModel.selectedSubcategory != nil,
-                        color: subcategoryChipColor
+                        color: subcategoryChipColor,
+                        isMissing: viewModel.marksMissing(.category)
                     ) {
                         dismissKeyboard()
                         viewModel.showSubcategorySelector = true
@@ -1484,6 +1542,8 @@ struct NewTransactionView: View {
     }
 
     private func saveTransaction() {
+        // Antes de guardar: después `editingTransaction` ya apunta a lo guardado.
+        let wasEdit = viewModel.editingTransaction != nil || viewModel.editingTransferPair != nil
         if let saved = viewModel.save(context: modelContext), let first = saved.first {
             // Mark setup checklist step 2 with practice cleanup option
             if SetupChecklistManager.shared.stepCompleted[.firstExpense] != true {
@@ -1525,8 +1585,73 @@ struct NewTransactionView: View {
                 )
             }
 
-            showTransactionSuccess()
+            finishSave(saved: saved, wasEdit: wasEdit)
         }
+    }
+
+    // MARK: - Tras guardar (UX 2.2 · L2-5)
+
+    /// La pantalla completa «¡Listo!» solo mientras la persona lleve menos de 3 registros; después el formulario se
+    /// cierra y sale el aviso breve con «Editar» y «Deshacer». Una edición nunca enseña la pantalla completa: cierra con
+    /// «Cambios guardados».
+    private func finishSave(saved: [TransactionItem], wasEdit: Bool) {
+        let savedCount = UserDefaults.standard.integer(forKey: NotificationPrimerMoments.savedRecordsKey)
+        switch TransactionSaveFeedbackLogic.feedback(isEdit: wasEdit, savedCountAfterSave: savedCount) {
+        case .fullScreen:
+            showTransactionSuccess()
+        case .editedNotice:
+            DS.Haptic.success()
+            dismissKeyboard()
+            dismiss()
+            SavedRecordNotice.showEdited()
+        case .savedNotice:
+            let message = SavedRecordNotice.message(
+                for: viewModel.transactionType,
+                formattedAmount: appPreferences.currency(
+                    viewModel.amount, currencyCode: viewModel.amountCurrencyCode, forceFullPrecision: true)
+            )
+            closeWithSavedNotice(message: message, recordIDs: saved.map(\.persistentModelID), scheduledPaymentID: nil)
+        }
+    }
+
+    /// Cierra el formulario y enseña el aviso sobre la pantalla de origen. Si toca pedir el permiso de notificaciones
+    /// (el respaldo del tercer registro, o el primer pago planificado), la hoja sale antes sobre el formulario y el
+    /// cierre espera a que se conteste: si no, el one-shot se quemaba sin enseñarse.
+    private func closeWithSavedNotice(
+        message: String,
+        recordIDs: [PersistentIdentifier],
+        scheduledPaymentID: UUID?,
+        undoable: Bool = true,
+        primer: NotificationPrimerContext = .records
+    ) {
+        DS.Haptic.success()
+        dismissKeyboard()
+        let context = modelContext
+        let opener = savedRecordEditorOpener
+        let close: () -> Void = {
+            dismiss()
+            if undoable {
+                SavedRecordNotice.showSaved(
+                    message: message, recordIDs: recordIDs, scheduledPaymentID: scheduledPaymentID,
+                    context: context, opener: opener)
+            } else {
+                SavedRecordNotice.showInfo(message: message)
+            }
+        }
+        Task { @MainActor in
+            if await NotificationPrimerMoments.claim(primer) {
+                closeAfterPrimer = close
+                primerBeforeClosing = true
+            } else {
+                close()
+            }
+        }
+    }
+
+    private func finishAfterPrimer() {
+        let close = closeAfterPrimer
+        closeAfterPrimer = nil
+        close?()
     }
 
     private func showTransactionSuccess() {
@@ -1592,6 +1717,10 @@ struct NewTransactionView: View {
             newViewModel.setContext(modelContext)
             viewModel = newViewModel
         }
+
+        // La regla de la cuenta precargada lee el filtro de cuentas y la última usada de ahora (UX 2.2 · L2-1). Se ponen
+        // también al editar: pasar a transferencia elige el destino con ellos.
+        loadAccountPrefillInputs(into: viewModel)
 
         // If we're editing an existing transaction, load all its data
         if let tx = transactionToEdit {
@@ -1715,7 +1844,9 @@ struct NewTransactionView: View {
             return
         }
 
-        // Only use explicitly provided prefill account (no fallback to last transaction)
+        // La cuenta explícita (si alguien la pasa) y, si no, la regla de la cuenta precargada (UX 2.2 · L2-1): filtro de
+        // una cuenta → la última usada si el filtro no la deja fuera → la única → vacía. Antes el Panel pasaba
+        // `selectedAccountIDs.first` (al azar con dos, la excluida en modo excluir) y las demás pantallas, nada.
         viewModel.prefill(
             accountID: prefillAccountID,
             categoryID: prefillCategoryID,
@@ -1723,6 +1854,62 @@ struct NewTransactionView: View {
             accounts: viewModel.accounts,
             subcategories: allSubcategories
         )
+        viewModel.applyAccountPrefillRule()
+    }
+
+    // MARK: - Cuenta precargada (UX 2.2 · L2-1)
+
+    /// El filtro de cuentas de `SessionState` (el del Panel, compartido con Registros y Estadísticas) y la última cuenta
+    /// usada (`LastUsedAccountStore`, la de Siri y Apple Pay).
+    private func loadAccountPrefillInputs(into model: NewTransactionViewModel) {
+        let selection = sessionState.selectedAccountIDs
+        model.accountPrefillFilter = TransactionAccountPrefillLogic.Filter(
+            accountIDs: selection,
+            shownAccountIDs: sessionState.shownAccountSelection(selection),
+            isExcludeMode: sessionState.isExcludeMode
+        )
+        model.lastUsedAccountShortcutID = LastUsedAccountStore.read()
+    }
+
+    private func applyAccountPrefillRule(to model: NewTransactionViewModel) {
+        loadAccountPrefillInputs(into: model)
+        model.applyAccountPrefillRule()
+    }
+
+    // MARK: - Cerrar con algo escrito (UX 2.2 · L2-4)
+
+    /// Hay algo escrito o elegido a mano: lo de ahora no es lo que se precargó al abrir. Lo que viene de un grupo no se
+    /// edita aquí, así que no cuenta.
+    private var hasUnsavedInput: Bool {
+        guard !isBridgedReadOnly, let formBaseline else { return false }
+        return viewModel.formSnapshot != formBaseline
+    }
+
+    private func closeOrAskToDiscard() {
+        if hasUnsavedInput {
+            dismissKeyboard()
+            showDiscardAlert = true
+        } else {
+            dismiss()
+        }
+    }
+
+    // MARK: - Lo que falta para guardar (UX 2.2 · L2-2)
+
+    /// La línea viva sobre «Guardar» mientras está apagado. Desaparece en cuanto el registro está completo.
+    @ViewBuilder
+    private var saveBlockedLine: some View {
+        if !isBridgedReadOnly, let message = viewModel.saveBlockedMessage {
+            Text(message)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.sm)
+                .accessibilityIdentifier("new_transaction_missing_line")
+                .transition(.opacity)
+        }
     }
 
     /// Tras `resolveBridgedPointer`: con la MISMA condición que deshabilita el botón Duplicar (`isBridgedCasoA`) y la
@@ -1739,6 +1926,11 @@ struct NewTransactionView: View {
         // Ya es un registro nuevo: en el acto, no tras la animación, o un toque rápido en Eliminar o en Guardar durante
         // esos 150 ms seguiría apuntando al original (Guardar lo reescribía en vez de crear la copia).
         isDuplicating = true
+        // La copia conserva la divisa del importe aunque no sea la de su cuenta (card 4k2q): sin esto, 50 USD en una
+        // cuenta en soles se copiaban como 50 PEN.
+        if !viewModel.isTransfer {
+            viewModel.keepAmountCurrency(viewModel.amountCurrencyCode, for: viewModel.selectedAccount)
+        }
         viewModel.editingTransaction = nil
         viewModel.editingTransferPair = nil
         viewModel.transactionDate = Date.now
@@ -1802,16 +1994,23 @@ struct NewTransactionView: View {
         }
     }
 
-    private func handleRecurringSaved(paymentID: UUID) {
+    /// - Parameter fromFullEditor: lo guardó el editor completo, que sigue presentado y pide él el permiso de
+    ///   notificaciones; el cierre espera a que su hoja se cierre.
+    private func handleRecurringSaved(paymentID: UUID, fromFullEditor: Bool = false) {
+        // Antes de guardar: con «Hacer recurrente» sobre un registro ya guardado, «Deshacer» no puede borrarlo.
+        let wasEdit = viewModel.editingTransaction != nil || viewModel.editingTransferPair != nil
         // Always save the transaction (new or edited) before linking
-        let txToLink = viewModel.save(context: modelContext)?.first
+        let saved = viewModel.save(context: modelContext) ?? []
+        let txToLink = saved.first
         txToLink?.scheduledPaymentID = paymentID.uuidString
 
         // Advance nextDueDate so the system doesn't create a duplicate draft
         let paymentIDString = paymentID.uuidString
+        var recurrence: RecurrenceType = .monthly
         do {
             let descriptor = FetchDescriptor<ScheduledPayment>()
             if let payment = try modelContext.fetch(descriptor).first(where: { $0.id.uuidString == paymentIDString }) {
+                recurrence = RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly
                 let calendar = Calendar.current
                 if calendar.startOfDay(for: payment.nextDueDate) <= calendar.startOfDay(for: Date.now) {
                     payment.lastPaidDate = Date.now
@@ -1834,7 +2033,100 @@ struct NewTransactionView: View {
             #endif
         }
 
-        showTransactionSuccess()
+        // Cierra y enseña el aviso de L2-5 (UX 2.2 · L2-15): «Guardado · se repetirá cada mes». Antes, la pantalla
+        // completa de «¡Listo!». Sin «Deshacer» si el registro ya existía: se borraría lo que la persona tenía.
+        guard !saved.isEmpty else { return }
+        let message = SavedRecordNotice.recurringMessage(for: recurrence)
+        let recordIDs = saved.map(\.persistentModelID)
+        if fromFullEditor {
+            let context = modelContext
+            let opener = savedRecordEditorOpener
+            closeAfterRecurringEditor = {
+                DS.Haptic.success()
+                dismiss()
+                if wasEdit {
+                    SavedRecordNotice.showInfo(message: message)
+                } else {
+                    SavedRecordNotice.showSaved(
+                        message: message, recordIDs: recordIDs, scheduledPaymentID: paymentID,
+                        context: context, opener: opener)
+                }
+            }
+            return
+        }
+        closeWithSavedNotice(
+            message: message,
+            recordIDs: recordIDs,
+            scheduledPaymentID: paymentID,
+            undoable: !wasEdit,
+            primer: .scheduledPayment
+        )
+    }
+
+    // MARK: - Hacer recurrente (UX 2.2 · L2-15)
+
+    /// Al cerrarse la hoja corta: la frecuencia tocada se crea ahora, con el formulario ya delante (así el permiso de
+    /// notificaciones puede salir sobre él); «Más opciones…» abre el editor completo de siempre, precargado.
+    private func openFullRecurringEditorIfAsked() {
+        if let recurrence = pendingRecurrence {
+            pendingRecurrence = nil
+            createRecurringPayment(recurrence)
+            return
+        }
+        guard opensFullRecurringEditor else { return }
+        opensFullRecurringEditor = false
+        viewModel.showSaveAsRecurringSheet = true
+    }
+
+    /// Al cerrarse el editor completo, el cierre con aviso que dejó su guardado.
+    private func closeAfterRecurringEditorIfPending() {
+        let close = closeAfterRecurringEditor
+        closeAfterRecurringEditor = nil
+        close?()
+    }
+
+    /// Una fila de la hoja corta: crea el pago planificado con la frecuencia y el ancla de la fecha del registro, guarda
+    /// el de hoy y cierra con el aviso. El pago no crea registros: deja un borrador en la Bandeja y avisa el día.
+    private func createRecurringPayment(_ recurrence: RecurrenceType) {
+        guard viewModel.canSave, let account = viewModel.selectedAccount else { return }
+        let anchor = RecurringQuickChoiceLogic.anchor(for: viewModel.transactionDate)
+        let editor = ScheduledPaymentEditorViewModel()
+        editor.setContext(modelContext, deletionService: deletionService)
+        let trimmedNote = viewModel.note.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = trimmedNote.isEmpty ? (viewModel.selectedSubcategory?.name ?? viewModel.transactionType.displayName) : trimmedNote
+        guard let paymentID = editor.savePayment(
+            existing: nil,
+            name: name,
+            amount: viewModel.amount,
+            note: viewModel.note,
+            // La divisa del importe, la que enseña la pantalla, sin convertir (card 4k2q).
+            currencyCode: viewModel.amountCurrencyCode,
+            transactionType: viewModel.transactionType.rawValue,
+            paymentCategory: .recurring,
+            account: account,
+            subcategory: viewModel.selectedSubcategory,
+            selectedTags: Set(viewModel.selectedTags.map(\.persistentModelID)),
+            isRecurring: true,
+            recurrenceType: recurrence,
+            recurrenceInterval: 1,
+            paymentDate: Calendar.current.startOfDay(for: viewModel.transactionDate),
+            dayOfMonth: anchor.dayOfMonth,
+            selectedWeekdays: [anchor.weekday],
+            yearlyMonth: anchor.month,
+            yearlyDay: anchor.dayOfMonth,
+            endDate: nil,
+            notifyOnDueDate: true,
+            notifyDaysBefore: 0,
+            isActive: true,
+            needOverride: viewModel.selectedNeed.flatMap {
+                $0 != viewModel.selectedSubcategory?.need ? $0.rawValue : nil
+            }
+        ) else {
+            showToast(L10n.Common.saveError)
+            return
+        }
+        SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+        handleRecurringSaved(paymentID: paymentID)
     }
 
     private func showToast(_ message: String, duration: Duration = .seconds(2)) {
@@ -1854,7 +2146,14 @@ struct NewTransactionView: View {
         }
     }
 
+    /// Un toque en un favorito rellena el formulario: tipo, cuenta, categoría, monto, descripción y etiquetas (UX 2.2 ·
+    /// L2-13). La persona toca «Guardar».
     private func prefillFromFavorite(_ favorite: FavoritePayment) {
+        if favorite.type == .transfer {
+            prefillTransferFromFavorite(favorite)
+            return
+        }
+
         // Set transaction type
         viewModel.transactionType = favorite.type
 
@@ -1865,12 +2164,14 @@ struct NewTransactionView: View {
 
         // Set account if available
         if let account = favorite.account {
-            // Con una tarjeta, la divisa del favorito decide la línea (entrega 3). Hoy coincide con la de su cuenta; cuenta
-            // si la cuenta se vinculó después como línea o principal.
-            let target = viewModel.routed(account, toCurrency: favorite.currencyCode ?? account.currencyCode)
+            // Con una tarjeta, la divisa del favorito decide la línea (entrega 3).
+            let favoriteCurrency = favorite.currencyCode ?? account.currencyCode
+            let target = viewModel.routed(account, toCurrency: favoriteCurrency)
             viewModel.selectedAccount = target
             viewModel.sourceAccount = account
             viewModel.currencyCode = target.currencyCode
+            // Si la cuenta no tiene esa divisa, el importe la conserva sin convertir (card 4k2q).
+            viewModel.keepAmountCurrency(favoriteCurrency, for: target)
         }
 
         // Set subcategory if available
@@ -1893,6 +2194,30 @@ struct NewTransactionView: View {
         // Set note if available
         if let note = favorite.note, !note.isEmpty {
             viewModel.note = note
+        }
+    }
+
+    /// Un favorito de transferencia pone el tipo con su origen y su destino (L2-14), por el mismo camino que elegir
+    /// «Transferencia». Uno guardado antes de 2.2 no tiene destino: va con el destino vacío, que la línea de lo que
+    /// falta sobre «Guardar» ya señala. Nunca «Sin configurar».
+    private func prefillTransferFromFavorite(_ favorite: FavoritePayment) {
+        viewModel.selectedSubcategory = nil
+        viewModel.sourceAccount = favorite.account
+        // Una cuenta archivada después de guardar el favorito no se ofrece: el selector tampoco la enseña.
+        viewModel.destinationAccount = favorite.destinationAccount.flatMap { $0.isArchived ? nil : $0 }
+        viewModel.transactionType = .transfer
+        viewModel.prepareForTransfer(allAccounts: viewModel.accounts)
+        if favorite.destinationAccount == nil || favorite.destinationAccount?.isArchived == true {
+            viewModel.destinationAccount = nil
+        }
+        if let amount = favorite.amount, amount > 0 {
+            viewModel.amountString = AmountInputHelper.formatWithGrouping(amount)
+        }
+        if let note = favorite.note, !note.isEmpty {
+            viewModel.note = note
+        }
+        Task {
+            await viewModel.loadExchangeRate(context: modelContext)
         }
     }
 }

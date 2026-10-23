@@ -218,6 +218,94 @@ struct RemoteWipeGraceLogicTests {
         #expect(Self.decide(lastImport: nil) == .present(.dataRemoved))
     }
 
+    // MARK: - El arranque en frío (ticket `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`)
+
+    /// Medido en el iPhone de QA el 19-oct: con Yala CERRADA al apagar iCloud Drive, iOS vacía la copia local antes de
+    /// que la app mida nada. `hasPersonalData` nace en `false` y la primera medida también da `false`, así que no hay
+    /// caída, no hay gracia y no salía ningún aviso: la app vacía y muda. El arranque pide el aviso por su cuenta.
+    private static func coldStart(personal: Bool = false, onboarding: Bool = true, obeys: Bool = true,
+                                  token: Bool = false, notAuthenticated: Bool = false) -> Bool {
+        RemoteWipeGraceLogic.coldStartRequestsICloudNotice(
+            hasPersonalData: personal, hasCompletedOnboarding: onboarding, sessionObeysWipeSignal: obeys,
+            iCloudTokenPresent: token, mirrorReportedNotAuthenticated: notAuthenticated)
+    }
+
+    @Test("arranque en frío con Drive apagado, store vacío, onboarding hecho y sesión privada: pide el aviso")
+    func coldStart_driveOff_requestsTheNotice() {
+        #expect(Self.coldStart(), """
+            con Yala cerrada al apagar iCloud Drive la app vuelve a arrancar vacía y sin decir nada: el arranque no \
+            pide el aviso de «iCloud no está disponible».
+            """)
+        #expect(Self.coldStart(token: true, notAuthenticated: true),
+                "CloudKit sin cuenta (`notAuthenticated`) es la otra puerta de iCloud no disponible")
+    }
+
+    /// Los cuatro controles, uno por término: cada uno, solo, apaga la petición.
+    @Test("controles: con datos, sin onboarding, sesión que no obedece o iCloud disponible, no se pide nada")
+    func coldStart_controls() {
+        #expect(!Self.coldStart(personal: true), "con datos en el store no hay nada que explicar")
+        #expect(!Self.coldStart(onboarding: false), "sin onboarding la persona está en el Welcome: el aviso estorba")
+        #expect(!Self.coldStart(obeys: false), """
+            el aviso habla del iCloud del Apple ID del teléfono, y una sesión solo-grupos o de la nube no guarda ahí lo suyo
+            """)
+        #expect(!Self.coldStart(token: true), """
+            con iCloud disponible el store vacío puede ser una importación en camino: el arranque no afirma nada
+            """)
+    }
+
+    /// El eje que entra es el de producción: la celda de la nube no obedece aunque la sesión sea privada. En XCUITest
+    /// no hay seam que ponga el modo nube, así que la celda se fija aquí con el predicado real.
+    @Test("la sesión de la nube no obedece la señal: el arranque no pide el aviso")
+    func coldStart_cloudSession_doesNotRequest() {
+        let obeys = DestructiveScopeLogic.wipeSignalObeyedByThisSession(confirmedPrivateSession: true,
+                                                                        storageMode: .cloud)
+        #expect(!obeys, "el eje dejó de cerrar la celda de la nube")
+        #expect(!Self.coldStart(obeys: obeys))
+    }
+
+    /// El drenaje de una petición del ARRANQUE solo enseña el aviso de iCloud. Si al drenar iCloud ya volvió, el store
+    /// vacío es la importación que trae los datos de vuelta: nunca hubo caída que justifique «tus datos fueron eliminados»,
+    /// así que ni ese aviso ni la espera que lo acabaría pidiendo.
+    @Test("el drenaje de la petición en frío solo presenta «iCloud no está disponible»")
+    func coldStartDrain_onlyPresentsTheUnavailableNotice() {
+        #expect(RemoteWipeGraceLogic.coldStartDrainPresents(.present(.iCloudUnavailable)))
+        #expect(!RemoteWipeGraceLogic.coldStartDrainPresents(.present(.dataRemoved)), """
+            una petición del arranque en frío acaba en «Tus datos fueron eliminados de iCloud» con «Empezar de cero» \
+            sobre unos datos que están volviendo con iCloud.
+            """)
+        #expect(!RemoteWipeGraceLogic.coldStartDrainPresents(.waitForImport))
+    }
+
+    /// **El arranque cede a la gracia cuando la caída es suya** (review del 19-oct): si ya había filas antes de re-medir,
+    /// o la gracia está armada, o hay un aviso pendiente. Cada término, solo, cede; sin ninguno, pide.
+    @Test("el arranque cede a la gracia si vio filas, si la gracia está armada o si ya hay aviso pendiente")
+    func coldStart_defersToTheGrace() {
+        #expect(!RemoteWipeGraceLogic.coldStartDefersToTheGrace(sawRowsBeforeRemeasuring: false, graceArmed: false,
+                                                                 noticePending: false),
+                "el caso de la card —store vacío desde la primera medida— ya no pide el aviso")
+        #expect(RemoteWipeGraceLogic.coldStartDefersToTheGrace(sawRowsBeforeRemeasuring: true, graceArmed: false,
+                                                                noticePending: false), """
+            las filas cayeron durante el arranque y el arranque pide el aviso además de la gracia: sale dos veces
+            """)
+        #expect(RemoteWipeGraceLogic.coldStartDefersToTheGrace(sawRowsBeforeRemeasuring: false, graceArmed: true,
+                                                                noticePending: false))
+        #expect(RemoteWipeGraceLogic.coldStartDefersToTheGrace(sawRowsBeforeRemeasuring: false, graceArmed: false,
+                                                                noticePending: true))
+    }
+
+    /// Las dos preguntas —la del arranque y la de la gracia— dicen «iCloud no disponible» con el MISMO predicado. Si
+    /// divergieran, el arranque pediría un aviso que el drenaje no enseñaría, o al revés.
+    @Test("el arranque y la gracia leen «iCloud no disponible» igual, en las cuatro combinaciones")
+    func coldStart_andTheGrace_shareTheUnavailablePredicate() {
+        for token in [false, true] {
+            for notAuthenticated in [false, true] {
+                let grace = Self.decide(token: token, notAuthenticated: notAuthenticated) == .present(.iCloudUnavailable)
+                #expect(Self.coldStart(token: token, notAuthenticated: notAuthenticated) == grace,
+                        "token \(token), notAuthenticated \(notAuthenticated): el arranque y la gracia no coinciden")
+            }
+        }
+    }
+
     @Test("pedir el asentamiento avanza el contador que observa `ContentView`")
     @MainActor
     func requestingTheSettleIsObservable() {
@@ -344,6 +432,51 @@ struct RemoteWipeGraceLogicTests {
         // La caída apunta su hora y el re-armado no: el techo se cuenta desde la caída.
         #expect(Self.count("remoteWipeDropAt = .now", in: vista) == 1,
                 "la hora de la caída se apunta fuera de `.startGrace`: el re-armado del drenaje estrenaría el techo")
+    }
+
+    /// **El arranque pide el aviso DESPUÉS del bootstrap, re-midiendo, y retirar la petición retira su marca**
+    /// (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). El cuerpo del productor y el
+    /// drenaje los fijan por igualdad `RemoteWipeSignalWiringTests`; aquí, quién lo llama y quién apaga la marca.
+    @Test("MUTACIÓN: el arranque en frío pide el aviso tras el bootstrap y re-midiendo, y cancelar retira la marca")
+    func theColdStartRequestsAfterTheBootstrap() throws {
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        // Medido en el XCUITest de la card: decidido en el splash, el eje (que escribe el backfill del bootstrap) aún
+        // no estaba y el aviso no salía. Por eso espera al bootstrap, y re-mide porque la medida del splash ya no vale.
+        let espera = try Self.body(of: "private func requestColdStartICloudNoticeAfterBootstrap()", in: vista)
+        // Y una vez por PROCESO, cediendo a la gracia cuando la caída es suya (review del 19-oct): con un `@State` el
+        // `ContentView` que asciende con otra ventana volvía a pedirlo, y pedir los dos sacaba el aviso dos veces.
+        #expect(espera == "await waitForBootstrap() "
+                + "guard !ColdStartICloudNotice.checkedThisProcess else { return } "
+                + "ColdStartICloudNotice.checkedThisProcess = true "
+                + "let sawRowsBeforeRemeasuring = hasPersonalData remeasurePersonalData() "
+                + "guard !RemoteWipeGraceLogic.coldStartDefersToTheGrace( "
+                + "sawRowsBeforeRemeasuring: sawRowsBeforeRemeasuring, graceArmed: wipeGraceTask != nil, "
+                + "noticePending: remoteWipeNoticePending) else { return } "
+                + "requestColdStartICloudNoticeIfNeeded()", """
+            el arranque en frío ya no espera al bootstrap, ya no decide una vez por proceso, ya no re-mide el store o ya \
+            no cede a la gracia. Leído: \(espera)
+            """)
+        #expect(Self.count("await checkInitialSyncState() ForceUpdateGate.shared.recompute() "
+                           + "await requestColdStartICloudNoticeAfterBootstrap() }", in: vista) == 1, """
+            el arranque en frío dejó de ir el ÚLTIMO de la tarea del arranque: delante, su espera al bootstrap retrasaría \
+            el chequeo inicial o el forzado de actualización.
+            """)
+        #expect(Self.count("requestColdStartICloudNoticeIfNeeded()", in: vista) == 2,
+                "el productor del arranque tiene que tener un solo llamador (más su definición)")
+        #expect(Self.count("requestColdStartICloudNoticeAfterBootstrap()", in: vista) == 2,
+                "la espera del arranque en frío tiene que tener un solo llamador (más su definición)")
+
+        let cancel = try Self.body(of: "private func cancelWipeGrace()", in: vista)
+        #expect(cancel.hasSuffix("AppRouter.shared.drop { $0.id == RouterIntent.presentRemoteWipeNotice.id } "
+                                 + "ColdStartICloudNotice.requestPending = false"), """
+            retirar la petición del aviso ya no apaga la marca del arranque en frío: el siguiente intent de la gracia \
+            se drenaría como si fuera del arranque y no enseñaría el aviso de borrado de un vaciado de verdad.
+            Leído: \(cancel)
+            """)
+        #expect(Self.count("ColdStartICloudNotice.requestPending = ", in: vista) == 3, """
+            la marca del arranque en frío la escriben tres sitios: el productor (`true`), el drenaje y la cancelación \
+            (`false`). Un cuarto escritor puede dejarla puesta sobre una petición de la gracia.
+            """)
     }
 
     /// **Por IGUALDAD, no por `contains`**: una sentencia antepuesta —un `hasPersonalData = …` delante de

@@ -3,7 +3,15 @@ import type { Env } from "./env";
 interface DOState {
   day: string; // 'YYYY-MM-DD' UTC
   counts: Record<string, number>; // por categoría, se reponen cada día
-  burst: number[]; // timestamps ms en los últimos 60s (global, anti-flood)
+  /**
+   * LEGADO, ya no se lee: la ráfaga era UNA lista para todo el teléfono, y sync, grupos y tasas la llenaban con su tope de
+   * 240 o 60 por minuto. Una foto del plan free (tope 5) se comparaba contra esa lista entera y salía 429 en cuanto el
+   * motor de la nube o el arranque hacían cinco peticiones en un minuto: la primera foto tras instalar (card vv0k del QA
+   * guiado del 19-oct). Se queda en el tipo porque los estados guardados lo traen.
+   */
+  burst: number[];
+  /** Timestamps ms de los últimos 60 s, POR CATEGORÍA: cada tope por minuto mira solo su propio tráfico (anti-flood). */
+  burstBy?: Record<string, number[]>;
   /** Cupo de prueba usado por categoría. NUNCA se repone (sesión 2). Ausente en estados de antes = 0. */
   trial?: Record<string, number>;
   /**
@@ -63,12 +71,21 @@ export function applyCheck(stored: DOState, req: CheckRequest, now: number): Rat
     stored.day = today;
     stored.counts = {};
   }
-  stored.burst = stored.burst.filter((t) => now - t < 60_000);
+  // Las listas de ráfaga de TODAS las categorías se podan aquí, no solo la de esta: una categoría que deja de llamarse no
+  // puede dejar su lista creciendo en el estado del Durable Object.
+  const burstBy: Record<string, number[]> = {};
+  for (const [category, stamps] of Object.entries(stored.burstBy ?? {})) {
+    const live = stamps.filter((t) => now - t < 60_000);
+    if (live.length > 0) burstBy[category] = live;
+  }
+  stored.burstBy = burstBy;
+  stored.burst = [];
+  const burst = burstBy[req.category] ?? [];
   const notes = (stored.notes ?? []).filter((t) => now - t < NOTE_CREDIT_MS);
   stored.notes = notes;
   stored.trial = stored.trial ?? {};
 
-  const burstExceeded = stored.burst.length >= req.burstPerMin;
+  const burstExceeded = burst.length >= req.burstPerMin;
 
   // Leer una nota abierta: la nota ya gastó su uso —y su hueco de ráfaga— al transcribirse. Ni el día, ni el cupo, ni
   // la ráfaga se miran: la 5.ª nota tiene que poder leerse aunque el cupo esté en 5, y contar la lectura en la ráfaga
@@ -90,7 +107,8 @@ export function applyCheck(stored: DOState, req: CheckRequest, now: number): Rat
   }
   if (isTrial) stored.trial[req.category] = used + 1;
   else stored.counts[req.category] = used + 1;
-  stored.burst.push(now);
+  burst.push(now);
+  burstBy[req.category] = burst;
   let grantedNoteAt: number | null = null;
   if (req.notePairing === "grant") {
     grantedNoteAt = now;
@@ -128,7 +146,7 @@ export function applyRefund(stored: DOState, req: RefundRequest, now: number): v
 /**
  * Durable Object: contador de cuota por keyId (consistencia fuerte, single-threaded → sin races).
  * Cuenta por categoría (reset diario UTC), el cupo de prueba sin reset, las notas de voz abiertas y la ráfaga
- * global en ventana de 60 s.
+ * por categoría en ventana de 60 s.
  */
 export class RateLimiter {
   constructor(

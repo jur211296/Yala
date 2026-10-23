@@ -43,10 +43,10 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
 
     /// Lanza con el teléfono nacido en la nube y la respuesta de iCloud fingida, abre «¿Dónde viven tus datos?» y toca
     /// «Volver a iCloud».
-    private func tapRevert(prior: String, wipeFails: Bool = false) -> XCUIApplication {
+    private func tapRevert(prior: String, wipe: String? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal", bornCloudStorage: true, reversePriorICloud: prior,
-                            reversePriorICloudWipeFails: wipeFails)
+                            reversePriorICloudWipe: wipe)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
         app.openProfile()
 
@@ -133,11 +133,8 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
                       "Con solo registros de grupos en iCloud, «Volver a iCloud» no avisó.")
     }
 
-    /// «Empezar sin ellos» pide su «¿seguro?», y con el borrado fallido la vuelta no empieza: sale el error y la tarjeta
-    /// sigue ofreciendo volver.
-    func test_discardWithAFailedWipe_doesNotStartTheReverse() {
-        let app = tapRevert(prior: "found", wipeFails: true)
-
+    /// Pulsa «Empezar sin ellos» y confirma el borrado.
+    private func discardAndConfirm(_ app: XCUIApplication) {
         let discard = sheetButton(app, "storage_revert_prior_discard")
         XCTAssertTrue(discard.waitForExistence(timeout: 5), "No salió el aviso de datos previos.")
         discard.tap()
@@ -145,17 +142,54 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
         let confirm = sheetButton(app, "storage_revert_prior_discard_confirm")
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "«Empezar sin ellos» no pidió confirmar el borrado.")
         confirm.tap()
+    }
+
+    /// «Empezar sin ellos» pide su «¿seguro?», y con el borrado fallido sin red la vuelta no empieza: sale el error, que
+    /// sí habla de la conexión, y la tarjeta sigue ofreciendo volver.
+    func test_discardWithAFailedWipe_doesNotStartTheReverse() {
+        let app = tapRevert(prior: "found", wipe: "network")
+        discardAndConfirm(app)
 
         // El TEXTO del aviso, no `app.alerts.firstMatch`, que puede casar con otra alerta (`.claude/rules/testing.md`).
         let wipeFailed = app.alerts.staticTexts.containing(
-            NSPredicate(format: "label BEGINSWITH %@", "No pudimos terminar de borrar")).firstMatch
-        XCTAssertTrue(wipeFailed.waitForExistence(timeout: 5), "El borrado fallido no se dijo.")
+            NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", "No pudimos terminar de borrar",
+                        "Revisa tu conexión")).firstMatch
+        XCTAssertTrue(wipeFailed.waitForExistence(timeout: 5), "El borrado fallido sin red no se dijo.")
         app.alerts.buttons.firstMatch.tap()
 
         XCTAssertTrue(app.buttons["storage_revert_button"].waitForExistence(timeout: 5), """
             Tras un borrado fallido, la tarjeta «Volver a iCloud» desapareció: la vuelta empezó con lo ajeno a medias en \
             iCloud.
             """)
+    }
+
+    /// Un borrado que se para sin avanzar no culpa a la conexión (QA guiado del 2026-10-19): dice que lo borrado se queda
+    /// y que el reintento sigue con lo que falta.
+    func test_discardWithAStalledWipe_doesNotBlameTheConnection() {
+        let app = tapRevert(prior: "found", wipe: "stalled")
+        discardAndConfirm(app)
+
+        let stopped = app.alerts.staticTexts.containing(
+            NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", "No pudimos terminar de borrar",
+                        "Lo que ya se borró queda borrado")).firstMatch
+        XCTAssertTrue(stopped.waitForExistence(timeout: 5), "El borrado parado no se dijo con su texto.")
+        XCTAssertFalse(stopped.label.contains("conexión"), "El borrado parado culpó a la conexión: \(stopped.label)")
+        app.alerts.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["storage_revert_button"].waitForExistence(timeout: 5),
+                      "Tras un borrado parado, la vuelta empezó con lo ajeno a medias en iCloud.")
+    }
+
+    /// Mientras borra, la tarjeta dice cuánto lleva: con un iCloud grande tarda minutos y sin cifra parecía colgado.
+    func test_discardWhileWiping_showsHowMuchIsDeleted() {
+        let app = tapRevert(prior: "found", wipe: "progress")
+        discardAndConfirm(app)
+
+        // El texto vive dentro del botón de la tarjeta, que tiene su propio id: se lee en su etiqueta.
+        let button = app.buttons["storage_revert_button"]
+        let wiping = NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "Borrando los datos de antes", "1197")
+        expectation(for: wiping, evaluatedWith: button)
+        waitForExpectations(timeout: 5)
+        XCTAssertFalse(button.isEnabled, "Mientras borra, «Volver a iCloud» se puede volver a tocar.")
     }
 
     /// Sin cuenta de iCloud la vuelta tampoco empieza: se quedaría esperando a que la persona abra iCloud, y entonces el

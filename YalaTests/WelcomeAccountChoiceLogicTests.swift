@@ -587,7 +587,7 @@ struct WelcomeNewChooserWiringTests {
             messageContent( \
             icon: "person.crop.circle.badge.exclamationmark", \
             title: L10n.Welcome.Cloud.providerMismatchTitle, \
-            body: providerMismatchBody(accountProvider: exits.accountProvider)) \
+            body: providerMismatchBody(exits)) \
             .accessibilityIdentifier("welcome_cloud_provider_mismatch") \
             VStack(spacing: DS.Spacing.md) { \
             switch exits.signInWith { \

@@ -70,7 +70,7 @@ final class YalaProLote06UITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["upgrade_prompt_title"].label, "Apuntar hablando es de Yala Pro")
         XCTAssertTrue(app.buttons["pro_plan_yearly"].exists, "Los planes tenían que estar dentro de la hoja.")
         XCTAssertTrue(app.buttons["pro_plan_monthly"].exists, "Falta el plan mensual.")
-        XCTAssertEqual(cta.label, "Probar Pro gratis 30 días")
+        XCTAssertEqual(cta.label, "Probar Pro gratis 1 mes")
         XCTAssertTrue(app.buttons["upgrade_prompt_not_now"].exists, "Falta «Ahora no».")
         capture(app, "funcion-pro-voz")
     }
@@ -126,12 +126,12 @@ final class YalaProLote06UITests: XCTestCase {
         app.openProfile()
         let row = app.buttons["profile_yala_pro"]
         XCTAssertTrue(row.waitForExistence(timeout: 10), "No salió la fila «Yala Pro».")
-        XCTAssertTrue(row.label.contains("Gratis · prueba 30 días gratis"), "La fila no dice el estado: \(row.label)")
+        XCTAssertTrue(row.label.contains("Gratis · prueba 1 mes gratis"), "La fila no dice el estado: \(row.label)")
         row.tap()
 
         XCTAssertTrue(app.buttons["pro_plan_yearly"].waitForExistence(timeout: 10), "El paywall no trae los planes.")
         XCTAssertTrue(app.descendants(matching: .any)["pro_trial_timeline"].exists, "Falta «Así funciona la prueba».")
-        XCTAssertEqual(app.buttons["subscription_cta"].label, "Probar gratis 30 días")
+        XCTAssertEqual(app.buttons["subscription_cta"].label, "Probar gratis 1 mes")
         capture(app, "paywall")
     }
 

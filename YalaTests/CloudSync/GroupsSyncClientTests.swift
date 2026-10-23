@@ -1403,6 +1403,70 @@ struct GroupsSyncClientTests {
         #expect(decodedCursor(cursor, group: "SplitGroup-A") == 60)   // avanzó normal, sin reset
     }
 
+    // MARK: - L12-20 · «Te avisaremos cuando te aprueben»: la aprobación propia sale en el changeset
+
+    /// La MISMA transición que resetea el cursor (mi member, de `pendingApproval` a `active`) llega al servicio de
+    /// avisos como `selfApprovedGroups`, con el `SplitGroup.id` local (el del deep-link del aviso).
+    @Test func apply_member_pendingApprovalToActive_currentUser_emitsSelfApproved() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let group = makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        let member = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        member.memberKey = "member-rec-1"
+        context.insert(member)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        let set = try #require(collector.sets.first, "la aprobación propia no llegó al servicio de avisos")
+        #expect(set.selfApprovedGroups == [group.id])
+    }
+
+    /// La aprobación de OTRO miembro no es la mía: no hay «Ya estás en».
+    @Test func apply_member_pendingApprovalToActive_otherUser_doesNotEmitSelfApproved() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        let member = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Alice", status: .pendingApproval)
+        member.memberKey = "member-rec-1"
+        context.insert(member)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "someone-else" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.allSatisfy { $0.selfApprovedGroups.isEmpty })
+    }
+
+    /// Mi member que baja ya activo (soy quien creó el grupo o entré sin aprobación) no esperaba a nadie: sin aviso.
+    @Test func apply_member_bornRemoteActive_doesNotEmitSelfApproved() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let collector = ChangeSetCollector()
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" },
+                                      onRemoteChanges: { collector.sets.append($0) })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: ["SplitGroup-A"]),
+            cursor: cursor, context: context)
+
+        #expect(collector.sets.allSatisfy { $0.selfApprovedGroups.isEmpty })
+    }
+
     /// No-loop: tras el reset, un segundo apply del MISMO member (ya `active` local) NO vuelve a resetear —
     /// el cursor avanzado se conserva (el gate `priorStatus != "active"` ya no matchea).
     @Test func apply_member_secondApply_doesNotResetAgain() throws {
@@ -1674,6 +1738,60 @@ struct GroupsSyncClientTests {
         client.startIfEligible(context: context)
         await task?.value
         #expect(stub.callCount == 1)  // una sola vuelta corrió (no se duplicó el loop)
+    }
+
+    // MARK: - Test 10e-bis · La pestaña Grupos arranca el canal que el alta no arrancó (QA guiado 2026-10-19, D5)
+
+    /// El bug: tras «Ya tengo una cuenta» con una cuenta solo-grupos, el canal no arrancó en ese proceso (el arranque
+    /// en frío fue sin sesión) y el pull que pide la pestaña al aparecer no llega a la red: falta el `context`.
+    @Test func tabPull_withANeverStartedChannel_reachesNoNetwork() async throws {
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        let stub = StubHTTPSession()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
+
+        let pulled = await client.syncNowFromUI(timeout: .seconds(1))
+
+        #expect(!pulled)
+        #expect(stub.callCount == 0)
+    }
+
+    /// El arreglo: la pestaña arranca el canal (`trigger: "groups-tab"`) y, con la sesión viva, el primer pull sale
+    /// sin esperar al siguiente arranque.
+    @Test func tabStart_withALiveSession_pullsWithoutARelaunch() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        // 401 sin refresh y con la sesión borrada: el loop hace UNA vuelta y para (el porqué, en Test 10).
+        let stub = StubHTTPSession(statusCode: 401)
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() },
+                                      forceRefreshTokenProvider: { nil }, canRenewSession: { false })
+        client.sleeper = { _ in }
+
+        client.startIfEligible(context: context, trigger: "groups-tab")
+        await client._testLoopTask?.value
+
+        #expect(stub.callCount == 1)
+        #expect(stub.lastRequest?.url?.path.hasSuffix("/groups/pull") == true)
+    }
+
+    /// Control: sin sesión, no arrancar es lo correcto —la pestaña pide iniciar sesión— y no se toca la red.
+    @Test func tabStart_withoutASession_staysOff() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        let stub = StubHTTPSession()
+        let client = GroupsSyncClient(tokenProvider: { Issue.record("token pedido sin sesión"); return nil },
+                                      urlSession: stub, sessionCheck: { false })
+
+        client.startIfEligible(context: context, trigger: "groups-tab")
+
+        #expect(client._testLoopTask == nil)
+        #expect(stub.callCount == 0)
+        #expect(!(await client.syncNowFromUI(timeout: .seconds(1))))
     }
 
     // MARK: - Test 10f · Volver a primer plano despierta el loop dormido (2026-09-16)

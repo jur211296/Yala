@@ -66,4 +66,37 @@ nonisolated enum CloudConsentRegistrationLogic {
         persist()
         return true
     }
+
+    // MARK: - Pasar de entrar a crear la cuenta en la misma pasada (UX 2.2 · lote decidido 15)
+
+    /// Qué pasa con el consentimiento cuando, en la MISMA pantalla, la persona pasa de «Entrar con…» a «Crear cuenta
+    /// con…» (desde «Este iPhone ya usó otra cuenta» o desde «No encontramos una cuenta»).
+    enum SignUpSwitch: Equatable {
+        /// No lo aceptó en esta pasada: se le pide, como siempre antes de firmar.
+        case askConsent
+        /// Ya lo aceptó hace un momento, antes de «Entrar con…»: el texto es el mismo (solo cambia el botón), así que
+        /// pedirlo otra vez era el mismo permiso dos veces en un minuto (QA de 2.1, 19-oct). Se registra para el alta.
+        case alreadyAccepted
+    }
+
+    static func signUpSwitch(consentAcceptedThisPass: Bool) -> SignUpSwitch {
+        consentAcceptedThisPass ? .alreadyAccepted : .askConsent
+    }
+
+    /// El registro GDPR del ALTA cuando no se vuelve a preguntar. El alta escribe al aceptar porque su ruta ya se conoce;
+    /// aquí la aceptación fue la de la re-entrada, que dejó su escritura PENDIENTE hasta que el guard cross-cuenta
+    /// decidiera. Ese guard ya no va a decidir nada —no hay adopt—, y la ruta ahora es el alta: se escribe en este
+    /// momento, una sola vez, y se consume el pendiente para que ningún otro punto lo escriba después.
+    ///
+    /// Sin pendiente no se escribe: o ya se escribió (no hay segunda aceptación que registrar) o no hubo aceptación, y
+    /// entonces `signUpSwitch` habría pedido el consentimiento.
+    ///
+    /// - Returns: `true` si esta llamada escribió.
+    @discardableResult
+    static func persistForSignUpSwitch(pending: inout Bool, persist: () -> Void) -> Bool {
+        guard pending else { return false }
+        pending = false
+        persist()
+        return true
+    }
 }

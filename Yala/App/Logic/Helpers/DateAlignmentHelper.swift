@@ -206,7 +206,18 @@ enum DateAlignmentHelper {
         // Clamp al rango del previo: neutraliza el rollover del mes destino más
         // corto (ej. hoy día 31, junio 30d → mapped+1 se pasa → clamp a fin del
         // previo = mes completo) y el último día del mes.
-        let alignedEnd = min(max(endOfEquivalentDay, previousInterval.start), previousInterval.end)
+        let clampedEnd = min(max(endOfEquivalentDay, previousInterval.start), previousInterval.end)
+        // `DateInterval.contains` es cerrado en los dos extremos y los heros filtran con él: un fin en la medianoche
+        // del día siguiente contaba un gasto de ese día fechado a las 00:00 (lo que guarda el selector de fecha) en
+        // «el mes pasado hasta hoy» (ticket `aligned-previous-interval-counts-the-next-midnight`). Se resta un
+        // segundo SOLO si el fin es una medianoche: el clamp al cierre del previo ya llega en 23:59:59 y restarle
+        // otro le quitaría un instante real (corolario de «Cálculos con fechas» en `CLAUDE.md`).
+        let alignedEnd: Date
+        if clampedEnd > previousInterval.start, calendar.startOfDay(for: clampedEnd) == clampedEnd {
+            alignedEnd = calendar.date(byAdding: .second, value: -1, to: clampedEnd) ?? clampedEnd
+        } else {
+            alignedEnd = clampedEnd
+        }
         return DateInterval(start: previousInterval.start, end: alignedEnd)
     }
 

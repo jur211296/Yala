@@ -257,7 +257,9 @@ struct GroupsDetachTwoCausesWiringTests {
             No se pierden. Entra otra vez, cierra y vuelve a abrir Yala (si sigue pasando, actualízala) y vuelve a intentarlo.
             """)
         let attest = try #require(es["storage.groups.detachBlockedAttestAndCaptureUnfinished"])
-        #expect(attest.hasPrefix("Este teléfono lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor"))
+        // Lote decidido 2.2 · 15 (D16): los avisos de App Attest siguen el molde de L19-18 —qué no puede hacer el teléfono
+        // y desde cuándo—, no «la verificación de seguridad que pide nuestro servidor».
+        #expect(attest.hasPrefix("Este teléfono no puede enviar cambios a tus grupos desde hace un día"))
         let other = try #require(es["storage.groups.detachBlockedOtherAccountAndCaptureUnfinished"])
         #expect(other.hasPrefix("Hay cambios de grupos que se apuntaron en este teléfono con otra cuenta, y solo se pueden subir con ella."))
         for text in [attest, other] {

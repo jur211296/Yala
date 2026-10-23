@@ -17,6 +17,7 @@ struct CashFlowTableView: View {
     let transactions: [TransactionItem]
     let categories: [Category]
     let scheduledPayments: [ScheduledPayment]
+    let accounts: [Account]
     let currencyCode: String
 
     // Tour
@@ -38,8 +39,7 @@ struct CashFlowTableView: View {
                         CashFlowMonthStrip(
                             months: projection.months,
                             selectedMonthKey: $viewModel.selectedMonthKey,
-                            currencyCode: currencyCode,
-                            showAccumulatedBalance: viewModel.plan?.showAccumulatedBalance ?? true
+                            currencyCode: currencyCode
                         )
 
                         // Month detail for selected month
@@ -88,9 +88,12 @@ struct CashFlowTableView: View {
             } catch {
                 return
             }
-            if viewModel.projection != nil && !appPreferences.hasSeenCashFlowTableTour {
+            // UX 2.2 · L18-6: la guía de 3 pasos solo sale justo después de crear el plan, una vez. Abrir un plan que ya
+            // existía (o que llegó de otro teléfono) no la enseña.
+            if viewModel.projection != nil && viewModel.planJustCreated && !appPreferences.hasSeenCashFlowTableTour {
                 showTour = true
             }
+            viewModel.planJustCreated = false
         }
         .sheet(isPresented: $viewModel.showLineConfig, onDismiss: { recalculate() }) {
             if let line = viewModel.selectedLine {
@@ -123,8 +126,27 @@ struct CashFlowTableView: View {
             )
         }
         .sheet(isPresented: $viewModel.showEditStartingBalance, onDismiss: { recalculate() }) {
-            EditStartingBalanceSheet(viewModel: viewModel, currencyCode: currencyCode)
+            // UX 2.2 · L18-10: la misma hoja que «Cambiar el monto» de crear el plan, con la divisa y «Usar este monto».
+            CashFlowStartingBalanceSheet(
+                title: L10n.CashFlowPlan.editStartingBalance,
+                initialAmount: viewModel.plan?.startingBalance ?? 0,
+                initialDate: viewModel.plan?.startingBalanceDate,
+                todayBalance: startingBalanceToday,
+                currencyCode: currencyCode,
+                showsDate: true
+            ) { amount, date in
+                viewModel.updateStartingBalance(amount, date: date)
+            }
         }
+    }
+
+    /// Lo de hoy en las cuentas, para «Usar este monto». `nil` sin cuentas que sumen.
+    private var startingBalanceToday: CashFlowSetupLogic.TodayBalance? {
+        let balance = CashFlowSetupLogic.todayBalance(
+            accounts: accounts, transactions: transactions, currencyCode: currencyCode,
+            includeGroups: appPreferences.includeGroupsInPanelTotal
+        )
+        return balance.accountCount > 0 ? balance : nil
     }
 
     // MARK: - Navigation
@@ -151,83 +173,5 @@ struct CashFlowTableView: View {
             currencyCode: currencyCode,
             converter: CurrencyConverter.shared
         )
-    }
-}
-
-// MARK: - Edit Starting Balance Sheet
-
-private struct EditStartingBalanceSheet: View {
-    @Bindable var viewModel: CashFlowPlanViewModel
-    let currencyCode: String
-    @State private var balanceText: String = ""
-    @State private var hasDate: Bool = false
-    @State private var balanceDate: Date = Date.now
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: DS.Spacing.xl) {
-                Text(L10n.CashFlowPlan.editStartingBalance)
-                    .font(DS.Typography.headline)
-
-                TextField("0", text: $balanceText)
-                    .keyboardType(.decimalPad)
-                    .font(DS.Typography.title)
-                    .monospacedDigit()
-                    .multilineTextAlignment(.center)
-                    .padding(DS.Spacing.lg)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                            .fill(.thCard)
-                    )
-
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                    Toggle(L10n.CashFlowPlan.startingBalanceDateLabel, isOn: $hasDate)
-                        .font(DS.Typography.label)
-
-                    if hasDate {
-                        DatePicker(
-                            "",
-                            selection: $balanceDate,
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.compact)
-                        .labelsHidden()
-                    }
-
-                    Text(L10n.CashFlowPlan.startingBalanceDateHelper)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(DS.Spacing.lg)
-                .background(
-                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                        .fill(.thCard)
-                )
-
-                YalaPrimaryButton(L10n.CashFlowPlan.editStartingBalanceSave, icon: "checkmark.circle.fill") {
-                    let value = AmountInputHelper.parseDecimal(balanceText)
-                    viewModel.updateStartingBalance(value, date: hasDate ? balanceDate : nil)
-                    dismiss()
-                }
-            }
-            .padding(DS.Spacing.xl)
-            .dismissKeyboardOnTap()
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .onAppear {
-            balanceText = String(format: "%.0f", viewModel.plan?.startingBalance ?? 0)
-            if let date = viewModel.plan?.startingBalanceDate {
-                hasDate = true
-                balanceDate = date
-            }
-        }
     }
 }

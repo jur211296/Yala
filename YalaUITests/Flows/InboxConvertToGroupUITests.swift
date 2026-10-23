@@ -94,6 +94,12 @@ final class InboxConvertToGroupUITests: XCTestCase {
         // 2. Assert explícito anti-crash: el proceso sigue en foreground.
         XCTAssertEqual(app.state, .runningForeground, "La app no está en foreground tras Guardar (posible crash).")
 
+        // UX 2.2 · L13-11: el borrador ya no está, y la Bandeja dice adónde fue («Movido a «X»» con «Ver»).
+        XCTAssertTrue(
+            app.descendants(matching: .any)["inbox_moved_to_group_notice"].waitForExistence(timeout: 5),
+            "Tras convertir, la Bandeja no dijo adónde fue el borrador."
+        )
+
         // 3. El borrador convertido NO vuelve a la Bandeja (ticket `shared-scheduled-expense-shows-twice-in-inbox`).
         //    Hasta el 2026-10-10 la plantilla del formulario no llevaba la categoría del borrador: el gasto nacía sin
         //    clasificar y el puente dejaba otro borrador del mismo gasto pidiéndola, que este test daba por bueno

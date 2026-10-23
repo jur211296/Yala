@@ -1547,7 +1547,8 @@ struct ScheduledPaymentEditorView: View {
         // Pre-fill from transaction data (when creating from "Save as Recurring")
         if payment == nil, let prefill = prefill {
             let calendar = Calendar.current
-            // Don't prefill name — let the user decide the payment name
+            // Desde «Hacer recurrente › Más opciones…» el nombre es la descripción del registro (UX 2.2 · L2-15).
+            name = prefill.note.trimmingCharacters(in: .whitespacesAndNewlines)
             amount = prefill.amount
             note = prefill.note
             transactionType = prefill.transactionType
@@ -1557,6 +1558,8 @@ struct ScheduledPaymentEditorView: View {
             selectedNeed = prefill.needOverride
             paymentDate = calendar.startOfDay(for: prefill.transactionDate)
             dayOfMonth = calendar.component(.day, from: prefill.transactionDate)
+            // El día de la semana del registro: con precarga se quedaba en lunes (L2-15).
+            selectedWeekdays = [calendar.component(.weekday, from: prefill.transactionDate)]
             yearlyMonth = calendar.component(.month, from: prefill.transactionDate)
             yearlyDay = calendar.component(.day, from: prefill.transactionDate)
             return
@@ -1645,9 +1648,14 @@ struct ScheduledPaymentEditorView: View {
         // Gasto compartido: `amount` guardado = MI PARTE (splitMyShare); el total va a
         // splitTotalAmount. Moneda = la elegida para el gasto de grupo. Etiquetas no aplican.
         let amountToSave = isGroupExpense ? splitMyShare : amountValue
+        // Desde un registro, la divisa del importe que enseñaba su pantalla, sin convertir, mientras la cuenta sea la
+        // suya (card 4k2q: un gasto de 50 USD en una cuenta en soles creaba un pago de 50 PEN).
+        let prefillCurrency = prefill.flatMap { prefill in
+            prefill.account?.persistentModelID == selectedAccount?.persistentModelID ? prefill.currencyCode : nil
+        }
         let currencyToSave = isGroupExpense
             ? splitCurrency.rawValue
-            : (selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue)
+            : (prefillCurrency ?? selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue)
 
         let savedID = viewModel.savePayment(
             existing: payment,

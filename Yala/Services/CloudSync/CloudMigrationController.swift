@@ -346,6 +346,9 @@ final class CloudMigrationController {
     /// «Volver a iCloud» le está preguntando a iCloud qué sumaría (`checkICloudBeforeReverse`). La tarjeta lo pinta en el
     /// botón y no deja tocarlo otra vez.
     private(set) var isCheckingICloudBeforeReverse = false
+    /// «Empezar sin ellos» está borrando lo ajeno de iCloud: cuántos registros lleva. `nil` fuera del borrado. La tarjeta
+    /// lo pinta en el botón, para que un iCloud grande no parezca colgado.
+    private(set) var priorICloudWipeDeleted: Int?
     /// Mensaje de error localizado (para el `.alert` de la vista). `nil` = sin error.
     var lastError: String?
 
@@ -621,7 +624,7 @@ final class CloudMigrationController {
         let account = CloudAccountClient()
         let engine = CloudSyncEngine()
         let token: () async -> String? = { await CloudAuthService.shared.accessToken() }
-        let attest: () async -> String? = { try? await session.attestToken() }
+        let attest = migrationAttestProvider(session: session)
         // Sin token, el SDK dice si es caducada o pasajero (ticket
         // `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry`). Desde el 2026-09-22 SÍ cambia lo que hace la
         // máquina en la subida del snapshot: la sesión caducada con el SDK sin sesión elige su techo corto, y el mismo
@@ -650,6 +653,40 @@ final class CloudMigrationController {
             adoptImportSettled: { iCloudSyncService.shared.hasCompletedFirstImport && iCloudSyncService.shared.isImportQuiescent })
     }
 
+    /// El token de App Attest de las peticiones de la migración, la vuelta y el adopt. Contrato «cabecera o nada» de los
+    /// clientes (`AttestSessionProvider`): sin token devuelve `nil` y la petición sale sin cabecera, que en producción el
+    /// gateway contesta con 401 `yala_attest_required` (pasajero, con su canario). Hasta el 2026-10-19 era un `try?` mudo; ahora
+    /// el fallo deja rastro con su tipo (ticket `cloud-activation-stalls-without-uploading-until-relaunch`). La espera a un
+    /// refresh colgado tiene techo dentro de `AppAttestClient`, no aquí: un techo por llamador dejaría la tarea colgada a los
+    /// demás.
+    static func migrationAttestProvider(session: CloudSyncSessionProviding) -> () async -> String? {
+        return {
+            do {
+                return try await session.attestToken()
+            } catch {
+                CloudSyncBreadcrumb.migrationAttestUnavailable(errorType: Self.attestErrorLabel(error))
+                #if DEBUG
+                print("CloudMigrationController: sin token de App Attest para la migración: \(error)")
+                #endif
+                return nil
+            }
+        }
+    }
+
+    /// Etiqueta sin PII del fallo del token para el rastro: separa el techo (`network:timedOut`) de la caché negativa, del
+    /// servidor y de un teléfono sin App Attest, que con el nombre del tipo salían todos como `AppAttestError`.
+    nonisolated static func attestErrorLabel(_ error: Error) -> String {
+        guard let attest = error as? AppAttestError else { return String(describing: type(of: error)) }
+        switch attest {
+        case .unavailable: return "unavailable"
+        case .unknownKey: return "unknownKey"
+        case .server(let type): return "server:\(type)"
+        case .network(let underlying):
+            let code = (underlying as? URLError)?.code.rawValue ?? (underlying as NSError).code
+            return "network:\(code)"
+        }
+    }
+
     /// El runner de producción (lazy, único). El panel DEBUG delega en este mismo runner.
     var runner: MigrationRunner {
         if let _runner { return _runner }
@@ -657,7 +694,13 @@ final class CloudMigrationController {
             context: context,
             executor: Self.makeExecutor(context: context, deviceID: deviceID),
             deviceID: deviceID,
-            quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
+            quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent },
+            onQuiescenceTimeout: {
+                MetricsService.canaryOnce(
+                    .cloudMigrationImportNotSettled, key: "runner",
+                    detail: MigrationImportWaitLogic.runnerStallDetail(
+                        stillImporting: iCloudSyncService.shared.status == .syncing(kind: .importing)))
+            })
         _runner = r
         return r
     }
@@ -1342,20 +1385,23 @@ final class CloudMigrationController {
         }
         isWorking = true
         lastError = nil
-        let failure: String?
+        priorICloudWipeDeleted = 0
+        let onProgress: @MainActor (Int) -> Void = { [weak self] deleted in self?.priorICloudWipeDeleted = deleted }
+        let outcome: ForeignWipeOutcome
         #if DEBUG
-        if UITestHooks.fakeReverseForeignWipeFails {
-            failure = "uitest"
+        if let fake = UITestHooks.fakeReverseForeignWipe {
+            outcome = await fake.run(onProgress)
         } else {
-            failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()
+            outcome = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse(onProgress)
         }
         #else
-        failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()
+        outcome = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse(onProgress)
         #endif
         isWorking = false
-        if let failure {
+        priorICloudWipeDeleted = nil
+        if let failure = outcome.canaryReason {
             MetricsService.cloudReverseICloudPriorDataChoice("discardFailed:\(failure)")
-            lastError = L10n.Storage.Revert.Prior.wipeFailed
+            lastError = ReverseICloudPriorDataLogic.wipeFailureMessage(outcome)
             return
         }
         MetricsService.cloudReverseICloudPriorDataChoice("discard")
@@ -1366,7 +1412,7 @@ final class CloudMigrationController {
     /// `-uitest-born-cloud-storage` lo lee `.cloud` (finge la entrada; ver `UITestHooks.fakeBornCloudStorage`).
     private static func readPersistedStorageMode() -> StorageMode {
         #if DEBUG
-        if UITestHooks.fakeBornCloudStorage { return .cloud }
+        if UITestHooks.fakeBornCloudStorage || UITestHooks.fakeAdoptedCloudStorage { return .cloud }
         #endif
         return StorageModePersistence.read()
     }
@@ -1559,6 +1605,13 @@ final class CloudMigrationController {
     /// `UserDefaults` (`closeSessionOfExitedAdopt`, ticket `adopt-exit-keeps-the-session-it-opened`).
     func cancelMigration() async {
         runner.requestMigrationCancel()
+        guard !isCancellingMigration else { return }
+        isCancellingMigration = true
+        defer { isCancellingMigration = false }
+        // Si lo que está en vuelo es la pre-espera del import (no una pasada del runner), se corta: la persona no tiene que
+        // esperar a que iCloud se asiente para que su «sí» llegue al runner (ticket
+        // `cloud-activation-waits-for-icloud-with-no-way-out`).
+        if isWorking && resumeWaitingForImport { preWaitCutRequested = true }
         while isWorking {
             do {
                 try await Task.sleep(for: .milliseconds(200))
@@ -1569,6 +1622,7 @@ final class CloudMigrationController {
                 return
             }
         }
+        preWaitCutRequested = false
         isWorking = true
         defer { isWorking = false }
         lastError = nil
@@ -1695,6 +1749,11 @@ final class CloudMigrationController {
     /// card diría "esperando iCloud" con la migración ya corriendo); tope vencido lo DEJA en true
     /// (estado honesto visible) + breadcrumb. El gate del runner se conserva intacto como red
     /// (jamás un save sin quiescencia).
+    ///
+    /// **«Cancelar la activación» la corta** (2026-10-19, ticket `cloud-activation-waits-for-icloud-with-no-way-out`): el
+    /// botón se puede tocar durante esta espera (`MigrationImportWaitLogic.cancelEnabled`) y `cancelMigration` pide el corte
+    /// con `preWaitCutRequested`, que esta espera mira en cada sondeo. Al vencer el tope deja el canario
+    /// `cloudMigrationImportNotSettled` con lo que tenía a iCloud sin asentarse.
     private func awaitImportQuiescenceForResume() async -> Bool {
         if iCloudSyncService.shared.isImportQuiescent {
             resumeWaitingForImport = false
@@ -1705,7 +1764,13 @@ final class CloudMigrationController {
         var waited: TimeInterval = 0
         let pollInterval: TimeInterval = 2
         let hardCap: TimeInterval = 300
+        var lastImport = iCloudSyncService.shared.lastSuccessfulImportDate
+        var importsFinished = 0
         while waited < hardCap {
+            if preWaitCutRequested {
+                preWaitCutRequested = false
+                return false
+            }
             do {
                 try await Task.sleep(for: .seconds(pollInterval))
             } catch {
@@ -1719,10 +1784,27 @@ final class CloudMigrationController {
                 resumeWaitingForImport = false
                 return true
             }
+            let seen = iCloudSyncService.shared.lastSuccessfulImportDate
+            if seen != lastImport {
+                importsFinished += 1
+                lastImport = seen
+            }
         }
         CloudSyncBreadcrumb.migrationResumeDeferredAwaitingImport()
+        MetricsService.canaryOnce(
+            .cloudMigrationImportNotSettled, key: "preWait",
+            detail: MigrationImportWaitLogic.stallDetail(
+                stillImporting: iCloudSyncService.shared.status == .syncing(kind: .importing),
+                importsFinished: importsFinished))
         return false
     }
+
+    /// «Cancelar la activación» pidió cortar la pre-espera del import en curso (ver `awaitImportQuiescenceForResume`).
+    private var preWaitCutRequested = false
+
+    /// Hay una cancelación de la ida en marcha (`cancelMigration`). Apaga el botón: su propia pre-espera no se corta con un
+    /// segundo toque (`MigrationImportWaitLogic.cancelEnabled`).
+    private(set) var isCancellingMigration = false
 
     /// #36 (H1): re-kick de foreground — si hay una migración/reversa APARCADA (journal transicional o
     /// efectos pendientes, controller ocioso), re-conduce por el MISMO camino del boot. Cubre la
