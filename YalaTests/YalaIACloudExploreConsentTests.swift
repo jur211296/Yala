@@ -143,7 +143,7 @@ struct YalaIACloudExploreConsentTests {
         #expect(source.contains("onDecline: { Task { await viewModel.declineCloudExploreConsent() } },"))
         #expect(source.contains("onPrivacyPolicy: { viewModel.postponeCloudExploreConsent() }"))
         #expect(source.contains(".sheet(isPresented: $showTopicsSheet, onDismiss: sendTopicAwaitingSheetDismissal)"))
-        #expect(source.contains("onSelect: { suggestion in topicAwaitingSheetDismissal = suggestion }"))
+        #expect(source.contains("onSelect: { example in topicAwaitingSheetDismissal = example }"))
     }
 
     // MARK: - Los textos

@@ -479,7 +479,7 @@ final class StoreKitManager {
             SessionState.shared.isProUser = isProUser
         }
 
-        if nowProUser && !wasAlreadyPro {
+        if Self.forcesChatButtonVisible(nowPro: nowProUser, wasProInMemory: wasAlreadyPro, wasProPersisted: wasProUser) {
             UserDefaults.standard.set(true, forKey: "chatFABVisible")
         }
 
@@ -493,6 +493,14 @@ final class StoreKitManager {
     }
 
     /// Sync subscription state to App Group for widget access
+    /// Si pasar a Pro vuelve a enseñar el botón de Yala IA. Solo al pasar de verdad: el valor en memoria arranca en
+    /// `false` en cada lanzamiento, así que sin mirar lo persistido (`wasProUser`, que se baja al resolver el fin de
+    /// Pro) cada arranque de un Pro contaba como «pasar a Pro» y deshacía el interruptor que desde UX 2.2 · L14-12 un
+    /// Pro también puede apagar. Comprar Pro sigue encendiéndolo (la decisión fue B, no C).
+    nonisolated static func forcesChatButtonVisible(nowPro: Bool, wasProInMemory: Bool, wasProPersisted: Bool) -> Bool {
+        nowPro && !wasProInMemory && !wasProPersisted
+    }
+
     func syncToAppGroup() {
         guard let defaults = UserDefaults(suiteName: appGroupID) else {
             #if DEBUG

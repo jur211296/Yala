@@ -780,9 +780,9 @@
 "scheduled.calendar.month.empty" = "Geen betalingen deze maand";
 
 "widget.sizeLabel" = "Grootte";
-"widget.chatFab.toggle" = "Vraag Yala";
+"widget.chatFab.toggle" = "Yala AI";
 "widget.chatFab.description" = "Toon de knop voor de AI-financieel assistent.";
-"widget.chatFab.hint" = "Bepaalt of de chatknop op de hoofdschermen verschijnt.";
+"widget.chatFab.hint" = "Toont de Yala AI-knop op de hoofdschermen.";
 "widget.aiCapabilities.header" = "AI-mogelijkheden";
 
 "common.all" = "Alle";
@@ -1080,7 +1080,7 @@
 "settings.organization" = "Organisatie";
 "settings.preferences" = "Voorkeuren";
 "settings.aiFeatures" = "AI-functies";
-"settings.customizeAISummary" = "AI-samenvatting aanpassen";
+"settings.customizeAISummary" = "Wat er in het overzicht staat";
 "settings.customizeAISummaryHint" = "Kies welke metingen en grafieken in je slimme overzicht verschijnen.";
 "settings.data" = "Gegevens";
 "settings.security" = "Beveiliging & account";
@@ -2169,7 +2169,7 @@
 "tipkit.pro.premiumIcons.message" = "Kies uit premium-iconen om je app te personaliseren.";
 "tipkit.pro.proThemes.title" = "Premium-thema's";
 "tipkit.pro.proThemes.message" = "Ontdek exclusieve kleurenthema's die Yala je persoonlijke touch geven.";
-"tipkit.pro.chatFab.title" = "Je financiële assistent";
+"tipkit.pro.chatFab.title" = "Yala AI";
 "tipkit.pro.aiSummary.title" = "Jouw AI-samenvatting";
 "tipkit.pro.aiSummary.message" = "Je AI-samenvatting van je financiën, met één tik. Nuttige inzichten, meteen.";
 "tipkit.aiCharts.pro.title" = "AI-observaties";
@@ -2807,22 +2807,20 @@
 
 // MARK: - AI Settings (Personalization Sheet from Chat)
 
-"aiSettings.title" = "AI aanpassen";
+"aiSettings.title" = "Toon van Yala AI";
 "aiSettings.toneSection" = "Toon";
 "aiSettings.styleSection" = "Stijl";
-"aiSettings.appliesHint" = "Deze instellingen gelden voor Inzichten, Assistent en Paneel Hero.";
-
+"aiSettings.appliesHint" = "Geldt voor Yala AI en de AI-samenvatting in Statistieken.";
 // MARK: - AI Privacy (sub-view from Profile > Security)
 
 "aiPrivacy.title" = "AI-privacy & gegevens";
-"aiPrivacy.processingRow" = "Verwerking (spraak & afbeelding)";
-"aiPrivacy.chatRow" = "Pro-assistent";
+"aiPrivacy.processingRow" = "Toevoegen met stem of foto";
+"aiPrivacy.chatRow" = "Yala AI";
 "aiPrivacy.insightsRow" = "AI-samenvatting";
 "aiPrivacy.cloudExploreRow" = "Je cloudaccount raadplegen";
-"aiPrivacy.revokeConfirmTitle" = "Deze functie uitschakelen?";
 "aiPrivacy.revokeConfirmMessage" = "We stoppen met het verwerken van je AI-gegevens voor deze functie. Je kunt het altijd weer aanzetten.";
 "aiPrivacy.revokeConfirmAction" = "Uitschakelen";
-"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je Inzichten, Assistent of spraak- en afbeeldingsinvoer gebruikt, en gaan via onze server naar een AI-dienst. We verkopen ze niet en gebruiken ze niet voor advertenties.";
+"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je een van deze functies gebruikt, en gaan via onze server naar een AI-dienst. We verkopen ze niet en gebruiken ze niet voor advertenties.";
 "aiPrivacy.policyLink" = "Privacybeleid";
 
 // MARK: - AI Consent
@@ -3311,12 +3309,11 @@
 "guide.favoritesManage.message" = "Bewaar je veelvoorkomende uitgaven hier. Bij het boeken tik je gewoon op de favoriet en wordt alles automatisch ingevuld.";
 
 // MARK: - Chat Assistant
-"chat.title" = "Vraag Yala";
 "chat.inputPlaceholder" = "Typ je vraag...";
 "chat.send" = "Versturen";
 "chat.emptySubtitle" = "Ontdek je financiën met vragen";
 "chat.errorTimeout" = "Het antwoord duurde te lang. Probeer opnieuw.";
-"chat.errorOffline" = "Je hebt een internetverbinding nodig om de assistent te gebruiken.";
+"chat.errorOffline" = "Je hebt een internetverbinding nodig om Yala AI te gebruiken.";
 "chat.errorGeneric" = "Er ging iets mis. Probeer opnieuw.";
 "chat.errorNoData" = "Geen gegevens gevonden voor die vraag. Kun je specifieker zijn?";
 "chat.dailyLimitReached" = "Je hebt je vragen voor vandaag opgebruikt. Kom morgen terug!";
@@ -3335,7 +3332,7 @@
 "chat.errorTranscription" = "Ik kon de audio niet transcriberen. Probeer opnieuw.";
 "chat.errorMicPermission" = "Ik heb toestemming nodig om de microfoon te gebruiken.";
 "chat.topics.title" = "Gespreksonderwerpen";
-"chat.resetContext" = "Gesprekscontext resetten";
+"chat.resetContext" = "Nieuw gesprek";
 "chat.listening" = "Aan het luisteren…";
 "chat.transcribing" = "Transcriberen…";
 "chat.preparingAI" = "AI wordt voorbereid…";
@@ -3375,7 +3372,7 @@
 "chat.draft.overflowFormat" = "Ik detecteerde %d boekingen. De eerste %d worden opgeslagen; stuur de rest in een ander bericht.";
 
 // MARK: - Chat Assistant Consent
-"aiConsent.chatTitle" = "Financiële assistent";
+"aiConsent.chatTitle" = "Yala AI";
 "aiConsent.chatMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten, terugkerende betalingen en je grootste uitgaven van deze maand. Die wordt alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
 "aiConsent.cloudExploreTitle" = "Yala AI met je cloudaccount";
 "aiConsent.cloudExploreMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst en, als een vraag erom vraagt, de gegevens uit je cloudaccount die nodig zijn om te antwoorden: boekingen van elke datum met hun notitie, rekeningen, budgetten en terugkerende betalingen. Ze worden alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
@@ -3383,10 +3380,9 @@
 "aiConsent.inlineHintMultiple" = "Meerdere functies gebruiken een AI-dienst om je gegevens te verwerken. Ze worden niet permanent bewaard.";
 
 // MARK: - Chat Assistant Feature Gate & Settings
-"featureGate.chatAssistant" = "Chat-assistent";
+"featureGate.chatAssistant" = "Yala AI";
 "settings.chatAssistant" = "Vraag Yala";
-"subscription.feature.aiAssistant" = "AI-financieel assistent";
-
+"subscription.feature.aiAssistant" = "Yala AI";
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "Betaald door";
 "groups.expense.selectAll" = "Alles selecteren";
@@ -4097,7 +4093,7 @@
 
 "welcome.hero.cards.capture.title" = "Foto van bonnen";
 "welcome.hero.cards.capture.body" = "Richt op de bon. Yala leest 'm.";
-"welcome.hero.cards.assistant.title" = "Stem en AI-assistent";
+"welcome.hero.cards.assistant.title" = "Stem en Yala AI";
 "welcome.hero.cards.assistant.body" = "Vertel of vraag. Yala antwoordt.";
 "welcome.hero.cards.groups.title" = "Gedeelde uitgaven";
 "welcome.hero.cards.groups.body" = "Verdeel met iedereen.";
@@ -6912,7 +6908,7 @@
 "tipkit.stepProgress" = "%1$d van %2$d";
 "tipkit.pro.quickEntry.title" = "Je kunt nu dicteren en bonnetjes laten lezen";
 "tipkit.pro.quickEntry.message" = "Tik op Spraak om een uitgave in te spreken of op Foto om een bonnetje te lezen. Yala boekt het voor je.";
-"tipkit.pro.quickAI.message" = "Tik op AI en vraag Yala naar je uitgaven, budgetten en meer.";
+"tipkit.pro.quickAI.message" = "Tik op Yala AI en vraag naar je uitgaven, budgetten en meer.";
 "milestone.nextGoal" = "Volgend doel: %d boekingen";
 "notificationPrimer.scheduled.title" = "Zullen we je vóór elke betaling herinneren?";
 "notificationPrimer.scheduled.benefit" = "Een herinnering voordat een geplande betaling vervalt, zodat je niets mist.";
@@ -7696,6 +7692,32 @@
 "uxpro.welcome.theme" = "Je kunt dit thema nu gebruiken.";
 "uxpro.welcome.icon" = "Je kunt dit icoon nu gebruiken.";
 "uxpro.welcome.cashFlow" = "Je kunt nu de uitgebreide kasstroom gebruiken.";
+
+/* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
+"chat.l14d.conversationDeleted" = "Gesprek verwijderd";
+"chat.l14d.limitBox" = "Kom morgen terug: je vragen worden om middernacht vernieuwd";
+"chat.l14d.draft.saveAll" = "Alle %d opslaan";
+"chat.l14d.topics.areaSpending" = "Uitgaven";
+"chat.l14d.topics.areaBudgets" = "Budgetten";
+"chat.l14d.topics.areaPayments" = "Geplande betalingen";
+"chat.l14d.topics.areaLog" = "Toevoegen";
+"chat.l14d.topics.spendingTop" = "Waaraan heb ik deze maand het meest uitgegeven?";
+"chat.l14d.topics.spendingCategory" = "Hoeveel heb ik deze maand aan %@ uitgegeven?";
+"chat.l14d.topics.spendingVsLastMonth" = "Geef ik meer of minder uit dan vorige maand?";
+"chat.l14d.topics.budgetLeft" = "Hoeveel is er nog over van mijn budget %@?";
+"chat.l14d.topics.budgetOnTrack" = "Lig ik op schema met mijn budget %@?";
+"chat.l14d.topics.budgetWorst" = "Welk budget loopt deze maand het slechtst?";
+"chat.l14d.topics.paymentsThisWeek" = "Welke betalingen heb ik deze week?";
+"chat.l14d.topics.paymentWhen" = "Wanneer moet %@ betaald worden?";
+"chat.l14d.topics.logExample" = "20 uitgegeven aan %@";
+"chat.l14d.topics.logExampleDefault" = "25 uitgegeven aan een taxi met mijn kaart";
+"chat.l14d.topics.logRowHint" = "Zet het in het invoerveld zodat je het kunt aanpassen voordat je het verstuurt.";
+"aiPrivacy.l14d.processingLine" = "Maakt van wat je zegt of fotografeert een transactie.";
+"aiPrivacy.l14d.chatLine" = "Beantwoordt je vragen over je geld en voegt uitgaven toe vanuit de chat.";
+"aiPrivacy.l14d.insightsLine" = "Schrijft observaties over je cijfers in Statistieken.";
+"aiPrivacy.l14d.cloudExploreLine" = "Yala AI kijkt ook in je cloudaccount als een vraag dat nodig heeft.";
+"aiPrivacy.l14d.revokeTitle" = "%@ uitschakelen?";
+"settings.l14d.summaryWhere" = "Je ziet het in %@.";
 "siriShortcuts.siri.alsoSay" = "Ook: %1$@ · %2$@";
 "siriShortcuts.quotedPhrase" = "“%@”";
 "siriShortcuts.openShortcuts" = "Mijn Yala-opdrachten openen";

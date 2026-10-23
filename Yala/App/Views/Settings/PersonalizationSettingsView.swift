@@ -30,6 +30,7 @@ struct PersonalizationSettingsView: View {
     @State private var showingExpensesOnlyActivate = false
     @State private var showingExpensesOnlyDeactivate = false
     @State private var showingSmartInsightsSettings = false
+    @State private var showingAIPersonalization = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.chatAssistant)
@@ -156,6 +157,15 @@ struct PersonalizationSettingsView: View {
             }
 
             YalaSettingsSection {
+                // UX 2.2 · L14-10 (opción C): el tono se busca en Ajustes, y aquí solo estaba el resumen, que es otra
+                // cosa. La fila abre la misma hoja que el botón de ajustes del chat.
+                YalaSettingsValueRow(L10n.AISettings.title) {
+                    showingAIPersonalization = true
+                }
+                .accessibilityIdentifier("personalization_row_ai_tone")
+
+                // UX 2.2 · L16-8: «Qué sale en el resumen» (antes «Personalizar resumen de IA»): controla Estadísticas ›
+                // Resumen, y de lo que enciende solo las Observaciones son de IA.
                 YalaSettingsValueRow(L10n.Settings.customizeAISummary) {
                     showingSmartInsightsSettings = true
                 }
@@ -174,16 +184,17 @@ struct PersonalizationSettingsView: View {
                 Text(forcesMonochromeIcons ? L10n.Settings.colorfulIconsDisabledByTheme : L10n.UXL15.colorfulIconsFooter)
             }
 
-            // Chat FAB visibility (Free users only — Pro users manage it via per-section Panel preferences)
-            if !isProUser {
-                YalaSettingsSection {
-                    YalaSettingsToggleRow(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible) {
+            // El botón de Yala IA, para todos (UX 2.2 · L14-12, opción B): un Pro que no quiere IA no tenía cómo
+            // quitarlo, y el comentario de aquí lo mandaba a unas «preferencias del Panel» que no existían.
+            YalaSettingsSection {
+                YalaSettingsToggleRow(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible) {
+                    if !isProUser {
                         ProBadge(size: .small)
                     }
-                    .accessibilityIdentifier("personalization_row_chat_fab")
-                } footer: {
-                    Text(L10n.Widget.chatFabHint)
                 }
+                .accessibilityIdentifier("personalization_row_chat_fab")
+            } footer: {
+                Text(L10n.Widget.chatFabHint)
             }
 
             // MARK: - Calendario
@@ -355,6 +366,9 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingSmartInsightsSettings) {
             SmartInsightsSettingsView()
+        }
+        .sheet(isPresented: $showingAIPersonalization) {
+            AIPersonalizationSheet()
         }
         // UX 2.2 · L16-6: un aviso del sistema y no un diálogo anclado al interruptor, que no pintaba «Cancelar»
         // (`swiftui-ds.md`); y «Activar» sin rojo: activar no borra nada, solo oculta.

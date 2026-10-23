@@ -30,7 +30,8 @@ enum DraftDiscardUndoNotice {
     private static var window: UIWindow?
     private static var hideTask: Task<Void, Never>?
     /// El `noticeIdentifier` del aviso que está en pantalla, o `nil`. Quien vigila su propio aviso
-    /// (`SavedRecordNotice`) lo mira para no retirar el de otro.
+    /// (`SavedRecordNotice`) lo mira para no retirar el de otro, y quien lo pidió lo retira sin llevarse
+    /// el de otro (`hide(noticeIdentifier:)`).
     private(set) static var currentNoticeIdentifier: String?
 
     /// Enseña el aviso en la ventana que está delante. `onUndo` corre al tocar «Deshacer» y el aviso se va.
@@ -107,6 +108,13 @@ enum DraftDiscardUndoNotice {
         window?.isHidden = true
         window = nil
         currentNoticeIdentifier = nil
+    }
+
+    /// Retira el aviso solo si el que se ve es ese: el chat lo hace al cerrarse (UX 2.2 · L14-7), y en el iPad, con el
+    /// chat en columna, el aviso de delante puede ser otro (el de Registros, el de un pago) que no le toca quitar.
+    static func hide(noticeIdentifier: String) {
+        guard currentNoticeIdentifier == noticeIdentifier else { return }
+        hide()
     }
 
     /// La escena de la ventana que está delante; si el registro aún no la conoce, la escena activa.

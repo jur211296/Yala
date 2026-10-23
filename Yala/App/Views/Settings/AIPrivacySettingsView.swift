@@ -33,17 +33,49 @@ struct AIPrivacySettingsView: View {
     @State private var showRevokeChatDialog = false
     @State private var showRevokeInsightsDialog = false
     @State private var showRevokeCloudExploreDialog = false
+    @State private var showChatUpgrade = false
+
+    /// Yala IA es de Pro: sin Pro su fila lleva la marca y encenderla abre la hoja de Pro, no el permiso (UX 2.2 ·
+    /// L14-11, opción D). Antes se aceptaba el permiso y la función seguía bloqueada.
+    private var isChatLocked: Bool { !FeatureGateService.shared.canAccess(.chatAssistant) }
 
     var body: some View {
+        // UX 2.2 · L14-11: cada función con el nombre que tiene en la app y una línea que dice qué hace. La línea va en
+        // el pie de su bloque, como pide `YalaSettingsList` para la ayuda que solo es de una fila. Antes eran tres
+        // filas con nombres internos («Procesamiento (voz e imagen)», «Asistente Pro») en un solo bloque.
         YalaSettingsList {
             YalaSettingsSection(L10n.AIPrivacy.title) {
                 YalaSettingsToggleRow(L10n.AIPrivacy.processingRow, isOn: $dataToggle)
-                YalaSettingsToggleRow(L10n.AIPrivacy.chatRow, isOn: $chatToggle)
+                    .accessibilityIdentifier("ai_privacy_processing_row")
+            } footer: {
+                Text(L10n.UXL14D.processingLine)
+            }
+            YalaSettingsSection {
+                YalaSettingsToggleRow(L10n.AIPrivacy.chatRow, isOn: $chatToggle) {
+                    if isChatLocked {
+                        ProBadge(size: .small)
+                    }
+                }
+                .accessibilityIdentifier("ai_privacy_chat_row")
+            } footer: {
+                Text(L10n.UXL14D.chatLine)
+            }
+            YalaSettingsSection {
                 YalaSettingsToggleRow(L10n.AIPrivacy.insightsRow, isOn: $insightsToggle)
-                if showsCloudExploreRow {
+                    .accessibilityIdentifier("ai_privacy_insights_row")
+            } footer: {
+                Text(L10n.UXL14D.insightsLine)
+            }
+            if showsCloudExploreRow {
+                YalaSettingsSection {
                     YalaSettingsToggleRow(L10n.AIPrivacy.cloudExploreRow, isOn: $cloudExploreToggle)
                         .accessibilityIdentifier("ai_privacy_cloud_explore_row")
+                } footer: {
+                    Text(L10n.UXL14D.cloudExploreLine)
                 }
+            }
+            Section {
+                EmptyView()
             } footer: {
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(L10n.AIPrivacy.footerHint)
@@ -86,7 +118,11 @@ struct AIPrivacySettingsView: View {
             }
         }
         .onChange(of: chatToggle) { _, newValue in
-            if newValue && !appPreferences.aiChatConsentAccepted {
+            if newValue && !appPreferences.aiChatConsentAccepted && isChatLocked {
+                // Sin Pro el permiso no sirve de nada: la fila vuelve a apagado y sale la hoja de Pro.
+                chatToggle = false
+                showChatUpgrade = true
+            } else if newValue && !appPreferences.aiChatConsentAccepted {
                 showChatConsentAlert = true
             } else if !newValue && appPreferences.aiChatConsentAccepted {
                 showRevokeChatDialog = true
@@ -118,8 +154,9 @@ struct AIPrivacySettingsView: View {
         .aiConsentAlert(isPresented: $showDataConsentAlert, pendingInput: $pendingAIInput) { _ in }
         .chatConsentAlert(isPresented: $showChatConsentAlert)
         .insightsConsentAlert(isPresented: $showInsightsConsentAlert)
+        .proUpgradeSheet(isPresented: $showChatUpgrade, feature: .chatAssistant, context: .proFeature)
         .confirmationDialog(
-            L10n.AIPrivacy.revokeConfirmTitle,
+            L10n.UXL14D.revokeTitle(L10n.AIPrivacy.processingRow),
             isPresented: $showRevokeDataDialog,
             titleVisibility: .visible
         ) {
@@ -133,7 +170,7 @@ struct AIPrivacySettingsView: View {
             Text(L10n.AIPrivacy.revokeConfirmMessage)
         }
         .confirmationDialog(
-            L10n.AIPrivacy.revokeConfirmTitle,
+            L10n.UXL14D.revokeTitle(L10n.AIPrivacy.chatRow),
             isPresented: $showRevokeChatDialog,
             titleVisibility: .visible
         ) {
@@ -147,7 +184,7 @@ struct AIPrivacySettingsView: View {
             Text(L10n.AIPrivacy.revokeConfirmMessage)
         }
         .confirmationDialog(
-            L10n.AIPrivacy.revokeConfirmTitle,
+            L10n.UXL14D.revokeTitle(L10n.AIPrivacy.insightsRow),
             isPresented: $showRevokeInsightsDialog,
             titleVisibility: .visible
         ) {
@@ -185,7 +222,7 @@ private struct CloudExploreConsentRowBehavior: ViewModifier {
                 onPrivacyPolicy: { toggle = false }
             )
             .confirmationDialog(
-                L10n.AIPrivacy.revokeConfirmTitle,
+                L10n.UXL14D.revokeTitle(L10n.AIPrivacy.cloudExploreRow),
                 isPresented: $showRevokeDialog,
                 titleVisibility: .visible
             ) {

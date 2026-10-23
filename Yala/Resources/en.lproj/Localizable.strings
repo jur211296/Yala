@@ -780,9 +780,9 @@
 "scheduled.calendar.month.empty" = "No payments this month";
 
 "widget.sizeLabel" = "Size";
-"widget.chatFab.toggle" = "Ask Yala";
+"widget.chatFab.toggle" = "Yala AI";
 "widget.chatFab.description" = "Show the AI financial assistant button.";
-"widget.chatFab.hint" = "Controls whether the chat button appears on the main screens.";
+"widget.chatFab.hint" = "Shows the Yala AI button on the main screens.";
 "widget.aiCapabilities.header" = "AI Capabilities";
 
 "common.all" = "All";
@@ -1080,7 +1080,7 @@
 "settings.organization" = "Organization";
 "settings.preferences" = "Preferences";
 "settings.aiFeatures" = "AI Features";
-"settings.customizeAISummary" = "Customize AI Summary";
+"settings.customizeAISummary" = "What's in the overview";
 "settings.customizeAISummaryHint" = "Choose which metrics and charts appear in your smart overview.";
 "settings.data" = "Data";
 "settings.security" = "Security & Account";
@@ -2169,7 +2169,7 @@
 "tipkit.pro.premiumIcons.message" = "Choose from premium icons to personalize your app.";
 "tipkit.pro.proThemes.title" = "Premium themes";
 "tipkit.pro.proThemes.message" = "Discover exclusive color themes that give Yala your personal touch.";
-"tipkit.pro.chatFab.title" = "Your financial assistant";
+"tipkit.pro.chatFab.title" = "Yala AI";
 "tipkit.pro.aiSummary.title" = "Your AI summary";
 "tipkit.pro.aiSummary.message" = "Your AI summary of your finances, in one tap. Useful observations, instantly.";
 "tipkit.aiCharts.pro.title" = "AI observations";
@@ -2854,22 +2854,20 @@
 
 // MARK: - AI Settings (Personalization Sheet from Chat)
 
-"aiSettings.title" = "Customize AI";
+"aiSettings.title" = "Yala AI tone";
 "aiSettings.toneSection" = "Tone";
 "aiSettings.styleSection" = "Style";
-"aiSettings.appliesHint" = "These settings apply to Insights, Assistant, and Panel Hero.";
-
+"aiSettings.appliesHint" = "Applies to Yala AI and to the AI summary in Statistics.";
 // MARK: - AI Privacy (sub-view from Profile > Security)
 
 "aiPrivacy.title" = "AI Privacy & Data";
-"aiPrivacy.processingRow" = "Processing (voice & image)";
-"aiPrivacy.chatRow" = "Pro Assistant";
+"aiPrivacy.processingRow" = "Add with voice or photo";
+"aiPrivacy.chatRow" = "Yala AI";
 "aiPrivacy.insightsRow" = "AI summary";
 "aiPrivacy.cloudExploreRow" = "Use your cloud account";
-"aiPrivacy.revokeConfirmTitle" = "Disable this feature?";
 "aiPrivacy.revokeConfirmMessage" = "We'll stop processing your AI data for this feature. You can re-enable it anytime.";
 "aiPrivacy.revokeConfirmAction" = "Disable";
-"aiPrivacy.footerHint" = "Your data is only sent when you use Insights, the Assistant or voice and image entries, and it reaches an AI service through our server. We don't sell it or use it for advertising.";
+"aiPrivacy.footerHint" = "Your data is only sent when you use one of these features, and it reaches an AI service through our server. We don't sell it or use it for advertising.";
 "aiPrivacy.policyLink" = "Privacy Policy";
 
 // MARK: - AI Consent
@@ -3351,12 +3349,11 @@
 "guide.favoritesManage.message" = "Save your frequent expenses here. When recording, just tap the favorite and everything fills in automatically.";
 
 // MARK: - Chat Assistant
-"chat.title" = "Ask Yala";
 "chat.inputPlaceholder" = "Type your question...";
 "chat.send" = "Send";
 "chat.emptySubtitle" = "Explore your finances with questions";
 "chat.errorTimeout" = "Response took too long. Try again.";
-"chat.errorOffline" = "You need an internet connection to use the assistant.";
+"chat.errorOffline" = "You need an internet connection to use Yala AI.";
 "chat.errorGeneric" = "Something went wrong. Try again.";
 "chat.errorNoData" = "No data found for that query. Can you be more specific?";
 "chat.dailyLimitReached" = "You've used your questions for today. Come back tomorrow!";
@@ -3375,7 +3372,7 @@
 "chat.errorTranscription" = "I couldn't transcribe the audio. Try again.";
 "chat.errorMicPermission" = "I need permission to use the microphone.";
 "chat.topics.title" = "Conversation topics";
-"chat.resetContext" = "Reset conversation context";
+"chat.resetContext" = "New conversation";
 "chat.listening" = "Listening…";
 "chat.transcribing" = "Transcribing…";
 "chat.preparingAI" = "Preparing the AI…";
@@ -3415,7 +3412,7 @@
 "chat.draft.overflowFormat" = "I detected %d entries. Saving the first %d; send the rest in another message.";
 
 // MARK: - Chat Assistant Consent
-"aiConsent.chatTitle" = "Financial assistant";
+"aiConsent.chatTitle" = "Yala AI";
 "aiConsent.chatMessage" = "Yala answers your questions about your finances using your own numbers. To do that it sends an AI service a summary of your last 13 months: your account balances and names, totals by category, frequent merchants, budgets, recurring payments, and your largest expenses this month. It’s used only to answer you, not to train the AI.";
 "aiConsent.cloudExploreTitle" = "Yala AI with your cloud account";
 "aiConsent.cloudExploreMessage" = "Yala answers your questions about your finances using your own numbers. To do that it sends an AI service a summary of your last 13 months and, when a question needs it, the data from your cloud account needed to answer it: entries from any date with their notes, accounts, budgets, and recurring payments. It’s used only to answer you, not to train the AI.";
@@ -3423,10 +3420,9 @@
 "aiConsent.inlineHintMultiple" = "Several features use an AI service to process your data. It is not stored permanently.";
 
 // MARK: - Chat Assistant Feature Gate & Settings
-"featureGate.chatAssistant" = "Chat assistant";
+"featureGate.chatAssistant" = "Yala AI";
 "settings.chatAssistant" = "Ask Yala";
-"subscription.feature.aiAssistant" = "AI financial assistant";
-
+"subscription.feature.aiAssistant" = "Yala AI";
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "Paid by";
 "groups.expense.selectAll" = "Select all";
@@ -4070,7 +4066,7 @@
 
 "welcome.hero.cards.capture.title" = "Snap a receipt";
 "welcome.hero.cards.capture.body" = "Point your camera. Yala reads it.";
-"welcome.hero.cards.assistant.title" = "Voice & AI assistant";
+"welcome.hero.cards.assistant.title" = "Voice & Yala AI";
 "welcome.hero.cards.assistant.body" = "Tell it or ask it. Yala answers.";
 "welcome.hero.cards.groups.title" = "Shared expenses";
 "welcome.hero.cards.groups.body" = "Split with anyone.";
@@ -6906,7 +6902,7 @@
 "tipkit.stepProgress" = "%1$d of %2$d";
 "tipkit.pro.quickEntry.title" = "You can now dictate and read receipts";
 "tipkit.pro.quickEntry.message" = "Tap Voice to dictate an expense or Photo to read a receipt. Yala logs it for you.";
-"tipkit.pro.quickAI.message" = "Tap AI and ask Yala about your spending, budgets and more.";
+"tipkit.pro.quickAI.message" = "Tap Yala AI and ask about your spending, budgets and more.";
 "milestone.nextGoal" = "Next goal: %d records";
 "notificationPrimer.scheduled.title" = "Want a reminder before each payment?";
 "notificationPrimer.scheduled.benefit" = "A reminder before each scheduled payment is due, so it doesn't slip by.";
@@ -7690,6 +7686,32 @@
 "uxpro.welcome.theme" = "You can now use this theme.";
 "uxpro.welcome.icon" = "You can now use this icon.";
 "uxpro.welcome.cashFlow" = "You can now use advanced cash flow.";
+
+/* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
+"chat.l14d.conversationDeleted" = "Conversation deleted";
+"chat.l14d.limitBox" = "Come back tomorrow: your questions renew at midnight";
+"chat.l14d.draft.saveAll" = "Save all %d";
+"chat.l14d.topics.areaSpending" = "Spending";
+"chat.l14d.topics.areaBudgets" = "Budgets";
+"chat.l14d.topics.areaPayments" = "Scheduled payments";
+"chat.l14d.topics.areaLog" = "Log";
+"chat.l14d.topics.spendingTop" = "What did I spend the most on this month?";
+"chat.l14d.topics.spendingCategory" = "How much have I spent on %@ this month?";
+"chat.l14d.topics.spendingVsLastMonth" = "Am I spending more or less than last month?";
+"chat.l14d.topics.budgetLeft" = "How much is left in my %@ budget?";
+"chat.l14d.topics.budgetOnTrack" = "Am I on track with my %@ budget?";
+"chat.l14d.topics.budgetWorst" = "Which budget is doing worst this month?";
+"chat.l14d.topics.paymentsThisWeek" = "What payments do I have this week?";
+"chat.l14d.topics.paymentWhen" = "When is %@ due?";
+"chat.l14d.topics.logExample" = "I spent 20 on %@";
+"chat.l14d.topics.logExampleDefault" = "I spent 25 on a taxi with my card";
+"chat.l14d.topics.logRowHint" = "Writes it in the message box so you can change it before sending.";
+"aiPrivacy.l14d.processingLine" = "Turns what you say or photograph into a record.";
+"aiPrivacy.l14d.chatLine" = "Answers your questions about your money and logs expenses from the chat.";
+"aiPrivacy.l14d.insightsLine" = "Writes observations about your numbers in Statistics.";
+"aiPrivacy.l14d.cloudExploreLine" = "Yala AI also checks your cloud account when a question needs it.";
+"aiPrivacy.l14d.revokeTitle" = "Turn off %@?";
+"settings.l14d.summaryWhere" = "You'll see it in %@.";
 "siriShortcuts.siri.alsoSay" = "Also: %1$@ · %2$@";
 "siriShortcuts.quotedPhrase" = "“%@”";
 "siriShortcuts.openShortcuts" = "Open my Yala shortcuts";

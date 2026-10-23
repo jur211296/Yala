@@ -3042,7 +3042,6 @@ enum L10n {
         static var chatRow: String { ls("aiPrivacy.chatRow", comment: "") }
         static var insightsRow: String { ls("aiPrivacy.insightsRow", comment: "") }
         static var cloudExploreRow: String { ls("aiPrivacy.cloudExploreRow", comment: "") }
-        static var revokeConfirmTitle: String { ls("aiPrivacy.revokeConfirmTitle", comment: "") }
         static var revokeConfirmMessage: String { ls("aiPrivacy.revokeConfirmMessage", comment: "") }
         static var revokeConfirmAction: String { ls("aiPrivacy.revokeConfirmAction", comment: "") }
         static var footerHint: String { ls("aiPrivacy.footerHint", comment: "") }
@@ -3074,7 +3073,6 @@ enum L10n {
     // MARK: - Chat Assistant
 
     enum Chat {
-        static var title: String { ls("chat.title", comment: "") }
         static var inputPlaceholder: String { ls("chat.inputPlaceholder", comment: "") }
         static var send: String { ls("chat.send", comment: "") }
         static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
