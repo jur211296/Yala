@@ -213,6 +213,16 @@ final class AppBootstrapper {
 
         // 2. Load exchange rates (required for currency display)
         await loadExchangeRates(context: context)
+        #if DEBUG
+        // Seam de la card apsn: un arranque tan lento como el de un iPhone recién instalado.
+        if let seconds = UITestHooks.slowBootstrapSeconds {
+            do {
+                try await Task.sleep(for: .seconds(seconds))
+            } catch {
+                print("AppBootstrapper: la espera del seam -uitest-slow-bootstrap se cortó: \(error)")
+            }
+        }
+        #endif
 
         // 2.5. Migración Live Balance multi-divisa diferida — bulk recalc
         //      puede ser O(N) sobre miles de tx. Lanzamos en background tras
@@ -1388,6 +1398,8 @@ final class AppBootstrapper {
         // Tareas de boot que podrían tocar el contexto viejo tras el remonte.
         remoteChangeTask?.cancel()
         remoteChangeTask = nil
+        historicalRatesTask?.cancel()
+        historicalRatesTask = nil
         subscriptionCheckTask?.cancel()
         subscriptionCheckTask = nil
         accountEntitlementTask?.cancel()
@@ -2946,17 +2958,44 @@ final class AppBootstrapper {
         // Get today's rate
         await ExchangeRateService.shared.updateTodayIfNeeded(context: context)
 
-        // Preload historical data if needed (first launch or after data wipe)
-        await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
+        // Card apsn · **el histórico va FUERA del camino que el arranque espera.** En el primer arranque (y cada 30 días)
+        // `preloadHistoricalIfNeeded` pide 12 meses en 12 peticiones seguidas con 0,5 s de pausa entre cada una: en un
+        // iPhone que atesta son más de 6 s solo de pausas, y mientras tanto el bloqueo `bootstrapPending` retiene la cadena
+        // de Grupos de la bienvenida —el QA del 21-oct midió ~10 s de pantalla negra tras «Vengo por un grupo»—. En el
+        // simulador no se ve: sin App Attest las 12 fallan al instante y el arranque acaba en 1,2 s.
+        //
+        // Lo que va detrás conserva su orden, dentro de la misma tarea: el barrido del 1:1 justo después de refrescar las
+        // tasas y antes del reparador, para que lo que reabra se arregle en este mismo arranque. Para mostrar importes basta
+        // la tasa de hoy, que sí se espera arriba.
+        guard historicalRatesTask == nil else { return }
+        let token = UUID()
+        historicalRatesTaskToken = token
+        historicalRatesTask = Task { @MainActor in
+            // Al terminar se suelta, para que otra carga de tasas en este proceso pueda volver a lanzarla; solo si sigue
+            // siendo esta (una cancelada por el swap no suelta la del remonte).
+            defer {
+                if self.historicalRatesTaskToken == token { self.historicalRatesTask = nil }
+            }
+            // Preload historical data if needed (first launch or after data wipe)
+            await ExchangeRateService.shared.preloadHistoricalIfNeeded(context: context)
+            // El swap la cancela al soltar los contextos: lo que sigue escribiría en el contenedor que se va.
+            guard !Task.isCancelled else { return }
 
-        // Barrido one-shot: devuelve a la cola las transacciones que el código viejo selló con un 1:1
-        // envenenado. Va JUSTO ANTES del reparador y después de refrescar las tasas, para que lo que
-        // reabra se arregle en este mismo arranque en vez de esperar al siguiente.
-        TransactionUpdateService.repairLegacyOneToOneRatesIfNeeded(context: context)
+            // Barrido one-shot: devuelve a la cola las transacciones que el código viejo selló con un 1:1
+            // envenenado. Va JUSTO ANTES del reparador y después de refrescar las tasas, para que lo que
+            // reabra se arregle en este mismo arranque en vez de esperar al siguiente.
+            TransactionUpdateService.repairLegacyOneToOneRatesIfNeeded(context: context)
 
-        // Update transactions with provisional exchange rates
-        await TransactionUpdateService.updateProvisionalTransactions(context: context)
+            // Update transactions with provisional exchange rates
+            await TransactionUpdateService.updateProvisionalTransactions(context: context)
+        }
     }
+
+    /// Card apsn · la tarea del histórico de tasas (ver `loadExchangeRates`). Una por proceso: el arranque solo se repite en
+    /// el remonte del swap, y `releaseModelContextsForSwap` la cancela y la suelta antes, porque retiene el contexto del
+    /// contenedor que se va (con ella viva, el release no verificaría y el cierre caería al relanzamiento).
+    private var historicalRatesTask: Task<Void, Never>?
+    private var historicalRatesTaskToken: UUID?
 
     /// Clave UserDefaults del flag idempotente de la migración Live Balance.
     // MARK: - Biometric keychain cleanup (removed in-app lock)

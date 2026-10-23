@@ -715,9 +715,10 @@ struct PrivateSignOutWiringTests {
     }
 
     /// Sin sesión privada que conservar, el store de grupos se olvida con la sesión; en la privada sin
-    /// sesión (C) solo si guarda filas del canal backend. Y ninguno de estos cierres intenta el swap.
-    @Test("el store de grupos entra en el borrado por su regla, y el swap sigue siendo solo de la nube")
-    func groupsMarkerRule_andNoSwap() throws {
+    /// sesión (C) solo si guarda filas del canal backend. Y de estos cierres solo la celda solo-grupos intenta el swap
+    /// (card ypit, regla de Jürgen del 22-oct): las privadas montan el espejo y se quedan con el relanzamiento.
+    @Test("el store de grupos entra en el borrado por su regla, y el swap es solo de la nube y de la celda solo-grupos")
+    func groupsMarkerRule_andSwapOnlyForTheGroupsOnlyCell() throws {
         let source = try Self.source(Self.signOutPath)
         let finalize = try Self.body(of: Self.finalizeMarker, in: source)
         let arm = try Self.body(of: Self.armMarker, in: source)
@@ -736,7 +737,13 @@ struct PrivateSignOutWiringTests {
             + "            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability) {\n"
             + "            StorageModePersistence.markSignOutWipeIncludesGroups()"), "El arm dejó de preguntar con sus entradas, o la marca de grupos ya no depende de la respuesta.")
         let tail = finalize + arm
-        #expect(!tail.contains("attemptSignOutSwap"))
+        #expect(!finalize.contains("attemptSignOutSwap"))
+        // En el arm, el swap va detrás de la celda solo-grupos y en un solo sitio.
+        let soloGrupos = try #require(arm.range(of: "guard kind == .groupsOnly else { return }"),
+                                      "El swap del arm dejó de estar acotado a la celda solo-grupos")
+        let swap = try #require(arm.range(of: "attemptSignOutSwap"))
+        #expect(soloGrupos.upperBound <= swap.lowerBound)
+        #expect(arm.components(separatedBy: "attemptSignOutSwap").count == 2)
         #expect(!tail.contains("armGroupsOnlyWipe()"))
         #expect(!tail.contains("purgeGroupsSyncState("), """
             Volvió la purga en sesión: es un `save()` sobre el contexto compartido y el boot-wipe ya borra \
@@ -1602,6 +1609,7 @@ struct AttestUnavailableSignOutWiringTests {
                 acceptedGroupsLoss = nil
                 personalLossExit = nil
                 acceptedPersonalLoss = nil
+                destinationOnArm = nil
             }
             """)), "`acknowledgeBlocked()` retira lo aceptado fuera del bloqueo")
         // Y el aviso del desasociar NO reconoce la fase (2026-10-02, ticket

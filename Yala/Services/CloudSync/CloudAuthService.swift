@@ -216,7 +216,25 @@ final class CloudAuthService: NSObject {
     /// En memoria a propósito —un relanzamiento vuelve a 0— y sin el seam de `hasSession`. Lo lee la tarjeta de «Migrar a la
     /// nube» para atar un rechazo de la comprobación a la sesión que lo recibió, no solo a la cuenta: cerrar y volver a
     /// entrar con la misma puede cambiar la respuesta (ticket `migrate-card-keeps-promising-an-account-the-check-refused`).
-    private(set) var sessionEpoch = 0
+    private(set) var sessionEpoch = 0 {
+        didSet { Self.postSessionDidChange() }
+    }
+
+    /// Card nve0 · **la sesión cambió**: un inicio de sesión que entró o un `signOut()` (dos veces: al subir `sessionEpoch`
+    /// y al terminar, con la sesión ya suelta).
+    ///
+    /// Este servicio no es observable, así que una vista que lea `hasSession` en su body no se repinta sola cuando cambia
+    /// (`swiftui-ds.md`, «Un singleton que NO es `@Observable`…»). Medido en producción el 22-oct: tras conectar la cuenta
+    /// desde la hoja de Grupos, la pestaña seguía en «Crea tu cuenta de Yala» más de 10 s, hasta que otra cosa la movía.
+    /// Quien pinte algo con la sesión escucha este aviso y se re-decide; el aviso no dice qué sesión es, a propósito: la
+    /// vista la vuelve a leer.
+    ///
+    /// **Solo para repintar.** No es el sitio para sellar ni registrar nada: una sesión que entra puede ser la que la
+    /// puerta rechaza un instante después (bloqueo [I]). Lo que se escribe al aceptar una sesión va en cada puerta
+    /// (`GroupsConsentRegistrar.sealAfterSessionAccepted()`).
+    ///
+    /// No cubre la sesión que el SDK borra por su cuenta tras un refresco terminal: ahí `sessionEpoch` no se mueve.
+    static let sessionDidChangeNotification = Notification.Name("CloudAuthService.sessionDidChange")
 
     /// ¿Hay una sesión almacenada (con refresh token)?
     ///
@@ -229,10 +247,34 @@ final class CloudAuthService: NSObject {
     /// sigue haciendo CERO tráfico. Ver `UITestHooks.fakeCloudSession` para el porqué del seam.
     var hasSession: Bool {
         #if DEBUG
-        if UITestHooks.fakeCloudSession { return true }
+        if UITestHooks.fakeCloudSession || uitestDelayedSessionArrived { return true }
         #endif
         return client?.currentSession != nil
     }
+
+    #if DEBUG
+    /// Seam de la card nve0 (`UITestHooks.fakeCloudSessionDelaySeconds`): `true` desde que vence el reloj.
+    private var uitestDelayedSessionArrived = false
+    private var uitestDelayedSessionArmed = false
+
+    /// Arma la sesión fingida que llega tarde. Idempotente: la primera llamada pone el reloj y las demás no hacen nada.
+    /// Al vencer avisa como un inicio de sesión real (`sessionDidChangeNotification`), que es lo que la pestaña tiene que oír.
+    func armUITestDelayedFakeSession() {
+        guard let delay = UITestHooks.fakeCloudSessionDelaySeconds, !uitestDelayedSessionArmed else { return }
+        uitestDelayedSessionArmed = true
+        Task { @MainActor in
+            do {
+                try await Task.sleep(for: .seconds(delay))
+            } catch {
+                return
+            }
+            self.uitestDelayedSessionArrived = true
+            // Solo el aviso, no la época: la sesión fingida no es un inicio de sesión que los rechazos atados a la época
+            // deban distinguir.
+            Self.postSessionDidChange()
+        }
+    }
+    #endif
 
     /// Contrato I7c (preflight de I9): `true` siempre que HAY sesión almacenada — tener sesión implica
     /// tener refresh token. Cuando el refresh falla terminal, el SDK limpia el storage → `currentSession`
@@ -639,7 +681,15 @@ final class CloudAuthService: NSObject {
         } else {
             CloudSyncBreadcrumb.authSignOutLeftSession()
         }
+        // Card nve0 · el aviso de `sessionEpoch` sale ANTES de soltar la sesión (va delante del guard a propósito, ver
+        // arriba), y quien repinte en esa vuelta lee `hasSession` todavía en `true`. Este segundo aviso es el que ve la
+        // sesión ya cerrada (lo cazó la review: sin él, la pestaña de Grupos se quedaba con el estado de sesión).
+        Self.postSessionDidChange()
         return gone
+    }
+
+    private static func postSessionDidChange() {
+        NotificationCenter.default.post(name: sessionDidChangeNotification, object: nil)
     }
 
     /// La postcondición de `signOut()`: el llavero ya no guarda sesión. Sin el seam de `hasSession`, a propósito (ver el

@@ -106,7 +106,11 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         let today = Date.now
 
         // Fetch in monthly chunks (exchangerate.host allows max 365 days per request)
+        var persistedAnyChunk = false
         for monthOffset in 0..<12 {
+            // Card apsn · desde que el histórico corre fuera del arranque, el swap de persona puede cancelarlo a mitad.
+            // Cancelado no se sigue pidiendo (cada petición fallaría en seco) ni se sella como cargado abajo.
+            if Task.isCancelled { break }
             guard let chunkEnd = calendar.date(byAdding: .month, value: -monthOffset, to: today),
                 let chunkStart = calendar.date(byAdding: .month, value: -1, to: chunkEnd)
             else {
@@ -116,6 +120,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             do {
                 try await fetchAndPersistRates(
                     from: chunkStart, to: chunkEnd, symbols: requiredCurrencies, context: context)
+                persistedAnyChunk = true
                 // Small delay between requests to avoid rate limiting
                 try? await Task.sleep(for: .seconds(0.5))
             } catch {
@@ -128,7 +133,14 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             }
         }
 
+        guard !Task.isCancelled else { return }
         UserDefaults.standard.set(Date.now, forKey: lastHistoricalLoadKey)
+        // Todo escritor de tasas avisa (`currency-fx.md`). Hasta la card apsn el histórico estaba en disco antes de que el
+        // arranque asentara y nadie lo echaba de menos; ahora llega después, y sin el aviso el Panel seguía valorando las
+        // fechas pasadas con los escalones de respaldo.
+        if persistedAnyChunk {
+            NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+        }
     }
 
     /// Updates today's exchange rate if not already fetched.

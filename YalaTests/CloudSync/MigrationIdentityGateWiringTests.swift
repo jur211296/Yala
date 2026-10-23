@@ -141,8 +141,15 @@ struct MigrationIdentityGateWiringTests {
             "await r.submit(.signInSucceeded)",
             "await announceForwardClaimRefusal(since: refusalBefore)",
             "refresh()",
-            "guard migrationAttempt != nil,",
-            "[.notStarted, .consent, .authenticating].contains(journaledPhase) else { return }",
+            // Card m387: un claim rechazado vacía el intento y cierra la sesión (`announceForwardClaimRefusal`): ese
+            // `return` no sella. Pasado el claim, se sella el consentimiento de Grupos, salvo con el claim aparcado.
+            "guard migrationAttempt != nil else { return }",
+            "guard [.notStarted, .consent, .authenticating].contains(journaledPhase) else {",
+            "if journaledPhase != .claimingMigration {",
+            "GroupsConsentRegistrar.shared.sealAfterSessionAccepted()",
+            "}",
+            "return",
+            "}",
             "migrationAttempt = nil",
             "_ = await closeSessionIfOpened(openedSession)",
             "lastError = L10n.Storage.Errors.generic",

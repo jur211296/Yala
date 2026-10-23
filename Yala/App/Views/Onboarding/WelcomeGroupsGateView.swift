@@ -87,6 +87,15 @@ struct WelcomeGroupsGateView: View {
             if case .acceptInvite(let groupID) = self { return groupID }
             return nil
         }
+
+        /// A dónde vuelve el Welcome cuando la vuelta al neutro queda armada: la misma puerta, para seguir donde iba. El
+        /// invitado solo si hay sobre `{groupID, token}` de ESTA invitación: sin él no hay join que retomar, y un destino
+        /// sin nada detrás llevaría a una puerta vacía. Lo escriben el coordinador pegado al arm (card ypit) y `ContentView`
+        /// al ver la fase; los dos con esta misma regla.
+        var destinationAfterNeutralReturn: WelcomeMirrorRelaunchLogic.Destination? {
+            guard let groupID = invitedGroupID else { return .groupsOrganizer }
+            return GroupInviteResumeStore.peek()?.groupID == groupID ? .groupsInvite : nil
+        }
     }
 
     /// Ver `Purpose`. Sin valor por defecto a propósito: un default sería `.createGroup` y un call-site
@@ -878,7 +887,8 @@ struct WelcomeGroupsGateView: View {
         await CloudSessionSignOut.shared.signOut(
             context: modelContext,
             confirmedPath: celda,
-            confirmedWithoutICloudCopy: withoutICloudCopy)
+            confirmedWithoutICloudCopy: withoutICloudCopy,
+            destinationOnArm: purpose.destinationAfterNeutralReturn)
         // Cinturón del cinturón: si el coordinador volvió sin tocar su fase, no arrancó nada. Sin esto la
         // pantalla se queda en un progreso que no avanza y sin botón de volver.
         if CloudSessionSignOut.shared.phase == .idle { phase = .unavailable }

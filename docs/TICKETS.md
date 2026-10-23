@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1038)
+## Index (1040)
 
 | id | status | path |
 |---|---|---|
@@ -453,7 +453,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
-| groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed | backlog | tickets/backlog/groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed.md |
+| groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed | done | tickets/done/groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed.md |
 | groups-convergence-retries-every-launch-without-a-ceiling | backlog | tickets/backlog/groups-convergence-retries-every-launch-without-a-ceiling.md |
 | groups-create-approve-remove-show-a-raw-rpc-error | done | tickets/done/groups-create-approve-remove-show-a-raw-rpc-error.md |
 | groups-cursor-map-reads-an-undecodable-json-as-no-cursors | backlog | tickets/backlog/groups-cursor-map-reads-an-undecodable-json-as-no-cursors.md |
@@ -810,7 +810,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | remote-wipe-signal-honored-by-any-session | done | tickets/done/remote-wipe-signal-honored-by-any-session.md |
 | remote-wipe-signal-is-burned-even-when-the-session-ignores-it | backlog | tickets/backlog/remote-wipe-signal-is-burned-even-when-the-session-ignores-it.md |
 | remove-device-data-row-leads-to-alerts-that-say-sign-out | done | tickets/done/remove-device-data-row-leads-to-alerts-that-say-sign-out.md |
-| reopen-yala-only-for-private-icloud | backlog | tickets/backlog/reopen-yala-only-for-private-icloud.md |
+| reopen-yala-mirror-off-in-place-needs-an-iphone-measurement | blocked | tickets/blocked/reopen-yala-mirror-off-in-place-needs-an-iphone-measurement.md |
+| reopen-yala-only-for-private-icloud | qa | tickets/qa/reopen-yala-only-for-private-icloud.md |
 | reopened-balance-calculator-reads-a-grouped-amount-as-zero | done | tickets/done/reopened-balance-calculator-reads-a-grouped-amount-as-zero.md |
 | repair-queue-has-no-exit-for-partial-rate-rows | done | tickets/done/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | done | tickets/done/reparacion-de-tasas-no-avisa-al-panel.md |
@@ -1013,6 +1014,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | upload-order-sorts-by-hlc-test-fails-in-ci | done | tickets/done/upload-order-sorts-by-hlc-test-fails-in-ci.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | verify-reads-a-failed-local-fetch-as-an-empty-outbox | done | tickets/done/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
+| views-reading-the-cloud-session-do-not-repaint-when-it-changes | backlog | tickets/backlog/views-reading-the-cloud-session-do-not-repaint-when-it-changes.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | done | tickets/done/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |

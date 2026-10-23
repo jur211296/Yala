@@ -614,10 +614,13 @@ struct GroupInviteNeutralGateWiringTests {
                 "la pantalla ya no escribe el sobre en el gesto")
         #expect(!content.contains("GroupInviteResumeStore.set("),
                 "el sobre volvió al callback del arm, fuera de la ventana del swap in-process")
-        #expect(content.contains("if GroupInviteResumeStore.peek()?.groupID == groupID {"))
-        #expect(content.contains("WelcomePendingDestinationStore.set(.groupsInvite)"))
-        #expect(content.contains("WelcomePendingDestinationStore.set(.groupsOrganizer)"),
+        // Desde la card ypit la regla del destino vive en `Purpose.destinationAfterNeutralReturn` (la usan el coordinador,
+        // pegado al arm, y `ContentView` al ver la fase): el invitado solo con SU sobre, el organizador siempre.
+        #expect(view.contains("return GroupInviteResumeStore.peek()?.groupID == groupID ? .groupsInvite : nil"))
+        #expect(view.contains("guard let groupID = invitedGroupID else { return .groupsOrganizer }"),
                 "la rama del organizador perdió su destino: el paso 5 se rompe")
+        #expect(content.contains("if let destination = purpose.destinationAfterNeutralReturn {"))
+        #expect(content.contains("WelcomePendingDestinationStore.set(destination)"))
     }
 
     /// **«Continuar igualmente» no se le ofrece al invitado.** Esa salida descarta lo que el espejo no

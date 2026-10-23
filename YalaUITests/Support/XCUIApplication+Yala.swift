@@ -44,6 +44,10 @@ extension XCUIApplication {
         groupInvite: Bool = false,
         fakeICloud: Bool = false,
         cloudSession: Bool = false,
+        // nve0: la sesión fingida aparece N segundos después de que la pestaña pinte «Crea tu cuenta».
+        cloudSessionAfterSeconds: Int? = nil,
+        // apsn: el arranque tarda N segundos más en asentar, como en un iPhone recién instalado.
+        slowBootstrapSeconds: Int? = nil,
         groupsConsent: Bool = false,
         groupsEducativo: Bool = false,
         inviteOnboarding: Bool = false,
@@ -196,6 +200,12 @@ extension XCUIApplication {
         // `-uitest-fake-backend-session` (otro hook, otro significado) y un typo en un string suelto
         // daría un rojo MUDO — el arg desconocido se ignora en silencio.
         if cloudSession { args.append("-uitest-fake-cloud-session") }
+        if let cloudSessionAfterSeconds {
+            args += ["-uitest-fake-cloud-session-after", String(cloudSessionAfterSeconds)]
+        }
+        if let slowBootstrapSeconds {
+            args += ["-uitest-slow-bootstrap", String(slowBootstrapSeconds)]
+        }
         if groupsConsent { args.append("-uitest-groups-consent") }
         // C2 · invierte el early-return que desmonta el educativo bajo `-uitest`. Va aquí, con nombre, y
         // NO por `extraArguments:` por la misma razón que sus dos vecinos: un typo en un string suelto se

@@ -397,6 +397,50 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(save.waitUntilEnabledForWelcome(timeout: 5), "Con los dos nombres, «crear» tiene que encenderse.")
     }
 
+    /// **Card apsn · con el arranque todavía en curso, «Crear mi primer grupo» no deja la pantalla en negro.** En un iPhone
+    /// recién instalado el arranque tardaba ~10 s (el histórico de tasas, que ya no lo alarga), y mientras tanto el bloqueo
+    /// `bootstrapPending` retiene el educativo: el Welcome se iba y debajo no había nada. Ahora se ve la pantalla de carga
+    /// de la app hasta que el educativo sube.
+    ///
+    /// `-uitest-slow-bootstrap 25` reproduce ese arranque lento: en el simulador, sin App Attest, acaba en ~1 s y la espera
+    /// no existe. Sin el arreglo, `shell_waiting_brand` no aparece nunca (el fondo vacío no lleva id).
+    func testGroupsOrganizer_withTheStartupStillRunning_showsTheLoadingScreenNotBlack() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            cloudSession: true,
+            slowBootstrapSeconds: 25,
+            groupsConsent: true,
+            groupsEducativo: true
+        )
+
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 20), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+        let inviteBranch = app.buttons["welcome_chooser_invite"]
+        XCTAssertTrue(inviteBranch.waitForExistence(timeout: 10), "No apareció la card «Vengo por un grupo».")
+        inviteBranch.tap()
+        let createCard = app.buttons["welcome_groups_create"]
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció la card «Crear mi primer grupo».")
+        createCard.tap()
+
+        // El arranque sigue: el educativo no puede subir todavía, y lo que se ve es la pantalla de carga. Primero, que el
+        // Welcome se fue de verdad: la pantalla de espera ya estaba montada debajo desde el arranque.
+        let welcomeGone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: createCard)
+        wait(for: [welcomeGone], timeout: 10)
+        let educationalCTA = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(
+            app.descendants(matching: .any)["shell_waiting_brand"].firstMatch.waitForExistence(timeout: 5),
+            "Con el arranque en curso, tras «Crear mi primer grupo» tiene que verse la pantalla de carga, no el fondo vacío.")
+        XCTAssertFalse(educationalCTA.exists, "El educativo subió antes de asentar el arranque: el seam no reprodujo la espera.")
+
+        // Y en cuanto asienta, el educativo sube sin otro gesto.
+        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 45),
+                      "Tras asentar el arranque, la rama no siguió al educativo.")
+    }
+
     /// **Tras un borrado de arranque que no pudo borrar, la puerta de Grupos lo dice y NO vuelve a armar** (ticket
     /// `sign-out-wipe-abort-loops-the-groups-gate`).
     ///

@@ -190,6 +190,23 @@ final class GroupsConsentRegistrar {
         await refreshFromServer()
     }
 
+    /// Card m387 · **una puerta acaba de dar la sesión por buena**: el mismo `handleSignIn` de la hoja de Grupos, del
+    /// arranque y de la pestaña, lanzado sin bloquear a quien lo llama. Sella el consentimiento que se aceptó en el paso 3
+    /// del educativo SIN sesión (L12-4) con la cuenta que la puerta acaba de aceptar, para que un cierre de sesión antes de
+    /// volver a Grupos o de relanzar no lo borre sin registrar.
+    ///
+    /// **Se llama donde cada puerta ACEPTA la sesión, nunca en `CloudAuthService.signIn`.** Ahí rompería el bloqueo [I]
+    /// («el bloqueo no escribe NADA»): una cuenta que la puerta rechaza después (Yala completo en la hoja de Grupos, datos
+    /// de otra persona en la bienvenida, la puerta de identidad de «Migrar») se quedaría con un consentimiento dado para
+    /// otra cosa. Las puertas: la hoja de Grupos, la pestaña y el arranque ya lo hacían; desde m387 también la bienvenida
+    /// (cuenta solo-grupos y alta en la nube) y Ajustes («Migrar» con el claim ya contestado, y volver a entrar desde el
+    /// aviso de sincronización con la cuenta dueña). **Los adopt no**: su salida (cancelar, el techo, el linaje sin probar)
+    /// cierra la sesión que abrió, así que hasta terminar no la han aceptado; al terminar relanzan y sella el arranque. Lo
+    /// fija `GroupsConsentSealDoorsWiringTests`.
+    func sealAfterSessionAccepted() {
+        Task { @MainActor in await self.handleSignIn() }
+    }
+
     /// El consent que este device tiene en el formato anterior a C1 (o sin sellar) pasa a snapshot sellado
     /// con el `sub` vivo, y se ARMA su registro contra la cuenta. Idempotente y barato: sin sesión, sin
     /// consent local o con el snapshot ya sellado para esta cuenta, es un no-op.

@@ -102,7 +102,8 @@ final class AccountDeletionService {
         var deletePersonalAccount: @MainActor () async -> DeleteOutcome
         var revokeSIWA: @MainActor () async -> Void
         var revokeGoogle: @MainActor () async -> Void
-        var closeLocalCloud: @MainActor () async -> Void
+        /// `true` = cerró en caliente, sin relanzar (card ypit).
+        var closeLocalCloud: @MainActor () async -> Bool
         var closeLocalGroupsOnly: @MainActor (ModelContext) async -> Bool
         /// D7 (§3.3.4.2): higiene post-delete BEST-EFFORT. `clearCloudBeacon` no lanza (KV removeObject);
         /// `deleteCloudKitMarker` sí (fetch/save) y el flujo lo TRAGA — jamás condición del cierre.
@@ -243,9 +244,13 @@ final class AccountDeletionService {
         // privada (F) cierra como la nube: su dispositivo no guarda nada privado que conservar, y el cierre de
         // solo-grupos lo dejaría en una shell de grupos sin sesión ni cuenta (paso 9 del rediseño).
         if deps.storageModeIsCloud() || !deps.hasPrivateSession() {
-            await deps.closeLocalCloud()
-            MetricsService.accountDeletionCompleted(step: deps.storageModeIsCloud() ? "cloud" : "groupsOnlyNoPrivate")
-            phase = .awaitingRelaunch
+            // El paso se lee ANTES del cierre: el cambio en caliente consuma el borrado y deja el modo en `.icloud`.
+            let step = deps.storageModeIsCloud() ? "cloud" : "groupsOnlyNoPrivate"
+            let closedInPlace = await deps.closeLocalCloud()
+            MetricsService.accountDeletionCompleted(step: step)
+            // Card ypit · en caliente la app ya está en el Welcome y no hay nada que reabrir: la fase vuelve a reposo. Con
+            // `.awaitingRelaunch` el `onAppear` de Perfil la cerraría al abrirla y un borrado nuevo no arrancaría.
+            phase = closedInPlace ? .idle : .awaitingRelaunch
         } else {
             if await deps.closeLocalGroupsOnly(context) {
                 MetricsService.accountDeletionCompleted(step: "groupsOnly")

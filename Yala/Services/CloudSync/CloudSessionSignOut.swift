@@ -96,6 +96,17 @@ final class CloudSessionSignOut {
     }
     private(set) var iCloudExportWait: ICloudExportWait?
 
+    /// Card ypit · a dónde vuelve el Welcome cuando el borrado de este cierre queda ARMADO. Lo pasa la puerta de Grupos
+    /// del Welcome (`WelcomeGroupsGateView.Purpose.destinationAfterNeutralReturn`) y se escribe pegado al arm
+    /// (`persistDestinationOnArm`), antes del cambio en caliente.
+    ///
+    /// **Por qué no basta el callback de `ContentView`**: el destino lo escribía al ver la fase `.awaitingRelaunch`, una
+    /// entrega de SwiftUI DESPUÉS del arm. Con el cambio en caliente (`PersonalContainerSwap`) la jerarquía se desmonta en
+    /// la misma vuelta del arm, la puerta incluida, y esa entrega puede no llegar: el teléfono quedaba recién instalado sin
+    /// saber que venía a crear un grupo o a unirse. Escribirlo antes del arm tampoco vale: `RelaunchNetLogic` lee un
+    /// destino puesto como «este proceso tiene que morir al pasar a segundo plano», aunque el cierre se bloquee.
+    private var destinationOnArm: WelcomeMirrorRelaunchLogic.Destination?
+
     /// Vuelve a `.idle` tras un `.blocked` (el usuario cerró el error).
     func acknowledgeBlocked() {
         if case .blocked = phase {
@@ -110,8 +121,16 @@ final class CloudSessionSignOut {
             // retira las dos aceptaciones, porque el cierre que las tenía ya no sigue.
             personalLossExit = nil
             acceptedPersonalLoss = nil
+            // El destino era de este cierre, que ya no sigue.
+            destinationOnArm = nil
         }
         blockedExit = nil
+    }
+
+    /// Escribe el destino del Welcome pegado al arm del borrado (ver `destinationOnArm`) y lo retira: un cierre lo usa una vez.
+    private func persistDestinationOnArm() {
+        if let destinationOnArm { WelcomePendingDestinationStore.set(destinationOnArm) }
+        destinationOnArm = nil
     }
 
     #if DEBUG
@@ -152,9 +171,11 @@ final class CloudSessionSignOut {
     /// copia en iCloud. Solo entonces se salta la espera del export — no hay a dónde subir, y ya se le dijo
     /// que se pierde (decisión de Jürgen del 2026-09-09). En los demás caminos se ignora.
     func signOut(context: ModelContext, confirmedPath: CloudSignOutFlowLogic.Path? = nil,
-                 confirmedWithoutICloudCopy: Bool = false) async {
+                 confirmedWithoutICloudCopy: Bool = false,
+                 destinationOnArm: WelcomeMirrorRelaunchLogic.Destination? = nil) async {
         // Con la subida de «Empezar de cero» en vuelo tampoco: sube el mismo outbox (`freshStartDrainInFlight`).
         guard phase == .idle, !freshStartDrainInFlight else { return }
+        self.destinationOnArm = destinationOnArm
         // Un gesto nuevo no hereda lo que otro aceptó perder (las salidas del teléfono sin App Attest, la de grupos y la
         // personal).
         groupsLossExit = nil
@@ -1494,8 +1515,19 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        persistDestinationOnArm()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
+
+        // Card ypit · **la celda solo-grupos cierra sin reabrir**, con el mismo cambio en caliente que el cierre en la nube
+        // (`performCloudSecureSignOut`, regla de Jürgen del 22-oct: «Reabre Yala» solo al entrar en el iCloud privado). Su
+        // montaje es neutro, sin espejo, que es lo único que `PersonalContainerSwap` admite; las celdas privadas montan el
+        // espejo y se quedan con el relanzamiento (`mountAdmitsSwap` las saltaría igual: el `guard` lo dice aquí). Mismo
+        // orden y misma red: el borrado ya está armado, y si el cambio no puede, el arranque siguiente hace lo de siempre.
+        guard kind == .groupsOnly else { return }
+        if await PersonalContainerSwap.attemptSignOutSwap() == .swapped {
+            phase = .idle
+        }
     }
 
     private static func breadcrumbPath(_ kind: CloudSignOutFlowLogic.ExitKind) -> String {
@@ -1746,6 +1778,7 @@ final class CloudSessionSignOut {
         }
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
+        persistDestinationOnArm()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
 
@@ -2447,7 +2480,10 @@ final class CloudSessionSignOut {
     /// flag ON), `armSignOutWipe` ÚLTIMO (disparador). Reusa el cover terminal por FASE VIVA
     /// (`.awaitingRelaunch`) — cero red duplicada. El `AccountDeletionService` ya corrió los teardowns
     /// antes del borrado; aquí se re-ejecutan por idempotencia (self-contained, correcto si se invoca solo).
-    func closeLocalAfterAccountDeletionCloud() async {
+    /// Devuelve `true` si cerró en caliente (card ypit): el borrado se consumó, el contenedor se remontó neutro y la app está
+    /// en el Welcome sin relanzar; con `false` la fase queda en `.awaitingRelaunch` y el cover pide reabrir, como antes.
+    @discardableResult
+    func closeLocalAfterAccountDeletionCloud() async -> Bool {
         phase = .working
         CloudSyncBreadcrumb.signOutStarted(path: "account-delete-cloud")
 
@@ -2476,6 +2512,13 @@ final class CloudSessionSignOut {
         CloudSyncBreadcrumb.signOutWipeArmed()
         clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
+
+        // Card ypit · «Borrar mi cuenta» en la nube y en solo-grupos sin sesión privada cierra sin reabrir: el mismo cambio
+        // en caliente y en el mismo sitio que el cierre de sesión en la nube (R4, arriba), y con la misma red. Los dos
+        // montan sin espejo; si el proceso montó con él (`mountAdmitsSwap`), se salta y queda el relanzamiento de siempre.
+        guard await PersonalContainerSwap.attemptSignOutSwap() == .swapped else { return false }
+        phase = .idle
+        return true
     }
 
     /// Cierre LOCAL del camino solo-grupos tras un `delete_personal_account` EXITOSO. Espeja el tail-end de
