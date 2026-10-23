@@ -4,6 +4,14 @@
 //
 //  Sheet para crear o editar un grupo compartido.
 //
+//  UX 2.2 · L12-9 (decisión B de Jürgen, 2026-10-18): crear es escribir un nombre y guardar. El nombre lleva ejemplo y
+//  las tres opciones, que traen un valor que sirve a casi todos, van plegadas en «Más opciones» con palabras de persona.
+//
+//  UX 2.2 · L12-12 (decisión B): en la rama «Crear mi primer grupo» de la bienvenida este formulario pide además el
+//  nombre de la persona («Tu nombre en el grupo», obligatorio) y sustituye a la pantalla «¿Cómo te llamas?», cuyo botón
+//  decía «Crear mi grupo» y abría otro formulario. Al crear escribe el alta (`GroupsOrganizerOnboarding.completeSetup`,
+//  su ÚNICO llamador de producción) y crea el grupo en el mismo gesto.
+//
 
 import SwiftUI
 import SwiftData
@@ -22,6 +30,11 @@ struct GroupFormView: View {
     /// Solo al CREAR: el grupo recién nacido, antes de cerrar la hoja. Quien la presentó lo usa para proponer invitar
     /// en cuanto la hoja se cierre (auditoría UX 2.2 · L12-10).
     var onCreated: ((SplitGroup) -> Void)? = nil
+    /// L12-12 · rama «Crear mi primer grupo»: el formulario pide también el nombre de la persona y escribe el alta.
+    var isFirstGroupSetup: Bool = false
+    /// L12-12 · el alta quedó escrita (aunque crear el grupo falle después): quien presentó el formulario ya no puede
+    /// devolver a la persona al Welcome.
+    var onSetupCompleted: (() -> Void)? = nil
 
     // MARK: - Form State
 
@@ -35,6 +48,12 @@ struct GroupFormView: View {
     @State private var showSaveError: Bool = false
     @State private var saveErrorMessage: String = ""
     @State private var isSaving: Bool = false
+    /// L12-12 · el nombre de la persona (solo en la rama del primer grupo).
+    @State private var displayName: String = ""
+    /// L12-12 · el alta ya se escribió en esta presentación: un reintento tras un fallo al crear no la repite.
+    @State private var setupWritten = false
+    /// L12-9 · «Más opciones» plegadas por defecto.
+    @State private var showsMoreOptions = false
 
     // MARK: - Sheet State
 
@@ -54,11 +73,16 @@ struct GroupFormView: View {
                     // Icon preview
                     iconPreview
 
+                    // L12-12 · primero quién eres, después el grupo.
+                    if isFirstGroupSetup {
+                        displayNameSection
+                    }
+
                     // Name
                     nameSection
 
-                    // Options
-                    optionsSection
+                    // Options (L12-9: plegadas)
+                    moreOptionsSection
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
@@ -74,12 +98,16 @@ struct GroupFormView: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.cancel) {
                         dismiss()
                     }
+                    // Cerrar a mitad del guardado separaba el grupo creado de lo que venía después (la hoja de
+                    // invitar o el gasto de L13-8): se espera a que termine.
+                    .disabled(isSaving)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton(
                         action: { Task { await saveAsync() } },
-                        isDisabled: isSaving || name.trimmingCharacters(in: .whitespaces).isEmpty
+                        isDisabled: isSaving || !canSave
                     )
+                    .accessibilityIdentifier("group_form_save")
                 }
             }
             .sheet(isPresented: $showIconPicker) {
@@ -146,7 +174,7 @@ struct GroupFormView: View {
 
     private var nameSection: some View {
         SectionBox(title: L10n.Groups.Form.name) {
-            TextField(L10n.Groups.Form.namePlaceholder, text: $name)
+            TextField(L10n.GroupsCreate.namePlaceholder, text: $name)
                 .font(DS.Typography.body)
                 .focused($isNameFocused)
                 .accessibilityIdentifier("group_form_name_input")
@@ -155,17 +183,75 @@ struct GroupFormView: View {
         }
     }
 
+    // MARK: - Your Name (L12-12)
+
+    private var displayNameSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            SectionBox(title: L10n.GroupsCreate.yourName) {
+                TextField(L10n.Groups.Invite.namePlaceholder, text: $displayName)
+                    .font(DS.Typography.body)
+                    .textContentType(.givenName)
+                    .accessibilityIdentifier("group_form_your_name_input")
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+            }
+            Text(L10n.Welcome.Groups.nameBody)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, DS.Spacing.xs)
+        }
+    }
+
+    private var canSave: Bool {
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        // L12-12: sin nombre no se sigue (antes se dejaba y los demás te veían como «Usuario»).
+        if isFirstGroupSetup && displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
+        return true
+    }
+
+    // MARK: - More Options (L12-9)
+
+    private var moreOptionsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Button {
+                withAnimation(.smooth(duration: 0.25)) { showsMoreOptions.toggle() }
+            } label: {
+                HStack(spacing: DS.Spacing.sm) {
+                    Text(L10n.Common.moreOptions)
+                        .font(DS.Typography.subheadline.weight(.semibold))
+                    Image(systemName: "chevron.down")
+                        .font(DS.Typography.captionSmall.weight(.semibold))
+                        .rotationEffect(.degrees(showsMoreOptions ? 180 : 0))
+                        .accessibilityHidden(true)
+                    Spacer()
+                }
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, DS.Spacing.xs)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(showsMoreOptions ? .isSelected : [])
+            .accessibilityIdentifier("group_form_more_options")
+
+            if showsMoreOptions {
+                optionsSection
+                    .transition(.opacity)
+            }
+        }
+    }
+
     // MARK: - Options Section
 
     private var optionsSection: some View {
-        SectionBox(title: L10n.Groups.Settings.options) {
+        // El título del bloque es el botón «Más opciones» de encima: la tarjeta va sola.
+        VStack(spacing: DS.Spacing.none) {
             VStack(spacing: DS.Spacing.none) {
                 // Simplify Debts
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.simplifyDebts, isOn: $simplifyDebts)
+                    Toggle(L10n.GroupsCreate.simplify, isOn: $simplifyDebts)
                         .font(DS.Typography.body)
 
-                    Text(L10n.Groups.Form.simplifyDebtsHint)
+                    Text(L10n.GroupsCreate.simplifyHint)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
@@ -177,7 +263,7 @@ struct GroupFormView: View {
 
                 // Show debts in single currency
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.showDebtsInSingleCurrency, isOn: $showDebtsInSingleCurrency)
+                    Toggle(L10n.GroupsCreate.singleCurrency, isOn: $showDebtsInSingleCurrency)
                         .font(DS.Typography.body)
                         .accessibilityIdentifier("group_form_single_currency_toggle")
 
@@ -227,7 +313,7 @@ struct GroupFormView: View {
 
                 // Default split type
                 HStack {
-                    Text(L10n.Groups.Form.defaultSplitType)
+                    Text(L10n.GroupsCreate.splitType)
                         .font(DS.Typography.body)
 
                     Spacer()
@@ -246,6 +332,7 @@ struct GroupFormView: View {
                     .padding(.leading, DS.FormRow.paddingH)
             }
         }
+        .solidCard()
     }
 
     // MARK: - Actions
@@ -256,9 +343,15 @@ struct GroupFormView: View {
         defer { isSaving = false }
 
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty else { return }
+        guard canSave else { return }
 
-        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : appPreferences.defaultCurrencyCode.rawValue
+        // En la rama del primer grupo, la divisa es la que acaba de escribir el alta (la de la región), leída de su
+        // misma fuente: el espejo observable de `AppPreferences` se pone al día por notificación y puede ir un paso por
+        // detrás justo después del alta.
+        let preferredCurrency = isFirstGroupSetup
+            ? CurrencyDefaults.detectCurrencyFromRegion()
+            : appPreferences.defaultCurrencyCode
+        let currencyCode = showDebtsInSingleCurrency ? selectedCurrency.rawValue : preferredCurrency.rawValue
 
         do {
             if let group {
@@ -294,10 +387,22 @@ struct GroupFormView: View {
                     showSaveError = true
                     return
                 case .backend:
+                    // L12-12 · el alta va ANTES de crear, como iba antes de abrir el formulario: es la que fija la
+                    // divisa de la región (la del grupo cuando no se elige otra) y retira las preferencias del dueño
+                    // del Apple ID. Solo con el canal encendido (`.channelOff` no escribe nada, C4) y una vez por
+                    // presentación: si crear falla, el reintento ya no la repite.
+                    if isFirstGroupSetup && !setupWritten {
+                        GroupsOrganizerOnboarding.completeSetup(displayName: displayName, context: modelContext)
+                        setupWritten = true
+                        onSetupCompleted?()
+                    }
                     // `displayName` no-vacío (patrón defaultName R1: `join`/`create_group` hacen btrim=''
                     // → yala_bad_input permanente si vacío).
                     let profile = UserDefaults.standard.string(forKey: "userName") ?? ""
-                    let displayName = profile.isEmpty ? L10n.Profile.defaultName : profile
+                    let typedName = self.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let displayName = isFirstGroupSetup && !typedName.isEmpty
+                        ? typedName
+                        : (profile.isEmpty ? L10n.Profile.defaultName : profile)
                     let created = try await GroupBackendMembershipService(
                         client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                         .createGroup(
@@ -350,6 +455,10 @@ struct GroupFormView: View {
             showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
             selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
             defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
+        } else if isFirstGroupSetup {
+            // El alta escribirá la divisa de la región al guardar; la de antes del alta puede ser la del dueño del
+            // Apple ID (la aplica el arranque neutro), así que el selector arranca ya en la que va a valer.
+            selectedCurrency = CurrencyDefaults.detectCurrencyFromRegion()
         } else {
             selectedCurrency = appPreferences.defaultCurrencyCode
         }

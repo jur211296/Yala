@@ -1003,7 +1003,9 @@ struct OnboardingView: View {
     private func prefillCalculatorFromInitialBalance() {
         let amount = AmountInputHelper.parseDecimal(initialBalanceText)
         guard amount > 0 else { return }
-        let formatted = AmountInputHelper.formatWithGrouping(amount)
+        // El formato de la calculadora, no el del campo manual: con separador de miles («1,800.00») la calculadora
+        // leía 0 (`BalanceCalculatorInputLogic`).
+        let formatted = BalanceCalculatorInputLogic.prefillText(for: amount)
 
         switch selectedAccountType {
         case .creditCard:

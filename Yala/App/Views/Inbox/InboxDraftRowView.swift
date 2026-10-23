@@ -21,6 +21,8 @@ struct InboxDraftRowView: View {
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.modelContext) private var modelContext
+    /// UX 2.2 · L13-12: el borrador de un pago de grupo sin descripción se nombra («Pago a Ana · Viaje a Cusco»).
+    @State private var settlementName: String?
 
     var body: some View {
         Button(action: onTap) {
@@ -64,11 +66,22 @@ struct InboxDraftRowView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityText)
         .accessibilityIdentifier("inbox_draft_row_\(draft.note)")
+        .task(id: draft.persistentModelID) {
+            guard draft.sourceType == .groupSettlement, draft.note.isEmpty,
+                  !draft.isSettlementAmountChangeNotice else { return }
+            settlementName = GroupSettlementDraftNameResolver.name(for: draft, context: modelContext)
+        }
+    }
+
+    /// La descripción que se enseña: la del borrador, el nombre del pago de grupo (L13-12) o «Sin descripción».
+    private var shownNote: String {
+        if !draft.note.isEmpty { return draft.note }
+        return settlementName ?? L10n.Inbox.noDescription
     }
 
     /// La etiqueta de siempre y, en el aviso de importe cambiado, su segunda línea: sin ella VoiceOver no dice qué cambió.
     private var accessibilityText: String {
-        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + draft.sourceDisplayName
+        let base = L10n.Accessibility.draftRow(shownNote, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + draft.sourceDisplayName
         guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
         return "\(base), \(detail)"
     }
@@ -167,9 +180,9 @@ struct InboxDraftRowView: View {
     @ViewBuilder
     private var incompleteContentView: some View {
         // Line 1: Note or placeholder
-        Text(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note)
+        Text(shownNote)
             .font(DS.Typography.label)
-            .foregroundStyle(draft.note.isEmpty ? .secondary : .primary)
+            .foregroundStyle(draft.note.isEmpty && settlementName == nil ? .secondary : .primary)
             .lineLimit(conceptLineLimit)
 
         // Line 2: Missing fields indicators

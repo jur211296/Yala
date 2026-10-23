@@ -88,6 +88,10 @@ extension SceneNavigation {
         pendingRecordID = nil
         pendingNewGroupExpense = false
         pendingNewGroupForm = false
+        pendingCreateGroupAfterIdentity = false
+        pendingExpenseAfterNewGroup = false
+        pendingCreatedGroupInviteID = nil
+        isWelcomeGroupFormOpen = false
         pendingKeyboardPanelRequest = nil
         pendingStatisticsFocus = nil
         pendingSharedImageURL = nil

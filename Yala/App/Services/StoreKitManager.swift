@@ -104,11 +104,19 @@ final class StoreKitManager {
         planOffers.compactMap(\.trialDays).first
     }
 
+    /// Si la prueba que se le puede prometer es de un mes (la del primer plan que la tiene): «1 mes», no «30 días».
+    var offeredTrialIsOneMonth: Bool {
+        planOffers.first { $0.trialDays != nil }?.trialIsOneMonth ?? false
+    }
+
     // MARK: - Downgrade Detection
 
     private let wasProUserKey = "yala.wasProUser"
     private let lastVerifiedProductIDKey = "yala.lastVerifiedProProductID"
     private let lastVerifiedExpirationKey = "yala.lastVerifiedProExpiresAt"
+    /// El `originalID` del derecho guardado, como texto (es un `UInt64`). Sin él, una transacción caducada listada vuelve
+    /// a mandar sobre lo guardado (`ProSubscriptionActivationLogic.isSupersededExpiredListing`).
+    private let lastVerifiedOriginalIDKey = "yala.lastVerifiedProOriginalID"
     private let lastActivePlanWasTrialKey = "yala.lastActiveProPlanWasTrial"
 
     /// Whether user was previously a Pro user (persisted)
@@ -247,6 +255,9 @@ final class StoreKitManager {
                 await updateSubscriptionStatus(verifiedPurchase: transaction)
                 await transaction.finish()
                 didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+                // El token de sesión del gateway lleva el plan dentro: sin olvidarlo, la primera foto tras comprar o
+                // restaurar salía con los topes de free hasta 15 min (card vv0k).
+                AppAttestClient.shared.discardSessionTokenAfterPlanChange()
                 if !didJustSubscribe {
                     alertTitle = L10n.Subscription.errorTitle
                     errorMessage = L10n.Subscription.purchaseNotActivated
@@ -319,6 +330,9 @@ final class StoreKitManager {
             switch ProSubscriptionActivationLogic.restoreOutcome(isProUser: isProUser) {
             case .restoredPro:
                 didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+                // El token de sesión del gateway lleva el plan dentro: sin olvidarlo, la primera foto tras comprar o
+                // restaurar salía con los topes de free hasta 15 min (card vv0k).
+                AppAttestClient.shared.discardSessionTokenAfterPlanChange()
             case .noEntitlement:
                 alertTitle = L10n.Subscription.restoreEmptyTitle
                 errorMessage = L10n.Subscription.restoreEmpty
@@ -465,7 +479,7 @@ final class StoreKitManager {
             SessionState.shared.isProUser = isProUser
         }
 
-        if nowProUser && !wasAlreadyPro {
+        if Self.forcesChatButtonVisible(nowPro: nowProUser, wasProInMemory: wasAlreadyPro, wasProPersisted: wasProUser) {
             UserDefaults.standard.set(true, forKey: "chatFABVisible")
         }
 
@@ -479,6 +493,14 @@ final class StoreKitManager {
     }
 
     /// Sync subscription state to App Group for widget access
+    /// Si pasar a Pro vuelve a enseñar el botón de Yala IA. Solo al pasar de verdad: el valor en memoria arranca en
+    /// `false` en cada lanzamiento, así que sin mirar lo persistido (`wasProUser`, que se baja al resolver el fin de
+    /// Pro) cada arranque de un Pro contaba como «pasar a Pro» y deshacía el interruptor que desde UX 2.2 · L14-12 un
+    /// Pro también puede apagar. Comprar Pro sigue encendiéndolo (la decisión fue B, no C).
+    nonisolated static func forcesChatButtonVisible(nowPro: Bool, wasProInMemory: Bool, wasProPersisted: Bool) -> Bool {
+        nowPro && !wasProInMemory && !wasProPersisted
+    }
+
     func syncToAppGroup() {
         guard let defaults = UserDefaults(suiteName: appGroupID) else {
             #if DEBUG
@@ -559,7 +581,9 @@ final class StoreKitManager {
             displayPrice: product.displayPrice,
             monthlyEquivalent: monthlyEquivalent(for: product),
             trialDays: days,
-            firstChargeDate: chargeDate
+            firstChargeDate: chargeDate,
+            trialIsOneMonth: days != nil && PaywallPricingLogic.trialIsOneMonth(
+                periodUnit: intro?.period.unit, periodValue: intro?.period.value ?? 0)
         )
     }
 
@@ -578,7 +602,8 @@ final class StoreKitManager {
             productID: transaction.productID,
             productTypeIsAutoRenewable: transaction.productType == .autoRenewable,
             revocationDate: transaction.revocationDate,
-            expirationDate: transaction.expirationDate
+            expirationDate: transaction.expirationDate,
+            originalID: transaction.originalID
         )
     }
 
@@ -594,7 +619,8 @@ final class StoreKitManager {
         }
         return ProSubscriptionActivationLogic.LastVerifiedLocal(
             productID: productID,
-            expirationDate: expiration
+            expirationDate: expiration,
+            originalID: UserDefaults.standard.string(forKey: lastVerifiedOriginalIDKey).flatMap { UInt64($0) }
         )
     }
 
@@ -606,9 +632,15 @@ final class StoreKitManager {
             } else {
                 UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
             }
+            if let originalID = last.originalID {
+                UserDefaults.standard.set(String(originalID), forKey: lastVerifiedOriginalIDKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: lastVerifiedOriginalIDKey)
+            }
         } else {
             UserDefaults.standard.removeObject(forKey: lastVerifiedProductIDKey)
             UserDefaults.standard.removeObject(forKey: lastVerifiedExpirationKey)
+            UserDefaults.standard.removeObject(forKey: lastVerifiedOriginalIDKey)
         }
     }
 
@@ -744,9 +776,9 @@ final class StoreKitManager {
         let charge = trialAvailable ? Calendar.current.date(byAdding: .month, value: 1, to: .now) : nil
         return [
             ProPlanOffer(id: proYearlyID, isYearly: true, displayPrice: "$29.99", monthlyEquivalent: "$2.50",
-                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge),
+                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge, trialIsOneMonth: trialAvailable),
             ProPlanOffer(id: proMonthlyID, isYearly: false, displayPrice: "$4.99", monthlyEquivalent: nil,
-                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge),
+                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge, trialIsOneMonth: trialAvailable),
         ]
     }
 

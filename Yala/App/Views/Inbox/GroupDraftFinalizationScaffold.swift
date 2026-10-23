@@ -35,6 +35,8 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
     var finalizeTitle: String? = nil
     /// Acción secundaria opcional bajo el botón principal (el «Dejar en…» del aviso de importe cambiado).
     var secondaryAction: (title: String, action: () -> Void)? = nil
+    /// Bloque opcional sobre el selector: «¿Ya lo apuntaste?» con los movimientos parecidos (UX 2.2 · L13-15).
+    var accessory: AnyView? = nil
     /// Selector interactivo de la pieza que falta (un `SelectionChip`).
     @ViewBuilder let selector: () -> Selector
 
@@ -45,39 +47,61 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: DS.Spacing.none) {
-            banner
-                .padding(.top, DS.Spacing.sm)
+        // Con un bloque de movimientos parecidos (L13-15) la hoja ya no cabe en un iPhone SE: el contenido se desplaza y
+        // los botones quedan fijos abajo. Cuando cabe, los `Spacer` reparten igual que antes y no hay scroll
+        // (molde de `.claude/rules/swiftui-ds.md`, «Una pantalla que reparte su alto con `Spacer`s…»).
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    banner
+                        .padding(.top, DS.Spacing.sm)
 
-            Spacer()
-            centralContent
-            Spacer()
+                    Spacer(minLength: DS.Spacing.lg)
+                    centralContent
+                    Spacer(minLength: DS.Spacing.lg)
 
-            HStack(spacing: DS.Spacing.sm) { selector() }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.lg)
+                    if let accessory {
+                        accessory
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.bottom, DS.Spacing.lg)
+                    }
 
-            if let hint {
-                hintView(hint)
-                    .padding(.bottom, DS.Spacing.md)
-            }
+                    HStack(spacing: DS.Spacing.sm) { selector() }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.lg)
 
-            YalaPrimaryButton(finalizeTitle ?? L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {
-                onFinalize()
-            }
-            .disabled(finalizeDisabled)
-            .padding(.horizontal, DS.Spacing.xl)
-            .padding(.bottom, secondaryAction == nil ? DS.Spacing.xxl : DS.Spacing.sm)
-
-            if let secondaryAction {
-                YalaSecondaryButton(secondaryAction.title) {
-                    secondaryAction.action()
+                    if let hint {
+                        hintView(hint)
+                            .padding(.bottom, DS.Spacing.md)
+                    }
                 }
-                .accessibilityIdentifier("group_draft_secondary_button")
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.bottom, DS.Spacing.xxl)
+                .frame(minHeight: proxy.size.height)
             }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: DS.Spacing.none) {
+                YalaPrimaryButton(finalizeTitle ?? L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {
+                    onFinalize()
+                }
+                .disabled(finalizeDisabled)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, secondaryAction == nil ? DS.Spacing.xxl : DS.Spacing.sm)
+
+                if let secondaryAction {
+                    YalaSecondaryButton(secondaryAction.title) {
+                        secondaryAction.action()
+                    }
+                    .accessibilityIdentifier("group_draft_secondary_button")
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.bottom, DS.Spacing.xxl)
+                }
+            }
+            .padding(.top, DS.Spacing.sm)
+            // Mismo fondo que la hoja (`.subtle`): lo que pasa por debajo al desplazarse no se lee a través de los botones.
+            // Molde del pie de `GroupExpenseFormView`.
+            .background(.thBackground)
         }
         // Sheet full-height (sin detents en InboxView) → .subtle, igual que
         // InboxDraftEditSheet. El `.partialSheet` (subtle solo si la ventana fuerza `.large`)
@@ -96,6 +120,7 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.leading)
+                .accessibilityIdentifier("group_draft_banner")
         }
         .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -189,7 +189,34 @@ final class NewTransactionViewModel {
            editing.account?.persistentModelID == account.persistentModelID {
             return normalizeCurrencyCode(editing.currencyCode)
         }
+        if !isTransfer,
+           let override = amountCurrencyOverride,
+           override.accountID == selectedAccount?.persistentModelID {
+            return override.currencyCode
+        }
         return effectiveCurrencyCode
+    }
+
+    /// La divisa de un importe que llega de fuera con su propia divisa —un favorito o la copia de un registro— y no es
+    /// la de su cuenta (card `tablero-desde-un-movimiento-en-dolares-de-una-cu-4k2q`): 50 USD en una cuenta en soles
+    /// siguen siendo 50 USD, sin convertir, mientras la cuenta sea esa. Elegir otra cuenta la descarta, como al editar.
+    struct AmountCurrencyOverride: Equatable {
+        let currencyCode: String
+        let accountID: PersistentIdentifier
+    }
+
+    var amountCurrencyOverride: AmountCurrencyOverride?
+
+    /// Fija la divisa del importe si no es la de la cuenta; si lo es, no hace falta nada.
+    func keepAmountCurrency(_ code: String?, for account: Account?) {
+        guard let code, let account else {
+            amountCurrencyOverride = nil
+            return
+        }
+        let normalized = normalizeCurrencyCode(code)
+        amountCurrencyOverride = normalized == normalizeCurrencyCode(account.currencyCode)
+            ? nil
+            : AmountCurrencyOverride(currencyCode: normalized, accountID: account.persistentModelID)
     }
 
     // MARK: - Context Setup
@@ -286,28 +313,64 @@ final class NewTransactionViewModel {
         return source.persistentModelID != dest.persistentModelID
     }
 
-    /// Prepara el estado para una transferencia, seleccionando cuentas por defecto si es necesario
+    /// Prepara el estado para una transferencia (UX 2.2 · L2-1): el origen es la cuenta que ya tenía el formulario (la de
+    /// la regla de la cuenta precargada, o la que eligió la persona) y, si no había, la misma regla. El destino va vacío
+    /// salvo que haya exactamente dos cuentas: entonces, la otra. Antes ponía la primera por nombre en los dos, también
+    /// con cinco cuentas, y la persona pasaba dinero a una cuenta que no había elegido.
     func prepareForTransfer(allAccounts: [Account]) {
-        // Only use non-archived accounts for auto-selection
-        let eligible = allAccounts.filter { !$0.isArchived }
-
-        // Ensure source account is set (use selected if available)
         if sourceAccount == nil {
             sourceAccount = selectedAccount
         }
-
-        // If still nil, try to pick first eligible account
         if sourceAccount == nil {
-            sourceAccount = eligible.first
+            sourceAccount = prefilledAccount()
         }
+        if destinationAccount == nil {
+            let destinationID = TransactionAccountPrefillLogic.transferDestination(
+                candidates: prefillCandidates(),
+                filter: accountPrefillFilter,
+                source: sourceAccount?.persistentModelID
+            )
+            destinationAccount = destinationID.flatMap { id in accounts.first { $0.persistentModelID == id } }
+        }
+    }
 
-        // Auto-select destination if nil
-        if destinationAccount == nil, let source = sourceAccount {
-            // Pick first eligible account that is not source
-            destinationAccount = eligible.first {
-                $0.persistentModelID != source.persistentModelID
-            }
+    // MARK: - Cuenta precargada (UX 2.2 · L2-1)
+
+    /// El filtro de cuentas de `SessionState` en el momento de abrir el formulario. Lo pone la vista.
+    var accountPrefillFilter: TransactionAccountPrefillLogic.Filter<PersistentIdentifier> = .none
+
+    /// La última cuenta usada (`LastUsedAccountStore`) al abrir el formulario. La pone la vista.
+    var lastUsedAccountShortcutID: String?
+
+    /// Las cuentas cargadas tal como las ve la regla.
+    func prefillCandidates() -> [TransactionAccountPrefillLogic.Candidate<PersistentIdentifier>] {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        return accounts.map { account in
+            TransactionAccountPrefillLogic.Candidate(
+                id: account.persistentModelID,
+                shortcutID: account.shortcutID.uuidString,
+                isActive: !account.isArchived && !account.isSystemAccount,
+                isLine: roles[account.shortcutID]?.isLine ?? false
+            )
         }
+    }
+
+    /// La cuenta que da la regla, o `nil`.
+    func prefilledAccount() -> Account? {
+        guard let id = TransactionAccountPrefillLogic.account(
+            candidates: prefillCandidates(),
+            filter: accountPrefillFilter,
+            lastUsedShortcutID: lastUsedAccountShortcutID
+        ) else { return nil }
+        return accounts.first { $0.persistentModelID == id }
+    }
+
+    /// Pone la cuenta de la regla en un registro nuevo. No pisa una cuenta ya puesta.
+    func applyAccountPrefillRule() {
+        guard selectedAccount == nil, let account = prefilledAccount() else { return }
+        selectedAccount = account
+        sourceAccount = account
+        currencyCode = account.currencyCode
     }
 
     var isSubcategoryValid: Bool {
@@ -320,6 +383,90 @@ final class NewTransactionViewModel {
 
     var canSave: Bool {
         isAmountValid && isAccountValid && isTransferAccountsValid && isSubcategoryValid
+    }
+
+    // MARK: - Lo que falta para guardar (UX 2.2 · L2-2)
+
+    /// Un campo obligatorio que aún no está.
+    enum MissingField: Equatable {
+        case amount, account, category, sourceAccount, destinationAccount
+
+        /// Cómo se nombra en la línea de encima de «Guardar» («la cuenta», «la categoría»…).
+        var phrase: String {
+            switch self {
+            case .amount: return L10n.UXL2.missingAmount
+            case .account: return L10n.UXL2.missingAccount
+            case .category: return L10n.UXL2.missingCategory
+            case .sourceAccount: return L10n.UXL2.missingSourceAccount
+            case .destinationAccount: return L10n.UXL2.missingDestinationAccount
+            }
+        }
+    }
+
+    /// Lo que falta, en el orden en que se ve en pantalla (monto, cuenta, categoría).
+    var missingFieldsForSave: [MissingField] {
+        var missing: [MissingField] = []
+        if !isAmountValid { missing.append(.amount) }
+        if isTransfer {
+            if sourceAccount == nil { missing.append(.sourceAccount) }
+            if destinationAccount == nil { missing.append(.destinationAccount) }
+        } else {
+            if selectedAccount == nil { missing.append(.account) }
+            if selectedSubcategory == nil { missing.append(.category) }
+        }
+        return missing
+    }
+
+    /// La línea viva sobre «Guardar» mientras está apagado: «Para guardar, falta la cuenta y la categoría», o «Elige dos
+    /// cuentas distintas» si origen y destino coinciden. `nil` cuando se puede guardar.
+    var saveBlockedMessage: String? {
+        guard !canSave else { return nil }
+        if isTransfer, sourceAccount != nil, destinationAccount != nil, !isTransferAccountsValid {
+            return L10n.UXL2.chooseTwoDifferentAccounts
+        }
+        let phrases = missingFieldsForSave.map(\.phrase)
+        guard !phrases.isEmpty else { return nil }
+        return L10n.UXL2.missingToSave(phrases.formatted(.list(type: .and).locale(AppLocale.current)))
+    }
+
+    /// ¿Este chip lleva el borde de «falta»? Solo con monto: el formulario recién abierto no se llena de bordes.
+    func marksMissing(_ field: MissingField) -> Bool {
+        isAmountValid && missingFieldsForSave.contains(field)
+    }
+
+    // MARK: - ¿Hay algo escrito? (UX 2.2 · L2-4)
+
+    /// Lo que la persona puede escribir o elegir en el formulario. Dos fotos iguales = nada cambió.
+    struct FormSnapshot: Equatable {
+        let type: TransactionType
+        let amount: Double
+        let account: PersistentIdentifier?
+        let source: PersistentIdentifier?
+        let destination: PersistentIdentifier?
+        let subcategory: PersistentIdentifier?
+        /// La naturaleza efectiva (la elegida o la de la subcategoría): la elegida se rellena en un `onChange` después de
+        /// abrir, y compararla a secas daba «cambió» en un registro que nadie tocó.
+        let need: SubcategoryNeed?
+        let day: Date
+        let tags: [PersistentIdentifier]
+        let note: String
+        let splitTotal: Double?
+    }
+
+    var formSnapshot: FormSnapshot {
+        FormSnapshot(
+            type: transactionType,
+            amount: amount,
+            account: selectedAccount?.persistentModelID,
+            source: isTransfer ? sourceAccount?.persistentModelID : nil,
+            destination: isTransfer ? destinationAccount?.persistentModelID : nil,
+            subcategory: selectedSubcategory?.persistentModelID,
+            need: selectedNeed ?? selectedSubcategory?.need,
+            day: Calendar.current.startOfDay(for: transactionDate),
+            tags: selectedTags.map(\.persistentModelID),
+            note: note,
+            splitTotal: splitTotalAmount
+        )
     }
 
     // MARK: - Field Validation States
@@ -604,6 +751,8 @@ final class NewTransactionViewModel {
             // Memoria per-device (App Group) para fallback de QuickExpenseIntent.
             if let savedAccount = result.first?.account {
                 LastUsedAccountStore.write(savedAccount.shortcutID.uuidString)
+                // Con la última cuenta usada cambia la moneda de la notificación de Apple Pay (L15-8).
+                ApplePayDraftService.refreshCurrencyHint(context: context)
             }
 
             // Update widget cache deferred — don't block save UI
@@ -1113,6 +1262,7 @@ final class NewTransactionViewModel {
         isExchangeRateManual = false
         showValidationErrors = false
         isSaving = false
+        amountCurrencyOverride = nil
         clearSplitData()
     }
 }

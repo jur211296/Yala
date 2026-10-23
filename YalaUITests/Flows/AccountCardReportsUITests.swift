@@ -57,12 +57,12 @@ final class AccountCardReportsUITests: XCTestCase {
 
         // Sin agrupar por cuenta, el selector no sale.
         let drillDown = app.buttons["report_grouping_drill_down"]
-        XCTAssertTrue(drillDown.waitForExistence(timeout: 10), "No está «Profundizar».")
+        XCTAssertTrue(drillDown.waitForExistence(timeout: 10), "No está «Desglosar».")
         XCTAssertFalse(element(app, "account_card_grouping_picker").exists, "El selector sale sin agrupar por cuenta.")
 
         drillDown.tap()
         let addAccount = app.buttons["report_grouping_add_cuenta"]
-        XCTAssertTrue(addAccount.waitForExistence(timeout: 5), "No está la opción Cuenta en «Profundizar».")
+        XCTAssertTrue(addAccount.waitForExistence(timeout: 5), "No está la opción Cuenta en «Desglosar».")
         // El centro de esa fila no responde (la fila no tiene `contentShape`): se toca el «+».
         addAccount.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.5)).tap()
         let save = app.buttons["toolbar_save_button"]
@@ -78,7 +78,9 @@ final class AccountCardReportsUITests: XCTestCase {
         grouping(app, 1).tap()
         let lineRow = element(app, "pivot_row_cuenta_\(line)")
         XCTAssertTrue(lineRow.waitForExistence(timeout: 10), "«Por línea» no enseña la línea en dólares.")
-        XCTAssertTrue(lineRow.label.contains("-80"), "La línea no sale en su divisa: «\(lineRow.label)».")
+        // Desde UX 2.2 · L18-4 los gastos van sin signo menos: ya están bajo «Gastos».
+        XCTAssertTrue(lineRow.label.contains("$ 80"), "La línea no sale en su divisa: «\(lineRow.label)».")
+        XCTAssertFalse(lineRow.label.contains("-80"), "El gasto sale con signo menos: «\(lineRow.label)».")
         XCTAssertFalse(lineRow.label.contains("≈"), "La línea no se convierte: «\(lineRow.label)».")
         XCTAssertFalse(element(app, "pivot_row_cuenta_\(card)").label.contains("≈"), "«Por línea» convierte la principal.")
     }

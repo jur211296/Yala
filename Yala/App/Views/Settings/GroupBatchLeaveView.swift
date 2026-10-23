@@ -179,6 +179,14 @@ struct GroupBatchLeaveView: View {
                         Text(reasonText(item.reason))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        // L19-13 (decisión C de Jürgen): un botón por grupo que abre sus ajustes, donde se archiva,
+                        // se elimina o se transfiere.
+                        Button(L10n.UXL19.batchOpenSettings) { openSettings(of: item) }
+                            .font(DS.Typography.label.weight(.semibold))
+                            .foregroundStyle(.thAccent)
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("batch_leave_open_settings_\(item.groupZoneID)")
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(DS.Spacing.lg)
@@ -196,10 +204,19 @@ struct GroupBatchLeaveView: View {
         }
     }
 
+    private func openSettings(of item: GroupBatchLeaveTracker.NeedsDecisionItem) {
+        navigation.pendingGroupSettingsZoneID = item.groupZoneID
+        navigation.selectMainTab(.groups)
+        onRequestCloseSettings?()
+        dismiss()
+    }
+
     private func reasonText(_ reason: GroupBatchLeaveLogic.NeedsDecisionReason) -> String {
         switch reason {
         case .cloudKitOwnerWithCoMembers, .backendNoEligibleHeir:
-            return L10n.Settings.batchLeaveReasonManual
+            // L19-13: el motivo real. No es «eres administrador»: desde L19-3 puede haber varios, y lo que impide
+            // irse es haberlo creado sin nadie con cuenta que pueda quedarse al frente.
+            return L10n.UXL19.batchReasonCreator
         case .debtAppeared:
             return L10n.Settings.batchLeaveReasonDebt
         case .operationFailed:

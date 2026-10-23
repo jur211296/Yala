@@ -72,6 +72,10 @@ esac
 VIAJE=$(python3 -c 'import re,sys
 t=open(sys.argv[1],encoding="utf-8").read()
 print(re.search(r"^\"devseed\.ficha\.groupTrip\" = \"(.*)\";", t, re.M).group(1))' "$MOLDE/../Yala/Resources/$LPROJ.lproj/Localizable.strings")
+# Con YALA_FICHA_MARKETING=1 la semilla siembra los grupos de casa (DevSeedGroups.FichaCasa) y no hay viaje.
+if [ "${YALA_FICHA_MARKETING:-}" = 1 ]; then
+  case "$IDIOMA" in es*) VIAJE="Depa compartido" ;; pt*) VIAJE="Apê compartilhado" ;; *) VIAJE="Shared apartment" ;; esac
+fi
 
 escena() {
   case "$1" in
@@ -102,6 +106,8 @@ escena() {
       esperar "group_card"; sleep 1
       graba grupos; sleep 1.2
       toque group_card "$VIAJE"; esperar "group_header_balance" 10; marca detalle; sleep 3.5
+      # Material de lanzamiento: Grupos en movimiento hasta el final, con «quién le debe a quién».
+      if [ "${YALA_FICHA_MARKETING:-}" = 1 ]; then toque "$(texto_app groups.detail.balances)"; marca balances; sleep 3; fi
       corta grupos ;;
     *) echo "✗ escena desconocida: $1" >&2; exit 1 ;;
   esac

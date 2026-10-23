@@ -1436,6 +1436,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt orphanReconciled count=\(count, privacy: .public) identityAssigned=\(identityAssigned, privacy: .public) — el adoptador rescató writes de la ventana de cutover")
     }
 
+    /// El adopt casó `count` de sus `candidates` tipos de cambio sin identidad con los de la cuenta, en vez de subirlos
+    /// (card hov2). Sin PII: solo los conteos.
+    static func adoptExchangeRatesRebound(count: Int, candidates: Int) {
+        logger.notice("CloudSyncAdopt exchangeRatesRebound count=\(count, privacy: .public) candidates=\(candidates, privacy: .public) — tipos de cambio casados con la cuenta, no suben")
+    }
+
     /// El adopt tenía filas que subir y el store local no tiene ni el marcador de esa cuenta ni filas suyas: no sube nada (ticket
     /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin PII: solo el conteo.
     static func adoptReconcileLineageUnproven(pending: Int) {
@@ -3070,6 +3076,11 @@ final class CloudSyncEngine {
             if level < SyncCapability.accountLinksSince, changedColumns.contains("parent_account_id"),
                let account = model as? Account {
                 SyncCapability.noteSuppressedAccountLink(account.shortcutID)
+            }
+            // Igual con los cambios de monto «desde este mes» del flujo de caja (v3), también cuando se vacían.
+            if level < SyncCapability.cashFlowAmountChangesSince, changedColumns.contains("amount_changes_raw"),
+               let line = model as? CashFlowLine {
+                SyncCapability.noteSuppressedCashFlowAmountChange(line.id)
             }
             changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }

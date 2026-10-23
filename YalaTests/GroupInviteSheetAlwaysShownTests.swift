@@ -406,7 +406,10 @@ struct GroupInviteSheetAlwaysShownTests {
                 .dropFirst().first)
         let body = try #require(drain.components(separatedBy: "\n        case ").first)
 
-        #expect(body.contains("switch PendingJoinStore.entry(zoneName: zone)?.isInviteConfirmed"), """
+        // Desde el lote decidido 2.2 · 14 (L12-17) la entrada se lee UNA vez —el drenado la necesita también para saber
+        // si la tarjeta del grupo ya se aceptó— y el `switch` decide sobre esa misma lectura: misma fuente, misma pregunta.
+        #expect(body.contains("let pendingEntry = PendingJoinStore.entry(zoneName: zone)")
+                && body.contains("switch pendingEntry?.isInviteConfirmed"), """
             el drain volvió a decidir por su cuenta. Es la puerta gemela de \
             `GroupBackendInviteEntryLogic.nextStep`: si preguntan cosas distintas, una de las dos se \
             salta la hoja — que es exactamente como el defecto sobrevivió a tener la tabla bien.

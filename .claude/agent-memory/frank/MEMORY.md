@@ -1,6 +1,8 @@
 # Memoria de Frank — Yala
 
 ## Cómo trabaja Jürgen
+- [QA en Yala Dev antes que prod](feedback_qa_en_yala_dev_antes_que_prod.md) — TestFlight solo para lo que exige producción (App Store, attest enforce, StoreKit).
+- [QA guiado 2.1 sigue abierto](project_qa_guiado_2_1_espera_tf19.md) — tras el TF19 espera t2q8, 840m, blqa, z81w y un TF20; tanda en Yala Dev.
 - [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions.
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
 - [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar.
@@ -23,18 +25,25 @@
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
 - [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
+- [El rerun no recoge el arreglo de la base](feedback_rerun_no_recoge_el_arreglo_de_la_base.md) — reusa el merge original: hace falta update-branch.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 - [Auditoría UX por lotes: propone, no implementa](feedback_auditoria_ux_lote_propone_no_implementa.md) — solo bugs claros con card; informe.md + HTML acumulado + card por mejora.
 - [Auditoría UI: el glass se queda, se jerarquiza](feedback_auditoria_ui_glass_se_queda_jerarquiza.md) — rellenos sólidos, sin degradados ni brillos; instruir; adaptar; solo el lote.
 
 - [Capturas en el chat antes de preguntar](feedback_capturas_en_el_chat_antes_de_preguntar.md) — SendUserFile o artifact antes de la pregunta; la ruta no sirve.
+- [El guion se adapta al estado del teléfono](feedback_el_guion_se_adapta_al_estado_del_telefono.md) — QA guiado: re-deriva cada paso de lo que dejaron las pruebas previas; nunca literal.
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
 - [Lo que llega en vivo se encola](feedback_alcance_que_llega_en_vivo_se_encola.md) — decisión grande a mitad de lote: a su card lista para lanzar; «widget» = ¿inicio o Panel?
+- [Planificar con él es iterar](feedback_planificar_con_el_es_iterar.md) — acepta lo recomendado y vuelve con ideas; re-pregunta «¿bueno?».
+- [Tablero: una tanda a la vez](feedback_tablero_una_tanda_a_la_vez.md) — dos tandas se pisan (409); ajustes en pasada final.
 ## Cómo mido y cómo entrego
+- [Ver un fallo de XCUITest en vídeo](reference_ver_un_fallo_de_xcuitest_en_video.md) — xcresult → mp4 → ffmpeg último fotograma; los .txt no ven las hojas.
+- [Un seam de contador dispara sus one-shots](feedback_un_seam_de_contador_dispara_sus_one_shots.md) — fijar «5 registros» sin primer ni checklist sacaba hojas encima.
 - [La decisión vive en la nota de la card](feedback_la_decision_vive_en_la_nota_de_la_card.md) — `listar --json` no trae `note`: `tablero ver` antes de lanzar.
 - [Agentes en paralelo: textos por JSON](feedback_agentes_en_paralelo_merge_de_textos.md) — textos como JSON + script, no `union`; el barrido cazó 6 defectos que no ven.
 - [Prefs del simulador y NavigationLink](reference_simulador_prefs_y_navigationlink.md) — plist con el simulador apagado; axe no abre un link en hoja.
 - [axe no ve las hojas](feedback_axe_no_ve_las_hojas.md) — árbol de debajo; filas de List con el tap de MCP.
+- [El silencio de la telemetría también mide](feedback_el_silencio_de_la_telemetria_tambien_mide.md) — hueco sin eventos o valor fijo en la flota: 9 min sin exports; 366 huérfanas en 5/5.
 - [La telemetría de la card puede ser de otro aparato](feedback_la_telemetria_de_la_card_puede_ser_de_otro_aparato.md) — filtra por instalación; el 401 «medido» era del iPad.
 - [Un seam que deja algo pendiente contamina el test siguiente](feedback_un_seam_que_deja_algo_pendiente_contamina_al_siguiente_test.md) — `SessionState` lee antes del reset; lee la debug description.
 - [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
@@ -108,19 +117,24 @@
 - [Molde de la ficha de la App Store](reference_molde_ficha_app_store.md) — ficha-app-store/: reloj falso al 13-oct; barra del iPad y Panel, lo descartado.
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
 - [Conducir el simulador con axe](reference_conducir_simulador_con_axe.md) — describe-ui filtrado y tap por id: una fracción de snapshot_ui; sin tildes.
+- [Portapapeles y PasteButton en el simulador](reference_portapapeles_y_pastebutton_en_simulador.md) — pbcopy no llega en iOS 27; el PasteButton ignora toques sintéticos: typeText + guion.
 - [Capturas de hojas con XCUITest](feedback_capturas_de_hojas_con_xcuitest.md) — dentro de Ajustes, XCTAttachment + export; los swipes de axe cierran la hoja.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
 - [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.
+- [La captura es del binario que lanzas](feedback_la_captura_es_del_binario_que_lanzas.md) — `-configuration Debug` deja otro bundle; lanza el .dev recién compilado.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
 - [Tras un mutante, la app instalada es el mutante](feedback_tras_un_mutante_la_app_instalada_es_el_mutante.md) — recompila antes de capturar; axe type, no type_text.
 - [La gráfica se queda el gesto](feedback_la_grafica_se_queda_el_gesto.md) — swipe por x=8, despacio; el banner, en ráfaga.
 - [El vídeo del simulador salta pantallas cortas](feedback_el_video_del_simulador_salta_pantallas_cortas.md) — el «después» breve se conduce a mano y screenshot.
+- [El vídeo del simulador no casa con el reloj](feedback_el_video_del_simulador_no_casa_con_el_reloj.md) — solo escribe al cambiar la pantalla: graba el tramo con apretón de manos.
 - [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
 - [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.
+- [SPM sin red en el sandbox](reference_spm_sin_red_en_el_sandbox.md) — el build se cuelga resolviendo paquetes; copia de SourcePackages + `-clonedSourcePackagesDirPath`.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números…
 - [El control que no recorre el camino no descarta](feedback_el_control_que_no_recorre_el_camino_no_descarta.md) — «sin X funciona» no aísla X si X cambia la ruta.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de ded…
+- [Una carrera se prueba con el último escritor](feedback_una_carrera_se_prueba_con_el_ultimo_escritor.md) — con el código viejo: si lee y escribe sin `await`, es el dato.
 - [Un flaky «de entorno» se mide a mano](feedback_el_flaky_de_entorno_se_mide_lanzando_a_mano.md) — N arranques con simctl + prints; el de la oferta en cola era producto.
 - [Conducir a mano ensucia aunque no teclees](feedback_conducir_a_mano_ensucia_aunque_no_teclees.md) — capturas con content_size/axe antes del gate: erase o capturar después.
 - [Conducir a mano contamina los unit](feedback_conducir_a_mano_contamina_los_unit.md) — un arranque en solo grupos dejó 16 rojos falsos; erase antes del gate.
@@ -150,6 +164,7 @@
 - [La segunda capa no cubre lo que dice](feedback_la_segunda_capa_no_cubre_lo_que_dice.md) — mide el ALCANCE de cada defensa…
 - [El régimen del test decide qué mutante caza](feedback_el_regimen_del_test_decide_que_mutante_caza.md) — en el régimen del bug las variantes se igualan; mutante por alternativa descartada.
 - [La aserción que no puede fallar](feedback_la_asercion_que_no_puede_fallar.md) — el mutante valida el CASO, no cada `#expect`.
+- [El mutante tiene que caer por su caso](feedback_el_mutante_tiene_que_caer_por_su_caso.md) — con el banco rojo entero mueren todos; busca el caso por nombre.
 - [Cerrar deslizando agarra la hoja de debajo](feedback_el_gesto_de_cerrar_agarra_la_hoja_de_debajo.md) — `navigationBars.firstMatch` es la de fondo; verde con el bug.
 - [Mover un paso detrás de un `await` deja correr al vecino](feedback_mover_un_paso_detras_de_un_await.md) — el runtime arran…
 - [Sacar un `await` a una tarea aparte pierde garantías](feedback_lo_que_saco_a_una_tarea_aparte_pierde_garantias.md) — cancelación her…
@@ -290,3 +305,5 @@
 - [El hook de /cerrar salta con «cerramos»](hook_cerrar_disparador_substring.md) — verifica la premisa contra su mensaje.
 - [DNS de yala-app.pe](reference_dns_yala_app_pe.md) — el correo autentica desde el 8-sep; qué leer en la cabecera además de…
 - [El disco: los GB están DENTRO del simulador](reference_disco_cache_simulador.md) — cachés regenerables del device; tras mu…
+- [Adelantar un paso vuelve normal el caso «imposible»](feedback_adelantar_un_paso_vuelve_normal_el_caso_imposible.md) — consent antes de la sesión: el sin-sello lo heredaba otro.
+- [Yala Dev es Debug-Dev](reference_yala_dev_es_debug_dev.md) — `configuration: Debug` en XcodeBuildMCP compila producción sin DEV_BUILD.

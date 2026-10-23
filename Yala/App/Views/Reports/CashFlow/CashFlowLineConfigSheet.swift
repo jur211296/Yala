@@ -473,6 +473,8 @@ struct CashFlowLineConfigSheet: View {
         if selectedMethod == .manual {
             line.manualAmount = AmountInputHelper.parseDecimal(manualAmount)
         }
+        // Como «Cambiar» del detalle (L18-7): un cambio «desde este mes» seguiría tapando el método nuevo.
+        line.amountChangesRaw = nil
         do {
             try viewModel.plan?.modelContext?.save()
         } catch {

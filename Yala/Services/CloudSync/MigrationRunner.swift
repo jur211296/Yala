@@ -1058,7 +1058,8 @@ final class MigrationRunner {
         },
         quiescenceTimeoutSeconds: Double = 120,
         quiescenceTickSeconds: Double = 0.5,
-        wipeDefaults: UserDefaults = .standard
+        wipeDefaults: UserDefaults = .standard,
+        onQuiescenceTimeout: @escaping () -> Void = {}
     ) {
         self.context = context
         self.executor = executor
@@ -1070,7 +1071,14 @@ final class MigrationRunner {
         self.quiescenceTimeoutSeconds = quiescenceTimeoutSeconds
         self.quiescenceTickSeconds = quiescenceTickSeconds
         self.wipeDefaults = wipeDefaults
+        self.onQuiescenceTimeout = onQuiescenceTimeout
     }
+
+    /// Se llama cada vez que una entrada agota la espera a que iCloud termine de importar (`awaitQuiescence`). Producción
+    /// emite ahí el canario `cloudMigrationImportNotSettled` (card ppxk del QA guiado del 2026-10-20: «Activar la nube»
+    /// pasó 9 minutos sin emitir NADA —ni un export de iCloud— y esta espera, la única candidata, solo dejaba rastro en el
+    /// log del teléfono).
+    private let onQuiescenceTimeout: () -> Void
 
     // MARK: - Entradas públicas (todas gateadas por quiescencia ANTES del primer save)
 
@@ -1089,6 +1097,7 @@ final class MigrationRunner {
     func submit(_ event: MigrationEvent) async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
+            onQuiescenceTimeout()
             return
         }
         await runGuarded {
@@ -1117,6 +1126,7 @@ final class MigrationRunner {
     func resume() async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
+            onQuiescenceTimeout()
             return
         }
         await runGuarded {
@@ -1135,6 +1145,7 @@ final class MigrationRunner {
     func resetAfterRollback() async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
+            onQuiescenceTimeout()
             return
         }
         await runGuarded {
@@ -1211,6 +1222,7 @@ final class MigrationRunner {
     func cancelReverse() async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
+            onQuiescenceTimeout()
             return
         }
         await runGuarded {
@@ -1248,6 +1260,7 @@ final class MigrationRunner {
         guard await awaitQuiescence() else {
             // Sin quiescencia el «sí» se queda APUNTADO: lo ejecuta la próxima pasada que llegue a una fase cancelable.
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
+            onQuiescenceTimeout()
             return
         }
         await runGuarded {
@@ -1314,6 +1327,7 @@ final class MigrationRunner {
     func pollLeader() async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
+            onQuiescenceTimeout()
             return
         }
         await runGuarded {

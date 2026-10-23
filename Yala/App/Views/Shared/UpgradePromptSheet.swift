@@ -160,7 +160,17 @@ struct UpgradePromptSheet: View {
                 AppIconPreviewImage(icon: icon, size: 96)
             }
         case nil:
-            if context.showsFeatureHighlight {
+            if context == .proFeature, feature == .chatAssistant {
+                // UX 2.2 · L14-13 (opción C): la demo animada del paso 1 de la presentación de Yala IA —registrar,
+                // preguntar y una sugerencia— en vez del icono: enseña qué hace en lugar de describirlo. Va en el
+                // sitio del icono, como la vista previa de temas e iconos (L16-11).
+                YalaAIChatPreview()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 260)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel(feature.localizedName)
+                    .accessibilityIdentifier("upgrade_prompt_chat_demo")
+            } else if context.showsFeatureHighlight {
                 // Con su nombre para VoiceOver, y visible en el árbol: oculto, se perdía también su identificador
                 // (lo cazó `ProConversionUpsellsUITests` B6).
                 tile(systemName: feature.icon, hidden: false)
@@ -272,6 +282,7 @@ struct UpgradePromptSheet: View {
     private var ctaTitle: String {
         if store.isPurchasing { return L10n.Subscription.processing }
         let selected = store.planOffers.first { $0.id == selectedPlan } ?? store.planOffers.first
+        if selected?.trialDays != nil, selected?.trialIsOneMonth == true { return L10n.UXL15.gateStartTrialOneMonth }
         if let days = selected?.trialDays { return L10n.UXPro.gateStartTrialDays(days) }
         return L10n.UXPro.switchToPro
     }

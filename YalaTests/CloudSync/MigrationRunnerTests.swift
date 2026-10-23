@@ -767,6 +767,31 @@ struct MigrationRunnerTests {
         #expect(try journal(context).readPhase().phase == .consent)
     }
 
+    /// Card ppxk (QA guiado del 2026-10-20): agotar la espera a iCloud avisa a quien construyó el runner —producción emite
+    /// el canario `cloudMigrationImportNotSettled`—, una vez por espera agotada y nunca cuando la espera se cumple.
+    @Test func quiescenceTimeout_tellsTheOwner_onlyWhenItRunsOut() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        var quiescent = false
+        var timeouts = 0
+        let runner = MigrationRunner(
+            context: context, executor: fake, deviceID: deviceID, quiescenceSignal: { quiescent },
+            now: { self.fixedNow }, sleeper: { _ in }, quiescenceTimeoutSeconds: 1, quiescenceTickSeconds: 0.5,
+            wipeDefaults: makeIsolatedDefaults(prefix: "mrunner"), onQuiescenceTimeout: { timeouts += 1 })
+
+        await runner.startMigration(dryRun: false)
+        await runner.resume()
+        #expect(timeouts == 2)
+
+        quiescent = true
+        await runner.startMigration(dryRun: false)
+        #expect(timeouts == 2, "con iCloud quieto no avisa")
+        #expect(try journal(context).readPhase().phase == .consent)
+        #expect(MigrationImportWaitLogic.runnerStallDetail(stillImporting: true) == "importing|runner")
+        #expect(MigrationImportWaitLogic.runnerStallDetail(stillImporting: false) == "recentImport|runner")
+    }
+
     // MARK: - 8. Efecto que lanza → journaled; resume lo re-ejecuta
 
     @Test func effectThrows_staysJournaled_resumeReExecutesOnce() async throws {

@@ -125,3 +125,17 @@ struct ChatTransactionDraft: Identifiable, Codable, Equatable {
         account?.currencyCode ?? currencyCode
     }
 }
+
+extension ChatTransactionDraft {
+    /// Tiene lo que `ChatAssistantViewModel.saveDraft` exige: importe, cuenta y subcategoría. Es lo que enciende el
+    /// «Guardar» de la tarjeta y lo que cuenta «Guardar los N» (UX 2.2 · L14-9).
+    var isReadyToSave: Bool {
+        amount != nil && accountID != nil && subcategoryID != nil
+    }
+
+    /// El importe con el signo con que se guardará, como lo enseña Registros: el gasto en negativo (UX 2.2 · L14-9).
+    var signedAmount: Decimal? {
+        guard let amount else { return nil }
+        return isExpense ? -amount : amount
+    }
+}

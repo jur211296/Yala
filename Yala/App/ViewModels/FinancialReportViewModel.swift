@@ -117,6 +117,11 @@ final class FinancialReportViewModel: Filterable {
     /// tabla se comparaba consigo misma («+0 %» en cada fila). Con `false` no hay columna anterior ni chip.
     private(set) var supportsComparison: Bool = true
 
+    /// El último día con movimientos del período que se mira: el anterior se recorta a ese mismo día
+    /// (`DateAlignmentHelper.alignedPreviousItems`), así que los nombres de la tabla (UX 2.2 · L18-3) lo necesitan para
+    /// decir el tramo que de verdad entra.
+    private(set) var currentDataEnd: Date?
+
     /// Whether there is data to display
     var hasData: Bool { !rootNodes.isEmpty }
 
@@ -257,5 +262,6 @@ final class FinancialReportViewModel: Filterable {
             PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }
         self.supportsComparison = supportsComparison
+        currentDataEnd = currentTxns.map(\.date).max()
     }
 }

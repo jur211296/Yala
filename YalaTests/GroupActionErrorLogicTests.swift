@@ -39,6 +39,18 @@ struct GroupActionErrorLogicTests {
         }
     }
 
+    /// L19-3: los tres rechazos de `set_member_role` dicen por qué, no «vuelve a intentarlo».
+    @Test func classify_roleChangeRejections_haveTheirOwnText() {
+        #expect(L.classify(GroupsRPCError.cannotChangeOwnerRole, attestUnavailable: false) == .creatorStaysAdmin)
+        #expect(L.classify(GroupsRPCError.lastAdmin, attestUnavailable: false) == .lastAdmin)
+        #expect(L.classify(GroupServiceError.lastAdmin, attestUnavailable: false) == .lastAdmin)
+        #expect(L.classify(GroupsRPCError.memberNotEligible, attestUnavailable: false) == .memberNeedsAccount)
+        for kind in [L.Kind.creatorStaysAdmin, .lastAdmin, .memberNeedsAccount] {
+            #expect(kind.localizedMessage != L10n.Groups.Errors.actionFailed)
+            #expect(!kind.localizedMessage.hasPrefix("groups."))
+        }
+    }
+
     @Test func classify_service_pendingApprovalHasItsOwnText_restGeneric() {
         #expect(L.classify(GroupServiceError.currentUserPendingApproval, attestUnavailable: false) == .pendingApproval)
         #expect(L.classify(GroupServiceError.adminRequired, attestUnavailable: false) == .generic)

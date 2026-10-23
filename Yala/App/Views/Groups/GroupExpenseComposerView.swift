@@ -17,6 +17,8 @@ struct GroupExpenseComposerView: View {
     let activeMembers: (SplitGroup) -> [SplitMember]
     let memberNameLookup: (SplitGroup) -> [String: String]
     let memberCount: (SplitGroup) -> Int
+    /// L13-8 · aviso arriba del formulario cuando el gasto sigue a la creación del grupo.
+    let notice: String?
     let onSave: () -> Void
 
     @State private var selectedGroup: SplitGroup
@@ -28,12 +30,14 @@ struct GroupExpenseComposerView: View {
         activeMembers: @escaping (SplitGroup) -> [SplitMember],
         memberNameLookup: @escaping (SplitGroup) -> [String: String],
         memberCount: @escaping (SplitGroup) -> Int,
+        notice: String? = nil,
         onSave: @escaping () -> Void
     ) {
         self.groups = groups
         self.activeMembers = activeMembers
         self.memberNameLookup = memberNameLookup
         self.memberCount = memberCount
+        self.notice = notice
         self.onSave = onSave
         self._selectedGroup = State(initialValue: initialGroup)
     }
@@ -47,6 +51,7 @@ struct GroupExpenseComposerView: View {
                 members: activeMembers(selectedGroup),
                 memberNameLookup: memberNameLookup(selectedGroup),
                 groupChip: chipMode,
+                notice: notice,
                 onSave: onSave
             )
             .id(selectedGroup.id)

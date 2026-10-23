@@ -95,8 +95,8 @@ struct ImportCurrencyMappingSheet: View {
         let currency = CurrencyCode(rawValue: currencyCode) ?? .pen
         let info = currencyInfo(for: currency)
         let selectedAccount = currencyAccountMap[currencyCode]
-        let availableAccounts = accounts.filter {
-            normalizeCurrencyCode($0.currencyCode) == currencyCode && !$0.isArchived
+        let availableAccounts = ImportAccountChoiceLogic.importableAccounts(accounts).filter {
+            normalizeCurrencyCode($0.currencyCode) == currencyCode
         }
         let isExpanded = expandedCurrency == currencyCode
 

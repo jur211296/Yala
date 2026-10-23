@@ -22,6 +22,8 @@ struct PersonalDetailsView: View {
     @State private var isAliasValid: Bool = true
     /// Hasta que `onAppear` carga lo guardado, los campos están vacíos: guardar antes borraría el nombre.
     @State private var didLoadValues = false
+    /// «Más sobre tus datos» abre la política de privacidad dentro de Yala (UX 2.2 · L16-2, con el molde de L16-19).
+    @State private var webPage: InAppWebPage?
 
     private let maxNameLength = 30
 
@@ -62,13 +64,17 @@ struct PersonalDetailsView: View {
             .navigationTitle(L10n.Profile.personalDetails)
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.subtle)
+            // UX 2.2 · L16-2: «Listo» arriba a la derecha, que es como se cierra una hoja que guarda. El «‹» de antes era el de
+            // una pantalla empujada y no decía que guardaba.
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.Action.done) {
                         saveAndDismiss()
                     }
+                    .accessibilityIdentifier("personal_details_done")
                 }
             }
+            .inAppSafari($webPage)
             .onAppear {
                 loadCurrentValues()
             }
@@ -235,16 +241,25 @@ struct PersonalDetailsView: View {
 
     // MARK: - Privacy Disclaimer
 
+    /// UX 2.2 · L16-2: dos líneas y «Más sobre tus datos». El párrafo de seis líneas (iCloud, la nube, los grupos, el alias,
+    /// la IA) es lo que cuenta la política de privacidad, y ahí lleva el enlace.
     private var privacyDisclaimer: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Profile.privacyTitle)
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
 
-            Text(L10n.Profile.privacyDesc)
+            Text(L10n.UXL15.personalDataNote)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
+            Button(L10n.UXL15.moreAboutYourData) {
+                webPage = InAppWebPage(url: AppConstants.privacyURL)
+            }
+            .font(DS.Typography.caption.weight(.semibold))
+            .foregroundStyle(theme.accent)
+            .accessibilityIdentifier("personal_details_more_about_data")
         }
         .padding(.horizontal, DS.Spacing.sm)
     }
@@ -253,7 +268,9 @@ struct PersonalDetailsView: View {
 
     private func loadCurrentValues() {
         didLoadValues = true
-        editedName = appPreferences.userName
+        // UX 2.2 · L16-2: el nombre de serie («Usuario») no se escribe en el campo: el campo sale vacío con la pista «Tu
+        // nombre» y la persona escribe sin borrar nada. Si lo deja vacío, se guarda el de serie, como antes.
+        editedName = PersonalNameFieldLogic.fieldValue(stored: appPreferences.userName, defaultName: L10n.Profile.defaultName)
         editedAlias = appPreferences.userAlias
         selectedIcon = appPreferences.userProfileIcon
 

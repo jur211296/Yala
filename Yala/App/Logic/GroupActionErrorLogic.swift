@@ -33,6 +33,13 @@ nonisolated enum GroupActionErrorLogic {
         /// La cuenta del usuario sigue pendiente de aprobación en ese grupo (`GroupServiceError
         /// .currentUserPendingApproval`). Copy `groups.errors.pendingApproval`.
         case pendingApproval
+        /// L19-3: el servidor no deja quitar el rol a quien creó el grupo (`yala_cannot_change_owner_role`). Se ve en
+        /// el teléfono de OTRO administrador, que no sabe quién es el creador (el pull no trae `owner_user_id`).
+        case creatorStaysAdmin
+        /// L19-3: tiene que quedar un administrador (`yala_last_admin` o la validación local `GroupServiceError.lastAdmin`).
+        case lastAdmin
+        /// L19-3: para administrar hace falta cuenta (`yala_member_not_eligible`: un hueco de un grupo migrado).
+        case memberNeedsAccount
         /// Cualquier otro, incluido lo pasajero (red, 5xx). Copy `groups.errors.actionFailed`, que pide
         /// volver a intentarlo.
         case generic
@@ -49,6 +56,13 @@ nonisolated enum GroupActionErrorLogic {
                 return .channelOff
             case .transient(let status):
                 return status == 401 && attestUnavailable ? .deviceCannotSyncGroups : .generic
+            // L19-3: los tres rechazos de `set_member_role` (g22_01), cada uno con su texto.
+            case .cannotChangeOwnerRole:
+                return .creatorStaysAdmin
+            case .lastAdmin:
+                return .lastAdmin
+            case .memberNotEligible:
+                return .memberNeedsAccount
             case .notAuthorized, .invalidInvite, .groupDeleted, .groupArchived, .badInput, .groupExists,
                  .invalidGroupID, .memberNotFound, .cannotRemoveOwner, .ownerCannotLeave, .permanentRejected,
                  .decoding:
@@ -59,8 +73,10 @@ nonisolated enum GroupActionErrorLogic {
             switch service {
             case .currentUserPendingApproval:
                 return .pendingApproval
+            case .lastAdmin:
+                return .lastAdmin
             case .noContext, .emptyName, .emptyMemberName, .invalidRole, .notOwner, .adminRequired,
-                 .ownerCannotLeave, .lastAdmin, .inactiveMember, .memberNotInGroup, .cannotRemoveSelf,
+                 .ownerCannotLeave, .inactiveMember, .memberNotInGroup, .cannotRemoveSelf,
                  .ownerMemberImmutable, .currentUserMemberNotFound, .notPendingApproval, .outstandingBalance,
                  .missingMemberKey, .backendActionUnavailable, .movedToBackend, .saveFailed:
                 return .generic
@@ -97,7 +113,7 @@ nonisolated enum GroupActionErrorLogic {
             return status == 401 && attestUnavailable ? .deviceCannotSyncGroups : .unavailable
         case .channelDisabled, .notAuthorized, .invalidInvite, .groupDeleted, .groupArchived, .badInput,
              .groupExists, .invalidGroupID, .memberNotFound, .cannotRemoveOwner, .ownerCannotLeave,
-             .permanentRejected, .decoding:
+             .permanentRejected, .decoding, .cannotChangeOwnerRole, .lastAdmin, .memberNotEligible:
             return .unavailable
         }
     }
@@ -112,6 +128,9 @@ extension GroupActionErrorLogic.Kind {
         case .channelOff:             return L10n.Welcome.Groups.channelOffBody
         case .deviceCannotSyncGroups: return L10n.Groups.Errors.attestUnavailable
         case .pendingApproval:        return L10n.Groups.Errors.pendingApproval
+        case .creatorStaysAdmin:      return L10n.UXL19.errorCreatorStaysAdmin
+        case .lastAdmin:              return L10n.UXL19.errorLastAdmin
+        case .memberNeedsAccount:     return L10n.UXL19.errorMemberNeedsAccount
         case .generic:                return L10n.Groups.Errors.actionFailed
         }
     }

@@ -3,7 +3,7 @@
  * sync (`/groups/push|pull|merkle`); convive con `/sync/*` y `/account/*` sin tocarlos.
  *
  * Invariantes de seguridad (espejo del canal de sync de grupos):
- * - `fn` DEBE estar en la ALLOWLIST estática (12 RPCs: 10 de membresía + los 2 del consent C1) —
+ * - `fn` DEBE estar en la ALLOWLIST estática (13 RPCs: 11 de membresía + los 2 del consent C1) —
  *   cualquier otra ruta (p.ej.
  *   apply_group_delta, que solo va por /groups/push) → 404. Evita que el gateway sea un proxy RPC
  *   genérico contra PostgREST.
@@ -61,6 +61,10 @@ export const PARAM_ALLOWLIST: Record<string, Set<string>> = {
   // D10 (batch "salir de todos mis grupos"): transfiere el ownership de UN grupo backend al co-member
   // elegible más antiguo. NO escribe columnas † → NO va a RPC_NEEDS_ENC_KEY (sin p_key).
   transfer_group_ownership: new Set(["p_group_id"]),
+  // L19-3 (g22_01, auditoría UX 2.2): el admin hace admin a otro miembro o se lo quita. NO escribe columnas † →
+  // fuera de RPC_NEEDS_ENC_KEY. ENTRADA (gate compuesto en el cliente) → la corta el kill-switch, como
+  // remove_member. Sin fan-out de push a propósito: los demás lo ven en su siguiente pull.
+  set_member_role: new Set(["p_group_id", "p_member_key", "p_role"]),
   // C1 (registro GDPR del consent de Grupos, g13_01): alcance-CUENTA dentro del namespace de grupos —
   // precedente exacto `groups_forget_user`, que también deriva todo de auth.uid(). NO escriben columnas †
   // ⇒ fuera de RPC_NEEDS_ENC_KEY. `p_accepted_at` viaja del cliente A PROPÓSITO (el epoch es la hora de la
@@ -72,8 +76,8 @@ export const PARAM_ALLOWLIST: Record<string, Set<string>> = {
 };
 
 // G7: RPCs que escriben columnas † → se les inyecta la llave de cifrado (p_key) tras el filtro de la allowlist.
-// p_key NO está en PARAM_ALLOWLIST (el cliente jamás la manda). approve/remove/leave/revoke/create_invite NO
-// escriben † → sin llave.
+// p_key NO está en PARAM_ALLOWLIST (el cliente jamás la manda). approve/remove/leave/revoke/create_invite/
+// set_member_role NO escriben † → sin llave.
 const RPC_NEEDS_ENC_KEY = new Set([
   "create_group",
   "join_group",
@@ -138,7 +142,7 @@ export async function handleGroupsRpc(c: Ctx): Promise<Response> {
   // G7: la llave se comprueba ANTES de leer el body y de construir los args — sin ella `p_key` viajaría
   // `undefined` y PostgREST respondería con un error de firma de función que no nombra el secreto. Mismo
   // 503 tipado y MISMO mensaje que /groups/pull y /groups/merkle (constante compartida en encKey.ts).
-  // Solo la exigen los RPCs que escriben columnas † : los otros 6 de la allowlist siguen funcionando sin
+  // Solo la exigen los RPCs que escriben columnas † : los otros 9 de la allowlist siguen funcionando sin
   // llave, así que un secreto ausente no tumba `leave_group`/`approve_member`/… de más.
   const encKey = RPC_NEEDS_ENC_KEY.has(fn) ? requireEncKey(c.env) : null;
   if (encKey instanceof Response) return encKey;

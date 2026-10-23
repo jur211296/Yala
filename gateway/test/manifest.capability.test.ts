@@ -6,6 +6,9 @@
  * COMPLETO, y el Merkle serializa un NULL como `key:null`: con la columna en el manifest, la hoja de cada cuenta
  * del servidor la llevaría y la del teléfono 2.1 no ⇒ la tabla `accounts` divergente para siempre en cada teléfono
  * viejo. Estos casos fijan que `v1` sigue siendo exactamente lo de antes y que `v2` añade la columna nueva.
+ *
+ * Desde el 2026-10-21 (UX 2.2 · L18-8) hay una v3: `cashflow_lines.amount_changes_raw`, los cambios de monto «desde
+ * este mes» de una línea del flujo de caja. `v2` es entonces todo menos esa columna, y `v3` el set completo.
  */
 import { describe, expect, it } from "vitest";
 import { canonRowC1, merkleColumns } from "../src/sync/canon";
@@ -54,8 +57,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 2, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(2);
+  it("el Worker anuncia la versión 3, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(3);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -63,30 +66,57 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("parent_account_id es la única columna con since 2", () => {
+  it("parent_account_id es la única columna con since 2, y amount_changes_raw la única con since 3", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
-        if ((c.since ?? 1) > 1) later.push(`${entity}.${col}`);
+        if ((c.since ?? 1) > 1) later.push(`${entity}.${col}@${c.since}`);
       }
     }
-    expect(later).toEqual(["accounts.parent_account_id"]);
+    expect(later.sort()).toEqual(["accounts.parent_account_id@2", "cashflow_lines.amount_changes_raw@3"]);
   });
 
-  it("v1 = exactamente las columnas de antes en accounts; el resto de tablas, enteras", () => {
+  it("v1 = exactamente las columnas de antes en accounts; cashflow_lines sin la de v3; el resto, enteras", () => {
     const cap = resolveCapabilitySet("v1");
     expect(cap.columns).toBeDefined();
     expect([...(cap.columns!.accounts ?? [])].sort()).toEqual([...ACCOUNTS_V1].sort());
+    expect([...(cap.columns!.cashflow_lines ?? [])]).not.toContain("amount_changes_raw");
     for (const [entity, spec] of Object.entries(manifest.entities)) {
-      if (entity === "accounts") continue;
+      if (entity === "accounts" || entity === "cashflow_lines") continue;
       expect([...(cap.columns![entity] ?? [])].sort()).toEqual(Object.keys(spec.columns).sort());
     }
   });
 
-  it("v2, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v2", "v3", "v99", "full", null]) {
+  it("v2 = todo menos amount_changes_raw: el enlace de tarjeta sí, los cambios del flujo de caja no", () => {
+    const cap = resolveCapabilitySet("v2");
+    expect(cap.columns).toBeDefined();
+    expect([...(cap.columns!.accounts ?? [])]).toContain("parent_account_id");
+    const lines = [...(cap.columns!.cashflow_lines ?? [])];
+    expect(lines).not.toContain("amount_changes_raw");
+    expect(lines.sort()).toEqual(
+      Object.keys(manifest.entities.cashflow_lines.columns).filter((c) => c !== "amount_changes_raw").sort(),
+    );
+  });
+
+  it("v3, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v3", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
+  });
+
+  it("el pull de v2 no baja los cambios del flujo de caja; el de v3 sí", () => {
+    const row = {
+      sync_id: "9d2f3a1b-1111-4222-8333-944455556666",
+      name: "Salario",
+      amount_changes_raw: "2026-11=9000.0",
+    };
+    const stored = { name: HLC, amount_changes_raw: HLC };
+    const v2 = projectRowToDelta("cashflow_lines", row, stored, resolveCapabilitySet("v2"));
+    expect(v2.fields).not.toHaveProperty("amount_changes_raw");
+    expect(v2.field_hlcs).not.toHaveProperty("amount_changes_raw");
+    const v3 = projectRowToDelta("cashflow_lines", row, stored, resolveCapabilitySet("v3"));
+    expect(v3.fields.amount_changes_raw).toBe("2026-11=9000.0");
+    expect(v3.field_hlcs.amount_changes_raw).toBe(HLC);
   });
 
   it("v0 se lee como v1 (no deja una tabla sin columnas)", () => {

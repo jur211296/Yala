@@ -252,6 +252,8 @@ final class DataWipeService {
             SetupChecklistManager.shared.resetAll()
             UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?
                 .removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)
+            UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?
+                .removeObject(forKey: ApplePayCurrencyHint.storageKey)  // la moneda de esa cuenta (L15-8)
         }
 
         // **«El borrado del aviso tardío quedó a medias» se resuelve aquí, en cualquier scope.** Esa marca describe un
@@ -526,6 +528,7 @@ final class DataWipeService {
             let isTaken = taken(favorite.createdAt)
             if isTaken { takenFavorites.append(favorite) }
             use(favorite.account?.persistentModelID, byTaken: isTaken)
+            use(favorite.destinationAccount?.persistentModelID, byTaken: isTaken)
             use(favorite.subcategory?.persistentModelID, byTaken: isTaken)
         }
         for payment in scheduled {
@@ -955,6 +958,9 @@ final class DataWipeService {
     /// dejaría al proceso vivo operando con la identidad cacheada del usuario anterior).
     static func removeGroupsDomainPreferenceKeys(from defaults: UserDefaults) {
         defaults.removeObject(forKey: AppPreferences.Keys.groupsBetaUnlocked)
+        // UX 2.2 · L12-4: el consentimiento que la persona anterior aceptó en el educativo sin llegar a iniciar sesión no
+        // lleva sello, así que nada más impediría que se atribuyera a quien entre después.
+        GroupsConsentState.removeUnsealedSnapshot(in: defaults)
 
         // Toggles personales de visibilidad/bridge y one-shots de Grupos: `removeUserPreferenceKeys`
         // ya los barre en todo wipe, pero este camino también corre sin él en algún futuro caller —
@@ -1100,6 +1106,7 @@ final class DataWipeService {
             appGroup.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)   // espejo del didSet de SessionState (widgets)
             appGroup.removeObject(forKey: "firstWeekday")                         // espejo de PreferenceSyncService (widgets)
             appGroup.removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)  // shortcutID de una Account ya borrada
+            appGroup.removeObject(forKey: ApplePayCurrencyHint.storageKey)        // su moneda, para la notificación de Apple Pay
         }
     }
 
@@ -1363,12 +1370,12 @@ final class DataWipeService {
         removeRowDerivedKeys(from: defaults)
 
         // --- Contextual Guides ---
-        let guideIDs = ["panel", "trends", "categories", "records", "budgets", "scheduled",
-                        "accounts", "transaction", "comparative", "cashflow", "insights", "inbox",
-                        "budgetEditor", "scheduledEditor"]
-        for guideID in guideIDs {
+        // La lista vive con la regla de quien vuelve con datos, que marca las mismas como vistas.
+        for guideID in ReturningUserBeginnerTips.guideIDs {
             defaults.removeObject(forKey: "guide.\(guideID).dismissed")
         }
+        // Una entrada por «Ya tengo una cuenta» sin resolver no sobrevive al borrado: era de la vida anterior.
+        defaults.removeObject(forKey: ReturningUserBeginnerTips.pendingKey)
 
         // --- Seed guards ---
         // **Delegados, no enumerados aquí**: los necesita también el borrado que NO resetea

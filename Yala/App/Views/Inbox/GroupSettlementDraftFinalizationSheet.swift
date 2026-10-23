@@ -20,6 +20,8 @@ struct GroupSettlementDraftFinalizationSheet: View {
 
     let draft: InboxDraft
     let onApproved: () -> Void
+    /// UX 2.2 · L13-7: tras «Sí, registrar» de un pago, quien abre la hoja recibe la cuenta elegida.
+    var onRegistered: ((String) -> Void)? = nil
 
     // MARK: - Environment
 
@@ -35,6 +37,8 @@ struct GroupSettlementDraftFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
+    /// UX 2.2 · L13-12: «Pago a Ana · Viaje a Cusco» cuando el borrador no trae descripción.
+    @State private var paymentName: String?
 
     // MARK: - Body
 
@@ -42,7 +46,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
         NavigationStack {
             GroupDraftFinalizationScaffold(
                 bannerMessage: String(format: L10n.Inbox.GroupSettlementDraft.banner, groupName),
-                note: draft.note,
+                note: draft.note.isEmpty ? (paymentName ?? draft.note) : draft.note,
                 amount: draft.amount,
                 currencyCode: resolvedCurrency,
                 date: draft.effectiveDate,
@@ -120,6 +124,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
             )
             resolvedCurrency = (try? modelContext.fetch(settDesc).first?.currencyCode) ?? ""
         }
+        paymentName = GroupSettlementDraftNameResolver.name(for: draft, context: modelContext)
     }
 
     private func handleFinalize() {
@@ -129,6 +134,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
             _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
             // M6: NO defaults — eliminada persistencia setDefaultSettlementAccount.
             DS.Haptic.success()
+            onRegistered?(account.name)
             onApproved()
             dismiss()
         } catch {

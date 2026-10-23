@@ -18,9 +18,6 @@ struct ThemeSettingsView: View {
 
     private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
 
-    /// Called after theme changes to dismiss the entire profile sheet
-    var onThemeChanged: (() -> Void)?
-
     @State private var showUpgradeSheet = false
     /// El tema Pro que se tocó: el muro lo enseña (UX 2.2 · L16-11) y, si se compra ahí, se aplica (L17-9).
     @State private var lockedTheme: AppTheme?
@@ -68,14 +65,10 @@ struct ThemeSettingsView: View {
                         ForEach(TranslucentVariant.allCases) { variant in
                             Button {
                                 // El tema se aplica AQUÍ, al elegir variante. Antes se aplicaba al tocar la tarjeta y
-                                // cerrar el diálogo sin elegir lo dejaba puesto (auditoría UX 2.2, lote 16).
+                                // cerrar el diálogo sin elegir lo dejaba puesto (auditoría UX 2.2, lote 16). Y la pantalla
+                                // se queda (L16-10): se ve el cambio aquí mismo y se puede probar otro.
                                 themeManager.userChoice = .translucent
                                 themeManager.translucentVariant = variant
-                                Task {
-                                    try? await Task.sleep(for: .milliseconds(300))
-                                    dismiss()
-                                    onThemeChanged?()
-                                }
                             } label: {
                                 Label(variant.label, systemImage: "circle.fill")
                             }
@@ -118,13 +111,9 @@ struct ThemeSettingsView: View {
             // Solo abre el selector de variante: el tema no cambia hasta que se elige una.
             showTranslucentVariantPicker = true
         } else {
+            // UX 2.2 · L16-10: el tema se aplica en vivo y Temas se queda abierta. Antes, a los 300 ms se cerraba Ajustes
+            // entero y no se podían comparar dos temas.
             themeManager.userChoice = appTheme
-            // Dismiss theme view + parent profile sheet
-            Task {
-                try? await Task.sleep(for: .milliseconds(300))
-                dismiss()
-                onThemeChanged?()
-            }
         }
     }
 

@@ -28,7 +28,7 @@
 //  `GroupsSignInView` sería justo la regla (4) de Presentaciones —dos anchors ante el mismo flujo— con el
 //  agravante de que el paso siguiente se monta desde aquí.
 //
-//  Cover y no sheet, como su hermano `GroupsOrganizerNameView`: es un paso de una cadena que ya salió del
+//  Cover y no sheet, como su hermano, el formulario del primer grupo de `ContentView` (L12-12): es un paso de una cadena que ya salió del
 //  Welcome, así que debajo no hay shell. Su blocker `groupsEducational` está en la matriz de readiness.
 //
 
@@ -75,6 +75,10 @@ struct GroupsBackendInviteModifier: ViewModifier {
     @State private var blockRetriesSignIn = false
     /// [I] · el destino que decidió la tabla, armado junto a `signInAuthenticated` y consumido con él.
     @State private var signInDestination: CloudIdentityRoutingLogic.Destination?
+    /// La lectura del consentimiento de la cuenta que lanza el sign-in. El `onDismiss` la espera (con techo) antes de
+    /// decidir la puerta: decidida con la caché local, que un cierre de sesión borra, la persona que vuelve con la
+    /// misma cuenta veía otra vez «Grupos en la nube» (`ReturningGroupsMemberLogic`).
+    @State private var consentRefresh: Task<Void, Never>?
     @State private var consentAccepted = false
     /// C2 · el mismo molde para el educativo. Sin él, cerrar con la «X» —que NO marca la preferencia, por
     /// diseño del educativo— haría que `GroupsGateLogic` devolviera `.presentEducational` otra vez, y otra:
@@ -95,7 +99,9 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 // presentación siguiente (que es el sign-in, de este mismo anchor).
                 RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
             }) {
-                GroupsOnboardingView { result in
+                // L12-12: esta rama ya eligió crear un grupo, así que el educativo arranca en su Step 3, que desde L12-4 es el
+                // consentimiento. Los dos primeros contaban qué es un grupo a quien acababa de decir que quería uno.
+                GroupsOnboardingView(consentPath: "organizer", startsAtConsent: true) { result in
                     switch result {
                     case .complete, .completeAndSignIn:
                         // Los dos casos son el MISMO aquí, y no por descuido: el paso siguiente de ESTA
@@ -116,7 +122,22 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 signInAuthenticated = false
                 let destino = signInDestination
                 signInDestination = nil
-                routeIdentityDestination(destino)
+                let refresh = consentRefresh
+                consentRefresh = nil
+                // El bloqueo y la adopción presentan en el acto, como siempre: no deciden nada con el consentimiento y
+                // una presentación que llegara tras una espera asíncrona podría chocar con otra en el mismo ancla.
+                guard GroupsSignInSettle.waitsBeforeRouting(destino) else {
+                    return routeIdentityDestination(destino)
+                }
+                // Antes de seguir la cadena: lo que la cuenta ya sabe (su consentimiento y, si viene a crear, sus
+                // grupos con su nombre). Con techo: sin red se decide con lo que haya, como antes. Lo que viene después
+                // pasa por el router (`continueFlow`).
+                let pullsGroups = groupsOrganizerFlowActive
+                    && GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino)
+                Task { @MainActor in
+                    await GroupsSignInSettle.wait(consentRefresh: refresh, pullsGroups: pullsGroups)
+                    routeIdentityDestination(destino)
+                }
             }) {
                 GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? "").isEmpty) { destino, origen in
                     signInAuthenticated = true
@@ -165,6 +186,16 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.
                     // Salvo con una cuenta completa: su alta pasa por el guard cross-cuenta del Welcome, y los grupos que
                     // el canal bajara ahora contarían como «datos de otra cuenta» (`GroupsSignInChannelStartLogic`).
+                    // Los grupos que el canal baje desde aquí son de quien acaba de entrar (card t2q8): sin esto, un relanzamiento
+                    // antes del CTA de la hoja los encontraba en el store y la puerta del invitado los contaba como de otra
+                    // persona. ANTES de arrancar el canal: la marca solo se escribe sin grupos aquí.
+                    if GroupInviteNeutralGateLogic.vouchesForGroupsAtSignIn(
+                        sessionOpenedHere: origen == .signedInHere,
+                        hasCompletedPersonalOnboarding: UserDefaults.standard.bool(
+                            forKey: AppPreferences.Keys.hasCompletedOnboarding),
+                        channelStartsAtSignIn: GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino)) {
+                        LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
+                    }
                     if GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino) {
                         GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
                     }
@@ -172,7 +203,7 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     // por fin tiene cuenta a la que atribuirse, (b) el consent LEGACY de este device —el
                     // que vivía en el iKV del Apple ID y nunca llegó a Yala— se sella y se registra, y (c)
                     // el consent que esta persona ya dio en OTRO device baja y evita volver a preguntarle.
-                    Task { @MainActor in await GroupsConsentRegistrar.shared.handleSignIn() }
+                    consentRefresh = Task { @MainActor in await GroupsConsentRegistrar.shared.handleSignIn() }
                 }
                 .environment(SessionState.shared)
             }
@@ -251,6 +282,8 @@ struct GroupsBackendInviteModifier: ViewModifier {
             // sign-in, antes de `startIfEligible` — ver allí el porqué completo.
             continueFlow()
         case .adoptAsCompleteAndOpenGroups:
+            // L12-11 · el recorrido sigue por la adopción de la cuenta completa, no por el formulario.
+            Self.dropCreateIntent()
             onAdoptCompleteAccount()
         case .blockedAccountIsComplete:
             showGroupsAccountIsCompleteBlock = true
@@ -268,9 +301,21 @@ struct GroupsBackendInviteModifier: ViewModifier {
     /// Cancel: para el invitado es un no-op (su intent persiste, TTL 7 d); para el organizador es la
     /// vuelta al Welcome.
     private func handleCancel() {
+        // L12-11 · cancelar la cuenta o el consentimiento retira la intención de crear (y el gasto que esperaba al grupo,
+        // L13-8): la persona decidió no seguir, y un formulario que saltara más tarde sería otra sorpresa.
+        Self.dropCreateIntent()
         guard groupsOrganizerFlowActive else { return }
         groupsOrganizerFlowActive = false
         onGroupsOrganizerCancelled()
+    }
+
+    /// L12-11/L13-8 · retira la intención de crear y el gasto que esperaba al grupo en TODAS las ventanas: los arma la
+    /// ventana donde se tocó, que con varias (iPad) no tiene por qué ser la líder que presenta la cadena.
+    private static func dropCreateIntent() {
+        for window in SceneRegistry.shared.allNavigations {
+            window.pendingCreateGroupAfterIdentity = false
+            window.pendingExpenseAfterNewGroup = false
+        }
     }
 
     private func continueFlow() {
@@ -284,7 +329,21 @@ struct GroupsBackendInviteModifier: ViewModifier {
         // `!isEmpty` además de `let`: el intent de re-ofrecer el sign-in tras el bloqueo puede llegar sin
         // zona (crear un grupo desde el tab), y el drain la asigna tal cual ⇒ `pendingGroupsJoinZone` pasa
         // de `nil` a `""`. Sin este término, la continuación llamaría al handler con una zona vacía.
-        guard let zone = pendingGroupsJoinZone, !zone.isEmpty else { return }
+        // UX 2.2 · L12-11 (decisión B de Jürgen): se venía a crear un grupo. La pestaña vuelve a pedir el formulario por
+        // el choke-point de siempre (`requestCreateGroup`), que re-decide con condiciones vivas: si aún falta el
+        // consentimiento lo pide (y vuelve a armar la intención), y si ya está todo, abre el formulario. Se consume
+        // AQUÍ, antes de pedirlo, para que una cadena que no avanza no pueda quedarse dando vueltas.
+        guard let zone = pendingGroupsJoinZone, !zone.isEmpty else {
+            // Sin invitación detrás (la invitación manda: su zona es lo primero que se mira).
+            // La intención la armó la ventana donde se tocó «Crear grupo», y este modificador vive en la líder (es la
+            // que drena la cuenta y el consentimiento): se busca en todas y el formulario se pide en ESA.
+            if let origin = SceneRegistry.shared.allNavigations.first(where: \.pendingCreateGroupAfterIdentity) {
+                origin.pendingCreateGroupAfterIdentity = false
+                origin.selectMainTab(.groups)
+                origin.pendingNewGroupForm = true
+            }
+            return
+        }
         Task { @MainActor in
             await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
         }

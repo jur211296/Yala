@@ -278,11 +278,15 @@ struct DateAlignmentHelperTests {
         )
 
         #expect(result.start == date(2026, 6, 1))
-        #expect(result.end == date(2026, 6, 7))          // FIN del día equivalente (jun 6 completo)
+        // FIN del día equivalente (jun 6 completo), en 23:59:59 y no en la medianoche del 7
+        // (`aligned-previous-interval-counts-the-next-midnight`).
+        #expect(result.end == date(2026, 6, 7).addingTimeInterval(-1))
         #expect(result.end != previousInterval.end)      // ≠ fin de junio (jul 1)
         // Simetría MTD: una TX de la TARDE del día equivalente entra (como su gemela
-        // actual jul 6 14:00); el día siguiente ya NO.
+        // actual jul 6 14:00); el día siguiente ya NO, tampoco a medianoche exacta.
         #expect(result.contains(date(2026, 6, 6).addingTimeInterval(14 * 3600)))
+        #expect(result.contains(date(2026, 6, 6).addingTimeInterval(86_399)))
+        #expect(!result.contains(date(2026, 6, 7)))
         #expect(!result.contains(date(2026, 6, 7).addingTimeInterval(60)))
     }
 
@@ -291,7 +295,8 @@ struct DateAlignmentHelperTests {
         // Hoy 31 de marzo; previo = febrero (28 días en 2026). day=31 rueda a mar 3,
         // el clamp lo capa a previousInterval.end → febrero completo.
         let currentInterval = DateInterval(start: date(2026, 3, 1), end: date(2026, 4, 1))
-        let previousInterval = DateInterval(start: date(2026, 2, 1), end: date(2026, 3, 1))
+        // Como lo entrega `PreviousPeriodHelper`: cerrado en 23:59:59 del último día.
+        let previousInterval = DateInterval(start: date(2026, 2, 1), end: date(2026, 3, 1).addingTimeInterval(-1))
 
         let result = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: currentInterval,
@@ -305,11 +310,30 @@ struct DateAlignmentHelperTests {
         #expect(result == previousInterval)             // febrero completo, sin colapsar
     }
 
+    @Test("Un previo que cierra en medianoche no se cuela por el clamp: también resta el segundo")
+    func alignedPreviousInterval_clampAMedianoche_restaElSegundo() {
+        let currentInterval = DateInterval(start: date(2026, 3, 1), end: date(2026, 4, 1))
+        let previousInterval = DateInterval(start: date(2026, 2, 1), end: date(2026, 3, 1))
+
+        let result = DateAlignmentHelper.alignedPreviousInterval(
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            asOf: date(2026, 3, 31),
+            period: .thisMonth,
+            comparisonMode: .month,
+            calendar: cal
+        )
+
+        #expect(result.end == date(2026, 3, 1).addingTimeInterval(-1))
+        #expect(!result.contains(date(2026, 3, 1)))
+    }
+
     @Test("thisMonth+month, último día del mes: previo completo (no trunca)")
     func alignedPreviousInterval_ultimoDiaDelMes_previoCompleto() {
         // Hoy 31 de julio; previo = junio (30 días). day=31 rueda a jul 1 = prev.end.
         let currentInterval = DateInterval(start: date(2026, 7, 1), end: date(2026, 8, 1))
-        let previousInterval = DateInterval(start: date(2026, 6, 1), end: date(2026, 7, 1))
+        // Como lo entrega `PreviousPeriodHelper`: cerrado en 23:59:59 del último día.
+        let previousInterval = DateInterval(start: date(2026, 6, 1), end: date(2026, 7, 1).addingTimeInterval(-1))
 
         let result = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: currentInterval,
@@ -377,7 +401,10 @@ struct DateAlignmentHelperTests {
             calendar: cal
         )
 
-        #expect(result == previousInterval)
+        // El previo ya es YTD; solo pierde el segundo de la medianoche del 7, que es del día siguiente
+        // (`aligned-previous-interval-counts-the-next-midnight`).
+        #expect(result.start == previousInterval.start)
+        #expect(result.end == previousInterval.end.addingTimeInterval(-1))
     }
 
     @Test("lastMonth+month cerrado: no-op")
@@ -448,8 +475,8 @@ struct DateAlignmentHelperTests {
             calendar: cal
         )
 
-        // FIN del día equivalente (jun 6 completo); la hora 14:30 del asOf NO se arrastra.
-        #expect(result.end == date(2026, 6, 7))
+        // FIN del día equivalente (jun 6 completo, hasta 23:59:59); la hora 14:30 del asOf NO se arrastra.
+        #expect(result.end == date(2026, 6, 7).addingTimeInterval(-1))
     }
 
     @Test("thisMonth+month, día 1: previo de 1 día completo (no colapsa a ancho cero)")
@@ -466,7 +493,7 @@ struct DateAlignmentHelperTests {
             calendar: cal
         )
 
-        #expect(result.end == date(2026, 6, 2))          // jun 1 completo, no [jun1, jun1]
+        #expect(result.end == date(2026, 6, 2).addingTimeInterval(-1))  // jun 1 completo, no [jun1, jun1]
         #expect(result.duration > 0)
         #expect(result.contains(date(2026, 6, 1).addingTimeInterval(12 * 3600)))  // jun 1 tarde entra
     }
@@ -486,14 +513,15 @@ struct DateAlignmentHelperTests {
         )
 
         #expect(result.start == date(2026, 4, 1))
-        #expect(result.end == date(2026, 4, 16))         // abr 15 completo
+        #expect(result.end == date(2026, 4, 16).addingTimeInterval(-1))  // abr 15 completo
         #expect(result.contains(date(2026, 4, 15).addingTimeInterval(20 * 3600)))  // abr 15 noche entra
     }
 
     @Test("thisMonth+month, febrero bisiesto (mar 29 2024 → feb 29): previo = febrero completo")
     func alignedPreviousInterval_febBisiesto_dia29() {
         let currentInterval = DateInterval(start: date(2024, 3, 1), end: date(2024, 4, 1))
-        let previousInterval = DateInterval(start: date(2024, 2, 1), end: date(2024, 3, 1))
+        // Como lo entrega `PreviousPeriodHelper`: cerrado en 23:59:59 del último día.
+        let previousInterval = DateInterval(start: date(2024, 2, 1), end: date(2024, 3, 1).addingTimeInterval(-1))
 
         let result = DateAlignmentHelper.alignedPreviousInterval(
             currentInterval: currentInterval,
@@ -642,7 +670,8 @@ struct DateAlignmentHelperTests {
     func alignedPreviousItems_thisMonth_previoMasCorto_conservaTodo() {
         // Actual marzo con datos hasta el día 30; previo febrero (28 días en 2026).
         let currentInterval = DateInterval(start: date(2026, 3, 1), end: date(2026, 4, 1))
-        let previousInterval = DateInterval(start: date(2026, 2, 1), end: date(2026, 3, 1))
+        // Como lo entrega `PreviousPeriodHelper`: cerrado en 23:59:59 del último día.
+        let previousInterval = DateInterval(start: date(2026, 2, 1), end: date(2026, 3, 1).addingTimeInterval(-1))
         let currentDates = (1...30).map { date(2026, 3, $0) }
         let previous = (1...28).map { date(2026, 2, $0) }
         let result = DateAlignmentHelper.alignedPreviousItems(

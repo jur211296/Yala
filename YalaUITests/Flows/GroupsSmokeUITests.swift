@@ -135,6 +135,11 @@ final class GroupsSmokeUITests: XCTestCase {
             "GroupFormView no montó (group_form_name_input)."
         )
 
+        // Desde el lote decidido 2.2 · 13 los ajustes viven tras «Más opciones», cerrado por defecto.
+        let more = app.buttons["group_form_more_options"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "No apareció «Más opciones».")
+        more.tap()
+
         // La fila de divisa solo existe con el toggle ON.
         let toggle = app.switches["group_form_single_currency_toggle"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No apareció el toggle de moneda única.")
@@ -302,7 +307,7 @@ final class GroupsSmokeUITests: XCTestCase {
     }
 
     /// groups-expense-form: si pagaste tú, la cuenta de la que salió se pide a la vista bajo la
-    /// frase (Guardar apagado). Elegir a otra persona como pagadora la retira y habilita Guardar. Seed: «Hotel Miraflores» (Viaje a Lima) lo pagaste tú y no tiene
+    /// frase (Guardar activo; tocarlo dice que falta la cuenta, L13-9). Elegir a otra persona como pagadora la retira y habilita Guardar. Seed: «Hotel Miraflores» (Viaje a Lima) lo pagaste tú y no tiene
     /// movimiento personal enlazado, así que no hay cuenta que recuperar.
     func test_groupExpenseAccountRowFollowsThePayer() {
         let app = launchOnGroups()
@@ -323,7 +328,12 @@ final class GroupsSmokeUITests: XCTestCase {
         let accountRow = app.buttons["group_expense_account_row"]
         XCTAssertTrue(accountRow.waitForExistence(timeout: 5), "Pagaste tú y no apareció la fila de cuenta.")
         let save = app.buttons["group_expense_save"]
-        XCTAssertFalse(save.isEnabled, "Sin cuenta, Guardar debería quedar apagado.")
+        // UX 2.2 · L13-9 (decisión B): «Guardar» está siempre activo; tocarlo sin cuenta no guarda, la marca y lo dice.
+        XCTAssertTrue(save.isEnabled, "«Guardar» debía estar activo aunque falte la cuenta (L13-9).")
+        save.tap()
+        let missing = app.descendants(matching: .any)["group_expense_missing_hint"]
+        XCTAssertTrue(missing.waitForExistence(timeout: 5), "Tocar «Guardar» sin cuenta no dijo qué falta.")
+        XCTAssertTrue(accountRow.exists, "«Guardar» sin cuenta cerró el formulario.")
 
         // Grupo de 2: una sola pastilla con la frase entera; tocarla abre las opciones rápidas,
         // y elegir que pagó Caro cambia el pagador sin pasar por el reparto completo.
@@ -337,6 +347,7 @@ final class GroupsSmokeUITests: XCTestCase {
         let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: accountRow)
         XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 5), .completed,
                        "Con Caro como pagadora, la fila de cuenta debería desaparecer.")
+        XCTAssertTrue(missing.waitForNonExistence(timeout: 5), "Sin nada pendiente, la línea de lo que falta debía irse.")
         let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: save)
         XCTAssertEqual(XCTWaiter().wait(for: [enabled], timeout: 5), .completed,
                        "Con Caro como pagadora, Guardar debería habilitarse.")
@@ -429,6 +440,13 @@ final class GroupsSmokeUITests: XCTestCase {
         gear.tap()
 
         let shareRow = app.buttons["group_settings_share_summary_button"]
+        // Desde el lote 19 decidido, Ajustes del grupo es una lista agrupada: solo monta las filas visibles, y el
+        // resumen queda por debajo de las opciones. Se baja hasta él.
+        var swipes = 0
+        while !shareRow.exists && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(
             shareRow.waitForExistence(timeout: 10),
             "GroupSettingsView no ofreció «Compartir resumen» con un grupo que tiene gastos."

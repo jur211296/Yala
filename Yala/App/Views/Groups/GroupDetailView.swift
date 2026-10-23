@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Vista detalle de un grupo — fullScreenCover "app within app".
-//  Navigation chips: Gastos / Balances / Estadísticas.
+//  Navigation chips: Gastos / Saldos / Estadísticas.
 //
 
 import SwiftUI
@@ -73,6 +73,7 @@ struct GroupDetailView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(SceneNavigation.self) private var navigation
 
     // MARK: - Input
 
@@ -147,6 +148,30 @@ struct GroupDetailView: View {
                     PendingApprovalBanner(state: .pending, onLeave: nil)
                 } else if viewModel.currentUserMember?.isRejected == true {
                     PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })
+                }
+
+                // UX 2.2 · L19-9 (decisión B de Jürgen, 18-oct): un grupo archivado lo dice dentro. Antes se veía igual que
+                // uno activo y nada avisaba de que estaba en Archivados. Desarchivar es de administrador
+                // (`GroupService.setArchived`); a un miembro se le dice quién puede.
+                if group.isArchived && !group.isMigratedFrozen {
+                    ArchivedGroupBanner(
+                        onUnarchive: viewModel.isCurrentUserAdmin ? { unarchiveFromBanner() } : nil
+                    )
+                }
+
+                // L19-1 · alguien pidió unirse: se ve sin abrir Miembros, y «Revisar» lleva a su tarjeta. Solo para quien
+                // puede aceptar, y no en un grupo congelado (ahí aprobar no llega a ningún sitio).
+                if let requestTitle = GroupJoinRequestsLogic.bannerTitle(
+                    pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                    canReview: viewModel.isCurrentUserAdmin && !group.isMigratedFrozen
+                ) {
+                    GroupJoinRequestsBanner(
+                        pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                        title: requestTitle,
+                        onReview: { viewModel.activeSheet = .members }
+                    )
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
                 }
 
                 tabContent
@@ -229,6 +254,13 @@ struct GroupDetailView: View {
             // (conserva el gasto); si no, cierre normal (recarga datos).
             if let expense = viewModel.consumePendingEditFromDetail() {
                 viewModel.activeSheet = expense.isOpeningBalance ? .editOpeningBalance(expense) : .editExpense(expense)
+            } else if let next = viewModel.consumeAfterSheetDismiss() {
+                // L19-4/L19-10/L19-11: «Saldar primero» y «Ver los saldos» desde Ajustes o Miembros.
+                viewModel.loadData()
+                switch next {
+                case .settle(let debt): viewModel.activeSheet = .settlement(debt)
+                case .showBalances: selectedTab = .balances
+                }
             } else {
                 viewModel.loadData()
             }
@@ -237,7 +269,12 @@ struct GroupDetailView: View {
         }
         .sheet(isPresented: $showShareSheet) {
             if let url = viewModel.shareURL {
-                ActivityView(activityItems: [url])
+                // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
+                ActivityView(activityItems: [GroupInviteShareMessage.text(
+                    inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+                    defaultName: L10n.Profile.defaultName,
+                    groupName: group.name,
+                    url: url)])
                 }
         }
         .alert(L10n.Common.error, isPresented: $viewModel.showActionError) {
@@ -246,6 +283,7 @@ struct GroupDetailView: View {
             Text(viewModel.actionErrorMessage ?? L10n.Groups.Errors.actionFailed)
         }
         .appliesPendingRemoteChanges(sessionState)
+        .task { await openSettingsIfRequested() }
         .onAppear {
             wasArchivedOnAppear = group.isArchived
             viewModel.setContext(modelContext)
@@ -293,6 +331,32 @@ struct GroupDetailView: View {
             }
             // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
             viewModel.reloadAndRecalculate()
+        }
+    }
+
+    /// L19-13 · «Abrir sus ajustes» desde el resultado de salir de varios grupos: el detalle llega empujado y abre su
+    /// hoja de Ajustes. Espera a que se cierren las hojas de Ajustes de Grupos que lo pidieron: una hoja nueva pedida
+    /// mientras otra se desmonta se puede perder.
+    private func openSettingsIfRequested() async {
+        guard navigation.pendingGroupSettingsZoneID == group.cloudKitZoneID else { return }
+        navigation.pendingGroupSettingsZoneID = nil
+        do {
+            try await Task.sleep(for: .milliseconds(600))
+        } catch {
+            return
+        }
+        viewModel.activeSheet = .settings
+    }
+
+    /// L19-9 · «Desarchivar» del banner. Mismo servicio y mismo copy de error que la fila de Ajustes del grupo.
+    private func unarchiveFromBanner() {
+        do {
+            try GroupService.shared.setArchived(group, isArchived: false)
+            DS.Haptic.success()
+            viewModel.loadData()
+        } catch {
+            viewModel.actionErrorMessage = GroupActionErrorLogic.message(for: error)
+            viewModel.showActionError = true
         }
     }
 
@@ -370,6 +434,16 @@ struct GroupDetailView: View {
             .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
 
+        case .newOpeningBalance:
+            GroupOpeningBalanceFormView(
+                group: group,
+                members: viewModel.activeMembers,
+                memberNameLookup: viewModel.memberNameLookup,
+                onSave: {}
+            )
+            .yalaSheetDetents([.large])
+            .presentationDragIndicator(.visible)
+
         case .settlement(let debt):
             SettlementFormView(
                 group: group,
@@ -420,14 +494,22 @@ struct GroupDetailView: View {
                 selectedTab = tab
             }
         } label: {
+            // Icono en las tres y nombre solo en la elegida, como las pestañas de Estadísticas (UX 2.2 · L12-1, decisión
+            // B de Jürgen del 2026-10-18: la solución de L11-1). Con los tres nombres «Estadísticas» salía cortada contra
+            // el borde de un iPhone 17 Pro.
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
                     .font(DS.Typography.subheadline)
-                Text(tab.displayName)
-                    .font(DS.Typography.label)
+                    .accessibilityHidden(true)
+                if isSelected {
+                    Text(tab.displayName)
+                        .font(DS.Typography.label)
+                        .lineLimit(1)
+                }
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.horizontal, isSelected ? DS.Spacing.lg : DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
+            .frame(minWidth: 44)
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
@@ -436,6 +518,9 @@ struct GroupDetailView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        // El nombre se lee aunque el chip enseñe solo el icono.
+        .accessibilityLabel(tab.displayName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("group_detail_tab_\(tab.rawValue)")
     }
 
@@ -494,7 +579,10 @@ struct GroupDetailView: View {
                 onSettleDebt: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .settlement($0) } : nil,
                 onConfirmSettlement: viewModel.canCurrentUserParticipate ? { viewModel.confirmSettlement($0) } : nil,
                 onRejectSettlement: viewModel.canCurrentUserParticipate ? { viewModel.rejectSettlement($0) } : nil,
-                onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil
+                onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil,
+                // Solo quien creó el grupo gestiona los saldos iniciales (el servicio lo exige; Miembros ya lo filtra).
+                onAddOpeningBalance: group.isOwner && viewModel.canCurrentUserParticipate
+                    ? { viewModel.activeSheet = .newOpeningBalance } : nil
             )
 
         case .stats:
@@ -688,6 +776,48 @@ private struct MigratedGroupBanner: View {
             guard mode == .needsUpdate, AppUpdateService.shared.appStoreURL == nil else { return }
             await AppUpdateService.shared.checkForUpdate()
         }
+    }
+}
+
+/// L19-9 · «Grupo archivado · Desarchivar».
+private struct ArchivedGroupBanner: View {
+    /// `nil` para quien no administra: no puede desarchivar, y el banner lo dice en vez de enseñar un botón que fallaría.
+    var onUnarchive: (() -> Void)?
+
+    var body: some View {
+        HStack(alignment: .center, spacing: DS.Spacing.sm) {
+            Image(systemName: "archivebox.fill")
+                .font(DS.Typography.title3)
+                .foregroundStyle(.thAccent)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.UXL19.archivedBannerTitle)
+                    .font(DS.Typography.subheadlineEmphasized)
+                if onUnarchive == nil {
+                    Text(L10n.UXL19.archivedBannerMemberHint)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: DS.Spacing.sm)
+
+            if let onUnarchive {
+                Button(L10n.UXL19.unarchive, action: onUnarchive)
+                    .font(DS.Typography.label.weight(.semibold))
+                    .foregroundStyle(.thAccent)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("group_archived_unarchive")
+            }
+        }
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(.thAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("group_archived_banner")
     }
 }
 

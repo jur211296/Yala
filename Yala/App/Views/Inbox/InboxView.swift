@@ -20,6 +20,7 @@ struct InboxView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SceneNavigation.self) private var navigation
 
     /// Callback for navigating to Records tab (bulk approve success)
     var onNavigateToRecords: (() -> Void)?
@@ -58,6 +59,8 @@ struct InboxView: View {
     // Group conversion flow (draft personal de gasto → SplitExpense de grupo). Approach A: el
     // edit sheet cierra y notifica; InboxView rutea. Un solo sheet activo a la vez (delays).
     @State private var pendingConversion: PendingConversion?
+    /// UX 2.2 · L13-11: el grupo al que se acaba de mover un borrador; al volver a la Bandeja se avisa con «Ver».
+    @State private var convertedToGroup: SplitGroup?
     @State private var conversionPicker: ConversionPickerData?
     @State private var conversionContext: ConversionContext?
 
@@ -212,6 +215,25 @@ struct InboxView: View {
             subcategory: draft.subcategory
         )
         return ConversionContext(draft: draft, group: group, members: members, lookup: lookup, template: template)
+    }
+
+    /// UX 2.2 · L13-11 (decisión B): el borrador desapareció de la Bandeja; el aviso dice adónde fue y «Ver» lleva al grupo.
+    private func announceConvertedDraft() {
+        guard let group = convertedToGroup else { return }
+        convertedToGroup = nil
+        let groupID = group.id.uuidString
+        let navigation = navigation
+        DraftDiscardUndoNotice.show(
+            message: L10n.Inbox.movedToGroup(group.name),
+            systemImage: "person.2",
+            undoTitle: L10n.Inbox.movedToGroupView,
+            noticeIdentifier: "inbox_moved_to_group_notice",
+            undoIdentifier: "inbox_moved_to_group_view"
+        ) {
+            dismiss()
+            navigation.pendingGroupID = groupID
+            navigation.selectMainTab(.groups)
+        }
     }
 
     /// Cierra el ciclo tras crear el SplitExpense desde un draft personal: borra el draft.
@@ -441,7 +463,7 @@ struct InboxView: View {
                 // >1 grupo elegible: elegir cuál antes de abrir el form prellenado.
                 GroupPickerSheet(
                     groups: data.groups,
-                    selectedGroupID: data.groups.first?.id ?? UUID(),
+                    selectedGroupID: nil,
                     memberCount: { data.memberCounts[$0.id] ?? 0 }
                 ) { picked in
                     let draft = data.draft
@@ -454,7 +476,10 @@ struct InboxView: View {
                 }
                 .yalaSheetDetents([.medium, .large])
             }
-            .sheet(item: $conversionContext, onDismiss: { viewModel.loadData() }) { ctx in
+            .sheet(item: $conversionContext, onDismiss: {
+                viewModel.loadData()
+                announceConvertedDraft()
+            }) { ctx in
                 GroupExpenseFormView(
                     group: ctx.group,
                     members: ctx.members,
@@ -464,6 +489,7 @@ struct InboxView: View {
                     onSave: {},
                     onExpenseCreated: { _ in
                         finalizeConvertedDraft(draft: ctx.draft)
+                        convertedToGroup = ctx.group
                     },
                     presentsSuccessScreen: false
                 )

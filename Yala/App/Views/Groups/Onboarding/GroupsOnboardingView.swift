@@ -16,18 +16,40 @@
 //  (`.presentGroupsSignIn`) — no monta una presentación nueva. La visibilidad la decide
 //  `GroupsOnboardingLogic.shouldShowSignInCTA` (lógica pura, tests de tabla).
 //
+//  UX 2.2 · L12-4/L12-5/L12-6 (decisiones B de Jürgen, 2026-10-18): el Step 3 ES el consentimiento de Grupos —sus
+//  cuatro puntos, un solo título y «Aceptar y continuar»— cuando hay que aceptarlo; antes contaba lo mismo que la hoja
+//  «Grupos en la nube» y la persona leía dos veces lo mismo. La frase de Ajustes de Grupos bajó al Step 2, pegada a la
+//  nota del registro personal a la que se refiere. L12-12: la rama «Crear mi primer grupo» arranca en el Step 3.
+//
 
 import SwiftUI
 
 struct GroupsOnboardingView: View {
 
+    /// Por dónde entró (`tab` | `organizer`): viaja al registro del consentimiento como diagnóstico, igual que en la
+    /// hoja (`GroupsConsentView.path`). Sin valor por defecto, para que cada llamada se pronuncie.
+    let consentPath: String
+    /// UX 2.2 · L12-12: quien ya eligió «Crear mi primer grupo» en la bienvenida empieza en el Step 3; los dos
+    /// primeros le cuentan qué es un grupo, y eso ya lo decidió.
+    let startsAtConsent: Bool
     var onResult: (GroupsOnboardingResult) -> Void
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var currentStep: Step = .hero
+    @State private var currentStep: Step
+
+    init(consentPath: String, startsAtConsent: Bool = false, onResult: @escaping (GroupsOnboardingResult) -> Void) {
+        self.consentPath = consentPath
+        self.startsAtConsent = startsAtConsent
+        self.onResult = onResult
+        self._currentStep = State(initialValue: startsAtConsent ? .privacy : .hero)
+    }
+    @Environment(\.openURL) private var openURL
+
+    /// El primer step que esta presentación enseña: atrás de él no hay nada, así que lleva la «X».
+    private var firstStep: Step { startsAtConsent ? .privacy : .hero }
 
     private enum Step: Int, CaseIterable {
         case hero = 1
@@ -67,7 +89,7 @@ struct GroupsOnboardingView: View {
 
     @ViewBuilder
     private var leadingButton: some View {
-        if currentStep == .hero {
+        if currentStep == firstStep {
             YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                 onResult(.close)
             }
@@ -80,7 +102,7 @@ struct GroupsOnboardingView: View {
 
     private var progressIndicator: some View {
         HStack(spacing: DS.Spacing.sm) {
-            ForEach(Step.allCases, id: \.rawValue) { step in
+            ForEach(visibleSteps, id: \.rawValue) { step in
                 Capsule()
                     .fill(step.rawValue <= currentStep.rawValue ? Color.electricIndigo : theme.secondaryText.opacity(0.2))
                     .frame(width: step == currentStep ? 24 : 8, height: 8)
@@ -89,9 +111,15 @@ struct GroupsOnboardingView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            String(format: L10n.Groups.Onboarding.progressLabel, currentStep.rawValue, Step.allCases.count)
+            String(format: L10n.Groups.Onboarding.progressLabel,
+                   currentStep.rawValue - firstStep.rawValue + 1, visibleSteps.count)
         )
+        // Un solo step no tiene progreso que enseñar.
+        .opacity(visibleSteps.count > 1 ? 1 : 0)
+        .accessibilityHidden(visibleSteps.count <= 1)
     }
+
+    private var visibleSteps: [Step] { Step.allCases.filter { $0.rawValue >= firstStep.rawValue } }
 
     // MARK: - Step content
 
@@ -164,7 +192,9 @@ struct GroupsOnboardingView: View {
 
                 // F6 awareness Perfil A: contar al user que el bridge crea TX real
                 // automáticamente para que su saldo personal refleje los pagos de grupo.
-                Text(L10n.Groups.Onboarding.step2BridgeAwareness)
+                // L12-6: la frase de Ajustes de Grupos va aquí, pegada a la nota a la que se refiere. En el Step 3,
+                // debajo de los puntos de privacidad, se leía como que la privacidad se podía apagar.
+                Text("\(L10n.Groups.Onboarding.step2BridgeAwareness) \(L10n.GroupsCreate.bridgeOff)")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.thSecondaryText)
                     .multilineTextAlignment(.center)
@@ -213,81 +243,47 @@ struct GroupsOnboardingView: View {
         .accessibilityLabel("\(title). \(body)")
     }
 
-    // MARK: - Step 3: Privacy + CTA
+    // MARK: - Step 3: el consentimiento (L12-4)
 
     private var privacyStep: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Spacer(minLength: DS.Spacing.xl)
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                // Sin degradado (criterio de Jürgen para toda la auditoría): un círculo índigo suave y el icono lleno.
+                ZStack {
+                    Circle()
+                        .fill(Color.electricIndigo.opacity(0.18))
+                        .frame(width: 96, height: 96)
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 44, weight: .semibold)) // A11Y-DT: hero icon
+                        .foregroundStyle(Color.electricIndigo)
+                }
+                .accessibilityHidden(true)
+                .padding(.top, DS.Spacing.xl)
 
-            ZStack {
-                Circle()
-                    .fill(LinearGradient(
-                        colors: [Color.hotPink.opacity(0.25), theme.accent.opacity(0.18)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-                    .frame(width: 96, height: 96)
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 44, weight: .semibold)) // A11Y-DT: hero icon
-                    .foregroundStyle(LinearGradient(
-                        colors: [.hotPink, theme.accent],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-            }
-            .accessibilityHidden(true)
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Groups.Onboarding.step3Title)
+                // L12-5: UN solo título, el de la hoja «Grupos en la nube», que es lo que aquí se acepta.
+                Text(L10n.Groups.Consent.title)
                     .font(DS.Typography.largeTitle)
                     .foregroundStyle(.thPrimaryText)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
-                Text(L10n.Groups.Onboarding.step3Subtitle)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thSecondaryText)
-                    .multilineTextAlignment(.center)
+                GroupsConsentPoints()
+                    .padding(.top, DS.Spacing.sm)
+
+                Button {
+                    openURL(AppConstants.privacyURL)
+                } label: {
+                    Text(L10n.Storage.Consent.privacyLink)
+                        .font(DS.Typography.caption.weight(.medium))
+                        .foregroundStyle(DS.Semantic.infoForeground)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("groups_onboarding_privacy_link")
             }
-
-            VStack(spacing: DS.Spacing.md) {
-                // C2 · el HECHO sustantivo, y va PRIMERO. Los otros dos tranquilizan sin decir nunca dónde
-                // se guardan los gastos del grupo; el consent sí lo dice, pero llega después de pedir
-                // identidad, y a estas alturas el usuario todavía no ha dado ninguna.
-                privacyPoint(icon: "icloud.fill", text: L10n.Groups.Onboarding.step3Point0)
-                // El icono acompaña al copy: la cuenta es de Yala, no de iCloud (A1).
-                privacyPoint(icon: "person.crop.circle.badge.checkmark", text: L10n.Groups.Onboarding.step3Point1)
-                privacyPoint(icon: "lock.shield.fill", text: L10n.Groups.Onboarding.step3Point2)
-            }
-            .padding(.top, DS.Spacing.md)
-
-            // F6 awareness: cierre Step 3 mencionando que el comportamiento del bridge
-            // es configurable desde "Ajustes de Grupos".
-            Text(L10n.Groups.Onboarding.step3BridgeAwareness)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.thSecondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.top, DS.Spacing.md)
-
-            Spacer(minLength: 0)
+            .padding(.bottom, DS.Spacing.lg)
         }
-    }
-
-    private func privacyPoint(icon: String, text: String) -> some View {
-        HStack(alignment: .top, spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold)) // A11Y-DT: bullet icon
-                .foregroundStyle(theme.accent)
-                .frame(width: 28)
-
-            Text(text)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.thSecondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 0)
-        }
-        .accessibilityElement(children: .combine)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     // MARK: - CTA
@@ -297,21 +293,43 @@ struct GroupsOnboardingView: View {
         let label = currentStep == .privacy
             ? L10n.Groups.Onboarding.step3CTA
             : L10n.Action.continueAction
+        let isLastStep = currentStep == .privacy
+        // Las señales vivas, leídas una vez para las dos decisiones del cierre (las mismas que lee el estado vacío).
+        let channelOn = CloudSyncFlags.groupsBackendEnabled
+        let sessionAlive = CloudAuthService.shared.hasSession
 
-        // A1: sin sesión Yala, el cierre convierte — el sign-in manda y "Ir a Grupos" queda
-        // como salida visible (nunca un muro: quien lo salte se topa con el CTA del empty
-        // state, que es el contextual de siempre).
-        if GroupsOnboardingLogic.shouldShowSignInCTA(
-            isLastStep: currentStep == .privacy,
+        if GroupsOnboardingLogic.lastStepAcceptsConsent(
+            isLastStep: isLastStep,
+            flagOn: channelOn,
+            isConsented: GroupsConsentState.isAccepted
+        ) {
+            // L12-4: aceptar aquí es aceptar el consentimiento, por el mismo escritor que la hoja. Sin sesión sigue a la
+            // cuenta; con sesión, a Grupos. El segundo botón sale sin aceptar y se llama «Ahora no» (decisión B de
+            // Jürgen, 2026-10-21): «Ir a Grupos» se leía como el mismo destino que el principal, y la pestaña vuelve a
+            // pedir lo mismo.
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.Groups.Consent.accept, icon: "checkmark.shield") {
+                    GroupsConsentView.registerAcceptance(path: consentPath)
+                    onResult(GroupsOnboardingLogic.resultAfterAcceptingConsent(hasSession: sessionAlive))
+                }
+                .accessibilityIdentifier("groups_onboarding_consent_accept")
+
+                YalaSecondaryButton(L10n.Action.notNow) {
+                    advance()
+                }
+                .accessibilityIdentifier("groups_onboarding_cta")
+            }
+        } else if GroupsOnboardingLogic.shouldShowSignInCTA(
+            isLastStep: isLastStep,
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSession: CloudAuthService.shared.hasSession
         ) {
+            // A1: sin sesión Yala (y con el consentimiento ya dado), el cierre convierte — el sign-in manda y «Ir a
+            // Grupos» queda como salida visible (nunca un muro: quien lo salte se topa con el CTA del empty state).
             VStack(spacing: DS.Spacing.sm) {
-                // C2 · el MISMO CTA con el copy honesto por caso: a quien nunca tuvo cuenta se le está
-                // CREANDO una, y «Iniciar sesión» le pide volver a un sitio donde no ha estado. La señal es
-                // el latch `GroupsSessionHistoryMarker`, la misma que decide el empty state — no una
-                // segunda fuente. El intent que emite es idéntico en los dos casos: `GroupsSignInView` es
-                // la pantalla que crea la cuenta además de recuperarla.
+                // C2 · el MISMO CTA con el copy honesto por caso: a quien nunca tuvo cuenta se le está CREANDO una, y
+                // «Iniciar sesión» le pide volver a un sitio donde no ha estado. La señal es el latch
+                // `GroupsSessionHistoryMarker`, la misma que decide el empty state — no una segunda fuente.
                 YalaPrimaryButton(
                     GroupsSessionHistoryMarker.hadSessionEver()
                         ? L10n.Groups.Onboarding.step3SignInCTA
@@ -337,7 +355,7 @@ struct GroupsOnboardingView: View {
     // MARK: - Navigation
 
     private func goBack() {
-        guard let prev = Step(rawValue: currentStep.rawValue - 1) else { return }
+        guard currentStep != firstStep, let prev = Step(rawValue: currentStep.rawValue - 1) else { return }
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.3)) {
             currentStep = prev
         }

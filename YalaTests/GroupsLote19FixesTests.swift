@@ -62,7 +62,12 @@ struct GroupsLote19FixesTests {
         #expect(!source.contains("Budget.hint(group.currencyCode)"))
         #expect(!source.contains("TextField(group.currencyCode"))
         let uses = source.components(separatedBy: "currencyDisplayFormat.label(for: group.currencyCode)").count - 1
-        #expect(uses == 3, "La pista de la fila, la de la alerta y el campo: \(uses)")
+        // Desde L19-6 (lote 19 decidido) el campo vive en su hoja: aquí queda la pista del pie de la fila.
+        #expect(uses == 1, "La pista del pie de la fila: \(uses)")
+        let sheet = try Self.source("Yala/App/Views/Groups/GroupBudgetSheet.swift")
+        #expect(!sheet.contains("Text(group.currencyCode)"))
+        let sheetUses = sheet.components(separatedBy: "currencyDisplayFormat.label(for: group.currencyCode)").count - 1
+        #expect(sheetUses == 1, "El símbolo junto al monto de la hoja: \(sheetUses)")
     }
 
     // MARK: - B6 · «Saliste de algunos grupos» solo si saliste de alguno

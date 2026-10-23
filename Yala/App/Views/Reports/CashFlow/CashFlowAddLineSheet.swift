@@ -19,6 +19,8 @@ struct CashFlowAddLineSheet: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var isIncome: Bool = false
+    /// El selector en pastilla de «Nuevo registro» (lienzo «Una sola Yala»), con solo gasto e ingreso.
+    @State private var lineType: TransactionType = .expense
 
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query(filter: #Predicate<ScheduledPayment> { $0.isActive }) private var scheduledPayments: [ScheduledPayment]
@@ -27,12 +29,14 @@ struct CashFlowAddLineSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
-                    // Type toggle
-                    Picker("", selection: $isIncome) {
-                        Text(L10n.CashFlowPlan.expenseSection).tag(false)
-                        Text(L10n.CashFlowPlan.incomeSection).tag(true)
+                    // Type toggle: el de «Nuevo registro»
+                    TransactionTypeSelectorView(
+                        selectedType: $lineType,
+                        availableTypes: [.expense, .income]
+                    ) { type in
+                        isIncome = type == .income
                     }
-                    .pickerStyle(.segmented)
+                    .padding(.horizontal, -DS.Spacing.lg)
 
                     // 3 flow options
                     VStack(spacing: DS.Spacing.none) {
@@ -49,7 +53,9 @@ struct CashFlowAddLineSheet: View {
                             flowRow(
                                 icon: "chart.bar.fill",
                                 title: isIncome ? L10n.CashFlowPlan.addFromIncome : L10n.CashFlowPlan.addFromExpenses,
-                                subtitle: L10n.CashFlowPlan.addFromExpensesDesc,
+                                subtitle: isIncome
+                                    ? L10n.UXL18.fromHistoryIncomeExample
+                                    : L10n.UXL18.fromHistoryExpenseExample,
                                 trailing: nil
                             )
                         }
@@ -69,7 +75,9 @@ struct CashFlowAddLineSheet: View {
                             flowRow(
                                 icon: "calendar.badge.clock",
                                 title: L10n.CashFlowPlan.addFromScheduled,
-                                subtitle: L10n.CashFlowPlan.addFromScheduledDesc,
+                                subtitle: isIncome
+                                    ? L10n.UXL18.fromScheduledIncomeExample
+                                    : L10n.UXL18.fromScheduledExpenseExample,
                                 trailing: available.isEmpty ? nil : "\(available.count)"
                             )
                         }
@@ -88,7 +96,7 @@ struct CashFlowAddLineSheet: View {
                             flowRow(
                                 icon: "pencil.line",
                                 title: L10n.CashFlowPlan.addCustomLine,
-                                subtitle: L10n.CashFlowPlan.addCustomLineDesc,
+                                subtitle: L10n.UXL18.customExample,
                                 trailing: nil
                             )
                         }
@@ -113,6 +121,7 @@ struct CashFlowAddLineSheet: View {
         .presentationDetents([.large])
         .onAppear {
             isIncome = viewModel.addLineIsIncome
+            lineType = viewModel.addLineIsIncome ? .income : .expense
         }
     }
 
@@ -120,18 +129,23 @@ struct CashFlowAddLineSheet: View {
 
     private func flowRow(icon: String, title: String, subtitle: String, trailing: String?) -> some View {
         HStack(spacing: DS.Spacing.md) {
+            // El icono de 40 de la app (lienzo «Una sola Yala»).
             Image(systemName: icon)
-                .font(DS.Typography.body)
+                .font(DS.Typography.label)
                 .foregroundStyle(theme.accent)
-                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .frame(width: 40, height: 40)
+                .background(Circle().fill(theme.accent.opacity(0.14)))
+                .accessibilityHidden(true)
 
+            // L18-13: cada camino con un ejemplo en una línea, para saber cuál conviene.
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(title)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
                 Text(subtitle)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer()
@@ -280,12 +294,15 @@ struct CashFlowAddFromExpensesView: View {
 
                             Spacer()
 
-                            let avg = averageAmount(for: cat)
-                            if avg > 0 {
-                                Text(YalaFormatter.amountCompactTable(value: avg))
+                            // L18-13: el número dice qué es: lo de los 6 últimos meses, en la divisa del plan.
+                            let total = sixMonthTotal(for: cat)
+                            if total > 0 {
+                                Text(L10n.UXL18.inSixMonths(appPreferences.currency(total, currencyCode: currencyCode)))
                                     .font(DS.Typography.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(.secondary)
                                     .monospacedDigit()
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
                             }
 
                             let isSelected = selectedCategory?.persistentModelID == cat.persistentModelID
@@ -432,26 +449,30 @@ struct CashFlowAddFromExpensesView: View {
     // MARK: - Helpers
 
     private func averageAmount(for category: Category) -> Double {
+        sixMonthTotal(for: category) / 6
+    }
+
+    /// Lo que movió una categoría en los 6 últimos meses, en la divisa del plan (`CashFlowCalculator.resolvedAmount`):
+    /// antes sumaba el importe de cada movimiento en su divisa y lo pintaba con el símbolo del plan.
+    private func sixMonthTotal(for category: Category) -> Double {
+        sixMonthTotal { $0.category?.persistentModelID == category.persistentModelID }
+    }
+
+    private func sixMonthTotal(matching matches: (TransactionItem) -> Bool) -> Double {
         let calendar = Calendar.current
         let sixMonthsAgo = calendar.date(byAdding: .month, value: -6, to: .now) ?? .now
         var total: Double = 0
-        for tx in transactions where tx.date >= sixMonthsAgo {
-            guard tx.category?.persistentModelID == category.persistentModelID else { continue }
-            total += abs(tx.amount)
+        for tx in transactions where tx.date >= sixMonthsAgo && matches(tx) {
+            total += abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: .none, converter: CurrencyConverter.shared
+            ).value)
         }
-        return total / 6
+        return total
     }
 
     private func computePreview() -> Double {
         if let sub = selectedSubcategory {
-            let calendar = Calendar.current
-            let sixMonthsAgo = calendar.date(byAdding: .month, value: -6, to: .now) ?? .now
-            var total: Double = 0
-            for tx in transactions where tx.date >= sixMonthsAgo {
-                guard tx.subcategory?.persistentModelID == sub.persistentModelID else { continue }
-                total += abs(tx.amount)
-            }
-            return total / 6
+            return sixMonthTotal { $0.subcategory?.persistentModelID == sub.persistentModelID } / 6
         }
         if let cat = selectedCategory {
             return averageAmount(for: cat)

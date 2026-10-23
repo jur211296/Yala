@@ -34,7 +34,9 @@ final class StepGuideUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["step_guide_guarantee"].exists, "Falta la línea de garantía.")
         XCTAssertTrue(app.descendants(matching: .any)["step_guide_preview"].exists, "Falta «Lo que vas a ver».")
         XCTAssertTrue(app.buttons["step_guide_stuck"].exists, "Falta la salida «Me atasqué».")
-        XCTAssertTrue(app.buttons["primary_button"].exists, "Falta la salida de éxito.")
+        // Sin «Listo» hasta el último paso: el pie dice cuánto falta (auditoría UX 2.2, L15-10).
+        assertRemaining("Te faltan 4 pasos", in: app)
+        XCTAssertFalse(app.buttons["primary_button"].exists, "«Listo» deja terminar sin hacer los pasos.")
     }
 
     // MARK: - Face ID
@@ -50,17 +52,22 @@ final class StepGuideUITests: XCTestCase {
         assertProgress("Paso 1 de 3", in: app)
         assertSingleActiveStep(0, of: 3, in: app)
         XCTAssertTrue(app.descendants(matching: .any)["step_guide_preview"].exists, "Falta «Lo que vas a ver».")
+        assertRemaining("Te faltan 3 pasos", in: app)
 
         for next in 1...2 {
             app.buttons["step_guide_action"].tap()
             assertProgress("Paso \(next + 1) de 3", in: app)
             assertSingleActiveStep(next, of: 3, in: app)
+            XCTAssertFalse(app.buttons["primary_button"].exists, "«Listo» antes del último paso.")
         }
+        assertRemaining("Te falta 1 paso", in: app)
 
-        // Con el último hecho no queda paso accionable y el progreso se queda en «3 de 3».
+        // Con el último hecho no queda paso accionable, el progreso se queda en «3 de 3» y ahora sí sale «Listo».
         app.buttons["step_guide_action"].tap()
         assertProgress("Paso 3 de 3", in: app)
         XCTAssertFalse(app.buttons["step_guide_action"].exists, "Quedó un botón de paso con todos hechos.")
+        XCTAssertTrue(app.buttons["primary_button"].waitForExistence(timeout: 5), "Con todo hecho falta «Listo».")
+        XCTAssertFalse(app.descendants(matching: .any)["step_guide_remaining"].exists)
 
         // «Listo» cierra la guía y vuelve a Ajustes.
         app.buttons["primary_button"].tap()
@@ -70,7 +77,31 @@ final class StepGuideUITests: XCTestCase {
         )
     }
 
+    /// «Tu avance se guarda» es verdad: salir a medias y volver deja la guía donde estaba (L15-10).
+    func test_faceIDGuide_keepsItsProgress_whenLeftHalfway() {
+        let app = launchAndOpenProfile()
+        tapRow("profile_security_faceid", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["faceid_guide_root"].waitForExistence(timeout: 5))
+        app.buttons["step_guide_action"].tap()
+        assertProgress("Paso 2 de 3", in: app)
+
+        // El «Atrás» de la guía es un botón propio de la barra (`YalaToolbarButton`), con su etiqueta en español.
+        app.navigationBars.buttons["Atrás"].firstMatch.tap()
+        tapRow("profile_security_faceid", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["faceid_guide_root"].waitForExistence(timeout: 5))
+        assertProgress("Paso 2 de 3", in: app)
+        assertSingleActiveStep(1, of: 3, in: app)
+        assertRemaining("Te faltan 2 pasos", in: app)
+    }
+
     // MARK: - Ayudas
+
+    private func assertRemaining(_ expected: String, in app: XCUIApplication) {
+        let remaining = app.staticTexts["step_guide_remaining"]
+        XCTAssertTrue(remaining.waitForExistence(timeout: 5), "Falta la línea de lo que queda.")
+        XCTAssertTrue(remaining.label.hasPrefix(expected), "El pie dice «\(remaining.label)», no «\(expected)…».")
+        XCTAssertTrue(remaining.label.contains("tu avance se guarda"), "Falta «tu avance se guarda»: «\(remaining.label)».")
+    }
 
     private func launchAndOpenProfile() -> XCUIApplication {
         let app = XCUIApplication()

@@ -159,6 +159,16 @@ final class RecordsViewModel: Filterable {
     /// cerrarse el editor, junto con `editingTransaction`.
     var editorStartsAsDuplicate = false
 
+    /// «Editar» del aviso tras guardar un registro (UX 2.2 · L2-5): la misma hoja de editar de siempre.
+    var savedRecordEditorOpener: SavedRecordEditorOpener {
+        SavedRecordEditorOpener { [weak self] record in
+            guard let self else { return }
+            self.editingTransaction = record
+            self.editorStartsAsDuplicate = false
+            self.showEditTransaction = true
+        }
+    }
+
     /// Menú contextual y ⌫: el registro que espera la confirmación de borrado.
     var pendingDeleteRecordID: PersistentIdentifier?
     var isConfirmingSingleDelete = false

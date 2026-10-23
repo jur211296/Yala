@@ -76,13 +76,44 @@ nonisolated enum GroupInviteNeutralGateLogic {
     ///     terminado, la puerta sigue en TODAS las celdas. El espejo sí sigue mandando: en el arranque que
     ///     acaba de pasar a la nube el store aún lo lleva adjunto hasta reabrir, y lo escrito ahí se iría al
     ///     iCloud del teléfono. Sin valor por defecto, por lo mismo que `mountAttachesMirror`.
+    ///   - signUpStartedOnCleanStore: el alta de ESTA invitación empezó aquí sobre un store sin datos de nadie
+    ///     (`PendingJoinEntry.signUpOnCleanStoreAt`, card t2q8 del QA guiado del TF19, 2026-10-20). **Solo apaga el
+    ///     término del corpus, nunca el del espejo**, como el término de la nube. Existe porque el CTA de la hoja del
+    ///     invitado siembra sus categorías (`performSilentSetup`) y la puerta, que vuelve a medir justo después en el
+    ///     `drive(.userAction)` y en cada relanzamiento, las tomaba por el corpus de otra persona: el join no salía
+    ///     («Conectando con tu grupo…» para siempre) y al reabrir pedía dejar el teléfono en blanco. La marca la mide
+    ///     el propio CTA ANTES de sembrar, así que no puede cubrir un corpus que ya estaba. Sin valor por defecto.
     static func decide(hasCompletedPersonalOnboarding: Bool,
                        hasExistingData: Bool,
                        mountAttachesMirror: Bool,
-                       personalDataLivesInLiveCloudAccount: Bool) -> Decision {
+                       personalDataLivesInLiveCloudAccount: Bool,
+                       signUpStartedOnCleanStore: Bool) -> Decision {
         guard !hasCompletedPersonalOnboarding else { return .proceed }
         if mountAttachesMirror { return .returnsToNeutral }
-        return (hasExistingData && !personalDataLivesInLiveCloudAccount) ? .returnsToNeutral : .proceed
+        let corpusIsSomeoneElses = hasExistingData && !personalDataLivesInLiveCloudAccount && !signUpStartedOnCleanStore
+        return corpusIsSomeoneElses ? .returnsToNeutral : .proceed
+    }
+
+    /// **¿El CTA de la hoja apunta que el alta empieza sobre un store limpio?** Lo mide `performSilentSetup` ANTES de
+    /// sembrar nada: sin datos de nadie (`hasExistingData`, el detector del Welcome) y sin espejo. Si el store ya tenía
+    /// algo, o el espejo está montado, no se apunta y la puerta decide como siempre.
+    static func marksSignUpOnCleanStore(hasExistingData: Bool, mountAttachesMirror: Bool) -> Bool {
+        !hasExistingData && !mountAttachesMirror
+    }
+
+    /// **¿Apunta el sign-in del invitado que los grupos que baje son de quien entra?** (card t2q8.) Con una cuenta
+    /// solo-grupos, la hoja de Grupos arranca el canal al firmar y baja sus grupos; un relanzamiento antes del CTA los
+    /// encontraba en el store y la puerta los contaba como de otra persona. Es la misma marca que deja
+    /// `onEnterGroupsOnly` (`LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet`, que además solo la escribe sin
+    /// grupos aquí) y con las mismas dos condiciones: la sesión se abrió en ESTE sign-in (una del llavero puede ser de la
+    /// persona anterior) y el teléfono no tiene el onboarding hecho (con él, la marca no describe a nadie). Y una tercera:
+    /// **solo si el canal arranca al firmar** (`GroupsSignInChannelStartLogic`). Con una cuenta completa no arranca —su
+    /// alta pasa por el guard cross-cuenta— y la marca alcanzaría de más a quien luego vuelve a «Es mi primera vez»
+    /// (review del 2026-10-20).
+    static func vouchesForGroupsAtSignIn(sessionOpenedHere: Bool,
+                                         hasCompletedPersonalOnboarding: Bool,
+                                         channelStartsAtSignIn: Bool) -> Bool {
+        sessionOpenedHere && !hasCompletedPersonalOnboarding && channelStartsAtSignIn
     }
 
     /// **¿Se arma el neutro durable al entrar por una invitación?** (2026-10-19, ticket

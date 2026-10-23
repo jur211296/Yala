@@ -69,6 +69,8 @@ struct GroupExpenseFormView: View {
     let memberNameLookup: [String: String]
     /// Chip de contexto de grupo debajo del segmented control. Default `.hidden`.
     let groupChip: GroupContextChipMode
+    /// L13-8 · aviso arriba del formulario («Ahora apunta el gasto») cuando se abre justo después de crear el grupo.
+    let notice: String?
     let expenseToEdit: SplitExpense?
     let existingShares: [SplitShare]
     let onSave: () -> Void
@@ -104,6 +106,20 @@ struct GroupExpenseFormView: View {
     // Opt-out: alert post-save cuando bridge effective OFF + Caso A.
     @State private var pendingOptInExpenseID: String?
     @State private var showOptInAlert: Bool = false
+    /// UX 2.2 · L13-7: tras «Sí, registrar», el borrador que se completa AHÍ MISMO con la hoja de la Bandeja (cuenta, y
+    /// subcategoría si hace falta). Cerrarla sin elegir lo deja en la Bandeja.
+    @State private var optInCompletion: OptInCompletion?
+    /// La cuenta en la que quedó registrado (o enlazado) al completarlo; `nil` si se cerró sin elegir.
+    @State private var optInRegisteredAccount: String?
+    /// Del «Sí» al cierre de la hoja: «Guardar» queda apagado (el gasto ya está guardado) y `finishOptIn` corre UNA vez.
+    @State private var optInInFlight = false
+    /// La hoja llegó a montarse. Sin esto, una presentación que UIKit descarta dejaría el formulario abierto para
+    /// siempre (`.claude/rules/swiftui-ds.md`, «Presentaciones»: solo el `onAppear` del contenido prueba que se presentó).
+    @State private var optInSheetAppeared = false
+
+    /// UX 2.2 · L13-9: se tocó «Guardar» con algo pendiente. Desde ahí se marca lo que falta y lo dice una línea, que
+    /// se va sola en cuanto se completa.
+    @State private var showsMissingField = false
 
     // Pantalla de éxito (solo flujos manuales; ver `presentsSuccessScreen`).
     @State private var showSuccessScreen = false
@@ -133,6 +149,7 @@ struct GroupExpenseFormView: View {
         members: [SplitMember],
         memberNameLookup: [String: String],
         groupChip: GroupContextChipMode = .hidden,
+        notice: String? = nil,
         expenseToEdit: SplitExpense? = nil,
         existingShares: [SplitShare] = [],
         initialTemplate: GroupExpensePrefillTemplate? = nil,
@@ -145,6 +162,7 @@ struct GroupExpenseFormView: View {
         self.members = members
         self.memberNameLookup = memberNameLookup
         self.groupChip = groupChip
+        self.notice = notice
         self.expenseToEdit = expenseToEdit
         self.existingShares = existingShares
         self.initialTemplate = initialTemplate
@@ -182,10 +200,33 @@ struct GroupExpenseFormView: View {
         }
     }
 
+    /// L13-8 (decisión B de Jürgen): el grupo se acaba de crear para esto, y el formulario lo dice.
+    private func noticeBanner(_ text: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Color.electricIndigo)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(DS.Typography.subheadline.weight(.semibold))
+                .foregroundStyle(.thPrimaryText)
+            Spacer(minLength: 0)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(padding: 0, radius: DS.Radius.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_notice")
+    }
+
     private var formView: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
+                    if let notice {
+                        noticeBanner(notice)
+                            .padding(.horizontal, DS.Spacing.lg)
+                    }
+
                     centralContent
                         .padding(.horizontal, DS.Spacing.lg)
 
@@ -204,6 +245,8 @@ struct GroupExpenseFormView: View {
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: DS.Spacing.none) {
                     migratedFrozenHint
+
+                    missingFieldHint
 
                     registerButton
                         .padding(.horizontal, DS.Spacing.xl)
@@ -259,7 +302,7 @@ struct GroupExpenseFormView: View {
                     : L10n.Groups.Errors.actionFailed)
             }
             .confirmationDialog(
-                L10n.Action.delete,
+                L10n.Groups.Expense.deleteTitle(expenseToEdit?.expenseDescription ?? ""),
                 isPresented: $showDeleteConfirmation,
                 titleVisibility: .visible
             ) {
@@ -273,6 +316,13 @@ struct GroupExpenseFormView: View {
                 // Lote 13: borrar afecta a todo el grupo; sin esta salida el diálogo solo se cerraba tocando fuera.
                 // Sin `role: .cancel`: con él, el diálogo (sale como popover en iOS 26) no la pinta.
                 Button(L10n.Common.cancel) {}
+            } message: {
+                // UX 2.2 · L13-4: el alcance de borrar — para todo el grupo, y de tus cuentas si estaba ahí.
+                Text(L10n.Groups.Expense.deleteMessage)
+            }
+            .sheet(item: $optInCompletion, onDismiss: finishOptIn) { completion in
+                optInCompletionSheet(completion)
+                    .onAppear { optInSheetAppeared = true }
             }
             .onAppear {
                 viewModel.setContext(modelContext)
@@ -404,6 +454,7 @@ struct GroupExpenseFormView: View {
             .tint(Color.primary)
             .accessibilityLabel(L10n.Groups.Expense.descriptionPlaceholder)
             .accessibilityIdentifier("group_expense_description")
+            .overlay(alignment: .bottom) { missingMark(for: .description) }
     }
 
     // MARK: - Amount Display
@@ -454,6 +505,8 @@ struct GroupExpenseFormView: View {
                     }
                 }
         }
+        .padding(.bottom, DS.Spacing.xs)
+        .overlay(alignment: .bottom) { missingMark(for: .amount) }
     }
 
     // MARK: - Currency Chip
@@ -570,6 +623,12 @@ struct GroupExpenseFormView: View {
                         RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                             .fill(.thCard)
                     )
+                    .overlay {
+                        if markedMissingField == .account {
+                            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                                .stroke(DS.Semantic.errorForeground, lineWidth: 2)
+                        }
+                    }
             }
 
             if expandedSection == .payer {
@@ -842,11 +901,11 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Register Button
 
-    /// El botón Guardar está habilitado solo si el VM puede guardar Y el grupo NO está
-    /// congelado por migración. La lectura de `group.isMigratedFrozen` sobre el @Model vivo
-    /// es reactiva: un pull que congele el grupo con el composer abierto voltea el botón solo.
+    /// UX 2.2 · L13-9 (decisión B): «Guardar» está SIEMPRE activo; si falta algo, tocarlo lo dice (`missingFieldHint`).
+    /// Solo se apaga con el grupo congelado por migración, que ya tiene su aviso encima. La lectura de
+    /// `group.isMigratedFrozen` sobre el @Model vivo es reactiva: un pull que congele el grupo voltea el botón solo.
     private var saveButtonEnabled: Bool {
-        viewModel.canSave && !group.isMigratedFrozen
+        !group.isMigratedFrozen
     }
 
     private var registerButton: some View {
@@ -869,7 +928,7 @@ struct GroupExpenseFormView: View {
         .buttonStyle(.borderedProminent)
         .tint(saveButtonEnabled ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
         .controlSize(.large)
-        .disabled(!saveButtonEnabled || viewModel.isSaving)
+        .disabled(!saveButtonEnabled || viewModel.isSaving || optInInFlight)
         .accessibilityIdentifier("group_expense_save")
         .dsAnimation(.easeInOut(duration: 0.2), value: saveButtonEnabled, reduceMotion: reduceMotion)
     }
@@ -906,6 +965,12 @@ struct GroupExpenseFormView: View {
         // Quien quedó sin valor en %/monto/partes no participa. Antes lo hacía el cierre de la
         // hoja de división; con el reparto en el formulario, se hace al guardar.
         viewModel.purgeEmptyParticipants()
+        // L13-9: con algo pendiente, «Guardar» no guarda: marca el campo y dice qué falta.
+        if let missing = viewModel.firstMissingField {
+            showMissingField(missing)
+            return
+        }
+        showsMissingField = false
         guard viewModel.save() else {
             // El save falló (throw atrapado en el VM). Presenta el error en vez de morir mudo:
             // cubre el grupo congelado por migración, la carrera pull-congela-mientras-guardas
@@ -976,9 +1041,9 @@ struct GroupExpenseFormView: View {
     }
 
     /// Construye el payload de la pantalla de éxito desde el estado actual del VM (post-save).
-    /// - Parameter optInDraftCreated: la respuesta al aviso «¿Lo registramos?» cuando se hizo; con ella la línea de «qué
-    ///   pasó con tu dinero» (L13-3) dice si el gasto espera en la Bandeja.
-    private func buildSuccessData(optInDraftCreated: Bool? = nil) -> GroupExpenseSuccessData {
+    /// - Parameter optIn: cómo terminó el aviso «¿Lo registramos?» cuando se hizo; con él la línea de «qué pasó con tu
+    ///   dinero» (L13-3) dice en qué cuenta quedó o si espera en la Bandeja (L13-7).
+    private func buildSuccessData(optIn: GroupExpenseOptInResolution? = nil) -> GroupExpenseSuccessData {
         let shares = viewModel.calculatedShares ?? []
         let participants = shares.map { share in
             GroupExpenseSuccessData.Participant(
@@ -1019,7 +1084,7 @@ struct GroupExpenseFormView: View {
                 bridgeEnabled: viewModel.effectiveBridgeEnabled,
                 accountName: viewModel.selectedAccount?.name,
                 isCreation: viewModel.lastCreatedExpenseID != nil,
-                optInDraftCreated: optInDraftCreated,
+                optIn: optIn,
                 myShare: viewModel.currentUserMemberID.flatMap { me in
                     shares.first(where: { $0.memberID == me })?.amount
                 } ?? 0
@@ -1033,38 +1098,155 @@ struct GroupExpenseFormView: View {
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
         vm.setContext(modelContext)
         viewModel = vm
+        // El formulario nuevo no arrastra la marca de «qué falta» del anterior.
+        showsMissingField = false
         dsWithAnimation(reduceMotion) {
             showSuccessScreen = false
             successData = nil
         }
     }
 
-    /// Crea el draft opt-in y continúa. Llamado desde el alert "Sí".
+    /// «Sí, registrar»: crea el borrador y lo completa AHÍ MISMO (UX 2.2 · L13-7, decisión B de Jürgen): se abre la hoja de
+    /// la Bandeja que pide la cuenta. Elegirla registra de verdad (o enlaza un movimiento que ya estaba, L13-15); cerrarla
+    /// sin elegir deja el borrador en la Bandeja. El desenlace lo recoge `finishOptIn`.
     private func confirmOptIn() {
         guard let expenseID = pendingOptInExpenseID else { return }
-        var draftCreated = false
+        pendingOptInExpenseID = nil
+        let draft: InboxDraft
         do {
-            try DraftService.shared.createGroupExpenseOptInDraft(
+            draft = try DraftService.shared.createGroupExpenseOptInDraft(
                 splitExpenseID: expenseID,
                 groupZoneID: group.cloudKitZoneID
             )
-            draftCreated = true
         } catch {
             #if DEBUG
             print("GroupExpenseFormView: createGroupExpenseOptInDraft failed: \(error)")
             #endif
+            // Sin borrador no hay nada que completar: la pantalla de éxito dice lo que pasó de verdad (solo tu parte).
+            if presentsSuccessScreen { successData = buildSuccessData(optIn: .declined) }
+            resolveAfterOptIn()
+            return
         }
-        pendingOptInExpenseID = nil
-        // L13-3: la pantalla de éxito dice lo que pasó de verdad — en la Bandeja solo si el borrador se creó.
-        if presentsSuccessScreen { successData = buildSuccessData(optInDraftCreated: draftCreated) }
+        optInRegisteredAccount = nil
+        optInSheetAppeared = false
+        optInInFlight = true
+        let completion = OptInCompletion(
+            draft: draft, needsSubcategory: draft.needsUserInput.contains(DraftInputRequirement.subcategory))
+        presentOptInSheet(completion, attempt: 1)
+    }
+
+    /// La alerta se está cerrando: la hoja se pide un momento después, y se comprueba que llegó. Si UIKit la descarta,
+    /// se reintenta una vez; si tampoco, el borrador se queda en la Bandeja y el flujo sigue (lo dice la pantalla de éxito).
+    private func presentOptInSheet(_ completion: OptInCompletion, attempt: Int) {
+        Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+            guard optInInFlight else { return }
+            optInCompletion = completion
+            do { try await Task.sleep(for: .milliseconds(1500)) } catch { return }
+            guard optInInFlight, !optInSheetAppeared else { return }
+            optInCompletion = nil
+            if attempt < 2 {
+                presentOptInSheet(completion, attempt: attempt + 1)
+            } else {
+                finishOptIn()
+            }
+        }
+    }
+
+    /// Se cerró la hoja de la cuenta: registrado (con su cuenta) o esperando en la Bandeja. Corre una sola vez por «Sí».
+    private func finishOptIn() {
+        guard optInInFlight else { return }
+        optInInFlight = false
+        let resolution: GroupExpenseOptInResolution = optInRegisteredAccount.map { .registered(accountName: $0) }
+            ?? .waitingInInbox
+        optInRegisteredAccount = nil
+        if presentsSuccessScreen { successData = buildSuccessData(optIn: resolution) }
         resolveAfterOptIn()
+    }
+
+    /// La misma hoja que abriría la Bandeja para este borrador. La ruta se fija al abrirla: al aprobar, el borrador se
+    /// borra, y volver a leerlo en un repintado sería leer un `@Model` borrado.
+    @ViewBuilder
+    private func optInCompletionSheet(_ completion: OptInCompletion) -> some View {
+        if completion.needsSubcategory {
+            GroupExpenseAccountAndSubcategoryFinalizationSheet(
+                draft: completion.draft, onApproved: {}, onRegistered: { optInRegisteredAccount = $0 })
+        } else {
+            GroupExpenseAccountFinalizationSheet(
+                draft: completion.draft, onApproved: {}, onRegistered: { optInRegisteredAccount = $0 })
+        }
     }
 
     /// User dice "No" al alert opt-in: continúa sin crear draft.
     private func declineOptIn() {
         pendingOptInExpenseID = nil
-        if presentsSuccessScreen { successData = buildSuccessData(optInDraftCreated: false) }
+        if presentsSuccessScreen { successData = buildSuccessData(optIn: .declined) }
         resolveAfterOptIn()
+    }
+
+    // MARK: - L13-9 · Qué falta
+
+    /// Lo que se marca: el primer campo que falta, solo después de haber tocado «Guardar».
+    private var markedMissingField: GroupExpenseMissingField? {
+        showsMissingField ? viewModel.firstMissingField : nil
+    }
+
+    private func showMissingField(_ missing: GroupExpenseMissingField) {
+        DS.Haptic.warning()
+        dsWithAnimation(reduceMotion) {
+            showsMissingField = true
+            switch missing {
+            case .description: focusedField = .description
+            case .amount: focusedField = .amount
+            case .payer: expandedSection = .payer
+            case .participants, .split: expandedSection = .split
+            case .account: dismissKeyboard()
+            }
+        }
+        UIAccessibility.post(notification: .announcement, argument: missingFieldMessage(missing))
+    }
+
+    private func missingFieldMessage(_ missing: GroupExpenseMissingField) -> String {
+        switch missing {
+        case .description: L10n.Groups.Expense.missingDescription
+        case .amount: L10n.Groups.Expense.missingAmount
+        case .payer: L10n.Groups.Expense.missingPayer
+        case .participants: L10n.Groups.Expense.missingParticipants
+        case .split: L10n.Groups.Expense.missingSplit
+        case .account: L10n.Groups.Expense.missingAccount
+        }
+    }
+
+    /// Una línea sobre «Guardar» con lo que falta; desaparece cuando se completa.
+    @ViewBuilder
+    private var missingFieldHint: some View {
+        if let missing = markedMissingField {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(DS.Typography.caption)
+                    .accessibilityHidden(true)
+                Text(missingFieldMessage(missing))
+                    .font(DS.Typography.subheadline)
+            }
+            .foregroundStyle(DS.Semantic.errorForeground)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.top, DS.Spacing.sm)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("group_expense_missing_hint")
+            .transition(.opacity)
+        }
+    }
+
+    /// La raya bajo la descripción o el importe cuando es eso lo que falta.
+    @ViewBuilder
+    private func missingMark(for field: GroupExpenseMissingField) -> some View {
+        if markedMissingField == field {
+            Capsule()
+                .fill(DS.Semantic.errorForeground)
+                .frame(height: 2)
+                .accessibilityHidden(true)
+        }
     }
 
     /// Tras resolver el alert opt-in: en flujo manual presenta la pantalla de éxito; en flujo
@@ -1102,6 +1284,15 @@ struct GroupExpenseFormView: View {
             set: { viewModel.currencyCode = $0.rawValue }
         )
     }
+}
+
+// MARK: - Opt-in (L13-7)
+
+/// El borrador de «Sí, registrar» y qué hoja le toca, fijado al abrirla.
+private struct OptInCompletion: Identifiable {
+    let id = UUID()
+    let draft: InboxDraft
+    let needsSubcategory: Bool
 }
 
 // MARK: - Focus Field

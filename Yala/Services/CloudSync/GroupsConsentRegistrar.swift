@@ -82,13 +82,16 @@ final class GroupsConsentRegistrar {
     /// caller, que cierra el sheet y sigue el flujo — armar después de él ya es tarde.
     ///
     /// Sin sesión NO se arma (no habría cuenta a la que atribuirlo) y aun así la caché local se escribe: el
-    /// usuario aceptó de verdad y la puerta no puede depender de la red. En la práctica ese caso no ocurre
-    /// —las tres tablas de routing ordenan sign-in ANTES que consent— y si ocurriera, `adoptLegacyIfNeeded`
-    /// lo sella y lo registra en cuanto haya sesión.
+    /// usuario aceptó de verdad y la puerta no puede depender de la red. Desde UX 2.2 · L12-4 ese caso es el
+    /// camino normal de quien acepta en el paso 3 del educativo antes de crear su cuenta: `adoptLegacyIfNeeded`
+    /// lo sella y lo registra en cuanto haya sesión (con el `path` que guardó el snapshot), y las fronteras de
+    /// persona lo retiran (`GroupsConsentState.removeUnsealedSnapshot`).
     func register(path: String?, now: Date = .now) {
         let userID = userIDProvider()
+        // Sin sesión el snapshot va sin sello y guarda su `path`, que `adoptLegacyIfNeeded` usará al sellarlo.
         GroupsConsentState.write(GroupsConsentSnapshot(
-            userID: userID, textVersion: GroupsConsentText.version, acceptedAt: now))
+            userID: userID, textVersion: GroupsConsentText.version, acceptedAt: now,
+            path: userID == nil ? path : nil))
         guard let userID else { return }
         GroupsConsentPendingIntent.arm(
             userID: userID, textVersion: GroupsConsentText.version, acceptedAt: now, path: path, at: now)
@@ -162,8 +165,10 @@ final class GroupsConsentRegistrar {
         // `.groupArchived` por exhaustividad: `record_groups_consent` es un hecho de la CUENTA y no mira
         // grupos, así que no puede devolverlo. Si algún día lo hiciera, «rechazo permanente» es la
         // clasificación correcta — el consent no se pierde, se conserva y se hace ruido.
+        // Y los tres de `set_member_role` (g22_01), por la misma exhaustividad: no miran el consent.
         case .badInput, .notAuthorized, .permanentRejected, .invalidInvite, .groupDeleted, .groupArchived,
-             .groupExists, .invalidGroupID, .memberNotFound, .cannotRemoveOwner, .ownerCannotLeave:
+             .groupExists, .invalidGroupID, .memberNotFound, .cannotRemoveOwner, .ownerCannotLeave,
+             .cannotChangeOwnerRole, .lastAdmin, .memberNotEligible:
             // Un rechazo permanente sobre un registro LEGAL es un bug nuestro, no una razón para tirar la
             // prueba: se CONSERVA y se hace ruido. El backoff impide que el bucle cueste batería.
             MetricsService.canary(.groupsConsentRegistrationRejected, detail: "\(rpcError)")
@@ -203,7 +208,7 @@ final class GroupsConsentRegistrar {
         }
         GroupsConsentPendingIntent.arm(
             userID: live, textVersion: local.textVersion, acceptedAt: local.acceptedAt,
-            path: "adopt-legacy", at: now)
+            path: local.path ?? "adopt-legacy", at: now)
     }
 
     /// Trae el consent vigente de la CUENTA y sella la caché local con él. Un fallo de red NUNCA borra ni

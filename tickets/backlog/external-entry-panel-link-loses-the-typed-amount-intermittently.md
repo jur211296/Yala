@@ -33,3 +33,10 @@ no llega entero al campo antes de salir a segundo plano. Si es eso, es el test y
 Gate de los lotes 11 y 16 (batería completa, centinela «estuviste solo»): rojo en
 `test_halfFilledFormInAnotherTab_voiceEntry_keepsTheFormAndOpensOnThePanelWhenClosed` (`:111`, «0.00»); aislado justo
 después, verde (34,6 s). Mismo patrón que el del 15-oct en el caso del enlace.
+
+## Medido el 2026-10-22 (sesión «Auditoría UX 2.2 · siguiente lote»)
+
+Sale también en `test_halfFilledFormInAnotherTab_sharedPhoto_keepsTheFormAndReadsWhenClosed` («El importe escrito se
+perdió (valor: «0.00»)»), no solo en el del enlace al Panel. Reproducido en la base `d72ff0263` (2.2 sin los cambios de
+esa sesión): 1 de 3 iteraciones de la suite (`-test-iterations 3`). En la rama de la sesión, el del enlace al Panel cayó
+una vez y el de la foto otra, en corridas distintas.

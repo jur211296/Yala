@@ -55,3 +55,34 @@ nonisolated struct StepGuideProgress: Equatable {
         completed += 1
     }
 }
+
+/// El avance de una guía, guardado por guía: el pie promete «tu avance se guarda» mientras faltan pasos (auditoría UX
+/// 2.2, lote 15, L15-10), así que salir y volver tiene que dejarla donde estaba. Terminar la guía lo borra: volver a
+/// entrar después es para repasarla desde el principio. Es del dispositivo (los pasos se hacen en ESTE iPhone), no se
+/// sincroniza.
+nonisolated enum StepGuideProgressStore {
+    /// Las guías que guardan avance: Apple Pay (Tutoriales) y Face ID (Seguridad).
+    static let applePay = "applePay"
+    static let faceID = "faceID"
+    static let guideIDs = [applePay, faceID]
+
+    static func key(_ guideID: String) -> String { "stepGuide.progress.\(guideID)" }
+
+    static func load(_ guideID: String, total: Int, defaults: UserDefaults = .standard) -> StepGuideProgress {
+        StepGuideProgress(total: total, completed: defaults.integer(forKey: key(guideID)))
+    }
+
+    static func save(_ progress: StepGuideProgress, guideID: String, defaults: UserDefaults = .standard) {
+        defaults.set(progress.completed, forKey: key(guideID))
+    }
+
+    static func clear(_ guideID: String, defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: key(guideID))
+    }
+}
+
+extension StepGuideProgress {
+    /// Los pasos que quedan, el activo incluido: «Te faltan 2 pasos» en el paso 3 de 4.
+    nonisolated var remaining: Int { total - completed }
+}
+

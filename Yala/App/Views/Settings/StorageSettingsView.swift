@@ -523,9 +523,16 @@ struct StorageSettingsView: View {
                 .disabled(controller.isWorking || controller.isCheckingICloudBeforeReverse)
                 .accessibilityIdentifier("storage_revert_button")
             } else {
-                Text(L10n.Storage.Revert.ineligible)
+                // `.degradedNoMap` no se cura esperando: la cuenta llegó a la nube desde otro dispositivo. El resto
+                // (mapa ilegible, sobre todo) sí puede cambiar, y conserva el «ahora mismo».
+                Text(eligibility == .degradedNoMap
+                     ? L10n.Storage.Revert.ineligibleOtherDevice
+                     : L10n.Storage.Revert.ineligible)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.tertiary)
+                    .accessibilityIdentifier(eligibility == .degradedNoMap
+                                             ? "storage_revert_ineligible_other_device"
+                                             : "storage_revert_ineligible")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

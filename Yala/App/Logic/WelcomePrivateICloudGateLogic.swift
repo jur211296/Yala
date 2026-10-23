@@ -138,6 +138,13 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         }
     }
 
+    /// ¿El «no pudimos revisar» fue el plazo sin avance de la revisión (`ICloudZoneScan`) y no un fallo de CloudKit? Decide
+    /// el texto de `.unreachable`: con el plazo, no se culpa a la conexión (card blqa del QA guiado del TF19). Cualquier
+    /// otro motivo —un `CKError`, un registro que no se deja leer, el de un build anterior— conserva el texto de siempre.
+    static func wasStalled(_ reason: String) -> Bool {
+        reason == ICloudZoneScanEnd.stalledReason
+    }
+
     /// ¿Esta decisión permite salir del Welcome hacia el onboarding sin que el usuario diga nada más?
     ///
     /// Existe como predicado y no como `== .proceed` escrito a mano en la vista porque **`noICloud` sí

@@ -2,8 +2,10 @@
 //  AIPersonalizationSheet.swift
 //  Yala
 //
-//  Settings sheet to customize AI tone and style — accessible from ChatSheetView toolbar.
-//  Settings apply globally to Insights, Chat Assistant, and Panel Hero.
+//  «Tono de Yala IA»: cómo habla Yala IA (tono) y en qué se fija (estilo). Se abre desde el botón de ajustes del chat
+//  y desde Ajustes › Personalización (UX 2.2 · L14-10, opción C elegida por Jürgen el 2026-10-18). Reusa el paso
+//  «Hazla a tu manera» de la presentación —opciones rellenas, su descripción y un ejemplo que junta las dos— en vez de
+//  los dos menús sin explicación que había.
 //
 
 import SwiftUI
@@ -14,27 +16,23 @@ struct AIPersonalizationSheet: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
-        @Bindable var prefs = appPreferences
-
         NavigationStack {
-            Form {
-                Section {
-                    toneMenu(prefs: prefs)
-                } header: {
-                    Text(L10n.AISettings.toneSection)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    YalaAIPersonalizeForm()
 
-                Section {
-                    focusMenu(prefs: prefs)
-                } header: {
-                    Text(L10n.AISettings.styleSection)
-                } footer: {
+                    // Dónde se nota lo elegido. Medido: el tono y el estilo los leen el chat, el Resumen con IA y
+                    // Tendencias de Estadísticas; el Panel no (la nota vieja decía «Hero del Panel»).
                     Text(L10n.AISettings.appliesHint)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thSecondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("ai_settings_applies_hint")
                 }
+                .padding(DS.Spacing.lg)
             }
-            .scrollContentBackground(.hidden)
-            .yalaScreenBackground(.transparent)
-            .tint(.primary)
+            .scrollIndicators(.hidden)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.AISettings.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -43,7 +41,7 @@ struct AIPersonalizationSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .onChange(of: appPreferences.insightsTone) { _, _ in
             InsightsLLMService.shared.invalidateCache()
@@ -51,41 +49,5 @@ struct AIPersonalizationSheet: View {
         .onChange(of: appPreferences.insightsFocus) { _, _ in
             InsightsLLMService.shared.invalidateCache()
         }
-    }
-
-    // MARK: - Subviews
-
-    private func toneMenu(prefs: AppPreferences) -> some View {
-        Menu {
-            ForEach(InsightTone.allCases) { item in
-                Button(item.displayName) { prefs.insightsTone = item }
-            }
-        } label: {
-            menuLabel(value: prefs.insightsTone.displayName)
-        }
-    }
-
-    private func focusMenu(prefs: AppPreferences) -> some View {
-        Menu {
-            ForEach(InsightFocus.allCases) { item in
-                Button(item.displayName) { prefs.insightsFocus = item }
-            }
-        } label: {
-            menuLabel(value: prefs.insightsFocus.displayName)
-        }
-    }
-
-    private func menuLabel(value: String) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Text(value)
-                .foregroundStyle(.thPrimaryText)
-
-            Spacer()
-
-            Image(systemName: "chevron.up.chevron.down")
-                .font(DS.Typography.captionSmall) // A11Y-DT: chevron icon size
-                .foregroundStyle(.thPrimaryText)
-        }
-        .contentShape(Rectangle())
     }
 }

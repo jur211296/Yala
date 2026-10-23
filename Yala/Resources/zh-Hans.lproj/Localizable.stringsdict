@@ -1120,5 +1120,19 @@
 			<string>%d 个预算</string>
 		</dict>
 	</dict>
+	<key>stepGuide.remaining</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>还剩 %d 步 · 进度会保存</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

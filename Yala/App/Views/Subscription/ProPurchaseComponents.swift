@@ -63,7 +63,8 @@ enum ProPresentation {
             plan: store.activePlan,
             offeredTrialDays: store.offeredTrialDays
         ) {
-        case .freeWithTrial(let days): return L10n.UXPro.settingsFreeWithTrial(days)
+        case .freeWithTrial(let days):
+            return store.offeredTrialIsOneMonth ? L10n.UXL15.settingsFreeWithTrialOneMonth : L10n.UXPro.settingsFreeWithTrial(days)
         case .free: return L10n.UXPro.settingsFree
         case .trialEnds(let date): return L10n.UXPro.settingsTrialEnds(shortDate(date))
         case .renews(let yearly, let date):
@@ -118,6 +119,11 @@ struct ProPlanCard: View {
     }
 
     private var priceLine: String {
+        if offer.trialDays != nil, offer.trialIsOneMonth {
+            return offer.isYearly
+                ? L10n.UXL15.oneMonthThenYearly(offer.displayPrice)
+                : L10n.UXL15.oneMonthThenMonthly(offer.displayPrice)
+        }
         if let days = offer.trialDays {
             return offer.isYearly
                 ? L10n.UXPro.trialThenYearly(days, offer.displayPrice)
@@ -372,6 +378,7 @@ struct ProPaywallBody: View {
 
     private var ctaTitle: String {
         if isPurchasing { return L10n.Subscription.processing }
+        if selectedOffer?.trialDays != nil, selectedOffer?.trialIsOneMonth == true { return L10n.UXL15.startTrialOneMonth }
         if let days = selectedOffer?.trialDays { return L10n.UXPro.startTrialDays(days) }
         return L10n.Subscription.subscribe
     }

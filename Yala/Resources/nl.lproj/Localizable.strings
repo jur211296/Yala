@@ -268,7 +268,7 @@
 "exchangeRate.updated" = "Bijgewerkt";
 "exchangeRate.loadError" = "We konden de wisselkoers niet ophalen. Probeer het zo opnieuw.";
 "exchangeRate.noSecondaryCurrenciesHint" = "Je kunt secundaire valuta's kiezen in";
-"exchangeRate.noSecondaryCurrenciesPath" = "Profiel > Valuta & wisselkoers";
+"exchangeRate.noSecondaryCurrenciesPath" = "Instellingen > Valuta & wisselkoers";
 
 // MARK: - Empty States
 
@@ -400,7 +400,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "Favoriete betalingen";
+"favorites.title" = "Favorieten";
 "favorites.new" = "Nieuwe favoriet";
 "favorites.edit" = "Favoriet bewerken";
 "favorites.noFavorites" = "Je hebt nog geen favorieten";
@@ -410,7 +410,7 @@
 "favorites.namePlaceholder" = "Naam van favoriet";
 "favorites.notConfigured" = "Niet ingesteld";
 "favorites.descriptionPlaceholder" = "Beschrijving (optioneel)";
-"favorites.saveDescription" = "Sla deze betaling op als favoriet om vergelijkbare uitgaven in de toekomst snel te boeken. Je vindt hem in de ⭐ rechtsboven bij het aanmaken of bewerken van een boeking. Je kunt hem altijd bewerken via Favoriete betalingen in je profiel.";
+"favorites.saveDescription" = "Je vaste uitgaven, met één tik.";
 
 // MARK: - Scheduled
 
@@ -445,7 +445,7 @@
 "settings.categories" = "Categorieën";
 "settings.tags" = "Labels";
 "settings.notifications" = "Notificaties";
-"settings.favorites" = "Favoriete betalingen";
+"settings.favorites" = "Favorieten";
 "settings.budgets" = "Budgetten";
 "settings.budgetsFavorites" = "Favoriete budgetten";
 "settings.budgetsFavoritesInfo" = "Favoriete budgetten verschijnen in de Budgetten-kaart op Start (3 in medium, 5 in groot).";
@@ -453,9 +453,9 @@
 "settings.budgetsFavoritesReorder" = "Volgorde favorieten wijzigen";
 "budgets.favorites.previewTitle" = "Zo ziet het eruit op Start";
 "budgets.favorites.previewEmpty" = "Selecteer favorieten om het voorbeeld te zien";
-"settings.tabBarConfig" = "Navigatie aanpassen";
-"settings.tabBarConfigInfo" = "Kies welke secties in de onderbalk worden getoond. Minimaal 1, maximaal 3.";
-"settings.tabBarConfigActive" = "Actieve tabbladen";
+"settings.tabBarConfig" = "Tabbladen onderaan";
+"settings.tabBarConfigInfo" = "Kies welke tabbladen je onderaan ziet en in welke volgorde.";
+"settings.tabBarConfigActive" = "In de balk";
 "settings.tabBarConfigAvailable" = "Beschikbaar";
 "settings.tabBarConfigReorderHint" = "Lang indrukken om de volgorde te wijzigen";
 "settings.tabBarConfigMinWarning" = "Je moet minstens één sectie hebben";
@@ -534,7 +534,7 @@
 "budgets.alerts.message.75" = "75%% van \"%1$@\" besteed — %2$@ van %3$@";
 "budgets.alerts.message.90" = "\"%1$@\" raakt op — %2$@ van %3$@ besteed";
 "budgets.alerts.message.100" = "Je hebt de limiet van \"%1$@\" bereikt — %2$@ van %3$@";
-"budgets.alerts.globalDisabledHint" = "Schakel budgetmeldingen in via Profiel > Notificaties om ze te ontvangen";
+"budgets.alerts.globalDisabledHint" = "Schakel budgetmeldingen in via Instellingen > Notificaties om ze te ontvangen";
 "budgets.alerts.custom" = "Aangepast";
 "budgets.alerts.addThreshold" = "Toevoegen";
 "budgets.new" = "Nieuw budget";
@@ -607,7 +607,7 @@
 
 // MARK: - Profile
 
-"profile.title" = "Profiel";
+"profile.title" = "Instellingen";
 "profile.defaultName" = "Gebruiker";
 "profile.personalDetails" = "Persoonlijke gegevens";
 "profile.dataManagement" = "Gegevensbeheer";
@@ -677,14 +677,14 @@
 "report.noSubcategory" = "Geen subcategorie";
 "report.noTag" = "Geen label";
 "report.noAccount" = "Geen rekening";
-"report.grouping.type" = "Type";
+"report.grouping.type" = "Inkomsten en uitgaven";
 "report.grouping.category" = "Categorie";
 "report.grouping.subcategory" = "Subcategorie";
 "report.grouping.tag" = "Label";
 "report.grouping.account" = "Rekening";
 "report.grouping.currency" = "Valuta";
-"report.grouping.nature" = "Aard";
-"report.grouping.drillDown" = "Inzoomen";
+"report.grouping.nature" = "Behoefte";
+"report.grouping.drillDown" = "Uitsplitsen";
 "report.grouping.hint" = "Voeg niveaus toe voor meer detail. Sleep om de volgorde te wijzigen.";
 "report.grouping.active" = "Actief";
 "report.grouping.available" = "Beschikbaar";
@@ -780,9 +780,9 @@
 "scheduled.calendar.month.empty" = "Geen betalingen deze maand";
 
 "widget.sizeLabel" = "Grootte";
-"widget.chatFab.toggle" = "Vraag Yala";
+"widget.chatFab.toggle" = "Yala AI";
 "widget.chatFab.description" = "Toon de knop voor de AI-financieel assistent.";
-"widget.chatFab.hint" = "Bepaalt of de chatknop op de hoofdschermen verschijnt.";
+"widget.chatFab.hint" = "Toont de Yala AI-knop op de hoofdschermen.";
 "widget.aiCapabilities.header" = "AI-mogelijkheden";
 
 "common.all" = "Alle";
@@ -834,7 +834,7 @@
 "cashFlowPlan.monthsActive" = "maanden";
 "cashFlowPlan.suggestedSource" = "Op basis van %d maanden activiteit";
 "cashFlowPlan.bannerTitle" = "Wat is kasstroom?";
-"cashFlowPlan.bannerBody" = "Het is je maand-per-maand-plan voor inkomsten en uitgaven. Het laat zien of je geld toereikend is, of dat je iets moet bijsturen.";
+"cashFlowPlan.bannerBody" = "Zie per maand of wat je verdient je uitgaven dekt.";
 "cashFlowPlan.available" = "Beschikbaar";
 "cashFlowPlan.accumulated" = "Cumulatief";
 "cashFlowPlan.accumulatedShort" = "Cumul.";
@@ -903,7 +903,7 @@
 "cashFlowPlan.monthSummaryOnTrack" = "Je hebt %d%% van je geschatte uitgaven besteed deze maand";
 "cashFlowPlan.monthSummaryOver" = "Je zit %d%% boven je schatting deze maand";
 "cashFlowPlan.monthSummaryUnder" = "Pas %d%% besteed — je doet het lekker deze maand";
-"cashFlowPlan.configureHorizon" = "Horizon instellen";
+"cashFlowPlan.configureHorizon" = "Hoeveel maanden tonen";
 "cashFlowPlan.monthsAhead" = "Maanden vooruit";
 "cashFlowPlan.monthsBack" = "Maanden terug";
 "cashFlowPlan.showAccumulatedBalance" = "Cumulatief tonen";
@@ -1070,7 +1070,7 @@
 "insights.ofTotal" = "van totaal";
 "insights.analyzingData" = "Je gegevens worden geanalyseerd...";
 "insights.activateAITitle" = "AI-samenvatting beschikbaar";
-"insights.activateAIBody" = "Schakel het in en pas aan via Profiel > AI-functies.";
+"insights.activateAIBody" = "Schakel het in en pas aan via Instellingen > AI-functies.";
 "insights.activate" = "Activeren";
 "insights.goToSettings" = "Naar instellingen";
 "insights.notInterested" = "Niet geïnteresseerd";
@@ -1080,7 +1080,7 @@
 "settings.organization" = "Organisatie";
 "settings.preferences" = "Voorkeuren";
 "settings.aiFeatures" = "AI-functies";
-"settings.customizeAISummary" = "AI-samenvatting aanpassen";
+"settings.customizeAISummary" = "Wat er in het overzicht staat";
 "settings.customizeAISummaryHint" = "Kies welke metingen en grafieken in je slimme overzicht verschijnen.";
 "settings.data" = "Gegevens";
 "settings.security" = "Beveiliging & account";
@@ -1094,7 +1094,7 @@
 "settings.permissions" = "Toestemmingen";
 "settings.aiPrivacy" = "AI-privacy & gegevens";
 "settings.subscriptions" = "Abonnementen beheren";
-"settings.rateApp" = "Beoordelen & aanbevelen";
+"settings.rateApp" = "Yala beoordelen";
 "settings.tutorials" = "Tutorials";
 "settings.faq" = "Veelgestelde vragen";
 "settings.contact" = "Neem contact op";
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "Indicatoren";
 "settings.sectionFormat" = "Getalformaat";
 "settings.defaultPeriod" = "Standaardperiode";
-"settings.defaultPeriodDescription" = "Deze periode wordt standaard toegepast bij elke keer dat je de app opent. Je kunt het altijd tijdelijk wijzigen via de periodekiezer.";
+"settings.defaultPeriodDescription" = "De periode waarmee Start, Boekingen en Statistieken openen. Je kunt die even wijzigen via de periodekiezer.";
 "settings.colorfulIcons" = "Kleurrijke iconen";
 "settings.colorfulIconsDescription" = "Toon gekleurde iconen in het profielmenu, in iOS-stijl.";
 "settings.colorfulIconsDisabledByTheme" = "Automatisch uitgeschakeld door het huidige thema.";
@@ -1699,19 +1699,19 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Helphints";
-"settings.widgetHintsDescription" = "Toon infoknoppen op widgets met uitleg per grafiek.";
-"settings.showVariations" = "Vergelijkingen";
-"settings.showVariationsDescription" = "Toon procentuele veranderingen en vergelijkingsgrafieken vs de vorige periode.";
-"settings.averageLine" = "Gemiddelde lijn";
+"settings.widgetHintsDescription" = "Toont de knop ‘?’ naast de grafieken, met uitleg over elke grafiek. Je ziet het op Start, in Statistieken en in Planning.";
+"settings.showVariations" = "Vergelijken met vorige periode";
+"settings.showVariationsDescription" = "Toont hoeveel elk bedrag steeg of daalde ten opzichte van de vorige periode. Je ziet het op Start, in Statistieken en in rapporten.";
+"settings.averageLine" = "Gemiddelde lijn in grafieken";
 "settings.averageLineDescription" = "Toon een gemiddelde lijn op staafgrafieken.";
-"settings.averageLine.off" = "Uit";
-"settings.averageLine.total" = "Totaal";
-"settings.averageLine.segmented" = "Gesegmenteerd";
-"settings.averageLine.offDescription" = "Geen gemiddelde lijn op grafieken.";
-"settings.averageLine.totalDescription" = "Een horizontale lijn die het algemene gemiddelde toont.";
-"settings.averageLine.segmentedDescription" = "Segmenten per periode met procentuele variatie.";
+"settings.averageLine.off" = "Geen";
+"settings.averageLine.total" = "Eén";
+"settings.averageLine.segmented" = "Per deel";
+"settings.averageLine.offDescription" = "Geen gemiddelde lijn.";
+"settings.averageLine.totalDescription" = "Eén lijn met het gemiddelde van de hele periode.";
+"settings.averageLine.segmentedDescription" = "Eén lijn per deel, met hoeveel het steeg of daalde ten opzichte van het vorige.";
 "settings.decimalPlaces" = "Aantal decimalen";
-"settings.decimalPlacesDescription" = "Alleen van toepassing op totalen en grafieken. Individuele boekingen tonen altijd 2 decimalen.";
+"settings.decimalPlacesDescription" = "Je ziet het in totalen en grafieken. Elke boeking toont altijd 2 decimalen.";
 "settings.decimalsNone" = "Geen decimalen";
 "settings.decimalsOne" = "1 decimaal";
 "settings.decimalsTwo" = "2 decimalen";
@@ -1719,22 +1719,22 @@
 "settings.currencyFormatDescription" = "Kies of we de valutacode (USD) of het symbool ($) tonen.";
 "settings.currencyCode" = "Code (PEN, USD)";
 "settings.currencySymbol" = "Symbool (S/, $)";
-"settings.autoFocusField" = "Veld automatisch activeren";
-"settings.autoFocusFieldDescription" = "Bij een nieuwe handmatige boeking opent het toetsenbord automatisch op het geselecteerde veld.";
+"settings.autoFocusField" = "Toetsenbord openen bij";
+"settings.autoFocusFieldDescription" = "Als je handmatig een boeking invoert, opent het toetsenbord in dit veld.";
 "settings.autoFocusAmount" = "Bedrag";
 "settings.autoFocusNote" = "Omschrijving";
-"settings.autoFocusNone" = "Geen";
+"settings.autoFocusNone" = "Niet openen";
 
 // Expenses Only Mode
 "settings.sectionUsageMode" = "Gebruiksmodus";
 "settings.expensesOnlyMode" = "Alleen uitgaven";
-"settings.expensesOnlyModeDescription" = "Verbergt inkomsten, overschrijvingen en saldi. Je gegevens worden niet verwijderd, alleen verborgen.";
+"settings.expensesOnlyModeDescription" = "Verbergt inkomsten, overschrijvingen en saldi in de hele app. Je gegevens worden niet verwijderd.";
 "settings.expensesOnlyActivateTitle" = "Modus alleen uitgaven inschakelen?";
 "settings.expensesOnlyActivateMessage" = "Inkomsten, overschrijvingen en saldi worden in de hele app verborgen. Je kunt dit altijd terugzetten.";
-"settings.expensesOnlyActivateConfirm" = "Ja, inschakelen";
+"settings.expensesOnlyActivateConfirm" = "Inschakelen";
 "settings.expensesOnlyDeactivateTitle" = "Modus alleen uitgaven uitschakelen?";
 "settings.expensesOnlyDeactivateMessage" = "Inkomsten, overschrijvingen en saldi worden weer getoond.";
-"settings.expensesOnlyDeactivateConfirm" = "Ja, uitschakelen";
+"settings.expensesOnlyDeactivateConfirm" = "Uitschakelen";
 "settings.expensesOnlyActive" = "Actief";
 "settings.categoryHidden" = "(verborgen)";
 
@@ -1773,7 +1773,7 @@
 "onboarding.categoriesYes" = "Begin met deze categorieën";
 "onboarding.categoriesNo" = "Geen categorieën, ik maak ze zelf";
 "onboarding.categoriesRecommended" = "Aanbevolen";
-"onboarding.categoriesInfo" = "Elke categorie heeft uitgebreide subcategorieën. Je kunt ze bekijken en aanpassen via Profiel > Categorieën.";
+"onboarding.categoriesInfo" = "Elke categorie heeft uitgebreide subcategorieën. Je kunt ze bekijken en aanpassen via Instellingen > Categorieën.";
 "onboarding.notificationsTitle" = "Op de hoogte blijven?";
 "onboarding.notificationsSubtitle" = "Zet de herinneringen aan die je helpen. Je kunt ze altijd wijzigen.";
 "onboarding.notificationsSkip" = "Nu niet, bedankt";
@@ -1781,7 +1781,7 @@
 "onboarding.notificationsDeselectAll" = "Alles uitschakelen";
 "onboarding.recommended" = "Aanbevolen";
 "onboarding.languageTitle" = "Kies je taal";
-"onboarding.languageSubtitle" = "Yala is nog niet beschikbaar in de taal van je toestel. Kies er een: je kunt het altijd wijzigen via Profiel > Personalisatie.";
+"onboarding.languageSubtitle" = "Yala is nog niet beschikbaar in de taal van je toestel. Kies er een: je kunt het altijd wijzigen via Instellingen > Personalisatie.";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "Hoe wil je Yala gebruiken?";
@@ -1887,7 +1887,7 @@
 "onboarding.calc.balanceLabelChecking" = "Geld op je rekening";
 "onboarding.calc.balanceLabelSavings" = "Gespaard bedrag";
 "onboarding.calc.balanceLabelCash" = "Contant geld bij je";
-"onboarding.accountImportTip" = "Via Profiel > Importeren kun je boekingen importeren naar elke rekening.";
+"onboarding.accountImportTip" = "Via Instellingen > Importeren kun je boekingen importeren naar elke rekening.";
 "onboarding.accountMoreTip" = "Je kunt altijd meer rekeningen toevoegen. Maak er minstens één per valuta als je meerdere gebruikt.";
 "onboarding.budgetTitle" = "Hoeveel verwacht je uit te geven?";
 "onboarding.budgetSubtitle" = "Met een budget weet je wanneer je in de buurt komt van je grens. Kies een categorie en een maandelijks richtbedrag.";
@@ -2169,7 +2169,7 @@
 "tipkit.pro.premiumIcons.message" = "Kies uit premium-iconen om je app te personaliseren.";
 "tipkit.pro.proThemes.title" = "Premium-thema's";
 "tipkit.pro.proThemes.message" = "Ontdek exclusieve kleurenthema's die Yala je persoonlijke touch geven.";
-"tipkit.pro.chatFab.title" = "Je financiële assistent";
+"tipkit.pro.chatFab.title" = "Yala AI";
 "tipkit.pro.aiSummary.title" = "Jouw AI-samenvatting";
 "tipkit.pro.aiSummary.message" = "Je AI-samenvatting van je financiën, met één tik. Nuttige inzichten, meteen.";
 "tipkit.aiCharts.pro.title" = "AI-observaties";
@@ -2187,19 +2187,19 @@
 "faq.howToRecord.q" = "Hoe boek ik een uitgave?";
 "faq.howToRecord.a" = "Tik op Start op Nieuwe boeking om het bedrag in te typen, of op Spraak of Foto om het in te spreken of een bonnetje te lezen. Yala vult de details voor je in.";
 "faq.multiCurrency.q" = "Kan ik meerdere valuta's gebruiken?";
-"faq.multiCurrency.a" = "Ja. Yala ondersteunt 7 valuta's (PEN, USD, EUR, MXN, COP, BRL, GBP). Stel je hoofdvaluta in en voeg secundaire valuta's toe via Instellingen > Valuta.";
+"faq.multiCurrency.a" = "Ja. Yala heeft 54 valuta's. Elke rekening heeft haar eigen valuta en Yala rekent de totalen om naar je hoofdvaluta. Je kiest je hoofdvaluta, en tot 2 secundaire om te vergelijken, in Instellingen > Valuta & wisselkoers.";
 "faq.changeCategory.q" = "Hoe wijzig ik de categorie van een uitgave?";
 "faq.changeCategory.a" = "Open de boeking, tik op ‘Bewerken’ en wijzig de categorie. Sneller: houd de boeking in de lijst ingedrukt en kies ‘Categorie wijzigen’. Om er meerdere tegelijk te wijzigen, tik je in Boekingen op ···, kies je ‘Selecteren’, vink je de gewenste aan en tik je op het potlood.";
 "faq.importData.q" = "Kan ik mijn gegevens importeren?";
-"faq.importData.a" = "Ja. Ga naar Instellingen > Importeren en upload een CSV- of Excel-bestand. Yala detecteert automatisch de kolommen en laat je rekeningen per valuta toewijzen.";
+"faq.importData.a" = "Ja. Ga naar Instellingen > Bestand importeren en upload een CSV- of Excel-bestand. Yala detecteert automatisch de kolommen en laat je rekeningen per valuta toewijzen.";
 "faq.exportData.q" = "Hoe exporteer ik mijn gegevens?";
-"faq.exportData.a" = "Ga naar Instellingen > Exporteren en kies CSV of Excel. Je kunt al je boekingen downloaden voor analyse in een spreadsheet of als backup.";
+"faq.exportData.a" = "Ga naar Instellingen > Boekingen exporteren en kies CSV of Excel. Je kunt al je boekingen downloaden voor analyse in een spreadsheet of als backup.";
 "faq.deleteData.q" = "Kan ik al mijn gegevens verwijderen?";
 "faq.deleteData.a" = "Ja. Via Instellingen > Gegevens wissen kun je al je gegevens verwijderen. Deze actie kan niet ongedaan worden gemaakt — we raden aan eerst een backup te exporteren.";
 "faq.whatIsPro.q" = "Wat zit er in Yala Pro?";
-"faq.whatIsPro.a" = "Yala Pro ontgrendelt premium-functies zoals spraakinvoer, bonnetjes scannen, exclusieve thema's en meer. Bekijk alle voordelen via Instellingen > Abonnement.";
+"faq.whatIsPro.a" = "Met Yala Pro noteer je met je stem of een foto, stel je vragen aan Yala AI, heb je onbeperkt rekeningen en budgetten en gebruik je thema's en iconen. Je ziet alles in Instellingen > Yala Pro.";
 "faq.cancelSub.q" = "Hoe zeg ik mijn abonnement op?";
-"faq.cancelSub.a" = "Je kunt je abonnement altijd beheren of opzeggen via Instellingen > Abonnement > Beheer in App Store. Je Pro-toegang loopt door tot het einde van de betaalde periode.";
+"faq.cancelSub.a" = "Je kunt je abonnement altijd beheren of opzeggen via Instellingen > Yala Pro > Beheren of opzeggen. Je houdt Pro tot het einde van de betaalde periode.";
 
 // MARK: - Shortcuts (App Intents)
 "shortcut.quickExpense.title" = "Nieuwe boeking";
@@ -2495,10 +2495,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "Nieuwe automatische boeking";
-"shortcut.notification.expense" = "uitgave";
-"shortcut.notification.income" = "inkomsten";
-"shortcut.notification.body" = "Er is een %@ van %@%@ genoteerd. Open Yala om het te controleren en op te slaan.";
 
 // MARK: - Category Seeds
 
@@ -2601,10 +2597,10 @@
 "tutorials.createAccount.intro.title" = "Wat is een rekening?";
 "tutorials.createAccount.intro.desc" = "Stel je bank, portemonnee of kaart in om bij te houden waar je geld staat.";
 "tutorials.createAccount.step0.title" = "Maak een nieuwe rekening";
-"tutorials.createAccount.step1.title" = "Of maak er een via het Paneel";
+"tutorials.createAccount.step1.title" = "Of maak hem aan vanaf Start";
 "tutorials.createAccount.step2.title" = "Vul de gegevens in";
-"tutorials.createAccount.completion.title" = "Je rekening is klaar!";
-"tutorials.createAccount.completion.desc" = "Je rekeningen netjes en gescheiden houden is essentieel voor het beheren van je financiën. Per rekening kun je je gegevens filteren en je trends beter zien. Je kunt ze altijd bewerken en het beginsaldo of huidige saldo aanpassen.";
+"tutorials.createAccount.completion.title" = "Nu weet je hoe je een rekening aanmaakt";
+"tutorials.createAccount.completion.desc" = "Verdeel je geld over rekeningen (bank, contant, kaart) om te zien hoeveel er op elke rekening staat. Je kunt ze altijd bewerken.";
 
 // 2. createCategories (4 steps)
 "tutorials.createCategories.title" = "Categorieën maken";
@@ -2614,8 +2610,8 @@
 "tutorials.createCategories.step1.title" = "Subcategorieën toevoegen";
 "tutorials.createCategories.step2.title" = "Subcategorieën aanmaken";
 "tutorials.createCategories.step3.title" = "Pas je categorie aan";
-"tutorials.createCategories.completion.title" = "Categorie aangemaakt!";
-"tutorials.createCategories.completion.desc" = "Goede categorieën maken je rapporten veel nuttiger. Je kunt ze altijd bewerken of er meer toevoegen.";
+"tutorials.createCategories.completion.title" = "Nu weet je hoe je categorieën aanmaakt";
+"tutorials.createCategories.completion.desc" = "Met goede categorieën zie je waar je geld naartoe gaat. Je kunt ze altijd bewerken of er meer aanmaken.";
 
 // 3. createTags (2 steps)
 "tutorials.createTags.title" = "Labels maken";
@@ -2623,8 +2619,8 @@
 "tutorials.createTags.intro.desc" = "Groepeer uitgaven dwars door categorieën heen — zoals \"Vakantie\" voor eten, vervoer en hotel.";
 "tutorials.createTags.step0.title" = "Naar Labels";
 "tutorials.createTags.step1.title" = "Pas je label aan";
-"tutorials.createTags.completion.title" = "Label aangemaakt!";
-"tutorials.createTags.completion.desc" = "Gebruik labels om uitgaven voor projecten, reizen of evenementen te groeperen. Perfect voor analyses die verder gaan dan categorieën.";
+"tutorials.createTags.completion.title" = "Nu weet je hoe je labels aanmaakt";
+"tutorials.createTags.completion.desc" = "Gebruik labels om de uitgaven van een reis, een project of een evenement bij elkaar te zetten, ook als ze in verschillende categorieën vallen.";
 
 // 4. createRecord (4 steps)
 "tutorials.createRecord.title" = "Een uitgave boeken";
@@ -2634,17 +2630,17 @@
 "tutorials.createRecord.step1.title" = "Kies het type boeking";
 "tutorials.createRecord.step2.title" = "Vul de velden in";
 "tutorials.createRecord.step3.title" = "Gebruik snelle shortcuts";
-"tutorials.createRecord.completion.title" = "Uitgave geboekt!";
-"tutorials.createRecord.completion.desc" = "Uitgaven meteen boeken is essentieel. Hoe meer je boekt, hoe beter je analyses en rapporten worden.";
+"tutorials.createRecord.completion.title" = "Nu weet je hoe je een uitgave boekt";
+"tutorials.createRecord.completion.desc" = "Hoe eerder je elke uitgave noteert, hoe beter je ziet waar je geld naartoe gaat.";
 
 // 5. importData (2 steps)
 "tutorials.importData.title" = "Gegevens importeren";
 "tutorials.importData.intro.title" = "Importeer je gegevens";
 "tutorials.importData.intro.desc" = "Haal je uitgaven uit een spreadsheet of andere app in seconden binnen.";
-"tutorials.importData.step0.title" = "Kies Gegevens importeren";
+"tutorials.importData.step0.title" = "Tik op Bestand importeren";
 "tutorials.importData.step1.title" = "Importeer je bestand";
-"tutorials.importData.completion.title" = "Gegevens geïmporteerd!";
-"tutorials.importData.completion.desc" = "Je geschiedenis staat nu in Yala. Bij fouten krijg je een duidelijke melding met details; anders zie je het succesbericht. Bekijk je boekingen om te bevestigen dat alles goed is geïmporteerd.";
+"tutorials.importData.completion.title" = "Nu weet je hoe je je gegevens importeert";
+"tutorials.importData.completion.desc" = "Bij het importeren vertelt Yala wat er is binnengekomen en wat niet. Bekijk daarna je boekingen om het te controleren.";
 
 // 6. createBudgets (4 steps)
 "tutorials.createBudgets.title" = "Budgetten maken";
@@ -2652,31 +2648,31 @@
 "tutorials.createBudgets.intro.desc" = "Stel uitgavengrenzen in en krijg een melding als je in de buurt komt.";
 "tutorials.createBudgets.step0.title" = "Open Planning";
 "tutorials.createBudgets.step1.title" = "Stel je budget in";
-"tutorials.createBudgets.step2.title" = "Voeg toe aan favorieten";
+"tutorials.createBudgets.step2.title" = "Toon het op Start";
 "tutorials.createBudgets.step3.title" = "Bewerk wanneer je wilt";
-"tutorials.createBudgets.completion.title" = "Budget is actief!";
-"tutorials.createBudgets.completion.desc" = "Je ziet nu real-time hoe je uitgaven lopen en kunt betere beslissingen nemen over of je doorgaat met die uitgaven of niet. Check het regelmatig om in controle te blijven.";
+"tutorials.createBudgets.completion.title" = "Nu weet je hoe je een budget aanmaakt";
+"tutorials.createBudgets.completion.desc" = "Met een budget zie je meteen hoeveel je nog kunt uitgeven, en Yala laat het je weten als je de limiet nadert.";
 
 // 7. createScheduledPayments (5 steps)
 "tutorials.createScheduledPayments.title" = "Geplande betalingen";
 "tutorials.createScheduledPayments.intro.title" = "Wat zijn geplande betalingen?";
-"tutorials.createScheduledPayments.intro.desc" = "Automatiseer huur, nutsvoorzieningen en abonnementen — Yala boekt ze voor je.";
+"tutorials.createScheduledPayments.intro.desc" = "Voer huur, nutsvoorzieningen en abonnementen één keer in: telkens als het zover is, zet Yala de betaling in je Inbox, klaar om goed te keuren.";
 "tutorials.createScheduledPayments.step0.title" = "Open Planning";
 "tutorials.createScheduledPayments.step1.title" = "Vul de gegevens in";
 "tutorials.createScheduledPayments.step2.title" = "Bepaal de herhaling";
 "tutorials.createScheduledPayments.step3.title" = "Markeer als abonnement";
 "tutorials.createScheduledPayments.step4.title" = "Beheer je betalingen";
-"tutorials.createScheduledPayments.completion.title" = "Betaling gepland!";
-"tutorials.createScheduledPayments.completion.desc" = "Je terugkerende betalingen boeken zichzelf nu. Je krijgt een melding bij elke uitvoering.";
+"tutorials.createScheduledPayments.completion.title" = "Nu weet je hoe je een betaling plant";
+"tutorials.createScheduledPayments.completion.desc" = "Op de vervaldag zet Yala elke betaling in de Inbox, klaar om goed te keuren.";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "Favoriete betalingen";
+"tutorials.createFavorites.title" = "Favorieten";
 "tutorials.createFavorites.intro.title" = "Wat zijn favorieten?";
 "tutorials.createFavorites.intro.desc" = "Bewaar veelvoorkomende uitgaven als shortcuts en boek ze met één tik.";
 "tutorials.createFavorites.step0.title" = "Maak een favoriet";
 "tutorials.createFavorites.step1.title" = "Gebruik hem snel";
-"tutorials.createFavorites.completion.title" = "Favoriet opgeslagen!";
-"tutorials.createFavorites.completion.desc" = "Favorieten besparen je tijd bij terugkerende uitgaven. Je kunt er zoveel hebben als je wilt en ze altijd bewerken.";
+"tutorials.createFavorites.completion.title" = "Nu weet je hoe je favorieten gebruikt";
+"tutorials.createFavorites.completion.desc" = "Met een favoriet boek je een uitgave die je vaak doet in één tik. Je kunt er zoveel hebben als je wilt.";
 
 // 9. editPanel (3 steps)
 "tutorials.editPanel.title" = "Pas het paneel aan";
@@ -2685,8 +2681,8 @@
 "tutorials.editPanel.step0.title" = "Open het paneel";
 "tutorials.editPanel.step1.title" = "Pas de widgets aan";
 "tutorials.editPanel.step2.title" = "Reset als je wilt";
-"tutorials.editPanel.completion.title" = "Paneel aangepast!";
-"tutorials.editPanel.completion.desc" = "Je paneel toont nu precies wat je nodig hebt. Je kunt het altijd wijzigen om aan te passen aan je manier van beheren.";
+"tutorials.editPanel.completion.title" = "Nu weet je hoe je Start aanpast";
+"tutorials.editPanel.completion.desc" = "Start toont wat je kiest, in de volgorde die jij wilt. Je kunt het altijd wijzigen.";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "Paneelfilters";
@@ -2697,19 +2693,19 @@
 "tutorials.panelFiltering.step2.title" = "Filter in elke weergave";
 "tutorials.panelFiltering.step3.title" = "Zie filters door alle weergaven";
 "tutorials.panelFiltering.step4.title" = "Gebruik snelle filterknoppen";
-"tutorials.panelFiltering.completion.title" = "Filters onder de knie!";
-"tutorials.panelFiltering.completion.desc" = "Filters zijn je beste tool om je financiën in detail te begrijpen. Combineer ze voor steeds nauwkeurigere analyses.";
+"tutorials.panelFiltering.completion.title" = "Nu weet je hoe je filtert";
+"tutorials.panelFiltering.completion.desc" = "Combineer filters om precies te zien wat je zoekt. Ze gelden voor alle schermen tegelijk.";
 
 // 11. inboxApproval (4 steps)
 "tutorials.inboxApproval.title" = "Inbox";
 "tutorials.inboxApproval.intro.title" = "Je slimme inbox";
-"tutorials.inboxApproval.intro.desc" = "Bekijk en keur automatische uitgaven goed van Apple Pay, spraak of camera.";
-"tutorials.inboxApproval.step0.title" = "Boek via spraak of afbeelding";
+"tutorials.inboxApproval.intro.desc" = "Controleer en sla op wat Yala voor je vastlegde: wat je dicteert of fotografeert, Apple Pay-betalingen en betalingen die vervallen.";
+"tutorials.inboxApproval.step0.title" = "Wat er in de Inbox komt";
 "tutorials.inboxApproval.step1.title" = "Vul aan en keur goed";
-"tutorials.inboxApproval.step2.title" = "Boek meerdere tegelijk";
+"tutorials.inboxApproval.step2.title" = "Sla er meerdere tegelijk op";
 "tutorials.inboxApproval.step3.title" = "Beheer je inbox";
-"tutorials.inboxApproval.completion.title" = "Inbox onder de knie!";
-"tutorials.inboxApproval.completion.desc" = "Je boekingen in de inbox hebben geen vervaldatum, je kunt ze goedkeuren of weigeren wanneer je wilt. Concepten beïnvloeden je totalen pas zodra je ze goedkeurt.";
+"tutorials.inboxApproval.completion.title" = "Nu weet je hoe je de Inbox gebruikt";
+"tutorials.inboxApproval.completion.desc" = "Wat in de Inbox staat, telt pas mee in je totalen als je het goedkeurt, en het verloopt niet.";
 
 // 12. applePay (4 steps)
 "tutorials.applePay.title" = "Boeken met Apple Pay";
@@ -2721,49 +2717,48 @@
 "tutorials.applePay.step3.title" = "Configureer de parameters";
 
 // Tutorial step descriptions (re-expanded)
-"tutorials.createAccount.step0.desc" = "In je profiel kies je de sectie Rekeningen en tik je om een nieuwe rekening aan te maken.";
-"tutorials.createAccount.step1.desc" = "Je kunt ook direct vanaf het Paneel een rekening aanmaken via de kaart 'Nieuwe rekening toevoegen'.";
+"tutorials.createAccount.step0.desc" = "Ga in Instellingen naar Rekeningen en tik op + om een nieuwe aan te maken.";
+"tutorials.createAccount.step1.desc" = "Veeg op Start, bij Je financiën, door je rekeningen tot het einde en tik op Toevoegen.";
 "tutorials.createAccount.step2.desc" = "Vul de gegevens van je nieuwe rekening in en tik op Opslaan.";
-"tutorials.createCategories.step0.desc" = "In je profiel kies je de sectie Categorieën en maak je een nieuwe categorie aan.";
+"tutorials.createCategories.step0.desc" = "Ga in Instellingen naar Categorieën en tik op + om een nieuwe aan te maken.";
 "tutorials.createCategories.step1.desc" = "Onthoud dat er altijd subcategorieën aan een categorie gekoppeld moeten zijn om hem aan te maken.";
 "tutorials.createCategories.step2.desc" = "Subcategorieën maken werkt net zoals categorieën: geef hem een naam, selecteer de aard en pas optioneel het icoon aan.";
 "tutorials.createCategories.step3.desc" = "Pas het icoon en de kleur van je categorie aan zoals jij wilt, wanneer je maar wilt.";
-"tutorials.createTags.step0.desc" = "In je profiel kies je de sectie Labels en maak je een nieuw label aan.";
+"tutorials.createTags.step0.desc" = "Ga in Instellingen naar Labels en tik op + om een nieuw label aan te maken.";
 "tutorials.createTags.step1.desc" = "Pas je label aan naar jouw smaak: geef het een naam, icoon en kleur.";
 "tutorials.createRecord.step0.desc" = "Tik op Start op Nieuwe boeking. Om te dicteren of een bonnetje te lezen, tik je op Spraak of Foto.";
 "tutorials.createRecord.step1.desc" = "Je kunt uitgaven, inkomsten en zelfs overschrijvingen tussen rekeningen boeken. Wisselkoersen worden automatisch en in realtime berekend.";
 "tutorials.createRecord.step2.desc" = "Vul de verplichte velden in: bedrag, rekening en subcategorie. Je kunt ook een omschrijving en labels toevoegen.";
 "tutorials.createRecord.step3.desc" = "Gebruik snelle shortcuts: @ voor rekening, ! voor categorie en # voor label. Begin met typen om je zoekopdracht binnen elke shortcut te verfijnen.";
-"tutorials.importData.step0.desc" = "In je profiel kies je de sectie Gegevens importeren.";
+"tutorials.importData.step0.desc" = "Tik in Instellingen, bij Gegevens, op Bestand importeren.";
 "tutorials.importData.step1.desc" = "Je kunt zo vaak je wilt CSV of Excel importeren met het standaardsjabloon, dat je daar kunt downloaden. Bij gegevens in meerdere valuta's vraagt de app je per valuta een rekening te kiezen.";
 "tutorials.createBudgets.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Budgetten staat. Gebruik de +-knop om er een nieuw aan te maken.";
-"tutorials.createBudgets.step1.desc" = "Geef hem een naam, bedrag en bepaal de periode: dagelijks, maandelijks, jaarlijks of eenmalig (voor een reis, evenement, enz.). Pas aan welke rekeningen, categorieën, labels en aarden je wilt volgen. Zet meldingen aan voor waarschuwingen bij bepaalde drempels.";
-"tutorials.createBudgets.step2.desc" = "Je kunt budgetten aan favorieten toevoegen om ze in de Paneel-widget te tonen. Kies maximaal 3 in jouw voorkeursvolgorde.";
+"tutorials.createBudgets.step1.desc" = "Geef hem een naam, bedrag en bepaal de periode: dagelijks, maandelijks, jaarlijks of eenmalig (voor een reis, evenement, enz.). Kies welke rekeningen, categorieën, labels en aarden je wilt volgen. Zet meldingen aan voor waarschuwingen bij bepaalde drempels.";
+"tutorials.createBudgets.step2.desc" = "Zet ‘In widget tonen’ aan om het in de Budgetten-widget op Start te zien.";
 "tutorials.createBudgets.step3.desc" = "Onthoud dat je altijd kunt terugkomen om je budget te bewerken door erop te tikken.";
 "tutorials.createScheduledPayments.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Geplande betalingen staat. Gebruik de +-knop om er een nieuwe aan te maken.";
 "tutorials.createScheduledPayments.step1.desc" = "Vul de naam van je betaling, het bedrag, een notitie (optioneel), de rekening, subcategorie en labels (optioneel) in.";
 "tutorials.createScheduledPayments.step2.desc" = "Selecteer de betaaldag en de frequentie. Kies wanneer de eerste betaling valt en zet meldingen aan als je op dezelfde dag of een aantal dagen vooraf gemeld wilt worden.";
-"tutorials.createScheduledPayments.step3.desc" = "Vergeet de abonnementsschakelaar niet aan te zetten als het een terugkerend abonnement is.";
+"tutorials.createScheduledPayments.step3.desc" = "Zet onder ‘Meer opties’ ‘Is dit een abonnement?’ aan als het er een is.";
 "tutorials.createScheduledPayments.step4.desc" = "Door op een geplande betaling te tikken zie je aankomende en al uitgevoerde betalingen, en kun je hem altijd bewerken.";
-"tutorials.createFavorites.step0.desc" = "Ga naar het scherm Nieuwe boeking en tik bovenin op de ster om een nieuwe favoriet te maken.";
-"tutorials.createFavorites.step1.desc" = "Vul de velden in die je vooraf ingevuld wilt hebben. De volgende keer tik je op de favoriet en zie je alle velden automatisch invullen.";
+"tutorials.createFavorites.step0.desc" = "Tik in Nieuwe boeking onder het bedrag op ‘Favoriet’ om wat je al hebt ingevuld als favoriet op te slaan.";
+"tutorials.createFavorites.step1.desc" = "Tik de volgende keer op de favoriet in de rij bovenaan het formulier: de velden die je hebt opgeslagen, worden vanzelf ingevuld.";
 "tutorials.editPanel.step0.desc" = "Ga naar het hoofdscherm waar je je uitgavenoverzicht ziet met alle beschikbare widgets.";
-"tutorials.editPanel.step1.desc" = "Je kunt aanpassen welke widgets je ziet en in welke volgorde door op de aanpasknop op het paneel te tikken.";
+"tutorials.editPanel.step1.desc" = "Tik op de knop met vierkantjes naast elke sectie op Start om te kiezen welke widgets je ziet en in welke volgorde.";
 "tutorials.editPanel.step2.desc" = "Onthoud dat je altijd kunt terugkeren naar de standaardvolgorde door binnen 'Aanpassen' op \"Reset\" te tikken.";
 "tutorials.panelFiltering.step0.desc" = "Haal het beste uit Yala's interactieve grafieken. Bijna alle panelen zijn filterbaar per categorie, aard en meer. Speel ermee en vind wat voor jou werkt.";
 "tutorials.panelFiltering.step1.desc" = "Je hebt een filterbalk waarin je alle toegepaste filters ziet. Je kunt ze individueel of allemaal tegelijk verwijderen wanneer je wilt.";
 "tutorials.panelFiltering.step2.desc" = "In de verschillende weergaven van de app zie je dat je naar wens kunt filteren met de grafieken.";
 "tutorials.panelFiltering.step3.desc" = "Filters worden gelijkmatig op alle weergaven toegepast, zodat je allerlei statistieken ziet voor wat je ook wilt filteren.";
 "tutorials.panelFiltering.step4.desc" = "In sommige weergaven heb je ook een filtersectie bovenaan zodat je naar wens kunt filteren of alles met één knop kunt verwijderen.";
-"tutorials.inboxApproval.step0.desc" = "Als je Yala Pro gebruikt, brengt een spraak- of afbeeldingsboeking je automatisch naar het concept. Hetzelfde geldt voor de opdracht ‘Apple Pay-betaling boeken’.";
+"tutorials.inboxApproval.step0.desc" = "In de Inbox komt wat Yala voor je vastlegde: wat je dicteert of fotografeert, de Apple Pay-betalingen die de opdracht boekt en geplande betalingen die vervallen. Ze blijven concepten tot je ze bekijkt.";
 "tutorials.inboxApproval.step1.desc" = "Vul gewoon de verplichte velden in en keur goed. De boeking wordt normaal aangemaakt.";
-"tutorials.inboxApproval.step2.desc" = "Je kunt ook meerdere boekingen tegelijk inspreken of fotograferen. De app vertelt je hoeveel concepten er zijn gemaakt en leidt je naar de inbox om ze te bekijken.";
-"tutorials.inboxApproval.step3.desc" = "In je inbox kun je boekingen goedkeuren, kiezen voor 'Later goedkeuren' om ze later te bekijken of ze direct weigeren.";
-"tutorials.applePay.step0.desc" = "Open de Opdrachten-app en ga naar de sectie Automatiseringen.";
-"tutorials.applePay.step1.desc" = "Tik op Nieuwe automatisering, kies de optie Wallet, selecteer de kaarten die je wilt gebruiken en kies Direct uitvoeren.";
-"tutorials.applePay.step2.desc" = "Kies Maak nieuwe opdracht en zoek helemaal onderaan naar Yala. Selecteer in Yala de opdracht ‘Apple Pay-betaling boeken’.";
-"tutorials.applePay.step3.desc" = "Voor Bedrag kies je Opdrachtinvoer en daarna Bedrag. Doe hetzelfde voor Verkoper en Naam. Zet de schakelaar \"Toon bij uitvoeren\" uit.";
-
+"tutorials.inboxApproval.step2.desc" = "Zijn meerdere concepten al compleet? Tik op ‘De klare opslaan’ en ze gaan in één keer naar je boekingen.";
+"tutorials.inboxApproval.step3.desc" = "Veeg over een concept om het te verwijderen, of open het om het aan te vullen en goed te keuren wanneer je wilt.";
+"tutorials.applePay.step0.desc" = "Open de Opdrachten-app en ga naar Automatisering. Zie je die onderaan niet, dan staat hij in Bibliotheek.";
+"tutorials.applePay.step1.desc" = "Tik op +, kies Wallet en selecteer de kaarten die je gebruikt. Als het wordt aangeboden, kies Direct uitvoeren.";
+"tutorials.applePay.step2.desc" = "Als erom wordt gevraagd, tik op Maak nieuwe opdracht. Zoek naar Yala en kies de opdracht ‘Apple Pay-betaling boeken’.";
+"tutorials.applePay.step3.desc" = "Voor Bedrag kies je Opdrachtinvoer en daarna Bedrag. Doe hetzelfde voor Verkoper en Naam. Zie je ‘Toon bij uitvoeren’, zet het dan uit.";
 "tutorials.applePay.completion.title" = "Apple Pay verbonden!";
 "tutorials.applePay.completion.desc" = "Hiermee heb je nu automatische boekingen elke keer dat je met de geselecteerde kaarten Apple Pay gebruikt. Elke betaling maakt een concept in je inbox.";
 
@@ -2788,21 +2783,16 @@
 "settings.siriShortcuts" = "Siri & Opdrachten";
 "siriShortcuts.title" = "Siri & Opdrachten";
 "siriShortcuts.subtitle" = "Gebruik je stem of snelle shortcuts om uitgaven direct te boeken.";
-"siriShortcuts.siri.title" = "Boeken met Siri";
 "siriShortcuts.siri.description" = "Dicteer je uitgave en er wordt een concept in je inbox aangemaakt.";
 "siriShortcuts.siri.proNote" = "Vereist Yala Pro";
 "siriShortcuts.siri.phrase" = "Maak een boeking in Yala";
-"siriShortcuts.siri.alt1" = "Je kunt ook zeggen: \"Boek een uitgave in Yala\"";
-"siriShortcuts.siri.alt2" = "Of: \"Sla een uitgave op in Yala\"";
+"siriShortcuts.siri.alt1" = "Boek een uitgave in Yala";
+"siriShortcuts.siri.alt2" = "Sla een uitgave op in Yala";
 "siriShortcuts.all.title" = "Andere shortcuts";
-"siriShortcuts.shortcut.quick" = "Snel boeken";
-"siriShortcuts.shortcut.voice" = "Spraakinvoer";
-"siriShortcuts.shortcut.image" = "Vastleggen met foto of bestand";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "Opent het boekformulier met één tik.";
-"siriShortcuts.desc.voice" = "Dicteer het bedrag en de omschrijving met je stem.";
-"siriShortcuts.desc.image" = "Scan een bonnetje of ticket met je camera.";
-"siriShortcuts.desc.applePay" = "Boek een betaling die met Apple Pay is gedaan.";
+"siriShortcuts.desc.quick" = "Opent het formulier om een uitgave of inkomst te boeken.";
+"siriShortcuts.desc.voice" = "Dicteer het bedrag en de omschrijving.";
+"siriShortcuts.desc.image" = "Een bonnetje, een screenshot of een pdf.";
+"siriShortcuts.desc.applePay" = "Wordt gebruikt door de Wallet-automatisering.";
 "siriShortcuts.phrase.quick" = "Boeken in Yala";
 "siriShortcuts.phrase.voice" = "Boeken met spraak in Yala";
 "siriShortcuts.phrase.image" = "Boeken met foto of bestand in Yala";
@@ -2817,22 +2807,20 @@
 
 // MARK: - AI Settings (Personalization Sheet from Chat)
 
-"aiSettings.title" = "AI aanpassen";
+"aiSettings.title" = "Toon van Yala AI";
 "aiSettings.toneSection" = "Toon";
 "aiSettings.styleSection" = "Stijl";
-"aiSettings.appliesHint" = "Deze instellingen gelden voor Inzichten, Assistent en Paneel Hero.";
-
+"aiSettings.appliesHint" = "Geldt voor Yala AI en de AI-samenvatting in Statistieken.";
 // MARK: - AI Privacy (sub-view from Profile > Security)
 
 "aiPrivacy.title" = "AI-privacy & gegevens";
-"aiPrivacy.processingRow" = "Verwerking (spraak & afbeelding)";
-"aiPrivacy.chatRow" = "Pro-assistent";
+"aiPrivacy.processingRow" = "Toevoegen met stem of foto";
+"aiPrivacy.chatRow" = "Yala AI";
 "aiPrivacy.insightsRow" = "AI-samenvatting";
 "aiPrivacy.cloudExploreRow" = "Je cloudaccount raadplegen";
-"aiPrivacy.revokeConfirmTitle" = "Deze functie uitschakelen?";
 "aiPrivacy.revokeConfirmMessage" = "We stoppen met het verwerken van je AI-gegevens voor deze functie. Je kunt het altijd weer aanzetten.";
 "aiPrivacy.revokeConfirmAction" = "Uitschakelen";
-"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je Inzichten, Assistent of spraak- en afbeeldingsinvoer gebruikt, en gaan via onze server naar een AI-dienst. We verkopen ze niet en gebruiken ze niet voor advertenties.";
+"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je een van deze functies gebruikt, en gaan via onze server naar een AI-dienst. We verkopen ze niet en gebruiken ze niet voor advertenties.";
 "aiPrivacy.policyLink" = "Privacybeleid";
 
 // MARK: - AI Consent
@@ -2914,7 +2902,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Secundaire valuta";
-"account.secondaryCurrency.message" = "Je hebt een rekening in %@ toegevoegd. Wil je de wisselkoers %@ → %@ zien? Je kunt dit aanpassen via Profiel > Valuta & wisselkoers.";
+"account.secondaryCurrency.message" = "Je hebt een rekening in %@ toegevoegd. Wil je de wisselkoers %@ → %@ zien? Je kunt dit aanpassen via Instellingen > Valuta & wisselkoers.";
 "account.secondaryCurrency.accept" = "Toevoegen";
 "account.secondaryCurrency.reject" = "Nee, bedankt";
 
@@ -2925,7 +2913,7 @@
 "notificationPrimer.benefit3" = "Meldingen als je in de buurt komt van je budgetgrens";
 "notificationPrimer.accept" = "Notificaties inschakelen";
 "notificationPrimer.reject" = "Nu niet";
-"notificationPrimer.hint" = "Je kunt ze inschakelen via Profiel > Notificaties";
+"notificationPrimer.hint" = "Je kunt ze inschakelen via Instellingen > Notificaties";
 
 // MARK: - What's New
 "whatsNew.title" = "Wat is er nieuw in Yala";
@@ -3047,7 +3035,7 @@
 "groups.settings.dangerZone" = "Gevarenzone";
 
 // Bridge personal integration (per-group override)
-"groups.settings.personalIntegrationSectionTitle" = "Persoonlijke integratie";
+"groups.settings.personalIntegrationSectionTitle" = "Tonen in je rekeningen";
 "groups.settings.personalIntegrationToggleLabel" = "Uitgaven van deze groep vastleggen op mijn persoonlijke rekeningen";
 "groups.settings.personalIntegrationHintInheritOn" = "Je neemt je algemene instelling over (Aan).";
 "groups.settings.personalIntegrationHintLocalOff" = "Alleen in deze groep: uit.";
@@ -3065,7 +3053,7 @@
 "groups.balance.title" = "Saldi";
 "groups.balance.noDebts" = "Alles afgerekend!";
 "groups.balance.pendingDebts" = "Openstaande schulden";
-"groups.balance.settlements" = "Afrekeningen";
+"groups.balance.settlements" = "Betalingen";
 "groups.balance.confirmed" = "Bevestigd";
 "groups.balance.pending" = "Openstaand";
 "groups.expense.noExpenses" = "Geen uitgaven";
@@ -3321,12 +3309,11 @@
 "guide.favoritesManage.message" = "Bewaar je veelvoorkomende uitgaven hier. Bij het boeken tik je gewoon op de favoriet en wordt alles automatisch ingevuld.";
 
 // MARK: - Chat Assistant
-"chat.title" = "Vraag Yala";
 "chat.inputPlaceholder" = "Typ je vraag...";
 "chat.send" = "Versturen";
 "chat.emptySubtitle" = "Ontdek je financiën met vragen";
 "chat.errorTimeout" = "Het antwoord duurde te lang. Probeer opnieuw.";
-"chat.errorOffline" = "Je hebt een internetverbinding nodig om de assistent te gebruiken.";
+"chat.errorOffline" = "Je hebt een internetverbinding nodig om Yala AI te gebruiken.";
 "chat.errorGeneric" = "Er ging iets mis. Probeer opnieuw.";
 "chat.errorNoData" = "Geen gegevens gevonden voor die vraag. Kun je specifieker zijn?";
 "chat.dailyLimitReached" = "Je hebt je vragen voor vandaag opgebruikt. Kom morgen terug!";
@@ -3345,7 +3332,7 @@
 "chat.errorTranscription" = "Ik kon de audio niet transcriberen. Probeer opnieuw.";
 "chat.errorMicPermission" = "Ik heb toestemming nodig om de microfoon te gebruiken.";
 "chat.topics.title" = "Gespreksonderwerpen";
-"chat.resetContext" = "Gesprekscontext resetten";
+"chat.resetContext" = "Nieuw gesprek";
 "chat.listening" = "Aan het luisteren…";
 "chat.transcribing" = "Transcriberen…";
 "chat.preparingAI" = "AI wordt voorbereid…";
@@ -3385,7 +3372,7 @@
 "chat.draft.overflowFormat" = "Ik detecteerde %d boekingen. De eerste %d worden opgeslagen; stuur de rest in een ander bericht.";
 
 // MARK: - Chat Assistant Consent
-"aiConsent.chatTitle" = "Financiële assistent";
+"aiConsent.chatTitle" = "Yala AI";
 "aiConsent.chatMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten, terugkerende betalingen en je grootste uitgaven van deze maand. Die wordt alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
 "aiConsent.cloudExploreTitle" = "Yala AI met je cloudaccount";
 "aiConsent.cloudExploreMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst en, als een vraag erom vraagt, de gegevens uit je cloudaccount die nodig zijn om te antwoorden: boekingen van elke datum met hun notitie, rekeningen, budgetten en terugkerende betalingen. Ze worden alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
@@ -3393,10 +3380,9 @@
 "aiConsent.inlineHintMultiple" = "Meerdere functies gebruiken een AI-dienst om je gegevens te verwerken. Ze worden niet permanent bewaard.";
 
 // MARK: - Chat Assistant Feature Gate & Settings
-"featureGate.chatAssistant" = "Chat-assistent";
+"featureGate.chatAssistant" = "Yala AI";
 "settings.chatAssistant" = "Vraag Yala";
-"subscription.feature.aiAssistant" = "AI-financieel assistent";
-
+"subscription.feature.aiAssistant" = "Yala AI";
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "Betaald door";
 "groups.expense.selectAll" = "Alles selecteren";
@@ -3442,7 +3428,7 @@
 "groups.invite.ready" = "Helemaal klaar!";
 "groups.invite.goToGroup" = "Naar groep";
 "groups.invite.linkInvalidTitle" = "Ongeldige link";
-"groups.invite.linkInvalidDetail" = "Deze link is niet meer geldig of is verlopen. Vraag de admin een nieuwe te genereren.";
+"groups.invite.linkInvalidDetail" = "Deze link is niet meer geldig of is verlopen. Vraag degene die je heeft uitgenodigd om een nieuwe link.";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Probleem met de groep";
@@ -3965,17 +3951,17 @@
 "filters.includeGroupTransactionsHint" = "Indien ingeschakeld verschijnen bewegingen gegenereerd door gedeelde uitgaven in je lijst.";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "Deze uitgave heeft latere afrekeningen. Verwijder of regel eerst de afrekeningen voordat je het verwijdert.";
+"groups.bridge.deleteExpenseBlocked" = "Deze uitgave heeft latere betalingen. Verwijder of pas die betalingen eerst aan voordat je haar verwijdert.";
 "groups.bridge.editFromGroup" = "Deze boeking synchroniseert met een groep. Bewerk haar vanuit de gedeelde uitgave.";
 "groups.bridge.assignFromInbox" = "Wijs een subcategorie toe vanuit je Inbox om deze af te ronden.";
-"groups.bridge.editSettlementInGroup" = "Deze boeking komt uit een afrekening. Bewerk haar in de groep.";
+"groups.bridge.editSettlementInGroup" = "Deze boeking komt uit een groepsbetaling. Bewerk haar in de groep.";
 "groups.bridge.editPartialBanner" = "Deze uitgave komt uit de groep. Je kunt rekening, categorie en tags bewerken. Bedrag en datum synchroniseren met de groep.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ heeft deze uitgave geregistreerd in %2$@. Kies een rekening om het in je administratie bij te houden.";
 "groups.bridge.draftReasonCurrencyChanged" = "De valuta van de uitgave in %@ is gewijzigd. Kies een rekening om je deel te registreren.";
 "groups.card.moreDebts" = "+%d meer";
-"inbox.groupExpenseAccountDraft.title" = "Rekening toewijzen";
+"inbox.groupExpenseAccountDraft.title" = "Kies de rekening";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Bronrekening";
-"groups.bridge.activateTitle" = "Automatische boekingen inschakelen";
+"groups.bridge.activateTitle" = "Tonen in je rekeningen";
 "groups.bridge.activateBody" = "Vanaf nu verschijnen gedeelde uitgaven in je persoonlijke rekeningen. Eerdere uitgaven in je groepen: %d. Wat doen we ermee?";
 "groups.bridge.activateOptionFromNow" = "Vanaf nu beginnen";
 "groups.bridge.activateOptionFromNowHint" = "Alleen nieuwe uitgaven worden weerspiegeld.";
@@ -3997,14 +3983,14 @@
 "groups.bridge.optoutAlertNo" = "Alleen in de groep";
 
 // Bridge deactivation sheet (F5)
-"groups.bridge.deactivationSheetTitle" = "Persoonlijke integratie uitschakelen";
+"groups.bridge.deactivationSheetTitle" = "Niet meer tonen in je rekeningen";
 "groups.bridge.deactivationSheetBody" = "Je hebt al boekingen die automatisch op je rekeningen zijn aangemaakt. Kies wat je ermee wilt doen.";
 "groups.bridge.deactivationOptionFreeze" = "Bewaren als geschiedenis";
 "groups.bridge.deactivationOptionDelete" = "Verwijderen uit mijn rekeningen";
 
 // Groups Global Settings sheet (F3a)
 "groups.globalSettings.title" = "Groepsinstellingen";
-"groups.globalSettings.bridgeSectionTitle" = "Integratie met je persoonlijke Yala";
+"groups.globalSettings.bridgeSectionTitle" = "Tonen in je rekeningen";
 "groups.globalSettings.bridgeToggleLabel" = "Groepsuitgaven vastleggen op mijn persoonlijke rekeningen";
 "groups.globalSettings.bridgeCaption" = "Als dit aanstaat, wordt elke uitgave die je betaalt of afrekent ook vastgelegd op de persoonlijke rekening die je kiest. Je saldo weerspiegelt de werkelijkheid.";
 "groups.globalSettings.visibilitySectionTitle" = "Zichtbaarheid";
@@ -4022,7 +4008,7 @@
 "subcategory.system.settlementSent" = "Afrekening verzonden";
 "subcategory.system.settlementReceived" = "Afrekening ontvangen";
 "inbox.sourceGroupExpense" = "Gedeelde uitgave";
-"inbox.sourceGroupSettlement" = "Afrekening";
+"inbox.sourceGroupSettlement" = "Groepsbetaling";
 "inbox.sourceManual" = "Handmatig";
 "inbox.groupDraftCannotDelete" = "Deze boeking kan alleen worden verwijderd uit haar groep.";
 
@@ -4031,9 +4017,9 @@
 "groups.settlement.fromAccountNone" = "Geen — later afronden";
 "inbox.openInbox" = "Inbox openen";
 "groups.detail.openGroup" = "Groep openen";
-"inbox.groupExpenseDraft.title" = "Subcategorie toewijzen";
+"inbox.groupExpenseDraft.title" = "Kies de subcategorie";
 "inbox.groupExpenseDraft.assignSubcategory" = "Subcategorie";
-"inbox.groupSettlementDraft.title" = "Rekening toewijzen";
+"inbox.groupSettlementDraft.title" = "Kies de rekening";
 "inbox.groupSettlementDraft.assignAccount" = "Doelrekening";
 "inbox.groupDraft.finalize" = "Afronden";
 "inbox.groupDraft.fromGroup" = "Groep: %@";
@@ -4048,7 +4034,7 @@
 "groups.member.rejectConfirm" = "Het verzoek van %@ afwijzen? Diegene kan opnieuw toegang vragen met een andere link.";
 "groups.member.pendingRequestsSection" = "Openstaande verzoeken";
 "groups.invite.waitingApproval.title" = "Verzoek verstuurd";
-"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. Ondertussen zie je de groep in je lijst, maar je kunt hem nog niet openen. Open Yala straks nog eens om te zien of het gelukt is.";
+"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. Ondertussen zie je de groep in je lijst, maar je kunt hem nog niet openen. We laten het je weten zodra je bent goedgekeurd.";
 "groups.invite.waitingApproval.banner" = "Wacht op goedkeuring van de beheerder";
 "groups.invite.rejected.title" = "Verzoek afgewezen";
 "groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";
@@ -4107,7 +4093,7 @@
 
 "welcome.hero.cards.capture.title" = "Foto van bonnen";
 "welcome.hero.cards.capture.body" = "Richt op de bon. Yala leest 'm.";
-"welcome.hero.cards.assistant.title" = "Stem en AI-assistent";
+"welcome.hero.cards.assistant.title" = "Stem en Yala AI";
 "welcome.hero.cards.assistant.body" = "Vertel of vraag. Yala antwoordt.";
 "welcome.hero.cards.groups.title" = "Gedeelde uitgaven";
 "welcome.hero.cards.groups.body" = "Verdeel met iedereen.";
@@ -4271,18 +4257,13 @@
 "groups.onboarding.step2.card1.body" = "Familie, vrienden, reizen of werk. Zoveel groepen als je nodig hebt.";
 "groups.onboarding.step2.card2.title" = "Registreer uitgaven, Yala verdeelt ze";
 "groups.onboarding.step2.card2.body" = "Kies hoe elke uitgave wordt verdeeld. Yala berekent wie wat moet betalen.";
-"groups.onboarding.step2.card3.title" = "Vereffen schulden met een paar taps";
+"groups.onboarding.step2.card3.title" = "Verreken schulden met een paar taps";
 "groups.onboarding.step2.card3.body" = "Sluit betalingen af en begin weer bij nul. Geen ruzies, geen Excel.";
 
 "groups.onboarding.step2.bridgeAwareness" = "Wanneer je een uitgave betaalt, leggen we die automatisch ook vast op je persoonlijke rekening — zodat je saldo altijd de werkelijkheid weerspiegelt.";
-"groups.onboarding.step3.title" = "Jouw privacy staat voorop";
-"groups.onboarding.step3.subtitle" = "Je deelt alleen het noodzakelijke, niets meer.";
-"groups.onboarding.step3.point1" = "Elk lid heeft een eigen Yala-account nodig.";
-"groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
 "groups.onboarding.step3.cta" = "Naar groepen";
 "groups.onboarding.step3.signInCTA" = "Aanmelden";
 
-"groups.onboarding.step3.bridgeAwareness" = "Je kunt dit gedrag wijzigen in Groepsinstellingen.";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ is verwijderd";
@@ -4310,11 +4291,11 @@
 "more.subtitle.distribution" = "Ontdek waar je geld heen gaat";
 "more.subtitle.budgets" = "Stel limieten in en houd je tempo bij";
 "more.subtitle.scheduledPayments" = "Wat eraan komt: rekeningen en abonnementen";
-"more.subtitle.comparative" = "Vergelijk je periodes naast elkaar";
-"more.subtitle.cashFlow" = "Wat binnenkomt en wat eruitgaat";
+"more.subtitle.comparative" = "Meer of minder uitgegeven dan vorige maand?";
+"more.subtitle.cashFlow" = "Kom je de komende maanden rond?";
 "more.subtitle.records" = "Al je boekingen op één plek";
 "more.subtitle.groups" = "Deel uitgaven zonder gedoe";
-"more.subtitle.profile" = "Je account en voorkeuren";
+"more.subtitle.profile" = "Je profiel en voorkeuren";
 "more.toolsSection" = "Meer functies";
 
 
@@ -4358,20 +4339,20 @@
 "groups.card.youOwe" = "Jij bent %@ schuldig";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
-"inbox.groupExpenseAccountDraft.banner" = "Uitgave van groep %@. Wijs alleen de rekening toe waar het geld vandaan kwam; het bedrag en de datum worden door de groep beheerd.";
+"inbox.groupExpenseAccountDraft.banner" = "Uit de groep ‘%@’.";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
-"inbox.groupExpenseDraft.banner" = "Uitgave van groep %@. Kies alleen een subcategorie om het in te delen; het bedrag en de datum worden door de groep beheerd.";
+"inbox.groupExpenseDraft.banner" = "Uit de groep ‘%@’.";
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
-"inbox.groupSettlementDraft.banner" = "Afrekening van groep %@. Wijs alleen een rekening toe; het bedrag en de datum worden door de groep beheerd.";
+"inbox.groupSettlementDraft.banner" = "Uit de groep ‘%@’.";
 "inbox.groupSettlementDraft.alreadyRegistered" = "Deze betaling staat al in je rekeningen. Je kunt dit concept verwijderen.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "Rekening en subcategorie toewijzen";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Kies de rekening en subcategorie";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
-"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Uitgave van groep %@. Wijs de rekening toe waar het geld vandaan kwam en kies een subcategorie om het in te delen; het bedrag en de datum worden door de groep beheerd.";
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Uit de groep ‘%@’.";
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Deze gedeelde uitgave bestaat niet meer in de groep.";
@@ -4488,10 +4469,10 @@
 "groups.openingBalance.emptyState" = "Nog geen beginsaldi.";
 "groups.openingBalance.rollupOwes" = "is schuldig";
 "groups.openingBalance.rollupOwed" = "heeft tegoed";
-"groups.openingBalance.approvalPromptTitle" = "Begint %@ met een saldo?";
-"groups.openingBalance.approvalPromptBody" = "Leg vast wat iemand schuldig is of tegoed heeft.";
-"groups.openingBalance.approvalPromptAdd" = "Beginsaldo toevoegen";
-"groups.openingBalance.approvalPromptSkip" = "Niet nu";
+"groups.openingBalance.approvalPromptTitle" = "Had %@ al iets openstaan met de groep?";
+"groups.openingBalance.approvalPromptBody" = "Was diegene vóór het meedoen al iets schuldig, of had die nog iets tegoed? Voeg het toe zodat de saldi kloppen.";
+"groups.openingBalance.approvalPromptAdd" = "Ja, toevoegen";
+"groups.openingBalance.approvalPromptSkip" = "Nee, begin bij nul";
 "groups.openingBalance.errorNotOwner" = "Alleen de maker van de groep kan beginsaldi beheren.";
 "groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";
 
@@ -4781,7 +4762,7 @@
 "groups.consent.point1" = "Groepen zijn van nature gedeeld: ze leven in de cloud van Yala zodat iedereen dezelfde uitgaven ziet, altijd actueel.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Met de groep wordt alleen het minimale gedeeld: je alias en de uitgaven van de groep. Andere leden zien je e-mail niet.";
+"groups.consent.point2" = "Met de groep wordt alleen het minimale gedeeld: je naam en de uitgaven van de groep. Andere leden zien je e-mail niet.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Je persoonlijke financiën verhuizen niet: ze blijven waar jij hebt gekozen, privé zoals altijd.";
@@ -4889,17 +4870,9 @@
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Gebruik hetzelfde Google-account waarmee je je cloudaccount hebt gemaakt.";
 
-/* Note under sign-in buttons: account is tied to the sign-in method */
-"welcome.cloud.providerNote" = "Log in met dezelfde methode als waarmee je je account hebt gemaakt — je Yala-account is eraan gekoppeld.";
 
-/* R9 provider mismatch screen title */
-"welcome.cloud.providerMismatchTitle" = "Dat account gebruikt een andere methode";
 
-/* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "Het Yala-account van deze Apple ID is gemaakt met %@.";
 
-/* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "Het Yala-account van deze Apple ID is met een andere inlogmethode gemaakt.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
 "welcome.cloud.beaconOrigin" = "Het is gemaakt met %@. Je kunt erop inloggen of een nieuw account maken.";
@@ -5216,7 +5189,7 @@
 "settings.batchLeaveStoppedBody" = "Je kunt het altijd hervatten via ‘Gegevens wissen’.";
 
 /* Feed row title for a confirmed settlement in group records */
-"groups.settlement.entryDescription" = "Afrekening";
+"groups.settlement.entryDescription" = "Betaling";
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@ heeft %2$@ betaald";
@@ -5287,16 +5260,16 @@
 "groups.signin.retryLater" = "Hmm, we konden je account nu niet verbinden. Je groep staat er nog en je verliest niets — probeer het later opnieuw.";
 
 /* Groups > Balances: menu item on a confirmed settlement row (destructive) */
-"groups.settlement.deleteAction" = "Afrekening verwijderen";
+"groups.settlement.deleteAction" = "Betaling verwijderen";
 
 /* Groups > Balances: title of the delete-settlement confirmation dialog */
-"groups.settlement.deleteTitle" = "Deze afrekening verwijderen?";
+"groups.settlement.deleteTitle" = "Deze betaling verwijderen?";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
 "groups.settlement.deleteMessage" = "De saldi die hiermee vereffend zijn, staan weer open. En als er een boeking op je rekeningen is aangemaakt, wordt die ook verwijderd.";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
-"groups.settlement.deleteFailed" = "De afrekening kon niet worden verwijderd. Probeer het opnieuw.";
+"groups.settlement.deleteFailed" = "De betaling kon niet worden verwijderd. Probeer het opnieuw.";
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "We konden deze uitnodiging nu niet openen. We hebben je verzoek opgeslagen — probeer het over een moment opnieuw.";
@@ -5312,11 +5285,13 @@
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Maak je Yala-account";
 "welcome.bornCloud.subtitle" = "Daarmee open je Yala op elk apparaat.";
-"welcome.bornCloud.providerNote" = "Je Yala-account blijft gekoppeld aan de methode die je kiest.";
 "welcome.bornCloud.creating" = "Je account wordt aangemaakt…";
 
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
 "welcome.mirrorRelaunch.title" = "Nog één stap: open Yala opnieuw";
+
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "Je uitnodiging wordt geopend…";
 
 /* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
 "welcome.mirrorRelaunch.body" = "Om je gegevens goed te beschermen moet Yala opnieuw starten. Ga naar het beginscherm en kom terug — daarna gaan we verder waar je gebleven was.";
@@ -5360,14 +5335,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "Terug";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "Hoe heet je?";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "Dit is de naam die de anderen in de groep zien.";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "Mijn groep maken";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "Hoe werken groepen?";
@@ -5380,12 +5351,10 @@
 "groups.empty.createAccount.action" = "Account aanmaken";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "Nog één stap";
+"groups.empty.needsConsent.title" = "Accepteer hoe je groepen worden bewaard";
 "groups.empty.needsConsent.message" = "We vertellen je wat er in de Yala-cloud wordt bewaard, en jij beslist.";
-"groups.empty.needsConsent.action" = "Doorgaan";
+"groups.empty.needsConsent.action" = "Bekijken en accepteren";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "Uitgaven die je in een groep noteert, worden bewaard op de servers van Yala, zodat iedereen ze bijgewerkt ziet.";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Account aanmaken";
@@ -5400,7 +5369,7 @@
 "groups.freshStartPending.leadUnknown" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
 "groups.freshStartPending.lossSessionExpired" = "Ze kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan staat niet meer op deze telefoon. Als je niet opnieuw inlogt met dat account, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.lossPermanent" = "Het account dat ze heeft gemaakt kan ze niet meer uploaden, en opnieuw proberen lost dat niet op. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
-"groups.freshStartPending.lossAttest" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus ze kunnen niet worden geüpload. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossAttest" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, dus ze kunnen niet worden geüpload. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.lossAction" = "Opnieuw beginnen en ze verliezen";
 "groups.freshStartPending.lossConfirmTitle" = "Deze wijzigingen verliezen?";
 "groups.freshStartPending.lossConfirmBody" = "Groepswijzigingen die verloren gaan: %d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
@@ -5470,7 +5439,7 @@
 "groups.card.pendingNotice.title" = "Wacht op goedkeuring";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "De groepsbeheerder heeft je verzoek nog niet goedgekeurd. Zodra dat gebeurt, kun je de groep openen en de uitgaven bekijken. Kom straks nog eens terug.";
+"groups.card.pendingNotice.body" = "De groepsbeheerder heeft je verzoek nog niet goedgekeurd. Zodra dat gebeurt, kun je de groep openen en de uitgaven bekijken. We laten het je weten zodra je bent goedgekeurd.";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "Rekeningsaldo";
@@ -5512,7 +5481,7 @@
 "groups.shareableSummary.action" = "Overzicht delen";
 
 /* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
-"groups.shareableSummary.hint" = "Een afbeelding met de totalen van de groep en de minste betalingen om alles te vereffenen. Bevat de hele geschiedenis.";
+"groups.shareableSummary.hint" = "Een afbeelding met de totalen van de groep en de betalingen om alles te vereffenen. Bevat de hele geschiedenis.";
 
 /* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
 "groups.shareableSummary.totalSpent" = "Totaal uitgegeven";
@@ -5611,7 +5580,7 @@
 "account.currencyChange.blockedReasonGroupExpense" = "groepsuitgaven";
 
 /* Lowercase, used inside a list */
-"account.currencyChange.blockedReasonGroupSettlement" = "groepsafrekeningen";
+"account.currencyChange.blockedReasonGroupSettlement" = "groepsbetalingen";
 
 /* %1 old currency, %2 new currency */
 "account.currencyChange.confirmMessage" = "Ze zijn vastgelegd in %1$@ en gaan naar %2$@ met de wisselkoers van de datum van elke boeking. Dit kan niet ongedaan worden gemaakt.";
@@ -5693,6 +5662,15 @@
 
 /* Private branch iCloud gate: body when the CloudKit probe failed */
 "welcome.privateICloud.errorBody" = "Misschien ligt het aan je verbinding. Probeer het opnieuw voordat je verdergaat — dan duiken er geen oude gegevens onaangekondigd op.";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "iCloud deed er te lang over om te reageren";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "We konden je iCloud niet helemaal nakijken. Probeer het opnieuw voordat je verdergaat — dan duiken er geen oude gegevens onaangekondigd op.";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "We konden je iCloud niet helemaal nakijken, dus hebben we niets verwijderd: alles is nog zoals het was. Probeer het opnieuw, of ga terug en beslis wanneer je wilt.";
 
 /* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
 "welcome.privateICloud.lateTitle" = "We hebben gegevens van je in iCloud gevonden";
@@ -5835,14 +5813,14 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "Je sessie voor groepen is verlopen. Log opnieuw in en probeer het nog eens.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Je sessie voor groepen is verlopen en sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Log opnieuw in, sluit Yala en open hem weer (blijft het gebeuren, werk hem dan bij) en probeer het nog eens.";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw om ze voor te bereiden (blijft het gebeuren, werk hem dan bij).";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, en sommige van de laatste konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw om ze voor te bereiden (blijft het gebeuren, werk hem dan bij).";
 "storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Sommige groepswijzigingen op deze telefoon zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Bovendien konden sommige groepswijzigingen niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van dat account worden alleen geüpload als je daarmee inlogt.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
 "welcome.groups.inviteNeutralTitle" = "Voor je meedoet, wordt deze telefoon leeggemaakt";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "Hier staan gegevens opgeslagen die synchroniseren met een iCloud. Zodat jouw groepsuitgaven daar niet terechtkomen, verwijderen we ze van deze telefoon: de kopie in iCloud blijft ongemoeid. Yala start opnieuw op en je gaat verder met je uitnodiging.";
+"welcome.groups.inviteNeutralBody" = "Hier staan gegevens opgeslagen die synchroniseren met een iCloud-account. Zodat jouw groepsuitgaven daar niet terechtkomen, verwijderen we ze van deze telefoon: de kopie in iCloud blijft ongemoeid. Yala start opnieuw op en je gaat verder met je uitnodiging.";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
 "welcome.groups.inviteNeutralBodyNoBackup" = "Hier staan gegevens opgeslagen en we konden geen kopie in iCloud vinden. Zodat jouw groepsuitgaven er niet mee vermengd raken, moeten ze van deze telefoon verwijderd worden, en ze zijn niet terug te halen. Yala start opnieuw op en je gaat verder met je uitnodiging.";
@@ -5927,25 +5905,25 @@
 "groups.errors.attestUnavailableTitle" = "Deze telefoon kan je groepen niet synchroniseren";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Groepswijzigingen die niet zijn aangekomen: %d. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"groups.errors.attestUnavailableSignOutLoss" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen. Wijzigingen die niet zijn aangekomen: %d. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige groepswijzigingen zijn niet aangekomen. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, en sommige wijzigingen zijn niet aangekomen. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "Uitloggen en ze verliezen";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus je groepswijzigingen kunnen niet worden geüpload.";
+"groups.errors.attestUnavailable" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, dus wat je wijzigt, bereikt de groep niet. Gebruik zolang een andere telefoon.";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
 "groups.errors.leaveAttestUnavailable" = "Deze telefoon kan je groepen niet synchroniseren, dus we konden je vertrek uit de groep niet afronden.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Groepswijzigingen die niet zijn aangekomen: %d. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralAttestLossBody" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen. Wijzigingen die niet zijn aangekomen: %d. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige groepswijzigingen zijn niet aangekomen. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralAttestLossBodyUnknown" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, en sommige wijzigingen zijn niet aangekomen. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "Doorgaan en ze verliezen";
@@ -5955,11 +5933,11 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "Deze telefoon kan je gegevens niet synchroniseren";
-"settings.signOutAttestMessage" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
-"settings.signOutAttestMessageUnknown" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, en sommige wijzigingen zijn niet in je account in de cloud aangekomen. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestMessage" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen. Wijzigingen die niet zijn aangekomen: %d. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestMessageUnknown" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen, en sommige wijzigingen zijn niet aangekomen. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
 "settings.signOutAttestExportButton" = "Mijn boekingen exporteren";
 "settings.signOutAttestLossButton" = "Uitloggen en ze verliezen";
-"settings.signOutAttestBlocked" = "Deze telefoon komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist, dus je wijzigingen kunnen niet naar je account in de cloud worden geüpload.";
+"settings.signOutAttestBlocked" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen, dus je wijzigingen kunnen niet worden geüpload.";
 "settings.signOutAttestExportEmpty" = "Je hebt geen boekingen om te exporteren.";
 "settings.signOutAttestExportFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";
 
@@ -5967,7 +5945,7 @@
 "groups.attestTerminalBanner" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen. Niemand in de groep ziet wat je hier invoert — gebruik een andere telefoon.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier invoert, wordt op deze telefoon bewaard, maar bereikt je cloudaccount niet — gebruik zolang een andere telefoon.";
+"settings.attestTerminalBanner" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen. Wat je hier invoert, wordt op de telefoon bewaard, maar bereikt je account niet — gebruik zolang een andere telefoon.";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "Je gegevens worden naar iCloud geüpload. Je kunt Yala blijven gebruiken.";
@@ -6107,16 +6085,16 @@
 "settings.signOutCaptureUnfinished" = "Sommige van je laatste wijzigingen konden niet worden voorbereid om naar de cloud te uploaden. Ze blijven op deze telefoon staan en er gaat niets verloren. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
-"settings.signOutSyncStoppedMidMigration" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd omdat de overstap van je gegevens tussen de cloud en iCloud niet is afgerond. Open ‘Waar je gegevens staan’, hier in Profiel, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
+"settings.signOutSyncStoppedMidMigration" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd omdat de overstap van je gegevens tussen de cloud en iCloud niet is afgerond. Open ‘Waar je gegevens staan’, hier in Instellingen, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
 
 /* Sign-out blocked: sync paused until Yala is reopened */
 "settings.signOutSyncStoppedNeedsRelaunch" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd tot je Yala opnieuw opent. Sluit hem volledig af (veeg hem weg in de app-kiezer), open hem opnieuw en probeer het nog eens.";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Je laatste wijzigingen zijn niet in de cloud aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
-"settings.signOutCloudSessionExpired" = "Je sessie is verlopen en sommige wijzigingen zijn nog niet naar de cloud geüpload. Er gaat niets verloren: open ‘Waar je gegevens staan’, hier in Profiel, tik op ‘Aanmelden’ en probeer het daarna opnieuw.";
+"settings.signOutCloudSessionExpired" = "Je sessie is verlopen en sommige wijzigingen zijn nog niet naar de cloud geüpload. Er gaat niets verloren: open ‘Waar je gegevens staan’, hier in Instellingen, tik op ‘Aanmelden’ en probeer het daarna opnieuw.";
 "settings.signOutSessionSurvived" = "Je bent nog ingelogd op deze iPhone, dus er is niets verwijderd. Probeer het opnieuw.";
-"settings.signOutMigrationInFlight" = "De overstap van je gegevens tussen iCloud en de cloud is nog niet afgerond, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Open ‘Waar je gegevens staan’, in Profiel, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
+"settings.signOutMigrationInFlight" = "De overstap van je gegevens tussen iCloud en de cloud is nog niet afgerond, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Open ‘Waar je gegevens staan’, in Instellingen, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
 "settings.signOutMigrationUnreadable" = "We konden niet controleren hoe ver de overstap van je gegevens tussen iCloud en de cloud is, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
 
 /* Title: a deletion of the old iCloud data succeeded in iCloud but failed on this phone */
@@ -6143,10 +6121,10 @@
 "groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op deze telefoon met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
-"settings.signOutCloudSessionExpiredGroupsLoss" = "Je sessie is verlopen. Nog niet geüploade groepswijzigingen: %d. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"settings.signOutCloudSessionExpiredGroupsLoss" = "Je sessie is verlopen. Nog niet geüploade groepswijzigingen: %d. Open ‘Waar je gegevens staan’, hier in Instellingen, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Je sessie is verlopen en sommige groepswijzigingen zijn nog niet geüpload. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Je sessie is verlopen en sommige groepswijzigingen zijn nog niet geüpload. Open ‘Waar je gegevens staan’, hier in Instellingen, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
 "welcome.groups.neutralNoSessionLossBody" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
@@ -6173,10 +6151,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van deze telefoon gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "Je sessie is verlopen. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je boekingen eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Je sessie is verlopen. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Open ‘Waar je gegevens staan’, hier in Instellingen, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je boekingen eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Je sessie is verlopen en sommige wijzigingen zijn niet in je account in de cloud aangekomen. Open ‘Waar je gegevens staan’, hier in Profiel, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je boekingen eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Je sessie is verlopen en sommige wijzigingen zijn niet in je account in de cloud aangekomen. Open ‘Waar je gegevens staan’, hier in Instellingen, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je boekingen eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Kies een boeking om die hier te zien";
@@ -6452,7 +6430,7 @@
 "inbox.groupSettlementAmountChange.bannerSent" = "Je betaling aan %1$@ in ‘%2$@’ is gewijzigd: het was %3$@ en is nu %4$@. In %5$@ staat %6$@ geregistreerd.";
 
 /* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
-"inbox.groupSettlementAmountChange.bannerUnnamed" = "Deze afrekening in ‘%1$@’ is gewijzigd: het was %2$@ en is nu %3$@. In %4$@ staat %5$@ geregistreerd.";
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Deze betaling in ‘%1$@’ is gewijzigd: het was %2$@ en is nu %3$@. In %4$@ staat %5$@ geregistreerd.";
 
 /* Primary button: set my transaction to the new amount */
 "inbox.groupSettlementAmountChange.adjust" = "Aanpassen naar %@";
@@ -6560,7 +6538,7 @@
 "welcome.mirrorRelaunch.privacyNote" = "Zo maakt Yala verbinding met je privé-iCloud en blijven je gegevens altijd privé: niemand anders kan ze lezen, wij ook niet.";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
-"onboarding.purpose.changeLaterHint" = "Je kunt dit altijd wijzigen via Profiel > Personalisatie.";
+"onboarding.purpose.changeLaterHint" = "Je kunt dit altijd wijzigen via Instellingen > Personalisatie.";
 
 /* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
 "onboarding.currencyName.titleExpenses" = "In welke valuta geef je uit?";
@@ -6915,7 +6893,7 @@
 "inbox.stillPending" = "Nog open: %d";
 
 /* UX 2.2 · lote 5: primeros días, guías y tips */
-"setup.step5.title.trial" = "Probeer Yala Pro 30 dagen gratis";
+"setup.step5.title.trial" = "Probeer Yala Pro 1 maand gratis";
 "setup.step5.title.knowPro" = "Ontdek Yala Pro";
 "setup.step5.title.alreadyPro" = "Je hebt Yala Pro al";
 "setup.step.skipped" = "Overgeslagen. Tik om het te proberen";
@@ -6930,7 +6908,7 @@
 "tipkit.stepProgress" = "%1$d van %2$d";
 "tipkit.pro.quickEntry.title" = "Je kunt nu dicteren en bonnetjes laten lezen";
 "tipkit.pro.quickEntry.message" = "Tik op Spraak om een uitgave in te spreken of op Foto om een bonnetje te lezen. Yala boekt het voor je.";
-"tipkit.pro.quickAI.message" = "Tik op AI en vraag Yala naar je uitgaven, budgetten en meer.";
+"tipkit.pro.quickAI.message" = "Tik op Yala AI en vraag naar je uitgaven, budgetten en meer.";
 "milestone.nextGoal" = "Volgend doel: %d boekingen";
 "notificationPrimer.scheduled.title" = "Zullen we je vóór elke betaling herinneren?";
 "notificationPrimer.scheduled.benefit" = "Een herinnering voordat een geplande betaling vervalt, zodat je niets mist.";
@@ -7722,3 +7700,625 @@
 "window.busy.starting" = "Yala wordt geopend…";
 "records.l15.deleteFromGroup" = "Verwijder het in de groep";
 "records.l15.undoSeconds" = "Je hebt een paar seconden om het ongedaan te maken.";
+
+/* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
+"chat.l14d.conversationDeleted" = "Gesprek verwijderd";
+"chat.l14d.limitBox" = "Kom morgen terug: je vragen worden om middernacht vernieuwd";
+"chat.l14d.draft.saveAll" = "Alle %d opslaan";
+"chat.l14d.topics.areaSpending" = "Uitgaven";
+"chat.l14d.topics.areaBudgets" = "Budgetten";
+"chat.l14d.topics.areaPayments" = "Geplande betalingen";
+"chat.l14d.topics.areaLog" = "Toevoegen";
+"chat.l14d.topics.spendingTop" = "Waaraan heb ik deze maand het meest uitgegeven?";
+"chat.l14d.topics.spendingCategory" = "Hoeveel heb ik deze maand aan %@ uitgegeven?";
+"chat.l14d.topics.spendingVsLastMonth" = "Geef ik meer of minder uit dan vorige maand?";
+"chat.l14d.topics.budgetLeft" = "Hoeveel is er nog over van mijn budget %@?";
+"chat.l14d.topics.budgetOnTrack" = "Lig ik op schema met mijn budget %@?";
+"chat.l14d.topics.budgetWorst" = "Welk budget loopt deze maand het slechtst?";
+"chat.l14d.topics.paymentsThisWeek" = "Welke betalingen heb ik deze week?";
+"chat.l14d.topics.paymentWhen" = "Wanneer moet %@ betaald worden?";
+"chat.l14d.topics.logExample" = "20 uitgegeven aan %@";
+"chat.l14d.topics.logExampleDefault" = "25 uitgegeven aan een taxi met mijn kaart";
+"chat.l14d.topics.logRowHint" = "Zet het in het invoerveld zodat je het kunt aanpassen voordat je het verstuurt.";
+"aiPrivacy.l14d.processingLine" = "Maakt van wat je zegt of fotografeert een transactie.";
+"aiPrivacy.l14d.chatLine" = "Beantwoordt je vragen over je geld en voegt uitgaven toe vanuit de chat.";
+"aiPrivacy.l14d.insightsLine" = "Schrijft observaties over je cijfers in Statistieken.";
+"aiPrivacy.l14d.cloudExploreLine" = "Yala AI kijkt ook in je cloudaccount als een vraag dat nodig heeft.";
+"aiPrivacy.l14d.revokeTitle" = "%@ uitschakelen?";
+"settings.l14d.summaryWhere" = "Je ziet het in %@.";
+"siriShortcuts.siri.alsoSay" = "Ook: %1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "“%@”";
+"siriShortcuts.openShortcuts" = "Mijn Yala-opdrachten openen";
+"inbox.alert.siriDrafts" = "Siri-concepten: %d";
+"shortcut.applePay.notification.title" = "Betaling van %1$@ bij %2$@ te controleren";
+"shortcut.applePay.notification.titleNoMerchant" = "Betaling van %@ te controleren";
+"shortcut.applePay.notification.body" = "Tik om goed te keuren.";
+
+/* VoiceOver: el cambio entre dos períodos redondea a cero */
+"accessibility.variationNoChange" = "Geen verandering";
+/* Comparativa en «Todo el tiempo»: tarjeta que invita a elegir un período */
+"report.l18.allTime.title" = "Kies een maand of jaar om te vergelijken";
+/* Comparativa: qué se compara con qué; %1$@ = «Octubre», %2$@ = «septiembre» */
+"report.l18.heading" = "%1$@ vergeleken met %2$@";
+/* Comparativa: igual, con un tramo de días; %1$@ = «Octubre», %2$@ = «1–21 de septiembre» */
+"report.l18.headingRange" = "%1$@ vergeleken met %2$@";
+/* Comparativa: chip para comparar con el mes anterior */
+"report.l18.chip.previousMonth" = "Met vorige maand";
+/* Comparativa: chip para comparar con la semana anterior */
+"report.l18.chip.previousWeek" = "Met vorige week";
+/* Comparativa: chip para comparar con los 7 días anteriores */
+"report.l18.chip.previous7Days" = "Met de 7 dagen ervoor";
+/* Comparativa: chip para comparar con los 30 días anteriores */
+"report.l18.chip.previous30Days" = "Met de 30 dagen ervoor";
+/* Comparativa: chip para comparar con el período anterior */
+"report.l18.chip.previousPeriod" = "Met de vorige periode";
+/* Comparativa: chip para comparar con el mismo período del año pasado; %@ = «octubre de 2025» */
+"report.l18.chip.yearAgo" = "Met %@";
+/* Comparativa: cabecera de la columna del cambio */
+"report.l18.column.change" = "Verschil";
+/* Comparativa: ingresos menos gastos cuando sobra */
+"report.l18.net.gain" = "Overgebleven";
+/* Comparativa: ingresos menos gastos cuando falta */
+"report.l18.net.loss" = "Tekort";
+/* Comparativa: qué es «Te quedó» */
+"report.l18.net.caption" = "Inkomsten min uitgaven.";
+/* Comparativa: qué es «Te quedó» y cuánto quedó antes; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionGainBefore" = "Inkomsten min uitgaven. In %1$@ hield je %2$@ over.";
+/* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionLossBefore" = "Inkomsten min uitgaven. In %1$@ kwam je %2$@ tekort.";
+/* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
+"report.l18.row.amountsA11y" = "%1$@ in %2$@, %3$@ in %4$@";
+/* Desglosar: título del ejemplo de cómo quedará la tabla */
+"report.l18.example.title" = "Zo ziet je tabel eruit";
+/* Desglosar, ejemplo: el nivel de ingresos y gastos */
+"report.l18.example.expenses" = "Uitgaven";
+/* Desglosar, ejemplo: una categoría */
+"report.l18.example.category" = "Eten";
+/* Desglosar, ejemplo: una subcategoría */
+"report.l18.example.subcategory" = "Boodschappen";
+/* Desglosar, ejemplo: una etiqueta */
+"report.l18.example.tag" = "Reis";
+/* Desglosar, ejemplo: una cuenta */
+"report.l18.example.account" = "Kaart";
+/* Desglosar, ejemplo: una divisa */
+"report.l18.example.currency" = "Euro";
+/* Desglosar, ejemplo: una necesidad */
+"report.l18.example.need" = "Essentieel";
+/* Desglosar: sin niveles elegidos, la tabla solo separa ingresos y gastos */
+"report.l18.onlyIncomeAndExpenses" = "Alleen inkomsten en uitgaven. Voeg hieronder een niveau toe.";
+/* Crear el plan: rótulo del saldo con el que empieza el plan */
+"cashflow.l18.start.title" = "Met hoeveel begin je?";
+/* Crear el plan: de dónde sale el saldo (una cuenta) */
+"cashflow.l18.start.captionOne" = "Wat je vandaag op je rekening hebt";
+/* Crear el plan: de dónde sale el saldo; %d = número de cuentas (2 o más) */
+"cashflow.l18.start.caption" = "Wat je vandaag op je %d rekeningen hebt";
+/* Crear el plan: sin cuentas que sumen, el saldo se escribe a mano */
+"cashflow.l18.start.captionNone" = "Vul in met hoeveel je begint";
+/* Crear el plan: el saldo lo escribió la persona */
+"cashflow.l18.start.captionTyped" = "Het bedrag dat je invulde";
+/* Crear el plan: enlace para cambiar el saldo inicial */
+"cashflow.l18.start.change" = "Bedrag wijzigen";
+/* Crear el plan: título de la sección de ingresos */
+"cashflow.l18.section.in" = "Wat binnenkomt";
+/* Crear el plan: título de la sección de gastos */
+"cashflow.l18.section.out" = "Wat eruitgaat";
+/* Crear el plan: fila plegada con los gastos que cambian; %d = cuántos */
+"cashflow.l18.variable.title" = "Wisselende uitgaven · %d";
+/* Crear el plan: qué son los gastos que cambian; %@ = ejemplos («Restaurantes, Taxis») */
+"cashflow.l18.variable.caption" = "%@… We tellen ze op als gemiddelde.";
+/* Crear el plan: desplegar los gastos que cambian */
+"cashflow.l18.variable.show" = "Bekijken";
+/* Crear el plan: plegar los gastos que cambian */
+"cashflow.l18.variable.hide" = "Verbergen";
+/* Crear el plan: total de ingresos al mes */
+"cashflow.l18.summary.income" = "Inkomsten per maand";
+/* Crear el plan: total de gastos al mes */
+"cashflow.l18.summary.expense" = "Uitgaven per maand";
+/* Crear el plan: lo que sobra al mes */
+"cashflow.l18.summary.surplus" = "Hou je per maand over";
+/* Crear el plan: lo que falta al mes */
+"cashflow.l18.summary.shortfall" = "Kom je per maand tekort";
+/* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
+"cashflow.l18.sheet.todayBalance" = "Vandaag heb je %@ op je rekeningen";
+/* Hoja del saldo inicial: usar el saldo de hoy */
+"cashflow.l18.sheet.useThisAmount" = "Dit bedrag gebruiken";
+/* Flujo de caja: con cuánto empezó el plan; %@ = monto */
+"cashflow.l18.startedWith" = "Je begon met %@";
+/* Flujo de caja: botón para cambiar algo (el saldo inicial, cómo se calcula una línea) */
+"cashflow.l18.change" = "Wijzigen";
+/* Detalle de una línea: rótulo de cómo se calcula el monto */
+"cashflow.l18.detail.howItsCalculated" = "Zo wordt het berekend";
+/* Detalle de una línea: monto nuevo desde un mes; %1$@ = «noviembre», %2$@ = monto */
+"cashflow.l18.detail.changeFrom" = "Vanaf %1$@: %2$@ per maand";
+/* Ajustar monto: rótulo del campo; %@ = «noviembre» */
+"cashflow.l18.detail.amountFor" = "Bedrag voor %@";
+/* Ajustar monto: a qué meses se aplica; %1$@ y %2$@ = el mismo mes («noviembre») */
+"cashflow.l18.scope.question" = "Alleen %1$@, of %2$@ en de maanden daarna?";
+/* Ajustar monto: solo el mes elegido */
+"cashflow.l18.scope.onlyThatMonth" = "Alleen die maand";
+/* Ajustar monto: el mes elegido y los siguientes */
+"cashflow.l18.scope.alsoFollowing" = "Die maand en de volgende";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
+"cashflow.l18.hero.surplusThisMonth" = "Deze maand hou je over";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
+"cashflow.l18.hero.shortfallThisMonth" = "Deze maand kom je tekort";
+/* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
+"cashflow.l18.hero.surplusFuture" = "In %@ hou je over";
+/* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
+"cashflow.l18.hero.shortfallFuture" = "In %@ kom je tekort";
+/* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
+"cashflow.l18.hero.surplusPast" = "In %@ hield je over";
+/* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
+"cashflow.l18.hero.shortfallPast" = "In %@ kwam je tekort";
+/* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
+"cashflow.l18.hero.projectedEnd" = "Als het zo doorgaat, heb je eind %1$@ %2$@";
+/* Flujo de caja: cuánto se lleva gastado del plan del mes; %d = porcentaje */
+"cashflow.l18.month.spentShare" = "Je hebt %d%% uitgegeven van wat je plande";
+/* Flujo de caja: en un ingreso, lo que falta recibir */
+"cashflow.l18.row.toReceive" = "Nog te ontvangen";
+/* Flujo de caja: en un ingreso, lo recibido de más */
+"cashflow.l18.row.receivedExtra" = "Extra ontvangen";
+/* Flujo de caja: una línea con un monto nuevo desde un mes; %@ = «noviembre» */
+"cashflow.l18.row.fromMonth" = "Vanaf %@";
+/* Gráficas: el período; %1$@ = «agosto», %2$@ = «febrero de 2027» */
+"cashflow.l18.chart.periodRange" = "%1$@ tot %2$@";
+/* Gráficas: de qué es la cifra de la proyección; %@ = «febrero» */
+"cashflow.l18.chart.projectionKPI" = "Saldo eind %@";
+/* Gráficas: de qué es la cifra del ahorro; %1$d = meses, %2$@ = «De agosto a octubre» */
+"cashflow.l18.chart.savingsKPI" = "Gemiddelde van %1$d maanden · %2$@";
+/* Gráficas: el período de «Gastos por revisar»; %@ = «De agosto a octubre» */
+"cashflow.l18.chart.deviationPeriod" = "Gemiddelde per maand. %@. Daarom wijkt het af van het detail van één maand.";
+/* Gráficas: gastado frente a lo planeado al mes; %1$@ = gastado, %2$@ = planeado */
+"cashflow.l18.chart.deviationLine" = "%1$@ van %2$@ per maand";
+/* Agregar línea: ejemplo del camino «Desde mis gastos» */
+"cashflow.l18.add.historyExpense" = "Gebruikt wat je deze maanden uitgaf, zoals boodschappen";
+/* Agregar línea: ejemplo del camino «Desde mis ingresos» */
+"cashflow.l18.add.historyIncome" = "Gebruikt wat je deze maanden ontving, zoals je salaris";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (gasto) */
+"cashflow.l18.add.scheduledExpense" = "Een geplande betaling die je al hebt, zoals de huur";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (ingreso) */
+"cashflow.l18.add.scheduledIncome" = "Een gepland inkomen dat je al hebt, zoals je salaris";
+/* Agregar línea: ejemplo del camino «Línea personalizada» */
+"cashflow.l18.add.custom" = "Iets wat je nog niet bijhoudt, zoals sparen of een reis";
+/* Agregar línea: lo que movió una categoría en 6 meses; %@ = monto */
+"cashflow.l18.add.inSixMonths" = "%@ in 6 maanden";
+
+/* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
+"report.l18.inPeriod" = "in %@";
+
+/* Título del diálogo de borrar un gasto de grupo. %@ = descripción del gasto. */
+"groups.expense.deleteTitle" = "‘%@’ verwijderen?";
+
+/* Mensaje del diálogo de borrar un gasto de grupo: alcance del borrado. */
+"groups.expense.deleteMessage" = "Hij wordt voor de hele groep verwijderd en de saldi worden opnieuw berekend. Staat hij in je rekeningen, dan verdwijnt hij daar ook.";
+
+/* Línea sobre «Guardar» cuando falta la descripción del gasto. */
+"groups.expense.missingDescription" = "Beschrijving ontbreekt";
+
+/* Línea sobre «Guardar» cuando falta el monto. */
+"groups.expense.missingAmount" = "Bedrag ontbreekt";
+
+/* Línea sobre «Guardar» cuando no se eligió quién pagó. */
+"groups.expense.missingPayer" = "Kies wie heeft betaald";
+
+/* Línea sobre «Guardar» cuando nadie participa del gasto. */
+"groups.expense.missingParticipants" = "Kies wie meedoet";
+
+/* Línea sobre «Guardar» cuando el reparto no suma el monto. */
+"groups.expense.missingSplit" = "De verdeling komt niet uit op het bedrag";
+
+/* Línea sobre «Guardar» cuando pagaste tú y falta la cuenta. */
+"groups.expense.missingAccount" = "Kies van welke rekening het kwam";
+
+/* Línea de ayuda bajo el título del formulario de saldo inicial. */
+"groups.openingBalance.formHelp" = "Wat iemand al schuldig was vóór Yala";
+
+/* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
+"inbox.movedToGroup" = "Verplaatst naar ‘%@’";
+
+/* Botón del aviso «Movido a…»: abre el grupo. */
+"inbox.movedToGroupView" = "Bekijken";
+
+/* Nombre del borrador de un pago que hiciste. %1$@ = a quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidTo" = "Betaling aan %1$@ · %2$@";
+
+/* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidBy" = "Betaling van %1$@ · %2$@";
+
+/* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
+"groups.stats.myPortionHint" = "wat jij moest betalen";
+
+/* Confirmación de «Eliminar de mis cuentas» al dejar de reflejar los gastos de grupo. */
+"groups.bridge.deleteConfirmTitle" = "Verwijderen uit je rekeningen?";
+
+/* Cuerpo de la confirmación. %d = movimientos que se borran (sin concordancia de plural a propósito). */
+"groups.bridge.deleteConfirmMessage" = "Boekingen die worden verwijderd: %d. Dit kan niet ongedaan worden gemaakt.";
+
+/* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
+"groups.settings.openGroupsSettings" = "Groepsinstellingen openen";
+
+/* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
+"inbox.groupDraft.linkTitle" = "Al genoteerd?";
+
+/* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
+"inbox.groupDraft.linkHint" = "Tik op de boeking en we koppelen haar aan deze uitgave, zonder dubbel.";
+
+/* Pista de VoiceOver de cada movimiento parecido. */
+"inbox.groupDraft.linkRowHint" = "Koppelt het aan de groepsuitgave";
+
+/* Título del diálogo de borrar un gasto de grupo sin descripción. */
+"groups.expense.deleteTitleUnnamed" = "Deze uitgave verwijderen?";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "Wil je dit niet, zet het dan uit in Groepsinstellingen.";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "Heb je al een account, dan log je in; zo niet, dan wordt er een aangemaakt.";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "Bijv. Reis naar Cusco";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "Minder betalingen onderling";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yala voegt de schulden samen zodat er minder overboekingen nodig zijn.";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "Alles in één valuta";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "Hoe jullie meestal verdelen";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "Je naam in de groep";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "Om een uitgave te delen, maak eerst een groep";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "Voer nu de uitgave in";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "Groepsmeldingen";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "We laten het je weten als iemand een uitgave toevoegt of je betaalt.";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "Meldingen aanzetten";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "Meldingen staan aan";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Meldingen van Yala staan uit in Instellingen.";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@ nodigt je uit voor ‘%2$@’ in Yala om uitgaven te delen. Tik op de link om mee te doen; heb je Yala nog niet, download het dan en tik daarna nog een keer op de link.";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "Je bent uitgenodigd voor ‘%@’ in Yala om uitgaven te delen. Tik op de link om mee te doen; heb je Yala nog niet, download het dan en tik daarna nog een keer op de link.";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@ nodigt je uit";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "Je bent uitgenodigd voor deze groep";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "Daarna kies je met welk account je inlogt.";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "Je zit nu in ‘%@’";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "Je zit nu in de groep";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "Met %@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "Uitgave toevoegen";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "Groep bekijken";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "Je groep is onderweg";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "Hij verschijnt hier zodra hij klaar is.";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "Je bent goedgekeurd: je kunt nu de uitgaven zien en die van jou toevoegen.";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@ wil meedoen";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "Meerdere mensen willen meedoen";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "Accepteer het verzoek zodat diegene uitgaven kan zien en toevoegen.";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "Accepteer de verzoeken zodat ze uitgaven kunnen zien en toevoegen.";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "Bekijken";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "Willen meedoen (%d)";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "Heeft vandaag je uitnodigingslink geopend";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "Heeft gisteren je uitnodigingslink geopend";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "Heeft op %@ je uitnodigingslink geopend";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "Als je accepteert, ziet diegene de uitgaven van de groep en kan die eigen uitgaven toevoegen. Als je weigert, ziet diegene niets.";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "Accepteren";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "%@ toelaten tot de groep?";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "Je account is vanaf een ander apparaat naar de cloud gegaan, dus terug naar iCloud gaat vanaf dat apparaat, als Yala er nog op staat. Hier kun je de cloud blijven gebruiken.";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "Even geduld";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van deze telefoon. Wacht een minuut en probeer het opnieuw: de foto is in orde.";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "Daglimiet bereikt";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "Voor vandaag zijn er geen fotolezingen meer over. Ze worden elke dag vernieuwd; voer het intussen handmatig in.";
+
+/* card vv0k */
+"voice.failure.busy.title" = "Even geduld";
+
+/* card vv0k */
+"voice.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van deze telefoon. Wacht een minuut en probeer het opnieuw met dezelfde notitie.";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "Daglimiet bereikt";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "Voor vandaag zijn er geen spraaklezingen meer over. Ze worden elke dag vernieuwd; voer het intussen handmatig in.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "Daglimiet bereikt: 1 is niet gelezen.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "Daglimiet bereikt: %d zijn niet gelezen.";
+
+/* UX 2.2 · lote decidido 15 (Ajustes, ayuda y preferencias) */
+"l15.personal.dataNote" = "Ze worden bewaard in je iCloud of in je account in de cloud, afhankelijk van wat je hebt gekozen. Wat je in een groep invoert, ziet de groep.";
+"l15.personal.moreAboutData" = "Meer over je gegevens";
+"l15.rates.search" = "Valuta zoeken";
+"l15.personalization.voiceLanguageFooter" = "De taal waarin je tegen Yala praat als je met je stem noteert.";
+"l15.personalization.colorfulIconsFooter" = "Je ziet ze in de iconen van Instellingen en Meer.";
+"l15.personalization.averageLineFooter" = "Je ziet het in de grafieken op Start.";
+"l15.personalization.currencyFormatFooter" = "Hoe bedragen in de hele app worden geschreven: met het symbool (S/) of met de code (PEN).";
+"l15.tabBar.rules" = "Start staat altijd eerst. Er passen er nog 3 bij, plus Meer en Zoeken.";
+"l15.permissions.title" = "Toestemmingen van Yala";
+"l15.permissions.footer" = "Yala vraagt elke toestemming de eerste keer dat je iets gebruikt wat die nodig heeft.";
+"l15.permissions.notAskedHint" = "We vragen het de eerste keer dat je het gebruikt.";
+"l15.permissions.changeInSettings" = "Wijzigen in Instellingen";
+"l15.permissions.notifications" = "Notificaties";
+"l15.permissions.notificationsDetail" = "Herinneringen, betalingen die eraan komen en meldingen van je groepen.";
+"l15.permissions.camera" = "Camera";
+"l15.permissions.cameraDetail" = "Om een uitgave te noteren met een foto van een bonnetje.";
+"l15.permissions.microphone" = "Microfoon";
+"l15.permissions.microphoneDetail" = "Om een uitgave in te spreken.";
+"l15.permissions.photos" = "Foto's";
+"l15.permissions.photosDetail" = "Om de groepsoverzichten die je kiest in Foto's te bewaren.";
+"l15.permissions.status.allowed" = "Toegestaan";
+"l15.permissions.status.limited" = "Sommige foto's";
+"l15.permissions.status.saveOnly" = "Alleen bewaren";
+"l15.permissions.status.denied" = "Niet toegestaan";
+"l15.permissions.status.notAsked" = "Nog niet gevraagd";
+"l15.recommend.row" = "Yala aanbevelen";
+"l15.recommend.message" = "Ik houd mijn uitgaven bij met Yala. Een aanrader:";
+"l15.tutorials.doItNow" = "Nu doen";
+"l15.tutorials.done" = "Voltooid";
+"l15.faq.section.currencies" = "Valuta";
+"l15.faq.section.groups" = "Groepen";
+"l15.faq.notHere" = "Staat je vraag er niet bij?";
+"l15.faq.writeToUs" = "Schrijf ons";
+"l15.faq.exchangeRate.q" = "Waar komt de wisselkoers vandaan?";
+"l15.faq.exchangeRate.a" = "Yala werkt de wisselkoersen bij en rekent elke boeking om met de koers van de dag waarop je hem noteerde. De koersen, en wanneer ze zijn bijgewerkt, vind je in Instellingen > Valuta & wisselkoers > Alles bekijken.";
+"l15.faq.groups.q" = "Hoe werken groepen?";
+"l15.faq.groups.a" = "Hiermee deel je uitgaven met anderen: een reis, het huis of een avondje uit. Iedereen noteert wat hij betaalde en Yala berekent wie wie wat schuldig is. Je hebt een Yala-account nodig, omdat de groepsuitgaven in de cloud worden bewaard, zodat iedereen ze actueel ziet.";
+"l15.faq.yalaAI.q" = "Wat is Yala AI?";
+"l15.faq.yalaAI.a" = "Het is de assistent van Yala Pro. Je stelt hem vragen over je financiën (‘hoeveel heb ik deze maand aan koffie uitgegeven?’) of vertelt hem over een uitgave en hij noteert die voor je. Om te antwoorden stuurt hij het nodige naar een AI-dienst; dat bepaal je in Instellingen > AI-privacy & gegevens.";
+"l15.faq.whereData.q" = "Waar worden mijn gegevens bewaard?";
+"l15.faq.whereData.a" = "Als je je privé-iCloud hebt gekozen: op je iPhone en in je iCloud, en Yala ziet ze niet. Als je een account in de cloud hebt: op de servers van Yala, en je logt in op een andere iPhone met Apple of Google. Wat je in een groep invoert, wordt in de cloud bewaard zodat de groep het ziet.";
+"l15.faq.faceID.q" = "Kan ik Yala beveiligen met Face ID?";
+"l15.faq.faceID.a" = "Ja, met de vergrendeling van iOS: houd het Yala-icoon op je beginscherm ingedrukt en tik op ‘Vereis Face ID’. Yala ziet je gezicht nooit: iOS controleert het. De uitleg vind je in Instellingen > Beveiligen met Face ID.";
+"l15.faq.widgets.q" = "Hoe voeg ik een Yala-widget toe?";
+"l15.faq.widgets.a" = "Houd een lege plek op je beginscherm ingedrukt, tik op ‘Wijzig’ > ‘Voeg widget toe’ en zoek naar Yala. Er zijn widgets voor saldo, uitgaven, categorieën, maandoverzicht en laatste boekingen, en ook voor het toegangsscherm.";
+"l15.support.sendFooter" = "Je e-mailapp opent om het naar %@ te sturen. We sturen je Yala- en iOS-versie, je iPhone-model, thema en taal mee, zodat we je beter kunnen helpen.";
+"l15.removeData.noCopyConfirm" = "Verwijderen en wissen";
+"l15.removeData.exportDiscard" = "Toch mijn gegevens verwijderen";
+"l15.removeData.exportPending" = "Wijzigingen van deze iPhone die nog niet in iCloud zijn aangekomen: %d. Als je je gegevens nu verwijdert, gaan ze verloren.";
+"l15.removeData.exportPendingUnknown" = "We konden niet bevestigen dat je laatste wijzigingen in iCloud zijn aangekomen. Als je je gegevens nu verwijdert, kunnen ze verloren gaan.";
+"l15.pro.themeResetNote" = "Je thema gaat terug naar Liquid Glass.";
+"l15.pro.oneMonthThenYearly" = "1 maand gratis, daarna %@ per jaar";
+"l15.pro.oneMonthThenMonthly" = "1 maand gratis, daarna %@ per maand";
+"l15.pro.startTrialOneMonth" = "1 maand gratis proberen";
+"l15.pro.gateStartTrialOneMonth" = "Pro 1 maand gratis proberen";
+"l15.pro.settingsFreeWithTrialOneMonth" = "Gratis · 1 maand gratis proberen";
+"welcome.cloud.otherAccountUsedTitle" = "Deze iPhone heeft al een ander account gebruikt";
+"welcome.cloud.otherAccountUsedBody" = "Op deze iPhone is al een Yala-account gebruikt dat met %1$@ is gemaakt, en dat van %2$@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met %1$@ om je vertrouwde account te blijven gebruiken.";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "Op deze iPhone is al een Yala-account gebruikt dat met een andere methode is gemaakt, en dat van %@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met de methode van toen om je vertrouwde account te blijven gebruiken.";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "Beheerder";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "Beheerder maken";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "Verwijderen als beheerder";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "%@ beheerder maken?";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@ kan dan verzoeken om lid te worden accepteren of weigeren, leden verwijderen, de naam en het budget van de groep wijzigen, de groep archiveren en anderen beheerder maken.";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "%@ verwijderen als beheerder?";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@ blijft in de groep, maar kan geen verzoeken meer accepteren, geen leden verwijderen, de naam en het budget niet meer wijzigen en de groep niet archiveren.";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "Uit de groep verwijderen";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "%@ uit de groep verwijderen?";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@ ziet de groep dan niet meer. De uitgaven die er al in staan, blijven.";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "Als je %@ uit de groep verwijdert, blijft wat nog openstaat onverrekend.";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "Eerst verrekenen";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@ is je %2$@ schuldig.";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "Je bent %1$@ %2$@ schuldig.";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@ is %3$@ %2$@ schuldig.";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@ moet nog %2$@ betalen";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "Je moet nog %@ betalen";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "Als je de groep verlaat, zie je deze groep en die schuld niet meer; %@ ziet die nog wel.";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "Als je de groep verlaat, zie je deze groep en die schulden niet meer; de anderen zien ze nog wel.";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "De groep verdwijnt voor iedereen. Wat je in je rekeningen hebt vastgelegd, blijft.";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "Archiveren of verwijderen";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "Archiveren";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "De groep gaat voor iedereen naar Gearchiveerd. Uitgaven en schulden blijven bewaard en je kunt hem terughalen wanneer je wilt.";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "De groep komt voor iedereen terug in de lijst, met de uitgaven en schulden.";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "De groep verdwijnt voor iedereen en dit kan niet ongedaan worden gemaakt.";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "Je kunt de groep verwijderen zodra alles verrekend is.";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "Wil je weg? Draag de groep over en verlaat hem.";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "Wil je hem alleen uit de lijst? Archiveer hem: de schulden blijven bewaard.";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "Saldi bekijken";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "Verplaatst naar Gearchiveerd";
+/* Deshacer el archivado */
+"groups.l19.undo" = "Ongedaan maken";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "Gearchiveerde groep";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "Alleen een beheerder kan de groep dearchiveren.";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "Dearchiveren";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ %@ die je nog krijgt in gearchiveerde groepen";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ %@ die je nog moet betalen in gearchiveerde groepen";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "Hoeveel willen jullie maximaal uitgeven?";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "Tot nu toe: %@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "Nog geen uitgaven in de groep.";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "Jullie zitten er al %@ boven";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "Nog %@ over";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "De hele groep ziet het, niet alleen jij.";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "We laten iedereen het weten bij de helft, driekwart, bijna op de limiet en op de limiet.";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "Minder betalingen onderling";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "Als Ana jou geld schuldig is en jij Beto, betaalt Ana Beto rechtstreeks.";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "Schulden in één valuta tonen";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "Alleen wie de groep heeft gemaakt, kan dit wijzigen.";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "Hoe een nieuwe uitgave wordt verdeeld";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "In je rekeningen";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "Wat ik hier betaal in mijn rekeningen vastleggen";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "Zoals in Groepsinstellingen.";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "Is je schuldig";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "Je bent schuldig";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "Jij hebt de groep gemaakt en niemand anders kan hem nog overnemen. Open hem om hem te archiveren of te verwijderen.";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "Instellingen openen";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "Je groepen verdwijnen van deze iPhone; ze blijven in je account en komen terug als je dat weer koppelt.";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "Wat ik betaalde in mijn rekeningen laten staan";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "Dat ook uit mijn rekeningen halen";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "Als je het laat staan, blijven de uitgaven die je hebt betaald in je rekeningen: %1$d (%2$@).";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "Als je het weghaalt, verdwijnen ze ook uit je rekeningen.";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "Wie de groep heeft gemaakt, is altijd beheerder: die rol kan niet worden weggehaald.";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "De groep moet minstens één beheerder hebben.";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "Deze persoon moet eerst met een eigen account weer lid worden voordat die beheerder kan zijn.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "Om op te slaan ontbreekt nog %@";
+"l2d.missing.amount" = "het bedrag";
+"l2d.missing.account" = "de rekening";
+"l2d.missing.category" = "de categorie";
+"l2d.missing.sourceAccount" = "de rekening waar het vandaan komt";
+"l2d.missing.destinationAccount" = "de rekening waar het naartoe gaat";
+"l2d.missing.twoDifferentAccounts" = "Kies twee verschillende rekeningen";
+"l2d.missing.chipValue" = "Ontbreekt";
+"l2d.discard.title" = "Deze registratie weggooien?";
+"l2d.saved.expense" = "Uitgave opgeslagen · %@";
+"l2d.saved.income" = "Inkomen opgeslagen · %@";
+"l2d.saved.transfer" = "Overschrijving opgeslagen · %@";
+"l2d.saved.changes" = "Wijzigingen opgeslagen";
+"l2d.saved.repeatsWeekly" = "Opgeslagen · herhaalt elke week";
+"l2d.saved.repeatsMonthly" = "Opgeslagen · herhaalt elke maand";
+"l2d.saved.repeatsYearly" = "Opgeslagen · herhaalt elk jaar";
+"l2d.transfer.needsAnotherAccount" = "Om geld over te maken heb je nog een rekening nodig";
+"l2d.transfer.createAnotherAccount" = "Nog een rekening maken";
+"l2d.date.dayBeforeYesterday" = "Eergisteren";
+"l2d.date.futureDaysNote" = "Komende dagen zijn grijs. Gebruik voor een betaling die nog moet komen [Geplande betalingen](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "Alles bekijken";
+"l2d.favorites.use" = "Favoriet %@ gebruiken";
+"l2d.favorites.transferHelp" = "Je vaste overschrijvingen, met één tik.";
+"l2d.recurring.title" = "Terugkerend maken";
+"l2d.recurring.header" = "We slaan die van vandaag op. De volgende komen op de juiste dag in je Inbox, zodat je ze bevestigt. Je vindt ze bij Geplande betalingen.";
+"l2d.recurring.weekly" = "Elke week, op %@";
+"l2d.recurring.monthly" = "Elke maand, op dag %d";
+"l2d.recurring.yearly" = "Elk jaar, op %@";
+"l2d.recurring.moreOptions" = "Meer opties…";

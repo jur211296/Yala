@@ -27,14 +27,18 @@ nonisolated enum ImageEntryFailure: Equatable, Sendable {
     case unreadableFile
     /// El plan free ya usó su cupo de prueba de fotos: la salida es Yala Pro (no se repone esperando).
     case trialUsedUp
+    /// El gateway frenó la petición por ráfaga (429 `yala_quota_burst`): esperar un minuto lo arregla (card vv0k).
+    case busy
+    /// Se acabó el cupo de fotos de hoy (429 `yala_quota_daily`): vuelve mañana.
+    case dailyLimit
 
     /// Si tiene sentido volver a mandar las MISMAS fotos. Sin importe o ilegible, la foto es el problema; sin servicio,
     /// repetir falla igual. Sin conexión sí: a diferencia de la voz, la foto no se repite, y al volver la red basta con
     /// reintentarla.
     var retriesSamePhotos: Bool {
         switch self {
-        case .generic, .saveFailed, .noConnection: true
-        case .noAmount, .unreadable, .unreadableFile, .cameraPermission, .serviceUnavailable, .trialUsedUp: false
+        case .generic, .saveFailed, .noConnection, .busy: true
+        case .noAmount, .unreadable, .unreadableFile, .cameraPermission, .serviceUnavailable, .trialUsedUp, .dailyLimit: false
         }
     }
 }
@@ -65,9 +69,28 @@ enum ImageEntryFlowLogic {
         switch error {
         case .noAPIKey: .serviceUnavailable
         case .imageEncodingFailed: .unreadable
-        case .networkError(let inner): ProxyErrorMapper.isTrialExhausted(inner) ? .trialUsedUp : (isConnected ? .generic : .noConnection)
+        case .networkError(let inner): failure(forNetworkError: inner, isConnected: isConnected)
         case .invalidResponse: .generic
         case .noTransactionsFound: .noAmount
+        }
+    }
+
+    /// Lo que el gateway contestó con nombre propio va con su texto; lo demás, sin red o «inténtalo otra vez».
+    static func failure(forNetworkError inner: Error, isConnected: Bool) -> ImageEntryFailure {
+        if ProxyErrorMapper.isTrialExhausted(inner) { return .trialUsedUp }
+        if ProxyErrorMapper.isDailyLimitReached(inner) { return .dailyLimit }
+        if ProxyErrorMapper.isBurstLimited(inner) { return .busy }
+        return isConnected ? .generic : .noConnection
+    }
+
+    /// El detalle del canario `aiEntryReadFailed` para un error de la lectura, o `nil` si no habla del camino al gateway
+    /// (sin clave, foto que no se codifica, foto sin movimientos: esos ya tienen su texto y no son una avería).
+    static func canaryDetail(for error: VisionError) -> String? {
+        switch error {
+        case .networkError(let inner):
+            ProxyErrorMapper.isTrialExhausted(inner) ? nil : "photo|\(ProxyErrorMapper.failureKind(inner))"
+        case .invalidResponse: "photo|invalidResponse"
+        case .noAPIKey, .imageEncodingFailed, .noTransactionsFound: nil
         }
     }
 
@@ -100,23 +123,28 @@ enum ImageEntryFlowLogic {
     enum FailedPhotosNotice: Equatable {
         case retry(count: Int)
         case trialUsedUp(count: Int)
+        /// Se acabó el cupo del día (card vv0k, review del 2026-10-21): reintentar no sirve hasta que se renueve.
+        case dailyLimit(count: Int)
     }
 
     static func failedPhotosNotice(for failures: [ImageEntryFailure]) -> FailedPhotosNotice? {
         guard !failures.isEmpty else { return nil }
-        return failures.contains(.trialUsedUp) ? .trialUsedUp(count: failures.count) : .retry(count: failures.count)
+        if failures.contains(.trialUsedUp) { return .trialUsedUp(count: failures.count) }
+        if failures.contains(.dailyLimit) { return .dailyLimit(count: failures.count) }
+        return .retry(count: failures.count)
     }
 
-    /// Con el cupo de prueba agotado en una foto, las siguientes de la tanda fallarían igual: no se piden.
+    /// Con el cupo de prueba o el del día agotados en una foto, las siguientes de la tanda fallarían igual: no se piden, y
+    /// cuentan con el mismo fallo.
     static func skipsRemainingReads(after failure: ImageEntryFailure) -> Bool {
-        failure == .trialUsedUp
+        failure == .trialUsedUp || failure == .dailyLimit
     }
 
     private static func worstFailure(_ failures: [ImageEntryFailure]) -> ImageEntryFailure {
         // El cupo agotado va primero: si una foto lo agotó, las siguientes también fallarán, y lo único que lo arregla
         // es Yala Pro.
         let priority: [ImageEntryFailure] = [
-            .trialUsedUp, .noConnection, .serviceUnavailable, .generic, .saveFailed, .noAmount, .unreadable, .unreadableFile,
+            .trialUsedUp, .dailyLimit, .noConnection, .serviceUnavailable, .busy, .generic, .saveFailed, .noAmount, .unreadable, .unreadableFile,
             .cameraPermission
         ]
         return priority.first { failures.contains($0) } ?? .generic

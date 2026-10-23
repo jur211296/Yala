@@ -117,3 +117,10 @@ verificado.
 
 Relacionado: [[mis-mediciones-fallan-por-el-filtro]] — su caso 9 es justo el error que esto evita
 («no consta en el repo» leído como «no está hecho»); aquí la regla se aplica en positivo.
+
+**2026-10-22: sin MCP de Supabase en la sesión, y no hizo falta.** El encargo daba el token de gestión
+(`~/Secrets/yala-supabase-mgmt/pat`) por inválido y respondió 200, con los dos proyectos listados. Por
+`POST /v1/projects/<ref>/database/query` entra como **`postgres` en staging Y en producción**: así se aplicaron
+g18_01 y g21_01. Los `raise notice` no vuelven por esa vía: la prueba es releer `information_schema`. Para saber
+si el Worker verá la columna, PostgREST con la anon (`/v1/projects/<ref>/api-keys`) y `select=<col>&limit=0`, con
+una columna inventada como control (400). wrangler tenía sesión OAuth con `workers (write)`. cktool, sin token.

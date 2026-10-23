@@ -26,8 +26,12 @@ struct PersonalizationSettingsView: View {
     @State private var showingAverageLinePicker = false
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
-    @State private var showingExpensesOnlyConfirmation = false
+    /// UX 2.2 · L16-6: dos avisos, uno por sentido, con el texto de sus botones LITERAL: el `actions` de un `.alert` no
+    /// admite un botón cuyo texto dependa del estado (`swiftui-ds.md`), y un solo aviso para los dos lo necesitaba.
+    @State private var showingExpensesOnlyActivate = false
+    @State private var showingExpensesOnlyDeactivate = false
     @State private var showingSmartInsightsSettings = false
+    @State private var showingAIPersonalization = false
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.chatAssistant)
@@ -97,7 +101,13 @@ struct PersonalizationSettingsView: View {
             YalaSettingsSection(L10n.Settings.sectionUsageMode) {
                 YalaSettingsToggleRow(L10n.Settings.expensesOnlyMode, isOn: Binding(
                     get: { sessionState.isExpensesOnlyMode },
-                    set: { _ in showingExpensesOnlyConfirmation = true }
+                    set: { _ in
+                        if sessionState.isExpensesOnlyMode {
+                            showingExpensesOnlyDeactivate = true
+                        } else {
+                            showingExpensesOnlyActivate = true
+                        }
+                    }
                 ))
                 .accessibilityIdentifier("personalization_row_expenses_only")
             } footer: {
@@ -142,13 +152,28 @@ struct PersonalizationSettingsView: View {
                     )
                 }
                 .accessibilityIdentifier("voice_language_menu")
+            } footer: {
+                // UX 2.2 · L16-7: cada pie dice dónde se ve (o se usa) su ajuste.
+                Text(L10n.UXL15.voiceLanguageFooter)
+            }
 
+            YalaSettingsSection {
+                // UX 2.2 · L14-10 (opción C): el tono se busca en Ajustes, y aquí solo estaba el resumen, que es otra
+                // cosa. La fila abre la misma hoja que el botón de ajustes del chat.
+                YalaSettingsValueRow(L10n.AISettings.title) {
+                    showingAIPersonalization = true
+                }
+                .accessibilityIdentifier("personalization_row_ai_tone")
+
+                // UX 2.2 · L16-8: «Qué sale en el resumen» (antes «Personalizar resumen de IA»): controla Estadísticas ›
+                // Resumen, y de lo que enciende solo las Observaciones son de IA.
                 YalaSettingsValueRow(L10n.Settings.customizeAISummary) {
                     showingSmartInsightsSettings = true
                 }
                 .accessibilityIdentifier("personalization_row_ai_summary")
+            }
 
-                // Último del bloque: su ayuda (solo cuando el tema lo apaga) cae justo debajo.
+            YalaSettingsSection {
                 YalaSettingsToggleRow(
                     L10n.Settings.colorfulIcons,
                     isOn: $prefs.colorfulIcons,
@@ -157,21 +182,20 @@ struct PersonalizationSettingsView: View {
                 .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
                 .accessibilityIdentifier("settings_colorful_icons_toggle")
             } footer: {
-                if forcesMonochromeIcons {
-                    Text(L10n.Settings.colorfulIconsDisabledByTheme)
-                }
+                Text(forcesMonochromeIcons ? L10n.Settings.colorfulIconsDisabledByTheme : L10n.UXL15.colorfulIconsFooter)
             }
 
-            // Chat FAB visibility (Free users only — Pro users manage it via per-section Panel preferences)
-            if !isProUser {
-                YalaSettingsSection {
-                    YalaSettingsToggleRow(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible) {
+            // El botón de Yala IA, para todos (UX 2.2 · L14-12, opción B): un Pro que no quiere IA no tenía cómo
+            // quitarlo, y el comentario de aquí lo mandaba a unas «preferencias del Panel» que no existían.
+            YalaSettingsSection {
+                YalaSettingsToggleRow(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible) {
+                    if !isProUser {
                         ProBadge(size: .small)
                     }
-                    .accessibilityIdentifier("personalization_row_chat_fab")
-                } footer: {
-                    Text(L10n.Widget.chatFabHint)
                 }
+                .accessibilityIdentifier("personalization_row_chat_fab")
+            } footer: {
+                Text(L10n.Widget.chatFabHint)
             }
 
             // MARK: - Calendario
@@ -203,7 +227,11 @@ struct PersonalizationSettingsView: View {
                     showingAverageLinePicker = true
                 }
                 .accessibilityIdentifier("personalization_row_average_line")
+            } footer: {
+                Text(L10n.UXL15.averageLineFooter)
+            }
 
+            YalaSettingsSection {
                 YalaSettingsToggleRow(L10n.Settings.showVariations, isOn: $prefs.showVariations)
                     .accessibilityIdentifier("personalization_row_variations")
             } footer: {
@@ -216,7 +244,11 @@ struct PersonalizationSettingsView: View {
                     showingCurrencyFormatPicker = true
                 }
                 .accessibilityIdentifier("personalization_row_currency_format")
+            } footer: {
+                Text(L10n.UXL15.currencyFormatFooter)
+            }
 
+            YalaSettingsSection {
                 YalaSettingsValueRow(L10n.Settings.decimalPlaces, value: decimalPlacesDisplayName) {
                     showingDecimalsPicker = true
                 }
@@ -339,41 +371,42 @@ struct PersonalizationSettingsView: View {
         .sheet(isPresented: $showingSmartInsightsSettings) {
             SmartInsightsSettingsView()
         }
-        .confirmationDialog(
-            sessionState.isExpensesOnlyMode
-                ? L10n.Settings.expensesOnlyDeactivateTitle
-                : L10n.Settings.expensesOnlyActivateTitle,
-            isPresented: $showingExpensesOnlyConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button(
-                sessionState.isExpensesOnlyMode
-                    ? L10n.Settings.expensesOnlyDeactivateConfirm
-                    : L10n.Settings.expensesOnlyActivateConfirm,
-                role: sessionState.isExpensesOnlyMode ? nil : .destructive
-            ) {
-                // Este toggle es el punto de INTENCIÓN del usuario y la key es `synced: true`, así
-                // que publica ÉL — mismo orden que `OnboardingView`, que ya lo hacía a mano.
-                // El espejo (`SessionState.isExpensesOnlyMode.didSet`) escribe local + App Group +
-                // recarga widgets, pero NO encola y no debe: a ese mismo `didSet` llegan también el
-                // merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset de
-                // `-uitest-reset`, y publicar ahí devolvería el eco (en `.cloud`, con HLC fresco
-                // sobre un valor recién bajado) y haría que un XCUITest encolara preferencias.
-                // Hasta ahora llegaba a iCloud de rebote, porque `AppPreferences.loadFromDefaults`
-                // re-persistía lo que releía; ese puente accidental se cerró.
-                let newValue = !sessionState.isExpensesOnlyMode
-                PreferenceSyncService.shared.set(
-                    bool: newValue, forKey: AppPreferences.Keys.expensesOnlyMode)
-                sessionState.isExpensesOnlyMode = newValue
-            }
+        .sheet(isPresented: $showingAIPersonalization) {
+            AIPersonalizationSheet()
+        }
+        // UX 2.2 · L16-6: un aviso del sistema y no un diálogo anclado al interruptor, que no pintaba «Cancelar»
+        // (`swiftui-ds.md`); y «Activar» sin rojo: activar no borra nada, solo oculta.
+        .alert(L10n.Settings.expensesOnlyActivateTitle, isPresented: $showingExpensesOnlyActivate) {
+            Button(L10n.Settings.expensesOnlyActivateConfirm) { setExpensesOnlyMode(true) }
+                .accessibilityIdentifier("expenses_only_activate_confirm")
+            Button(L10n.Settings.cancel, role: .cancel) {}
+                .accessibilityIdentifier("expenses_only_cancel")
+        } message: {
+            Text(L10n.Settings.expensesOnlyActivateMessage)
+        }
+        .alert(L10n.Settings.expensesOnlyDeactivateTitle, isPresented: $showingExpensesOnlyDeactivate) {
+            Button(L10n.Settings.expensesOnlyDeactivateConfirm) { setExpensesOnlyMode(false) }
+                .accessibilityIdentifier("expenses_only_deactivate_confirm")
             Button(L10n.Settings.cancel, role: .cancel) {}
         } message: {
-            Text(
-                sessionState.isExpensesOnlyMode
-                    ? L10n.Settings.expensesOnlyDeactivateMessage
-                    : L10n.Settings.expensesOnlyActivateMessage
-            )
+            Text(L10n.Settings.expensesOnlyDeactivateMessage)
         }
+    }
+
+    private func setExpensesOnlyMode(_ newValue: Bool) {
+        // Este toggle es el punto de INTENCIÓN del usuario y la key es `synced: true`, así
+        // que publica ÉL — mismo orden que `OnboardingView`, que ya lo hacía a mano.
+        // El espejo (`SessionState.isExpensesOnlyMode.didSet`) escribe local + App Group +
+        // recarga widgets, pero NO encola y no debe: a ese mismo `didSet` llegan también el
+        // merge remoto (`PreferenceSyncService.applyMergeOutcome`) y el reset de
+        // `-uitest-reset`, y publicar ahí devolvería el eco (en `.cloud`, con HLC fresco
+        // sobre un valor recién bajado) y haría que un XCUITest encolara preferencias.
+        // Hasta ahora llegaba a iCloud de rebote, porque `AppPreferences.loadFromDefaults`
+        // re-persistía lo que releía; ese puente accidental se cerró.
+        guard newValue != sessionState.isExpensesOnlyMode else { return }
+        PreferenceSyncService.shared.set(
+            bool: newValue, forKey: AppPreferences.Keys.expensesOnlyMode)
+        sessionState.isExpensesOnlyMode = newValue
     }
 
 }

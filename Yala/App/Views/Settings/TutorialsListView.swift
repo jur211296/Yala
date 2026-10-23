@@ -10,6 +10,9 @@ import SwiftUI
 struct TutorialsListView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.settingsListIsAlongside) private var settingsListIsAlongside
+    /// Los tutoriales hechos, releídos cada vez que la lista aparece (UX 2.2 · L16-16). `Tutorial.isCompleted` lee
+    /// `UserDefaults` y nadie observa ese cambio: al volver de terminar uno, el ✓ no salía hasta reabrir Ajustes.
+    @State private var completed: Set<Tutorial> = []
 
     var body: some View {
         YalaSettingsList {
@@ -59,6 +62,7 @@ struct TutorialsListView: View {
                 }
             }
         }
+        .onAppear { completed = Set(Tutorial.allCases.filter(\.isCompleted)) }
         .navigationDestination(for: Tutorial.self) { tutorial in
             // Apple Pay se hace fuera de Yala, en Atajos: es una guía por pasos (referencia del 2026-09-15), no el
             // carrusel de vídeo de los tutoriales que se hacen dentro de la app.
@@ -81,6 +85,7 @@ struct TutorialsListView: View {
                     tutorialRow(tutorial)
                 }
                 .accessibilityIdentifier("tutorial_row_\(tutorial.rawValue)")
+                .accessibilityValue(completed.contains(tutorial) ? L10n.UXL15.tutorialDone : "")
             }
         }
     }
@@ -111,10 +116,11 @@ struct TutorialsListView: View {
 
             Spacer()
 
-            if tutorial.isCompleted {
+            if completed.contains(tutorial) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DS.Typography.body)
                     .foregroundStyle(.thAccent)
+                    .accessibilityHidden(true)
             }
         }
         .contentShape(Rectangle())

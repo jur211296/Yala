@@ -24,6 +24,9 @@ struct SuggestedLine: Identifiable {
     var isSelected: Bool
     /// `suggestedAmount` salió de convertir el pago programado con una tasa no exacta («≈»).
     var isApproximate: Bool = false
+    /// Se repite cada mes con un monto parecido (UX 2.2 · L18-5): va a la vista al crear el plan; los gastos que no,
+    /// van plegados en «Gastos que cambian» (`CashFlowSetupLogic.isRecurring`).
+    var isRecurring: Bool = false
 }
 
 // MARK: - ViewModel
@@ -41,6 +44,9 @@ final class CashFlowPlanViewModel {
     /// es un valor calculado y no ve sola que el plan cambió. Antes, la línea borrada seguía en pantalla y el
     /// horizonte nuevo no se aplicaba hasta salir y volver.
     private(set) var planRevision: Int = 0
+    /// El plan se acaba de crear en esta sesión (UX 2.2 · L18-6): la guía de 3 pasos del plan solo sale entonces, una
+    /// vez, y no al abrir un plan que ya existía.
+    var planJustCreated: Bool = false
     var suggestedLines: [SuggestedLine] = []
     private(set) var isLoading: Bool = false
 
@@ -194,6 +200,15 @@ final class CashFlowPlanViewModel {
                 months: 6, line: tempLine, referenceDate: currentMonthStart,
                 index: index, calendar: calendar
             )
+            // Los 6 meses completos anteriores, para saber si se repite (L18-5).
+            let monthlyTotals: [Double] = (1...6).compactMap { offset in
+                calendar.date(byAdding: .month, value: -offset, to: currentMonthStart).map {
+                    CashFlowProjectionCalculator.lookupTotal(
+                        line: tempLine, index: index,
+                        monthKey: CashFlowProjectionCalculator.monthKey(for: $0, calendar: calendar)
+                    )
+                }
+            }
 
             suggestions.append(SuggestedLine(
                 category: entry.category,
@@ -204,7 +219,8 @@ final class CashFlowPlanViewModel {
                 suggestedAmount: calculatedAmount,
                 estimationMethod: .average6m,
                 monthsWithActivity: monthCount,
-                isSelected: monthCount >= 4
+                isSelected: monthCount >= 4,
+                isRecurring: CashFlowSetupLogic.isRecurring(monthlyTotals: monthlyTotals)
             ))
         }
 
@@ -233,7 +249,8 @@ final class CashFlowPlanViewModel {
                 estimationMethod: .scheduled,
                 monthsWithActivity: 6,
                 isSelected: true,
-                isApproximate: converted.isApproximate
+                isApproximate: converted.isApproximate,
+                isRecurring: true
             ))
         }
 
@@ -346,6 +363,7 @@ final class CashFlowPlanViewModel {
         }
 
         plan = newPlan
+        planJustCreated = true
     }
 
     // MARK: - CRUD
@@ -459,20 +477,76 @@ final class CashFlowPlanViewModel {
         }
     }
 
-    func setOverrideAndUpdateFuture(line: CashFlowLine, monthKey: String, amount: Double, note: String) {
-        setOverride(line: line, monthKey: monthKey, amount: amount, note: note)
-
-        // Update line to manual estimation for all future months
-        line.estimationMethod = EstimationMethod.manual.rawValue
-        line.manualAmount = amount
-
+    /// «Este mes y los siguientes» (UX 2.2 · L18-8): el monto nuevo vale desde `monthKey`. Antes pasaba la línea entera a
+    /// «monto fijo», y eso cambiaba también los meses anteriores, pasados incluidos. Ahora guarda un cambio «desde este
+    /// mes» (`CashFlowAmountChangeLogic`) y no toca el método: los meses anteriores siguen con el suyo.
+    ///
+    /// El ajuste de un solo mes que tuviera ESTE mes se retira, o taparía el cambio que se acaba de pedir. Los ajustes de
+    /// un solo mes de los meses siguientes se quedan: son excepciones que la persona puso a propósito. La nota no se
+    /// guarda: un cambio de varios meses no lleva nota.
+    func setAmountFromMonthOnward(line: CashFlowLine, monthKey: String, amount: Double) {
+        guard let ctx = modelContext else { return }
+        for existing in Self.overrides(of: line, monthKey: monthKey) {
+            ctx.delete(existing)
+        }
+        let updated = CashFlowAmountChangeLogic.applying(
+            .init(monthKey: monthKey, amount: amount), to: line.amountChanges
+        )
+        line.amountChangesRaw = CashFlowAmountChangeLogic.encode(updated)
         do {
-            try modelContext?.save()
+            try ctx.save()
         } catch {
             #if DEBUG
-            print("CashFlowPlanViewModel: Error updating future estimation: \(error)")
+            print("CashFlowPlanViewModel: Error setting amount from month onward: \(error)")
             #endif
         }
+    }
+
+    /// «Cómo se calcula · Cambiar» (UX 2.2 · L18-7): cambia el método de la línea para todos los meses, como hacía la
+    /// hoja de configuración. Retira los cambios «desde este mes»: el método nuevo es lo que la persona quiere ver, y un
+    /// cambio de noviembre que siguiera tapándolo haría que «Cambiar» no cambiara nada en los meses siguientes. Los
+    /// ajustes de un solo mes se quedan.
+    func changeEstimationMethod(line: CashFlowLine, to method: EstimationMethod, manualAmount: Double?) {
+        guard let ctx = modelContext else { return }
+        // Abrir «Cambiar» y guardar sin tocar nada no es un cambio: retirar los cambios «desde este mes» ahí
+        // reescribía meses sin que la persona lo pidiera.
+        let sameMethod = line.estimationMethod == method.rawValue
+        let sameAmount = method != .manual || manualAmount == nil || manualAmount == line.manualAmount
+        guard !(sameMethod && sameAmount) else { return }
+        line.estimationMethod = method.rawValue
+        if method == .manual {
+            line.manualAmount = manualAmount ?? line.manualAmount
+        }
+        line.amountChangesRaw = nil
+        do {
+            try ctx.save()
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Error changing estimation method: \(error)")
+            #endif
+        }
+        planRevision += 1
+    }
+
+    /// Prepara las cifras de cada método para una línea ya creada (la hoja de «Cambiar»): el índice de movimientos del
+    /// asistente solo existe mientras se crea el plan. Mismo filtro que `generateSuggestions`.
+    func prepareMethodPreviews(transactions: [TransactionItem], currencyCode: String) {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month], from: .now)
+        guard let currentMonthStart = calendar.date(from: components) else { return }
+        let validTransactions = transactions.filter {
+            $0.category != nil && $0.balanceAdjustmentType == nil && $0.subcategory?.isAnySystem != true
+        }
+        let resolvedCurrency = currencyCode.isEmpty ? "USD" : currencyCode
+        let adjustment: GroupBridgeStatsAdjustment = modelContext
+            .map { GroupBridgeStatsAdjustment.build(from: transactions, context: $0) }
+            ?? .build(from: transactions)
+        cachedIndex = TransactionIndex(
+            transactions: validTransactions, currencyCode: resolvedCurrency,
+            adjustment: adjustment, converter: CurrencyConverter.shared, calendar: calendar
+        )
+        cachedReferenceDate = currentMonthStart
+        cachedCurrencyCode = resolvedCurrency
     }
 
     func removeOverride(line: CashFlowLine, monthKey: String) {

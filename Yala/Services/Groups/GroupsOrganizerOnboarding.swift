@@ -162,7 +162,8 @@ enum GroupsOrganizerOnboarding {
     /// El alta completa: preferencias, espejo en memoria, seeds y aterrizaje en el tab Grupos.
     ///
     /// - Important: **es UN call-site de producción, detrás de la cadena completa**:
-    ///   `GroupsOrganizerNameView` (puerta A, Welcome). Hubo un segundo hasta el 2026-09-10 —el caso
+    ///   `GroupFormView` en su rama `isFirstGroupSetup` (puerta A, Welcome; desde UX 2.2 · L12-12 sustituye a la
+    ///   pantalla del nombre, `GroupsOrganizerNameView`, retirada). Hubo un segundo hasta el 2026-09-10 —el caso
     ///   `.presentName` con payload de `ContentView.advanceGroupsOrganizerFlow`, la puerta B de la card
     ///   «Solo grupos» del onboarding—, retirado con la card (ADR 2026-09-09 §7). Pinneado por source-scan
     ///   con conteo; moverlo antes de la cadena es la mutación (b) del chip.

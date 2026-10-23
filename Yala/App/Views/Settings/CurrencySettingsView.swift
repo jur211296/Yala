@@ -289,15 +289,19 @@ struct CurrencySettingsView: View {
     @ViewBuilder
     private func exchangeRateRow(currency: CurrencyCode) -> some View {
         let info = currencyInfo(for: currency)
-        let rate = getDisplayRate(from: currency, to: preferredCurrency)
+        let display = ExchangeRateRowLogic.display(rate: getDisplayRate(from: currency, to: preferredCurrency))
         let preferredInfo = currencyInfo(for: preferredCurrency)
+        let isInverted: Bool = {
+            if case .inverted = display { return true }
+            return false
+        }()
 
         HStack(spacing: DS.Spacing.md) {
             Text(info.flag)
                 .font(DS.Typography.title)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text("1 \(info.code)")
+                Text(isInverted ? info.code : "1 \(info.code)")
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(.primary)
                 Text(info.name.capitalized)
@@ -307,11 +311,18 @@ struct CurrencySettingsView: View {
 
             Spacer()
 
-            if let rate = rate {
+            // UX 2.2 · L16-4: la misma lectura que «Ver todas» (`ExchangeRatesSheet`): bajo 0,01, al revés.
+            switch display {
+            case .direct(let rate):
                 Text("\(ExchangeRateDisplayFormatter.string(rate)) \(preferredInfo.code)")
                     .font(DS.Typography.body.monospacedDigit())
                     .foregroundStyle(.primary)
-            } else {
+            case .inverted(let units):
+                Text("1 \(preferredInfo.code) = \(ExchangeRateRowLogic.invertedString(units)) \(info.code)")
+                    .font(DS.Typography.body.monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.trailing)
+            case nil:
                 Text("--")
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)

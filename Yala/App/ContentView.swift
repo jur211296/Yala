@@ -696,22 +696,32 @@ struct ContentView: View {
         // se apaga en vez de quedarse colgada esperando un paso que nadie va a dar.
         .fullScreenCover(isPresented: $showGroupsOrganizerName, onDismiss: {
             // La continuación corre AQUÍ y no en el callback de éxito (contrato C7): con la dismissal ya
-            // terminada, lo que el drain presente a continuación no se lo traga SwiftUI. Cancel (swipe,
-            // o UIKit tumbando el cover) ⇒ la rama se apaga y el usuario vuelve al Welcome, nunca a una
-            // pantalla muerta.
+            // terminada, lo que pase después no se lo traga SwiftUI. Cancel sin alta (swipe, la «X» o UIKit
+            // tumbando el cover) ⇒ la rama se apaga y el usuario vuelve al Welcome, nunca a una pantalla muerta.
             guard organizerSetupCompleted else {
                 groupsOrganizerFlowActive = false
                 returnToGroupsChooser()
                 return
             }
             organizerSetupCompleted = false
-            // El trío ya está escrito ⇒ el siguiente paso que decide la máquina es el formulario.
-            RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
+            // L12-12 · el alta ya está escrita y el formulario era el último paso: la rama termina aquí, en Grupos. Con
+            // el grupo creado, Grupos propone invitar (L12-10); si crear falló y la persona cerró, aterriza en su estado
+            // vacío con «Crear grupo», que ya no vuelve a pedir nada.
+            groupsOrganizerFlowActive = false
+            navigation.selectedMainTab = .groups
+            // La hoja de invitar ya está pedida (la pidió el `onCreated`); soltar esto es lo que la deja salir.
+            navigation.isWelcomeGroupFormOpen = false
         }) {
-            GroupsOrganizerNameView {
-                organizerSetupCompleted = true
-                showGroupsOrganizerName = false
-            }
+            // L12-12 (decisión B de Jürgen): el nombre de la persona va DENTRO del formulario del grupo, y este cover
+            // sustituye a «¿Cómo te llamas?», cuyo botón decía «Crear mi grupo» y abría otro formulario.
+            GroupFormView(
+                group: nil,
+                // Se pide en el acto, también si la persona cerró el formulario mientras se guardaba: la pestaña la
+                // presenta cuando el cover ya no está (`isWelcomeGroupFormOpen`).
+                onCreated: { navigation.pendingCreatedGroupInviteID = $0.id.uuidString },
+                isFirstGroupSetup: true,
+                onSetupCompleted: { organizerSetupCompleted = true }
+            )
             .environment(SessionState.shared)
         }
         .modifier(GroupInviteModifier(
@@ -1336,6 +1346,13 @@ struct ContentView: View {
         // `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`). `updateContentViewReadiness` bloquea en
         // el acto y libera una vuelta después, así que esto no añade ningún drenaje.
         defer { updateContentViewReadiness() }
+        // La cadena del invitado (firmar, consentir, la hoja o su puerta) releva a la bienvenida: «Abriendo tu
+        // invitación…» ya cumplió (card z81w). Aquí y no en `dismissWelcomeChainForSupersedingIntent`, que solo corre con
+        // el Welcome como único bloqueo: si la hoja sale sin pasar por ahí y la persona la cancela, el Welcome volvería
+        // con la pantalla de apertura puesta hasta el techo.
+        if intent.supersedesWelcomeChain {
+            InviteOpeningState.shared.finish(.handedOver)
+        }
         switch intent {
         case .showInboxAlert(let notif):
             activeInboxNotification = notif
@@ -1451,7 +1468,20 @@ struct ContentView: View {
             // ausencia como «no confirmó» le presenta la hoja a alguien que YA está dentro del grupo, con
             // el visual genérico y un CTA que no puede hacer nada (`reconcile` sale por su
             // `guard !entries.isEmpty`). Sin entry no se presenta: no se pide confirmar lo que ya no existe.
-            switch PendingJoinStore.entry(zoneName: zone)?.isInviteConfirmed {
+            let pendingEntry = PendingJoinStore.entry(zoneName: zone)
+            // L12-17 · la tarjeta ya dijo «Unirme» y falta cuenta o consentimiento: lo que toca es seguir la cadena, no
+            // volver a enseñarla (una vuelta a primer plano con ella delante deja otra petición en cola).
+            if let pendingEntry, !pendingEntry.isInviteConfirmed,
+               GroupInviteGroupFirstLogic.skipsSheetToContinueChain(
+                   hasAcceptedGroupCard: pendingEntry.hasAcceptedGroupCard,
+                   hasSession: GroupBackendInviteEntryHandler.hasSessionProvider(),
+                   isConsented: GroupBackendInviteEntryHandler.isConsentedProvider()) {
+                Task { @MainActor in
+                    await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
+                }
+                break
+            }
+            switch pendingEntry?.isInviteConfirmed {
             case .some(false):
                 // La marca sale del intent PERSISTIDO, no del payload: es lo que hace que también la
                 // tenga el invitado que llegó desde la web con la app cerrada, que es el caso normal.
@@ -1539,6 +1569,15 @@ struct ContentView: View {
             pendingGroupsJoinZone = nil
             showGroupsConsent = true
         case .presentName:
+            // Quien vuelve con la misma cuenta y ya está en sus grupos no rellena el formulario del primer grupo: el alta
+            // se completa con el nombre que ya tiene allí y aterriza en Grupos (`ReturningGroupsMemberLogic`).
+            if let name = returningGroupsMemberName() {
+                GroupsOrganizerOnboarding.completeSetup(displayName: name, context: modelContext)
+                groupsOrganizerFlowActive = false
+                navigation.selectedMainTab = .groups
+                return
+            }
+            navigation.isWelcomeGroupFormOpen = true
             showGroupsOrganizerName = true
         case .presentGroupForm:
             // La rama termina aquí: el form lo abre `GroupsContainerView` al montar el tab (molde de
@@ -1548,6 +1587,28 @@ struct ContentView: View {
             navigation.selectedMainTab = .groups
             navigation.pendingNewGroupForm = true
         }
+    }
+
+    /// El nombre con el que la cuenta de la sesión ya está en sus grupos, si el canal ya los bajó. `nil` = se pregunta.
+    @MainActor
+    private func returningGroupsMemberName() -> String? {
+        let members: [SplitMember]
+        do {
+            members = try modelContext.fetch(FetchDescriptor<SplitMember>())
+        } catch {
+            #if DEBUG
+            print("ContentView: Error leyendo los miembros de grupos: \(error)")
+            #endif
+            return nil
+        }
+        return ReturningGroupsMemberLogic.returningName(
+            members: members.map {
+                ReturningGroupsMemberLogic.Member(
+                    userID: $0.userID, memberKey: $0.memberKey, status: $0.status,
+                    displayName: $0.displayName, joinedAt: $0.joinedAt)
+            },
+            currentUserID: CloudAuthService.shared.currentUserID
+        )
     }
 
     /// **Bloque [I]** · la cuenta que firmó en la puerta de Grupos lleva Yala completo y no hay sesión
@@ -2875,9 +2936,19 @@ struct ContentView: View {
         // uitest: presentar el cover de GroupInviteOnboarding directo (CKShare no
         // funciona en sim). `-uitest-join-phase` congela la fase del tracker para
         // testear cada step determinista.
+        // `-uitest-invite-opening` (card z81w): «Abriendo tu invitación…» encendida justo cuando la bienvenida se va a
+        // presentar, para que el techo empiece a contar con ella delante y no durante el splash.
+        if UITestHooks.inviteOpening {
+            InviteOpeningState.shared.begin(origin: "uitest")
+        }
         if UITestHooks.startAtInviteOnboarding {
             if let phase = UITestHooks.joinPhaseOverride {
                 GroupJoinIntentTracker.shared._uitestForcePhase(named: phase)
+            }
+            if UITestHooks.inviteBranded {
+                pendingInviteMetadata = InviteLinkService.BrandedMetadata(
+                    name: "Depa Miraflores", icon: "house.fill", color: "E91E63",
+                    members: ["Lucía", "Ana", "Beto"], inviter: "Lucía")
             }
             showGroupInviteOnboarding = true
             return
@@ -3048,18 +3119,24 @@ private struct WelcomeFlowModifier: ViewModifier {
                 WelcomeFlowContainer(
                     initialStep: welcomeFlowInitialStep,
                     onSelectBranch: { branch in
-                        hasShownWelcomeChooser = true
                         switch branch {
                         case .new:
+                            hasShownWelcomeChooser = true
                             // Inalcanzable desde A4: el container desvía `.new` a su 2º nivel
                             // (`handleNewBranch`) igual que ya hacía con `.restore`. Se delega al
                             // MISMO helper que el callback nuevo — dos copias de este camino es
                             // como divergen la limpieza de residuales y el alert de wipe.
                             startFreshPrivateOnboarding()
                         case .restore:
+                            hasShownWelcomeChooser = true
                             showWelcomeFlow = false
                             showWelcomeRestore = true
                         case .invite:
+                            // **«Tengo una invitación» no marca el chooser** (card t2q8, 2026-10-20), como «Crear mi primer
+                            // grupo»: el invitado todavía no ha elegido dónde viven sus datos personales. Marcado, el enlace
+                            // que pega no arma el neutro duradero (`GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry`)
+                            // y un relanzamiento a mitad montaba el espejo del iCloud del aparato. Si abandona, el Welcome
+                            // vuelve a salir en el arranque siguiente, que es lo honesto.
                             showWelcomeFlow = false
                             showInviteRecovery = true
                         }
@@ -3373,7 +3450,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         //    actúa (su guard mira `showWelcomeFlow`).
                         //
                         // Lo que NO se hace aquí, y no por olvido: escribir el trío de solo-grupos. Lo
-                        // escribe `GroupsOrganizerNameView` al final de su cadena, que es quien tiene
+                        // escribe el formulario del primer grupo (L12-12) al final de su cadena, que es quien tiene
                         // permiso.
                         // **El desarme del boot-wipe de grupos, que este camino se saltaba.** Lo medido:
                         // «Salir de Yala en este dispositivo» arma `groupsOnlyWipeArmed` y reabre el
@@ -3487,6 +3564,9 @@ private struct WelcomeFlowModifier: ViewModifier {
             if WelcomeKeptGroupsLogic.freshStartRetiresThePreviousPerson(
                 groupsKeptForThisPerson: groupsKeptForThisPerson) {
                 OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                // UX 2.2 · L12-4: el consentimiento de Grupos que la persona anterior aceptó sin iniciar sesión no lleva
+                // sello: sin retirarlo aquí, se le atribuiría a quien entre después.
+                GroupsConsentState.removeUnsealedSnapshot(in: .standard)
                 // **Y la sesión en la nube se retira también por aquí.** Esta rama es la que declara «soy
                 // nuevo» cuando no hay NADA que borrar, así que no pasa por `wipeLocalGroupsDomain` y hasta
                 // el 2026-09-17 se iba al onboarding con la sesión de la persona anterior intacta — el
@@ -3719,6 +3799,9 @@ fileprivate func applyEntryOnboardingEffects(_ kind: AppEntryKind) {
 /// en la ventana en la que la app se ve vacía porque sus datos todavía están bajando.
 fileprivate func completeOnboardingAsRestoreSkip() {
     applyEntryOnboardingEffects(.reentry)
+    // Quien vuelve con datos no ve los tips de principiante (decisión de Jürgen, 2026-10-22). Sus datos pueden estar
+    // todavía bajando: se apunta la entrada y se resuelve cuando lleguen (`ReturningUserBeginnerTips`).
+    ReturningUserBeginnerTips.armOnReentry()
     // Hasta el 2026-09-12, el CAJÓN de la sesión, por el mismo motivo que su gemelo de `OnboardingView.completeOnboarding`
     // (decisión del owner 2026-09-03): es el MISMO hecho —«esta persona ya no tiene onboarding
     // pendiente»— escrito por el otro camino, el de la restauración. Fuera de sesión secundaria la
@@ -3775,6 +3858,13 @@ private struct GroupInviteModifier: ViewModifier {
     @Binding var hasCompletedOnboarding: Bool
     @Binding var activeInviteError: InviteAlertContent?
     @Binding var activeGroupSyncError: String?
+    /// La ventana que presenta la hoja: «Ver el grupo» y «Apuntar un gasto» de «Ya estás en «X»» (L12-18) dejan su
+    /// destino en ella.
+    @Environment(SceneNavigation.self) private var navigation
+    /// L12-17 · la invitación cuya tarjeta acaba de decir «Unirme» sin cuenta o sin consentimiento. La cadena sigue en el
+    /// `onDismiss` del cover, cuando el ancla ya está libre: pedir el inicio de sesión con el cover aún bajando son dos
+    /// presentaciones ante el mismo ancla.
+    @State private var zoneAwaitingAccount: String?
 
     func body(content: Content) -> some View {
         content
@@ -3802,7 +3892,24 @@ private struct GroupInviteModifier: ViewModifier {
             } message: {
                 Text(activeGroupSyncError ?? "")
             }
-            .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
+            .fullScreenCover(isPresented: $showGroupInviteOnboarding, onDismiss: {
+                // L12-18 · lo que pidió «Ya estás en «X»», ahora que el cover se fue y la pestaña puede presentar.
+                if let followUp = navigation.pendingInviteFollowUp {
+                    navigation.pendingInviteFollowUp = nil
+                    switch followUp {
+                    case .addExpense(let groupID):
+                        navigation.pendingNewGroupExpenseGroupID = groupID
+                        navigation.pendingNewGroupExpense = true
+                    case .viewGroup(let groupID):
+                        navigation.pendingGroupID = groupID.uuidString
+                    }
+                }
+                guard let zone = zoneAwaitingAccount else { return }
+                zoneAwaitingAccount = nil
+                Task { @MainActor in
+                    await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
+                }
+            }) {
                 GroupInviteOnboardingView(
                     inviteMetadata: pendingInviteMetadata,
                     pendingJoinZone: pendingInviteZone
@@ -3817,7 +3924,15 @@ private struct GroupInviteModifier: ViewModifier {
                     // onboarding —no ha completado nada— ni se le toca el intent desde aquí (lo retira la
                     // propia vista, que es quien sabe de qué grupo habla). En los demás, el setup ya corrió
                     // (nombre/moneda): no re-onboardear, y el join intent sigue trabajando en background.
-                    if outcome != .declined {
+                    //
+                    // L12-17 · `.continueToAccount` tampoco: la tarjeta del grupo solo apuntó el «sí» y falta la cuenta,
+                    // el consentimiento y la propia unión (con su alta, si es nuevo). La cadena sigue al cerrarse el cover.
+                    switch outcome {
+                    case .declined:
+                        break
+                    case .continueToAccount:
+                        zoneAwaitingAccount = pendingInviteZone
+                    default:
                         hasCompletedOnboarding = true
                     }
                     showGroupInviteOnboarding = false
@@ -3825,6 +3940,7 @@ private struct GroupInviteModifier: ViewModifier {
                     pendingInviteZone = nil
                 }
                 .environment(SessionState.shared)
+                .environment(navigation)
             }
     }
 }
@@ -3843,6 +3959,8 @@ struct MainTabView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     /// D1: leído reactivamente para reducir la tab bar cuando el usuario elige «Solo mis grupos».
     @Environment(AppPreferences.self) private var appPreferences
+    /// El tema elegido, para decidir si la hoja de fin de Pro avisa de que vuelve a Liquid Glass.
+    @Environment(ThemeManager.self) private var themeManager
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
     /// Gate "Grupos necesita iCloud" (§i.8(c)2): singleton observado — leer `status`
@@ -3856,6 +3974,8 @@ struct MainTabView: View {
     @State private var showDowngradeResolution = false
     /// La hoja de fin de Pro avisa y devuelve el icono de Pro al original (UX 2.2 · L16-11).
     @State private var downgradeIconWillReset = false
+    /// Y el tema de Pro a Liquid Glass (decisión B de Jürgen, 2026-10-21).
+    @State private var downgradeThemeWillReset = false
     @State private var showTrialExpired = false
     /// Milestone number for the upgrade sheet — also drives sheet
     /// presentation (non-nil → shown). Carried by .presentMilestoneUpgrade.
@@ -3998,7 +4118,8 @@ struct MainTabView: View {
                 DowngradeResolutionSheet(
                     accounts: downgradeAccounts,
                     budgets: downgradeBudgets,
-                    iconWillReset: downgradeIconWillReset
+                    iconWillReset: downgradeIconWillReset,
+                    themeWillReset: downgradeThemeWillReset
                 ) {
                     showDowngradeResolution = false
                 }
@@ -4054,7 +4175,7 @@ struct MainTabView: View {
     /// Lo que enseñaría la hoja de fin de Pro, o `nil` si no hay nada que decir: ni cuentas o presupuestos de más que
     /// elegir, ni un icono de Pro que devolver al original (UX 2.2 · L17-6 y L16-11). Con un fetch fallido tampoco: no
     /// se presenta con datos parciales, y el productor re-encola en el arranque siguiente mientras dure el downgrade.
-    private func endOfProSheetContent() -> (accounts: [Account], budgets: [Budget], iconWillReset: Bool)? {
+    private func endOfProSheetContent() -> (accounts: [Account], budgets: [Budget], iconWillReset: Bool, themeWillReset: Bool)? {
         do {
             let accounts = try modelContext.fetch(FetchDescriptor<Account>())
             let budgets = try modelContext.fetch(
@@ -4063,10 +4184,13 @@ struct MainTabView: View {
             let hasExcess = accounts.billableUserAccounts.count > (ProFeature.accounts.freeLimit ?? Int.max)
                 || budgets.count > (ProFeature.budgets.freeLimit ?? Int.max)
             let iconWillReset = !FeatureGateService.shared.isProUser && UIApplication.shared.alternateIconName != nil
-            guard ProPlanStatusLogic.endedSheetIsNeeded(hasExcess: hasExcess, iconWillReset: iconWillReset) else {
+            let themeWillReset = ProPlanStatusLogic.themeWillReset(
+                isProUser: FeatureGateService.shared.isProUser, currentTheme: themeManager.userChoice)
+            guard ProPlanStatusLogic.endedSheetIsNeeded(
+                hasExcess: hasExcess, iconWillReset: iconWillReset, themeWillReset: themeWillReset) else {
                 return nil
             }
-            return (accounts, budgets, iconWillReset)
+            return (accounts, budgets, iconWillReset, themeWillReset)
         } catch {
             #if DEBUG
             print("ContentView: fetch downgrade falló: \(error)")
@@ -4229,6 +4353,7 @@ struct MainTabView: View {
             downgradeAccounts = ended.accounts
             downgradeBudgets = ended.budgets
             downgradeIconWillReset = ended.iconWillReset
+            downgradeThemeWillReset = ended.themeWillReset
             showDowngradeResolution = true
         case .presentTrialExpired:
             // Una sola hoja al acabarse Pro (UX 2.2 · L17-6): si la de fin de Pro ya salió (quema este aviso al

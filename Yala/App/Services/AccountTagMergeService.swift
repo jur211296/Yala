@@ -111,6 +111,7 @@ enum AccountTagMergeService {
                 for tx in loser.transactions ?? [] { tx.account = winner }
                 for sched in loser.scheduledPayments ?? [] { sched.account = winner }
                 for fav in loser.favoritePayments ?? [] { fav.account = winner }
+                for fav in loser.destinationFavoritePayments ?? [] { fav.destinationAccount = winner }
                 for draft in loser.inboxDrafts ?? [] { draft.account = winner }
                 // Tarjeta con varias divisas: las líneas del perdedor pasan al ganador; sin esto quedarían huérfanas
                 // (el enlace es el `shortcutID` crudo, no una relación que el borrado anule). Si así una tarjeta acaba

@@ -69,11 +69,24 @@ nonisolated enum GroupExpensePersonalOutcome: Equatable {
     case none
 }
 
+/// Cómo terminó el «¿Registrar también en tu Yala personal?» (puente apagado y pagaste tú).
+///
+/// UX 2.2 · L13-7 (decisión B de Jürgen, 2026-10-18): «Sí, registrar» pide la cuenta ahí mismo y registra de verdad; el
+/// borrador solo se queda en la Bandeja si la persona cierra sin elegir.
+nonisolated enum GroupExpenseOptInResolution: Equatable {
+    /// Eligió la cuenta (o enlazó un movimiento suyo): está en tus finanzas, en esa cuenta.
+    case registered(accountName: String)
+    /// Dijo que sí y cerró sin elegir: el borrador espera en la Bandeja.
+    case waitingInInbox
+    /// «Solo en el grupo», o el borrador no se pudo crear.
+    case declined
+}
+
 extension GroupExpenseSuccessLogic {
 
     /// - Parameters:
-    ///   - optInDraftCreated: respuesta al aviso «¿Lo registramos?» (puente apagado y pagaste tú). `nil` mientras no
-    ///     se ha contestado o si no se preguntó.
+    ///   - optIn: cómo terminó el aviso «¿Lo registramos?» (puente apagado y pagaste tú). `nil` mientras no se ha
+    ///     contestado o si no se preguntó.
     ///   - isCreation: `false` en una edición. Si pagaste tú, la pantalla no sabe qué hizo el puente con la transacción de
     ///     antes (con el puente encendido conserva la cuenta original o, si cambió la moneda, deja un borrador; apagado,
     ///     puede quedar la de un «Sí» anterior): no dice nada antes que decir algo falso.
@@ -83,7 +96,7 @@ extension GroupExpenseSuccessLogic {
         bridgeEnabled: Bool,
         accountName: String?,
         isCreation: Bool,
-        optInDraftCreated: Bool?,
+        optIn: GroupExpenseOptInResolution?,
         myShare: Double
     ) -> GroupExpensePersonalOutcome {
         guard !isGroupsOnlySession else { return .none }
@@ -96,8 +109,15 @@ extension GroupExpenseSuccessLogic {
             guard let accountName, !accountName.isEmpty else { return .none }
             return .chargedToAccount(accountName: accountName)
         }
-        guard let optInDraftCreated else { return .none }
-        return optInDraftCreated ? .waitingInInbox : share
+        guard let optIn else { return .none }
+        switch optIn {
+        case .registered(let accountName):
+            return accountName.isEmpty ? .none : .chargedToAccount(accountName: accountName)
+        case .waitingInInbox:
+            return .waitingInInbox
+        case .declined:
+            return share
+        }
     }
 
     /// Quién te debe y cuánto, sin ti. Para la línea «Ana y Beto, S/ 50 cada uno».
@@ -115,5 +135,41 @@ extension GroupExpenseSuccessLogic {
     nonisolated static func allEqual(_ amounts: [Double]) -> Bool {
         guard let first = amounts.first else { return false }
         return amounts.allSatisfy { abs($0 - first) < 0.005 }
+    }
+}
+
+// MARK: - Auditoría UX 2.2 · L13-9 · Qué falta para guardar
+
+/// Lo primero que falta para poder guardar un gasto de grupo. UX 2.2 · L13-9 (decisión B de Jürgen, 2026-10-18):
+/// «Guardar» siempre activo; al tocarlo con algo pendiente se marca ese campo y una línea dice qué falta.
+nonisolated enum GroupExpenseMissingField: Equatable {
+    case description
+    case amount
+    case payer
+    case participants
+    case split
+    case account
+}
+
+nonisolated enum GroupExpenseMissingFieldLogic {
+
+    /// En el orden en que se ve el formulario, de arriba abajo: descripción e importe arriba; quién pagó y el reparto en
+    /// la frase; la cuenta debajo. `nil` si no falta nada (los mismos términos que `GroupExpenseViewModel.canSave`).
+    static func firstMissing(
+        descriptionValid: Bool,
+        amountValid: Bool,
+        payerValid: Bool,
+        hasParticipants: Bool,
+        sharesBalanced: Bool,
+        accountRequired: Bool,
+        accountCompatible: Bool
+    ) -> GroupExpenseMissingField? {
+        if !descriptionValid { return .description }
+        if !amountValid { return .amount }
+        if !payerValid { return .payer }
+        if !hasParticipants { return .participants }
+        if !sharesBalanced { return .split }
+        if accountRequired && !accountCompatible { return .account }
+        return nil
     }
 }

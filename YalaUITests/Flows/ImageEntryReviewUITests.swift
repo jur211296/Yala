@@ -165,6 +165,21 @@ final class ImageEntryReviewUITests: XCTestCase {
         )
     }
 
+    /// El cupo del DÍA (429 `yala_quota_daily`, card vv0k): reintentar no sirve hasta mañana, así que no se ofrece; la salida
+    /// es registrar a mano. La CONDICIÓN es la ráfaga (`busy`), que sí ofrece reintentar las mismas fotos.
+    func test_dailyLimit_offersManualEntry_notRetry_andBusyOffersRetry() {
+        let daily = openAndRead("daily-limit")
+        XCTAssertTrue(daily.buttons["image_enter_manually"].waitForExistence(timeout: 15),
+                      "Con el cupo del día agotado no se ofreció registrar a mano.")
+        XCTAssertFalse(daily.buttons["image_retry"].exists, "Con el cupo del día agotado, reintentar no sirve.")
+        daily.terminate()
+
+        let busy = openAndRead("busy")
+        XCTAssertTrue(busy.buttons["image_retry"].waitForExistence(timeout: 15),
+                      "Con la ráfaga del gateway (se cura en un minuto) no se ofreció reintentar.")
+        XCTAssertFalse(busy.buttons["image_trial_see_pro"].exists, "La ráfaga no es el cupo de prueba.")
+    }
+
     /// Cupo de prueba de fotos agotado (sesión 2 del gateway de IA): salida a Yala Pro y sin «Reintentar».
     func test_trialUsedUp_saysSo_andOffersPro() {
         let app = openAndRead("trial-used-up")
