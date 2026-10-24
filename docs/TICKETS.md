@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1046)
+## Index (1047)
 
 | id | status | path |
 |---|---|---|
@@ -997,6 +997,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-insight-card-v2-bullets | done | tickets/done/trends-insight-card-v2-bullets.md |
 | trends-insight-title-capitalizes-the-period-mid-sentence | done | tickets/done/trends-insight-title-capitalizes-the-period-mid-sentence.md |
 | trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
+| trial-banner-uitest-fails-after-ten-pm | backlog | tickets/backlog/trial-banner-uitest-fails-after-ten-pm.md |
 | trial-says-30-days-for-a-one-month-offer | done | tickets/done/trial-says-30-days-for-a-one-month-offer.md |
 | tutorial-completion-check-appears-only-after-reentering | backlog | tickets/backlog/tutorial-completion-check-appears-only-after-reentering.md |
 | two-account-drafts-for-one-group-expense-can-create-two-real-legs | backlog | tickets/backlog/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |

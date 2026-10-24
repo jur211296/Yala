@@ -63,6 +63,9 @@ struct InboxView: View {
     @State private var convertedToGroup: SplitGroup?
     @State private var conversionPicker: ConversionPickerData?
     @State private var conversionContext: ConversionContext?
+    #if DEV_BUILD
+    @State private var showGmailConnect = false
+    #endif
 
     private var filteredDrafts: [InboxDraft] {
         viewModel.filteredDrafts(for: selectedFilter)
@@ -326,6 +329,15 @@ struct InboxView: View {
                         }
                         .accessibilityIdentifier("inbox_close")
                     }
+                    #if DEV_BUILD
+                    // «Conectar Gmail», fase 1: solo Yala Dev, para el video de la verificación de Google.
+                    ToolbarItem(placement: .topBarTrailing) {
+                        YalaToolbarButton(systemName: "envelope.badge", label: "Conectar Gmail") {
+                            showGmailConnect = true
+                        }
+                        .accessibilityIdentifier("inbox_connect_gmail")
+                    }
+                    #endif
                     if !filteredDrafts.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
                             // Este botón no aprueba nada: entra en modo selección. VoiceOver decía «Aprobar todo».
@@ -339,6 +351,11 @@ struct InboxView: View {
                 }
             }
             .tint(.primary)
+            #if DEV_BUILD
+            .sheet(isPresented: $showGmailConnect, onDismiss: { viewModel.loadData() }) {
+                GmailConnectSheet()
+            }
+            #endif
             .sheet(item: $selectedDraft, onDismiss: {
                 if shouldDismissAfterApproval {
                     shouldDismissAfterApproval = false
