@@ -137,6 +137,7 @@
 - [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
 - [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.
 - [SPM sin red en el sandbox](reference_spm_sin_red_en_el_sandbox.md) — el build se cuelga resolviendo paquetes; copia de SourcePackages + `-clonedSourcePackagesDirPath`.
+- [Card que ya falló no va a la tanda](feedback_barrido_una_card_que_ya_fallo_no_va_a_la_tanda.md) — n5zw a la cola; qb1r falló a mano con unit en verde.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números…
 - [El control que no recorre el camino no descarta](feedback_el_control_que_no_recorre_el_camino_no_descarta.md) — «sin X funciona» no aísla X si X cambia la ruta.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de ded…
