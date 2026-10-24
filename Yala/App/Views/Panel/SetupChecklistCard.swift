@@ -255,18 +255,18 @@ struct SetupChecklistCard: View {
     @State private var progressBarWidth: CGFloat = 0
 
     private var progressBar: some View {
-        ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: DS.Radius.xs)
-                .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
-                .frame(height: 6)
-
-            RoundedRectangle(cornerRadius: DS.Radius.xs)
-                .fill(theme.accent)
-                .frame(width: progressBarWidth * manager.progress, height: 6)
-                .animation(.easeInOut(duration: 0.4), value: manager.progress)
-        }
-        .frame(height: 6)
-        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { progressBarWidth = $0 }
+        // El progreso va en `overlay` del carril: en un `ZStack` fijaba el ancho medido y la barra tardaba en encoger (o
+        // no encogía, al 100 %) al estrechar la ventana.
+        RoundedRectangle(cornerRadius: DS.Radius.xs)
+            .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
+            .frame(height: 6)
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: DS.Radius.xs)
+                    .fill(theme.accent)
+                    .frame(width: progressBarWidth * manager.progress, height: 6)
+                    .animation(.easeInOut(duration: 0.4), value: manager.progress)
+            }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { progressBarWidth = $0 }
     }
 }
 

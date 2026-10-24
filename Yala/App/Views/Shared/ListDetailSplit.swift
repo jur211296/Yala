@@ -10,7 +10,9 @@
 //    las filas se rompen), y más ancha con texto de accesibilidad (`DS.Adaptive.listColumnWidths`);
 //  - la visibilidad en manos del split (`@State`), para que pueda superponer la lista cuando no caben las dos
 //    (iPad mini en vertical) y retirarla;
-//  - al abrir algo con la lista superpuesta, la retira, para que se vea lo abierto.
+//  - al abrir algo con la lista superpuesta, la retira, para que se vea lo abierto;
+//  - en el iPhone Duo abierto en horizontal, la separación de las columnas sobre el pliegue (medido el 2026-10-24: con
+//    los 400 de siempre el pliegue caía dentro del detalle, a 455-495 pt).
 //
 
 import SwiftUI
@@ -85,12 +87,13 @@ extension View {
         modifier(MarksEmptyDetailColumn())
     }
 
-    /// Para la página que monta un `ListDetailSplit`, desde FUERA (quien la monta): con texto de accesibilidad y una
-    /// ventana ancha donde no caben dos columnas que lo lean (Pro Max girado, iPad mini), la página entera ve compacto y
-    /// se comporta como en vertical — lista sola, lo abierto empujado o en hoja. Va fuera porque la página lee el size
-    /// class por su cuenta para decidir hoja o columna (`RecordsStandaloneView`, `GroupsContainerView`).
-    func foldsListDetailForAccessibilityText() -> some View {
-        modifier(FoldsListDetailForAccessibilityText())
+    /// Para la página que monta un `ListDetailSplit`, desde FUERA (quien la monta): en una ventana ancha donde no caben
+    /// dos columnas legibles (iPhone Duo abierto en vertical, iPad mini en vertical; con texto de accesibilidad, también
+    /// el Pro Max girado y el iPad mini en horizontal), la página entera ve compacto y se comporta como en un iPhone —
+    /// lista sola, lo abierto empujado o en hoja. Va fuera porque la página lee el size class por su cuenta para
+    /// decidir hoja o columna (`RecordsStandaloneView`, `GroupsContainerView`).
+    func foldsListDetailWhenColumnsDontFit() -> some View {
+        modifier(FoldsListDetailWhenColumnsDontFit())
     }
 
     /// Marca una vista como «lo abierto» de la columna de detalle: al aparecer, si la lista la estaba tapando, el
@@ -108,16 +111,15 @@ private struct AnnouncesShownInDetailColumn: ViewModifier {
     }
 }
 
-private struct FoldsListDetailForAccessibilityText: ViewModifier {
+private struct FoldsListDetailWhenColumnsDontFit: ViewModifier {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var pageWidth: CGFloat = 0
 
     private var folds: Bool {
-        ListDetailOverlayLogic.foldsForAccessibilityText(
+        ListDetailOverlayLogic.foldsToSingleColumn(
             pageWidth: pageWidth,
-            minimumColumnWidth: DS.Adaptive.listColumnWidths(isAccessibilityText: true).min,
-            isAccessibilityText: dynamicTypeSize.isAccessibilitySize,
+            minimumColumnWidth: DS.Adaptive.listColumnWidths(isAccessibilityText: dynamicTypeSize.isAccessibilitySize).min,
             isRegularWidth: horizontalSizeClass == .regular)
     }
 
@@ -150,6 +152,8 @@ struct ListDetailSplit<ListColumn: View, DetailColumn: View>: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     /// Con texto de accesibilidad la columna de lista se ensancha: es el tamaño del contenido, no el aparato.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// El pliegue del iPhone Duo abierto en horizontal, en el espacio del split (ver `readsVerticalFold(_:)`).
+    @State private var fold: ClosedRange<CGFloat>?
 
     private var columnWidths: DS.Adaptive.ListColumnWidths {
         DS.Adaptive.listColumnWidths(isAccessibilityText: dynamicTypeSize.isAccessibilitySize)
@@ -176,6 +180,7 @@ struct ListDetailSplit<ListColumn: View, DetailColumn: View>: View {
                 state.isRegularWidth = newClass == .regular
             }
             .onChange(of: columnWidths.min, initial: true) { _, newMin in state.minimumColumnWidth = newMin }
+            .readsVerticalFold($fold)
             .environment(\.listDetailSplit, state)
     }
 
@@ -200,7 +205,8 @@ struct ListDetailSplit<ListColumn: View, DetailColumn: View>: View {
     /// sin avisar (medido).
     private var listColumn: some View {
         let widths = columnWidths
-        return list.navigationSplitViewColumnWidth(min: widths.min, ideal: widths.ideal, max: widths.max)
+        let ideal = DS.Adaptive.listColumnIdealWidth(widths, fold: fold)
+        return list.navigationSplitViewColumnWidth(min: widths.min, ideal: ideal, max: widths.max)
     }
 
     private var detailColumn: some View {

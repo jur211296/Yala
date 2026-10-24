@@ -421,26 +421,27 @@ private struct CategoryRow: View {
                     }
 
                     // Bar
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(DS.Semantic.neutralBackground)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 6)
-
-                        let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
-                        // Al 22 %: la barra conserva el tono de su categoría —y
-                        // con él la lectura de a quién pertenece— sin competir
-                        // con el icono, que es quien de verdad identifica. Medido
-                        // el 2026-09-02: las barras eran el 47 % de la superficie
-                        // de color saturado de la tarjeta, y los iconos el 35 %.
-                        Capsule()
-                            .fill(Color(hex: summary.colorHex).opacity(0.22))
-                            .frame(width: width, height: 6)
-                    }
-                    .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-                        guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
-                        barWidth = newWidth
-                    }
+                    // El relleno, en `overlay` del carril: en un `ZStack` el de la primera fila (al 100 %) fijaba el
+                    // ancho medido y la barra no encogía al estrechar la ventana (iPhone Duo, iPad).
+                    let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
+                    Capsule()
+                        .fill(DS.Semantic.neutralBackground)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 6)
+                        .overlay(alignment: .leading) {
+                            // Al 22 %: la barra conserva el tono de su categoría —y
+                            // con él la lectura de a quién pertenece— sin competir
+                            // con el icono, que es quien de verdad identifica. Medido
+                            // el 2026-09-02: las barras eran el 47 % de la superficie
+                            // de color saturado de la tarjeta, y los iconos el 35 %.
+                            Capsule()
+                                .fill(Color(hex: summary.colorHex).opacity(0.22))
+                                .frame(width: width, height: 6)
+                        }
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                            guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
+                            barWidth = newWidth
+                        }
                 }
             }
         }

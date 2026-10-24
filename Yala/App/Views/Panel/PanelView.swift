@@ -233,7 +233,9 @@ struct PanelView: View {
         Button {
             sheets.showFilters = true
         } label: {
-            Image(systemName: "line.3.horizontal.decrease")
+            // Con título además del icono: con el iPhone Duo abierto en horizontal no cabe en la barra vertical y se va
+            // al menú «···», que enseña el título; con solo el icono desaparecía. En una barra se ve el icono, como antes.
+            Label(L10n.Accessibility.filters, systemImage: "line.3.horizontal.decrease")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
         }
@@ -247,7 +249,8 @@ struct PanelView: View {
             DS.Haptic.light()
             sheets.showSectionsConfig = true
         } label: {
-            Image(systemName: "square.grid.2x2")
+            // Con título además del icono, como Filtros: con el iPhone Duo abierto en horizontal se va al menú «···».
+            Label(L10n.Accessibility.sectionsConfig, systemImage: "square.grid.2x2")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
         }
@@ -299,12 +302,20 @@ struct PanelView: View {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
                     }
+                    // Vista propia (icono + contador): en el iPhone Duo cerrado no pasaba sola a la barra vertical y,
+                    // en el primer arranque, se pintaba flotando abajo encima de la gráfica. Con contador, de lo último
+                    // en irse a «···».
+                    .joinsVerticalBar()
+                    .overflowsLast()
                     ToolbarItem(placement: .topBarTrailing) {
                         filtersToolbarButton
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         sectionsConfigButton
                     }
+                    // Con el Duo abierto en horizontal (siete pestañas) la barra vertical solo deja sitio para la bandeja
+                    // y «···»: ordenar las secciones es lo que menos se toca.
+                    .overflowsFirst()
                     ProfileToolbarItem {
                         sheets.isPresentingSettings = true
                     }
@@ -552,9 +563,12 @@ struct PanelView: View {
     /// a la izquierda, «Tus finanzas» a la derecha— con los avisos debajo: en horizontal la cabecera se comía un tercio
     /// de la pantalla (ticket `ipad-and-duo-panel-and-statistics-use-the-width`). Los mismos hijos en los dos casos,
     /// así redimensionar no cambia su identidad.
+    /// El pliegue del iPhone Duo abierto en horizontal, medido sobre la cabecera: la banda pone una columna a cada lado.
+    @State private var headerFold: ClosedRange<CGFloat>?
+
     private var headerLayout: AnyLayout {
         DS.Adaptive.isWideScreen(sizeClass)
-            ? AnyLayout(HeaderBandLayout(spacing: DS.Spacing.lg))
+            ? AnyLayout(HeaderBandLayout(spacing: DS.Spacing.lg, fold: headerFold))
             : AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.lg))
     }
 
@@ -661,6 +675,7 @@ struct PanelView: View {
                         )
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
+                    .readsVerticalFold($headerFold)
                     .padding(.top, DS.Spacing.lg)
                     // Tocar un registro de «Últimos registros» abre su detalle (UX 2.2 · L3-12).
                     .environment(\.openPanelRecord, OpenPanelRecordAction { record in

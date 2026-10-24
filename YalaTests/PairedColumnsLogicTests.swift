@@ -111,4 +111,57 @@ struct PairedColumnsLogicTests {
             measure: { _, _ in 50 })
         #expect(result.placements.map(\.origin.y) == [0, 66, 132])
     }
+
+    // MARK: - El pliegue del iPhone Duo
+
+    /// Medido el 2026-10-24 en el simulador del Duo abierto en horizontal: la región `division` del pliegue va de 455,5
+    /// a 495,5 en el espacio del Panel, y su cabecera mide 805 a partir de x = 31. En la cabecera, de 424,5 a 464,5.
+    private let panelFold: ClosedRange<CGFloat> = 424.5...464.5
+
+    @Test func columns_withoutFold_areEvenHalves() {
+        let c = Logic.columns(width: 1000, columnSpacing: 20, minColumnWidth: 320, fold: nil)
+        #expect(c == .init(leadingWidth: 490, trailingX: 510, trailingWidth: 490))
+    }
+
+    /// Una columna a cada lado del pliegue: la derecha ya no empieza encima de él.
+    @Test func columns_withFold_splitAroundIt() {
+        let c = Logic.columns(width: 805, columnSpacing: 16, minColumnWidth: 320, fold: panelFold)
+        #expect(c == .init(leadingWidth: 424.5, trailingX: 464.5, trailingWidth: 340.5))
+    }
+
+    /// Si a un lado no queda una columna legible, mitades, como sin pliegue.
+    @Test func columns_foldLeavingANarrowColumn_fallsBackToHalves() {
+        let c = Logic.columns(width: 700, columnSpacing: 20, minColumnWidth: 320, fold: 455...495)
+        #expect(c == .init(leadingWidth: 340, trailingX: 360, trailingWidth: 340))
+    }
+
+    /// Un pliegue fuera del contenedor (otra columna, Yala IA al lado) no le afecta.
+    @Test func columns_foldOutsideTheContainer_isIgnored() {
+        let c = Logic.columns(width: 805, columnSpacing: 16, minColumnWidth: 320, fold: 900...940)
+        #expect(c.trailingX == 410.5)
+    }
+
+    /// Solo el pliegue que separa izquierda y derecha cuenta; el del Duo abierto en vertical (horizontal) lo cruza el
+    /// scroll.
+    @Test func verticalFold_fromTheSystemRegions() {
+        #expect(Logic.verticalFold(in: [CGRect(x: 455.5, y: -82, width: 40, height: 669)]) == 455.5...495.5)
+        #expect(Logic.verticalFold(in: [CGRect(x: 0, y: 373.5, width: 669, height: 40)]) == nil)
+        #expect(Logic.verticalFold(in: []) == nil)
+    }
+
+    @Test func pairedPlacements_withFold_putOneCardOnEachSide() {
+        let result = Logic.pairedPlacements(
+            width: 805, spans: [false, false], minColumnWidth: 320, columnSpacing: 16, rowSpacing: 10,
+            fold: panelFold, measure: { _, w in w < 400 ? 120 : 100 })
+        #expect(result.placements[0] == .init(origin: .zero, slotWidth: 424.5, slotHeight: 120))
+        #expect(result.placements[1] == .init(origin: CGPoint(x: 464.5, y: 0), slotWidth: 340.5, slotHeight: 120))
+    }
+
+    @Test func band_withFold_trailingColumnStartsAfterIt() {
+        let result = Logic.bandPlacements(
+            width: 805, columns: [.leading, .trailing], minColumnWidth: 320, columnSpacing: 16, spacing: 16,
+            fold: panelFold, measure: { _, _ in 50 })
+        #expect(result.placements[0] == .init(origin: .zero, slotWidth: 424.5, slotHeight: 50))
+        #expect(result.placements[1] == .init(origin: CGPoint(x: 464.5, y: 0), slotWidth: 340.5, slotHeight: 50))
+    }
 }
