@@ -182,6 +182,12 @@ struct PanelHeroPeriodData: Equatable {
     /// «Disponible» pequeño con una incertidumbre mayor que él mismo. Lo calcula
     /// `HeroBucketsCalculator` contra el número que se pinta.
     var amountsAreApproximate: Bool = false
+    /// Si el período tuvo algún movimiento (`HeroBucketsCalculator.Buckets.periodHasAnyTx`). `nil` lo deduce de las
+    /// cifras, para quien construye el dato a mano (previews).
+    var periodHadMovements: Bool? = nil
+    /// «Sin movimientos» del hero. Por actividad y no por cifras: con la suma con signo, un gasto y su devolución dejan
+    /// las dos cifras en 0 con movimientos.
+    var hasNoMovements: Bool { !(periodHadMovements ?? (income != 0 || expense != 0)) }
 }
 
 @MainActor
@@ -1835,19 +1841,18 @@ final class PanelViewModel {
     /// (nil → gasto). Residual conocido: para Tags no se filtra "tiene tag", así que
     /// un gasto SIN etiqueta más tardío que el último gasto etiquetado puede correr
     /// el corte 1+ días (borde estrecho, conservador).
+    /// La regla vive en `DistributionPreviousPeriodCalculator.currentDates`, que comparte con Distribución:
+    /// `countsUncategorized` va en `true` para los widgets que cuentan el movimiento sin categoría (Flujo de caja,
+    /// Etiquetas).
     private func currentPeriodDates(
         _ txs: [TransactionItem],
         in interval: DateInterval,
-        natures: Set<TransactionNature>?
+        natures: Set<TransactionNature>?,
+        countsUncategorized: Bool
     ) -> [Date] {
-        let include = natures ?? [.expense]
-        return txs.filter { tx in
-            guard tx.balanceAdjustmentType == nil, let category = tx.category,
-                  interval.contains(tx.date) else { return false }
-            let nature: TransactionNature = category.isIncome ? .income : .expense
-            return include.contains(nature)
-        }
-        .map(\.date)
+        DistributionPreviousPeriodCalculator.currentDates(
+            from: txs, in: interval, natures: natures, countsUncategorized: countsUncategorized
+        )
     }
 
     /// Transacciones del período ANTERIOR (dentro de `previousInterval`) truncadas al
@@ -1862,6 +1867,7 @@ final class PanelViewModel {
         previousInterval: DateInterval,
         currentSource: [TransactionItem],
         natures: Set<TransactionNature>?,
+        countsUncategorized: Bool = false,
         context: PanelCalculationContext
     ) -> [TransactionItem] {
         let previous = context.transactionsWithoutDateFilter.filter {
@@ -1869,7 +1875,9 @@ final class PanelViewModel {
         }
         return DateAlignmentHelper.alignedPreviousItems(
             previous,
-            currentDates: currentPeriodDates(currentSource, in: context.effectiveInterval, natures: natures),
+            currentDates: currentPeriodDates(
+                currentSource, in: context.effectiveInterval, natures: natures, countsUncategorized: countsUncategorized
+            ),
             currentInterval: context.effectiveInterval,
             previousInterval: previousInterval,
             period: context.period,
@@ -2057,6 +2065,7 @@ final class PanelViewModel {
             previousInterval: previousInterval,
             currentSource: context.expenseFilteredTransactions,
             natures: [.income, .expense],
+            countsUncategorized: true,
             context: context
         )
         let previousSummary = CashFlowCalculator.calculateCashFlow(
@@ -2082,7 +2091,7 @@ final class PanelViewModel {
 
         // In expenses-only mode, exclude income transactions
         if SessionState.shared.isExpensesOnlyMode {
-            filtered = filtered.filter { $0.category?.isIncome != true }
+            filtered = filtered.filter { !TransactionClassificationLogic.isIncome($0) }
         }
 
         return Array(
@@ -2369,9 +2378,7 @@ final class PanelViewModel {
     func calculateBudgetsWidget(
         budgets: [Budget],
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        excludedCategoryIDs: Set<PersistentIdentifier> = [],
-        excludedSubcategoryIDs: Set<PersistentIdentifier> = []
+        defaultCurrencyCode: String
     ) {
         // Check if there are budgets but none are favorites
         let hasBudgets = !budgets.isEmpty
@@ -2388,9 +2395,7 @@ final class PanelViewModel {
             calculateBudgetSummary(
                 budget: budget,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode,
-                excludedCategoryIDs: excludedCategoryIDs,
-                excludedSubcategoryIDs: excludedSubcategoryIDs
+                defaultCurrencyCode: defaultCurrencyCode
             )
         }
         let summaries = newHasBudgetsButNoFavorites
@@ -2408,78 +2413,20 @@ final class PanelViewModel {
     private func calculateBudgetSummary(
         budget: Budget,
         transactions: [TransactionItem],
-        defaultCurrencyCode: String,
-        excludedCategoryIDs: Set<PersistentIdentifier> = [],
-        excludedSubcategoryIDs: Set<PersistentIdentifier> = []
+        defaultCurrencyCode: String
     ) -> BudgetSummary? {
         // Get budget period date interval
         let interval = getBudgetDateInterval(budget: budget)
 
-        // Filter transactions by date
-        var filtered = transactions.filter { interval.contains($0.date) }
-
-        // Apply session exclude filters (user-excluded categories/subcategories)
-        if !excludedCategoryIDs.isEmpty || !excludedSubcategoryIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                if !excludedCategoryIDs.isEmpty,
-                   let catID = transaction.category?.persistentModelID,
-                   excludedCategoryIDs.contains(catID) { return false }
-                if !excludedSubcategoryIDs.isEmpty,
-                   let subID = transaction.subcategory?.persistentModelID,
-                   excludedSubcategoryIDs.contains(subID) { return false }
-                return true
-            }
-        }
-
-        // Apply budget filters
-
-        // Account filter (CSV mirror SSOT con M2M fallback + auto-cura). Con las líneas de las tarjetas que guarda (entrega 3).
-        if let accountUUIDs = budget.spendingAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                if let account = transaction.account {
-                    return accountUUIDs.contains(account.shortcutID)
-                }
-                return false
-            }
-        }
-
-        // Subcategory filter (CSV mirror SSOT con M2M fallback + auto-cura)
-        if let subcategoryUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subcategoryUUIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                if let subcategory = transaction.subcategory {
-                    return subcategoryUUIDs.contains(subcategory.shortcutID)
-                }
-                return false
-            }
-        }
-
-        // Tag filter — ambos lados (budget + tx) usan CSV mirror SSOT.
-        if let budgetTagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !budgetTagUUIDs.isEmpty {
-            filtered = filtered.filter { transaction in
-                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
-                return !txTagUUIDs.isDisjoint(with: budgetTagUUIDs)
-            }
-        }
-
-        // Need filter
-        if let naturesString = budget.natures, !naturesString.isEmpty {
-            let natures = naturesString.split(separator: ",")
-                .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-
-            filtered = filtered.filter { transaction in
-                natures.contains(transaction.effectiveNeed)
-            }
-        }
-
-        // Only count expenses (not income)
-        filtered = filtered.filter { $0.category?.isIncome == false }
-
-        // Sum amounts in budget's currency. Delega al helper único de
-        // BudgetsViewModel para consistencia: TC actual cuando difiere la
-        // moneda, sin la heurística de "ramas mezcladas" anterior.
-        let spent = filtered.reduce(0.0) { sum, transaction in
-            sum + abs(BudgetsViewModel.budgetAmount(of: transaction, in: budget.currencyCode))
-        }
+        // Lo gastado sale de la MISMA función que Planificación (`BudgetsViewModel.calculateSpending`, que también usan
+        // las alertas de presupuesto), con el neteo de gastos de grupo del Panel. Hasta el 2026-10-23 el Panel filtraba
+        // por su cuenta: contaba los ajustes de saldo como gasto, ignoraba «Contar mi parte de los gastos de grupo» y
+        // sumaba el gasto de grupo entero, y además restaba las categorías excluidas con el filtro de sesión, que
+        // Planificación no mira. «Te quedan» podía salir distinto en las dos pantallas (ticket
+        // `panel-budget-spent-diverges-from-planning`).
+        let spent = BudgetsViewModel.calculateSpending(
+            budget: budget, transactions: transactions, interval: interval, adjustment: statsAdjustment
+        )
 
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getBudgetDaysRemaining(budget: budget, interval: interval)
@@ -2611,9 +2558,7 @@ final class PanelViewModel {
             calculateBudgetsWidget(
                 budgets: budgets,
                 transactions: transactions,
-                defaultCurrencyCode: defaultCurrencyCode,
-                excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
-                excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
+                defaultCurrencyCode: defaultCurrencyCode
             )
         }
         // Shared paidAmounts fetch between the scheduled-payments widget and the
@@ -2727,6 +2672,7 @@ final class PanelViewModel {
             previousInterval: previousInterval,
             currentSource: context.filteredTransactions,
             natures: [.expense],
+            countsUncategorized: true,
             context: context
         )
         let previousData = TagSpendingCalculator.calculateTopSpending(
@@ -2960,6 +2906,7 @@ final class PanelViewModel {
         newPeriod.incomeApproximate = buckets.periodIncomeApproximate
         newPeriod.expenseApproximate = buckets.periodExpenseApproximate
         newPeriod.amountsAreApproximate = buckets.periodNetApproximate
+        newPeriod.periodHadMovements = buckets.periodHasAnyTx
         if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
 
         let totalMonthlyBudget = budgets

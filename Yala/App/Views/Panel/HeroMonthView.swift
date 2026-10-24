@@ -280,7 +280,7 @@ struct HeroMonthView: View {
             .buttonStyle(.plain)
             .accessibilityHint(L10n.Panel.Hero.clearNatureFilter)
             .accessibilityIdentifier("panel_hero_nature_chip")
-        } else if periodSummary.income == 0 && periodSummary.expense == 0 {
+        } else if periodSummary.hasNoMovements {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Panel.Hero.noMovements)
                     .font(DS.Typography.subheadlineEmphasized)

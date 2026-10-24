@@ -458,6 +458,15 @@ class SessionState {
         globalFilters.clearAll()
     }
 
+    /// Quita del filtro de cuentas una cuenta que se acaba de eliminar. Sin esto el filtro sobrevivía a la cuenta: el
+    /// chip no se pintaba (ningún ID resolvía) y el Panel enseñaba 0 sin nada que explicara por qué (ticket
+    /// `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Lo llama el embudo de los borrados,
+    /// `EntityDeletionService.deleteAccount`.
+    func forgetDeletedAccount(_ id: PersistentIdentifier) {
+        guard selectedAccountIDs.contains(id) else { return }
+        selectedAccountIDs.remove(id)
+    }
+
     /// Toggle account filter (single-select behavior for Panel compatibility)
     func toggleAccountFilter(_ id: PersistentIdentifier) {
         if selectedAccountIDs.contains(id) {

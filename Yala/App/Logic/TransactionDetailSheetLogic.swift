@@ -37,7 +37,7 @@ enum TransactionDetailSheetLogic {
     /// con RecordRowView.amountColor para que el hero no contradiga a la row.
     static func kind(isTransfer: Bool, categoryIsIncome: Bool?, amount: Double) -> Kind {
         if isTransfer { return .transfer }
-        let isIncome = categoryIsIncome ?? (amount >= 0)
+        let isIncome = TransactionClassificationLogic.isIncome(categoryIsIncome: categoryIsIncome, signedAmount: amount)
         return isIncome ? .income : .expense
     }
 

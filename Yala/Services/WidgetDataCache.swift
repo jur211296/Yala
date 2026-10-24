@@ -397,8 +397,7 @@ enum WidgetDataCache {
             accounts.filter { $0.excludeFromStatistics }.map { $0.persistentModelID }
         )
         let isEligible: (TransactionItem) -> Bool = { tx in
-            guard let account = tx.account else { return true }
-            return !excludedAccountIDs.contains(account.persistentModelID)
+            countsForWidgets(tx, excludedAccountIDs: excludedAccountIDs)
         }
         let eligibleTransactions = allTransactions.filter(isEligible)
         let eligibleRecentTransactions = recentTransactions.filter(isEligible)
@@ -622,10 +621,19 @@ enum WidgetDataCache {
         )
     }
 
-    /// Income/expense por `category.isIncome`. Tx sin categoría → no es income.
-    /// Centraliza la regla y descarta heurísticas de signo del monto.
+    /// Si un movimiento entra en los widgets de inicio: con cuenta, y de una cuenta que cuenta para estadísticas. Es el
+    /// filtro de cuentas elegibles de la app (Panel, Registros, Estadísticas), que deja fuera los movimientos sin cuenta.
+    /// Hasta el 2026-10-23 los widgets sí los contaban y su «Este mes» no coincidía con el de la app.
+    static func countsForWidgets(_ tx: TransactionItem, excludedAccountIDs: Set<PersistentIdentifier>) -> Bool {
+        guard let account = tx.account else { return false }
+        return !excludedAccountIDs.contains(account.persistentModelID)
+    }
+
+    /// Ingreso o gasto con la regla de toda la app (`TransactionClassificationLogic`: la categoría manda; sin
+    /// categoría, el signo). Hasta el 2026-10-23 aquí un movimiento sin categoría era siempre gasto, y los widgets
+    /// contaban otro mes que Registros (ticket `records-standalone-amount-discrepancy`).
     static func isIncomeTx(_ tx: TransactionItem) -> Bool {
-        tx.category?.isIncome ?? false
+        TransactionClassificationLogic.isIncome(tx)
     }
 
     /// Cuentas visibles para widgets: no archivadas y no excluidas de stats.
@@ -696,9 +704,9 @@ enum WidgetDataCache {
         // `panel-balance-chart-contradicts-its-own-figure`). El punto de hoy es `totalBalance`, el saldo vivo.
         var nativeByDay: [Date: [String: Decimal]] = [:]
         var totalNative: [String: Decimal] = [:]
-        // Solo las filas con cuenta, como el saldo vivo (`liveBalanceBreakdown` salta las que no tienen): si no, el punto
-        // de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón en hoy.
-        for tx in transactions where tx.account != nil {
+        // Solo las filas que entran en un saldo, como el saldo vivo (`LiveBalanceCalculator.entersBalance`): si no, el
+        // punto de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón en hoy.
+        for tx in transactions where LiveBalanceCalculator.entersBalance(tx) {
             let day = calendar.startOfDay(for: tx.date)
             LiveBalanceCalculator.addNative(tx, to: &nativeByDay[day, default: [:]])
             LiveBalanceCalculator.addNative(tx, to: &totalNative)
@@ -830,9 +838,13 @@ enum WidgetDataCache {
         // `ApproximateMarkThreshold` documenta y que `CashFlowCalculator` aplica).
         var incomeApproximateMagnitude: Double = 0
         var expenseApproximateMagnitude: Double = 0
+        // Denominadores del umbral y de los porcentajes de categorías: magnitudes por lado, como `CashFlowCalculator`.
+        // Los totales van con signo desde el 2026-10-23, y una devolución que los encoge disparaba el cociente (la marca)
+        // y pasaba de 100 % los porcentajes de las categorías, que suman magnitudes (lo cazó la review).
+        var incomeTotalMagnitude: Double = 0
+        var expenseTotalMagnitude: Double = 0
 
         for tx in periodTransactions {
-            guard tx.category != nil else { continue }
             if adjustment.isSuppressed(tx) { continue }
             // La regla de la app (`CashFlowCalculator.resolvedAmount`): el monto guardado si se
             // guardó en la divisa vigente —y entonces la señal es la del `adjustment`, que en un
@@ -843,12 +855,15 @@ enum WidgetDataCache {
             )
             let amount = resolved.value
             let approximate = resolved.approximateMagnitude
+            // Con signo, como el Flujo de caja de la app: una devolución en una categoría de gasto resta del gasto.
             if isIncomeTx(tx) {
-                totalIncome += abs(amount)
+                totalIncome += amount
                 incomeApproximateMagnitude += approximate
+                incomeTotalMagnitude += abs(amount)
             } else {
-                totalExpense += abs(amount)
+                totalExpense -= amount
                 expenseApproximateMagnitude += approximate
+                expenseTotalMagnitude += abs(amount)
             }
         }
 
@@ -867,7 +882,10 @@ enum WidgetDataCache {
         var balanceApproximateMagnitude: Double = 0
         if let allTx = allTransactionsForBalance {
             var native: [String: Decimal] = [:]
-            for tx in allTx where tx.date < periodEnd {
+            // Las mismas filas que el saldo vivo y que la curva del widget (`LiveBalanceCalculator.entersBalance`): un
+            // movimiento sin cuenta no está en ningún saldo, y contarlo aquí separaba la cifra del último punto de la
+            // curva (card `tablero-la-cifra-y-la-curva-del-widget-de-saldo-zyah`).
+            for tx in allTx where tx.date < periodEnd && LiveBalanceCalculator.entersBalance(tx) {
                 LiveBalanceCalculator.addNative(tx, to: &native)
             }
             let closing = min(periodEnd, Date.now)
@@ -882,7 +900,7 @@ enum WidgetDataCache {
         // Build top categories (expenses only, top 20 for Large widgets)
         let topCategories = buildTopCategories(
             transactions: periodTransactions,
-            totalExpense: totalExpense,
+            totalExpense: expenseTotalMagnitude,
             limit: 20,
             currencyCode: currencyCode,
             adjustment: adjustment,
@@ -892,7 +910,7 @@ enum WidgetDataCache {
         // Build top subcategories (expenses only, top 20 for Large widgets)
         let topSubcategories = buildTopSubcategories(
             transactions: periodTransactions,
-            totalExpense: totalExpense,
+            totalExpense: expenseTotalMagnitude,
             limit: 20,
             currencyCode: currencyCode,
             adjustment: adjustment,
@@ -918,10 +936,10 @@ enum WidgetDataCache {
             cashFlowPoints: cashFlowPoints,
             periodBalance: allTransactionsForBalance != nil ? periodBalance : nil,
             incomeIsApproximate: ApproximateMarkThreshold.marks(
-                approximate: incomeApproximateMagnitude, total: totalIncome
+                approximate: incomeApproximateMagnitude, total: incomeTotalMagnitude
             ),
             expenseIsApproximate: ApproximateMarkThreshold.marks(
-                approximate: expenseApproximateMagnitude, total: totalExpense
+                approximate: expenseApproximateMagnitude, total: expenseTotalMagnitude
             ),
             // El neto lleva la incertidumbre de los DOS lados contra el número que se muestra, no
             // el OR de las dos marcas: un ingreso grande con un 4,9 % dudoso y un gasto grande
@@ -1062,7 +1080,6 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
-            guard tx.category != nil else { continue }
             // Suprime la pata de préstamo derivada (bridge): mata el ingreso fantasma +lent.
             if adjustment.isSuppressed(tx) { continue }
 
@@ -1072,10 +1089,11 @@ enum WidgetDataCache {
             ).value
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
+            // Con signo, como los totales del período (`buildPeriodSummary`).
             if isIncomeTx(tx) {
-                existing.income += abs(rawAmount)
+                existing.income += rawAmount
             } else {
-                existing.expense += abs(rawAmount)
+                existing.expense -= rawAmount
             }
             dailyData[day] = existing
         }

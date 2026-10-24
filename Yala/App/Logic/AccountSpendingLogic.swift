@@ -6,7 +6,9 @@
 //  (`PanelViewModel.calculateAccountPeriodExpenses`) y la vista de cuenta (`AccountDetailCalculator`), para que las dos
 //  no puedan contradecirse.
 //
-//  - **Qué cuenta**: un registro normal (sin ajuste ni transferencia) con categoría de gasto. Sin categoría no cuenta.
+//  - **Qué cuenta**: un registro normal (sin ajuste ni transferencia) que es gasto con la regla de toda la app
+//    (`TransactionClassificationLogic`: la categoría manda; sin categoría, el signo). Hasta el 2026-10-23 un gasto sin
+//    categoría no contaba aquí y sí en Registros.
 //  - **Cuánto aporta**: su importe con el signo cambiado. Un gasto de −100 suma 100 y una devolución de +30 en una
 //    categoría de gasto resta 30, como acumulan Registros y Tendencias (`TransactionClassificationLogic` + suma con
 //    signo). Hasta el 2026-10-10 se sumaba el valor absoluto y la devolución SUBÍA lo gastado.
@@ -18,14 +20,16 @@ import Foundation
 enum AccountSpendingLogic {
 
     /// `true` si el registro cuenta como gasto de su cuenta.
-    nonisolated static func countsAsSpending(adjustmentType: String?, categoryIsIncome: Bool?) -> Bool {
-        adjustmentType == nil && categoryIsIncome == false
+    nonisolated static func countsAsSpending(adjustmentType: String?, categoryIsIncome: Bool?, amount: Double) -> Bool {
+        adjustmentType == nil
+            && !TransactionClassificationLogic.isIncome(categoryIsIncome: categoryIsIncome, signedAmount: amount)
     }
 
     /// Lo que el registro aporta a lo gastado, o `nil` si no cuenta. Positivo para un gasto, negativo para una
     /// devolución.
     nonisolated static func spending(amount: Double, adjustmentType: String?, categoryIsIncome: Bool?) -> Double? {
-        guard countsAsSpending(adjustmentType: adjustmentType, categoryIsIncome: categoryIsIncome) else { return nil }
+        guard countsAsSpending(adjustmentType: adjustmentType, categoryIsIncome: categoryIsIncome, amount: amount)
+        else { return nil }
         return -amount
     }
 

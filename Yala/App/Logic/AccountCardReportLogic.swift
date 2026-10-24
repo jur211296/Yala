@@ -87,7 +87,7 @@ enum AccountCardReportLogic {
 
     /// El resumen de flujo de caja de una tarjeta con su «≈» por lado: un lado está convertido si alguno de sus
     /// movimientos estaba en otra divisa. Se suma a lo que ya marcaba el calculador por la calidad de las tasas.
-    /// Mismo criterio de lado que `CashFlowCalculator` (categoría de ingreso o no; sin categoría no cuenta).
+    /// Mismo criterio de lado que `CashFlowCalculator` (`TransactionClassificationLogic`: sin categoría, el signo).
     static func markingConversions(
         _ summary: CashFlowSummary,
         transactions: [TransactionItem]
@@ -95,9 +95,9 @@ enum AccountCardReportLogic {
         var incomeConverted = false
         var expenseConverted = false
         for tx in transactions {
-            guard let category = tx.category, tx.balanceAdjustmentType == nil else { continue }
+            guard tx.balanceAdjustmentType == nil else { continue }
             guard convertsAny([tx.currencyCode], to: summary.currencyCode) else { continue }
-            if category.isIncome { incomeConverted = true } else { expenseConverted = true }
+            if TransactionClassificationLogic.isIncome(tx) { incomeConverted = true } else { expenseConverted = true }
         }
         guard incomeConverted || expenseConverted else { return summary }
         return CashFlowSummary(

@@ -547,7 +547,7 @@ enum FinancialScoreCalculator {
             .filter {
                 interval.contains($0.date)
                     && $0.balanceAdjustmentType == nil
-                    && ($0.category?.isIncome ?? false)
+                    && TransactionClassificationLogic.isIncome($0)
                     && !adjustment.isSuppressed($0)
             }
             .reduce(0) {

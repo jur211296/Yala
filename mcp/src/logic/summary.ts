@@ -6,8 +6,9 @@
  *
  * - Fuera: ajustes de saldo, movimientos de cuentas excluidas de estadísticas, y los futuros. Una cuenta archivada
  *   cuenta si no está excluida: archivar no decide la suma (decisión de Jürgen, 2026-10-03).
- * - Solo cuentan los movimientos CON categoría (así caen las transferencias). Ingreso o gasto lo decide
- *   `category.is_income`, no el signo.
+ * - Ingreso o gasto con la regla de la app (`TransactionClassificationLogic`, `isIncomeOf` aquí): la categoría manda;
+ *   sin categoría, el signo (`>= 0` es ingreso). Desde el 2026-10-23 el movimiento sin categoría CUENTA (antes no
+ *   contaba); `sin_categoria` sigue diciendo cuántos hay. Las transferencias caen por `balance_adjustment_type`.
  * - Acumulación CON SIGNO: un reembolso (gasto positivo) resta del gasto; no se usa el valor absoluto.
  * - Gastos de grupo: la pata real cuenta por «tu parte» y la de préstamo no cuenta (`GroupBridgeStatsAdjustment`,
  *   ver groups.ts).
@@ -60,6 +61,15 @@ export function eligibleForStats(tx: TxRow, lookup: Lookup, today: string, tz: s
  * nativo distinto de 0. Port de `CashFlowCalculator.storedConversionIsMissing` (ticket
  * `resolved-amount-trusts-a-zero-converted-amount`). Un null del wire vale el default del modelo, 0.
  */
+/**
+ * Ingreso o gasto, con la regla única de la app (`TransactionClassificationLogic.isIncome`): la categoría manda; sin
+ * categoría, el signo del nativo (mismo signo que el convertido), y el cero es ingreso.
+ */
+export function isIncomeOf(category: { is_income?: boolean | null } | null, tx: Pick<TxRow, "amount">): boolean {
+  if (category) return category.is_income === true;
+  return (num(tx.amount) ?? 0) >= 0;
+}
+
 export function storedConversionMissing(tx: Pick<TxRow, "amount" | "amount_in_preferred_currency">): boolean {
   return (num(tx.amount_in_preferred_currency) ?? 0) === 0 && (num(tx.amount) ?? 0) !== 0;
 }
@@ -151,11 +161,8 @@ export function summarize(
     if (groups.isSuppressed(tx)) continue;
     const category = categoryOf(lookup, tx);
     if (!category) {
-      if (!tx.transfer_pair_id) {
-        uncategorizedCount += 1;
-        uncategorizedAbs += chatMagnitude(tx, ctx.preferredCurrency, ctx.rates, groups) ?? 0;
-      }
-      continue;
+      uncategorizedCount += 1;
+      uncategorizedAbs += chatMagnitude(tx, ctx.preferredCurrency, ctx.rates, groups) ?? 0;
     }
     const conv = preferredAmount(tx, ctx.preferredCurrency, ctx.rates, groups);
     if (!conv) {
@@ -164,7 +171,7 @@ export function summarize(
     }
     count += 1;
 
-    if (category.is_income === true) {
+    if (isIncomeOf(category, tx)) {
       income += conv.value;
       incomeTotal += Math.abs(conv.value);
       incomeApprox += conv.approximate;
@@ -172,16 +179,20 @@ export function summarize(
       expenseTotal += Math.abs(conv.value);
       expenseApprox += conv.approximate;
       expense -= conv.value;
-      const c = byCategory.get(category.sync_id) ?? { nombre: category.name ?? "(sin nombre)", importe: 0, movimientos: 0 };
-      c.importe -= conv.value;
-      c.movimientos += 1;
-      byCategory.set(category.sync_id, c);
-      const merchant = canonicalMerchant(tx.note);
-      if (merchant) {
-        const m = byMerchant.get(merchant) ?? { importe: 0, movimientos: 0 };
-        m.importe -= conv.value;
-        m.movimientos += 1;
-        byMerchant.set(merchant, m);
+      // Los tops son desgloses: el gasto sin categoría no tiene fila de categoría (como en la app) y, como en el
+      // contexto del chat, tampoco entra en el de comercios.
+      if (category) {
+        const c = byCategory.get(category.sync_id) ?? { nombre: category.name ?? "(sin nombre)", importe: 0, movimientos: 0 };
+        c.importe -= conv.value;
+        c.movimientos += 1;
+        byCategory.set(category.sync_id, c);
+        const merchant = canonicalMerchant(tx.note);
+        if (merchant) {
+          const m = byMerchant.get(merchant) ?? { importe: 0, movimientos: 0 };
+          m.importe -= conv.value;
+          m.movimientos += 1;
+          byMerchant.set(merchant, m);
+        }
       }
     }
   }
@@ -218,7 +229,7 @@ export function summarize(
     avisos.push("Parte de estas cifras se convirtió sin la cotización exacta de su día: son aproximadas, y la app las marca igual, con «≈».");
   }
   if (uncategorizedCount > 0) {
-    avisos.push(`${uncategorizedCount} movimiento(s) no tienen categoría y no cuentan ni como ingreso ni como gasto.`);
+    avisos.push(`${uncategorizedCount} movimiento(s) no tienen categoría: cuentan como ingreso o gasto por su signo, como en la app.`);
   }
 
   return {

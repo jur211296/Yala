@@ -639,6 +639,7 @@ final class ScheduledPaymentsViewModel {
                 ScheduledPaymentDetailLogic.isLinkCandidate(
                     adjustmentType: tx.balanceAdjustmentType,
                     categoryIsIncome: tx.category?.isIncome,
+                    amount: tx.amount,
                     paymentIsIncome: isPaymentIncome
                 )
             }

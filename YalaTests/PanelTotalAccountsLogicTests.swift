@@ -129,12 +129,12 @@ struct PanelTotalAccountsLogicTests {
         #expect(summedCount(accts, selected: [accts[0].persistentModelID], excludeMode: true) == 2)
     }
 
-    /// La elegida está excluida de las estadísticas: el saldo vuelve al total (fallback heredado) y
-    /// el conteo lo acompaña.
-    @Test func summed_seleccionSoloExcluida_sigueElFallbackDelSaldo() {
+    /// La elegida está excluida de las estadísticas: el saldo es 0 y no suma ninguna cuenta (decisión A de Jürgen del
+    /// 2026-10-08; hasta el 2026-10-23 el saldo caía al total y el conteo lo acompañaba con 2).
+    @Test func summed_seleccionSoloExcluida_noSumaNinguna() {
         let a = makeAccount("A", excluded: false, archived: false)
         let b = makeAccount("B", excluded: false, archived: false)
         let fuera = makeAccount("Fuera", excluded: true, archived: false)
-        #expect(summedCount([a, b, fuera], selected: [fuera.persistentModelID]) == 2)
+        #expect(summedCount([a, b, fuera], selected: [fuera.persistentModelID]) == 0)
     }
 }

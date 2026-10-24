@@ -168,12 +168,14 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     tx({ ...base, category_ref: food, amount: -50, amount_in_preferred_currency: -50, note: "Tambo" }),
     // Reembolso: gasto positivo, RESTA del gasto (acumulación con signo, no abs).
     tx({ ...base, category_ref: food, amount: 20, amount_in_preferred_currency: 20, note: "Devolución" }),
-    // Fuera: ajuste de saldo, cuenta excluida, futuro, sin categoría, transferencia, fila a medias.
+    // Fuera: ajuste de saldo, cuenta excluida, futuro, transferencia, fila a medias. El sin categoría (−30) CUENTA como
+    // gasto por su signo desde el 2026-10-23, como en la app (`TransactionClassificationLogic`).
     tx({ ...base, category_ref: food, amount: -999, amount_in_preferred_currency: -999, balance_adjustment_type: "initial_balance" }),
     tx({ ...base, account_ref: excludedAcc, category_ref: food, amount: -999, amount_in_preferred_currency: -999 }),
     tx({ ...base, category_ref: food, date: "2026-09-28T15:00:00Z", amount: -999, amount_in_preferred_currency: -999 }),
     tx({ ...base, amount: -30 }),
-    tx({ ...base, amount: -500, transfer_pair_id: "t1" }),
+    // Una pata de transferencia, como la escribe la app: con `balance_adjustment_type`.
+    tx({ ...base, amount: -500, transfer_pair_id: "t1", balance_adjustment_type: "transfer" }),
     tx({ ...base, category_ref: food, amount: null }),
     // Del mes anterior, aunque `date` UTC caiga en septiembre: local_day manda.
     tx({ ...base, category_ref: food, date: "2026-09-01T02:00:00Z", local_day: "2026-08-31", amount: -999, amount_in_preferred_currency: -999 }),
@@ -184,14 +186,14 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
   it("clasifica por categoría, acumula con signo y aplica el filtro de elegibilidad del chat", () => {
     const r = summarize(txs, lookup, period, ctx);
     expect(r.ingresos).toBe(3000);
-    expect(r.gastos).toBeCloseTo(100 + 50 - 20 + 34);
-    expect(r.neto).toBeCloseTo(3000 - 164);
-    expect(r.movimientos).toBe(5);
+    expect(r.gastos).toBeCloseTo(100 + 50 - 20 + 34 + 30);
+    expect(r.neto).toBeCloseTo(3000 - 194);
+    expect(r.movimientos).toBe(6);
     expect(r.sin_categoria).toEqual({ movimientos: 1, importe_absoluto: 30 });
     expect(r.aproximado).toBe(true);
     expect(r.aproximado_detalle).toEqual({ ingresos: false, gastos: true, neto: false });
     // Periodo en curso: el día de hoy no cuenta en el denominador, como `DateIntervalDayCount` hasta `now`.
-    expect(r.gasto_medio_diario).toBeCloseTo(164 / 25, 2);
+    expect(r.gasto_medio_diario).toBeCloseTo(194 / 25, 2);
     // Periodo cerrado: cuentan todos sus días.
     const agosto = summarize(
       [tx({ ...base, category_ref: food, date: "2026-08-10T15:00:00Z", amount: -310, amount_in_preferred_currency: -310 })],

@@ -561,13 +561,14 @@ struct InsightsCalculator {
 
         for tx in transactions {
             guard !adjustment.isSuppressed(tx) else { continue }
-            guard let category = tx.category, !category.isIncome else { continue }
+            // La regla de toda la app: un gasto sin categoría también puede ser el mayor.
+            guard !TransactionClassificationLogic.isIncome(tx) else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
             let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
             if highest.map({ amount > $0.amount }) ?? true {
-                let note = tx.note ?? tx.subcategory?.name ?? category.name
+                let note = tx.note ?? tx.subcategory?.name ?? tx.category?.name ?? L10n.Report.uncategorized
                 highest = (amount, note)
             }
         }

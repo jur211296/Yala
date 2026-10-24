@@ -144,8 +144,14 @@ enum ScheduledPaymentDetailLogic {
 
     /// `true` si un registro puede cubrir el pago: ni transferencia ni ajuste de saldo, y del mismo tipo (gasto con gasto,
     /// ingreso con ingreso).
-    static func isLinkCandidate(adjustmentType: String?, categoryIsIncome: Bool?, paymentIsIncome: Bool) -> Bool {
-        adjustmentType == nil && (categoryIsIncome ?? false) == paymentIsIncome
+    /// Ingreso o gasto con la regla de toda la app (`TransactionClassificationLogic`): un registro sin categoría lo decide
+    /// su signo, no «gasto» por defecto.
+    static func isLinkCandidate(
+        adjustmentType: String?, categoryIsIncome: Bool?, amount: Double, paymentIsIncome: Bool
+    ) -> Bool {
+        adjustmentType == nil
+            && TransactionClassificationLogic.isIncome(categoryIsIncome: categoryIsIncome, signedAmount: amount)
+                == paymentIsIncome
     }
 
     /// Diferencia de importe para ordenar candidatos: compara magnitudes, porque el gasto se guarda en negativo y el

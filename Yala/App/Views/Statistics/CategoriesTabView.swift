@@ -1539,12 +1539,14 @@ struct CategoriesTabView: View {
         func alignedPrevious(
             _ previous: [TransactionItem],
             currentSource: [TransactionItem],
-            natures: Set<TransactionNature>?
+            natures: Set<TransactionNature>?,
+            countsUncategorized: Bool = false
         ) -> [TransactionItem] {
             DistributionPreviousPeriodCalculator.alignedPrevious(
                 previous,
                 currentDates: DistributionPreviousPeriodCalculator.currentDates(
-                    from: currentSource, in: currentInterval, natures: natures
+                    from: currentSource, in: currentInterval, natures: natures,
+                    countsUncategorized: countsUncategorized
                 ),
                 currentInterval: currentInterval,
                 previousInterval: previousInterval,
@@ -1657,7 +1659,8 @@ struct CategoriesTabView: View {
                 transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
             ),
             currentSource: currentTagSource,
-            natures: naturesFilter
+            natures: naturesFilter,
+            countsUncategorized: true  // las etiquetas cuentan el gasto sin categoría (`TagSpendingCalculator`)
         )
         let previousTagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: prevTagFiltered,

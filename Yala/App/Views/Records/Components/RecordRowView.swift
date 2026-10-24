@@ -308,7 +308,7 @@ struct RecordRowView: View {
     }
 
     private var isIncome: Bool {
-        record.category?.isIncome ?? (record.amount >= 0)
+        TransactionClassificationLogic.isIncome(record)
     }
 
     /// Ingreso en su color, gasto en el del texto, y transferencias y ajustes de saldo en gris (L8-3).

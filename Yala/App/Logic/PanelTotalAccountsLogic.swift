@@ -34,7 +34,7 @@ enum PanelTotalAccountsLogic {
 
     /// Cuántas cuentas suma el saldo del panorama: las contables que el cálculo del saldo eligió
     /// (`LiveBalanceCalculator.Breakdown.eligibleAccountIDs`), con su filtro de cuentas, su modo
-    /// excluir, su fallback y el toggle de grupos ya aplicados. Contarlas aparte con
+    /// excluir y el toggle de grupos ya aplicados. Contarlas aparte con
     /// `accountsForTotal` ignoraba el filtro y decía «en 3 cuentas» junto al saldo de una.
     static func summedAccountsCount(
         _ accounts: [Account],

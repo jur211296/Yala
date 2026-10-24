@@ -247,14 +247,19 @@ struct FilterService {
             }
         }
 
+        // Ingreso o gasto con la regla de toda la app (`TransactionClassificationLogic`). Hasta el 2026-10-23 un
+        // movimiento sin categoría no pasaba ni «Ingresos» ni «Gastos»: estaba en la lista sin filtro y desaparecía al
+        // filtrar, sin que ningún filtro dijera que lo escondía (decisión de Jürgen del 2026-09-06).
+        let isIncome = TransactionClassificationLogic.isIncome(transaction)
+
         // Transaction type filter (NOT affected by exclude mode)
         switch criteria.transactionTypeFilter {
         case .all:
             break
         case .income:
-            guard transaction.category?.isIncome == true else { return false }
+            guard isIncome else { return false }
         case .expense:
-            guard transaction.category?.isIncome == false else { return false }
+            guard !isIncome else { return false }
         case .transfer:
             // Transfers don't have a category, or have special handling
             break
@@ -265,9 +270,9 @@ struct FilterService {
         // Empty = all, both selected = all, exactly 1 = filter
         if criteria.selectedTransactionNatures.count == 1 {
             if criteria.selectedTransactionNatures.contains(.income) {
-                guard transaction.category?.isIncome == true else { return false }
+                guard isIncome else { return false }
             } else if criteria.selectedTransactionNatures.contains(.expense) {
-                guard transaction.category?.isIncome == false else { return false }
+                guard !isIncome else { return false }
             }
         }
 
