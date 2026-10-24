@@ -4621,6 +4621,8 @@
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "É o nome que os outros vão ver no grupo.";
+"welcome.groups.closeNameTitle" = "Como te chamas?";
+"welcome.groups.closeNameBody" = "Vais para Grupos e crias o grupo quando quiseres.";
 
 
 /* C2 · empty state cuando aún no vio el educativo */

@@ -5338,6 +5338,8 @@
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "È il nome che gli altri vedranno nel gruppo.";
+"welcome.groups.closeNameTitle" = "Come ti chiami?";
+"welcome.groups.closeNameBody" = "Entri in Gruppi e crei il gruppo quando vuoi.";
 
 
 /* C2 · empty state cuando aún no vio el educativo */

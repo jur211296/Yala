@@ -6103,6 +6103,10 @@ enum L10n {
             /// CTA de las pantallas con una sola salida: vuelta al step con las otras vías intactas.
             static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
             static var nameBody: String { ls("welcome.groups.nameBody", comment: "") }
+            /// Card ycke (C2) · cerrar el formulario del primer grupo sin tu nombre: la pregunta de una línea que deja entrar
+            /// en Grupos sin crear el grupo.
+            static var closeNameTitle: String { ls("welcome.groups.closeNameTitle", comment: "") }
+            static var closeNameBody: String { ls("welcome.groups.closeNameBody", comment: "") }
         }
 
         /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:

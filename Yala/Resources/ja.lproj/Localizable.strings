@@ -5340,6 +5340,8 @@
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "グループのみんなに表示される名前です。";
+"welcome.groups.closeNameTitle" = "お名前を教えてください";
+"welcome.groups.closeNameBody" = "グループに進み、好きなときにグループを作れます。";
 
 
 /* C2 · empty state cuando aún no vio el educativo */

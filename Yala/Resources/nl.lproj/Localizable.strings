@@ -5340,6 +5340,8 @@
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "Dit is de naam die de anderen in de groep zien.";
+"welcome.groups.closeNameTitle" = "Hoe heet je?";
+"welcome.groups.closeNameBody" = "Je gaat naar Groepen en maakt de groep wanneer je wilt.";
 
 
 /* C2 · empty state cuando aún no vio el educativo */
