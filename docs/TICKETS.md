@@ -544,7 +544,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | history-token-guard-echo-blind-spot | discarded | tickets/discarded/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | done | tickets/done/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
 | home-screen-budgets-widget-ignores-favorites | done | tickets/done/home-screen-budgets-widget-ignores-favorites.md |
-| icloud-drive-off-before-launch-starts-empty-and-silent | qa | tickets/qa/icloud-drive-off-before-launch-starts-empty-and-silent.md |
+| icloud-drive-off-before-launch-starts-empty-and-silent | backlog | tickets/backlog/icloud-drive-off-before-launch-starts-empty-and-silent.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-screen-says-not-active-with-drive-off | backlog | tickets/backlog/icloud-screen-says-not-active-with-drive-off.md |
@@ -675,7 +675,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | multi-currency-accounts-1-model-and-sync | done | tickets/done/multi-currency-accounts-1-model-and-sync.md |
 | multi-currency-accounts-2-card-view | qa | tickets/qa/multi-currency-accounts-2-card-view.md |
 | multi-currency-accounts-3-pickers-and-capture | qa | tickets/qa/multi-currency-accounts-3-pickers-and-capture.md |
-| multi-currency-accounts-4-reports-and-export | qa | tickets/qa/multi-currency-accounts-4-reports-and-export.md |
+| multi-currency-accounts-4-reports-and-export | done | tickets/done/multi-currency-accounts-4-reports-and-export.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |

@@ -1,12 +1,11 @@
 ---
 id: icloud-drive-off-before-launch-starts-empty-and-silent
-status: qa
+status: backlog
 priority: high
 area: "sync, icloud"
 created: 2026-10-19
 source: "QA guiado del 2026-10-19 (prueba A · i1o5) · card tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw"
-updated: 2026-10-19
-qa-status: needs-testing
+updated: 2026-10-24
 qa-notes: pide iPhone real con iCloud Drive; el simulador no tiene iCloud
 ---
 
@@ -77,3 +76,5 @@ cuentas y categorías verá el aviso en cada arranque. Es cierto (iCloud no est�
 5. Toca «Entendido». **Esperado:** te quedas en el Panel (vacío), no te manda al Welcome.
 6. Ajustes › iCloud › iCloud Drive → enciéndelo. Vuelve a Yala y espera un minuto. **Esperado:** tus movimientos
    vuelven solos y no sale ningún aviso de borrado.
+
+Vuelto a backlog en el barrido de QA 2026-10-24: el arreglo del PR #562 falló en el iPhone el 19-oct (ver la card) y no ha tenido segunda vuelta; la card pasa a «lista para lanzar».

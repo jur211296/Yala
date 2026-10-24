@@ -1,10 +1,10 @@
 ---
 id: multi-currency-accounts-4-reports-and-export
-status: qa
+status: done
 priority: medium
 area: "accounts, currency, reports, export"
 created: 2026-10-10
-updated: 2026-10-18
+updated: 2026-10-24
 source: multi-currency-accounts (entrega 4 de A1, decidida por Jürgen el 2026-10-09/10)
 ---
 
@@ -111,3 +111,5 @@ Con el build de 2.2 de este PR y tu tarjeta con línea en dólares:
    movimientos en soles y en dólares, y está vacía en las demás cuentas.
 4. Yala IA: pregunta «¿cuánto debo en mi tarjeta?». La respuesta habla de UNA tarjeta, con lo de cada divisa y un total
    aproximado en soles; no suma soles con dólares.
+
+Cerrado en el barrido de QA 2026-10-24: AccountCardReportsUITests (3/3) y AccountCardAIContextTests en verde sobre 2.2 @ 03fa38a03; el paso de Yala IA queda cubierto por lo que recibe el modelo (card dbxp).
