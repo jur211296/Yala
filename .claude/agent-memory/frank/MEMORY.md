@@ -33,6 +33,7 @@
 - [Capturas en el chat antes de preguntar](feedback_capturas_en_el_chat_antes_de_preguntar.md) — SendUserFile o artifact antes de la pregunta; la ruta no sirve.
 - [El guion se adapta al estado del teléfono](feedback_el_guion_se_adapta_al_estado_del_telefono.md) — QA guiado: re-deriva cada paso de lo que dejaron las pruebas previas; nunca literal.
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
+- [Barrido: filtro doble, mínimo QA](feedback_barrido_filtro_doble_minimo_qa.md) — 24-oct: al iPhone solo lo grave Y no validable en sim/tests; vistos buenos uno por mensaje.
 - [Lo que llega en vivo se encola](feedback_alcance_que_llega_en_vivo_se_encola.md) — decisión grande a mitad de lote: a su card lista para lanzar; «widget» = ¿inicio o Panel?
 - [Planificar con él es iterar](feedback_planificar_con_el_es_iterar.md) — acepta lo recomendado y vuelve con ideas; re-pregunta «¿bueno?».
 - [Tablero: una tanda a la vez](feedback_tablero_una_tanda_a_la_vez.md) — dos tandas se pisan (409); ajustes en pasada final.
