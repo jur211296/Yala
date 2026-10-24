@@ -299,14 +299,16 @@ struct SankeyFlowCalculatorTests {
         #expect(result.totalExpense == 100)
     }
 
-    @Test func compute_ignoresTxWithoutCategory() {
+    /// Hasta el 2026-10-23 se ignoraba. Decisión A de Jürgen: es el nodo «Sin categoría» de la columna de gastos.
+    @Test func compute_txWithoutCategory_isTheUncategorizedNode() {
         let tx = makeTransaction(amount: -100, category: nil)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
             interval: defaultInterval,
             currencyCode: "USD"
         )
-        #expect(result.hasFlow == false)
+        #expect(result.totalExpense == 100)
+        #expect(result.nodes.contains { $0.id == SankeyFlowCalculator.expenseUncategorizedID && $0.amount == 100 })
     }
 
     // MARK: - Top-N + "Otros"

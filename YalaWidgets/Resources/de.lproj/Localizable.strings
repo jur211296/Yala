@@ -113,6 +113,7 @@
 "widget.ui.topCategories" = "Kategorien mit den meisten Ausgaben";
 "widget.ui.topSubcategories" = "Unterkategorien mit den meisten Ausgaben";
 "widget.ui.noNote" = "Keine Notiz";
+"widget.ui.uncategorized" = "Ohne Kategorie";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "Überfällig";

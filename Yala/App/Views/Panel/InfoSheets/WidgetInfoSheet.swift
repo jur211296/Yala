@@ -171,10 +171,14 @@ struct WidgetInfoSheet<Preview: View>: View {
                 expense: money(period.expense, isEstimate: period.expenseApproximate)
             )
         case .categoriesPie, .topCategories:
-            guard let top = viewModel.categoriesWidget.topSpendingCategories.first, top.amount != 0 else { return nil }
-            return L10n.Panel.WidgetInfo.YourData.topSpending(name: top.category.name, amount: money(abs(top.amount)))
+            // La mayor categoría REAL: «Sin categoría» suma en el desglose pero no se nombra como categoría.
+            guard let top = viewModel.categoriesWidget.topSpendingCategories.first(where: { !$0.isUncategorized }),
+                  top.amount != 0 else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.topSpending(name: top.name, amount: money(abs(top.amount)))
         case .subcategoriesPie, .topSubcategories:
-            guard let top = viewModel.subcategoriesWidget.topSubcategories.first, top.amount != 0 else { return nil }
+            // Ídem: la fila «Sin categoría» del ranking de subcategorías es la única sin categoría padre.
+            guard let top = viewModel.subcategoriesWidget.topSubcategories.first(where: { !$0.isUncategorized }),
+                  top.amount != 0 else { return nil }
             return L10n.Panel.WidgetInfo.YourData.topSpending(name: top.subcategoryName, amount: money(abs(top.amount)))
         case .tagsPie:
             guard let top = viewModel.tagsWidget.topTags.first, top.amount != 0 else { return nil }

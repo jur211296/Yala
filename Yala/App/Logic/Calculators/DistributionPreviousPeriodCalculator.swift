@@ -15,20 +15,19 @@ enum DistributionPreviousPeriodCalculator {
     /// Fechas del actual que la calculadora cuenta — corte nature-aware
     /// (nil → gasto), para no correr el WTD con un ingreso tardío.
     ///
-    /// `countsUncategorized` dice si la calculadora del widget cuenta el movimiento sin categoría: los totales y lo que no
-    /// se agrupa por categoría (Flujo de caja, Etiquetas) sí, con la regla de toda la app (`TransactionClassificationLogic`);
-    /// los desgloses por categoría, subcategoría o necesidad no. Si el corte saliera de otras filas que la cifra, el previo
-    /// se cortaría en otro día (lo cazó la review del 2026-10-23). Lo usa también el Panel (`currentPeriodDates`).
+    /// El movimiento sin categoría cuenta, por su signo (`TransactionClassificationLogic`): lo cuentan todas las
+    /// calculadoras que usan este corte —totales, etiquetas y, desde la decisión A de Jürgen del 2026-10-23, también los
+    /// desgloses por categoría, subcategoría y necesidad (trozo «Sin categoría»)—. Si el corte saliera de otras filas que
+    /// la cifra, el previo se cortaría en otro día (lo cazó la review del 2026-10-23, y otra vez la del 2026-10-24). Lo usa
+    /// también el Panel (`currentPeriodDates`).
     static func currentDates(
         from transactions: [TransactionItem],
         in interval: DateInterval,
-        natures: Set<TransactionNature>?,
-        countsUncategorized: Bool = false
+        natures: Set<TransactionNature>?
     ) -> [Date] {
         let include = natures ?? [.expense]
         return transactions.filter { tx in
             guard tx.balanceAdjustmentType == nil, interval.contains(tx.date) else { return false }
-            guard countsUncategorized || tx.category != nil else { return false }
             let nature: TransactionNature = TransactionClassificationLogic.isIncome(tx) ? .income : .expense
             return include.contains(nature)
         }

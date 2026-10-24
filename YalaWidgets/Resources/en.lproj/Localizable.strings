@@ -113,6 +113,7 @@
 "widget.ui.topCategories" = "Top spending categories";
 "widget.ui.topSubcategories" = "Top spending subcategories";
 "widget.ui.noNote" = "No note";
+"widget.ui.uncategorized" = "Uncategorized";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "Overdue";

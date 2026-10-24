@@ -113,6 +113,7 @@
 "widget.ui.topCategories" = "支出最多的分类";
 "widget.ui.topSubcategories" = "支出最多的子分类";
 "widget.ui.noNote" = "无备注";
+"widget.ui.uncategorized" = "未分类";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "已逾期";

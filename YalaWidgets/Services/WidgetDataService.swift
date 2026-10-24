@@ -552,6 +552,12 @@ enum WidgetDataService {
         )
     }
 
+    /// Espejo de `WidgetDataCache.uncategorizedWidgetKey` y de `AppConstants.uncategorizedIconName/ColorHex` (la
+    /// extensión no compila esos ficheros). `WidgetExtensionUncategorizedParityTests` los compara.
+    static let uncategorizedKey = "\u{1}uncategorized"
+    static let uncategorizedIconName = "questionmark.folder.fill"
+    static let uncategorizedColorHex = "#9CA3AF"
+
     private static func buildTopCategories(
         from transactions: [WidgetTransaction],
         totalExpense: Double,
@@ -561,8 +567,24 @@ enum WidgetDataService {
         var categoryTotals: [String: (name: String, icon: String, color: String, amount: Double)] = [:]
 
         for tx in transactions where !tx.isIncome {
-            guard let categoryName = tx.categoryName else { continue }
             let amount = abs(tx.amountInPreferredCurrency)
+            // Sin categoría: el trozo «Sin categoría» en gris, como en la app (`WidgetDataCache.buildTopCategories`),
+            // para que el desglose sume el gasto del período.
+            guard let categoryName = tx.categoryName else {
+                let key = uncategorizedKey
+                if var existing = categoryTotals[key] {
+                    existing.amount += amount
+                    categoryTotals[key] = existing
+                } else {
+                    categoryTotals[key] = (
+                        name: String(localized: "widget.ui.uncategorized", bundle: .main),
+                        icon: uncategorizedIconName,
+                        color: uncategorizedColorHex,
+                        amount: amount
+                    )
+                }
+                continue
+            }
 
             if var existing = categoryTotals[categoryName] {
                 existing.amount += amount

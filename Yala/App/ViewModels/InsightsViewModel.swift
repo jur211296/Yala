@@ -402,7 +402,7 @@ final class InsightsViewModel {
         // Top 5 categories with amounts
         if !data.quickStats.topCategories.isEmpty {
             result["top_categories"] = data.quickStats.topCategories.map {
-                ["name": $0.category.name, "amount": Int($0.amount), "pct": Int($0.percentage)] as [String: Any]
+                ["name": $0.name, "amount": Int($0.amount), "pct": Int($0.percentage)] as [String: Any]
             }
         }
 

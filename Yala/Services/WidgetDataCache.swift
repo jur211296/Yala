@@ -972,8 +972,9 @@ enum WidgetDataCache {
         adjustment: GroupBridgeStatsAdjustment = .none,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetCategory] {
-        // Group expenses by category
-        var categoryTotals: [String: (category: Category, amount: Double)] = [:]
+        // Group expenses by category. `category == nil` es el trozo «Sin categoría»: un gasto sin categoría (por su
+        // signo) entra ahí para que el desglose sume el gasto del período (decisión A de Jürgen, 2026-10-23).
+        var categoryTotals: [String: (category: Category?, amount: Double)] = [:]
 
         for tx in transactions {
             // Skip balance adjustments
@@ -981,12 +982,13 @@ enum WidgetDataCache {
             // Skip la pata de préstamo derivada (bridge) e income (clasif. por categoría)
             guard !adjustment.isSuppressed(tx) else { continue }
             guard !isIncomeTx(tx) else { continue }
-            guard let category = tx.category else { continue }
+            let category = tx.category
 
             let amount = abs(CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             ).value)
-            let key = category.name
+            // Una clave que ningún nombre de categoría puede tener (el nombre es texto del usuario).
+            let key = category?.name ?? uncategorizedWidgetKey
 
             if var existing = categoryTotals[key] {
                 existing.amount += amount
@@ -1002,16 +1004,30 @@ enum WidgetDataCache {
 
         return topN.map { item in
             let percentage = totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0
+            guard let category = item.category else {
+                return WidgetCategory(
+                    id: uncategorizedWidgetKey,
+                    name: L10n.Report.uncategorized,
+                    iconName: AppConstants.uncategorizedIconName,
+                    colorHex: AppConstants.uncategorizedColorHex,
+                    amount: item.amount,
+                    percentage: percentage
+                )
+            }
             return WidgetCategory(
-                id: item.category.persistentModelID.hashValue.description,
-                name: item.category.name,
-                iconName: item.category.iconName ?? "folder",
-                colorHex: item.category.colorHex,
+                id: category.persistentModelID.hashValue.description,
+                name: category.name,
+                iconName: category.iconName ?? "folder",
+                colorHex: category.colorHex,
                 amount: item.amount,
                 percentage: percentage
             )
         }
     }
+
+    /// Clave y `id` del trozo «Sin categoría» en las categorías del widget. Lleva un carácter de control para que no
+    /// coincida con el nombre de ninguna categoría.
+    static let uncategorizedWidgetKey = "\u{1}uncategorized"
 
     static func buildTopSubcategories(
         transactions: [TransactionItem],

@@ -1841,18 +1841,14 @@ final class PanelViewModel {
     /// (nil → gasto). Residual conocido: para Tags no se filtra "tiene tag", así que
     /// un gasto SIN etiqueta más tardío que el último gasto etiquetado puede correr
     /// el corte 1+ días (borde estrecho, conservador).
-    /// La regla vive en `DistributionPreviousPeriodCalculator.currentDates`, que comparte con Distribución:
-    /// `countsUncategorized` va en `true` para los widgets que cuentan el movimiento sin categoría (Flujo de caja,
-    /// Etiquetas).
+    /// La regla vive en `DistributionPreviousPeriodCalculator.currentDates`, que comparte con Distribución: el
+    /// movimiento sin categoría cuenta, porque todos los widgets que la usan lo cuentan.
     private func currentPeriodDates(
         _ txs: [TransactionItem],
         in interval: DateInterval,
-        natures: Set<TransactionNature>?,
-        countsUncategorized: Bool
+        natures: Set<TransactionNature>?
     ) -> [Date] {
-        DistributionPreviousPeriodCalculator.currentDates(
-            from: txs, in: interval, natures: natures, countsUncategorized: countsUncategorized
-        )
+        DistributionPreviousPeriodCalculator.currentDates(from: txs, in: interval, natures: natures)
     }
 
     /// Transacciones del período ANTERIOR (dentro de `previousInterval`) truncadas al
@@ -1867,7 +1863,6 @@ final class PanelViewModel {
         previousInterval: DateInterval,
         currentSource: [TransactionItem],
         natures: Set<TransactionNature>?,
-        countsUncategorized: Bool = false,
         context: PanelCalculationContext
     ) -> [TransactionItem] {
         let previous = context.transactionsWithoutDateFilter.filter {
@@ -1876,7 +1871,7 @@ final class PanelViewModel {
         return DateAlignmentHelper.alignedPreviousItems(
             previous,
             currentDates: currentPeriodDates(
-                currentSource, in: context.effectiveInterval, natures: natures, countsUncategorized: countsUncategorized
+                currentSource, in: context.effectiveInterval, natures: natures
             ),
             currentInterval: context.effectiveInterval,
             previousInterval: previousInterval,
@@ -1944,12 +1939,12 @@ final class PanelViewModel {
 
         // Create lookup dictionary for previous amounts by category ID
         let previousAmounts = Dictionary(
-            uniqueKeysWithValues: previousData.map { ($0.category.persistentModelID, $0.amount) }
+            uniqueKeysWithValues: previousData.map { ($0.id, $0.amount) }
         )
 
         // Assign previousAmount to current data
         for index in currentData.indices {
-            let categoryID = currentData[index].category.persistentModelID
+            let categoryID = currentData[index].id
             currentData[index].previousAmount = previousAmounts[categoryID]
         }
 
@@ -2065,7 +2060,6 @@ final class PanelViewModel {
             previousInterval: previousInterval,
             currentSource: context.expenseFilteredTransactions,
             natures: [.income, .expense],
-            countsUncategorized: true,
             context: context
         )
         let previousSummary = CashFlowCalculator.calculateCashFlow(
@@ -2672,7 +2666,6 @@ final class PanelViewModel {
             previousInterval: previousInterval,
             currentSource: context.filteredTransactions,
             natures: [.expense],
-            countsUncategorized: true,
             context: context
         )
         let previousData = TagSpendingCalculator.calculateTopSpending(

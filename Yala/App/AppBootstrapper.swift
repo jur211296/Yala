@@ -1202,6 +1202,10 @@ final class AppBootstrapper {
         if UITestHooks.seedFutureMovement {
             DevSeedFutureMovement.create(in: context)
         }
+        // Un gasto sin categoría: el trozo «Sin categoría» de la tarta y los rankings (decisión A, 2026-10-23).
+        if UITestHooks.seedUncategorizedExpense {
+            DevSeedUncategorizedExpense.create(in: context)
+        }
         #endif
         // Liquidación aprobada cuyo importe cambia después: el aviso de importe cambiado en el Inbox.
         if UITestHooks.seedSettlementAmountChange {

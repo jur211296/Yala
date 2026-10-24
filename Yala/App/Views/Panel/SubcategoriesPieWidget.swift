@@ -691,7 +691,7 @@ struct SubcategoriesPieWidget: View {
                 return PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
-                    iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
                     colorHex: $0.colorHex ?? AppConstants.othersColorHex,
@@ -707,7 +707,7 @@ struct SubcategoriesPieWidget: View {
                 return PieChartData(
                     id: $0.id,
                     name: $0.subcategoryName,
-                    iconName: $0.subcategory?.iconName ?? $0.category?.iconName ?? "tag.fill",
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
                     colorHex: $0.colorHex ?? AppConstants.othersColorHex,

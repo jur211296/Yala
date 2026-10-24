@@ -397,7 +397,7 @@ struct TopSubcategoriesWidget: View {
                             .fill(color)
                             .frame(width: 28, height: 28)
 
-                        Image(systemName: summary.subcategory?.iconName ?? summary.category?.iconName ?? "tag.fill")
+                        Image(systemName: summary.iconName ?? "tag.fill")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .accessibilityHidden(true)
@@ -504,10 +504,7 @@ private struct SubcategoryRow: View {
                             .fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex))
                             .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
-                        Image(
-                            systemName: summary.subcategory?.iconName ?? summary.category?.iconName
-                                ?? "tag.fill"
-                        )
+                        Image(systemName: summary.iconName ?? "tag.fill")
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                         .accessibilityHidden(true)
@@ -529,15 +526,18 @@ private struct SubcategoryRow: View {
 
                         // Percentages + Variation Chip (inline, chip aligned right)
                         HStack(spacing: DS.Spacing.sm) {
-                            Text(
-                                "\(formattedPercentage(summary.percentageOfCategory)) \(String(format: L10n.Widget.of, summary.category?.name ?? L10n.Widget.categoryAbbr))"
-                            )
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-
-                            Text("•")
+                            // «Sin categoría» no tiene categoría padre: su «% de la categoría» sería siempre 100 %.
+                            if !summary.isUncategorized {
+                                Text(
+                                    "\(formattedPercentage(summary.percentageOfCategory)) \(String(format: L10n.Widget.of, summary.category?.name ?? L10n.Widget.categoryAbbr))"
+                                )
                                 .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary.opacity(0.5))
+                                .foregroundStyle(.secondary)
+
+                                Text("•")
+                                    .font(DS.Typography.captionSmall)
+                                    .foregroundStyle(.secondary.opacity(0.5))
+                            }
 
                             Text(
                                 "\(formattedPercentage(summary.percentageOfTotal)) \(L10n.Widget.ofTotal)"
