@@ -5816,6 +5816,9 @@ enum L10n {
             // accesibilidad y de los 16 locales; sin call-sites, la key no sobrevive.
             static var cloudTitle: String { ls("welcome.new.cloudTitle", comment: "") }
             static var cloudBody: String { ls("welcome.new.cloudBody", comment: "") }
+            /// Pregunta de pie de «Es mi primera vez»: la salida a grupos de quien solo viene a dividir gastos (propuesta B).
+            static var groupsQuestion: String { ls("welcome.new.groupsQuestion", comment: "") }
+            static var groupsAction: String { ls("welcome.new.groupsAction", comment: "") }
             // `cloudWarning` RETIRADA (2026-08-11, W2): la renuncia inline de §k.6 sermoneaba —
             // decisión del owner. La idea sigue en el flujo: el `cloudBody` recortado dice quién
             // puede ver los datos, y el consent la lleva completa. Sin call-sites, la key tampoco

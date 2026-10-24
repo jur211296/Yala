@@ -60,6 +60,15 @@ struct WelcomeNewChooserView: View {
     /// mismo orden—, y lo único que cambia es el texto: en la activación la persona no es nueva, y la card de
     /// nube tiene que decir que es LA MISMA cuenta que ya usa para grupos, no una segunda (decisión de Jürgen).
     var context: Context = .firstTime
+    /// **La salida a grupos (propuesta B del estudio de solo-grupos, decisión de Jürgen del 24-oct).** Quien viene solo a
+    /// dividir gastos y entra por «Es mi primera vez» no tenía salida: esta pregunta de pie lo lleva al MISMO 2.º nivel de
+    /// grupos que la fila del elector. Es una pregunta de pie y no una tercera fila porque la tarjeta contesta «¿dónde
+    /// guardo mis datos?», y «solo grupos» no es una respuesta a eso. `nil` = sin pie: solo lo pasa el Welcome, no la
+    /// activación de Yala completo, donde la persona ya está en grupos.
+    ///
+    /// Con el faro encendido o con una sola opción de nube esta pantalla no se monta, y la salida no se ve: aceptado por
+    /// Jürgen (24-oct). No se replica en el aviso del faro ni en el elector principal.
+    var onStartGroups: (() -> Void)? = nil
 
     enum Context {
         /// Welcome → «Es mi primera vez».
@@ -86,8 +95,45 @@ struct WelcomeNewChooserView: View {
                 }
             }
             .welcomeFlowCard(radius: DS.Radius.xl)
+
+            if let onStartGroups {
+                groupsFooter(action: onStartGroups)
+            }
         }
         .welcomeBackButton(tint: .white, action: onBack)
+    }
+
+    /// Mismo patrón que la pregunta de pie de «¡Hola de nuevo!» (`WelcomeExistingChooserView.footer`): fuera de la
+    /// tarjeta, `ViewThatFits` para que con Dynamic Type grande la pregunta y la acción se apilen.
+    private func groupsFooter(action: @escaping () -> Void) -> some View {
+        let question = Text(L10n.Welcome.New.groupsQuestion)
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.white.opacity(0.7))
+            .multilineTextAlignment(.center)
+        let button = Button {
+            DS.Haptic.selection()
+            action()
+        } label: {
+            Text(L10n.Welcome.New.groupsAction)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.white)
+                .underline()
+                .frame(minHeight: DS.Button.actionSize)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("welcome_new_start_groups")
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Spacing.xs) {
+                question
+                button
+            }
+            VStack(spacing: DS.Spacing.xs) {
+                question
+                button
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     /// Orden de PANTALLA: la nube primero (punto 6). Es una función pura y no un `sorted` inline

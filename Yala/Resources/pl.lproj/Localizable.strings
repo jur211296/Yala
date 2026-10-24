@@ -4049,8 +4049,8 @@
 "welcome.chooser.optionNew.body" = "Zacznijmy od zera. Pomogę Ci skonfigurować wszystko krok po kroku.";
 "welcome.chooser.optionExisting.title" = "Mam już konto";
 "welcome.chooser.optionExisting.body" = "Już korzystam z Yala i chcę odzyskać swoje dane – z iCloud albo z mojego konta.";
-"welcome.chooser.optionInvite.title" = "Chodzi mi o grupę";
-"welcome.chooser.optionInvite.body" = "Chcę dzielić wydatki ze znajomymi: założyć grupę albo dołączyć do istniejącej.";
+"welcome.chooser.optionInvite.title" = "Dzielić wydatki ze znajomymi";
+"welcome.chooser.optionInvite.body" = "Wyjazdy, wspólne mieszkanie, wyjścia: załóż grupę albo dołącz do grupy znajomych. Bez prowadzenia własnych finansów.";
 
 "welcome.restore.searching" = "Szukam Twoich danych w iCloud…";
 "welcome.restore.searchingTip" = "Może to potrwać kilka sekund.";
@@ -5281,6 +5281,8 @@
 "welcome.new.privateBody" = "Twoje dane zostają na urządzeniach Apple przypisanych do Twojego Apple ID i synchronizują się przez Twój prywatny iCloud. Nikt inny ich nie odczyta, my też nie.";
 "welcome.new.cloudTitle" = "Twoje konto w chmurze";
 "welcome.new.cloudBody" = "Twoje dane są na naszych serwerach, tak jak w większości Twoich aplikacji. Nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia i dodawać nowe funkcje.";
+"welcome.new.groupsQuestion" = "Chcesz tylko dzielić wydatki?";
+"welcome.new.groupsAction" = "Zacznij tutaj";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Załóż konto Yala";
@@ -5306,7 +5308,7 @@
 "welcome.bornCloud.readyCta" = "Zaczynamy";
 
 /* Title of the two-paths groups screen in the Welcome flow */
-"welcome.groups.title" = "Jak chcesz zacząć z grupą?";
+"welcome.groups.title" = "Jak chcesz zacząć?";
 
 /* Subtitle of the two-paths groups screen in the Welcome flow */
 "welcome.groups.subtitle" = "Obie drogi prowadzą w to samo miejsce.";
@@ -5318,10 +5320,10 @@
 "welcome.groups.createBody" = "To ty zapraszasz. Zapisujesz, kto ile płaci, a Yala prowadzi rozliczenia.";
 
 /* Card title: the user already received an invitation link */
-"welcome.groups.joinTitle" = "Mam zaproszenie";
+"welcome.groups.joinTitle" = "Ktoś zaprosił mnie do grupy";
 
 /* Card body: paste the invitation link to join */
-"welcome.groups.joinBody" = "Wklej otrzymany link i dołączasz do grupy.";
+"welcome.groups.joinBody" = "Otwórz otrzymany link albo wklej go tutaj.";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "Sprawdzamy, czy wszystko jest gotowe…";
