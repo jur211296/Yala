@@ -42,14 +42,12 @@ struct TopSubcategoriesCalculator {
         let validTransactions = transactions.filter { transaction in
             // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
             guard !adjustment.isSuppressed(transaction) else { return false }
-            // Basic validity - must have category
-            guard let category = transaction.category else { return false }
-
             // Exclude balance adjustments and transfers (they shouldn't appear in category stats)
             guard transaction.balanceAdjustmentType == nil else { return false }
 
-            // Need check
-            let nature: TransactionNature = category.isIncome ? .income : .expense
+            // Ingreso o gasto con la regla de toda la app. Sin categoría también entra: va a la fila «Sin categoría»
+            // (decisión A de Jürgen, 2026-10-23) para que el ranking sume el total del período.
+            let nature: TransactionNature = TransactionClassificationLogic.isIncome(transaction) ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }
 
             // Interval check
@@ -63,20 +61,25 @@ struct TopSubcategoriesCalculator {
         // Needs total expense per Parent Category (for % of Category)
 
         var totalExpenseAll: Double = 0
-        var totalExpensePerCategory: [PersistentIdentifier: Double] = [:]
+        // Clave `nil` = «Sin categoría».
+        var totalExpensePerCategory: [PersistentIdentifier?: Double] = [:]
 
-        // Grouping Key: "SubcategoryID" or "NoSubcategory-CategoryID"
+        // Grouping Key: "SubcategoryID", "NoSubcategory-CategoryID" o, sin categoría, las dos `nil`.
         struct GroupingKey: Hashable {
             let subcategoryID: PersistentIdentifier?
-            let categoryID: PersistentIdentifier
+            let categoryID: PersistentIdentifier?
         }
 
         var groupingTotals: [GroupingKey: Double] = [:]
+        // La fila «Sin categoría» suma la magnitud de cada lado: con los filtros Ingresos y Gastos a la vez, un ingreso y
+        // un gasto sin categoría no se restan entre sí (review del 2026-10-24; mismo criterio que la tarta).
+        var uncategorizedIncome = 0.0
+        var uncategorizedExpense = 0.0
         var groupingMetadata:
-            [GroupingKey: (name: String, color: String?, sub: Subcategory?, cat: Category)] = [:]
+            [GroupingKey: (name: String, color: String?, sub: Subcategory?, cat: Category?)] = [:]
 
         for transaction in validTransactions {
-            guard let category = transaction.category else { continue }
+            let category = transaction.category
 
             // Convert using the transaction's date for accurate historical rate
             // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
@@ -101,19 +104,33 @@ struct TopSubcategoriesCalculator {
 
             // Apply categoryFilter only for grouping/per-category totals
             if let filterID = categoryFilter,
-               category.persistentModelID != filterID { continue }
+               category?.persistentModelID != filterID { continue }
 
-            totalExpensePerCategory[category.persistentModelID, default: 0] += doubleVal
+            totalExpensePerCategory[category?.persistentModelID, default: 0] += doubleVal
 
-            // Grouping
-            let subID = transaction.subcategory?.persistentModelID
-            let key = GroupingKey(subcategoryID: subID, categoryID: category.persistentModelID)
+            // Grouping. Sin categoría, una sola fila aunque el movimiento traiga una subcategoría colgando.
+            let subID = category == nil ? nil : transaction.subcategory?.persistentModelID
+            let key = GroupingKey(subcategoryID: subID, categoryID: category?.persistentModelID)
 
             groupingTotals[key, default: 0] += doubleVal
+            if category == nil {
+                if TransactionClassificationLogic.isIncome(transaction) {
+                    uncategorizedIncome += doubleVal
+                } else {
+                    uncategorizedExpense += doubleVal
+                }
+            }
 
             // Metadata (store once)
             if groupingMetadata[key] == nil {
-                if let sub = transaction.subcategory {
+                if category == nil {
+                    groupingMetadata[key] = (
+                        name: L10n.Report.uncategorized,
+                        color: AppConstants.uncategorizedColorHex,
+                        sub: nil,
+                        cat: nil
+                    )
+                } else if let category, let sub = transaction.subcategory {
                     groupingMetadata[key] = (
                         name: sub.name,
                         color: (sub.colorHex?.isEmpty == false ? sub.colorHex : nil)
@@ -121,7 +138,7 @@ struct TopSubcategoriesCalculator {
                         sub: sub,
                         cat: category
                     )
-                } else {
+                } else if let category {
                     // No Subcategory case
                     groupingMetadata[key] = (
                         name: L10n.Subcategory.noSubcategory,
@@ -143,8 +160,10 @@ struct TopSubcategoriesCalculator {
             guard let meta = groupingMetadata[key] else { continue }
 
             let catTotal = totalExpensePerCategory[key.categoryID] ?? amount
-            let absCatTotal = abs(catTotal)
-            let absAmount = abs(amount)
+            let absAmount = key.categoryID == nil
+                ? abs(uncategorizedIncome) + abs(uncategorizedExpense)
+                : abs(amount)
+            let absCatTotal = key.categoryID == nil ? absAmount : abs(catTotal)
 
             let pctTotal = absTotalAll > 0 ? (absAmount / absTotalAll) * 100 : 0
             let pctCat = absCatTotal > 0 ? (absAmount / absCatTotal) * 100 : 0

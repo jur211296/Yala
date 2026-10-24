@@ -295,7 +295,8 @@ final class ReportNotificationService {
             balance: balance,
             totalExpense: NSDecimalNumber(decimal: totals.totalExpense).doubleValue,
             totalIncome: NSDecimalNumber(decimal: totals.totalIncome).doubleValue,
-            topCategory: topCategories.first?.category.name,
+            // La mayor categoría REAL: «Sin categoría» suma en el desglose pero no se nombra como categoría.
+            topCategory: topCategories.first(where: { !$0.isUncategorized })?.name,
             hasExpenseActivity: totals.hasExpenseActivity,
             hasIncomeActivity: totals.hasIncomeActivity
         )

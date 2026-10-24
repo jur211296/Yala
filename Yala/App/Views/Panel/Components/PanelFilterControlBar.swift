@@ -114,7 +114,7 @@ struct PanelFilterControlBar: View {
                             && selectedSubsByID.count == viewModel.allSubcategories.count
 
                         if let categoryID = viewModel.selectedCategoryID,
-                           let category = viewModel.topSpendingCategories.first(where: { $0.category.persistentModelID == categoryID })?.category {
+                           let category = viewModel.topSpendingCategories.first(where: { $0.id == categoryID })?.category {
                             FilterChipView(
                                 categoryName: category.name,
                                 iconName: category.iconName,

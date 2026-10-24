@@ -113,6 +113,7 @@
 "widget.ui.topCategories" = "Kategorie z największymi wydatkami";
 "widget.ui.topSubcategories" = "Podkategorie z największymi wydatkami";
 "widget.ui.noNote" = "Brak notatki";
+"widget.ui.uncategorized" = "Bez kategorii";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "Po terminie";

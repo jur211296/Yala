@@ -113,6 +113,7 @@
 "widget.ui.topCategories" = "Categorie con più spese";
 "widget.ui.topSubcategories" = "Sottocategorie con più spese";
 "widget.ui.noNote" = "Senza nota";
+"widget.ui.uncategorized" = "Senza categoria";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "Scaduto";

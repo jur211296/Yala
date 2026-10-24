@@ -47,11 +47,11 @@ struct CategoriesPieWidget: View {
         if isExcludeMode {
             // Excluded items removed — total is sum of remaining visible items
             return categories
-                .filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
+                .filter { !$0.isSelected(in: selectedCategoryIDs) }
                 .reduce(0) { $0 + $1.amount }
         }
         return categories
-            .filter { selectedCategoryIDs.contains($0.category.persistentModelID) }
+            .filter { $0.isSelected(in: selectedCategoryIDs) }
             .reduce(0) { $0 + $1.amount }
     }
 
@@ -253,7 +253,8 @@ struct CategoriesPieWidget: View {
 
     private func simpleLegendList(_ chartData: [PieChartData]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            ForEach(chartData) { item in
+            // Por `identity`, no por `id`: «Otros» y «Sin categoría» tienen los dos `id == nil`.
+            ForEach(chartData, id: \.identity) { item in
                 simpleLegendRow(for: item)
             }
         }
@@ -681,7 +682,7 @@ struct CategoriesPieWidget: View {
         // In exclude mode, remove excluded items entirely (they disappear from the chart)
         let visibleCategories: [CategorySpendingSummary]
         if isExcludeMode && !selectedCategoryIDs.isEmpty {
-            visibleCategories = categories.filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
+            visibleCategories = categories.filter { !$0.isSelected(in: selectedCategoryIDs) }
         } else {
             visibleCategories = categories
         }
@@ -695,12 +696,12 @@ struct CategoriesPieWidget: View {
             finalItems = visibleCategories.map {
                 let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
                 return PieChartData(
-                    id: $0.category.persistentModelID,
-                    name: $0.category.name,
-                    iconName: $0.category.iconName ?? "tag.fill",
+                    id: $0.id,
+                    name: $0.name,
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
-                    colorHex: $0.category.colorHex
+                    colorHex: $0.colorHex
                 )
             }
         } else {
@@ -710,12 +711,12 @@ struct CategoriesPieWidget: View {
             finalItems = top.map {
                 let pct = visibleTotal > 0 ? ($0.amount / visibleTotal) * 100 : 0
                 return PieChartData(
-                    id: $0.category.persistentModelID,
-                    name: $0.category.name,
-                    iconName: $0.category.iconName ?? "tag.fill",
+                    id: $0.id,
+                    name: $0.name,
+                    iconName: $0.iconName ?? "tag.fill",
                     amount: $0.amount,
                     percentage: pct,
-                    colorHex: $0.category.colorHex
+                    colorHex: $0.colorHex
                 )
             }
 
@@ -763,7 +764,8 @@ struct CategoriesPieWidget: View {
         let availableWidth = max(0, segmentedBarWidth - totalSpacing)
 
         HStack(spacing: segmentSpacing) {
-            ForEach(chartData) { item in
+            // Por `identity`, no por `id`: «Otros» y «Sin categoría» tienen los dos `id == nil`.
+            ForEach(chartData, id: \.identity) { item in
                 RoundedRectangle(cornerRadius: DS.Radius.xs)
                     .fill(Color(hex: item.colorHex))
                     .frame(width: availableWidth * CGFloat(item.percentage / 100))

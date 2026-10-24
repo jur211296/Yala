@@ -31,16 +31,16 @@ struct TopSpendingCategoriesCalculator {
 
         // 1. Filter Transactions
         // - Within interval
-        // - Has a category
-        // - Matches requested transaction natures
+        // - Matches requested transaction natures (ingreso o gasto con la regla de toda la app: la categoría manda y,
+        //   sin categoría, el signo). Un movimiento sin categoría entra en el trozo «Sin categoría» (decisión A de
+        //   Jürgen, 2026-10-23): hasta entonces quedaba fuera y la tarta sumaba menos que el gasto del período.
         // - Excludes balance adjustments and transfers
         // - Excludes bridge-derived loan legs (préstamo a grupos): no son gasto/ingreso propio.
         let filteredTransactions = transactions.filter { transaction in
             guard !adjustment.isSuppressed(transaction) else { return false }
-            guard let category = transaction.category else { return false }
             // Exclude balance adjustments and transfers
             guard transaction.balanceAdjustmentType == nil else { return false }
-            let nature: TransactionNature = category.isIncome ? .income : .expense
+            let nature: TransactionNature = TransactionClassificationLogic.isIncome(transaction) ? .income : .expense
             guard naturesToInclude.contains(nature) else { return false }
             return interval.contains(transaction.date)
         }
@@ -53,9 +53,14 @@ struct TopSpendingCategoriesCalculator {
 
         var categoryTotals: [PersistentIdentifier: Double] = [:]
         var categoryMap: [PersistentIdentifier: Category] = [:]
+        // «Sin categoría», con signo y POR LADO: con los filtros Ingresos y Gastos a la vez, un ingreso y un gasto sin
+        // categoría no se restan entre sí (lo cazó la review del 2026-10-24). Su lado lo dice el signo, así que el de
+        // ingresos nunca baja de 0 ni el de gastos sube de 0.
+        var uncategorizedIncome = 0.0
+        var uncategorizedExpense = 0.0
 
         for transaction in filteredTransactions {
-            guard let category = transaction.category else { continue }
+            let category = transaction.category
 
             // Use absolute value for expense. `adjustment` proyecta un gasto de grupo Caso A a
             // "mi parte" (neto) en vez del total que pagué.
@@ -110,27 +115,57 @@ struct TopSpendingCategoriesCalculator {
                 doubleAmount = (adjustment.amount(transaction) < 0) ? -magnitude : magnitude
             }
 
+            guard let category else {
+                if TransactionClassificationLogic.isIncome(transaction) {
+                    uncategorizedIncome += doubleAmount
+                } else {
+                    uncategorizedExpense += doubleAmount
+                }
+                continue
+            }
             let categoryID = category.persistentModelID
             categoryTotals[categoryID, default: 0] += doubleAmount
             categoryMap[categoryID] = category
         }
 
+        // Cada trozo: su clave (`nil` = «Sin categoría»), su importe con signo (para el total) y su magnitud (lo que se
+        // pinta). En una categoría la magnitud es la del neto; en «Sin categoría», la suma de las de cada lado.
+        var entries: [(id: PersistentIdentifier?, signed: Double, magnitude: Double)] = categoryTotals.map {
+            (id: $0.key, signed: $0.value, magnitude: abs($0.value))
+        }
+        if uncategorizedIncome != 0 || uncategorizedExpense != 0 {
+            entries.append((
+                id: nil,
+                signed: uncategorizedIncome + uncategorizedExpense,
+                magnitude: abs(uncategorizedIncome) + abs(uncategorizedExpense)
+            ))
+        }
+
         // 3. Calculate Total Expense (Using ABS of the net negative sum)
-        let netTotalSigned = categoryTotals.values.reduce(0, +)
+        let netTotalSigned = entries.reduce(0) { $0 + $1.signed }
         let totalExpense = abs(netTotalSigned)
 
         // 4. Sort (All categories)
-        // Sort by magnitude (abs)
-        let sortedCategories = categoryTotals.sorted { abs($0.value) > abs($1.value) }
+        // Sort by magnitude; a igual importe, «Sin categoría» detrás de cualquier categoría.
+        let sortedCategories = entries.sorted {
+            if $0.magnitude != $1.magnitude { return $0.magnitude > $1.magnitude }
+            return $0.id != nil && $1.id == nil
+        }
 
         // Return all categories (Consumers like TopSpendingCardView can prefix(5) themselves)
         let topCategories = sortedCategories
 
         // 5. Create Summaries
-        return topCategories.compactMap { (id, signedAmount) -> CategorySpendingSummary? in
-            guard let category = categoryMap[id] else { return nil }
+        return topCategories.compactMap { entry -> CategorySpendingSummary? in
+            let category: Category?
+            if let id = entry.id {
+                guard let found = categoryMap[id] else { return nil }
+                category = found
+            } else {
+                category = nil
+            }
 
-            let absAmount = abs(signedAmount)
+            let absAmount = entry.magnitude
             let percentage = totalExpense > 0 ? (absAmount / totalExpense) * 100 : 0
 
             return CategorySpendingSummary(

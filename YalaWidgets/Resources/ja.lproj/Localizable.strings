@@ -113,6 +113,7 @@
 "widget.ui.topCategories" = "支出の多いカテゴリ";
 "widget.ui.topSubcategories" = "支出の多いサブカテゴリ";
 "widget.ui.noNote" = "メモなし";
+"widget.ui.uncategorized" = "未分類";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "期限超過";

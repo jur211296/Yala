@@ -113,6 +113,7 @@
 "widget.ui.topCategories" = "Categorieën met de meeste uitgaven";
 "widget.ui.topSubcategories" = "Subcategorieën met de meeste uitgaven";
 "widget.ui.noNote" = "Geen notitie";
+"widget.ui.uncategorized" = "Zonder categorie";
 
 // MARK: - Date labels
 "widget.ui.overdue" = "Te laat";

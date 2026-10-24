@@ -407,8 +407,9 @@ struct CategoriesTabView: View {
 
     /// Subtítulo dimensional dinámico. 3 variantes según qué dimensiones tienen data.
     private func heroDimensionalSubtitle() -> String? {
-        let catCount = categorySpending.count
-        let subCount = subcategorySpending.count
+        // Cuenta categorías y subcategorías REALES: el trozo «Sin categoría» suma en la tarta pero no es una de ellas.
+        let catCount = categorySpending.filter { !$0.isUncategorized }.count
+        let subCount = subcategorySpending.filter { !$0.isUncategorized }.count
         let tagCount = tagSpending.count
         let activeDims = [catCount > 0, subCount > 0, tagCount > 0].filter { $0 }.count
         switch activeDims {
@@ -1275,16 +1276,18 @@ struct CategoriesTabView: View {
 
     private func computeDistributionFinding() -> DistributionInsightFinding {
         let prevLabel = previousPeriodLabelForInsight()
-        let cats: [DistributionCategoryInput] = categorySpending.map {
+        // El hallazgo NOMBRA categorías: «Sin categoría» suma en la tarta pero no es una de ellas. Los porcentajes
+        // siguen siendo del total del período.
+        let cats: [DistributionCategoryInput] = categorySpending.filter { !$0.isUncategorized }.map {
             DistributionCategoryInput(
-                name: $0.category.name,
+                name: $0.name,
                 amount: $0.amount,
                 percentage: $0.percentage,
                 previousAmount: $0.previousAmount,
                 variation: $0.variation
             )
         }
-        let topSub: DistributionTopSubInput? = subcategorySpending.first.map {
+        let topSub: DistributionTopSubInput? = subcategorySpending.first(where: { !$0.isUncategorized }).map {
             DistributionTopSubInput(
                 name: $0.subcategoryName,
                 parent: $0.category?.name ?? "",
@@ -1539,14 +1542,12 @@ struct CategoriesTabView: View {
         func alignedPrevious(
             _ previous: [TransactionItem],
             currentSource: [TransactionItem],
-            natures: Set<TransactionNature>?,
-            countsUncategorized: Bool = false
+            natures: Set<TransactionNature>?
         ) -> [TransactionItem] {
             DistributionPreviousPeriodCalculator.alignedPrevious(
                 previous,
                 currentDates: DistributionPreviousPeriodCalculator.currentDates(
-                    from: currentSource, in: currentInterval, natures: natures,
-                    countsUncategorized: countsUncategorized
+                    from: currentSource, in: currentInterval, natures: natures
                 ),
                 currentInterval: currentInterval,
                 previousInterval: previousInterval,
@@ -1600,10 +1601,10 @@ struct CategoriesTabView: View {
 
         // Populate previousAmount on each category item
         let prevCategoryAmounts = Dictionary(
-            uniqueKeysWithValues: previousCategorySpending.map { ($0.category.persistentModelID, $0.amount) }
+            uniqueKeysWithValues: previousCategorySpending.map { ($0.id, $0.amount) }
         )
         for index in categorySpending.indices {
-            categorySpending[index].previousAmount = prevCategoryAmounts[categorySpending[index].category.persistentModelID]
+            categorySpending[index].previousAmount = prevCategoryAmounts[categorySpending[index].id]
         }
 
         // Calculate previous period subcategory spending (filter by category if selected)
@@ -1659,8 +1660,7 @@ struct CategoriesTabView: View {
                 transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
             ),
             currentSource: currentTagSource,
-            natures: naturesFilter,
-            countsUncategorized: true  // las etiquetas cuentan el gasto sin categoría (`TagSpendingCalculator`)
+            natures: naturesFilter
         )
         let previousTagSpending = TagSpendingCalculator.calculateTopSpending(
             transactions: prevTagFiltered,
@@ -1801,7 +1801,7 @@ private struct AllCategoriesListContent: View {
     /// Visible categories: in exclude mode, excluded items are hidden entirely
     private var visibleCategories: [CategorySpendingSummary] {
         if isExcludeMode && !selectedCategoryIDs.isEmpty {
-            return categories.filter { !selectedCategoryIDs.contains($0.category.persistentModelID) }
+            return categories.filter { !$0.isSelected(in: selectedCategoryIDs) }
         }
         return categories
     }
@@ -1818,13 +1818,16 @@ private struct AllCategoriesListContent: View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
             if let maxAmount = displayedCategories.first?.amount {
                 ForEach(displayedCategories) { summary in
-                    let isSelected = selectedCategoryIDs.contains(summary.category.persistentModelID)
+                    let isSelected = summary.isSelected(in: selectedCategoryIDs)
                     let isAnySelected = !selectedCategoryIDs.isEmpty
                     // In exclude mode, excluded items are already hidden — no dimming
                     let shouldDim = !isExcludeMode && isAnySelected && !isSelected
 
                     Button {
-                        onSelectCategory?(summary.category.persistentModelID)
+                        // «Sin categoría» no tiene categoría que filtrar: no hace nada.
+                        if let categoryID = summary.id {
+                            onSelectCategory?(categoryID)
+                        }
                     } label: {
                         CategoryRowView(
                             summary: summary,
@@ -1980,10 +1983,10 @@ private struct CategoryRowView: View {
             // Icon Circle
             ZStack {
                 Circle()
-                    .fill(Color(hex: summary.category.colorHex))
+                    .fill(Color(hex: summary.colorHex))
                     .frame(width: 40, height: 40)
 
-                Image(systemName: summary.category.iconName ?? "tag.fill")
+                Image(systemName: summary.iconName ?? "tag.fill")
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
                     .accessibilityHidden(true)
@@ -1992,7 +1995,7 @@ private struct CategoryRowView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name and Amount
                 HStack {
-                    Text(summary.category.name)
+                    Text(summary.name)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
@@ -2032,7 +2035,7 @@ private struct CategoryRowView: View {
                                 .frame(height: 6)
 
                             Capsule()
-                                .fill(Color(hex: summary.category.colorHex))
+                                .fill(Color(hex: summary.colorHex))
                                 .frame(width: width, height: 6)
                         }
                     }
@@ -2078,7 +2081,7 @@ private struct SubcategoryRowView: View {
                         .foregroundStyle(.white)
                         .accessibilityHidden(true)
                 } else {
-                    Image(systemName: "list.bullet.indent")
+                    Image(systemName: summary.isUncategorized ? AppConstants.uncategorizedIconName : "list.bullet.indent")
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                         .accessibilityHidden(true)

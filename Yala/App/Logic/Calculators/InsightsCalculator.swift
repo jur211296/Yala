@@ -74,8 +74,10 @@ struct QuickStats {
     let highestAvgWeekday: HighestAvgWeekdayInfo?
     let subscriptionsTotal: Double
 
-    var topCategory: CategorySpendingSummary? { topCategories.first }
-    var topSubcategory: SubcategorySpendingSummary? { topSubcategories.first }
+    /// La mayor categoría REAL: el trozo «Sin categoría» suma en el ranking, pero no es una categoría que nombrar.
+    var topCategory: CategorySpendingSummary? { topCategories.first { !$0.isUncategorized } }
+    /// Ídem: la fila «Sin categoría» del ranking de subcategorías es la única sin categoría padre.
+    var topSubcategory: SubcategorySpendingSummary? { topSubcategories.first { !$0.isUncategorized } }
 }
 
 struct HighestExpenseInfo {
@@ -737,7 +739,8 @@ struct InsightsCalculator {
         )
     }
 
-    private static func calculateNeedDistribution(
+    /// `internal` para los tests (`CategoryBreakdownUncategorizedTests`).
+    static func calculateNeedDistribution(
         _ transactions: [TransactionItem],
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment,
@@ -749,12 +752,14 @@ struct InsightsCalculator {
 
         for tx in transactions {
             guard !adjustment.isSuppressed(tx) else { continue }
-            guard let category = tx.category, !category.isIncome else { continue }
+            // Solo gastos, con la regla de toda la app. Un gasto sin categoría no tiene necesidad: va con lo sin
+            // clasificar, que este reparto suma a Opcional (decisión A de Jürgen, 2026-10-23; antes quedaba fuera).
+            guard !TransactionClassificationLogic.isIncome(tx) else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
             let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
-            let need = tx.subcategory?.need
+            let need = tx.category == nil ? nil : tx.subcategory?.need
             switch need {
             case .essential:
                 essential += amount
@@ -833,9 +838,10 @@ struct InsightsCalculator {
         let budgetRiskThreshold: Double = focus == .cautious ? 75 : 90
 
         // Rule 1: Top category dominance
-        if let top = topCategories.first, top.percentage > topCategoryThreshold {
-            let text = AttributedString(L10n.Insights.ruleTopCategory(top.category.name, Int(top.percentage), tone: tone))
-            let tip = AttributedString(L10n.Insights.tipTopCategory(top.category.name))
+        // «Sin categoría» suma en el ranking pero no se nombra como categoría.
+        if let top = topCategories.first(where: { !$0.isUncategorized }), top.percentage > topCategoryThreshold {
+            let text = AttributedString(L10n.Insights.ruleTopCategory(top.name, Int(top.percentage), tone: tone))
+            let tip = AttributedString(L10n.Insights.tipTopCategory(top.name))
             insights.append(InsightResult(
                 id: "top_category_dominant",
                 icon: "chart.pie",

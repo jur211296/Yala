@@ -546,7 +546,7 @@ struct InsightsTabView: View {
                 QuickStatCell(
                     icon: "folder.fill",
                     label: L10n.Insights.topCategory,
-                    value: top.category.name,
+                    value: top.name,
                     secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage.rounded()))%"
                 )
             }

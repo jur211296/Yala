@@ -171,7 +171,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
 | cashflow-this-and-future-adjustment-rewrites-past-months | qa | tickets/qa/cashflow-this-and-future-adjustment-rewrites-past-months.md |
 | cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two | done | tickets/done/cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two.md |
-| category-breakdowns-leave-out-uncategorized-movements | backlog | tickets/backlog/category-breakdowns-leave-out-uncategorized-movements.md |
+| category-breakdowns-leave-out-uncategorized-movements | qa | tickets/qa/category-breakdowns-leave-out-uncategorized-movements.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | done | tickets/done/changing-an-account-currency-orphans-its-whole-history.md |
 | chart-mark-labels-are-english-for-voiceover | backlog | tickets/backlog/chart-mark-labels-are-english-for-voiceover.md |

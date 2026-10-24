@@ -28,13 +28,22 @@ sueltos (sin `TransactionItem`), por `isIncome(categoryIsIncome:signedAmount:)`,
 
 Al leer código, tres formas delatan una regla propia —cada una contesta otra cosa para el movimiento sin categoría—:
 `category?.isIncome == true` y `?? false` (lo dan por gasto) y `guard let category … else { continue }` (lo hace
-desaparecer). Cámbialas por el helper, salvo en un desglose por categoría (abajo).
+desaparecer). Cámbialas por el helper, también en un desglose por categoría (abajo).
 
-**Excepción, abierta:** los desgloses POR CATEGORÍA (tarta y rankings de categorías/subcategorías, Sankey, distribución
-por necesidad) no tienen dónde poner un movimiento sin categoría y lo dejan fuera; su suma puede quedar por debajo del
-total. Es una decisión de UI pendiente (ticket `category-breakdowns-leave-out-uncategorized-movements`). Yala IA y el
-conector `mcp/` tampoco siguen aún la regla (ticket `yala-ia-classifies-uncategorized-movements-as-expense`): si los
-tocas, cambia los dos y regenera `MCPAppParityGoldenTests`.
+**Un desglose POR CATEGORÍA lleva un trozo «Sin categoría» (decisión A de Jürgen, 2026-10-23).** Tarta y rankings de
+categorías y subcategorías, Sankey y categorías del widget de inicio meten el movimiento sin categoría del lado que dice
+su signo, con el texto del Informe (`L10n.Report.uncategorized`; en la extensión, `widget.ui.uncategorized`, la misma
+traducción) y el gris `AppConstants.uncategorizedColorHex`. Así su suma es el total del período. En
+`CategorySpendingSummary` es `category == nil` (`isUncategorized`, `id == nil`): no se puede elegir como filtro
+(`isSelected(in:)`), y lo que NOMBRA la mayor categoría (Observaciones, aviso de informe, hallazgo de Distribución) se
+lo salta. Con Ingresos y Gastos elegidos a la vez, el trozo suma la magnitud de cada lado (no se restan). La distribución
+por necesidad no tiene trozos por categoría: sin categoría no hay necesidad y cae en «Sin clasificar» (en Observaciones,
+que suma lo sin clasificar a Opcional, ahí). El corte del período anterior (`DistributionPreviousPeriodCalculator.currentDates`)
+cuenta el movimiento sin categoría, porque todas sus calculadoras lo cuentan. Un desglose nuevo por categoría sigue la misma forma; lo fija `CategoryBreakdownUncategorizedTests`.
+Pendiente: el ranking de subcategorías del widget de inicio deja fuera lo que no tiene subcategoría, con o sin
+categoría. Yala IA y el conector `mcp/` tampoco siguen aún la regla (ticket
+`yala-ia-classifies-uncategorized-movements-as-expense`): si los tocas, cambia los dos y regenera
+`MCPAppParityGoldenTests`.
 
 ## Cómo se suma: con signo
 

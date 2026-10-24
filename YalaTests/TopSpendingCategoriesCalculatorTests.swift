@@ -72,7 +72,7 @@ struct TopSpendingCategoriesCalculatorTests {
         )
 
         #expect(result.count == 1)
-        #expect(result[0].category.name == "Food")
+        #expect(result[0].category?.name == "Food")
         #expect(result[0].amount == 100)
         #expect(result[0].percentage == 100)
     }
@@ -109,8 +109,8 @@ struct TopSpendingCategoriesCalculatorTests {
             converter: MockCurrencyConverter()
         )
 
-        #expect(result[0].category.name == "Big")
-        #expect(result[1].category.name == "Small")
+        #expect(result[0].category?.name == "Big")
+        #expect(result[1].category?.name == "Small")
     }
 
     @Test func balanceAdjustments_excluded() {
@@ -160,7 +160,7 @@ struct TopSpendingCategoriesCalculatorTests {
         )
 
         #expect(result.count == 1)
-        #expect(result[0].category.name == "Salary")
+        #expect(result[0].category?.name == "Salary")
     }
 
     @Test func transactionsOutsideInterval_excluded() {
@@ -197,7 +197,9 @@ struct TopSpendingCategoriesCalculatorTests {
         #expect(result[0].amount == 100) // 50 * 2.0
     }
 
-    @Test func noCategoryTransactions_excluded() {
+    /// Hasta el 2026-10-23 un movimiento sin categoría se excluía y la tarta sumaba menos que el gasto del período.
+    /// Decisión A de Jürgen: entra como el trozo «Sin categoría» (`CategoryBreakdownUncategorizedTests`).
+    @Test func noCategoryTransactions_formTheUncategorizedSlice() {
         let tx = makeTransaction(amount: -100)
 
         let result = TopSpendingCategoriesCalculator.calculateTopSpending(
@@ -207,7 +209,10 @@ struct TopSpendingCategoriesCalculatorTests {
             converter: MockCurrencyConverter()
         )
 
-        #expect(result.isEmpty)
+        #expect(result.count == 1)
+        #expect(result.first?.isUncategorized == true)
+        #expect(result.first?.amount == 100)
+        #expect(result.first?.percentage == 100)
     }
 }
 
@@ -222,7 +227,7 @@ Tests generated:
 7. transactionNaturesIncome_onlyIncomeCategories - Income filter returns only income categories
 8. transactionsOutsideInterval_excluded - Transactions outside date interval are excluded
 9. multiCurrency_conversionApplied - Currency conversion uses MockCurrencyConverter rate
-10. noCategoryTransactions_excluded - Transactions without category are excluded
+10. noCategoryTransactions_formTheUncategorizedSlice - Transactions without category form «Sin categoría»
 
 Cases NOT covered (require more context):
 - Categories with subcategories rolled up to parent (all belong to same parent category in this model)

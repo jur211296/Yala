@@ -29,6 +29,10 @@ struct SankeyFlowCalculator {
     private static var plannedRecurringLabel: String { L10n.Statistics.Sankey.plannedRecurring }
     private static var plannedSubscriptionLabel: String { L10n.Statistics.Sankey.plannedSubscription }
     private static var otherFundsLabel: String { L10n.Statistics.Sankey.otherFunds }
+    private static var uncategorizedLabel: String { L10n.Report.uncategorized }
+    private static let uncategorizedColor = AppConstants.uncategorizedColorHex
+    static let incomeUncategorizedID = "inc_uncategorized"
+    static let expenseUncategorizedID = "exp_uncategorized"
 
     // MARK: - Public API
 
@@ -36,7 +40,6 @@ struct SankeyFlowCalculator {
     ///
     /// Guards (independent of caller-side filtering):
     /// - `tx.balanceAdjustmentType == nil`
-    /// - `tx.category != nil`
     /// - `interval.contains(tx.date)` — protects metrics that bypass the period filter (e.g. `.balance`).
     ///
     /// One O(N) pass over `transactions`. Cada importe se resuelve en `currencyCode` con la regla
@@ -69,9 +72,13 @@ struct SankeyFlowCalculator {
         var expenseSubcatMap: [PersistentIdentifier: Subcategory] = [:]
         var expenseSubcatToCat: [PersistentIdentifier: PersistentIdentifier] = [:]
 
+        // Sin categoría: un nodo «Sin categoría» en la columna de su lado, que dice el signo (la regla de los totales).
+        // Hasta el 2026-10-23 se quedaba fuera y el flujo sumaba menos que el período (decisión A de Jürgen).
+        var incomeUncategorized = 0.0
+        var expenseUncategorized = 0.0
+
         for tx in transactions {
             guard tx.balanceAdjustmentType == nil else { continue }
-            guard let category = tx.category else { continue }
             guard interval.contains(tx.date) else { continue }
             // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
             guard !adjustment.isSuppressed(tx) else { continue }
@@ -82,6 +89,15 @@ struct SankeyFlowCalculator {
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             ).value)
             guard amount > 0 else { continue }
+
+            guard let category = tx.category else {
+                if TransactionClassificationLogic.isIncome(tx) {
+                    incomeUncategorized += amount
+                } else {
+                    expenseUncategorized += amount
+                }
+                continue
+            }
 
             let catID = category.persistentModelID
 
@@ -108,7 +124,8 @@ struct SankeyFlowCalculator {
 
         let totalIncome = incomeBySubcat.values.reduce(0, +)
             + incomeOrphanByCat.values.reduce(0, +)
-        let totalExpense = expenseByCat.values.reduce(0, +)
+            + incomeUncategorized
+        let totalExpense = expenseByCat.values.reduce(0, +) + expenseUncategorized
 
         guard totalIncome > 0 || totalExpense > 0 else { return .empty }
 
@@ -136,6 +153,7 @@ struct SankeyFlowCalculator {
             subcatMap: incomeSubcatMap,
             orphanTotals: incomeOrphanByCat,
             catMap: incomeCatMap,
+            uncategorizedTotal: incomeUncategorized,
             maxPerColumn: maxPerColumn
         )
 
@@ -194,6 +212,7 @@ struct SankeyFlowCalculator {
         let expenseCategoryNodes = buildCategoryNodes(
             from: expenseByCat,
             categoryMap: expenseCatMap,
+            uncategorizedTotal: expenseUncategorized,
             column: .expenseCategory,
             maxPerColumn: maxPerColumn,
             otrosID: "exp_otros",
@@ -394,6 +413,7 @@ struct SankeyFlowCalculator {
         subcatMap: [PersistentIdentifier: Subcategory],
         orphanTotals: [PersistentIdentifier: Double],
         catMap: [PersistentIdentifier: Category],
+        uncategorizedTotal: Double,
         maxPerColumn: Int
     ) -> [SankeyNode] {
 
@@ -427,6 +447,16 @@ struct SankeyFlowCalculator {
                 name: cat.name,
                 amount: amount,
                 colorHex: cat.colorHex,
+                persistentID: nil
+            ))
+        }
+
+        if uncategorizedTotal > 0 {
+            entries.append(Entry(
+                id: incomeUncategorizedID,
+                name: uncategorizedLabel,
+                amount: uncategorizedTotal,
+                colorHex: uncategorizedColor,
                 persistentID: nil
             ))
         }
@@ -468,17 +498,36 @@ struct SankeyFlowCalculator {
     private static func buildCategoryNodes(
         from totals: [PersistentIdentifier: Double],
         categoryMap: [PersistentIdentifier: Category],
+        uncategorizedTotal: Double,
         column: SankeyColumn,
         maxPerColumn: Int,
         otrosID: String,
         isTappable: Bool
     ) -> [SankeyNode] {
-        let sorted = totals.sorted { $0.value > $1.value }
+        // Clave `nil` = «Sin categoría»: entra en el orden por importe como una categoría más y no se toca (no hay
+        // categoría que filtrar).
+        var entries: [(key: PersistentIdentifier?, value: Double)] = totals.map { (key: $0.key, value: $0.value) }
+        if uncategorizedTotal > 0 { entries.append((key: nil, value: uncategorizedTotal)) }
+        let sorted = entries.sorted { $0.value > $1.value }
         let top = sorted.prefix(maxPerColumn)
         let remainder = sorted.dropFirst(maxPerColumn)
 
         var nodes: [SankeyNode] = top.compactMap { (catID, amount) in
-            guard let cat = categoryMap[catID], amount > 0 else { return nil }
+            guard amount > 0 else { return nil }
+            guard let catID else {
+                return SankeyNode(
+                    id: expenseUncategorizedID,
+                    column: column,
+                    name: uncategorizedLabel,
+                    amount: amount,
+                    colorHex: uncategorizedColor,
+                    persistentID: nil,
+                    parentCategoryID: nil,
+                    isOtros: false,
+                    isTappable: false
+                )
+            }
+            guard let cat = categoryMap[catID] else { return nil }
             return SankeyNode(
                 id: nodeID(column: column, persistentID: catID),
                 column: column,

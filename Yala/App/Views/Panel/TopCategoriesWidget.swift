@@ -186,7 +186,7 @@ struct TopCategoriesWidget: View {
             // In exclude mode, hide excluded items entirely
             let visibleCategories: [CategorySpendingSummary] = {
                 if isExcludeMode, let excludedID = selectedCategoryID {
-                    return categories.filter { $0.category.persistentModelID != excludedID }
+                    return categories.filter { $0.id != excludedID }
                 }
                 return categories
             }()
@@ -195,21 +195,15 @@ struct TopCategoriesWidget: View {
                 let displayedCategories =
                     limit >= visibleCategories.count ? visibleCategories : Array(visibleCategories.prefix(limit))
                 ForEach(displayedCategories) { summary in
-                    let isSelected = selectedCategoryID == summary.category.persistentModelID
+                    let isSelected = selectedCategoryID != nil && selectedCategoryID == summary.id
                     let isAnySelected = selectedCategoryID != nil
                     // In exclude mode, excluded items are hidden — no dimming needed
                     let shouldDim = !isExcludeMode && isAnySelected && !isSelected
 
                     Button {
-                        if isSelected {
-                            // Deselect if already selected?
-                            // Requirements "filter that category". Maybe tap again to deselect is good UX.
-                            // But usually close chip to deselect. Let's strictly follow "filter that category".
-                            // If I tap again, I might want to do nothing or re-select.
-                            // Let's assume onSelectCategory handles the toggle or just sets it.
-                            onSelectCategory?(summary.category.persistentModelID)
-                        } else {
-                            onSelectCategory?(summary.category.persistentModelID)
+                        // «Sin categoría» no tiene categoría que filtrar: no hace nada.
+                        if let categoryID = summary.id {
+                            onSelectCategory?(categoryID)
                         }
                     } label: {
                         CategoryRow(
@@ -238,7 +232,7 @@ struct TopCategoriesWidget: View {
                 // en modo normal todos son visibles y el dim se aplica por row.
                 let visibleCategories: [CategorySpendingSummary] = {
                     if isExcludeMode, let excludedID = selectedCategoryID {
-                        return categories.filter { $0.category.persistentModelID != excludedID }
+                        return categories.filter { $0.id != excludedID }
                     }
                     return categories
                 }()
@@ -264,13 +258,16 @@ struct TopCategoriesWidget: View {
 
     @ViewBuilder
     private func smallCategoryRow(for summary: CategorySpendingSummary) -> some View {
-        let color = Color(hex: summary.category.colorHex)
+        let color = Color(hex: summary.colorHex)
         let clampedPercentage = max(0, min(100, summary.percentage))
-        let isSelected = selectedCategoryID == summary.category.persistentModelID
+        let isSelected = selectedCategoryID != nil && selectedCategoryID == summary.id
         let shouldDim = !isExcludeMode && selectedCategoryID != nil && !isSelected
 
         Button {
-            onSelectCategory?(summary.category.persistentModelID)
+            // «Sin categoría» no tiene categoría que filtrar: no hace nada.
+            if let categoryID = summary.id {
+                onSelectCategory?(categoryID)
+            }
         } label: {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Línea 1: ícono + nombre (ocupa casi todo el ancho para nombres largos)
@@ -280,13 +277,13 @@ struct TopCategoriesWidget: View {
                             .fill(color)
                             .frame(width: 28, height: 28)
 
-                        Image(systemName: summary.category.iconName ?? "tag.fill")
+                        Image(systemName: summary.iconName ?? "tag.fill")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .accessibilityHidden(true)
                     }
 
-                    Text(summary.category.name)
+                    Text(summary.name)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
@@ -384,10 +381,10 @@ private struct CategoryRow: View {
             // Icon Circle
             ZStack {
                 Circle()
-                    .fill(Color(hex: summary.category.colorHex))
+                    .fill(Color(hex: summary.colorHex))
                     .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
-                Image(systemName: summary.category.iconName ?? "tag.fill")  // Use actual category icon
+                Image(systemName: summary.iconName ?? "tag.fill")  // Use actual category icon
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.white)
                     .accessibilityHidden(true)
@@ -396,7 +393,7 @@ private struct CategoryRow: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                 // Name and Amount
                 HStack {
-                    Text(summary.category.name)
+                    Text(summary.name)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
 
@@ -437,7 +434,7 @@ private struct CategoryRow: View {
                         // el 2026-09-02: las barras eran el 47 % de la superficie
                         // de color saturado de la tarjeta, y los iconos el 35 %.
                         Capsule()
-                            .fill(Color(hex: summary.category.colorHex).opacity(0.22))
+                            .fill(Color(hex: summary.colorHex).opacity(0.22))
                             .frame(width: width, height: 6)
                     }
                     .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
