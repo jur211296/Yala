@@ -415,10 +415,16 @@ struct PanelView: View {
             reconcileAccountsSortOrder()
         }
         .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
-        .modifier(PanelSettingsReturnOpening(isPresentingSettings: sheets.isPresentingSettings) { destination in
-            sheets.settingsInitialDestination = destination
-            sheets.isPresentingSettings = true
-        })
+        .modifier(PanelSettingsReturnOpening(
+            isPresentingSettings: sheets.isPresentingSettings,
+            open: { destination in
+                sheets.settingsInitialDestination = destination
+                sheets.isPresentingSettings = true
+            },
+            release: {
+                sheets.isPresentingSettings = false
+                sheets.settingsInitialDestination = nil
+            }))
         .modifier(PanelAccountAlertOpening { sheets.accountDetail = AccountDetailPresentation(account: $0) })
     }
 
@@ -792,12 +798,14 @@ private struct PanelKeyboardRequestObserver: ViewModifier {
 /// UX 2.2 · L16-5: tras cambiar el idioma con el selector de Yala, la app se reconstruye y la hoja de Ajustes se cierra;
 /// este Panel, recién montado, la reabre en el ajuste de donde se salió (`SceneNavigation.pendingSettingsReturn`). Solo
 /// al APARECER o al quedar delante: el Panel de antes del cambio ya está delante y con la hoja encima, así que no abre
-/// una segunda. Una vuelta del main actor después: una presentación pedida en el primer `onAppear` de una vista que se
-/// está montando puede perderse (`swiftui-ds.md`).
+/// una segunda. **Y solo con la ventana libre** (`SettingsReturnOpening`): al aparecer, Ajustes y el selector de antes
+/// siguen cerrándose, y pedirla ahí hacía que UIKit la rechazara («already presenting») con el flag ya en `true`: el
+/// botón de Ajustes quedaba muerto hasta cerrar la app (card 6d71, medido el 2026-10-24).
 private struct PanelSettingsReturnOpening: ViewModifier {
     @Environment(SceneNavigation.self) private var navigation
     let isPresentingSettings: Bool
     let open: (ProfileDestination) -> Void
+    let release: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -809,7 +817,27 @@ private struct PanelSettingsReturnOpening: ViewModifier {
         guard navigation.selectedMainTab == .panel, !isPresentingSettings,
               let destination = navigation.pendingSettingsReturn else { return }
         navigation.pendingSettingsReturn = nil
-        Task { @MainActor in open(destination) }
+        let windowID = navigation.id
+        Task { @MainActor in
+            let outcome = await SettingsReturnOpening.run(
+                isWindowPresenting: {
+                    ModalPresentationProbe.isAnythingPresented(in: SceneRegistry.shared.windowScene(for: windowID))
+                },
+                open: { open(destination) },
+                release: release,
+                pause: {
+                    do {
+                        try await Task.sleep(for: SettingsReturnOpening.pollInterval)
+                    } catch {
+                        #if DEBUG
+                        print("PanelSettingsReturnOpening: Error: \(error)")
+                        #endif
+                    }
+                })
+            #if DEBUG
+            if outcome != .presented { print("PanelSettingsReturnOpening: Ajustes no se reabrió (\(outcome))") }
+            #endif
+        }
     }
 }
 

@@ -140,6 +140,7 @@
 - [Card que ya falló no va a la tanda](feedback_barrido_una_card_que_ya_fallo_no_va_a_la_tanda.md) — n5zw a la cola; qb1r falló a mano con unit en verde.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números…
 - [El control que no recorre el camino no descarta](feedback_el_control_que_no_recorre_el_camino_no_descarta.md) — «sin X funciona» no aísla X si X cambia la ruta.
+- [Una carrera de presentación no se mide a mano](feedback_una_carrera_de_presentacion_no_se_mide_a_mano.md) — axe lento gana la carrera; XCUITest + sonda + log stream.
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de ded…
 - [Una carrera se prueba con el último escritor](feedback_una_carrera_se_prueba_con_el_ultimo_escritor.md) — con el código viejo: si lee y escribe sin `await`, es el dato.
 - [Un flaky «de entorno» se mide a mano](feedback_el_flaky_de_entorno_se_mide_lanzando_a_mano.md) — N arranques con simctl + prints; el de la oferta en cola era producto.

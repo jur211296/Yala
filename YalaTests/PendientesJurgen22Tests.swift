@@ -102,13 +102,18 @@ struct AppLanguageRowLogicTests {
     @Test("El Panel recién montado reabre Ajustes en el ajuste apuntado, y solo él")
     func panelReopensSettings() throws {
         let panel = try PJ22Repo.code("Yala/App/Views/Panel/PanelView.swift")
-        #expect(panel.contains(".modifier(PanelSettingsReturnOpening(isPresentingSettings: sheets.isPresentingSettings) {"))
+        #expect(panel.contains(".modifier(PanelSettingsReturnOpening(\n            isPresentingSettings: sheets.isPresentingSettings,"))
         let opening = try PJ22Repo.slice(panel, from: "private struct PanelSettingsReturnOpening: ViewModifier {",
                                          to: "private struct PanelAccountAlertOpening")
         #expect(opening.contains(".onAppear { openIfFront() }"))
         #expect(!opening.contains("onChange(of: navigation.pendingSettingsReturn"),
                 "el Panel de antes del cambio, con Ajustes encima, abriría una segunda hoja")
         #expect(opening.contains("navigation.pendingSettingsReturn = nil"))
+        // Card 6d71: la hoja se pide con la ventana libre y con red si no llega; pedida en el acto, UIKit la rechazaba
+        // («already presenting») y el flag quedaba en `true`: el botón de Ajustes, muerto hasta cerrar la app.
+        #expect(opening.contains("SettingsReturnOpening.run("))
+        #expect(opening.contains("ModalPresentationProbe.isAnythingPresented(in: SceneRegistry.shared.windowScene(for: windowID))"))
+        #expect(!opening.contains("Task { @MainActor in open(destination) }"), "volvió la petición sin esperar a la ventana")
         let sheets = try PJ22Repo.code("Yala/App/Views/Panel/PanelSheetsModifier.swift")
         #expect(sheets.contains("ProfileView(initialDestination: sheets.settingsInitialDestination)"))
         #expect(sheets.contains("sheets.settingsInitialDestination = nil"))
