@@ -4017,8 +4017,8 @@
 "welcome.chooser.optionNew.body" = "Beginnen Sie mit mir bei null. Ich helfe Ihnen, alles Schritt für Schritt einzurichten.";
 "welcome.chooser.optionExisting.title" = "Ich habe bereits ein Konto";
 "welcome.chooser.optionExisting.body" = "Ich habe Yala schon benutzt und möchte meine Daten zurück – aus iCloud oder aus meinem Konto.";
-"welcome.chooser.optionInvite.title" = "Ich komme wegen einer Gruppe";
-"welcome.chooser.optionInvite.body" = "Ich will Ausgaben mit Freunden teilen: eine Gruppe erstellen oder einer beitreten.";
+"welcome.chooser.optionInvite.title" = "Ausgaben mit Freunden teilen";
+"welcome.chooser.optionInvite.body" = "Reisen, WG, Ausgehen: Erstelle eine Gruppe oder tritt der deiner Freunde bei. Ohne deine eigenen Finanzen zu führen.";
 
 "welcome.restore.searching" = "Ihre Daten werden in iCloud gesucht…";
 "welcome.restore.searchingTip" = "Das kann ein paar Sekunden dauern.";
@@ -5269,6 +5269,8 @@
 "welcome.new.privateBody" = "Deine Daten bleiben auf den Apple-Geräten deiner Apple-ID und werden über deine private iCloud synchronisiert. Niemand sonst kann sie lesen, auch wir nicht.";
 "welcome.new.cloudTitle" = "Dein Konto in der Cloud";
 "welcome.new.cloudBody" = "Deine Daten liegen auf unseren Servern, wie bei den meisten deiner Apps. Unser Team kann sie einsehen, um dir zu helfen und neue Funktionen zu bauen.";
+"welcome.new.groupsQuestion" = "Nur zum Ausgabenteilen hier?";
+"welcome.new.groupsAction" = "Hier entlang";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Erstelle dein Yala-Konto";
@@ -5294,7 +5296,7 @@
 "welcome.bornCloud.readyCta" = "Loslegen";
 
 /* Title of the two-paths groups screen in the Welcome flow */
-"welcome.groups.title" = "Wie möchtest du mit deiner Gruppe starten?";
+"welcome.groups.title" = "Wie möchtest du starten?";
 
 /* Subtitle of the two-paths groups screen in the Welcome flow */
 "welcome.groups.subtitle" = "Beide Wege führen zum selben Ziel.";
@@ -5306,10 +5308,10 @@
 "welcome.groups.createBody" = "Du lädst ein. Trag ein, wer was zahlt — Yala führt die Abrechnung.";
 
 /* Card title: the user already received an invitation link */
-"welcome.groups.joinTitle" = "Ich habe eine Einladung";
+"welcome.groups.joinTitle" = "Ich wurde in eine Gruppe eingeladen";
 
 /* Card body: paste the invitation link to join */
-"welcome.groups.joinBody" = "Füge den Link ein, den du bekommen hast, und du bist dabei.";
+"welcome.groups.joinBody" = "Öffne den Link, den du bekommen hast, oder füge ihn hier ein.";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "Wir prüfen, ob alles bereit ist …";

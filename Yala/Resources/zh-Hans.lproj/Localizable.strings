@@ -4049,8 +4049,8 @@
 "welcome.chooser.optionNew.body" = "和我从零开始吧。我会一步步帮你配置好一切。";
 "welcome.chooser.optionExisting.title" = "我已经有账户了";
 "welcome.chooser.optionExisting.body" = "我以前用过 Yala，想恢复我的数据，不管在 iCloud 还是在我的账户里。";
-"welcome.chooser.optionInvite.title" = "我是为群组而来";
-"welcome.chooser.optionInvite.body" = "我想和朋友分摊开销：创建群组或加入一个。";
+"welcome.chooser.optionInvite.title" = "和朋友分摊费用";
+"welcome.chooser.optionInvite.body" = "旅行、合租、聚会：创建群组，或加入朋友的群组。无需记录个人财务。";
 
 "welcome.restore.searching" = "正在 iCloud 中查找你的数据…";
 "welcome.restore.searchingTip" = "这可能需要几秒钟。";
@@ -5281,6 +5281,8 @@
 "welcome.new.privateBody" = "数据保存在使用你 Apple ID 的 Apple 设备上，通过你的私人 iCloud 同步。其他人都读不到，我们也一样。";
 "welcome.new.cloudTitle" = "你的云端账户";
 "welcome.new.cloudBody" = "数据保存在我们的服务器上，和你大多数应用一样。我们的团队可以查看，用于为你提供支持和新功能。";
+"welcome.new.groupsQuestion" = "只想和朋友分摊费用？";
+"welcome.new.groupsAction" = "从这里开始";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "创建你的 Yala 账户";
@@ -5306,7 +5308,7 @@
 "welcome.bornCloud.readyCta" = "开始";
 
 /* Title of the two-paths groups screen in the Welcome flow */
-"welcome.groups.title" = "你想怎样开始你的群组？";
+"welcome.groups.title" = "你想怎样开始？";
 
 /* Subtitle of the two-paths groups screen in the Welcome flow */
 "welcome.groups.subtitle" = "两条路最终都到同一个地方。";
@@ -5318,10 +5320,10 @@
 "welcome.groups.createBody" = "由你来邀请。记下每个人付了多少，Yala 帮你算账。";
 
 /* Card title: the user already received an invitation link */
-"welcome.groups.joinTitle" = "我收到了邀请";
+"welcome.groups.joinTitle" = "我被邀请加入群组";
 
 /* Card body: paste the invitation link to join */
-"welcome.groups.joinBody" = "粘贴收到的链接，就能加入群组。";
+"welcome.groups.joinBody" = "打开收到的链接，或粘贴到这里。";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "正在确认一切就绪…";

@@ -4049,8 +4049,8 @@
 "welcome.chooser.optionNew.body" = "Begin met mij vanaf nul. Ik help je stap voor stap alles in te stellen.";
 "welcome.chooser.optionExisting.title" = "Ik heb al een account";
 "welcome.chooser.optionExisting.body" = "Ik heb Yala eerder gebruikt en wil mijn gegevens terug, uit iCloud of uit mijn account.";
-"welcome.chooser.optionInvite.title" = "Ik kom voor een groep";
-"welcome.chooser.optionInvite.body" = "Ik wil kosten delen met vrienden: een groep maken of aan een groep meedoen.";
+"welcome.chooser.optionInvite.title" = "Kosten met vrienden delen";
+"welcome.chooser.optionInvite.body" = "Reizen, huisgenoten, uitjes: maak een groep of doe mee met die van je vrienden. Zonder je eigen financiën bij te houden.";
 
 "welcome.restore.searching" = "Je gegevens zoeken in iCloud…";
 "welcome.restore.searchingTip" = "Dit kan een paar seconden duren.";
@@ -5281,6 +5281,8 @@
 "welcome.new.privateBody" = "Je gegevens blijven op de Apple-apparaten van je Apple ID en synchroniseren via je privé-iCloud. Niemand anders kan ze lezen, wij ook niet.";
 "welcome.new.cloudTitle" = "Je account in de cloud";
 "welcome.new.cloudBody" = "Je gegevens staan op onze servers, net als bij de meeste van je apps. Ons team kan ze inzien om je te helpen en nieuwe functies te maken.";
+"welcome.new.groupsQuestion" = "Alleen hier om kosten te delen?";
+"welcome.new.groupsAction" = "Begin hier";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Maak je Yala-account";
@@ -5306,7 +5308,7 @@
 "welcome.bornCloud.readyCta" = "Beginnen";
 
 /* Title of the two-paths groups screen in the Welcome flow */
-"welcome.groups.title" = "Hoe wil je met je groep beginnen?";
+"welcome.groups.title" = "Hoe wil je beginnen?";
 
 /* Subtitle of the two-paths groups screen in the Welcome flow */
 "welcome.groups.subtitle" = "Beide routes brengen je op dezelfde plek.";
@@ -5318,10 +5320,10 @@
 "welcome.groups.createBody" = "Jij nodigt uit. Noteer wat iedereen betaalt en Yala houdt de rekening bij.";
 
 /* Card title: the user already received an invitation link */
-"welcome.groups.joinTitle" = "Ik heb een uitnodiging";
+"welcome.groups.joinTitle" = "Ik ben uitgenodigd voor een groep";
 
 /* Card body: paste the invitation link to join */
-"welcome.groups.joinBody" = "Plak de link die je hebt gekregen en je doet mee.";
+"welcome.groups.joinBody" = "Open de link die je hebt gekregen, of plak hem hier.";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "We controleren of alles klaar is…";
