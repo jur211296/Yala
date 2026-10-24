@@ -4017,8 +4017,8 @@
 "welcome.chooser.optionNew.body" = "Comece do zero comigo. Te ajudo a configurar tudo passo a passo.";
 "welcome.chooser.optionExisting.title" = "Já tenho conta";
 "welcome.chooser.optionExisting.body" = "Já usei o Yala e quero recuperar meus dados, do iCloud ou da minha conta.";
-"welcome.chooser.optionInvite.title" = "Vim por causa de um grupo";
-"welcome.chooser.optionInvite.body" = "Quero dividir despesas com amigos: criar um grupo ou entrar em um.";
+"welcome.chooser.optionInvite.title" = "Dividir despesas com amigos";
+"welcome.chooser.optionInvite.body" = "Viagens, república, rolês: crie um grupo ou entre no dos seus amigos. Sem precisar controlar suas finanças.";
 
 "welcome.restore.searching" = "Buscando seus dados no iCloud…";
 "welcome.restore.searchingTip" = "Pode levar alguns segundos.";
@@ -5269,6 +5269,8 @@
 "welcome.new.privateBody" = "Seus dados ficam nos dispositivos Apple do seu Apple ID e sincronizam pelo seu iCloud privado. Ninguém mais consegue lê-los, nem a gente.";
 "welcome.new.cloudTitle" = "Sua conta na nuvem";
 "welcome.new.cloudBody" = "Seus dados ficam nos nossos servidores, como na maioria dos seus apps. Nosso time pode vê-los para te dar suporte e novos recursos.";
+"welcome.new.groupsQuestion" = "Só quer dividir despesas?";
+"welcome.new.groupsAction" = "Comece por aqui";
 
 /* A5 de D-A7 — alta born-cloud: intro del alta. Las terminales (relanzamiento, espera, mismatch, error) reusan welcome.cloud.* */
 "welcome.bornCloud.title" = "Crie sua conta Yala";
@@ -5294,7 +5296,7 @@
 "welcome.bornCloud.readyCta" = "Começar";
 
 /* Title of the two-paths groups screen in the Welcome flow */
-"welcome.groups.title" = "Como você quer começar com seu grupo?";
+"welcome.groups.title" = "Como você quer começar?";
 
 /* Subtitle of the two-paths groups screen in the Welcome flow */
 "welcome.groups.subtitle" = "Os dois caminhos levam ao mesmo lugar.";
@@ -5306,10 +5308,10 @@
 "welcome.groups.createBody" = "Você convida. Registra o que cada um paga e o Yala faz as contas.";
 
 /* Card title: the user already received an invitation link */
-"welcome.groups.joinTitle" = "Tenho um convite";
+"welcome.groups.joinTitle" = "Me convidaram para um grupo";
 
 /* Card body: paste the invitation link to join */
-"welcome.groups.joinBody" = "Cole o link que te enviaram e você entra no grupo.";
+"welcome.groups.joinBody" = "Abra o link que te mandaram, ou cole aqui.";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "Verificando se está tudo pronto…";

@@ -131,6 +131,10 @@ struct WelcomeFlowContainer: View {
     var onRestoreOrigin: (WelcomeFlowStep) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
+    /// De qué pantalla se abrió el 2.º nivel de grupos, y por tanto a dónde vuelve su «Volver»: la fila del elector o la
+    /// pregunta de pie de «Es mi primera vez» (propuesta B, 24-oct). Lo escribe cada productor al abrirlo; la vuelta
+    /// desde la puerta de crear no lo toca. Si el cover se re-monta, cae al elector, que la persona también vio.
+    @State private var groupsChooserOrigin: WelcomeFlowStep = .chooser
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -237,7 +241,7 @@ struct WelcomeFlowContainer: View {
                         // G2: la card ya no es «me invitaron» sino «vengo por un grupo», así que no
                         // puede salir directa a la recuperación de invitación — abre el step de los
                         // dos caminos y es ahí donde el invitado elige el suyo.
-                        case .invite: goTo(.groupsChooser)
+                        case .invite: openGroupsChooser(from: .chooser)
                         }
                     },
                     onBack: { goTo(.hero) }
@@ -252,7 +256,7 @@ struct WelcomeFlowContainer: View {
                     onJoin: {
                         leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
                     },
-                    onBack: { goTo(.chooser) }
+                    onBack: { goTo(groupsChooserOrigin) }
                 )
                 .transition(.opacity)
             case .groupsGate(let purpose):
@@ -297,7 +301,10 @@ struct WelcomeFlowContainer: View {
                 WelcomeNewChooserView(
                     options: visibleNewOptions,
                     onSelect: { option in handleNewOption(option) },
-                    onBack: { goTo(.chooser) }
+                    onBack: { goTo(.chooser) },
+                    // Propuesta B: «¿Solo vienes a dividir gastos? Empieza por aquí» lleva al MISMO 2.º nivel que la fila
+                    // de grupos del elector, y su «Volver» devuelve aquí.
+                    onStartGroups: { openGroupsChooser(from: .newChooser) }
                 )
                 .transition(.opacity)
             case .privateICloudGate:
@@ -579,6 +586,12 @@ struct WelcomeFlowContainer: View {
             // R2: pasa por el portal igual que los demás, y sale sin relanzar — que es el chip entero.
             leaveWelcome(to: .cloudAccount) { onSelectCloudAccount() }
         }
+    }
+
+    /// Abre el 2.º nivel de grupos apuntando de dónde se vino (`WelcomeBackStepLogic.groupsChooserOrigin`).
+    private func openGroupsChooser(from origin: WelcomeFlowStep) {
+        groupsChooserOrigin = WelcomeBackStepLogic.groupsChooserOrigin(openedFrom: origin)
+        goTo(.groupsChooser)
     }
 
     private func goTo(_ next: WelcomeFlowStep) {

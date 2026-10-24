@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1047)
+## Index (1048)
 
 | id | status | path |
 |---|---|---|
@@ -1049,6 +1049,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-fresh-install-neutral-mount-lasts-one-launch | backlog | tickets/backlog/welcome-fresh-install-neutral-mount-lasts-one-launch.md |
 | welcome-fresh-start-alert-leaves-blank-screen | done | tickets/done/welcome-fresh-start-alert-leaves-blank-screen.md |
 | welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | backlog | tickets/backlog/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
+| welcome-groups-back-forgets-first-time-after-invite-screen | backlog | tickets/backlog/welcome-groups-back-forgets-first-time-after-invite-screen.md |
 | welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen | backlog | tickets/backlog/welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen.md |
 | welcome-privacy-branch-has-no-secondary-door | discarded | tickets/discarded/welcome-privacy-branch-has-no-secondary-door.md |
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |

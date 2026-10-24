@@ -27,6 +27,14 @@ enum WelcomeBackStepLogic {
         step == .existingChooser ? .existingChooser : .chooser
     }
 
+    /// A dónde vuelve «Volver» del 2.º nivel de grupos («¿Cómo empiezas?»). Se abre desde la fila del elector o desde la
+    /// pregunta de pie de «Es mi primera vez» (propuesta B del estudio de solo-grupos, 24-oct), y vuelve a la que lo
+    /// abrió: mandar al elector a quien vino de «Es mi primera vez» le haría subir un nivel de más, el mismo defecto que
+    /// `restoreOrigin` corrigió. Cualquier otro origen cae al elector de primer nivel, que la persona sí vio.
+    static func groupsChooserOrigin(openedFrom step: WelcomeFlowStep) -> WelcomeFlowStep {
+        step == .newChooser ? .newChooser : .chooser
+    }
+
     /// ¿Cancelar el consentimiento de la nube sale de la entrada entera? Solo cuando la entrada lo pidió (la abrió
     /// «¡Hola de nuevo!», donde el consentimiento es su primera pantalla) y la pantalla sigue en el intro — es decir,
     /// nada se ha firmado todavía. Con el flujo en marcha el consentimiento no se enseña, pero si una fase posterior

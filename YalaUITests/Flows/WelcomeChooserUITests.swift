@@ -126,6 +126,48 @@ final class WelcomeChooserUITests: XCTestCase {
                       "El back no volvió al chooser.")
     }
 
+    /// **La salida a grupos de «Es mi primera vez»** (propuesta B del estudio de solo-grupos, decisión de Jürgen del
+    /// 24-oct). Quien viene solo a dividir gastos y entra por la puerta de los nuevos encuentra, bajo la elección de
+    /// nube, «¿Solo vienes a dividir gastos? Empieza por aquí»: lleva al MISMO 2.º nivel de grupos que la fila del
+    /// elector, y su «Volver» devuelve a «Es mi primera vez», no al elector.
+    ///
+    /// Discrimina las dos mitades: las cards de grupos prueban que se llegó al 2.º nivel y no a otro sitio, y la card de
+    /// nube tras el «Volver» prueba el origen — con el «Volver» fijo al elector de siempre, sale `welcome_chooser_new`.
+    /// Con faro o con una sola opción de nube esta pantalla no se monta (lo fijan los hermanos de abajo) y B no se ve.
+    func testNewChooser_groupsFooter_opensGroupsAndBackReturnsHere() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            fakeAttestSupport: true,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 10), "No apareció la card «Es mi primera vez».")
+        newBranch.tap()
+
+        let cloudCard = app.buttons["welcome_new_cloud"]
+        XCTAssertTrue(cloudCard.waitForExistence(timeout: 10), "No apareció «Es mi primera vez» con la elección de nube.")
+        let groupsExit = app.buttons["welcome_new_start_groups"]
+        XCTAssertTrue(groupsExit.exists, "Falta la pregunta de pie «¿Solo vienes a dividir gastos?».")
+        groupsExit.tap()
+
+        XCTAssertTrue(app.buttons["welcome_groups_create"].waitForExistence(timeout: 10),
+                      "«Empieza por aquí» no llevó al 2.º nivel de grupos.")
+        XCTAssertTrue(app.buttons["welcome_groups_join"].exists, "Falta la card de unirse en el 2.º nivel de grupos.")
+
+        let backButton = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del 2.º nivel.")
+        backButton.tap()
+        XCTAssertTrue(cloudCard.waitForExistence(timeout: 10),
+                      "El «Volver» del 2.º nivel no devolvió a «Es mi primera vez», de donde se vino.")
+    }
+
     /// **Sin App Attest, «Es mi primera vez» no ofrece la nube** (ticket
     /// `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`). Es la CONDICIÓN con el predicado real: el
     /// simulador no tiene App Attest, y `-uitest-cloud-chooser` destapa todo lo demás, así que lo único que puede esconder
@@ -209,6 +251,10 @@ final class WelcomeChooserUITests: XCTestCase {
                       "«Crear otra cuenta» no llegó al chooser, o lo recortó sin la card privada.")
         XCTAssertTrue(app.buttons["welcome_new_cloud"].exists,
                       "«Crear otra cuenta» abrió el chooser sin la card de la nube.")
+        // Es la misma pantalla de «Es mi primera vez», así que trae su salida a grupos (propuesta B, 24-oct). El aviso del
+        // faro de arriba, no: ahí la persona aún no ha pedido elegir.
+        XCTAssertTrue(app.buttons["welcome_new_start_groups"].exists,
+                      "«Crear otra cuenta» abrió «Es mi primera vez» sin la salida a grupos.")
     }
 
     /// **«Crear otra cuenta» sin App Attest: el chooser con UNA card, la privada** (ticket
