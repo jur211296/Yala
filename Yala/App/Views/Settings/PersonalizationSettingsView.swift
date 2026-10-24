@@ -843,6 +843,7 @@ private struct LanguagePickerSheet: View {
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .accessibilityIdentifier("app_language_option_\(lang.code)")
 
             if lang.code != LanguageManager.supportedLanguages.last?.code {
                 Divider()

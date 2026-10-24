@@ -56,6 +56,14 @@ paths:
   `onAppear`, y el `onAppear` de `BudgetsListView` —el que hace `setContext`— aún no había corrido: lista vacía, el
   aviso consumido y nada abierto. Lo cazó un XCUITest en rojo. ⇒ **lo que un modificador lea al aparecer lo prepara él**
   (aquí, `viewModel.setContext(modelContext)` idempotente antes de leer), no cuenta con el orden de los `onAppear`.
+- **Una hoja pedida por una vista recién montada tras una reconstrucción (`.id(...)` de `ContentView`) puede llegar con las
+  hojas del árbol VIEJO aún cerrándose, y UIKit la rechaza (medido el 2026-10-24, iOS 27.0, card 6d71).** Al cambiar el
+  idioma, el Panel nuevo pedía Ajustes en su `onAppear` (+ una vuelta del main actor) con Ajustes y el selector de antes
+  todavía presentados: `Attempt to present … which is already presenting`, la ventana quedaba vacía medio segundo después
+  y el flag `isPresentingSettings` en `true` sin hoja — el botón de Ajustes, muerto hasta cerrar la app. Iba por la
+  carrera: a mano, con toques lentos, salía bien; el XCUITest caía 2 de 3. ⇒ **espera a que la ventana no tenga nada
+  presentado (`ModalPresentationProbe`) y verifica que la hoja llegó; si no, baja el flag** (`SettingsReturnOpening`).
+  Una vuelta del main actor no basta: el cierre de UIKit dura ~0,3-0,5 s.
 - **Un empuje con `navigationDestination(item:)` pedido en el PRIMER `onAppear` de una vista que se está montando por un
   cambio de chip se pierde sin aviso (medido el 2026-10-17, iOS 27.0, lote 10).** El recordatorio de un pago cambia
   Planificación al chip de Pagos y, en el mismo instante, `ScheduledPaymentAlertOpening` ponía el `item`: encontraba el

@@ -3606,6 +3606,7 @@
         "Yala/App/Views/Settings/PermissionsSettingsView.swift",
         "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
         "Yala/App/Logic/AppLanguageRowLogic.swift",
+        "Yala/App/Logic/SettingsReturnOpening.swift",
         "Yala/App/Models/SceneNavigation.swift",
         "Yala/App/Views/Panel/PanelView.swift",
         "Yala/App/Views/Panel/PanelSheetState.swift",
@@ -3620,8 +3621,8 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "2026-10-23 (sesión «Pendientes de Jürgen 2.2», sin simulador por encargo): D23 Ajustes en «Seguridad y privacidad» + «Tu cuenta» (Siri a Preferencias, Valorar/Recomendar a Ayuda); L16-14 fila Face ID con «Ver cómo» a la guía; L16-5 idioma híbrido (iOS con varios idiomas, selector de Yala con uno o con override; vuelve a Personalización por `SceneNavigation.pendingSettingsReturn`); fptw tarjeta de avisos en el gasto de L13-8 y una vez en la lista de Grupos; L20-15 «Datos no disponibles» como hoja. unit:YalaTests/PendientesJurgen22Tests + UXAudit22Lote20NubeTests (remoteWipe_*) + RemoteWipeSignalWiringTests. xcuitest actualizado sin correr en local: YalaUITests/Flows/RemoteWipeNoticeRoutingUITests (lo corre el CI). Device-QA pendiente con guion en las cards.",
-      "lastVerified": "2026-10-23"
+      "coverage": "2026-10-23 (sesión «Pendientes de Jürgen 2.2», sin simulador por encargo): D23 Ajustes en «Seguridad y privacidad» + «Tu cuenta» (Siri a Preferencias, Valorar/Recomendar a Ayuda); L16-14 fila Face ID con «Ver cómo» a la guía; L16-5 idioma híbrido (iOS con varios idiomas, selector de Yala con uno o con override; vuelve a Personalización por `SceneNavigation.pendingSettingsReturn`); fptw tarjeta de avisos en el gasto de L13-8 y una vez en la lista de Grupos; L20-15 «Datos no disponibles» como hoja. unit:YalaTests/PendientesJurgen22Tests + UXAudit22Lote20NubeTests (remoteWipe_*) + RemoteWipeSignalWiringTests. xcuitest actualizado sin correr en local: YalaUITests/Flows/RemoteWipeNoticeRoutingUITests (lo corre el CI). Device-QA pendiente con guion en las cards. | 2026-10-24 (card 6d71): tras elegir idioma en el selector de Yala, Ajustes no volvía y el botón de Ajustes quedaba muerto: el Panel nuevo pedía la hoja con Ajustes y el selector de antes aún cerrándose, UIKit la rechazaba («already presenting») y `isPresentingSettings` quedaba en true sin hoja. `SettingsReturnOpening` espera a la ventana libre (ModalPresentationProbe), comprueba que la hoja llegó y si no baja el flag. unit:YalaTests/SettingsReturnOpeningTests + PendientesJurgen22Tests#panelReopensSettings (source-scan) + xcuitest:YalaUITests/AppLanguageSettingsReturnUITests#test_changingLanguage_reopensPersonalization_andSettingsButtonKeepsOpening (un idioma en el iPhone, ida y vuelta es→en→es). Sin probar: la ruta de iOS con dos idiomas en el iPhone (device-QA de Jürgen).",
+      "lastVerified": "2026-10-24"
     }
   ]
 }
