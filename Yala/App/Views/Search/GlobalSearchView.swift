@@ -134,7 +134,7 @@ struct SearchContentView: View {
 
     private var baseTransactions: [TransactionItem] {
         sessionState.isExpensesOnlyMode
-            ? transactions.filter { $0.category?.isIncome != true }
+            ? transactions.filter { !TransactionClassificationLogic.isIncome($0) }
             : transactions
     }
 

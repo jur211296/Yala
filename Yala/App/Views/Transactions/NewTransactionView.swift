@@ -1819,8 +1819,9 @@ struct NewTransactionView: View {
             // Load category/subcategory
             viewModel.selectedSubcategory = tx.subcategory
 
-            // Determine transaction type from amount sign and category
-            if tx.subcategory?.safeCategory.isIncome == true || tx.amount > 0 {
+            // Ingreso o gasto con la regla de toda la app (la categoría manda; sin categoría, el signo). Con el `||` de
+            // antes, un gasto con importe positivo (una devolución) se abría para editar como Ingreso.
+            if TransactionClassificationLogic.isIncome(tx) {
                 viewModel.transactionType = .income
             } else {
                 viewModel.transactionType = .expense

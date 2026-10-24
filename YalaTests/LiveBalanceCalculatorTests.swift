@@ -218,8 +218,8 @@ struct LiveBalanceCalculatorTests {
     }
 
     @Test func liveBalance_excludeMode_allAccountsExcluded_isZeroNotTotal() {
-        // El fallback al total es SOLO del modo incluir. Excluir todas debe dar
-        // 0, no el agregado — si no, "excluir" acabaría mostrando el total.
+        // Excluir todas debe dar 0, no el agregado — si no, "excluir" acabaría
+        // mostrando el total. (Desde el 2026-10-23 tampoco el modo incluir cae al total.)
         let acc1 = makeAccount(name: "A1", currencyCode: "USD")
         let acc2 = makeAccount(name: "A2", currencyCode: "USD")
         let tx1 = makeTransaction(amount: 100, currencyCode: "USD", account: acc1)
@@ -278,10 +278,12 @@ struct LiveBalanceCalculatorTests {
         #expect(breakdown.nativeBalances.count == 2)
     }
 
-    @Test func liveBalance_selectedAccountIDExcluded_fallsBackToTotal() {
-        // Si la cuenta seleccionada está excluida, comportamiento actual de
-        // BalanceHelper.displayedBalance es caer al total agregado
-        // (sumando todas las no-excluidas).
+    /// Retirado a conciencia el 2026-10-23 (decisión A de Jürgen del 2026-10-08, ticket
+    /// `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`): el test anterior,
+    /// `liveBalance_selectedAccountIDExcluded_fallsBackToTotal`, fijaba que una selección de solo cuentas excluidas caía al
+    /// total agregado. Ahora da 0, como los widgets del Panel y Estadísticas. El fixture es el mismo y discrimina: con el
+    /// fallback daría 200.
+    @Test func liveBalance_selectedAccountIDExcluded_isZero_likeStatistics() {
         let included = makeAccount(name: "In", currencyCode: "USD")
         let excluded = makeAccount(name: "Out", currencyCode: "USD", excludeFromStatistics: true)
         let txIn = makeTransaction(amount: 200, currencyCode: "USD", account: included)
@@ -291,10 +293,10 @@ struct LiveBalanceCalculatorTests {
             accounts: [included, excluded],
             transactions: [txIn, txOut],
             preferredCurrencyCode: "USD",
-            selectedAccountIDs: [excluded.persistentModelID],  // excluida → fallback total
+            selectedAccountIDs: [excluded.persistentModelID],  // solo una excluida → ninguna cuenta contable
             converter: MockCurrencyConverter()
         )
-        #expect(result == 200)  // solo cuenta la incluida
+        #expect(result == 0)  // ni 200 (el fallback al total de antes) ni 999 (la excluida)
     }
 
     @Test func liveBalance_transferMultiCurrency_bothSidesCounted() {

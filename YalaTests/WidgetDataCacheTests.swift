@@ -113,7 +113,8 @@ struct WidgetDataCacheTests {
     // MARK: - Period summary
 
     @Test func periodSummary_classifiesIncomeByCategoryNotSign() {
-        // Refund (negativo + isIncome=true) suma a totalIncome, NO a totalExpense.
+        // Un importe negativo en categoría de ingreso es del lado del ingreso (lo decide la categoría) y, con signo, lo
+        // RESTA: como el Flujo de caja y Registros de la app (desde el 2026-10-23; antes sumaba su magnitud).
         let refund = makeTx(amount: -50, category: incomeCategory)
         let realExpense = makeTx(amount: -200, category: expenseCategory)
         let realIncome = makeTx(amount: 1000, category: incomeCategory)
@@ -125,24 +126,26 @@ struct WidgetDataCacheTests {
             currencyCode: "PEN"
         )
 
-        #expect(summary.totalIncome == 1050)  // 50 refund + 1000 income
+        #expect(summary.totalIncome == 950)  // 1000 de ingreso − 50 en contra, en su mismo lado
         #expect(summary.totalExpense == 200)
     }
 
-    @Test func periodSummary_skipsTxWithoutCategory() {
-        // Tx sin categoría no se clasifica como income ni como expense.
+    /// Un movimiento sin categoría cuenta por su signo (decisión de Jürgen del 2026-09-06): hasta el 2026-10-23 el widget
+    /// lo descartaba y contaba otro mes que Registros.
+    @Test func periodSummary_uncategorizedCountsBySign() {
         let orphan = makeTx(amount: 500, category: nil)
+        let orphanExpense = makeTx(amount: -30, category: nil)
         let realExpense = makeTx(amount: -100, category: expenseCategory)
 
         let summary = WidgetDataCache.buildPeriodSummary(
-            transactions: [orphan, realExpense],
+            transactions: [orphan, orphanExpense, realExpense],
             periodStart: Date.distantPast,
             periodEnd: Date.distantFuture,
             currencyCode: "PEN"
         )
 
-        #expect(summary.totalIncome == 0)
-        #expect(summary.totalExpense == 100)
+        #expect(summary.totalIncome == 500)
+        #expect(summary.totalExpense == 130)
     }
 
     // MARK: - Top categories
@@ -179,7 +182,7 @@ struct WidgetDataCacheTests {
         )
 
         let dayPoint = points.first
-        #expect(dayPoint?.income == 50)  // refund: negativo + isIncome → income (abs)
+        #expect(dayPoint?.income == -50)  // negativo en categoría de ingreso: su lado, con signo (como los totales)
         #expect(dayPoint?.expense == 100)
     }
 

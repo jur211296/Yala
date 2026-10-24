@@ -69,12 +69,16 @@ return isExcludeMode
 
 Si tocas una, toca la otra. `BalanceKPIParityTests` fija la paridad y falla si divergen.
 
-**Divergencia conocida y viva** (no la «arregles» sin decidirlo): cuando la selección no resuelve a
-ninguna cuenta contable —p. ej. la única elegida está excluida de estadísticas— el Panel hace
-**fallback al total agregado** y Estadísticas devuelve **0**. Es comportamiento heredado de
-`BalanceHelper.displayedBalance`, fijado por
-`liveBalance_selectedAccountIDExcluded_fallsBackToTotal`. Ticket:
-`saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`.
+**Una selección que no resuelve a ninguna cuenta contable da 0 en las dos** —p. ej. la única elegida está excluida de
+estadísticas—. Hasta el 2026-10-23 el Panel hacía **fallback al total agregado** (herencia de
+`BalanceHelper.displayedBalance`) y su saldo grande contradecía a sus propios widgets; decisión A de Jürgen del
+2026-10-08, ticket `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`. Lo fija
+`liveBalance_selectedAccountIDExcluded_isZero_likeStatistics`. **No devuelvas un fallback** sin reabrir esa decisión.
+
+**Borrar una cuenta la quita del filtro** (`EntityDeletionService.deleteAccount` → `SessionState.forgetDeletedAccount`).
+Un borrador de cuentas nuevo pasa por ese embudo: un ID que sobrevive a su cuenta deja el Panel en 0 sin chip que lo
+explique. Lo que NO cubre: una cuenta que borra OTRO dispositivo y llega por sync deja su ID en la sesión hasta que
+cambie el filtro.
 
 ## Archivar no decide la suma: la decide «Excluir de las estadísticas»
 

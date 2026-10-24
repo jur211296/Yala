@@ -188,7 +188,9 @@ nonisolated enum AccountDetailCalculator {
     }
 
     static func isExpense(_ entry: Entry) -> Bool {
-        AccountSpendingLogic.countsAsSpending(adjustmentType: entry.adjustmentType, categoryIsIncome: entry.categoryIsIncome)
+        AccountSpendingLogic.countsAsSpending(
+            adjustmentType: entry.adjustmentType, categoryIsIncome: entry.categoryIsIncome, amount: entry.amount
+        )
     }
 
     /// Lo que el movimiento aporta a lo gastado (`nil` si no es gasto): una devolución resta.

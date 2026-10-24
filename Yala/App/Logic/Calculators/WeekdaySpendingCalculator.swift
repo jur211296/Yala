@@ -59,7 +59,7 @@ struct WeekdaySpendingCalculator {
 
         for tx in transactions {
             guard !adjustment.isSuppressed(tx) else { continue }
-            guard let category = tx.category, !category.isIncome else { continue }
+            guard !TransactionClassificationLogic.isIncome(tx) else { continue }
             guard tx.balanceAdjustmentType == nil else { continue }
 
             let weekday = calendar.component(.weekday, from: tx.date)

@@ -102,8 +102,10 @@ struct AccountSpendingParityTests {
             tx(-40, super_, day: 30, month: 9), tx(-700, nil, day: 4),
         ]
 
-        #expect(panelSpent(txs) == 150)
-        #expect(detailSpent(txs) == 150)
+        // El −700 sin categoría cuenta como gasto por su signo desde el 2026-10-23 (regla de toda la app,
+        // `TransactionClassificationLogic`); «En qué se fue» es un desglose por categoría y no tiene fila para él.
+        #expect(panelSpent(txs) == 850)
+        #expect(detailSpent(txs) == 850)
         #expect(topCategories(txs).map(\.amount) == [100, 50])
     }
 

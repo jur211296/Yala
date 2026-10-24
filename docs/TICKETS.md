@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1043)
+## Index (1046)
 
 | id | status | path |
 |---|---|---|
@@ -171,6 +171,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
 | cashflow-this-and-future-adjustment-rewrites-past-months | qa | tickets/qa/cashflow-this-and-future-adjustment-rewrites-past-months.md |
 | cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two | done | tickets/done/cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two.md |
+| category-breakdowns-leave-out-uncategorized-movements | backlog | tickets/backlog/category-breakdowns-leave-out-uncategorized-movements.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | done | tickets/done/changing-an-account-currency-orphans-its-whole-history.md |
 | chart-mark-labels-are-english-for-voiceover | backlog | tickets/backlog/chart-mark-labels-are-english-for-voiceover.md |
@@ -577,6 +578,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | indigo-accent-as-small-text-on-dark-themes-is-below-aa | backlog | tickets/backlog/indigo-accent-as-small-text-on-dark-themes-is-below-aa.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
+| insights-budgets-at-risk-compute-spent-on-their-own | backlog | tickets/backlog/insights-budgets-at-risk-compute-spent-on-their-own.md |
 | insights-cards-send-the-note-of-the-largest-expense | backlog | tickets/backlog/insights-cards-send-the-note-of-the-largest-expense.md |
 | insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | done | tickets/done/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
@@ -703,7 +705,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-balance-chart-contradicts-its-own-figure | done | tickets/done/panel-balance-chart-contradicts-its-own-figure.md |
 | panel-balance-curve-parity-test-depends-on-the-clock | done | tickets/done/panel-balance-curve-parity-test-depends-on-the-clock.md |
 | panel-balance-curve-parity-test-depends-on-the-day | done | tickets/done/panel-balance-curve-parity-test-depends-on-the-day.md |
-| panel-budget-spent-diverges-from-planning | backlog | tickets/backlog/panel-budget-spent-diverges-from-planning.md |
+| panel-budget-spent-diverges-from-planning | done | tickets/done/panel-budget-spent-diverges-from-planning.md |
 | panel-colapsa-la-seleccion-de-cuentas-a-la-primera | done | tickets/done/panel-colapsa-la-seleccion-de-cuentas-a-la-primera.md |
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | done | tickets/done/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
@@ -789,7 +791,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
 | records-delete-uitest-counts-only-visible-rows | backlog | tickets/backlog/records-delete-uitest-counts-only-visible-rows.md |
 | records-orphaned-by-earlier-account-deletions-stay-invisible | done | tickets/done/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
-| records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
+| records-standalone-amount-discrepancy | done | tickets/done/records-standalone-amount-discrepancy.md |
 | records-summary-approximate-mark-fails-only-alongside-group-suites | backlog | tickets/backlog/records-summary-approximate-mark-fails-only-alongside-group-suites.md |
 | records-summary-chips-hide-their-amount-from-voiceover | backlog | tickets/backlog/records-summary-chips-hide-their-amount-from-voiceover.md |
 | records-summary-mixes-preferred-currencies | done | tickets/done/records-summary-mixes-preferred-currencies.md |
@@ -875,7 +877,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rojo-xcuitest-runner-muere-tras-el-primer-caso | done | tickets/done/rojo-xcuitest-runner-muere-tras-el-primer-caso.md |
 | row-deleted-during-the-relief-wait-comes-back-after-the-relief | backlog | tickets/backlog/row-deleted-during-the-relief-wait-comes-back-after-the-relief.md |
 | rules-testing-habla-de-ios-27-que-no-existe | discarded | tickets/discarded/rules-testing-habla-de-ios-27-que-no-existe.md |
-| saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas | backlog | tickets/backlog/saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas.md |
+| saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas | done | tickets/done/saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas.md |
 | save-as-favorite-from-a-mismatched-row-relabels-it | done | tickets/done/save-as-favorite-from-a-mismatched-row-relabels-it.md |
 | save-error-alert-lies-when-the-context-autosaves | backlog | tickets/backlog/save-error-alert-lies-when-the-context-autosaves.md |
 | saved-record-notice-covers-the-panel-plus-button | backlog | tickets/backlog/saved-record-notice-covers-the-panel-plus-button.md |
@@ -1062,7 +1064,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa | backlog | tickets/backlog/white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa.md |
 | widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
 | widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
-| widget-balance-figure-and-curve-count-different-rows-for-accountless-movements | backlog | tickets/backlog/widget-balance-figure-and-curve-count-different-rows-for-accountless-movements.md |
+| widget-balance-figure-and-curve-count-different-rows-for-accountless-movements | done | tickets/done/widget-balance-figure-and-curve-count-different-rows-for-accountless-movements.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
@@ -1087,6 +1089,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | yala-ia-answer-renders-model-links-as-tappable | done | tickets/done/yala-ia-answer-renders-model-links-as-tappable.md |
+| yala-ia-classifies-uncategorized-movements-as-expense | backlog | tickets/backlog/yala-ia-classifies-uncategorized-movements-as-expense.md |
 | yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
 | yearly-scheduled-payment-on-feb-29-skips-common-years | backlog | tickets/backlog/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |

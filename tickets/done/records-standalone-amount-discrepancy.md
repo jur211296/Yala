@@ -1,11 +1,14 @@
 ---
 id: records-standalone-amount-discrepancy
-status: backlog
+status: done
 priority: medium
 area: calculos
 created: 2026-04-30
-updated: 2026-10-08
+updated: 2026-10-23
 source: YalaWiki/Backlog/p20-13_records-standalone-discrepancy.md
+implementation_date: 2026-10-23
+qa-date: 2026-10-23
+qa-notes: cerrado con IncomeExpenseScreenParityTests y 10 mutantes muertos
 ---
 
 # Los totales de ingresos y gastos no cuadran entre pantallas para el mismo período
@@ -333,3 +336,32 @@ La decisión del 2026-09-06 (fallback al signo) no está aplicada en ningún sit
 - No hay commits de clasificación en estos ficheros desde el 2026-09-06.
 
 Triage 2026-10-08: abierto · medium → medium · la convención decidida el 2026-09-06 sigue sin aplicar: `NewTransactionView.swift:1534`, `PivotTableCalculator.swift:195`, `HeroBucketsCalculator.swift:104` y `FilterService.swift:255`.
+
+## Implementación (2026-10-23, encargo `2026-10-23-cifras-distintas-mismo-dinero-2-2`, card vl1q)
+
+Aplicada la decisión del 2026-09-06 fuera del helper. Qué cambia para el usuario: el mismo mes da los mismos ingresos y
+gastos en el hero del Panel, el widget Flujo de caja, Observaciones, Registros, Tendencias, el Informe y los widgets de
+inicio, también con movimientos sin categoría o con signo contrario a su categoría; los chips Ingresos/Gastos ya no
+esconden el sin categoría.
+
+- **Regla única**: `TransactionClassificationLogic.isIncome` (+ `isIncome(categoryIsIncome:signedAmount:)` para datos
+  sueltos). Aplicada en `HeroBucketsCalculator`, `CashFlowCalculator`, `WidgetDataCache` (+ `WidgetDataService` del
+  widget), `PivotTableCalculator` (las 5 dimensiones: residual 2 cerrado), `FilterService`, modo solo gastos del Panel,
+  `AccountSpendingLogic`, `BudgetsViewModel.filterTransactions`, `InsightsCalculator` (mayor gasto),
+  `Weekday/TagSpendingCalculator`, `FinancialScoreCalculator`, `ScheduledPaymentDetailLogic`, `AccountCardReportLogic`,
+  `TransactionDetailSheetLogic`, `RecordRowView`, `RecentRecordsWidget`, `BalanceHelper`, `GlobalSearchView`, y el
+  recorte del período anterior (`DistributionPreviousPeriodCalculator.currentDates`, que el Panel ahora reusa).
+- **Residual 1 cerrado**: el prefill de edición (`NewTransactionView`) sigue la regla canónica.
+- **Suma con signo** en el hero y los widgets (antes magnitudes). La marca «≈» y los porcentajes de categorías del
+  widget dividen entre magnitudes, y «Sin movimientos» del hero se decide por actividad (`periodHasAnyTx`): las tres
+  cosas las cazó la review adversarial.
+- **Conector de Claude (`mcp/`)**: `summary.ts` y `budgets.ts` portados (`isIncomeOf`) y golden regenerado: Yala IA ya
+  daba las cifras nuevas porque usa `CashFlowCalculator` y `calculateSpending`.
+- **Regla**: `.claude/rules/ingreso-gasto.md`. Índice: globs del área `income-expense-classification-parity` ampliados.
+- **Tests**: `IncomeExpenseScreenParityTests` (6 superficies × 3 períodos, Informe por dimensión, filtros, neto, marca,
+  porcentajes, hero vacío).
+- **Fuera, con ticket**: desgloses por categoría (`category-breakdowns-leave-out-uncategorized-movements`, decisión de
+  Jürgen) y el resto de Yala IA (`yala-ia-classifies-uncategorized-movements-as-expense`). El comentario de
+  `DailySpendingCalculator` ya estaba corregido. El +240 de los datos de 2026-04-30 sigue sin comprobarse en esos datos.
+
+Cerrado en el barrido de QA 2026-10-23: test de integración contra el código real, con sus mutantes muertos (caso 3 del barrido). Registro: `docs/qa/tanda-qa-jurgen-2.2-cifras.md`.

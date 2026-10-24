@@ -1,11 +1,15 @@
 ---
 id: saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas
-status: backlog
+status: done
 priority: medium
 area: panel
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-10-23
 source: review adversarial de panel-colapsa-la-seleccion-de-cuentas-a-la-primera
+qa-status: passed
+implementation_date: 2026-10-23
+qa-date: 2026-10-23
+qa-notes: antes y despues en el simulador mas ExcludedAccountSelectionTests
 ---
 
 # Con una cuenta excluida de estadísticas filtrada, el Panel se contradice consigo mismo
@@ -86,3 +90,17 @@ Qué ve quien filtra el Panel por una cuenta excluida de estadísticas:
 vista. Exige retirar el test del fallback a conciencia. Con A, `medium`.
 
 Triage 2026-10-08: abierto · medium → medium · El fallback de LiveBalanceCalculator sigue fijado por test, computeEligibleAccounts del Panel no lo tiene, y borrar una cuenta filtrada sigue sin limpiar selectedAccountIDs; sigue pendiente la decisión de producto que dejó 8b2aa9393.
+
+## Implementación (2026-10-23, card shhm) — opción A
+
+- `LiveBalanceCalculator.liveBalanceBreakdown` sin fallback: una selección que no resuelve a ninguna cuenta contable da
+  0 en el saldo grande, igual que los widgets y Distribución. El test del fallback se reescribió a conciencia
+  (`liveBalance_selectedAccountIDExcluded_isZero_likeStatistics`), y el conteo «en N cuentas» lo acompaña con 0
+  (`PanelTotalAccountsLogicTests`).
+- Borrar una cuenta la quita del filtro: `EntityDeletionService.deleteAccount` → `SessionState.forgetDeletedAccount`
+  (el embudo del formulario y de `AccountRemovalService`).
+- Tests: `ExcludedAccountSelectionTests`. Regla `session-filters.md` al día.
+- Residuales: una cuenta borrada en otro dispositivo y llegada por sync deja su ID en la sesión; al borrar la principal
+  de una tarjeta elegida, sus líneas quedan en el filtro como cuentas sueltas (la review lo midió, gravedad baja).
+
+Cerrado en el barrido de QA 2026-10-23: antes y después en el simulador (`/Users/jur/Claude/worktrees/_capturas/2026-10-23-cifras-distintas-mismo-dinero-2-2/`) y test de integración con mutantes. Registro: `docs/qa/tanda-qa-jurgen-2.2-cifras.md`.

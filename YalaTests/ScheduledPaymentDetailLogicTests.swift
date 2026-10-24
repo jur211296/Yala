@@ -169,13 +169,17 @@ struct ScheduledPaymentDetailLogicTests {
 
     @Test("Ni transferencias ni ajustes de saldo; gasto con gasto e ingreso con ingreso")
     func linkCandidates() {
-        #expect(ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: false, paymentIsIncome: false))
+        #expect(ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: false, amount: -10, paymentIsIncome: false))
         #expect(!ScheduledPaymentDetailLogic.isLinkCandidate(
-            adjustmentType: TransactionItem.adjustmentTypeTransfer, categoryIsIncome: nil, paymentIsIncome: false
+            adjustmentType: TransactionItem.adjustmentTypeTransfer, categoryIsIncome: nil, amount: -10, paymentIsIncome: false
         ))
-        #expect(!ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: "initial_balance", categoryIsIncome: nil, paymentIsIncome: false))
-        #expect(!ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: true, paymentIsIncome: false))
-        #expect(ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: true, paymentIsIncome: true))
+        #expect(!ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: "initial_balance", categoryIsIncome: nil, amount: -10, paymentIsIncome: false))
+        #expect(!ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: true, amount: 10, paymentIsIncome: false))
+        #expect(ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: true, amount: 10, paymentIsIncome: true))
+        // Sin categoría decide el signo, como en el resto de la app (antes era siempre gasto).
+        #expect(ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: nil, amount: 80, paymentIsIncome: true))
+        #expect(!ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: nil, amount: 80, paymentIsIncome: false))
+        #expect(ScheduledPaymentDetailLogic.isLinkCandidate(adjustmentType: nil, categoryIsIncome: nil, amount: -80, paymentIsIncome: false))
     }
 
     @Test("El gasto de S/ 60 queda más cerca de un pago de S/ 60 que uno de S/ 9")

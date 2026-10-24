@@ -163,17 +163,21 @@ struct TagSpendingCalculatorTests {
         #expect(result.isEmpty)
     }
 
-    @Test func noCategory_excluded() {
+    /// Desde el 2026-10-23 un gasto sin categoría cuenta por su signo (regla de toda la app, `TransactionClassificationLogic`);
+    /// uno positivo sin categoría es ingreso y no entra en el gasto por etiqueta.
+    @Test func noCategory_countsBySign() {
         let tag = makeTag(name: "Food")
-        let tx = makeTransaction(amount: -100, tags: [tag])
+        let expense = makeTransaction(amount: -100, tags: [tag])
+        let income = makeTransaction(amount: 70, tags: [tag])
 
         let result = TagSpendingCalculator.calculateTopSpending(
-            transactions: [tx],
+            transactions: [expense, income],
             interval: defaultInterval,
             currencyCode: "USD",
             allTags: [tag]
         )
-        #expect(result.isEmpty)
+        #expect(result.count == 1)
+        #expect(result.first?.amount == 100)
     }
 
     @Test func noTags_excluded() {

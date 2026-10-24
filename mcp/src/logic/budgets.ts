@@ -23,6 +23,7 @@
  */
 import { linesByHead, spendingAccountIds } from "./accountLines";
 import { categoryOf, type Lookup } from "./lookup";
+import { isIncomeOf } from "./summary";
 import { convertOn, type RateBook } from "./fx";
 import { NO_GROUP_ADJUSTMENT, type GroupAdjustment } from "./groups";
 import { addDays, dayInZone, monthEnd, monthStart, txDay, weekStart, yearEnd, yearStart, type Day } from "./dates";
@@ -143,8 +144,8 @@ export function budgetStatuses(
     let approximate = false;
     for (const { tx, day } of eligible) {
       if (day < period.desde || day > period.hasta) continue;
-      const category = categoryOf(lookup, tx);
-      if (!category || category.is_income === true) continue;
+      // Solo gastos, con la regla de la app: un gasto sin categoría cuenta (`BudgetsViewModel.filterTransactions`).
+      if (isIncomeOf(categoryOf(lookup, tx), tx)) continue;
       if (accounts.size > 0 && !(tx.account_ref && accounts.has(tx.account_ref.trim().toLowerCase()))) continue;
       if (subs.size > 0 && !(tx.subcategory_ref && subs.has(tx.subcategory_ref))) continue;
       if (tags.size > 0 && !(tx.tag_refs ?? []).some((t) => tags.has(t))) continue;

@@ -189,10 +189,10 @@ struct CashFlowCalculator {
 
         // 1. Process Transactions and Accumulate
         for tx in transactions {
-            // Strict Filter:
-            // Must have a category (excludes Transfers)
-            // Skip balance adjustments (they affect balance, not cash flow)
-            guard let category = tx.category else { continue }
+            // Ajustes de saldo y transferencias fuera (mueven el saldo, no el flujo: las dos patas de una
+            // transferencia llevan `balanceAdjustmentType`). Un movimiento SIN categoría sí entra, por su signo
+            // (`TransactionClassificationLogic`, decisión de Jürgen del 2026-09-06): hasta el 2026-10-23 se descartaba
+            // aquí y el widget y el resumen de Observaciones daban otro mes que Registros y Tendencias.
             guard tx.balanceAdjustmentType == nil else { continue }
             // Excluir patas de préstamo derivadas del bridge: son un préstamo, no ingreso/gasto
             // propio — así se mata el "ingreso fantasma" +lent y el neto queda en -myShare.
@@ -206,7 +206,7 @@ struct CashFlowCalculator {
             let val = resolved.value
             let approximate = resolved.approximateMagnitude
 
-            let isIncome = category.isIncome
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
             let magnitude = abs(val)
             if isIncome {
                 incomeTotalMagnitude += magnitude

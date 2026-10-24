@@ -737,7 +737,9 @@ final class BudgetsViewModel {
         // este filtro pasaría el corte y se sumaría como gasto vía abs(amount).
         filtered = filtered.filter { $0.balanceAdjustmentType == nil }
 
-        return filtered.filter { $0.category?.isIncome == false }
+        // Solo gastos, con la regla de toda la app (`TransactionClassificationLogic`): un gasto sin categoría cuenta en un
+        // presupuesto sin filtro de subcategorías. Hasta el 2026-10-23 se quedaba fuera (decisión de Jürgen del 2026-09-06).
+        return filtered.filter { !TransactionClassificationLogic.isIncome($0) }
     }
 
     /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.

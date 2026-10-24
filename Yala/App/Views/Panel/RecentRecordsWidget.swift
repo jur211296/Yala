@@ -244,7 +244,7 @@ struct RecentRecordsWidget: View {
 
     private func amountColor(for record: TransactionItem) -> Color {
         if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer { return Color(.label) }
-        let isIncome = record.category?.isIncome ?? (record.amount >= 0)
+        let isIncome = TransactionClassificationLogic.isIncome(record)
         // Sólo el ingreso lleva color. El gasto es el caso mayoritario en esta
         // lista: teñirlo pinta la pantalla entera y el color deja de avisar de
         // nada. Además ninguno de los dos tonos anteriores llegaba al mínimo AA

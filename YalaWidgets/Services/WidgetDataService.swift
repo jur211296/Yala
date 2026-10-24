@@ -497,25 +497,32 @@ enum WidgetDataService {
         // `amountInPreferredCurrency` llega YA resuelto en la divisa principal vigente: la app lo
         // escribe así (`WidgetDataCache.widgetTransaction`), porque la fila no viaja con la divisa
         // en que se guardó y este camino no podría reconvertirla.
+        // Con signo, como los totales que precalcula la app (`WidgetDataCache.buildPeriodSummary`): una devolución en una
+        // categoría de gasto resta del gasto. `isIncome` ya llega con la regla de la app.
+        // Denominadores del umbral y de los porcentajes de categorías: magnitudes por lado, como la app.
+        var incomeTotalMagnitude: Double = 0
+        var expenseTotalMagnitude: Double = 0
         for tx in transactions {
-            let amount = abs(tx.amountInPreferredCurrency)
+            let amount = tx.amountInPreferredCurrency
             let isApproximate = tx.isExchangeRateProvisional ?? false
             if tx.isIncome {
                 totalIncome += amount
-                if isApproximate { incomeApproximateMagnitude += amount }
+                incomeTotalMagnitude += abs(amount)
+                if isApproximate { incomeApproximateMagnitude += abs(amount) }
             } else {
-                totalExpense += amount
-                if isApproximate { expenseApproximateMagnitude += amount }
+                totalExpense -= amount
+                expenseTotalMagnitude += abs(amount)
+                if isApproximate { expenseApproximateMagnitude += abs(amount) }
             }
         }
 
         let netCashFlow = totalIncome - totalExpense
 
         // Build top categories
-        let topCategories = buildTopCategories(from: transactions, totalExpense: totalExpense)
+        let topCategories = buildTopCategories(from: transactions, totalExpense: expenseTotalMagnitude)
 
         // Build top subcategories
-        let topSubcategories = buildTopSubcategories(from: transactions, totalExpense: totalExpense)
+        let topSubcategories = buildTopSubcategories(from: transactions, totalExpense: expenseTotalMagnitude)
 
         // Build cash flow by day
         let cashFlowPoints = buildCashFlowByDay(from: transactions)
@@ -532,10 +539,10 @@ enum WidgetDataService {
             // el umbral se replica aquí. Es el mismo 5 % y el mismo suelo, y hay un test que los
             // compara: si la app cambia el suyo y este no, se pone rojo.
             incomeIsApproximate: marksApproximate(
-                approximate: incomeApproximateMagnitude, total: totalIncome
+                approximate: incomeApproximateMagnitude, total: incomeTotalMagnitude
             ),
             expenseIsApproximate: marksApproximate(
-                approximate: expenseApproximateMagnitude, total: totalExpense
+                approximate: expenseApproximateMagnitude, total: expenseTotalMagnitude
             ),
             netCashFlowIsApproximate: marksApproximate(
                 approximate: incomeApproximateMagnitude + expenseApproximateMagnitude,
@@ -641,13 +648,13 @@ enum WidgetDataService {
 
         for tx in transactions {
             let day = calendar.startOfDay(for: tx.date)
-            let amount = abs(tx.amountInPreferredCurrency)
+            let amount = tx.amountInPreferredCurrency
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
             if tx.isIncome {
                 existing.income += amount
             } else {
-                existing.expense += amount
+                existing.expense -= amount
             }
             dailyData[day] = existing
         }

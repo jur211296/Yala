@@ -111,9 +111,8 @@ struct LiveBalanceCalculator {
         let amountsAreApproximate: Bool
     }
 
-    /// Saldo total "hoy" en moneda preferida. Si `selectedAccountIDs` no
-    /// resuelve a ninguna cuenta contable, hace fallback al total agregado
-    /// (replica behavior del antiguo `BalanceHelper.displayedBalance`).
+    /// Saldo total "hoy" en moneda preferida. Si `selectedAccountIDs` no resuelve a ninguna cuenta contable (la única
+    /// elegida está excluida de estadísticas), el saldo es 0, como en Estadísticas.
     static func liveBalance(
         accounts: [Account],
         transactions: [TransactionItem],
@@ -169,17 +168,18 @@ struct LiveBalanceCalculator {
             // 0 y no el total: aquí NO hay fallback, igual que en Estadísticas.
             eligibleAccountIDs = countableIDs.subtracting(selectedAccountIDs)
         } else {
-            let filtered = countableIDs.intersection(selectedAccountIDs)
-            // Fallback al total agregado cuando la selección no resuelve a
-            // ninguna cuenta contable (p. ej. la única elegida está excluida de
-            // estadísticas). Comportamiento heredado, fijado por test.
-            eligibleAccountIDs = filtered.isEmpty ? countableIDs : filtered
+            // Una selección que no resuelve a ninguna cuenta contable (la única elegida está excluida de estadísticas)
+            // da 0, no el total: decisión A de Jürgen del 2026-10-08 (ticket
+            // `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Hasta entonces este saldo caía al
+            // total agregado —herencia de `BalanceHelper.displayedBalance`— mientras los widgets del Panel y
+            // Estadísticas daban 0, y la misma pantalla se contradecía.
+            eligibleAccountIDs = countableIDs.intersection(selectedAccountIDs)
         }
 
         let cutoff = TodayCutoff(asOf: now)
         var nativeBalances: [String: Decimal] = [:]
         for tx in transactions {
-            guard let acc = tx.account,
+            guard entersBalance(tx), let acc = tx.account,
                 eligibleAccountIDs.contains(acc.persistentModelID),
                 cutoff.counts(tx.date)
             else { continue }
@@ -205,6 +205,15 @@ struct LiveBalanceCalculator {
     }
 
     // MARK: - La regla del saldo vivo, compartida con las curvas de saldo
+
+    /// `true` si la fila entra en un saldo: la que tiene cuenta. Un movimiento sin cuenta (`OrphanedRecordsService`)
+    /// sigue en ingresos y gastos, pero no está en el saldo de ninguna cuenta. Es la regla única que leen el saldo vivo,
+    /// la curva del widget de inicio y su saldo de período: hasta el 2026-10-23 ese saldo de período contaba también
+    /// las filas sin cuenta y no coincidía con el último punto de la curva (card
+    /// `tablero-la-cifra-y-la-curva-del-widget-de-saldo-zyah`).
+    static func entersBalance(_ transaction: TransactionItem) -> Bool {
+        transaction.account != nil
+    }
 
     /// Lo que una fila suma al saldo, en su divisa NATIVA. Es la mitad de la regla del saldo vivo; la otra es
     /// `convertAtLatestRate`. Las curvas de saldo acumulan con esta misma función y valoran el punto de hoy con

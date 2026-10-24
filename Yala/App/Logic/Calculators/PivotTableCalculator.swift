@@ -214,9 +214,12 @@ struct PivotTableCalculator {
         tagsByID: [UUID: Tag],
         cards: AccountCardIndex
     ) -> [GroupKey] {
+        // Ingreso o gasto con la regla de toda la app, en TODAS las dimensiones (`TransactionClassificationLogic`). Hasta
+        // el 2026-10-23 «Tipo» caía al signo con `> 0` y «Categoría», «Subcategoría» y «Cuenta» daban por gasto lo que no
+        // tuviera categoría: cambiar de dimensión movía un movimiento sin categoría de lado en el mismo informe.
+        let isIncome = TransactionClassificationLogic.isIncome(tx)
         switch dimension {
         case .tipo:
-            let isIncome = tx.category?.isIncome ?? (tx.amount > 0)
             let label = isIncome ? L10n.Report.income : L10n.Report.expense
             let icon = isIncome ? TrendType.income.iconName : TrendType.expense.iconName
             let color: String? = nil  // View layer decides color based on isIncome
@@ -226,14 +229,12 @@ struct PivotTableCalculator {
             let label = tx.category?.name ?? L10n.Report.uncategorized
             let icon = tx.category?.iconName
             let color = tx.category?.colorHex
-            let isIncome = tx.category?.isIncome ?? false
             return [GroupKey(label: label, iconName: icon, colorHex: color, isIncome: isIncome)]
 
         case .subcategoria:
             let label = tx.subcategory?.name ?? L10n.Report.noSubcategory
             let icon = tx.subcategory?.iconName
             let color = tx.subcategory?.colorHex ?? tx.category?.colorHex
-            let isIncome = tx.category?.isIncome ?? false
             return [GroupKey(label: label, iconName: icon, colorHex: color, isIncome: isIncome)]
 
         case .etiqueta:
@@ -256,12 +257,11 @@ struct PivotTableCalculator {
             if let card = cards.card(of: tx.account) {
                 return [GroupKey(
                     label: card.name, iconName: card.iconName, colorHex: card.colorHex,
-                    isIncome: tx.category?.isIncome ?? false, isAccountCard: true)]
+                    isIncome: isIncome, isAccountCard: true)]
             }
             let label = tx.account?.name ?? L10n.Report.noAccount
             let icon = tx.account?.iconName
             let color = tx.account?.colorHex
-            let isIncome = tx.category?.isIncome ?? false
             return [GroupKey(label: label, iconName: icon, colorHex: color, isIncome: isIncome)]
 
         case .divisa:

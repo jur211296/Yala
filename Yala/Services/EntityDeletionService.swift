@@ -77,8 +77,12 @@ final class EntityDeletionService {
         // Cascade `.nullify` limpia M2M Budget.accounts pero NO el CSV mirror.
         // Capturar inverse pre-delete, re-encode CSV post-delete.
         let affectedBudgets = account.budgets ?? []
+        let accountID = account.persistentModelID
         try delete(account)
         reencodeBudgetCSVMirrors(in: affectedBudgets)
+        // Una cuenta eliminada no puede seguir en el filtro de sesión: después del guardado, para que un borrado que falla
+        // deje el filtro como estaba.
+        SessionState.shared.forgetDeletedAccount(accountID)
     }
 
     // MARK: - Category Deletion

@@ -187,20 +187,22 @@ struct WeekdaySpendingCalculatorTests {
         }
     }
 
-    @Test func noCategoryTransactions_excluded() {
+    /// Desde el 2026-10-23 un gasto sin categoría cuenta por su signo (regla de toda la app); uno positivo sin categoría
+    /// es ingreso y no entra.
+    @Test func noCategoryTransactions_countBySign() {
         let monday = dateForWeekday(2)
-        let tx = makeTransaction(amount: -100, date: monday)
+        let expense = makeTransaction(amount: -100, date: monday)
+        let income = makeTransaction(amount: 60, date: monday)
 
         let result = WeekdaySpendingCalculator.calculate(
-            transactions: [tx],
+            transactions: [expense, income],
             interval: weekInterval,
             currencyCode: "USD",
             converter: MockCurrencyConverter()
         )
 
-        for entry in result {
-            #expect(entry.total == 0)
-        }
+        #expect(result.reduce(0) { $0 + $1.total } == 100)
+        #expect(result.first { $0.weekday == 2 }?.total == 100)
     }
 
     @Test func multipleExpenses_sameWeekday_averagePerDay() {
