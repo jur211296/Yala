@@ -209,7 +209,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing | done | tickets/done/ci-runner-se-queda-sin-simuladores-y-tumba-build-for-testing.md |
 | ci-runner-sesion-de-ci-arranca-servicios-que-no-usa | backlog | tickets/backlog/ci-runner-sesion-de-ci-arranca-servicios-que-no-usa.md |
 | ci-suite-simulador-duplicada-y-allowlist-incompleta | done | tickets/done/ci-suite-simulador-duplicada-y-allowlist-incompleta.md |
-| ci-tests-job-ceiling-cancels-green-runs | backlog | tickets/backlog/ci-tests-job-ceiling-cancels-green-runs.md |
+| ci-tests-job-ceiling-cancels-green-runs | done | tickets/done/ci-tests-job-ceiling-cancels-green-runs.md |
 | ci-verde-con-la-suite-en-rojo | done | tickets/done/ci-verde-con-la-suite-en-rojo.md |
 | ci-volumen-no-cabe-en-la-mini | backlog | tickets/backlog/ci-volumen-no-cabe-en-la-mini.md |
 | ci-warns-but-does-not-block | done | tickets/done/ci-warns-but-does-not-block.md |

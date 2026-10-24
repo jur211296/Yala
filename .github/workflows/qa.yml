@@ -304,23 +304,35 @@ jobs:
     if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
     runs-on: xcode-27
     # ------------------------------------------------------------------------------
-    # TOPES DE TIEMPO (2026-09-07; tabla rehecha el 2026-10-09). Sin `timeout-minutes` GitHub aplica su default de
+    # TOPES DE TIEMPO (2026-09-07; tabla rehecha el 2026-10-09 y el 2026-10-24). Sin `timeout-minutes` GitHub aplica su default de
     # **360 minutos**, y este job no tenia ninguno: ni aqui ni a nivel de workflow. El
     # problema que eso creaba no era el gasto sino el DIAGNOSTICO — un cuelgue real era
     # indistinguible de una corrida lenta, y nadie se enteraba hasta las seis horas.
     #
     # Los numeros salen de medir, no de estimar: tiempos por PASO leidos de la API de Actions.
     # La tabla de 2026-09-07 (39 runs) daba la UI en 67 min de mediana y 76 de maximo; el
-    # 2026-10-09 ya no era verdad. Lo de hoy, medido sobre las nocturnas del 5 al 8-oct y los
-    # 8 ultimos PR verdes (8/9-oct):
+    # 2026-10-09 ya no era verdad, y la del 2026-10-09 tampoco lo era el 2026-10-24. Lo de hoy,
+    # medido sobre los 83 jobs `tests` verdes de 2.2 del 18 al 24-oct (PR, push y nocturna; desde
+    # el 18-oct en Xcode 27.1, imagen `xcode-27`), minimo · mediana · p90 · maximo:
     #
-    #   paso / conjunto              medido          tope
-    #   Build for testing            13,3-15,7         25
-    #   Unit pure-logic              12,3-15,8         30
-    #   Unit context-based            2,6-3,8          10
-    #   JOB `tests` en un PR         27-43 (mediana 32) 45
-    #   JOB `tests` en la nocturna   36 (sin UI)       60
-    #   UI, suite entera en serie    ~141 (estimado)    —   ← ya no corre asi; ver job `ui`
+    #   paso / conjunto              medido                       tope
+    #   Build for testing            9,9 · 14,4 · 17,6 · 21,3       30   (25 hasta el 24-oct)
+    #   Unit pure-logic              11,4 · 17,1 · 22,1 · 24,4      35   (30 hasta el 24-oct)
+    #   Unit context-based           1,8 · 2,9 · 4,0 · 5,6          10
+    #   JOB `tests` (PR y nocturna)  23,7 · 36,0 · 41,7 · 44,2      60   (PR en 45 hasta el 24-oct)
+    #   UI, suite entera en serie    ~141 (estimado)                 —   ← ya no corre asi; ver job `ui`
+    #
+    # POR QUE SUBIO EL TOPE DEL JOB (2026-10-24, ticket ci-tests-job-ceiling-cancels-green-runs).
+    # El encargo decia «context-based se cuelga en CI». No se colgaba: en el run 39982719207 el tope
+    # de 45 lo cancelo a los 1,2 min de empezar, con build (21,7) y pure-logic (22,7, 11 243 casos
+    # en verde a la primera) ya gastados. En esos seis dias el tope cancelo CINCO jobs con todos sus
+    # pasos en verde (39527716872, 39678903605, 39783441806, 39832740877, 39982719207: 45,0-48,6
+    # min), y un check requerido cancelado frena el auto-merge igual que un rojo. El trabajo crecio
+    # por debajo del tope: pure-logic corre 11 243 casos (8 963 el 6-oct), a ~0,12 s por caso de
+    # coste fijo del runner, y la velocidad del runner varia el doble de un run a otro (el mismo
+    # build tarda de 10 a 22 min). Relanzar a mano no es salida: la cola de auto-merge no espera a
+    # nadie. Los topes de paso de build y pure-logic tenian el mismo problema (2-5 min de margen
+    # sobre el maximo) y suben con el.
     #
     # LA UI SALIO DE ESTE JOB el 2026-10-09 (ticket nightly-ui-suite-hits-its-110-minute-cap-every-
     # night). En serie ya no cabia: del 2 al 8-oct el paso agoto sus 110 min las siete noches, solo
@@ -357,13 +369,14 @@ jobs:
     # contarlo. El del JOB es la red de debajo, para lo que se cuelgue fuera de estos
     # cuatro pasos, y su desenlace es mas tosco a proposito.
     #
-    # `timeout-minutes` admite una expresion (comprobado con actionlint 1.7.12, que
-    # rechaza el texto plano con «expecting a single ${{...}} expression or float number
-    # literal»), y es lo que deja tener UN solo job en vez de dos casi identicos.
-    # El PR se queda en 45 a proposito (es el gate; no se toca). La nocturna corre lo mismo pero
-    # le cuesta mas porque nace en horas punta del runner: 36 min medidos, y 60 deja 24 de margen
-    # para un rojo de unit con sus reintentos (~5,5 min el 7-oct).
-    timeout-minutes: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 60 || 45 }}
+    # PR y nocturna comparten tope desde el 2026-10-24: corren lo mismo (la UI ya no vive aqui) y la
+    # nocturna ya no tarda mas que un PR (32-41 min las cuatro del 20 al 23-oct). 60 es ~1,35x el
+    # maximo verde y deja ~15 min para un runner lento mas un flaky rescatado por
+    # `ci-reintentar-rojos.sh` (~5,5 min el 7-oct). Hasta ese dia era una expresion (PR 45,
+    # nocturna 60); si vuelven a divergir, `timeout-minutes` la admite (comprobado con actionlint
+    # 1.7.12, que rechaza el texto plano con «expecting a single ${{...}} expression or float
+    # number literal»).
+    timeout-minutes: 60
     # Los tests de intervalos construyen sus expectativas con un calendario fijado a
     # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
     # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
@@ -401,9 +414,9 @@ jobs:
       # Unica fuente de «esta corrida lleva UI» para el JOB `aviso` de mas abajo, que la lee
       # para no confundir «saltado a proposito» con «no llego a correr» — dos cosas que en
       # `needs.<job>.outputs` llegan IGUAL: vacias.
-      # La condicion aparece TRES veces en el fichero: aqui, en `timeout-minutes` de este job
-      # (se evalua antes de que exista `env`) y en el `if:` del job `ui` (un `if:` de job no
-      # ve el `env` de otro job). Si cambia una, cambian las tres.
+      # La condicion aparece DOS veces en el fichero: aqui y en el `if:` del job `ui` (un `if:`
+      # de job no ve el `env` de otro job). Si cambia una, cambian las dos. (Hasta el 2026-10-24
+      # habia una tercera en `timeout-minutes` de este job; ver «TOPES DE TIEMPO».)
       UI_TOCABA: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     steps:
       # `UI_TOCABA` sale por un paso, y no como `outputs: ui_tocaba: ${{ env.UI_TOCABA }}`,
@@ -466,7 +479,8 @@ jobs:
         run: bash qa/scripts/ci-simulador.sh
       - name: Build for testing
         id: build
-        timeout-minutes: 25
+        # 30 desde el 2026-10-24 (era 25 y el maximo medido ya llegaba a 22,8). Ver «TOPES DE TIEMPO».
+        timeout-minutes: 30
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
@@ -495,7 +509,8 @@ jobs:
       # diagnósticos: el `.xcresult` y el log bastan.
       - name: Unit tests (YalaTests pure-logic)
         id: unit_pure
-        timeout-minutes: 30
+        # 35 desde el 2026-10-24 (era 30: maximo verde 24,4 mas las vueltas de un flaky rescatado).
+        timeout-minutes: 35
         run: |
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 -- \
             test-without-building \

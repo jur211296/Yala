@@ -27,7 +27,7 @@ El ruleset de `2.1` exige tres checks: `tests`, `coverage-index` y `gateway`. El
   `ci-reintentar-rojos.sh`: repite solo los casos rojos, hasta 3 vueltas, y en un PR verde no cuesta
   nada. El flaky lleva su ticket (hoy `spike-r3-eje-4b-flaky-en-suite-completa`).
 - **Nunca `-retry-tests-on-failure` en un paso de unit.** Con Swift Testing repite la selección
-  entera, no el caso: un rojo triplica el paso y el tope de 45 min del job lo cancela.
+  entera, no el caso: un rojo triplica el paso y el tope del job lo cancela.
 - **Context-based corre aunque pure-logic salga en rojo** (`if: !cancelled() && build ok`). Si se
   saltara, el aviso leería ese `skipped` como «la suite no llegó a correr».
 
@@ -36,9 +36,15 @@ cambio: `ci-warns-but-does-not-block`.
 
 ## El tope del job cancela, y una cancelación también frena
 
-Un job `tests` que agota sus 45 min sale `cancelled`, y un check requerido cancelado también
-bloquea el merge. Eso no lo trajo la promoción de los unit. Medido del 30-sep al 10-oct: 7 de 280
-runs de PR y push, seis por el reintento viejo que triplicaba pure-logic (retirado el 6-oct) y uno
-por un runner lento (build de 23 min frente a 13-15). Se relanza el job
-(`gh run rerun <id> --failed`); quitar el tope no es la salida. Ticket:
+Un job `tests` que agota su tope sale `cancelled`, y un check requerido cancelado también bloquea
+el merge. **El tope sigue al trabajo, no al revés**: cuando el job verde se acerca a él, se sube
+con la tabla de `qa.yml` («TOPES DE TIEMPO») re-medida, y se sube con él cualquier tope de paso
+que tenga el mismo margen. Relanzar a mano no es la salida —la cola de auto-merge no espera a
+nadie— y quitar el tope tampoco: sin él, un cuelgue real tarda seis horas en verse.
+
+Pasó el 2026-10-24: el tope de 45 min canceló cinco jobs en verde en seis días (la suite pasó de
+8 963 a 11 243 casos y el runner varía el doble de un run a otro). Un «context-based se cuelga»
+era el tope del job cortando el último paso. **Antes de buscar el cuelgue, lee los tiempos por
+paso de la API de Actions**: si el paso cancelado lleva un minuto y los anteriores se comieron el
+tope, no hay cuelgue. Hoy el tope es 60 para PR y nocturna. Ticket:
 `ci-tests-job-ceiling-cancels-green-runs`.

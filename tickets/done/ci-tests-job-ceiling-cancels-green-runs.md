@@ -1,10 +1,10 @@
 ---
 id: ci-tests-job-ceiling-cancels-green-runs
-status: backlog
+status: done
 priority: low
 area: ci
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-24
 source: medido de camino en ci-warns-but-does-not-block (2026-10-10)
 ---
 
@@ -40,5 +40,26 @@ propósito (es el gate; no se toca)»: cambiarlo es revisar esa decisión, no un
 
 ## Acceptance Criteria
 
-- [ ] Medida de nuevo la frecuencia de cancelaciones por tope desde el 7-oct (antes de decidir).
-- [ ] Decidido y escrito en el comentario de topes de `qa.yml`.
+- [x] Medida de nuevo la frecuencia de cancelaciones por tope desde el 7-oct (antes de decidir).
+- [x] Decidido y escrito en el comentario de topes de `qa.yml`.
+
+## Resuelto (2026-10-24)
+
+Llegó como «los unit context-based se cuelgan en el CI de 2.2» (card `m0tx`). No se colgaban. Medido
+sobre los 88 jobs `tests` de 2.2 del 18 al 24-oct:
+
+- **Cinco cancelaciones por tope en seis días**, todas con sus pasos en verde: 39527716872,
+  39678903605, 39783441806, 39832740877 y 39982719207 (45,0-48,6 min). En la última, context-based
+  murió a los 1,2 min de empezar; build (21,7) y pure-logic (22,7) se habían comido el tope.
+- **Context-based nunca pasó de 5,6 min** (mediana 2,9). El paso estaba sano.
+- **El job verde va de 23,7 a 44,2 min** (mediana 36, p90 41,7): el máximo verde quedaba a 0,8 min
+  del tope. Pure-logic corre 11 243 casos (8 963 el 6-oct) y el mismo build tarda de 10 a 22 min
+  según el runner.
+
+**Decisión:** el tope del job sube de 45 a 60 para PR (el mismo de la nocturna, que ya no tarda más
+que un PR), y con él los topes de paso con el mismo margen: build 25→30 y pure-logic 30→35.
+Relanzar a mano quedó descartado: la cola de auto-merge no espera a nadie. La tabla re-medida vive
+en el comentario «TOPES DE TIEMPO» de `qa.yml`, y la regla en `.claude/rules/ci-qa.md`.
+
+**Fuera, sin ticket todavía:** acelerar la suite. Cada caso cuesta ~0,12 s de runner aunque su
+cuerpo tarde 0,001 s, y cada paso de test gasta ~4 min en arrancar la app anfitriona.
