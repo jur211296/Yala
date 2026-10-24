@@ -5340,6 +5340,8 @@
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "群组里的其他人会看到这个名字。";
+"welcome.groups.closeNameTitle" = "你叫什么名字？";
+"welcome.groups.closeNameBody" = "先进入群组，想建群时再建。";
 
 
 /* C2 · empty state cuando aún no vio el educativo */

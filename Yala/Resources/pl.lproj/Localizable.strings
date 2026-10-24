@@ -5340,6 +5340,8 @@
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "To imię zobaczą inni w grupie.";
+"welcome.groups.closeNameTitle" = "Jak masz na imię?";
+"welcome.groups.closeNameBody" = "Przejdziesz do Grup i utworzysz grupę, kiedy zechcesz.";
 
 
 /* C2 · empty state cuando aún no vio el educativo */

@@ -54,6 +54,9 @@ struct GroupFormView: View {
     @State private var setupWritten = false
     /// L12-9 · «Más opciones» plegadas por defecto.
     @State private var showsMoreOptions = false
+    /// Card ycke (C2) · la pregunta del nombre al cerrar el primer grupo sin haberlo escrito.
+    @State private var showCloseNamePrompt = false
+    @State private var closeNameDraft = ""
 
     // MARK: - Sheet State
 
@@ -96,8 +99,9 @@ struct GroupFormView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.cancel) {
-                        dismiss()
+                        close()
                     }
+                    .accessibilityIdentifier("group_form_close")
                     // Cerrar a mitad del guardado separaba el grupo creado de lo que venía después (la hoja de
                     // invitar o el gasto de L13-8): se espera a que termine.
                     .disabled(isSaving)
@@ -128,6 +132,19 @@ struct GroupFormView: View {
                 Button(L10n.Common.ok) {}
             } message: {
                 Text(saveErrorMessage)
+            }
+            // Card ycke (C2) · cerrar el primer grupo sin tu nombre: se pregunta en una línea en vez de echar al Welcome.
+            // Los textos de los botones van literales (regla del `actions` de un `.alert` en `swiftui-ds.md`).
+            .alert(L10n.Welcome.Groups.closeNameTitle, isPresented: $showCloseNamePrompt) {
+                TextField(L10n.Groups.Invite.namePlaceholder, text: $closeNameDraft)
+                    .textContentType(.givenName)
+                    .accessibilityIdentifier("group_form_close_name_input")
+                Button(L10n.Action.cancel, role: .cancel) {}
+                Button(L10n.Action.continueAction) { enterGroupsWithoutCreating(named: closeNameDraft) }
+                    .disabled(closeNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("group_form_close_name_continue")
+            } message: {
+                Text(L10n.Welcome.Groups.closeNameBody)
             }
         }
     }
@@ -391,11 +408,7 @@ struct GroupFormView: View {
                     // divisa de la región (la del grupo cuando no se elige otra) y retira las preferencias del dueño
                     // del Apple ID. Solo con el canal encendido (`.channelOff` no escribe nada, C4) y una vez por
                     // presentación: si crear falla, el reintento ya no la repite.
-                    if isFirstGroupSetup && !setupWritten {
-                        GroupsOrganizerOnboarding.completeSetup(displayName: displayName, context: modelContext)
-                        setupWritten = true
-                        onSetupCompleted?()
-                    }
+                    writeFirstGroupSetupIfNeeded(displayName: displayName)
                     // `displayName` no-vacío (patrón defaultName R1: `join`/`create_group` hacen btrim=''
                     // → yala_bad_input permanente si vacío).
                     let profile = UserDefaults.standard.string(forKey: "userName") ?? ""
@@ -444,6 +457,51 @@ struct GroupFormView: View {
             saveErrorMessage = GroupActionErrorLogic.message(for: error)
             showSaveError = true
         }
+    }
+
+    /// El alta del primer grupo, una vez por presentación. Es su ÚNICO sitio en el formulario (lo cuentan los source-scan
+    /// de `GroupsGateLogicTests`): crear y cerrar (card ycke) pasan por aquí.
+    private func writeFirstGroupSetupIfNeeded(displayName: String) {
+        if isFirstGroupSetup && !setupWritten {
+            GroupsOrganizerOnboarding.completeSetup(displayName: displayName, context: modelContext)
+            setupWritten = true
+            onSetupCompleted?()
+        }
+    }
+
+    /// Card ycke (C2 del estudio del Welcome solo-grupos) · la «X». En la rama del primer grupo, cerrar ya no devuelve al
+    /// Welcome: quien aún no sabe cómo llamar al grupo, o espera que un amigo lo invite, entra en Grupos sin crearlo. Con su
+    /// nombre escrito se completa el alta y la pestaña aterriza en su estado vacío (el `onDismiss` de `ContentView` lo hace
+    /// al ver el alta escrita); sin nombre, se pregunta en una línea, porque el alta lo necesita (L12-12).
+    ///
+    /// Se queda como antes —cerrar devuelve al elector— fuera de esa rama, con el alta ya escrita (crear falló después) y
+    /// sin el canal de grupos: el alta solo se escribe con el canal encendido (C4), igual que al crear.
+    private func close() {
+        guard isFirstGroupSetup, !setupWritten,
+              GroupCreateRoutingLogic.route(
+                flagOn: CloudSyncFlags.groupsBackendEnabled,
+                hasSession: CloudAuthService.shared.hasSession,
+                consentAccepted: GroupsConsentState.isAccepted
+              ) == .backend
+        else {
+            dismiss()
+            return
+        }
+        let typed = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !typed.isEmpty else {
+            closeNameDraft = ""
+            showCloseNamePrompt = true
+            return
+        }
+        enterGroupsWithoutCreating(named: typed)
+    }
+
+    /// Card ycke · completa el alta con ese nombre, sin crear grupo, y cierra: el `onDismiss` del cover aterriza en Grupos.
+    private func enterGroupsWithoutCreating(named name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        writeFirstGroupSetupIfNeeded(displayName: trimmed)
+        dismiss()
     }
 
     private func populateFromGroup() {

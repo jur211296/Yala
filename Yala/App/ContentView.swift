@@ -719,8 +719,10 @@ struct ContentView: View {
         // se apaga en vez de quedarse colgada esperando un paso que nadie va a dar.
         .fullScreenCover(isPresented: $showGroupsOrganizerName, onDismiss: {
             // La continuación corre AQUÍ y no en el callback de éxito (contrato C7): con la dismissal ya
-            // terminada, lo que pase después no se lo traga SwiftUI. Cancel sin alta (swipe, la «X» o UIKit
-            // tumbando el cover) ⇒ la rama se apaga y el usuario vuelve al Welcome, nunca a una pantalla muerta.
+            // terminada, lo que pase después no se lo traga SwiftUI. Cerrar sin alta (UIKit tumbando el cover, o la
+            // «X» sin canal de grupos) ⇒ la rama se apaga y el usuario vuelve al Welcome, nunca a una pantalla muerta.
+            // Desde la card ycke (C2) la «X» con el canal encendido escribe el alta antes de cerrar (con el nombre escrito,
+            // o el que pide en una línea): llega aquí con `organizerSetupCompleted` y aterriza en Grupos sin grupo.
             guard organizerSetupCompleted else {
                 groupsOrganizerFlowActive = false
                 returnToGroupsChooser()
