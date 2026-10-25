@@ -872,6 +872,10 @@ struct ProfileView: View {
                     }
                     .scrollDisabled(false)
                     .onAppear { settingsScrollProxy = scrollProxy }
+                    // iPhone Duo cerrado: la lista ocupa también la columna de la barra vertical y la cabecera se centra en
+                    // la pantalla entera, sin el hueco a la derecha. Excepción a la regla A, decidida por Jürgen el
+                    // 2026-10-25 viendo también cómo pasan las filas bajo la hora y la X al desplazar.
+                    .extendsUnderVerticalBar()
             }
             .navigationTitle(L10n.Profile.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -1362,8 +1366,25 @@ struct ProfileView: View {
         // Con la lista al lado, el primer ajuste del detalle no lleva «‹»: la lista ya es la vuelta (UX 2.2 · L16-20).
         // Lo que ese ajuste empuje sí la lleva. El «‹» del sistema se oculta aquí; el propio de cada pantalla, con el
         // valor de entorno.
-        .navigationBarBackButtonHidden(isRootOfDetailColumn(destination))
+        //
+        // **Y se oculta también en las pantallas que pintan su propio «‹»**: este modificador, por fuera, manda sobre
+        // el `swipeBack()` de la pantalla, así que con `false` el del sistema volvía y salían dos «‹» (medido el
+        // 2026-10-25 en Ajustes › Categorías, iPhone Duo cerrado: dos chevrons en la barra vertical).
+        .navigationBarBackButtonHidden(isRootOfDetailColumn(destination) || paintsOwnBackButton(destination))
         .environment(\.settingsListIsAlongside, isRootOfDetailColumn(destination))
+    }
+
+    /// Las pantallas de Ajustes que pintan su propio «‹» (`YalaToolbarButton` y `swipeBack()`). Las demás usan el del
+    /// sistema. Sin `default`: una pantalla nueva tiene que decidirlo aquí.
+    private func paintsOwnBackButton(_ destination: ProfileDestination) -> Bool {
+        switch destination {
+        case .accounts, .categories, .tags, .themes, .personalization, .appIcon, .notifications, .budgets,
+             .subscription, .tips, .faq, .siriShortcuts, .permissions:
+            true
+        case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .storageMode,
+             .yalaAccount:
+            false
+        }
     }
 
     // MARK: - Header

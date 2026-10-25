@@ -54,6 +54,8 @@ struct AccountsCarouselView: View {
             .scrollPosition(id: $leadingColumnIndex)
             .contentMargins(.horizontal, 0, for: .scrollContent)
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { carouselWidth = $0 }
+            // iPhone Duo cerrado: se funde contra la barra vertical en vez de cortarse en seco.
+            .fadesTowardVerticalBar()
 
             // Page indicator
             if pageCount > 1 {

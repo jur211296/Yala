@@ -29,6 +29,7 @@ struct GroupingChipsBar: View {
                     }
                 }
             }
+            .fadesTowardVerticalBar()
 
             // Drill down button
             drillDownButton

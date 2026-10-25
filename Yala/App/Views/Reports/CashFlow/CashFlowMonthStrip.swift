@@ -38,6 +38,7 @@ struct CashFlowMonthStrip: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .scrollTargetLayout()
             }
+            .fadesTowardVerticalBar()
             .scrollTargetBehavior(.viewAligned)
             .onChange(of: selectedMonthKey) { _, newKey in
                 withAnimation(.easeInOut(duration: DS.Animation.fast)) {

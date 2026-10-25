@@ -371,6 +371,7 @@ struct ImportIntroSheet: View {
                     }
                 }
             }
+            .fadesTowardVerticalBar()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(L10n.UXL7.ImportScreen.columnsAccessibility(
                 Self.requiredColumns.joined(separator: ", ")))

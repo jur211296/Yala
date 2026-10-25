@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1062)
+## Index (1063)
 
 | id | status | path |
 |---|---|---|
@@ -620,7 +620,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | done | tickets/done/ipad-sidebar-and-list-detail-for-records-and-planning.md |
-| iphone-duo-closed-width-a-or-b | backlog | tickets/backlog/iphone-duo-closed-width-a-or-b.md |
+| iphone-duo-closed-width-a-or-b | done | tickets/done/iphone-duo-closed-width-a-or-b.md |
 | iphone-duo-native-app | done | tickets/done/iphone-duo-native-app.md |
 | iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar | done | tickets/done/iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar.md |
 | iphone-landscape-headers-fill-the-short-screen | done | tickets/done/iphone-landscape-headers-fill-the-short-screen.md |
@@ -704,6 +704,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
+| onboarding-sigue-los-estilos-del-resto-de-la-app | backlog | tickets/backlog/onboarding-sigue-los-estilos-del-resto-de-la-app.md |
 | one-off-scheduled-payment-row-says-monthly | qa | tickets/qa/one-off-scheduled-payment-row-says-monthly.md |
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |

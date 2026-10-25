@@ -138,6 +138,7 @@ struct AutocompleteSuggestionsView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
             }
+            .fadesTowardVerticalBar()
             .frame(height: 44)
         }
     }

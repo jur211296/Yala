@@ -779,6 +779,7 @@ struct GroupExpenseFormView: View {
             .padding(.vertical, DS.Spacing.sm)
             .padding(.horizontal, DS.Spacing.lg)
         }
+        .fadesTowardVerticalBar()
         // El anillo del elegido sobresale del avatar: sin esto el scroll lo recorta.
         .scrollClipDisabled()
         .padding(.vertical, DS.Spacing.sm)
@@ -896,6 +897,7 @@ struct GroupExpenseFormView: View {
             }
             .padding(.horizontal, DS.Spacing.xl)
         }
+        .fadesTowardVerticalBar()
     }
 
     private var subcategoryChipColor: Color? {

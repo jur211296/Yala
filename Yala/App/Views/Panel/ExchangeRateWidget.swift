@@ -332,6 +332,7 @@ struct ExchangeRateWidget: View {
                 }
             }
         }
+        .fadesTowardVerticalBar()
     }
 
     // MARK: - Y Domain Calculation

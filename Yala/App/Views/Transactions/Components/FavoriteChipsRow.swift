@@ -36,6 +36,7 @@ struct FavoriteChipsRow: View {
                 }
                 .padding(.horizontal, DS.Spacing.xl)
             }
+            .fadesTowardVerticalBar()
             .accessibilityIdentifier("new_transaction_favorites_row")
         }
     }

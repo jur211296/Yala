@@ -86,9 +86,10 @@ struct WelcomeFlowScreen<Content: View>: View {
                         .frame(minHeight: geo.size.height)
                 }
                 .scrollBounceBehavior(.basedOnSize)
-                // iPhone Duo cerrado: las tarjetas del carrusel no pasan por detrás de la columna de la barra.
-                .staysOutOfVerticalBar()
             }
         }
+        // iPhone Duo cerrado: el Welcome ocupa también la columna de la barra (solo la hora y el wifi) y se centra en la
+        // pantalla entera, sin el corte del carrusel. Excepción a la regla A, decidida por Jürgen el 2026-10-25.
+        .extendsUnderVerticalBar()
     }
 }

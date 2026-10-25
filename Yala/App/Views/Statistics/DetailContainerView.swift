@@ -481,6 +481,7 @@ struct DetailContainerView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
         }
+        .fadesTowardVerticalBar()
     }
 
     @ViewBuilder

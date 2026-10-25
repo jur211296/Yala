@@ -626,9 +626,11 @@ final class WelcomeChooserUITests: XCTestCase {
 
         let back = app.buttons["welcome_back_button"].firstMatch
         XCTAssertTrue(back.exists, "No apareció el botón Volver.")
-        // El chevron suelto medía 44 pt de ancho (su marco de toque); la píldora con la palabra pasa de 80.
-        XCTAssertGreaterThan(back.frame.width, 60,
-                             "El Volver volvió a ser un chevron sin palabra: la píldora lleva el texto a la vista.")
+        // Jürgen, 2026-10-25: el «‹» del Welcome es el botón atrás del sistema, como en el resto de la app (antes, una
+        // píldora con la palabra dibujada encima). Vive en la barra de navegación, que es lo que lo lleva a la barra
+        // vertical en el iPhone Duo cerrado.
+        XCTAssertTrue(app.navigationBars.buttons["welcome_back_button"].exists,
+                      "El Volver ya no está en la barra de navegación: volvió a ser un botón dibujado encima.")
 
         let startNew = app.buttons["welcome_existing_start_new"]
         XCTAssertTrue(startNew.exists, "No apareció la pregunta de pie «¿Es tu primera vez en Yala?».")

@@ -78,6 +78,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                                 chipsContent
                             }
                         }
+                        .fadesTowardVerticalBar()
                         .scrollClipDisabled()
                     }
                 }
@@ -95,6 +96,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         ScrollView(.horizontal, showsIndicators: false) {
                             chipsContent
                         }
+                        .fadesTowardVerticalBar()
                     }
 
                     Spacer()

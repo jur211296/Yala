@@ -478,6 +478,7 @@ struct GroupDetailView: View {
             }
             .scrollTargetLayout()
         }
+        .fadesTowardVerticalBar()
         .contentMargins(.horizontal, DS.Spacing.lg)
         .scrollTargetBehavior(.viewAligned)
         .scrollClipDisabled()

@@ -22,13 +22,11 @@ import SwiftUI
 // MARK: - Layout
 
 enum WelcomeFormLayout {
-    /// Hueco sobre el titular: el de la píldora «Volver» (`welcomeBackButton`) más aire, para que el
-    /// titular no quede debajo de ella aunque la pantalla no tenga botón de volver — así todas las
-    /// pantallas del recorrido arrancan el titular a la misma altura.
-    ///
-    /// Fijo porque la píldora no crece más allá de `xxxLarge` (`welcomeBackButton`): con texto de
-    /// accesibilidad montaba encima del titular (medido en el iPhone 17 Pro a AX5, ~80 pt).
-    static let topInset: CGFloat = DS.Spacing.sm + DS.Button.actionSize + DS.Spacing.lg
+    /// Aire sobre el titular. El hueco del botón de volver ya lo pone la barra de navegación
+    /// (`welcomeBackButton`), que todas las pantallas del recorrido llevan aunque no tengan vuelta atrás: así
+    /// arrancan el titular a la misma altura. En el iPhone Duo cerrado el botón pasa a la barra vertical y la
+    /// de arriba no ocupa nada, así que el titular sube.
+    static let topInset: CGFloat = DS.Spacing.lg
     /// Ancho máximo de la columna en ventanas anchas (iPad, Stage Manager): una tarjeta de formulario
     /// estirada a 1 000 pt deja los botones como barras.
     static let maxWidth: CGFloat = 560
