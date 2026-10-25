@@ -185,7 +185,7 @@ struct UpgradePromptSheet: View {
     private func tile(systemName: String, circular: Bool = false, hidden: Bool = true) -> some View {
         Image(systemName: systemName)
             .font(DS.Typography.title)
-            .foregroundStyle(.white)
+            .foregroundStyle(.thOnAccent)
             .frame(width: 56, height: 56)
             .background(
                 RoundedRectangle(cornerRadius: circular ? 28 : DS.Radius.md, style: .continuous)

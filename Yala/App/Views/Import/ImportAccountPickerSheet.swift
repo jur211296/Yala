@@ -104,7 +104,7 @@ struct ImportAccountPickerSheet: View {
 
             if selectedAccount == account {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
             } else {
                 Image(systemName: "circle")
                     .foregroundStyle(.tertiary)

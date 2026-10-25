@@ -17,6 +17,7 @@ struct SettlementFormView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Input
 
@@ -55,6 +56,10 @@ struct SettlementFormView: View {
     // Toggle del segmented control superior: alterna entre el monto original
     // (`debt.currencyCode`) y el sugerido convertido a `group.currencyCode`.
     @State private var useSuggestedAmount: Bool = false
+
+    /// Lote 12.3 (card rhgi, molde de L13-9): «Apuntar pago» siempre activo; tocarlo sin importe marca el campo y lo dice.
+    @State private var showsMissingAmount = false
+    @FocusState private var amountFocused: Bool
 
     // MARK: - Init
 
@@ -128,11 +133,15 @@ struct SettlementFormView: View {
                     detailsSection
 
                     // Submit button
-                    YalaPrimaryButton(L10n.Groups.Settlement.registerPayment, icon: "checkmark.circle.fill") {
-                        handleSave()
+                    VStack(spacing: DS.Spacing.sm) {
+                        missingAmountHint
+                        // El id va en el botón y no en la pila: puesto en el contenedor pisaría el de la línea de arriba.
+                        YalaPrimaryButton(L10n.Groups.Settlement.registerPayment, icon: "checkmark.circle.fill") {
+                            handleSave()
+                        }
+                        .accessibilityIdentifier("settlement_form_save")
                     }
-                    .disabled(parsedAmount <= 0 || isSaving || optInInFlight)
-                    .accessibilityIdentifier("settlement_form_save")
+                    .disabled(isSaving || optInInFlight)
                     .padding(.horizontal, DS.Spacing.lg)
                 }
                 .padding(.top, DS.Spacing.lg)
@@ -301,13 +310,15 @@ struct SettlementFormView: View {
                 // Lote 13: respeta la preferencia «S/» / «PEN», como el formulario de gasto.
                 Text(appPreferences.currencyDisplayFormat.label(for: effectiveCurrency))
                     .font(DS.Typography.headline)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
 
                 TextField("0.00", text: $amountString)
                     .font(.system(size: 36, weight: .bold, design: .rounded)) // A11Y-DT: amount display
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .keyboardType(.decimalPad)
+                    .focused($amountFocused)
+                    .accessibilityIdentifier("settlement_form_amount")
                     .onChange(of: amountString) { _, newValue in
                         let filtered = AmountInputHelper.filterAmountInput(newValue)
                         if filtered != newValue {
@@ -316,8 +327,51 @@ struct SettlementFormView: View {
                     }
             }
             .frame(maxWidth: .infinity)
+            .overlay(alignment: .bottom) {
+                if markedMissingAmount {
+                    Capsule()
+                        .fill(DS.Semantic.errorForeground)
+                        .frame(height: 2)
+                        .accessibilityHidden(true)
+                }
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Qué falta (card rhgi)
+
+    /// Solo después de tocar «Apuntar pago», y mientras siga faltando: al escribir el importe se va sola.
+    private var markedMissingAmount: Bool {
+        showsMissingAmount && SettlementMissingFieldLogic.amountMissing(parsedAmount)
+    }
+
+    /// Una línea sobre «Apuntar pago» con lo que falta (la de L13-9 en el gasto de grupo).
+    @ViewBuilder
+    private var missingAmountHint: some View {
+        if markedMissingAmount {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(DS.Typography.caption)
+                    .accessibilityHidden(true)
+                Text(L10n.Groups.Expense.missingAmount)
+                    .font(DS.Typography.subheadline)
+            }
+            .foregroundStyle(DS.Semantic.errorForeground)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("settlement_form_missing_hint")
+            .transition(.opacity)
+        }
+    }
+
+    private func showMissingAmount() {
+        DS.Haptic.warning()
+        dsWithAnimation(reduceMotion) {
+            showsMissingAmount = true
+            amountFocused = true
+        }
+        UIAccessibility.post(notification: .announcement, argument: L10n.Groups.Expense.missingAmount)
     }
 
     // MARK: - Details Section
@@ -348,7 +402,11 @@ struct SettlementFormView: View {
     }
 
     private func handleSave() {
-        guard parsedAmount > 0 else { return }
+        guard !SettlementMissingFieldLogic.amountMissing(parsedAmount) else {
+            showMissingAmount()
+            return
+        }
+        showsMissingAmount = false
         isSaving = true
 
         do {

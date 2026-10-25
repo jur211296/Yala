@@ -482,7 +482,7 @@ struct GroupExpenseFormView: View {
 
             TextField("0.00", text: $viewModel.amountString)
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($focusedField, equals: .amount)
@@ -726,7 +726,7 @@ struct GroupExpenseFormView: View {
             }
             // En reposo, el tinte del tema (se ve tocable); abierta, el tema sólido (se está
             // editando). Decisión de Jürgen, 2026-10-04.
-            .foregroundStyle(isOpen ? Color.white : theme.accent)
+            .foregroundStyle(isOpen ? theme.onAccent : theme.accentText)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.xs)
             .background(Capsule().fill(isOpen ? theme.accent : theme.accent.opacity(0.18)))
@@ -755,7 +755,7 @@ struct GroupExpenseFormView: View {
                 }
             }
             .font(DS.Typography.body)
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
             .background(Capsule().fill(theme.accent.opacity(0.18)))
@@ -931,6 +931,7 @@ struct GroupExpenseFormView: View {
         }
         .buttonStyle(.borderedProminent)
         .tint(saveButtonEnabled ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
+        .foregroundStyle(saveButtonEnabled ? theme.onAccent : Color.white)
         .controlSize(.large)
         .disabled(!saveButtonEnabled || viewModel.isSaving || optInInFlight)
         .accessibilityIdentifier("group_expense_save")

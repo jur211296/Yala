@@ -179,7 +179,7 @@ extension PanelSection where Footer == EmptyView {
                         .frame(height: 80)
                 },
                 footer: {
-                    Text("Footer CTA").foregroundStyle(.tint)
+                    Text("Footer CTA").foregroundStyle(.thAccentText)
                 }
             )
         }

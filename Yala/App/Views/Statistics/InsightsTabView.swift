@@ -344,7 +344,7 @@ struct InsightsTabView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 24))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Stats.Insights.aiCardTitle)
@@ -427,7 +427,7 @@ struct InsightsTabView: View {
                 } label: {
                     HStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "sparkles")
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .accessibilityHidden(true)
                         Text(L10n.Stats.Insights.aiCardSubtitle)
                             .font(DS.Typography.subheadlineEmphasized)
@@ -601,7 +601,7 @@ struct InsightsTabView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "chart.bar.fill")
                 .font(.system(size: 32))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -648,7 +648,7 @@ struct InsightsTabView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "repeat.circle.fill")
                 .font(.system(size: 24))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -814,7 +814,7 @@ struct InsightsTabView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .frame(width: 32)
                 .accessibilityHidden(true)
 
@@ -1012,7 +1012,7 @@ struct InsightsTabView: View {
                     Text(ProPresentation.upgradeButtonTitle)
                         .font(DS.Typography.labelSmall)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(theme.accent)

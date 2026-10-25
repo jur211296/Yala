@@ -7907,6 +7907,9 @@
 
 /* Línea de ayuda bajo el título del formulario de saldo inicial. */
 "groups.openingBalance.formHelp" = "O que alguém já devia antes de usar o Yala";
+"groups.openingBalance.missingDebtor" = "Escolha quem deve";
+"groups.openingBalance.missingCreditor" = "Escolha a quem deve";
+"groups.openingBalance.missingDistinctPeople" = "Escolha duas pessoas diferentes";
 
 /* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
 "inbox.movedToGroup" = "Movido para “%@”";

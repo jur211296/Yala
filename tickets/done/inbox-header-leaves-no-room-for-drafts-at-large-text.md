@@ -1,10 +1,10 @@
 ---
 id: inbox-header-leaves-no-room-for-drafts-at-large-text
-status: backlog
+status: done
 priority: medium
 area: "inbox, a11y, iphone, adaptativo"
 created: 2026-09-28
-updated: 2026-10-08
+updated: 2026-10-25
 source: "iphone-small-screens-and-safe-areas-audit (carril adaptativo, paso 3), capturas del 2026-09-28"
 ---
 
@@ -39,3 +39,5 @@ iphone-small-screens-and-safe-areas-audit/README.md`. A tamaño normal no deber�
   sílabas a AX5. Se puede arreglar a la vez.
 
 Triage 2026-10-08: abierto · medium → medium · `InboxView.body` sigue apilando la cabecera fija y la lista en un `VStack` (`InboxView.swift:230-264`), sin commit de arreglo desde el 28-sep.
+
+Hecho en el lote 12.3 (2026-10-25): con texto de accesibilidad (AX1–AX5) la cabecera entra en la lista y se desplaza con ella, y los filtros van uno debajo del otro (punto 4 de `large-text-leftovers-outside-the-main-iphone-screens`). A tamaño normal no cambia: diff de píxeles en el iPhone SE, solo el reloj y el tono de «2 pendientes» (card 1c9w). XCUITest `InboxLargeTextUITests` (cae con la cabecera fija). Capturas antes/después en el PR.

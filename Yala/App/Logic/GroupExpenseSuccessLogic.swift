@@ -173,3 +173,33 @@ nonisolated enum GroupExpenseMissingFieldLogic {
         return nil
     }
 }
+
+// MARK: - Lote 12.3 · El mismo trato en los formularios hermanos (card rhgi)
+
+/// Lo primero que falta para guardar un saldo inicial. Mismo criterio que L13-9 en el gasto: «Guardar» siempre activo y,
+/// al tocarlo con algo pendiente, se marca el campo y una línea dice qué falta.
+nonisolated enum GroupOpeningBalanceMissingField: Equatable {
+    case debtor
+    case creditor
+    /// Quien debe y a quien le debe son la misma persona (los selectores lo evitan; una edición con datos raros, no).
+    case samePerson
+    case amount
+}
+
+nonisolated enum GroupOpeningBalanceMissingFieldLogic {
+
+    /// En el orden en que se ve el formulario: quién debe, a quién, el importe. `nil` si se puede guardar (los mismos
+    /// términos que pedía el `canSave` de antes).
+    static func firstMissing(debtorMemberID: String, creditorMemberID: String, amount: Double) -> GroupOpeningBalanceMissingField? {
+        if debtorMemberID.isEmpty { return .debtor }
+        if creditorMemberID.isEmpty { return .creditor }
+        if debtorMemberID == creditorMemberID { return .samePerson }
+        if !(amount > 0) { return .amount }
+        return nil
+    }
+}
+
+/// «Apuntar pago» de una liquidación: lo único que puede faltar es el importe.
+nonisolated enum SettlementMissingFieldLogic {
+    static func amountMissing(_ amount: Double) -> Bool { !(amount > 0) }
+}

@@ -104,7 +104,7 @@ private struct RetryChip: View {
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.xs)
             .background(theme.accent.opacity(0.12))
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)

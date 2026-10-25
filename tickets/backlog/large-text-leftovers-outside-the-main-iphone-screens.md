@@ -36,7 +36,7 @@ arregladas, **inferido** sin captura.
    **Corrección del 2026-09-28** ([[iphone-small-screens-and-safe-areas-audit]]): «no tapa ningún botón» valía para
    el ProMax. En el SE a AX5 el formulario no cabía y «Guardar» y los chips quedaban fuera de la pantalla; ese
    ticket le dio scroll. Los rótulos cortados siguen aquí.
-4. **Bandeja**: los filtros «Pendientes / Archivados» se parten en sílabas («Pe / n…») a AX5. Visto.
+4. **Bandeja**: los filtros «Pendientes / Archivados» se parten en sílabas («Pe / n…») a AX5. Visto. **Arreglado en el lote 12.3 (2026-10-25)**: a tamaños de accesibilidad van uno debajo del otro.
 5. **Panel**: el widget pequeño de presupuestos corta su título («Pre…») y el eje del gráfico de Tendencias solapa
    las fechas («2122 24 2628»). Visto a AX5. Las tarjetas pequeñas tienen alto fijo (`WidgetSize.smallHeight`,
    192 pt); el de pagos planificados ya se topa en AX1 con su motivo escrito, y aquí toca decidir si el de

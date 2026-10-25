@@ -20,7 +20,7 @@ struct QuickStatCell: View {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: icon)
                     .font(DS.Typography.captionSmall)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
 
                 Text(label)

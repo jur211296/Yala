@@ -433,7 +433,7 @@ struct TransactionSuccessView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "arrow.down.circle")
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .frame(width: 20)
                         .accessibilityHidden(true)
 

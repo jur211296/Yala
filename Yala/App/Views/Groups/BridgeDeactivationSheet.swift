@@ -137,7 +137,7 @@ struct BridgeDeactivationSheet: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: selectedOption == option ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(selectedOption == option ? .thAccent : .thSecondaryText)
+                    .foregroundStyle(selectedOption == option ? .thAccentText : .thSecondaryText)
                 Text(label)
                     .font(DS.Typography.body)
                     // UX 2.2 · L13-14: la opción que borra va en el color de peligro.

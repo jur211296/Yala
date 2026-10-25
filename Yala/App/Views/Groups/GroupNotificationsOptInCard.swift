@@ -48,7 +48,7 @@ struct GroupNotificationsOptInCard: View {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: state == .enabled ? "bell.badge.fill" : "bell.fill")
                     .font(DS.Typography.title3)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.UXD14.notifyTitle)

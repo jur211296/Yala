@@ -193,7 +193,7 @@ struct CurrencySelectorView: View {
 
                 if currency == selectedCurrency {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }

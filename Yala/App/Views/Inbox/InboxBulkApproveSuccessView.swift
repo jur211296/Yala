@@ -40,7 +40,7 @@ struct InboxBulkApproveSuccessView: View {
             VStack(spacing: DS.Spacing.sm) {
                 Text("\(approvedCount)")
                     .font(Font.system(.largeTitle, design: .rounded).weight(.bold))
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
 
                 Text(approvedCount == 1 ? L10n.Inbox.transactionCreated : L10n.Inbox.transactionsCreated)
                     .font(DS.Typography.subheadline)

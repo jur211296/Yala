@@ -62,7 +62,7 @@ struct GroupNudgeBanner: View {
                     } label: {
                         Text(nudge.ctaLabel)
                             .font(DS.Typography.labelSmall)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.thOnAccent)
                             .padding(.horizontal, DS.Spacing.lg)
                             .padding(.vertical, DS.Spacing.xs)
                             .background(Capsule().fill(.thAccent))

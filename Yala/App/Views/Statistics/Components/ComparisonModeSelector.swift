@@ -55,7 +55,7 @@ struct ComparisonModeSelector: View {
                 }
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .background(Capsule().fill(theme.accent.opacity(0.14)))
                 .glassEffect(.regular.interactive(), in: .capsule)
                 .contentShape(Capsule())

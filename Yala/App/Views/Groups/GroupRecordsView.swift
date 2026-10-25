@@ -379,7 +379,7 @@ struct GroupRecordsView: View {
 
         return Image(systemName: icon)
             .font(DS.Typography.label)
-            .foregroundStyle(.thAccent)
+            .foregroundStyle(.thAccentText)
             .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
             .background(Circle().fill(.thAccent.opacity(0.12)))
     }

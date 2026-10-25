@@ -484,7 +484,7 @@ struct GroupMembersView: View {
             } label: {
                 Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
                     .font(DS.Typography.label)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
             }

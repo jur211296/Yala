@@ -21,7 +21,7 @@ struct TutorialsListView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "book.fill")
                             .font(DS.Typography.amountLarge)
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.tutorials)
@@ -119,7 +119,7 @@ struct TutorialsListView: View {
             if completed.contains(tutorial) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DS.Typography.body)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .accessibilityHidden(true)
             }
         }

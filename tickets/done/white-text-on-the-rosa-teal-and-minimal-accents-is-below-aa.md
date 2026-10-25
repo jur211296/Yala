@@ -1,10 +1,10 @@
 ---
 id: white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa
-status: backlog
+status: done
 priority: low
 area: "design-system, accesibilidad, temas"
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-10-25
 source: "pulido del 2026-10-17 (acento de marca a AA), hallazgo fuera de alcance"
 ---
 
@@ -36,3 +36,5 @@ tema.
 ## Hecha cuando
 
 Hay decisión y, si es la 1, el texto de los botones rellenos mide ≥ 4,5:1 en los ocho temas.
+
+Hecho en el lote 12.3 (2026-10-25), opción 1: token `YalaTheme.onAccent` (blanco en los índigo; negro en Teal, Rosa y Minimalista) en todos los rellenos de acento con texto, incluidos el ✓ de las hojas y los «+» flotantes (`theme.onFill`). ≥ 4,5:1 en los diez temas (`ThemeTokenContrastTests`): Teal 9,6 · Minimalista 11,4 · Rosa 5,6 · índigo 4,6. Rosa con texto negro y no con relleno más profundo, para no cambiar el color del tema.

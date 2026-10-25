@@ -470,7 +470,7 @@ struct CashFlowChartsSheet: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
         }
-        .foregroundStyle(appPreferences.cashFlowAIEnabled ? AnyShapeStyle(Color.white) : AnyShapeStyle(.thSecondaryText))
+        .foregroundStyle(appPreferences.cashFlowAIEnabled ? AnyShapeStyle(theme.onAccent) : AnyShapeStyle(.thSecondaryText))
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
         .background {
@@ -514,7 +514,7 @@ struct CashFlowChartsSheet: View {
         if isAIEnabled && isLoading {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "sparkles")
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .font(DS.Typography.subheadline)
                 Text(L10n.CashFlowPlan.analyzingProjection)
                     .font(DS.Typography.caption)
@@ -526,7 +526,7 @@ struct CashFlowChartsSheet: View {
         } else if isAIEnabled, let comment = aiComment {
             HStack(alignment: .top, spacing: DS.Spacing.sm) {
                 Image(systemName: "sparkles")
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .font(DS.Typography.subheadline)
                 Text(LocalizedStringKey(comment))
                     .font(DS.Typography.caption)
@@ -788,7 +788,7 @@ struct CashFlowChartsSheet: View {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: "lightbulb.fill")
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .frame(width: 32, height: 32)
                     .background(theme.accent.opacity(0.12), in: Circle())
                     .accessibilityHidden(true)

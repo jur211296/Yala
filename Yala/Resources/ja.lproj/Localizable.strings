@@ -7919,6 +7919,9 @@
 
 /* Línea de ayuda bajo el título del formulario de saldo inicial. */
 "groups.openingBalance.formHelp" = "Yalaを使う前からあった貸し借り";
+"groups.openingBalance.missingDebtor" = "借りている人を選んでください";
+"groups.openingBalance.missingCreditor" = "貸している人を選んでください";
+"groups.openingBalance.missingDistinctPeople" = "別々の2人を選んでください";
 
 /* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
 "inbox.movedToGroup" = "「%@」に移動しました";

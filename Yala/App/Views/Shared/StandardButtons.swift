@@ -36,6 +36,7 @@ struct YalaToolbarButton: View {
 /// Botón circular de confirmación (Check)
 /// Diseño: SF Symbol `checkmark.circle.fill` con rendering palette (Blanco + Electric Indigo).
 struct YalaSaveButton: View {
+    @Environment(\.yalaTheme) private var theme
     let action: () -> Void
     var isDisabled: Bool = false
     var disabledHint: String?
@@ -47,7 +48,8 @@ struct YalaSaveButton: View {
         Button(action: action) {
             Image(systemName: "checkmark")
                 .font(DS.Typography.label.weight(.bold))
-                .foregroundStyle(.white)
+                // Sobre el relleno del tinte de la app (el acento): negro en Teal, Rosa y Minimalista (card lbcr).
+                .foregroundStyle(theme.onAccent)
                 .frame(width: 20, height: 20)
         }
         .disabled(isDisabled)
@@ -100,7 +102,7 @@ struct YalaPrimaryButton: View {
             HStack(spacing: DS.Spacing.sm) {
                 if isLoading {
                     ProgressView()
-                        .tint(.white)
+                        .tint(primaryForeground)
                 } else if let icon {
                     Image(systemName: icon)
                         .font(DS.Typography.label)
@@ -111,7 +113,7 @@ struct YalaPrimaryButton: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: 50)
-            .foregroundStyle(.white)
+            .foregroundStyle(primaryForeground)
             .background(isDisabled ? DS.Semantic.disabledForeground : (enabledFill ?? theme.accent))
             .clipShape(Capsule())
         }
@@ -119,6 +121,12 @@ struct YalaPrimaryButton: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("primary_button")
         .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
+    }
+
+    /// El texto sobre el relleno: `onAccent` sobre el acento (negro en Teal, Rosa y Minimalista, card lbcr); sobre un
+    /// relleno propio, el que contraste; apagado, blanco como siempre.
+    private var primaryForeground: Color {
+        isDisabled ? .white : theme.onFill(enabledFill ?? theme.accent)
     }
 }
 
@@ -237,8 +245,8 @@ extension Color {
     /// Color del símbolo "+" del FAB. En material siempre blanco (sobre el tint
     /// translúcido). En sólido, contraste calculado sobre el `base` — necesario
     /// porque accents claros (teal, minimalist) lavarían un blanco fijo.
-    static func fabPlusForeground(base: Color, usesMaterial: Bool) -> Color {
-        usesMaterial ? .white : Color.contrastingText(for: base)
+    static func fabPlusForeground(base: Color, usesMaterial: Bool, theme: YalaTheme) -> Color {
+        usesMaterial ? .white : theme.onFill(base)
     }
 }
 
@@ -258,7 +266,7 @@ struct CircularPlusFAB: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(DS.Typography.title)
-                .foregroundStyle(Color.fabPlusForeground(base: tint, usesMaterial: theme.usesMaterial))
+                .foregroundStyle(Color.fabPlusForeground(base: tint, usesMaterial: theme.usesMaterial, theme: theme))
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .modifier(FABSurfaceModifier(base: tint))
         }

@@ -988,7 +988,7 @@ struct ScheduledPaymentEditorView: View {
         } label: {
             Text(weekday.short)
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()

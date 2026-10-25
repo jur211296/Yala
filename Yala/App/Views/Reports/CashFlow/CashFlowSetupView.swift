@@ -175,7 +175,7 @@ struct CashFlowSetupView: View {
                 } label: {
                     Text(L10n.UXL18.startChange)
                         .font(DS.Typography.caption.weight(.semibold))
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -191,7 +191,7 @@ struct CashFlowSetupView: View {
         HStack(alignment: .top, spacing: DS.Spacing.md) {
             Image(systemName: "lightbulb.fill")
                 .font(DS.Typography.headline)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .frame(width: 36, height: 36)
                 .background(theme.accent.opacity(0.12), in: Circle())
                 .accessibilityHidden(true)
@@ -237,7 +237,7 @@ struct CashFlowSetupView: View {
                     .font(DS.Typography.body)
                     .fontWeight(.medium)
             }
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .buttonStyle(.plain)
@@ -311,7 +311,7 @@ struct CashFlowSetupView: View {
                 Spacer(minLength: DS.Spacing.sm)
                 Text(showVariableLines ? L10n.UXL18.variableHide : L10n.UXL18.variableShow)
                     .font(DS.Typography.label.weight(.semibold))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
             }
             .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
@@ -335,7 +335,7 @@ struct CashFlowSetupView: View {
                 }
             } label: {
                 Image(systemName: line.isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(line.isSelected ? theme.accent : .secondary)
+                    .foregroundStyle(line.isSelected ? theme.accentText : .secondary)
                     .font(DS.Typography.headline)
             }
             .buttonStyle(.plain)
@@ -572,7 +572,7 @@ struct CashFlowMethodPickerSheet: View {
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: selectedMethod == method ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
+                    .foregroundStyle(selectedMethod == method ? theme.accentText : .secondary)
                     .font(DS.Typography.headline)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

@@ -88,7 +88,7 @@ struct AppIconSettingsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "app.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.appIcon)

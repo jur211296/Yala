@@ -7919,6 +7919,9 @@
 
 /* Línea de ayuda bajo el título del formulario de saldo inicial. */
 "groups.openingBalance.formHelp" = "使用 Yala 之前就欠下的款项";
+"groups.openingBalance.missingDebtor" = "请选择欠款人";
+"groups.openingBalance.missingCreditor" = "请选择欠给谁";
+"groups.openingBalance.missingDistinctPeople" = "请选择两个不同的人";
 
 /* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
 "inbox.movedToGroup" = "已移至「%@」";

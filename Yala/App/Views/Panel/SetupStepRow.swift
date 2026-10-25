@@ -33,7 +33,7 @@ struct SetupStepRow: View {
         } else if isCurrent {
             Image(systemName: "arrow.right.circle.fill")
                 .font(.system(size: 18))
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
         } else {
             Image(systemName: "circle")
                 .font(.system(size: 18))
@@ -70,11 +70,11 @@ struct SetupStepRow: View {
                 if step.isSkipped {
                     Text(L10n.SetupChecklist.tryAgain)
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 } else if !step.isCompleted {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold)) // A11Y-DT: SF Symbol icon sizing for chevron
-                        .foregroundStyle(isCurrent ? AnyShapeStyle(.thAccent) : AnyShapeStyle(.thSecondaryText))
+                        .foregroundStyle(isCurrent ? AnyShapeStyle(.thAccentText) : AnyShapeStyle(.thSecondaryText))
                 }
             }
             .padding(.vertical, DS.Spacing.xs)

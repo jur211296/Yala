@@ -253,7 +253,7 @@ struct YalaAIOnboardingView: View {
                     )
                     consentRow(
                         icon: "checkmark.shield.fill",
-                        fill: .incomeAmount,
+                        fill: .incomeFill,
                         title: L10n.UXL14.consentUseTitle,
                         body: L10n.UXL14.consentUseBody
                     )
@@ -274,7 +274,7 @@ struct YalaAIOnboardingView: View {
                 } label: {
                     Text(L10n.AIConsent.privacyPolicy)
                         .font(DS.Typography.label)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .frame(minHeight: 44)
                         .contentShape(Rectangle())
                 }

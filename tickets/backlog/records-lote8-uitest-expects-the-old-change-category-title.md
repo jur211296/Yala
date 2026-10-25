@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "testing, records"
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-25
 source: "gate de la sesión «Duo cerrado · opción 2» (2026-10-24)"
 ---
 
@@ -21,3 +21,8 @@ busca la barra «Cambiar subcategoría», y la hoja se titula **«Cambiar catego
 
 - El test lee el título por la clave de localización (o el literal nuevo) y vuelve a verde.
 - Se comprueba que el resto del caso (marca la actual, deshacer desde el aviso) sigue cubriendo lo que cubría.
+
+**Medido otra vez el 2026-10-25** (lote 12.3, iPhone 17 Pro, iOS 27.0): ahora cae ANTES, en la línea 130 («El menú no
+ofrece cambiar la categoría»): tras la pulsación larga, `app.buttons["Cambiar categoría"]` no aparece. Rojo 2 de 2 con la
+rama del lote y 1 de 1 con la base `2.2` (`fc58604a0`) sin cambios, así que no lo trae el lote. El arreglo del título de
+la hoja no basta: hay que mirar primero cómo sale hoy el menú contextual de la fila.

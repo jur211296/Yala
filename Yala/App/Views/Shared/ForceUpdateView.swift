@@ -21,7 +21,7 @@ struct ForceUpdateView: View {
             // A11Y-DT: icono decorativo (accessibilityHidden), tamaño fijo — molde SignOutRelaunchView.
             Image(systemName: "arrow.up.circle.fill")
                 .font(.system(size: 44))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
             Text(L10n.AppUpdate.Force.title)
                 .font(DS.Typography.title2)

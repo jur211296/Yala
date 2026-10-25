@@ -1,10 +1,10 @@
 ---
 id: indigo-accent-as-small-text-on-dark-themes-is-below-aa
-status: backlog
+status: done
 priority: low
 area: "design-system, accesibilidad"
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-10-25
 source: "pulido del 2026-10-17 (acento de marca a AA), conflicto medido fuera de alcance"
 ---
 
@@ -41,3 +41,5 @@ Glass y de Traslúcido; sobre tarjetas oscuras ya estaba por debajo.
 ## Hecha cuando
 
 Hay decisión y, si es la 1, el texto pequeño índigo mide ≥ 4,5:1 sobre las superficies de la tabla.
+
+Hecho en el lote 12.3 (2026-10-25), opción 1: token `YalaTheme.accentText` (#818CF8 en los temas índigo oscuros, #FF4DA6 en Rosa) para todo el acento como texto o icono; ≥ 4,6:1 sobre fondo y tarjeta de todos los temas oscuros (`ThemeTokenContrastTests`). Queda el tema Claro a 4,46 sobre el fondo: `indigo-small-text-on-the-light-background-is-4-46`.

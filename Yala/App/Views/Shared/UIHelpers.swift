@@ -230,6 +230,13 @@ extension Color {
     /// `BrandAccentContrastTests`, junto con las copias del hex (widgets, `AccentColor`, `LaunchBackground`, Sankey).
     static let electricIndigo = Color(hex: "6063F1")
 
+    /// Índigo de TEXTO en los temas oscuros (`YalaTheme.accentText`, card 1c9w): el mismo que usa la web para lo mismo.
+    /// ≥ 4,6:1 en todas las superficies oscuras de los temas; `electricIndigo` se queda en 3,2–4,5 ahí.
+    static let indigoTextOnDark = Color(hex: "818CF8")
+
+    /// Rosa de TEXTO en los temas Rosa (`YalaTheme.accentText`): `hotPink` como texto da 4,48 sobre la tarjeta de Rosa.
+    static let pinkTextOnDark = Color(hex: "FF4DA6")
+
     /// Neon Cyan: Representa el 'dinero digital' y el optimismo.
     static let neonCyan = Color(hex: "00F3FF")
 
@@ -242,12 +249,26 @@ extension Color {
     /// Priority Nature: Softer Cyan for „Priority" expenses.
     static let priorityNeed = Color(hex: "00C2CB")
 
-    /// Turquesa oscurecido para el MONTO de un ingreso sobre tarjeta blanca.
-    /// `priorityNeed` (#00C2CB) sólo alcanza 2,19 de contraste sobre blanco y
-    /// no llega al mínimo AA de 4,5; éste da 5,1 conservando el matiz. Medido
-    /// el 2026-09-02. Para superficies rellenas (chips, barras, anillos) sigue
-    /// usándose `priorityNeed`: el requisito de contraste es del TEXTO.
-    static let incomeAmount = Color(hex: "0F7A80")
+    /// Turquesa del MONTO de un ingreso. Adaptativo (card elwl, 2026-10-25):
+    /// - Claro: #0F7A80, oscurecido para la tarjeta blanca (`priorityNeed` da 2,19 sobre blanco; éste 5,1). Medido el
+    ///   2026-09-02.
+    /// - Oscuro: `priorityNeed` (#00C2CB), el turquesa de marca. El fijo de antes daba 3,3:1 sobre la tarjeta del tema
+    ///   Oscuro (#1C1C1E) y 2,9 sobre la de Índigo; éste da ≥ 6,3:1 en todas las superficies oscuras de los temas
+    ///   (lo fija `ThemeTokenContrastTests`).
+    /// Para superficies rellenas (chips, barras, anillos) sigue usándose `priorityNeed`: el requisito es del TEXTO.
+    static let incomeAmount = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color.incomeAmountDark) : UIColor(Color.incomeAmountLight)
+    })
+    /// Las dos mitades de `incomeAmount`, para medirlas (`ThemeTokenContrastTests`).
+    static let incomeAmountLightHex = "0F7A80"
+    static let incomeAmountDarkHex = "00C2CB"
+    static let incomeAmountLight = Color(hex: incomeAmountLightHex)
+    static let incomeAmountDark = Color(hex: incomeAmountDarkHex)
+
+    /// Turquesa de RELLENO sólido con texto o icono blanco encima (5,1:1), igual en claro y en oscuro: la píldora de
+    /// ingresos del hero, la ficha de categorías y el consentimiento de Yala IA. Hasta el 2026-10-25 usaban
+    /// `incomeAmount`, que desde entonces se aclara en oscuro y con blanco encima no llegaría a AA.
+    static let incomeFill = Color(hex: incomeAmountLightHex)
 
     /// El tono de un IMPORTE de movimiento, el mismo que el Panel en toda la app (UX 2.2 · L4-14, decisión de Jürgen
     /// 2026-10-14): el ingreso en `incomeAmount`, el gasto en el color del texto. Se colorea la excepción; el signo

@@ -274,7 +274,7 @@ struct NewTransactionView: View {
                 HStack(alignment: .top, spacing: DS.Spacing.sm) {
                     Image(systemName: "info.circle.fill")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         Text(message)
                             .font(DS.Typography.body)
@@ -295,7 +295,7 @@ struct NewTransactionView: View {
                     Text(ctaLabel)
                         .font(DS.Typography.body)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
                 .buttonStyle(.plain)
             }

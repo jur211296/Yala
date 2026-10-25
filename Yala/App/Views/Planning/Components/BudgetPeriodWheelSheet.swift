@@ -54,7 +54,7 @@ struct BudgetPeriodWheelSheet: View {
                         Text(NSLocalizedString("budgets.period.goToToday", comment: ""))
                             .font(DS.Typography.subheadline)
                     }
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                 }
                 .buttonStyle(.plain)
             }

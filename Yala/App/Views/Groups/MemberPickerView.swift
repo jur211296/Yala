@@ -74,7 +74,7 @@ struct MemberPickerView: View {
                 if selectedMemberID == id {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
             }
             .padding(.horizontal, DS.FormRow.paddingH)

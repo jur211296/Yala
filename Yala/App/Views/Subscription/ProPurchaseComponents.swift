@@ -144,7 +144,7 @@ struct ProPlanCard: View {
                         if let savingsBadge {
                             Text(savingsBadge)
                                 .font(DS.Typography.labelSmall)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(theme.onFill(isSelected ? Color.hotPink : theme.accent))
                                 .padding(.horizontal, DS.Spacing.sm)
                                 .padding(.vertical, DS.Spacing.xxs)
                                 .background(Capsule().fill(isSelected ? Color.hotPink : theme.accent))
@@ -166,10 +166,10 @@ struct ProPlanCard: View {
                     .font(DS.Typography.title)
                     .symbolRenderingMode(isSelected ? .palette : .monochrome)
                     .foregroundStyle(isSelected ? AnyShapeStyle(theme.accent) : AnyShapeStyle(Color.primary.opacity(0.6)),
-                                     Color.white)
+                                     theme.onAccent)
                     .accessibilityHidden(true)
             }
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .foregroundStyle(isSelected ? theme.onAccent : Color.primary)
             .padding(DS.Spacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
@@ -348,7 +348,7 @@ struct ProLegalFooter: View {
                 Link(L10n.Subscription.privacyPolicyLink, destination: AppConstants.privacyURL)
             }
             .font(DS.Typography.caption)
-            .tint(theme.accent)
+            .tint(theme.accentText)
         }
         .frame(maxWidth: .infinity)
     }

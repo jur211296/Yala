@@ -99,7 +99,7 @@ private struct HomeScreenMenuPreview: View {
         } else {
             Image(systemName: "app.fill")
                 .font(DS.Typography.title2)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: iconSize, height: iconSize)
                 .accessibilityHidden(true)
         }

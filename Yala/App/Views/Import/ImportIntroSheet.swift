@@ -66,7 +66,7 @@ struct ImportResultOverlay: View {
                 } label: {
                     Text(L10n.Import.continueBtn)
                         .font(Typography.bodyLarge)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.onFill(result.isSuccess ? Color.financeGreen : theme.accent))
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(result.isSuccess ? Color.financeGreen : theme.accent)
@@ -256,7 +256,7 @@ struct ImportIntroSheet: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "square.and.arrow.down")
                 .font(.system(size: heroIconSize))
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.title)
@@ -295,7 +295,7 @@ struct ImportIntroSheet: View {
 
                     Image(systemName: "arrow.down.circle")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.FormRow.paddingV)

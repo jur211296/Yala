@@ -465,7 +465,7 @@ struct ExchangeRateWidget: View {
                 .multilineTextAlignment(.center)
             Text(L10n.ExchangeRate.noSecondaryCurrenciesPath)
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
         }
         .frame(height: 120)
         .frame(maxWidth: .infinity)

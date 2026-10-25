@@ -240,7 +240,7 @@ struct ScheduledPaymentDetailView: View {
                         systemImage: "checkmark.circle.fill"
                     )
                     .font(DS.Typography.label)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityIdentifier("scheduled_detail_month_paid")
                 }
             }
@@ -287,7 +287,7 @@ struct ScheduledPaymentDetailView: View {
         Button(action: action) {
             Text(title)
                 .font(DS.Typography.bodyBold)
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
@@ -386,7 +386,7 @@ struct ScheduledPaymentDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
-                    .foregroundStyle(isPast ? Color.secondary : theme.accent)
+                    .foregroundStyle(isPast ? Color.secondary : theme.accentText)
                     .accessibilityHidden(true)
                 Text(title)
                     .font(DS.Typography.subheadlineEmphasized)
@@ -442,7 +442,7 @@ struct ScheduledPaymentDetailView: View {
 
                 Image(systemName: "ellipsis.circle")
                     .font(DS.Typography.body)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -582,6 +582,7 @@ struct PayNowTarget: Identifiable {
 
 /// La píldora de arriba del detalle: los mismos colores que la de la lista, algo más grande.
 private struct TopPillStyle: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
     let state: ScheduledPaymentRowState
     let accent: Color
 
@@ -605,7 +606,8 @@ private struct TopPillStyle: ViewModifier {
 
     private var foreground: Color {
         switch state {
-        case .overdue, .paid: return .white
+        case .overdue: return .white
+        case .paid: return theme.onFill(accent)  // sobre el relleno del acento (card lbcr)
         case .dueToday, .dueTomorrow, .dueInDays: return .primary
         case .skipped, .paused: return .secondary
         }

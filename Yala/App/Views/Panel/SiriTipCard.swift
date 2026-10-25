@@ -15,7 +15,7 @@ struct SiriTipCard: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "mic.badge.plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(.tint)
+                .foregroundStyle(.thAccentText)
                 .frame(width: 36, height: 36)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

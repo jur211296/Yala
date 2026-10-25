@@ -198,6 +198,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(.thOnAccent)
                     .accessibilityIdentifier("filters_apply_button")
                 }
             }
@@ -335,7 +336,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
                 Text(tag.name)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -452,7 +453,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             HStack(spacing: DS.Spacing.sm) {
                 Text(need.displayName)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -512,7 +513,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         } label: {
             Text(currency.rawValue)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
@@ -627,7 +628,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                         Spacer()
                                         if localSelectedAccounts.contains(account.persistentModelID) {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(theme.accent)
+                                                .foregroundStyle(theme.accentText)
                                                 .font(DS.Typography.headline)
                                                 .accessibilityHidden(true)
                                         }
@@ -708,7 +709,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
                                         if localSelectedTags.contains(tag.persistentModelID) {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(theme.accent)
+                                                .foregroundStyle(theme.accentText)
                                                 .font(DS.Typography.headline)
                                                 .accessibilityHidden(true)
                                         }

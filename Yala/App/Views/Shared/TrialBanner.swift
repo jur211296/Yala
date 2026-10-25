@@ -52,7 +52,7 @@ struct TrialBanner: View {
             } label: {
                 Text(L10n.UXPro.bannerManage)
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("trial_banner_manage")

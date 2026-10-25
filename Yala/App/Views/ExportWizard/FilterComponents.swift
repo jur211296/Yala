@@ -259,7 +259,7 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
 
                                         if selection.contains(item) {
                                             Image(systemName: "checkmark")
-                                                .foregroundStyle(theme.accent)
+                                                .foregroundStyle(theme.accentText)
                                                 .font(DS.Typography.headline)
                                         }
                                     }

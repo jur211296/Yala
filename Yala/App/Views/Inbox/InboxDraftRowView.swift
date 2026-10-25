@@ -284,7 +284,7 @@ struct InboxDraftRowView: View {
 
                 Image(systemName: "checkmark")
                     .font(DS.Typography.badgeLabel)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
             }
         }
     }

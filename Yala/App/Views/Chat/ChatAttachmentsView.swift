@@ -70,7 +70,7 @@ struct ChatAttachmentsView: View {
             } label: {
                 Text(L10n.UXL14D.saveAll(ready.count))
                     .font(DS.Typography.label)
-                    .foregroundStyle(Color.contrastingText(for: theme.accent))
+                    .foregroundStyle(theme.onAccent)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .background(Capsule().fill(theme.accent))
                     .contentShape(Capsule())

@@ -211,7 +211,7 @@ struct MoreView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: kind.icon)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                 Text(kind.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
@@ -296,7 +296,7 @@ struct MoreView: View {
             HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.label)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)

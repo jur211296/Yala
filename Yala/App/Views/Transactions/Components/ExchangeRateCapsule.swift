@@ -76,7 +76,7 @@ struct ExchangeRateCapsule: View {
                             .foregroundStyle(.primary)
                     }
                     Image(systemName: "pencil")
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .accessibilityHidden(true)
                 }
                 .font(DS.Typography.label)

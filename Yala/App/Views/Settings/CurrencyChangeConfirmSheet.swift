@@ -120,7 +120,7 @@ struct CurrencyChangeConfirmSheet: View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .frame(width: 20)
                 .accessibilityHidden(true)
             Text(text)

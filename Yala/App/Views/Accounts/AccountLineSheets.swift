@@ -155,7 +155,7 @@ struct AddAccountLineSheet: View {
                 if selected == currency {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.body)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .accessibilityHidden(true)
                 }
             }

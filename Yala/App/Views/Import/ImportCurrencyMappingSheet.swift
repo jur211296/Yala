@@ -60,7 +60,7 @@ struct ImportCurrencyMappingSheet: View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "dollarsign.arrow.circlepath")
                 .font(DS.Typography.amountLarge)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .padding(.bottom, DS.Spacing.sm)
 
             Text(L10n.Import.currenciesDetected(sortedCurrencies.count))
@@ -215,7 +215,7 @@ struct ImportCurrencyMappingSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 } else {
                     Image(systemName: "circle")
                         .foregroundStyle(.tertiary)

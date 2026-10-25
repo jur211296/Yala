@@ -57,7 +57,7 @@ struct ProUpgradeBanner: View {
                     Text(ProPresentation.upgradeButtonTitle)
                         .font(DS.Typography.labelSmall)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(theme.accent)

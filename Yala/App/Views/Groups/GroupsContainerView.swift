@@ -945,7 +945,7 @@ struct GroupsContainerView: View {
         if showGroupsSignOutReentryBanner && isGroupsSignedOutEmptyState {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "person.crop.circle.badge.checkmark")
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                 Text(L10n.Groups.Empty.SignedOut.reentryBanner)
                     .font(DS.Typography.caption)
                 Spacer(minLength: 0)

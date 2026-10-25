@@ -25,6 +25,7 @@ struct GroupOpeningBalanceFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var debtorMemberID: String
     @State private var creditorMemberID: String
@@ -37,6 +38,8 @@ struct GroupOpeningBalanceFormView: View {
     @State private var errorMessage: String?
     @State private var showError = false
     @FocusState private var amountFocused: Bool
+    /// Lote 12.3 (card rhgi, molde de L13-9): «Guardar» siempre activo; tocarlo con algo pendiente marca el campo y lo dice.
+    @State private var showsMissingField = false
 
     init(
         group: SplitGroup,
@@ -71,11 +74,17 @@ struct GroupOpeningBalanceFormView: View {
 
     private var amountValue: Double { AmountInputHelper.parseDecimal(amountString) }
 
-    private var canSave: Bool {
-        !debtorMemberID.isEmpty
-            && !creditorMemberID.isEmpty
-            && debtorMemberID != creditorMemberID
-            && amountValue > 0
+    private var firstMissingField: GroupOpeningBalanceMissingField? {
+        GroupOpeningBalanceMissingFieldLogic.firstMissing(
+            debtorMemberID: debtorMemberID,
+            creditorMemberID: creditorMemberID,
+            amount: amountValue
+        )
+    }
+
+    /// Lo que se marca: lo primero que falta, solo después de haber tocado «Guardar».
+    private var markedMissingField: GroupOpeningBalanceMissingField? {
+        showsMissingField ? firstMissingField : nil
     }
 
     var body: some View {
@@ -89,15 +98,18 @@ struct GroupOpeningBalanceFormView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, DS.Spacing.xs)
                         .accessibilityIdentifier("opening_balance_help")
+                    missingFieldHint
                     memberRow(
                         label: L10n.Groups.OpeningBalance.debtorLabel,
                         selectedID: debtorMemberID,
+                        isMarked: markedMissingField == .debtor || markedMissingField == .samePerson,
                         action: { showDebtorPicker = true },
                         identifier: "opening_balance_debtor"
                     )
                     memberRow(
                         label: L10n.Groups.OpeningBalance.creditorLabel,
                         selectedID: creditorMemberID,
+                        isMarked: markedMissingField == .creditor || markedMissingField == .samePerson,
                         action: { showCreditorPicker = true },
                         identifier: "opening_balance_creditor"
                     )
@@ -117,7 +129,6 @@ struct GroupOpeningBalanceFormView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.save) { save() }
                         .fontWeight(.semibold)
-                        .disabled(!canSave)
                         .accessibilityIdentifier("opening_balance_save")
                 }
             }
@@ -155,7 +166,7 @@ struct GroupOpeningBalanceFormView: View {
 
     // MARK: - Rows
 
-    private func memberRow(label: String, selectedID: String, action: @escaping () -> Void, identifier: String) -> some View {
+    private func memberRow(label: String, selectedID: String, isMarked: Bool, action: @escaping () -> Void, identifier: String) -> some View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
                 Text(label)
@@ -175,6 +186,13 @@ struct GroupOpeningBalanceFormView: View {
         }
         .buttonStyle(.plain)
         .solidCard(padding: DS.Spacing.none, radius: DS.Radius.lg)
+        .overlay {
+            if isMarked {
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                    .strokeBorder(DS.Semantic.errorForeground, lineWidth: 2)
+                    .accessibilityHidden(true)
+            }
+        }
         .accessibilityIdentifier(identifier)
     }
 
@@ -186,7 +204,7 @@ struct GroupOpeningBalanceFormView: View {
                 // Lote 13: respeta la preferencia «S/» / «PEN», como el formulario de gasto.
                 Text(appPreferences.currencyDisplayFormat.label(for: selectedCurrency.rawValue))
                     .font(DS.Typography.label)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.sm)
                     .background(Capsule().fill(theme.accent.opacity(0.12)))
@@ -196,20 +214,73 @@ struct GroupOpeningBalanceFormView: View {
 
             TextField("0.00", text: $amountString)
                 .font(.system(size: 34, weight: .bold, design: .rounded)) // A11Y-DT: campo de monto hero, escala con minimumScaleFactor
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($amountFocused)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
                 .accessibilityIdentifier("opening_balance_amount")
+                .overlay(alignment: .bottom) {
+                    if markedMissingField == .amount {
+                        Capsule()
+                            .fill(DS.Semantic.errorForeground)
+                            .frame(height: 2)
+                            .accessibilityHidden(true)
+                    }
+                }
         }
         .padding(.vertical, DS.Spacing.lg)
+    }
+
+    // MARK: - Qué falta (card rhgi)
+
+    private func missingFieldMessage(_ missing: GroupOpeningBalanceMissingField) -> String {
+        switch missing {
+        case .debtor: L10n.Groups.OpeningBalance.missingDebtor
+        case .creditor: L10n.Groups.OpeningBalance.missingCreditor
+        case .samePerson: L10n.Groups.OpeningBalance.missingDistinctPeople
+        case .amount: L10n.Groups.Expense.missingAmount
+        }
+    }
+
+    /// Una línea bajo la ayuda —lo más cerca de «Guardar», que está arriba— con lo que falta; se va al completarlo.
+    @ViewBuilder
+    private var missingFieldHint: some View {
+        if let missing = markedMissingField {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(DS.Typography.caption)
+                    .accessibilityHidden(true)
+                Text(missingFieldMessage(missing))
+                    .font(DS.Typography.subheadline)
+                Spacer(minLength: DS.Spacing.none)
+            }
+            .foregroundStyle(DS.Semantic.errorForeground)
+            .padding(.horizontal, DS.Spacing.xs)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("opening_balance_missing_hint")
+            .transition(.opacity)
+        }
+    }
+
+    private func showMissingField(_ missing: GroupOpeningBalanceMissingField) {
+        DS.Haptic.warning()
+        dsWithAnimation(reduceMotion) {
+            showsMissingField = true
+            if missing == .amount { amountFocused = true }
+        }
+        UIAccessibility.post(notification: .announcement, argument: missingFieldMessage(missing))
     }
 
     // MARK: - Save
 
     private func save() {
+        if let missing = firstMissingField {
+            showMissingField(missing)
+            return
+        }
+        showsMissingField = false
         do {
             if let edit = expenseToEdit {
                 try GroupExpenseService.shared.updateOpeningBalance(

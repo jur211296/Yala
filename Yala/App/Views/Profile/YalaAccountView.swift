@@ -139,7 +139,7 @@ struct YalaAccountView: View {
         case .unknown:
             Image(systemName: "person.crop.circle.badge.checkmark")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .frame(width: badgeSize, height: badgeSize)
         }
     }
@@ -277,7 +277,7 @@ struct YalaAccountView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
-                .foregroundStyle(destructive ? DS.Semantic.errorForeground : theme.accent)
+                .foregroundStyle(destructive ? DS.Semantic.errorForeground : theme.accentText)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

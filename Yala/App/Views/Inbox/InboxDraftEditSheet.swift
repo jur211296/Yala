@@ -679,7 +679,7 @@ struct InboxDraftEditSheet: View {
                     if isNewlyCreated {
                         Text(L10n.Inbox.newTag)
                             .font(DS.Typography.badgeLabel)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.thOnAccent)
                             .padding(.horizontal, DS.Spacing.xs)
                             .padding(.vertical, DS.Spacing.xxs)
                             .background(Capsule().fill(theme.accent))
@@ -746,7 +746,7 @@ struct InboxDraftEditSheet: View {
                     } label: {
                         Text(L10n.Inbox.saveLater)
                             .font(DS.Typography.headline)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, DS.Spacing.lg)
                             .background(
@@ -765,7 +765,7 @@ struct InboxDraftEditSheet: View {
                     } label: {
                         Text(L10n.Inbox.returnToPending)
                             .font(DS.Typography.headline)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, DS.Spacing.lg)
                             .background(
@@ -807,7 +807,7 @@ struct InboxDraftEditSheet: View {
                 } label: {
                     Text(L10n.Inbox.convertToShared)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.sm)
                 }

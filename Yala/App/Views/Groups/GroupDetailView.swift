@@ -510,7 +510,7 @@ struct GroupDetailView: View {
             .padding(.horizontal, isSelected ? DS.Spacing.lg : DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
             .frame(minWidth: 44)
-            .foregroundStyle(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? theme.onAccent : .primary)
             .background(
                 Capsule()
                     .fill(isSelected ? theme.accent : Color.clear)
@@ -788,7 +788,7 @@ private struct ArchivedGroupBanner: View {
         HStack(alignment: .center, spacing: DS.Spacing.sm) {
             Image(systemName: "archivebox.fill")
                 .font(DS.Typography.title3)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -806,7 +806,7 @@ private struct ArchivedGroupBanner: View {
             if let onUnarchive {
                 Button(L10n.UXL19.unarchive, action: onUnarchive)
                     .font(DS.Typography.label.weight(.semibold))
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .frame(minHeight: 44)
                     .accessibilityIdentifier("group_archived_unarchive")
             }

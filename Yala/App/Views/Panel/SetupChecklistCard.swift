@@ -94,7 +94,7 @@ struct SetupChecklistCard: View {
         HStack {
             Image(systemName: "target")
                 .font(DS.Typography.headline)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.SetupChecklist.title)
@@ -116,7 +116,7 @@ struct SetupChecklistCard: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: step.icon)
                     .font(.system(size: 20, weight: .semibold)) // A11Y-DT: icono de la ficha, tamaño fijo del molde Kargul
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .frame(width: 48, height: 48)
                     .background(RoundedRectangle(cornerRadius: DS.Radius.sm).fill(theme.accent))
                     .accessibilityHidden(true)
@@ -156,7 +156,7 @@ struct SetupChecklistCard: View {
                     Image(systemName: showsAllSteps ? "chevron.up" : "chevron.down")
                         .font(.system(size: 10)) // A11Y-DT: chevron decorativo junto al texto
                 }
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(minHeight: DS.Button.actionSize)
                 .contentShape(Rectangle())
             }
@@ -192,7 +192,7 @@ struct SetupChecklistCard: View {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "target")
                         .font(DS.Typography.body)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
 
                     Text(L10n.SetupChecklist.progress(manager.completedCount, manager.totalCount))
                         .font(DS.Typography.label)
@@ -206,7 +206,7 @@ struct SetupChecklistCard: View {
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10))
                     }
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                 }
 
                 progressBar

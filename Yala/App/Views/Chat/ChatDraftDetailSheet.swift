@@ -51,7 +51,7 @@ struct ChatDraftDetailSheet: View {
                         onOpenFullForm()
                     }
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .frame(minHeight: 44)
                     .accessibilityIdentifier("chat_draft_open_full_form")
                 }

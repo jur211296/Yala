@@ -84,7 +84,7 @@ struct GroupMemberRow: View {
                         Button(action: onApprove) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(DS.Typography.title2)
-                                .foregroundStyle(.thAccent)
+                                .foregroundStyle(.thAccentText)
                                 .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                                 .contentShape(Rectangle())
                         }
@@ -163,7 +163,7 @@ struct GroupMemberRow: View {
     private var adminBadge: some View {
         Text(L10n.UXL19.roleAdmin)
             .font(DS.Typography.captionSmall)
-            .foregroundStyle(.thAccent)
+            .foregroundStyle(.thAccentText)
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xxs)
             .background(

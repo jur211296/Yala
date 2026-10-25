@@ -131,7 +131,7 @@ struct PermissionsSettingsView: View {
                 Spacer(minLength: DS.Spacing.sm)
                 Text(L10n.PJ22.permissionFaceIDSeeHow)
                     .font(DS.Typography.subheadline.weight(.semibold))
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.thAccentText)
             }
             .padding(.vertical, DS.Spacing.xs)
             .contentShape(Rectangle())

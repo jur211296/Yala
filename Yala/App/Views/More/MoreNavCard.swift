@@ -84,7 +84,7 @@ struct AccentIconBadge: View {
         let color = tint ?? theme.accent
         Image(systemName: systemName)
             .font(font)
-            .foregroundStyle(color)
+            .foregroundStyle(tint ?? theme.accentText)
             .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)

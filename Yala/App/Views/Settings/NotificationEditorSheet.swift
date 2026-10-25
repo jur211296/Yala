@@ -347,7 +347,7 @@ struct NotificationEditorSheet: View {
         } label: {
             Text(weekday.short)
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
@@ -412,7 +412,7 @@ struct NotificationEditorSheet: View {
                             if selectedDataType == dataType {
                                 Image(systemName: "checkmark")
                                     .font(DS.Typography.headline)
-                                    .foregroundStyle(.thAccent)
+                                    .foregroundStyle(.thAccentText)
                             }
                         }
                         .padding(.horizontal, DS.Spacing.lg)
@@ -466,7 +466,7 @@ struct NotificationEditorSheet: View {
                 if selectedDayPreference == preference {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -581,7 +581,7 @@ struct NotificationEditorSheet: View {
                 Text(L10n.Notifications.testNotification)
             }
             .font(DS.Typography.label)
-            .foregroundStyle(.thAccent)
+            .foregroundStyle(.thAccentText)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.md)
             .background(

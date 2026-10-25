@@ -241,7 +241,7 @@ struct ExportRecordsView: View {
                 .font(DS.Typography.subheadlineEmphasized)
                 .lineLimit(1)
                 .fixedSize()
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                .foregroundStyle(isSelected ? theme.onAccent : Color.primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
                 .background {
@@ -289,10 +289,10 @@ struct ExportRecordsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Text(caption)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                    .foregroundStyle(isSelected ? theme.onAccent : Color.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .foregroundStyle(isSelected ? theme.onAccent : Color.primary)
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background {
@@ -512,7 +512,7 @@ struct ExportRecordsView: View {
                     .frame(width: 8, height: 8)
                 Text(tag.name)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -564,7 +564,7 @@ struct ExportRecordsView: View {
         } label: {
             Text(currency.rawValue)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
@@ -607,7 +607,7 @@ struct ExportRecordsView: View {
         } label: {
             Text(need.displayName)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .lineLimit(1)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)

@@ -75,7 +75,7 @@ struct ExpandableFAB: View {
         } label: {
             Image(systemName: showMenu ? "xmark" : "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.usesMaterial || showMenu ? .white : Color.contrastingText(for: mainTint))
+                .foregroundStyle(theme.usesMaterial || showMenu ? .white : theme.onFill(mainTint))
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .rotationEffect(.degrees(showMenu ? 90 : 0))
                 .modifier(FABSurfaceModifier(base: showMenu ? DS.Semantic.disabledForeground : mainTint))

@@ -58,7 +58,7 @@ struct SmartInsightsSettingsView: View {
                     } label: {
                         Text(L10n.Insights.restoreDefaults)
                             .font(DS.Typography.body)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                     }
                     .frame(maxWidth: .infinity)
                     .listRowBackground(Color.clear)

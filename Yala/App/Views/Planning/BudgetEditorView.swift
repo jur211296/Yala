@@ -413,7 +413,7 @@ struct BudgetEditorView: View {
                     .font(DS.Typography.subheadline)
                     .lineLimit(1)
             }
-            .foregroundStyle(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? theme.onAccent : .primary)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
             .background(Capsule().fill(isSelected ? theme.accent : Color.clear))
@@ -473,7 +473,7 @@ struct BudgetEditorView: View {
                         } label: {
                             Text(L10n.UXL9.activateAlerts)
                                 .font(DS.Typography.labelSmall)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.thOnAccent)
                                 .padding(.horizontal, DS.Spacing.md)
                                 .padding(.vertical, DS.Spacing.sm)
                                 .background(Capsule().fill(theme.accent))
@@ -514,7 +514,7 @@ struct BudgetEditorView: View {
                                     Text(NSLocalizedString("budgets.alerts.custom", comment: ""))
                                         .font(DS.Typography.subheadline)
                                 }
-                                .foregroundStyle(showCustomThreshold ? .white : .primary)
+                                .foregroundStyle(showCustomThreshold ? theme.onAccent : .primary)
                                 .padding(.horizontal, DS.Spacing.md)
                                 .padding(.vertical, DS.Spacing.sm)
                                 .background(
@@ -549,7 +549,7 @@ struct BudgetEditorView: View {
                                 } label: {
                                     Text(NSLocalizedString("budgets.alerts.addThreshold", comment: ""))
                                         .font(DS.Typography.subheadline)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.thOnAccent)
                                         .padding(.horizontal, DS.Spacing.md)
                                         .padding(.vertical, DS.Spacing.sm)
                                         .background(
@@ -586,7 +586,7 @@ struct BudgetEditorView: View {
         } label: {
             Text("\(threshold)%")
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
@@ -739,7 +739,7 @@ struct BudgetEditorView: View {
 
                 Text(tag.name)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)
@@ -800,7 +800,7 @@ struct BudgetEditorView: View {
             HStack(spacing: DS.Spacing.xs) {
                 Text(need.displayName)
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? theme.onAccent : .primary)
                     .lineLimit(1)
             }
             .padding(.horizontal, DS.Spacing.md)

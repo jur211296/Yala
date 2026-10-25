@@ -1397,7 +1397,7 @@ struct ProfileView: View {
 
                         Image(systemName: appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon)
                             .font(.system(size: avatarIconSize))
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                     }
 
                     // Spark badge for Pro users
@@ -1490,29 +1490,29 @@ struct ProfileView: View {
             HStack(spacing: DS.FormRow.iconSpacing) {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.label)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.onAccent)
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white.opacity(0.2))
+                            .fill(theme.onAccent.opacity(0.2))
                     )
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Groups.Activate.title)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.onAccent)
 
                     Text(L10n.Groups.Activate.subtitle)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(theme.onAccent.opacity(0.85))
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.chevron)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(theme.onAccent.opacity(0.8))
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.FormRow.paddingH)

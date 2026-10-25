@@ -264,7 +264,7 @@ struct PanelQuickActionsRow: View {
     /// Blanco sobre la píldora principal, dorado sólido en la de Yala IA —el mismo del botón flotante, para que se lean
     /// como el mismo botón— y tinta en el resto.
     private func iconStyle(isPrimary: Bool, usaDorado: Bool) -> AnyShapeStyle {
-        if isPrimary { return AnyShapeStyle(Color.white) }
+        if isPrimary { return AnyShapeStyle(theme.onAccent) }
         if usaDorado { return AnyShapeStyle(Color.proGoldOnCard) }
         return AnyShapeStyle(Color.primary)
     }

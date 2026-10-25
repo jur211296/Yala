@@ -148,7 +148,7 @@ struct RecordSubcategoryChangeSheet: View {
                     Label(L10n.UXL8.current, systemImage: "checkmark")
                         .labelStyle(.titleAndIcon)
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.thOnAccent)
                         .padding(.horizontal, DS.Chip.paddingH)
                         .padding(.vertical, DS.Chip.paddingV)
                         .background(Capsule().fill(theme.accent))

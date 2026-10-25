@@ -178,7 +178,7 @@ private struct FollowerNeedsLeaderView: View {
             Spacer()
             Image(systemName: "macwindow.on.rectangle")
                 .font(DS.Typography.largeTitle)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
             Text(L10n.Window.followerTitle)
                 .font(DS.Typography.title2)

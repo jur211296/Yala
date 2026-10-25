@@ -156,7 +156,7 @@ struct MilestoneUpgradeSheet: View {
 
             Image(systemName: "checkmark.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
         }
     }
 

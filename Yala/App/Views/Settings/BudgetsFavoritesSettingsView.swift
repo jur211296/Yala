@@ -214,7 +214,7 @@ struct BudgetsFavoritesSettingsView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
 
             Text(L10n.Settings.budgetsFavoritesInfo)
                 .font(DS.Typography.subheadline)
@@ -379,7 +379,7 @@ struct BudgetsFavoritesSettingsView: View {
         HStack(spacing: DS.Spacing.md) {
             Text("#\(position)")
                 .font(DS.Typography.captionMonoBold)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: 28)
 
             Text(budget.name)

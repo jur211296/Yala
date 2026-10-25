@@ -1013,7 +1013,7 @@ struct CategoriesTabView: View {
             Image(systemName: viewType.iconName)
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
                 .frame(width: 32, height: 32)
                 .background {
                     if isSelected {
@@ -1110,7 +1110,7 @@ struct CategoriesTabView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "chart.pie")
                     .font(DS.Typography.body)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
                 Text(L10n.UXL11D.atAGlance(viewModel.detailPeriod))
                     .font(DS.Typography.subheadlineEmphasized)
@@ -1130,7 +1130,7 @@ struct CategoriesTabView: View {
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent.opacity(0.12))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -1162,7 +1162,7 @@ struct CategoriesTabView: View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "sparkles")
                 .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
             Text(L10n.UXL11D.atAGlance(viewModel.detailPeriod))
                 .font(DS.Typography.subheadlineEmphasized)
@@ -1205,7 +1205,7 @@ struct CategoriesTabView: View {
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)
                     .background(theme.accent.opacity(0.12))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -1241,7 +1241,7 @@ struct CategoriesTabView: View {
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent.opacity(0.12))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -1855,7 +1855,7 @@ private struct AllCategoriesListContent: View {
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .background((theme.accent).opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }
@@ -1948,7 +1948,7 @@ private struct AllSubcategoriesListContent: View {
                             Spacer()
                         }
                         .padding(.vertical, DS.Spacing.md)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .background((theme.accent).opacity(DS.Opacity.subtle))
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                     }

@@ -101,7 +101,7 @@ struct BridgeActivationSheet: View {
         } label: {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: selectedOption == option ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(selectedOption == option ? .thAccent : .thSecondaryText)
+                    .foregroundStyle(selectedOption == option ? .thAccentText : .thSecondaryText)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(label)
                         .font(DS.Typography.body)

@@ -164,7 +164,7 @@ struct DowngradeResolutionSheet: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             Image(systemName: "hourglass")
                 .font(DS.Typography.title)
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .frame(width: 56, height: 56)
                 .background(Circle().fill(theme.accent))
                 .accessibilityHidden(true)
@@ -259,7 +259,7 @@ struct DowngradeResolutionSheet: View {
                     .accessibilityAddTraits(.isHeader)
                 Text(chosen)
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)
                     .background(Capsule().fill(theme.accent))
@@ -289,7 +289,7 @@ struct DowngradeResolutionSheet: View {
                 showSubscription = true
             }
             .font(DS.Typography.bodyBold)
-            .foregroundStyle(.thAccent)
+            .foregroundStyle(.thAccentText)
             .accessibilityIdentifier("downgrade_reactivate")
         }
         .padding(DS.Spacing.lg)
@@ -337,10 +337,10 @@ struct DowngradeResolutionSheet: View {
                     .font(DS.Typography.title)
                     .symbolRenderingMode(isSelected ? .palette : .monochrome)
                     .foregroundStyle(isSelected ? AnyShapeStyle(theme.accent) : AnyShapeStyle(Color.primary.opacity(0.6)),
-                                     Color.white)
+                                     theme.onAccent)
                     .accessibilityHidden(true)
             }
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .foregroundStyle(isSelected ? theme.onAccent : Color.primary)
             .padding(DS.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
