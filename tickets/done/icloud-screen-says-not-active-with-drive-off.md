@@ -1,10 +1,10 @@
 ---
 id: icloud-screen-says-not-active-with-drive-off
-status: backlog
+status: done
 priority: low
 area: "icloud, ajustes"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-25
 source: "review adversarial del lote decidido 2.2 · 05 (L20-14), lente de verdad del texto — leído, no medido en un iPhone"
 ---
 
@@ -33,3 +33,11 @@ afirma que los datos se quedan solo aquí.
 
 - Con Drive apagado y sesión de iCloud abierta, la pantalla no dice que iCloud no está activo ni que los datos se quedan
   solo aquí. Medido en un iPhone (el simulador no tiene iCloud).
+
+## Cierre (lote 12.2, 2026-10-25)
+
+La pantalla decide «sin cuenta» con `iCloudSyncService.hasICloudAccount` (token de Drive **o** `CKContainer.accountStatus()
+== .available`), y `checkAccountStatus` y `forceSync` también. Con Drive apagado y CloudKit vivo ya no dice «iCloud no está
+activo» ni esconde «Sincronizar ahora». Tests: `ICloudAccountWitnessTests` (lógica, servicio y cableado) y el scan de
+`UXAudit22Lote20NubeTests`. La comprobación en el iPhone va en el guion de la card n5zw (mismo montaje: Drive apagado).
+Card 90yc.

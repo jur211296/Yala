@@ -344,6 +344,13 @@ enum EntityApplyMap {
                     try findAccount(byShortcutID: $0, context: ctx)
                 }
             },
+            // Card da5d (`since: 4`): solo llega si este teléfono pidió `v4` (`SyncCapability`).
+            "destination_account_ref": ColumnApplier { m, v, ctx in
+                m.destinationAccount = try resolveRef(v, entity: "favorite_payments", column: "destination_account_ref",
+                                                  rowSyncID: m.syncID, context: ctx) {
+                    try findAccount(byShortcutID: $0, context: ctx)
+                }
+            },
             "subcategory_ref": ColumnApplier { m, v, ctx in
                 m.subcategory = try resolveRef(v, entity: "favorite_payments", column: "subcategory_ref",
                                            rowSyncID: m.syncID, context: ctx) {
@@ -891,6 +898,11 @@ enum EntityApplyMap {
             guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
             guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
             row.account = t
+            return .resolved
+        case (favoritePayment.table, "destination_account_ref"):
+            guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = try findAccount(byShortcutID: target, context: context) else { return .targetMissing }
+            row.destinationAccount = t
             return .resolved
         case (favoritePayment.table, "subcategory_ref"):
             guard let row = try findFavoritePayment(bySyncID: dangler.rowSyncID, context: context) else { return .rowGone }

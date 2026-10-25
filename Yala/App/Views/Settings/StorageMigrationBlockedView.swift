@@ -20,6 +20,8 @@ struct StorageMigrationBlockedView: View {
     let block: MigrationIdentityBlock
     /// «Usar otra cuenta». Solo se pinta con `block.offersAnotherAccount`.
     var onUseAnotherAccount: () -> Void
+    /// «Desasociarla y seguir» (card 9mc6). Solo se pinta con `block.offersDetachingStaleAssociation`.
+    var onDetachAndContinue: () -> Void = {}
     /// «Entendido».
     var onClose: () -> Void
 
@@ -61,7 +63,27 @@ struct StorageMigrationBlockedView: View {
                                 .multilineTextAlignment(.center)
                                 .accessibilityIdentifier("storage_migrate_block_apple_note")
                         }
-                        if block.offersAnotherAccount {
+                        if block.offersDetachingStaleAssociation {
+                            // La cuenta de grupos que bloquea llegó del iCloud de otra instalación: soltarla aquí es el
+                            // gesto que el cuerpo manda hacer en «Grupos», y la elección de cuenta sigue sola. Ocupa el
+                            // sitio de «Usar otra cuenta»: con la asociación puesta, cualquier otra cuenta se pararía igual.
+                            YalaPrimaryButton(L10n.Storage.MigrateBlock.detachAndContinue,
+                                              icon: "person.crop.circle.badge.xmark") {
+                                onDetachAndContinue()
+                            }
+                            .accessibilityIdentifier("storage_migrate_block_detach_continue")
+                            // Lo que «solo en el iCloud» no distingue: la de otra instalación vieja y la que otro dispositivo
+                            // del mismo Apple ID sigue usando (review adversarial del lote 12.2). Se dice, no se adivina.
+                            Text(L10n.Storage.MigrateBlock.detachNote)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .accessibilityIdentifier("storage_migrate_block_detach_note")
+                            YalaSecondaryButton(L10n.Common.understood) {
+                                onClose()
+                            }
+                            .accessibilityIdentifier("storage_migrate_block_close")
+                        } else if block.offersAnotherAccount {
                             YalaPrimaryButton(L10n.Storage.MigrateBlock.useAnotherAccount,
                                               icon: "person.crop.circle.badge.plus") {
                                 onUseAnotherAccount()

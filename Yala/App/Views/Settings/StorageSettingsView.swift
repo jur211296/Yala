@@ -174,6 +174,12 @@ struct StorageSettingsView: View {
                     migrationBlockUseAnotherAccount = true
                     presentedMigrationBlock = nil
                 },
+                onDetachAndContinue: {
+                    // Card 9mc6: suelta la asociación vieja y sigue por la misma cadena que «Usar otra cuenta».
+                    controller?.releaseStaleGroupsAssociation()
+                    migrationBlockUseAnotherAccount = true
+                    presentedMigrationBlock = nil
+                },
                 onClose: { presentedMigrationBlock = nil })
             // El aviso se consume cuando la hoja MONTA, no al pedirla (regla 3 de presentaciones): si la pantalla se va
             // mientras llega, o el anchor está ocupado, sigue en el controller y sale la próxima vez.
@@ -374,17 +380,12 @@ struct StorageSettingsView: View {
                 isDisabled: controller.isWorking || isBlockedOtherAccount(decision) || isRefused(decision, refusal),
                 isLoading: controller.isCheckingMigrationIdentity
             ) {
-                // **Un borrado de iCloud pendiente se pregunta ANTES que todo lo demás**: es lo único de esta cadena que
-                // la nube no puede deshacer después, y la persona tiene que elegir con él delante. Sin borrado pendiente,
-                // la cadena de siempre.
-                pendingICloudWipeWaived = false
-                guard !hasPendingICloudWipe else {
-                    confirmPendingICloudWipe = true
-                    return
-                }
-                beginActivation(controller, isAdopt: isAdopt)
+                tapActivate(controller, isAdopt: isAdopt)
             }
             .accessibilityIdentifier("storage_migrate_button")
+            // Card vbf9: «Activar» del aviso del Panel llega aquí y arranca lo mismo que este botón, una vez. Cuelga de la
+            // tarjeta: solo existe cuando la tarjeta se ofrece, así que no hace falta repetir sus condiciones.
+            .onAppear { beginAdoptFromPanelOfferIfRequested(controller, isAdopt: isAdopt) }
             .confirmationDialog(L10n.Storage.PendingICloudWipe.title,
                                 isPresented: $confirmPendingICloudWipe, titleVisibility: .visible) {
                 Button(L10n.Storage.PendingICloudWipe.proceed) {
@@ -425,6 +426,27 @@ struct StorageSettingsView: View {
     /// viva, «Migrar» pregunta por la cuenta ANTES de abrir la hoja (Jürgen, 2026-09-16); sin sesión hay que firmar
     /// primero, y la comprobación va entre firmar y el claim. La hoja cuenta lo que pasaría al abrirse, no antes.
     /// `isAdopt` es la cara de la tarjeta del render que pintó el botón o el diálogo; la decisión de sesión se relee viva.
+    /// El botón de la tarjeta. **Un borrado de iCloud pendiente se pregunta ANTES que todo lo demás**: es lo único de esta
+    /// cadena que la nube no puede deshacer después, y la persona tiene que elegir con él delante. Sin borrado pendiente,
+    /// la cadena de siempre.
+    private func tapActivate(_ controller: CloudMigrationController, isAdopt: Bool) {
+        pendingICloudWipeWaived = false
+        guard !hasPendingICloudWipe else {
+            confirmPendingICloudWipe = true
+            return
+        }
+        beginActivation(controller, isAdopt: isAdopt)
+    }
+
+    /// Card vbf9: el aviso del Panel («Tus datos ya están en tu cuenta en la nube») pidió activar aquí. Se consume siempre al
+    /// llegar; arranca solo si la tarjeta es la del adopt y nada está en marcha, con el mismo gesto que su botón.
+    private func beginAdoptFromPanelOfferIfRequested(_ controller: CloudMigrationController, isAdopt: Bool) {
+        guard CloudAdoptOfferRequest.pending else { return }
+        CloudAdoptOfferRequest.pending = false
+        guard isAdopt, !controller.isWorking else { return }
+        tapActivate(controller, isAdopt: true)
+    }
+
     private func beginActivation(_ controller: CloudMigrationController, isAdopt: Bool) {
         consentPath = isAdopt ? .adopt : .migration
         activationPlan = nil
@@ -1276,7 +1298,6 @@ private struct StorageRevertPriorDataDialogs: ViewModifier {
                 // (medido en el simulador, como el diálogo del borrado pendiente).
                 Button(L10n.Storage.PendingICloudWipe.wait) {}
                     .accessibilityIdentifier("storage_revert_prior_wait")
-                Button(L10n.Common.cancel, role: .cancel) {}
             } message: {
                 Text(priorData.map { ReverseICloudPriorDataLogic.message($0) } ?? L10n.Storage.Revert.Prior.bodyNoCount)
             }
@@ -1284,7 +1305,10 @@ private struct StorageRevertPriorDataDialogs: ViewModifier {
                                 isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button(L10n.Storage.Revert.Prior.discardConfirm, role: .destructive) { onDiscard() }
                     .accessibilityIdentifier("storage_revert_prior_discard_confirm")
-                Button(L10n.Common.cancel, role: .cancel) {}
+                // Sin rol, como «Ahora no»: borra de iCloud sin vuelta, así que la salida tiene que verse (regla B6 de
+                // `swiftui-ds.md`; con `role: .cancel` el globo no la pintaba).
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("storage_revert_prior_discard_cancel")
             } message: {
                 Text(L10n.Storage.Revert.Prior.discardConfirmBody)
             }

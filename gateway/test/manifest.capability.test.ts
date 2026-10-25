@@ -9,6 +9,9 @@
  *
  * Desde el 2026-10-21 (UX 2.2 · L18-8) hay una v3: `cashflow_lines.amount_changes_raw`, los cambios de monto «desde
  * este mes» de una línea del flujo de caja. `v2` es entonces todo menos esa columna, y `v3` el set completo.
+ *
+ * Desde el 2026-10-25 (card da5d) hay una v4: `favorite_payments.destination_account_ref`, el destino de un favorito de
+ * transferencia. `v3` es todo menos esa columna, y `v4` el set completo.
  */
 import { describe, expect, it } from "vitest";
 import { canonRowC1, merkleColumns } from "../src/sync/canon";
@@ -57,8 +60,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 3, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(3);
+  it("el Worker anuncia la versión 4, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(4);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -66,23 +69,28 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("parent_account_id es la única columna con since 2, y amount_changes_raw la única con since 3", () => {
+  it("una columna por versión: parent_account_id (2), amount_changes_raw (3) y destination_account_ref (4)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
         if ((c.since ?? 1) > 1) later.push(`${entity}.${col}@${c.since}`);
       }
     }
-    expect(later.sort()).toEqual(["accounts.parent_account_id@2", "cashflow_lines.amount_changes_raw@3"]);
+    expect(later.sort()).toEqual([
+      "accounts.parent_account_id@2",
+      "cashflow_lines.amount_changes_raw@3",
+      "favorite_payments.destination_account_ref@4",
+    ]);
   });
 
-  it("v1 = exactamente las columnas de antes en accounts; cashflow_lines sin la de v3; el resto, enteras", () => {
+  it("v1 = exactamente las columnas de antes en accounts; cashflow_lines y favoritos sin las suyas; el resto, enteras", () => {
     const cap = resolveCapabilitySet("v1");
     expect(cap.columns).toBeDefined();
     expect([...(cap.columns!.accounts ?? [])].sort()).toEqual([...ACCOUNTS_V1].sort());
     expect([...(cap.columns!.cashflow_lines ?? [])]).not.toContain("amount_changes_raw");
+    expect([...(cap.columns!.favorite_payments ?? [])]).not.toContain("destination_account_ref");
     for (const [entity, spec] of Object.entries(manifest.entities)) {
-      if (entity === "accounts" || entity === "cashflow_lines") continue;
+      if (entity === "accounts" || entity === "cashflow_lines" || entity === "favorite_payments") continue;
       expect([...(cap.columns![entity] ?? [])].sort()).toEqual(Object.keys(spec.columns).sort());
     }
   });
@@ -98,10 +106,37 @@ describe("capability-set por versión del manifest", () => {
     );
   });
 
-  it("v3, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v3", "v99", "full", null]) {
+  it("v3 = todo menos destination_account_ref: los cambios del flujo de caja sí, el destino del favorito no", () => {
+    const cap = resolveCapabilitySet("v3");
+    expect(cap.columns).toBeDefined();
+    expect([...(cap.columns!.cashflow_lines ?? [])]).toContain("amount_changes_raw");
+    const favorites = [...(cap.columns!.favorite_payments ?? [])];
+    expect(favorites).not.toContain("destination_account_ref");
+    expect(favorites.sort()).toEqual(
+      Object.keys(manifest.entities.favorite_payments.columns).filter((c) => c !== "destination_account_ref").sort(),
+    );
+  });
+
+  it("v4, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v4", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
+  });
+
+  it("el pull de v3 no baja el destino del favorito; el de v4 sí", () => {
+    const destination = "22222222-3333-4444-8555-666666666666";
+    const row = {
+      sync_id: "7c1e2d3f-1111-4222-8333-944455556666",
+      name: "Ahorro del mes",
+      destination_account_ref: destination,
+    };
+    const stored = { name: HLC, destination_account_ref: HLC };
+    const v3 = projectRowToDelta("favorite_payments", row, stored, resolveCapabilitySet("v3"));
+    expect(v3.fields).not.toHaveProperty("destination_account_ref");
+    expect(v3.field_hlcs).not.toHaveProperty("destination_account_ref");
+    const v4 = projectRowToDelta("favorite_payments", row, stored, resolveCapabilitySet("v4"));
+    expect(v4.fields.destination_account_ref).toBe(destination);
+    expect(v4.field_hlcs.destination_account_ref).toBe(HLC);
   });
 
   it("el pull de v2 no baja los cambios del flujo de caja; el de v3 sí", () => {

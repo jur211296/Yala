@@ -8376,6 +8376,10 @@ enum L10n {
             /// enseña. En una sesión solo-grupos esa sección no existe (`groups-only-session-storage-screen-says-data-lives-in-icloud`).
             static var freshStartSessionBody: String { ls("storage.migrateBlock.freshStartSessionBody", comment: "") }
             static var useAnotherAccount: String { ls("storage.migrateBlock.useAnotherAccount", comment: "") }
+            /// «Desasociarla y seguir» (card 9mc6): la cuenta de grupos que bloquea llegó del iCloud de otra instalación.
+            static var detachAndContinue: String { ls("storage.migrateBlock.detachAndContinue", comment: "") }
+            /// Bajo «Desasociarla y seguir»: soltarla aquí no la suelta en la copia local de otro dispositivo (review del 9mc6).
+            static var detachNote: String { ls("storage.migrateBlock.detachNote", comment: "") }
             /// Otro dispositivo de esta misma persona está llevando sus datos a esa cuenta (ticket
             /// `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen del 2026-10-08). El título es su
             /// texto. El cuerpo nombra las dos salidas —terminar allí, o reintentar allí si se paró— y no promete que aquí se

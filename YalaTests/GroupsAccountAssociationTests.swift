@@ -227,6 +227,25 @@ struct GroupsAccountAssociationStoreTests {
         #expect(sut.hasAssociation)
     }
 
+    /// Card 9mc6: la asociación que solo está en el iCloud-KV la dejó otra instalación; la que este dispositivo escribió
+    /// tiene espejo local y no lo es. Sin ninguna, tampoco.
+    @MainActor
+    @Test("Solo en el iCloud-KV = de otra instalación; con espejo local, de esta")
+    func soloRemota() {
+        let kv = FakeKV()
+        kv.setBool(true, forKey: GroupsAccountAssociation.Keys.associated)
+        kv.setString("sub-de-otra-instalacion", forKey: GroupsAccountAssociation.Keys.sub)
+        let defaults = isolatedDefaults()
+        let sut = GroupsAccountAssociation(iKV: kv, defaults: defaults)
+        #expect(sut.isRemoteOnly)
+
+        #expect(sut.associate(sub: "sub-aqui", provider: "google", email: nil, kind: nil, sessionOpenedByThisSignIn: true))
+        #expect(!sut.isRemoteOnly, "con espejo local la asociación es de este dispositivo")
+
+        let vacio = GroupsAccountAssociation(iKV: FakeKV(), defaults: isolatedDefaults())
+        #expect(!vacio.isRemoteOnly, "sin asociación no hay nada que soltar")
+    }
+
     /// El `sub` es lo único sin lo que el registro no contesta ninguna de sus tres preguntas.
     @MainActor
     @Test("Un registro del iCloud-KV sin `sub` se trata como ausente")

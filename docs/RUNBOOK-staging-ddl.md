@@ -583,6 +583,38 @@ entorno, va primero (su sección, arriba).
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
 
+## `g24_01_favorite_destination.sql` — el destino de un favorito de transferencia (PREPARADA, sin aplicar)
+
+**Ni staging ni producción.** La sesión que lo escribió (lote 12.2, card da5d) no despliega backend. **Lo aplica Jürgen**
+o una sesión de despliegues autorizada (card da5d, en «blocked» hasta entonces).
+
+Qué es: `favorite_payments.destination_account_ref uuid` nullable, con el `shortcutID` de la cuenta destino de un favorito
+de transferencia. Va con el Worker de `manifest_version: 4` (`qa/cloud/README.md`, entrada g24_01). No depende de nada más
+que de g18_01 y g21_01, ya aplicadas en los dos entornos.
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select column_name from information_schema.columns
+    where table_schema = 'public' and table_name = 'favorite_payments' and column_name = 'destination_account_ref';
+   ```
+   Si ya sale `destination_account_ref`, salta al paso 4.
+2. **Aplicar.** *New query* → pega `qa/cloud/g24_01_favorite_destination.sql` entero → *Run*. Tiene que salir el aviso
+   `g24_01 OK · favorite_payments.destination_account_ref uuid nullable, grants heredados`. Con un error no se aplicó nada
+   (va en transacción): para y avisa a Frank.
+3. **Comprobar.** Repite la consulta del paso 1: sale la columna.
+4. **Desplegar el Worker, SOLO después del paso 3**, desde `2.2` con este cambio mergeado: `cd gateway && npm ci && npm run
+   deploy:staging` (staging) o `npm run deploy:production`. El `predeploy` tiene que decir `check-manifest-not-older: OK
+   (desplegado v3, este árbol v4)`. Apunta el `Current Version ID` y el anterior.
+5. **Comprobar el Worker.** `curl -s -A yala <url del gateway>/config` trae `"sync":{"manifestVersion":4}`. Con un iPhone
+   con esta build en la nube, `npx wrangler tail` (con `--env production` en producción) no debe enseñar
+   `[sync-merkle] … 502`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columna: `g24_01_rollback.sql`, idempotente, que aborta si
+algún favorito ya tiene destino. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 4» manda la columna hasta
+su siguiente pull, y el Worker v3 rechaza esas filas enteras (`unknown_column`) en ese hueco.
+
 ## `g22_01_set_member_role.sql` — hacer o quitar administrador en un grupo de la nube (aplicada en los dos entornos el 2026-10-22)
 
 > **Aplicada el 2026-10-22 en staging y producción** (Frank, con el token de gestión por `/database/query`, envuelta en

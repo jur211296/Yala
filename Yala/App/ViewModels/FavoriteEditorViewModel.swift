@@ -47,12 +47,24 @@ final class FavoriteEditorViewModel {
         account: Account?,
         subcategory: Subcategory?,
         tags: [Tag],
-        needOverride: SubcategoryNeed?
+        needOverride: SubcategoryNeed?,
+        destinationAccount: Account? = nil
     ) -> Bool {
         guard let context = modelContext else { return false }
 
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return false }
+        // Card 93ta: una transferencia de una cuenta a sí misma no se guarda (el editor tampoco deja elegirla).
+        guard FavoriteEditorTransferLogic.accountsAreValid(
+            isTransfer: transactionType == .transfer, origin: account?.persistentModelID,
+            destination: destinationAccount?.persistentModelID) else { return false }
+        // Una transferencia no lleva categoría, etiquetas ni naturaleza; y el destino solo vive en una transferencia
+        // (antes, tocar «Gasto» dejaba el destino puesto e invisible).
+        let isTransfer = transactionType == .transfer
+        let subcategory = isTransfer ? nil : subcategory
+        let tags = isTransfer ? [] : tags
+        let needOverride = isTransfer ? nil : needOverride
+        let destinationAccount = isTransfer ? destinationAccount : nil
 
         let amount: Double? = amountString.isEmpty ? nil : AmountInputHelper.parseDecimal(amountString)
         let needRaw: String? =
@@ -70,6 +82,7 @@ final class FavoriteEditorViewModel {
             existing.subcategory = subcategory
             existing.setTags(from: tags)
             existing.needOverride = needRaw
+            existing.destinationAccount = destinationAccount
             existing.currencyCode = account?.currencyCode
         } else {
             // Create new
@@ -79,6 +92,7 @@ final class FavoriteEditorViewModel {
                 amount: amount,
                 note: note.isEmpty ? nil : note,
                 account: account,
+                destinationAccount: destinationAccount,
                 subcategory: subcategory,
                 tags: tags,
                 needOverride: needRaw,
@@ -122,5 +136,17 @@ final class FavoriteEditorViewModel {
 
     func dismissSaveError() {
         showSaveError = false
+    }
+}
+
+// MARK: - Favorito de transferencia (card 93ta)
+
+/// Lo que el editor de Ajustes › Favoritos decide de un favorito de transferencia. Puro, para probarlo sin vista.
+nonisolated enum FavoriteEditorTransferLogic {
+    /// Origen y destino no pueden ser la misma cuenta. Falta uno de los dos: se guarda igual (el formulario señala lo que
+    /// falta al usarlo, como con un favorito de transferencia de antes de 2.2, que no tenía destino).
+    static func accountsAreValid<ID: Equatable>(isTransfer: Bool, origin: ID?, destination: ID?) -> Bool {
+        guard isTransfer, let origin, let destination else { return true }
+        return origin != destination
     }
 }

@@ -1,10 +1,10 @@
 ---
 id: favorite-editor-does-not-know-transfer-favorites
-status: backlog
+status: done
 priority: low
 area: "favorites"
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-25
 source: lote decidido 2.2 · 02, sesión A (L2-14)
 ---
 
@@ -30,3 +30,12 @@ Consecuencias (review adversarial del 2026-10-22):
 
 Si el editor de Ajustes gana el modo transferencia (origen, destino, monto y descripción, como la hoja de guardar), o si
 un favorito de transferencia solo se edita borrándolo y volviéndolo a guardar desde el formulario.
+
+## Cierre (lote 12.2, 2026-10-25)
+
+Decidido en autónomo (Paso 0, D6): el editor gana el modo transferencia con lo que ya hay. Un favorito de transferencia
+enseña origen y destino con los chips del formulario de registro, sin categoría, etiquetas ni selector de tipo; el selector
+de una cuenta excluye la otra y el guardado rechaza origen igual a destino (`FavoriteEditorTransferLogic`). Guardar un gasto
+quita un destino colgando. Uno nuevo desde Ajustes sigue siendo gasto o ingreso. Tests: `FavoriteEditorTransferTests` y el
+XCUITest `FavoritesCrudUITests#test_transferFavorite_editsOriginAndDestination` (rojo con el código anterior, captura
+`capturas/antes-1-favorito-transferencia.png`). Card 93ta.

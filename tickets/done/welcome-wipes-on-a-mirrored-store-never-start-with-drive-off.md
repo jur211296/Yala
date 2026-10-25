@@ -1,10 +1,10 @@
 ---
 id: welcome-wipes-on-a-mirrored-store-never-start-with-drive-off
-status: backlog
+status: done
 priority: low
 area: "welcome, borrado, icloud"
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-25
 source: "Frank, al arreglar `fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed` (2026-10-15). Inferido leyendo el código, sin medir en device."
 ---
 
@@ -41,3 +41,11 @@ seam: no prueba nada sobre producción.
 - [ ] Medido en device si un Welcome con `.localNoMirror` llega a estos borrados.
 - [ ] Si llega: la espera usa un testigo de cuenta que no dependa de iCloud Drive, o el texto del fallo dice que no se
       borró nada.
+
+## Cierre (lote 12.2, 2026-10-25)
+
+No se midió en device si la población existe: el arreglo hace que dé igual. `waitForImportQuiescence` y
+`forceFetchAndWait` ya no salen `false` al instante por el token de Drive: preguntan por `hasICloudAccount`, así que con Drive
+apagado y el espejo adjunto los borrados del Welcome esperan al import de verdad. Sin cuenta siguen saliendo al instante.
+Tests: `ICloudAccountWitnessServiceTests`. Las demás esperas que aún leen el token, en
+`boot-gates-still-read-the-icloud-drive-token`. Card 2taf.

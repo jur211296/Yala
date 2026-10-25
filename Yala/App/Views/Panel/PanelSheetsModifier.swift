@@ -76,6 +76,9 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
                 sheets.settingsInitialDestination = nil
+                // Card vbf9: una petición del aviso que no llegó a la tarjeta (la pantalla cambió entretanto) no se queda
+                // armada para la próxima vez que la persona abra «Dónde viven tus datos» por su cuenta.
+                CloudAdoptOfferRequest.pending = false
                 viewModel.reloadAndRecalculate()
             }) {
                 ProfileView(initialDestination: sheets.settingsInitialDestination)

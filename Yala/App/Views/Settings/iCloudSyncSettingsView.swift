@@ -79,11 +79,13 @@ struct iCloudSyncSettingsView: View {
 
     // MARK: - Estado
 
-    /// «Sin cuenta», con UNA sola respuesta para toda la pantalla: el testigo de iCloud Drive o un `notAuthenticated` de
-    /// CloudKit (`status == .noAccount`). Con dos —la fila por el estado y las secciones por el testigo— la pantalla decía
+    /// «Sin cuenta», con UNA sola respuesta para toda la pantalla: la cuenta de iCloud o un `notAuthenticated` de CloudKit
+    /// (`status == .noAccount`). Con dos —la fila por el estado y las secciones por el testigo— la pantalla decía
     /// «iCloud no está activo» encima de «Tus datos se sincronizan automáticamente con iCloud» (review del 2026-10-19).
+    /// La cuenta es `hasICloudAccount`, no el token de iCloud Drive (card 90yc): con Drive apagado y la sesión abierta el
+    /// espejo sincroniza, y la pantalla decía que los datos se quedaban solo aquí.
     private var showsNoAccount: Bool {
-        !syncService.isAccountAvailable || syncService.status.isNoAccount
+        !syncService.hasICloudAccount || syncService.status.isNoAccount
     }
 
     private var statusRow: some View {

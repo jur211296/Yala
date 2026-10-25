@@ -333,10 +333,10 @@ enum SwiftDataConfiguration {
     /// SOLO tras `isMarkerExported()`). Un kill pre-armado → mirror remonta ON → el marcador exporta en
     /// el resume → recién el relaunch posterior apaga el mirror. R9: JAMÁS caer a `.automatic`.
     ///
-    /// **R9 está INCUMPLIDO hoy por `.localNoMirror`, y su consecuencia está MEDIDA (auditoría R1(c),
-    /// 2026-08-10): `.automatic` adjunta el mirror igual, sin cuenta iCloud.** La medición y por qué el fix
-    /// —explicitar `.none`— es una decisión APARTE y no de este chip (cambiaría el comportamiento del parque
-    /// sin iCloud) están en `PersonalStoreDecision.attachesCloudKitMirror`.
+    /// **R9 se cumple desde el 2026-10-24 (card n5zw): `.localNoMirror` nombra su contenedor.** Con `.automatic` la
+    /// auditoría R1(c) midió que el mirror se adjunta igual sin cuenta, y en `Yala Dev` apuntaba al contenedor de
+    /// producción (el primero de los entitlements). Explicitar `.none` seguiría siendo un cambio de comportamiento
+    /// para el parque sin iCloud y no se hizo: se nombró el MISMO contenedor que usa `.iCloudMirror`.
     ///
     /// **R2 — `freshInstall` va SIN default a propósito** (molde del tercer término de
     /// `MigrationRuntimeGate.canRun`): la tabla de mounts es el sitio donde un descuido cuesta un store
@@ -390,15 +390,16 @@ extension SwiftDataConfiguration.PersonalStoreDecision {
     /// ⇒ dos consecuencias que hay que tener presentes antes de "arreglar" nada:
     ///  - el valor viejo del testigo para `localNoMirror` (`.icloud` = mirror vivo) **era correcto**; lo que
     ///    mentía era el colapso de cuatro decisiones en dos valores, no esta celda;
-    ///  - la violación de «R9: JAMÁS caer a `.automatic`» (docblock de `personalStoreDecision`) es REAL,
-    ///    pero explicitarla a `.none` sería un CAMBIO DE COMPORTAMIENTO para el parque sin iCloud, y esa
-    ///    decisión es del punto de control — **no de este chip**, que solo la mide y la documenta.
+    ///  - la violación de «R9: JAMÁS caer a `.automatic`» (docblock de `personalStoreDecision`) era REAL,
+    ///    y explicitarla a `.none` sería un CAMBIO DE COMPORTAMIENTO para el parque sin iCloud. Se cerró el
+    ///    2026-10-24 (card n5zw) nombrando `.private(container)`, el mismo contenedor que `.iCloudMirror`:
+    ///    `.automatic` tomaba el primero de los entitlements, que en `Yala Dev` es el de producción.
     nonisolated var attachesCloudKitMirror: Bool {
         switch self {
         case .iCloudMirror:
             return true   // `.private(container)` explícito
         case .localNoMirror:
-            return true   // `.automatic` — MEDIDO: adjunta aunque no haya cuenta
+            return true   // `.private(container)` desde la card n5zw; con `.automatic` ya adjuntaba (MEDIDO) sin cuenta
         case .cloudMirrorOff, .neutralNoMirror:
             return false  // `.none` explícito
         }
@@ -1085,7 +1086,17 @@ extension SwiftDataConfiguration {
                 cloudKitDatabase: .private(cloudKitContainerIdentifier)
             )
         case .localNoMirror:
-            return ModelConfiguration(databaseName, schema: personalSchema)
+            // Card n5zw (2026-10-24): el contenedor va NOMBRADO, como en `.iCloudMirror`. Sin `cloudKitDatabase:` caía en
+            // `.automatic`, que toma el PRIMER contenedor de los entitlements (`iCloud.com.jurgenschmidt.yala`): en
+            // `Yala Dev` el de PRODUCCIÓN. Con iCloud Drive apagado el espejo cambiaba de contenedor, vaciaba la copia
+            // local y la reimportaba de otro sitio (medido en el iPhone de QA el 15 y el 19-oct: «arranca vacía», y al
+            // encender Drive todo volvía). En `Yala` nombrarlo no cambia nada: es el mismo contenedor que `.automatic`.
+            // Sin cuenta de iCloud `.private` adjunta el espejo igual que `.automatic` (auditoría R1(c)): el eje A no cambia.
+            return ModelConfiguration(
+                databaseName,
+                schema: personalSchema,
+                cloudKitDatabase: .private(cloudKitContainerIdentifier)
+            )
         }
     }
 

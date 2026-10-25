@@ -321,12 +321,16 @@ final class UITestHooks {
     /// el XCUITest de la cadena hoja → elección de Apple/Google, que con una sesión fingida no se puede recorrer: la
     /// sesión viva quita ese botón a propósito. Finge la SALIDA del controller, no su decisión. No persiste nada. Solo
     /// DEBUG.
-    nonisolated static var pendingMigrationBlock: (reason: StorageMigrationIdentityGateLogic.Block, rejectedProvider: CloudSignInProvider?)? {
+    nonisolated static var pendingMigrationBlock: (reason: StorageMigrationIdentityGateLogic.Block,
+                                                   rejectedProvider: CloudSignInProvider?, staleAssociation: Bool)? {
         #if DEBUG
         guard isActive else { return nil }
         switch parseValue(after: "-uitest-pending-migration-block", from: ProcessInfo.processInfo.arguments) {
-        case "personalData":      return (.accountHasPersonalData, nil)
-        case "personalDataApple": return (.accountHasPersonalData, .apple)
+        case "personalData":      return (.accountHasPersonalData, nil, false)
+        case "personalDataApple": return (.accountHasPersonalData, .apple, false)
+        // Card 9mc6: «Ya usas otra cuenta para tus grupos», con la asociación de otra instalación (`Stale`) o de esta.
+        case "otherGroups":       return (.anotherGroupsAccountAssociated, .google, false)
+        case "otherGroupsStale":  return (.anotherGroupsAccountAssociated, .google, true)
         default:                  return nil
         }
         #else
@@ -343,6 +347,11 @@ final class UITestHooks {
     /// motor no arranca. Lo que la pantalla pinta lo siguen decidiendo `CloudMigrationUIStateDeriver` y
     /// `ReverseEligibility`. No persiste nada. Solo DEBUG.
     nonisolated static var fakeBornCloudStorage: Bool { hasArg("-uitest-born-cloud-storage") }
+
+    /// `-uitest-cloud-adopt-offer` (card vbf9): `CloudMigrationController.markerDecision()` lee el marcador de migración de
+    /// otro dispositivo como presente, para que el Panel proponga activar la nube aquí y «Dónde viven tus datos» enseñe la
+    /// tarjeta de adopt. Finge solo esa lectura; el resto de condiciones del aviso son las reales. Solo DEBUG.
+    nonisolated static var fakeCloudAdoptOffer: Bool { hasArg("-uitest-cloud-adopt-offer") }
 
     /// `-uitest-adopted-cloud-storage`: como `-uitest-born-cloud-storage`, pero la cuenta NO nació aquí (el teléfono entró
     /// con «Ya tengo una cuenta»). Sin mapa de CloudKit en el simulador, `ReverseEligibility` decide `.degradedNoMap`: la

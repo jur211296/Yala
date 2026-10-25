@@ -79,6 +79,16 @@ final class MigrationPhaseStore {
         identityCaptureDerivationPending = false
     }
 
+    /// ¿Hay journal detrás de `currentPhaseRead`? `false` antes de `configure` y tras el swap de persona: ahí la lectura es
+    /// el `.notStarted` de relleno, no una fase leída (card jbjj). El override DEBUG cuenta como conectado: es una fase
+    /// elegida, no un relleno.
+    var isJournalConnected: Bool {
+        #if DEBUG
+        if simulatedPhase?.migrationPhase != nil { return true }
+        #endif
+        return container != nil
+    }
+
     /// `configure` no pudo leer el journal y la ventana de captura quedó sin derivar. Lo consume la primera lectura buena.
     private(set) var identityCaptureDerivationPending = false
 

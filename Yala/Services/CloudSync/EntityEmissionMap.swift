@@ -476,6 +476,11 @@ enum EntityEmissionMap {
             ColumnEmitter("amount") { m, _ in Emit.money(m.amount) },
             ColumnEmitter("note") { m, _ in Emit.text(m.note) },
             ColumnEmitter("account_ref") { m, _ in Emit.ref(m.account?.shortcutID) },
+            // Card da5d: el destino de un favorito de transferencia (UX 2.2 · L2-14). Columna posterior al lanzamiento:
+            // no viaja hasta que el backend anuncia la versión que la conoce.
+            ColumnEmitter("destination_account_ref", since: SyncCapability.favoriteDestinationSince) { m, _ in
+                Emit.ref(m.destinationAccount?.shortcutID)
+            },
             ColumnEmitter("subcategory_ref") { m, _ in Emit.ref(m.subcategory?.shortcutID) },
             ColumnEmitter("tag_refs") { m, _ in Emit.uuidArray(m.resolvedTagIDs()) },
             ColumnEmitter("need_override") { m, _ in Emit.text(m.needOverride) },
@@ -489,6 +494,7 @@ enum EntityEmissionMap {
             \FavoritePayment.amount: ["amount"],
             \FavoritePayment.note: ["note"],
             \FavoritePayment.account: ["account_ref"],
+            \FavoritePayment.destinationAccount: ["destination_account_ref"],
             \FavoritePayment.subcategory: ["subcategory_ref"],
             \FavoritePayment.tags: ["tag_refs"],
             \FavoritePayment.tagIDs: ["tag_refs"],

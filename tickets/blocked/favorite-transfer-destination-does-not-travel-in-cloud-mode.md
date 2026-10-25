@@ -1,10 +1,10 @@
 ---
 id: favorite-transfer-destination-does-not-travel-in-cloud-mode
-status: backlog
+status: blocked
 priority: low
 area: "favorites, cloud-sync"
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-25
 source: lote decidido 2.2 · 02, sesión A (L2-14)
 ---
 
@@ -37,3 +37,16 @@ producción. Esa sesión no desplegaba backend.
 
 - [ ] Un favorito de transferencia creado en un teléfono en la nube llega al otro con su destino.
 - [ ] Un teléfono con la app anterior no recibe la columna (proyección por versión del manifest).
+
+## Lote 12.2 (2026-10-25): el código está; falta desplegar
+
+Hecho en el repo: `capability_manifest.json` v4 con `destination_account_ref` (`since: 4`), `supabase-staging.ddl`, DDL
+`qa/cloud/g24_01_favorite_destination.sql` + `g24_01_rollback.sql`, emisión y aplicación con dangler, reemisión al subir de
+versión (`SyncCapability.noteSuppressedFavoriteDestination`) y el remap de identidad de la cuenta destino. Tests:
+`FavoriteDestinationSyncTests` y los del gateway (`manifest.capability`, `config`; 552/552 en local).
+
+**Bloqueado en el despliegue**, que esta sesión no hace (nada en Supabase de producción): g24_01 en staging y producción →
+Worker v4, pasos en `docs/RUNBOOK-staging-ddl.md`. Hasta entonces la app declara v3 y el destino no viaja (como hoy).
+
+Residual aceptado: lo apuntado para la reemisión va por `syncID`, que en favoritos es identidad acuñada; si una
+re-identificación (linaje, restauración del relevo) cae entre el apunte y la subida de versión, ese destino no se reemite.

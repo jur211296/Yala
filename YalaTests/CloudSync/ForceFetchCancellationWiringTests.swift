@@ -83,7 +83,7 @@ struct ForceFetchCancellationWiringTests {
 
         try Self.expectOrdered([
             "func forceFetchAndWait(timeout: TimeInterval = 15) async -> Bool {",
-            "guard isAccountAvailable else { return false }",
+            "guard hasICloudAccount else { return false }",
             "if hasCompletedFirstImport { return true }",
             "let box = ForceFetchWaitBox()",
             "return await withTaskCancellationHandler {",

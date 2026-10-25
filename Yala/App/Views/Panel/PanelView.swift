@@ -44,6 +44,12 @@ struct PanelView: View {
     @State private var showNudgeBanner = false
     /// El aviso que se está enseñando de la cola (UX 2.2 · L3-8). `nil` = el primero.
     @State private var selectedNotice: PanelNotice?
+    /// Card vbf9: el marcador de migración de otro dispositivo llegó por iCloud (`CloudMigrationController.markerDecision`).
+    /// En un `@State` y no en el body: es un `fetchCount`, y el body del Panel se re-evalúa durante el scroll. Lo refrescan
+    /// la aparición, cada cambio de datos (el marcador llega por el espejo) y cada vuelta a primer plano.
+    @State private var cloudAdoptMarkerPresent = false
+    /// La persona cerró el aviso en este arranque.
+    @State private var cloudAdoptOfferDismissed = false
     /// La misma clave que lee `ContextualGuideBanner.panel()`: el Panel necesita saber si la guía sigue puesta para
     /// contarla en «1 de N».
     @AppStorage("guide.panel.dismissed") private var panelGuideDismissed = false
@@ -373,7 +379,9 @@ struct PanelView: View {
             viewModel.syncFromSessionState(sessionState)
             reconcileAccountsSortOrder()
             viewModel.reloadAndRecalculate()
+            refreshCloudAdoptMarker()
         }
+        .onChange(of: sessionState.dataVersion) { _, _ in refreshCloudAdoptMarker() }
         .onDisappear {
             viewModel.cancelRecalculation()
         }
@@ -385,6 +393,7 @@ struct PanelView: View {
                 guard UIApplication.shared.applicationState == .active else { return }
                 viewModel.setBackground(false)
                 viewModel.reloadAndRecalculate()
+                refreshCloudAdoptMarker()
             @unknown default:
                 break
             }
@@ -478,11 +487,29 @@ struct PanelView: View {
         return (visible(.accounts), visible(.health))
     }
 
+    /// Card vbf9: relee si el marcador de migración de otro dispositivo está en el iCloud de este.
+    private func refreshCloudAdoptMarker() {
+        let present = CloudMigrationController.shared?.markerDecision() == .secondaryDeviceCloudLogin
+        if present != cloudAdoptMarkerPresent { cloudAdoptMarkerPresent = present }
+    }
+
     // MARK: - Avisos (UX 2.2 · L3-8)
 
     /// Cada aviso con la MISMA condición con la que se pintaba suelto.
     private var noticeFlags: PanelNoticeQueueLogic.Flags {
         var flags = PanelNoticeQueueLogic.Flags()
+        flags.cloudAdoptOffer = CloudAdoptOfferLogic.shows(
+            markerFromAnotherDevice: cloudAdoptMarkerPresent,
+            migrationIdle: (CloudMigrationController.shared?.uiState ?? .idle) == .idle,
+            persistedMode: StorageModePersistence.read(),
+            offersCloudEntry: StorageRowGateLogic.offersCloudMigrationEntry(
+                remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
+                isEngaged: StorageRowGateLogic.isEngaged(
+                    persistedMode: StorageModePersistence.read(),
+                    uiState: CloudMigrationController.shared?.uiState ?? .idle),
+                isAttestSupported: UITestHooks.fakeAttestSupport || AppAttestClient.canObtainSessionToken),
+            hasPrivateSession: SessionState.shared.hasPrivateSession,
+            dismissedThisSession: cloudAdoptOfferDismissed)
         flags.panelGuide = !UITestHooks.isActive && !panelGuideDismissed
         flags.setupChecklist = !UITestHooks.isActive && SetupChecklistManager.shared.shouldShow
         flags.updateAvailable = AppUpdateService.shared.shouldShowBanner && AppUpdateService.shared.latestVersion != nil
@@ -499,6 +526,17 @@ struct PanelView: View {
     @ViewBuilder
     private func noticeView(_ notice: PanelNotice) -> some View {
         switch notice {
+        case .cloudAdoptOffer:
+            CloudAdoptOfferBanner(
+                onActivate: {
+                    // La pantalla de almacenamiento arranca la activación al aparecer (un paso desde aquí).
+                    CloudAdoptOfferRequest.pending = true
+                    sheets.settingsInitialDestination = .storageMode
+                    sheets.isPresentingSettings = true
+                },
+                onDismiss: {
+                    withAnimation(.easeOut(duration: 0.25)) { cloudAdoptOfferDismissed = true }
+                })
         case .panelGuide:
             ContextualGuideBanner.panel()
         case .setupChecklist:

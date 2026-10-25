@@ -1,10 +1,10 @@
 ---
 id: discard-prior-icloud-confirmation-has-no-visible-cancel
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, ajustes"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-25
 source: "review adversarial del lote decidido 2.2 · 05 (lente de avisos que borran), medido en el simulador el 2026-10-19"
 ---
 
@@ -36,3 +36,10 @@ afirme que no se borró nada; quitar el `.cancel` redundante del diálogo de dat
 ## Criterios de aceptación
 
 - La confirmación enseña «Cancelar» y tocarlo no empieza la vuelta ni borra (XCUITest con el seam `found`).
+
+## Cierre (lote 12.2, 2026-10-25)
+
+«Cancelar» de «¿Borrarlos de tu iCloud?» es un botón sin rol con su id (`storage_revert_prior_discard_cancel`), como «Ahora
+no»; el `.cancel` redundante del diálogo previo se quitó. XCUITest
+`ReverseICloudPriorDataUITests#test_discardConfirmation_showsCancel_andCancelDeletesNothing`: tocarlo cierra la confirmación,
+no pinta el paso «borrando» y la tarjeta «Volver a iCloud» sigue. Card cchh.

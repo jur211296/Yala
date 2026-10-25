@@ -1,11 +1,11 @@
 ---
 id: icloud-drive-off-before-launch-starts-empty-and-silent
-status: backlog
+status: qa
 priority: high
 area: "sync, icloud"
 created: 2026-10-19
 source: "QA guiado del 2026-10-19 (prueba A · i1o5) · card tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw"
-updated: 2026-10-24
+updated: 2026-10-25
 qa-notes: pide iPhone real con iCloud Drive; el simulador no tiene iCloud
 ---
 
@@ -78,3 +78,24 @@ cuentas y categorías verá el aviso en cada arranque. Es cierto (iCloud no est�
    vuelven solos y no sale ningún aviso de borrado.
 
 Vuelto a backlog en el barrido de QA 2026-10-24: el arreglo del PR #562 falló en el iPhone el 19-oct (ver la card) y no ha tenido segunda vuelta; la card pasa a «lista para lanzar».
+
+## Segunda vuelta (lote 12.2, 2026-10-25): la causa era el contenedor
+
+No era iOS vaciando la copia: con Drive apagado el store se montaba `.localNoMirror` con `cloudKitDatabase: .automatic`, que
+toma el primer contenedor de los entitlements, y en `Yala Dev` ese es el de PRODUCCIÓN. El espejo cambiaba de contenedor,
+vaciaba la copia y reimportaba de otro sitio; al encender Drive volvía al `.dev` y todo regresaba. Las dos mediciones (15 y
+19-oct) fueron en `Yala Dev`. En `Yala` `.automatic` ya era el mismo contenedor, así que en producción este vaciado no
+debería pasar.
+
+Arreglo: `.localNoMirror` nombra el contenedor (`.private(cloudKitContainerIdentifier)`). El «hecha cuando» cambia
+(decisión D3 del encargo): con Drive apagado los datos siguen ahí y no sale ningún aviso. El aviso de «iCloud no
+disponible» del arranque queda para el teléfono sin cuenta (lee `hasICloudAccount`). Lo que dejó atrás el contenedor
+equivocado: `yala-dev-with-drive-off-mirrored-to-the-production-container`.
+
+### Guion (iPhone de QA, `Yala Dev` de este build)
+
+1. Con iCloud Drive ENCENDIDO, instala y abre Yala Dev una vez (que monte con este build). Apunta cuántos movimientos ves.
+2. Cierra Yala del todo. Ajustes › tu nombre › iCloud › iCloud Drive: apágalo.
+3. Abre Yala. Esperado: los mismos movimientos, sin ningún aviso. Ajustes › Sincronización iCloud: no dice «iCloud no está
+   activo» (card 90yc).
+4. Crea un movimiento. Cierra Yala, enciende Drive, abre: el movimiento sigue, sin aviso de borrado.

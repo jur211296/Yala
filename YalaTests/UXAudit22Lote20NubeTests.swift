@@ -361,7 +361,7 @@ struct UXAudit22Lote20NubeWiringTests {
         let gate = try #require(body.firstIndex(of: "if !showsNoAccount {"))
         #expect(gate < description)
         let predicate = try Self.body(of: "private var showsNoAccount: Bool {", in: try Self.code(Self.icloud))
-        #expect(predicate == ["!syncService.isAccountAvailable || syncService.status.isNoAccount"])
+        #expect(predicate == ["!syncService.hasICloudAccount || syncService.status.isNoAccount"])
         let noAccount = try Self.body(of: "private var noAccountSection: some View {", in: try Self.code(Self.icloud))
         #expect(noAccount.contains("guard let url = URL(string: UIApplication.openSettingsURLString) else { return }"))
     }

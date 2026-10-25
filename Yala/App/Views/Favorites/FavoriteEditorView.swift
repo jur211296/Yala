@@ -3,7 +3,9 @@
 //  Yala
 //
 //  Editor for favorite payment templates.
-//  Based on NewTransactionView but without date and transfer options.
+//  Based on NewTransactionView but without date. Un favorito de TRANSFERENCIA se edita como tal (card 93ta): origen y
+//  destino, sin categoría ni etiquetas y sin convertirlo en gasto o ingreso. Uno nuevo desde aquí sigue siendo gasto o
+//  ingreso: los de transferencia nacen en el formulario de registro.
 //
 
 import SwiftData
@@ -30,6 +32,7 @@ struct FavoriteEditorView: View {
     @State private var amountString: String = ""
     @State private var note: String = ""
     @State private var selectedAccount: Account?
+    @State private var selectedDestinationAccount: Account?
     @State private var selectedSubcategory: Subcategory?
     @State private var selectedTags: [Tag] = []
     @State private var selectedNeed: SubcategoryNeed?
@@ -40,12 +43,14 @@ struct FavoriteEditorView: View {
     @State private var initialAmountString: String = ""
     @State private var initialNote: String = ""
     @State private var initialAccountID: PersistentIdentifier?
+    @State private var initialDestinationAccountID: PersistentIdentifier?
     @State private var initialSubcategoryID: PersistentIdentifier?
     @State private var initialTagIDs: Set<PersistentIdentifier> = []
     @State private var initialNeed: SubcategoryNeed?
 
     // Sheet states
     @State private var showAccountSelector = false
+    @State private var showDestinationAccountSelector = false
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showNeedSelector = false
@@ -119,7 +124,15 @@ struct FavoriteEditorView: View {
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $selectedAccount,
-                    title: L10n.Transaction.account
+                    title: isTransfer ? L10n.Transaction.sourceAccount : L10n.Transaction.account,
+                    excludeAccount: isTransfer ? selectedDestinationAccount : nil
+                )
+            }
+            .sheet(isPresented: $showDestinationAccountSelector) {
+                AccountSelectorSheet(
+                    selectedAccount: $selectedDestinationAccount,
+                    title: L10n.Transaction.destinationAccount,
+                    excludeAccount: selectedAccount
                 )
             }
             .sheet(isPresented: $showSubcategorySelector) {
@@ -141,6 +154,12 @@ struct FavoriteEditorView: View {
                 .yalaSheetDetents([.medium])
             }
             .onChange(of: showAccountSelector) { _, isPresenting in
+                if isPresenting {
+                    isNameFieldFocused = false
+                    isAmountFieldFocused = false
+                }
+            }
+            .onChange(of: showDestinationAccountSelector) { _, isPresenting in
                 if isPresenting {
                     isNameFieldFocused = false
                     isAmountFieldFocused = false
@@ -216,7 +235,18 @@ struct FavoriteEditorView: View {
         sessionState.isExpensesOnlyMode ? [.expense] : [.expense, .income]
     }
 
+    /// El favorito que se edita es una transferencia (card 93ta). Se lee del FAVORITO y no del estado: un favorito de
+    /// transferencia no se convierte en gasto o ingreso desde aquí.
+    private var isTransfer: Bool { favorite?.type == .transfer }
+
+    @ViewBuilder
     private var transactionTypeSelector: some View {
+        // Una transferencia no se cambia de tipo: sin selector, como el formulario cuando solo cabe un tipo
+        // (`TransactionTypeSelectorView` también se esconde con uno).
+        if !isTransfer { expenseIncomeSelector }
+    }
+
+    private var expenseIncomeSelector: some View {
         HStack(spacing: DS.Spacing.none) {
             ForEach(availableTransactionTypes, id: \.self) { type in
                 Button {
@@ -274,7 +304,7 @@ struct FavoriteEditorView: View {
             amountDisplay
 
             // Nature chip (visible when subcategory is selected)
-            if selectedSubcategory != nil, transactionType != .income {
+            if selectedSubcategory != nil, transactionType != .income, !isTransfer {
                 NeedEditChip(
                     need: selectedNeed ?? selectedSubcategory?.need ?? .unclassified
                 ) {
@@ -324,7 +354,8 @@ struct FavoriteEditorView: View {
     }
 
     private var amountColor: Color {
-        Color.amountTint(isIncome: transactionType == .income)
+        // Una transferencia, con el color de su tipo, como en el formulario de registro.
+        isTransfer ? TransactionType.transfer.color : Color.amountTint(isIncome: transactionType == .income)
     }
 
     // MARK: - Bottom Chips
@@ -332,50 +363,87 @@ struct FavoriteEditorView: View {
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) { // DS: intentional non-token value
-                // Account chip
-                SelectionChip(
-                    icon: "creditcard",
-                    text: selectedAccount?.name ?? L10n.Transaction.account,
-                    isSelected: selectedAccount != nil,
-                    color: selectedAccount.map { Color(hex: $0.colorHex) }
-                ) {
-                    showAccountSelector = true
-                }
-
-                // Subcategory chip
-                SelectionChip(
-                    icon: "tag",
-                    text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
-                    isSelected: selectedSubcategory != nil,
-                    color: subcategoryChipColor
-                ) {
-                    showSubcategorySelector = true
-                }
-
-                // Tags chips
-                if selectedTags.isEmpty {
-                    SelectionChip(
-                        icon: "number",
-                        text: L10n.Transaction.tags,
-                        isSelected: false,
-                        color: nil
-                    ) {
-                        showTagSelector = true
-                    }
+                if isTransfer {
+                    transferChips
                 } else {
-                    ForEach(selectedTags, id: \.persistentModelID) { tag in
-                        SelectionChip(
-                            icon: "number",
-                            text: tag.name,
-                            isSelected: true,
-                            color: theme.tagChip
-                        ) {
-                            showTagSelector = true
-                        }
-                    }
+                    expenseIncomeChips
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
+        }
+    }
+
+    /// Origen y destino, con los mismos colores e iconos que el formulario de registro (`NewTransactionView`). Sin
+    /// categoría ni etiquetas: una transferencia no las lleva.
+    @ViewBuilder
+    private var transferChips: some View {
+        SelectionChip(
+            icon: "arrow.up.circle",
+            text: selectedAccount?.name ?? L10n.Transaction.origin,
+            isSelected: selectedAccount != nil,
+            color: selectedAccount != nil ? Color.hotPink : nil,
+            fillsWhenSelected: true
+        ) {
+            showAccountSelector = true
+        }
+        .accessibilityIdentifier("favorite_editor_source_chip")
+
+        SelectionChip(
+            icon: "arrow.down.circle",
+            text: selectedDestinationAccount?.name ?? L10n.Transaction.destination,
+            isSelected: selectedDestinationAccount != nil,
+            color: selectedDestinationAccount != nil ? Color.electricIndigo : nil,
+            fillsWhenSelected: true
+        ) {
+            showDestinationAccountSelector = true
+        }
+        .accessibilityIdentifier("favorite_editor_destination_chip")
+    }
+
+    @ViewBuilder
+    private var expenseIncomeChips: some View {
+        // Account chip
+        SelectionChip(
+            icon: "creditcard",
+            text: selectedAccount?.name ?? L10n.Transaction.account,
+            isSelected: selectedAccount != nil,
+            color: selectedAccount.map { Color(hex: $0.colorHex) }
+        ) {
+            showAccountSelector = true
+        }
+
+        // Subcategory chip
+        SelectionChip(
+            icon: "tag",
+            text: selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+            isSelected: selectedSubcategory != nil,
+            color: subcategoryChipColor
+        ) {
+            showSubcategorySelector = true
+        }
+        .accessibilityIdentifier("favorite_editor_subcategory_chip")
+
+        // Tags chips
+        if selectedTags.isEmpty {
+            SelectionChip(
+                icon: "number",
+                text: L10n.Transaction.tags,
+                isSelected: false,
+                color: nil
+            ) {
+                showTagSelector = true
+            }
+        } else {
+            ForEach(selectedTags, id: \.persistentModelID) { tag in
+                SelectionChip(
+                    icon: "number",
+                    text: tag.name,
+                    isSelected: true,
+                    color: theme.tagChip
+                ) {
+                    showTagSelector = true
+                }
+            }
         }
     }
 
@@ -389,6 +457,9 @@ struct FavoriteEditorView: View {
 
     private var canSave: Bool {
         let nameValid = !name.trimmingCharacters(in: .whitespaces).isEmpty
+            && FavoriteEditorTransferLogic.accountsAreValid(
+                isTransfer: isTransfer, origin: selectedAccount?.persistentModelID,
+                destination: selectedDestinationAccount?.persistentModelID)
 
         // For new favorites, just need a name
         guard favorite != nil else { return nameValid }
@@ -401,6 +472,7 @@ struct FavoriteEditorView: View {
         name != initialName || transactionType != initialTransactionType
             || amountString != initialAmountString || note != initialNote
             || selectedAccount?.persistentModelID != initialAccountID
+            || selectedDestinationAccount?.persistentModelID != initialDestinationAccountID
             || selectedSubcategory?.persistentModelID != initialSubcategoryID
             || Set(selectedTags.map { $0.persistentModelID }) != initialTagIDs
             || selectedNeed != initialNeed
@@ -418,6 +490,7 @@ struct FavoriteEditorView: View {
         }
         note = favorite.note ?? ""
         selectedAccount = favorite.account
+        selectedDestinationAccount = favorite.destinationAccount
         selectedSubcategory = favorite.subcategory
         // CSV-mirror SSOT via resolver + TagResolver.
         selectedTags = TagResolver.fetchOrEmpty(
@@ -435,6 +508,7 @@ struct FavoriteEditorView: View {
         initialAmountString = amountString
         initialNote = note
         initialAccountID = selectedAccount?.persistentModelID
+        initialDestinationAccountID = selectedDestinationAccount?.persistentModelID
         initialSubcategoryID = selectedSubcategory?.persistentModelID
         initialTagIDs = Set(selectedTags.map { $0.persistentModelID })
         initialNeed = selectedNeed
@@ -450,7 +524,8 @@ struct FavoriteEditorView: View {
             account: selectedAccount,
             subcategory: selectedSubcategory,
             tags: selectedTags,
-            needOverride: selectedNeed
+            needOverride: selectedNeed,
+            destinationAccount: isTransfer ? selectedDestinationAccount : nil
         )
         if saved {
             dismiss()

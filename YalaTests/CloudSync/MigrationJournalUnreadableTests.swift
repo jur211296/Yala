@@ -279,6 +279,34 @@ struct MigrationJournalUnreadableConsumerTests {
         #expect(!MigrationRuntimeGate.canRun(read: .phase(.done), cloudWithMirrorOn: false, personalMountMismatch: true))
     }
 
+    /// Card jbjj: el canario del par roto solo con el journal conectado. El control (par roto de verdad, fase estable
+    /// leída) sigue diciendo que sí; sin journal, en fase transitoria, ilegible o sin espejo, no.
+    @Test func pairViolation_onlyWithAConnectedJournal_andAStableReadPhase() {
+        #expect(MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.notStarted), cloudWithMirrorOn: true,
+                                                                journalConnected: true))
+        #expect(MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.done), cloudWithMirrorOn: true,
+                                                                journalConnected: true))
+        // La vuelta a iCloud: relanzado con el journal aún sin conectar, la lectura es el relleno `.notStarted`.
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.notStarted), cloudWithMirrorOn: true,
+                                                                 journalConnected: false))
+        // Ya conectado, la fase de verdad es transitoria: el par es el legítimo.
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.reverseMountMirror), cloudWithMirrorOn: true,
+                                                                 journalConnected: true))
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .unreadable, cloudWithMirrorOn: true,
+                                                                 journalConnected: true))
+        #expect(!MigrationRuntimeGate.isStorageModePairViolation(read: .phase(.done), cloudWithMirrorOn: false,
+                                                                 journalConnected: true))
+    }
+
+    /// Sin `configure` no hay journal: un `MigrationPhaseStore` recién creado lo dice, y el swap de persona lo suelta.
+    @Test func phaseStore_withoutConfigure_isNotConnected() {
+        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let store = MigrationPhaseStore(defaults: defaults)
+        #expect(!store.isJournalConnected)
+        store.releaseContainerForSwap()
+        #expect(!store.isJournalConnected)
+    }
+
     @Test func prefsDrain_unreadable_doesNotDrain_andTheControlDoes() {
         #expect(!PrefsCutoverDrain.isLeaderPostRelaunchPhase(JournaledPhaseRead.unreadable))
         #expect(PrefsCutoverDrain.isLeaderPostRelaunchPhase(JournaledPhaseRead.phase(.done)))
@@ -695,7 +723,8 @@ struct MigrationJournalUnreadableWiringTests {
             "case .unreadable: phaseLabel = \"unreadable\"",
             "}",
             "let cloudWithMirrorOn = StorageModePersistence.isCloudWithMirrorOn()",
-            "if cloudWithMirrorOn, case .phase(let phase) = read, MigrationRuntimeGate.isDomainStablePhase(phase) {",
+            "if MigrationRuntimeGate.isStorageModePairViolation(read: read, cloudWithMirrorOn: cloudWithMirrorOn,",
+            "journalConnected: MigrationPhaseStore.shared.isJournalConnected) {",
             "CloudSyncBreadcrumb.storageModePairViolation(phase: phaseLabel)",
             "if !pairViolationCanaryFired {",
             "pairViolationCanaryFired = true",

@@ -117,8 +117,9 @@ struct WhatsNewLaunchLogicTests {
     func returningUser_wiring() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let src = try String(contentsOf: root.appendingPathComponent("Yala/App/ContentView.swift"), encoding: .utf8)
-        let start = try #require(src.range(of: "private func runReturningUserPostChecks() {"))
-        let end = try #require(src.range(of: "private func resumeFullModeActivationIfPending() {", range: start.upperBound..<src.endIndex))
+        // Desde la card y2vg la decisión vive en su propia función, que llaman el arranque y la primera activación.
+        let start = try #require(src.range(of: "private func presentReturningUserSheetIfPending() {"))
+        let end = try #require(src.range(of: "private func runReturningUserPostChecks() {", range: start.upperBound..<src.endIndex))
         let body = src[start.upperBound..<end.lowerBound].components(separatedBy: "\n")
             .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && !$0.hasPrefix("//") }
             .joined(separator: "\n")
@@ -142,5 +143,43 @@ struct WhatsNewLaunchLogicTests {
             }
             """))
         #expect(!body.contains("} else if let data = whatsNewDataIfPending() {"), "el orden viejo (oferta primero) volvió")
+    }
+
+    /// Card y2vg: un arranque en segundo plano no decide la hoja; uno normal (`.inactive` o `.active`) sí.
+    @Test func backgroundLaunch_defersTheSheet_andANormalOneDoesNot() {
+        #expect(WhatsNewLaunchLogic.defersReturningUserSheet(applicationInBackground: true))
+        #expect(!WhatsNewLaunchLogic.defersReturningUserSheet(applicationInBackground: false))
+    }
+
+    /// Card y2vg: el arranque aplaza con la app en segundo plano y la primera activación decide lo aplazado. Los dos
+    /// tramos, enteros: un `else` perdido o la activación que no lo consume dejarían Novedades para el arranque siguiente.
+    @Test func backgroundLaunch_wiring_defersAndTheFirstActivationPresents() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let src = try String(contentsOf: root.appendingPathComponent("Yala/App/ContentView.swift"), encoding: .utf8)
+        func code(from startMarker: String, to endMarker: String) throws -> String {
+            let start = try #require(src.range(of: startMarker))
+            let end = try #require(src.range(of: endMarker, range: start.upperBound..<src.endIndex))
+            return src[start.upperBound..<end.lowerBound].components(separatedBy: "\n")
+                .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && !$0.hasPrefix("//") }
+                .joined(separator: "\n")
+        }
+        let launch = try code(from: "private func runReturningUserPostChecks() {",
+                              to: "Task { await AppUpdateService.shared.checkForUpdate() }")
+        #expect(launch.hasSuffix("""
+            if WhatsNewLaunchLogic.defersReturningUserSheet(applicationInBackground:
+            UIApplication.shared.applicationState == .background) {
+            ReturningUserSheetDeferral.pendingUntilActive = true
+            } else {
+            presentReturningUserSheetIfPending()
+            }
+            """), "El arranque ya no aplaza la hoja con la app en segundo plano: \(launch)")
+        let activation = try code(from: "private func handleAppBecameActive() {",
+                                  to: "UserSegmentService.shared.recalculate()")
+        #expect(activation == """
+            if ReturningUserSheetDeferral.pendingUntilActive {
+            ReturningUserSheetDeferral.pendingUntilActive = false
+            presentReturningUserSheetIfPending()
+            }
+            """, "La primera activación no decide la hoja aplazada: \(activation)")
     }
 }

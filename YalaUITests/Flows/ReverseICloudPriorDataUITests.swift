@@ -144,6 +144,32 @@ final class ReverseICloudPriorDataUITests: XCTestCase {
         confirm.tap()
     }
 
+    /// La confirmación del borrado enseña «Cancelar», y tocarlo no borra ni empieza la vuelta (card cchh). Con el seam
+    /// `progress` un borrado empezado pinta el paso «borrando»: si «Cancelar» borrara, ese paso saldría.
+    func test_discardConfirmation_showsCancel_andCancelDeletesNothing() {
+        let app = tapRevert(prior: "found", wipe: "progress")
+
+        let discard = sheetButton(app, "storage_revert_prior_discard")
+        XCTAssertTrue(discard.waitForExistence(timeout: 5), "No salió el aviso de datos previos.")
+        discard.tap()
+
+        let confirm = sheetButton(app, "storage_revert_prior_discard_confirm")
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "«Empezar sin ellos» no pidió confirmar el borrado.")
+        let cancel = sheetButton(app, "storage_revert_prior_discard_cancel")
+        XCTAssertTrue(cancel.exists, "«¿Borrarlos de tu iCloud?» no enseña «Cancelar»: solo se sale tocando fuera.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-cchh-borrarlos-con-cancelar"
+        shot.lifetime = .keepAlways
+        add(shot)
+        cancel.tap()
+
+        XCTAssertFalse(confirm.waitForExistence(timeout: 3), "«Cancelar» dejó abierta la confirmación del borrado.")
+        XCTAssertFalse(app.descendants(matching: .any)["storage_step_wipePrior_active"].exists,
+                       "«Cancelar» empezó a borrar de iCloud.")
+        XCTAssertTrue(app.buttons["storage_revert_button"].waitForExistence(timeout: 5),
+                      "Tras «Cancelar», la tarjeta «Volver a iCloud» ya no está: la vuelta empezó.")
+    }
+
     /// «Empezar sin ellos» pide su «¿seguro?», y con el borrado fallido sin red la vuelta no empieza: sale el error, que
     /// sí habla de la conexión, y la tarjeta sigue ofreciendo volver.
     func test_discardWithAFailedWipe_doesNotStartTheReverse() {

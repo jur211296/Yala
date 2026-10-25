@@ -294,6 +294,11 @@ struct MigrationIdentityBlock: Identifiable, Equatable {
     let associatedEmail: String?
     /// Con qué método se firmó la cuenta rechazada, cuando la sesión la abrió este intento. `nil` si no se sabe.
     let rejectedProvider: CloudSignInProvider?
+    /// «Desasociarla y seguir» (card 9mc6): la cuenta de grupos que bloquea solo está en el iCloud-KV del Apple ID
+    /// (`GroupsAccountAssociation.isRemoteOnly`), así que la dejó otra instalación y puede no existir ya. La hoja ofrece
+    /// soltarla y volver a elegir cuenta en un paso, en vez de mandar a «Grupos». Solo con «Usar otra cuenta»: la elección
+    /// que sigue es la misma.
+    var offersDetachingStaleAssociation: Bool = false
 
     /// ¿La hoja avisa de que con Apple no se puede elegir otra cuenta? Solo junto a «Usar otra cuenta», y solo si la
     /// rechazada era de Apple: elegir Apple otra vez firma con el mismo Apple ID del dispositivo y repite el aviso.
@@ -645,7 +650,8 @@ final class CloudMigrationController {
         if let fingido = UITestHooks.pendingMigrationBlock {
             migrationIdentityBlock = MigrationIdentityBlock(
                 reason: fingido.reason, offersAnotherAccount: true, associatedEmail: nil,
-                rejectedProvider: fingido.rejectedProvider)
+                rejectedProvider: fingido.rejectedProvider,
+                offersDetachingStaleAssociation: fingido.staleAssociation)
         }
         #endif
     }
@@ -1123,13 +1129,24 @@ final class CloudMigrationController {
             offersAnotherAccount: offersAnotherAccount,
             associatedEmail: reason == .anotherGroupsAccountAssociated
                 ? GroupsAccountAssociation.shared.read()?.email : nil,
-            rejectedProvider: rejectedProvider)
+            rejectedProvider: rejectedProvider,
+            offersDetachingStaleAssociation: reason == .anotherGroupsAccountAssociated && offersAnotherAccount
+                && GroupsAccountAssociation.shared.isRemoteOnly)
         CloudSyncBreadcrumb.migrationIdentityBlocked(reason: reason.slug, stage: stage)
         MetricsService.cloudMigrationExistingAccountBlocked(reason: reason.slug, stage: stage)
         // Después del cierre de la sesión que abrió el intento: la que queda viva es la que se comprobó, y es la que la
         // tarjeta seguiría prometiendo. Un `signOut` que no cerró la deja viva, y entonces también se recuerda.
         readLiveSession()
         refusedSession = StorageMigrationIdentityGateLogic.refusalToRemember(reason: reason, session: liveSession)
+    }
+
+    /// «Desasociarla y seguir» de la hoja del bloqueo (card 9mc6): suelta la asociación de grupos que llegó del iCloud-KV de
+    /// otra instalación. Es el mismo `clear()` que «Desasociar» de la sección «Grupos» (con su tombstone, para que otro
+    /// dispositivo no la reponga en su arranque). La elección de cuenta que sigue la abre la pantalla al bajar la hoja.
+    func releaseStaleGroupsAssociation() {
+        guard GroupsAccountAssociation.shared.isRemoteOnly else { return }
+        GroupsAccountAssociation.shared.clear()
+        CloudSyncBreadcrumb.migrationIdentityBlocked(reason: "other_groups_account_released", stage: "sheet")
     }
 
     /// Adopt desde el Welcome (H4/pieza 2): conduce la máquina asumiendo una sesión SIWA YA viva —
@@ -2237,6 +2254,13 @@ final class CloudMigrationController {
     /// —lo impiden las dos capas de `StorageMigrationIdentityGateLogic` y `ForwardClaimIntent.migrateOnly`—, así que con
     /// una cuenta que ya tiene datos acaba en el aviso de la puerta. El contrario ofrecería adoptar sin saber si hay algo.
     func markerDecision() -> MarkerDecision {
+        #if DEBUG
+        // Seam `-uitest-cloud-adopt-offer` (card vbf9): finge el marcador de otro dispositivo, que en el simulador no puede
+        // llegar (sin CloudKit). Finge la ENTRADA: la fase journaleada y el resto de condiciones siguen siendo las reales.
+        if UITestHooks.fakeCloudAdoptOffer {
+            return MigrationStateMachine.markerReconciliation(markerFound: true, journaledPhase: journaledPhase)
+        }
+        #endif
         let markerFound: Bool
         do {
             markerFound = try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) > 0
