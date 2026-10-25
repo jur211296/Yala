@@ -39,7 +39,7 @@ struct RecordsSelectionBar: View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "hand.tap")
                 .font(DS.Typography.label)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
             Text(L10n.UXL8.selectHint)
                 .font(DS.Typography.subheadline)
@@ -104,7 +104,7 @@ struct RecordsSelectionBar: View {
         } label: {
             Label(L10n.Action.edit, systemImage: "pencil")
                 .font(DS.Typography.label)
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, DS.Spacing.md)

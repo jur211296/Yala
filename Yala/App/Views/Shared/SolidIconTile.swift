@@ -38,7 +38,7 @@ struct SolidIconTile: View {
 enum SolidIconTilePalette {
     static let transactions = Color.selectedIndigoFill
     static let accounts = Color.emphasisPinkFill
-    static let categories = Color.incomeAmount
+    static let categories = Color.incomeFill
     static let budgets = Color(hex: "B45309")
     static let groups = Color(hex: "6D28D9")
 }

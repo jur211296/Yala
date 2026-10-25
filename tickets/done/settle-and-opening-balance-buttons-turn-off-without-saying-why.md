@@ -1,10 +1,10 @@
 ---
 id: settle-and-opening-balance-buttons-turn-off-without-saying-why
-status: backlog
+status: done
 priority: low
 area: groups
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-25
 source: lote decidido 2.2 · 11 (L13-9, visto al buscar el mismo patrón)
 ---
 
@@ -18,3 +18,5 @@ pendiente marca el campo y una línea dice qué falta. Dos formularios hermanos 
 
 No se tocaron en el lote porque la decisión nombra el formulario de gasto. Si Jürgen quiere el mismo trato, es la misma
 pieza (`GroupExpenseMissingFieldLogic` como molde).
+
+Hecho en el lote 12.3 (2026-10-25): «Apuntar pago» y el «Guardar» del saldo inicial siempre activos; con algo pendiente marcan el campo, una línea dice qué falta (quién debe, a quién, dos personas distintas, el monto) y VoiceOver lo anuncia. `GroupOpeningBalanceMissingFieldLogic` + `SettlementMissingFieldLogic`; unit `GroupFormsMissingFieldTests`, XCUITest `GroupFormsMissingFieldUITests`.

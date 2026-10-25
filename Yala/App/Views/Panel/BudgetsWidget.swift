@@ -112,7 +112,7 @@ struct BudgetsWidget: View {
         } label: {
             Text(L10n.UXL9.chooseWhich)
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("panel_budgets_choose_which")

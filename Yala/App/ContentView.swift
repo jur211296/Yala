@@ -4197,7 +4197,8 @@ struct MainTabView: View {
                 }
             }
             .tabViewStyle(.sidebarAdaptable)
-            .tint(theme.accent)
+            // La pestaña elegida es texto e icono sobre la barra: el acento de texto (card 1c9w).
+            .tint(theme.accentText)
             // Encoge al bajar, y llega desplegada a cada pestaña (L8-2): ver `TabBarArrivesExpandedModifier`.
             .tabBarArrivesExpanded(selection: navigation.selectedMainTab)
             .transaction { $0.animation = nil }

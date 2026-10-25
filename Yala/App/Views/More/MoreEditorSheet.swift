@@ -75,7 +75,7 @@ struct MoreEditorSheet: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: kind.icon)
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
 
             Text(kind.title)
@@ -99,7 +99,7 @@ struct MoreEditorSheet: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "rectangle.bottomthird.inset.filled")
                     .font(DS.Typography.body)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

@@ -85,7 +85,7 @@ struct AIPrivacySettingsView: View {
                     } label: {
                         Text(L10n.AIPrivacy.policyLink)
                             .font(DS.Typography.caption.weight(.medium))
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.thAccentText)
                     }
                     .buttonStyle(.plain)
                 }

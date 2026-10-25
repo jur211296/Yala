@@ -7919,6 +7919,9 @@
 
 /* Línea de ayuda bajo el título del formulario de saldo inicial. */
 "groups.openingBalance.formHelp" = "To, co ktoś był winien jeszcze przed Yala";
+"groups.openingBalance.missingDebtor" = "Wybierz, kto jest winien";
+"groups.openingBalance.missingCreditor" = "Wybierz, komu jest winien";
+"groups.openingBalance.missingDistinctPeople" = "Wybierz dwie różne osoby";
 
 /* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
 "inbox.movedToGroup" = "Przeniesiono do „%@”";

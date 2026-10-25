@@ -256,7 +256,7 @@ struct ScheduledPaymentsWidget: View {
             Image(systemName: filterOption.iconName)
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? .white : theme.secondaryText)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
@@ -350,7 +350,7 @@ struct ScheduledPaymentsWidget: View {
                 } else if item.isPaid {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.captionSmall)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .accessibilityHidden(true)
                 }
             }

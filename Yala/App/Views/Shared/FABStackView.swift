@@ -186,7 +186,7 @@ struct FABStackView: View {
         } label: {
             Image(systemName: showFABMenu ? "xmark" : "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.usesMaterial || showFABMenu ? .white : Color.contrastingText(for: background))
+                .foregroundStyle(theme.usesMaterial || showFABMenu ? .white : theme.onFill(background))
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 .modifier(FABSurfaceModifier(base: showFABMenu ? DS.Semantic.disabledForeground : background))
@@ -276,7 +276,7 @@ struct FABStackView: View {
         Button {} label: {
             Image(systemName: "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(Color.contrastingText(for: theme.accent))
+                .foregroundStyle(theme.onAccent)
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .background(background)
                 .clipShape(Circle())

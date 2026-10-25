@@ -2190,6 +2190,10 @@ enum L10n {
         enum OpeningBalance {
             /// UX 2.2 · L13-10: línea de ayuda bajo el título del formulario.
             static var formHelp: String { ls("groups.openingBalance.formHelp", comment: "") }
+            /// Lote 12.3 (card rhgi): la línea con lo que falta al tocar «Guardar».
+            static var missingDebtor: String { ls("groups.openingBalance.missingDebtor", comment: "") }
+            static var missingCreditor: String { ls("groups.openingBalance.missingCreditor", comment: "") }
+            static var missingDistinctPeople: String { ls("groups.openingBalance.missingDistinctPeople", comment: "") }
             /// Descripción del SplitExpense de saldo inicial (también label base del feed).
             static var entryDescription: String { ls("groups.openingBalance.entryDescription", comment: "") }
             /// Fila del feed: "%1$@ le debe a %2$@".

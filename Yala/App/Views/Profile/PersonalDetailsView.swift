@@ -172,7 +172,7 @@ struct PersonalDetailsView: View {
 
                 Image(systemName: selectedIcon)
                     .font(.system(size: avatarSize))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
             } else {
                 // Default
                 Circle()
@@ -181,7 +181,7 @@ struct PersonalDetailsView: View {
 
                 Image(systemName: "person.fill")
                     .font(.system(size: avatarSize))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
             }
 
             // Edit badge overlay
@@ -191,7 +191,7 @@ struct PersonalDetailsView: View {
                 .overlay {
                     Image(systemName: "pencil")
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.thOnAccent)
                 }
                 .offset(x: 35, y: 35)
         }
@@ -258,7 +258,7 @@ struct PersonalDetailsView: View {
                 webPage = InAppWebPage(url: AppConstants.privacyURL)
             }
             .font(DS.Typography.caption.weight(.semibold))
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .accessibilityIdentifier("personal_details_more_about_data")
         }
         .padding(.horizontal, DS.Spacing.sm)
@@ -422,8 +422,8 @@ struct IconPickerSheet: View {
                     Image(systemName: icon.symbol)
                         .font(DS.Typography.largeTitle)
                         .foregroundStyle(selectedIcon == icon.symbol
-                                         ? .white
-                                         : theme.accent)
+                                         ? theme.onAccent
+                                         : theme.accentText)
                 }
 
                 Text(icon.name)

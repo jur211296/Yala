@@ -62,7 +62,7 @@ struct TabBarConfigView: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "info.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
 
             Text(L10n.Settings.tabBarConfigInfo)
                 .font(DS.Typography.subheadline)
@@ -130,13 +130,13 @@ struct TabBarConfigView: View {
             // Position indicator
             Text("\(position)")
                 .font(DS.Typography.captionMonoBold)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: 20)
 
             // Tab icon
             Image(systemName: tab.iconName)
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .frame(width: 28, height: 28)
 
             // Tab name
@@ -220,7 +220,7 @@ struct TabBarConfigView: View {
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(DS.Typography.title)
-                    .foregroundStyle(canActivate ? theme.accent : Color.secondary.opacity(0.5))
+                    .foregroundStyle(canActivate ? theme.accentText : Color.secondary.opacity(0.5))
             }
             .buttonStyle(.plain)
             .disabled(!canActivate)

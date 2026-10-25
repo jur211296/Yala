@@ -582,7 +582,7 @@ struct GroupSettingsView: View {
                         showGroupsGlobalSettings = true
                     }
                     .font(DS.Typography.body)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityIdentifier("group_settings_open_groups_settings")
                 }
             } footer: {
@@ -683,7 +683,7 @@ struct GroupSettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "square.and.arrow.up")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                     Text(L10n.Groups.ShareableSummary.action)
                         .font(DS.Typography.body)
                         .foregroundStyle(.thPrimaryText)
@@ -857,7 +857,7 @@ struct GroupSettingsView: View {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: group.isArchived ? "tray.and.arrow.up" : "archivebox")
                     .font(DS.Typography.title3)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .frame(width: 28, alignment: .center) // A11Y-DT: columna de icono de la fila
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -929,7 +929,7 @@ struct GroupSettingsView: View {
                     // El área táctil va DENTRO del label: con el `frame` colgado del botón medía 13 pt de alto.
                     Text(L10n.UXL19.seeBalances)
                         .font(DS.Typography.captionSmall.weight(.semibold))
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .frame(minHeight: 44, alignment: .leading)
                         .contentShape(Rectangle())
                 }

@@ -55,7 +55,7 @@ struct SplitTypeSegmentedSelector: View {
             .font(.footnote.weight(selectedType == type ? .semibold : .regular))
             .lineLimit(1)
             .minimumScaleFactor(0.8)
-            .foregroundStyle(selectedType == type ? .white : .secondary)
+            .foregroundStyle(selectedType == type ? AnyShapeStyle(.thOnAccent) : AnyShapeStyle(.secondary))
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.sm)
             .background(
@@ -85,7 +85,7 @@ struct SplitTypeSegmentedSelector: View {
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.thOnAccent)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
             .background(Capsule().fill(.thAccent))

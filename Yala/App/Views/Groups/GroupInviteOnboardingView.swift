@@ -204,7 +204,7 @@ struct GroupInviteOnboardingView: View {
 
                 Image(systemName: groupIcon)
                     .font(.system(size: 32)) // A11Y-DT: decorative icon inside circle
-                    .foregroundStyle(.white)
+                    .foregroundStyle(theme.onFill(groupColor))
             }
             .glassEffect(.regular, in: Circle())
             .accessibilityHidden(true)

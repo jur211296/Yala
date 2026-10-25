@@ -103,7 +103,7 @@ struct CategorySelectorSheet: View {
                 Image(systemName: isEverythingSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(
                         isEverythingSelected
-                            ? theme.accent : theme.secondaryText.opacity(0.4)
+                            ? theme.accentText : theme.secondaryText.opacity(0.4)
                     )
                     .accessibilityHidden(true)
             }
@@ -150,7 +150,7 @@ struct CategorySelectorSheet: View {
                         .foregroundStyle(
                             isNoneSelected(for: category)
                                 ? theme.secondaryText.opacity(0.4)
-                                : theme.accent
+                                : theme.accentText
                         )
                         .accessibilityHidden(true)
                 }
@@ -206,7 +206,7 @@ struct CategorySelectorSheet: View {
                 let isSelected = selectedSubcategories.contains(subcategory.persistentModelID)
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(
-                        isSelected ? theme.accent : theme.secondaryText.opacity(0.4)
+                        isSelected ? theme.accentText : theme.secondaryText.opacity(0.4)
                     )
                     .accessibilityHidden(true)
             }

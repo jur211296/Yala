@@ -686,7 +686,7 @@ private struct BulkTagRow: View {
             // Checked - tag will be present after save
             Image(systemName: "checkmark.square.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
         case .toRemove, .available:
             // Unchecked - tag will NOT be present after save

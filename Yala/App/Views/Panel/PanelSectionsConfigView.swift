@@ -161,7 +161,7 @@ struct PanelSectionsConfigView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: kind.iconName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.thAccentText)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(kind.configTitle)
@@ -213,7 +213,7 @@ struct PanelSectionsConfigView: View {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: kind.iconName)
                             .font(DS.Typography.body)
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.thAccentText)
                             .frame(width: 28)
                         Text(kind.localizedTitle)
                             .font(DS.Typography.body)

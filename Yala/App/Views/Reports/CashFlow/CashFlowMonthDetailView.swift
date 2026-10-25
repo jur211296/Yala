@@ -96,7 +96,7 @@ struct CashFlowMonthDetailView: View {
                 Text(L10n.CashFlowPlan.thisMonth)
                     .font(DS.Typography.captionSmall)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
                     .background(Capsule().fill(theme.accent))
@@ -166,7 +166,7 @@ struct CashFlowMonthDetailView: View {
             } label: {
                 Text("· " + L10n.UXL18.change)
                     .font(DS.Typography.caption.weight(.semibold))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -331,7 +331,7 @@ struct CashFlowMonthDetailView: View {
                 Text(L10n.CashFlowPlan.addLine)
                     .font(DS.Typography.subheadline.weight(.semibold))
             }
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.xs)
             .padding(.vertical, DS.Spacing.sm)

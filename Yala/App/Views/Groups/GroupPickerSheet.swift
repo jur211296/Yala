@@ -86,7 +86,7 @@ private struct GroupPickerRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

@@ -85,7 +85,7 @@ struct GroupTwoPersonSplitView: View {
                 if isActive {
                     Image(systemName: "checkmark.circle.fill")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -106,7 +106,7 @@ struct GroupTwoPersonSplitView: View {
                 Image(systemName: "slider.horizontal.3")
             }
             .font(DS.Typography.subheadlineEmphasized)
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.md)
             .contentShape(Rectangle())

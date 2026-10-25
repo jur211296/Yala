@@ -44,7 +44,7 @@ struct YalaSectionHeader: View {
                             .font(DS.Typography.labelSmall)
                     }
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                 }
             }
         }

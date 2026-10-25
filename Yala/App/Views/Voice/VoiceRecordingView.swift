@@ -447,7 +447,7 @@ struct VoiceRecordingView: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 // Apagado se VE apagado: con fondo explícito, `.disabled` no atenúa nada (#348).
-                .foregroundStyle(isEnabled ? Color.contrastingText(for: theme.accent) : Color.secondary)
+                .foregroundStyle(isEnabled ? theme.onAccent : Color.secondary)
                 .frame(maxWidth: .infinity, minHeight: buttonHeight)
                 .padding(.horizontal, DS.Spacing.sm)
                 .background(

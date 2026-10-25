@@ -194,7 +194,7 @@ struct FinancialReportView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? theme.onAccent : .primary)
             .background(
                 Capsule()
                     .fill(isSelected ? theme.accent : Color.clear)

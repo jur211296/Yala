@@ -511,7 +511,7 @@ struct DetailContainerView: View {
             .padding(.horizontal, isSelected ? DS.Spacing.lg : DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
             .frame(minWidth: 44)
-            .foregroundStyle(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? theme.onAccent : .primary)
             .background(
                 Capsule()
                     .fill(isSelected ? theme.accent : Color.clear)

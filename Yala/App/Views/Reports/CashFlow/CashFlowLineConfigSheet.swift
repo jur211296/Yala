@@ -219,7 +219,7 @@ struct CashFlowLineConfigSheet: View {
         } label: {
             HStack {
                 Image(systemName: selectedMethod == method ? "circle.inset.filled" : "circle")
-                    .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
+                    .foregroundStyle(selectedMethod == method ? theme.accentText : .secondary)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(label)
                         .font(DS.Typography.body)
@@ -235,7 +235,7 @@ struct CashFlowLineConfigSheet: View {
                     if preview > 0 {
                         Text(YalaFormatter.amountCompactTable(value: preview))
                             .font(DS.Typography.caption)
-                            .foregroundStyle(selectedMethod == method ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.secondary))
+                            .foregroundStyle(selectedMethod == method ? AnyShapeStyle(theme.accentText) : AnyShapeStyle(.secondary))
                             .monospacedDigit()
                     }
                 }
@@ -286,7 +286,7 @@ struct CashFlowLineConfigSheet: View {
                         Text(L10n.CashFlowPlan.addOverride)
                             .font(DS.Typography.caption)
                     }
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                 }
                 .buttonStyle(.plain)
             }

@@ -220,7 +220,7 @@ struct ChatTransactionDraftCard: View {
                     showingDetails = true
             }
             .font(DS.Typography.label)
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(theme.accentText)
             .frame(minHeight: 44)
             .padding(.horizontal, DS.Spacing.sm)
             .disabled(isSaving)
@@ -243,7 +243,7 @@ struct ChatTransactionDraftCard: View {
                 // Apagado se VE apagado: con fondo y texto explícitos, `.disabled` no atenúa nada y el botón
                 // parecía activo sin hacer nada (medido el 2026-10-04 con la subcategoría sin elegir).
                 .background(canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.35))
-                .foregroundStyle(canSave ? Color.contrastingText(for: theme.accent) : Color.secondary)
+                .foregroundStyle(canSave ? theme.onAccent : Color.secondary)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)

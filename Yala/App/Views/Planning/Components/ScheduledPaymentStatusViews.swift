@@ -79,7 +79,8 @@ struct ScheduledPaymentStatusPill: View {
 
     private var foreground: Color {
         switch state {
-        case .overdue, .paid: return .white
+        case .overdue: return .white
+        case .paid: return theme.onAccent  // sobre el relleno del acento (card lbcr)
         case .dueToday, .dueTomorrow, .dueInDays: return .primary
         case .skipped, .paused: return .secondary
         }

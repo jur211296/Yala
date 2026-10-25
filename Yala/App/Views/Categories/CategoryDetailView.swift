@@ -370,7 +370,7 @@ struct CategoryDetailView: View {
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(.thAccent)
+                                .foregroundStyle(.thAccentText)
                             Text(L10n.Category.addSubcategory)
                                 .foregroundStyle(.primary)
                             Spacer()

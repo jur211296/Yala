@@ -54,7 +54,7 @@ struct GroupDraftLinkCandidatesView: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "link")
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(title)

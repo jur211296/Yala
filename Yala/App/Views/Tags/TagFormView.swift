@@ -86,6 +86,7 @@ struct TagFormView: View {
                             isPresentingColorPicker = false
                         }
                         .buttonStyle(.borderedProminent)
+                        .foregroundStyle(.thOnAccent)
 
                         Spacer()
                     }

@@ -123,7 +123,7 @@ struct YalaAIPersonalizeForm: View {
             HStack(alignment: .top, spacing: DS.Spacing.sm) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 16, weight: .semibold)) // A11Y-DT: bot avatar
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .frame(width: 28, height: 28)
                     .background(Circle().fill(.thCard))
 

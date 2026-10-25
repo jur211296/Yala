@@ -94,7 +94,7 @@ struct GroupSplitEditorCard: View {
             } label: {
                 Label(L10n.Groups.Expense.TwoPerson.quickOptions, systemImage: "bolt.fill")
                     .font(DS.Typography.subheadline)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("group_expense_quick_options")
@@ -174,7 +174,7 @@ struct GroupSplitMemberList: View {
                     let isSelected = viewModel.selectedMemberIDs.contains(id)
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(isSelected ? theme.accent : Color.secondary)
+                        .foregroundStyle(isSelected ? theme.accentText : Color.secondary)
                 }
                 .padding(.horizontal, rowInset)
                 .padding(.vertical, DS.Spacing.md)
@@ -223,7 +223,7 @@ struct GroupSplitMemberList: View {
                 Spacer()
                 Image(systemName: allSelected ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.headline)
-                    .foregroundStyle(allSelected ? theme.accent : Color.secondary)
+                    .foregroundStyle(allSelected ? theme.accentText : Color.secondary)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)

@@ -91,7 +91,7 @@ struct CashFlowOthersSheet: View {
                         promoteCategory(named: item.categoryName)
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .font(DS.Typography.headline)
                     }
                     .buttonStyle(.plain)

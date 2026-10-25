@@ -206,7 +206,7 @@ struct HeroMonthView: View {
         let isIncome = nature == .income
         // Relleno sólido con texto blanco: los tonos oscurecidos de la paleta pasan AA con blanco (#0F7A80 y
         // #D6006B); `incomeGraph`/`expenseGraph` no.
-        let fill = isIncome ? Color.incomeAmount : Color.emphasisPinkFill
+        let fill = isIncome ? Color.incomeFill : Color.emphasisPinkFill
         return Button {
             DS.Haptic.selection()
             dsWithAnimation(reduceMotion) { toggleNature(nature) }

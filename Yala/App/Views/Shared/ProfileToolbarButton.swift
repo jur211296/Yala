@@ -76,7 +76,7 @@ struct ProfileToolbarButton: View {
                     .overlay {
                         Image(systemName: displayIcon)
                             .font(DS.Typography.bodyBold)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                     }
             }
         }

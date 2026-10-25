@@ -569,7 +569,7 @@ struct TrendsTabView: View {
             }
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.xs)
-            .foregroundStyle(showsPreviousPeriod ? Color.white : theme.accent)
+            .foregroundStyle(showsPreviousPeriod ? theme.onAccent : theme.accentText)
             .background(
                 Capsule().fill(showsPreviousPeriod ? theme.accent : theme.accent.opacity(0.12))
             )
@@ -717,7 +717,7 @@ struct TrendsTabView: View {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(DS.Typography.body)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
                 Text(L10n.UXL11D.inAFewWords(trendsViewModel.detailPeriod))
                     .font(DS.Typography.subheadlineEmphasized)
@@ -740,7 +740,7 @@ struct TrendsTabView: View {
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent.opacity(0.12))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -770,7 +770,7 @@ struct TrendsTabView: View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: "sparkles")
                 .font(DS.Typography.body)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
             // El mismo título que en gratis, con el sustantivo del período (UX 2.2 · L11-8): «Análisis del período» era el
             // sexto nombre de la misma función.
@@ -792,7 +792,7 @@ struct TrendsTabView: View {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
                         Image(systemName: bulletIcon(for: bullet.source))
                             .font(DS.Typography.caption)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .frame(minWidth: 16)
                             .accessibilityHidden(true)
                         Text(AIInsightCardComponents.markdownAttributed(bullet.text))
@@ -830,7 +830,7 @@ struct TrendsTabView: View {
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)
                     .background(theme.accent.opacity(0.12))
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -869,7 +869,7 @@ struct TrendsTabView: View {
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent.opacity(0.12))
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -1131,7 +1131,7 @@ struct TrendsTabView: View {
                 .font(DS.Typography.caption)
                 .fontWeight(.semibold)
                 .lineLimit(1)
-                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background {

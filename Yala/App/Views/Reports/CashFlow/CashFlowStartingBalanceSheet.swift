@@ -120,7 +120,7 @@ struct CashFlowStartingBalanceSheet: View {
                 } label: {
                     Text(L10n.UXL18.useThisAmount)
                         .font(DS.Typography.label.weight(.semibold))
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .padding(.horizontal, DS.Spacing.md)
                         .padding(.vertical, DS.Spacing.sm)
                         .background(Capsule().fill(theme.accent.opacity(0.14)))

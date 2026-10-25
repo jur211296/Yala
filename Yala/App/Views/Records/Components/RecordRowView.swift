@@ -127,6 +127,13 @@ struct RecordRowView: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
+        Self.accessibilityDescription(for: record, appPreferences: appPreferences)
+    }
+
+    /// La etiqueta de VoiceOver de la fila. El importe va SIEMPRE en la divisa del registro, como el texto visible: con la
+    /// preferida, un gasto de 9.064.482 ₫ se leía «S/ 9.064.482,03» (card cvlu). Estática para fijarla con un registro de
+    /// verdad en `RecordRowAccessibilityCurrencyTests`.
+    static func accessibilityDescription(for record: TransactionItem, appPreferences: AppPreferences) -> String {
         let isTransfer = record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
         // Un ajuste de saldo no es gasto ni ingreso: sin tipo y con el signo en el importe.
         let isBalanceAdjustment = record.balanceAdjustmentType != nil && !isTransfer
@@ -168,7 +175,7 @@ struct RecordRowView: View {
 
                 Image(systemName: "checkmark")
                     .font(DS.Typography.badgeLabel)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .transition(.scale)
                     .accessibilityHidden(true)
             }

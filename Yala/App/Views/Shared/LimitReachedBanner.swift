@@ -50,7 +50,7 @@ struct LimitReachedBanner: View {
             } label: {
                 Text(L10n.UXL9.seePro)
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("budgets_free_plan_see_pro")
@@ -93,7 +93,7 @@ struct LimitReachedBanner: View {
                     Text(ProPresentation.upgradeButtonTitle)
                         .font(DS.Typography.labelSmall)
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(.thOnAccent)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.xs)
                 .background(theme.accent)

@@ -62,7 +62,7 @@ struct YalaEmptyState: View {
                 let actionButton = Button(action: action) {
                     Text(actionTitle)
                         .font(DS.Typography.label)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
                 .padding(.top, DS.Spacing.sm)
 

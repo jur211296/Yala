@@ -15,6 +15,7 @@ struct InboxView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
@@ -248,46 +249,28 @@ struct InboxView: View {
         NavigationStack {
             ZStack {
                 VStack(spacing: DS.Spacing.none) {
-                    // Mini-hero (panel-aligned). Pending-global; oculto en selection mode.
-                    miniHero
-
-                    // Filter chips
-                    filterChips
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.sm)
-                        .padding(.bottom, DS.Spacing.md)
-
-                    // Lo común —guardar lo que ya está listo— a un toque (UX 2.2 · L4-7). Antes eran cuatro: ✓,
-                    // Seleccionar todo, Editar y Aprobar.
-                    if !isSelectionMode && selectedFilter == .pending && readyDrafts.count >= 2 {
-                        saveReadyButton
-                            .padding(.horizontal, DS.Spacing.lg)
-                            .padding(.bottom, DS.Spacing.sm)
+                    // A tamaño normal la cabecera queda fija sobre la lista; con texto de accesibilidad se desplaza con
+                    // ella (card rrpx): en un iPhone SE a AX5 ocupaba la pantalla entera y no dejaba ver los borradores.
+                    if !headerScrollsWithContent {
+                        inboxHeader
                     }
-
-                    // Bulk action hint (shown when 2+ pending drafts and not in selection mode).
-                    // Sin contador: el badge del mini-hero ya transmite la cantidad.
-                    if !isSelectionMode && selectedFilter == .pending && filteredDrafts.count >= 2 {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: "hand.tap")
-                                .font(DS.Typography.captionSmall)
-                                .accessibilityHidden(true)
-                            Text(L10n.Inbox.bulkHint)
-                                .font(DS.Typography.caption)
-                        }
-                        .foregroundStyle(.secondary)
-                        .padding(.bottom, DS.Spacing.sm)
-                    }
-
-                    // Contextual guide for new users
-                    ContextualGuideBanner.inbox()
-                        .padding(.horizontal, DS.Spacing.lg)
 
                     // Content
                     if filteredDrafts.isEmpty {
-                        Spacer()
-                        emptyState
-                        Spacer()
+                        if headerScrollsWithContent {
+                            ScrollView {
+                                VStack(spacing: DS.Spacing.none) {
+                                    inboxHeader
+                                    emptyState
+                                        .padding(.vertical, DS.Spacing.xxl)
+                                }
+                            }
+                            .scrollBounceBehavior(.basedOnSize)
+                        } else {
+                            Spacer()
+                            emptyState
+                            Spacer()
+                        }
                     } else {
                         draftsList
                     }
@@ -593,7 +576,7 @@ struct InboxView: View {
             } label: {
                 Image(systemName: selectedDraftIDs.count == filteredDrafts.count ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.title)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .frame(minWidth: 44, minHeight: 44)
             }
             .accessibilityLabel(selectedDraftIDs.count == filteredDrafts.count ? L10n.Filters.deselectAll : L10n.Filters.selectAll)
@@ -610,7 +593,7 @@ struct InboxView: View {
             } label: {
                 Text(L10n.Action.edit)
                     .font(DS.Typography.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
                     .frame(minHeight: 44)
@@ -640,6 +623,55 @@ struct InboxView: View {
         selectedDraftIDs.removeAll()
     }
 
+    // MARK: - Cabecera
+
+    /// Con texto de accesibilidad la cabecera entra en el scroll de la lista (card rrpx). Solo ahí: a tamaño normal se
+    /// queda fija, como siempre.
+    private var headerScrollsWithContent: Bool {
+        dynamicTypeSize.isAccessibilitySize
+    }
+
+    /// Resumen, filtros, «guardar lo listo», la pista de selección y la guía: lo que va encima de los borradores.
+    @ViewBuilder
+    private var inboxHeader: some View {
+        VStack(spacing: DS.Spacing.none) {
+            // Mini-hero (panel-aligned). Pending-global; oculto en selection mode.
+            miniHero
+
+            // Filter chips
+            filterChips
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+                .padding(.bottom, DS.Spacing.md)
+
+            // Lo común —guardar lo que ya está listo— a un toque (UX 2.2 · L4-7). Antes eran cuatro: ✓,
+            // Seleccionar todo, Editar y Aprobar.
+            if !isSelectionMode && selectedFilter == .pending && readyDrafts.count >= 2 {
+                saveReadyButton
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.sm)
+            }
+
+            // Bulk action hint (shown when 2+ pending drafts and not in selection mode).
+            // Sin contador: el badge del mini-hero ya transmite la cantidad.
+            if !isSelectionMode && selectedFilter == .pending && filteredDrafts.count >= 2 {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "hand.tap")
+                        .font(DS.Typography.captionSmall)
+                        .accessibilityHidden(true)
+                    Text(L10n.Inbox.bulkHint)
+                        .font(DS.Typography.caption)
+                }
+                .foregroundStyle(.secondary)
+                .padding(.bottom, DS.Spacing.sm)
+            }
+
+            // Contextual guide for new users
+            ContextualGuideBanner.inbox()
+                .padding(.horizontal, DS.Spacing.lg)
+        }
+    }
+
     // MARK: - Mini-hero (panel-aligned)
 
     @ViewBuilder
@@ -649,7 +681,7 @@ struct InboxView: View {
                 if pendingCount > 0 {
                     Text(L10n.Inbox.pendingBadge(pendingCount))
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .padding(.horizontal, DS.Chip.paddingH)
                         .padding(.vertical, DS.Spacing.xxs)
                         .background(Capsule().fill(theme.accent.opacity(0.15)))
@@ -683,12 +715,19 @@ struct InboxView: View {
 
     // MARK: - Filter Chips
 
+    /// A tamaños de accesibilidad los dos filtros van uno debajo del otro: en fila, a AX5 se partían en sílabas
+    /// («Pe / n…», punto 4 de `large-text-leftovers-outside-the-main-iphone-screens`).
     private var filterChips: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            ForEach(InboxFilter.allCases, id: \.self) { filter in
-                filterChip(for: filter)
+        let layout = headerScrollsWithContent
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Spacing.sm))
+            : AnyLayout(HStackLayout(spacing: DS.Spacing.sm))
+        return HStack(spacing: DS.Spacing.none) {
+            layout {
+                ForEach(InboxFilter.allCases, id: \.self) { filter in
+                    filterChip(for: filter)
+                }
             }
-            Spacer()
+            Spacer(minLength: DS.Spacing.none)
         }
     }
 
@@ -709,7 +748,7 @@ struct InboxView: View {
                 if count > 0 {
                     Text("\(count)")
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(isSelected ? .white : .secondary)
+                        .foregroundStyle(isSelected ? theme.onAccent : .secondary)
                         .padding(.horizontal, DS.Chip.paddingV)
                         .padding(.vertical, DS.Spacing.xxs)
                         .background(
@@ -721,7 +760,7 @@ struct InboxView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
             .frame(minHeight: 44)
-            .foregroundStyle(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? theme.onAccent : .primary)
             .background(
                 Capsule()
                     .fill(isSelected ? theme.accent : Color.clear)
@@ -740,6 +779,14 @@ struct InboxView: View {
 
     private var draftsList: some View {
         List {
+            if headerScrollsWithContent {
+                Section {
+                    inboxHeader
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
             ForEach(groupedDrafts, id: \.date) { group in
                 Section {
                     ForEach(group.drafts, id: \.persistentModelID) { draft in

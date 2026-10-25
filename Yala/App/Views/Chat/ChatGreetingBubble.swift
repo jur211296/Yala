@@ -190,7 +190,7 @@ struct ChatTwoUsesGreeting: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "arrow.up.circle.fill")
                     .font(DS.Typography.title3)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Spacing.lg)

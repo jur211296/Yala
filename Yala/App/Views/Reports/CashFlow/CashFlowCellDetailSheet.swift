@@ -238,7 +238,7 @@ struct CashFlowCellDetailSheet: View {
                     } label: {
                         Text("· " + L10n.UXL18.change)
                             .font(DS.Typography.label.weight(.semibold))
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -554,7 +554,7 @@ struct CashFlowCellDetailSheet: View {
                         Text(L10n.CashFlowPlan.adjustAmount)
                     }
                     .font(DS.Typography.label)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.md)
                     .contentShape(Rectangle())

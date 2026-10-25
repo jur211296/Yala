@@ -363,7 +363,7 @@ struct CoachMarkOverlay: View {
             if steps.count > 1 {
                 Text(L10n.TipKit.stepProgress(currentIndex + 1, steps.count))
                     .font(DS.Typography.labelSmall.bold())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
                     .background(Capsule().fill(theme.accent))
@@ -400,7 +400,7 @@ struct CoachMarkOverlay: View {
                 } label: {
                     Text(currentIndex < steps.count - 1 ? L10n.TipKit.next : L10n.TipKit.done)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.thOnAccent)
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
                         .background(theme.accent)

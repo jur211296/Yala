@@ -89,7 +89,7 @@ struct ContextualGuideBanner: View {
                     .accessibilityLabel(L10n.ContextualGuide.dismiss)
                     .accessibilityIdentifier("contextual_guide_dismiss")
                 }
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
 
                 Text(title)
                     .font(DS.Typography.headline)
@@ -116,7 +116,7 @@ struct ContextualGuideBanner: View {
                 HStack(alignment: .top, spacing: DS.Spacing.sm) {
                     Image(systemName: icon)
                         .font(DS.Typography.body)
-                        .foregroundStyle(isDismissible ? AnyShapeStyle(.thAccent) : AnyShapeStyle(DS.Semantic.infoForeground))
+                        .foregroundStyle(isDismissible ? AnyShapeStyle(.thAccentText) : AnyShapeStyle(DS.Semantic.infoForeground))
                         .frame(width: 24)
 
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {

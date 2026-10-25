@@ -195,7 +195,7 @@ struct GroupBalancesView: View {
         } label: {
             Text(L10n.UXL13.pendingNo)
                 .font(DS.Typography.label)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .padding(.horizontal, DS.Spacing.lg)
                 .frame(minHeight: 44)
                 .background(Capsule().fill(.thAccent.opacity(0.14)))
@@ -390,7 +390,7 @@ struct GroupBalancesView: View {
         Button(action: action) {
             Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
                 .font(DS.Typography.label)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, DS.Spacing.sm)
                 .contentShape(Rectangle())

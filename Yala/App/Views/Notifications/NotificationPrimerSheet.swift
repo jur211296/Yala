@@ -66,7 +66,7 @@ struct NotificationPrimerSheet: View {
                         // Icon
                         Image(systemName: "bell.badge.fill")
                             .font(.system(size: iconSize))
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.thAccentText)
                             .accessibilityHidden(true)
 
                         // Title
@@ -140,7 +140,7 @@ struct NotificationPrimerSheet: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
-                .foregroundStyle(.tint)
+                .foregroundStyle(.thAccentText)
                 .frame(width: DS.Spacing.xxl)
                 .accessibilityHidden(true)
             Text(text)

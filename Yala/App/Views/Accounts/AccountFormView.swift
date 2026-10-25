@@ -148,6 +148,7 @@ struct AccountFormView: View {
                             viewModel.updateColorFromCustom()
                         }
                         .buttonStyle(.borderedProminent)
+                        .foregroundStyle(.thOnAccent)
 
                         Spacer()
                     }
@@ -1402,7 +1403,7 @@ struct AccountFormView: View {
                     .foregroundStyle(.tertiary)
                     .accessibilityHidden(true)
             }
-            .foregroundStyle(.thAccent)
+            .foregroundStyle(.thAccentText)
             .padding()
             .contentShape(Rectangle())
         }
@@ -1444,7 +1445,7 @@ struct AccountFormView: View {
                         Text(L10n.Account.Lines.unlink)
                         Spacer()
                     }
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .padding()
                     .contentShape(Rectangle())
                 }

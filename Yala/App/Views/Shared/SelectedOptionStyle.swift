@@ -48,7 +48,7 @@ struct InUseBadge: View {
     var body: some View {
         Text(L10n.UXL16.inUse)
             .font(DS.Typography.captionSmall.weight(.bold))
-            .foregroundStyle(.white)
+            .foregroundStyle(.thOnAccent)
             .lineLimit(1)
             .padding(.horizontal, DS.Spacing.xs)
             .padding(.vertical, DS.Spacing.xxs)

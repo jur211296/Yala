@@ -23,7 +23,7 @@ struct OrphanedRecordsBanner: View {
             HStack(alignment: .center, spacing: DS.Spacing.md) {
                 Image(systemName: "tray.and.arrow.down.fill")
                     .font(DS.Typography.title)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -33,7 +33,7 @@ struct OrphanedRecordsBanner: View {
                             .foregroundStyle(.thPrimaryText)
                         Text("\(count)")
                             .font(DS.Typography.labelSmall.monospacedDigit())
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.thOnAccent)
                             .padding(.horizontal, DS.Spacing.xs)
                             .background(theme.accent, in: Capsule())
                             .accessibilityIdentifier("orphaned_records_banner_count")
@@ -44,7 +44,7 @@ struct OrphanedRecordsBanner: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Text(L10n.OrphanedRecords.bannerAction)
                         .font(DS.Typography.labelSmall)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .padding(.top, DS.Spacing.xxs)
                 }
 

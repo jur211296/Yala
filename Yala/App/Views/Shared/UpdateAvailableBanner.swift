@@ -25,7 +25,7 @@ struct UpdateAvailableBanner: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "arrow.up.circle.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -47,7 +47,7 @@ struct UpdateAvailableBanner: View {
             } label: {
                 Text(L10n.AppUpdate.updateButton)
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)
                     .background(theme.accent)

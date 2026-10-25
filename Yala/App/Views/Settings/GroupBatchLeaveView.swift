@@ -184,7 +184,7 @@ struct GroupBatchLeaveView: View {
                         // se elimina o se transfiere.
                         Button(L10n.UXL19.batchOpenSettings) { openSettings(of: item) }
                             .font(DS.Typography.label.weight(.semibold))
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .frame(minHeight: 44)
                             .accessibilityIdentifier("batch_leave_open_settings_\(item.groupZoneID)")
                     }

@@ -115,7 +115,7 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
         HStack(alignment: .top, spacing: DS.Spacing.sm) {
             Image(systemName: "info.circle.fill")
                 .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
             Text(bannerMessage)
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)

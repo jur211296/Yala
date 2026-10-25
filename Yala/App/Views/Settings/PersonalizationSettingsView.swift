@@ -103,7 +103,7 @@ struct PersonalizationSettingsView: View {
                 VStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: heroIconSize))
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .padding(.bottom, DS.Spacing.sm)
 
                     Text(L10n.Settings.personalization)
@@ -505,7 +505,7 @@ private struct PeriodPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
@@ -580,7 +580,7 @@ private struct WeekdayPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
@@ -667,7 +667,7 @@ private struct DecimalsPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
@@ -753,7 +753,7 @@ private struct CurrencyFormatPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
@@ -829,7 +829,7 @@ private struct LanguagePickerSheet: View {
 
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .font(DS.Typography.headline)
                     }
                 }
@@ -918,7 +918,7 @@ private struct AverageLinePickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }
@@ -995,7 +995,7 @@ private struct AutoFocusPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                 }
             }

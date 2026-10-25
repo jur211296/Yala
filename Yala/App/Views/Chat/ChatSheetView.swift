@@ -311,7 +311,7 @@ struct ChatSheetView: View {
             } label: {
                 Text(L10n.Chat.retry)
                     .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(Color.contrastingText(for: theme.accent))
+                    .foregroundStyle(theme.onAccent)
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.sm)
                     .background(Capsule().fill(theme.accent))
@@ -526,7 +526,7 @@ struct ChatSheetView: View {
         } label: {
             Image(systemName: "arrow.up")
                 .font(.system(size: 16, weight: .bold)) // A11Y-DT: send icon
-                .foregroundStyle(Color.contrastingText(for: theme.accent))
+                .foregroundStyle(theme.onAccent)
                 .frame(width: inputControlSize, height: inputControlSize)
                 .background(Circle().fill(theme.accent))
         }

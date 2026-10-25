@@ -1,10 +1,10 @@
 ---
 id: income-amount-color-is-dim-in-dark-mode
-status: backlog
+status: done
 priority: medium
 area: "ui, design-system"
 created: 2026-10-03
-updated: 2026-10-08
+updated: 2026-10-25
 source: hallazgo de panel-accounts-redesign, 2026-10-03
 ---
 
@@ -22,3 +22,5 @@ simulador `YalaLane-Adapt-iPhone-ProMax` en oscuro. Falta medir el contraste y d
 - Sube a `medium`: es texto con importes en toda la app en modo oscuro, una mejora clara sin urgencia.
 
 Triage 2026-10-08: abierto · low → medium · `Color.incomeAmount` (UIHelpers.swift) sigue fijo en #0F7A80 y da 3,3:1 sobre una tarjeta oscura, por debajo del 4,5 AA, en las 27 apariciones del código.
+
+Hecho en el lote 12.3 (2026-10-25): `Color.incomeAmount` adaptativo, #0F7A80 en claro y #00C2CB en oscuro (≥ 6,3:1 en todas las tarjetas oscuras, `ThemeTokenContrastTests`). Los tres rellenos con texto blanco que lo usaban pasan a `Color.incomeFill` (fijo).

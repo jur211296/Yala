@@ -231,7 +231,7 @@ struct BudgetDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "info.circle.fill")
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.infoTitle)
                     .font(DS.Typography.subheadlineEmphasized)
@@ -307,7 +307,7 @@ struct BudgetDetailView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: "gauge.medium")
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.statusTitle)
                     .font(DS.Typography.subheadlineEmphasized)
@@ -320,7 +320,7 @@ struct BudgetDetailView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: budget.isActive ? "checkmark.circle.fill" : "pause.circle.fill")
                         .font(DS.Typography.body)
-                        .foregroundStyle(budget.isActive ? theme.accent : DS.Semantic.warningForeground)
+                        .foregroundStyle(budget.isActive ? theme.accentText : DS.Semantic.warningForeground)
                         .frame(width: 24)
                         .accessibilityHidden(true)
 

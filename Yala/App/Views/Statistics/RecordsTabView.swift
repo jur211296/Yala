@@ -573,7 +573,7 @@ struct RecordsTabView: View {
             Image(systemName: mode.iconName)
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? .white : theme.secondaryText)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
                 .frame(width: 32, height: 32)
                 .background {
                     if isSelected {

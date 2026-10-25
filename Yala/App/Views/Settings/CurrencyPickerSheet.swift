@@ -131,7 +131,7 @@ struct CurrencyPickerSheet: View {
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                         .font(DS.Typography.headline)
                         .accessibilityHidden(true)
                 }

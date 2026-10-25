@@ -218,11 +218,11 @@ struct YalaStepGuide<Preview: View>: View {
             if phase == .done {
                 Image(systemName: "checkmark")
                     .font(DS.Typography.caption.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
             } else {
                 Text(index + 1, format: .number)
                     .font(DS.Typography.subheadline.weight(.semibold))
-                    .foregroundStyle(phase == .active ? AnyShapeStyle(.white) : AnyShapeStyle(.thPrimaryText))
+                    .foregroundStyle(phase == .active ? AnyShapeStyle(.thOnAccent) : AnyShapeStyle(.thPrimaryText))
             }
         }
         .frame(width: markerSize, height: markerSize)
@@ -252,6 +252,7 @@ struct YalaStepGuide<Preview: View>: View {
         .buttonBorderShape(.capsule)
         .controlSize(.large)
         .tint(theme.accent)
+        .foregroundStyle(theme.onAccent)
         .accessibilityIdentifier("step_guide_action")
     }
 

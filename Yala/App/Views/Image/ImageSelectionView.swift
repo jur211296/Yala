@@ -271,14 +271,14 @@ struct ImageSelectionView: View {
             VStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
                     .font(DS.Typography.title3)
-                    .foregroundStyle(isPrimary ? Color.contrastingText(for: theme.accent) : theme.accent)
+                    .foregroundStyle(isPrimary ? theme.onAccent : theme.accentText)
                     .frame(width: 48, height: 48) // A11Y-DT: disco del icono de la fuente
                     .background(
-                        Circle().fill(isPrimary ? Color.contrastingText(for: theme.accent).opacity(0.18) : theme.accent.opacity(0.15))
+                        Circle().fill(isPrimary ? theme.onAccent.opacity(0.18) : theme.accent.opacity(0.15))
                     )
                 Text(title)
                     .font(DS.Typography.label)
-                    .foregroundStyle(isPrimary ? Color.contrastingText(for: theme.accent) : Color.primary)
+                    .foregroundStyle(isPrimary ? theme.onAccent : Color.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
@@ -768,7 +768,7 @@ struct ImageSelectionView: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
                 // Apagado se VE apagado: con fondo explícito, `.disabled` no atenúa nada (#348).
-                .foregroundStyle(isEnabled ? Color.contrastingText(for: theme.accent) : Color.secondary)
+                .foregroundStyle(isEnabled ? theme.onAccent : Color.secondary)
                 .frame(maxWidth: .infinity, minHeight: buttonHeight)
                 .padding(.horizontal, DS.Spacing.sm)
                 .background(

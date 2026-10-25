@@ -20,7 +20,7 @@ struct CloudAdoptOfferBanner: View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: "icloud.and.arrow.up.fill")
                 .font(DS.Typography.title)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -42,7 +42,7 @@ struct CloudAdoptOfferBanner: View {
             } label: {
                 Text(L10n.CloudAdoptOffer.button)
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
                     .padding(.horizontal, DS.Spacing.md)
                     .padding(.vertical, DS.Spacing.xs)
                     .background(theme.accent)

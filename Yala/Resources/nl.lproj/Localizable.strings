@@ -7919,6 +7919,9 @@
 
 /* Línea de ayuda bajo el título del formulario de saldo inicial. */
 "groups.openingBalance.formHelp" = "Wat iemand al schuldig was vóór Yala";
+"groups.openingBalance.missingDebtor" = "Kies wie schuldig is";
+"groups.openingBalance.missingCreditor" = "Kies aan wie";
+"groups.openingBalance.missingDistinctPeople" = "Kies twee verschillende personen";
 
 /* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
 "inbox.movedToGroup" = "Verplaatst naar ‘%@’";

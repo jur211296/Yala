@@ -114,7 +114,7 @@ struct TagSelectorSheet: View {
         SectionBox(title: "") {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(.thAccent)
+                    .foregroundStyle(.thAccentText)
                     .accessibilityHidden(true)
                 TextField(L10n.Tag.newTag, text: $viewModel.newTagName)
                     .font(DS.Typography.body)
@@ -130,7 +130,7 @@ struct TagSelectorSheet: View {
                     .accessibilityIdentifier("tag_selector_new_name")
                 Button(L10n.UXL2B.createTag, action: createTag)
                     .font(DS.Typography.label)
-                    .foregroundStyle(viewModel.canCreateTag ? theme.accent : DS.Semantic.disabledForeground)
+                    .foregroundStyle(viewModel.canCreateTag ? theme.accentText : DS.Semantic.disabledForeground)
                     .disabled(!viewModel.canCreateTag)
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("tag_selector_create")
@@ -194,7 +194,7 @@ struct TagSelectorRow: View {
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

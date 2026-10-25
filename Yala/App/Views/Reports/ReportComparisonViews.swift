@@ -70,7 +70,7 @@ struct ReportAllTimeCompareCard: View {
             HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: "arrow.left.arrow.right")
                     .font(DS.Typography.headline)
-                    .foregroundStyle(theme.accent)
+                    .foregroundStyle(theme.accentText)
                     .frame(width: 36, height: 36)
                     .background(theme.accent.opacity(0.12), in: Circle())
                     .accessibilityHidden(true)
@@ -113,7 +113,7 @@ struct ReportChoiceChip: View {
     var body: some View {
         Text(title)
             .font(DS.Typography.labelSmall.weight(.semibold))
-            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .foregroundStyle(isSelected ? theme.onAccent : Color.primary)
             .lineLimit(1)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)

@@ -54,7 +54,7 @@ struct ChatMessageBubble: View {
             }
         }
         .font(DS.Typography.body.monospacedDigit())
-        .foregroundStyle(isUser ? AnyShapeStyle(Color.contrastingText(for: theme.accent)) : AnyShapeStyle(.thPrimaryText))
+        .foregroundStyle(isUser ? AnyShapeStyle(theme.onAccent) : AnyShapeStyle(.thPrimaryText))
     }
 }
 

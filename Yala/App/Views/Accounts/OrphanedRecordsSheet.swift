@@ -164,7 +164,7 @@ struct OrphanedRecordsSheet: View {
                 Spacer(minLength: 0)
                 if option.id == viewModel.destinationID {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(.thAccentText)
                         .accessibilityHidden(true)
                 }
             }

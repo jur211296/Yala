@@ -158,7 +158,7 @@ struct ScheduledPaymentsListView: View {
             Image(systemName: mode.iconName)
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? .white : theme.secondaryText)
+                .foregroundStyle(isSelected ? theme.onAccent : theme.secondaryText)
                 .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
@@ -275,7 +275,7 @@ struct ScheduledPaymentsListView: View {
                         Text(ScheduledPaymentDateText.day(summary.dueDate))
                             .font(DS.Typography.labelSmall)
                             .fontWeight(.bold)
-                            .foregroundStyle(isFilled ? .white : .primary)
+                            .foregroundStyle(isFilled ? theme.onFill(dotColor) : .primary)
                     }
                     if !isLast {
                         Rectangle()
@@ -397,28 +397,28 @@ struct ScheduledPaymentsListView: View {
             VStack(spacing: DS.Spacing.xxs) {
                 Text("\(day)")
                     .font(.caption2.weight(isToday || isSelected ? .bold : .medium))
-                    .foregroundStyle(isSelected ? .white : (isToday ? theme.accent : .secondary))
+                    .foregroundStyle(isSelected ? theme.onAccent : (isToday ? theme.accentText : .secondary))
 
                 if hasPayments {
                     HStack(spacing: 3) {
                         ForEach(Array(summaries.prefix(3).enumerated()), id: \.offset) { _, summary in
                             Circle()
                                 .fill(isSelected
-                                      ? .white
+                                      ? theme.onAccent
                                       : ScheduledPaymentListLogic.dotStatus(for: summary.rowState).color(accent: theme.accent))
                                 .frame(width: 6, height: 6)
                         }
                         if summaries.count > 3 {
                             Text("+\(summaries.count - 3)")
                                 .font(.system(size: 8, weight: .medium)) // A11Y-DT: fixed size — calendar micro-badge
-                                .foregroundStyle(isSelected ? .white.opacity(0.8) : .secondary)
+                                .foregroundStyle(isSelected ? theme.onAccent.opacity(0.8) : .secondary)
                         }
                     }
                     // El importe del día, cuando cabe y comparte divisa (L10-3).
                     if let dayAmount {
                         Text(YalaFormatter.amountCompactTable(value: dayAmount.value))
                             .font(.system(size: 9, weight: .medium)) // A11Y-DT: fixed size — cifra del día en la celda
-                            .foregroundStyle(isSelected ? .white.opacity(0.9) : .secondary)
+                            .foregroundStyle(isSelected ? theme.onAccent.opacity(0.9) : .secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
                     }
@@ -485,7 +485,7 @@ struct ScheduledPaymentsListView: View {
                     } label: {
                         Text(NSLocalizedString("scheduled.calendar.show.all", comment: ""))
                             .font(DS.Typography.labelSmall)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.accentText)
                     }
                     .buttonStyle(.plain)
                 }

@@ -248,7 +248,7 @@ struct SearchContentView: View {
         } label: {
             Text(filter.displayName)
                 .font(DS.Typography.subheadline.weight(isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : .primary)
+                .foregroundStyle(isSelected ? theme.onAccent : .primary)
                 .padding(.horizontal, DS.Spacing.md)
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
@@ -296,7 +296,7 @@ struct SearchContentView: View {
                                     Image(systemName: "chevron.down")
                                 }
                                 .font(DS.Typography.label)
-                                .foregroundStyle(theme.accent)
+                                .foregroundStyle(theme.accentText)
                             }
                             .accessibilityIdentifier("search_view_all")
                         }

@@ -1,6 +1,6 @@
 ---
 id: record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency
-status: backlog
+status: done
 priority: medium
 area: "records, accessibility, currency"
 created: 2026-10-09
@@ -29,3 +29,5 @@ La etiqueta de accesibilidad de la fila (`record_row`) sale
 - [ ] La etiqueta de accesibilidad usa la divisa del registro, igual que el importe visible.
 - [ ] Test que lo fije con un registro en divisa distinta de la preferida.
 - [ ] Buscar el mismo patrón (importe nativo + divisa preferida) en otras filas con `accessibilityLabel`.
+
+Hecho: el arreglo entró en el lote 8 (47aa34f6c). El lote 12.3 (2026-10-25) añade el test con registros de verdad (`RecordRowAccessibilityCurrencyTests`: dongs y dólares con la preferida en soles) y el barrido del patrón: el resto de filas con etiqueta de VoiceOver formatean con la misma divisa que su texto visible (Bandeja, calendario, pagos, cuentas).

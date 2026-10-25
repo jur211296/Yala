@@ -128,11 +128,11 @@ struct RestoreProgressView: View {
             if OnboardingRestoreProgress.isTerminal(phase) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 44, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thOnAccent)
             } else {
                 ProgressView()
                     .scaleEffect(1.5)
-                    .tint(.white)
+                    .tint(theme.onAccent)
             }
         }
     }

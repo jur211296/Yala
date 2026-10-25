@@ -317,7 +317,7 @@ struct RecordsCalendarView: View {
                     Text(CompactAmountFormatter.string(expense))
                         // A11Y-DT: micro-monto en celda de 7 columnas; el a11yLabel da el monto completo.
                         .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                        .foregroundStyle(isSelected ? theme.onAccent : Color.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
@@ -381,9 +381,9 @@ struct RecordsCalendarView: View {
     private func dayNumber(_ dayNum: Int, isSelected: Bool, isToday: Bool, inRange: Bool) -> some View {
         let text = Text("\(dayNum)").font(.caption2.weight(isToday || isSelected ? .bold : .medium))
         if isSelected {
-            text.foregroundStyle(.white)
+            text.foregroundStyle(theme.onAccent)
         } else if isToday {
-            text.foregroundStyle(theme.accent)
+            text.foregroundStyle(theme.accentText)
         } else if inRange {
             text.foregroundStyle(.primary)
         } else {

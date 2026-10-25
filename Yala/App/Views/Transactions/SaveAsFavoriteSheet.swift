@@ -302,7 +302,7 @@ struct SaveAsFavoriteSheet: View {
             } else {
                 Button(action: onTap) {
                     Text(L10n.Common.select)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
                 .buttonStyle(.plain)
             }
@@ -326,7 +326,7 @@ struct SaveAsFavoriteSheet: View {
             if selectedTags.isEmpty {
                 Button { showTagSelector = true } label: {
                     Text(L10n.Common.select)
-                        .foregroundStyle(.thAccent)
+                        .foregroundStyle(.thAccentText)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -453,7 +453,7 @@ struct SaveAsFavoriteSheet: View {
                                                 if selectedTags.contains(tag.persistentModelID) {
                                                     Image(systemName: "checkmark")
                                                         .font(DS.Typography.headline)
-                                                        .foregroundStyle(.thAccent)
+                                                        .foregroundStyle(.thAccentText)
                                                 }
                                             }
                                             .padding(.horizontal, DS.Spacing.lg)

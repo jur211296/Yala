@@ -84,7 +84,7 @@ struct InboxAlertModal: View {
 
                     Image(systemName: icon)
                         .font(DS.Typography.amountLarge)
-                        .foregroundStyle(theme.accent)
+                        .foregroundStyle(theme.accentText)
                         .accessibilityHidden(true)
                 }
                 .padding(.top, DS.Spacing.sm)
@@ -113,7 +113,7 @@ struct InboxAlertModal: View {
                     } label: {
                         Text(L10n.Scheduled.viewInbox)
                             .font(DS.Typography.bodyBold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.thOnAccent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, DS.Spacing.md)
                             .background(theme.accent)

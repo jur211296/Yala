@@ -62,7 +62,7 @@ struct CurrencySettingsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(.thAccent)
+                            .foregroundStyle(.thAccentText)
                             .padding(.bottom, DS.Spacing.sm)
 
                         Text(L10n.Settings.currencyAndExchange)

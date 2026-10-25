@@ -53,7 +53,7 @@ struct PanelNoticeCarousel<Content: View>: View {
                         .accessibilityHidden(true)
                 }
                 .font(DS.Typography.labelSmall)
-                .foregroundStyle(.thAccent)
+                .foregroundStyle(.thAccentText)
                 .padding(.vertical, DS.Spacing.xs)
                 .contentShape(Rectangle())
             }

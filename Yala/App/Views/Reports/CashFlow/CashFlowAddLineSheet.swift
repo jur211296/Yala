@@ -132,7 +132,7 @@ struct CashFlowAddLineSheet: View {
             // El icono de 40 de la app (lienzo «Una sola Yala»).
             Image(systemName: icon)
                 .font(DS.Typography.label)
-                .foregroundStyle(theme.accent)
+                .foregroundStyle(theme.accentText)
                 .frame(width: 40, height: 40)
                 .background(Circle().fill(theme.accent.opacity(0.14)))
                 .accessibilityHidden(true)
@@ -312,7 +312,7 @@ struct CashFlowAddFromExpensesView: View {
                                     .font(DS.Typography.caption)
                             } else {
                                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(isSelected ? theme.accent : .secondary)
+                                    .foregroundStyle(isSelected ? theme.accentText : .secondary)
                             }
                         }
                         .padding(.horizontal, DS.Spacing.lg)
@@ -354,7 +354,7 @@ struct CashFlowAddFromExpensesView: View {
                                     Spacer()
 
                                     Image(systemName: selectedSubcategory?.persistentModelID == sub.persistentModelID ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(selectedSubcategory?.persistentModelID == sub.persistentModelID ? theme.accent : .secondary)
+                                        .foregroundStyle(selectedSubcategory?.persistentModelID == sub.persistentModelID ? theme.accentText : .secondary)
                                         .font(DS.Typography.caption)
                                 }
                                 .padding(.leading, DS.Spacing.xxl)
@@ -416,7 +416,7 @@ struct CashFlowAddFromExpensesView: View {
                                     ? AnyShapeStyle(theme.accent.opacity(0.15))
                                     : AnyShapeStyle(Color.clear)
                             )
-                            .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
+                            .foregroundStyle(selectedMethod == method ? theme.accentText : .secondary)
                             .clipShape(Capsule())
                             .overlay(
                                 Capsule().stroke(selectedMethod == method ? theme.accent.opacity(0.3) : theme.secondaryText.opacity(DS.Opacity.subtle), lineWidth: 1)
@@ -596,7 +596,7 @@ struct CashFlowAddFromScheduledView: View {
                         )
 
                         Image(systemName: selectedPayment?.persistentModelID == payment.persistentModelID ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(selectedPayment?.persistentModelID == payment.persistentModelID ? theme.accent : .secondary)
+                            .foregroundStyle(selectedPayment?.persistentModelID == payment.persistentModelID ? theme.accentText : .secondary)
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.md)
