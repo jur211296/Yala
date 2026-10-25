@@ -141,5 +141,8 @@ struct RecordsSelectToolbarButton: View {
         }
         .fontWeight(.semibold)
         .accessibilityIdentifier("records_select_visible")
+        // Solo texto: en la barra vertical del iPhone Duo cerrado se quedaba en una barra aparte arriba, junto al
+        // título. Ahí no sale; sigue en «···».
+        .hiddenInVerticalBar()
     }
 }

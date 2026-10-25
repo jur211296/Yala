@@ -82,6 +82,7 @@ struct PlanningView: View {
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Planning.title)
             .navigationBarTitleDisplayMode(.large)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 // Favorites button (only for budgets tab)
                 if selectedTab == .budgets {

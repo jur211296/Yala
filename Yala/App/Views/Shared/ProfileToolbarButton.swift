@@ -113,14 +113,22 @@ struct ProfileToolbarButton: View {
 
 /// ToolbarContent wrapper that applies .sharedBackgroundVisibility(.hidden)
 /// to remove toolbar's default glass (button has its own glass effect).
+///
+/// iPhone Duo cerrado: es una vista propia, y sin pedirlo se quedaba en una barra horizontal arriba, aparte de la
+/// vertical. Ahí va en la vertical, en las siete páginas que lo llevan (opción 2 de Jürgen, 2026-10-24), y de lo último
+/// en irse a «···». Solo en ancho compacto: abierto en horizontal, con siete pestañas, no cabía y acababa en «···»,
+/// donde una vista propia no se pinta; ahí se queda arriba, como estaba.
 struct ProfileToolbarItem: ToolbarContent {
     let action: () -> Void
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             ProfileToolbarButton(action: action)
         }
         .sharedBackgroundVisibility(.hidden)
+        .joinsVerticalBar(horizontalSizeClass == .compact)
+        .overflowsLast()
     }
 }
 

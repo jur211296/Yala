@@ -81,6 +81,7 @@ struct FinancialReportView: View {
             }
             .navigationTitle(L10n.Report.title)
             .navigationBarTitleDisplayMode(.large)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 reportToolbar
             }

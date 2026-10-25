@@ -123,6 +123,7 @@ struct DetailContainerView: View {
 
     var body: some View {
         mainContent
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 if recordsViewModel.isSelectionMode {
                     selectionModeToolbar
