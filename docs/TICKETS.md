@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1065)
+## Index (1066)
 
 | id | status | path |
 |---|---|---|
@@ -423,6 +423,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | g16-01-is-not-applied-on-staging | done | tickets/done/g16-01-is-not-applied-on-staging.md |
 | gate-doc-says-swift-testing-only | backlog | tickets/backlog/gate-doc-says-swift-testing-only.md |
 | gate-never-reads-test-file-warnings | backlog | tickets/backlog/gate-never-reads-test-file-warnings.md |
+| gate-stamp-changes-when-a-staged-rename-hides-the-old-path | backlog | tickets/backlog/gate-stamp-changes-when-a-staged-rename-hides-the-old-path.md |
 | gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade | backlog | tickets/backlog/gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade.md |
 | gateway-does-not-record-ai-token-usage | backlog | tickets/backlog/gateway-does-not-record-ai-token-usage.md |
 | gateway-has-no-telemetry | backlog | tickets/backlog/gateway-has-no-telemetry.md |
