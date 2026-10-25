@@ -46,5 +46,7 @@ extension View {
             .contentMargins(.horizontal, horizontalMargin, for: .scrollContent)
             .contentMargins(.vertical, verticalMargin, for: .scrollContent)
             .scrollEdgeEffectStyle(style, for: edges)
+            // iPhone Duo: lo que se desplaza no pasa por detrás de la barra vertical (`ToolbarVerticalBar.swift`).
+            .staysOutOfVerticalBar()
     }
 }

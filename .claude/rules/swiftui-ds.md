@@ -465,9 +465,30 @@ paths:
   segmentadas de las tortas). `GeometryReader` no tiene el problema: toma el tamaño propuesto.
 - **Barras verticales.** Pasan solos a la barra vertical los botones con icono (`YalaToolbarButton`, `YalaSaveButton`
   y un `Button` con `Image`). No pasan: los de solo texto y los de vista propia, que se quedan en una barra horizontal
-  arriba (ticket `iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar`). Uno de vista propia sin título arriba (la
-  bandeja del Panel) se pintó **flotando abajo, encima del contenido**, en el primer arranque: va con
-  `.joinsVerticalBar()` (`ToolbarVerticalBar.swift`).
+  arriba. Uno de vista propia sin título arriba (la bandeja del Panel) se pintó **flotando abajo, encima del
+  contenido**, en el primer arranque: va con `.joinsVerticalBar()` (`ToolbarVerticalBar.swift`).
+- **Opción 2 de Jürgen (2026-10-24), en el Duo cerrado: los botones de la página van en la barra vertical y, si no
+  caben, ceden las pestañas.** El avatar (`ProfileToolbarItem`) lleva `.joinsVerticalBar` desde el propio componente,
+  así ninguna página se queda con el avatar arriba. Y cada página de pestaña lleva `.prefersToolbarItemsInVerticalBar()`
+  **dentro de su pila, junto a su `.toolbar`**: puesto en la `TabView` o en el contenido de cada `Tab` no hace nada
+  (medido). Las dos cosas, **solo en ancho compacto**: abierto en horizontal, con siete pestañas, la compresión plegaba
+  las pestañas del Panel y el avatar no cabía y se iba a «···», donde una vista propia no se pinta. Ahí queda el
+  comportamiento del sistema. Una página de pestaña nueva lleva el modificador; un botón de barra de vista propia
+  nuevo, `.joinsVerticalBar`.
+- **Un botón de barra de solo texto que ya está en el menú de la página se retira con `.hiddenInVerticalBar()`**
+  («Seleccionar» de Registros). Darle icono cambiaría el iPhone (su barra horizontal prefiere el icono: «Cancelar»
+  sería una ✕), y `.axisBehavior(.horizontalOnly)` no basta: la barra del título grande es horizontal y lo deja ahí.
+  `\.toolbarVerticalEdge` (iOS 27.1) es el borde de la barra: medido, `.trailing` en el Duo cerrado y `nil` en el
+  iPhone, en el Duo abierto en vertical y en la columna de la lista del Duo abierto en horizontal, que van en
+  horizontal. Los «Cancelar / Hecho» de las hojas se quedan arriba, decidido.
+- **Ancho (regla A, 2026-10-24): nada de lo que se desplaza pasa por detrás de la barra vertical; bajo ella, solo el
+  fondo.** Es la regla de Apple (`app-resizability`). Un `ScrollView` horizontal pinta hasta el borde físico aunque su
+  página acabe antes: las cuentas y los chips del Panel y las tarjetas del Welcome llegaban por detrás de la barra y los
+  widgets no. `scrollViewGlassEdges` lleva `.staysOutOfVerticalBar()`, que recorta el scroll de la página en su propio
+  borde por el lado de la barra; un scroll de página que no use ese helper lo lleva a mano (el Welcome). **No leas el
+  inset de un `GeometryProxy` para esto**: es el del espacio ofrecido y el recorte quedaba 84 pt más adentro (el marco
+  del scroll ya acaba en el borde seguro). La alternativa B (la página por debajo del cristal) está en capturas en
+  `qa/evidencia-duo-cerrado-20261024/`: tapa «Todo el tiempo», importes y botones.
 - **En la barra vertical cabe poco, y lo que no cabe va al menú «···» solo si tiene título**: un botón de solo icono
   que desborda **desaparece**. Medido en el Panel abierto en horizontal (siete pestañas: cabe un botón y «···»):
   Filtros, que era un `Image`, se esfumó. ⇒ un botón que pueda desbordar lleva `Label(título, systemImage:)` (en una

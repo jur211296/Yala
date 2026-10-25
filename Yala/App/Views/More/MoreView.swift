@@ -98,6 +98,7 @@ struct MoreView: View {
             .navigationTitle(L10n.Tab.more)
             .navigationBarTitleDisplayMode(.inline)
             .yalaScreenBackground(.panel)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 if !isGroupsFocusedShell {
                     ToolbarItem(placement: .topBarTrailing) {

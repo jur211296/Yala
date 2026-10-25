@@ -1,6 +1,6 @@
 ---
 id: iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar
-status: backlog
+status: done
 priority: low
 area: "platform, iphone-duo, adaptativo"
 created: 2026-10-24
@@ -47,3 +47,19 @@ Capturas en `~/Claude/worktrees/_capturas/2026-10-24-iphone-duo-adaptar-2-2/` (`
 - La decisión está tomada y aplicada, con capturas del Duo cerrado y del iPhone 17 Pro antes y después.
 - Ojo al aplicarla: un botón de barra con solo icono que no cabe **desaparece** de la barra vertical en vez de pasar a
   «···» (medido; regla en `.claude/rules/swiftui-ds.md`). Todo lo que pueda desbordar lleva título.
+
+## Resuelto (2026-10-24, sesión «Duo cerrado · opción 2»)
+
+Jürgen eligió la **opción 2** y **no pasar texto a icono** en toda la app. Aplicado en el Duo cerrado:
+
+1. **El avatar va en la barra vertical en las siete páginas** (Panel, Registros, Estadísticas, Planificación, Grupos,
+   Más, Reportes), desde `ProfileToolbarItem`. Abierto en horizontal se queda arriba: con siete pestañas no cabía y se
+   iba a «···».
+2. **Las pestañas ceden sitio** (`toolbarVerticalCompressionBehavior(.prefersToolbarItems)`, en cada página y solo en
+   ancho compacto): en el Panel cerrado caben bandeja, Filtros, Configurar y avatar; Filtros ya no va a «···».
+3. **«Seleccionar» de Registros no sale con barra vertical** (sigue en «···»); en el iPhone no cambia.
+4. **Los «Cancelar / Hecho / Editar…» de las hojas se quedan como están**, por la decisión de no pasar texto a icono.
+   «👥 3» del detalle de grupo, tampoco: en vertical el número se salía de la cápsula.
+
+Capturas antes / después: `qa/evidencia-duo-cerrado-20261024/` (columna «A»). La pregunta del ancho que salió de esta
+misma revisión sigue en `iphone-duo-closed-width-a-or-b`.

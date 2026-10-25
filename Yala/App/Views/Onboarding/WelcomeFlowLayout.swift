@@ -86,6 +86,8 @@ struct WelcomeFlowScreen<Content: View>: View {
                         .frame(minHeight: geo.size.height)
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                // iPhone Duo cerrado: las tarjetas del carrusel no pasan por detrás de la columna de la barra.
+                .staysOutOfVerticalBar()
             }
         }
     }

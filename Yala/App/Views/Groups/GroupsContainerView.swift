@@ -243,6 +243,7 @@ struct GroupsContainerView: View {
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
+            .prefersToolbarItemsInVerticalBar()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

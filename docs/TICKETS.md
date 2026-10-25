@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1053)
+## Index (1055)
 
 | id | status | path |
 |---|---|---|
@@ -615,8 +615,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | done | tickets/done/ipad-sidebar-and-list-detail-for-records-and-planning.md |
+| iphone-duo-closed-width-a-or-b | backlog | tickets/backlog/iphone-duo-closed-width-a-or-b.md |
 | iphone-duo-native-app | done | tickets/done/iphone-duo-native-app.md |
-| iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar | backlog | tickets/backlog/iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar.md |
+| iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar | done | tickets/done/iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar.md |
 | iphone-landscape-headers-fill-the-short-screen | done | tickets/done/iphone-landscape-headers-fill-the-short-screen.md |
 | iphone-large-models-use-the-extra-width | done | tickets/done/iphone-large-models-use-the-extra-width.md |
 | iphone-large-text-sizes-break-layouts | done | tickets/done/iphone-large-text-sizes-break-layouts.md |
@@ -795,6 +796,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
 | records-delete-uitest-counts-only-visible-rows | backlog | tickets/backlog/records-delete-uitest-counts-only-visible-rows.md |
+| records-lote8-uitest-expects-the-old-change-category-title | backlog | tickets/backlog/records-lote8-uitest-expects-the-old-change-category-title.md |
 | records-orphaned-by-earlier-account-deletions-stay-invisible | done | tickets/done/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
 | records-standalone-amount-discrepancy | done | tickets/done/records-standalone-amount-discrepancy.md |
 | records-summary-approximate-mark-fails-only-alongside-group-suites | backlog | tickets/backlog/records-summary-approximate-mark-fails-only-alongside-group-suites.md |

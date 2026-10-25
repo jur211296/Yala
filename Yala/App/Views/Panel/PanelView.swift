@@ -298,6 +298,7 @@ struct PanelView: View {
                 // evitando duplicación con el saludo del hero al inicio.
                 .navigationTitle(showInlineTitle ? L10n.Panel.title(appPreferences.userName) : "")
                 .navigationBarTitleDisplayMode(.inline)
+                .prefersToolbarItemsInVerticalBar()
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
