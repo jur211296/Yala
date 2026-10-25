@@ -3190,404 +3190,480 @@ private struct WelcomeFlowModifier: ViewModifier {
     let performDeviceCorpusWipe: @MainActor () async -> String?
     let showGroupInviteOnboarding: Bool
 
+    /// Lo último que enseñó el cover del Welcome. Lo pinta mientras baja, cuando ya no lo pide ningún flag, y decide si
+    /// el respaldo de la entrada a la cuenta corre al cerrarse (`WelcomeCoverContentLogic`).
+    @State private var lastWelcomeCoverContent: WelcomeCoverContentLogic.Content = .flow
+
+    private var requestedWelcomeCoverContent: WelcomeCoverContentLogic.Content? {
+        WelcomeCoverContentLogic.requested(showsFlow: showWelcomeFlow, showsCloudSignIn: showWelcomeCloudSignIn)
+    }
+
+    private var displayedWelcomeCoverContent: WelcomeCoverContentLogic.Content {
+        WelcomeCoverContentLogic.displayed(
+            showsFlow: showWelcomeFlow, showsCloudSignIn: showWelcomeCloudSignIn, last: lastWelcomeCoverContent)
+    }
+
+    /// El cover se presenta con cualquiera de los dos flags y nunca con la invitación de grupo delante: si llega un
+    /// CKShare, el cover se cierra y `hasShownWelcomeChooser` queda `false`, así que el flow reaparece desde el Hero en
+    /// el próximo arranque si la invitación se cancela. Si UIKit lo cierra por su cuenta, se apaga el flag de lo que
+    /// estaba enseñando, que es lo que hacía cada uno de los dos covers de antes con el suyo.
+    private var welcomeCoverIsPresented: Binding<Bool> {
+        Binding(
+            get: {
+                WelcomeCoverContentLogic.isPresented(
+                    showsFlow: showWelcomeFlow, showsCloudSignIn: showWelcomeCloudSignIn,
+                    inhibited: showGroupInviteOnboarding)
+            },
+            set: { presented in
+                guard !presented else { return }
+                switch displayedWelcomeCoverContent {
+                case .flow: showWelcomeFlow = false
+                case .cloudSignIn: showWelcomeCloudSignIn = false
+                }
+            }
+        )
+    }
+
     func body(content: Content) -> some View {
         content
-            // Cover único Hero+Chooser. Gate `!showGroupInviteOnboarding`: si
-            // llega CKShare, el cover se cierra y `hasShownWelcomeChooser` queda
-            // false — el flow reaparece desde el Hero en el próximo cold launch
-            // si el invite onboarding se cancela.
-            .fullScreenCover(isPresented: $showWelcomeFlow.gated(by: showGroupInviteOnboarding)) {
-                WelcomeFlowContainer(
-                    initialStep: welcomeFlowInitialStep,
-                    onSelectBranch: { branch in
-                        switch branch {
-                        case .new:
-                            hasShownWelcomeChooser = true
-                            // Inalcanzable desde A4: el container desvía `.new` a su 2º nivel
-                            // (`handleNewBranch`) igual que ya hacía con `.restore`. Se delega al
-                            // MISMO helper que el callback nuevo — dos copias de este camino es
-                            // como divergen la limpieza de residuales y el alert de wipe.
-                            startFreshPrivateOnboarding()
-                        case .restore:
-                            hasShownWelcomeChooser = true
-                            showWelcomeFlow = false
-                            showWelcomeRestore = true
-                        case .invite:
-                            // **«Tengo una invitación» no marca el chooser** (card t2q8, 2026-10-20), como «Crear mi primer
-                            // grupo»: el invitado todavía no ha elegido dónde viven sus datos personales. Marcado, el enlace
-                            // que pega no arma el neutro duradero (`GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry`)
-                            // y un relanzamiento a mitad montaba el espejo del iCloud del aparato. Si abandona, el Welcome
-                            // vuelve a salir en el arranque siguiente, que es lo honesto.
-                            showWelcomeFlow = false
-                            showInviteRecovery = true
-                        }
-                    },
-                    onSelectExistingOption: { option in
-                        // H4: sub-elección de "Ya tengo una cuenta" (o su bypass — hoy en
-                        // prod DARK siempre .restoreICloud = flujo restore actual intacto).
-                        hasShownWelcomeChooser = true
-                        switch option {
-                        case .restoreICloud:
-                            showWelcomeFlow = false
-                            showWelcomeRestore = true
-                        case .cloudSignIn:
-                            welcomeCloudEntry = .reentry(.apple)  // EXPLÍCITO (jamás heredar el previo)
-                            cloudSignInFromExistingChooser = true
-                            // UX 2.2 · L6-3: «Entrar con Apple» abre directamente el consentimiento, y de ahí Apple.
-                            // La pantalla intermedia repetía el mismo botón («Iniciar sesión con Apple»).
-                            adoptStartsAtConsent = true
-                            showWelcomeFlow = false
-                            showWelcomeCloudSignIn = true
-                        case .googleSignIn:
-                            welcomeCloudEntry = .reentry(.google)
-                            cloudSignInFromExistingChooser = true
-                            adoptStartsAtConsent = true
-                            showWelcomeFlow = false
-                            showWelcomeCloudSignIn = true
-                        }
-                    },
-                    onSelectPrivateAccount: {
-                        // A4: "Soy nuevo" → privacidad total (o su bypass, que es el recorrido de
-                        // producción de hoy). Byte-idéntico al `case .new` de siempre.
-                        hasShownWelcomeChooser = true
-                        startFreshPrivateOnboarding()
-                    },
-                    onSelectCloudAccount: {
-                        // A5: "Soy nuevo" → cuenta en la nube. El alta va por el MISMO cover que la
-                        // re-entrada (`Entry.bornCloud`): un cover propio sería un segundo anchor
-                        // presentando ante el mismo estado, y ese es el bug del sign-out de
-                        // 2026-07-14 (regla (4) de Presentaciones).
-                        //
-                        // **NO se llama a `startFreshPrivateOnboarding()`**, y no es un olvido: aquí
-                        // no se limpia nada ni se pregunta por el wipe. La limpieza de residuales y
-                        // el alert de datos existentes pertenecen al camino iCloud; el alta nube
-                        // decide el destino de los datos DESPUÉS del relanzamiento, con el
-                        // onboarding normal, y el corpus local lo gobierna el guard cross-cuenta si
-                        // el claim acaba encaminando al returning-user.
-                        hasShownWelcomeChooser = true
-                        welcomeCloudEntry = .bornCloud
-                        cloudSignInFromExistingChooser = false
-                        showWelcomeFlow = false
-                        showWelcomeCloudSignIn = true
-                    },
-                    onSelectGroupsOrganizer: {
-                        // G3 · la puerta ya dijo que sí (canal encendido y sin datos de otro humano): el
-                        // step `.groupsGate` es el único que puede llegar hasta aquí.
-                        //
-                        // **`hasShownWelcomeChooser` NO se marca, y es deliberado**: a diferencia de las
-                        // otras cinco salidas, esta rama todavía no ha escrito NADA —el trío va cuatro
-                        // pasos más allá— así que un abandono a mitad tiene que poder volver al Welcome y
-                        // reintentar. Marcarlo mandaría al usuario al onboarding completo, que no es el
-                        // camino que eligió. Es el mismo criterio con el que G2 dejó de marcarlo al tapear
-                        // la card de nivel 1.
-                        showWelcomeFlow = false
-                        startGroupsOrganizerBranch()
-                    },
-                    onBeaconRoutesToCloudSignIn: { provider in
-                        // ADR §10: el faro dice que este Apple ID YA tiene cuenta nube ⇒ lo probable es un
-                        // 2º device o un reinstall, y se ENCAMINA a entrar con ella. Mismo cover que la card
-                        // "Ya tengo cuenta", pero con su propio `Entry`: el intro dice de dónde viene y
-                        // ofrece «Crear otra cuenta» (paso 6). El método viene del faro y se setea EXPLÍCITO
-                        // (jamás heredar el del intento anterior). Aquí NO se limpian prefs residuales: no
-                        // es un fresh start.
-                        hasShownWelcomeChooser = true
-                        welcomeCloudEntry = .beaconRouted(accountProvider: provider)
-                        cloudSignInFromExistingChooser = false
-                        showWelcomeFlow = false
-                        showWelcomeCloudSignIn = true
-                    },
-                    onNeedsMirrorRelaunch: { destination in
-                        // R2: el destino necesita el mirror y este proceso montó neutro. Se cierra la
-                        // elección (el chooser no vuelve a salir) y se GUARDA a dónde iba, porque el
-                        // relanzamiento mata el proceso: sin esto, quien pidió restaurar reabriría la app
-                        // y aterrizaría en el onboarding normal con su elección perdida.
-                        //
-                        // La limpieza de residuales del camino privado corre AQUÍ y no tras el
-                        // relanzamiento: es la misma que hace `startFreshPrivateOnboarding` y tiene que
-                        // ocurrir antes de que el onboarding lea nada.
-                        //
-                        // **Lo que aquí NO se hace es preguntar por los datos, y hasta el 2026-09-13 este
-                        // comentario decía que no hacía falta.** Decía: «el mount neutro exige que no haya
-                        // archivo de store, así que en este camino no puede haber datos que confirmar».
-                        // Eso valía con los dos términos viejos del neutro; el tercero
-                        // (`groupsOnlySessionArmed`) rompió la equivalencia — una sesión solo-grupos tiene
-                        // archivo de store CON datos dentro (categorías sembradas, grupos, bridgeadas) y
-                        // monta neutro igual. El aviso se perdía entero: `proceed()` no corre en este
-                        // camino, así que no corría `startFreshPrivateOnboarding` ni con él el alert.
-                        //
-                        // El aviso vive ahora DELANTE, en la puerta privada
-                        // (`WelcomePrivateICloudGateView`, término `deviceCorpus`), que es un step del
-                        // mismo cover y puede pedir confirmación sin desmontar nada. Para cuando este
-                        // callback corre, la pregunta ya se hizo.
-                        hasShownWelcomeChooser = true
-                        // **El anti-bucle del neutro solo-grupos** (paso 5 del rediseño), y va JUNTO a la
-                        // línea de arriba porque hace exactamente su mismo trabajo sobre el otro
-                        // predicado de mount. Este callback es el punto ÚNICO donde se decide que un
-                        // destino necesita el espejo (`WelcomeMirrorRelaunchLogic.shouldRelaunch`), y un
-                        // device solo-grupos que pide restaurar giraría para siempre sin esto: marca
-                        // puesta ⇒ mount neutro ⇒ «reabre Yala» ⇒ mount neutro otra vez. Es el bucle que
-                        // la caducidad por `hasShownWelcomeChooser` cierra para la marca hermana y que
-                        // ésta, al no caducar, tiene que cerrar aquí.
-                        StorageModePersistence.clearGroupsOnlyNeutralMount()
-                        // **Salvo que los grupos de este teléfono sean de quien está delante** (ticket
-                        // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): tras el aviso tardío que
-                        // los conservó, «Soy nuevo → privado» es la misma persona, y retirarle la sesión de Grupos en el
-                        // arranque siguiente es el borrado que ese aviso acababa de evitar. Mismo criterio que
-                        // `startFreshPrivateOnboarding`.
-                        if destination == .privateOnboarding,
-                           WelcomeKeptGroupsLogic.freshStartRetiresThePreviousPerson(
-                               groupsKeptForThisPerson: groupsKeptForThisPersonNow()) {
-                            OnboardingResetHelper.clearResidualPreferencesForFreshStart()
-                            // **Y la sesión en la nube de la persona anterior, armada.** Este callback es
-                            // la QUINTA declaración de «empiezo de cero» del shell, y la única que no pasa
-                            // ni por `wipeLocalGroupsDomain` ni por `startFreshPrivateOnboarding`: con el
-                            // mount neutro, «Soy nuevo → privacidad total» sale por aquí en vez de por
-                            // `onSelectPrivateAccount` (`WelcomeMirrorRelaunchLogic`, `.privateOnboarding`
-                            // exige espejo). Sin esto aterrizaba en el onboarding con el llavero del
-                            // anterior intacto — el bug del ticket por la puerta que nadie miró. Lo cazó
-                            // la review adversarial.
-                            //
-                            // **Solo se ARMA, sin disparar**: este camino relanza el proceso, así que lo
-                            // consume el `purgeIfArmed` PRE-MOUNT del arranque siguiente, que además es el
-                            // consumidor race-free. Y la línea va junto a su vecina porque las dos
-                            // declaran lo mismo.
-                            CloudSessionRetirement.arm(defaults: .standard)
-                        }
-                        WelcomePendingDestinationStore.set(destination)
-                    },
-                    onGroupsGateNeutralReturnArmed: { purpose in
-                        // **Mitad 2 del paso 5 · el borrado está ARMADO y solo falta reabrir la app.**
-                        //
-                        // El destino se persiste AQUÍ y no antes de empezar, y el orden es lo que evita un
-                        // daño concreto: `RelaunchNetLogic.shouldExitOnBackground` lee «hay destino
-                        // pendiente» como «este proceso tiene que morir al pasar a segundo plano»
-                        // (`YalaApp.swift`, `welcomeMirrorRelaunchArmed`). Escribirlo antes del arm haría
-                        // que la app se cerrara sola aunque la vuelta al neutro se hubiera bloqueado o
-                        // abortado. La ventana que queda —un kill entre el arm y esta línea— cuesta una
-                        // pantalla, no datos: el borrado corre igual y la persona aterriza en el Welcome.
-                        //
-                        // Y se persiste a donde iba. Sobrevive al borrado:
-                        // `welcome.pendingMirrorRelaunchDestination` no está en el barrido de
-                        // `DataWipeService.removeUserPreferenceKeys` (medido) y nadie la limpia en
-                        // producción.
-                        //
-                        // **Y qué destino se persiste lo decide el PROPÓSITO que VIENE CON el aviso**, no
-                        // un estado de esta vista: los dos caminos llegan a este mismo callback desde la
-                        // misma pantalla, y escribir siempre `.groupsOrganizer` mandaría al invitado al
-                        // alta de un grupo que no quiso crear.
-                        //
-                        // El sobre `{groupID, token}` ya lo escribió la PANTALLA al recibir el gesto —aquí
-                        // solo se comprueba—: entre el arm del borrado y este callback hay una entrega de
-                        // SwiftUI, y en el camino del swap in-process la jerarquía se desmonta en la misma
-                        // vuelta del arm, así que escribirlo aquí lo dejaba fuera de la ventana.
-                        //
-                        // Sin sobre no hay join que retomar, así que tampoco se persiste un destino que llevaría a una
-                        // puerta sin nada detrás: el arranque siguiente cae en el recorrido normal, que es lo honesto
-                        // cuando la invitación ya no está. La regla vive en `Purpose.destinationAfterNeutralReturn`, que
-                        // el coordinador usa también para escribirlo pegado al arm (card ypit): con el cambio en caliente
-                        // esta entrega puede no llegar, y aquí queda de respaldo.
-                        if let destination = purpose.destinationAfterNeutralReturn {
-                            WelcomePendingDestinationStore.set(destination)
-                        } else {
-                            #if DEBUG
-                            print("ContentView: invite neutral return armed without a live envelope — nothing to resume")
-                            #endif
-                        }
-                        // El cover del Welcome y el terminal del cierre de sesión cuelgan del MISMO body,
-                        // así que UIKit presenta uno solo. Cerrar éste es lo que deja presentarse al otro,
-                        // que es el que tiene verify loop, blocker de readiness y salida en background.
-                        showWelcomeFlow = false
-                    },
-                    onGroupsGateInviteProceed: { zone in
-                        // La puerta del invitado abrió: este dispositivo ya no cruza datos de nadie. Se
-                        // cierra el Welcome y se RETOMA el join donde estaba — `continueFlow` re-lee el
-                        // intent persistido y re-evalúa el paso con condiciones vivas, así que no hace
-                        // falta recordar en cuál se quedó.
-                        //
-                        // **El cover NO se cierra si no hay nada que continuar**, y esa comprobación es la
-                        // misma que `continueFlow` hace por dentro antes de volverse sin hacer nada. El
-                        // intent puede haber muerto entre el submit y este tap (el pull baja el member y el
-                        // reconciler lo limpia), y con el onboarding sin completar debajo de este cover no
-                        // hay shell ninguna: cerrarlo dejaba a la persona ante un fondo vacío, sin un solo
-                        // control, hasta matar la app.
-                        guard PendingJoinStore.entry(zoneName: zone) != nil else {
-                            welcomeFlowInitialStep = .groupsChooser
-                            return
-                        }
-                        showWelcomeFlow = false
-                        Task { @MainActor in
-                            await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
-                        }
-                    },
-                    hasLocalDataNow: hasLocalDataNow,
-                    welcomeDeviceDataNow: welcomeDeviceDataNow,
-                    welcomeDeviceDataReading: welcomeDeviceDataReading,
-                    // Paso 4: el borrado vive aquí porque necesita el `modelContext`. La puerta solo
-                    // decide y enseña.
-                    //
-                    // **Sin scope a propósito: esto es un REENVÍO, no una llamada al borrador.** El
-                    // `performICloudCorpusWipe` que se lee aquí es el closure que `WelcomeFlowModifier`
-                    // recibió, y quien eligió `.handover` fue el envoltorio que se lo pasó. Ponerle un
-                    // scope aquí sería darle a este reenvío el derecho a contradecir al de arriba.
-                    performICloudCorpusWipe: { await performICloudCorpusWipe() },
-                    performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
-                    onRestoreOrigin: { welcomeRestoreOrigin = $0 }
-                )
-                .environment(SessionState.shared)
+            // **Un solo cover para los pasos del Welcome y la entrada a la cuenta** (card 4gfj, decisión A de Jürgen del
+            // 2026-10-25). Eran dos covers del mismo anchor: pasar de uno a otro bajaba una pantalla entera, dejaba
+            // ~0,6 s de negro y subía la otra. Ahora el degradado se queda quieto y el contenido se funde, como entre
+            // los pasos del Welcome. Los dos flags siguen siendo los de siempre.
+            .fullScreenCover(isPresented: welcomeCoverIsPresented, onDismiss: welcomeCoverDidDismiss) {
+                welcomeCover
             }
-            // H4: re-entrada a una cuenta del Modo Nube (SIWA → exists → adopt).
-            // Gate group-invite (mismo patrón que el cover del flow) + onDismiss de
-            // respaldo (C2): si UIKit tumba el cover sin terminal, reabrir el chooser
-            // — jamás dejar al usuario en pantalla vacía con onboarding incompleto.
-            .fullScreenCover(
-                isPresented: $showWelcomeCloudSignIn.gated(by: showGroupInviteOnboarding),
-                onDismiss: {
-                    // El arranque-en-consent es de UNA entrada: la siguiente por el chooser es un
-                    // recorrido normal y debe ver su intro.
-                    adoptStartsAtConsent = false
-                    cloudSignInFromExistingChooser = false
-                    // R2: `!showOnboarding` es el término nuevo. El alta born-cloud que NO relanza cierra
-                    // este cover y enciende el onboarding en la misma vuelta; sin este término, el respaldo
-                    // devolvería al usuario al chooser encima del onboarding que acaba de abrirse — dos
-                    // presentaciones ante el mismo anchor, que es la regla (4) de Presentaciones.
-                    // `!showWelcomeFlow` es el término del bloque [I], hermano del `!showOnboarding` de
-                    // arriba: `onEnterGroupsOnly` cierra este cover y enciende el Welcome en el step de
-                    // Grupos, y sin este término el respaldo lo pisaba con `.chooser` — devolviendo a la
-                    // persona a «¿qué quieres hacer en Yala?» justo después de haberlo elegido.
-                    if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding
-                        && !showWelcomeFlow {
-                        welcomeFlowInitialStep = .chooser
-                        showWelcomeFlow = true
-                    }
+            .onChange(of: requestedWelcomeCoverContent, initial: true) { _, now in
+                noteWelcomeCoverContent(now)
+            }
+    }
+
+    /// El degradado del Welcome DEBAJO de las dos pantallas: cada una pinta el suyo, y en el fundido de dos capas
+    /// opacas el centro dejaría ver el fondo del cover. Con «Reducir movimiento» el fundido se queda: no desplaza nada.
+    private var welcomeCover: some View {
+        ZStack {
+            LinearGradient(colors: DS.Gradients.heroIndigoBlack, startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            switch displayedWelcomeCoverContent {
+            case .flow:
+                welcomeFlowContainer
+                    .transition(.opacity)
+            case .cloudSignIn:
+                welcomeCloudSignIn
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: WelcomeCoverContentLogic.crossfadeSeconds),
+                   value: displayedWelcomeCoverContent)
+    }
+
+    /// Apunta lo que enseña el cover y, si la entrada a la cuenta acaba de irse a los pasos del Welcome sin cerrarlo
+    /// («Volver», «Crear otra cuenta», la entrada a solo grupos), repone lo que antes reponía su `onDismiss`.
+    private func noteWelcomeCoverContent(_ now: WelcomeCoverContentLogic.Content?) {
+        if WelcomeCoverContentLogic.cloudSignInLeftForFlow(last: lastWelcomeCoverContent, now: now) {
+            resetCloudSignInEntry()
+        }
+        if let now { lastWelcomeCoverContent = now }
+    }
+
+    /// El arranque-en-consent es de UNA entrada: la siguiente por el chooser es un recorrido normal y debe ver su intro.
+    private func resetCloudSignInEntry() {
+        adoptStartsAtConsent = false
+        cloudSignInFromExistingChooser = false
+    }
+
+    /// H4 · respaldo (C2) de la entrada a la cuenta: si UIKit tumba el cover sin terminal, reabrir el chooser — jamás
+    /// dejar al usuario en pantalla vacía con onboarding incompleto. Solo si lo último que enseñó fue la entrada: el
+    /// cover cerrado desde los pasos del Welcome (Restaurar, la invitación, el onboarding) no tenía respaldo.
+    private func welcomeCoverDidDismiss() {
+        guard WelcomeCoverContentLogic.runsCloudSignInDismissFallback(last: lastWelcomeCoverContent) else { return }
+        resetCloudSignInEntry()
+        // R2: `!showOnboarding` es el término nuevo. El alta born-cloud que NO relanza cierra
+        // este cover y enciende el onboarding en la misma vuelta; sin este término, el respaldo
+        // devolvería al usuario al chooser encima del onboarding que acaba de abrirse — dos
+        // presentaciones ante el mismo anchor, que es la regla (4) de Presentaciones.
+        // `!showWelcomeFlow` es el término del bloque [I], hermano del `!showOnboarding` de
+        // arriba: desde el cover único `onEnterGroupsOnly` ya no lo cierra (vuelve al Welcome en el step de Grupos
+        // fundiendo), pero el término sigue siendo el que impide pisar un Welcome ya pedido con `.chooser`.
+        if !hasCompletedOnboarding && !showGroupInviteOnboarding && !showOnboarding
+            && !showWelcomeFlow {
+            welcomeFlowInitialStep = .chooser
+            showWelcomeFlow = true
+        }
+    }
+
+    /// Los pasos del Welcome (Hero, elector, sub-electores, puertas).
+    private var welcomeFlowContainer: some View {
+        WelcomeFlowContainer(
+            initialStep: welcomeFlowInitialStep,
+            onSelectBranch: { branch in
+                switch branch {
+                case .new:
+                    hasShownWelcomeChooser = true
+                    // Inalcanzable desde A4: el container desvía `.new` a su 2º nivel
+                    // (`handleNewBranch`) igual que ya hacía con `.restore`. Se delega al
+                    // MISMO helper que el callback nuevo — dos copias de este camino es
+                    // como divergen la limpieza de residuales y el alert de wipe.
+                    startFreshPrivateOnboarding()
+                case .restore:
+                    hasShownWelcomeChooser = true
+                    showWelcomeFlow = false
+                    showWelcomeRestore = true
+                case .invite:
+                    // **«Tengo una invitación» no marca el chooser** (card t2q8, 2026-10-20), como «Crear mi primer
+                    // grupo»: el invitado todavía no ha elegido dónde viven sus datos personales. Marcado, el enlace
+                    // que pega no arma el neutro duradero (`GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry`)
+                    // y un relanzamiento a mitad montaba el espejo del iCloud del aparato. Si abandona, el Welcome
+                    // vuelve a salir en el arranque siguiente, que es lo honesto.
+                    showWelcomeFlow = false
+                    showInviteRecovery = true
                 }
-            ) {
-                WelcomeCloudSignInView(
-                    entry: welcomeCloudEntry,
-                    startsAtConsent: adoptStartsAtConsent,
-                    cancelConsentGoesBack: cloudSignInFromExistingChooser,
-                    deviceStateNow: {
-                        // Se compone AQUÍ y se evalúa en el momento de la decisión: el mirror puede
-                        // asentar entre que se monta la pantalla y que la persona firma, y esta vista es
-                        // alcanzable desde la puerta de Grupos con el onboarding ya completado.
-                        CloudIdentityRoutingLogic.deviceState(
-                            hasCompletedOnboarding: hasCompletedOnboarding,
-                            storageMode: StorageModePersistence.read(),
-                            hasPrivateSession: PrivateSessionMark.hasPrivateSession())
-                    },
-                    hasLocalDataNow: hasLocalDataNow,
-                    onAdoptStarted: {
-                        // TEMPRANO (antes de conducir la máquina): cierra el hazard
-                        // kill-mid-adopt → el seed del onboarding jamás corre sobre una
-                        // cuenta existente; un kill aterriza en MainTab con la card de
-                        // Almacenamiento reflejando el estado real del adopt.
-                        // Eje 1: adoptar una cuenta existente trae su vida personal a este dispositivo.
-                        SessionState.shared.hasPrivateSession = true
-                        completeOnboardingAsRestoreSkip()
-                        hasCompletedOnboarding = true
-                        // Adoptar es elegir: el neutro que armó un enlace de invitación no puede sobrevivir a la nube.
-                        StorageModePersistence.retireNeutralMountOnChoice()
-                    },
-                    onFinishedToApp: {
-                        showWelcomeCloudSignIn = false
-                    },
-                    onBornCloudCompleted: {
-                        // R2: el alta terminó sin relanzamiento (mount neutro). Se cierra el cover y se
-                        // presenta el onboarding NORMAL — que es exactamente lo que el usuario habría visto
-                        // tras reabrir la app. `hasShownWelcomeChooser` ya quedó `true` al elegir la card
-                        // nube, así que no hay chooser al que volver.
-                        //
-                        // **Sigue siendo SOLO del alta, y conviene saber por qué** (2026-09-07): la
-                        // re-entrada terminó teniendo su propia fase (`.reentryReady`) y sale por
-                        // `onFinishedToApp`. Mandarla aquí habría deshecho el `onAdoptStarted` de cuatro
-                        // líneas más arriba —que marca `hasCompletedOnboarding` para que el seed no corra
-                        // sobre una cuenta existente— y con el motor ya arrancado en sesión, la cuenta
-                        // duplicada y las categorías sembradas habrían SUBIDO al backend.
-                        //
-                        // `hasCompletedOnboarding` NO se marca aquí: el onboarding es real y lo marca él.
-                        // Por eso `showOnboarding` se enciende EXPLÍCITAMENTE en vez de dejar que el
-                        // `onDismiss` decida — su rama de respaldo devuelve al chooser.
-                        showWelcomeCloudSignIn = false
-                        showOnboarding = true
-                    },
-                    onEnterGroupsOnly: { offersFullActivation, sessionOpenedHere in
-                        // Paso 8 · la oferta viaja hasta que la sesión solo-grupos quede montada.
-                        offersFullActivationAfterGroupsEntry = offersFullActivation
-                        // **Bloque [I]** · el backend dijo que esta cuenta solo lleva grupos, así que no
-                        // se adopta nada: el recorrido pasa a la mini-app de Grupos con la sesión VIVA.
-                        //
-                        // **Va a la PUERTA de Grupos del Welcome, no a la cadena directamente**, y esa es
-                        // la corrección de dos defectos que las lentes adversariales cazaron:
-                        //
-                        // 1. `startGroupsOrganizerBranch()` se salta `GroupsOrganizerGateLogic`, que es
-                        //    quien comprueba el canal, el espejo del mount y —lo que más pesa— los DATOS
-                        //    AJENOS. Por ahí un device con el corpus de otra persona llegaba al alta, y
-                        //    su final da de alta una sesión solo-grupos encima del corpus del dueño.
-                        // 2. El `onDismiss` de respaldo de este cover se dispara igual —en el Welcome
-                        //    `hasCompletedOnboarding` es `false` por construcción, así que el término que
-                        //    salva a sus hermanos no puede salvar a este— y reabría el chooser encima,
-                        //    dejando la cadena de Grupos retenida por el blocker `welcomeFlow`. Encender
-                        //    aquí el flujo del Welcome en su step lo hace explícito, y el respaldo ya no
-                        //    actúa (su guard mira `showWelcomeFlow`).
-                        //
-                        // Lo que NO se hace aquí, y no por olvido: escribir el trío de solo-grupos. Lo
-                        // escribe el formulario del primer grupo (L12-12) al final de su cadena, que es quien tiene
-                        // permiso.
-                        // **El desarme del boot-wipe de grupos, que este camino se saltaba.** Lo medido:
-                        // «Salir de Yala en este dispositivo» arma `groupsOnlyWipeArmed` y reabre el
-                        // Welcome SIN relanzar, así que la persona puede volver a entrar por aquí y
-                        // recuperar sus grupos… hasta el siguiente arranque en frío, que los borra. El
-                        // único desarme de re-entrada vivía en el closure del sheet de `GroupsSignInView`,
-                        // y por este camino ese sheet no se presenta (con la sesión viva, `GroupsGateLogic`
-                        // no pide sign-in). Los otros efectos de ese closure sí se auto-curan: el latch de
-                        // historial y el arranque del canal los repone el `onAppear` del tab, y el consent
-                        // baja en el boot siguiente.
-                        StorageModePersistence.clearGroupsOnlyWipeArm()
-                        GroupsSignOutBannerMarker.clear()
-                        // Los grupos que el canal baje desde aquí son de quien acaba de entrar: si deja el alta a
-                        // medias y vuelve a «Es mi primera vez → privado», la puerta no los trata como de otra persona
-                        // (ticket `groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`). Solo con la
-                        // sesión abierta en este intento: una del llavero puede ser de la persona anterior.
-                        if sessionOpenedHere {
-                            LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
-                        }
-                        welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
-                        showWelcomeFlow = true
-                        showWelcomeCloudSignIn = false
-                    },
-                    onCreateAnotherAccount: {
-                        // **Paso 6 · el faro solo encamina.** Desde la entrada a la que llevó el faro, la
-                        // persona pide crear otra cuenta: vuelve a «Elige dónde quieres guardar tus datos»
-                        // ENTERO —las cards que diga `visibleNewOptions`, privado incluido— y NO al chooser
-                        // de nivel 1, donde «Soy nuevo» la volvería a encaminar. Decisión de Jürgen del
-                        // 2026-09-09: ni se preselecciona ni se recorta nada.
-                        //
-                        // Mismo trío que `onBack`, en el mismo orden: el `onDismiss` de este cover mira
-                        // `showWelcomeFlow` y, ya encendido, no pisa el step con `.chooser`.
-                        //
-                        // **Y la persona vuelve a estar ELIGIENDO**, así que `hasShownWelcomeChooser` vuelve a
-                        // `false`: es el estado de quien llega a esa pantalla por el recorrido normal. Con el
-                        // `true` que dejó el faro al encaminar, un cierre de la app aquí abriría el onboarding
-                        // privado directo —sin elegir y sin la comprobación de iCloud del paso 4— y el arranque
-                        // siguiente ya no montaría neutro. Mismo gesto que `onCancelFromStep1`.
-                        hasShownWelcomeChooser = false
-                        showWelcomeCloudSignIn = false
-                        welcomeFlowInitialStep = .newChooser
-                        showWelcomeFlow = true
-                    },
-                    onBack: {
-                        showWelcomeCloudSignIn = false
-                        // UX 2.2 · L6-3: la re-entrada vuelve a «¡Hola de nuevo!», que es de donde salió (también al
-                        // cancelar el consentimiento, que ahora es su primera pantalla). El alta y el faro, al chooser.
-                        if cloudSignInFromExistingChooser {
-                            welcomeFlowInitialStep = WelcomeBackStepLogic.existingBranchOrigin(
-                                options: WelcomeFlowContainer.liveVisibleExistingOptions)
-                        } else {
-                            welcomeFlowInitialStep = .chooser
-                        }
-                        showWelcomeFlow = true
-                    }
-                )
+            },
+            onSelectExistingOption: { option in
+                // H4: sub-elección de "Ya tengo una cuenta" (o su bypass — hoy en
+                // prod DARK siempre .restoreICloud = flujo restore actual intacto).
+                hasShownWelcomeChooser = true
+                switch option {
+                case .restoreICloud:
+                    showWelcomeFlow = false
+                    showWelcomeRestore = true
+                case .cloudSignIn:
+                    welcomeCloudEntry = .reentry(.apple)  // EXPLÍCITO (jamás heredar el previo)
+                    cloudSignInFromExistingChooser = true
+                    // UX 2.2 · L6-3: «Entrar con Apple» abre directamente el consentimiento, y de ahí Apple.
+                    // La pantalla intermedia repetía el mismo botón («Iniciar sesión con Apple»).
+                    adoptStartsAtConsent = true
+                    showWelcomeFlow = false
+                    showWelcomeCloudSignIn = true
+                case .googleSignIn:
+                    welcomeCloudEntry = .reentry(.google)
+                    cloudSignInFromExistingChooser = true
+                    adoptStartsAtConsent = true
+                    showWelcomeFlow = false
+                    showWelcomeCloudSignIn = true
+                }
+            },
+            onSelectPrivateAccount: {
+                // A4: "Soy nuevo" → privacidad total (o su bypass, que es el recorrido de
+                // producción de hoy). Byte-idéntico al `case .new` de siempre.
+                hasShownWelcomeChooser = true
+                startFreshPrivateOnboarding()
+            },
+            onSelectCloudAccount: {
+                // A5: "Soy nuevo" → cuenta en la nube. El alta va por el MISMO cover que la
+                // re-entrada (`Entry.bornCloud`): un cover propio sería un segundo anchor
+                // presentando ante el mismo estado, y ese es el bug del sign-out de
+                // 2026-07-14 (regla (4) de Presentaciones).
+                //
+                // **NO se llama a `startFreshPrivateOnboarding()`**, y no es un olvido: aquí
+                // no se limpia nada ni se pregunta por el wipe. La limpieza de residuales y
+                // el alert de datos existentes pertenecen al camino iCloud; el alta nube
+                // decide el destino de los datos DESPUÉS del relanzamiento, con el
+                // onboarding normal, y el corpus local lo gobierna el guard cross-cuenta si
+                // el claim acaba encaminando al returning-user.
+                hasShownWelcomeChooser = true
+                welcomeCloudEntry = .bornCloud
+                cloudSignInFromExistingChooser = false
+                showWelcomeFlow = false
+                showWelcomeCloudSignIn = true
+            },
+            onSelectGroupsOrganizer: {
+                // G3 · la puerta ya dijo que sí (canal encendido y sin datos de otro humano): el
+                // step `.groupsGate` es el único que puede llegar hasta aquí.
+                //
+                // **`hasShownWelcomeChooser` NO se marca, y es deliberado**: a diferencia de las
+                // otras cinco salidas, esta rama todavía no ha escrito NADA —el trío va cuatro
+                // pasos más allá— así que un abandono a mitad tiene que poder volver al Welcome y
+                // reintentar. Marcarlo mandaría al usuario al onboarding completo, que no es el
+                // camino que eligió. Es el mismo criterio con el que G2 dejó de marcarlo al tapear
+                // la card de nivel 1.
+                showWelcomeFlow = false
+                startGroupsOrganizerBranch()
+            },
+            onBeaconRoutesToCloudSignIn: { provider in
+                // ADR §10: el faro dice que este Apple ID YA tiene cuenta nube ⇒ lo probable es un
+                // 2º device o un reinstall, y se ENCAMINA a entrar con ella. Mismo cover que la card
+                // "Ya tengo cuenta", pero con su propio `Entry`: el intro dice de dónde viene y
+                // ofrece «Crear otra cuenta» (paso 6). El método viene del faro y se setea EXPLÍCITO
+                // (jamás heredar el del intento anterior). Aquí NO se limpian prefs residuales: no
+                // es un fresh start.
+                hasShownWelcomeChooser = true
+                welcomeCloudEntry = .beaconRouted(accountProvider: provider)
+                cloudSignInFromExistingChooser = false
+                showWelcomeFlow = false
+                showWelcomeCloudSignIn = true
+            },
+            onNeedsMirrorRelaunch: { destination in
+                // R2: el destino necesita el mirror y este proceso montó neutro. Se cierra la
+                // elección (el chooser no vuelve a salir) y se GUARDA a dónde iba, porque el
+                // relanzamiento mata el proceso: sin esto, quien pidió restaurar reabriría la app
+                // y aterrizaría en el onboarding normal con su elección perdida.
+                //
+                // La limpieza de residuales del camino privado corre AQUÍ y no tras el
+                // relanzamiento: es la misma que hace `startFreshPrivateOnboarding` y tiene que
+                // ocurrir antes de que el onboarding lea nada.
+                //
+                // **Lo que aquí NO se hace es preguntar por los datos, y hasta el 2026-09-13 este
+                // comentario decía que no hacía falta.** Decía: «el mount neutro exige que no haya
+                // archivo de store, así que en este camino no puede haber datos que confirmar».
+                // Eso valía con los dos términos viejos del neutro; el tercero
+                // (`groupsOnlySessionArmed`) rompió la equivalencia — una sesión solo-grupos tiene
+                // archivo de store CON datos dentro (categorías sembradas, grupos, bridgeadas) y
+                // monta neutro igual. El aviso se perdía entero: `proceed()` no corre en este
+                // camino, así que no corría `startFreshPrivateOnboarding` ni con él el alert.
+                //
+                // El aviso vive ahora DELANTE, en la puerta privada
+                // (`WelcomePrivateICloudGateView`, término `deviceCorpus`), que es un step del
+                // mismo cover y puede pedir confirmación sin desmontar nada. Para cuando este
+                // callback corre, la pregunta ya se hizo.
+                hasShownWelcomeChooser = true
+                // **El anti-bucle del neutro solo-grupos** (paso 5 del rediseño), y va JUNTO a la
+                // línea de arriba porque hace exactamente su mismo trabajo sobre el otro
+                // predicado de mount. Este callback es el punto ÚNICO donde se decide que un
+                // destino necesita el espejo (`WelcomeMirrorRelaunchLogic.shouldRelaunch`), y un
+                // device solo-grupos que pide restaurar giraría para siempre sin esto: marca
+                // puesta ⇒ mount neutro ⇒ «reabre Yala» ⇒ mount neutro otra vez. Es el bucle que
+                // la caducidad por `hasShownWelcomeChooser` cierra para la marca hermana y que
+                // ésta, al no caducar, tiene que cerrar aquí.
+                StorageModePersistence.clearGroupsOnlyNeutralMount()
+                // **Salvo que los grupos de este teléfono sean de quien está delante** (ticket
+                // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): tras el aviso tardío que
+                // los conservó, «Soy nuevo → privado» es la misma persona, y retirarle la sesión de Grupos en el
+                // arranque siguiente es el borrado que ese aviso acababa de evitar. Mismo criterio que
+                // `startFreshPrivateOnboarding`.
+                if destination == .privateOnboarding,
+                   WelcomeKeptGroupsLogic.freshStartRetiresThePreviousPerson(
+                       groupsKeptForThisPerson: groupsKeptForThisPersonNow()) {
+                    OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                    // **Y la sesión en la nube de la persona anterior, armada.** Este callback es
+                    // la QUINTA declaración de «empiezo de cero» del shell, y la única que no pasa
+                    // ni por `wipeLocalGroupsDomain` ni por `startFreshPrivateOnboarding`: con el
+                    // mount neutro, «Soy nuevo → privacidad total» sale por aquí en vez de por
+                    // `onSelectPrivateAccount` (`WelcomeMirrorRelaunchLogic`, `.privateOnboarding`
+                    // exige espejo). Sin esto aterrizaba en el onboarding con el llavero del
+                    // anterior intacto — el bug del ticket por la puerta que nadie miró. Lo cazó
+                    // la review adversarial.
+                    //
+                    // **Solo se ARMA, sin disparar**: este camino relanza el proceso, así que lo
+                    // consume el `purgeIfArmed` PRE-MOUNT del arranque siguiente, que además es el
+                    // consumidor race-free. Y la línea va junto a su vecina porque las dos
+                    // declaran lo mismo.
+                    CloudSessionRetirement.arm(defaults: .standard)
+                }
+                WelcomePendingDestinationStore.set(destination)
+            },
+            onGroupsGateNeutralReturnArmed: { purpose in
+                // **Mitad 2 del paso 5 · el borrado está ARMADO y solo falta reabrir la app.**
+                //
+                // El destino se persiste AQUÍ y no antes de empezar, y el orden es lo que evita un
+                // daño concreto: `RelaunchNetLogic.shouldExitOnBackground` lee «hay destino
+                // pendiente» como «este proceso tiene que morir al pasar a segundo plano»
+                // (`YalaApp.swift`, `welcomeMirrorRelaunchArmed`). Escribirlo antes del arm haría
+                // que la app se cerrara sola aunque la vuelta al neutro se hubiera bloqueado o
+                // abortado. La ventana que queda —un kill entre el arm y esta línea— cuesta una
+                // pantalla, no datos: el borrado corre igual y la persona aterriza en el Welcome.
+                //
+                // Y se persiste a donde iba. Sobrevive al borrado:
+                // `welcome.pendingMirrorRelaunchDestination` no está en el barrido de
+                // `DataWipeService.removeUserPreferenceKeys` (medido) y nadie la limpia en
+                // producción.
+                //
+                // **Y qué destino se persiste lo decide el PROPÓSITO que VIENE CON el aviso**, no
+                // un estado de esta vista: los dos caminos llegan a este mismo callback desde la
+                // misma pantalla, y escribir siempre `.groupsOrganizer` mandaría al invitado al
+                // alta de un grupo que no quiso crear.
+                //
+                // El sobre `{groupID, token}` ya lo escribió la PANTALLA al recibir el gesto —aquí
+                // solo se comprueba—: entre el arm del borrado y este callback hay una entrega de
+                // SwiftUI, y en el camino del swap in-process la jerarquía se desmonta en la misma
+                // vuelta del arm, así que escribirlo aquí lo dejaba fuera de la ventana.
+                //
+                // Sin sobre no hay join que retomar, así que tampoco se persiste un destino que llevaría a una
+                // puerta sin nada detrás: el arranque siguiente cae en el recorrido normal, que es lo honesto
+                // cuando la invitación ya no está. La regla vive en `Purpose.destinationAfterNeutralReturn`, que
+                // el coordinador usa también para escribirlo pegado al arm (card ypit): con el cambio en caliente
+                // esta entrega puede no llegar, y aquí queda de respaldo.
+                if let destination = purpose.destinationAfterNeutralReturn {
+                    WelcomePendingDestinationStore.set(destination)
+                } else {
+                    #if DEBUG
+                    print("ContentView: invite neutral return armed without a live envelope — nothing to resume")
+                    #endif
+                }
+                // El cover del Welcome y el terminal del cierre de sesión cuelgan del MISMO body,
+                // así que UIKit presenta uno solo. Cerrar éste es lo que deja presentarse al otro,
+                // que es el que tiene verify loop, blocker de readiness y salida en background.
+                showWelcomeFlow = false
+            },
+            onGroupsGateInviteProceed: { zone in
+                // La puerta del invitado abrió: este dispositivo ya no cruza datos de nadie. Se
+                // cierra el Welcome y se RETOMA el join donde estaba — `continueFlow` re-lee el
+                // intent persistido y re-evalúa el paso con condiciones vivas, así que no hace
+                // falta recordar en cuál se quedó.
+                //
+                // **El cover NO se cierra si no hay nada que continuar**, y esa comprobación es la
+                // misma que `continueFlow` hace por dentro antes de volverse sin hacer nada. El
+                // intent puede haber muerto entre el submit y este tap (el pull baja el member y el
+                // reconciler lo limpia), y con el onboarding sin completar debajo de este cover no
+                // hay shell ninguna: cerrarlo dejaba a la persona ante un fondo vacío, sin un solo
+                // control, hasta matar la app.
+                guard PendingJoinStore.entry(zoneName: zone) != nil else {
+                    welcomeFlowInitialStep = .groupsChooser
+                    return
+                }
+                showWelcomeFlow = false
+                Task { @MainActor in
+                    await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
+                }
+            },
+            hasLocalDataNow: hasLocalDataNow,
+            welcomeDeviceDataNow: welcomeDeviceDataNow,
+            welcomeDeviceDataReading: welcomeDeviceDataReading,
+            // Paso 4: el borrado vive aquí porque necesita el `modelContext`. La puerta solo
+            // decide y enseña.
+            //
+            // **Sin scope a propósito: esto es un REENVÍO, no una llamada al borrador.** El
+            // `performICloudCorpusWipe` que se lee aquí es el closure que `WelcomeFlowModifier`
+            // recibió, y quien eligió `.handover` fue el envoltorio que se lo pasó. Ponerle un
+            // scope aquí sería darle a este reenvío el derecho a contradecir al de arriba.
+            performICloudCorpusWipe: { await performICloudCorpusWipe() },
+            performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
+            onRestoreOrigin: { welcomeRestoreOrigin = $0 }
+        )
+        .environment(SessionState.shared)
+    }
+
+    /// H4: re-entrada a una cuenta del Modo Nube (SIWA → exists → adopt), el alta born-cloud y la entrada a la que
+    /// encamina el faro.
+    private var welcomeCloudSignIn: some View {
+        WelcomeCloudSignInView(
+            entry: welcomeCloudEntry,
+            startsAtConsent: adoptStartsAtConsent,
+            cancelConsentGoesBack: cloudSignInFromExistingChooser,
+            deviceStateNow: {
+                // Se compone AQUÍ y se evalúa en el momento de la decisión: el mirror puede
+                // asentar entre que se monta la pantalla y que la persona firma, y esta vista es
+                // alcanzable desde la puerta de Grupos con el onboarding ya completado.
+                CloudIdentityRoutingLogic.deviceState(
+                    hasCompletedOnboarding: hasCompletedOnboarding,
+                    storageMode: StorageModePersistence.read(),
+                    hasPrivateSession: PrivateSessionMark.hasPrivateSession())
+            },
+            // Re-envuelto y no reenviado: fuera del closure del cover, pasar la property directa avisa (`may introduce
+            // data races`). Mismo remedio que `performICloudCorpusWipe` en el contenedor.
+            hasLocalDataNow: { hasLocalDataNow() },
+            onAdoptStarted: {
+                // TEMPRANO (antes de conducir la máquina): cierra el hazard
+                // kill-mid-adopt → el seed del onboarding jamás corre sobre una
+                // cuenta existente; un kill aterriza en MainTab con la card de
+                // Almacenamiento reflejando el estado real del adopt.
+                // Eje 1: adoptar una cuenta existente trae su vida personal a este dispositivo.
+                SessionState.shared.hasPrivateSession = true
+                completeOnboardingAsRestoreSkip()
+                hasCompletedOnboarding = true
+                // Adoptar es elegir: el neutro que armó un enlace de invitación no puede sobrevivir a la nube.
+                StorageModePersistence.retireNeutralMountOnChoice()
+            },
+            onFinishedToApp: {
+                showWelcomeCloudSignIn = false
+            },
+            onBornCloudCompleted: {
+                // R2: el alta terminó sin relanzamiento (mount neutro). Se cierra el cover y se
+                // presenta el onboarding NORMAL — que es exactamente lo que el usuario habría visto
+                // tras reabrir la app. `hasShownWelcomeChooser` ya quedó `true` al elegir la card
+                // nube, así que no hay chooser al que volver.
+                //
+                // **Sigue siendo SOLO del alta, y conviene saber por qué** (2026-09-07): la
+                // re-entrada terminó teniendo su propia fase (`.reentryReady`) y sale por
+                // `onFinishedToApp`. Mandarla aquí habría deshecho el `onAdoptStarted` de cuatro
+                // líneas más arriba —que marca `hasCompletedOnboarding` para que el seed no corra
+                // sobre una cuenta existente— y con el motor ya arrancado en sesión, la cuenta
+                // duplicada y las categorías sembradas habrían SUBIDO al backend.
+                //
+                // `hasCompletedOnboarding` NO se marca aquí: el onboarding es real y lo marca él.
+                // Por eso `showOnboarding` se enciende EXPLÍCITAMENTE en vez de dejar que el
+                // `onDismiss` decida — su rama de respaldo devuelve al chooser.
+                showWelcomeCloudSignIn = false
+                showOnboarding = true
+            },
+            onEnterGroupsOnly: { offersFullActivation, sessionOpenedHere in
+                // Paso 8 · la oferta viaja hasta que la sesión solo-grupos quede montada.
+                offersFullActivationAfterGroupsEntry = offersFullActivation
+                // **Bloque [I]** · el backend dijo que esta cuenta solo lleva grupos, así que no
+                // se adopta nada: el recorrido pasa a la mini-app de Grupos con la sesión VIVA.
+                //
+                // **Va a la PUERTA de Grupos del Welcome, no a la cadena directamente**, y esa es
+                // la corrección de dos defectos que las lentes adversariales cazaron:
+                //
+                // 1. `startGroupsOrganizerBranch()` se salta `GroupsOrganizerGateLogic`, que es
+                //    quien comprueba el canal, el espejo del mount y —lo que más pesa— los DATOS
+                //    AJENOS. Por ahí un device con el corpus de otra persona llegaba al alta, y
+                //    su final da de alta una sesión solo-grupos encima del corpus del dueño.
+                // 2. El `onDismiss` de respaldo de este cover se dispara igual —en el Welcome
+                //    `hasCompletedOnboarding` es `false` por construcción, así que el término que
+                //    salva a sus hermanos no puede salvar a este— y reabría el chooser encima,
+                //    dejando la cadena de Grupos retenida por el blocker `welcomeFlow`. Encender
+                //    aquí el flujo del Welcome en su step lo hace explícito, y el respaldo ya no
+                //    actúa (su guard mira `showWelcomeFlow`).
+                //
+                // Lo que NO se hace aquí, y no por olvido: escribir el trío de solo-grupos. Lo
+                // escribe el formulario del primer grupo (L12-12) al final de su cadena, que es quien tiene
+                // permiso.
+                // **El desarme del boot-wipe de grupos, que este camino se saltaba.** Lo medido:
+                // «Salir de Yala en este dispositivo» arma `groupsOnlyWipeArmed` y reabre el
+                // Welcome SIN relanzar, así que la persona puede volver a entrar por aquí y
+                // recuperar sus grupos… hasta el siguiente arranque en frío, que los borra. El
+                // único desarme de re-entrada vivía en el closure del sheet de `GroupsSignInView`,
+                // y por este camino ese sheet no se presenta (con la sesión viva, `GroupsGateLogic`
+                // no pide sign-in). Los otros efectos de ese closure sí se auto-curan: el latch de
+                // historial y el arranque del canal los repone el `onAppear` del tab, y el consent
+                // baja en el boot siguiente.
+                StorageModePersistence.clearGroupsOnlyWipeArm()
+                GroupsSignOutBannerMarker.clear()
+                // Los grupos que el canal baje desde aquí son de quien acaba de entrar: si deja el alta a
+                // medias y vuelve a «Es mi primera vez → privado», la puerta no los trata como de otra persona
+                // (ticket `groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`). Solo con la
+                // sesión abierta en este intento: una del llavero puede ser de la persona anterior.
+                if sessionOpenedHere {
+                    LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
+                }
+                welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
+                showWelcomeFlow = true
+                showWelcomeCloudSignIn = false
+            },
+            onCreateAnotherAccount: {
+                // **Paso 6 · el faro solo encamina.** Desde la entrada a la que llevó el faro, la
+                // persona pide crear otra cuenta: vuelve a «Elige dónde quieres guardar tus datos»
+                // ENTERO —las cards que diga `visibleNewOptions`, privado incluido— y NO al chooser
+                // de nivel 1, donde «Soy nuevo» la volvería a encaminar. Decisión de Jürgen del
+                // 2026-09-09: ni se preselecciona ni se recorta nada.
+                //
+                // Mismo trío que `onBack`, en el mismo orden: el `onDismiss` de este cover mira
+                // `showWelcomeFlow` y, ya encendido, no pisa el step con `.chooser`.
+                //
+                // **Y la persona vuelve a estar ELIGIENDO**, así que `hasShownWelcomeChooser` vuelve a
+                // `false`: es el estado de quien llega a esa pantalla por el recorrido normal. Con el
+                // `true` que dejó el faro al encaminar, un cierre de la app aquí abriría el onboarding
+                // privado directo —sin elegir y sin la comprobación de iCloud del paso 4— y el arranque
+                // siguiente ya no montaría neutro. Mismo gesto que `onCancelFromStep1`.
+                hasShownWelcomeChooser = false
+                showWelcomeCloudSignIn = false
+                welcomeFlowInitialStep = .newChooser
+                showWelcomeFlow = true
+            },
+            onBack: {
+                showWelcomeCloudSignIn = false
+                // UX 2.2 · L6-3: la re-entrada vuelve a «¡Hola de nuevo!», que es de donde salió (también al
+                // cancelar el consentimiento, que ahora es su primera pantalla). El alta y el faro, al chooser.
+                if cloudSignInFromExistingChooser {
+                    welcomeFlowInitialStep = WelcomeBackStepLogic.existingBranchOrigin(
+                        options: WelcomeFlowContainer.liveVisibleExistingOptions)
+                } else {
+                    welcomeFlowInitialStep = .chooser
+                }
+                showWelcomeFlow = true
             }
+        )
     }
 
     /// G3 · arranca la rama organizador. **No presenta nada directamente**: submitea el avance al router
@@ -3901,19 +3977,6 @@ fileprivate func completeOnboardingAsRestoreSkip() {
     // pendiente»— escrito por el otro camino, el de la restauración. Fuera de sesión secundaria la
     // puerta devuelve `.standard` y esto es byte-idéntico a lo de antes.
     UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
-}
-
-/// Binding gate: el flag solo se refleja `true` si `inhibitor == false`.
-/// Setear el binding a `false` siempre llega al storage. Centraliza el patrón
-/// "auto-cerrar Hero/alert/chooser cuando llega un CKShare" en el flow de
-/// onboarding A4 v3.1.
-fileprivate extension Binding where Value == Bool {
-    func gated(by inhibitor: Bool) -> Binding<Bool> {
-        Binding(
-            get: { wrappedValue && !inhibitor },
-            set: { wrappedValue = $0 }
-        )
-    }
 }
 
 // MARK: - Group Invite Modifier (GC-08)

@@ -190,13 +190,13 @@ struct FreshStartAfterAdoptExitWiringTests {
         #expect(!view.contains("hasCompletedOnboarding = false"), "una salida del adopt que bajara el flag sería la opción B")
 
         let content = Self.code(try Self.source(Self.contentView))
-        let onBack = try Self.slice(from: "onBack: {\n                        showWelcomeCloudSignIn = false",
-                                    to: "\n                    }", in: content)
+        let onBack = try Self.slice(from: "onBack: {\n                showWelcomeCloudSignIn = false",
+                                    to: "\n            }", in: content)
         #expect(onBack.contains("welcomeFlowInitialStep = .chooser"))
         #expect(onBack.contains("showWelcomeFlow = true"))
         #expect(!onBack.contains("hasCompletedOnboarding"))
         // El `true` temprano del adopt se queda: es su kill-safety, y este ticket no la toca.
-        let started = try Self.slice(from: "onAdoptStarted: {", to: "\n                    },", in: content)
+        let started = try Self.slice(from: "onAdoptStarted: {", to: "\n            },", in: content)
         #expect(started.contains("hasCompletedOnboarding = true"))
     }
 
