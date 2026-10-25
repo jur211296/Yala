@@ -43,6 +43,9 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
+    /// Card 9o4n: el gasto ya estaba en las cuentas (otro borrador lo aprobó). El «OK» del aviso cierra la hoja, y el
+    /// borrador se retira al desaparecer: con la hoja montada, borrarlo la tumbaría.
+    @State private var retiresDraftOnClose: Bool = false
     /// UX 2.2 · L13-15: movimientos que ya apuntaste y pueden ser este gasto.
     @State private var linkCandidates: [TransactionItem] = []
 
@@ -104,11 +107,12 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                 )
             }
             .alert(L10n.Common.error, isPresented: $showSaveError) {
-                Button(L10n.Common.ok) {}
+                Button(L10n.Common.ok) { closeIfAlreadyRegistered() }
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
             .onAppear { loadMetadata() }
+            .onDisappear { retireDraftIfAlreadyRegistered() }
         }
     }
 
@@ -201,8 +205,27 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
             #if DEBUG
             print("GroupExpenseAccountAndSubcategoryFinalizationSheet: approve failed: \(error)")
             #endif
+            if case DraftServiceError.groupExpenseAlreadyRegistered = error { retiresDraftOnClose = true }
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
+        }
+    }
+
+    private func closeIfAlreadyRegistered() {
+        guard retiresDraftOnClose else { return }
+        dismiss()
+    }
+
+    /// Al desaparecer la hoja, y solo tras `groupExpenseAlreadyRegistered`: el servicio vuelve a medir antes de borrar.
+    private func retireDraftIfAlreadyRegistered() {
+        guard retiresDraftOnClose else { return }
+        retiresDraftOnClose = false
+        do {
+            try DraftService.shared.retireGroupExpenseDraftIfAlreadyRegistered(draft)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseAccountAndSubcategoryFinalizationSheet: retire failed: \(error)")
+            #endif
         }
     }
 }

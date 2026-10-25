@@ -4341,6 +4341,7 @@
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "From the group “%@”.";
 "inbox.groupSettlementDraft.alreadyRegistered" = "This payment is already recorded in your accounts. You can dismiss this draft.";
+"inbox.groupExpenseDraft.alreadyRegistered" = "This expense is already recorded in your accounts, so we removed this draft.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "Choose the account and category";
@@ -5318,6 +5319,8 @@
 
 /* Card body: paste the invitation link to join */
 "welcome.groups.joinBody" = "Open the link you were sent, or paste it here.";
+"welcome.groups.signInQuestion" = "Already have an account?";
+"welcome.groups.signInAction" = "Sign in here";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "Making sure everything's ready…";
@@ -5755,7 +5758,7 @@
 "storage.groups.title" = "Groups";
 
 /* Cuerpo cuando no hay cuenta de grupos asociada */
-"storage.groups.noAccountBody" = "Your groups live in a Yala account, separate from the data on this iPhone.";
+"storage.groups.noAccountBody" = "Your groups live in a Yala account, separate from the data on this device.";
 
 /* Botón para asociar una cuenta de grupos */
 "storage.groups.associateButton" = "Link an account for groups";
@@ -5764,7 +5767,7 @@
 "storage.groups.associatedUnnamedBody" = "Your groups use a Yala account.";
 
 /* Cuerpo en un segundo dispositivo, sin nombre de cuenta */
-"storage.groups.needsSignInUnnamedBody" = "Your groups are in your Yala account. Sign in to see them on this iPhone.";
+"storage.groups.needsSignInUnnamedBody" = "Your groups are in your Yala account. Sign in to see them on this device.";
 
 /* Botón para entrar con la cuenta de grupos ya asociada */
 "storage.groups.signInButton" = "Sign in with that account";
@@ -5794,10 +5797,10 @@
 "storage.groups.associatedBody" = "Your groups use %@.";
 
 /* Cuerpo en un segundo dispositivo, con el nombre de la cuenta */
-"storage.groups.needsSignInBody" = "Your groups are in %@. Sign in to see them on this iPhone.";
+"storage.groups.needsSignInBody" = "Your groups are in %@. Sign in to see them on this device.";
 
 /* Mensaje de la confirmación de desasociar */
-"storage.groups.detachBody" = "Your groups leave this iPhone and stay in your account: if you link it again, they'll be there. The entries for what you're owed or owe disappear either way; what you're choosing is what happens to the expenses you paid for.";
+"storage.groups.detachBody" = "Your groups leave this device and stay in your account: if you link it again, they'll be there. The entries for what you're owed or owe disappear either way; what you're choosing is what happens to the expenses you paid for.";
 
 /* Título del aviso cuando el desasociar se bloquea */
 "storage.groups.detachBlockedTitle" = "We couldn't unlink the account";
@@ -5830,17 +5833,17 @@
 "storage.groups.detachPurgeFailedTitle" = "We couldn't unlink the account";
 
 /* Aviso: cuerpo del fallo del borrado al desasociar */
-"storage.groups.detachPurgeFailedBody" = "Your groups are still on this iPhone and the account wasn't unlinked. What you chose for your Panel entries has already been applied, and we signed you out of that account. Try again to finish.";
+"storage.groups.detachPurgeFailedBody" = "Your groups are still on this device and the account wasn't unlinked. What you chose for your Panel entries has already been applied, and we signed you out of that account. Try again to finish.";
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
-"storage.groups.detachBlockedBridge" = "We couldn't check your groups' entries on this iPhone. Nothing was unlinked. Try again.";
-"storage.groups.detachBlockedSessionNotClosed" = "We couldn't sign your groups account out on this iPhone. Nothing was unlinked. Try again.";
+"storage.groups.detachBlockedBridge" = "We couldn't check your groups' entries on this device. Nothing was unlinked. Try again.";
+"storage.groups.detachBlockedSessionNotClosed" = "We couldn't sign your groups account out on this device. Nothing was unlinked. Try again.";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "Finish unlinking the account";
 
 /* Cuerpo de la sección cuando quedó un desasociar a medias */
-"storage.groups.detachPendingBody" = "It stopped halfway: your groups are still on this iPhone and you're already signed out of that account.";
+"storage.groups.detachPendingBody" = "It stopped halfway: your groups are still on this device and you're already signed out of that account.";
 
 /* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
 "storage.groups.detachBusy" = "You're signing out right now. Finish that first and then try again.";
@@ -8274,7 +8277,7 @@
 /* Salir de varios: botón por grupo */
 "groups.l19.batch.openSettings" = "Open its settings";
 /* Desasociar la cuenta de grupos: qué pasa */
-"groups.l19.detach.body" = "Your groups leave this iPhone; they stay in your account and come back if you connect it again.";
+"groups.l19.detach.body" = "Your groups leave this device; they stay in your account and come back if you connect it again.";
 /* Desasociar: salida que conserva */
 "groups.l19.detach.keep" = "Keep what I paid in my accounts";
 /* Desasociar: salida que quita */

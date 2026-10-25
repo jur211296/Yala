@@ -1,10 +1,10 @@
 ---
 id: groups-canal-sin-capability-set
-status: backlog
+status: done
 priority: medium
 area: "groups, cloudsync, gateway"
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-10-24
 source: hallazgo de la review adversarial de groups-budget (2026-09-07)
 ---
 
@@ -61,3 +61,7 @@ convertido «staging no tiene la columna» en un rojo local en vez de en un dead
 - No hay test que cruce `group_capability_manifest.json` con el DDL: `gateway/test/manifest.sync.test.ts` solo compara la copia con la SSOT.
 
 Triage 2026-10-08: abierto · medium → medium · Nada cambió desde g14_01: el cliente de Grupos no manda X-Yala-Capability-Set, el gateway no poda y no hay test de paridad manifest de Grupos vs DDL.
+
+## Cerrado (2026-10-24, lote 12.1 Grupos)
+
+Portado el mecanismo del canal personal: `group_capability_manifest.json` v2 con `since: 2` en `split_groups.budget_limit_amount`; el gateway lee `X-Yala-Capability-Set` en pull y Merkle (ausente = v2 fija), poda por versión y anuncia `manifest_version`; el cliente declara la menor entre la suya y la anunciada (`GroupsSyncCapability`) y hashea solo las columnas de su nivel. Test de paridad manifest de Grupos ↔ `supabase-groups-staging.ddl` (`GroupsCapabilityManifestParityTests`). Gateway: `groups.capability.test.ts` (11 casos, mutantes de la poda en rojo); suite 550 verde. **Falta desplegar el Worker** (staging y producción): el orden es libre, un Worker viejo ignora la cabecera. Lo que queda para la primera columna con `since: 3`: `groups-next-column-needs-the-capability-level-in-the-drain`.

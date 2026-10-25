@@ -47,6 +47,12 @@ struct WelcomeGroupsChooserView: View {
     var onCreate: () -> Void
     var onJoin: () -> Void
     var onBack: () -> Void
+    /// **La salida de quien ya tiene una cuenta de Grupos** (card 2osn, QA guiado de 2.1 del 19-oct). Los dos caminos
+    /// de la tarjeta son empezar —crear o unirse con un enlace—, y quien ya usa Grupos no tenía por dónde entrar. Esta
+    /// pregunta de pie lo lleva a «¡Hola de nuevo!» (Ya tengo una cuenta), por la misma puerta que el elector. Es una
+    /// pregunta de pie y no una tercera fila por lo mismo que la de «Es mi primera vez» (#620): la tarjeta contesta
+    /// «¿cómo empiezas?», y entrar con una cuenta no es una forma de empezar.
+    var onSignIn: () -> Void
 
     /// Alto NATURAL del contenido de cada card, para igualarlas. Mismo mecanismo —y mismo porqué— que
     /// `WelcomeNewChooserView`: el alto depende del idioma (un título que envuelve en alemán y no en
@@ -68,8 +74,43 @@ struct WelcomeGroupsChooserView: View {
                 }
             }
             .welcomeFlowCard(radius: DS.Radius.xl)
+
+            signInFooter
         }
         .welcomeBackButton(tint: .white, action: onBack)
+    }
+
+    /// Molde exacto de la pregunta de pie de «Es mi primera vez» (`WelcomeNewChooserView.groupsFooter`) y de «¡Hola de
+    /// nuevo!»: fuera de la tarjeta, `ViewThatFits` para que con Dynamic Type grande la pregunta y la acción se apilen.
+    private var signInFooter: some View {
+        let question = Text(L10n.Welcome.Groups.signInQuestion)
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.white.opacity(0.7))
+            .multilineTextAlignment(.center)
+        let button = Button {
+            DS.Haptic.selection()
+            onSignIn()
+        } label: {
+            Text(L10n.Welcome.Groups.signInAction)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.white)
+                .underline()
+                .frame(minHeight: DS.Button.actionSize)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("welcome_groups_sign_in")
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Spacing.xs) {
+                question
+                button
+            }
+            VStack(spacing: DS.Spacing.xs) {
+                question
+                button
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     /// `nil` hasta que TODAS las cards visibles se han medido: igualar con media medición daría un salto

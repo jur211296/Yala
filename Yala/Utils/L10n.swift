@@ -5989,6 +5989,9 @@ enum L10n {
             static var createBody: String { ls("welcome.groups.createBody", comment: "") }
             static var joinTitle: String { ls("welcome.groups.joinTitle", comment: "") }
             static var joinBody: String { ls("welcome.groups.joinBody", comment: "") }
+            /// Card 2osn · pregunta de pie para quien ya tiene una cuenta de Grupos: lleva a «¡Hola de nuevo!».
+            static var signInQuestion: String { ls("welcome.groups.signInQuestion", comment: "") }
+            static var signInAction: String { ls("welcome.groups.signInAction", comment: "") }
             /// G3 · la PUERTA de la rama organizador, mientras re-mide el canal.
             static var checking: String { ls("welcome.groups.checking", comment: "") }
             /// G3 · el canal sigue apagado tras el refresh forzado. Tono del único sitio donde el kill se
@@ -6670,6 +6673,8 @@ enum L10n {
             static var assignSubcategory: String { ls("inbox.groupExpenseDraft.assignSubcategory", comment: "") }
             /// Banner explicativo (asignar categoría). Formato: %@ = nombre del grupo.
             static var banner: String { ls("inbox.groupExpenseDraft.banner", comment: "") }
+            /// Card 9o4n: el borrador de cuenta de un gasto de grupo que ya está en tus cuentas (otro borrador lo aprobó).
+            static var alreadyRegistered: String { ls("inbox.groupExpenseDraft.alreadyRegistered", comment: "") }
         }
 
         enum GroupSettlementDraft {

@@ -174,11 +174,17 @@ nonisolated enum GroupsSignInChannelStartLogic {
 /// invitación que la propia persona acaba de aceptar en la pantalla que le contó lo que iba a pasar. Sin
 /// él, el invitado reabre la app **sin su invitación**: el camino muerto, movido un paso más adelante.
 ///
-/// **Qué guarda, y qué NO.** El par `{groupID, token}` y nada más. Sin PII: ni el nombre tecleado, ni la
-/// marca del grupo (`branded`, que sí es dato del usuario), ni el `legacyMemberKey` —que además es una
-/// credencial de re-bind y no debe cruzar un wipe—. Lo que se repone es la INTENCIÓN de unirse, no el
-/// estado de la sesión anterior; el resto lo vuelve a traer el flujo (la hoja del invitado captura el
-/// nombre otra vez) o simplemente no hace falta.
+/// **Qué guarda, y qué NO.** El par `{groupID, token}`, y desde la card we8a (2026-10-24) también la respuesta a la
+/// tarjeta del grupo: cuándo dijo «Unirme» y el nombre que tecleó ahí. Nada más: ni la marca del grupo (`branded`, que
+/// sí es dato del usuario) ni el `legacyMemberKey` —que además es una credencial de re-bind y no debe cruzar un wipe—.
+///
+/// **La respuesta a la tarjeta solo se repone dentro de su ventana** (`GroupInviteGroupFirstLogic.autoJoinWindow`,
+/// 30 min desde «Unirme»). Desde L12-17 la tarjeta sale ANTES que esta puerta, así que sin ella la persona volvía a
+/// verla vacía tras el relanzamiento y tenía que reescribir su nombre (review del lote decidido 2.2 · 14, L12-17). Y la
+/// ventana es lo que mantiene el porqué de no llevar PII: un sobre huérfano que repone OTRO cierre de sesión días después
+/// trae la invitación sin el nombre ni el «sí» de nadie, como antes. Pasada la ventana la marca tampoco uniría sola
+/// (`joinsOnAppear`), así que no hay nada que reponer. Solo viaja si la persona dijo «Unirme»: el sobre de quien no llegó
+/// a la tarjeta no lleva nombre.
 ///
 /// **One-shot, y sin TTL propio.** Se consume en el arranque que lo lee; el TTL de verdad sigue siendo el
 /// de `PendingJoinStore` (7 días), que arranca de cero al reponerse — lo correcto, porque la persona
@@ -205,11 +211,18 @@ enum GroupInviteResumeStore {
         let token: String
         /// Cuándo se escribió. No es PII y es lo único que permite que el sobre caduque solo.
         let createdAt: Date
+        /// Card we8a · cuándo dijo «Unirme» en la tarjeta del grupo (`PendingJoinEntry.groupCardAcceptedAt`). `nil` si
+        /// no llegó a decirlo.
+        let groupCardAcceptedAt: Date?
+        /// Card we8a · el nombre que tecleó en la tarjeta. Solo viaja con `groupCardAcceptedAt`.
+        let displayName: String?
 
         enum CodingKeys: String, CodingKey {
             case groupID = "g"
             case token = "t"
             case createdAt = "c"
+            case groupCardAcceptedAt = "a"
+            case displayName = "n"
         }
 
         /// Back-compat: un sobre escrito por la versión anterior no traía fecha. Se trata como RECIÉN
@@ -220,23 +233,38 @@ enum GroupInviteResumeStore {
             groupID = try c.decode(String.self, forKey: .groupID)
             token = try c.decode(String.self, forKey: .token)
             createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? .now
+            groupCardAcceptedAt = try c.decodeIfPresent(Date.self, forKey: .groupCardAcceptedAt)
+            displayName = try c.decodeIfPresent(String.self, forKey: .displayName)
         }
 
-        init(groupID: String, token: String, createdAt: Date = .now) {
+        init(groupID: String, token: String, createdAt: Date = .now,
+             groupCardAcceptedAt: Date? = nil, displayName: String? = nil) {
             self.groupID = groupID
             self.token = token
             self.createdAt = createdAt
+            // El nombre solo acompaña al «sí»: sin él no viaja.
+            self.groupCardAcceptedAt = groupCardAcceptedAt
+            self.displayName = groupCardAcceptedAt == nil ? nil : displayName
+        }
+
+        /// ¿Se repone la respuesta a la tarjeta? Solo con «sí» dado dentro de su ventana, medida desde ese «sí».
+        func restoresGroupCardAnswer(now: Date) -> Bool {
+            guard let acceptedAt = groupCardAcceptedAt else { return false }
+            let elapsed = now.timeIntervalSince(acceptedAt)
+            return elapsed >= 0 && elapsed < GroupInviteGroupFirstLogic.autoJoinWindow
         }
     }
 
     /// Guarda la invitación que hay que reponer tras el borrado. **Lo llama la PANTALLA al recibir el
     /// gesto**, no el callback del arm: entre armar el borrado y que `ContentView` se entere hay una
     /// vuelta de SwiftUI, y en el camino del swap in-process la jerarquía se desmonta antes de esa vuelta.
-    static func set(groupID: String, token: String, now: Date = .now) {
+    static func set(groupID: String, token: String, groupCardAcceptedAt: Date? = nil, displayName: String? = nil,
+                    now: Date = .now) {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         do {
-            let data = try encoder.encode(Entry(groupID: groupID, token: token, createdAt: now))
+            let data = try encoder.encode(Entry(groupID: groupID, token: token, createdAt: now,
+                                                groupCardAcceptedAt: groupCardAcceptedAt, displayName: displayName))
             defaults.set(data, forKey: key)
         } catch {
             #if DEBUG
@@ -302,6 +330,12 @@ enum GroupInviteResumeStore {
     static func restoreIntoPendingJoins(now: Date = .now) -> Bool {
         guard let entry = peek(now: now) else { return false }
         GroupBackendInviteEntryHandler.persistIntent(groupID: entry.groupID, token: entry.token)
+        // Card we8a: la tarjeta ya se contestó; sin esto vuelve a salir vacía. Con la hora ORIGINAL del «sí», así la
+        // ventana de la unión sola sigue contando desde ahí.
+        if entry.restoresGroupCardAnswer(now: now), let acceptedAt = entry.groupCardAcceptedAt {
+            PendingJoinStore.restoreGroupCardAnswer(
+                zoneName: entry.groupID, acceptedAt: acceptedAt, displayName: entry.displayName)
+        }
         return true
     }
 

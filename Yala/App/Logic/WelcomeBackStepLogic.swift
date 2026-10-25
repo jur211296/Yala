@@ -35,6 +35,13 @@ enum WelcomeBackStepLogic {
         step == .newChooser ? .newChooser : .chooser
     }
 
+    /// A dónde vuelve «Volver» de «¡Hola de nuevo!». Se abre desde la fila del elector, desde la tarjeta del faro o desde
+    /// la pregunta de pie del 2.º nivel de grupos (card 2osn: «¿Ya tienes una cuenta?»), y desde esta última vuelve allí:
+    /// quien buscaba entrar a sus grupos no vio el elector justo antes. Cualquier otro origen cae al elector, como antes.
+    static func existingChooserOrigin(openedFrom step: WelcomeFlowStep) -> WelcomeFlowStep {
+        step == .groupsChooser ? .groupsChooser : .chooser
+    }
+
     /// ¿Cancelar el consentimiento de la nube sale de la entrada entera? Solo cuando la entrada lo pidió (la abrió
     /// «¡Hola de nuevo!», donde el consentimiento es su primera pantalla) y la pantalla sigue en el intro — es decir,
     /// nada se ha firmado todavía. Con el flujo en marcha el consentimiento no se enseña, pero si una fase posterior

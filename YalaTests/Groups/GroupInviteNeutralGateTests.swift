@@ -501,8 +501,9 @@ struct GroupInviteResumeStoreTests {
         #expect(PendingJoinStore.all().isEmpty)
     }
 
-    /// Sin PII: el sobre lleva DOS campos y nada más. El nombre tecleado y la marca del grupo son datos de
-    /// la persona y no cruzan un borrado; el `legacyMemberKey` además es una credencial de re-bind.
+    /// Sin PII cuando no se contestó la tarjeta: el sobre lleva DOS campos y la fecha. El nombre tecleado solo viaja con
+    /// el «Unirme» de la tarjeta (card we8a, casos de abajo); la marca del grupo no viaja nunca, y el `legacyMemberKey`
+    /// además es una credencial de re-bind.
     @Test("el sobre no lleva PII")
     func envelopeCarriesNoPII() throws {
         let (d, cleanup) = makeEnv(); defer { cleanup() }
@@ -520,6 +521,54 @@ struct GroupInviteResumeStoreTests {
         let decoded = try JSONDecoder().decode([String: String].self, from: raw)
         #expect(Set(decoded.keys) == ["g", "t", "c"],
                 "campos inesperados en el sobre: \(decoded.keys.sorted())")
+    }
+
+    // MARK: Card we8a · la respuesta a la tarjeta del grupo cruza el borrado, dentro de su ventana
+
+    /// Desde L12-17 la tarjeta sale antes que la puerta: la persona escribe su nombre, toca «Unirme», la puerta borra el
+    /// teléfono y, sin esto, al volver la tarjeta salía otra vez vacía.
+    @Test("con «Unirme» reciente, la tarjeta no vuelve a salir y el nombre se queda")
+    func groupCardAnswer_crossesTheWipe_withinItsWindow() {
+        let (_, cleanup) = makeEnv(); defer { cleanup() }
+        let unirme = Date(timeIntervalSince1970: 3_000_000)
+
+        GroupInviteResumeStore.set(groupID: "G-W", token: "tok-W", groupCardAcceptedAt: unirme,
+                                   displayName: "Pia", now: unirme.addingTimeInterval(60))
+        PendingJoinStore.clearAll()
+        #expect(GroupInviteResumeStore.restoreIntoPendingJoins(now: unirme.addingTimeInterval(5 * 60)))
+
+        let repuesto = PendingJoinStore.entry(zoneName: "G-W", now: unirme.addingTimeInterval(5 * 60))
+        #expect(repuesto?.groupCardAcceptedAt == unirme, "la tarjeta vuelve a salir: el «sí» no cruzó el borrado")
+        #expect(repuesto?.displayName == "Pia", "hay que reescribir el nombre")
+        #expect(repuesto?.isInviteConfirmed == false, "la confirmación del join no viaja: eso sigue siendo un gesto")
+    }
+
+    /// Un sobre huérfano que repone OTRO cierre de sesión días después no puede traer el nombre ni el «sí» de nadie.
+    @Test("pasada la ventana se repone la invitación, sin nombre ni «sí»")
+    func groupCardAnswer_afterItsWindow_isNotRestored() {
+        let (_, cleanup) = makeEnv(); defer { cleanup() }
+        let unirme = Date(timeIntervalSince1970: 3_000_000)
+        let tarde = unirme.addingTimeInterval(GroupInviteGroupFirstLogic.autoJoinWindow + 1)
+
+        GroupInviteResumeStore.set(groupID: "G-V", token: "tok-V", groupCardAcceptedAt: unirme,
+                                   displayName: "Pia", now: unirme)
+        PendingJoinStore.clearAll()
+        #expect(GroupInviteResumeStore.restoreIntoPendingJoins(now: tarde), "la invitación sí se repone")
+
+        let repuesto = PendingJoinStore.entry(zoneName: "G-V", now: tarde)
+        #expect(repuesto?.inviteToken == "tok-V")
+        #expect(repuesto?.groupCardAcceptedAt == nil)
+        #expect(repuesto?.displayName == nil, "el nombre de otra persona cruzó fuera de su ventana")
+    }
+
+    /// Sin «Unirme» el sobre sigue siendo el de siempre: el nombre no viaja aunque se le pase.
+    @Test("sin «sí» en la tarjeta, el nombre no viaja")
+    func withoutGroupCardAnswer_theNameDoesNotTravel() throws {
+        let (d, cleanup) = makeEnv(); defer { cleanup() }
+
+        GroupInviteResumeStore.set(groupID: "G-N", token: "tok-N", groupCardAcceptedAt: nil, displayName: "Pia")
+        let raw = try #require(d.data(forKey: GroupInviteResumeStore.key))
+        #expect(!String(decoding: raw, as: UTF8.self).contains("Pia"))
     }
 }
 
@@ -610,8 +659,11 @@ struct GroupInviteNeutralGateWiringTests {
     func theEnvelopeIsWrittenOnTheGesture() throws {
         let view = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
         let content = try Self.source("Yala/App/ContentView.swift")
-        #expect(view.contains("GroupInviteResumeStore.set(groupID: groupID, token: token)"),
-                "la pantalla ya no escribe el sobre en el gesto")
+        // Card we8a: con la respuesta a la tarjeta del grupo, que tiene que cruzar también.
+        #expect(view.contains("""
+            GroupInviteResumeStore.set(groupID: groupID, token: token,
+                                                   groupCardAcceptedAt: entry.groupCardAcceptedAt, displayName: entry.displayName)
+            """), "la pantalla ya no escribe el sobre en el gesto, o lo escribe sin la respuesta a la tarjeta")
         #expect(!content.contains("GroupInviteResumeStore.set("),
                 "el sobre volvió al callback del arm, fuera de la ventana del swap in-process")
         // Desde la card ypit la regla del destino vive en `Purpose.destinationAfterNeutralReturn` (la usan el coordinador,

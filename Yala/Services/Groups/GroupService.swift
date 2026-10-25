@@ -1099,7 +1099,7 @@ final class GroupService {
             hasOutstandingDebt: try batchHasOutstandingDebt(group, members: members, context: context))
     }
 
-    /// `true` si el usuario tiene saldo pendiente (`abs(netBalance) > 0.01`) en el grupo. Molde
+    /// `true` si el usuario tiene alguna deuda en el grupo (`GroupRoundingResidueLogic.memberHasOutstanding`). Molde
     /// `accountDeletionGroupsSummary`/`recomputeOutstandingDebt`: early-exit sin gastos; member no resuelto →
     /// `false` (sub-conteo, jamás sobre-aviso). READ-ONLY.
     private func batchHasOutstandingDebt(_ group: SplitGroup, members: [SplitMember], context: ModelContext) throws -> Bool {
@@ -1111,10 +1111,10 @@ final class GroupService {
         let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
         let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
         let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
-        let balances = GroupBalanceService.calculateBalances(
-            expenses: expenses, shares: shares, members: members, settlements: settlements)
-        let meID = me.id.uuidString
-        return balances.contains { $0.memberID == meID && abs($0.netBalance) > 0.01 }
+        // Card aeae: cuentan las deudas de persona a persona, como Saldos y Ajustes del grupo (L19-10), no el saldo neto,
+        // que arrastra el residuo de redondeo y avisaba de una deuda que nadie cobra.
+        return GroupRoundingResidueLogic.memberHasOutstanding(
+            memberID: me.id.uuidString, expenses: expenses, shares: shares, members: members, settlements: settlements)
     }
 
     /// REINTENTABLE por el resume (`.deferred`) vs permanente (`.failed`, estado TERMINAL del batch).
@@ -1732,7 +1732,7 @@ final class GroupService {
     ///    evalúa en memoria (evita el gotcha de `#Predicate` sobre opcionales) y **sobre TODOS los grupos,
     ///    ocultos incluidos** — a diferencia de la deuda, ver el porqué en el cuerpo.
     /// Degrada a `.empty` si el contexto no está montado o un fetch lanza. La composición del copy vive en
-    /// `AccountDeletionMessageLogic`; el conteo se delega a `AccountDeletionDebtLogic` (ambos puros/testeados).
+    /// `AccountDeletionMessageLogic`; la deuda de cada grupo la decide `GroupRoundingResidueLogic.memberHasOutstanding`.
     ///
     /// `context` inyectable (default `nil` → `self.modelContext`, producción intacta): permite testear la
     /// glue SwiftData→resumen sin mutar el singleton `.shared`. La resolución del member del usuario se hace
@@ -1752,7 +1752,7 @@ final class GroupService {
             // ninguna lista, así que avisar de su saldo sería avisar de algo que el usuario ya no puede ver.
             let groups = allGroups.filter { !$0.isHiddenForAll }
 
-            var perGroupNets: [[Double]] = []
+            var groupsWithDebt = 0
             for group in groups {
                 let zoneID = group.cloudKitZoneID
 
@@ -1777,14 +1777,16 @@ final class GroupService {
                 let members = try context.fetch(FetchDescriptor<SplitMember>(
                     predicate: #Predicate { $0.groupZoneID == zoneID }))
 
-                let balances = GroupBalanceService.calculateBalances(
-                    expenses: expenses, shares: shares, members: members, settlements: settlements)
-                perGroupNets.append(balances.filter { $0.memberID == myMemberID }.map(\.netBalance))
+                // Card aeae: el residuo de redondeo no es deuda (`GroupRoundingResidueLogic`, la regla de Saldos).
+                if GroupRoundingResidueLogic.memberHasOutstanding(
+                    memberID: myMemberID, expenses: expenses, shares: shares, members: members,
+                    settlements: settlements) {
+                    groupsWithDebt += 1
+                }
             }
 
             return AccountDeletionGroupsSummary(
-                outstandingDebtGroupCount: AccountDeletionDebtLogic.groupsWithOutstandingBalance(
-                    perGroupUserNetBalances: perGroupNets),
+                outstandingDebtGroupCount: groupsWithDebt,
                 hasLegacyCloudKitFootprint: hasLegacy,
                 hasGroups: !groups.isEmpty)
         } catch {

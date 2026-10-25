@@ -36,11 +36,15 @@ export interface GroupPullResponse {
   cursors: Record<string, number>;
   /** group_ids de los que el caller es member (active/pendingApproval) — descubre grupos nuevos Y perdidos. */
   memberships: string[];
+  /** Versión del group_capability_manifest de este Worker (el cliente declara la menor entre la suya y ésta). */
+  manifest_version: number;
 }
 
 /** GET /groups/merkle?group_id=<gid> — response (dos canales, acotado a UN grupo). */
 export interface GroupMerkleResponse {
   canon_version: string;
+  /** Versión del group_capability_manifest de este Worker (el cliente declara la menor entre la suya y ésta). */
+  manifest_version: number;
   group_id: string;
   root: string;
   entities: Record<string, { count: number; hash: string }>;

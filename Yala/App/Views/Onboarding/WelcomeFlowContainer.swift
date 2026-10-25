@@ -135,6 +135,9 @@ struct WelcomeFlowContainer: View {
     /// pregunta de pie de «Es mi primera vez» (propuesta B, 24-oct). Lo escribe cada productor al abrirlo; la vuelta
     /// desde la puerta de crear no lo toca. Si el cover se re-monta, cae al elector, que la persona también vio.
     @State private var groupsChooserOrigin: WelcomeFlowStep = .chooser
+    /// Lo mismo para «¡Hola de nuevo!»: la abre la fila del elector o la pregunta de pie del 2.º nivel de grupos (card
+    /// 2osn), y su «Volver» devuelve a la que la abrió (`WelcomeBackStepLogic.existingChooserOrigin`).
+    @State private var existingChooserOrigin: WelcomeFlowStep = .chooser
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -256,7 +259,10 @@ struct WelcomeFlowContainer: View {
                     onJoin: {
                         leaveWelcome(to: .inviteRecovery) { onSelectBranch(.invite) }
                     },
-                    onBack: { goTo(groupsChooserOrigin) }
+                    onBack: { goTo(groupsChooserOrigin) },
+                    // Card 2osn: «¿Ya tienes una cuenta? Entra aquí» va por la MISMA puerta que «Ya tengo una cuenta» del
+                    // elector (bypass incluido), y su «Volver» devuelve aquí.
+                    onSignIn: { handleExistingBranch() }
                 )
                 .transition(.opacity)
             case .groupsGate(let purpose):
@@ -291,7 +297,7 @@ struct WelcomeFlowContainer: View {
                     options: order.options,
                     usedOnThisDevice: order.usedOnThisDevice,
                     onSelect: { option in handleExistingOption(option) },
-                    onBack: { goTo(.chooser) },
+                    onBack: { goTo(existingChooserOrigin) },
                     // La pregunta de pie («¿Es tu primera vez en Yala?») entra por la MISMA puerta que la card
                     // «Es mi primera vez» del Chooser: el faro se consulta igual y el bypass también.
                     onStartNew: { handleNewBranch() }
@@ -472,6 +478,7 @@ struct WelcomeFlowContainer: View {
         if let single = WelcomeAccountChoiceLogic.bypass(visibleExistingOptions) {
             handleExistingOption(single)
         } else {
+            existingChooserOrigin = WelcomeBackStepLogic.existingChooserOrigin(openedFrom: step)
             goTo(.existingChooser)
         }
     }

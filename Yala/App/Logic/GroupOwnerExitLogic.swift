@@ -46,7 +46,7 @@ nonisolated enum GroupOwnerExitLogic {
         /// `transfer_group_ownership` (`user_id is not null` — los placeholders de un grupo legacy
         /// migrado y no reclamado NUNCA son herederos: no hay auth.user al que ceder).
         let eligibleHeirCount: Int
-        /// `abs(netBalance) > 0.01` de CUALQUIER miembro — la deuda de TODO el grupo, que es la que
+        /// Alguna deuda de persona a persona en el grupo (`GroupRoundingResidueLogic`, desde L19-10) — la de TODO el grupo, que es la que
         /// bloquea «Eliminar» (molde `GroupSettingsView.recomputeOutstandingDebt`). NO es la deuda
         /// del usuario: el dueño puede estar a cero y quedar bloqueado por un saldo entre otros dos.
         let groupHasOutstandingDebt: Bool

@@ -32,7 +32,7 @@ enum GroupBatchLeaveLogic {
         /// Herederos elegibles: co-members `.isActive && userID != nil && !isCurrentUser` (solo tiene
         /// sentido en canal backend). Replica la elegibilidad de `transfer_group_ownership`.
         let eligibleHeirCount: Int
-        /// `abs(netBalance) > 0.01` del usuario en el grupo (read-only, molde `recomputeOutstandingDebt`).
+        /// ¿Tiene el usuario alguna deuda en el grupo? Desde la card aeae, como Saldos: `GroupRoundingResidueLogic.memberHasOutstanding`.
         let hasOutstandingDebt: Bool
     }
 

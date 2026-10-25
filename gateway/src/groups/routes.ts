@@ -19,11 +19,13 @@ import { gateRequest } from "../ratelimit";
 import { bearerToken, callRpc, getRows, verifyUserToken } from "../sync/userauth";
 import {
   GROUP_ENTITIES,
+  GROUP_MANIFEST_VERSION,
   groupManifest,
   isGroupEntity,
   isPullOnlyEntity,
   nestFieldsByUnit,
   projectGroupRowToDelta,
+  resolveGroupCapabilitySet,
   rowIdentity,
   validateUpsertShape,
 } from "./manifest";
@@ -441,6 +443,8 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
   if (encKey instanceof Response) return encKey;
 
   const limit = clamp(parseIntOr(c.req.query("limit"), 500), 1, 1000);
+  // Capability-set del cliente (espejo de `/sync/pull`): poda las columnas que no conoce. Sin cabecera = v2.
+  const cap = resolveGroupCapabilitySet(c.req.header("X-Yala-Capability-Set") ?? c.req.query("capability_set") ?? null);
   let cursors: Record<string, number> = {};
   const rawCursors = c.req.query("cursors");
   if (rawCursors) {
@@ -543,7 +547,7 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
     for (const { entity, row, server_seq } of page) {
       const storedFh = (row.field_hlcs ?? {}) as Record<string, string>;
       const isDeleted = row.deleted === true;
-      const { fields, field_hlcs } = projectGroupRowToDelta(entity, row, storedFh);
+      const { fields, field_hlcs } = projectGroupRowToDelta(entity, row, storedFh, cap);
       deltas.push({
         entity_type: entity,
         group_id: gid,
@@ -559,7 +563,12 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
     outCursors[gid] = page[page.length - 1].server_seq;
   }
 
-  const resp: GroupPullResponse = { deltas, cursors: outCursors, memberships: memberGroupIds };
+  const resp: GroupPullResponse = {
+    deltas,
+    cursors: outCursors,
+    memberships: memberGroupIds,
+    manifest_version: GROUP_MANIFEST_VERSION,
+  };
   return c.json(resp);
 }
 
@@ -587,13 +596,17 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
     return jsonError("yala_bad_request", "falta group_id (8..120)", 400);
   }
 
+  // Capability-set del cliente (espejo de `/sync/merkle`): la hoja hashea solo las columnas que conoce, o una
+  // columna nueva le cambiaría la hoja de cada fila (el canon serializa el NULL como `key:null`). Sin cabecera = v2.
+  const cap = resolveGroupCapabilitySet(c.req.header("X-Yala-Capability-Set") ?? c.req.query("capability_set") ?? null);
+
   const channel1 = new Map<string, Uint8Array>();
   const channel2 = new Map<string, Uint8Array>();
   const entities: Record<string, { count: number; hash: string }> = {};
 
   try {
     for (const entity of GROUP_ENTITIES) {
-      const columns = merkleColumnsGroup(entity);
+      const columns = merkleColumnsGroup(entity, cap);
       const leaves1: Array<{ syncId: string; leaf: Uint8Array }> = [];
       const leaves2: Array<{ syncId: string; leaf: Uint8Array }> = [];
       const pageSize = 1000;
@@ -639,6 +652,7 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
 
   const resp: GroupMerkleResponse = {
     canon_version: groupManifest.canon_version,
+    manifest_version: GROUP_MANIFEST_VERSION,
     group_id: gid,
     root: hex(await merkleRoot(channel1)),
     entities,

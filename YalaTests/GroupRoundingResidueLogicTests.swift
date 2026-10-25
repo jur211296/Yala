@@ -108,4 +108,49 @@ struct GroupRoundingResidueLogicTests {
     @Test func noExpenses_noDebt() {
         #expect(!GroupRoundingResidueLogic.hasOutstanding(debts: [], balances: []))
     }
+
+    // MARK: - Card aeae · «Salir de todos mis grupos» y el borrado de cuenta deciden por persona
+
+    /// La semilla `grupos-saldado` vista desde Beto: su saldo neto (−0.02) bloqueaba las dos superficies.
+    @Test func memberHasOutstanding_residueOfTheSettledSeed_isNotADebt() {
+        let taxi = expense(50, paidBy: "beto", shares: [("yo", 16.67), ("ana", 16.67), ("beto", 16.67)])
+        let souvenirs = expense(80, paidBy: "beto", shares: [("yo", 26.67), ("ana", 26.67), ("beto", 26.67)])
+        let settled = [settlement("yo", "beto", 43.34), settlement("ana", "beto", 43.34)]
+        let items = [taxi, souvenirs]
+        for member in ["beto", "yo", "ana"] {
+            #expect(!GroupRoundingResidueLogic.memberHasOutstanding(
+                memberID: member, expenses: items.map(\.0), shares: items.flatMap(\.1), members: [],
+                settlements: settled), "\(member)")
+        }
+    }
+
+    /// Liquidación corta de dos céntimos: es deuda para los dos que la comparten, y no para el tercero.
+    @Test func memberHasOutstanding_shortSettlement_isADebtForBothEnds() {
+        let dinner = expense(99.99, paidBy: "ana", shares: [("ana", 33.33), ("beto", 33.33), ("yo", 33.33)])
+        let settled = [settlement("beto", "ana", 33.31), settlement("yo", "ana", 33.33)]
+        func has(_ id: String) -> Bool {
+            GroupRoundingResidueLogic.memberHasOutstanding(
+                memberID: id, expenses: [dinner.0], shares: dinner.1, members: [], settlements: settled)
+        }
+        #expect(has("beto"))
+        #expect(has("ana"))
+        #expect(!has("yo"))
+    }
+
+    /// Falla cerrado: un importe no finito en el saldo PROPIO cuenta como deuda.
+    @Test func memberHasOutstanding_nonFiniteOwnBalance_countsAsDebt() {
+        let broken = expense(.nan, paidBy: "yo", shares: [("yo", 10), ("ana", 10)])
+        #expect(GroupRoundingResidueLogic.memberHasOutstanding(
+            memberID: "yo", expenses: [broken.0], shares: broken.1, members: [], settlements: []))
+    }
+
+    /// Las dos superficies del ticket llaman a la función, y ninguna vuelve al saldo neto.
+    @Test func batchLeaveAndAccountDeletion_decideWithTheResidueRule() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let service = try String(contentsOf: root.appendingPathComponent("Yala/Services/Groups/GroupService.swift"),
+                                 encoding: .utf8)
+        #expect(service.components(separatedBy: "GroupRoundingResidueLogic.memberHasOutstanding(").count - 1 == 2)
+        #expect(!service.contains("abs($0.netBalance) > 0.01"), "vuelve el saldo neto con tolerancia")
+        #expect(!service.contains("perGroupUserNetBalances"), "el borrado de cuenta vuelve a contar netos")
+    }
 }

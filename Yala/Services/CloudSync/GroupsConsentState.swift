@@ -175,8 +175,15 @@ enum GroupsConsentState {
     /// de Grupos). Hasta L12-4 un snapshot sin sello solo podía venir del formato legacy o del seam de UI tests; desde
     /// entonces lo deja también quien acepta en el paso 3 del educativo sin llegar a iniciar sesión, y al no llevar
     /// sello la regla «manda el sello» no lo frena: la persona siguiente lo vería aceptado y, al entrar, se le
-    /// atribuiría. El sellado no se toca (lo protege su sello) ni las keys legacy (residual previo, sin cambio).
+    /// atribuiría. El sellado no se toca (lo protege su sello).
+    ///
+    /// **Las keys legacy se retiran siempre** (card lrwn, 2026-10-24): tampoco llevan sello —`legacySnapshot()` las lee
+    /// con `userID: nil`—, así que la persona siguiente las veía aceptadas y `adoptLegacyIfNeeded` se las atribuía al
+    /// entrar. Hasta ese día quedaban fuera como residual previo. Con un snapshot sellado al lado ya no sirven: la
+    /// adopción ya ocurrió.
     nonisolated static func removeUnsealedSnapshot(in defaults: UserDefaults) {
+        defaults.removeObject(forKey: legacyAcceptedAtKey)
+        defaults.removeObject(forKey: legacyTextVersionKey)
         guard let data = defaults.data(forKey: snapshotKey) else { return }
         do {
             let snapshot = try JSONDecoder().decode(GroupsConsentSnapshot.self, from: data)

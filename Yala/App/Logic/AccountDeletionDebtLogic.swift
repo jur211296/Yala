@@ -3,7 +3,9 @@
 //  Yala
 //
 //  Lógica PURA del aviso de "Eliminar mi cuenta" (D5, §3.3.4 del estudio MODO-NUBE-GESTION-DATOS-UX):
-//  detección de saldos pendientes en grupos + composición de las líneas del diálogo de confirmación.
+//  el resumen de grupos y la composición de las líneas del diálogo de confirmación. La deuda de cada grupo ya no se
+//  decide aquí con el saldo neto (card aeae, 2026-10-24): la decide `GroupRoundingResidueLogic.memberHasOutstanding`,
+//  la regla de Saldos, dentro de `GroupService.accountDeletionGroupsSummary`.
 //  Todo DARK hoy ([FLAG] — la fila de eliminar-cuenta solo existe con sesión backend viva).
 //
 //  Decisión owner D5 (2026-07-19): el aviso INFORMA, JAMÁS bloquea (línea roja GDPR del 2026-07-14). El
@@ -11,9 +13,8 @@
 //  «Usuario eliminado» — pero el borrado nunca se impide. No se añade a "Cerrar sesión" (ahí la membership
 //  sigue viva, nada se pierde — ensuciaría el modelo sesión≠datos).
 //
-//  Ambos enums son `nonisolated` y sin dependencias de UI/SwiftData: la detección recibe los saldos YA
-//  calculados (el fetch read-only vive en `GroupService.accountDeletionGroupsSummary`, invariante de
-//  quiescencia (b) intacto — cero saves) y la composición recibe flags. Testeables por tabla.
+//  La composición es `nonisolated` y sin dependencias de UI/SwiftData: recibe flags. El fetch read-only vive en
+//  `GroupService.accountDeletionGroupsSummary` (invariante de quiescencia (b) intacto — cero saves).
 //
 
 import Foundation
@@ -40,28 +41,6 @@ struct AccountDeletionGroupsSummary: Equatable {
         outstandingDebtGroupCount: 0, hasLegacyCloudKitFootprint: false, hasGroups: false)
 
     var hasOutstandingDebt: Bool { outstandingDebtGroupCount > 0 }
-}
-
-/// Detección agregada de saldos pendientes del usuario actual a lo largo de todos sus grupos.
-nonisolated enum AccountDeletionDebtLogic {
-
-    /// Mismo umbral que `GroupBalanceService`/`GroupSettingsView` (molde `GroupSettingsView.swift:687-701`).
-    static let epsilon: Double = 0.01
-
-    /// Cuenta cuántos grupos tienen al menos un saldo neto pendiente (`|net| > epsilon`) para el usuario
-    /// actual. `perGroupUserNetBalances` es, POR grupo, los saldos netos del usuario (uno por moneda — un
-    /// grupo cross-currency puede aportar varios). Un grupo donde el usuario no participa o su balance es
-    /// cero NO cuenta. Read-only por construcción (recibe datos ya calculados).
-    static func groupsWithOutstandingBalance(perGroupUserNetBalances: [[Double]]) -> Int {
-        perGroupUserNetBalances.filter { nets in
-            nets.contains { abs($0) > epsilon }
-        }.count
-    }
-
-    /// Conveniencia: ¿algún grupo con saldo pendiente del usuario?
-    static func hasOutstandingBalance(perGroupUserNetBalances: [[Double]]) -> Bool {
-        groupsWithOutstandingBalance(perGroupUserNetBalances: perGroupUserNetBalances) > 0
-    }
 }
 
 /// Composición de las líneas del mensaje del PRIMER diálogo de eliminar-cuenta (§3.3.4.1). El orden es

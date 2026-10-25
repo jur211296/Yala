@@ -24,7 +24,8 @@
 //  Falla CERRADO ante un importe no finito: si algún saldo neto no es un número, el grupo cuenta como con deuda.
 //
 //  Quién la usa: el bloqueo de «Eliminar» y el aviso de «Archivar» con deudas (`GroupSettingsView`), la red de
-//  `GroupService.softDelete`, el aviso de salir con deuda y el de quitar a alguien que debe.
+//  `GroupService.softDelete`, el aviso de salir con deuda y el de quitar a alguien que debe, y desde la card aeae
+//  «Salir de todos mis grupos» y el aviso de borrar la cuenta (`memberHasOutstanding`).
 //
 
 import Foundation
@@ -58,5 +59,26 @@ enum GroupRoundingResidueLogic {
         debts.contains {
             ($0.fromMemberID == memberID || $0.toMemberID == memberID) && ($0.amount > 0.01 || !$0.amount.isFinite)
         }
+    }
+
+    /// ¿Tiene `memberID` alguna deuda en el grupo, contada como Saldos? Lo usan las dos superficies que decidían con el
+    /// saldo NETO del usuario (`abs > 0.01`) y por eso tomaban el residuo de redondeo por deuda: «Salir de todos mis
+    /// grupos» (`GroupService.batchHasOutstandingDebt`) y el aviso de borrar la cuenta
+    /// (`GroupService.accountDeletionGroupsSummary`). Card aeae, 2026-10-24.
+    ///
+    /// Falla cerrado como `hasOutstanding(debts:balances:)`, pero solo con el saldo PROPIO no finito: un importe roto
+    /// entre otros dos no es deuda de esta persona.
+    static func memberHasOutstanding(
+        memberID: String,
+        expenses: [SplitExpense],
+        shares: [SplitShare],
+        members: [SplitMember],
+        settlements: [SplitSettlement]
+    ) -> Bool {
+        let balances = GroupBalanceService.calculateBalances(
+            expenses: expenses, shares: shares, members: members, settlements: settlements)
+        if balances.contains(where: { $0.memberID == memberID && !$0.netBalance.isFinite }) { return true }
+        let debts = outstandingDebts(expenses: expenses, shares: shares, settlements: settlements)
+        return hasOutstanding(debts: debts, memberID: memberID)
     }
 }

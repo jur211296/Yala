@@ -378,8 +378,8 @@ final class GroupsSyncClient {
         self.onRemoteChangesApplied = onRemoteChangesApplied
         self.onRemoteChanges = onRemoteChanges
         self.clock = HLCClock(nodeID: nodeID)
-        // Default: mismo baseURL + los providers de sesión del canal (el Merkle de Grupos NO manda
-        // capability-set). Los tests inyectan uno con `StubHTTPSession`.
+        // Default: mismo baseURL + los providers de sesión del canal (la cabecera del capability-set la pone
+        // `GroupsMerkleClient` con `GroupsSyncCapability`). Los tests inyectan uno con `StubHTTPSession`.
         self.merkleClient = merkleClient ?? GroupsMerkleClient(
             baseURL: baseURL, tokenProvider: tokenProvider, attestProvider: attestProvider,
             urlSession: urlSession)
@@ -2405,6 +2405,9 @@ final class GroupsSyncClient {
             return .transient
         }
         let attest = await attestProvider()
+        // Versión del manifest de Grupos que habla el teléfono (`GroupsSyncCapability`): el Worker poda las columnas
+        // posteriores. Se fija una vez para la página y su re-emisión tras un 401.
+        let capabilityHeader = GroupsSyncCapability.declaredHeader
 
         // Cierre interno con la URL/attest ya resueltos: solo cambia el bearer, para RE-EMITIR la página
         // con un token fresco tras un 401. Mapeo de status EXACTO al previo.
@@ -2412,6 +2415,7 @@ final class GroupsSyncClient {
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
             request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+            request.setValue(capabilityHeader, forHTTPHeaderField: "X-Yala-Capability-Set")
             if let attest, !attest.isEmpty {
                 request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
             }
@@ -2435,6 +2439,8 @@ final class GroupsSyncClient {
                 guard generation == teardownGeneration else { return .transient }
                 do {
                     let page = try Self.decodePage(data)
+                    // Lo que el Worker dice saber, para el ciclo siguiente: esta página ya bajó con la versión pedida.
+                    GroupsSyncCapability.recordBackendManifestVersion(page.manifestVersion)
                     let saved = applyPulledPage(page, cursor: cursor, context: context)
                     return .applied(deltas: page.deltas.count, saved: saved)
                 } catch {
@@ -2643,6 +2649,10 @@ final class GroupsSyncClient {
         // zonas que ESTA página trajo y esto sobre las que NO trajo. Segundo call-site — el otro está en la
         // salida idle, que es la que cubre el caso dominante.
         reconcileLostMemberships(page, cursor: cursor, context: context)
+        // Card 5d22: el grupo que esta persona creó y cuya respuesta se perdió llega aquí sin `isOwner`. POST-SAVE, como
+        // lo de arriba: adopta filas que ya están en disco.
+        GroupBackendMembershipService.adoptPendingCreations(
+            context: context, currentUserID: CloudAuthService.shared.currentUserID)
         return true
     }
 
@@ -3598,7 +3608,8 @@ final class GroupsSyncClient {
             cursors: decoded.cursors ?? [:],
             // SIN `?? []`: la ausencia del campo se propaga como `nil` y `reconcileLostMemberships` no
             // toca nada. Ver el docblock de `GroupPulledPage`.
-            memberships: decoded.memberships
+            memberships: decoded.memberships,
+            manifestVersion: decoded.manifestVersion
         )
     }
 
@@ -3791,8 +3802,11 @@ extension GroupsSyncClient {
         // porque el canon emite `null`— y un cliente de la versión anterior compararía 11 columnas
         // contra 12. Sin este bump eso sería una divergencia FALSA en el 100 % de los grupos, con su
         // reset de cursores y su re-pull por sesión; con él, esos clientes caen aquí y SALTAN la
-        // verificación, que es justo para lo que existe este guard. El canal personal no necesita el
-        // truco porque manda `X-Yala-Capability-Set` y el server le poda las columnas que no conoce.
+        // verificación, que es justo para lo que existe este guard.
+        // Desde el 2026-10-24 (ticket `groups-canal-sin-capability-set`) Grupos ya no necesita ese truco para la
+        // PRÓXIMA columna: manda `X-Yala-Capability-Set` (`GroupsSyncCapability`), el server le poda las columnas
+        // que no conoce y la columna nueva lleva `since` en el manifest en vez de otro bump de canon. El server se
+        // queda en `c2` y este guard también; los builds que esperan `c1` siguen saltando el Merkle por el suyo.
         guard remote.canonVersion == "c2" else {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "canon:\(remote.canonVersion)")
             return .skipped(reason: GroupMerkleSkipReason.canonVersionMismatch)
@@ -3805,7 +3819,9 @@ extension GroupsSyncClient {
         // porque exige `!localEmpty`. El rastro por tabla lo deja `collectLeaves`; aquí, el del veredicto.
         let local: GroupMerkleProjection.LocalGroupMerkle
         do {
-            local = try GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+            // Con la versión con la que se PIDIÓ el snapshot: el server hasheó esas columnas y no otras.
+            local = try GroupMerkleProjection.computeLocalMerkle(
+                groupID: gid, context: context, capabilityLevel: remote.capabilityLevel)
         } catch {
             #if DEBUG
             print("GroupsSyncClient.verifyGroupIntegrity: cómputo del árbol local falló: \(error)")
@@ -4036,12 +4052,23 @@ struct GroupPulledPage: Equatable {
     let deltas: [GroupPulledDelta]
     let cursors: [String: Int64]
     let memberships: [String]?
+    /// Versión del `group_capability_manifest.json` que anunció el Worker (`GroupsSyncCapability`). `nil` = un Worker
+    /// anterior a esto. `var` con default para no romper el init memberwise de los tests.
+    var manifestVersion: Int? = nil
 }
 
 private struct RawGroupPullResponse: Decodable {
     let deltas: [RawGroupPulledDelta]
     let cursors: [String: Int64]?
     let memberships: [String]?
+    let manifestVersion: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case deltas
+        case cursors
+        case memberships
+        case manifestVersion = "manifest_version"
+    }
 }
 
 private struct RawGroupPulledDelta: Decodable {
