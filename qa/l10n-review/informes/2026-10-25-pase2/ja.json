@@ -1,0 +1,15 @@
+[
+ {
+  "k": "more.subtitle.comparative",
+  "categoria": "registro",
+  "gravedad": "baja",
+  "propuesta": "先月より多く使いましたか、少なかったですか？",
+  "motivo": "El texto usa tono coloquial (多く使った？少なかった？) en lugar del です・ます調 que pide la guía.",
+  "fuente": "llm",
+  "actual": "先月より多く使った？少なかった？",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "gravedad baja"
+ }
+]

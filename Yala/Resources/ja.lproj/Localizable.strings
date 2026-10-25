@@ -67,7 +67,7 @@
 "panel.health.emptyBadge" = "—";
 "panel.health.subScore.budget" = "予算";
 "panel.health.subScore.activity" = "リズム";
-"panel.health.subScore.bills" = "コミットメント";
+"panel.health.subScore.bills" = "支払い負担";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "金融の健全性";
 "panel.health.total.sheet.explanation" = "スコアは3つの要素から決まります。各要素の比重は横に表示。データがない要素の比重は他の要素で分け合います。";
@@ -97,11 +97,11 @@
 "panel.health.activity.cta.create" = "最初の支出を記録";
 
 // Detail sheet — Bills
-"panel.health.bills.sheet.title" = "あなたのコミットメント";
+"panel.health.bills.sheet.title" = "あなたの支払い負担";
 "panel.health.bills.sheet.explanation" = "2つの要素を組み合わせています：残高が期間内の保留中の支払いをカバーするか、収入のうちサブスクリプションや定期支払いに使われる割合。";
-"panel.health.bills.headline.high" = "コミットメントはコントロール下にあります 💪";
-"panel.health.bills.headline.mid" = "コミットメントは管理可能です";
-"panel.health.bills.headline.low" = "コミットメントが流れに重くのしかかっています";
+"panel.health.bills.headline.high" = "支払い負担はコントロールできています 💪";
+"panel.health.bills.headline.mid" = "支払い負担は無理のない範囲です";
+"panel.health.bills.headline.low" = "支払い負担がお金の流れを圧迫しています";
 "panel.health.bills.headline.empty" = "まだ予定された支払いはありません";
 "panel.health.bills.cta.view" = "支払いを見る";
 "panel.health.bills.cta.create" = "最初の予定支払いを作る";
@@ -482,7 +482,7 @@
 
 // MARK: - Common
 
-"common.accept" = "同意する";
+"common.accept" = "OK";
 "common.name" = "名前";
 "common.alias" = "エイリアス";
 "common.color" = "色";
@@ -528,7 +528,7 @@
 "budgets.widget.noFavorites.message" = "ここに表示するには、設定 > 予算でお気に入りに登録してください。";
 "budgets.widget.selectFavorites" = "お気に入りを選択";
 "budgets.alerts.title" = "通知";
-"budgets.alerts.enable" = "上限に近づいたら通知";
+"budgets.alerts.enable" = "上限に達したら通知";
 "budgets.alerts.thresholds" = "通知タイミング:";
 "budgets.alerts.message.50" = "「%1$@」は半分到達 — %3$@中%2$@を使用";
 "budgets.alerts.message.75" = "「%1$@」の75%%を使用 — %3$@中%2$@";
@@ -756,7 +756,7 @@
 "widgetType.categoriesPie" = "カテゴリー";
 "widgetType.subcategoriesPie" = "サブカテゴリー";
 "widgetType.latestRecords" = "最新の記録";
-"widgetType.expensesByNeed" = "性質";
+"widgetType.expensesByNeed" = "必要度";
 "widgetType.expensesByTag" = "タグ";
 "widgetType.exchangeRate" = "為替レート";
 "widgetType.budgets" = "予算";
@@ -804,7 +804,7 @@
 "widget.noExpensesSubcategoriesPeriod" = "この期間にサブカテゴリー別の支出はまだありません。";
 "widget.distributionByCategory" = "カテゴリー";
 "widget.distributionBySubcategory" = "サブカテゴリー";
-"widget.distributionByNeed" = "性質";
+"widget.distributionByNeed" = "必要度";
 "widget.distributionByTag" = "タグ別の内訳";
 "widget.noDataForPeriod" = "この期間のデータはまだありません";
 "widget.selectCurrencies" = "%@と比較する通貨を最大2つ選択";
@@ -826,9 +826,9 @@
 "cashFlowPlan.incomeSection" = "収入";
 "cashFlowPlan.expenseSection" = "支出";
 "cashFlowPlan.recommendedBadge" = "おすすめ";
-"cashFlowPlan.otherExpenses" = "未分類の支出";
+"cashFlowPlan.otherExpenses" = "計画外の支出";
 "cashFlowPlan.otherExpensesDesc" = "計画に含まれていないカテゴリーからの支出";
-"cashFlowPlan.otherIncome" = "未分類の収入";
+"cashFlowPlan.otherIncome" = "計画外の収入";
 "cashFlowPlan.emptyState" = "データがまだありません";
 "cashFlowPlan.emptyStateMessage" = "支出と収入を最低1ヶ月記録してください、計画を作成します。";
 "cashFlowPlan.monthsActive" = "ヶ月";
@@ -863,10 +863,10 @@
 "cashFlowPlan.realIncome" = "受取済み";
 "cashFlowPlan.difference" = "差額";
 "cashFlowPlan.adjustAmount" = "金額を調整";
-"cashFlowPlan.othersTitle" = "未分類の支出";
+"cashFlowPlan.othersTitle" = "計画外の支出";
 "cashFlowPlan.othersDesc" = "記録の中で計画に含まれていない支出です。+をタップして追加できます。";
 "cashFlowPlan.othersHint" = "たまにしか発生しないものは気にせず、毎月繰り返すものだけ追加すれば大丈夫です。";
-"cashFlowPlan.othersIncomeTitle" = "未分類の収入";
+"cashFlowPlan.othersIncomeTitle" = "計画外の収入";
 "cashFlowPlan.othersIncomeDesc" = "記録の中で計画に含まれていない収入です。+をタップして追加できます。";
 "cashFlowPlan.othersIncomeHint" = "毎月繰り返すものだけ追加すれば大丈夫です。";
 "cashFlowPlan.promoteCategory" = "計画に追加";
@@ -2112,7 +2112,7 @@
 "tips.section.organize" = "お金を整理";
 "tips.section.advanced" = "上級テクニック";
 "tips.voice.title" = "支出を音声で入力";
-"tips.voice.detail" = "音声入力を有効にして「ランチ35ドル」のように話してみましょう。Yalaは金額、日付、メモを自然に理解します。";
+"tips.voice.detail" = "音声入力を有効にして「ランチ35ソル」のように話してみましょう。Yalaは金額、日付、メモを自然に理解します。";
 "tips.camera.title" = "レシートやスクリーンショットを読み取り";
 "tips.camera.detail" = "レシートや銀行のスクリーンショットを撮影。Yalaが金額を抽出し、自動でドラフトを作成します。";
 "tips.favorites.title" = "よく使う支払いを保存";
@@ -2349,7 +2349,7 @@
 
 // Test
 "notifications.testNotification" = "テストリマインダー";
-"notifications.testReport.scheduledPayment" = "3日後に支払いがあります: 「Netflix」 USD 14.99";
+"notifications.testReport.scheduledPayment" = "3日後に支払いがあります: 「Netflix」 PEN 44.90";
 
 // Section headers
 "notifications.section.reminders" = "リマインダー";
@@ -2571,8 +2571,8 @@
 "subcategory.giftIncome" = "贈与・その他収入";
 "subcategory.salary" = "給与";
 "subcategory.sales" = "売上";
-"subcategory.accountTransfer" = "口座振替";
-"subcategory.accountTransferOther" = "口座振替";
+"subcategory.accountTransfer" = "口座間振替";
+"subcategory.accountTransferOther" = "口座間振替";
 
 // MARK: - Tips & Tricks
 // MARK: - Tutorials
@@ -2733,7 +2733,7 @@
 "tutorials.importData.step0.desc" = "設定の「データ」で「ファイルをインポート」をタップします。";
 "tutorials.importData.step1.desc" = "デフォルトテンプレート(ここからダウンロード可能)に沿って、CSVやExcelを何度でもインポートできます。複数通貨のデータがある場合は通貨ごとに口座を選択するよう求められます。";
 "tutorials.createBudgets.step0.desc" = "メニューで計画を選び、予算タブで+ボタンを使って新規作成します。";
-"tutorials.createBudgets.step1.desc" = "名前、金額、期間(日次・月次・年次・1回限り、旅行やイベントなど)を設定。追跡したい口座、カテゴリー、タグ、必要度を選択。閾値で通知を受けたい場合は通知をオンにします。";
+"tutorials.createBudgets.step1.desc" = "名前、金額、期間(毎週・毎月・毎年・1回限り、旅行やイベントなど)を設定。追跡したい口座、カテゴリー、タグ、必要度を選択。閾値で通知を受けたい場合は通知をオンにします。";
 "tutorials.createBudgets.step2.desc" = "「ウィジェットに表示」をオンにすると、ホームの予算ウィジェットに表示されます。";
 "tutorials.createBudgets.step3.desc" = "予算をタップすればいつでも編集に戻れます。";
 "tutorials.createScheduledPayments.step0.desc" = "メニューで計画を選び、予定支払いタブで+ボタンを使って新規作成します。";
@@ -2745,7 +2745,7 @@
 "tutorials.createFavorites.step1.desc" = "次回はフォーム上部の列にあるお気に入りをタップすると、保存した項目が自動で入力されます。";
 "tutorials.editPanel.step0.desc" = "メイン画面に移動すると、利用可能なすべてのウィジェットで支出のサマリーが表示されます。";
 "tutorials.editPanel.step1.desc" = "ホームの各セクションの横にある四角いボタンをタップすると、表示するウィジェットと順番を選べます。";
-"tutorials.editPanel.step2.desc" = "カスタマイズ内の「リセット」をタップすればいつでも既定の順序に戻せます。";
+"tutorials.editPanel.step2.desc" = "カスタマイズ内の「元のレイアウトに戻す」をタップすればいつでも既定の順序に戻せます。";
 "tutorials.panelFiltering.step0.desc" = "Yalaのインタラクティブグラフを最大限活用しましょう。ほぼすべてのパネルがカテゴリーや必要度でフィルター可能です。色々試して、自分に合うものを見つけてください。";
 "tutorials.panelFiltering.step1.desc" = "フィルターバーで適用中のフィルターをすべて確認できます。個別または一括でいつでも削除可能です。";
 "tutorials.panelFiltering.step2.desc" = "アプリの各ビューで、グラフを使って好みにフィルターできることが分かります。";
@@ -2765,10 +2765,10 @@
 // MARK: - Scheduled Payments UX (M1-M7)
 "scheduled.period.selector.title" = "月を選択";
 "scheduled.summary.paid" = "支払い済み";
-"scheduled.summary.pending" = "保留中";
+"scheduled.summary.pending" = "未払い";
 "scheduled.filter.all" = "すべて";
 "scheduled.filter.paid" = "支払い済み";
-"scheduled.filter.pending" = "保留中";
+"scheduled.filter.pending" = "未払い";
 "scheduled.associate.title" = "支出をリンク";
 "scheduled.associate.confirm" = "この支出を予定支払いにリンクしますか？";
 "scheduled.associate.success" = "支出をリンクしました";
@@ -2932,7 +2932,7 @@
 "whatsNew.v12.themes.title" = "PROテーマ";
 "whatsNew.v12.themes.description" = "ミニマルと半透明の新テーマでアプリをカスタマイズ。";
 "whatsNew.v12.scheduled.title" = "予定支払い";
-"whatsNew.v12.scheduled.description" = "可変金額と回のスキップに対応しました。";
+"whatsNew.v12.scheduled.description" = "可変金額と特定の回のスキップに対応しました。";
 "whatsNew.v12.moreForYou.title" = "さらにあなたへ";
 "whatsNew.v12.moreForYou.description" = "無料口座が4つに、30日間の無料トライアル付き。";
 
@@ -3264,7 +3264,7 @@
 "guide.panel.title" = "ここがあなたの概要です";
 "guide.panel.message" = "支出と残金がひと目で分かります。「新規記録」をタップすると支出を追加できます。";
 "guide.trends.title" = "支出の調子はどうですか？";
-"guide.trends.message" = "このグラフは以前より使っているか少ないかを示します。線が上がっていれば支出が増えています。";
+"guide.trends.message" = "このグラフは以前より多く使っているか少ないかを示します。線が上がっていれば支出が増えています。";
 "guide.categories.title" = "お金はどこに使っていますか？";
 "guide.categories.message" = "食事、交通など、それぞれにいくら使っているかが分かります。一番大きなスライスが、最も使っている分野です。";
 "guide.records.title" = "すべての支出";
@@ -4231,7 +4231,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "ここに表示されているのは何ですか？";
 "panel.widgetInfo.periodComparison.whatA" = "現在の期間の残高・収入・支出を、前の期間と並べて表示しています。傾向が改善しているかどうかが一目で分かります。";
 "panel.widgetInfo.periodComparison.howQ" = "何と比較していますか？";
-"panel.widgetInfo.periodComparison.howA" = "Mをタップすると前月、Aをタップすると前年と比較できます。この選択はパネル全体の差分にも適用されます。";
+"panel.widgetInfo.periodComparison.howA" = "P-1をタップすると前の期間、Y-1をタップすると前年の同じ期間と比較できます。この選択はパネル全体の差分にも適用されます。";
 "panel.widgetInfo.sankey.title" = "お金の流れ";
 "panel.widgetInfo.sankey.chip1" = "流れ";
 "panel.widgetInfo.sankey.chip2" = "必要度別";
@@ -4278,7 +4278,7 @@
 "split.you" = "あなた";
 "split.rest" = "残り";
 "split.percentSuffix %@" = "(%@%%)";
-"split.sharesSuffix %d %d" = "(%d/%d 株)";
+"split.sharesSuffix %d %d" = "(%d/%d シェア)";
 
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 "split.youPaidAll" = "あなたが全額支払いました";
@@ -4291,7 +4291,7 @@
 "more.subtitle.distribution" = "お金の使いみちを発見";
 "more.subtitle.budgets" = "上限を決めて進み具合を確認";
 "more.subtitle.scheduledPayments" = "これからの支払いとサブスク";
-"more.subtitle.comparative" = "先月より使った？使わなかった？";
+"more.subtitle.comparative" = "先月より多く使った？少なかった？";
 "more.subtitle.cashFlow" = "これからの数か月、お金は足りる？";
 "more.subtitle.records" = "すべての記録をひとつに";
 "more.subtitle.groups" = "割り勘を手軽に共有";
@@ -5418,7 +5418,7 @@
 "settings.signOutWaitButton" = "待つ";
 
 /* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
-"settings.signOutExitAnywayButton" = "それでも終了";
+"settings.signOutExitAnywayButton" = "それでもサインアウト";
 
 /* Leave group rejected: the server says the current user owns the group */
 "groups.errors.ownerCannotLeave" = "このグループはあなたのものなので、退出できません。誰かが管理者として残る必要があります。もう必要なければ、削除できます。";
@@ -7006,7 +7006,7 @@
 "import.columns.accessibility" = "必要な列：%@";
 "import.columns.exampleCategory" = "食費";
 "import.columns.exampleSubcategory" = "外食";
-"import.createCategories.on" = "ファイルにないカテゴリがあれば、インポート時に作成します。";
+"import.createCategories.on" = "ファイルに、まだないカテゴリーが含まれている場合は、インポート時に作成します。";
 "import.createCategories.off" = "すでにあるカテゴリの行だけを取り込みます。それ以外はインポート前に表示します。";
 "import.preview.title" = "インポート前に確認";
 "import.preview.summary" = "%1$@を%2$@にインポートします。";
@@ -7580,7 +7580,7 @@
 "l20n.sheet.seesTitle" = "Yala はあなたのデータを見ることができます";
 "l20n.sheet.seesDetail" = "サポートやスマート機能を提供するためです。";
 "l20n.sheet.accessTitle" = "Apple または Google でログインします";
-"l20n.sheet.accessDetail" = "そのアクセスを失っても Yala のパスワードはありません。先にコピーをエクスポートしてください。";
+"l20n.sheet.accessDetail" = "そのアクセスを失うと、Yala のパスワードでは復旧できません。先にコピーをエクスポートしてください。";
 "l20n.sheet.exportCopy" = "先にコピーをエクスポート";
 "l20n.sheet.details" = "詳細を見る";
 "l20n.sheet.hideDetails" = "詳細を隠す";

@@ -1,0 +1,51 @@
+[
+ {
+  "k": "settings.currencyCode",
+  "categoria": "sin_traducir",
+  "gravedad": "media",
+  "motivo": "Idéntica al inglés (posible resto sin traducir).",
+  "fuente": "determinista",
+  "actual": "Code (PEN, USD)",
+  "protegida": false,
+  "aplicada": false,
+  "no_aplicada_por": "sin propuesta"
+ },
+ {
+  "k": "widget.main",
+  "categoria": "significado",
+  "gravedad": "media",
+  "propuesta": "Primär",
+  "motivo": "«Haupt-» es un prefijo de compuesto suelto y se ve como texto cortado en el widget.",
+  "fuente": "llm",
+  "actual": "Haupt-",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": true
+ },
+ {
+  "k": "widget.hint.needTrend",
+  "categoria": "terminologia",
+  "gravedad": "baja",
+  "propuesta": "Klassifiziert deine Ausgaben als essenziell, prioritär oder optional.",
+  "motivo": "El resto de la app usa «essenziell» para «esenciales», no «wesentlich».",
+  "fuente": "llm",
+  "actual": "Klassifiziert deine Ausgaben als wesentlich, prioritär oder optional.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ },
+ {
+  "k": "stats.trends.heroOnset",
+  "categoria": "terminologia",
+  "gravedad": "media",
+  "propuesta": "Dein erster Zeitraum mit Yala",
+  "motivo": "La app traduce «período» como «Zeitraum»; «Periode» es inconsistente y puede leerse como menstruación.",
+  "fuente": "llm",
+  "actual": "Deine erste Periode mit Yala",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ }
+]

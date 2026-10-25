@@ -297,7 +297,7 @@ struct PanelFilterControlBar: View {
     private static let chipDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 

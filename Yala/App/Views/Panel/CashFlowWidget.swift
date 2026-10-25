@@ -1044,14 +1044,14 @@ struct CashFlowWidget: View {
     private static let tooltipDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yy"
+        f.setLocalizedDateFormatFromTemplate("dMMMyy")
         return f
     }()
 
     private static let tooltipMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yy"
+        f.setLocalizedDateFormatFromTemplate("MMMyy")
         return f
     }()
 
