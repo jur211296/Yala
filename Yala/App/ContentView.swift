@@ -530,7 +530,7 @@ struct ContentView: View {
     private func currentRemoteWipeNoticeDecision() -> RemoteWipeGraceLogic.NoticeDecision {
         let sync = iCloudSyncService.shared
         return RemoteWipeGraceLogic.noticeDecision(
-            iCloudTokenPresent: sync.isAccountAvailable,
+            iCloudAccountPresent: sync.hasICloudAccount,
             mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated,
             firstImportCompleted: sync.hasCompletedFirstImport,
             isImporting: sync.status.isImporting,
@@ -1226,6 +1226,11 @@ struct ContentView: View {
     /// El proceso volvió a primer plano (ver el `onChange(of: appActivations)` del cuerpo).
     @MainActor
     private func handleAppBecameActive() {
+        // Card y2vg: el arranque fue en segundo plano y dejó la hoja de quien vuelve para la primera activación.
+        if ReturningUserSheetDeferral.pendingUntilActive {
+            ReturningUserSheetDeferral.pendingUntilActive = false
+            presentReturningUserSheetIfPending()
+        }
         // GC-08: Recalculate user segment on each foreground activation
         UserSegmentService.shared.recalculate()
         // Cinturón del join intent: cubre "grupo ya local pero el reconcile
@@ -1886,6 +1891,8 @@ struct ContentView: View {
     @MainActor
     private func requestColdStartICloudNoticeAfterBootstrap() async {
         await waitForBootstrap()
+        // Card 90yc: la cuenta la dice CloudKit, y su respuesta llega asíncrona. Se decide una vez: con ella.
+        await iCloudSyncService.shared.awaitCloudKitAccountStatus()
         guard !ColdStartICloudNotice.checkedThisProcess else { return }
         ColdStartICloudNotice.checkedThisProcess = true
         let sawRowsBeforeRemeasuring = hasPersonalData
@@ -1908,7 +1915,7 @@ struct ContentView: View {
         guard RemoteWipeGraceLogic.coldStartRequestsICloudNotice(
             hasPersonalData: hasPersonalData, hasCompletedOnboarding: hasCompletedOnboarding,
             sessionObeysWipeSignal: sessionObeysWipeSignal,
-            iCloudTokenPresent: sync.isAccountAvailable,
+            iCloudAccountPresent: sync.hasICloudAccount,
             mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated) else { return }
         ColdStartICloudNotice.requestPending = true
         RouterEntryGate.shared.submit(.presentRemoteWipeNotice)
@@ -2894,14 +2901,9 @@ struct ContentView: View {
         return nil
     }
 
-    /// Post-checks de returning user: trial pendiente, What's New, language, app update.
-    /// Extraído para SSOT — antes vivía inline en `checkInitialSyncState`.
-    private func runReturningUserPostChecks() {
-        // Una vez por contenedor, no por `ContentView`: con varias ventanas, la que asciende a líder monta uno nuevo
-        // a mitad de sesión, y repetir esto ofrecería otra vez la prueba y Novedades y reanudaría un borrado que la
-        // líder anterior quizá aún tiene en vuelo. El swap de contenedor sí lo repite: es un arranque nuevo.
-        guard SceneRegistry.shared.claimBootChecks(generation: PersonalContainerHost.shared.generation) else { return }
-        resumeFullModeActivationIfPending()
+    /// La hoja de quien vuelve: Novedades, o la oferta de prueba pendiente (una por arranque). La decide
+    /// `runReturningUserPostChecks` en primer plano, o la primera activación si el arranque fue en segundo plano (y2vg).
+    private func presentReturningUserSheetIfPending() {
         // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
         // Una hoja por arranque, y Novedades antes que una oferta de prueba pendiente (`WhatsNewLaunchLogic
         // .returningUserSheet`): al actualizar con la oferta pendiente, Novedades salía en el segundo arranque.
@@ -2924,6 +2926,26 @@ struct ContentView: View {
             }
         case .none:
             break
+        }
+    }
+
+    /// Post-checks de returning user: trial pendiente, What's New, language, app update.
+    /// Extraído para SSOT — antes vivía inline en `checkInitialSyncState`.
+    private func runReturningUserPostChecks() {
+        // Una vez por contenedor, no por `ContentView`: con varias ventanas, la que asciende a líder monta uno nuevo
+        // a mitad de sesión, y repetir esto ofrecería otra vez la prueba y Novedades y reanudaría un borrado que la
+        // líder anterior quizá aún tiene en vuelo. El swap de contenedor sí lo repite: es un arranque nuevo.
+        guard SceneRegistry.shared.claimBootChecks(generation: PersonalContainerHost.shared.generation) else { return }
+        resumeFullModeActivationIfPending()
+        // Card y2vg: un arranque EN SEGUNDO PLANO (iOS relanza la app tras actualizar, o para una tarea de fondo, y
+        // reconecta la escena que seguía en el selector) no decide la hoja: se decide en la primera activación. Si no,
+        // el arranque se gastaba sin que nadie viera Novedades, y al abrir la app el proceso ya había hecho sus
+        // comprobaciones de arranque (`claimBootChecks`).
+        if WhatsNewLaunchLogic.defersReturningUserSheet(applicationInBackground:
+                                                            UIApplication.shared.applicationState == .background) {
+            ReturningUserSheetDeferral.pendingUntilActive = true
+        } else {
+            presentReturningUserSheetIfPending()
         }
         Task { await AppUpdateService.shared.checkForUpdate() }
         // Paso 4 · el espejo que llega tarde. Va aquí y no en `presentNextOnboardingScreen` porque su

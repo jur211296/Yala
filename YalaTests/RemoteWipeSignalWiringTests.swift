@@ -271,7 +271,7 @@ struct RemoteWipeSignalWiringTests {
             + "guard RemoteWipeGraceLogic.coldStartRequestsICloudNotice( "
             + "hasPersonalData: hasPersonalData, hasCompletedOnboarding: hasCompletedOnboarding, "
             + "sessionObeysWipeSignal: sessionObeysWipeSignal, "
-            + "iCloudTokenPresent: sync.isAccountAvailable, "
+            + "iCloudAccountPresent: sync.hasICloudAccount, "
             + "mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated) else { return } "
             + "ColdStartICloudNotice.requestPending = true "
             + "RouterEntryGate.shared.submit(.presentRemoteWipeNotice) }"

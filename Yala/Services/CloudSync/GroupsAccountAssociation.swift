@@ -111,6 +111,13 @@ final class GroupsAccountAssociation {
 
     var hasAssociation: Bool { read() != nil }
 
+    /// **¿La asociación solo existe en el iCloud-KV?** Sin espejo local, este dispositivo nunca la escribió: ni la
+    /// sesión de grupos de esa cuenta se registró aquí ni nadie la asoció en él (el arranque con sesión viva y el sign-in
+    /// de Grupos escriben los dos almacenes). Es la de OTRA instalación del mismo Apple ID — otro teléfono que la sigue
+    /// usando, o una prueba anterior cuya cuenta puede no existir ya (card 9mc6): desde aquí no se distinguen —el servidor
+    /// solo contesta a la sesión de esa cuenta— y la hoja de «Activar la nube» ofrece soltarla diciéndolo.
+    var isRemoteOnly: Bool { readLocal() == nil && readICloud() != nil }
+
     /// ¿Hay un desasociar explícito registrado en el iCloud-KV del Apple ID? Es lo que impide que otro
     /// dispositivo con sesión viva reponga la asociación que esta persona acaba de soltar.
     var isDetached: Bool { iKV.double(forKey: Keys.detachedAt) > 0 }

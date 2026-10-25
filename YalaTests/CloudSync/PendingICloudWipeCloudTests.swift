@@ -478,7 +478,11 @@ struct PendingICloudWipeCloudWiringTests {
         let src = try Self.code(Self.storage)
         #expect(src.contains(
             "UITestHooks.fakePendingICloudWipe || StorageModePersistence.hasPendingICloudCorpusWipe()"))
-        let tap = try Self.slice(from: "isLoading: controller.isCheckingMigrationIdentity", to: ".accessibilityIdentifier(\"storage_migrate_button\")", in: src)
+        // Desde la card vbf9 el toque vive en `tapActivate` (lo llaman el botón y el aviso del Panel): el botón lo llama, y
+        // el orden se mira dentro.
+        let button = try Self.slice(from: "isLoading: controller.isCheckingMigrationIdentity", to: ".accessibilityIdentifier(\"storage_migrate_button\")", in: src)
+        #expect(button.contains("tapActivate(controller, isAdopt: isAdopt)"), "el botón ya no pasa por `tapActivate`")
+        let tap = try Self.slice(from: "private func tapActivate(", to: "private func beginAdoptFromPanelOfferIfRequested(", in: src)
         try Self.expectOrder("pendingICloudWipeWaived = false", before: "guard !hasPendingICloudWipe else {", in: tap,
                              "un «sin borrar» de un intento anterior se arrastraría al siguiente")
         try Self.expectOrder("confirmPendingICloudWipe = true", before: "beginActivation(controller, isAdopt: isAdopt)", in: tap,

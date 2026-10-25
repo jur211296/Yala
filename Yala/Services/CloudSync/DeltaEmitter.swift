@@ -64,6 +64,11 @@ enum DeltaEmitter {
            let line = model as? CashFlowLine, line.amountChangesRaw != nil {
             SyncCapability.noteSuppressedCashFlowAmountChange(line.id)
         }
+        // Y con el destino de un favorito de transferencia (v4, card da5d).
+        if capabilityLevel < SyncCapability.favoriteDestinationSince, changedColumns.contains("destination_account_ref"),
+           let favorite = model as? FavoritePayment, favorite.destinationAccount != nil, let syncID = favorite.syncID {
+            SyncCapability.noteSuppressedFavoriteDestination(syncID)
+        }
         // 1) Índices de grupo desde los emisores: group_key → [columnas], y columna → group_key.
         var columnsByGroup: [String: [String]] = [:]
         var groupByColumn: [String: String] = [:]

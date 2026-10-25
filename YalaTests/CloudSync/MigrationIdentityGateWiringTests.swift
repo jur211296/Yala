@@ -321,7 +321,9 @@ struct MigrationIdentityGateWiringTests {
             "offersAnotherAccount: offersAnotherAccount,",
             "associatedEmail: reason == .anotherGroupsAccountAssociated",
             "? GroupsAccountAssociation.shared.read()?.email : nil,",
-            "rejectedProvider: rejectedProvider)",
+            "rejectedProvider: rejectedProvider,",
+            "offersDetachingStaleAssociation: reason == .anotherGroupsAccountAssociated && offersAnotherAccount",
+            "&& GroupsAccountAssociation.shared.isRemoteOnly)",
             "CloudSyncBreadcrumb.migrationIdentityBlocked(reason: reason.slug, stage: stage)",
             "MetricsService.cloudMigrationExistingAccountBlocked(reason: reason.slug, stage: stage)",
             "readLiveSession()",
@@ -405,7 +407,11 @@ struct MigrationIdentityGateWiringTests {
         let start = try #require(view.range(of: "isLoading: controller.isCheckingMigrationIdentity\n            ) {"))
         let end = try #require(view.range(of: ".accessibilityIdentifier(\"storage_migrate_button\")"))
         #expect(start.lowerBound < end.lowerBound)
-        let tap = String(view[start.upperBound..<end.lowerBound])
+        let button = String(view[start.upperBound..<end.lowerBound])
+        // Desde la card vbf9 el toque es `tapActivate`, que llaman el botón y el aviso del Panel.
+        #expect(Self.lines(button) == ["tapActivate(controller, isAdopt: isAdopt)", "}"])
+        let tap = try Self.body(of: "private func tapActivate(_ controller: CloudMigrationController, isAdopt: Bool) {",
+                                in: Self.viewPath)
         #expect(Self.lines(tap) == [
             "pendingICloudWipeWaived = false",
             "guard !hasPendingICloudWipe else {",
@@ -413,7 +419,6 @@ struct MigrationIdentityGateWiringTests {
             "return",
             "}",
             "beginActivation(controller, isAdopt: isAdopt)",
-            "}",
         ])
         let action = try Self.body(of: "private func beginActivation(_ controller: CloudMigrationController, isAdopt: Bool) {",
                                    in: Self.viewPath)
@@ -448,6 +453,12 @@ struct MigrationIdentityGateWiringTests {
             "migrationBlockUseAnotherAccount = true",
             "presentedMigrationBlock = nil",
             "},",
+            // Card 9mc6: suelta la asociación vieja y sigue por la misma cadena que «Usar otra cuenta».
+            "onDetachAndContinue: {",
+            "controller?.releaseStaleGroupsAssociation()",
+            "migrationBlockUseAnotherAccount = true",
+            "presentedMigrationBlock = nil",
+            "},",
             "onClose: { presentedMigrationBlock = nil })",
             ".onAppear {",
             "if controller?.migrationIdentityBlock?.id == block.id { controller?.migrationIdentityBlock = nil }",
@@ -472,7 +483,8 @@ struct MigrationIdentityGateWiringTests {
         ])
 
         let code = Self.lines(try Self.source(Self.viewPath)).joined(separator: "\n")
-        #expect(Self.occurrences(of: "migrationBlockUseAnotherAccount = true", in: code) == 1)
+        #expect(Self.occurrences(of: "migrationBlockUseAnotherAccount = true", in: code) == 2,
+                "«Usar otra cuenta» y «Desasociarla y seguir» (card 9mc6), y nadie más")
         #expect(Self.occurrences(of: "controller?.migrationIdentityBlock = nil", in: code) == 1,
                 "solo la hoja montada suelta el aviso")
     }
@@ -488,7 +500,23 @@ struct MigrationIdentityGateWiringTests {
             ".multilineTextAlignment(.center)",
             ".accessibilityIdentifier(\"storage_migrate_block_apple_note\")",
             "}",
-            "if block.offersAnotherAccount {",
+            // Card 9mc6: con la asociación de otra instalación, «Desasociarla y seguir» ocupa el sitio de «Usar otra cuenta».
+            "if block.offersDetachingStaleAssociation {",
+            "YalaPrimaryButton(L10n.Storage.MigrateBlock.detachAndContinue,",
+            "icon: \"person.crop.circle.badge.xmark\") {",
+            "onDetachAndContinue()",
+            "}",
+            ".accessibilityIdentifier(\"storage_migrate_block_detach_continue\")",
+            "Text(L10n.Storage.MigrateBlock.detachNote)",
+            ".font(DS.Typography.caption)",
+            ".foregroundStyle(.secondary)",
+            ".multilineTextAlignment(.center)",
+            ".accessibilityIdentifier(\"storage_migrate_block_detach_note\")",
+            "YalaSecondaryButton(L10n.Common.understood) {",
+            "onClose()",
+            "}",
+            ".accessibilityIdentifier(\"storage_migrate_block_close\")",
+            "} else if block.offersAnotherAccount {",
             "YalaPrimaryButton(L10n.Storage.MigrateBlock.useAnotherAccount,",
             "icon: \"person.crop.circle.badge.plus\") {",
             "onUseAnotherAccount()",

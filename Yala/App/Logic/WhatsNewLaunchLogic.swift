@@ -58,10 +58,27 @@ nonisolated enum WhatsNewLaunchLogic {
         return .none
     }
 
+    /// **¿El arranque deja la hoja de quien vuelve para la primera activación?** Solo si corre con la app en SEGUNDO
+    /// PLANO (card y2vg, QA guiado del TestFlight 19, 2026-10-20: actualizando con la 2.0.4 abierta en el selector,
+    /// Novedades no salía en el primer arranque; cerrada del todo, sí). INFERIDO, sin reproducir: iOS relanza en segundo
+    /// plano una app que seguía en el selector —tras actualizarla o para una tarea de fondo— y le reconecta la escena, así
+    /// que el arranque corre sin nadie delante y, al abrirla, el proceso ya hizo sus comprobaciones de arranque. Un
+    /// arranque normal corre en `.inactive` (la escena aún no está activa) y decide en el acto, como siempre.
+    static func defersReturningUserSheet(applicationInBackground: Bool) -> Bool {
+        applicationInBackground
+    }
+
     /// "2.1.1" → "2.1". Una versión sin punto se devuelve tal cual; la vacía sigue vacía.
     static func majorMinor(_ version: String) -> String {
         let parts = version.split(separator: ".")
         guard parts.count >= 2 else { return version }
         return "\(parts[0]).\(parts[1])"
     }
+}
+
+/// La hoja de quien vuelve, aplazada porque el arranque corrió en segundo plano (card y2vg). Del PROCESO, como
+/// `ColdStartICloudNotice`: el `ContentView` puede remontarse entre el arranque y la activación.
+@MainActor
+enum ReturningUserSheetDeferral {
+    static var pendingUntilActive = false
 }

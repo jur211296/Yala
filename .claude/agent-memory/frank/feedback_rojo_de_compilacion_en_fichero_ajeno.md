@@ -1,6 +1,6 @@
 ---
 name: rojo-de-compilacion-en-fichero-ajeno
-description: Un error de tipos en un fichero que no tocaste, tras un build incremental, puede ser del compilador — recompila una vez antes de bisecar tu diff
+description: Error de tipos en un fichero ajeno tras build incremental (`Category` no Hashable) es del compilador — relanza; si repite, clean antes de bisecar
 metadata:
   type: feedback
 ---
@@ -17,6 +17,10 @@ Segunda vez, 2026-10-24 (encargo de las tartas sin categoría): «Set requires t
 x86_64 además de arm64). Relanzado con el destino del simulador por id (solo arm64), compiló limpio. Mismo tipo
 (`Category`, conformidad `Hashable` de `@Model`), mismo patrón: el compilador, no el diff.
 
+Tercera vez, 2026-10-25 (lote 12.2): el mismo `PanelFilterControlBar.swift:134`, ya con destino por id, y relanzar NO
+lo curó (dos rojos seguidos). Había editado ficheros mientras un `xcodebuild test` compilaba ese DerivedData. `clean` +
+build: verde, sin tocar el diff.
+
 **How to apply:** si el rojo está en un fichero que no tocaste y el mensaje no tiene que ver con tu cambio, relanza el
-build tal cual antes de bisecar, y mejor con `-destination 'platform=iOS Simulator,id=<udid>'` (una sola arquitectura,
-más rápido). Si se repite, entonces sí es tuyo. Relacionado: [[regresion-aparente-se-mide-contra-la-base]].
+build tal cual antes de bisecar, con `-destination 'platform=iOS Simulator,id=<udid>'`. Si se repite y editaste el árbol
+durante un build anterior, `clean` antes de bisecar. Solo si cae también limpio es tuyo. Relacionado: [[regresion-aparente-se-mide-contra-la-base]].

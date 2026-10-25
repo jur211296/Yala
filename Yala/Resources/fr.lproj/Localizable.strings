@@ -8372,3 +8372,18 @@
 "pj22.permissions.faceID" = "Face ID";
 "pj22.permissions.faceIDDetail" = "C’est iOS qui l’active, pour que toi seul puisses ouvrir Yala.";
 "pj22.permissions.faceIDSeeHow" = "Voir comment";
+
+/* Botón de la hoja «Ya usas otra cuenta para tus grupos» cuando esa asociación llegó del iCloud de otra instalación: suelta la cuenta asociada y vuelve a pedir la cuenta */
+"storage.migrateBlock.detachAndContinue" = "La dissocier et continuer";
+
+/* Aviso del Panel en un segundo dispositivo: otro dispositivo del mismo iCloud activó la nube */
+"panel.cloudAdoptOffer.title" = "Tes données sont déjà dans ton compte cloud";
+
+/* Cuerpo del aviso: activar la cuenta en la nube aquí también */
+"panel.cloudAdoptOffer.body" = "L’activer aussi sur cet appareil ?";
+
+/* Botón corto del aviso: abre la activación de la nube en este dispositivo */
+"panel.cloudAdoptOffer.button" = "Activer";
+
+/* Nota bajo «Desasociarla y seguir»: el desasociar no alcanza la copia local de otro dispositivo */
+"storage.migrateBlock.detachNote" = "Si tu utilises ce compte pour tes groupes sur un autre appareil, il y reste associé.";

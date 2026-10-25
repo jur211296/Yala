@@ -248,4 +248,38 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
                        "«Entendido» abrió la elección de Apple/Google: el gesto de «Usar otra cuenta» se quedó armado.")
         XCTAssertFalse(title.waitForExistence(timeout: 2), "El aviso volvió a salir: la hoja no lo soltó al montar.")
     }
+
+    // MARK: - Card 9mc6: la cuenta de grupos que llegó del iCloud de otra instalación
+
+    /// Con la asociación solo en el iCloud (de otra instalación), la hoja ofrece «Desasociarla y seguir» en el sitio de «Usar
+    /// otra cuenta», y tocarlo baja la hoja y abre la elección de Apple/Google: un paso, sin pasar por «Grupos».
+    func test_staleGroupsAssociation_detachAndContinue_opensTheSignInChoice() {
+        let (app, title) = openStorageWithPendingBlock("otherGroupsStale")
+
+        let detach = app.buttons["storage_migrate_block_detach_continue"]
+        XCTAssertTrue(detach.waitForExistence(timeout: 5), """
+            Con la cuenta de grupos de otra instalación, la hoja no ofrece soltarla: la persona tiene que encontrar             «Desasociar» en «Grupos» (QA guiado del TestFlight 19).
+            """)
+        XCTAssertFalse(app.buttons["storage_migrate_block_use_another"].exists,
+                       "«Usar otra cuenta» sigue a la vista, y con la asociación puesta cualquier otra se pararía igual.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "despues-9mc6-desasociarla-y-seguir"
+        shot.lifetime = .keepAlways
+        add(shot)
+        detach.tap()
+
+        XCTAssertTrue(title.waitForNonExistence(timeout: 5), "«Desasociarla y seguir» no cerró la hoja.")
+        XCTAssertTrue(signInChooser(app).waitForExistence(timeout: 10),
+                      "«Desasociarla y seguir» cerró la hoja y no abrió la elección de Apple/Google.")
+    }
+
+    /// El gemelo que lo hace discriminante: con la asociación de ESTE dispositivo, la hoja no la suelta desde aquí y sigue
+    /// ofreciendo «Usar otra cuenta».
+    func test_ownGroupsAssociation_doesNotOfferToDetachIt() {
+        let (app, _) = openStorageWithPendingBlock("otherGroups")
+
+        XCTAssertTrue(app.buttons["storage_migrate_block_use_another"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["storage_migrate_block_detach_continue"].exists,
+                       "La hoja ofrece soltar una asociación que es de este dispositivo.")
+    }
 }

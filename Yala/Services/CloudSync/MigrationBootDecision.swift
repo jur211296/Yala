@@ -102,6 +102,17 @@ nonisolated enum MigrationRuntimeGate {
         !personalMountMismatch && !cloudWithMirrorOn && isDomainStablePhase(phase)
     }
 
+    /// C-1: ¿el par de storage está ROTO de verdad? `.cloud` con el espejo montado en una fase journaleada ESTABLE. Solo
+    /// con el journal CONECTADO (card jbjj, QA guiado del 2026-10-15): antes de `MigrationPhaseStore.configure` la lectura
+    /// es el `.notStarted` de relleno, y el primer `.active` del arranque (Grupos, `startIfEligible`) consulta el candado
+    /// antes del paso 11. En la vuelta a iCloud el par `.cloud` + espejo es legítimo (`reverseMountMirror`), y esa ventana
+    /// lo leía en una fase «estable» y disparaba el canario en cada vuelta. No decide si el motor arranca: eso es `canRun`.
+    static func isStorageModePairViolation(read: JournaledPhaseRead, cloudWithMirrorOn: Bool,
+                                           journalConnected: Bool) -> Bool {
+        guard journalConnected, cloudWithMirrorOn, case .phase(let phase) = read else { return false }
+        return isDomainStablePhase(phase)
+    }
+
     /// La misma pregunta con la LECTURA del journal: un journal que no se deja leer no arranca el motor. No se sabe si
     /// hay una migración o una vuelta en vuelo, y en ellas quien conduce es el `MigrationRunner` (P0).
     static func canRun(read: JournaledPhaseRead, cloudWithMirrorOn: Bool, personalMountMismatch: Bool) -> Bool {

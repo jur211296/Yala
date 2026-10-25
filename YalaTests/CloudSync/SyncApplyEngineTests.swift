@@ -1168,7 +1168,7 @@ struct SyncApplyEngineTests {
                                                                   range: NSRange(text.startIndex..., in: text))
     }
 
-    /// Las 18 ramas del pase final, UNA A UNA: con la fila ilegible, `.unreadable`; sin seam, la fila no existe y es
+    /// Las 19 ramas del pase final (la 19.ª, el destino de un favorito de transferencia, card da5d), UNA A UNA: con la fila ilegible, `.unreadable`; sin seam, la fila no existe y es
     /// `.rowGone` (control). Un `fetch*` tolerante que vuelva a CUALQUIER rama compila limpio —los `fetch*` siguen
     /// vivos para `liveRowExists`— y solo esto lo pone en rojo. El scan fija además que no quede ninguno y que la
     /// lista de aquí tenga tantas ramas como el switch: una rama nueva sin su fila en la lista, también en rojo.
@@ -1185,6 +1185,7 @@ struct SyncApplyEngineTests {
             (EntityApplyMap.inboxDraft.table, "subcategory_ref", "InboxDraft"),
             (EntityApplyMap.inboxDraft.table, "approved_transaction_ref", "InboxDraft"),
             (EntityApplyMap.favoritePayment.table, "account_ref", "FavoritePayment"),
+            (EntityApplyMap.favoritePayment.table, "destination_account_ref", "FavoritePayment"),
             (EntityApplyMap.favoritePayment.table, "subcategory_ref", "FavoritePayment"),
             (EntityApplyMap.merchantMemory.table, "subcategory_ref", "MerchantMemory"),
             (EntityApplyMap.budget.table, "category_id", "Budget"),
@@ -1215,7 +1216,7 @@ struct SyncApplyEngineTests {
         #expect(try occurrences(#"\bfetch[A-Z]"#, in: body) == 0)
     }
 
-    /// Los 25 appliers que leen algo —18 refs singulares y 7 M2M—, UNO A UNO: con el destino ilegible LANZAN (la
+    /// Los 26 appliers que leen algo —19 refs singulares (la 19.ª, el destino de un favorito, card da5d) y 7 M2M—, UNO A UNO: con el destino ilegible LANZAN (la
     /// página se tira). Un closure tolerante (`{ fetchSubcategory(…) }`) encaja en `(UUID) throws -> T?` sin un aviso
     /// del compilador; solo esto lo pone en rojo. El scan fija que la zona de los appliers no tenga ninguna lectura
     /// tolerante y que el recuento de `resolveRef` cuadre con la lista.
@@ -1250,6 +1251,7 @@ struct SyncApplyEngineTests {
         expectThrows(EntityApplyMap.inboxDraft, "approved_transaction_ref", reading: "TransactionItem", ref)
         expectThrows(EntityApplyMap.inboxDraft, "tag_refs", reading: "Tag", refs)
         expectThrows(EntityApplyMap.favoritePayment, "account_ref", reading: "Account", ref)
+        expectThrows(EntityApplyMap.favoritePayment, "destination_account_ref", reading: "Account", ref)
         expectThrows(EntityApplyMap.favoritePayment, "subcategory_ref", reading: "Subcategory", ref)
         expectThrows(EntityApplyMap.favoritePayment, "tag_refs", reading: "Tag", refs)
         expectThrows(EntityApplyMap.merchantMemory, "subcategory_ref", reading: "Subcategory", ref)
@@ -1274,7 +1276,7 @@ struct SyncApplyEngineTests {
         #expect(try occurrences(#"= try resolveRef\("#, in: appliersZone) == singular)
         #expect(try occurrences(#"try apply(TagRefs|UUIDArrayRefs)\("#, in: appliersZone) == many)
         #expect(try occurrences(#"\bfetch(?!BySyncID)[A-Z]\w*\("#, in: appliersZone) == 0)
-        #expect(singular == 18)
+        #expect(singular == 19)
         #expect(many == 7)
     }
 

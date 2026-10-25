@@ -13,6 +13,9 @@
 import Foundation
 
 enum PanelNotice: String, CaseIterable, Equatable {
+    /// Otro dispositivo del mismo iCloud activó la nube: ¿también aquí? (card vbf9). Primero porque es sobre dónde viven
+    /// los datos de la persona, no una novedad.
+    case cloudAdoptOffer
     /// «Este es tu resumen»: la guía de la primera visita. Primero porque explica la pantalla que se está viendo.
     case panelGuide
     /// Primeros pasos.
@@ -31,6 +34,7 @@ enum PanelNoticeQueueLogic {
 
     /// Lo que está encendido de cada aviso, ya resuelto por el Panel con las condiciones de siempre.
     struct Flags: Equatable {
+        var cloudAdoptOffer = false
         var panelGuide = false
         var setupChecklist = false
         var updateAvailable = false
@@ -43,6 +47,7 @@ enum PanelNoticeQueueLogic {
     static func visible(_ flags: Flags) -> [PanelNotice] {
         PanelNotice.allCases.filter { notice in
             switch notice {
+            case .cloudAdoptOffer: return flags.cloudAdoptOffer
             case .panelGuide: return flags.panelGuide
             case .setupChecklist: return flags.setupChecklist
             case .updateAvailable: return flags.updateAvailable

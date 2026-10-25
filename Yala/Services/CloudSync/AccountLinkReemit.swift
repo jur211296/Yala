@@ -20,6 +20,7 @@
 //
 //  Desde la v3 (UX 2.2 · L18-8) hace lo mismo con los cambios de monto «desde este mes» de las líneas del flujo de
 //  caja (`cashflow_lines.amount_changes_raw`), apuntados por `SyncCapability.noteSuppressedCashFlowAmountChange`.
+//  Y desde la v4 (card da5d), con el destino de los favoritos de transferencia (`favorite_payments.destination_account_ref`).
 //
 //  Por qué no «reemitir toda cuenta con enlace»: subiría con un HLC fresco copias de lo que bajó antes de que otro
 //  teléfono lo cambiara, y le ganaría por LWW a ese cambio más nuevo (lo cazó la review).
@@ -100,6 +101,38 @@ extension CloudSyncEngine {
             reemitted += inputs.count
         }
 
+        // El destino de un favorito de transferencia (v4, card da5d), con el mismo molde.
+        let pendingFavoriteIDs = level >= SyncCapability.favoriteDestinationSince
+            ? SyncCapability.suppressedFavoriteDestinations : []
+        if !pendingFavoriteIDs.isEmpty {
+            let favorites = try context.fetch(FetchDescriptor<FavoritePayment>()).filter {
+                $0.syncID.map(pendingFavoriteIDs.contains) ?? false
+            }
+            let emission = EntityEmissionMap.favoritePayment
+            let groupedColumns = Set(emission.groupByColumn.keys)
+            let inputs: [SnapshotRowInput] = favorites.compactMap { favorite in
+                guard let syncID = favorite.syncID else { return nil }
+                return SnapshotRowInput(syncID: syncID, entityType: SyncEntityType.favoritePayment) { hlc in
+                    let result = DeltaEmitter.emit(model: favorite, emission: emission,
+                                                   changedColumns: ["destination_account_ref"], hlc: hlc,
+                                                   capabilityLevel: level)
+                    do {
+                        let fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: groupedColumns)
+                        return (fieldsJSON, self.encodeFieldHlcs(result.fieldHlcs))
+                    } catch {
+                        #if DEBUG
+                        print("CloudSyncEngine.applyCapabilityUpgrade: codec c1 rechazó el favorito: \(error)")
+                        #endif
+                        CloudSyncBreadcrumb.encodeRejected(entity: SyncEntityType.favoritePayment,
+                                                           reason: "favoriteDestinationReemit:\(error)")
+                        return nil
+                    }
+                }
+            }
+            try enqueueSnapshotRows(inputs, context: context, now: now)
+            reemitted += inputs.count
+        }
+
         let cursor = try loadOrCreateCursor(context)
         if cursor.serverSeqCursor != 0 {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
@@ -109,6 +142,7 @@ extension CloudSyncEngine {
         // Lo apuntado de cuentas que ya no existen se retira igual: no hay nada que subir de ellas.
         SyncCapability.clearSuppressedAccountLinks(pendingIDs)
         SyncCapability.clearSuppressedCashFlowAmountChanges(pendingLineIDs)
+        SyncCapability.clearSuppressedFavoriteDestinations(pendingFavoriteIDs)
         SyncCapability.upgradePending = false
         CloudSyncBreadcrumb.capabilityUpgradeApplied(reemittedLinks: reemitted)
         return true

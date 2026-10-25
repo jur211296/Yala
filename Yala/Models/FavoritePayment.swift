@@ -32,8 +32,9 @@ final class FavoritePayment {
     /// Cuenta destino de un favorito de transferencia (UX 2.2 · L2-14). `account` es el origen. Un favorito de
     /// transferencia guardado antes de 2.2 no la tiene: se usa con el origen y el destino vacío, que la línea de lo que
     /// falta sobre «Guardar» ya señala. Campo nuevo del esquema personal de CloudKit (`CD_destinationAccount`): se
-    /// despliega a Production antes de publicar el build que lo escribe. No viaja al Modo Nube (sin columna en
-    /// `favorite_payments`): un favorito que baja por la nube llega sin destino, el mismo caso que uno viejo.
+    /// despliega a Production antes de publicar el build que lo escribe. Por el Modo Nube viaja desde la v4 del manifest
+    /// (`favorite_payments.destination_account_ref`, card da5d): con un backend anterior no viaja y el favorito llega sin
+    /// destino, el mismo caso que uno viejo; al subir de versión se reemite lo que se quedó fuera.
     @Relationship(deleteRule: .nullify, inverse: \Account.destinationFavoritePayments)
     var destinationAccount: Account?
 

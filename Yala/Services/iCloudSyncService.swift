@@ -181,11 +181,58 @@ final class iCloudSyncService {
     }
 
     /// Whether iCloud account is available (sync is automatic when true).
+    ///
+    /// **Es el token de iCloud DRIVE** (`ubiquityIdentityToken`), no CloudKit: con Drive apagado y la sesión de iCloud
+    /// abierta vale `false` mientras CloudKit funciona. Para «¿hay cuenta a la que CloudKit hable?» está
+    /// `hasICloudAccount` (cards 90yc y 2taf).
     var isAccountAvailable: Bool {
         #if DEBUG
         if let forced = _testForceAccountAvailable { return forced }
         #endif
         return SwiftDataConfiguration.isICloudAvailable()
+    }
+
+    /// **La cuenta de iCloud según CloudKit** (`CKContainer.accountStatus()`), la respuesta que no depende de iCloud
+    /// Drive. `nil` = aún no se preguntó en este proceso, o la pregunta falló. Se refresca al empezar a observar, al
+    /// cambiar la cuenta de iCloud (`NSUbiquityIdentityDidChange`) y al cambiar la de CloudKit (`CKAccountChanged`).
+    private(set) var cloudKitAccountStatus: CKAccountStatus?
+
+    /// La pregunta a CloudKit en vuelo, para quien tiene que decidir con su respuesta (`awaitCloudKitAccountStatus`).
+    @ObservationIgnored private var accountStatusRefresh: Task<Void, Never>?
+
+    /// Espera a que conteste la pregunta en vuelo, si la hay. La usa el aviso del arranque en frío, que decide UNA vez
+    /// por proceso: decidido antes de que CloudKit conteste, un teléfono con Drive apagado y cuenta se leía sin cuenta.
+    func awaitCloudKitAccountStatus() async {
+        await accountStatusRefresh?.value
+    }
+
+    /// **¿Hay cuenta de iCloud a la que CloudKit pueda hablar?** El token de Drive, o CloudKit diciendo `.available`
+    /// (`ICloudAccountWitness.hasAccount`). Con Drive apagado y la sesión abierta el espejo sincroniza igual, y la
+    /// pantalla de iCloud decía «iCloud no está activo» (card 90yc) y los borrados del Welcome no esperaban al import
+    /// (card 2taf). Mientras CloudKit no contesta vale lo que el token: nunca dice «sí» sin una de las dos pruebas.
+    var hasICloudAccount: Bool {
+        ICloudAccountWitness.hasAccount(tokenPresent: isAccountAvailable, cloudKitStatus: cloudKitAccountStatus)
+    }
+
+    /// Pregunta a CloudKit por la cuenta y repinta el estado con la respuesta. No en los hosts de test: en el simulador
+    /// CloudKit no tiene cuenta y la respuesta haría distinto cada arranque según llegara antes o después.
+    func refreshCloudKitAccountStatus() {
+        guard !SwiftDataConfiguration.isRunningTests, !SwiftDataConfiguration.isUITesting else { return }
+        accountStatusRefresh = Task { @MainActor [weak self] in
+            let status: CKAccountStatus?
+            do {
+                status = try await CKContainer(identifier: SwiftDataConfiguration.cloudKitContainerIdentifier)
+                    .accountStatus()
+            } catch {
+                #if DEBUG
+                print("iCloudSync: Error: accountStatus() falló: \(error)")
+                #endif
+                status = nil
+            }
+            guard let self else { return }
+            self.cloudKitAccountStatus = status
+            self.checkAccountStatus()
+        }
     }
 
     /// Assigns a new status only if it differs from the current one. Prevents
@@ -234,6 +281,11 @@ final class iCloudSyncService {
             name: .NSSystemClockDidChange,
             object: nil
         )
+        // La cuenta de CloudKit puede cambiar sin que cambie la de iCloud Drive (y al revés): las dos repreguntan.
+        // Con bloque y en `.main`: `CKAccountChanged` no promete hilo.
+        _ = NotificationCenter.default.addObserver(forName: .CKAccountChanged, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshCloudKitAccountStatus() }
+        }
         checkAccountStatus()
     }
 
@@ -261,12 +313,13 @@ final class iCloudSyncService {
         #if DEBUG
         print("iCloudSync: startObserving() registered — listening for NSPersistentCloudKitContainer events")
         #endif
+        refreshCloudKitAccountStatus()
     }
 
     // MARK: - Account Status
 
     func checkAccountStatus() {
-        if !isAccountAvailable {
+        if !hasICloudAccount {
             setStatus(.noAccount)
             return
         }
@@ -291,7 +344,11 @@ final class iCloudSyncService {
         // no por la cuenta, y cambiarles el suelo desde aquí es otro ticket
         // (`import-activity-latch-survives-an-icloud-account-change`).
         lastImportActivityAt = nil
+        // Lo que dijo CloudKit era de la cuenta anterior: hasta que conteste otra vez, decide el token (el lado que no
+        // inventa una cuenta que quizá ya no está).
+        cloudKitAccountStatus = nil
         checkAccountStatus()
+        refreshCloudKitAccountStatus()
     }
 
     @objc private func systemClockDidChange() {
@@ -592,7 +649,7 @@ final class iCloudSyncService {
     /// notificación llegaba a los 2 s y el sleep de 15 (o 90) seguía durmiendo hasta agotarse. Ese
     /// también era trabajo fantasma, solo que no lo veía nadie.
     func forceFetchAndWait(timeout: TimeInterval = 15) async -> Bool {
-        guard isAccountAvailable else { return false }
+        guard hasICloudAccount else { return false }
         if hasCompletedFirstImport { return true }
 
         // Sin `if Task.isCancelled { return false }` de entrada A PROPÓSITO: `withTaskCancellationHandler`
@@ -635,7 +692,9 @@ final class iCloudSyncService {
     ///   consumen migraciones `.cloud`/empty-store, aplicar el escape empty-store de `BootSaveGateLogic`
     ///   (gracia + `!hasObservedImportActivity` + quiescente) aquí también.
     func waitForImportQuiescence(timeout: TimeInterval = 90) async -> Bool {
-        guard isAccountAvailable else { return false }
+        // Con la cuenta de CloudKit y no con el token de Drive (card 2taf): con Drive apagado el espejo importa igual, y
+        // salir `false` al instante dejaba los borrados del Welcome en «No pudimos borrar todo» sin haber borrado nada.
+        guard hasICloudAccount else { return false }
         let deadline = Date.now.addingTimeInterval(timeout)
         // 1) Primer importEvent (con el tiempo restante del tope).
         if !hasCompletedFirstImport {
@@ -663,7 +722,7 @@ final class iCloudSyncService {
     /// only drives the contextual offline note in Sync Settings.
     @discardableResult
     func forceSync(modelContext: ModelContext) async -> ManualSyncResult {
-        guard isAccountAvailable else {
+        guard hasICloudAccount else {
             setStatus(.noAccount)
             return .failed
         }
@@ -739,6 +798,11 @@ final class iCloudSyncService {
         lastSuccessfulImportDate = date
     }
 
+    /// Fija lo que CloudKit contestó sobre la cuenta, sin preguntarle (en el simulador no tiene cuenta).
+    func _testSetCloudKitAccountStatus(_ status: CKAccountStatus?) {
+        cloudKitAccountStatus = status
+    }
+
     /// Reset state between tests. Not exposed in release.
     func _testReset() {
         pendingFailedTransition?.cancel()
@@ -758,6 +822,7 @@ final class iCloudSyncService {
         lastImportActivityAt = nil
         _testIgnoreExternalEvents = true
         _testForceAccountAvailable = nil
+        cloudKitAccountStatus = nil
         mirrorReportedNotAuthenticated = false
         // Ancla aislada por test: el singleton escribiría en el `UserDefaults` del simulador.
         if let isolated = UserDefaults(suiteName: "test.icloudsync.\(UUID().uuidString)") {
@@ -989,5 +1054,18 @@ nonisolated final class ForceFetchWaitBox: @unchecked Sendable {
         if let observer { NotificationCenter.default.removeObserver(observer) }
         timeoutTask?.cancel()
         continuation?.resume(returning: value)
+    }
+}
+
+// MARK: - El testigo de cuenta que no depende de iCloud Drive (cards 90yc y 2taf)
+
+/// **¿Hay cuenta de iCloud a la que CloudKit pueda hablar?** El token de iCloud Drive (`ubiquityIdentityToken`) solo
+/// dice que hay Drive; con Drive apagado y la sesión abierta CloudKit funciona y el espejo sincroniza
+/// (`.claude/rules/swiftdata-cloudkit.md`, regla del 2026-09-10). Así que basta una de las dos pruebas: el token, o
+/// CloudKit diciendo `.available`. Sin respuesta de CloudKit (`nil`) decide el token, como hasta hoy: el testigo solo
+/// AÑADE la población de Drive apagado, nunca quita a nadie que antes tuviera cuenta.
+nonisolated enum ICloudAccountWitness {
+    static func hasAccount(tokenPresent: Bool, cloudKitStatus: CKAccountStatus?) -> Bool {
+        tokenPresent || cloudKitStatus == .available
     }
 }

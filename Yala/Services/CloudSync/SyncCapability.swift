@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 3
+    static let clientManifestVersion = 4
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -48,11 +48,16 @@ nonisolated enum SyncCapability {
     /// este mes» de una línea del flujo de caja).
     static let cashFlowAmountChangesSince = 3
 
+    /// Versión del manifest que estrena `favorite_payments.destination_account_ref` (card da5d: el destino de un favorito
+    /// de transferencia, UX 2.2 · L2-14).
+    static let favoriteDestinationSince = 4
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
     static let suppressedAccountLinksKey = "cloudSync.accountLinksSuppressed"
     static let suppressedCashFlowAmountChangesKey = "cloudSync.cashFlowAmountChangesSuppressed"
+    static let suppressedFavoriteDestinationsKey = "cloudSync.favoriteDestinationsSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -157,6 +162,29 @@ nonisolated enum SyncCapability {
         let remaining = suppressedCashFlowAmountChanges.subtracting(lineIDs)
         if remaining.isEmpty { defaults.removeObject(forKey: suppressedCashFlowAmountChangesKey) }
         else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedCashFlowAmountChangesKey) }
+    }
+
+    // MARK: - Destinos de favoritos de transferencia que no subieron (v4)
+
+    /// Los favoritos (por `syncID`) cuyo destino este teléfono cambió o subió mientras hablaba una versión que no conoce la
+    /// columna: la emisión la quitó y el servidor no la tiene.
+    static var suppressedFavoriteDestinations: Set<UUID> {
+        Set((defaults.stringArray(forKey: suppressedFavoriteDestinationsKey) ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    /// Lo llama quien filtró `destination_account_ref` por la versión. Apuntar de más es inocuo: la reemisión sube el
+    /// valor de ese momento.
+    static func noteSuppressedFavoriteDestination(_ syncID: UUID) {
+        var current = suppressedFavoriteDestinations
+        guard current.insert(syncID).inserted else { return }
+        defaults.set(current.map(\.uuidString).sorted(), forKey: suppressedFavoriteDestinationsKey)
+    }
+
+    /// Retira los que ya se encolaron. Solo esos: uno que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedFavoriteDestinations(_ syncIDs: Set<UUID>) {
+        let remaining = suppressedFavoriteDestinations.subtracting(syncIDs)
+        if remaining.isEmpty { defaults.removeObject(forKey: suppressedFavoriteDestinationsKey) }
+        else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedFavoriteDestinationsKey) }
     }
 
     private static func makeDefaults() -> UserDefaults {

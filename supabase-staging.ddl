@@ -179,6 +179,7 @@ CREATE TABLE favorite_payments (
   amount NUMERIC(18,4),
   note TEXT,
   account_ref UUID,
+  destination_account_ref UUID,  -- g24_01 (2026-10-25): destino de un favorito de transferencia (card da5d); PENDIENTE en staging y producción
   subcategory_ref UUID,
   tag_refs UUID[],
   need_override TEXT,

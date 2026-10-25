@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-10-25` [g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)](#g2401--favoritepaymentsdestinationaccountref-el-destino-de-un-favorito-de-transferencia-2026-10-25)
 - `2026-10-21` [g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-1](#g2101--cashflowlinesamountchangesraw-los-cambios-desde-este-mes-del-flujo-de-caja-2026-10-21)
 - `2026-10-21` [g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)](#g2201--setmemberrole-hacer-o-quitar-administrador-en-un-grupo-de-la-nube-2026-10-21)
 - `2026-10-18` [g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)](#g1801--accountsparentaccountid-la-tarjeta-con-varias-divisas-2026-10-18)
@@ -1815,6 +1816,23 @@ teléfono de otro admin la app ofrece quitarle el admin al creador (el servidor 
 **El orden: g22_01 → Worker con `set_member_role` en la allowlist → app.** Al revés no se escribe nada: sin DDL, el
 gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app enseña en los dos el error genérico. El
 §2 no depende del orden: no cambia la forma de ninguna respuesta.
+
+## g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`, como g21_01). Fichero:
+`qa/cloud/g24_01_favorite_destination.sql`; marcha atrás `qa/cloud/g24_01_rollback.sql` (idempotente, solo sin destinos,
+bajo lock). Card da5d del lote 12.2.
+
+Qué cambia: una columna `uuid` nullable, sin FK, con el `shortcutID` de la cuenta destino de un favorito de transferencia,
+como `account_ref`. Grants heredados (la migración lo comprueba). No toca ningún RPC.
+
+**Tercer `since` del manifest**: la columna lleva `"since": 4` y el manifest `manifest_version: 4`, con el mismo mecanismo
+de g18_01 y g21_01 (proyección por versión, anuncio y subida con reemisión de lo apuntado,
+`SyncCapability.noteSuppressedFavoriteDestination`). Lo fijan `FavoriteDestinationSyncTests` y
+`gateway/test/manifest.capability.test.ts`.
+
+**El orden: g24_01 → Worker v4 → app.** El Worker v4 sirve las columnas de la v2, la v3 y la v4. La app puede salir antes:
+con un Worker v3 declara v3 y no emite ni hashea la columna.
 
 ## g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-10-21)
 

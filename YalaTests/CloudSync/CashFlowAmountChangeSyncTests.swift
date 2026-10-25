@@ -205,14 +205,16 @@ struct CashFlowAmountChangeSyncTests {
         #expect(SyncCapability.upgradePending, "la v3 llegó con la app y nadie pidió volver a bajar")
     }
 
-    /// Sin apunte (el build de antes no lo escribía) se supone una versión menos.
+    /// Sin apunte (el build de antes no lo escribía) se supone una versión menos que la de este build. Con el Worker en
+    /// la versión del build (desde la card da5d, la 4), el build de antes declaraba una menos: pide la subida.
     @Test func upgradeByUpdatingTheApp_withoutTheNote_alsoAsks() {
-        let restoreCapability = isolateCapability(backend: 3)
+        let current = SyncCapability.clientManifestVersion
+        let restoreCapability = isolateCapability(backend: current)
         defer { restoreCapability() }
-        SyncCapability.recordBackendManifestVersion(3)
+        SyncCapability.recordBackendManifestVersion(current)
         #expect(SyncCapability.upgradePending)
         SyncCapability.upgradePending = false
-        SyncCapability.recordBackendManifestVersion(3)
+        SyncCapability.recordBackendManifestVersion(current)
         #expect(!SyncCapability.upgradePending, "con el apunte ya escrito, el mismo nivel no vuelve a pedirla")
     }
 

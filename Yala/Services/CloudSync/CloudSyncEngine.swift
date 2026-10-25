@@ -3082,6 +3082,11 @@ final class CloudSyncEngine {
                let line = model as? CashFlowLine {
                 SyncCapability.noteSuppressedCashFlowAmountChange(line.id)
             }
+            // Y con el destino de un favorito de transferencia (v4, card da5d), también cuando se quita.
+            if level < SyncCapability.favoriteDestinationSince, changedColumns.contains("destination_account_ref"),
+               let favorite = model as? FavoritePayment, let favoriteSyncID = favorite.syncID {
+                SyncCapability.noteSuppressedFavoriteDestination(favoriteSyncID)
+            }
             changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
@@ -4197,6 +4202,8 @@ extension CloudSyncEngine {
                 try appendReferencing(account.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
                 try appendReferencing(account.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
                 try appendReferencing(account.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                // Card da5d: el favorito que la tiene como DESTINO también la referencia (`destination_account_ref`).
+                try appendReferencing(account.destinationFavoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
                 perEntityCount[SyncEntityType.account, default: 0] += 1
 
             case SyncEntityType.subcategory:

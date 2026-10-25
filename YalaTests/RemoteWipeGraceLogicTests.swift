@@ -130,7 +130,7 @@ struct RemoteWipeGraceLogicTests {
                                importing: Bool = false, lastImport: TimeInterval? = nil,
                                sinceDrop: TimeInterval = 5) -> RemoteWipeGraceLogic.NoticeDecision {
         RemoteWipeGraceLogic.noticeDecision(
-            iCloudTokenPresent: token, mirrorReportedNotAuthenticated: notAuthenticated,
+            iCloudAccountPresent: token, mirrorReportedNotAuthenticated: notAuthenticated,
             firstImportCompleted: firstImportDone, isImporting: importing,
             lastImportActivityAt: lastImport.map { now.addingTimeInterval(-$0) },
             droppedAt: now.addingTimeInterval(-sinceDrop), now: now)
@@ -227,7 +227,7 @@ struct RemoteWipeGraceLogicTests {
                                   token: Bool = false, notAuthenticated: Bool = false) -> Bool {
         RemoteWipeGraceLogic.coldStartRequestsICloudNotice(
             hasPersonalData: personal, hasCompletedOnboarding: onboarding, sessionObeysWipeSignal: obeys,
-            iCloudTokenPresent: token, mirrorReportedNotAuthenticated: notAuthenticated)
+            iCloudAccountPresent: token, mirrorReportedNotAuthenticated: notAuthenticated)
     }
 
     @Test("arranque en frío con Drive apagado, store vacío, onboarding hecho y sesión privada: pide el aviso")
@@ -409,7 +409,7 @@ struct RemoteWipeGraceLogicTests {
         let decision = try Self.body(of: "private func currentRemoteWipeNoticeDecision()", in: vista)
         #expect(decision == "let sync = iCloudSyncService.shared "
                 + "return RemoteWipeGraceLogic.noticeDecision( "
-                + "iCloudTokenPresent: sync.isAccountAvailable, "
+                + "iCloudAccountPresent: sync.hasICloudAccount, "
                 + "mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated, "
                 + "firstImportCompleted: sync.hasCompletedFirstImport, "
                 + "isImporting: sync.status.isImporting, "
@@ -446,6 +446,7 @@ struct RemoteWipeGraceLogicTests {
         // Y una vez por PROCESO, cediendo a la gracia cuando la caída es suya (review del 19-oct): con un `@State` el
         // `ContentView` que asciende con otra ventana volvía a pedirlo, y pedir los dos sacaba el aviso dos veces.
         #expect(espera == "await waitForBootstrap() "
+                + "await iCloudSyncService.shared.awaitCloudKitAccountStatus() "
                 + "guard !ColdStartICloudNotice.checkedThisProcess else { return } "
                 + "ColdStartICloudNotice.checkedThisProcess = true "
                 + "let sawRowsBeforeRemeasuring = hasPersonalData remeasurePersonalData() "
