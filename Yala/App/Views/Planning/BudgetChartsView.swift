@@ -752,17 +752,17 @@ struct BudgetChartsView: View {
         @State private var barWidth: CGFloat = 0
 
         var body: some View {
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(DS.Semantic.neutralBackground)
-                    .frame(height: 6)
-
-                Capsule()
-                    .fill(Color(hex: color))
-                    .frame(width: maxAmount > 0 ? (amount / maxAmount) * barWidth : 0, height: 6)
-            }
-            .frame(height: 6)
-            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
+            // El relleno, en `overlay` del carril: en un `ZStack` el de la mayor (al 100 %) fijaba el ancho medido y la
+            // barra no encogía al estrechar la ventana.
+            Capsule()
+                .fill(DS.Semantic.neutralBackground)
+                .frame(height: 6)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(Color(hex: color))
+                        .frame(width: maxAmount > 0 ? (amount / maxAmount) * barWidth : 0, height: 6)
+                }
+                .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
         }
     }
 }

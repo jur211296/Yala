@@ -1,10 +1,10 @@
 ---
 id: iphone-duo-native-app
-status: backlog
+status: done
 priority: medium
 area: "platform, iphone-duo, adaptativo"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-10-24
 source: idea Jürgen 2026-09-09; plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §5 y §7), 2026-09-27
 ---
 
@@ -96,3 +96,35 @@ la raíz; APIs de iOS 27.1 solo tras `if #available`.
 - El prerrequisito `xcode-27-1-with-the-iphone-duo-simulator` sigue en `backlog/`, así que no hay `YalaLane-Adapt-iPhone-Duo` para medir.
 
 Triage 2026-10-08: abierto · medium → medium · nada del Duo en el código todavía, y sigue bloqueado por `xcode-27-1-with-the-iphone-duo-simulator`; mientras tanto la app corre en modo compatible.
+
+## Hecho (2026-10-24, encargo `2026-10-24-iphone-duo-adaptar-2-2`)
+
+Compilando con el SDK 27.1 (Xcode 27.1 de la Mini: el build de PR y el de subida ya lo usan), en el simulador del Duo:
+pantalla completa en las dos pantallas, sin bandas negras; pestañas y botones con icono en la barra vertical bajo la
+barra de estado. Lo que se arregló por el camino (detalle en el PR y en `.claude/rules/swiftui-ds.md`, sección
+«iPhone Duo»):
+
+- **Al plegar o girar, las tarjetas del Panel se salían por la derecha** (las barras medidas con `onGeometryChange` no
+  encogían nunca). Diez barras en nueve ficheros, mismo patrón.
+- **Duo cerrado (678 pt de alto)**: el titular del Welcome salía cortado. **La bandeja del Panel flotaba encima de la
+  gráfica** en el primer arranque: ahora va en la barra vertical, con Filtros y Configurar con título para el menú «···».
+- **Duo abierto en vertical (669 pt)**: la lista de Registros, Planificación y Grupos tapaba el detalle y cortaba «Elige
+  un…»; la página pasa a la pila de iPhone. Por la misma regla también el iPad mini en vertical (744 pt): inferido de la
+  lógica, no medido en un iPad mini.
+- **A medio plegar**: las columnas del Panel, Estadísticas y los pares de widgets se ponen una a cada lado del pliegue
+  (región reservada `division`), y la lista de los splits llega hasta él.
+
+Las tres preguntas de arriba, contestadas:
+
+- **La `TabView` `.sidebarAdaptable` en el Duo abierto**: no da barra lateral, da barra de pestañas (vertical en
+  horizontal, abajo en vertical) con las seis páginas y Buscar, porque `RootTabLayoutLogic` ya las enseña todas en
+  ancho regular. No se pidió `defaultTabBarPlacement(.sidebar)`: cambiaría la navegación del Duo abierto y no es lo
+  que pidió el encargo.
+- **Los botones flotantes** quedan dentro del área segura, al lado de la barra vertical, sin taparla.
+- **Tamaño en puntos**: exterior 466 × 678 (1398 × 2034 px), interior 669 × 951 (2007 × 2853 px). Pliegue abierto en
+  horizontal: x 455,5-495,5 (con sus márgenes de 20).
+
+Lo que queda, en sus tickets: [[iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar]] (decisión de Jürgen). No hay
+XCUITest propio del Duo: la postura no se puede poner desde XCUITest y el CI corre en el iPhone 17 Pro; la lógica del
+reparto y del plegado tiene unit tests (`PairedColumnsLogicTests`, `ListDetailOverlayLogicTests`).
+Capturas: `~/Claude/worktrees/_capturas/2026-10-24-iphone-duo-adaptar-2-2/`.

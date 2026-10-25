@@ -763,25 +763,32 @@ struct CategoriesPieWidget: View {
         let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
         let availableWidth = max(0, segmentedBarWidth - totalSpacing)
 
-        HStack(spacing: segmentSpacing) {
-            // Por `identity`, no por `id`: «Otros» y «Sin categoría» tienen los dos `id == nil`.
-            ForEach(chartData, id: \.identity) { item in
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(Color(hex: item.colorHex))
-                    .frame(width: availableWidth * CGFloat(item.percentage / 100))
-                    .opacity(isDimmed(item) ? 0.3 : 1.0)
-                    .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryIDs, reduceMotion: reduceMotion)
-                    .onTapGesture {
-                        handleTap(item)
+        // Los segmentos van en `overlay` de un carril flexible, que es lo que se mide: medido el propio `HStack`, su
+        // ancho era la suma de los segmentos —la medida anterior— y la barra no se adaptaba al cambiar el ancho de la
+        // ventana (iPhone Duo al plegar o girar, iPad).
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
+            .overlay(alignment: .leading) {
+                HStack(spacing: segmentSpacing) {
+                    // Por `identity`, no por `id`: «Otros» y «Sin categoría» tienen los dos `id == nil`.
+                    ForEach(chartData, id: \.identity) { item in
+                        RoundedRectangle(cornerRadius: DS.Radius.xs)
+                            .fill(Color(hex: item.colorHex))
+                            .frame(width: availableWidth * CGFloat(item.percentage / 100))
+                            .opacity(isDimmed(item) ? 0.3 : 1.0)
+                            .dsAnimation(.easeInOut(duration: 0.2), value: selectedCategoryIDs, reduceMotion: reduceMotion)
+                            .onTapGesture {
+                                handleTap(item)
+                            }
+                            .accessibilityElement()
+                            .accessibilityLabel(item.name)
+                            .accessibilityAddTraits(.isButton)
                     }
-                    .accessibilityElement()
-                    .accessibilityLabel(item.name)
-                    .accessibilityAddTraits(.isButton)
+                }
             }
-        }
-        .frame(height: 28)
-        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
-            segmentedBarWidth = newWidth
-        }
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                segmentedBarWidth = newWidth
+            }
     }
 }

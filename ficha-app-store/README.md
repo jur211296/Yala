@@ -70,6 +70,24 @@ YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 portada/render.sh es g
 Si un texto no cabe, se ajusta la **composición** en `capturas/sets.js → AJUSTES[<idioma>]` (tamaño del titular,
 posición de un chip). Los textos no se tocan: son de Lola.
 
+## iPhone Duo (capturas sin componer)
+
+App Store Connect pide para el iPhone Duo **exterior 1398 × 2034** (o 2034 × 1398) e **interior 2007 × 2853** (o
+2853 × 2007); Apple anunció que desde abril de 2027 serán obligatorias. `duo/capturas.sh` saca seis pantallas en las dos,
+con las mismas condiciones que el resto de la ficha, como PNG sin alfa y a la medida exacta: el exterior con el Duo
+cerrado y el interior abierto en horizontal, que es como se sostiene.
+
+```bash
+export YALA_FICHA_APP=…/Build/Products/Debug-iphonesimulator/Yala.app   # scheme Yala, Debug, SDK 27.1
+duo/capturas.sh es          # → <salida>/es/duo/{exterior,interior}/01-panel.png … 06-yala-ia.png
+```
+
+Necesita Xcode 27.1, el runtime iOS 27.1 y un simulador `YalaLane-Adapt-iPhone-Duo` (`idiomas.json → simuladores.duo`),
+y **Device Hub abierto con el Duo a la vista**: las posturas son botones de Device Hub y los toques de `axe` no llegan a
+la app del Duo, así que el molde hace clic dentro de la ventana de Device Hub (`duo/comun.sh` explica cómo). Si la
+ventana se movió, los botones de postura se pasan con `YALA_DUO_POSE_*`. Componer láminas con los textos de Lola para
+el Duo no está hecho: `sets.js` no tiene sus medidas.
+
 ## Lo que hay dentro
 
 | Ruta | Qué es |
@@ -88,6 +106,7 @@ posición de un chip). Los textos no se tocan: son de Lola.
 | `video/cortes/<idioma>.json` | Los tramos de cada toma y los toques, medidos por idioma. |
 | `video/tomas.py` · `index.html` · `render.sh` | La pista de pantalla, la composición con las frases de `VIDEO` y el render (HyperFrames + ffmpeg). |
 | `portada/` | `portada.html` (composición del recurso universal, iPhone e iPad) y `render.sh` (Chrome → PNG sin alfa). |
+| `duo/` | `capturas.sh` (exterior e interior del iPhone Duo) y `comun.sh`: posturas y toques por Device Hub (`clic.swift`, `hubmap.py`, `mappt.py`). |
 | `assets/` | El logo y GSAP (licencia estándar de GreenSock). La música (`pop.mp3`, Mixkit) no está en el repo: `YALA_FICHA_MUSICA`. |
 
 ## El reloj

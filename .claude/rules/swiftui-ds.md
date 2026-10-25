@@ -306,9 +306,9 @@ paths:
     sin ningún aviso: la columna seguía en 320 con un ancho fijo de 420. Delante sí funciona. Aquí no se quita el
     botón, por lo siguiente.
   - **La visibilidad es un `@State`, nunca `.constant(.all)`, y el botón de plegar se queda.** Cuando lista y detalle
-    no caben a la vez (iPad mini en vertical: 744 pt), el split SUPERPONE la lista sobre el detalle; con la
-    visibilidad fija la superposición no se retira nunca y tapa el detalle, y sin el botón no hay forma de volver a
-    la lista después de retirarla.
+    no caben a la vez (iPad mini en vertical: 744 pt, antes de plegar la página; hoy, Yala IA abierto al lado), el
+    split SUPERPONE la lista sobre el detalle; con la visibilidad fija la superposición no se retira nunca y tapa el
+    detalle, y sin el botón no hay forma de volver a la lista después de retirarla.
 - **Un `navigationDestination` de la columna de lista presenta en la de detalle** (medido con presupuestos): sus filas
   no se tocaron. En compacta, empuja como siempre.
 - **Y lo que eso presenta no puede empujar nada por su cuenta si la columna de detalle no lleva su `NavigationStack`**
@@ -352,15 +352,19 @@ paths:
   detalle y el split por debajo de dos anchos de iPhone (750), `ListDetailSplit` pasa a `.detailOnly`
   (`ListDetailOverlayLogic.listYieldsToDetail`, con test); con «Elige un…» la lista se queda. Lo dispara abrir Yala IA
   al lado o estrechar la ventana. La lista sigue a un toque en el botón del sistema.
-- **Con texto de accesibilidad la columna se ensancha y, donde no caben dos, la página se pliega (2026-10-01).**
+- **Con texto de accesibilidad la columna se ensancha y, donde no caben dos, la página se pliega (2026-10-01; con
+  cualquier texto desde el 2026-10-24).**
   `DS.Adaptive.listColumnWidths(isAccessibilityText:)` da 440/460/520 con AX1–AX5 (los 408 pt de contenido del Pro
   Max vertical, donde AX5 cabe, más márgenes); con texto de siempre, los 375/400/480 de antes. Dos cosas medidas en el
   Pro Max girado que no son obvias: **el split SUMA la isla encima del ancho pedido** (pedida a 520, la columna midió
   582), y **no pone AL LADO del detalle una columna que lea AX5** — a 522 y a 582 la superpuso sobre «Elige un…», que
   quedaba medio tapado; la de 446 de siempre sí va al lado, pero ahí AX5 parte «Este mes». Por eso cada página con
-  `ListDetailSplit` lleva `.foldsListDetailForAccessibilityText()` puesto por QUIEN LA MONTA (`ContentView.viewForTab`):
-  con AX y sin ancho para dos columnas AX (`ListDetailOverlayLogic.foldsForAccessibilityText`), la página entera ve
-  ancho compacto y es la pila de vertical: el Pro Max girado (832) y el iPad mini (744 / 853); el iPad Pro 13 sigue en
+  `ListDetailSplit` lleva `.foldsListDetailWhenColumnsDontFit()` puesto por QUIEN LA MONTA (`ContentView.viewForTab`):
+  sin ancho para dos columnas del tamaño de texto (`ListDetailOverlayLogic.foldsToSingleColumn`), la página entera ve
+  ancho compacto y es la pila de vertical. Con AX: el Pro Max girado (832) y el iPad mini (744 / 853); el iPad Pro 13
+  sigue en split. **Con texto de siempre también desde el 2026-10-24** (umbral 2 × 375): el iPhone Duo abierto en
+  vertical (669 pt) superponía la lista, que tapaba el grupo abierto y cortaba «Elige un…» por la mitad; ahí y en el
+  iPad mini en vertical (744) la página es la pila. El Pro Max girado (832) y el Duo abierto en horizontal siguen en
   split. **El ancho es el que mide la vista, sin restarle nada**: ya viene sin la isla ni la barra lateral, aunque el
   proxy siga reportando esos márgenes (iPad Pro 13 girado: 1096 de ancho y 280 de margen). Restarlos los contaba dos
   veces y apartaba la lista en el Pro 13 con AX. Va fuera porque Registros y Grupos leen el size class por su cuenta para
@@ -449,6 +453,41 @@ paths:
   panel tapa la lista (`ZStackLayout`, la lista sigue montada) y su X la devuelve; al pasar a compacta con uno
   abierto, la hoja de siempre. El panel es `TransactionDetailSheet(presentation: .pane)`: cabecera propia con X y
   Editar, porque un `.toolbar` o el título inline ahí dentro cambiarían la barra de Estadísticas.
+
+## iPhone Duo (SDK 27.1, medido el 2026-10-24 en el simulador)
+
+- **Un ancho medido con `onGeometryChange` no puede fijar el ancho de un HERMANO dentro de lo que se mide.** En
+  `ZStack(alignment: .leading) { carril; relleno.frame(width: medido × ratio) }` el relleno al 100 % hace que el
+  `ZStack` no baje de la medida anterior: la barra crece y no encoge nunca. Al plegar o girar el Duo, «Entradas y
+  salidas» quedaba más ancha que la pantalla y descentraba a sus vecinas (el iPhone girado y el iPad lo tenían
+  igual). ⇒ **el relleno va en `.overlay(alignment: .leading)` del carril**, y lo que se mide es el carril. Igual con un
+  `HStack` de segmentos a porcentaje: se mide un `Color.clear` flexible y los segmentos van en su overlay (las barras
+  segmentadas de las tortas). `GeometryReader` no tiene el problema: toma el tamaño propuesto.
+- **Barras verticales.** Pasan solos a la barra vertical los botones con icono (`YalaToolbarButton`, `YalaSaveButton`
+  y un `Button` con `Image`). No pasan: los de solo texto y los de vista propia, que se quedan en una barra horizontal
+  arriba (ticket `iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar`). Uno de vista propia sin título arriba (la
+  bandeja del Panel) se pintó **flotando abajo, encima del contenido**, en el primer arranque: va con
+  `.joinsVerticalBar()` (`ToolbarVerticalBar.swift`).
+- **En la barra vertical cabe poco, y lo que no cabe va al menú «···» solo si tiene título**: un botón de solo icono
+  que desborda **desaparece**. Medido en el Panel abierto en horizontal (siete pestañas: cabe un botón y «···»):
+  Filtros, que era un `Image`, se esfumó. ⇒ un botón que pueda desbordar lleva `Label(título, systemImage:)` (en una
+  barra se ve solo el icono, como antes) y su prioridad: `.overflowsLast()` para lo que lleva contador o no puede ir al
+  menú (una vista propia no tiene cómo pintarse ahí), `.overflowsFirst()` para el ajuste que menos se toca.
+- **El pliegue es una región reservada `division` (iOS 27.1), y el sistema la da por INACTIVA en una vista que no la
+  cruza de arriba abajo**: el contenido de un scroll la recibía inactiva casi siempre. ⇒ se mide en la raíz de la
+  escena (`publishesVerticalFold()`, en `YalaApp.rootView`) y cada contenedor la traduce a su espacio con
+  `.readsVerticalFold($fold)`. **Solo está activa a medio plegar**; abierto en plano, inactiva, y las columnas vuelven
+  a mitades. Con el pliegue activo, `PairedColumnsLayout`, `HeaderBandLayout` y los pares del Panel
+  (`foldAwarePairLayout`) ponen una columna a cada lado si las dos siguen midiendo 320, y `ListDetailSplit` separa
+  lista y detalle sobre él (`DS.Adaptive.listColumnIdealWidth`). Un pliegue horizontal (abierto en vertical) no separa
+  columnas: lo cruza el scroll.
+- **El Duo abierto en vertical mide 669 pt: ancho regular, pero no caben dos columnas de iPhone.** Por eso la página con
+  lista y detalle se pliega a la pila (`foldsListDetailWhenColumnsDontFit()`, arriba).
+- **En el Duo cerrado (678 pt de alto, como un SE) una pantalla que reparte el alto con `Spacer` sin scroll se corta**:
+  el titular del Welcome salía «Tus finanzas person…». `WelcomeFlowScreen` lleva el molde del scroll con alto mínimo.
+- **Conducir el simulador del Duo**: `axe` lee el árbol pero sus toques no llegan (ni cerrado ni girado); XcodeBuildMCP
+  igual. Lo que funciona es hacer clic en la pantalla del Duo dentro de Device Hub. Las posturas (cerrado, medio
+  plegado, abierto, girar) son botones de Device Hub, sin `simctl`.
 
 ## Teclado, puntero, menús contextuales y soltar (2026-09-30)
 

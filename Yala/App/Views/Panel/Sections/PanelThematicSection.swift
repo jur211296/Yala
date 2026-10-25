@@ -26,6 +26,8 @@ struct PanelThematicSection: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
+    /// El pliegue del iPhone Duo abierto en horizontal: cada par de Planificación pone uno a cada lado.
+    @State private var fold: ClosedRange<CGFloat>?
 
     var body: some View {
         let widgets = viewModel.activeWidgets(in: kind)
@@ -103,7 +105,8 @@ struct PanelThematicSection: View {
                             planificacionFooter(for: config.type)
                         }
                     case .halfWidthPair(let left, let right):
-                        HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                        let pair = foldAwarePairLayout(spacing: DS.Spacing.lg, fold: fold)
+                        pair {
                             planificacionWidget(for: left)
                                 .frame(maxWidth: .infinity)
                                 .clipped()
@@ -118,6 +121,7 @@ struct PanelThematicSection: View {
                     }
                 }
             }
+            .readsVerticalFold($fold)
         } else {
             PanelWidgetsGrid(
                 widgets: widgets,

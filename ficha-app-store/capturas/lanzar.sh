@@ -36,7 +36,9 @@ xcrun simctl launch "$U" "$BUNDLE" -uitest ${SEMILLA[@]+"${SEMILLA[@]}"} -uitest
   "${PANEL_NUEVO[@]}" -accountsSortOrderNames "$ORDEN_CUENTAS" "$@" >/dev/null
 # La semilla de dos años tarda: se espera a la señal de la app (`uitest_ready` en el árbol de accesibilidad).
 for _ in $(seq 1 90); do
-  if axe describe-ui --udid "$U" 2>/dev/null | grep -q '"uitest_ready"'; then echo "✓ $IDIOMA · $APARATO listo"; exit 0; fi
+  # Sin `grep -q`: con `pipefail`, cortar la tubería al primer acierto mata a `axe` por SIGPIPE y la condición da falso
+  # aunque la app esté lista. Pasa con árboles de más de 64 KB (el iPhone Duo, 2026-10-24); el iPhone cabía en el búfer.
+  if axe describe-ui --udid "$U" 2>/dev/null | grep '"uitest_ready"' >/dev/null; then echo "✓ $IDIOMA · $APARATO listo"; exit 0; fi
   sleep 2
 done
 echo "✗ la app no llegó a uitest_ready en 180 s" >&2; exit 1

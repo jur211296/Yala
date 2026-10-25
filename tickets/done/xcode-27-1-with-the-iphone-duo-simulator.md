@@ -1,9 +1,10 @@
 ---
 id: xcode-27-1-with-the-iphone-duo-simulator
-status: backlog
+status: done
 priority: medium
 area: "tooling, iphone-duo, adaptativo"
 created: 2026-09-27
+updated: 2026-10-24
 source: "plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §1.1 y §3), 2026-09-27"
 ---
 
@@ -61,3 +62,11 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Cerrado (2026-10-24)
+
+Medido en la Mini: `xcodebuild -version` → Xcode 27.1 (27A9275), SDK iOS 27.1. `xcodebuild -downloadPlatform iOS`
+trae el runtime iOS 27.1 (24A94425), que **solo admite el iPhone Duo** (el iPhone 17 Pro sigue en el runtime 27.0).
+`YalaLane-Adapt-iPhone-Duo` se creó con `xcrun simctl create` y se usó por UDID en
+[[iphone-duo-native-app]]. Las posturas (cerrado, medio plegado, abierto, girar) son botones de Device Hub
+(`Xcode.app/Contents/Applications/DeviceHub.app`); `simctl` no las tiene.

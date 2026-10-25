@@ -136,6 +136,8 @@ struct YalaApp: App {
         }
             // Las hojas se dimensionan por el espacio de ESTA ventana, no por el aparato.
             .sizesSheetsByWindow()
+            // El pliegue del iPhone Duo abierto, para las rejillas en dos columnas (`readsVerticalFold(_:)`).
+            .publishesVerticalFold()
             .preferredColorScheme(themeManager.userChoice == .system ? nil : themeManager.resolved.baseColorScheme)
             .tint(themeManager.resolved.accent)
             .environment(\.yalaTheme, themeManager.resolved)

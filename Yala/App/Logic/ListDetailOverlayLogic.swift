@@ -38,23 +38,25 @@ enum ListDetailOverlayLogic {
         return splitWidth < minimumColumnWidth * 2
     }
 
-    /// `true` si, con texto de accesibilidad, la ventana es ancha pero no caben dos columnas que lo lean: la página
-    /// se pliega a la pila de compacto (la lista sola; lo abierto, encima). Pasa en el Pro Max girado (832 pt contra
-    /// 2 × 440): una columna que lea AX5 no cabe AL LADO del detalle y el split la superpone, tapando «Elige un…»
-    /// (medido 2026-10-01). Y en el iPad mini (744 en vertical; 853 en horizontal, junto a la barra lateral). Con texto
-    /// de siempre nunca: ahí la columna del iPhone cabe.
+    /// `true` si la ventana es ancha pero no caben dos columnas legibles: la página se pliega a la pila de compacto (la
+    /// lista sola; lo abierto, encima). Sin esto el split SUPERPONE la lista sobre el detalle: tapaba lo abierto y
+    /// cortaba «Elige un…» por la mitad.
+    ///
+    /// - Con texto de siempre, por debajo de dos columnas de iPhone (2 × 375): el iPhone Duo abierto en vertical (669 pt,
+    ///   medido el 2026-10-24) y el iPad mini en vertical (744). El Pro Max girado (832) y el iPad Pro siguen en split.
+    /// - Con texto de accesibilidad, por debajo de dos columnas que lean AX5 (2 × 440): además el Pro Max girado (832
+    ///   contra 880) y el iPad mini en horizontal (853, junto a la barra lateral), medidos el 2026-10-01.
     ///
     /// - `pageWidth`: el ancho de la página tal como lo mide ella. Ya viene SIN los márgenes seguros (la isla del
     ///   iPhone girado, la barra lateral del iPad), aunque el proxy los siga reportando: restarlos los cuenta dos
     ///   veces (medido: 1096 de página en el iPad Pro 13 girado, con 280 de margen reportado).
-    /// - `minimumColumnWidth`: el mínimo AX de la columna de lista (`DS.Adaptive.listColumnWidths`).
-    static func foldsForAccessibilityText(
+    /// - `minimumColumnWidth`: el mínimo de la columna de lista para el tamaño de texto (`DS.Adaptive.listColumnWidths`).
+    static func foldsToSingleColumn(
         pageWidth: CGFloat,
         minimumColumnWidth: CGFloat,
-        isAccessibilityText: Bool,
         isRegularWidth: Bool
     ) -> Bool {
-        guard isAccessibilityText, isRegularWidth, pageWidth > 0 else { return false }
+        guard isRegularWidth, pageWidth > 0 else { return false }
         return pageWidth < minimumColumnWidth * 2
     }
 }

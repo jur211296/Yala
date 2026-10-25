@@ -122,13 +122,12 @@ struct ListDetailOverlayLogicTests {
         #expect(yieldsWithText(2 * min - 1, accessibility: true))
     }
 
-    // MARK: - Con texto de accesibilidad y sin sitio para dos columnas, la página se pliega a la pila
+    // MARK: - Sin sitio para dos columnas legibles, la página se pliega a la pila
 
     private func folds(_ pageWidth: CGFloat, accessibility: Bool = true, regular: Bool = true) -> Bool {
-        Logic.foldsForAccessibilityText(
+        Logic.foldsToSingleColumn(
             pageWidth: pageWidth,
-            minimumColumnWidth: DS.Adaptive.listColumnWidths(isAccessibilityText: true).min,
-            isAccessibilityText: accessibility,
+            minimumColumnWidth: DS.Adaptive.listColumnWidths(isAccessibilityText: accessibility).min,
             isRegularWidth: regular)
     }
 
@@ -140,10 +139,20 @@ struct ListDetailOverlayLogicTests {
         #expect(folds(853))
     }
 
-    /// Con texto de siempre, nunca: la columna del iPhone cabe al lado (Pro Max girado, igual que antes).
-    @Test func defaultText_neverFolds() {
+    /// Con texto de siempre, por debajo de dos columnas de iPhone: el iPhone Duo abierto en vertical (669, medido el
+    /// 2026-10-24: la lista tapaba el grupo abierto y cortaba «Elige un…») y el iPad mini en vertical (744).
+    @Test func defaultText_foldsBelowTwoIPhoneColumns() {
+        #expect(folds(669, accessibility: false))
+        #expect(folds(744, accessibility: false))
+    }
+
+    /// Con texto de siempre, donde caben dos columnas de iPhone sigue en split: el Pro Max girado (832), el iPad mini en
+    /// horizontal (853), el Duo abierto en horizontal (~880 junto a la barra vertical) y el iPad Pro 13.
+    @Test func defaultText_staysSplitWhereTwoColumnsFit() {
         #expect(!folds(832, accessibility: false))
-        #expect(!folds(375, accessibility: false))
+        #expect(!folds(853, accessibility: false))
+        #expect(!folds(880, accessibility: false))
+        #expect(!folds(1032, accessibility: false))
     }
 
     /// En el iPad Pro 13 caben dos columnas AX: sigue en split, con la lista más ancha (1032 vertical, 1096 girado).
@@ -155,13 +164,33 @@ struct ListDetailOverlayLogicTests {
     /// Compacta ya es la pila; antes de medir, no se decide nada.
     @Test func compactOrUnmeasured_neverFolds() {
         #expect(!folds(832, regular: false))
+        #expect(!folds(375, accessibility: false, regular: false))
         #expect(!folds(0))
     }
 
-    /// Los dos vecinos del umbral: dos columnas AX mínimas caben; un punto menos, no.
+    /// Los dos vecinos de cada umbral: dos columnas mínimas caben; un punto menos, no.
     @Test func foldThreshold_neighbours() {
-        let min = DS.Adaptive.listColumnWidths(isAccessibilityText: true).min
-        #expect(!folds(2 * min))
-        #expect(folds(2 * min - 1))
+        let ax = DS.Adaptive.listColumnWidths(isAccessibilityText: true).min
+        #expect(!folds(2 * ax))
+        #expect(folds(2 * ax - 1))
+        let standard = DS.Adaptive.listColumnWidths(isAccessibilityText: false).min
+        #expect(!folds(2 * standard, accessibility: false))
+        #expect(folds(2 * standard - 1, accessibility: false))
+    }
+
+    // MARK: - La columna de lista sobre el pliegue del iPhone Duo
+
+    /// Abierto en horizontal el pliegue va de 455,5 a 495,5 (medido el 2026-10-24): las columnas se separan en 475,5.
+    @Test func listColumn_idealWidth_putsTheSeparationOnTheFold() {
+        let widths = DS.Adaptive.listColumnWidths(isAccessibilityText: false)
+        #expect(DS.Adaptive.listColumnIdealWidth(widths, fold: 455.5...495.5) == 475.5)
+    }
+
+    /// Sin pliegue, o con uno fuera de lo que la columna admite, el ancho de siempre.
+    @Test func listColumn_idealWidth_withoutAUsableFold_isTheUsual() {
+        let widths = DS.Adaptive.listColumnWidths(isAccessibilityText: false)
+        #expect(DS.Adaptive.listColumnIdealWidth(widths, fold: nil) == widths.ideal)
+        #expect(DS.Adaptive.listColumnIdealWidth(widths, fold: 600...640) == widths.ideal)
+        #expect(DS.Adaptive.listColumnIdealWidth(widths, fold: 200...240) == widths.ideal)
     }
 }

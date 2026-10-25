@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1048)
+## Index (1049)
 
 | id | status | path |
 |---|---|---|
@@ -164,7 +164,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
 | cashflow-ai-comment-does-not-check-pro | backlog | tickets/backlog/cashflow-ai-comment-does-not-check-pro.md |
-| cashflow-amount-changes-from-two-phones-overwrite-each-other | backlog | tickets/backlog/cashflow-amount-changes-from-two-phones-overwrite-each-other.md |
+| cashflow-amount-changes-from-two-phones-overwrite-each-other | discarded | tickets/discarded/cashflow-amount-changes-from-two-phones-overwrite-each-other.md |
 | cashflow-line-context-menu-deletes-without-asking | done | tickets/done/cashflow-line-context-menu-deletes-without-asking.md |
 | cashflow-override-synced-to-an-old-version-stays-invisible-after-updating | done | tickets/done/cashflow-override-synced-to-an-old-version-stays-invisible-after-updating.md |
 | cashflow-scheduled-line-ignores-payment-currency | done | tickets/done/cashflow-scheduled-line-ignores-payment-currency.md |
@@ -612,7 +612,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-reports-and-search-get-a-readable-width | backlog | tickets/backlog/ipad-reports-and-search-get-a-readable-width.md |
 | ipad-settings-sheet-size-depends-on-where-it-opens | backlog | tickets/backlog/ipad-settings-sheet-size-depends-on-where-it-opens.md |
 | ipad-sidebar-and-list-detail-for-records-and-planning | done | tickets/done/ipad-sidebar-and-list-detail-for-records-and-planning.md |
-| iphone-duo-native-app | backlog | tickets/backlog/iphone-duo-native-app.md |
+| iphone-duo-native-app | done | tickets/done/iphone-duo-native-app.md |
+| iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar | backlog | tickets/backlog/iphone-duo-title-only-toolbar-buttons-stay-in-a-top-bar.md |
 | iphone-landscape-headers-fill-the-short-screen | done | tickets/done/iphone-landscape-headers-fill-the-short-screen.md |
 | iphone-large-models-use-the-extra-width | done | tickets/done/iphone-large-models-use-the-extra-width.md |
 | iphone-large-text-sizes-break-layouts | done | tickets/done/iphone-large-text-sizes-break-layouts.md |
@@ -1087,7 +1088,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | worktree-stamp-depends-on-whether-a-rename-is-staged | backlog | tickets/backlog/worktree-stamp-depends-on-whether-a-rename-is-staged.md |
 | worktree-stamp-reads-a-staged-rename-as-a-code-change | backlog | tickets/backlog/worktree-stamp-reads-a-staged-rename-as-a-code-change.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
-| xcode-27-1-with-the-iphone-duo-simulator | backlog | tickets/backlog/xcode-27-1-with-the-iphone-duo-simulator.md |
+| xcode-27-1-with-the-iphone-duo-simulator | done | tickets/done/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | yala-ia-answer-renders-model-links-as-tappable | done | tickets/done/yala-ia-answer-renders-model-links-as-tappable.md |

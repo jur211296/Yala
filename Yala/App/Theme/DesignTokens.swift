@@ -537,11 +537,20 @@ enum DS {
         /// 408 + 32 de márgenes = 440. El margen de la isla del iPhone girado NO cuenta: el split lo suma encima
         /// (pedida a 520, la columna midió 582 en el Pro Max girado, medido 2026-10-01). El mínimo es también el
         /// umbral de dos columnas: por debajo, la lista se aparta al abrir algo (`listYieldsToDetail`) y la página se
-        /// pliega a la pila (`foldsForAccessibilityText`) — en el Pro Max girado el split no la pone AL LADO del
+        /// pliega a la pila (`foldsToSingleColumn`) — en el Pro Max girado el split no la pone AL LADO del
         /// detalle a ningún ancho que lea AX5 (a 522 y a 582 la superponía sobre «Elige un…»).
         static let listColumnAccessibilityMinWidth: CGFloat = 440
         static let listColumnAccessibilityIdealWidth: CGFloat = 460
         static let listColumnAccessibilityMaxWidth: CGFloat = 520
+
+        /// El ancho ideal de la columna de lista: el de siempre, o —con un pliegue vertical que cruce el split (iPhone Duo
+        /// abierto en horizontal)— el que deja la separación de las dos columnas sobre el pliegue, si cae entre el mínimo y
+        /// el máximo de la columna. `fold` va en el espacio del split, que empieza en el borde de la lista.
+        static func listColumnIdealWidth(_ widths: ListColumnWidths, fold: ClosedRange<CGFloat>?) -> CGFloat {
+            guard let fold else { return widths.ideal }
+            let hinge = (fold.lowerBound + fold.upperBound) / 2
+            return (widths.min...widths.max).contains(hinge) ? hinge : widths.ideal
+        }
 
         /// Anchos de la columna de lista según el tamaño del texto: con los de accesibilidad, más ancha.
         static func listColumnWidths(isAccessibilityText: Bool) -> ListColumnWidths {
