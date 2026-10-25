@@ -83,7 +83,8 @@ struct WidgetDataServiceIntervalTests {
         now: Date
     ) -> DateInterval {
         let startOfToday = calendar.startOfDay(for: now)
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow
 
         switch period {
         case .thisWeek:
@@ -226,7 +227,7 @@ struct WidgetDataServiceIntervalTests {
 
         // Réplica del SSOT (`DetailPeriod.thisWeek`) con el mismo calendario.
         let startOfToday = calendar.startOfDay(for: now)
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
+        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!.addingTimeInterval(-1)
         let startOfWeek = calendar.date(
             from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
         let ssotReplica = DateInterval(start: startOfWeek, end: endOfToday)
@@ -255,7 +256,8 @@ struct WidgetDataServiceIntervalTests {
         let calendar = makeCalendar()
         let now = fixedNow(calendar)
         let startOfToday = calendar.startOfDay(for: now)
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!
+        // 23:59:59 de hoy: la medianoche de mañana queda fuera (lote 12.5).
+        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday)!.addingTimeInterval(-1)
 
         for period in [DetailPeriod.thisWeek, .last7Days, .last30Days,
                        .thisMonth, .thisYear, .allTime] {

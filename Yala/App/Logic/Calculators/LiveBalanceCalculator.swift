@@ -267,7 +267,9 @@ struct LiveBalanceCalculator {
         asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> LiveAnchorInfo? {
-        guard metric == .balance, interval.end >= now else { return nil }
+        // «Llega a hoy»: acaba hoy o después. Los períodos en curso cierran a las 23:59:59; comparar con `now` los daba
+        // por terminados en el último segundo del día.
+        guard metric == .balance, interval.end >= Calendar.current.startOfDay(for: now) else { return nil }
         let breakdown = liveBalanceBreakdown(
             accounts: accounts,
             transactions: transactions,

@@ -22,7 +22,8 @@ import UIKit
 @MainActor
 enum DraftDiscardUndoNotice {
     /// Lo que dura el aviso en pantalla. Cinco segundos: lo que da tiempo a leerlo y a tocar «Deshacer».
-    static let visibleDuration: Duration = .seconds(5)
+    /// Un XCUITest puede alargarlo (`UITestHooks.undoNoticeSeconds`).
+    static let visibleDuration: Duration = UITestHooks.undoNoticeSeconds.map { .milliseconds(Int($0 * 1000)) } ?? .seconds(5)
 
     /// Hueco libre bajo el aviso: por encima de la barra de pestañas flotante y de los botones de pie de una hoja.
     private static let bottomClearance: CGFloat = 72

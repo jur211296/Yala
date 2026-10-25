@@ -133,7 +133,8 @@ final class AccountsSettingsListViewModel {
             sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
         )
         do {
-            transactions = try context.fetch(transactionDescriptor)
+            // Lo que espera su borrado con «Deshacer» no cuenta en el saldo de cada cuenta (`RecordPendingDeletion`).
+            transactions = RecordPendingDeletion.shared.visible(try context.fetch(transactionDescriptor))
         } catch {
             #if DEBUG
             print("AccountsSettingsListViewModel: Error loading transactions: \(error)")

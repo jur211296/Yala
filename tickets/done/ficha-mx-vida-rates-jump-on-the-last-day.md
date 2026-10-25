@@ -1,10 +1,10 @@
 ---
 id: ficha-mx-vida-rates-jump-on-the-last-day
-status: backlog
+status: done
 priority: low
 area: seed
 created: 2026-10-16
-updated: 2026-10-16
+updated: 2026-10-25
 source: capturas de panel-balance-chart-contradicts-its-own-figure (2026-10-16)
 ---
 
@@ -26,3 +26,7 @@ de hoy con ~18,30. Medir: tasas de las filas de ayer y de hoy en el store tras s
 
 Que la semilla ancle la serie a la tasa real de hoy, o que en `-uitest` no se pida la tasa del día. Las capturas de la
 App Store son de Lola: avisarle antes de cambiar la semilla.
+
+## Cerrado (cola 2.2 · lote 12.5, 2026-10-25)
+
+**La causa inferida no era la real.** Medido: la fila sembrada de hoy NO la sustituye la tasa real (sigue en 18,30). Lo que caía era el punto de hoy: el saldo vivo se convertía con la tabla estática (14.835 USD × 17,2 − 61.850 MXN = 193.312, la cifra exacta que enseñaba el Panel) porque la semilla escribía las tasas sin avisar al conversor (`.yalaExchangeRatesUpdated`), que se quedaba con lo resuelto antes de sembrar. Arreglo en `DevSeedService`: avisa tras sembrar (también en el camino corto de cuenta con movimientos). Después: 209.630,50, sin caída. Solo afecta a las semillas (DEBUG); el cambio no toca la semilla, solo el aviso. Test: `DevSeedNotifiesExchangeRatesTests`. Capturas `antes-5`/`despues-5` del PR.

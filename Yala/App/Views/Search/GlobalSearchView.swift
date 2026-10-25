@@ -27,7 +27,11 @@ struct GlobalSearchView: View {
         NavigationStack {
             ZStack {
                 if isDataReady {
-                    SearchContentView(searchText: $searchText, transactions: allTransactions)
+                    // Lo que espera su borrado con «Deshacer» no sale en Buscar (`RecordPendingDeletion`).
+                    SearchContentView(
+                        searchText: $searchText,
+                        transactions: RecordPendingDeletion.shared.visible(allTransactions)
+                    )
                 } else {
                     // Loading state - subtle animation
                     VStack(spacing: DS.Spacing.lg) {

@@ -104,6 +104,19 @@ final class RecordsLote8BUITests: XCTestCase {
         XCTAssertTrue(dateCriterion.waitForExistence(timeout: 5), "«Coincidir por» no ofreció «Fecha».")
         dateCriterion.tap()
 
+        // Sin «Fecha» ni «Nota», un grupo junta días distintos (la semilla tiene dos compras iguales en días distintos):
+        // cada fila de ese grupo dice el suyo (lote 12.5, ticket `duplicates-mode-rows-dont-say-their-date`).
+        menu.tap()
+        XCTAssertTrue(matchBy.waitForExistence(timeout: 5), "El menú no ofreció «Coincidir por» la segunda vez.")
+        matchBy.tap()
+        let noteCriterion = app.buttons["Nota"].firstMatch
+        XCTAssertTrue(noteCriterion.waitForExistence(timeout: 5), "«Coincidir por» no ofreció «Nota».")
+        noteCriterion.tap()
+        let rowWithDate = app.buttons.matching(
+            NSPredicate(format: "identifier == 'record_row' AND label MATCHES '.*20[0-9][0-9].*'")).firstMatch
+        XCTAssertTrue(rowWithDate.waitForExistence(timeout: 5),
+                      "Sin «Fecha», ninguna fila de un grupo de días distintos dice de qué día es.")
+
         // 3. Quitar repetidos: primero pregunta, con Cancelar a la vista.
         let remove = app.buttons["records_duplicates_remove"]
         XCTAssertTrue(remove.waitForExistence(timeout: 5), "Con un duplicado hecho a mano no salió «Quitar repetidos».")

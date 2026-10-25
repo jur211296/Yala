@@ -7048,6 +7048,7 @@
 "filters.l8.typeLivesInShowOnly" = "Um nur Ausgaben oder nur Einnahmen zu sehen, nutze „Nur zeigen“.";
 "filters.l8.amountTitle" = "Betrag";
 "filters.l8.amountNeedsOneCurrency" = "Um nach Betrag zu filtern, wähle oben eine einzige Währung.";
+"filters.l8.amountNeedsOneVisibleCurrency" = "Um nach Betrag zu filtern, lass nur eine Währung sichtbar.";
 "filters.l8.allAccounts" = "Alle Konten";
 "filters.l8.allCategories" = "Alle Kategorien";
 "filters.l8.allTags" = "Alle Tags";
@@ -7179,6 +7180,7 @@
 "scheduled.l10.delete.title" = "„%@“ löschen?";
 "scheduled.l10.delete.keepsRecords" = "Deine Einträge werden nicht gelöscht.";
 "scheduled.l10.deleted" = "„%@“ gelöscht";
+"records.pendingDeletion.deletedMany" = "%d Einträge gelöscht";
 "scheduled.l10.editor.moreOptions" = "Weitere Optionen";
 "scheduled.l10.editor.when" = "Wann";
 "scheduled.l10.editor.optional" = "Optional";

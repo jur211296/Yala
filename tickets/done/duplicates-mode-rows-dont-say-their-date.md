@@ -1,10 +1,10 @@
 ---
 id: duplicates-mode-rows-dont-say-their-date
-status: backlog
+status: done
 priority: low
 area: "registros"
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-10-25
 source: "barrido del lote 8 de la auditoría UX 2.2 en el simulador (2026-10-17)"
 ---
 
@@ -26,3 +26,7 @@ duplicados en 295 grupos», filas «Bus · S/ -29» sin fecha.
 
 Con «Fecha» fuera de los criterios, que cada fila del modo enseñe su fecha corta (o que la cabecera del grupo diga el
 rango de días).
+
+## Cerrado (cola 2.2 · lote 12.5, 2026-10-25)
+
+Con «Fecha» fuera de «Coincidir por» y un grupo que junta días distintos, cada fila del modo dice su día con año («20 oct 2026»), y VoiceOver lo lee (`RecordsDuplicateLogic.rowDateCaption`). Si todo el grupo es del mismo día, la cabecera ya lo dice y la fila no lo repite. Medido en el simulador (`capturas/antes-3`/`despues-3` del PR). Tests: `DuplicatesRowDateCaptionTests` y `RecordsLote8BUITests.test_duplicates_removeRepeated_asksFirst_andLeavesOnePerGroup`.

@@ -1,10 +1,10 @@
 ---
 id: trends-cards-ignore-an-in-place-amount-edit
-status: backlog
+status: done
 priority: medium
 area: statistics
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-25
 source: hallazgo de el-saldo-de-distribucion-no-se-entera-de-un-registro-nuevo (punto 3 del encargo)
 ---
 
@@ -41,3 +41,7 @@ pasar por su propio `scheduleTrendsRecalc`. Medir antes y después las veces por
 - [ ] Editar el importe de un movimiento con Tendencias montada actualiza las tres tarjetas.
 - [ ] Un alta las sigue actualizando una vez, no dos.
 - [ ] No se recalcula más veces por gesto que ahora (medido).
+
+## Cerrado (cola 2.2 · lote 12.5, 2026-10-25)
+
+Tendencias cuelga de `DetailContainerViewModel.dataGeneration` en vez de `allTransactions.count` (sustituye, no suma: el array solo cambia en esa recarga, y el contador avanza una vez por alta), con su `scheduleTrendsRecalc(debounceMs: 300)` de siempre. Tests: `TrendsDataGenerationWiringTests` + `DetailContainerDataGenerationTests.amountEdit_advancesGeneration_withTheSameRows`. No hay XCUITest: editar con la pestaña montada pide sync, otra ventana o Yala IA.

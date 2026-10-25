@@ -45,7 +45,10 @@ enum ScheduledPaymentPaidStatusHelper {
         var result: [String: [PaidOccurrenceInfo]] = [:]
         let paymentIDs = Set(payments.map { $0.id.uuidString })
         let intervalStart = interval.start
-        let intervalEnd = interval.end
+        // El filtro es semiabierto (`< intervalEnd`). Un intervalo que cierra en 23:59:59 (los períodos de Estadísticas y
+        // del Panel, en curso o cerrados) perdería su último segundo: se lleva al instante siguiente, la medianoche.
+        let nextSecond = interval.end.addingTimeInterval(1)
+        let intervalEnd = calendar.startOfDay(for: nextSecond) == nextSecond ? nextSecond : interval.end
         var countedPairs: Set<String> = []
 
         // Query 1: InboxDrafts approved with sourceScheduledPaymentID (filtered by interval)

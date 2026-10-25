@@ -176,4 +176,38 @@ final class UXAudit22Lote8CUITests: XCTestCase {
         XCTAssertTrue(app.buttons["filters_currency_chip_USD"].isSelected,
                       "Al reabrir en «Ocultar», USD ya no estaba marcado: la hoja vació lo oculto.")
     }
+
+    // MARK: - Lote 12.5 · El monto en «Ocultar»
+
+    /// En «Ocultar», con USD marcado, el monto se filtra en la moneda que queda a la vista (PEN), no en la que se oculta.
+    /// Hasta el 2026-10-25 el campo decía USD (ticket `hidden-single-currency-still-filters-the-amount-in-it`).
+    func test_filters_hidingOneCurrency_amountUsesTheOneLeft() {
+        let app = launch()
+        openRecords(app)
+        app.openRecordsFilters()
+
+        let picker = app.segmentedControls["filters_include_exclude_picker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 5), "No apareció el selector Mostrar solo / Ocultar.")
+        picker.buttons.element(boundBy: 1).tap()
+        let usdChip = app.buttons["filters_currency_chip_USD"]
+        XCTAssertTrue(usdChip.waitForExistence(timeout: 5), "No apareció el chip de moneda USD.")
+        usdChip.tap()
+        XCTAssertTrue(usdChip.isSelected, "El chip USD no quedó marcado.")
+
+        // «Mayor a» enseña la moneda del monto encima del campo.
+        // Baja hasta el bloque del monto: el marco contra la ventana (`isHittable` lanza fuera de pantalla).
+        let title = app.descendants(matching: .any)["filters_amount_title"]
+        let window = app.windows.firstMatch.frame
+        var swipes = 0
+        while !(title.exists && window.contains(CGPoint(x: title.frame.midX, y: title.frame.maxY + 60))), swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        let greaterThan = app.segmentedControls.allElementsBoundByIndex.first { $0.buttons.count == 4 }
+        XCTAssertNotNil(greaterThan, "No apareció el selector de la condición del monto.")
+        greaterThan?.buttons.element(boundBy: 1).tap()
+        let currency = app.staticTexts["filters_amount_currency"]
+        XCTAssertTrue(currency.waitForExistence(timeout: 5), "El campo del monto no dice en qué moneda compara.")
+        XCTAssertEqual(currency.label, "PEN", "Con USD oculto, el monto compara en \(currency.label).")
+    }
 }

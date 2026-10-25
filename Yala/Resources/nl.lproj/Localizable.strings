@@ -7060,6 +7060,7 @@
 "filters.l8.typeLivesInShowOnly" = "Gebruik ‘Alleen tonen’ om alleen uitgaven of alleen inkomsten te zien.";
 "filters.l8.amountTitle" = "Bedrag";
 "filters.l8.amountNeedsOneCurrency" = "Kies hierboven één valuta om op bedrag te filteren.";
+"filters.l8.amountNeedsOneVisibleCurrency" = "Laat één valuta zichtbaar om op bedrag te filteren.";
 "filters.l8.allAccounts" = "Alle rekeningen";
 "filters.l8.allCategories" = "Alle categorieën";
 "filters.l8.allTags" = "Alle labels";
@@ -7191,6 +7192,7 @@
 "scheduled.l10.delete.title" = "„%@” verwijderen?";
 "scheduled.l10.delete.keepsRecords" = "Je registraties worden niet verwijderd.";
 "scheduled.l10.deleted" = "„%@” verwijderd";
+"records.pendingDeletion.deletedMany" = "%d boekingen verwijderd";
 "scheduled.l10.editor.moreOptions" = "Meer opties";
 "scheduled.l10.editor.when" = "Wanneer";
 "scheduled.l10.editor.optional" = "Optioneel";

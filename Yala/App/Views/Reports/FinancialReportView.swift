@@ -37,7 +37,9 @@ struct FinancialReportView: View {
 
     // MARK: - Queries
 
-    @Query(sort: \TransactionItem.date, order: .reverse) private var transactions: [TransactionItem]
+    @Query(sort: \TransactionItem.date, order: .reverse) private var storedTransactions: [TransactionItem]
+    /// Sin lo que espera su borrado con «Deshacer» (`RecordPendingDeletion`): el Informe cuenta lo mismo que el Panel.
+    private var transactions: [TransactionItem] { RecordPendingDeletion.shared.visible(storedTransactions) }
     @Query private var accounts: [Account]
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query private var allSubcategories: [Subcategory]

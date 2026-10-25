@@ -100,9 +100,9 @@ enum PreviousPeriodHelper {
             return DateInterval(start: startOfPreviousWeek, end: endOfPreviousWeek)
 
         case .last7Days:
-            // Go back 7 days
-            let duration = currentInterval.duration
-            let previousStart = currentInterval.start.addingTimeInterval(-duration)
+            // Siete días de calendario antes (`previousStartByDays`): con el fin de hoy en 23:59:59, restar la duración arrancaba a
+            // las 00:00:01 y dejaba fuera lo fechado a medianoche de su primer día.
+            let previousStart = previousStartByDays(of: currentInterval, calendar: calendar)
             let previousEnd = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
             return DateInterval(start: previousStart, end: previousEnd)
 
@@ -124,9 +124,8 @@ enum PreviousPeriodHelper {
             return DateInterval(start: startOfTwoMonthsAgo, end: endOfTwoMonthsAgo)
 
         case .last30Days:
-            // Previous 30 days
-            let duration = currentInterval.duration
-            let previousStart = currentInterval.start.addingTimeInterval(-duration)
+            // Treinta días de calendario antes, como en `.last7Days`.
+            let previousStart = previousStartByDays(of: currentInterval, calendar: calendar)
             let previousEnd = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
             return DateInterval(start: previousStart, end: previousEnd)
 
@@ -139,12 +138,22 @@ enum PreviousPeriodHelper {
             return currentInterval
 
         case .custom:
-            // Move back by the same duration
-            let duration = currentInterval.duration
-            let previousStart = currentInterval.start.addingTimeInterval(-duration)
+            // Los mismos días de calendario antes (`previousStartByDays`), con el último entero si el rango cierra en 23:59:59.
+            let previousStart = previousStartByDays(of: currentInterval, calendar: calendar)
             let previousEnd = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
             return DateInterval(start: previousStart, end: previousEnd)
         }
+    }
+
+    /// El inicio del período anterior de un tramo de días (7, 30 o un rango propio): tantos días de calendario antes como
+    /// días tiene el actual, contando entero el último aunque cierre en 23:59:59 (`DateIntervalDayCount`). Por días y no
+    /// por segundos: restar la duración arrancaba a las 00:00:01 con el fin de hoy en 23:59:59, y con un cambio de hora
+    /// dentro de los dos tramos arrancaba una hora antes o después de la medianoche (lo que guarda el selector de fecha).
+    private static func previousStartByDays(of interval: DateInterval, calendar: Calendar) -> Date {
+        let days = DateIntervalDayCount.days(in: interval, calendar: calendar)
+        guard days > 0 else { return interval.start.addingTimeInterval(-interval.duration) }
+        return calendar.date(byAdding: .day, value: -days, to: interval.start)
+            ?? interval.start.addingTimeInterval(-interval.duration)
     }
 
     /// Calculates the same interval but from the previous year (A mode)
@@ -154,11 +163,10 @@ enum PreviousPeriodHelper {
     ) -> DateInterval {
         let previousYearStart = calendar.date(byAdding: .year, value: -1, to: currentInterval.start) ?? currentInterval.start
         let shiftedEnd = calendar.date(byAdding: .year, value: -1, to: currentInterval.end) ?? currentInterval.end
-        // Los periodos EN CURSO cierran en `endOfToday` (medianoche = inicio de manana,
-        // exclusivo de facto); desplazado un ano, el 31-dic ese instante coincide con
-        // `currentInterval.start` y la TX del 1-ene se cuenta en los dos lados. Se le
-        // resta 1s SOLO en ese caso: los periodos CERRADOS ya cierran en 23:59:59 y
-        // restarles otro segundo les quitaria un instante real (medido: los 730 dias).
+        // Un intervalo que cierre en medianoche (un rango propio; los períodos en curso cierran en 23:59:59 desde el
+        // 2026-10-25), desplazado un año, el 31-dic coincide con `currentInterval.start` y la TX del 1-ene se cuenta en
+        // los dos lados. Se le resta 1s SOLO en ese caso: los que ya cierran en 23:59:59 perderían un instante real
+        // (medido: los 730 dias).
         let previousYearEnd = calendar.startOfDay(for: shiftedEnd) == shiftedEnd
             ? (calendar.date(byAdding: .second, value: -1, to: shiftedEnd) ?? shiftedEnd)
             : shiftedEnd

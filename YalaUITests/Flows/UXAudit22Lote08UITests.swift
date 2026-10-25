@@ -27,9 +27,12 @@ final class UXAudit22Lote08UITests: XCTestCase {
 
     /// `minimal` para los borrados: con la lista entera en pantalla, contar filas dice si una salió. Con `realista` la
     /// lista es perezosa y, al esconder una, entra la siguiente y la cuenta no baja.
-    private func launch(seed: String = "realista", deeplink: String? = nil, deeplinkURL: String? = nil) -> XCUIApplication {
+    private func launch(
+        seed: String = "realista", deeplink: String? = nil, deeplinkURL: String? = nil, extraArguments: [String] = []
+    ) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true, seed: seed, deeplink: deeplink, deeplinkURL: deeplinkURL)
+        app.launchForUITest(
+            pro: true, seed: seed, deeplink: deeplink, deeplinkURL: deeplinkURL, extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
         return app
     }
@@ -83,6 +86,30 @@ final class UXAudit22Lote08UITests: XCTestCase {
 
         undo.tap()
         XCTAssertTrue(waitUntil { self.row(app, labeled: label).exists }, "«Deshacer» no devolvió el registro.")
+    }
+
+    /// Dos borrados seguidos comparten aviso y su «Deshacer» devuelve los dos. Hasta el 2026-10-25 el aviso del segundo
+    /// le quitaba el «Deshacer» al primero, que se borraba sin vuelta (lote 12.5, ticket
+    /// `record-pending-deletion-still-counts-outside-records`).
+    func test_twoDeletionsInARow_undoBringsBothBack() {
+        // El aviso dura 30 s: el test tarda más de los 5 s reales en borrar el segundo, y con ellos el primero ya se habría
+        // borrado de verdad antes (medido en iOS 27.0).
+        let app = launch(seed: "minimal", deeplink: "records", extraArguments: ["-uitest-undo-notice-seconds", "30"])
+        let first = deleteFirstRowFromContextMenu(app)
+        XCTAssertTrue(app.buttons["record_deleted_undo"].waitForExistence(timeout: 5), "No salió el aviso del primero.")
+        XCTAssertTrue(waitUntil { !self.row(app, labeled: first).exists }, "El primero sigue en la lista.")
+        let second = deleteFirstRowFromContextMenu(app)
+        XCTAssertNotEqual(first, second, "Se borró dos veces la misma fila.")
+        XCTAssertTrue(waitUntil { !self.row(app, labeled: second).exists }, "El segundo sigue en la lista.")
+
+        let undo = app.buttons["record_deleted_undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "Tras el segundo borrado no hay «Deshacer».")
+        XCTAssertTrue(
+            app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "2 registros")).firstMatch.waitForExistence(timeout: 3),
+            "El aviso no dice que espera el borrado de los dos registros.")
+        undo.tap()
+        XCTAssertTrue(waitUntil { self.row(app, labeled: second).exists }, "«Deshacer» no devolvió el segundo.")
+        XCTAssertTrue(waitUntil { self.row(app, labeled: first).exists }, "«Deshacer» no devolvió el primero.")
     }
 
     // ⌘Z (iPad con teclado) no se asierta aquí: `typeKey` no llega a un `CommandGroup` que solo existe mientras dura

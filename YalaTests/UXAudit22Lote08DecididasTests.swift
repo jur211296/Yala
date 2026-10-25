@@ -318,6 +318,165 @@ struct RecordPendingDeletionTests {
         #expect(!RecordPendingDeletion.shared.hides(otherLeg.persistentModelID, transferPairID: "pair-1"))
     }
 
+    /// Dos borrados seguidos comparten aviso: su «Deshacer» devuelve los dos. Hasta el 2026-10-25 el aviso del segundo
+    /// retiraba el del primero, que se quedaba sin botón ni ⌘Z antes de tiempo
+    /// (ticket `record-pending-deletion-still-counts-outside-records`).
+    @Test func twoDeletionsInARow_shareTheUndo() throws {
+        let context = try makeTestContext()
+        let account = makeTestAccount(context: context, name: "Diaria")
+        let first = TransactionItem(date: .now, amount: -26, currencyCode: account.currencyCode, note: "Uber", account: account)
+        let second = TransactionItem(date: .now, amount: -9, currencyCode: account.currencyCode, note: "Café", account: account)
+        context.insert(first)
+        context.insert(second)
+        try context.save()
+
+        var committed: [String] = []
+        RecordPendingDeletion.shared.request(id: first.persistentModelID, transferPairID: nil, name: "Uber") { committed.append("Uber") }
+        RecordPendingDeletion.shared.request(id: second.persistentModelID, transferPairID: nil, name: "Café") { committed.append("Café") }
+        #expect(RecordPendingDeletion.shared.hides(first.persistentModelID, transferPairID: nil))
+        #expect(RecordPendingDeletion.shared.hides(second.persistentModelID, transferPairID: nil))
+
+        // Lo que pulsa el «Deshacer» del aviso (y ⌘Z).
+        RecordPendingDeletion.shared.undoAll()
+        #expect(!RecordPendingDeletion.shared.hides(first.persistentModelID, transferPairID: nil))
+        #expect(!RecordPendingDeletion.shared.hides(second.persistentModelID, transferPairID: nil))
+        #expect(committed.isEmpty)
+    }
+
+    /// Sin «Deshacer», los dos se borran juntos al terminar el plazo del último, una vez cada uno.
+    @Test func twoDeletionsInARow_commitTogether() async throws {
+        let context = try makeTestContext()
+        let account = makeTestAccount(context: context, name: "Diaria")
+        let first = TransactionItem(date: .now, amount: -26, currencyCode: account.currencyCode, note: "Uber", account: account)
+        let second = TransactionItem(date: .now, amount: -9, currencyCode: account.currencyCode, note: "Café", account: account)
+        context.insert(first)
+        context.insert(second)
+        try context.save()
+
+        let pending = RecordPendingDeletion.shared
+        let savedDelay = pending.commitDelayForBatch
+        pending.commitDelayForBatch = .milliseconds(60)
+        defer { pending.commitDelayForBatch = savedDelay }
+
+        var committed: [String] = []
+        pending.request(id: first.persistentModelID, transferPairID: nil, name: "Uber") { committed.append("Uber") }
+        pending.request(id: second.persistentModelID, transferPairID: nil, name: "Café") { committed.append("Café") }
+        #expect(committed.isEmpty)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(committed.sorted() == ["Café", "Uber"])
+        #expect(!pending.hides(first.persistentModelID, transferPairID: nil))
+        #expect(!pending.hides(second.persistentModelID, transferPairID: nil))
+    }
+
+    /// El plazo es UNO y lo marca el último borrado: el primero no se borra a su hora, espera al segundo. Con un plazo por
+    /// registro (el molde viejo) el primero se borraba a los 200 ms aunque su aviso ya no estuviera.
+    @Test func secondDeletion_extendsTheFirstOnesDeadline() async throws {
+        let context = try makeTestContext()
+        let account = makeTestAccount(context: context, name: "Diaria")
+        let first = TransactionItem(date: .now, amount: -26, currencyCode: account.currencyCode, note: "Uber", account: account)
+        let second = TransactionItem(date: .now, amount: -9, currencyCode: account.currencyCode, note: "Café", account: account)
+        context.insert(first)
+        context.insert(second)
+        try context.save()
+
+        let pending = RecordPendingDeletion.shared
+        let savedDelay = pending.commitDelayForBatch
+        pending.commitDelayForBatch = .milliseconds(200)
+        defer { pending.commitDelayForBatch = savedDelay }
+
+        var committed: [String] = []
+        pending.request(id: first.persistentModelID, transferPairID: nil, name: "Uber") { committed.append("Uber") }
+        try await Task.sleep(for: .milliseconds(120))
+        pending.request(id: second.persistentModelID, transferPairID: nil, name: "Café") { committed.append("Café") }
+        try await Task.sleep(for: .milliseconds(140))
+        // A 260 ms del primero: su plazo propio ya habría vencido, el compartido (320 ms) no.
+        #expect(committed.isEmpty)
+        #expect(pending.hides(first.persistentModelID, transferPairID: nil))
+        try await Task.sleep(for: .milliseconds(250))
+        #expect(committed.sorted() == ["Café", "Uber"])
+    }
+
+    /// Al vencer, las pantallas recargan aunque el borrado no llegara a hacerse: el registro no se queda fuera de todas.
+    @Test func batchEnd_reloadsTheScreens_evenIfNothingWasDeleted() async throws {
+        let context = try makeTestContext()
+        let account = makeTestAccount(context: context, name: "Diaria")
+        let record = TransactionItem(date: .now, amount: -26, currencyCode: account.currencyCode, note: "Uber", account: account)
+        context.insert(record)
+        try context.save()
+
+        let pending = RecordPendingDeletion.shared
+        let savedDelay = pending.commitDelayForBatch
+        pending.commitDelayForBatch = .milliseconds(60)
+        defer { pending.commitDelayForBatch = savedDelay }
+
+        pending.request(id: record.persistentModelID, transferPairID: nil, name: "Uber") { /* el borrado no se hace */ }
+        let afterRequest = SessionState.shared.dataVersion
+        try await Task.sleep(for: .milliseconds(250))
+        #expect(!pending.hides(record.persistentModelID, transferPairID: nil))
+        #expect(SessionState.shared.dataVersion != afterRequest)
+    }
+
+    /// «Deshacer» rehace la foto de los widgets, que pudo escribirse sin el registro mientras esperaba.
+    @Test func undo_refreshesTheWidgetPhoto() throws {
+        let context = try makeTestContext()
+        let account = makeTestAccount(context: context, name: "Diaria")
+        let record = TransactionItem(date: .now, amount: -26, currencyCode: account.currencyCode, note: "Uber", account: account)
+        context.insert(record)
+        try context.save()
+
+        var refreshed = 0
+        RecordPendingDeletion.shared.request(
+            id: record.persistentModelID, transferPairID: nil, name: "Uber", refreshAfterUndo: { refreshed += 1 }
+        ) {}
+        RecordPendingDeletion.shared.undoAll()
+        #expect(refreshed == 1)
+        // Y quien borra con «Deshacer» le pasa la foto de los widgets.
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let vm = try String(contentsOf: root.appendingPathComponent("Yala/App/ViewModels/RecordsViewModel.swift"), encoding: .utf8)
+        #expect(vm.contains("refreshAfterUndo: { WidgetDataCache.updateCache(context: context) }"))
+    }
+
+    /// Lo que espera no sale en las pantallas que cargan por `visible(_:)` (Panel, Estadísticas, Buscar, widgets, ficha de
+    /// cuenta y Presupuestos): no cuenta en sus cifras ni se puede editar desde ellas.
+    @Test func pendingRecord_isLeftOutOfTheOtherScreens() throws {
+        let context = try makeTestContext()
+        let account = makeTestAccount(context: context, name: "Diaria")
+        let pendingRecord = TransactionItem(date: .now, amount: -26, currencyCode: account.currencyCode, note: "Uber", account: account)
+        let other = TransactionItem(date: .now, amount: -9, currencyCode: account.currencyCode, note: "Café", account: account)
+        context.insert(pendingRecord)
+        context.insert(other)
+        try context.save()
+
+        #expect(RecordPendingDeletion.shared.visible([pendingRecord, other]).count == 2)
+        RecordPendingDeletion.shared.request(id: pendingRecord.persistentModelID, transferPairID: nil, name: "Uber") {}
+        #expect(RecordPendingDeletion.shared.visible([pendingRecord, other]).map(\.persistentModelID) == [other.persistentModelID])
+        RecordPendingDeletion.shared.undoAll()
+        #expect(RecordPendingDeletion.shared.visible([pendingRecord, other]).count == 2)
+    }
+
+    /// Las cargas que cuentan registros fuera de Registros pasan por `visible(_:)`, y el aviso deshace todo lo pendiente.
+    @Test func screensLoadThroughVisible_andTheNoticeUndoesAll() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let files = [
+            "Yala/App/ViewModels/PanelViewModel.swift",
+            "Yala/App/ViewModels/DetailContainerViewModel.swift",
+            "Yala/App/Views/Search/GlobalSearchView.swift",
+            "Yala/Services/WidgetDataCache.swift",
+            "Yala/App/Views/Panel/Sheets/AccountDetailSheet.swift",
+            "Yala/App/ViewModels/BudgetsViewModel.swift",
+            "Yala/App/Views/Reports/FinancialReportView.swift",
+            "Yala/App/ViewModels/AccountsSettingsListViewModel.swift",
+        ]
+        for file in files {
+            let code = try String(contentsOf: root.appendingPathComponent(file), encoding: .utf8)
+            #expect(code.contains("RecordPendingDeletion.shared.visible("), "\(file) no deja fuera lo pendiente de borrar")
+        }
+        let service = try String(
+            contentsOf: root.appendingPathComponent("Yala/App/Services/RecordPendingDeletion.swift"), encoding: .utf8)
+        let notice = try #require(service.range(of: "DraftDiscardUndoNotice.show("))
+        #expect(service[notice.upperBound...].prefix(500).contains("self?.undoAll()"))
+    }
+
     /// La pregunta de borrado no puede decir «no se puede deshacer» cuando sí se puede.
     @Test func confirmationMessage_saysItCanBeUndone() throws {
         let context = try makeTestContext()

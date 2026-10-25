@@ -337,7 +337,8 @@ enum WidgetDataCache {
 
         var allTransactions: [TransactionItem] = []
         do {
-            allTransactions = try context.fetch(allTransactionsDescriptor)
+            // Lo que espera su borrado con «Deshacer» no cuenta en los widgets (`RecordPendingDeletion`).
+            allTransactions = RecordPendingDeletion.shared.visible(try context.fetch(allTransactionsDescriptor))
         } catch {
             #if DEBUG
             print("WidgetDataCache: Error fetching transactions: \(error)")
@@ -885,7 +886,11 @@ enum WidgetDataCache {
             // Las mismas filas que el saldo vivo y que la curva del widget (`LiveBalanceCalculator.entersBalance`): un
             // movimiento sin cuenta no está en ningún saldo, y contarlo aquí separaba la cifra del último punto de la
             // curva (card `tablero-la-cifra-y-la-curva-del-widget-de-saldo-zyah`).
-            for tx in allTx where tx.date < periodEnd && LiveBalanceCalculator.entersBalance(tx) {
+            // Fin exclusivo: un período que cierra en 23:59:59 (todos los de `WidgetPeriod`, los en curso desde el
+            // 2026-10-25) cuenta ese último segundo; uno que cierra en medianoche, no cuenta la medianoche.
+            let nextSecond = periodEnd.addingTimeInterval(1)
+            let exclusiveEnd = Calendar.current.startOfDay(for: nextSecond) == nextSecond ? nextSecond : periodEnd
+            for tx in allTx where tx.date < exclusiveEnd && LiveBalanceCalculator.entersBalance(tx) {
                 LiveBalanceCalculator.addNative(tx, to: &native)
             }
             let closing = min(periodEnd, Date.now)

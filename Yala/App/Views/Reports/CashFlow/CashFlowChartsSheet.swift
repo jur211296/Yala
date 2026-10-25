@@ -39,8 +39,13 @@ struct CashFlowChartsSheet: View {
         FeatureGateService.shared.isProUser
     }
 
+    /// Pide y enseña las frases de IA. Exige Pro: la preferencia del chip sobrevive al fin de la suscripción.
     private var isAIEnabled: Bool {
-        appPreferences.cashFlowAIEnabled && appPreferences.aiInsightsConsentAccepted
+        CashFlowAICommentGate.isEnabled(
+            toggleOn: appPreferences.cashFlowAIEnabled,
+            consentAccepted: appPreferences.aiInsightsConsentAccepted,
+            isPro: isPro
+        )
     }
 
     private let aiProTip = AIChartsProTip()
@@ -470,16 +475,16 @@ struct CashFlowChartsSheet: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
         }
-        .foregroundStyle(appPreferences.cashFlowAIEnabled ? AnyShapeStyle(theme.onAccent) : AnyShapeStyle(.thSecondaryText))
+        .foregroundStyle(isAIEnabled ? AnyShapeStyle(theme.onAccent) : AnyShapeStyle(.thSecondaryText))
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
         .background {
             Capsule()
-                .fill(appPreferences.cashFlowAIEnabled ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thSecondaryText.opacity(0.08)))
+                .fill(isAIEnabled ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thSecondaryText.opacity(0.08)))
         }
         .overlay(
             Capsule()
-                .stroke(appPreferences.cashFlowAIEnabled ? theme.accent.opacity(0.3) : .clear, lineWidth: 1)
+                .stroke(isAIEnabled ? theme.accent.opacity(0.3) : .clear, lineWidth: 1)
         )
     }
 

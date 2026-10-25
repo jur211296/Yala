@@ -74,9 +74,9 @@ nonisolated enum AccountDetailCalculator {
     /// Cuadra por construcción con `summary`: `moneyIn` y `moneyOut` son los mismos, y `closing` es la suma de todo
     /// lo fechado hasta el final del período.
     ///
-    /// Un período en curso cierra en la medianoche de mañana y `DateInterval` incluye su final: sin quitar ese instante,
-    /// un movimiento fechado mañana a las 00:00 entraba en «Saldo hoy». Un período cerrado ya acaba en 23:59:59 y no se
-    /// toca (CLAUDE.md, «Cálculos con fechas»).
+    /// Un intervalo que cierra en medianoche (un rango propio) incluye ese instante (`DateInterval` es cerrado): sin
+    /// quitarlo, un movimiento fechado ese día a las 00:00 entraba en «Saldo hoy». Los períodos de `DetailPeriod` ya
+    /// acaban en 23:59:59 (los en curso desde el 2026-10-25) y no se tocan (CLAUDE.md, «Cálculos con fechas»).
     static func reconciliation(
         entries: [Entry],
         interval: DateInterval,

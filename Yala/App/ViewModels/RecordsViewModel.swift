@@ -675,7 +675,9 @@ final class RecordsViewModel: Filterable {
                 transferPairID: transferPairID,
                 name: undoName ?? RecordDeleteConfirmationLogic.displayName(
                     note: record.note, subcategoryName: record.subcategory?.name, categoryName: record.category?.name)
-                    ?? String(format: "%.2f", abs(record.amount))
+                    ?? String(format: "%.2f", abs(record.amount)),
+                // La foto de los widgets pudo rehacerse sin este registro mientras esperaba.
+                refreshAfterUndo: { WidgetDataCache.updateCache(context: context) }
             ) {
                 // Fuerte a propósito: si la persona sale de Registros en esos segundos, el borrado se tiene que hacer
                 // igual. Solo lo retiene la tarea del aviso, que termina. Y con un fetch antes: si entretanto se borró

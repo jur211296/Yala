@@ -7048,6 +7048,7 @@
 "filters.l8.typeLivesInShowOnly" = "Para ver só despesas ou só receitas, use “Mostrar só”.";
 "filters.l8.amountTitle" = "Valor";
 "filters.l8.amountNeedsOneCurrency" = "Para filtrar por valor, escolha uma só moeda acima.";
+"filters.l8.amountNeedsOneVisibleCurrency" = "Para filtrar por valor, deixe só uma moeda à vista.";
 "filters.l8.allAccounts" = "Todas as contas";
 "filters.l8.allCategories" = "Todas as categorias";
 "filters.l8.allTags" = "Todas as etiquetas";
@@ -7179,6 +7180,7 @@
 "scheduled.l10.delete.title" = "Excluir “%@”?";
 "scheduled.l10.delete.keepsRecords" = "Seus registros não são excluídos.";
 "scheduled.l10.deleted" = "Você excluiu “%@”";
+"records.pendingDeletion.deletedMany" = "Você excluiu %d registros";
 "scheduled.l10.editor.moreOptions" = "Mais opções";
 "scheduled.l10.editor.when" = "Quando";
 "scheduled.l10.editor.optional" = "Opcional";

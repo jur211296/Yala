@@ -189,6 +189,8 @@ final class DevSeedService {
             do { try context.save() } catch {
                 print("DevSeedService: cuenta-con-movimientos save error: \(error)")
             }
+            // Escribió tipos de cambio: el conversor lo tiene que saber (ver el final de `seed`).
+            NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
             UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
             hasSeeded = true
             SessionState.shared.incrementDataVersion()
@@ -367,6 +369,14 @@ final class DevSeedService {
         // Mark as executed
         UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
         hasSeeded = true
+
+        // La semilla escribe tipos de cambio (y la ficha los reescribe en su divisa): como todo escritor de tasas, avisa
+        // al conversor (`currency-fx.md`). Sin el aviso, el «saldo de hoy» seguía con lo que el conversor resolvió antes
+        // de sembrar —la tabla estática—, y la curva de la ficha caía de golpe el último día (ticket
+        // `ficha-mx-vida-rates-jump-on-the-last-day`, medido: 14.835 USD × 17,2 de la tabla en vez de × 18,30 sembrado).
+        if profile.seedsPersonalData {
+            NotificationCenter.default.post(name: .yalaExchangeRatesUpdated, object: nil)
+        }
 
         // Notify UI to refresh all data-dependent views
         SessionState.shared.incrementDataVersion()

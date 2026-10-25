@@ -1,10 +1,10 @@
 ---
 id: scheduled-payment-once-labeled-monthly
-status: qa
+status: done
 priority: medium
 area: planning
 created: 2026-09-02
-updated: 2026-10-14
+updated: 2026-10-25
 ---
 
 # Un pago planificado de «una sola vez» se muestra como «Mensual» en la lista
@@ -71,3 +71,7 @@ Triage 2026-10-08: abierto · low → medium · sigue pasando (recurrenceBadge n
 ## Arreglado (2026-10-14, auditoría UX 2.2, lote 10, B1)
 
 La fila de la lista, el detalle, Ajustes › Pagos planificados y el flujo de caja nombran la frecuencia con una sola regla (`ScheduledPaymentDetailLogic.frequencyText`): «Una sola vez», «Mensual» o «Cada 2 meses». Medido en el simulador creando un pago «una sola vez» a mano (`B1-despues-lista.png` en la entrega del lote 10). Tests: `ScheduledPaymentDetailLogicTests`, `ScheduledPaymentWiringTests`. Falta el QA en un iPhone.
+
+## Cerrado (cola 2.2 · lote 12.5, 2026-10-25)
+
+Verificado en el simulador el 2026-10-25 (lote 12.5): con la semilla `grupos` + `-uitest-scheduled-due-today`, el detalle de «Recibo vence hoy» dice «Una sola vez · Cuenta Principal · Servicios del hogar», y la fila de la lista ya no pinta la frecuencia (`capturas/evidencia-card9-pago-una-sola-vez.png` del PR). Tests ya existentes: `ScheduledPaymentDetailLogicTests`. El QA en iPhone no añade nada que el simulador no vea: se cierra.

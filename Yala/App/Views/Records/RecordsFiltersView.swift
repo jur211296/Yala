@@ -566,7 +566,10 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                     currencyCode: amountCurrencyCode
                 )
             } else {
-                Text(L10n.UXL8C.Filters.amountNeedsOneCurrency)
+                // En «Ocultar» lo que se marca es lo que desaparece: pedir «elige una sola» diría lo contrario.
+                Text(localIsExcludeMode
+                     ? L10n.UXL8C.Filters.amountNeedsOneVisibleCurrency
+                     : L10n.UXL8C.Filters.amountNeedsOneCurrency)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -579,12 +582,13 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         }
     }
 
-    /// La moneda del filtro de monto: la elegida si hay una sola, o la única que tienen los registros. Con varias
-    /// monedas y ninguna elegida no hay monto que comparar.
+    /// La moneda del filtro de monto: la única que queda a la vista. En «Ocultar», nunca la que se oculta.
     private var amountCurrencyCode: CurrencyCode? {
-        if localSelectedCurrencies.count == 1 { return localSelectedCurrencies.first }
-        guard localSelectedCurrencies.isEmpty, filtersViewModel.currenciesWithTransactions.count == 1 else { return nil }
-        return filtersViewModel.currenciesWithTransactions.first
+        RecordsAmountFilterCurrencyLogic.currency(
+            selected: localSelectedCurrencies,
+            available: filtersViewModel.currenciesWithTransactions,
+            isExcludeMode: localIsExcludeMode
+        )
     }
 
     private var noteContent: some View {
@@ -770,7 +774,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             recordsViewModel.selectedNeeds = localSelectedNeeds
             recordsViewModel.selectedTransactionNatures = localSelectedTransactionNatures
             recordsViewModel.selectedCurrencies = localSelectedCurrencies
-            recordsViewModel.amountCondition = localAmountCondition
+            // Sin una moneda a la vista la hoja dice que el monto no se puede usar: tampoco se aplica (review del lote
+            // 12.5: seguía filtrando cada registro en su propia moneda).
+            recordsViewModel.amountCondition = amountCurrencyCode == nil ? .any : localAmountCondition
             recordsViewModel.searchText = localSearchText
         }
     }

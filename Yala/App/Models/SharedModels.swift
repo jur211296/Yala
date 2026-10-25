@@ -198,8 +198,13 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     ) -> DateInterval {
         let startOfToday = calendar.startOfDay(for: now)
 
-        // End of today (start of tomorrow) to include all transactions from today
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        // Fin de hoy: el último segundo, 23:59:59. `DateInterval` es CERRADO, así que acabar en la medianoche de mañana
+        // contaba en «Este mes» (y en todos los períodos en curso) lo fechado mañana a las 00:00, la hora que guarda el
+        // selector de fecha, mientras el saldo de hoy ya lo dejaba fuera (ticket
+        // `period-totals-count-a-row-dated-at-tomorrows-midnight`). Igual que ya cierran los períodos cerrados. Espejo:
+        // `WidgetPeriod.dateInterval()`.
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow
 
         switch self {
         case .thisWeek:
@@ -279,23 +284,30 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         now: Date = .now
     ) -> DateInterval? {
         let endOfMonth = calendar.endOfMonth(for: now)
+        // El fin de semana y de mes de `Calendar` es la medianoche siguiente, y `DateInterval` es cerrado: un pago del
+        // lunes siguiente o del día 1 del mes siguiente contaba como planificado de este período (y del siguiente). Un fin
+        // en medianoche se queda en 23:59:59; un rango propio que ya cierra así no se toca.
+        func closed(_ start: Date, _ end: Date) -> DateInterval {
+            let last = calendar.startOfDay(for: end) == end ? end.addingTimeInterval(-1) : end
+            return DateInterval(start: start, end: max(start, last))
+        }
 
         switch self {
         case .thisWeek:
             let startOfWeek = calendar.startOfWeek(for: now)
             let endOfWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: startOfWeek) ?? endOfMonth
-            return DateInterval(start: startOfWeek, end: min(endOfWeek, endOfMonth))
+            return closed(startOfWeek, min(endOfWeek, endOfMonth))
 
         case .thisMonth:
-            return DateInterval(start: calendar.startOfMonth(for: now), end: endOfMonth)
+            return closed(calendar.startOfMonth(for: now), endOfMonth)
 
         case .thisYear:
-            return DateInterval(start: calendar.startOfYear(for: now), end: endOfMonth)
+            return closed(calendar.startOfYear(for: now), endOfMonth)
 
         case .custom:
             let startOfToday = calendar.startOfDay(for: now)
             guard let range = customRange, range.end > startOfToday else { return nil }
-            return DateInterval(start: range.start, end: min(range.end, endOfMonth))
+            return closed(range.start, min(range.end, endOfMonth))
 
         case .last7Days, .last30Days, .lastMonth, .lastYear, .allTime:
             return nil

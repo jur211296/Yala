@@ -31,6 +31,9 @@ struct TrendsTabView: View {
     let allSubcategories: [Subcategory]
     let tags: [Tag]
     let allTransactions: [TransactionItem]
+    /// Recargas del store hechas por el contenedor (`DetailContainerViewModel.dataGeneration`). Las tres tarjetas que
+    /// esta pestaña precalcula cuelgan de él para enterarse de un alta, un borrado o una edición en sitio.
+    let dataGeneration: Int
 
     /// Sort accounts by user-defined order (from AccountsSettingsListView)
     private func sortedAccountIDs(_ ids: [PersistentIdentifier]) -> [PersistentIdentifier] {
@@ -194,9 +197,12 @@ struct TrendsTabView: View {
         .onChange(of: trendsViewModel.selectedMetric)          { scheduleTrendsRecalc() }
         .onChange(of: sessionState.comparisonMode)             { scheduleTrendsRecalc() }
         .onChange(of: sessionState.selectedTransactionNatures) { scheduleTrendsRecalc() }
-        // Use count instead of full array to avoid crashes during data wipe.
-        // Longer debounce (300ms) tolerates bulk inserts (import, draft dedup).
-        .onChange(of: allTransactions.count)                   { scheduleTrendsRecalc(debounceMs: 300) }
+        // Datos nuevos: cualquier mutador (alta, borrado, edición del importe, sync) acaba en una recarga del
+        // contenedor, y esa recarga avanza `dataGeneration`. Antes se miraba `allTransactions.count`, que no ve una
+        // edición en sitio: con la pestaña montada, las tarjetas seguían con el importe viejo (ticket
+        // `trends-cards-ignore-an-in-place-amount-edit`). Lo sustituye, no se suma: el array solo cambia dentro de esa
+        // recarga. El debounce largo (300 ms) sigue tolerando las altas en bloque (importar, deduplicar borradores).
+        .onChange(of: dataGeneration)                          { scheduleTrendsRecalc(debounceMs: 300) }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -1405,7 +1411,7 @@ struct TrendsTabView: View {
 
     /// Debounces `calculateCashFlowData` + `calculatePeriodComparisonData` so rapid onChange
     /// bursts (filter changes, bulk transaction inserts) collapse into a single pass.
-    /// Default 200ms for filter changes; use 300ms for `allTransactions.count` to tolerate imports.
+    /// Default 200ms for filter changes; use 300ms for `dataGeneration` (datos nuevos) to tolerate imports.
     private func scheduleTrendsRecalc(debounceMs: Int = 200) {
         recalcTask?.cancel()
         // El análisis con IA describe lo que había: con otro período, filtro,

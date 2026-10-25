@@ -234,7 +234,8 @@ final class BudgetsViewModel {
             sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse), SortDescriptor(\TransactionItem.createdAt, order: .reverse)]
         )
         do {
-            let fetched = try context.fetch(transactionDescriptor)
+            // Lo que espera su borrado con «Deshacer» no cuenta en lo gastado (`RecordPendingDeletion`).
+            let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionDescriptor))
             if fetched != allTransactions { allTransactions = fetched }
             transactionsLoadedFrom = earliestDate
         } catch {

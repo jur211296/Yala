@@ -193,7 +193,7 @@ enum DateAlignmentHelper {
         )
 
         // Extiende al INICIO del día SIGUIENTE al equivalente para incluir ese día
-        // COMPLETO. El intervalo actual termina en `endOfToday` (inicio de mañana),
+        // COMPLETO. El intervalo actual termina a las 23:59:59 de hoy,
         // así que cuenta hoy entero; el previo debe incluir el día equivalente
         // entero o la comparación MTD-vs-MTD queda asimétrica (una TX del previo con
         // hora — jun 6 14:00 — caería fuera mientras su gemela jul 6 14:00 sí cuenta;

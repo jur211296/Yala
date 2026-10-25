@@ -50,6 +50,8 @@ extension L10n {
 
             static var amountTitle: String { l8c("filters.l8.amountTitle") }
             static var amountNeedsOneCurrency: String { l8c("filters.l8.amountNeedsOneCurrency") }
+            /// La misma línea en «Ocultar»: lo que tiene que quedar es una sola moneda SIN ocultar.
+            static var amountNeedsOneVisibleCurrency: String { l8c("filters.l8.amountNeedsOneVisibleCurrency") }
 
             // Lo que dice cada sección sin nada marcado. En «Mostrar solo» se ve todo; en «Ocultar», nada se oculta.
             static var allAccounts: String { l8c("filters.l8.allAccounts") }
