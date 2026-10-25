@@ -101,7 +101,7 @@
 "panel.health.bills.sheet.explanation" = "Combineert twee dingen: of je saldo de openstaande betalingen voor deze periode dekt, en welk percentage van je inkomen naar abonnementen en terugkerende betalingen gaat.";
 "panel.health.bills.headline.high" = "Je verplichtingen zijn onder controle 💪";
 "panel.health.bills.headline.mid" = "Je verplichtingen zijn beheersbaar";
-"panel.health.bills.headline.low" = "Je verplichtingen wegen op je stroom";
+"panel.health.bills.headline.low" = "Je verplichtingen wegen op je cashflow";
 "panel.health.bills.headline.empty" = "Je hebt nog geen geplande betalingen";
 "panel.health.bills.cta.view" = "Bekijk mijn rekeningen";
 "panel.health.bills.cta.create" = "Maak mijn eerste geplande betaling";
@@ -254,7 +254,7 @@
 
 "search.noResults" = "We hebben niets gevonden";
 "search.tryAnotherTerm" = "Probeer een andere zoekterm";
-"search.filter.all" = "Alle";
+"search.filter.all" = "Alles";
 "search.filter.note" = "Notitie";
 "search.filter.category" = "Categorie";
 "search.filter.subcategory" = "Subcategorie";
@@ -371,7 +371,7 @@
 "import.templateGenerated" = "Sjabloon aangemaakt";
 "import.templateGeneratedMessage" = "Je vindt hem waar je hem bewaarde (bijvoorbeeld in Bestanden). Open hem met Numbers of Excel, vervang de voorbeeldrijen door je eigen en kom hier terug om te importeren.";
 "import.introDescription" = "Haal je boekingen uit een CSV- of Excel-bestand, bijvoorbeeld de spreadsheet waarin je je uitgaven al bijhoudt.";
-"import.templateDescription" = "De sjabloon heeft per subcategorie een voorbeeldrij: vervang ze door je eigen rijen voor het importeren.";
+"import.templateDescription" = "Het sjabloon heeft per subcategorie een voorbeeldrij: vervang ze door je eigen rijen voor het importeren.";
 "import.categoriesDescription" = "Als het bestand categorieën bevat die nog niet bestaan, worden ze automatisch aangemaakt.";
 "import.selectAccount" = "Selecteer een rekening";
 "import.fileUrlError" = "We konden dat bestand niet lezen. Probeer het opnieuw te selecteren.";
@@ -781,7 +781,7 @@
 
 "widget.sizeLabel" = "Grootte";
 "widget.chatFab.toggle" = "Yala AI";
-"widget.chatFab.description" = "Toon de knop voor de AI-financieel assistent.";
+"widget.chatFab.description" = "Toon de knop voor de financiële AI-assistent.";
 "widget.chatFab.hint" = "Toont de Yala AI-knop op de hoofdschermen.";
 "widget.aiCapabilities.header" = "AI-mogelijkheden";
 
@@ -826,9 +826,9 @@
 "cashFlowPlan.incomeSection" = "Inkomsten";
 "cashFlowPlan.expenseSection" = "Uitgaven";
 "cashFlowPlan.recommendedBadge" = "Aanbevolen";
-"cashFlowPlan.otherExpenses" = "Uitgaven zonder categorie";
+"cashFlowPlan.otherExpenses" = "Niet meegenomen uitgaven";
 "cashFlowPlan.otherExpensesDesc" = "Uitgaven van categorieën zonder een regel in je plan";
-"cashFlowPlan.otherIncome" = "Inkomsten zonder categorie";
+"cashFlowPlan.otherIncome" = "Niet meegenomen inkomsten";
 "cashFlowPlan.emptyState" = "Nog geen gegevens";
 "cashFlowPlan.emptyStateMessage" = "Boek je uitgaven en inkomsten van minstens één maand en we bouwen je plan.";
 "cashFlowPlan.monthsActive" = "maanden";
@@ -863,10 +863,10 @@
 "cashFlowPlan.realIncome" = "Ontvangen";
 "cashFlowPlan.difference" = "Verschil";
 "cashFlowPlan.adjustAmount" = "Bedrag aanpassen";
-"cashFlowPlan.othersTitle" = "Uitgaven zonder categorie";
+"cashFlowPlan.othersTitle" = "Niet meegenomen uitgaven";
 "cashFlowPlan.othersDesc" = "Dit zijn uitgaven die we in je boekingen zien maar nog niet in je plan staan. Tik op + om ze toe te voegen.";
 "cashFlowPlan.othersHint" = "Geen zorgen als sommige incidenteel zijn — voeg alleen die toe die elke maand terugkomen.";
-"cashFlowPlan.othersIncomeTitle" = "Inkomsten zonder categorie";
+"cashFlowPlan.othersIncomeTitle" = "Niet meegenomen inkomsten";
 "cashFlowPlan.othersIncomeDesc" = "Dit zijn inkomsten die we in je boekingen zien maar nog niet in je plan staan. Tik op + om ze toe te voegen.";
 "cashFlowPlan.othersIncomeHint" = "Voeg alleen die toe die elke maand terugkomen.";
 "cashFlowPlan.promoteCategory" = "Aan plan toevoegen";
@@ -1018,7 +1018,7 @@
 "comparison.month" = "Maand";
 "comparison.year" = "Jaar";
 "comparison.monthShort" = "P-1";
-"comparison.yearShort" = "Y-1";
+"comparison.yearShort" = "J-1";
 
 "statistics.noRecordsFiltered" = "Geen boekingen met deze filters";
 "statistics.noRecordsDescription" = "Wanneer je boekingen toevoegt, verschijnen ze hier.";
@@ -1388,7 +1388,7 @@
 "account.type.creditCard" = "Creditcard";
 "account.type.investment" = "Beleggingen";
 "account.type.loan" = "Lening";
-"account.type.other" = "Anders";
+"account.type.other" = "Overig";
 
 "iconPicker.title" = "Aanpassen";
 "iconPicker.preview" = "Voorvertoning";
@@ -1415,7 +1415,7 @@
 "iconPicker.direction" = "Richting";
 "iconPicker.other" = "Anders";
 
-"need.title" = "Aard van uitgave";
+"need.title" = "Noodzaak van uitgave";
 "need.incomeNotApplicable" = "Indeling naar behoefte geldt alleen voor uitgaven";
 
 // MARK: - Balance Adjustments
@@ -1793,7 +1793,7 @@
 // Usage Mode: 3 options
 "onboarding.usageMode.expensesOnly" = "Alleen uitgaven";
 "onboarding.usageMode.expensesOnly.quote" = "\"Ik wil gewoon weten waar mijn geld naartoe gaat\"";
-"onboarding.usageMode.expensesOnly.desc" = "Hou je uitgaven bij en that's it. Geen saldi, geen gedoe.";
+"onboarding.usageMode.expensesOnly.desc" = "Hou je uitgaven bij, meer niet. Geen saldi, geen gedoe.";
 "onboarding.usageMode.dayToDay" = "Dag tot dag";
 "onboarding.usageMode.dayToDay.quote" = "\"Ik wil weten hoeveel ik nog kan uitgeven\"";
 "onboarding.usageMode.dayToDay.desc" = "Uitgaven, inkomsten en je rekeningsaldi. Snel en praktisch.";
@@ -1858,7 +1858,7 @@
 "onboarding.calc.cash" = "Contant";
 "onboarding.calc.creditCardSpending" = "Creditcarduitgaven";
 "onboarding.calc.optional" = "(optioneel)";
-"onboarding.calc.available" = "Je beschikbaar →";
+"onboarding.calc.available" = "Je beschikbare geld →";
 "onboarding.calc.balance" = "Je saldo →";
 "onboarding.calc.tipCashFlow" = "Gebruik je creditcards, dan kun je ze altijd als aparte rekeningen toevoegen.";
 "onboarding.calc.tipPatrimonial" = "Deel je uitgaven met anderen, neem dan mee wat ze jou schuldig zijn en wat jij schuldig bent voor een nauwkeuriger saldo.";
@@ -1902,7 +1902,7 @@
 // Purpose step (binary)
 "onboarding.purpose.title" = "Wat zou je met Yala willen doen?";
 "onboarding.purpose.expenses" = "Alleen mijn uitgaven volgen";
-"onboarding.purpose.expensesDesc" = "Boek wat je uitgeeft en that's it";
+"onboarding.purpose.expensesDesc" = "Boek wat je uitgeeft, meer niet";
 "onboarding.purpose.control" = "Mijn geld beheren";
 "onboarding.purpose.controlDesc" = "Uitgaven, inkomsten en hoeveel je hebt";
 // Accounts step (binary)
@@ -2301,8 +2301,8 @@
 "notifications.selectData" = "Wat wil je zien?";
 
 // Day preferences
-"notifications.day.sunday" = "Zondag";
-"notifications.day.monday" = "Maandag";
+"notifications.day.sunday" = "zondag";
+"notifications.day.monday" = "maandag";
 "notifications.day.lastOfMonth" = "laatste dag van de maand";
 "notifications.day.firstOfMonth" = "eerste dag van de maand";
 "notifications.selectDay" = "Wanneer ontvangen?";
@@ -2464,8 +2464,8 @@
 "subscription.success.continue" = "Aan de slag";
 
 // Additional features for success view
-"subscription.feature.unlimitedAccounts" = "Onbeperkt rekeningen";
-"subscription.feature.unlimitedBudgets" = "Onbeperkt budgetten";
+"subscription.feature.unlimitedAccounts" = "Onbeperkte rekeningen";
+"subscription.feature.unlimitedBudgets" = "Onbeperkte budgetten";
 "subscription.feature.premiumIcons" = "Premium app-iconen";
 
 // MARK: - Trial Banner
@@ -2526,7 +2526,7 @@
 "subcategory.occasionalMobility" = "Incidentele mobiliteit";
 "subcategory.rideshare" = "Taxi's & ridesharing";
 "subcategory.publicTransport" = "Openbaar vervoer";
-"subcategory.fees" = "Kosten & toeslagen";
+"subcategory.fees" = "Provisies & kosten";
 "subcategory.taxes" = "Belastingen";
 "subcategory.pensions" = "Pensioenen & bijdragen";
 "subcategory.loans" = "Leningen & krediet";
@@ -2733,7 +2733,7 @@
 "tutorials.importData.step0.desc" = "Tik in Instellingen, bij Gegevens, op Bestand importeren.";
 "tutorials.importData.step1.desc" = "Je kunt zo vaak je wilt CSV of Excel importeren met het standaardsjabloon, dat je daar kunt downloaden. Bij gegevens in meerdere valuta's vraagt de app je per valuta een rekening te kiezen.";
 "tutorials.createBudgets.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Budgetten staat. Gebruik de +-knop om er een nieuw aan te maken.";
-"tutorials.createBudgets.step1.desc" = "Geef hem een naam, bedrag en bepaal de periode: dagelijks, maandelijks, jaarlijks of eenmalig (voor een reis, evenement, enz.). Kies welke rekeningen, categorieën, labels en behoeften je wilt volgen. Zet meldingen aan voor waarschuwingen bij bepaalde drempels.";
+"tutorials.createBudgets.step1.desc" = "Geef hem een naam, bedrag en bepaal de periode: wekelijks, maandelijks, jaarlijks of eenmalig (voor een reis, evenement, enz.). Kies welke rekeningen, categorieën, labels en behoeften je wilt volgen. Zet meldingen aan voor waarschuwingen bij bepaalde drempels.";
 "tutorials.createBudgets.step2.desc" = "Zet ‘In widget tonen’ aan om het in de Budgetten-widget op Start te zien.";
 "tutorials.createBudgets.step3.desc" = "Onthoud dat je altijd kunt terugkomen om je budget te bewerken door erop te tikken.";
 "tutorials.createScheduledPayments.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Geplande betalingen staat. Gebruik de +-knop om er een nieuwe aan te maken.";
@@ -2745,7 +2745,7 @@
 "tutorials.createFavorites.step1.desc" = "Tik de volgende keer op de favoriet in de rij bovenaan het formulier: de velden die je hebt opgeslagen, worden vanzelf ingevuld.";
 "tutorials.editPanel.step0.desc" = "Ga naar het hoofdscherm waar je je uitgavenoverzicht ziet met alle beschikbare widgets.";
 "tutorials.editPanel.step1.desc" = "Tik op de knop met vierkantjes naast elke sectie op Start om te kiezen welke widgets je ziet en in welke volgorde.";
-"tutorials.editPanel.step2.desc" = "Onthoud dat je altijd kunt terugkeren naar de standaardvolgorde door binnen 'Aanpassen' op \"Reset\" te tikken.";
+"tutorials.editPanel.step2.desc" = "Onthoud dat je altijd kunt terugkeren naar de standaardvolgorde door binnen 'Aanpassen' op \"Terug naar oorspronkelijke indeling\" te tikken.";
 "tutorials.panelFiltering.step0.desc" = "Haal het beste uit Yala's interactieve grafieken. Bijna alle panelen zijn filterbaar per categorie, behoefte en meer. Speel ermee en vind wat voor jou werkt.";
 "tutorials.panelFiltering.step1.desc" = "Je hebt een filterbalk waarin je alle toegepaste filters ziet. Je kunt ze individueel of allemaal tegelijk verwijderen wanneer je wilt.";
 "tutorials.panelFiltering.step2.desc" = "In de verschillende weergaven van de app zie je dat je naar wens kunt filteren met de grafieken.";
@@ -2866,7 +2866,7 @@
 "insights.tipOptionalHigh" = "Bekijk je optionele uitgaven en zie welke je kunt uitstellen";
 
 "insights.ruleDailyAverage %@" = "Je geeft gemiddeld %@ per dag uit.";
-"insights.ruleSavingsPositive %d" = "Je bespaart %d%% van je inkomen.";
+"insights.ruleSavingsPositive %d" = "Je spaart %d%% van je inkomen.";
 "insights.ruleSavingsNegative" = "Je uitgaven overschreden je inkomen deze periode.";
 "insights.ruleSharedRatio.normal" = "%d%% van je uitgaven deze periode zijn gedeeld";
 "insights.ruleSharedRatio.considerate" = "%d%% van je uitgaven was gedeeld — delen is leuk";
@@ -2932,7 +2932,7 @@
 "whatsNew.v12.themes.title" = "PRO-thema's";
 "whatsNew.v12.themes.description" = "Pas de app aan met de nieuwe thema's Minimalistisch en Doorschijnend.";
 "whatsNew.v12.scheduled.title" = "Geplande betalingen";
-"whatsNew.v12.scheduled.description" = "Nu met variabele bedragen en de optie om voorvallen over te slaan.";
+"whatsNew.v12.scheduled.description" = "Nu met variabele bedragen en de optie om herhalingen over te slaan.";
 "whatsNew.v12.moreForYou.title" = "Meer voor jou";
 "whatsNew.v12.moreForYou.description" = "Nu met 4 gratis rekeningen en een gratis proefperiode van 30 dagen.";
 
@@ -3059,7 +3059,7 @@
 "groups.expense.noExpenses" = "Geen uitgaven";
 "groups.expense.youPaid" = "Jij betaalde %@";
 "groups.expense.memberPaid" = "%@ betaalde %@";
-"groups.expense.youAreOwed" = "Geleend";
+"groups.expense.youAreOwed" = "Uitgeleend";
 "groups.expense.youOwe" = "Geleend van";
 "groups.expense.notIncluded" = "Niet meegedaan";
 "groups.expense.newExpense" = "Nieuwe uitgave";
@@ -3079,7 +3079,7 @@
 "milestone.message50" = "Indrukwekkend! Met de AI-samenvatting ontdek je patronen in je uitgaven.";
 "milestone.message100" = "Je bent een financiële pro. Ontgrendel de volledige ervaring met Yala Pro.";
 "milestone.notNow" = "Nu niet";
-"milestone.unlimitedAccounts" = "Onbeperkt rekeningen";
+"milestone.unlimitedAccounts" = "Onbeperkte rekeningen";
 
 // MARK: - Dev Seed
 
@@ -3238,7 +3238,7 @@
 "setup.step4.title" = "Voeg een terugkerende betaling toe";
 
 "setup.practice.title" = "Klaar! Je hebt je eerste %@ aangemaakt";
-"setup.practice.message" = "Was het maar oefenen, dan kun je hem zonder problemen verwijderen.";
+"setup.practice.message" = "Was het alleen om te oefenen, dan kun je het zonder problemen verwijderen.";
 "setup.practice.keep" = "Behouden";
 "setup.practice.delete" = "Verwijderen, het was oefenen";
 "setup.practice.type.expense" = "uitgave";
@@ -3465,7 +3465,7 @@
 "groups.activate.subtitle" = "Volg uitgaven, budgetten en meer";
 "groups.activate.accountStep" = "Wat is je hoofdrekening?";
 "groups.activate.accountName" = "Naam van rekening";
-"groups.activate.notificationStep" = "Wil je dat we je melden?";
+"groups.activate.notificationStep" = "Wil je dat we je waarschuwen?";
 "groups.activate.notificationMessage" = "Ontvang uitgaveherinneringen en budgetmeldingen";
 "groups.activate.enableNotifications" = "Notificaties inschakelen";
 "groups.activate.skipNotifications" = "Nu niet";
@@ -4146,7 +4146,7 @@
 "yalaAI.onboarding.step2.card3.title" = "Ontvang suggesties";
 "yalaAI.onboarding.step2.card3.body" = "Patronen, afwijkingen, ideeën om te besparen.";
 "yalaAI.onboarding.step3.toneNormalDescription" = "Evenwichtig en helder. De feiten, zonder franje.";
-"yalaAI.onboarding.step3.toneConsiderateDescription" = "Zacht en empathisch. Let op je stemming en viert je vooruitgang.";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "Zacht en empathisch. Houdt je stemming in het oog en viert je vooruitgang.";
 "yalaAI.onboarding.step3.toneSarcasticDescription" = "Direct met humor. Vertelt het je met een speelse knipoog.";
 "yalaAI.onboarding.step4.focusBalancedDescription" = "Kijkt evenveel naar uitgaven als inkomsten.";
 "yalaAI.onboarding.step4.focusSaverDescription" = "Helpt je elke maand meer opzij te zetten.";
@@ -4231,7 +4231,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "Wat zie je hier?";
 "panel.widgetInfo.periodComparison.whatA" = "Het saldo, de inkomsten of uitgaven van je huidige periode naast de vorige periode. Zo zie je in één oogopslag of de trend verbetert.";
 "panel.widgetInfo.periodComparison.howQ" = "Waarmee wordt vergeleken?";
-"panel.widgetInfo.periodComparison.howA" = "Tik op M om met de vorige maand te vergelijken of op J voor het vorige jaar. Je keuze geldt ook voor de afwijkingen in de rest van het Paneel.";
+"panel.widgetInfo.periodComparison.howA" = "Tik op P-1 om met de vorige periode te vergelijken of op J-1 voor hetzelfde periode een jaar eerder. Je keuze geldt ook voor de afwijkingen in de rest van het Paneel.";
 "panel.widgetInfo.sankey.title" = "Geldstroom";
 "panel.widgetInfo.sankey.chip1" = "Stroom";
 "panel.widgetInfo.sankey.chip2" = "Per behoefte";
@@ -4320,7 +4320,7 @@
 "split.typeExactShort" = "Bedrag";
 
 /* Split type short label (segmented control) */
-"split.typeSharesShort" = "Aandelen";
+"split.typeSharesShort" = "Delen";
 
 /* Reset-data screen description — groups-only mode */
 
@@ -5418,7 +5418,7 @@
 "settings.signOutWaitButton" = "Wachten";
 
 /* Sign-out blocked alert, guest session: close the session accepting that unsent changes are lost */
-"settings.signOutExitAnywayButton" = "Toch weggaan";
+"settings.signOutExitAnywayButton" = "Toch uitloggen";
 
 /* Leave group rejected: the server says the current user owns the group */
 "groups.errors.ownerCannotLeave" = "Deze groep is van jou, dus je kunt hem niet verlaten: iemand moet de leiding houden. Heb je hem niet meer nodig, dan kun je hem verwijderen.";
@@ -5557,7 +5557,7 @@
 "groups.budget.alertBody75" = "De groep heeft driekwart van het budget uitgegeven.";
 
 /* G14: aviso al cruzar 90 */
-"groups.budget.alertBody90" = "De groep is het budget bijna kwijt.";
+"groups.budget.alertBody90" = "Het budget van de groep is bijna op.";
 
 /* G14: aviso al cruzar 100 */
 "groups.budget.alertBody100" = "De groep heeft het budget bereikt.";
@@ -5617,7 +5617,7 @@
 "groups.accountIsComplete.useAnotherAccount" = "Ander account gebruiken";
 
 /* Bloque [I]: la otra salida del ADR */
-"groups.accountIsComplete.settingsHint" = "Wil je dat dat account je financiën bijhoudt? Dat kies je in Instellingen, bij ‘Waar je gegevens leven’.";
+"groups.accountIsComplete.settingsHint" = "Wil je dat dat account je financiën bijhoudt? Dat kies je in Instellingen, bij ‘Waar je gegevens staan’.";
 
 /* Private branch iCloud gate: spinner while probing CloudKit */
 "welcome.privateICloud.checking" = "We kijken wat er in je iCloud staat…";
@@ -5976,7 +5976,7 @@
 /* Vuelta a iCloud: la muestra no se deja leer en este dispositivo (espera y salida) */
 "storage.progress.reverseLocalFailure" = "Dit apparaat kon je gegevens niet klaarzetten voor het uploaden naar iCloud. Als dit niet binnen een paar minuten is opgelost, blijf je in de cloud en kun je het opnieuw proberen.";
 "storage.reverseAbort.localFailure" = "We konden de terugkeer naar iCloud niet voltooien: dit apparaat kon je gegevens niet klaarzetten voor het uploaden. Je blijft in de cloud — probeer het over een tijdje opnieuw.";
-"storage.errors.reversePendingExit" = "Terug naar iCloud kan nog niet: je cloud moet eerst helemaal opnieuw geactiveerd worden. Probeer het zo opnieuw.";
+"storage.errors.reversePendingExit" = "Terug naar iCloud kan nog niet: je cloud moet eerst nog worden heractiveerd. Probeer het zo opnieuw.";
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "We konden je account niet controleren. Probeer het zo meteen opnieuw. Er is niets veranderd.";
@@ -7093,7 +7093,7 @@
 "records.l8b.bulk.distinctNotes" = "Verschillende notities";
 "records.l8b.bulk.distinctAmounts" = "Verschillende bedragen";
 "records.l8b.bulk.noNote" = "Geen notitie";
-"records.l8b.bulk.mixedCurrencies" = "Ze hebben verschillende valuta. Kies eerst één rekening voor allemaal.";
+"records.l8b.bulk.mixedCurrencies" = "Ze hebben verschillende valuta’s. Kies eerst één rekening voor allemaal.";
 "records.l8b.bulk.amountResult" = "Alle %1$d worden %2$@";
 "records.l8b.bulk.blockedTitle" = "Kan niet worden gewijzigd";
 "records.l8b.bulk.discardChange" = "Deze wijziging weggooien";
@@ -7324,7 +7324,7 @@
 "groups.l13.pending.rejectMessageOther" = "We halen deze betaling weg en de schuld blijft zoals hij was.";
 
 /* UX 2.2 · lote 14 (Yala IA) */
-"yalaAI.onboarding.l14.personalize.title" = "Maak het jouw manier";
+"yalaAI.onboarding.l14.personalize.title" = "Maak het naar jouw hand";
 "yalaAI.onboarding.l14.personalize.subtitle" = "Je kunt dit altijd aanpassen.";
 "yalaAI.onboarding.l14.personalize.toneHeader" = "Hoe het met je praat";
 "yalaAI.onboarding.l14.personalize.focusHeader" = "Waar het op let";
@@ -7337,7 +7337,7 @@
 "yalaAI.onboarding.l14.consent.useTitle" = "Wat het niet doet";
 "yalaAI.onboarding.l14.consent.useBody" = "Het stuurt dit alleen naar een AI-dienst om je te antwoorden. Het wordt niet gebruikt om de AI te trainen.";
 "yalaAI.onboarding.l14.consent.decideTitle" = "Jij beslist";
-"yalaAI.onboarding.l14.consent.decideBody" = "Je zet het altijd uit in %@.";
+"yalaAI.onboarding.l14.consent.decideBody" = "Je kunt het altijd uitzetten in %@.";
 "yalaAI.onboarding.l14.consent.cta" = "Accepteren en beginnen";
 "chat.l14.greetingTwoUses" = "Hoi, ik ben Yala AI. Ik kan twee dingen voor je doen:";
 "chat.l14.logTitle" = "Leg een uitgave vast";
@@ -7628,8 +7628,8 @@
 "uxpro.feature.voice" = "Noteer met je stem";
 "uxpro.feature.photo" = "Noteer met een foto";
 "uxpro.feature.ai" = "Vraag het Yala AI";
-"uxpro.feature.accounts" = "Onbeperkt rekeningen";
-"uxpro.feature.budgets" = "Onbeperkt budgetten";
+"uxpro.feature.accounts" = "Onbeperkte rekeningen";
+"uxpro.feature.budgets" = "Onbeperkte budgetten";
 "uxpro.feature.looks" = "Thema’s en iconen";
 "uxpro.cta.tryFree" = "Pro gratis proberen";
 "uxpro.cta.switch" = "Overstappen op Pro";
@@ -7951,7 +7951,7 @@
 "inbox.groupDraft.linkTitle" = "Al genoteerd?";
 
 /* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
-"inbox.groupDraft.linkHint" = "Tik op de boeking en we koppelen haar aan deze uitgave, zonder dubbel.";
+"inbox.groupDraft.linkHint" = "Tik op de boeking en we koppelen die aan deze uitgave, zonder dubbele boeking.";
 
 /* Pista de VoiceOver de cada movimiento parecido. */
 "inbox.groupDraft.linkRowHint" = "Koppelt het aan de groepsuitgave";
@@ -8073,7 +8073,7 @@
 "groups.d14.requests.openedOn" = "Heeft op %@ je uitnodigingslink geopend";
 
 /* Qué pasa al aceptar o rechazar una solicitud. */
-"groups.d14.requests.consequence" = "Als je accepteert, ziet diegene de uitgaven van de groep en kan die eigen uitgaven toevoegen. Als je weigert, ziet diegene niets.";
+"groups.d14.requests.consequence" = "Als je accepteert, ziet diegene de uitgaven van de groep en kan diegene eigen uitgaven toevoegen. Als je weigert, ziet diegene niets.";
 
 /* Botón para aceptar una solicitud para unirse. */
 "groups.d14.requests.accept" = "Accepteren";

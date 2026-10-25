@@ -207,13 +207,13 @@ final class PanelViewModel {
 
     private static let monthYearFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("MMMMy")
         return f
     }()
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 

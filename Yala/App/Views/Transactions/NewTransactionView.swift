@@ -1369,8 +1369,8 @@ struct NewTransactionView: View {
 
     private static let shortDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
         f.locale = Locale.current
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 

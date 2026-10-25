@@ -133,14 +133,14 @@
 // MARK: - Periods
 
 "period.thisWeek" = "Ten tydzień";
-"period.lastWeek" = "Ostatni tydzień";
+"period.lastWeek" = "Poprzedni tydzień";
 "period.nextWeek" = "Następny tydzień";
 "period.thisMonth" = "Ten miesiąc";
-"period.lastMonth" = "Ostatni miesiąc";
+"period.lastMonth" = "Poprzedni miesiąc";
 "period.nextMonth" = "Następny miesiąc";
 "period.last30Days" = "Ostatnie 30 dni";
 "period.thisYear" = "Ten rok";
-"period.lastYear" = "Ostatni rok";
+"period.lastYear" = "Poprzedni rok";
 "period.nextYear" = "Następny rok";
 "period.allTime" = "Cały okres";
 "period.custom" = "Niestandardowy";
@@ -298,7 +298,7 @@
 "transaction.subcategory" = "Kategoria";
 "transaction.select" = "Wybierz";
 "transaction.total" = "Razem";
-"transaction.income" = "Dochód";
+"transaction.income" = "Dochody";
 "transaction.expense" = "Wydatki";
 "transaction.transfer" = "Transfer";
 "transaction.origin" = "Źródło";
@@ -306,7 +306,7 @@
 "transaction.exchangeRate" = "Kurs wymiany";
 "transaction.exchangeRateMissingForDay" = "Brak kursu wymiany dla tego dnia";
 "transaction.willReceive" = "Otrzymasz";
-"transaction.createAnother" = "Dodaj kolejną";
+"transaction.createAnother" = "Dodaj kolejny";
 "transaction.recents" = "Ostatnie";
 "transaction.successTitle" = "Gotowe!";
 "transaction.type.expense" = "Wydatek";
@@ -684,7 +684,7 @@
 "report.grouping.account" = "Konto";
 "report.grouping.currency" = "Waluta";
 "report.grouping.nature" = "Potrzeba";
-"report.grouping.drillDown" = "Rozbij";
+"report.grouping.drillDown" = "Podziel";
 "report.grouping.hint" = "Dodaj poziomy, aby zobaczyć więcej szczegółów. Przeciągnij, aby zmienić priorytet.";
 "report.grouping.active" = "Aktywne";
 "report.grouping.available" = "Dostępne";
@@ -699,10 +699,10 @@
 "panel.aiInsightsTitle" = "Obserwacje AI";
 "panel.aiInsightsDescription" = "Inteligentne komentarze o twoich finansach";
 "panel.dismissInsight" = "Odrzuć obserwację";
-"panel.aiConsentRequired" = "Włącz AI w Ustawienia → Obserwacje AI";
+"panel.aiConsentRequired" = "Włącz AI w Ustawieniach → Obserwacje AI";
 "panel.preparingInsight" = "Przygotowuję obserwację...";
 "panel.insightMenuRegenerate" = "Wygeneruj ponownie";
-"panel.insightMenuDifferentAngle" = "Inny kąt";
+"panel.insightMenuDifferentAngle" = "Inne podejście";
 "panel.insightMenuHideHour" = "Ukryj na godzinę";
 "panel.insightMenuHideToday" = "Ukryj na dzisiaj";
 
@@ -826,13 +826,13 @@
 "cashFlowPlan.incomeSection" = "Dochody";
 "cashFlowPlan.expenseSection" = "Wydatki";
 "cashFlowPlan.recommendedBadge" = "Zalecane";
-"cashFlowPlan.otherExpenses" = "Wydatki bez kategorii";
+"cashFlowPlan.otherExpenses" = "Wydatki nieujęte w planie";
 "cashFlowPlan.otherExpensesDesc" = "Wydatki z kategorii, które nie mają linii w twoim planie";
-"cashFlowPlan.otherIncome" = "Dochody bez kategorii";
+"cashFlowPlan.otherIncome" = "Dochody nieujęte w planie";
 "cashFlowPlan.emptyState" = "Brak danych";
 "cashFlowPlan.emptyStateMessage" = "Zapisz wydatki i dochody przez co najmniej miesiąc, a zbudujemy twój plan.";
 "cashFlowPlan.monthsActive" = "miesięcy";
-"cashFlowPlan.suggestedSource" = "Na podstawie %d miesięcy aktywności";
+"cashFlowPlan.suggestedSource" = "Na podstawie aktywności z liczby miesięcy: %d";
 "cashFlowPlan.bannerTitle" = "Czym jest przepływ środków?";
 "cashFlowPlan.bannerBody" = "Sprawdzaj miesiąc po miesiącu, czy to, co zarabiasz, pokrywa wydatki.";
 "cashFlowPlan.available" = "Dostępne";
@@ -863,10 +863,10 @@
 "cashFlowPlan.realIncome" = "Otrzymano";
 "cashFlowPlan.difference" = "Różnica";
 "cashFlowPlan.adjustAmount" = "Dostosuj kwotę";
-"cashFlowPlan.othersTitle" = "Wydatki bez kategorii";
+"cashFlowPlan.othersTitle" = "Wydatki nieujęte w planie";
 "cashFlowPlan.othersDesc" = "To wydatki, które znaleźliśmy w twoich wpisach, a których nie ma w planie. Możesz je dodać, dotykając +.";
 "cashFlowPlan.othersHint" = "Nie martw się, jeśli niektóre są jednorazowe — dodaj tylko te, które powtarzają się co miesiąc.";
-"cashFlowPlan.othersIncomeTitle" = "Dochody bez kategorii";
+"cashFlowPlan.othersIncomeTitle" = "Dochody nieujęte w planie";
 "cashFlowPlan.othersIncomeDesc" = "To wpisy dochodów, które znaleźliśmy w twoich danych, a których nie ma w planie. Możesz je dodać, dotykając +.";
 "cashFlowPlan.othersIncomeHint" = "Dodaj tylko te, które powtarzają się co miesiąc.";
 "cashFlowPlan.promoteCategory" = "Dodaj do planu";
@@ -965,7 +965,7 @@
 "cashFlowPlan.commentNegative" = "Od %@ twoje saldo będzie ujemne — sprawdź, czy możesz coś dostosować";
 "cashFlowPlan.commentTight" = "Ten miesiąc jest napięty — masz %@ marginesu";
 "cashFlowPlan.commentHealthy" = "Twój plan wygląda zdrowo — okres skończysz z %@ skumulowanymi";
-"cashFlowPlan.commentDefault" = "Twoja prognoza obejmuje %d miesięcy do przodu";
+"cashFlowPlan.commentDefault" = "Twoja prognoza obejmuje miesiące do przodu: %d";
 "cashFlowPlan.chartAllWithinPlan" = "Wszystkie linie wydatków mieszczą się w planie";
 "cashFlowPlan.deviationCommentSingle" = "W %@ wydałeś o %@ więcej niż planowano";
 "cashFlowPlan.deviationCommentMultiple" = "%@ to miejsce, gdzie najbardziej przekroczyłeś plan, o %@ — łącznie %@ ponad plan";
@@ -1018,7 +1018,7 @@
 "comparison.month" = "Miesiąc";
 "comparison.year" = "Rok";
 "comparison.monthShort" = "P-1";
-"comparison.yearShort" = "Y-1";
+"comparison.yearShort" = "R-1";
 
 "statistics.noRecordsFiltered" = "Brak wpisów dla tych filtrów";
 "statistics.noRecordsDescription" = "Gdy dodasz wpisy, pojawią się tutaj.";
@@ -1436,7 +1436,7 @@
 "account.creditCard.sectionTitle" = "Karta kredytowa";
 "account.creditCard.paymentReminder" = "Przypomnij w dniu płatności";
 "account.creditCard.paymentDay" = "Dzień płatności";
-"account.creditCard.paymentNotification" = "Czas zapłacić kartą kredytową %@ 💳";
+"account.creditCard.paymentNotification" = "Dziś czas spłacić kartę kredytową %@ 💳";
 "category.others" = "Inne";
 "subcategory.balanceAdjustment" = "Korekta salda";
 
@@ -1651,7 +1651,7 @@
 "accessibility.updatingExchangeRates" = "Aktualizowanie kursów wymiany";
 "accessibility.authenticating" = "Uwierzytelnianie";
 "accessibility.showMoreSubcategories" = "Pokaż więcej podkategorii";
-"accessibility.subscriptionToggle" = "Oznacz jako subskrypcja";
+"accessibility.subscriptionToggle" = "Oznacz jako subskrypcję";
 "accessibility.skipSync" = "Pomiń oczekiwanie i kontynuuj konfigurację";
 "accessibility.tabLimitReached" = "Osiągnięto limit zakładek";
 "accessibility.noTransactionsToExport" = "Brak wpisów do eksportu";
@@ -2166,7 +2166,7 @@
 "tipkit.pro.smartInsights.title" = "Podsumowanie AI";
 "tipkit.pro.smartInsights.message" = "Włącz, aby Yala generowała obserwacje o twoich finansach przy pomocy AI.";
 "tipkit.pro.premiumIcons.title" = "Ekskluzywne ikony";
-"tipkit.pro.premiumIcons.message" = "Wybierz spośród premium ikon, aby spersonalizować aplikację.";
+"tipkit.pro.premiumIcons.message" = "Wybierz spośród ikon premium, aby spersonalizować aplikację.";
 "tipkit.pro.proThemes.title" = "Motywy premium";
 "tipkit.pro.proThemes.message" = "Odkryj ekskluzywne motywy kolorystyczne, które nadadzą Yala osobisty styl.";
 "tipkit.pro.chatFab.title" = "Yala AI";
@@ -2296,13 +2296,13 @@
 // Report data types
 "notifications.data.balance" = "saldo";
 "notifications.data.expenses" = "wydatki";
-"notifications.data.income" = "dochód";
+"notifications.data.income" = "dochody";
 "notifications.data.topCategory" = "top kategoria wydatków";
 "notifications.selectData" = "Co chcesz widzieć?";
 
 // Day preferences
-"notifications.day.sunday" = "Niedziela";
-"notifications.day.monday" = "Poniedziałek";
+"notifications.day.sunday" = "niedziela";
+"notifications.day.monday" = "poniedziałek";
 "notifications.day.lastOfMonth" = "ostatni dzień miesiąca";
 "notifications.day.firstOfMonth" = "pierwszy dzień miesiąca";
 "notifications.selectDay" = "Kiedy otrzymywać?";
@@ -2362,7 +2362,7 @@
 // Scheduled Payment Notifications (personalized)
 "notifications.scheduledPayment.dueToday" = "Czas zapłacić %1$@ za %2$@ 💰";
 "notifications.scheduledPayment.dueSoon" = "%2$@ ma termin za %1$d dni — %3$@ 📅";
-"notifications.scheduledPayment.overdue" = "%1$@ za %2$@ minęło — udało się to ogarnąć? 👀";
+"notifications.scheduledPayment.overdue" = "Termin płatności %1$@ za %2$@ minął — udało się to ogarnąć? 👀";
 "notifications.scheduledPayment.dueToday.income" = "%1$@ od %2$@ wpływa dziś! 🎉";
 "notifications.scheduledPayment.dueSoon.income" = "%2$@ od %3$@ wpłynie za %1$d dni 📅";
 "notifications.scheduledPayment.overdue.income" = "Spodziewałeś się %1$@ od %2$@ — czy wpłynęło? 👀";
@@ -2409,7 +2409,7 @@
 "icloud.syncIndicator.hint" = "Stuknij, aby zobaczyć, co się stało";
 "icloud.detail.upToDate" = "Wszystko aktualne — ostatnia synchronizacja %@";
 "icloud.detail.errorTitle" = "iCloud teraz nie zapisuje";
-"icloud.detail.errorMessage" = "Jesteś offline lub iCloud jest niedostępne. Twoje dane są bezpieczne na tym urządzeniu i zsynchronizują się, gdy będzie to możliwe.";
+"icloud.detail.errorMessage" = "Jesteś offline lub iCloud jest niedostępny. Twoje dane są bezpieczne na tym urządzeniu i zsynchronizują się, gdy będzie to możliwe.";
 "icloud.detail.stalledMessage" = "Twoje ostatnie zmiany są nadal bezpieczne na tym iPhonie, ale jeszcze nie dotarły do iCloud.";
 "icloud.detail.technicalCode" = "Szczegół techniczny: %@";
 "icloud.detail.cta.retry" = "Ponów teraz";
@@ -2423,7 +2423,7 @@
 "icloud.remoteWipe.cancel" = "Poczekaj";
 "icloud.forceSync.button" = "Wymuś synchronizację";
 "icloud.forceSync.description" = "Sprawdza oczekujące dane z iCloud. Użyj, jeśli dane nie pojawiają się na tym urządzeniu.";
-"icloud.mismatch.title" = "iCloud teraz dostępne";
+"icloud.mismatch.title" = "iCloud jest już dostępny";
 "icloud.mismatch.message" = "Yala otworzyła się, zanim iCloud był gotowy. Zamknij i otwórz aplikację ponownie, aby zsynchronizować dane.";
 "icloud.mismatch.action" = "Rozumiem";
 
@@ -2733,7 +2733,7 @@
 "tutorials.importData.step0.desc" = "W Ustawieniach, w sekcji Dane, stuknij Importuj plik.";
 "tutorials.importData.step1.desc" = "Możesz importować CSV lub Excel ile razy chcesz, korzystając z domyślnego szablonu, który pobierzesz na miejscu. Jeśli dane są w kilku walutach, poprosimy cię o wybranie kont dla każdej z nich.";
 "tutorials.createBudgets.step0.desc" = "W menu wybierz Planowanie i upewnij się, że jesteś w zakładce Budżety. Użyj przycisku +, aby utworzyć nowy.";
-"tutorials.createBudgets.step1.desc" = "Nadaj nazwę, kwotę i zdefiniuj okres: dzienny, miesięczny, roczny lub jednorazowy (np. podróż, wydarzenie). Wybierz konta, kategorie, etykiety i potrzeby, które chcesz śledzić. Włącz powiadomienia, jeśli chcesz alertów przy określonych progach.";
+"tutorials.createBudgets.step1.desc" = "Nadaj nazwę, kwotę i zdefiniuj okres: tygodniowy, miesięczny, roczny lub jednorazowy (np. podróż, wydarzenie). Wybierz konta, kategorie, etykiety i potrzeby, które chcesz śledzić. Włącz powiadomienia, jeśli chcesz alertów przy określonych progach.";
 "tutorials.createBudgets.step2.desc" = "Włącz „Pokaż w widżecie”, aby widzieć go w widżecie Budżety na ekranie Start.";
 "tutorials.createBudgets.step3.desc" = "Pamiętaj, że zawsze możesz wrócić, by edytować budżet, dotykając go.";
 "tutorials.createScheduledPayments.step0.desc" = "W menu wybierz Planowanie i upewnij się, że jesteś w zakładce Zaplanowane płatności. Użyj przycisku +, aby utworzyć nową.";
@@ -2745,7 +2745,7 @@
 "tutorials.createFavorites.step1.desc" = "Następnym razem stuknij ulubioną w rzędzie u góry formularza: zapisane pola wypełnią się same.";
 "tutorials.editPanel.step0.desc" = "Przejdź na ekran główny, gdzie widzisz podsumowanie wydatków ze wszystkimi dostępnymi widżetami.";
 "tutorials.editPanel.step1.desc" = "Stuknij przycisk z kwadracikami obok każdej sekcji ekranu Start, aby wybrać, które widżety widzieć i w jakiej kolejności.";
-"tutorials.editPanel.step2.desc" = "Pamiętaj, że zawsze możesz wrócić do domyślnej kolejności, dotykając „Reset” w personalizacji.";
+"tutorials.editPanel.step2.desc" = "Pamiętaj, że zawsze możesz wrócić do domyślnej kolejności, dotykając „Przywróć układ domyślny” w personalizacji.";
 "tutorials.panelFiltering.step0.desc" = "Wykorzystaj w pełni interaktywne wykresy Yala. Niemal wszystkie panele można filtrować po kategorii, potrzebie i innych. Pobaw się nimi i znajdź to, co działa najlepiej.";
 "tutorials.panelFiltering.step1.desc" = "Masz pasek filtrów, gdzie zobaczysz wszystkie zastosowane. Możesz je usuwać pojedynczo lub wszystkie naraz w każdej chwili.";
 "tutorials.panelFiltering.step2.desc" = "W różnych widokach aplikacji zobaczysz, że możesz filtrować po swojemu poprzez wykresy.";
@@ -2774,7 +2774,7 @@
 "scheduled.associate.success" = "Wydatek powiązany";
 "scheduled.associate.empty" = "Nie znaleziono podobnych wydatków w tym miesiącu";
 "scheduled.associate.paymentHeader" = "Zaplanowana płatność";
-"scheduled.associate.candidatesHeader" = "Pobliskie wydatki";
+"scheduled.associate.candidatesHeader" = "Wydatki z podobnej daty";
 "scheduled.associate.already" = "Ten wydatek jest już powiązany";
 "scheduled.advance" = "Zapłać teraz";
 "scheduled.view.record" = "Zobacz wpis";
@@ -2874,7 +2874,7 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ to twoja najdroższa grupa, %d%% wydatków współdzielonych";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ stanowi %d%% twoich wydatków współdzielonych — twoja główna grupa";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ pochłania %d%% wydatków współdzielonych. Dominujące.";
-"insights.ruleDominantSharedCategory.normal" = "%@ dominuje twoje wydatki współdzielone (%d%%)";
+"insights.ruleDominantSharedCategory.normal" = "%@ dominuje w twoich wydatkach współdzielonych (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "Większość twoich wydatków współdzielonych (%2$d%%) jest w %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ to %d%% wydatków współdzielonych. Tylko jecie razem?";
 "insights.ruleSharedMoM.normal" = "Wydatki współdzielone wzrosły o %@ vs poprzedni okres";
@@ -3237,7 +3237,7 @@
 "setup.step3.title" = "Ustaw pierwszy budżet";
 "setup.step4.title" = "Dodaj cykliczną płatność";
 
-"setup.practice.title" = "Gotowe! Utworzono pierwszy %@";
+"setup.practice.title" = "Gotowe! Utworzono pierwszy element: %@";
 "setup.practice.message" = "Jeśli to była tylko próba, możesz spokojnie usunąć.";
 "setup.practice.keep" = "Zostaw";
 "setup.practice.delete" = "Usuń, to była próba";
@@ -3266,11 +3266,11 @@
 "guide.trends.title" = "Jak idą wydatki?";
 "guide.trends.message" = "Wykres pokazuje, czy wydajesz więcej, czy mniej niż wcześniej. Linia w górę = więcej wydatków.";
 "guide.categories.title" = "Gdzie idą twoje pieniądze?";
-"guide.categories.message" = "Zobacz, ile wydajesz na każde rzeczy: jedzenie, transport itd. Największy wycinek = najwięcej wydatków.";
+"guide.categories.message" = "Zobacz, ile wydajesz na każdą rzecz: jedzenie, transport itd. Największy wycinek = najwięcej wydatków.";
 "guide.records.title" = "Wszystkie wydatki";
 "guide.records.message" = "Tu masz wszystkie zapisane wydatki, posortowane według daty. Stuknij wybrany, aby zobaczyć szczegóły.";
 "guide.budgets.title" = "Ustaw limity wydatków";
-"guide.budgets.message" = "Budżet to maksimum, jakie chcesz wydać. Przykład: nie wydaj więcej niż 500 zł na jedzenie w tym miesiącu.";
+"guide.budgets.message" = "Budżet to maksimum, jakie chcesz wydać na daną rzecz. Przykład: nie wydaj więcej niż 500 na jedzenie w tym miesiącu.";
 "guide.scheduled.title" = "Cykliczne wydatki";
 "guide.scheduled.message" = "Płacisz Netflix co miesiąc? Czynsz? Dodaj je tutaj, a Yala przypomni przed terminem.";
 "guide.accounts.title" = "Twoje pieniądze, uporządkowane";
@@ -3320,7 +3320,7 @@
 "chat.questionsRemaining" = "Pozostało dziś pytań: %d";
 "chat.loading" = "Myślę...";
 "chat.questionTooLong" = "Twoje pytanie jest zbyt długie. Postaraj się być zwięzły.";
-"chat.contextHint" = "Mogę zapamiętać twoje ostatnie pytanie do dopytek";
+"chat.contextHint" = "Mogę zapamiętać ostatnie pytanie, by odpowiadać na kolejne";
 
 /* Yala AI Redesign */
 "chat.assistantName" = "Yala AI";
@@ -3405,7 +3405,7 @@
 
 // GC-05: Settlements
 "groups.settlement.title" = "Zarejestruj płatność";
-"groups.settlement.payTo" = "płaci do";
+"groups.settlement.payTo" = "płaci osobie";
 "groups.settlement.registerPayment" = "Zarejestruj płatność";
 "groups.settlement.confirm" = "Potwierdź";
 "groups.settlement.reject" = "Odrzuć";
@@ -3441,7 +3441,7 @@
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Dołącz do grupy";
 "groups.reconnect.subtitle" = "Zostałeś zaproszony do grupy współdzielonej";
-"groups.reconnect.fallbackGroupName" = "tę grupę";
+"groups.reconnect.fallbackGroupName" = "tej grupy";
 "groups.reconnect.archived.title" = "Grupa %@ została zarchiwizowana";
 "groups.reconnect.archived.body" = "Administrator ją zarchiwizował i nie przyjmuje już nowych członków.";
 "groups.reconnect.archived.cta" = "Rozumiem";
@@ -4088,7 +4088,7 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "Twoje finanse osobiste,";
 "welcome.hero.titleAccent" = "bez wysiłku.";
-"welcome.hero.cta" = "Zaczynaj";
+"welcome.hero.cta" = "Zacznij";
 "welcome.hero.trust" = "Bez śledzenia ani reklam";
 
 "welcome.hero.cards.capture.title" = "Zdjęcie paragonu";
@@ -4231,7 +4231,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "Co tu widzisz?";
 "panel.widgetInfo.periodComparison.whatA" = "Saldo, przychody lub wydatki Twojego bieżącego okresu obok poprzedniego okresu. Od razu widać, czy trend się poprawia.";
 "panel.widgetInfo.periodComparison.howQ" = "Z czym jest porównanie?";
-"panel.widgetInfo.periodComparison.howA" = "Stuknij M, by porównać z poprzednim miesiącem, lub R z poprzednim rokiem. Wybór dotyczy też zmian w pozostałej części Panelu.";
+"panel.widgetInfo.periodComparison.howA" = "Stuknij P-1, by porównać z poprzednim okresem, lub R-1 z tym samym okresem rok wcześniej. Wybór dotyczy też zmian w pozostałej części Panelu.";
 "panel.widgetInfo.sankey.title" = "Przepływ pieniędzy";
 "panel.widgetInfo.sankey.chip1" = "Przepływ";
 "panel.widgetInfo.sankey.chip2" = "Według potrzeb";
@@ -4541,7 +4541,7 @@
 /* Face ID protection guide (settings) */
 "settings.faceIDProtection" = "Chroń za pomocą Face ID";
 "faceIDGuide.title" = "Chroń Yala za pomocą Face ID";
-"faceIDGuide.subtitle" = "Użyj blokady iOS, aby tylko Ty otwierał aplikację";
+"faceIDGuide.subtitle" = "Użyj blokady iOS, żeby nikt poza Tobą nie wszedł do aplikacji";
 "faceIDGuide.step1Title" = "Przytrzymaj ikonę Yala";
 "faceIDGuide.step1Detail" = "Na ekranie głównym";
 "faceIDGuide.step2Title" = "Dotknij Wymagaj Face ID";
@@ -4748,7 +4748,7 @@
 "groups.icloud.gate.title" = "Grupy wymagają iCloud";
 
 /* Body of the Groups-needs-iCloud gate; [tu nombre] refers to the user's name row at the top of iOS Settings */
-"groups.icloud.gate.message" = "Twoje grupy są udostępniane i synchronizowane przez konto iCloud. Zaloguj się w Ustawienia → [Twoje imię] → iCloud i wróć tutaj.";
+"groups.icloud.gate.message" = "Twoje grupy są udostępniane i synchronizowane przez konto iCloud. Zaloguj się w Ustawieniach → [Twoje imię] → iCloud i wróć tutaj.";
 
 /* CTA of the Groups-needs-iCloud gate; opens the app's Settings page (cannot deep-link to iCloud directly) */
 "groups.icloud.gate.openSettings" = "Otwórz Ustawienia";
@@ -4769,7 +4769,7 @@
 "groups.consent.point3" = "Twoje osobiste finanse się nie przenoszą: zostają tam, gdzie wybrano, prywatne jak zawsze.";
 
 /* G4 consent point 4 */
-"groups.consent.point4" = "Dane grupy podróżują i są przechowywane w sposób chroniony, a z grupy możesz wyjść, kiedy chcesz.";
+"groups.consent.point4" = "Dane grupy są przesyłane i przechowywane w bezpieczny sposób, a z grupy możesz wyjść, kiedy chcesz.";
 
 /* G4 consent accept CTA */
 "groups.consent.accept" = "Zaakceptuj i kontynuuj";
@@ -4858,7 +4858,7 @@
 
 /* Google sign-in button label (brand guideline text next to the G logo) */
 "auth.googleButton" = "Kontynuuj przez Google";
-"auth.googleButtonSignUp" = "Zarejestruj się w Google";
+"auth.googleButtonSignUp" = "Zarejestruj się przez Google";
 "auth.googleButtonSignIn" = "Zaloguj się przez Google";
 
 /* Existing-account chooser: Google sign-in card title */
@@ -5470,7 +5470,7 @@
 "welcome.restore.cloudPausedBody" = "To Apple ID ma konto Yala w chmurze: Twoje dane są tam, bezpieczne, a nie w Twoim iCloud. Logowanie do chmury jest teraz wstrzymane. Spróbuj ponownie później.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
-"notifications.groups.settlementReminder" = "👋 Małe przypomnienie: masz do oddania %1$@ dla %2$@. Rozlicz się, kiedy będzie wygodnie.";
+"notifications.groups.settlementReminder" = "👋 Małe przypomnienie: masz do oddania %1$@ osobie %2$@. Rozlicz się, kiedy będzie wygodnie.";
 
 /* Push: same gentle reminder when the user owes several people in one group (no args). */
 "notifications.groups.settlementReminderMultiple" = "👋 Małe przypomnienie: masz nierozliczone kwoty z kilkoma osobami. Rozlicz się, kiedy będzie wygodnie.";
@@ -5617,7 +5617,7 @@
 "groups.accountIsComplete.useAnotherAccount" = "Użyj innego konta";
 
 /* Bloque [I]: la otra salida del ADR */
-"groups.accountIsComplete.settingsHint" = "Chcesz, żeby to konto prowadziło Twoje finanse? Decydujesz o tym w Ustawieniach, w „Gdzie mieszkają Twoje dane”.";
+"groups.accountIsComplete.settingsHint" = "Chcesz, żeby to konto prowadziło Twoje finanse? Decydujesz o tym w Ustawieniach, w „Gdzie są Twoje dane”.";
 
 /* Private branch iCloud gate: spinner while probing CloudKit */
 "welcome.privateICloud.checking" = "Sprawdzamy, co masz w iCloud…";
@@ -6545,7 +6545,7 @@
 "welcome.mirrorRelaunch.privacyNote" = "Dzięki temu Yala łączy się z Twoim prywatnym iCloud, a Twoje dane zawsze pozostają prywatne: nikt inny ich nie odczyta, my też nie.";
 
 /* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
-"onboarding.purpose.changeLaterHint" = "Możesz to zmienić w każdej chwili w Ustawienia > Personalizacja.";
+"onboarding.purpose.changeLaterHint" = "Możesz to zmienić w każdej chwili w Ustawieniach > Personalizacja.";
 
 /* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
 "onboarding.currencyName.titleExpenses" = "W jakiej walucie wydajesz?";
@@ -7037,7 +7037,7 @@
 "records.l8.deleteTransferAlsoPair" = "Usunięta zostanie też jego druga połowa, na drugim koncie.";
 "records.l8.deleteFromGroupHint" = "Aby go usunąć, zrób to w grupie.";
 "records.l8.group" = "Grupa";
-"records.l8.youPaid" = "Twoja wpłata";
+"records.l8.youPaid" = "Zapłacone przez ciebie";
 "records.l8.yourShare" = "Twoja część";
 "records.l8.owedToYou" = "Należy ci się";
 "records.l8.duplicateTitle" = "Duplikuj wpis";
@@ -7107,7 +7107,7 @@
 "budgets.l9.spentOfLimit" = "%1$@ z %2$@";
 "budgets.l9.notStarted" = "Jeszcze się nie zaczął";
 "budgets.l9.days.one" = "1 dzień";
-"budgets.l9.days" = "Dni: %@";
+"budgets.l9.days" = "%@ dni";
 "budgets.l9.perDay" = "Możesz wydać %@ dziennie";
 "budgets.l9.countsAllExpenses" = "Liczy wszystkie twoje wydatki";
 "budgets.l9.limitLabel" = "Limit";
@@ -7132,7 +7132,7 @@
 "budgets.l9.historyTitle.yearly" = "Ile wydałeś w każdym roku w porównaniu z limitem";
 "budgets.l9.limitShort" = "Limit %@";
 "budgets.l9.freePlanBanner" = "Aktywne budżety w planie darmowym: %lld";
-"budgets.l9.freePlanSheet" = "W planie darmowym masz %lld aktywne budżety. Wyłącz jeden albo przejdź na Pro.";
+"budgets.l9.freePlanSheet" = "W planie darmowym aktywne budżety: %lld. Wyłącz jeden albo przejdź na Pro.";
 "budgets.l9.seePro" = "Zobacz Pro";
 "budgets.l9.chooseWhich" = "Wybierz które";
 "budgets.l9.previewEmpty" = "Oznacz gwiazdką do 3 budżetów, a tu zobaczysz swoją kartę z ekranu Start.";
@@ -7205,7 +7205,7 @@
 "scheduled.l10.cadence.day" = "codziennie";
 "scheduled.l10.cadence.days" = "co %d dni";
 "scheduled.l10.cadence.year" = "co roku, %@";
-"scheduled.l10.cadence.years" = "co %1$d lata, %2$@";
+"scheduled.l10.cadence.years" = "co %1$d lat, %2$@";
 
 /* UX 2.2 · lotes 11 y 16 (implementación) */
 /* Estadísticas: flecha que pasa al período anterior (accesibilidad) */
@@ -7311,7 +7311,7 @@
 "groups.l13.success.owedTitle" = "Należy ci się %@";
 "groups.l13.success.owedEach" = "%1$@, po %2$@";
 "groups.l13.success.iOweTitle" = "Jesteś winien %@";
-"groups.l13.success.iOweTo" = "Jesteś winien %@";
+"groups.l13.success.iOweTo" = "Dług wobec: %@";
 "groups.l13.success.settledTitle" = "Nic nie zostało do rozliczenia";
 "groups.l13.success.accountTitle" = "−%1$@ z %2$@";
 "groups.l13.success.accountDetail" = "Zapisaliśmy to w twoich finansach, bo to ty zapłaciłeś.";
@@ -7333,7 +7333,7 @@
 "yalaAI.onboarding.l14.consent.title" = "Zanim zaczniesz";
 "yalaAI.onboarding.l14.consent.subtitle" = "Aby ci odpowiedzieć, Yala AI czyta podsumowanie twoich finansów.";
 "yalaAI.onboarding.l14.consent.readsTitle" = "Co czyta";
-"yalaAI.onboarding.l14.consent.readsBody" = "Salda i nazwy twoich kont, sumy według kategorii, częstych sprzedawców, budżety i płatności cykliczne z ostatnich 13 miesięcy oraz twoje największe wydatki w tym miesiącu.";
+"yalaAI.onboarding.l14.consent.readsBody" = "Salda i nazwy twoich kont, sumy według kategorii, częsti sprzedawcy, budżety i płatności cykliczne z ostatnich 13 miesięcy oraz twoje największe wydatki w tym miesiącu.";
 "yalaAI.onboarding.l14.consent.useTitle" = "Czego nie robi";
 "yalaAI.onboarding.l14.consent.useBody" = "Wysyła to do usługi AI tylko po to, żeby ci odpowiedzieć. Nie służy do trenowania AI.";
 "yalaAI.onboarding.l14.consent.decideTitle" = "Ty decydujesz";
@@ -7535,7 +7535,7 @@
 "l20d.export.active.tags" = "Etykiety: %d";
 "l20d.export.active.needs" = "Potrzeba: %d";
 "l20d.export.active.currencies" = "Waluta: %@";
-"l20d.export.active.amount" = "Kwota odfiltrowana";
+"l20d.export.active.amount" = "Filtr kwoty";
 "l20d.export.active.note" = "Notatka: „%@”";
 "l20d.export.active.hiding" = "Wybrane są ukryte";
 "l20d.export.rangeToToday" = "od %@ do dziś";
@@ -8194,7 +8194,7 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeTitle" = "Usunąć %@ z grupy?";
 /* Sin deuda; %@ = nombre */
-"groups.l19.member.removeBody" = "%@ przestanie widzieć grupę. Wpisane przez nią wydatki zostają.";
+"groups.l19.member.removeBody" = "%@ przestanie widzieć grupę. Wydatki dodane przez tę osobę zostają.";
 /* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
 "groups.l19.member.removeDebtTail" = "Jeśli usuniesz %@ z grupy, to, co zostało do rozliczenia, pozostanie nierozliczone.";
 /* Botón: saldar antes de quitar o salir */
@@ -8304,11 +8304,11 @@
 
 /* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
 "l2d.missing.toSave" = "Aby zapisać, brakuje: %@";
-"l2d.missing.amount" = "kwota";
-"l2d.missing.account" = "konto";
-"l2d.missing.category" = "kategoria";
-"l2d.missing.sourceAccount" = "konto źródłowe";
-"l2d.missing.destinationAccount" = "konto docelowe";
+"l2d.missing.amount" = "kwoty";
+"l2d.missing.account" = "konta";
+"l2d.missing.category" = "kategorii";
+"l2d.missing.sourceAccount" = "konta źródłowego";
+"l2d.missing.destinationAccount" = "konta docelowego";
 "l2d.missing.twoDifferentAccounts" = "Wybierz dwa różne konta";
 "l2d.missing.chipValue" = "Brakuje";
 "l2d.discard.title" = "Odrzucić ten wpis?";

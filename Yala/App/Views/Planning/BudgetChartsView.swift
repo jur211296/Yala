@@ -723,13 +723,13 @@ struct BudgetChartsView: View {
 
     private static let dayMonthFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 
     private static let weekDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 

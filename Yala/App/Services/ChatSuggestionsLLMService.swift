@@ -230,8 +230,10 @@ final class ChatSuggestionsLLMService {
             topCategories = sums.categories.sorted { $0.value > $1.value }.prefix(10).map(\.key)
             // Todas las subcategorías con tx>0 del mes.
             subcategoryNames = sums.subcategories.keys.sorted()
-            // Top 10 merchants (era top 1).
-            merchantNames = sums.merchants.sorted { $0.value > $1.value }.prefix(10).map(\.key)
+            // Top 10 merchants (era top 1), con el nombre como lo escribe el usuario y no el canónico en
+            // mayúsculas: el modelo lo copia tal cual en la sugerencia (lote 12.4).
+            merchantNames = sums.merchants.sorted { $0.value > $1.value }.prefix(10)
+                .map { sums.displayName(forMerchant: $0.key) }
             // Top 5 tags.
             tagNames = sums.tags.sorted { $0.value > $1.value }.prefix(5).map(\.key)
         } catch {
@@ -285,7 +287,16 @@ final class ChatSuggestionsLLMService {
         var categories: [String: Double] = [:]
         var subcategories: [String: Double] = [:]
         var merchants: [String: Double] = [:]
+        /// Canónico → cuántas veces aparece cada forma visible (`MerchantCanonicalizer.displayName`).
+        var merchantSpellings: [String: [String: Int]] = [:]
         var tags: [String: Double] = [:]
+
+        /// La forma visible más frecuente de un comercio; con empate, la primera en orden alfabético (determinista).
+        func displayName(forMerchant canonical: String) -> String {
+            let spellings = merchantSpellings[canonical] ?? [:]
+            return spellings.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.first?.key
+                ?? canonical
+        }
     }
 
     /// Cada fila se resuelve con `CashFlowCalculator.resolvedAmount`, la regla de Estadísticas: una
@@ -332,6 +343,8 @@ final class ChatSuggestionsLLMService {
                 let canonical = MerchantCanonicalizer.canonicalize(note)
                 if !canonical.isEmpty {
                     sums.merchants[canonical, default: 0] += amount
+                    sums.merchantSpellings[canonical, default: [:]][MerchantCanonicalizer.displayName(for: note),
+                                                                    default: 0] += 1
                 }
             }
             for uuid in tx.resolvedTagIDs(scheduleBackfill: true) ?? [] {

@@ -91,7 +91,7 @@
 "tutorials.editPanel.completion.title" = "Now you know how to customise Home";
 "tutorials.createCategories.step3.desc" = "Customise your category's icon and colour to your liking whenever you want.";
 "tutorials.createTags.step1.desc" = "Customise your tag to your liking: give it a name, icon, and colour.";
-"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: weekly, monthly, yearly, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
 "tutorials.createBudgets.step2.desc" = "Turn on ‘Show in widget’ to see it in the Budgets widget on Home.";
 "tutorials.createFavorites.step0.desc" = "In New Record, tap ‘Favourite’ below the amount to save what you’ve entered so far as a favourite.";
 "tutorials.createFavorites.step1.desc" = "Next time, tap the favourite in the row at the top of the form: the fields you saved fill in automatically.";
@@ -192,10 +192,6 @@
 "welcome.restore.foundTitle" = "Hi %@! Welcome back.";
 "welcome.restore.foundTitleAnonymous" = "Welcome back!";
 "welcome.restore.foundBody" = "Here's what's coming back to this phone:";
-"welcome.restore.foundAccounts" = "%d accounts";
-"welcome.restore.foundTransactions" = "%d records";
-"welcome.restore.foundBudgets" = "%d budgets";
-"welcome.restore.foundGroups" = "%d shared groups";
 "welcome.restore.continue" = "Continue";
 "welcome.restore.notFoundTitle" = "No data found";
 "welcome.restore.notFoundBody" = "There's no data linked to your iCloud account. Would you like to start fresh?";
@@ -248,9 +244,6 @@
 "welcome.hero.cards.more.body" = "Let's discover it together.";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"groups.member.activeCount" = "%d active members";
-"groups.member.pendingCount" = "%d pending requests";
-"groups.member.pendingRequestsCount" = "%d requests";
 
 // MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "Continue";
@@ -1042,7 +1035,6 @@
 "category.activeSubcategories" = "Active subcategories";
 "category.addOneSubcategory" = "Add at least one subcategory";
 "category.addSubcategory" = "Add subcategory";
-"category.cannotDeleteMessage" = "This category has subcategories with %d transactions. To delete it, first delete or transfer the transactions from each subcategory.";
 "category.cannotDeleteTitle" = "Cannot Delete";
 "category.delete" = "Delete Category";
 "category.deleteConfirmMessage" = "The category and all its subcategories will be deleted. This action cannot be undone.";
@@ -1736,11 +1728,6 @@
 "import.templateGenerated" = "Template generated";
 "import.templateGeneratedMessage" = "You'll find it where you saved it (for example, in Files). Open it with Numbers or Excel, replace the example rows with yours, and come back here to import it.";
 "import.title" = "Import Records";
-"inbox.alert.message.mixed.automations" = "%d automatic records";
-"inbox.alert.message.mixed.scheduled" = "%d payments";
-"inbox.alert.message.mixed.subscriptions" = "%d subscriptions";
-"inbox.alert.message.scheduled" = "%d scheduled payments were added to your inbox.";
-"inbox.alert.message.subscriptions" = "%d subscriptions were added to your inbox.";
 "inbox.alert.title.automations" = "New automatic records!";
 "inbox.alert.title.mixed" = "New records in your inbox!";
 "inbox.alert.title.scheduled" = "You have pending payments!";
@@ -1749,7 +1736,6 @@
 "inbox.approveAll" = "Save all";
 "inbox.approveNext" = "Save the next one";
 "inbox.approveSuccess" = "Record saved";
-"inbox.approveableCount" = "%1$d of %2$d ready to save";
 "inbox.archived" = "Archived";
 "inbox.backToInbox" = "Back to inbox";
 "inbox.bulkHint" = "Tap ✓ to pick several at once";
@@ -1759,7 +1745,6 @@
 "inbox.cannotApprove" = "Can’t save";
 "inbox.createAnyway" = "Save anyway";
 "inbox.delete" = "Delete";
-"inbox.deleteConfirmMessage" = "Are you sure you want to delete %d drafts?";
 "inbox.deleteMessage" = "This action cannot be undone.";
 "inbox.deleteTitle" = "Delete draft";
 "inbox.discardChanges" = "Discard";
@@ -1787,11 +1772,9 @@
 "inbox.noPending" = "No pending drafts";
 "inbox.noPendingDescription" = "This is where what Yala records for you lands: voice, photos, Apple Pay, Siri and planned payments.";
 "inbox.pending" = "Pending";
-"inbox.pendingBadge" = "%d pending";
 "inbox.reject" = "Discard";
 "inbox.returnToPending" = "Back to pending";
 "inbox.saveLater" = "Leave for later";
-"inbox.selectedCount" = "%d selected";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automation";
 "inbox.sourceEmail" = "Email";
@@ -1860,7 +1843,7 @@
 "insights.ruleDailyAverage %@" = "You spend %@ a day.";
 "insights.ruleDominantSharedCategory.considerate" = "Most of your shared expenses (%2$d%%) are in %1$@";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominates your shared expenses (%d%%)";
-"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Only eat together?";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Do you only eat together?";
 "insights.ruleExpenseDown.considerate" = "The data shows a %@ reduction in spending — a positive result.";
 "insights.ruleExpenseDown.normal" = "Nice pace: your spending dropped %@ compared to the previous period.";
 "insights.ruleExpenseDown.sarcastic" = "Nice, spending down %@. Not bad at all.";
@@ -1914,7 +1897,7 @@
 "need.expensesByNeed" = "Expenses by Need";
 "need.incomeNotApplicable" = "Need classification only applies to expenses";
 "need.optional" = "Optional";
-"need.optional.desc" = "Treats and splurges: nights out, takeaway.";
+"need.optional.desc" = "Treats and splurges: nights out, takeout.";
 "need.priority" = "Priority";
 "need.priority.desc" = "Worth it, but you can adjust it: gym, internet.";
 "need.title" = "Spending need";
@@ -1996,7 +1979,6 @@
 "notifications.scheduledPayment.overdue" = "%1$@ for %2$@ was due — did you cover it? 👀";
 "notifications.scheduledPayment.overdue.income" = "You expected %1$@ from %2$@ — has it arrived? 👀";
 "notifications.scheduledPayments.hint" = "We'll let you know when you have upcoming payments";
-"notifications.scheduledPayments.summaryBody" = "Scheduled payments due today: %d 📅";
 "notifications.scheduledPayments.name" = "Scheduled payments";
 "notifications.section.custom" = "Custom";
 "notifications.section.reminders" = "Reminders";
@@ -2348,7 +2330,7 @@
 "panel.widgetInfo.expensesByNeed.title" = "Distribution by need";
 "panel.widgetInfo.periodComparison.chip1" = "Comparison";
 "panel.widgetInfo.periodComparison.chip2" = "Follows the chosen period";
-"panel.widgetInfo.periodComparison.howA" = "Tap M to compare against the previous month or Y for the previous year. Your choice also applies to variations across the rest of the Panel.";
+"panel.widgetInfo.periodComparison.howA" = "Tap P-1 to compare against the previous period or Y-1 to compare against the same period in the previous year. Your choice also applies to variations across the rest of the Panel.";
 "panel.widgetInfo.periodComparison.howQ" = "What does it compare against?";
 "panel.widgetInfo.periodComparison.title" = "Period comparison";
 "panel.widgetInfo.periodComparison.whatA" = "Your current period's balance, income or expenses side by side with the previous period. Helps you see at a glance if the trend is improving.";
@@ -2651,7 +2633,6 @@
 "search.filter.subcategory" = "Subcategory";
 "search.filter.tag" = "Tag";
 "search.noResults" = "We didn't find any results";
-"search.resultsCount" = "%d results";
 "search.tryAnotherTerm" = "Try a different search term";
 "settings.accounts" = "Accounts";
 "settings.aiFeatures" = "AI Features";
@@ -3023,7 +3004,6 @@
 "subcategory.deleteConfirmTitle" = "Delete Subcategory?";
 "subcategory.deleteTransactions" = "Delete records";
 "subcategory.deleteTransactionsConfirm" = "Delete";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transactions will be permanently deleted. This action cannot be undone.";
 "subcategory.deleteTransactionsConfirmTitle" = "Delete records?";
 "subcategory.deleteTransactionsDesc" = "All records will be permanently deleted";
 "subcategory.delivery" = "Delivery";
@@ -3078,7 +3058,6 @@
 "subcategory.supportStaff" = "Support staff";
 "subcategory.taxes" = "Taxes";
 "subcategory.tech" = "Tech & accessories";
-"subcategory.transferDescription" = "There are %1$d transactions in \"%2$@\". Choose what to do with them before deleting.";
 "subcategory.transferHeader" = "This subcategory has records";
 "subcategory.transferTitle" = "Move Records";
 "subcategory.transferToSpecific" = "Transfer to another subcategory";
@@ -3111,7 +3090,7 @@
 "subscription.feature.unlimitedAccounts" = "Unlimited accounts";
 "subscription.feature.unlimitedBudgets" = "Unlimited budgets";
 "subscription.feature.voice" = "Unlimited voice input";
-"subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.";
+"subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless canceled at least 24 hours before the end of the current period.";
 "subscription.manageInAppStore" = "Manage in App Store";
 "subscription.paywallSubtitle" = "Take your finances to the next level with advanced tools";
 "subscription.paywallTitle" = "Unlock the full power of Yala";
@@ -3368,7 +3347,7 @@
 "tutorials.editPanel.step0.desc" = "Go to the main screen where you see your expense summary with all available widgets.";
 "tutorials.editPanel.step0.title" = "Open the panel";
 "tutorials.editPanel.step1.desc" = "Tap the grid button next to each Home section to choose which widgets to see and in what order.";
-"tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset\" within customization.";
+"tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset to original layout\" within customization.";
 "tutorials.editPanel.step2.title" = "Reset if you want";
 "tutorials.importData.completion.desc" = "When you import, Yala tells you what came in and what didn't. Check your records afterwards to confirm.";
 "tutorials.importData.completion.title" = "Now you know how to import your data";
@@ -3554,30 +3533,6 @@
 "widgetType.trend" = "Trends";
 "widgetType.weekdayBar" = "Daily average";
 
-// MARK: Plurales — degradación flat (forma "other" del .stringsdict del padre; las variantes no pueden tener .stringsdict propio)
-"export.subcategoriesSelected" = "%d subcategories selected";
-"filters.subcategoriesSelectedCount" = "%d subcategories selected";
-"groups.activate.importPrompt" = "You have %d shared expenses. Add them to your records?";
-"groups.nudge.dormantNewExpenses.message" = "Your group has %d new expenses since your last visit.";
-"icloud.detail.stalledTitle" = "It's been %d days since we last synced";
-"icloud.syncIndicator.stalled" = "It's been %d days since we saved to iCloud";
-"import.recordsImported" = "%d records imported successfully.";
-"inbox.alert.message.automations" = "%d automatic records were added to your inbox.";
-"insights.ruleSharedFrequency.considerate" = "%d shared expenses — you share quite a lot with your group";
-"insights.ruleSharedFrequency.normal" = "You have %d shared expenses this period";
-"insights.ruleSharedFrequency.sarcastic" = "%d shared expenses. Do you do EVERYTHING together?";
-"milestone.title" = "%d records!";
-"panel.panorama.collapsedSummary" = "You have %1$@ across %2$d accounts";
-"records.deleteConfirmTitle" = "Delete %d records?";
-"scheduled.due.days.ago" = "%d days ago";
-"scheduled.due.in.days" = "In %d days";
-"scheduled.widget.count" = "%d active payments";
-"scheduled.widget.daysAgo" = "%d days ago";
-"scheduled.widget.inDays" = "In %d days";
-"subscription.downgrade.selectAccounts" = "Select %d accounts to keep";
-"subscription.downgrade.selectBudgets" = "Select %d budgets to keep";
-"subscription.trial.daysRemaining" = "%d days remaining";
-"tutorials.stepsCount" = "%d steps";
 
 /* VoiceOver: expand a collapsible row */
 "accessibility.expand" = "Expand";
@@ -3756,7 +3711,6 @@
 "groups.detail.yourBalance" = "Your balance";
 "groups.detail.settledUp" = "All settled up";
 "groups.options.ownerOnlyHint" = "Only the group organiser can change this";
-"groups.detail.memberCount" = "%d members";
 
 /* Split sheet header title (equal mode) */
 "groups.expense.splitSheet.equalTitle" = "Split equally";
@@ -3863,7 +3817,6 @@
 "storage.revert.ineligible" = "You can’t go back to iCloud from this device right now.";
 "storage.sync.title" = "Sync";
 "storage.sync.upToDate" = "All synced";
-"storage.sync.needsSignIn" = "Sign in to upload %d changes";
 "storage.sync.signInButton" = "Sign in";
 "storage.progress.migrating" = "Turning on the cloud…";
 "storage.progress.reverting" = "Going back to iCloud…";
@@ -4878,7 +4831,6 @@
 "account.currencyChange.progressSubtitle" = "Applying each date's exchange rate";
 
 /* Plural del padre materializado flat: la variante no lleva .stringsdict propio */
-"account.currencyChange.confirmTitle" = "Convert %d records?";
 
 /* Rates could not be fetched */
 "account.currencyChange.ratesUnavailableTitle" = "Couldn't convert";
@@ -4923,7 +4875,7 @@
 "welcome.privateICloud.wipeAction" = "Start fresh";
 
 /* Private branch iCloud gate: body of the second confirmation before deleting */
-"welcome.privateICloud.wipeConfirmBody" = "Your records, accounts and budgets go from iCloud. No copy is left and we can't get them back afterwards.";
+"welcome.privateICloud.wipeConfirmBody" = "Your records, accounts, and budgets will be deleted from iCloud. No copy is left and we can't recover them afterward.";
 
 /* Private branch iCloud gate: safe button on the second confirmation */
 "welcome.privateICloud.wipeConfirmKeep" = "Never mind";
@@ -4968,7 +4920,6 @@
 "welcome.privateICloud.lateKeep" = "Leave it that way";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categories";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "a lot of saved data";
@@ -5358,7 +5309,6 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Sign in to upload your changes";
-"storage.sync.waitingForConnection" = "%d changes waiting for a connection";
 "storage.sync.waitingForConnectionUncounted" = "Changes waiting for a connection";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
@@ -5847,7 +5797,6 @@
 "onboarding.accountName.allTogether" = "My money %@";
 "account.deleteConfirmTitle" = "Delete ‘%@’?";
 "account.deleteConfirmMessageEmpty" = "It has no records. This can't be undone.";
-"account.deleteConfirmMessage" = "It has %d records. They aren't deleted: they stay in Records, with no account. If you just want to stop seeing the account, archive it. This can't be undone.";
 
 // Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
 "panel.voiceShort" = "Voice";
@@ -5860,8 +5809,6 @@
 "bulkEdit.cannotEditGroupRecords" = "Some of the selected records come from a group, and that is changed from the group. Remove them from the selection or edit them one by one.";
 "records.groupRecordsOnlyTitle" = "These records come from a group";
 "records.groupRecordsDeleteFromGroup" = "They’re deleted from the group, so everyone’s balances keep adding up.";
-"records.selectedCount" = "%d selected";
-"records.groupRecordsKept" = "%d come from a group and aren’t deleted here: delete them from the group.";
 
 // Presupuestos (auditoría UX 2.2, lote 9)
 "budgets.state.active" = "Active";
@@ -5875,10 +5822,6 @@
 /* Pagos planificados — auditoría UX 2.2, lote 10 */
 "scheduled.active" = "Active";
 "scheduled.editor.save.missing" = "To save, fill in: %@";
-"scheduled.frequency.every.days" = "Every %d days";
-"scheduled.frequency.every.weeks" = "Every %d weeks";
-"scheduled.frequency.every.months" = "Every %d months";
-"scheduled.frequency.every.years" = "Every %d years";
 "notifications.scheduledPayment.dueTomorrow" = "%1$@ is due tomorrow for %2$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "%1$@ from %2$@ arrives tomorrow 📅";
 "scheduled.filter.empty" = "No payments match this filter";
@@ -6321,14 +6264,6 @@
 "import.error.xlsxOpen" = "We couldn't open the Excel file. Save it again as .xlsx and try again.";
 "import.error.xlsxNoSheets" = "The Excel file has no sheets.";
 "import.error.xlsxRead" = "We couldn't read the sheet in the Excel file. Save it again as .xlsx and try again.";
-"records.count" = "%d records";
-"category.cannotDelete.records" = "It has %d records.";
-"tag.deleteConfirm.message" = "It will be removed from %d records; the records aren't deleted. This can't be undone.";
-"import.preview.failuresHeader" = "%d rows won't be imported";
-"import.preview.more" = "… and %d more";
-"import.preview.futureIgnored" = "%d rows have a future date and are left out.";
-"import.preview.importButton" = "Import %d records";
-"import.result.notImported" = "%d rows weren't imported:";
 "records.l8.deleteNamedTitle" = "Delete “%@”?";
 "records.l8.deleteTransferAlsoPair" = "Its other half, in the other account, is deleted too.";
 "records.l8.deleteFromGroupHint" = "To delete it, do it from the group.";
@@ -6394,16 +6329,6 @@
 "records.l8b.bulk.blockedTitle" = "Can’t change this";
 "records.l8b.bulk.discardChange" = "Discard this change";
 "records.l8b.bulk.nothingPendingHint" = "Choose what to change first.";
-"records.l8b.duplicates.count" = "%d possible duplicates";
-"records.l8b.duplicates.groups" = "%d groups";
-"records.l8b.duplicates.groupSize" = "%d matching records";
-"records.l8b.duplicates.removeTitle" = "Remove %d repeats?";
-"records.l8b.duplicates.keptShared" = "%d come from Groups and stay: delete them there.";
-"records.l8b.bulk.title" = "Edit %d records";
-"records.l8b.bulk.distinctAccounts" = "%d different accounts";
-"records.l8b.bulk.distinctSubcategories" = "%d different subcategories";
-"records.l8b.bulk.summaryTitle" = "You’ll change in %d records:";
-"records.l8b.bulk.apply" = "Apply to %d records";
 "records.l8.bulkSaveFailed" = "Couldn’t save. Nothing was changed; try again.";
 "records.l8.duplicatesMatchedOn" = "They match on %@, in the same account.";
 
@@ -6868,8 +6793,6 @@
 "l20d.groups.leaveAll.confirmAction" = "Leave all";
 "l20d.groups.leaveAll.confirmMessage" = "You’ll leave %@.";
 "l20d.groups.leaveAll.confirmMessageGeneric" = "You’ll leave every group where you have no outstanding balance.";
-"l20d.export.willExport" = "%d records will be exported";
-"l20d.export.exportCount" = "Export %d records";
 
 /* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
 "uxcs.removeDeviceData.row" = "Remove my data from this iPhone";
@@ -6916,9 +6839,6 @@
 "l20n.icloud.openSettings" = "Open iPhone Settings";
 "l20n.icloud.mailSubject" = "Yala: iCloud isn't syncing";
 "l20n.icloud.contactFooter" = "If it stays like this, write to us: the email already includes the technical detail so we can help.";
-"l20n.count.records" = "%d records";
-"l20n.count.accounts" = "%d accounts";
-"l20n.count.budgets" = "%d budgets";
 
 /* Auditoría UX 2.2 · lote decidido 06 — Yala Pro: paywall, prueba gratis, fin de la prueba y Pro activo (2026-10-19) */
 "uxpro.paywall.subtitle" = "Log in seconds, no limits";
@@ -7051,7 +6971,6 @@
 "shortcut.applePay.notification.title" = "%1$@ payment at %2$@ to review";
 "shortcut.applePay.notification.titleNoMerchant" = "%@ payment to review";
 "shortcut.applePay.notification.body" = "Tap to approve it.";
-"stepGuide.remaining" = "%d steps left · your progress is saved";
 
 /* VoiceOver: el cambio entre dos períodos redondea a cero */
 "accessibility.variationNoChange" = "No change";

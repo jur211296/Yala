@@ -1,0 +1,41 @@
+[
+ {
+  "k": "settings.deleteDataUnknownError",
+  "categoria": "significado",
+  "gravedad": "baja",
+  "propuesta": "Qualcosa è andato storto durante l'eliminazione dei dati. Riprova.",
+  "motivo": "Falta la indicación «Intenta de nuevo» y «errore sconosciuto» suena más técnico que el original.",
+  "fuente": "llm",
+  "actual": "Si è verificato un errore sconosciuto durante l'eliminazione dei dati.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "gravedad baja"
+ },
+ {
+  "k": "tutorials.createRecord.completion.desc",
+  "categoria": "significado",
+  "gravedad": "baja",
+  "propuesta": "Prima registri ogni spesa, più chiaramente vedi dove vanno i tuoi soldi.",
+  "motivo": "«Più presto… più» es un calco del español; en italiano se dice «Prima… più».",
+  "fuente": "llm",
+  "actual": "Più presto registri ogni spesa, più chiaramente vedi dove vanno i tuoi soldi.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "gravedad baja"
+ },
+ {
+  "k": "scheduled.l10.paid.alreadyRecordedHelp",
+  "categoria": "terminologia",
+  "gravedad": "baja",
+  "propuesta": "Scegli il registro e lo segniamo come pagato.",
+  "motivo": "La app llama «Registri» a los registros; «registrazione» es un concepto distinto.",
+  "fuente": "llm",
+  "actual": "Scegli la registrazione e lo segniamo come pagato.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ }
+]

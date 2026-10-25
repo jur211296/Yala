@@ -38,8 +38,8 @@ struct TransactionSuccessData {
 struct TransactionSuccessView: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM yyyy"
         f.locale = AppLocale.current
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 

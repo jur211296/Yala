@@ -199,7 +199,7 @@ struct SyncStatusSectionLogicTests {
         #expect(forms["other"] == "%d cambios esperando conexión")
     }
 
-    @Test("La versión sin cifra está en los 16 `.strings`, y las variantes llevan el plural flat")
+    @Test("La versión sin cifra está en los 16 `.strings`, y las variantes llevan el plural en su `.stringsdict`")
     func uncountedIsInEveryStrings() throws {
         for locale in Self.bases + Self.variants {
             let url = Self.resources.appendingPathComponent("\(locale).lproj/Localizable.strings")
@@ -207,7 +207,12 @@ struct SyncStatusSectionLogicTests {
             let uncounted = try #require(dict["storage.sync.waitingForConnectionUncounted"], "\(locale)")
             #expect(!uncounted.isEmpty && !uncounted.contains("%"), "\(locale)")
             if Self.variants.contains(locale) {
-                #expect(dict["storage.sync.waitingForConnection"]?.contains("%d") == true, "\(locale) sin plural flat")
+                // Desde el lote 12.4 la variante tiene su `.stringsdict` y ya no lleva el plural como línea plana
+                // (con la variante de idioma del sistema, la plana decía «1 cambios»).
+                #expect(dict["storage.sync.waitingForConnection"] == nil, "\(locale) con plural plano")
+                let pluralsURL = Self.resources.appendingPathComponent("\(locale).lproj/Localizable.stringsdict")
+                let plurals = try #require(NSDictionary(contentsOf: pluralsURL) as? [String: Any], "\(locale)")
+                #expect(plurals["storage.sync.waitingForConnection"] != nil, "\(locale) sin el plural")
             }
         }
     }

@@ -13,9 +13,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Das Konto hat %d Eintrag. Er wird nicht gelöscht: Er bleibt in Einträge, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
+			<string>Das Konto hat %d Eintrag. Er wird nicht gelöscht: Er bleibt unter „Einträge“, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
 			<key>other</key>
-			<string>Das Konto hat %d Einträge. Sie werden nicht gelöscht: Sie bleiben in Einträge, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
+			<string>Das Konto hat %d Einträge. Sie werden nicht gelöscht: Sie bleiben unter „Einträge“, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
 		</dict>
 	</dict>
 	<key>category.cannotDeleteMessage</key>
@@ -1015,9 +1015,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Sie wird von %d Eintrag entfernt; der Eintrag bleibt. Das lässt sich nicht rückgängig machen.</string>
+			<string>Er wird von %d Eintrag entfernt; der Eintrag bleibt. Das lässt sich nicht rückgängig machen.</string>
 			<key>other</key>
-			<string>Sie wird von %d Einträgen entfernt; die Einträge bleiben. Das lässt sich nicht rückgängig machen.</string>
+			<string>Er wird von %d Einträgen entfernt; die Einträge bleiben. Das lässt sich nicht rückgängig machen.</string>
 		</dict>
 	</dict>
 	<key>import.preview.more</key>
