@@ -3,9 +3,10 @@
 //  Yala
 //
 //  Proyección MERKLE del canal de GRUPOS (endurecimiento pre-flag B1, [R1]). SEPARADA de la proyección de
-//  EMISIÓN (`GroupEntityEmissionMap`): el server hashea TODAS las columnas de dominio del manifest
-//  (`merkleColumnsGroup()` = Object.keys(spec.columns), gateway/src/groups/canon.ts), mientras que la
-//  emisión OMITE deliberadamente dos cosas (que romperían el push si viajaran):
+//  EMISIÓN (`GroupEntityEmissionMap`): el server hashea TODAS las columnas de dominio del manifest que existen en
+//  la versión que pidió el cliente (`merkleColumnsGroup(entity, cap)`, gateway/src/groups/canon.ts; desde el
+//  2026-10-24 poda por `since`, ver `GroupsSyncCapability`), mientras que la emisión OMITE deliberadamente dos
+//  cosas (que romperían el push si viajaran):
 //    (a) `split_groups.created_at` — el column-grant del UPDATE no la incluye (hallazgo #1 de G1);
 //    (b) `group_members` ENTERA — es pull-only (el cliente jamás la empuja).
 //  Reusar el emission map para el Merkle daría un root DIVERGENTE en CADA grupo, permanente. Por eso esta
@@ -126,13 +127,21 @@ enum GroupMerkleProjection {
 
     // MARK: - Payload canónico c1 del leaf (proyección FULL de la fila)
 
-    /// Payload c1 del leaf: proyección FULL (TODAS las columnas de la emisión Merkle de la entidad; grupos
-    /// NO tienen `local_day` que excluir). Espejo de `SyncMerkle.channel1Payload` pero con el guard de
-    /// GRUPOS (que admite `user_id`). `internal` para tests de paridad de proyección.
-    static func channel1Payload<M>(model: M, emission: EntityEmission<M>) throws -> String {
+    /// Payload c1 del leaf: proyección FULL (TODAS las columnas de la emisión Merkle de la entidad que existen en la
+    /// versión `capabilityLevel` del manifest de Grupos; grupos NO tienen `local_day` que excluir). Espejo de
+    /// `SyncMerkle.channel1Payload` pero con el guard de GRUPOS (que admite `user_id`). `internal` para tests.
+    ///
+    /// **El nivel tiene que ser el que se le pidió al servidor** (`X-Yala-Capability-Set`): el Worker proyecta la fila
+    /// a esa versión (`merkleColumnsGroup`), y una columna de más —aunque valga NULL, que el canon serializa como
+    /// `key:null`— divergiría en todas las filas. Desde el 2026-10-24 (ticket `groups-canal-sin-capability-set`).
+    static func channel1Payload<M>(
+        model: M, emission: EntityEmission<M>,
+        capabilityLevel: Int = GroupsSyncCapability.declaredLevel
+    ) throws -> String {
         var fields: [String: CanonValue] = [:]
         let calendar = Calendar(identifier: .gregorian)  // irrelevante: grupos no derivan `local_day`
-        for emitter in emission.emitters {
+        for emitter in emission.emitters
+        where GroupsSyncCapability.since(table: emission.table, column: emitter.column) <= capabilityLevel {
             fields[emitter.column] = emitter.build(model, calendar)
         }
         return try encodeGroupCanonC1(fields, groupedColumns: Set(emission.groupByColumn.keys))
@@ -165,28 +174,34 @@ enum GroupMerkleProjection {
     /// **`throws` desde el 2026-09-23** (ticket `groups-merkle-reads-an-unreadable-table-as-an-empty-one`): una tabla
     /// que no se deja leer ya no se ensambla como una tabla vacía. El único consumidor de producción es
     /// `GroupsSyncClient.verifyGroupIntegrity`, que lo convierte en `.skipped(GroupMerkleSkipReason.localMerkleFetchFailed)`.
-    static func computeLocalMerkle(groupID gid: String, context: ModelContext) throws -> LocalGroupMerkle {
+    ///
+    /// `capabilityLevel`: la versión del manifest de Grupos con la que se pidió el snapshot remoto
+    /// (`RemoteGroupMerkle.capabilityLevel`). Solo se hashean las columnas que existen en ella.
+    static func computeLocalMerkle(
+        groupID gid: String, context: ModelContext,
+        capabilityLevel: Int = GroupsSyncCapability.declaredLevel
+    ) throws -> LocalGroupMerkle {
         var digests: [String: Data] = [:]
         var entities: [String: EntitySummary] = [:]
 
         let expenseLeaves = try collectLeaves(
             SplitExpense.self, emission: splitExpense, groupID: gid,
             groupFilter: #Predicate { $0.groupZoneID == gid }, identity: { $0.id.uuidString.lowercased() },
-            context: context)
+            capabilityLevel: capabilityLevel, context: context)
         let shareLeaves = try collectLeaves(
             SplitShare.self, emission: splitShare, groupID: gid,
             groupFilter: #Predicate { $0.groupZoneID == gid }, identity: { $0.id.uuidString.lowercased() },
-            context: context)
+            capabilityLevel: capabilityLevel, context: context)
         let settlementLeaves = try collectLeaves(
             SplitSettlement.self, emission: splitSettlement, groupID: gid,
             groupFilter: #Predicate { $0.groupZoneID == gid }, identity: { $0.id.uuidString.lowercased() },
-            context: context)
+            capabilityLevel: capabilityLevel, context: context)
         let groupLeaves = try collectLeaves(
             SplitGroup.self, emission: splitGroup, groupID: gid,
             groupFilter: #Predicate { $0.cloudKitZoneID == gid }, identity: { $0.cloudKitZoneID.lowercased() },
-            context: context)
+            capabilityLevel: capabilityLevel, context: context)
         // group_members: identidad = member_key OPCIONAL; nil → SKIP con breadcrumb (jamás keyea un leaf).
-        let memberLeaves = try collectMemberLeaves(groupID: gid, context: context)
+        let memberLeaves = try collectMemberLeaves(groupID: gid, capabilityLevel: capabilityLevel, context: context)
 
         let computed: [(String, [(String, Data)])] = [
             (splitExpense.table, expenseLeaves),
@@ -215,7 +230,7 @@ enum GroupMerkleProjection {
     /// leer no deja nada que comparar.
     private static func collectLeaves<M: PersistentModel>(
         _ type: M.Type, emission: EntityEmission<M>, groupID: String,
-        groupFilter: Predicate<M>, identity: (M) -> String, context: ModelContext
+        groupFilter: Predicate<M>, identity: (M) -> String, capabilityLevel: Int, context: ModelContext
     ) throws -> [(String, Data)] {
         let models: [M]
         // El seam va DENTRO del `do`: el camino de error que recorre un test es el `catch` REAL del fetch.
@@ -233,7 +248,7 @@ enum GroupMerkleProjection {
         for model in models {
             let id = identity(model)
             do {
-                let payload = try channel1Payload(model: model, emission: emission)
+                let payload = try channel1Payload(model: model, emission: emission, capabilityLevel: capabilityLevel)
                 leaves.append((id, SyncMerkle.leafDigest(syncID: id, payload: payload)))
             } catch {
                 #if DEBUG
@@ -249,7 +264,9 @@ enum GroupMerkleProjection {
     /// `memberKey` (member CloudKit preexistente no adoptado — mundo born-backend DARK no lo produce) NO puede
     /// keyear su leaf → SKIP con breadcrumb `memberKeyMissing` (jamás crash). Residual G6 (grupos migrados).
     /// Su fetch LANZA como el de `collectLeaves`, y por lo mismo.
-    private static func collectMemberLeaves(groupID gid: String, context: ModelContext) throws -> [(String, Data)] {
+    private static func collectMemberLeaves(
+        groupID gid: String, capabilityLevel: Int, context: ModelContext
+    ) throws -> [(String, Data)] {
         let models: [SplitMember]
         do {
             if _testThrowOnLeafFetchOf.contains(groupMember.table) { throw CocoaError(.fileReadCorruptFile) }
@@ -269,7 +286,7 @@ enum GroupMerkleProjection {
             }
             let id = memberKey.lowercased()
             do {
-                let payload = try channel1Payload(model: model, emission: groupMember)
+                let payload = try channel1Payload(model: model, emission: groupMember, capabilityLevel: capabilityLevel)
                 leaves.append((id, SyncMerkle.leafDigest(syncID: id, payload: payload)))
             } catch {
                 #if DEBUG

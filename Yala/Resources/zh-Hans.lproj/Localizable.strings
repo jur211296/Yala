@@ -4347,6 +4347,7 @@
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "来自群组「%@」。";
 "inbox.groupSettlementDraft.alreadyRegistered" = "这笔付款已记录在你的账户中。你可以放弃此草稿。";
+"inbox.groupExpenseDraft.alreadyRegistered" = "这笔支出已记录在你的账户中，所以我们移除了此草稿。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "选择账户和类别";
@@ -5324,6 +5325,8 @@
 
 /* Card body: paste the invitation link to join */
 "welcome.groups.joinBody" = "打开收到的链接，或粘贴到这里。";
+"welcome.groups.signInQuestion" = "已经有账户了？";
+"welcome.groups.signInAction" = "从这里登录";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "正在确认一切就绪…";
@@ -5761,7 +5764,7 @@
 "storage.groups.title" = "群组";
 
 /* Cuerpo cuando no hay cuenta de grupos asociada */
-"storage.groups.noAccountBody" = "你的群组保存在 Yala 账户中，与这台 iPhone 上的数据分开。";
+"storage.groups.noAccountBody" = "你的群组保存在 Yala 账户中，与这台设备上的数据分开。";
 
 /* Botón para asociar una cuenta de grupos */
 "storage.groups.associateButton" = "关联一个用于群组的账户";
@@ -5770,7 +5773,7 @@
 "storage.groups.associatedUnnamedBody" = "你的群组使用一个 Yala 账户。";
 
 /* Cuerpo en un segundo dispositivo, sin nombre de cuenta */
-"storage.groups.needsSignInUnnamedBody" = "你的群组在你的 Yala 账户中。登录后就能在这台 iPhone 上看到。";
+"storage.groups.needsSignInUnnamedBody" = "你的群组在你的 Yala 账户中。登录后就能在这台设备上看到。";
 
 /* Botón para entrar con la cuenta de grupos ya asociada */
 "storage.groups.signInButton" = "用该账户登录";
@@ -5800,10 +5803,10 @@
 "storage.groups.associatedBody" = "你的群组使用 %@。";
 
 /* Cuerpo en un segundo dispositivo, con el nombre de la cuenta */
-"storage.groups.needsSignInBody" = "你的群组在 %@ 中。登录后就能在这台 iPhone 上看到。";
+"storage.groups.needsSignInBody" = "你的群组在 %@ 中。登录后就能在这台设备上看到。";
 
 /* Mensaje de la confirmación de desasociar */
-"storage.groups.detachBody" = "你的群组会从这台 iPhone 上移除，但仍留在你的账户里：再次关联就会回来。别人欠你和你欠别人的账目两种情况下都会消失；你能选的是自己付的那些支出怎么处理。";
+"storage.groups.detachBody" = "你的群组会从这台设备上移除，但仍留在你的账户里：再次关联就会回来。别人欠你和你欠别人的账目两种情况下都会消失；你能选的是自己付的那些支出怎么处理。";
 
 /* Título del aviso cuando el desasociar se bloquea */
 "storage.groups.detachBlockedTitle" = "无法取消关联";
@@ -5836,17 +5839,17 @@
 "storage.groups.detachPurgeFailedTitle" = "无法取消关联";
 
 /* Aviso: cuerpo del fallo del borrado al desasociar */
-"storage.groups.detachPurgeFailedBody" = "你的群组还在这台 iPhone 上，账号也没有取消关联。你为面板记录所做的选择已经生效，并且我们已退出该账号。请再试一次以完成。";
+"storage.groups.detachPurgeFailedBody" = "你的群组还在这台设备上，账号也没有取消关联。你为面板记录所做的选择已经生效，并且我们已退出该账号。请再试一次以完成。";
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
-"storage.groups.detachBlockedBridge" = "我们无法检查这台 iPhone 上群组的记录。没有取消任何关联。请再试一次。";
-"storage.groups.detachBlockedSessionNotClosed" = "我们无法在这台 iPhone 上退出你的群组账户。没有取消任何关联。请再试一次。";
+"storage.groups.detachBlockedBridge" = "我们无法检查这台设备上群组的记录。没有取消任何关联。请再试一次。";
+"storage.groups.detachBlockedSessionNotClosed" = "我们无法在这台设备上退出你的群组账户。没有取消任何关联。请再试一次。";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "完成取消账号关联";
 
 /* Cuerpo de la sección cuando quedó un desasociar a medias */
-"storage.groups.detachPendingBody" = "中途停下了：你的群组还在这台 iPhone 上，而那个账号的登录已经退出。";
+"storage.groups.detachPendingBody" = "中途停下了：你的群组还在这台设备上，而那个账号的登录已经退出。";
 
 /* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
 "storage.groups.detachBusy" = "你正在退出登录。请先完成，然后再试一次。";
@@ -8280,7 +8283,7 @@
 /* Salir de varios: botón por grupo */
 "groups.l19.batch.openSettings" = "打开群组设置";
 /* Desasociar la cuenta de grupos: qué pasa */
-"groups.l19.detach.body" = "你的群组会从这台 iPhone 上移除；它们仍保留在你的账户中，重新连接后就会回来。";
+"groups.l19.detach.body" = "你的群组会从这台设备上移除；它们仍保留在你的账户中，重新连接后就会回来。";
 /* Desasociar: salida que conserva */
 "groups.l19.detach.keep" = "把我付的钱留在我的账户里";
 /* Desasociar: salida que quita */

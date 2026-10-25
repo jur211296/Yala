@@ -168,6 +168,42 @@ final class WelcomeChooserUITests: XCTestCase {
                       "El «Volver» del 2.º nivel no devolvió a «Es mi primera vez», de donde se vino.")
     }
 
+    /// Card 2osn (QA guiado de 2.1, 19-oct): en «¿Cómo empiezas?» quien ya tiene una cuenta de Grupos no tenía salida —solo
+    /// crear o unirse con un enlace—. La pregunta de pie «¿Ya tienes una cuenta? Entra aquí» lo lleva a «¡Hola de nuevo!»,
+    /// y su «Volver» devuelve al 2.º nivel de grupos, no al elector. Con `-uitest-cloud-chooser` hay varias entradas a una
+    /// cuenta, así que «¡Hola de nuevo!» se enseña (sin bypass).
+    func testGroupsChooser_signInFooter_opensExistingAndBackReturnsHere() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            extraArguments: ["-uitest-cloud-chooser"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let groupsBranch = app.buttons["welcome_chooser_invite"]
+        XCTAssertTrue(groupsBranch.waitForExistence(timeout: 10), "No apareció la fila de grupos del elector.")
+        groupsBranch.tap()
+
+        let createCard = app.buttons["welcome_groups_create"]
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10), "No apareció el 2.º nivel de grupos.")
+        let signIn = app.buttons["welcome_groups_sign_in"]
+        XCTAssertTrue(signIn.exists, "Falta la pregunta de pie «¿Ya tienes una cuenta?» en el 2.º nivel de grupos.")
+        signIn.tap()
+
+        XCTAssertTrue(app.buttons["welcome_existing_cloud"].waitForExistence(timeout: 10),
+                      "«Entra aquí» no llevó a «¡Hola de nuevo!».")
+
+        let backButton = app.buttons["welcome_back_button"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver de «¡Hola de nuevo!».")
+        backButton.tap()
+        XCTAssertTrue(createCard.waitForExistence(timeout: 10),
+                      "El «Volver» de «¡Hola de nuevo!» no devolvió al 2.º nivel de grupos, de donde se vino.")
+    }
+
     /// **Sin App Attest, «Es mi primera vez» no ofrece la nube** (ticket
     /// `cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest`). Es la CONDICIÓN con el predicado real: el
     /// simulador no tiene App Attest, y `-uitest-cloud-chooser` destapa todo lo demás, así que lo único que puede esconder

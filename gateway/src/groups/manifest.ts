@@ -19,6 +19,8 @@ interface ColumnSpec {
   scale?: number;
   safe?: boolean;
   group_key?: string;
+  /** manifest_version que estrenó la columna (ausente = 1). Ver `resolveGroupCapabilitySet`. */
+  since?: number;
 }
 interface EntitySpec {
   table: string;
@@ -39,6 +41,22 @@ interface GroupManifest {
 }
 
 export const groupManifest = groupManifestJson as unknown as GroupManifest;
+
+/**
+ * Versión del manifest de GRUPOS de este Worker. Se anuncia en `/groups/pull` y `/groups/merkle` (`manifest_version`):
+ * el cliente iOS declara la menor entre la suya y ésta (`GroupsSyncCapability.swift`), como en el canal personal
+ * (`sync/manifest.ts::MANIFEST_VERSION`). Es una versión DISTINTA de la personal: cada canal tiene su manifest.
+ */
+export const GROUP_MANIFEST_VERSION: number = groupManifest.manifest_version;
+
+/**
+ * Nivel que se supone a un cliente que NO manda `X-Yala-Capability-Set`. CONGELADO en 2, a propósito, y no ligado a
+ * `GROUP_MANIFEST_VERSION`: hasta el 2026-10-24 ningún iOS mandaba la cabecera en el canal de Grupos, y todos los
+ * publicados ya conocían `split_groups.budget_limit_amount` (since 2, g14_01). El que no la conoce habla canon `c1` y
+ * su `verifyGroupIntegrity` salta el Merkle por el guard de canon. Cuando entre una columna con `since: 3`, esos
+ * teléfonos siguen recibiendo v2 —sin ella—, que es justo lo que entienden.
+ */
+export const GROUP_CAPABILITY_LEVEL_WITHOUT_HEADER = 2;
 
 /** Las 5 tablas del canal de grupos (keys del manifest). */
 export const GROUP_ENTITIES: readonly string[] = Object.keys(groupManifest.entities);
@@ -167,20 +185,97 @@ export function nestFieldsByUnit(entity: string, fields: Record<string, unknown>
 }
 
 /**
- * Proyecta (poda) una fila del backend a `fields` (columnas de dominio conocidas) + `field_hlcs` (las
- * unidades correspondientes). v1 = un solo cliente (set completo del manifest), sin capability-set.
+ * capability-set del cliente de GRUPOS (espejo de `sync/manifest.ts::CapabilitySet`). `columns` ausente = el set
+ * completo del manifest; presente = las columnas que el cliente conoce por entidad, y el pull y el Merkle podan el
+ * resto (grupo de coherencia entero o nada).
+ */
+export interface GroupCapabilitySet {
+  columns?: Record<string, Set<string>>;
+}
+
+/**
+ * Resuelve el capability-set de Grupos desde la cabecera `X-Yala-Capability-Set` (o la query `capability_set`).
+ *  - AUSENTE → nivel `GROUP_CAPABILITY_LEVEL_WITHOUT_HEADER` (2), congelado: ver su docblock.
+ *  - `vN` → las columnas con `since <= N` (ausente = 1); `v0` se lee como v1; `vN` >= este Worker → completo.
+ *  - `full`, o un valor ilegible → completo, con el mismo criterio que el canal personal (`resolveCapabilitySet`),
+ *    incluido su formato explícito JSON `{entity: [col,...]}`.
+ * Medido el 2026-10-24: sin esto, `merkleColumnsGroup` hasheaba TODAS las columnas del manifest y una columna nueva
+ * cambiaba la hoja de cada fila (el canon serializa el NULL como `key:null`) ⇒ divergencia falsa en el 100 % de los
+ * grupos de cada teléfono que no la conociera. Por eso `budget_limit_amount` tuvo que bumpear `canon_version` a `c2`.
+ */
+export function resolveGroupCapabilitySet(raw: string | null | undefined): GroupCapabilitySet {
+  if (raw === null || raw === undefined || raw === "") return capabilityForLevel(GROUP_CAPABILITY_LEVEL_WITHOUT_HEADER);
+  if (raw === "full") return {};
+  const version = /^v(\d+)$/.exec(raw);
+  if (version) return capabilityForLevel(Number(version[1]));
+  // Formato explícito (futuro multi-cliente): JSON {entity: [col,...]}. Best-effort; inválido → completo.
+  try {
+    const parsed = JSON.parse(raw) as Record<string, string[]>;
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    const columns: Record<string, Set<string>> = {};
+    for (const [e, cols] of Object.entries(parsed)) {
+      if (Array.isArray(cols)) columns[e] = new Set(cols.map(String));
+    }
+    return { columns };
+  } catch {
+    return {};
+  }
+}
+
+/** capability-set de un nivel: completo si alcanza a este Worker; si no, las columnas con `since <= level`. */
+function capabilityForLevel(rawLevel: number): GroupCapabilitySet {
+  const level = Math.max(1, rawLevel);
+  if (level >= GROUP_MANIFEST_VERSION) return {};
+  return { columns: groupColumnsUpTo(level) };
+}
+
+/** Columnas de cada entidad de Grupos que existen en la versión `level` del manifest (`since` ausente = 1). */
+export function groupColumnsUpTo(level: number): Record<string, Set<string>> {
+  const columns: Record<string, Set<string>> = {};
+  for (const [entity, spec] of Object.entries(groupManifest.entities)) {
+    columns[entity] = new Set(
+      Object.entries(spec.columns)
+        .filter(([, c]) => (c.since ?? 1) <= level)
+        .map(([col]) => col),
+    );
+  }
+  return columns;
+}
+
+/**
+ * Grupos de coherencia de `entity` que el cliente NO conoce por completo: se podan enteros (columnas + su unidad en
+ * `field_hlcs`), para no reintroducir el «número mal convertido». Vacío si el cliente conoce todo.
+ */
+export function droppedGroupsFor(entity: string, cap: GroupCapabilitySet): Set<string> {
+  const dropped = new Set<string>();
+  const known = cap.columns?.[entity];
+  if (!known) return dropped;
+  for (const [g, cols] of Object.entries(groupsOfEntity(entity))) {
+    if (!cols.every((c) => known.has(c))) dropped.add(g);
+  }
+  return dropped;
+}
+
+/**
+ * Proyecta (poda) una fila del backend al capability-set del cliente: `fields` (columnas de dominio que conoce) +
+ * `field_hlcs` (sus unidades). Grupo de coherencia entero o nada. Espejo de `sync/manifest.ts::projectRowToDelta`.
  */
 export function projectGroupRowToDelta(
   entity: string,
   row: Record<string, unknown>,
   storedFieldHlcs: Record<string, string>,
+  cap: GroupCapabilitySet,
 ): { fields: Record<string, unknown>; field_hlcs: Record<string, string> } {
   const spec = groupManifest.entities[entity];
   const fields: Record<string, unknown> = {};
   const field_hlcs: Record<string, string> = {};
   if (!spec) return { fields, field_hlcs };
+  const known = cap.columns?.[entity]; // undefined = conoce todo
+  const dropped = droppedGroupsFor(entity, cap);
   for (const [col, spc] of Object.entries(spec.columns)) {
+    if (known && !known.has(col)) continue; // columna fuera del set del cliente
     const unit = spc.group_key ?? col;
+    if (dropped.has(unit)) continue; // grupo incompleto → nada
     if (col in row) fields[col] = row[col];
     if (unit in storedFieldHlcs) field_hlcs[unit] = storedFieldHlcs[unit];
   }

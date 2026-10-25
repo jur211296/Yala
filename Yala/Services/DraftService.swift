@@ -934,6 +934,21 @@ final class DraftService {
             throw DraftServiceError.missingAccount
         }
 
+        // 2-bis. Card 9o4n: el gasto YA tiene su pata real. Pasa cuando conviven dos borradores de cuenta del mismo gasto
+        // —el opt-in («Sí, registrar» con el puente apagado) sobrevive a los re-puentes, y encender el puente con
+        // «Importar todo el historial» crea otro—: aprobar el segundo dejaba dos movimientos `-total` y el gasto contado
+        // dos veces. Mismo criterio que «¿Ya lo apuntaste?» (`linkAllowed`): pata en una cuenta que no es del sistema.
+        //
+        // **El borrador NO se borra aquí**: la hoja que lo muestra sigue montada y pinta su alerta leyendo el `@Model`
+        // (un borrado ahí es el SIGTRAP de `InboxRowPruneCoordinator`), el mismo motivo que en
+        // `ensureSettlementNotAlreadyApproved`. Lo retira la hoja al cerrarse (`retireGroupExpenseDraftIfAlreadyRegistered`).
+        if try hasRealLeg(splitID: splitID, in: context) {
+            Logger(subsystem: "com.yala", category: "GroupBridge").notice(
+                "groupExpense account draft for an expense that already has a real leg; no second transaction"
+            )
+            throw DraftServiceError.groupExpenseAlreadyRegistered
+        }
+
         // 3. Crear TX cuenta real. Currency desde el expense (fuente de verdad del grupo).
         // Enfoque B: si el user asignó subcategoría (sheet "cuenta + categoría"), usarla
         // (override del auto-match). Si no, fallback al auto-match por nombre desde el grupo.
@@ -1023,6 +1038,21 @@ final class DraftService {
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
         return realTx
+    }
+
+    /// Card 9o4n · retira el borrador de cuenta de un gasto de grupo que ya tiene su pata real. Lo llama la hoja de la
+    /// Bandeja AL CERRARSE tras `groupExpenseAlreadyRegistered` (con la hoja montada, borrarlo la tumbaría). Vuelve a
+    /// medir: si entretanto la pata desapareció, el borrador se queda y la persona puede aprobarlo.
+    func retireGroupExpenseDraftIfAlreadyRegistered(_ draft: InboxDraft) throws {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              let splitID = draft.splitExpenseID,
+              try hasRealLeg(splitID: splitID, in: context) else { return }
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
     }
 
     // MARK: - «¿Ya lo apuntaste?» (UX 2.2 · L13-15)
@@ -1382,6 +1412,9 @@ enum DraftServiceError: LocalizedError {
     case settlementAmountChangeTransactionGone
     /// UX 2.2 · L13-15: el movimiento elegido ya no coincide con el gasto (se editó, o el gasto ganó su pata real).
     case groupExpenseLinkNoLongerMatches
+    /// Card 9o4n: el borrador de cuenta de un gasto de grupo que ya tiene su pata real. Aprobarlo lo contaría dos veces;
+    /// la hoja lo retira al cerrarse.
+    case groupExpenseAlreadyRegistered
 
     var errorDescription: String? {
         switch self {
@@ -1409,6 +1442,8 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.GroupSettlementAmountChange.transactionGone
         case .groupExpenseLinkNoLongerMatches:
             return L10n.Groups.Errors.actionFailed
+        case .groupExpenseAlreadyRegistered:
+            return L10n.Inbox.GroupExpenseDraft.alreadyRegistered
         }
     }
 }

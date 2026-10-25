@@ -212,7 +212,9 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 consentAccepted = false
                 continueFlow()
             }) {
-                GroupsConsentView(path: groupsOrganizerFlowActive ? "organizer" : "invite") {
+                // Card o8sc: la pestaña también acepta aquí («Un último paso», crear grupo), con la zona vacía.
+                GroupsConsentView(path: GroupsConsentPathLogic.path(
+                    organizerFlowActive: groupsOrganizerFlowActive, pendingJoinZone: pendingGroupsJoinZone)) {
                     consentAccepted = true
                     showGroupsConsent = false
                 }

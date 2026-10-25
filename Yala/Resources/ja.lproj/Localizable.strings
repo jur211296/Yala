@@ -4347,6 +4347,7 @@
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "グループ「%@」から。";
 "inbox.groupSettlementDraft.alreadyRegistered" = "この支払いはすでに口座に記録されています。この下書きは破棄できます。";
+"inbox.groupExpenseDraft.alreadyRegistered" = "この支出はすでに口座に記録されているため、この下書きを削除しました。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
 "inbox.groupExpenseAccountSubcategoryDraft.title" = "口座とカテゴリーを選ぶ";
@@ -5324,6 +5325,8 @@
 
 /* Card body: paste the invitation link to join */
 "welcome.groups.joinBody" = "届いたリンクを開くか、ここに貼り付けてください。";
+"welcome.groups.signInQuestion" = "すでにアカウントをお持ちですか？";
+"welcome.groups.signInAction" = "こちらからログイン";
 
 /* G3 gate: mientras se re-mide el canal de Grupos */
 "welcome.groups.checking" = "準備が整っているか確認しています…";
@@ -5761,7 +5764,7 @@
 "storage.groups.title" = "グループ";
 
 /* Cuerpo cuando no hay cuenta de grupos asociada */
-"storage.groups.noAccountBody" = "グループは Yala アカウントにあり、この iPhone のデータとは別に保存されます。";
+"storage.groups.noAccountBody" = "グループは Yala アカウントにあり、この端末のデータとは別に保存されます。";
 
 /* Botón para asociar una cuenta de grupos */
 "storage.groups.associateButton" = "グループ用のアカウントをリンク";
@@ -5770,7 +5773,7 @@
 "storage.groups.associatedUnnamedBody" = "グループは Yala アカウントを使っています。";
 
 /* Cuerpo en un segundo dispositivo, sin nombre de cuenta */
-"storage.groups.needsSignInUnnamedBody" = "グループは Yala アカウントにあります。この iPhone で見るにはサインインしてください。";
+"storage.groups.needsSignInUnnamedBody" = "グループは Yala アカウントにあります。この端末で見るにはサインインしてください。";
 
 /* Botón para entrar con la cuenta de grupos ya asociada */
 "storage.groups.signInButton" = "そのアカウントでサインイン";
@@ -5800,10 +5803,10 @@
 "storage.groups.associatedBody" = "グループは %@ を使っています。";
 
 /* Cuerpo en un segundo dispositivo, con el nombre de la cuenta */
-"storage.groups.needsSignInBody" = "グループは %@ にあります。この iPhone で見るにはサインインしてください。";
+"storage.groups.needsSignInBody" = "グループは %@ にあります。この端末で見るにはサインインしてください。";
 
 /* Mensaje de la confirmación de desasociar */
-"storage.groups.detachBody" = "グループはこの iPhone から消えますが、アカウントには残ります。もう一度リンクすれば、また表示されます。貸し借りの記録はどちらを選んでも消えます。選べるのは、自分が払った支出をどうするかだけです。";
+"storage.groups.detachBody" = "グループはこの端末から消えますが、アカウントには残ります。もう一度リンクすれば、また表示されます。貸し借りの記録はどちらを選んでも消えます。選べるのは、自分が払った支出をどうするかだけです。";
 
 /* Título del aviso cuando el desasociar se bloquea */
 "storage.groups.detachBlockedTitle" = "リンクを解除できませんでした";
@@ -5836,17 +5839,17 @@
 "storage.groups.detachPurgeFailedTitle" = "リンクを解除できませんでした";
 
 /* Aviso: cuerpo del fallo del borrado al desasociar */
-"storage.groups.detachPurgeFailedBody" = "グループはこの iPhone に残っていて、アカウントのリンクも解除されていません。パネルの記録について選んだ内容はすでに反映され、そのアカウントからはサインアウトしました。もう一度試して完了してください。";
+"storage.groups.detachPurgeFailedBody" = "グループはこの端末に残っていて、アカウントのリンクも解除されていません。パネルの記録について選んだ内容はすでに反映され、そのアカウントからはサインアウトしました。もう一度試して完了してください。";
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
-"storage.groups.detachBlockedBridge" = "この iPhone でグループの記録を確認できませんでした。何も解除されていません。もう一度お試しください。";
-"storage.groups.detachBlockedSessionNotClosed" = "この iPhone でグループ用アカウントからサインアウトできませんでした。何も解除されていません。もう一度お試しください。";
+"storage.groups.detachBlockedBridge" = "この端末でグループの記録を確認できませんでした。何も解除されていません。もう一度お試しください。";
+"storage.groups.detachBlockedSessionNotClosed" = "この端末でグループ用アカウントからサインアウトできませんでした。何も解除されていません。もう一度お試しください。";
 
 /* Botón cuando quedó un desasociar a medias */
 "storage.groups.detachFinishButton" = "アカウントのリンク解除を完了";
 
 /* Cuerpo de la sección cuando quedó un desasociar a medias */
-"storage.groups.detachPendingBody" = "途中で止まりました。グループはこの iPhone に残っていて、そのアカウントのセッションはすでに終了しています。";
+"storage.groups.detachPendingBody" = "途中で止まりました。グループはこの端末に残っていて、そのアカウントのセッションはすでに終了しています。";
 
 /* Aviso: el desasociar no puede correr con otro cierre de sesión en curso */
 "storage.groups.detachBusy" = "いまサインアウトの途中です。先にそれを終えてから、もう一度お試しください。";
@@ -8280,7 +8283,7 @@
 /* Salir de varios: botón por grupo */
 "groups.l19.batch.openSettings" = "設定を開く";
 /* Desasociar la cuenta de grupos: qué pasa */
-"groups.l19.detach.body" = "グループはこの iPhone から消えますが、アカウントには残り、もう一度接続すると戻ります。";
+"groups.l19.detach.body" = "グループはこの端末から消えますが、アカウントには残り、もう一度接続すると戻ります。";
 /* Desasociar: salida que conserva */
 "groups.l19.detach.keep" = "払った分を自分の口座に残す";
 /* Desasociar: salida que quita */

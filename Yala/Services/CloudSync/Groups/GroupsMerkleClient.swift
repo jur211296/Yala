@@ -4,10 +4,12 @@
 //
 //  Transporte del snapshot Merkle del canal de GRUPOS (GET /groups/merkle?group_id=…) — endurecimiento
 //  pre-flag B1. Espeja `SyncMerkleClient` (personal) pero contra el wire REAL de Grupos, que DIFIERE del
-//  personal en dos cosas (routes.ts:329 / types.ts):
+//  personal en dos cosas (routes.ts / types.ts):
 //    - la query lleva `group_id` (el Merkle de Grupos es POR-GRUPO, no global);
-//    - la respuesta trae `channel2_root` NO-OPCIONAL y **SIN `capability_set`** (el canal de Grupos no
-//      declara capability-set en este endpoint) → el request NO manda `X-Yala-Capability-Set`.
+//    - la respuesta trae `channel2_root` NO-OPCIONAL y SIN el eco `capability_set`.
+//  Desde el 2026-10-24 (ticket `groups-canal-sin-capability-set`) el request SÍ manda `X-Yala-Capability-Set` con la
+//  versión del manifest de Grupos que habla el teléfono (`GroupsSyncCapability`), el Worker poda las columnas
+//  posteriores y anuncia su `manifest_version`. Hasta ese día no la mandaba y el Worker hasheaba todas las columnas.
 //  La comparación local↔remoto vive en `GroupsSyncClient.verifyGroupIntegrity`; aquí SOLO el fetch + decode.
 //  DARK: solo corre con `CloudSyncFlags.groupsBackendEnabled` (el cableado de cadencia vive en el cliente).
 //
@@ -34,9 +36,17 @@ struct RemoteGroupMerkle: Equatable, Decodable {
     /// Root del Canal 2 (interno del Worker, full-row incl. deleted). INFORMATIVO: el cliente NO lo
     /// recomputa. NO-opcional en el wire de Grupos (difiere del personal).
     let channel2Root: String
+    /// Versión del `group_capability_manifest.json` del Worker (`GroupsSyncCapability`). `nil` = un Worker anterior a
+    /// esto, que vale `GroupsSyncCapability.levelWhenUnannounced`. `var` con default para no romper el init memberwise.
+    var manifestVersion: Int? = nil
+    /// Versión del manifest con la que se PIDIÓ este snapshot (la cabecera). No viaja en el wire: la pone
+    /// `fetchMerkle`, y el árbol local se computa con ella, no con la que se lea después —el anuncio de esta misma
+    /// respuesta puede cambiar `GroupsSyncCapability.declaredLevel` entre medias—.
+    var capabilityLevel: Int = GroupsSyncCapability.levelWhenUnannounced
 
     enum CodingKeys: String, CodingKey {
         case canonVersion = "canon_version"
+        case manifestVersion = "manifest_version"
         case groupID = "group_id"
         case root
         case entities
@@ -81,9 +91,12 @@ final class GroupsMerkleClient {
         self.urlSession = urlSession
     }
 
-    /// GET `/groups/merkle?group_id=<gid>`. Nunca lanza por red/HTTP (→ `.transient`). NO envía
-    /// `X-Yala-Capability-Set` (el wire de Grupos no lo declara — divergiría del server que lo ignora).
-    func fetchMerkle(groupID: String) async -> GroupMerkleFetchOutcome {
+    /// GET `/groups/merkle?group_id=<gid>` con la versión del manifest de Grupos `capabilityLevel`
+    /// (`X-Yala-Capability-Set`). Nunca lanza por red/HTTP (→ `.transient`). Apunta lo que el Worker anuncia y, si no
+    /// sabe proyectar esa versión (anuncia una menor), devuelve `.transient`: compararía columnas distintas.
+    func fetchMerkle(
+        groupID: String, capabilityLevel: Int = GroupsSyncCapability.declaredLevel
+    ) async -> GroupMerkleFetchOutcome {
         guard let token = await tokenProvider(), !token.isEmpty else {
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "no-session")
             return .sessionExpired
@@ -98,6 +111,7 @@ final class GroupsMerkleClient {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue(GroupsSyncCapability.header(forLevel: capabilityLevel), forHTTPHeaderField: "X-Yala-Capability-Set")
         if let attest = await attestProvider(), !attest.isEmpty {
             request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
         }
@@ -116,12 +130,24 @@ final class GroupsMerkleClient {
         }
         switch http.statusCode {
         case 200:
+            var snapshot: RemoteGroupMerkle
             do {
-                return .snapshot(try JSONDecoder().decode(RemoteGroupMerkle.self, from: data))
+                snapshot = try JSONDecoder().decode(RemoteGroupMerkle.self, from: data)
             } catch {
                 GroupsSyncBreadcrumb.groupsMerkleFetchFailed(reason: "decode-200")
                 return .transient
             }
+            // Lo que el Worker dice saber, para el ciclo siguiente.
+            GroupsSyncCapability.recordBackendManifestVersion(snapshot.manifestVersion)
+            // Un Worker que no sabe proyectar la versión pedida (rollback) la ignora y hashea las suyas: comparar
+            // daría una divergencia falsa. Se salta; el ciclo siguiente ya pide la que anunció.
+            let announced = snapshot.manifestVersion ?? GroupsSyncCapability.levelWhenUnannounced
+            guard announced >= capabilityLevel else {
+                GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "capability-unsupported:\(announced)<\(capabilityLevel)")
+                return .transient
+            }
+            snapshot.capabilityLevel = capabilityLevel
+            return .snapshot(snapshot)
         case 401:
             GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "http-401")
             return .sessionExpired

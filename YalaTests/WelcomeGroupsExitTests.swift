@@ -25,4 +25,14 @@ struct WelcomeGroupsExitTests {
         #expect(WelcomeBackStepLogic.groupsChooserOrigin(openedFrom: .existingChooser) == .chooser)
         #expect(WelcomeBackStepLogic.groupsChooserOrigin(openedFrom: .groupsGate(purpose: .createGroup)) == .chooser)
     }
+
+    /// Card 2osn: «¡Hola de nuevo!» abierta desde la pregunta de pie del 2.º nivel de grupos vuelve allí; desde cualquier
+    /// otro sitio, al elector, como antes.
+    @Test("«¡Hola de nuevo!» vuelve a la pantalla que la abrió")
+    func existingChooserOrigin() {
+        #expect(WelcomeBackStepLogic.existingChooserOrigin(openedFrom: .groupsChooser) == .groupsChooser)
+        #expect(WelcomeBackStepLogic.existingChooserOrigin(openedFrom: .chooser) == .chooser)
+        #expect(WelcomeBackStepLogic.existingChooserOrigin(openedFrom: .newChooser) == .chooser)
+        #expect(WelcomeBackStepLogic.existingChooserOrigin(openedFrom: .hero) == .chooser)
+    }
 }

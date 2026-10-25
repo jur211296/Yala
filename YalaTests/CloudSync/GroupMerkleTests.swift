@@ -288,7 +288,7 @@ struct GroupMerkleTests {
         #expect(stub.callCount == 0)
     }
 
-    @Test func merkleClient_requestOmitsCapabilitySetHeader_carriesGroupID() async throws {
+    @Test func merkleClient_requestCarriesGroupID() async throws {
         let stub = StubSession(merkleJSON(root: "a", entities: [:]))
         let client = GroupsMerkleClient(tokenProvider: { "jwt" }, urlSession: stub)
         _ = await client.fetchMerkle(groupID: "SplitGroup-Zébra")

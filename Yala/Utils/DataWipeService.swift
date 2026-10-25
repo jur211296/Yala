@@ -961,6 +961,9 @@ final class DataWipeService {
         // UX 2.2 · L12-4: el consentimiento que la persona anterior aceptó en el educativo sin llegar a iniciar sesión no
         // lleva sello, así que nada más impediría que se atribuyera a quien entre después.
         GroupsConsentState.removeUnsealedSnapshot(in: defaults)
+        // Card 5d22: los intentos de crear grupo sin respuesta son de la persona anterior. El `sub` ya impide adoptarlos
+        // con otra cuenta; retirarlos aquí evita que esperen a caducar.
+        PendingGroupCreationStore.clearAll(in: defaults)
 
         // Toggles personales de visibilidad/bridge y one-shots de Grupos: `removeUserPreferenceKeys`
         // ya los barre en todo wipe, pero este camino también corre sin él en algún futuro caller —

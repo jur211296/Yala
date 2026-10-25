@@ -237,6 +237,21 @@ enum PendingJoinStore {
         persist(entries)
     }
 
+    /// Card we8a · repone la respuesta a la tarjeta del grupo de UNA invitación tras la vuelta al neutro
+    /// (`GroupInviteResumeStore.restoreIntoPendingJoins`): la marca con su hora original y el nombre tecleado. Por zona y
+    /// no como `updateDisplayName`, que propaga a todas: aquí solo se repone lo que se dijo en ESTA tarjeta. Sin entry no
+    /// hace nada; un nombre vacío no pisa nada.
+    static func restoreGroupCardAnswer(zoneName: String, acceptedAt: Date, displayName: String?) {
+        var entries = load()
+        guard var entry = entries[zoneName] else { return }
+        entry.groupCardAcceptedAt = acceptedAt
+        if let name = displayName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            entry.displayName = name
+        }
+        entries[zoneName] = entry
+        persist(entries)
+    }
+
     /// Apunta que el alta de esta invitación empieza sobre un store limpio (ver `PendingJoinEntry.signUpOnCleanStoreAt`).
     /// Idempotente: conserva la primera fecha. Sin entry no hace nada.
     static func markSignUpStartedOnCleanStore(zoneName: String, at date: Date = .now) {

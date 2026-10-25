@@ -797,8 +797,11 @@ struct WelcomeGroupsGateView: View {
     /// boot-wipe lo consume, y caduca solo.
     private func beginNeutralReturn(withoutICloudCopy: Bool) {
         if let groupID = purpose.invitedGroupID,
-           let token = PendingJoinStore.entry(zoneName: groupID)?.inviteToken {
-            GroupInviteResumeStore.set(groupID: groupID, token: token)
+           let entry = PendingJoinStore.entry(zoneName: groupID),
+           let token = entry.inviteToken {
+            // Card we8a: la respuesta a la tarjeta del grupo cruza también, o la tarjeta vuelve a salir vacía.
+            GroupInviteResumeStore.set(groupID: groupID, token: token,
+                                       groupCardAcceptedAt: entry.groupCardAcceptedAt, displayName: entry.displayName)
         }
         intento += 1
         phase = .returningToNeutral(withoutICloudCopy: withoutICloudCopy, intento: intento)

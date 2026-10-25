@@ -1,10 +1,10 @@
 ---
 id: creategroup-throw-after-commit-loses-owner
-status: backlog
+status: done
 area: groups
 priority: medium
 created: 2026-08-29
-updated: 2026-10-08
+updated: 2026-10-24
 source: docs/aprendizajes-tecnicos.md
 ---
 
@@ -37,3 +37,7 @@ Residual medido y no cerrado en [docs/aprendizajes-tecnicos.md#un-gate-por-zona-
 - El pull no lo repara: `isOwner` es local y `owner_user_id` no está en el manifiesto (`GroupService.swift:838-846`). La única reparación existente es `reconcileServerSideOwnership` (`GroupService.swift:815`), y solo corre tras un `yala_owner_cannot_leave`, es decir, si la persona intenta salir del grupo.
 
 Triage 2026-10-08: abierto · medium → medium · `createGroup` sigue materializando solo tras un RPC con éxito (`GroupBackendMembershipService.swift:103-165`) y el pull no trae `isOwner`; ningún commit lo toca desde el 08-03.
+
+## Cerrado (2026-10-24, lote 12.1 Grupos)
+
+`createGroup` apunta `{zona, sub}` antes del RPC (`PendingGroupCreationStore`). Un rechazo definitivo lo borra; un error ambiguo (`.transient`, `.decoding`) lo deja. Al final de cada página del pull, `adoptPendingCreations` adopta las filas de esa zona con la MISMA sesión como el éxito (`isOwner`, el miembro propio) y retira el intento. Caduca a los 7 días y la frontera de persona lo retira. La zona la acuña este teléfono, así que una fila suya solo puede venir de su `create_group`. Tests: `GroupCreateLostResponseTests`; mutante (sin apuntar) → rojo. Lo que no cubre: reintentar tras el error crea un segundo grupo, `retrying-a-group-creation-after-a-lost-response-creates-a-second-group`.

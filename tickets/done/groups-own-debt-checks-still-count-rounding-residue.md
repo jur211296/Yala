@@ -1,10 +1,10 @@
 ---
 id: groups-own-debt-checks-still-count-rounding-residue
-status: backlog
+status: done
 priority: low
 area: "groups"
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-24
 owner: frank
 source: "review adversarial del lote decidido UX 2.2 · grupos administrar (L19-10), encargo 2026-10-21-lote-decidido-2-2-12-grupos-administrar"
 ---
@@ -29,3 +29,7 @@ Avisan de más, no pierden dinero. Pero el mismo grupo dice «a mano» en Ajuste
 Las dos superficies deciden con `GroupRoundingResidueLogic.hasOutstanding(debts:memberID:)` sobre las deudas
 simplificadas del grupo, con un test de cada una que use el caso de la semilla `grupos-saldado` (residuo sin deuda) y el
 de una liquidación corta (deuda real de céntimos).
+
+## Cerrado (2026-10-24, lote 12.1 Grupos)
+
+«Salir de todos mis grupos» (`GroupService.batchHasOutstandingDebt`) y el aviso de borrar la cuenta (`accountDeletionGroupsSummary`) deciden con `GroupRoundingResidueLogic.memberHasOutstanding`, la regla de Saldos, fallando cerrado ante un saldo propio no finito. Sale la detección por saldo neto de `AccountDeletionDebtLogic` (y su tabla de tests, que fijaba la regla vieja). Tests: `GroupRoundingResidueLogicTests` (semilla `grupos-saldado`, liquidación corta y no finito) y `AccountDeletionGroupsSummaryTests#roundingResidue_isNotADebt` / `#shortSettlementOfTwoCents_isADebt`.

@@ -15,7 +15,7 @@ import {
   utf8Compare,
   type CanonValue,
 } from "../sync/canon";
-import { groupManifest, groupsOfEntity } from "./manifest";
+import { droppedGroupsFor, groupManifest, type GroupCapabilitySet } from "./manifest";
 
 /** Columnas server-authored del canal de grupos que JAMÁS son leaves (guard defensivo; user_id NO está). */
 const GROUP_SERVER_AUTHORED = new Set([
@@ -78,11 +78,24 @@ function canonValueFor(format: string, scale: number | undefined, raw: unknown):
   }
 }
 
-/** Columnas de dominio de `entity` a incluir en el leaf del Merkle (todas — grupos no tienen local_day). */
-export function merkleColumnsGroup(entity: string): string[] {
+/**
+ * Columnas de dominio de `entity` a incluir en el leaf del Merkle: las del capability-set del cliente (grupo de
+ * coherencia entero o nada; grupos no tienen `local_day`). `cap` vacío = todas las del manifest, que es lo que pide
+ * el generador de `groups_merkle_fixtures.json`. Espejo de `sync/canon.ts::merkleColumns`. Hasta el 2026-10-24
+ * devolvía siempre todas, y una columna nueva cambiaba la hoja de CADA fila de un cliente que no la conocía.
+ */
+export function merkleColumnsGroup(entity: string, cap: GroupCapabilitySet = {}): string[] {
   const spec = groupManifest.entities[entity];
   if (!spec) return [];
-  return Object.keys(spec.columns);
+  const known = cap.columns?.[entity]; // undefined = conoce todo
+  const dropped = droppedGroupsFor(entity, cap);
+  const out: string[] = [];
+  for (const [col, spc] of Object.entries(spec.columns)) {
+    if (known && !known.has(col)) continue;
+    if (spc.group_key && dropped.has(spc.group_key)) continue;
+    out.push(col);
+  }
+  return out;
 }
 
 /** Re-serializa UNA fila de grupo (valores de PostgREST) al payload canónico c1 del leaf. */

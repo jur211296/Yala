@@ -434,6 +434,40 @@ struct GroupsConsentRegistrarTests {
         }
     }
 
+    /// Card lrwn · las keys LEGACY (`groupsConsentAcceptedAt` / `groupsConsentTextVersion`) tampoco llevan sello: sin
+    /// retirarlas en la frontera, la persona siguiente las veía aceptadas y `adoptLegacyIfNeeded` se las atribuía al
+    /// entrar. Las dos fronteras («Empezar desde cero» y el relevo del dominio) pasan por `removeUnsealedSnapshot`.
+    @Test func handoverFrontier_removesTheLegacyKeys() async {
+        await withIsolatedStores {
+            let d = GroupsConsentState.defaults
+            d.set(Int(t0.timeIntervalSince1970), forKey: GroupsConsentState.legacyAcceptedAtKey)
+            d.set(1, forKey: GroupsConsentState.legacyTextVersionKey)
+            #expect(GroupsConsentState.readSnapshot() != nil, "Control: el formato legacy se lee como aceptado")
+
+            DataWipeService.removeGroupsDomainPreferenceKeys(from: d)
+
+            #expect(GroupsConsentState.readSnapshot() == nil, "el consentimiento legacy sobrevivió al relevo")
+            #expect(d.object(forKey: GroupsConsentState.legacyAcceptedAtKey) == nil)
+            #expect(d.object(forKey: GroupsConsentState.legacyTextVersionKey) == nil)
+            #expect(!GroupsConsentState.hasLocalRecord(in: d))
+        }
+    }
+
+    /// Con un consentimiento sellado al lado, las keys legacy se retiran igual y el sellado se queda.
+    @Test func handoverFrontier_removesTheLegacyKeys_andKeepsTheSealedSnapshot() async {
+        await withIsolatedStores {
+            let d = GroupsConsentState.defaults
+            GroupsConsentState.write(GroupsConsentSnapshot(
+                userID: "sub-A", textVersion: GroupsConsentText.version, acceptedAt: t0))
+            d.set(Int(t0.timeIntervalSince1970), forKey: GroupsConsentState.legacyAcceptedAtKey)
+
+            GroupsConsentState.removeUnsealedSnapshot(in: d)
+
+            #expect(d.object(forKey: GroupsConsentState.legacyAcceptedAtKey) == nil)
+            #expect(GroupsConsentState.readSnapshot()?.userID == "sub-A", "se retiró un consentimiento sellado")
+        }
+    }
+
     @Test func adoptLegacy_doesNotTouchAConsentOfAnotherAccount() async {
         await withIsolatedStores {
             GroupsConsentState.write(GroupsConsentSnapshot(

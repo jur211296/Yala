@@ -416,7 +416,9 @@ struct GroupCreateRaceZoneTests {
     /// único que lo nombra.
     @Test func sourceScan_identityIsResolvedAfterTheAwait_neverBefore() throws {
         let source = try Self.serviceSource()
-        let rpc = try #require(source.range(of: "let result = try await client.createGroup("),
+        // Desde la card 5d22 el RPC va en un `do` (el `catch` decide si el intento de creación se queda), así que la
+        // asignación es `result = try await …` sobre un `let result` declarado antes. La ventana es la misma.
+        let rpc = try #require(source.range(of: "result = try await client.createGroup("),
                                "cambió la llamada al RPC: el escáner no tiene sujeto")
         let groupFetch = try #require(source.range(of: "let zoneRows = try Self.groupRows(zoneID: zoneID, context: context)"),
                                       "createGroup ya no resuelve la zona antes de insertar")
@@ -463,11 +465,22 @@ struct GroupCreateRaceZoneTests {
     /// `save()` intermedio, que comitearía filas a medias bajo el autor por defecto y las metería en el drain.
     ///
     /// MUTACIÓN: añadir un `context.save()` dentro del bloque → rojo.
+    ///
+    /// Desde la card 5d22 hay un SEGUNDO save, el de `adoptPendingCreations` (adopta como dueño el grupo cuya
+    /// respuesta se perdió). Es legítimo solo si va bajo el mismo autor, así que se fija eso: el autor se pone antes
+    /// del save dentro de esa función, y no hay un tercero.
     @Test func sourceScan_theWholeMaterializationStaysInOneAuthoredSave() throws {
         let source = try Self.serviceSource()
-        #expect(source.components(separatedBy: "try context.save()").count - 1 == 1,
-                "hay más de un save en el service: el segundo iría bajo el autor por defecto")
+        #expect(source.components(separatedBy: "try context.save()").count - 1 == 2,
+                "hay un save nuevo en el service: ¿va bajo el autor del outbox?")
         #expect(source.contains("context.author = GroupsSyncClient.outboxSaveAuthor"))
+        let adopt = try #require(source.range(of: "static func adoptPendingCreations("),
+                                 "desapareció la adopción de la card 5d22: el escáner no tiene sujeto")
+        let adoptBody = source[adopt.upperBound...]
+        let author = try #require(adoptBody.range(of: "context.author = GroupsSyncClient.outboxSaveAuthor"))
+        let save = try #require(adoptBody.range(of: "if changed { try context.save() }"))
+        #expect(author.upperBound < save.lowerBound,
+                "la adopción guarda antes de ponerse el autor del outbox: el drain re-emitiría lo adoptado")
         #expect(source.components(separatedBy: "try saveUnderOutboxAuthor(context)").count - 1 == 1,
                 "createGroup dejó de materializar en un solo bloque autorizado")
     }

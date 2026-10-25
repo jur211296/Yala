@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1049)
+## Index (1053)
 
 | id | status | path |
 |---|---|---|
@@ -276,9 +276,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
+| copy-names-the-iphone-outside-groups-storage | backlog | tickets/backlog/copy-names-the-iphone-outside-groups-storage.md |
 | corpus-de-test-de-staging-crece-sin-limite | done | tickets/done/corpus-de-test-de-staging-crece-sin-limite.md |
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
-| creategroup-throw-after-commit-loses-owner | backlog | tickets/backlog/creategroup-throw-after-commit-loses-owner.md |
+| creategroup-throw-after-commit-loses-owner | done | tickets/done/creategroup-throw-after-commit-loses-owner.md |
 | csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | backlog | tickets/backlog/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
@@ -430,6 +431,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke | backlog | tickets/backlog/google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke.md |
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
+| group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | backlog | tickets/backlog/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
 | group-expense-success-claims-a-bridge-write-that-did-not-happen | backlog | tickets/backlog/group-expense-success-claims-a-bridge-write-that-did-not-happen.md |
 | group-expense-views-redesign | done | tickets/done/group-expense-views-redesign.md |
@@ -448,7 +450,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-batch-facts-plural-identity | backlog | tickets/backlog/groups-batch-facts-plural-identity.md |
 | groups-block-has-no-route-to-storage-settings | backlog | tickets/backlog/groups-block-has-no-route-to-storage-settings.md |
 | groups-budget | done | tickets/done/groups-budget.md |
-| groups-canal-sin-capability-set | backlog | tickets/backlog/groups-canal-sin-capability-set.md |
+| groups-canal-sin-capability-set | done | tickets/done/groups-canal-sin-capability-set.md |
 | groups-channel-seal-has-no-reachable-producer | done | tickets/done/groups-channel-seal-has-no-reachable-producer.md |
 | groups-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/groups-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | groups-clock-rollback-wedges-the-drain-forever | done | tickets/done/groups-clock-rollback-wedges-the-drain-forever.md |
@@ -492,11 +494,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start | done | tickets/done/groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start.md |
 | groups-killswitch-403-blocks-detach-forever | done | tickets/done/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | done | tickets/done/groups-leave-rpc-error-10.md |
-| groups-legacy-consent-keys-survive-a-person-handover | backlog | tickets/backlog/groups-legacy-consent-keys-survive-a-person-handover.md |
+| groups-legacy-consent-keys-survive-a-person-handover | done | tickets/done/groups-legacy-consent-keys-survive-a-person-handover.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
 | groups-merkle-reads-an-unreadable-table-as-an-empty-one | done | tickets/done/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
+| groups-next-column-needs-the-capability-level-in-the-drain | backlog | tickets/backlog/groups-next-column-needs-the-capability-level-in-the-drain.md |
 | groups-notifications-permission-skipped-when-the-group-arrives-another-way | qa | tickets/qa/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
@@ -507,7 +510,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | done | tickets/done/groups-outbox-rows-without-a-live-session-have-no-exit.md |
 | groups-outbox-rows-without-a-provable-owner-never-upload | backlog | tickets/backlog/groups-outbox-rows-without-a-provable-owner-never-upload.md |
-| groups-own-debt-checks-still-count-rounding-residue | backlog | tickets/backlog/groups-own-debt-checks-still-count-rounding-residue.md |
+| groups-own-debt-checks-still-count-rounding-residue | done | tickets/done/groups-own-debt-checks-still-count-rounding-residue.md |
 | groups-owner-debt-no-heir-dead-end | done | tickets/done/groups-owner-debt-no-heir-dead-end.md |
 | groups-owner-transfer-and-leave | done | tickets/done/groups-owner-transfer-and-leave.md |
 | groups-pending-member-can-open-group | done | tickets/done/groups-pending-member-can-open-group.md |
@@ -589,7 +592,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | done | tickets/done/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
 | invite-link-on-a-fresh-install-shows-the-welcome-first | done | tickets/done/invite-link-on-a-fresh-install-shows-the-welcome-first.md |
-| invite-neutral-gate-forgets-the-group-card-answer | backlog | tickets/backlog/invite-neutral-gate-forgets-the-group-card-answer.md |
+| invite-neutral-gate-forgets-the-group-card-answer | done | tickets/done/invite-neutral-gate-forgets-the-group-card-answer.md |
 | invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness | backlog | tickets/backlog/invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness.md |
 | invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | done | tickets/done/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
@@ -841,6 +844,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | done | tickets/done/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
+| retrying-a-group-creation-after-a-lost-response-creates-a-second-group | backlog | tickets/backlog/retrying-a-group-creation-after-a-lost-response-creates-a-second-group.md |
 | returning-groups-entry-asks-consent-and-name-again | qa | tickets/qa/returning-groups-entry-asks-consent-and-name-again.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
 | reverse-before-mount-has-no-way-to-abandon-the-return | done | tickets/done/reverse-before-mount-has-no-way-to-abandon-the-return.md |
@@ -967,7 +971,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
 | step-flows-should-match-the-sep15-reference | done | tickets/done/step-flows-should-match-the-sep15-reference.md |
 | storage-actions-release-the-working-flag-under-a-running-resume | discarded | tickets/discarded/storage-actions-release-the-working-flag-under-a-running-resume.md |
-| storage-groups-copy-says-iphone-on-ipad | backlog | tickets/backlog/storage-groups-copy-says-iphone-on-ipad.md |
+| storage-groups-copy-says-iphone-on-ipad | done | tickets/done/storage-groups-copy-says-iphone-on-ipad.md |
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |
 | storage-mode-unknown-raw-reads-as-icloud | backlog | tickets/backlog/storage-mode-unknown-raw-reads-as-icloud.md |
@@ -1001,7 +1005,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
 | trial-says-30-days-for-a-one-month-offer | done | tickets/done/trial-says-30-days-for-a-one-month-offer.md |
 | tutorial-completion-check-appears-only-after-reentering | backlog | tickets/backlog/tutorial-completion-check-appears-only-after-reentering.md |
-| two-account-drafts-for-one-group-expense-can-create-two-real-legs | backlog | tickets/backlog/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
+| two-account-drafts-for-one-group-expense-can-create-two-real-legs | done | tickets/done/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
