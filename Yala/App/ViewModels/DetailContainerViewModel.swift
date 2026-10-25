@@ -67,7 +67,8 @@ final class DetailContainerViewModel {
             ]
         )
         do {
-            let fetched = try context.fetch(transactionsDescriptor)
+            // Lo que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`RecordPendingDeletion`).
+            let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionsDescriptor))
             if fetched != allTransactions { allTransactions = fetched; changed = true }
         } catch {
             #if DEBUG

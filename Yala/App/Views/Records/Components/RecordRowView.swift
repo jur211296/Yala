@@ -18,6 +18,9 @@ struct RecordRowView: View {
     let isSelected: Bool
     let onTap: () -> Void
     let onToggleSelection: () -> Void
+    /// «14 oct 2026» bajo el concepto. Solo el modo duplicados lo pasa, cuando «Fecha» no está entre los criterios
+    /// (`RecordsDuplicateLogic.rowDateCaption`): en la lista normal la fecha ya va en la cabecera del día.
+    var dateCaption: String? = nil
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -80,6 +83,13 @@ struct RecordRowView: View {
                         }
                     }
 
+                    if let dateCaption {
+                        Text(dateCaption)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
                     // Line 4: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
                     let resolvedTags = TagDisplayResolver.tags(for: record, catalog: tagCatalog, order: appPreferences.tagsSortOrderNames)
                     if !resolvedTags.isEmpty {
@@ -119,7 +129,8 @@ struct RecordRowView: View {
         }
         .buttonStyle(.plain)
         .pointerHighlight(cornerRadius: DS.Radius.card)
-        .accessibilityLabel(accessibilityDescription)
+        // La fecha del modo duplicados también se lee: la etiqueta de la fila sustituye a la de sus textos.
+        .accessibilityLabel(dateCaption.map { "\(accessibilityDescription), \($0)" } ?? accessibilityDescription)
         .accessibilityIdentifier("record_row")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

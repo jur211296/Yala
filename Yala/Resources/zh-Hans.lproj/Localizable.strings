@@ -7060,6 +7060,7 @@
 "filters.l8.typeLivesInShowOnly" = "只看支出或只看收入，请用“只显示”。";
 "filters.l8.amountTitle" = "金额";
 "filters.l8.amountNeedsOneCurrency" = "要按金额筛选，请在上方只选一种货币。";
+"filters.l8.amountNeedsOneVisibleCurrency" = "要按金额筛选，请只保留一种货币可见。";
 "filters.l8.allAccounts" = "全部账户";
 "filters.l8.allCategories" = "全部类别";
 "filters.l8.allTags" = "全部标签";
@@ -7191,6 +7192,7 @@
 "scheduled.l10.delete.title" = "删除“%@”？";
 "scheduled.l10.delete.keepsRecords" = "你的记录不会被删除。";
 "scheduled.l10.deleted" = "已删除“%@”";
+"records.pendingDeletion.deletedMany" = "已删除 %d 条记录";
 "scheduled.l10.editor.moreOptions" = "更多选项";
 "scheduled.l10.editor.when" = "时间";
 "scheduled.l10.editor.optional" = "可选";

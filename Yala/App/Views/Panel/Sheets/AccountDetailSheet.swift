@@ -368,7 +368,8 @@ struct AccountDetailSheet: View {
     /// «Saldo hoy» si el período llega a hoy; si ya terminó, «Saldo al 30 sep».
     private var closingLabel: String {
         let interval = viewModel.panelDateInterval
-        return interval.end >= Date.now ? L10n.AccountDetail.balanceToday : L10n.AccountDetail.balanceOn(dayLabel(interval.end))
+        // Llega a hoy si acaba hoy o después (los períodos en curso cierran a las 23:59:59).
+        return interval.end >= Calendar.current.startOfDay(for: .now) ? L10n.AccountDetail.balanceToday : L10n.AccountDetail.balanceOn(dayLabel(interval.end))
     }
 
     private func dayLabel(_ date: Date) -> String {
@@ -581,7 +582,8 @@ struct AccountDetailSheet: View {
 
     private func recompute() {
         guard !isStale else { return }
-        let entries = (shown.transactions ?? []).map { tx in
+        // Lo que espera su borrado con «Deshacer» no cuenta en la ficha (`RecordPendingDeletion`).
+        let entries = RecordPendingDeletion.shared.visible(shown.transactions ?? []).map { tx in
             AccountDetailCalculator.Entry(
                 id: String(describing: tx.persistentModelID),
                 date: tx.date,

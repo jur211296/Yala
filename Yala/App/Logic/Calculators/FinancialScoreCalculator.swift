@@ -448,13 +448,18 @@ enum FinancialScoreCalculator {
     static func commitmentsInterval(
         period: DetailPeriod, fallback: DateInterval, now: Date = .now, calendar: Calendar = .current
     ) -> DateInterval {
+        // El mes y el año naturales de `Calendar` acaban en la medianoche del siguiente, y `DateInterval` es cerrado: un
+        // pago que vence el día 1 del mes siguiente contaba como compromiso de este. Acaban en 23:59:59.
+        func closed(_ interval: DateInterval) -> DateInterval {
+            DateInterval(start: interval.start, end: max(interval.start, interval.end.addingTimeInterval(-1)))
+        }
         switch period {
         case .thisMonth:
             guard let monthInterval = calendar.dateInterval(of: .month, for: now) else { return fallback }
-            return monthInterval
+            return closed(monthInterval)
         case .thisYear:
             guard let yearInterval = calendar.dateInterval(of: .year, for: now) else { return fallback }
-            return yearInterval
+            return closed(yearInterval)
         default:
             return fallback
         }

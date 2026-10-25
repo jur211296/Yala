@@ -1,10 +1,10 @@
 ---
 id: cashflow-ai-comment-does-not-check-pro
-status: backlog
+status: done
 priority: low
 area: insights, pro
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-25
 source: revisión de Yala IA 2.2 (docs/ai/revision-ia-2-2.md §1)
 ---
 
@@ -20,3 +20,7 @@ free no tiene `insights`): una llamada perdida cada vez que abre las gráficas, 
 ## Qué hay que hacer
 
 `isAIEnabled` exige también `isPro`, como el chip. Test de la condición.
+
+## Cerrado (cola 2.2 · lote 12.5, 2026-10-25)
+
+`isAIEnabled` de `CashFlowChartsSheet` exige también Pro (`CashFlowAICommentGate`): quien dejó de ser Pro ya no llama al gateway al abrir las gráficas, y el chip deja de pintarse encendido sin frase. Tests: `CashFlowAICommentGateTests` (las tres condiciones y el cableado).

@@ -93,8 +93,9 @@ struct CategoriesTabView: View {
     @State private var showUpgradeSheet: Bool = false
     @State private var showInsightsConsentAlert: Bool = false
 
-    // Content mode pill — separa visualizaciones (Gráficas) de tablas (Detalle)
-    @State private var contentMode: DistributionContentMode = .charts
+    // Content mode pill — separa tablas (Detalle) de visualizaciones (Gráficas). Arranca en Detalle: es la lectura útil
+    // al llegar, y las gráficas son exploración (Jürgen, 2026-09-17).
+    @State private var contentMode: DistributionContentMode = .details
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
 
@@ -222,8 +223,10 @@ struct CategoriesTabView: View {
         .modifier(StatisticsFocusHandler(focus: .subcategories) { showSubcategoriesFromLink() })
     }
 
-    /// La gráfica y la lista pasan a subcategorías, como si la persona las hubiera elegido.
+    /// La gráfica y la lista pasan a subcategorías, como si la persona las hubiera elegido. El enlace promete la gráfica,
+    /// así que pasa a Gráficas aunque Distribución arranque en Detalle.
     private func showSubcategoriesFromLink() {
+        contentMode = .charts
         dsWithAnimation(reduceMotion) { chartsCarouselPosition = "subcategory" }
         setListViewManually(.subcategories)
     }
@@ -490,8 +493,8 @@ struct CategoriesTabView: View {
             labelProvider: { $0.label },
             selectedFillColorProvider: { _ in theme.accent }
         )
-        // En el contenedor: los dos segmentos lo heredan, en el orden de `DistributionContentMode` (Gráficas,
-        // Detalle). Lo usa `StatisticsHeroLikePanelUITests` para cambiar de modo sin depender del texto.
+        // En el contenedor: los dos segmentos lo heredan, en el orden de `DistributionContentMode` (Detalle,
+        // Gráficas). Lo usa `StatisticsHeroLikePanelUITests` para cambiar de modo sin depender del texto.
         .accessibilityIdentifier("distribution_content_mode")
     }
 
@@ -1774,9 +1777,10 @@ struct CategoriesTabView: View {
 
 /// Pill selector entre visualizaciones (Gráficas) y tablas (Detalle).
 /// Reusa `L10n.Stats.Insights.modeDetail` para "Detalle" (idéntico concepto cross-tab).
-private enum DistributionContentMode: String, CaseIterable {
-    case charts
+/// El orden de los `case` es el del selector: Detalle a la izquierda, porque es el modo con el que arranca.
+enum DistributionContentMode: String, CaseIterable {
     case details
+    case charts
 
     var label: String {
         switch self {

@@ -464,7 +464,8 @@ final class PanelViewModel {
             ]
         )
         do {
-            let fetched = try context.fetch(transactionsDesc)
+            // Lo que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`RecordPendingDeletion`).
+            let fetched = RecordPendingDeletion.shared.visible(try context.fetch(transactionsDesc))
             if fetched != transactions { transactions = fetched }
         } catch {
             #if DEBUG
@@ -1754,7 +1755,10 @@ final class PanelViewModel {
         // currentInterval from changing on every recalculation, which causes unnecessary re-renders.
         let effectiveInterval: DateInterval
         if selectedPeriod == .allTime {
-            let endOfToday = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)) ?? .now
+            // 23:59:59 de hoy, como `DetailPeriod.dateInterval()`: la medianoche de mañana contaba lo fechado mañana a
+            // las 00:00 (`DateInterval` es cerrado).
+            let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)) ?? .now
+            let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow
             if let firstTxDate = filtered.map(\.date).min() {
                 let start =
                     calendar.date(
@@ -2593,9 +2597,11 @@ final class PanelViewModel {
             // (caso común — evita un fetch redundante).
             let scoreInterval = selectedPeriod.dateInterval(customRange: customDateRange)
             let paidForHealth: [String: [PaidOccurrenceInfo]]
+            // «Este mes» cierra a las 23:59:59 del último día y el mes natural en la medianoche siguiente: el mismo mes.
             if let shared = sharedPaidAmounts,
                let monthInterval = currentMonthInterval,
-               scoreInterval == monthInterval {
+               scoreInterval.start == monthInterval.start,
+               scoreInterval.end == monthInterval.end || scoreInterval.end == monthInterval.end.addingTimeInterval(-1) {
                 paidForHealth = shared
             } else {
                 paidForHealth = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
@@ -2838,10 +2844,15 @@ final class PanelViewModel {
     /// is a future refinement tracked in the epic.
     private func calculateHeroWidget(
         eligibleAccountIDs: Set<PersistentIdentifier>,
-        monthInterval: DateInterval?,
+        monthInterval calendarMonth: DateInterval?,
         periodInterval: DateInterval
     ) {
-        guard let monthInterval else { return }
+        guard let calendarMonth else { return }
+        // El mes natural de `Calendar.dateInterval(of: .month)` acaba en el día 1 del siguiente a las 00:00, y
+        // `DateInterval` es cerrado: las pastillas del mes contaban lo fechado ese día a medianoche. Acaba en 23:59:59.
+        let monthInterval = DateInterval(
+            start: calendarMonth.start,
+            end: max(calendarMonth.start, calendarMonth.end.addingTimeInterval(-1)))
 
         // Mes anterior natural — independiente del selectedPeriod del Panel,
         // el Hero siempre compara contra el mes calendario anterior.

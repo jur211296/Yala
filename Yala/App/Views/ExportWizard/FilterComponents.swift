@@ -141,6 +141,7 @@ struct AmountFilterView: View {
                     .font(DS.Typography.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("filters_amount_currency")
             }
 
             TextField("0.00", text: text)

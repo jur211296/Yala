@@ -131,12 +131,23 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
 
         app.tabBars.buttons.element(boundBy: 1).tap()
         openChip(app, "detail_chip_categorías")
-        assertPanelHero(app, in: "Distribución › categoría")
 
+        // Distribución arranca en Detalle (izquierda) y Gráficas va a su derecha: los dos segmentos heredan el id del
+        // contenedor, en ese orden.
+        let modes = app.buttons.matching(identifier: "distribution_content_mode")
+        XCTAssertTrue(modes.firstMatch.waitForExistence(timeout: 10), "No está el selector Detalle/Gráficas.")
+        XCTAssertEqual(modes.count, 2, "El selector Detalle/Gráficas no tiene dos segmentos.")
+        XCTAssertTrue(modes.element(boundBy: 0).isSelected, "Distribución no arrancó en Detalle.")
         let page: (String) -> XCUIElement = { id in
             app.descendants(matching: .any).matching(identifier: "distribution_page_\(id)").firstMatch
         }
+        XCTAssertFalse(page("category").exists, "Al llegar ya se ven las gráficas: Distribución no arrancó en Detalle.")
+        assertPanelHero(app, in: "Distribución › Detalle")
+
+        modes.element(boundBy: 1).tap()
         XCTAssertTrue(page("category").waitForExistence(timeout: 10), "No está la página de categorías del carrusel.")
+        assertPanelHero(app, in: "Distribución › Gráficas › categoría")
+
         page("category").swipeLeft()
         XCTAssertTrue(waitUntilOnScreen(page("subcategory")), "El carrusel no pasó a subcategorías.")
         assertPanelHero(app, in: "Distribución › subcategoría")
@@ -145,14 +156,8 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         XCTAssertTrue(waitUntilOnScreen(page("tags")), "El carrusel no pasó a etiquetas.")
         assertPanelHero(app, in: "Distribución › etiquetas")
 
-        // Los dos segmentos heredan el id del contenedor, en el orden Gráficas, Detalle.
-        let modes = app.buttons.matching(identifier: "distribution_content_mode")
-        XCTAssertEqual(modes.count, 2, "El selector Gráficas/Detalle no tiene dos segmentos.")
-        modes.element(boundBy: 1).tap()
-        assertPanelHero(app, in: "Distribución › Detalle")
-
         modes.element(boundBy: 0).tap()
-        assertPanelHero(app, in: "Distribución › Gráficas")
+        assertPanelHero(app, in: "Distribución › vuelta a Detalle")
     }
 
     /// Registrar un movimiento desde Distribución cambia la cifra del hero sin salir de la pestaña. Hasta el 2026-10-09 el

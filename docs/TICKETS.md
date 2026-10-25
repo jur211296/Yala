@@ -139,7 +139,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | done | tickets/done/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
-| balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label | backlog | tickets/backlog/balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label.md |
+| balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label | done | tickets/done/balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label.md |
 | balance-chart-voiceover-reads-base-to-monto | backlog | tickets/backlog/balance-chart-voiceover-reads-base-to-monto.md |
 | balance-figure-counts-future-dated-rows-the-curve-never-draws | done | tickets/done/balance-figure-counts-future-dated-rows-the-curve-never-draws.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
@@ -165,7 +165,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
-| cashflow-ai-comment-does-not-check-pro | backlog | tickets/backlog/cashflow-ai-comment-does-not-check-pro.md |
+| cashflow-ai-comment-does-not-check-pro | done | tickets/done/cashflow-ai-comment-does-not-check-pro.md |
 | cashflow-amount-changes-from-two-phones-overwrite-each-other | discarded | tickets/discarded/cashflow-amount-changes-from-two-phones-overwrite-each-other.md |
 | cashflow-line-context-menu-deletes-without-asking | done | tickets/done/cashflow-line-context-menu-deletes-without-asking.md |
 | cashflow-override-synced-to-an-old-version-stays-invisible-after-updating | done | tickets/done/cashflow-override-synced-to-an-old-version-stays-invisible-after-updating.md |
@@ -327,7 +327,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | displaced-migration-leader-keeps-uploading-after-a-takeover | done | tickets/done/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
 | distribucion-recalcula-dos-veces-por-toque-y-sin-debounce | backlog | tickets/backlog/distribucion-recalcula-dos-veces-por-toque-y-sin-debounce.md |
 | distribution-balance-kpi-skips-fx | done | tickets/done/distribution-balance-kpi-skips-fx.md |
-| distribution-default-should-be-detail-not-charts | backlog | tickets/backlog/distribution-default-should-be-detail-not-charts.md |
+| distribution-default-should-be-detail-not-charts | done | tickets/done/distribution-default-should-be-detail-not-charts.md |
 | distribution-pie-totals-styled-differently-per-page | backlog | tickets/backlog/distribution-pie-totals-styled-differently-per-page.md |
 | distribution-sankey-recomputes-on-every-render-with-all-time | backlog | tickets/backlog/distribution-sankey-recomputes-on-every-render-with-all-time.md |
 | distribution-subviews-miss-the-new-panel-hero | done | tickets/done/distribution-subviews-miss-the-new-panel-hero.md |
@@ -340,7 +340,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks | done | tickets/done/drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks.md |
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
 | duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
-| duplicates-mode-rows-dont-say-their-date | backlog | tickets/backlog/duplicates-mode-rows-dont-say-their-date.md |
+| duplicates-mode-rows-dont-say-their-date | done | tickets/done/duplicates-mode-rows-dont-say-their-date.md |
 | edgecases-extreme-minimum-flaky-under-load | done | tickets/done/edgecases-extreme-minimum-flaky-under-load.md |
 | edgecases-minimum-amount-account-chip-never-settles-on-ios-27 | backlog | tickets/backlog/edgecases-minimum-amount-account-chip-never-settles-on-ios-27.md |
 | el-aviso-de-cierre-cita-el-pr-de-otra-sesion | backlog | tickets/backlog/el-aviso-de-cierre-cita-el-pr-de-otra-sesion.md |
@@ -373,7 +373,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | faq-says-long-press-starts-bulk-edit | done | tickets/done/faq-says-long-press-starts-bulk-edit.md |
 | favorite-editor-does-not-know-transfer-favorites | done | tickets/done/favorite-editor-does-not-know-transfer-favorites.md |
 | favorite-transfer-destination-does-not-travel-in-cloud-mode | blocked | tickets/blocked/favorite-transfer-destination-does-not-travel-in-cloud-mode.md |
-| ficha-mx-vida-rates-jump-on-the-last-day | backlog | tickets/backlog/ficha-mx-vida-rates-jump-on-the-last-day.md |
+| ficha-mx-vida-rates-jump-on-the-last-day | done | tickets/done/ficha-mx-vida-rates-jump-on-the-last-day.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
@@ -546,7 +546,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | handover-leaves-the-storage-mode-without-a-session | backlog | tickets/backlog/handover-leaves-the-storage-mode-without-a-session.md |
 | health-score-income-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/health-score-income-sums-stored-amounts-from-other-preferred-currencies.md |
 | hero-estadisticas-stock-vs-flujo-entre-pestanas | done | tickets/done/hero-estadisticas-stock-vs-flujo-entre-pestanas.md |
-| hidden-single-currency-still-filters-the-amount-in-it | backlog | tickets/backlog/hidden-single-currency-still-filters-the-amount-in-it.md |
+| hidden-single-currency-still-filters-the-amount-in-it | done | tickets/done/hidden-single-currency-still-filters-the-amount-in-it.md |
 | history-token-guard-echo-blind-spot | discarded | tickets/discarded/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | done | tickets/done/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
 | home-screen-budgets-widget-ignores-favorites | done | tickets/done/home-screen-budgets-widget-ignores-favorites.md |
@@ -730,7 +730,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
 | pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
-| period-totals-count-a-row-dated-at-tomorrows-midnight | backlog | tickets/backlog/period-totals-count-a-row-dated-at-tomorrows-midnight.md |
+| period-totals-count-a-row-dated-at-tomorrows-midnight | done | tickets/done/period-totals-count-a-row-dated-at-tomorrows-midnight.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
 | personal-cloudkit-cashflow-override-line-declared-as-reference | done | tickets/done/personal-cloudkit-cashflow-override-line-declared-as-reference.md |
@@ -797,7 +797,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | readme-index-lists-files-from-other-worktrees | discarded | tickets/discarded/readme-index-lists-files-from-other-worktrees.md |
 | readme-index-scans-internal-worktrees | discarded | tickets/discarded/readme-index-scans-internal-worktrees.md |
 | rebase-and-cherry-pick-skip-the-attribution-hook | backlog | tickets/backlog/rebase-and-cherry-pick-skip-the-attribution-hook.md |
-| record-pending-deletion-still-counts-outside-records | backlog | tickets/backlog/record-pending-deletion-still-counts-outside-records.md |
+| record-pending-deletion-still-counts-outside-records | done | tickets/done/record-pending-deletion-still-counts-outside-records.md |
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | done | tickets/done/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
@@ -900,7 +900,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
-| scheduled-payment-once-labeled-monthly | qa | tickets/qa/scheduled-payment-once-labeled-monthly.md |
+| scheduled-payment-once-labeled-monthly | done | tickets/done/scheduled-payment-once-labeled-monthly.md |
+| scheduled-payment-pending-deletion-loses-undo-on-a-second-delete | backlog | tickets/backlog/scheduled-payment-pending-deletion-loses-undo-on-a-second-delete.md |
+| panel-pies-ignore-hidden-currency-and-compare-signed-amount | backlog | tickets/backlog/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
+| export-wizard-amount-filter-in-hidden-currency | backlog | tickets/backlog/export-wizard-amount-filter-in-hidden-currency.md |
+| applied-amount-filter-keeps-filtering-after-its-currency-changes | backlog | tickets/backlog/applied-amount-filter-keeps-filtering-after-its-currency-changes.md |
 | scheduled-payment-save-does-nothing-when-a-field-is-missing | done | tickets/done/scheduled-payment-save-does-nothing-when-a-field-is-missing.md |
 | scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | done | tickets/done/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
 | scheduled-payment-start-date-is-ignored-by-the-calendar | backlog | tickets/backlog/scheduled-payment-start-date-is-ignored-by-the-calendar.md |
@@ -1006,7 +1010,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | transaction-save-helper-flake-one-per-suite | discarded | tickets/discarded/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | trends-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/trends-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
-| trends-cards-ignore-an-in-place-amount-edit | backlog | tickets/backlog/trends-cards-ignore-an-in-place-amount-edit.md |
+| trends-cards-ignore-an-in-place-amount-edit | done | tickets/done/trends-cards-ignore-an-in-place-amount-edit.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
 | trends-hero-keeps-the-previous-period-after-changing-it-on-trends | done | tickets/done/trends-hero-keeps-the-previous-period-after-changing-it-on-trends.md |
 | trends-insight-card-v2-bullets | done | tickets/done/trends-insight-card-v2-bullets.md |

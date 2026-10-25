@@ -7060,6 +7060,7 @@
 "filters.l8.typeLivesInShowOnly" = "支出だけ・収入だけを見るには「選んだものだけ」を使います。";
 "filters.l8.amountTitle" = "金額";
 "filters.l8.amountNeedsOneCurrency" = "金額で絞り込むには、上で通貨を1つだけ選んでください。";
+"filters.l8.amountNeedsOneVisibleCurrency" = "金額で絞り込むには、表示する通貨を1つだけにしてください。";
 "filters.l8.allAccounts" = "すべての口座";
 "filters.l8.allCategories" = "すべてのカテゴリー";
 "filters.l8.allTags" = "すべてのタグ";
@@ -7191,6 +7192,7 @@
 "scheduled.l10.delete.title" = "「%@」を削除しますか？";
 "scheduled.l10.delete.keepsRecords" = "記録は削除されません。";
 "scheduled.l10.deleted" = "「%@」を削除しました";
+"records.pendingDeletion.deletedMany" = "%d 件の記録を削除しました";
 "scheduled.l10.editor.moreOptions" = "その他のオプション";
 "scheduled.l10.editor.when" = "いつ";
 "scheduled.l10.editor.optional" = "任意";

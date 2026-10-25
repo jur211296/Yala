@@ -471,7 +471,9 @@ struct RecordsTabView: View {
                                 isSelectionMode: viewModel.isSelectionMode,
                                 isSelected: viewModel.selectedRecordIDs.contains(record.persistentModelID),
                                 onTap: { viewModel.showRecordDetail(record) },
-                                onToggleSelection: { viewModel.toggleSelection(record.persistentModelID) }
+                                onToggleSelection: { viewModel.toggleSelection(record.persistentModelID) },
+                                dateCaption: RecordsDuplicateLogic.rowDateCaption(
+                                    for: record.date, groupDates: group.map(\.date), criteria: viewModel.duplicateCriteria)
                             )
                             .modifier(RecordRowContextMenu(record: record, viewModel: viewModel))
                         }

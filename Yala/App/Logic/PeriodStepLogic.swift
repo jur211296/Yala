@@ -216,8 +216,9 @@ enum PeriodStepLogic {
 
     // MARK: - Helpers
 
-    /// El último instante que cuenta. Los períodos en curso cierran en la medianoche de mañana (`DateInterval` es
-    /// cerrado): para escribirlos, el último día es hoy.
+    /// El último instante que cuenta. Un intervalo que cierra en medianoche (un rango propio; los períodos en curso cierran
+    /// a las 23:59:59 desde el 2026-10-25) no cuenta ese instante (`DateInterval` es cerrado): para escribirlo, el día
+    /// anterior.
     static func displayEnd(of interval: DateInterval, calendar: Calendar) -> Date {
         let end = interval.end
         guard calendar.startOfDay(for: end) == end, end > interval.start else { return end }

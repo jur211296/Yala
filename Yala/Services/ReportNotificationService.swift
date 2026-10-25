@@ -387,7 +387,10 @@ final class ReportNotificationService {
             // R1: If now == startOfDay (exact midnight), use previous full day
             if now <= todayStart {
                 let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart
-                return DateInterval(start: yesterdayStart, end: todayStart)
+                // 23:59:59 de ayer: el filtro es cerrado (`<= end`) y lo fechado hoy a las 00:00 entraba en el informe
+                // de ayer (CLAUDE.md, «Cálculos con fechas»).
+                let yesterdayEnd = calendar.date(byAdding: .second, value: -1, to: todayStart) ?? todayStart
+                return DateInterval(start: yesterdayStart, end: yesterdayEnd)
             }
             return DateInterval(start: todayStart, end: now)
         }

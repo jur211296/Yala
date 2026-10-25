@@ -201,4 +201,21 @@ enum RecordsDuplicateLogic {
         }
         return parts.joined(separator: "|")
     }
+
+    /// La fecha que dice cada fila del modo duplicados: «14 oct 2026» cuando «Fecha» no está entre los criterios y su
+    /// grupo junta días distintos, porque sin ella no se puede decidir si de verdad están repetidos antes de «Quitar
+    /// repetidos». Con «Fecha», o con todo el grupo del mismo día (la cabecera ya lo dice), la fila no la repite (`nil`).
+    /// Con año: un grupo puede cruzar de un año a otro (ticket `duplicates-mode-rows-dont-say-their-date`).
+    static func rowDateCaption(
+        for date: Date,
+        groupDates: [Date],
+        criteria: Criteria,
+        calendar: Calendar = .current,
+        locale: Locale = AppLocale.current
+    ) -> String? {
+        guard !criteria.date, let first = groupDates.first,
+              !groupDates.allSatisfy({ calendar.isDate($0, inSameDayAs: first) })
+        else { return nil }
+        return ScheduledPaymentDateText.medium(date, locale: locale)
+    }
 }

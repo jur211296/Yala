@@ -1128,6 +1128,20 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-undo-notice-seconds <N>`: alarga el aviso con «Deshacer» (y con él el plazo de los borrados que esperan).
+    /// En iOS 27 un XCUITest tarda más de los 5 s reales en borrar un segundo registro, y «dos borrados seguidos» no se
+    /// podía recorrer. Solo cambia CUÁNTO dura, no qué decide nadie.
+    nonisolated static var undoNoticeSeconds: Double? {
+        #if DEBUG
+        guard isActive, let raw = parseValue(after: "-uitest-undo-notice-seconds", from: ProcessInfo.processInfo.arguments),
+              let seconds = Double(raw), seconds > 0
+        else { return nil }
+        return seconds
+        #else
+        return nil
+        #endif
+    }
+
     nonisolated static var deeplinkTarget: String? {
         #if DEBUG
         guard isActive else { return nil }

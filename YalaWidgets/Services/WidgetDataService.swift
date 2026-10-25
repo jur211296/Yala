@@ -748,7 +748,10 @@ enum WidgetPeriod: String, CaseIterable, Codable {
         let calendar = WidgetDataService.widgetConfiguredCalendar()
         let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
-        let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        // 23:59:59 de hoy, como `DetailPeriod.dateInterval()`: con la medianoche de mañana, lo fechado mañana a las 00:00
+        // contaba en el período en curso (`DateInterval` es cerrado).
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        let endOfToday = calendar.date(byAdding: .second, value: -1, to: startOfTomorrow) ?? startOfTomorrow
 
         switch self {
         case .thisWeek:

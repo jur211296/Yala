@@ -7054,6 +7054,7 @@
 "filters.l8.typeLivesInShowOnly" = "To see only expenses or only income, use “Show only”.";
 "filters.l8.amountTitle" = "Amount";
 "filters.l8.amountNeedsOneCurrency" = "To filter by amount, pick a single currency above.";
+"filters.l8.amountNeedsOneVisibleCurrency" = "To filter by amount, leave a single currency showing.";
 "filters.l8.allAccounts" = "All accounts";
 "filters.l8.allCategories" = "All categories";
 "filters.l8.allTags" = "All tags";
@@ -7185,6 +7186,7 @@
 "scheduled.l10.delete.title" = "Delete “%@”?";
 "scheduled.l10.delete.keepsRecords" = "Your records aren’t deleted.";
 "scheduled.l10.deleted" = "You deleted “%@”";
+"records.pendingDeletion.deletedMany" = "You deleted %d records";
 "scheduled.l10.editor.moreOptions" = "More options";
 "scheduled.l10.editor.when" = "When";
 "scheduled.l10.editor.optional" = "Optional";
