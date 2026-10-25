@@ -70,6 +70,13 @@ paths:
   pago y no empujaba nada. Puesto una vuelta del main actor después (`Task { @MainActor in item = … }`), empuja. Con la
   vista ya montada (el caso de presupuestos, L9-5) no hace falta. Lo cazó
   `ScheduledPaymentsLote10UITests#test_reminderTap_opensThatPaymentsDetail` en rojo.
+- **Pasar de un `fullScreenCover` a otro del mismo anchor deja ~0,6 s de negro, y la cura —un solo cover que cambia
+  de contenido— se lleva por delante el `onDismiss` del que desaparece (medido el 2026-10-25, card 4gfj).** UIKit baja
+  uno entero y sube el otro; entre medias se ve lo de debajo. Con un cover y `.transition(.opacity)` sobre el fondo
+  común (pintado DEBAJO de las dos pantallas, o el centro del fundido deja ver el del cover) el salto se funde, pero
+  volver de una pantalla a la otra ya no cierra nada: lo que limpiaba su `onDismiss` tiene que correr también al cambiar
+  el contenido, y el respaldo del `onDismiss` solo si lo último pintado era esa pantalla. Mientras baja, el cover sigue
+  pintando lo último, no lo que dicen los flags apagados. Molde: `WelcomeFlowModifier` + `WelcomeCoverContentLogic`.
 - **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
   contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
   como contenido, sí (`FilterChipView`).
