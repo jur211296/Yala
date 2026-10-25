@@ -1181,6 +1181,8 @@ struct TrendsTabView: View {
                 }
                 .scrollTargetBehavior(.viewAligned)
                 .scrollPosition(id: $accountCarouselPosition)
+                // iPhone Duo cerrado: lo que asoma de la página siguiente se funde contra la barra vertical, solo en el margen.
+                .fadesTowardVerticalBar(fadeWidth: DS.Spacing.lg)
 
                 // Page indicator
                 if accountIDs.count > 1 {
@@ -1246,6 +1248,8 @@ struct TrendsTabView: View {
                 }
                 .scrollTargetBehavior(.viewAligned)
                 .scrollPosition(id: $currencyCarouselPosition)
+                // iPhone Duo cerrado: lo que asoma de la página siguiente se funde contra la barra vertical, solo en el margen.
+                .fadesTowardVerticalBar(fadeWidth: DS.Spacing.lg)
 
                 // Page indicator
                 if currencyCodes.count > 1 {

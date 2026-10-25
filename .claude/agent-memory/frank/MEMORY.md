@@ -38,6 +38,7 @@
 - [Planificar con él es iterar](feedback_planificar_con_el_es_iterar.md) — acepta lo recomendado y vuelve con ideas; re-pregunta «¿bueno?».
 - [Tablero: una tanda a la vez](feedback_tablero_una_tanda_a_la_vez.md) — dos tandas se pisan (409); ajustes en pasada final.
 - [Encargo sin simulador y el gate](feedback_encargo_sin_simulador_y_el_gate.md) — el gate lo necesita: se pregunta; aprobó usarlo solo para el gate, en cola.
+- [Revisión por dispositivo sin saltar](feedback_revision_por_dispositivo_sin_saltar.md) — Duo entero primero; lo del iPhone se apunta y va al final.
 ## Cómo mido y cómo entrego
 - [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte, no `git checkout --`; diff de píxeles con el molde.
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.

@@ -258,6 +258,7 @@ struct TopSubcategoriesWidget: View {
                     }
                     .padding(.horizontal, 1)  // Tiny padding for shadow/clip safety
                 }
+                .fadesTowardVerticalBar()
             }
         }
     }

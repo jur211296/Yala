@@ -60,11 +60,16 @@ final class AppLanguageSettingsReturnUITests: XCTestCase {
 
     /// Vuelve a la lista de Ajustes, la cierra con su X y vuelve a abrirla desde el avatar del Panel: es el botón que
     /// quedaba muerto. La X solo está en la raíz de Ajustes; desde Personalización se vuelve con «Atrás».
+    ///
+    /// «Atrás» es el propio de Personalización, no el del sistema (`BackButton`): hasta el 2026-10-25 salían los dos,
+    /// uno al lado del otro, porque Ajustes volvía a pedir el del sistema por fuera (`ProfileView.paintsOwnBackButton`).
     private func closeSettingsAndReopenFromAvatar(_ app: XCUIApplication) {
         let close = app.buttons.matching(NSPredicate(format: "label IN %@", ["Cerrar", "Close"])).firstMatch
-        let back = app.buttons["BackButton"].firstMatch
+        let back = app.buttons.matching(NSPredicate(format: "label IN %@", ["Atrás", "Back"])).firstMatch
         for _ in 0..<3 where !close.waitForExistence(timeout: 2) {
             XCTAssertTrue(back.waitForExistence(timeout: 5), "Ni la X de Ajustes ni «Atrás» aparecieron.")
+            XCTAssertFalse(app.buttons["BackButton"].exists,
+                           "Personalización enseña también el «‹» del sistema: vuelven a salir dos.")
             back.tap()
         }
         XCTAssertTrue(close.waitForExistence(timeout: 10), "No apareció la X de Ajustes.")

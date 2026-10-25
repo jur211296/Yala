@@ -169,6 +169,7 @@ struct FinancialReportView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .scrollTargetLayout()
                 }
+                .fadesTowardVerticalBar()
                 .scrollTargetBehavior(.viewAligned)
             }
             .padding(.vertical, DS.Spacing.sm)

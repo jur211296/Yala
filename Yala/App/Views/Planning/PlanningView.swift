@@ -154,6 +154,7 @@ struct PlanningView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
         }
+        .fadesTowardVerticalBar()
     }
 
     @ViewBuilder

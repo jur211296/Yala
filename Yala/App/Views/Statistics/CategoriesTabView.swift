@@ -546,6 +546,8 @@ struct CategoriesTabView: View {
             .scrollTargetBehavior(.viewAligned)
             .scrollPosition(id: $chartsCarouselPosition)
             .frame(height: 340)
+            // iPhone Duo cerrado: lo que asoma de la página siguiente se funde contra la barra vertical, solo en el margen.
+            .fadesTowardVerticalBar(fadeWidth: DS.Spacing.lg)
 
             // Page indicator capsule (TX-11) — hide on iPad (multiple charts already visible)
             if !isWide {

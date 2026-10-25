@@ -497,10 +497,31 @@ paths:
   fondo.** Es la regla de Apple (`app-resizability`). Un `ScrollView` horizontal pinta hasta el borde físico aunque su
   página acabe antes: las cuentas y los chips del Panel y las tarjetas del Welcome llegaban por detrás de la barra y los
   widgets no. `scrollViewGlassEdges` lleva `.staysOutOfVerticalBar()`, que recorta el scroll de la página en su propio
-  borde por el lado de la barra; un scroll de página que no use ese helper lo lleva a mano (el Welcome). **No leas el
+  borde por el lado de la barra. **No leas el
   inset de un `GeometryProxy` para esto**: es el del espacio ofrecido y el recorte quedaba 84 pt más adentro (el marco
   del scroll ya acaba en el borde seguro). La alternativa B (la página por debajo del cristal) está en capturas en
   `qa/evidencia-duo-cerrado-20261024/`: tapa «Todo el tiempo», importes y botones.
+- **Un carrusel horizontal no se corta en seco contra la barra: se funde (Jürgen, 2026-10-25).** El tajo recto hacía
+  que la barra pareciera una pieza aparte. Todo `ScrollView(.horizontal)` lleva `.fadesTowardVerticalBar()`: se
+  desvanece en sus últimos 32 pt y acaba justo en el borde de la barra, y solo mientras queda contenido por ver hacia
+  ella. Va **en el carrusel, no en la página**, porque un fundido de página borraría también el borde de lo que no se
+  mueve (la tarjeta de Saldo). Un carrusel de páginas a todo el ancho (`containerRelativeFrame`) lleva
+  `fadeWidth: DS.Spacing.lg`: se funde solo en el margen y la página visible conserva su borde. Lee el borde de la
+  página que publica `staysOutOfVerticalBar`; fuera de una de esas páginas, y sin barra, no hace nada. Un carrusel
+  nuevo lo lleva.
+- **Dos excepciones a la regla A, decididas por Jürgen el 2026-10-25 sobre capturas: `.extendsUnderVerticalBar()`.**
+  La vista ocupa también la columna de la barra y se centra en la pantalla entera. (1) Las pantallas con logo del
+  Welcome (`WelcomeFlowScreen`: Hero y puertas). (2) La lista de Ajustes (`ProfileView`): al desplazar, las filas
+  pasan bajo la hora y la X, y lo eligió viéndolo. Los selectores del Welcome (`WelcomeFormScreen`) **no**: vio las
+  dos y prefirió el ancho seguro, con el «‹» en la barra. Fuera de estas, la regla A sin excepciones: una pantalla
+  nueva que la quiera saltar se pregunta.
+- **El «‹» del Welcome es un botón de barra del sistema** (`welcomeBackButton`, una `NavigationStack` por pantalla):
+  en el iPhone es el círculo de cristal de toda la app y en el Duo cerrado pasa a la barra vertical. Las pantallas de
+  formulario reservan el alto con la barra de navegación, no con un hueco fijo (`WelcomeFormLayout.topInset`).
+- **`.navigationBarBackButtonHidden(_:)` por fuera manda sobre el `swipeBack()` de la pantalla de dentro.** Ajustes
+  lo ponía en `false` para todas sus pantallas y las trece que pintan su propio «‹» enseñaban dos (en la barra vertical
+  del Duo se veían uno encima del otro). `ProfileView.paintsOwnBackButton(_:)` dice cuáles; una pantalla de Ajustes
+  nueva se añade ahí (el `switch` no tiene `default`).
 - **En la barra vertical cabe poco, y lo que no cabe va al menú «···» solo si tiene título**: un botón de solo icono
   que desborda **desaparece**. Medido en el Panel abierto en horizontal (siete pestañas: cabe un botón y «···»):
   Filtros, que era un `Image`, se esfumó. ⇒ un botón que pueda desbordar lleva `Label(título, systemImage:)` (en una

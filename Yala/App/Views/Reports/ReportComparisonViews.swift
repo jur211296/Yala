@@ -38,6 +38,7 @@ struct ReportComparisonHeader: View {
                         chip(.year, title: yearAgoTitle)
                     }
                 }
+                .fadesTowardVerticalBar()
                 .scrollClipDisabled()
             }
         }

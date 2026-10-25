@@ -236,6 +236,7 @@ struct SearchContentView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.sm)
         }
+        .fadesTowardVerticalBar()
     }
 
     private func filterChip(for filter: SearchFilter) -> some View {

@@ -371,6 +371,7 @@ struct FavoriteEditorView: View {
             }
             .padding(.horizontal, DS.Spacing.xl)
         }
+        .fadesTowardVerticalBar()
     }
 
     /// Origen y destino, con los mismos colores e iconos que el formulario de registro (`NewTransactionView`). Sin

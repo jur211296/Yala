@@ -37,6 +37,8 @@ struct PanelAccountChipsRow: View {
             .padding(.vertical, DS.Spacing.xxs)
         }
         .scrollClipDisabled()
+        // iPhone Duo cerrado: se funde contra la barra vertical en vez de cortarse en seco.
+        .fadesTowardVerticalBar()
     }
 
     // MARK: - Chip de cuenta

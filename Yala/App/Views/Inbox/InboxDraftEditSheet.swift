@@ -658,6 +658,7 @@ struct InboxDraftEditSheet: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
         }
+        .fadesTowardVerticalBar()
     }
 
     private func tagChip(for tag: Tag) -> some View {

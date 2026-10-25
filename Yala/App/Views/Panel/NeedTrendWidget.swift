@@ -908,6 +908,7 @@ struct NeedLegendView: View {
                 }
             }
         }
+        .fadesTowardVerticalBar()
     }
 }
 

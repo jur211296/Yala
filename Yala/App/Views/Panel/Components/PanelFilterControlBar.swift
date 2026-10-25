@@ -288,6 +288,7 @@ struct PanelFilterControlBar: View {
                 }
                 .contentMargins(.horizontal, DS.Spacing.md, for: .scrollContent)
                 .scrollClipDisabled()
+                .fadesTowardVerticalBar()
             } // PanelSection
         }
     }
