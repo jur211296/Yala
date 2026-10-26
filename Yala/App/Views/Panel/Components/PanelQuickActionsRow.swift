@@ -42,6 +42,12 @@ struct PanelQuickActionsRow: View {
     let onImageTap: () -> Void
     let onChatTap: () -> Void
 
+    /// Prefijo de los ids de XCUITest. La misma fila va bajo el hero de Estadísticas (`stats`, card kzhe): con las seis
+    /// páginas montadas a la vez, dos `panel_action_new` en el árbol harían ambiguo el toque.
+    var identifierPrefix: String = "panel"
+    /// El tour Pro señala la fila del Panel; en otra página sus anclas competirían con las del Panel.
+    var marksTourAnchors: Bool = true
+
     @Environment(\.yalaTheme) private var theme
 
     /// 44 pt es el mínimo táctil de las HIG. No bajar aunque la fila apriete:
@@ -106,7 +112,7 @@ struct PanelQuickActionsRow: View {
                     icon: "plus",
                     isPrimary: true,
                     isLocked: false,
-                    identifier: "panel_action_new",
+                    identifier: "\(identifierPrefix)_action_new",
                     action: onManualTap
                 )
                 // Voz y foto llevan su palabra DEBAJO del icono, dentro del mismo
@@ -123,7 +129,7 @@ struct PanelQuickActionsRow: View {
                         caption: L10n.Panel.voiceShort,
                         icon: "waveform",
                         isLocked: isVoiceLocked,
-                        identifier: "panel_action_voice",
+                        identifier: "\(identifierPrefix)_action_voice",
                         action: onVoiceTap
                     )
                     pill(
@@ -131,11 +137,11 @@ struct PanelQuickActionsRow: View {
                         caption: L10n.Panel.photoShort,
                         icon: "photo",
                         isLocked: isImageLocked,
-                        identifier: "panel_action_image",
+                        identifier: "\(identifierPrefix)_action_image",
                         action: onImageTap
                     )
                 }
-                .coachMarkAnchor(ProTourSteps.panelVoiceImageAnchor)
+                .tourAnchor(ProTourSteps.panelVoiceImageAnchor, isEnabled: marksTourAnchors)
                 if isChatVisible {
                     // UX 2.2 · L14-5 (variante 3, Jürgen 2026-10-15): la píldora de cristal de siempre, ahora con el
                     // nombre de la función, «Yala IA» (antes decía solo «IA»), y el dorado SÓLIDO en borde, icono y
@@ -147,10 +153,10 @@ struct PanelQuickActionsRow: View {
                         isLocked: isChatLocked,
                         isGold: true,
                         compactPadding: true,
-                        identifier: "panel_action_ai",
+                        identifier: "\(identifierPrefix)_action_ai",
                         action: onChatTap
                     )
-                    .coachMarkAnchor(ProTourSteps.panelAssistantAnchor)
+                    .tourAnchor(ProTourSteps.panelAssistantAnchor, isEnabled: marksTourAnchors)
                 }
             }
         }
@@ -158,7 +164,7 @@ struct PanelQuickActionsRow: View {
         .opacity(canCreateRecords ? 1 : DS.Opacity.disabled)
         .disabled(!canCreateRecords)
         .accessibilityLabel(L10n.Accessibility.newRecord)
-        .accessibilityIdentifier("panel_quick_actions")
+        .accessibilityIdentifier("\(identifierPrefix)_quick_actions")
     }
 
     // MARK: - Píldora
@@ -267,6 +273,18 @@ struct PanelQuickActionsRow: View {
         if isPrimary { return AnyShapeStyle(theme.onAccent) }
         if usaDorado { return AnyShapeStyle(Color.proGoldOnCard) }
         return AnyShapeStyle(Color.primary)
+    }
+}
+
+private extension View {
+    /// `coachMarkAnchor` solo donde la fila es la del Panel: fuera de él, un ancla con el mismo id sobraría.
+    @ViewBuilder
+    func tourAnchor(_ id: String, isEnabled: Bool) -> some View {
+        if isEnabled {
+            coachMarkAnchor(id)
+        } else {
+            self
+        }
     }
 }
 

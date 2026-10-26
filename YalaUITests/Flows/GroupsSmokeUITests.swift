@@ -87,17 +87,13 @@ final class GroupsSmokeUITests: XCTestCase {
         return app
     }
 
-    /// groups-form: el FAB despliega el menú y "Nuevo grupo" abre el formulario de crear grupo.
-    /// (Con ≥1 grupo elegible el FAB es expandible; el seed `grupos` cumple esa condición.)
+    /// groups-form: «Nuevo grupo» de arriba abre el formulario de crear grupo.
     func test_groupFormOpens() {
         let app = launchOnGroupsWithSession()
 
-        let fab = app.buttons["groups_fab_new"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
-        fab.tap()
-
-        let newGroup = app.buttons["groups_fab_new_group"]
-        XCTAssertTrue(newGroup.waitForExistence(timeout: 5), "No apareció la opción 'Nuevo grupo' del FAB.")
+        // Desde la card kzhe «Nuevo grupo» está arriba, bajo el resumen; el flotante solo sale al bajar.
+        let newGroup = app.buttons["groups_action_new_group"]
+        XCTAssertTrue(newGroup.waitForExistence(timeout: 10), "No apareció «Nuevo grupo» arriba en Grupos.")
         newGroup.tap()
 
         XCTAssertTrue(
@@ -122,12 +118,9 @@ final class GroupsSmokeUITests: XCTestCase {
     func test_groupFormCurrencyRowOpensSelector() {
         let app = launchOnGroupsWithSession()
 
-        let fab = app.buttons["groups_fab_new"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
-        fab.tap()
-
-        let newGroup = app.buttons["groups_fab_new_group"]
-        XCTAssertTrue(newGroup.waitForExistence(timeout: 5), "No apareció la opción 'Nuevo grupo' del FAB.")
+        // Desde la card kzhe «Nuevo grupo» está arriba, bajo el resumen; el flotante solo sale al bajar.
+        let newGroup = app.buttons["groups_action_new_group"]
+        XCTAssertTrue(newGroup.waitForExistence(timeout: 10), "No apareció «Nuevo grupo» arriba en Grupos.")
         newGroup.tap()
 
         XCTAssertTrue(
@@ -160,17 +153,14 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
-    /// groups-expense-form: desde el tab, FAB → "Nuevo gasto" abre el composer con el chip de
+    /// groups-expense-form: desde el tab, «Nuevo gasto» de arriba abre el composer con el chip de
     /// grupo editable (2 grupos en el seed) y el cambio de grupo desde el selector.
     func test_groupExpenseFromTabFAB() {
         let app = launchOnGroups()
 
-        let fab = app.buttons["groups_fab_new"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
-        fab.tap()
-
-        let newExpense = app.buttons["groups_fab_new_expense"]
-        XCTAssertTrue(newExpense.waitForExistence(timeout: 5), "No apareció la opción 'Nuevo gasto' del FAB.")
+        // Desde la card kzhe «Nuevo gasto» está arriba, bajo el resumen; el flotante solo sale al bajar.
+        let newExpense = app.buttons["groups_action_new_expense"]
+        XCTAssertTrue(newExpense.waitForExistence(timeout: 10), "No apareció «Nuevo gasto» arriba en Grupos.")
         newExpense.tap()
 
         XCTAssertTrue(

@@ -45,12 +45,10 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         XCTAssertTrue(statsTab.waitForExistence(timeout: 10), "No apareció el tab Estadísticas.")
         statsTab.tap()
 
-        let fabMenu = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fabMenu.waitForExistence(timeout: 10), "Falta el «+» de Estadísticas (fab_new_transaction).")
-        fabMenu.tap()
-        let manual = app.buttons["fab_manual"]
-        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del «+» (fab_manual).")
-        manual.tap()
+        // Desde la card kzhe «Nuevo registro» está arriba, bajo el hero, como en el Panel.
+        let newRecord = app.buttons["stats_action_new"]
+        XCTAssertTrue(newRecord.waitForExistence(timeout: 10), "Falta «Nuevo registro» arriba en Estadísticas (stats_action_new).")
+        newRecord.tap()
 
         let amountField = app.textFields["new_transaction_amount"]
         XCTAssertTrue(amountField.waitForExistence(timeout: 10), "No se abrió Nuevo registro (new_transaction_amount).")

@@ -63,10 +63,10 @@ final class DeeplinkRoutingUITests: XCTestCase {
         app.launchForUITest(pro: true, deeplinkURL: "yaladev://planning/scheduled-payments")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        let paymentsFab = app.descendants(matching: .any)["scheduled_payments_create_fab"]
+        let paymentsFab = app.descendants(matching: .any)["scheduled_payments_create_button"]
         XCTAssertTrue(paymentsFab.waitForExistence(timeout: 15),
                       "El enlace del widget de pagos no abrió Pagos planificados.")
-        XCTAssertFalse(app.descendants(matching: .any)["budgets_create_fab"].exists,
+        XCTAssertFalse(app.descendants(matching: .any)["budgets_create_button"].exists,
                        "El enlace del widget de pagos dejó Presupuestos delante.")
     }
 }

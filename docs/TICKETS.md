@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1070)
+## Index (1071)
 
 | id | status | path |
 |---|---|---|
@@ -809,6 +809,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | records-delete-uitest-counts-only-visible-rows | backlog | tickets/backlog/records-delete-uitest-counts-only-visible-rows.md |
 | records-lote8-uitest-expects-the-old-change-category-title | backlog | tickets/backlog/records-lote8-uitest-expects-the-old-change-category-title.md |
 | records-orphaned-by-earlier-account-deletions-stay-invisible | done | tickets/done/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
+| records-page-keeps-the-fixed-floating-button | backlog | tickets/backlog/records-page-keeps-the-fixed-floating-button.md |
 | records-standalone-amount-discrepancy | done | tickets/done/records-standalone-amount-discrepancy.md |
 | records-summary-approximate-mark-fails-only-alongside-group-suites | backlog | tickets/backlog/records-summary-approximate-mark-fails-only-alongside-group-suites.md |
 | records-summary-chips-hide-their-amount-from-voiceover | backlog | tickets/backlog/records-summary-chips-hide-their-amount-from-voiceover.md |

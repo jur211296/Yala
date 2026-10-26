@@ -57,6 +57,9 @@ struct RecordsTabView: View {
                     }
                 } else {
                     heroSummary
+                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). En modo
+                    // duplicados no: ahí lo que se hace es revisar, no apuntar.
+                    StatsQuickActionsSlot()
                 }
 
                 filterBarPanel

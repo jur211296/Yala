@@ -29,6 +29,9 @@ struct DetailContainerView: View {
 
     /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
     @State private var fabShortContainer = false
+    /// Yala IA y «+» flotantes solo cuando el scroll se lleva la fila de acciones del hero (card kzhe, el patrón del
+    /// Panel). Lo escribe la fila de cada subpestaña (`StatsQuickActionsSlot`).
+    @State private var showFloatingActions = false
 
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel: RecordsViewModel
@@ -88,6 +91,65 @@ struct DetailContainerView: View {
     /// Check if voice input can be used (requires accounts and subcategories)
     private var canUseVoiceInput: Bool {
         dataViewModel.canUseVoiceInput
+    }
+
+    // MARK: - Acciones de arriba (card kzhe)
+
+    /// Lo que la fila del hero de cada subpestaña necesita. Mismos gates que el botón flotante, decididos aquí: la
+    /// fila solo pinta y llama.
+    private var statsQuickActions: StatsQuickActions {
+        StatsQuickActions(
+            canCreateRecords: canUseVoiceInput,
+            isVoiceLocked: isVoiceLocked,
+            isImageLocked: isImageLocked,
+            isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+            isChatVisible: appPreferences.chatFABVisible,
+            onManualTap: { recordsViewModel.showNewTransaction = true },
+            onVoiceTap: { startAIEntry(.voice) },
+            onImageTap: { startAIEntry(.image) },
+            onChatTap: { startChat() },
+            showsFloating: $showFloatingActions
+        )
+    }
+
+    /// Voz y foto desde la fila: Pro → permiso de IA → la entrada. El mismo orden que `FABStackView` y que
+    /// `PanelView.startAIEntry`; el permiso lo pide el `aiConsentAlert` de esta vista.
+    private func startAIEntry(_ input: PendingAIInput) {
+        switch input {
+        case .voice where isVoiceLocked:
+            showUpgradeForVoice = true
+            return
+        case .image where isImageLocked:
+            showUpgradeForImage = true
+            return
+        default:
+            break
+        }
+        guard appPreferences.aiDataConsentAccepted else {
+            pendingAIInput = input
+            showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: showVoiceRecording = true
+        case .image: showImageSelection = true
+        }
+    }
+
+    /// Yala IA: Pro → presentación, permiso o chat (`YalaAIOnboardingLogic`), como el flotante.
+    private func startChat() {
+        guard FeatureGateService.shared.canAccess(.chatAssistant) else {
+            showUpgradeForChat = true
+            return
+        }
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: showYalaAIOnboarding = true
+        case .chat:       showChatSheet = true
+        case .consent:    showChatConsentAlert = true
+        }
     }
 
     // MARK: - Initialization
@@ -191,6 +253,8 @@ struct DetailContainerView: View {
                 if selectedTab != newValue { selectedTab = newValue }
             }
             .onChange(of: selectedTab) { _, newTab in
+                // Cada subpestaña monta su scroll desde arriba, con su fila a la vista.
+                showFloatingActions = false
                 if newTab != .records {
                     recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
                 }
@@ -258,6 +322,7 @@ struct DetailContainerView: View {
                     .padding(.top, DS.Spacing.xs)
 
                 tabContent
+                    .environment(\.statsQuickActions, statsQuickActions)
             }
             .navigationChipsInset {
                 navigationChipsBar
@@ -266,7 +331,9 @@ struct DetailContainerView: View {
             // Yala IA y «+» en las cuatro pestañas, no solo en Registros: en el Panel «Nuevo registro» está siempre a
             // mano (la fila del hero o, al bajar, estos mismos flotantes), y Estadísticas lleva ya su hero
             // (`HeroHeader`). Decisión del 2026-10-03, ticket `distribution-subviews-miss-the-new-panel-hero`.
-            if !recordsViewModel.isSelectionMode && !recordPaneCoversList {
+            // Desde la card kzhe, solo cuando el scroll se lleva la fila de acciones del hero: arriba la acción ya está a
+            // la vista y los flotantes tapaban la primera tarjeta.
+            if showFloatingActions && !recordsViewModel.isSelectionMode && !recordPaneCoversList {
                 VStack {
                     Spacer()
                     HStack {

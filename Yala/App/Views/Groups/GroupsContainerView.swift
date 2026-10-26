@@ -26,6 +26,8 @@ struct GroupsContainerView: View {
     // MARK: - State
 
     @State private var viewModel = GroupsViewModel()
+    /// El «+» flotante, solo cuando el scroll se lleva los botones de arriba (card kzhe).
+    @State private var showFloatingActions = false
     @State private var isPresentingSettings = false
     @State private var isPresentingGroupsSettings = false
     @Environment(AppPreferences.self) private var appPreferences
@@ -142,6 +144,10 @@ struct GroupsContainerView: View {
                                 }
                             }
 
+                            // La acción principal arriba, bajo el resumen, como en el Panel; el flotante solo al bajar
+                            // (card kzhe).
+                            topActions
+
                             // Nudge banner
                             if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
                                 GroupNudgeBanner(
@@ -219,9 +225,11 @@ struct GroupsContainerView: View {
                     }
                 }
 
-                // FAB — new group
-                if !viewModel.activeGroups.isEmpty || !viewModel.archivedGroups.isEmpty {
+                // FAB — new group. Solo con grupos activos y cuando el scroll se lleva los botones de arriba (card kzhe).
+                // Con solo archivados no: esa pantalla no se desplaza y su tarjeta ya ofrece crear el grupo.
+                if !viewModel.activeGroups.isEmpty && showFloatingActions {
                     newGroupFAB
+                        .transition(.opacity)
                 }
             }
             .safeAreaInset(edge: .top) { joinIntentBanner }
@@ -1125,6 +1133,43 @@ struct GroupsContainerView: View {
         RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))
     }
 
+    // MARK: - Acciones de arriba (card kzhe)
+
+    /// Bajo el resumen. Con algún grupo donde apuntar, «Nuevo gasto» es la principal —es lo que más se hace aquí— y
+    /// «Nuevo grupo» va al lado en tarjeta; sin ninguno, solo «Nuevo grupo». Las mismas dos acciones que el flotante.
+    private var topActions: some View {
+        let canAddExpense = !viewModel.eligibleGroupsForExpense().isEmpty
+        return HStack(spacing: DS.Spacing.sm) {
+            if canAddExpense {
+                TopPrimaryActionPill(
+                    title: L10n.Groups.Expense.newExpense,
+                    systemImage: "square.and.pencil",
+                    accessibilityIdentifier: "groups_action_new_expense",
+                    action: startNewExpense
+                )
+            }
+            TopPrimaryActionPill(
+                title: L10n.Groups.newGroup,
+                systemImage: "person.2.fill",
+                isPrimary: !canAddExpense,
+                accessibilityIdentifier: "groups_action_new_group"
+            ) {
+                Task { await requestCreateGroup() }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, DS.Spacing.lg)
+        .revealsFloatingActionWhenScrolledAway($showFloatingActions)
+    }
+
+    /// «Nuevo gasto», de arriba o del flotante: el composer con los grupos donde se puede apuntar.
+    private func startNewExpense() {
+        let eligibles = viewModel.eligibleGroupsForExpense()
+        if let first = eligibles.first {
+            expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
+        }
+    }
+
     // MARK: - FAB
 
     private var newGroupFAB: some View {
@@ -1172,10 +1217,7 @@ struct GroupsContainerView: View {
                         color: .hotPink,
                         accessibilityIdentifier: "groups_fab_new_expense"
                     ) {
-                        let eligibles = viewModel.eligibleGroupsForExpense()
-                        if let first = eligibles.first {
-                            expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
-                        }
+                        startNewExpense()
                     }
                 ],
                 mainAccessibilityLabel: L10n.Action.add,

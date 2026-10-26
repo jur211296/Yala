@@ -3,7 +3,7 @@
 //  YalaUITests
 //
 //  El hero de Estadísticas es el del Panel en las cuatro pestañas y en todas las subvistas de Distribución, y lleva
-//  los mismos flotantes (Yala IA y «+»). Ticket `distribution-subviews-miss-the-new-panel-hero`, decisión de Jürgen
+//  la misma fila de acciones debajo (card kzhe; antes, los flotantes fijos). Ticket `distribution-subviews-miss-the-new-panel-hero`, decisión de Jürgen
 //  del 2026-10-03.
 //
 //  Qué distingue el hero del Panel del de antes, en una medida: el rótulo de la cifra («Neto del período», «Saldo de
@@ -32,12 +32,13 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
             "\(place): el rótulo del hero (\(caption.frame)) no está a la izquierda como en el Panel: volvió la "
                 + "cabecera centrada.",
             file: file, line: line)
+        // Desde la card kzhe, como en el Panel: la fila de acciones bajo el hero, y los flotantes solo al bajar.
         XCTAssertTrue(
-            app.buttons["fab_new_transaction"].waitForExistence(timeout: 5),
-            "\(place): falta «+» (fab_new_transaction), que en el Panel está siempre a mano.", file: file, line: line)
+            app.buttons["stats_action_new"].waitForExistence(timeout: 5),
+            "\(place): falta «Nuevo registro» (stats_action_new) bajo el hero, como en el Panel.", file: file, line: line)
         XCTAssertTrue(
-            app.buttons["fab_chat"].exists,
-            "\(place): falta Yala IA (fab_chat) junto a «+».", file: file, line: line)
+            app.buttons["stats_action_ai"].exists,
+            "\(place): falta Yala IA (stats_action_ai) en la fila de acciones.", file: file, line: line)
     }
 
     /// El hero queda a la misma distancia de los chips que el contenido de Planificación o del detalle de grupo, el aire
@@ -176,13 +177,10 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
         XCTAssertTrue(heroAmount.waitForExistence(timeout: 15), "No se ve la cifra del hero de Distribución.")
         let before = heroAmount.label
 
-        let fab = app.buttons["fab_new_transaction"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "Falta «+» en Distribución.")
-        XCTAssertTrue(fab.waitForHittable(timeout: 5), "«+» no es alcanzable en Distribución.")
-        fab.tap()
-        let manual = app.buttons["fab_manual"]
-        XCTAssertTrue(manual.waitForExistence(timeout: 5), "No se expandió el menú del «+» (fab_manual).")
-        manual.tap()
+        let newRecord = app.buttons["stats_action_new"]
+        XCTAssertTrue(newRecord.waitForExistence(timeout: 5), "Falta «Nuevo registro» en Distribución.")
+        XCTAssertTrue(newRecord.waitForHittable(timeout: 5), "«Nuevo registro» no es alcanzable en Distribución.")
+        newRecord.tap()
 
         let amountField = app.textFields["new_transaction_amount"]
         XCTAssertTrue(amountField.waitForExistence(timeout: 5), "No apareció new_transaction_amount.")

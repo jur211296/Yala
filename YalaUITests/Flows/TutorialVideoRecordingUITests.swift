@@ -367,7 +367,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
         pause(0.8)
         openPlanning(app, chip: "budgets")
         pause(1.5)
-        tap(app.buttons["budgets_create_fab"], "el +")
+        tap(app.buttons["budgets_create_button"], "el +")
         pause(2)
         mark("end")
     }
@@ -375,7 +375,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
     func test_rec_createBudgets_step1() {
         let app = launch()
         openPlanning(app, chip: "budgets")
-        tap(app.buttons["budgets_create_fab"], "el +")
+        tap(app.buttons["budgets_create_button"], "el +")
         pause(1.2)
         mark("start")
         type(app.textFields["budget_name_field"], "Comida")
@@ -392,7 +392,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
     func test_rec_createBudgets_step2() {
         let app = launch()
         openPlanning(app, chip: "budgets")
-        tap(app.buttons["budgets_create_fab"], "el +")
+        tap(app.buttons["budgets_create_button"], "el +")
         pause(1.2)
         let toggle = app.switches["budget_show_in_widget_toggle"]
         var tries = 0
@@ -425,7 +425,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
         pause(0.8)
         openPlanning(app, chip: "scheduledPayments")
         pause(1.5)
-        tap(app.buttons["scheduled_payments_create_fab"], "el +")
+        tap(app.buttons["scheduled_payments_create_button"], "el +")
         pause(2)
         mark("end")
     }
@@ -433,7 +433,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
     func test_rec_createScheduledPayments_step1() {
         let app = launch()
         openPlanning(app, chip: "scheduledPayments")
-        tap(app.buttons["scheduled_payments_create_fab"], "el +")
+        tap(app.buttons["scheduled_payments_create_button"], "el +")
         pause(1.2)
         mark("start")
         type(app.textFields["scheduled_name_field"], "Alquiler")
@@ -451,7 +451,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
     func test_rec_createScheduledPayments_step2() {
         let app = launch()
         openPlanning(app, chip: "scheduledPayments")
-        tap(app.buttons["scheduled_payments_create_fab"], "el +")
+        tap(app.buttons["scheduled_payments_create_button"], "el +")
         pause(1.2)
         mark("start")
         pause(0.6)
@@ -465,7 +465,7 @@ final class TutorialVideoRecordingUITests: XCTestCase {
     func test_rec_createScheduledPayments_step3() {
         let app = launch()
         openPlanning(app, chip: "scheduledPayments")
-        tap(app.buttons["scheduled_payments_create_fab"], "el +")
+        tap(app.buttons["scheduled_payments_create_button"], "el +")
         pause(1.2)
         // El interruptor vive dentro de «Más opciones».
         let more = app.buttons["scheduled_more_options"]

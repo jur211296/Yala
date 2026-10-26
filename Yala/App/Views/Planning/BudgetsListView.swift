@@ -23,6 +23,8 @@ struct BudgetsListView: View {
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
     @State private var showUpgradeSheet = false
+    /// El «+» flotante, solo cuando el scroll se lleva «Nuevo presupuesto» de arriba (card kzhe).
+    @State private var showFloatingNew = false
     /// Sube al cerrarse el editor: es cuando se pregunta «¿era de prueba?» (UX 2.2 · L5-5).
     @State private var budgetEditorClosedToken = 0
 
@@ -71,6 +73,17 @@ struct BudgetsListView: View {
                         .padding(.horizontal, DS.Spacing.lg)
                     }
 
+                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
+                    TopPrimaryActionPill(
+                        title: L10n.Accessibility.newBudget,
+                        systemImage: "plus",
+                        accessibilityIdentifier: "budgets_create_button",
+                        action: createBudget
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .revealsFloatingActionWhenScrolledAway($showFloatingNew)
+
                     listContent
                 }
                 .frame(maxWidth: .infinity)
@@ -78,8 +91,11 @@ struct BudgetsListView: View {
             }
             .scrollViewGlassEdges()
 
-            // FAB button for new budget
-            newBudgetFAB
+            // FAB button for new budget: solo cuando el scroll se lleva el botón de arriba (card kzhe).
+            if showFloatingNew {
+                newBudgetFAB
+                    .transition(.opacity)
+            }
         }
         .yalaScreenBackground(.panel)
         .navigationDestination(for: BudgetNavigationID.self) { navID in
@@ -237,6 +253,16 @@ struct BudgetsListView: View {
 
     // MARK: - New Budget FAB
 
+    /// «Nuevo presupuesto», del botón de arriba o del flotante: el editor, o el paywall si se llegó al límite.
+    private func createBudget() {
+        if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
+            viewModel.editingBudget = nil
+            viewModel.showBudgetEditor = true
+        } else {
+            showUpgradeSheet = true
+        }
+    }
+
     private var newBudgetFAB: some View {
         VStack {
             Spacer()
@@ -249,12 +275,7 @@ struct BudgetsListView: View {
                     accessibilityLabel: L10n.Accessibility.newBudget,
                     accessibilityIdentifier: "budgets_create_fab"
                 ) {
-                    if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
-                        viewModel.editingBudget = nil
-                        viewModel.showBudgetEditor = true
-                    } else {
-                        showUpgradeSheet = true
-                    }
+                    createBudget()
                 }
                 .dsFloatingShadow()
             }
