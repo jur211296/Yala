@@ -19,10 +19,13 @@ enum FilterChipIndicator {
 /// Reusable filter chip showing applied filter with clear action
 struct FilterChipView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
 
     let text: String
     var indicator: FilterChipIndicator = .none
-    var isExcludeMode: Bool = false
+    /// Qué dice la cápsula de un filtro de entidad: «Solo X» (lila) o «Sin X» (contorno rojo). `.none` para los filtros
+    /// que no tienen «ocultar» (tipo, importe, nota, fecha): el texto tal cual.
+    var membership: EntityFilterMembership = .none
     /// Tocar la cápsula (fuera de la X) abre la hoja de Filtros del host (UX 2.2 · L8-17). `nil`: no hace nada, como
     /// antes; la X sigue quitando el filtro con su propia área de toque.
     var onOpen: (() -> Void)? = nil
@@ -34,7 +37,24 @@ struct FilterChipView: View {
         isExcluded ? L10n.UXL8C.Chip.excluded(text) : text
     }
 
-    private var displayText: String { Self.displayText(text, isExcluded: isExcludeMode) }
+    /// Con incluidos y ocultos a la vez en la barra (2026-10-25), cada cápsula dice cuál es: «Solo Comida», «Sin Uber».
+    static func displayText(_ text: String, membership: EntityFilterMembership) -> String {
+        switch membership {
+        case .none: return text
+        case .included: return L10n.SegmentFilter.chipIncluded(text)
+        case .excluded: return L10n.UXL8C.Chip.excluded(text)
+        }
+    }
+
+    private var displayText: String { Self.displayText(text, membership: membership) }
+
+    private var accessibilityStateValue: String {
+        switch membership {
+        case .none: return ""
+        case .included: return L10n.SegmentFilter.chipIncludedValue
+        case .excluded: return L10n.UXL8C.Chip.excludedValue
+        }
+    }
 
     var body: some View {
         HStack(spacing: DS.Chip.spacing) {
@@ -45,14 +65,14 @@ struct FilterChipView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(displayText)
-                .accessibilityValue(isExcludeMode ? L10n.UXL8C.Chip.excludedValue : "")
+                .accessibilityValue(accessibilityStateValue)
                 .accessibilityHint(L10n.UXL8C.Chip.openHint)
                 .accessibilityIdentifier("applied_filter_chip")
             } else {
                 chipLabel
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel(displayText)
-                    .accessibilityValue(isExcludeMode ? L10n.UXL8C.Chip.excludedValue : "")
+                    .accessibilityValue(accessibilityStateValue)
             }
 
             Button {
@@ -69,13 +89,28 @@ struct FilterChipView: View {
         }
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
-        // Lo oculto lleva contorno rojo: el texto sigue en `.primary`, que sí se lee sobre el cristal. Va ANTES del
-        // `glassEffect`, como contenido: colgado después, el cristal lo tapaba y no se veía (medido en el simulador).
+        // Lo oculto lleva contorno rojo y lo de «ver solo», relleno lila (propuesta A, 2026-10-25): el texto sigue en
+        // `.primary`, que sí se lee sobre el cristal. Va ANTES del `glassEffect`, como contenido: colgado después, el
+        // cristal lo tapaba y no se veía (medido en el simulador).
+        .background {
+            if membership == .included {
+                Capsule()
+                    .fill(theme.accent.opacity(0.18))
+                    .accessibilityHidden(true)
+            }
+        }
         .overlay {
-            if isExcludeMode {
+            switch membership {
+            case .excluded:
                 Capsule()
                     .strokeBorder(DS.Semantic.errorForeground, lineWidth: 1.5)
                     .accessibilityHidden(true)
+            case .included:
+                Capsule()
+                    .strokeBorder(theme.accent.opacity(0.55), lineWidth: 1)
+                    .accessibilityHidden(true)
+            case .none:
+                EmptyView()
             }
         }
         .glassEffect(.regular.interactive(), in: .capsule)
@@ -101,10 +136,10 @@ struct FilterChipView: View {
         return copy
     }
 
-    /// Fluent API to set exclude mode on any chip
-    func excludeMode(_ isExclude: Bool) -> FilterChipView {
+    /// Fluent API: «Solo X» o «Sin X» en una cápsula de entidad.
+    func filterMembership(_ membership: EntityFilterMembership) -> FilterChipView {
         var copy = self
-        copy.isExcludeMode = isExclude
+        copy.membership = membership
         return copy
     }
 
@@ -295,21 +330,6 @@ extension FilterChipView {
         self.onClear = onClear
     }
 
-    /// Simple text chip with exclude mode support
-    init(text: String, isExcludeMode: Bool, onClear: @escaping () -> Void) {
-        self.text = text
-        self.indicator = .none
-        self.isExcludeMode = isExcludeMode
-        self.onClear = onClear
-    }
-
-    /// Transaction nature chip with exclude mode support
-    init(transactionNature: TransactionNature, isExcludeMode: Bool, onClear: @escaping () -> Void) {
-        self.text = transactionNature.displayName
-        self.indicator = .colorDot(transactionNature.color)
-        self.isExcludeMode = isExcludeMode
-        self.onClear = onClear
-    }
 }
 
 // MARK: - Preview

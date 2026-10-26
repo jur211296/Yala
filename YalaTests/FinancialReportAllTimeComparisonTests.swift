@@ -51,7 +51,7 @@ struct FinancialReportAllTimeComparisonTests {
         let saved = (
             session.selectedAccountIDs, session.selectedCategoryIDs, session.selectedSubcategoryIDs,
             session.selectedNeeds, session.selectedTransactionNatures, session.selectedTags,
-            session.selectedCurrencies, session.amountCondition, session.searchText, session.isExcludeMode
+            session.selectedCurrencies, session.amountCondition, session.searchText, session.excludedFilterSets
         )
         defer {
             session.selectedAccountIDs = saved.0
@@ -63,7 +63,7 @@ struct FinancialReportAllTimeComparisonTests {
             session.selectedCurrencies = saved.6
             session.amountCondition = saved.7
             session.searchText = saved.8
-            session.isExcludeMode = saved.9
+            session.excludedFilterSets = saved.9
         }
         try body()
     }

@@ -22,8 +22,11 @@ struct TransactionAccountPrefillLogicTests {
         Candidate(id: id, shortcutID: "S-\(id)", isActive: active, isLine: line)
     }
 
+    /// `exclude: true` = las cuentas `ids` están OCULTAS (lo que antes era el modo excluir con ese conjunto).
     private func filter(_ ids: Set<String>, shown: Set<String>? = nil, exclude: Bool = false) -> Logic.Filter<String> {
-        Logic.Filter(accountIDs: ids, shownAccountIDs: shown ?? ids, isExcludeMode: exclude)
+        exclude
+            ? Logic.Filter(accountIDs: [], shownAccountIDs: [], excludedAccountIDs: ids)
+            : Logic.Filter(accountIDs: ids, shownAccountIDs: shown ?? ids, excludedAccountIDs: [])
     }
 
     private let three = [

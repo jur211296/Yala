@@ -193,16 +193,12 @@ struct BalanceKPIParityTests {
     private func eligibleAccounts(
         _ accounts: [Account],
         selected: Set<PersistentIdentifier>,
-        isExcludeMode: Bool = false
+        excluded: Set<PersistentIdentifier> = []
     ) -> [Account] {
-        accounts.filter { account in
+        let filter = EntityFilter(included: selected, excluded: excluded)
+        return accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
-            if selected.isEmpty { return true }
-            if isExcludeMode {
-                return !selected.contains(account.persistentModelID)
-            } else {
-                return selected.contains(account.persistentModelID)
-            }
+            return filter.matches(account.persistentModelID)
         }
     }
 
@@ -269,12 +265,11 @@ struct BalanceKPIParityTests {
             accounts: all,
             transactions: transactions,
             preferredCurrencyCode: "PEN",
-            selectedAccountIDs: selected,
-            isExcludeMode: true,
+            excludedAccountIDs: selected,
             converter: converter
         )
         let distribution = LiveBalanceCalculator.liveBalance(
-            accounts: eligibleAccounts(all, selected: selected, isExcludeMode: true),
+            accounts: eligibleAccounts(all, selected: [], excluded: selected),
             transactions: transactions,
             preferredCurrencyCode: "PEN",
             converter: converter
@@ -329,32 +324,21 @@ struct BalanceKPIParityTests {
         let converter = MockCurrencyConverter()
         let excluded: Set<PersistentIdentifier> = [other.persistentModelID]
 
-        // El flag: en modo excluir NO hay "filtro de cuenta" a efectos del toggle.
-        #expect(
-            PanelTotalAccountsLogic.hasAccountFilter(
-                selectedAccountIDs: excluded, isExcludeMode: true
-            ) == false
-        )
-        #expect(
-            PanelTotalAccountsLogic.hasAccountFilter(
-                selectedAccountIDs: excluded, isExcludeMode: false
-            ) == true
-        )
+        // El flag: con solo cuentas OCULTAS no hay "filtro de cuenta" a efectos del toggle (solo cuentan las incluidas).
+        #expect(PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: []) == false)
+        #expect(PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: excluded) == true)
 
         // Y el número que ve el usuario, componiendo como el Panel.
         let effective = PanelTotalAccountsLogic.accountsForTotal(
             all,
             includeGroups: false,
-            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(
-                selectedAccountIDs: excluded, isExcludeMode: true
-            )
+            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: [])
         )
         let balance = LiveBalanceCalculator.liveBalance(
             accounts: effective,
             transactions: transactions,
             preferredCurrencyCode: "PEN",
-            selectedAccountIDs: excluded,
-            isExcludeMode: true,
+            excludedAccountIDs: excluded,
             converter: converter
         )
 

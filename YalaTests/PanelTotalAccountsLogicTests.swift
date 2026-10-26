@@ -105,8 +105,8 @@ struct PanelTotalAccountsLogicTests {
             accounts: accounts,
             transactions: [],
             preferredCurrencyCode: "PEN",
-            selectedAccountIDs: selected,
-            isExcludeMode: excludeMode,
+            selectedAccountIDs: excludeMode ? [] : selected,
+            excludedAccountIDs: excludeMode ? selected : [],
             converter: MockCurrencyConverter()
         )
         return PanelTotalAccountsLogic.summedAccountsCount(

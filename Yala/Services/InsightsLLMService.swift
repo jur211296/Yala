@@ -151,7 +151,13 @@ final class InsightsLLMService {
            let summary = filters["summary"] as? String,
            !summary.isEmpty {
             let mode = filters["mode"] as? String ?? "include"
-            if mode == "exclude" {
+            if mode == "mixed" {
+                filterContext = """
+
+                FILTROS ACTIVOS (INCLUSIÓN Y EXCLUSIÓN): \(summary)
+                IMPORTANTE: Los datos que recibes solo incluyen los elementos marcados con "Solo" y EXCLUYEN los marcados con "Excluyendo". Todos los porcentajes, promedios y distribuciones son relativos a ese subconjunto, no al total de todas las finanzas. Menciona esta perspectiva filtrada en tus insights cuando sea relevante para evitar confusión.
+                """
+            } else if mode == "exclude" {
                 filterContext = """
 
                 FILTROS ACTIVOS (EXCLUSIÓN): \(summary)

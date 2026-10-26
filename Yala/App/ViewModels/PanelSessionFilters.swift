@@ -71,9 +71,34 @@ final class PanelSessionFilters: Filterable {
         set { session.searchText = newValue }
     }
 
-    var isExcludeMode: Bool {
-        get { session.isExcludeMode }
-        set { session.isExcludeMode = newValue }
+    var excludedAccounts: Set<PersistentIdentifier> {
+        get { session.excludedAccountIDs }
+        set { session.excludedAccountIDs = newValue }
+    }
+
+    var excludedCategories: Set<PersistentIdentifier> {
+        get { session.excludedCategoryIDs }
+        set { session.excludedCategoryIDs = newValue }
+    }
+
+    var excludedSubcategories: Set<PersistentIdentifier> {
+        get { session.excludedSubcategoryIDs }
+        set { session.excludedSubcategoryIDs = newValue }
+    }
+
+    var excludedNeeds: Set<SubcategoryNeed> {
+        get { session.excludedNeeds }
+        set { session.excludedNeeds = newValue }
+    }
+
+    var excludedTags: Set<PersistentIdentifier> {
+        get { session.excludedTags }
+        set { session.excludedTags = newValue }
+    }
+
+    var excludedCurrencies: Set<CurrencyCode> {
+        get { session.excludedCurrencies }
+        set { session.excludedCurrencies = newValue }
     }
 
     var selectedTransactionNatures: Set<TransactionNature> {

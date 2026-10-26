@@ -21,11 +21,9 @@ struct AccountCardView: View {
     /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
     let currentBalance: Double
 
-    /// La cuenta está en el filtro de cuentas del Panel (incluida o excluida según `isExcludeMode`).
-    var isSelected: Bool
-
-    /// En modo excluir, la cuenta seleccionada se atenúa con el signo menos.
-    var isExcludeMode: Bool = false
+    /// Cómo está la cuenta en el filtro de cuentas del Panel: incluida (rellena), oculta (atenuada con el signo menos)
+    /// o fuera del filtro.
+    var filterMembership: EntityFilterMembership
 
     /// En modo «solo gastos» el importe es lo gastado en el período, no el saldo, y la etiqueta lo dice.
     var isExpensesOnlyMode: Bool = false
@@ -43,16 +41,14 @@ struct AccountCardView: View {
     init(
         account: Account,
         currentBalance: Double,
-        isSelected: Bool = false,
-        isExcludeMode: Bool = false,
+        filterMembership: EntityFilterMembership = .none,
         isExpensesOnlyMode: Bool = false,
         periodName: String = "",
         lines: [AccountCardLogic.LineAmount] = []
     ) {
         self.account = account
         self.currentBalance = currentBalance
-        self.isSelected = isSelected
-        self.isExcludeMode = isExcludeMode
+        self.filterMembership = filterMembership
         self.isExpensesOnlyMode = isExpensesOnlyMode
         self.periodName = periodName
         self.lines = lines
@@ -101,7 +97,7 @@ struct AccountCardView: View {
     }
 
     var body: some View {
-        let style = PanelAccountCardLogic.style(isSelected: isSelected, isExcludeMode: isExcludeMode)
+        let style = PanelAccountCardLogic.style(membership: filterMembership)
         let color = accountColor
         // La cuenta que filtra el Panel va RELLENA de su color y dice «Filtrando» (UX 2.2 · L3-16, variante 2): el
         // tinte al 16 % no se distinguía sobre el glass oscuro. El texto pasa al color que contrasta con el relleno.

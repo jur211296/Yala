@@ -23,16 +23,12 @@ enum PanelBalanceScopeLogic {
     static func accounts(
         eligible: [Account],
         includeGroups: Bool,
-        selectedAccountIDs: Set<PersistentIdentifier>,
-        isExcludeMode: Bool
+        selectedAccountIDs: Set<PersistentIdentifier>
     ) -> [Account] {
         PanelTotalAccountsLogic.accountsForTotal(
             eligible,
             includeGroups: includeGroups,
-            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(
-                selectedAccountIDs: selectedAccountIDs,
-                isExcludeMode: isExcludeMode
-            )
+            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: selectedAccountIDs)
         )
     }
 

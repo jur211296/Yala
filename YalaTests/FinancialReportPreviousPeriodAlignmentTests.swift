@@ -74,7 +74,7 @@ struct FinancialReportPreviousPeriodAlignmentTests {
         let savedCurrencies = session.selectedCurrencies
         let savedAmount = session.amountCondition
         let savedSearch = session.searchText
-        let savedExclude = session.isExcludeMode
+        let savedExclude = session.excludedFilterSets
         defer {
             session.selectedAccountIDs = savedAccounts
             session.selectedCategoryIDs = savedCategories
@@ -85,7 +85,7 @@ struct FinancialReportPreviousPeriodAlignmentTests {
             session.selectedCurrencies = savedCurrencies
             session.amountCondition = savedAmount
             session.searchText = savedSearch
-            session.isExcludeMode = savedExclude
+            session.excludedFilterSets = savedExclude
         }
 
         let vm = FinancialReportViewModel()

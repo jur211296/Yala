@@ -75,10 +75,10 @@ struct ExcludedAccountSelectionTests {
     func deletingAFilteredAccount_clearsItFromTheSessionFilter() throws {
         let session = SessionState.shared
         let previousSelection = session.selectedAccountIDs
-        let previousExclude = session.isExcludeMode
+        let previousExclude = session.excludedFilterSets
         defer {
             session.selectedAccountIDs = previousSelection
-            session.isExcludeMode = previousExclude
+            session.excludedFilterSets = previousExclude
             EntityDeletionService.shared.setContext(nil)
         }
 

@@ -54,7 +54,7 @@ struct RecordsFiltersDraftLogicTests {
     @Test func changes_whenAnythingDiffers() {
         let original = RecordsFiltersDraft()
         var note = original; note.noteText = "QA"
-        var mode = original; mode.isExcludeMode = true
+        var mode = original; mode.excludedAccounts = []; mode.excludedTags = []; mode.excludedNeeds = [.optional]
         var currency = original; currency.currencies = [.usd]
         var amount = original; amount.amountCondition = .greaterThan(100)
         var natures = original; natures.transactionNatures = [.expense]
@@ -72,27 +72,20 @@ struct RecordsFiltersDraftLogicTests {
         #expect(!RecordsFiltersDraftLogic.hasChanges(current: current, original: original))
     }
 
-    @Test func modeSwitch_withNothingMarked_doesNotAsk() {
-        #expect(!RecordsFiltersDraftLogic.modeSwitchWouldClear(RecordsFiltersDraft(), isExpensesOnlyMode: false))
+    /// «Mostrar solo» y «Ocultar» conviven desde el 2026-10-25: lo oculto también es lo elegido, y cambiarlo cuenta.
+    @Test func hiddenValues_areAChange() {
+        let original = RecordsFiltersDraft(needs: [.essential])
+        var current = original
+        #expect(!RecordsFiltersDraftLogic.hasChanges(current: current, original: original))
+        current.excludedCurrencies = [.usd]
+        #expect(RecordsFiltersDraftLogic.hasChanges(current: current, original: original))
     }
 
-    /// Con «solo gastos», el Tipo `[.expense]` lo pone la app: no cuenta como algo que se perdería.
-    @Test func modeSwitch_expensesOnlyType_doesNotAsk() {
-        let draft = RecordsFiltersDraft(transactionNatures: [.expense])
-        #expect(!RecordsFiltersDraftLogic.modeSwitchWouldClear(draft, isExpensesOnlyMode: true))
-        #expect(RecordsFiltersDraftLogic.modeSwitchWouldClear(draft, isExpensesOnlyMode: false))
-    }
-
-    @Test func modeSwitch_withSomethingMarked_asks() {
-        let drafts = [
-            RecordsFiltersDraft(needs: [.essential]),
-            RecordsFiltersDraft(currencies: [.usd]),
-            RecordsFiltersDraft(amountCondition: .lessThan(50)),
-            RecordsFiltersDraft(noteText: "uber"),
-        ]
-        for draft in drafts {
-            #expect(RecordsFiltersDraftLogic.modeSwitchWouldClear(draft, isExpensesOnlyMode: false))
-        }
+    /// Ya no hay modo que vaciar: un borrador con incluidos y ocultos a la vez es un estado válido.
+    @Test func includedAndHidden_coexistInTheDraft() {
+        let draft = RecordsFiltersDraft(needs: [.essential], excludedNeeds: [.optional])
+        #expect(draft.needs == [.essential])
+        #expect(draft.excludedNeeds == [.optional])
     }
 }
 
@@ -138,6 +131,14 @@ struct AppliedFilterChipTextTests {
     @Test func included_isJustTheName() {
         #expect(FilterChipView.displayText("Ahorros USD", isExcluded: false) == "Ahorros USD")
     }
+
+    /// Con incluidos y ocultos a la vez en la barra (propuesta A, 2026-10-25), cada cápsula dice cuál es.
+    @Test func membership_saysOnlyOrWithout() {
+        #expect(FilterChipView.displayText("Comida", membership: .included) == L10n.SegmentFilter.chipIncluded("Comida"))
+        #expect(FilterChipView.displayText("Comida", membership: .included) != "Comida")
+        #expect(FilterChipView.displayText("Uber", membership: .excluded) == L10n.UXL8C.Chip.excluded("Uber"))
+        #expect(FilterChipView.displayText("Gastos", membership: .none) == "Gastos")
+    }
 }
 
 // MARK: - Textos en cada idioma
@@ -167,8 +168,7 @@ struct UXAudit22Lote8CStringsTests {
         let keys = [
             "search.l8.recent",
             "filters.l8.discardTitle", "filters.l8.discardMessage", "filters.l8.keepChoosing", "filters.l8.discard",
-            "filters.l8.switchToExcludeTitle", "filters.l8.switchToIncludeTitle", "filters.l8.switchMessage",
-            "filters.l8.switchConfirm", "filters.l8.typeLivesInShowOnly",
+            "filters.l8.typeLivesInShowOnly",
             "filters.l8.amountTitle", "filters.l8.amountNeedsOneCurrency",
             "filters.l8.allAccounts", "filters.l8.allCategories", "filters.l8.allTags", "filters.l8.allNeeds",
             "filters.l8.allCurrencies", "filters.l8.allTypes",
@@ -220,11 +220,13 @@ struct UXAudit22Lote8CWiringTests {
         #expect(!code.contains("pinnedViews"), "la fecha volvió a fijarse sobre la primera fila")
     }
 
-    /// El segmento no vacía lo elegido por su cuenta: pasa por la pregunta. Y la X pregunta antes de cerrar.
-    @Test func filters_modeAndCloseGoThroughTheQuestion() throws {
+    /// El segmento solo elige qué lista se edita: no vacía nada ni pregunta (opción B, 2026-10-25). Y la X pregunta
+    /// antes de cerrar.
+    @Test func filters_tabDoesNotClear_andCloseGoesThroughTheQuestion() throws {
         let code = Self.codeOnly(try Self.source("Yala/App/Views/Records/RecordsFiltersView.swift"))
-        #expect(code.contains("Picker(\"\", selection: $requestedExcludeMode)"))
-        #expect(!code.contains(".onChange(of: localIsExcludeMode)"), "un onChange del modo vaciaba lo elegido al rehidratar")
+        #expect(code.contains("Picker(\"\", selection: $isEditingHidden)"))
+        #expect(!code.contains(".onChange(of: isEditingHidden)"), "un onChange de la pestaña vaciaría lo elegido")
+        #expect(!code.contains("switchMessage"), "volvió la pregunta de «se quitará lo que marcaste»")
         #expect(code.contains(".onSheetDismissAttempt(isActive: hasChanges)"))
         let close = try #require(code.range(of: "accessibilityIdentifier(\"filters_close_button\")"))
         let request = try #require(code.range(of: "requestClose()"))

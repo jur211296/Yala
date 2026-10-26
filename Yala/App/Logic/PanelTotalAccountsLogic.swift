@@ -55,19 +55,18 @@ enum PanelTotalAccountsLogic {
     /// ¿El saldo mostrado es el TOTAL AGREGADO, y por tanto le aplica el toggle
     /// `includeGroupsInPanelTotal`?
     ///
-    /// Lo es cuando no hay filtro de cuentas **y también en modo excluir**: "todas
+    /// Lo es cuando no hay cuentas INCLUIDAS («Solo X»), aunque haya ocultas: "todas
     /// menos éstas" sigue siendo un agregado, y el usuario que apagó las cuentas de
-    /// grupos espera que sigan apagadas. Sin la segunda condición, excluir una
+    /// grupos espera que sigan apagadas. Si contaran las ocultas, ocultar una
     /// cuenta devolvía al agregado las cuentas sistema que el toggle había
-    /// quitado — y el saldo del Panel SUBÍA al excluir una cuenta con saldo
-    /// positivo.
+    /// quitado — y el saldo del Panel SUBÍA al ocultar una cuenta con saldo
+    /// positivo. Por eso esta función solo recibe las incluidas.
     ///
     /// Vive aquí, y no en el ViewModel, porque tiene dos consumidores —el saldo y
     /// el conteo "en N cuentas" del panorama— y tienen que decir lo mismo.
     static func hasAccountFilter(
-        selectedAccountIDs: Set<PersistentIdentifier>,
-        isExcludeMode: Bool
+        selectedAccountIDs: Set<PersistentIdentifier>
     ) -> Bool {
-        !selectedAccountIDs.isEmpty && !isExcludeMode
+        !selectedAccountIDs.isEmpty
     }
 }

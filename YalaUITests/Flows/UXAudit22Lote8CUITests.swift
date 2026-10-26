@@ -110,9 +110,11 @@ final class UXAudit22Lote8CUITests: XCTestCase {
                       "La X sin cambios no cerró la hoja.")
     }
 
-    // MARK: - L8-16 · Cambiar de modo pregunta
+    // MARK: - Opción B · «Mostrar solo» y «Ocultar» se combinan (2026-10-25)
 
-    func test_filters_switchToHideWithSomethingMarked_asksBeforeClearing() {
+    /// Cambiar de pestaña ya no pregunta ni vacía: cada pestaña tiene su lista, y al aplicar conviven «Solo USD» y
+    /// «Sin PEN». Hasta el 2026-10-25 el cambio preguntaba «Se quitará lo que marcaste» y vaciaba (L8-16).
+    func test_filters_showOnlyAndHide_combine() {
         let app = launch()
         openRecords(app)
         app.openRecordsFilters()
@@ -120,28 +122,32 @@ final class UXAudit22Lote8CUITests: XCTestCase {
         let usdChip = app.buttons["filters_currency_chip_USD"]
         XCTAssertTrue(usdChip.waitForExistence(timeout: 5), "No apareció el chip de moneda USD.")
         usdChip.tap()
-        XCTAssertTrue(usdChip.isSelected, "El chip USD no quedó marcado.")
+        XCTAssertTrue(usdChip.isSelected, "El chip USD no quedó marcado en «Mostrar solo».")
 
         let picker = app.segmentedControls["filters_include_exclude_picker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5), "No apareció el selector Mostrar solo / Ocultar.")
-        // Segmento «Ocultar» = 2º (tag true).
         picker.buttons.element(boundBy: 1).tap()
+        XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 2), "Cambiar de pestaña volvió a preguntar.")
+        XCTAssertTrue(picker.buttons.element(boundBy: 1).isSelected, "No pasó a «Ocultar».")
+        // En «Ocultar», USD no está marcado: está en la otra lista.
+        XCTAssertFalse(usdChip.isSelected, "USD salió marcado en «Ocultar».")
 
-        let alert = app.alerts.firstMatch
-        XCTAssertTrue(alert.waitForExistence(timeout: 5), "Pasar a «Ocultar» con algo marcado no preguntó.")
-        // Cancelar: el modo y lo marcado siguen como estaban.
-        alert.buttons["Cancelar"].firstMatch.tap()
-        XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "La pregunta no se cerró al cancelar.")
-        XCTAssertTrue(picker.buttons.element(boundBy: 0).isSelected, "Cancelar dejó el modo cambiado.")
-        XCTAssertTrue(usdChip.isSelected, "Cancelar vació lo marcado.")
+        let penChip = app.buttons["filters_currency_chip_PEN"]
+        XCTAssertTrue(penChip.waitForExistence(timeout: 5), "No apareció el chip de moneda PEN.")
+        penChip.tap()
+        XCTAssertTrue(penChip.isSelected, "PEN no quedó oculto.")
 
-        // Cambiar: pasa a «Ocultar» y vacía.
-        picker.buttons.element(boundBy: 1).tap()
-        XCTAssertTrue(alert.waitForExistence(timeout: 5), "La segunda vez no preguntó.")
-        alert.buttons["Cambiar"].firstMatch.tap()
-        XCTAssertTrue(alert.waitForNonExistence(timeout: 5), "La pregunta no se cerró al cambiar.")
-        XCTAssertTrue(picker.buttons.element(boundBy: 1).isSelected, "«Cambiar» no pasó a «Ocultar».")
-        XCTAssertFalse(app.buttons["filters_currency_chip_USD"].isSelected, "«Cambiar» no vació lo marcado.")
+        // De vuelta en «Mostrar solo», USD sigue marcado: nada se vació.
+        picker.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(usdChip.isSelected, "Volver a «Mostrar solo» perdió USD.")
+
+        app.buttons["filters_apply_button"].tap()
+
+        let chips = app.buttons.matching(identifier: "applied_filter_chip")
+        XCTAssertTrue(chips.firstMatch.waitForExistence(timeout: 10), "No aparecieron las cápsulas aplicadas.")
+        let labels = chips.allElementsBoundByIndex.map(\.label)
+        XCTAssertTrue(labels.contains { $0.contains("USD") && $0 != "USD" }, "Falta la cápsula «Solo USD»: \(labels)")
+        XCTAssertTrue(labels.contains { $0.contains("PEN") && $0 != "PEN" }, "Falta la cápsula «Sin PEN»: \(labels)")
     }
 
     // MARK: - L8-17 · La cápsula abre Filtros y dice «Sin …»
@@ -155,9 +161,8 @@ final class UXAudit22Lote8CUITests: XCTestCase {
 
         let picker = app.segmentedControls["filters_include_exclude_picker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5), "No apareció el selector Mostrar solo / Ocultar.")
-        // Con nada marcado cambia sin preguntar.
         picker.buttons.element(boundBy: 1).tap()
-        XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 2), "Cambiar de modo sin nada marcado preguntó.")
+        XCTAssertFalse(app.alerts.firstMatch.waitForExistence(timeout: 2), "Cambiar de pestaña preguntó.")
 
         let usdChip = app.buttons["filters_currency_chip_USD"]
         XCTAssertTrue(usdChip.waitForExistence(timeout: 5), "No apareció el chip de moneda USD.")
@@ -172,6 +177,7 @@ final class UXAudit22Lote8CUITests: XCTestCase {
         chip.tap()
 
         XCTAssertTrue(picker.waitForExistence(timeout: 5), "Tocar la cápsula no abrió Filtros.")
+        // Con solo cosas ocultas, la hoja abre en «Ocultar» para que se vea lo que hay.
         XCTAssertTrue(picker.buttons.element(boundBy: 1).isSelected, "Filtros no reabrió en «Ocultar».")
         XCTAssertTrue(app.buttons["filters_currency_chip_USD"].isSelected,
                       "Al reabrir en «Ocultar», USD ya no estaba marcado: la hoja vació lo oculto.")

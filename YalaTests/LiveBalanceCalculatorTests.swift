@@ -210,8 +210,7 @@ struct LiveBalanceCalculatorTests {
             accounts: [acc1, acc2, acc3],
             transactions: [tx1, tx2, tx3],
             preferredCurrencyCode: "USD",
-            selectedAccountIDs: [acc1.persistentModelID, acc2.persistentModelID],
-            isExcludeMode: true,
+            excludedAccountIDs: [acc1.persistentModelID, acc2.persistentModelID],
             converter: MockCurrencyConverter()
         )
         #expect(result == 777)
@@ -229,8 +228,7 @@ struct LiveBalanceCalculatorTests {
             accounts: [acc1, acc2],
             transactions: [tx1, tx2],
             preferredCurrencyCode: "USD",
-            selectedAccountIDs: [acc1.persistentModelID, acc2.persistentModelID],
-            isExcludeMode: true,
+            excludedAccountIDs: [acc1.persistentModelID, acc2.persistentModelID],
             converter: MockCurrencyConverter()
         )
         #expect(result == 0)

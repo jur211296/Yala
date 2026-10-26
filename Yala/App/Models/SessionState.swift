@@ -106,6 +106,16 @@ enum KeyboardPanelRequest: Equatable {
     case settings
 }
 
+/// Un valor de una dimensión de filtro: lo que se toca en un segmento de una gráfica o en una cápsula de la barra.
+enum SegmentFilterTarget: Hashable {
+    case account(PersistentIdentifier)
+    case category(PersistentIdentifier)
+    case subcategory(PersistentIdentifier)
+    case tag(PersistentIdentifier)
+    case need(SubcategoryNeed)
+    case currency(CurrencyCode)
+}
+
 /// Global session state to manage synchronization between views
 @MainActor
 @Observable
@@ -272,7 +282,7 @@ class SessionState {
     var selectedAccountIDs: Set<PersistentIdentifier> = [] {
         didSet {
             normalizeAccountSelection(from: oldValue)
-            resetExcludeModeIfNeeded()
+            if overlaps(excludedAccountIDs, selectedAccountIDs) { excludedAccountIDs.subtract(selectedAccountIDs) }
         }
     }
 
@@ -280,6 +290,7 @@ class SessionState {
     /// (`installAccountLinesSource`); sin él (tests de unidad que no lo instalan), el filtro se guarda tal cual, como antes.
     @ObservationIgnored var accountLinesByHead: (() -> [PersistentIdentifier: Set<PersistentIdentifier>])?
     @ObservationIgnored private var isNormalizingAccountSelection = false
+    @ObservationIgnored private var isNormalizingExcludedAccounts = false
 
     /// Instala la fuente de `accountLinesByHead`. El contexto se captura débil: un contenedor que se cambia en caliente no se
     /// queda vivo por esto, y el arranque siguiente instala el nuevo. Un fetch que falla no expande (el filtro de antes).
@@ -300,7 +311,7 @@ class SessionState {
     }
 
     private func normalizeAccountSelection(from oldValue: Set<PersistentIdentifier>) {
-        // Vaciar un filtro vacío (`clearFilters` tras un borrado, cambiar de modo) no tiene nada que normalizar: sin fetch.
+        // Vaciar un filtro vacío (`clearFilters` tras un borrado) no tiene nada que normalizar: sin fetch.
         guard !isNormalizingAccountSelection, !(oldValue.isEmpty && selectedAccountIDs.isEmpty),
               let linesByHead = accountLinesByHead?(), !linesByHead.isEmpty else { return }
         let normalized = AccountCardLogic.normalizedSelection(
@@ -311,13 +322,31 @@ class SessionState {
         isNormalizingAccountSelection = false
     }
 
+    /// Lo mismo para las cuentas OCULTAS: ocultar una tarjeta oculta sus líneas, y quitarla las vuelve a enseñar. Sin
+    /// esto, «Sin Visa» dejaba sumando la línea en dólares de esa tarjeta.
+    private func normalizeExcludedAccounts(from oldValue: Set<PersistentIdentifier>) {
+        guard !isNormalizingExcludedAccounts, !(oldValue.isEmpty && excludedAccountIDs.isEmpty),
+              let linesByHead = accountLinesByHead?(), !linesByHead.isEmpty else { return }
+        let normalized = AccountCardLogic.normalizedSelection(
+            old: oldValue, new: excludedAccountIDs, linesByHead: linesByHead)
+        guard normalized != excludedAccountIDs else { return }
+        isNormalizingExcludedAccounts = true
+        excludedAccountIDs = normalized
+        isNormalizingExcludedAccounts = false
+    }
+
     /// Tras vincular o añadir una línea: si su tarjeta está en el filtro, la línea entra también. La normalización solo corre
     /// al escribir el filtro, y sin esto el saldo y Registros dejaban fuera la línea nueva mientras el carrusel marcaba la
     /// tarjeta entera (review del 2026-10-18).
     func reapplyAccountSelection() {
-        guard !selectedAccountIDs.isEmpty else { return }
-        let current = selectedAccountIDs
-        selectedAccountIDs = current
+        if !selectedAccountIDs.isEmpty {
+            let current = selectedAccountIDs
+            selectedAccountIDs = current
+        }
+        if !excludedAccountIDs.isEmpty {
+            let current = excludedAccountIDs
+            excludedAccountIDs = current
+        }
     }
 
     /// La selección tal como se PINTA: cada tarjeta una vez (sin las líneas cuya tarjeta también está). Para píldoras,
@@ -335,23 +364,182 @@ class SessionState {
     }
 
     /// Selected category IDs (empty = all categories)
-    var selectedCategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedCategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(excludedCategoryIDs, selectedCategoryIDs) { excludedCategoryIDs.subtract(selectedCategoryIDs) } }
+    }
 
     /// Selected subcategory IDs (empty = all subcategories)
     /// Changed from names to IDs to handle duplicate subcategory names across categories
-    var selectedSubcategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedSubcategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(excludedSubcategoryIDs, selectedSubcategoryIDs) { excludedSubcategoryIDs.subtract(selectedSubcategoryIDs) } }
+    }
 
     /// Selected natures (empty = all natures)
-    var selectedNeeds: Set<SubcategoryNeed> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedNeeds: Set<SubcategoryNeed> = [] {
+        didSet { if overlaps(excludedNeeds, selectedNeeds) { excludedNeeds.subtract(selectedNeeds) } }
+    }
 
     /// Selected tags (empty = all tags)
-    var selectedTags: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedTags: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(excludedTags, selectedTags) { excludedTags.subtract(selectedTags) } }
+    }
 
     /// Selected budget ID for widget highlighting (nil = none selected)
     var selectedBudgetID: PersistentIdentifier?
 
     /// Selected currencies (empty = all currencies)
-    var selectedCurrencies: Set<CurrencyCode> = [] { didSet { resetExcludeModeIfNeeded() } }
+    var selectedCurrencies: Set<CurrencyCode> = [] {
+        didSet { if overlaps(excludedCurrencies, selectedCurrencies) { excludedCurrencies.subtract(selectedCurrencies) } }
+    }
+
+    // MARK: - Lo oculto (opción B de Jürgen, 2026-10-12)
+
+    // Los `selected*` de arriba son los INCLUIDOS («solo estos»); estos, los EXCLUIDOS («todos menos estos») de cada
+    // dimensión. Conviven: «Solo Comida» y «Sin Uber» a la vez. Hasta el 2026-10-25 había un solo interruptor global
+    // (`isExcludeMode`) que daba a todos los conjuntos un mismo significado y los vaciaba al cambiar. Un id no puede estar
+    // en los dos: marcarlo en uno lo quita del otro (`overlaps`). La regla de coincidencia es `EntityFilter.matches`.
+
+    var excludedAccountIDs: Set<PersistentIdentifier> = [] {
+        didSet {
+            normalizeExcludedAccounts(from: oldValue)
+            if overlaps(selectedAccountIDs, excludedAccountIDs) { selectedAccountIDs.subtract(excludedAccountIDs) }
+        }
+    }
+    var excludedCategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(selectedCategoryIDs, excludedCategoryIDs) { selectedCategoryIDs.subtract(excludedCategoryIDs) } }
+    }
+    var excludedSubcategoryIDs: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(selectedSubcategoryIDs, excludedSubcategoryIDs) { selectedSubcategoryIDs.subtract(excludedSubcategoryIDs) } }
+    }
+    var excludedNeeds: Set<SubcategoryNeed> = [] {
+        didSet { if overlaps(selectedNeeds, excludedNeeds) { selectedNeeds.subtract(excludedNeeds) } }
+    }
+    var excludedTags: Set<PersistentIdentifier> = [] {
+        didSet { if overlaps(selectedTags, excludedTags) { selectedTags.subtract(excludedTags) } }
+    }
+    var excludedCurrencies: Set<CurrencyCode> = [] {
+        didSet { if overlaps(selectedCurrencies, excludedCurrencies) { selectedCurrencies.subtract(excludedCurrencies) } }
+    }
+
+    /// ¿Hay que quitar del otro conjunto lo que acaba de entrar en este? El último en escribir gana. Se comprueba ANTES de
+    /// asignar —y no con un `inout`, que reescribe siempre y dispararía el `didSet` del gemelo en bucle—: si no hay
+    /// solape no se toca nada. Durante un volcado en bloque (la hoja de Registros, que ya entrega los dos conjuntos
+    /// disjuntos) no actúa.
+    private func overlaps<T: Hashable>(_ other: Set<T>, _ written: Set<T>) -> Bool {
+        !isBatchingFilterUpdate && !other.isDisjoint(with: written)
+    }
+
+    /// Filtros de entidad por dimensión, para los calculadores (incluidos + excluidos juntos: un conjunto sin su
+    /// gemelo invierte o pierde el filtro).
+    var accountFilter: EntityFilter<PersistentIdentifier> {
+        EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
+    }
+
+    /// Todo lo oculto, como un solo valor que observar: las pantallas recalculan cuando cambia cualquiera de sus seis
+    /// conjuntos (antes observaban `isExcludeMode`).
+    struct ExcludedFilterSets: Equatable {
+        var accounts: Set<PersistentIdentifier>
+        var categories: Set<PersistentIdentifier>
+        var subcategories: Set<PersistentIdentifier>
+        var needs: Set<SubcategoryNeed>
+        var tags: Set<PersistentIdentifier>
+        var currencies: Set<CurrencyCode>
+
+        static let none = ExcludedFilterSets(
+            accounts: [], categories: [], subcategories: [], needs: [], tags: [], currencies: []
+        )
+    }
+
+    /// También se escribe de golpe: lo usan los tests para guardar y restaurar lo oculto alrededor de un caso.
+    var excludedFilterSets: ExcludedFilterSets {
+        get {
+            ExcludedFilterSets(
+                accounts: excludedAccountIDs, categories: excludedCategoryIDs, subcategories: excludedSubcategoryIDs,
+                needs: excludedNeeds, tags: excludedTags, currencies: excludedCurrencies
+            )
+        }
+        set {
+            excludedAccountIDs = newValue.accounts
+            excludedCategoryIDs = newValue.categories
+            excludedSubcategoryIDs = newValue.subcategories
+            excludedNeeds = newValue.needs
+            excludedTags = newValue.tags
+            excludedCurrencies = newValue.currencies
+        }
+    }
+
+    /// Hay algo oculto en alguna dimensión.
+    var hasExcludedFilters: Bool {
+        !excludedAccountIDs.isEmpty || !excludedCategoryIDs.isEmpty || !excludedSubcategoryIDs.isEmpty
+            || !excludedNeeds.isEmpty || !excludedTags.isEmpty || !excludedCurrencies.isEmpty
+    }
+
+    /// Copia los filtros de entidad de la sesión (incluidos y excluidos) a un criterio. Las etiquetas por UUID las rellena
+    /// quien tenga el catálogo (`populateTagUUIDs(fromCatalog:)`).
+    func applyEntityFilters(to criteria: inout FilterCriteria) {
+        criteria.selectedAccounts = selectedAccountIDs
+        criteria.selectedCategories = selectedCategoryIDs
+        criteria.selectedSubcategories = selectedSubcategoryIDs
+        criteria.selectedTags = selectedTags
+        criteria.selectedNeeds = selectedNeeds
+        criteria.selectedCurrencies = selectedCurrencies
+        criteria.excludedAccounts = excludedAccountIDs
+        criteria.excludedCategories = excludedCategoryIDs
+        criteria.excludedSubcategories = excludedSubcategoryIDs
+        criteria.excludedTags = excludedTags
+        criteria.excludedNeeds = excludedNeeds
+        criteria.excludedCurrencies = excludedCurrencies
+    }
+
+    // MARK: - Tocar un segmento: «Ver solo» / «Ocultar» / «Quitar el filtro»
+
+    /// Cómo está ese valor en el filtro de su dimensión.
+    func membership(of target: SegmentFilterTarget) -> EntityFilterMembership {
+        switch target {
+        case .account(let id): return EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs).membership(of: id)
+        case .category(let id): return EntityFilter(included: selectedCategoryIDs, excluded: excludedCategoryIDs).membership(of: id)
+        case .subcategory(let id): return EntityFilter(included: selectedSubcategoryIDs, excluded: excludedSubcategoryIDs).membership(of: id)
+        case .tag(let id): return EntityFilter(included: selectedTags, excluded: excludedTags).membership(of: id)
+        case .need(let need): return EntityFilter(included: selectedNeeds, excluded: excludedNeeds).membership(of: need)
+        case .currency(let code): return EntityFilter(included: selectedCurrencies, excluded: excludedCurrencies).membership(of: code)
+        }
+    }
+
+    /// «Ocultar X»: entra en los excluidos de su dimensión (y sale de los incluidos). Las demás dimensiones no cambian.
+    func hide(_ target: SegmentFilterTarget) {
+        switch target {
+        case .account(let id): excludedAccountIDs.insert(id)
+        case .category(let id): excludedCategoryIDs.insert(id)
+        case .subcategory(let id): excludedSubcategoryIDs.insert(id)
+        case .tag(let id): excludedTags.insert(id)
+        case .need(let need): excludedNeeds.insert(need)
+        case .currency(let code): excludedCurrencies.insert(code)
+        }
+    }
+
+    /// «Quitar el filtro»: el valor sale de los dos conjuntos de su dimensión.
+    func clearFilter(_ target: SegmentFilterTarget) {
+        switch target {
+        case .account(let id):
+            selectedAccountIDs.remove(id)
+            excludedAccountIDs.remove(id)
+        case .category(let id):
+            selectedCategoryIDs.remove(id)
+            excludedCategoryIDs.remove(id)
+        case .subcategory(let id):
+            selectedSubcategoryIDs.remove(id)
+            excludedSubcategoryIDs.remove(id)
+        case .tag(let id):
+            selectedTags.remove(id)
+            excludedTags.remove(id)
+        case .need(let need):
+            selectedNeeds.remove(need)
+            excludedNeeds.remove(need)
+        case .currency(let code):
+            selectedCurrencies.remove(code)
+            excludedCurrencies.remove(code)
+        }
+    }
 
     /// Selected transaction natures for filtering income/expense (empty = all)
     var selectedTransactionNatures: Set<TransactionNature> = []
@@ -362,34 +550,10 @@ class SessionState {
     }
 
     /// Amount filter condition
-    var amountCondition: AmountFilterCondition = .any { didSet { resetExcludeModeIfNeeded() } }
+    var amountCondition: AmountFilterCondition = .any
 
     /// Search text for note filtering
-    var searchText: String = "" { didSet { resetExcludeModeIfNeeded() } }
-
-    /// Guard against re-entrant didSet calls during exclude mode transitions
-    private var isSwitchingExcludeMode = false
-
-    /// Exclude mode: when true, selected entity filters hide matching items instead of showing only them
-    var isExcludeMode: Bool = false {
-        didSet {
-            guard oldValue != isExcludeMode else { return }
-            // Clear entity selections when switching mode to avoid confusion
-            // Don't call clearFilters() — it resets isExcludeMode itself, causing a loop
-            isSwitchingExcludeMode = true
-            selectedAccountIDs.removeAll()
-            selectedCategoryIDs.removeAll()
-            selectedSubcategoryIDs.removeAll()
-            selectedNeeds.removeAll()
-            selectedTags.removeAll()
-            selectedCurrencies.removeAll()
-            selectedTransactionNatures.removeAll()
-            amountCondition = .any
-            searchText = ""
-            globalFilters.clearAll()
-            isSwitchingExcludeMode = false
-        }
-    }
+    var searchText: String = ""
 
     // MARK: - Filter Criteria State
 
@@ -411,29 +575,14 @@ class SessionState {
             || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
             || !selectedTransactionNatures.isEmpty
             || amountCondition.isActive || !searchText.isEmpty
+            || hasExcludedFilters
     }
 
-    /// Check if any exclude-eligible filter is active (transaction type is NOT excludable)
-    private var hasActiveExcludeFilters: Bool {
-        !selectedAccountIDs.isEmpty || !selectedCategoryIDs.isEmpty
-            || !selectedSubcategoryIDs.isEmpty || !selectedNeeds.isEmpty
-            || !selectedTags.isEmpty || !selectedCurrencies.isEmpty
-            || amountCondition.isActive || !searchText.isEmpty
-    }
+    /// Volcado en bloque en curso: `overlaps` no recorta.
+    @ObservationIgnored private var isBatchingFilterUpdate = false
 
-    /// Auto-reset exclude mode when no exclude-eligible filters remain
-    func resetExcludeModeIfNeeded() {
-        guard !isSwitchingExcludeMode, !isBatchingFilterUpdate, isExcludeMode, !hasActiveExcludeFilters else { return }
-        isSwitchingExcludeMode = true
-        isExcludeMode = false
-        isSwitchingExcludeMode = false
-    }
-
-    /// Guard against resetExcludeModeIfNeeded during batch filter commits
-    private var isBatchingFilterUpdate = false
-
-    /// Batch-set multiple filter properties without triggering intermediate resetExcludeModeIfNeeded calls.
-    /// Use when committing filter values from a sheet where isExcludeMode was already set.
+    /// Escribe varios conjuntos de golpe sin que `overlaps` recorte uno con el valor intermedio de otro. Para la hoja
+    /// de Registros, que entrega incluidos y excluidos ya disjuntos.
     func performBatchFilterUpdate(_ block: () -> Void) {
         isBatchingFilterUpdate = true
         block()
@@ -450,9 +599,14 @@ class SessionState {
         selectedNeeds.removeAll()
         selectedTags.removeAll()
         selectedCurrencies.removeAll()
+        excludedAccountIDs.removeAll()
+        excludedCategoryIDs.removeAll()
+        excludedSubcategoryIDs.removeAll()
+        excludedNeeds.removeAll()
+        excludedTags.removeAll()
+        excludedCurrencies.removeAll()
         selectedTransactionNatures.removeAll()
         selectedBudgetID = nil
-        isExcludeMode = false
         amountCondition = .any
         searchText = ""
         globalFilters.clearAll()
@@ -463,8 +617,8 @@ class SessionState {
     /// `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Lo llama el embudo de los borrados,
     /// `EntityDeletionService.deleteAccount`.
     func forgetDeletedAccount(_ id: PersistentIdentifier) {
-        guard selectedAccountIDs.contains(id) else { return }
-        selectedAccountIDs.remove(id)
+        if selectedAccountIDs.contains(id) { selectedAccountIDs.remove(id) }
+        if excludedAccountIDs.contains(id) { excludedAccountIDs.remove(id) }
     }
 
     /// Toggle account filter (single-select behavior for Panel compatibility)
