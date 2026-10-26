@@ -80,6 +80,12 @@ enum StatsHeroCaptionLogic {
     /// El hero no se pinta en modo solo-gastos, así que no hay caso de un lado.
     static let insights: StatsHeroCaption = .netPeriod
 
+    /// En modo «Solo gastos» Resumen y Registros enseñan el gasto del período, como el Panel (decisión A de Jürgen
+    /// del 2026-10-26): su cifra de siempre es un neto, y sin ingresos el neto no dice nada.
+    static func insights(expensesOnly: Bool) -> StatsHeroCaption {
+        expensesOnly ? .expensePeriod : insights
+    }
+
     /// Registros (`RecordsViewModel.recordsSummary.balance` = `income - expense`
     /// sobre lo ya filtrado).
     ///
@@ -90,6 +96,10 @@ enum StatsHeroCaptionLogic {
         if natures == [.income]  { return .incomePeriod }
         if natures == [.expense] { return .expensePeriod }
         return .netPeriod
+    }
+
+    static func records(natures: Set<TransactionNature>, expensesOnly: Bool) -> StatsHeroCaption {
+        expensesOnly ? .expensePeriod : records(natures: natures)
     }
 }
 

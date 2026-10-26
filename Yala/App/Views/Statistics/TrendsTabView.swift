@@ -257,10 +257,18 @@ struct TrendsTabView: View {
                 )
                 .contentTransition(.numericText())
 
-                incomeExpenseChips(summary)
+                // En «Solo gastos» la fila de entradas y salidas repetía la cifra grande: queda su variación, con la
+                // lectura del Panel (decisión A de Jürgen del 2026-10-26).
+                if sessionState.isExpensesOnlyMode {
+                    ExpensesOnlyHeroVariation(variation: summary.expenseVariation)
+                } else {
+                    incomeExpenseChips(summary)
+                }
             }
 
-            if let summary, let text = heroVariationSubtitle(for: summary) {
+            // La frase compara el BALANCE. En «Solo gastos» es el gasto en negativo y gastar más se leía «por debajo ·
+            // Ánimo»: fuera (decisión A de Jürgen del 2026-10-26); la variación ya la dice el chip.
+            if !sessionState.isExpensesOnlyMode, let summary, let text = heroVariationSubtitle(for: summary) {
                 Text(text)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)

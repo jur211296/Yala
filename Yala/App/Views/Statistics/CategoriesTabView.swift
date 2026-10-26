@@ -396,6 +396,14 @@ struct CategoriesTabView: View {
                 .contentTransition(.numericText())
                 // Lo lee el XCUITest que comprueba que la cifra sigue a un alta (`StatisticsHeroLikePanelUITests`).
                 .accessibilityIdentifier("stats_hero_amount")
+
+                // En «Solo gastos» la cabecera es la del Panel: cifra y su variación (decisión A de Jürgen del
+                // 2026-10-26). La variación sale del mismo total anterior que enseña la tarjeta de la tarta.
+                if sessionState.isExpensesOnlyMode {
+                    ExpensesOnlyHeroVariation(variation: previousCategoryTotal.flatMap {
+                        PreviousPeriodHelper.calculateVariation(currentAmount: totalAmount, previousAmount: $0)
+                    })
+                }
             }
 
             if hasRecords, let subtitle = heroDimensionalSubtitle() {

@@ -259,7 +259,10 @@ struct RecordsTabView: View {
     private var heroSummary: some View {
         let hasRecords = viewModel.filteredCount > 0
 
-        let showsFigure = !sessionState.isExpensesOnlyMode && hasRecords
+        // En «Solo gastos» la cifra es lo gastado, como en el Panel (decisión A de Jürgen del 2026-10-26): el neto de
+        // siempre, sin ingresos, no diría nada. Antes el hero se quedaba sin cifra y la pantalla, coja.
+        let expensesOnly = sessionState.isExpensesOnlyMode
+        let showsFigure = hasRecords
 
         // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
         // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
@@ -268,26 +271,29 @@ struct RecordsTabView: View {
         } caption: {
             // Qué es la cifra. Con un chip de naturaleza activo el otro lado es
             // 0 y `recordsSummary.balance` deja de ser un neto, así que el
-            // rótulo sigue al filtro. (El hero no se pinta en solo-gastos, de
-            // modo que las naturalezas efectivas son las seleccionadas.)
+            // rótulo sigue al filtro; en «Solo gastos», siempre el gasto.
             if showsFigure {
                 HeroHeaderLabel(text: StatsHeroCaptionLogic.records(
-                    natures: viewModel.selectedTransactionNatures
+                    natures: viewModel.selectedTransactionNatures,
+                    expensesOnly: expensesOnly
                 ).text)
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } figure: {
             if showsFigure {
                 AmountText(
-                    value: recordsSummary.balance,
+                    value: expensesOnly ? recordsSummary.expense : recordsSummary.balance,
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: recordsSummary.balanceIsApproximate
+                    isEstimate: expensesOnly ? recordsSummary.expenseIsApproximate : recordsSummary.balanceIsApproximate
                 )
                 .accessibilityIdentifier("records_summary_balance")
             }
         } detail: {
-            incomeExpenseChips
+            // En «Solo gastos» la fila de entradas y salidas sería solo el gasto, que ya es la cifra grande.
+            if !expensesOnly {
+                incomeExpenseChips
+            }
 
             if let subtitle = RecordsMotivationalLogic.subtitle(forCount: viewModel.filteredCount) {
                 Text(localizedMotivational(subtitle))

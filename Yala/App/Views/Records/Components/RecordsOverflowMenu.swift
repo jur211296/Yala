@@ -12,6 +12,7 @@ import SwiftUI
 
 struct RecordsOverflowMenu: View {
     @Bindable var viewModel: RecordsViewModel
+    @Environment(SessionState.self) private var sessionState
 
     var body: some View {
         Menu {
@@ -57,7 +58,7 @@ struct RecordsOverflowMenu: View {
         // Iconos de los items del menú en color primary (el ellipsis conserva
         // su color por el foregroundStyle explícito del label).
         .tint(.primary)
-        .filterBadge(isActive: viewModel.activeFilterCount > 0)
+        .filterBadge(isActive: viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 0)
         .accessibilityLabel(L10n.Common.moreOptions)
     }
 }
