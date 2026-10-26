@@ -2796,7 +2796,7 @@
 "siriShortcuts.phrase.quick" = "Yalaに記録";
 "siriShortcuts.phrase.voice" = "Yalaに音声で記録";
 "siriShortcuts.phrase.image" = "Yalaに写真やファイルで記録";
-"siriShortcuts.phrase.applePay" = "Yalaに Apple Payを記録";
+"siriShortcuts.phrase.applePay" = "Yalaに支払いを記録";
 "siriShortcuts.faq.title" = "よくある質問";
 "siriShortcuts.faq.activateQ" = "Siriはどう有効化する？";
 "siriShortcuts.faq.activateA" = "自動です。フレーズをSiriに話しかければ、Yalaがリクエストを処理します。";

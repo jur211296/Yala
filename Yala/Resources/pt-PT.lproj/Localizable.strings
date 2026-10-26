@@ -2854,7 +2854,7 @@
 "siriShortcuts.faq.offlineA" = "Sim, os atalhos funcionam em modo básico sem ligação à internet.";
 "siriShortcuts.faq.offlineQ" = "Funciona sem internet?";
 "siriShortcuts.faq.title" = "Perguntas frequentes";
-"siriShortcuts.phrase.applePay" = "Regista Apple Pay no Yala";
+"siriShortcuts.phrase.applePay" = "Regista um pagamento no Yala";
 "siriShortcuts.phrase.image" = "Regista com foto ou ficheiro no Yala";
 "siriShortcuts.phrase.quick" = "Regista no Yala";
 "siriShortcuts.phrase.voice" = "Regista com voz no Yala";

@@ -65,70 +65,7 @@
         }
       }
     },
-    "Apple Pay en ${applicationName}": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay in ${applicationName}"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay dans ${applicationName}"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay in ${applicationName}"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "${applicationName}でApple Pay"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay in ${applicationName}"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay w ${applicationName}"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay no ${applicationName}"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay no ${applicationName}"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple Pay no ${applicationName}"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 ${applicationName} 中 Apple Pay"
-          }
-        }
-      }
-    },
+    "Apple Pay en ${applicationName}": {},
     "Apunta un gasto en ${applicationName}": {
       "localizations": {
         "de": {
@@ -626,19 +563,19 @@
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registre com a Siri no ${applicationName}"
+            "value": "Registre uma despesa no ${applicationName}"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registre com a Siri no ${applicationName}"
+            "value": "Registre uma despesa no ${applicationName}"
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regista com a Siri no ${applicationName}"
+            "value": "Regista uma despesa no ${applicationName}"
           }
         }
       }
@@ -810,61 +747,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apple-Pay-Zahlung in ${applicationName}"
+            "value": "Handyzahlung in ${applicationName}"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Paiement Apple Pay dans ${applicationName}"
+            "value": "Paiement mobile dans ${applicationName}"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pagamento Apple Pay in ${applicationName}"
+            "value": "Pagamento mobile in ${applicationName}"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "${applicationName}でApple Pay支払い"
+            "value": "${applicationName}でモバイル決済"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apple Pay-betaling in ${applicationName}"
+            "value": "Mobiele betaling in ${applicationName}"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Płatność Apple Pay w ${applicationName}"
+            "value": "Płatność mobilna w ${applicationName}"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pagamento Apple Pay no ${applicationName}"
+            "value": "Pagamento por celular no ${applicationName}"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pagamento Apple Pay no ${applicationName}"
+            "value": "Pagamento por celular no ${applicationName}"
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pagamento Apple Pay no ${applicationName}"
+            "value": "Pagamento por telemóvel no ${applicationName}"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在 ${applicationName} 中 Apple Pay 付款"
+            "value": "在 ${applicationName} 中手机支付"
           }
         }
       }
@@ -874,61 +811,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Erfasse Apple Pay in ${applicationName}"
+            "value": "Erfasse eine Zahlung in ${applicationName}"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enregistre Apple Pay dans ${applicationName}"
+            "value": "Enregistre un paiement dans ${applicationName}"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registra Apple Pay in ${applicationName}"
+            "value": "Registra un pagamento in ${applicationName}"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "${applicationName}に Apple Payを記録"
+            "value": "${applicationName}に支払いを記録"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apple Pay boeken in ${applicationName}"
+            "value": "Boek een betaling in ${applicationName}"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zapisz Apple Pay w ${applicationName}"
+            "value": "Zapisz płatność w ${applicationName}"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registre Apple Pay no ${applicationName}"
+            "value": "Registre um pagamento no ${applicationName}"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registre Apple Pay no ${applicationName}"
+            "value": "Registre um pagamento no ${applicationName}"
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regista Apple Pay no ${applicationName}"
+            "value": "Regista um pagamento no ${applicationName}"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在 ${applicationName} 记录 Apple Pay"
+            "value": "在 ${applicationName} 记录一笔付款"
           }
         }
       }
