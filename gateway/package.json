@@ -24,6 +24,7 @@
     "@levischuck/tiny-cbor": "^0.2.11",
     "@peculiar/asn1-schema": "^2.8.0",
     "@peculiar/x509": "^1.14.3",
+    "@sentry/cloudflare": "11.9.0",
     "hono": "^4.6.0",
     "jose": "^5.9.0"
   },
