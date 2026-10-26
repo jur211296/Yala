@@ -2796,7 +2796,7 @@
 "siriShortcuts.phrase.quick" = "在 Yala 中记录";
 "siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
 "siriShortcuts.phrase.image" = "用照片或文件在 Yala 中记录";
-"siriShortcuts.phrase.applePay" = "在 Yala 记录 Apple Pay";
+"siriShortcuts.phrase.applePay" = "在 Yala 记录一笔付款";
 "siriShortcuts.faq.title" = "常见问题";
 "siriShortcuts.faq.activateQ" = "我怎么激活 Siri?";
 "siriShortcuts.faq.activateA" = "自动激活。只需对 Siri 说出对应短语,Yala 就会处理你的请求。";

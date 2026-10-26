@@ -2796,7 +2796,7 @@
 "siriShortcuts.phrase.quick" = "Zapisz w Yala";
 "siriShortcuts.phrase.voice" = "Zapisz głosem w Yala";
 "siriShortcuts.phrase.image" = "Zapisz ze zdjęcia lub pliku w Yala";
-"siriShortcuts.phrase.applePay" = "Zapisz Apple Pay w Yala";
+"siriShortcuts.phrase.applePay" = "Zapisz płatność w Yala";
 "siriShortcuts.faq.title" = "FAQ";
 "siriShortcuts.faq.activateQ" = "Jak aktywować Siri?";
 "siriShortcuts.faq.activateA" = "Robi się automatycznie. Wystarczy powiedzieć frazę do Siri, a Yala przetworzy żądanie.";

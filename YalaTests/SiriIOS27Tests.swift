@@ -579,6 +579,18 @@ struct SiriPhrasesPortugueseTests {
         }
     }
 
+    /// App Store Connect rechaza el binario (ITMS-90626, «Localization string … cannot contain 'apple'») si una traducción
+    /// de frase lleva «Apple» o «Siri»: tumbó el primer upload de 2.2 con 23 frases. Las frases del código (es/en) no las
+    /// mira; las traducciones, sí.
+    @Test(arguments: translatedLanguages)
+    func ningunaTraduccion_llevaMarcasQueAppStoreRechaza(_ lang: String) throws {
+        let table = try #require(SiriTraining.translations(lang))
+        for value in table.values {
+            let lower = value.lowercased()
+            #expect(!lower.contains("apple") && !lower.contains("siri"), "\(lang): «\(value)» no pasa la validación de ASC.")
+        }
+    }
+
     /// Dos acciones con la misma frase en un idioma: Siri no sabría cuál abrir.
     @Test(arguments: translatedLanguages)
     func ningunaFrase_seRepiteEnElIdioma(_ lang: String) throws {

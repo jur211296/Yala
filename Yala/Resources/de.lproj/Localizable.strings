@@ -2792,7 +2792,7 @@
 "siriShortcuts.phrase.quick" = "Erfasse in Yala";
 "siriShortcuts.phrase.voice" = "Erfasse mit Stimme in Yala";
 "siriShortcuts.phrase.image" = "Erfasse mit Foto oder Datei in Yala";
-"siriShortcuts.phrase.applePay" = "Erfasse Apple Pay in Yala";
+"siriShortcuts.phrase.applePay" = "Erfasse eine Zahlung in Yala";
 "siriShortcuts.faq.title" = "Häufige Fragen";
 "siriShortcuts.faq.activateQ" = "Wie aktiviere ich Siri?";
 "siriShortcuts.faq.activateA" = "Es ist automatisch. Sage einfach den Befehl zu Siri und Yala verarbeitet deine Anfrage.";
