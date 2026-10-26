@@ -11,8 +11,8 @@ source: tablero-tarjeta-de-credito-fecha-de-corte-fecha-nmtk
 
 Card `nmtk`. Jürgen, 19-oct: **no es una función nueva**, son ajustes sobre la tarjeta de crédito que Yala ya tiene.
 Paridad primero (corte + pago + facturado / por facturar + aviso N días antes), mejor UI después. Referencia de
-competencia: Pablo (usapablo.com). Estado: **spec + propuesta visual, esperando que Jürgen elija variantes** (decisión
-del 26-oct: no se implementa a ciegas).
+competencia: Pablo (usapablo.com). Estado: **spec + propuesta visual aprobados; listo para implementar.** Jürgen eligió el 26-oct la variante A
+en las cuatro decisiones (D1-D4, abajo).
 
 ## Medido hoy (árbol `origin/2.2` @ 393459ddb)
 
@@ -70,6 +70,8 @@ Propuesta visual (maquetas + capturas de hoy): https://claude.ai/artifact/79WtHX
 | D2 | Ficha | Bloque «Estado de cuenta» bajo el hero; el hero sigue en «Por pagar» | El hero se parte en Facturado + Por facturar |
 | D3 | Aviso | Elegible: el mismo día · 1 · 3 · 5 días antes | Fijo: 3 días antes y el mismo día, sin ajuste |
 | D4 | Flujo de caja | Fila informativa en el mes del pago, sin sumar | Nada en 2.2: solo ficha y aviso |
+
+**Elegido por Jürgen (2026-10-26): A en D1, D2, D3 y D4.**
 
 Por qué A en D3: el día de corte ya obliga a un campo nuevo con su despliegue de esquema; un segundo campo en el mismo
 despliegue cuesta casi lo mismo.
