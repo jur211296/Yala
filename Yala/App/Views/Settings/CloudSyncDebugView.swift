@@ -977,6 +977,12 @@ struct CloudSyncDebugView: View {
             actionButton("Enviar push de prueba (staging)", disabled: model.deviceTokenHex == nil) {
                 await model.sendTestPush()
             }
+            // Sentry: un error de prueba con un correo y un importe falsos, que en `yala-ios` deben verse tapados.
+            actionButton("Enviar error de prueba a Sentry", disabled: false) {
+                model.lastMessage = ErrorReportingService.sendTestError()
+                    ? "Sentry: error de prueba enviado (yala-ios)."
+                    : "Sentry: el SDK no arrancó (sin SENTRY_DSN en Secrets.xcconfig)."
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)

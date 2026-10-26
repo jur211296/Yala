@@ -66,6 +66,9 @@ export interface Env {
   // PUSH_ROLE_JWT`. Ausente → el fan-out es no-op silencioso (log 1 vez, junto al de APNs). ⚠️ si el owner
   // revoca el legacy secret (rotación de firmas), el fan-out muere en silencio (401) → re-acuñar. NUNCA a URL.
   PUSH_ROLE_JWT?: string;
+  // Avisos de errores en Sentry (proyecto `yala-gateway`, src/sentry.ts). `wrangler secret put SENTRY_DSN` (staging) /
+  // `--env production`; `.dev.vars` en local. Ausente → el SDK no arranca. NUNCA en wrangler.toml ni en el repo.
+  SENTRY_DSN?: string;
 }
 
 /** true solo en el entorno no-prod, donde se acepta el bypass de dev/test. */

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import * as Sentry from "@sentry/cloudflare";
 import type { Env } from "./env";
 import { handleConfig } from "./config";
 import { handleMetrics } from "./metrics";
@@ -21,6 +22,8 @@ import { handleSiwaExchange, handleSiwaRevoke } from "./sync/siwa";
 import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
 import { handleGroupsRpc } from "./groups/rpc";
 import { handleDebugPush } from "./push/routes";
+import { handleDebugSentry } from "./debugSentry";
+import { sentryOptions } from "./sentry";
 import { handlePushRegister, handlePushUnregister } from "./push/register";
 
 /**
@@ -52,6 +55,8 @@ app.post("/v1/attest/dev", handleDevToken); // bypass dev/test (solo staging + D
 
 // --- Push (spike G0 Grupos→backend): prueba de APNs desde el Worker — mismo gate que /v1/attest/dev ---
 app.post("/v1/debug/push", handleDebugPush);
+// --- Sentry: error de prueba para comprobar que el aviso llega y sin datos personales — mismo gate ---
+app.post("/v1/debug/sentry", handleDebugSentry);
 
 // --- Push APNs (G8-1): registro/desregistro del device token per-user (upsert/delete a push_tokens; RLS per-user) ---
 app.post("/push/register", handlePushRegister);
@@ -110,8 +115,12 @@ app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 // que no pudimos escribir. Lo que se arregla es el shape, no el status.
 app.onError((err, c) => {
   console.log(`[unhandled] ${c.req.method} ${new URL(c.req.url).pathname}: ${err.message}`);
+  // Hono atrapa el throw aquí y `withSentry` ya no lo ve: el aviso se manda a mano. Sin DSN es un no-op.
+  Sentry.captureException(err);
   return jsonError("yala_unavailable", "Internal error", 500);
 });
 
-export default app;
+// `withSentry` instrumenta el `fetch` de la app en el sitio y devuelve la misma app (los tests siguen usando
+// `app.request`). Sin `SENTRY_DSN`, `sentryOptions` devuelve `undefined` y el SDK no arranca.
+export default Sentry.withSentry((env: Env) => sentryOptions(env), app);
 export { RateLimiter } from "./rate_limiter";
