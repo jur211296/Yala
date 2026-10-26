@@ -99,6 +99,7 @@
 "widget.ui.expenses" = "Uitgaven";
 "widget.ui.balance" = "Saldo";
 "widget.ui.netFlow" = "Nettostroom";
+"widget.ui.spent" = "Uitgegeven";
 "widget.ui.cashFlow" = "In en uit";
 "widget.ui.total" = "Totaal";
 "widget.ui.ofLimit" = "van %@";

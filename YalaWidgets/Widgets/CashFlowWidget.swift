@@ -39,6 +39,17 @@ struct CashFlowEntry: TimelineEntry {
     var incomeIsApproximate: Bool = false
     var expenseIsApproximate: Bool = false
     var netCashFlowIsApproximate: Bool = false
+    /// Modo «Solo gastos»: la cifra grande es lo gastado, en positivo, y el rótulo dice «Gastado», como el Panel
+    /// (decisión A de Jürgen del 2026-10-26, auditoría «Solo gastos» L4). Antes decía «Flujo neto» con el gasto en
+    /// negativo, el único sitio donde ese usuario veía un flujo.
+    var isExpensesOnly: Bool = false
+
+    /// El rótulo de la cifra grande: `fallbackKey` (flujo neto o flujo de caja, según el tamaño) o «Gastado».
+    func kpiTitle(fallbackKey: String.LocalizationValue) -> String {
+        isExpensesOnly
+            ? String(localized: "widget.ui.spent", bundle: .main)
+            : String(localized: fallbackKey, bundle: .main)
+    }
 
     static var placeholder: CashFlowEntry {
         CashFlowEntry(
@@ -94,20 +105,21 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
             date: Date(),
             totalIncome: isExpensesOnly ? 0 : (summary?.totalIncome ?? 0),
             totalExpense: summary?.totalExpense ?? 0,
-            netCashFlow: isExpensesOnly ? -(summary?.totalExpense ?? 0) : (summary?.netCashFlow ?? 0),
+            netCashFlow: isExpensesOnly ? (summary?.totalExpense ?? 0) : (summary?.netCashFlow ?? 0),
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
             cashFlowPoints: summary?.cashFlowPoints ?? [],
             isPlaceholder: false,
             period: configuration.period,
-            // En Solo Gastos el widget fuerza el ingreso a 0 y el neto a `-gasto`: la marca sigue
+            // En Solo Gastos el widget fuerza el ingreso a 0 y la cifra grande al gasto: la marca sigue
             // al número, así que las tres pasan a ser la del gasto. Marcar el «ingreso» de 0 con la
             // señal del ingreso real pondría «≈» sobre un cero.
             incomeIsApproximate: isExpensesOnly ? false : (summary?.incomeIsApproximate ?? false),
             expenseIsApproximate: summary?.expenseIsApproximate ?? false,
             netCashFlowIsApproximate: isExpensesOnly
                 ? (summary?.expenseIsApproximate ?? false)
-                : (summary?.netCashFlowIsApproximate ?? false)
+                : (summary?.netCashFlowIsApproximate ?? false),
+            isExpensesOnly: isExpensesOnly
         )
     }
 }
@@ -140,7 +152,7 @@ struct SmallCashFlowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
             WidgetHeader(
-                title: String(localized: "widget.ui.netFlow", bundle: .main),
+                title: entry.kpiTitle(fallbackKey: "widget.ui.netFlow"),
                 subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                 icon: "arrow.left.arrow.right"
             )
@@ -219,7 +231,7 @@ struct MediumCashFlowView: View {
             // Header row: title+subtitle left, KPI right
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                    Text("widget.ui.netFlow", bundle: .main)
+                    Text(entry.kpiTitle(fallbackKey: "widget.ui.netFlow"))
                         .font(WDS.Typography.title)
                         .foregroundStyle(.primary)
                     Text(entry.period.toWidgetPeriod.localizedDisplayName)
@@ -328,7 +340,7 @@ struct LargeCashFlowView: View {
             // Header row
             HStack {
                 WidgetHeader(
-                    title: String(localized: "widget.ui.cashFlow", bundle: .main),
+                    title: entry.kpiTitle(fallbackKey: "widget.ui.cashFlow"),
                     subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
                     icon: "arrow.left.arrow.right"
                 )

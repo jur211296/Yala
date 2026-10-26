@@ -99,6 +99,7 @@
 "widget.ui.expenses" = "Wydatki";
 "widget.ui.balance" = "Saldo";
 "widget.ui.netFlow" = "Przepływ netto";
+"widget.ui.spent" = "Wydano";
 "widget.ui.cashFlow" = "Wpływy i wydatki";
 "widget.ui.total" = "Razem";
 "widget.ui.ofLimit" = "z %@";

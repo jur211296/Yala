@@ -412,7 +412,7 @@ struct FinancialReportView: View {
                         .foregroundStyle(.thToolbarIcon)
                 }
                 .accessibilityLabel(L10n.Filters.title)
-                .filterBadge(isActive: viewModel.activeFilterCount > 0)
+                .filterBadge(isActive: viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 0)
             }
         }
 

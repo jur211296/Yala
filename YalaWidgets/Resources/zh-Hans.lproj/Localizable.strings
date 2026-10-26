@@ -99,6 +99,7 @@
 "widget.ui.expenses" = "支出";
 "widget.ui.balance" = "余额";
 "widget.ui.netFlow" = "净流量";
+"widget.ui.spent" = "已支出";
 "widget.ui.cashFlow" = "收入与支出";
 "widget.ui.total" = "总计";
 "widget.ui.ofLimit" = "/ %@";

@@ -10,6 +10,7 @@ import SwiftUI
 struct GroupingChipsBar: View {
 
     @Binding var state: ReportGroupingState
+    @Environment(SessionState.self) private var sessionState
 
     @State private var showReorderSheet = false
 
@@ -54,7 +55,7 @@ struct GroupingChipsBar: View {
                 Image(systemName: dimension.iconName)
                     .font(.caption)
 
-                Text(dimension.displayName)
+                Text(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
                     .font(DS.Typography.caption)
             }
             .foregroundStyle(.primary)
@@ -63,7 +64,7 @@ struct GroupingChipsBar: View {
             .glassEffect(.regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(dimension.displayName)
+        .accessibilityLabel(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
         .accessibilityAddTraits(.isSelected)
     }
 

@@ -623,7 +623,7 @@ struct DetailContainerView: View {
                 .accessibilityLabel(L10n.Accessibility.filters)
                 .accessibilityIdentifier("filters_toolbar_button")
                 .overlay(alignment: .topTrailing) {
-                    if trendsViewModel.activeFilterCount > 0 {
+                    if trendsViewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 0 {
                         Circle()
                             .fill(Color.hotPink)
                             .frame(width: 8, height: 8)
