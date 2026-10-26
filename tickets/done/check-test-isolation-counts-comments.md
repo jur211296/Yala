@@ -1,6 +1,6 @@
 ---
 id: check-test-isolation-counts-comments
-status: backlog
+status: done
 priority: low
 area: "qa, ci"
 created: 2026-10-26
@@ -31,3 +31,11 @@ propio script. Barato; no cambia qué ficheros tienen que ser `.serialized`.
 
 Un fichero que solo menciona `makeTestContext()` en comentarios pasa el check, y uno que la llama sin `.serialized` sigue
 cayendo.
+
+## Cerrado 2026-10-26 (encargo ci-gate-reintentos-sello)
+
+`qa/check-test-isolation.sh` quita comentarios (`//`, `///`, `/* */` anidables) y vacía los literales de cadena (crudos
+incluidos) antes de buscar la llamada y `.serialized`; la definición `func makeTestContext(` no cuenta como llamada.
+Medido sobre el árbol: 154 → 136 ficheros «que llaman», los 18 que salen solo la nombran (comentario, texto de un
+`#expect` o la definición) y no entra ninguno. Banco nuevo `qa/check-test-isolation-test.sh` (13 casos + árbol real), en
+el job `coverage-index`; contra el check viejo da 8 rojos.
