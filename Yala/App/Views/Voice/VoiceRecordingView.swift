@@ -823,7 +823,7 @@ struct VoiceRecordingView: View {
         // Memoria del comercio: sugiere la subcategoría si el modelo no la encontró.
         if matchedSubcategory == nil && !parsed.note.trimmingCharacters(in: .whitespaces).isEmpty {
             let merchantService = MerchantMemoryService(modelContext: modelContext)
-            switch merchantService.suggest(for: parsed.note) {
+            switch merchantService.suggest(for: parsed.note, isExpense: parsed.isExpense) {
             case .suggest(let sub), .autoAssign(let sub):
                 matchedSubcategory = sub
                 needsUserInputFields.removeAll { $0 == "subcategory" }

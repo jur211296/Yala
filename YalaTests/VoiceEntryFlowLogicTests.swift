@@ -17,6 +17,27 @@ struct VoiceEntryFlowLogicTests {
 
     private struct Stub: Error {}
 
+    // MARK: - Importe en «Esto leí» (card ex73)
+
+    /// En 2.2 salía «S/ -251.81»; en 2.1, «S/ 251.81». El gasto se enseña sin signo y el ingreso igual.
+    @Test func reviewAmount_showsNoSign_forAnExpense_orAnIncome() {
+        #expect(VoiceEntryFlowLogic.reviewDisplayedAmount(-251.81) == 251.81)
+        #expect(VoiceEntryFlowLogic.reviewDisplayedAmount(40) == 40)
+        #expect(VoiceEntryFlowLogic.reviewDisplayedAmount(0) == 0)
+    }
+
+    /// Lo que pinta la tarjeta pasa por esa función: si vuelve a formatear el importe con signo, esto se pone rojo.
+    @Test func reviewCard_formatsTheUnsignedAmount() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Yala/App/Views/Voice/VoiceDraftReviewCard.swift")
+        let source = try String(contentsOf: url, encoding: .utf8)
+        let body = source.components(separatedBy: "private var formattedAmount: String {").dropFirst().first ?? ""
+        let getter = body.components(separatedBy: "\n    }").first ?? ""
+        #expect(getter.contains("VoiceEntryFlowLogic.reviewDisplayedAmount(amount)"))
+        #expect(!getter.contains("currency(amount,"))
+    }
+
     // MARK: - Fallos de grabación
 
     @Test func micDenied_orRestricted_asksForSettings() {

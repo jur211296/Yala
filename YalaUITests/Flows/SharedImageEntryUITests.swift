@@ -58,6 +58,48 @@ final class SharedImageEntryUITests: XCTestCase {
         XCTAssertTrue(started, message, file: file, line: line)
     }
 
+    // MARK: - Siendo gratis: la foto choca con «Función Pro» (card fazw)
+
+    /// Gratis, con la compra de pruebas que sale bien (`-uitest-fake-purchase`, molde de `YalaProLote06UITests`).
+    private func launchFree() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchForUITest(aiConsent: true, fakePrices: true, fakePurchase: true,
+                            extraArguments: ["-uitest-image-result", "one"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        return app
+    }
+
+    /// Comprar desde la puerta que sacó la foto compartida y tocar «Comenzar» lee ESA foto. Hasta el 2026-10-25 la tanda
+    /// se descartaba al salir la puerta y «Comenzar» abría el registro por imagen vacío.
+    func test_freeUser_sharedImage_purchaseFromTheGate_readsThePhoto() {
+        let app = launchFree()
+        openShare()
+        let cta = app.buttons["upgrade_prompt_cta"]
+        XCTAssertTrue(cta.waitForExistence(timeout: 15), "Siendo gratis, la foto compartida tenía que sacar «Función Pro».")
+        cta.tap()
+        let start = app.buttons["subscription_success_continue"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10), "No salió la bienvenida a Pro.")
+        start.tap()
+        assertReadingStarts(app, capture: "fazw-tras-comprar",
+                            "Tras comprar, la foto compartida tenía que leerse (image_review_title).")
+    }
+
+    /// Control: cerrar con «Ahora no» descarta la foto, como antes, y volver a la app no saca la puerta otra vez.
+    func test_freeUser_sharedImage_notNow_discardsIt_andTheGateDoesNotComeBack() {
+        let app = launchFree()
+        openShare()
+        let notNow = app.buttons["upgrade_prompt_not_now"]
+        XCTAssertTrue(notNow.waitForExistence(timeout: 15), "Siendo gratis, la foto compartida tenía que sacar «Función Pro».")
+        notNow.tap()
+        XCTAssertFalse(app.staticTexts["image_review_title"].waitForExistence(timeout: 5), "Sin comprar no se lee nada.")
+
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10), "Yala no volvió delante.")
+        XCTAssertFalse(app.buttons["upgrade_prompt_cta"].waitForExistence(timeout: 5),
+                       "La foto descartada volvió a sacar «Función Pro» al volver a la app.")
+    }
+
     /// a) En frío: la URL entra antes de que el arranque termine.
     func test_coldLaunch_sharedImage_startsReading() {
         let app = launch(deeplinkURL: "yala://shared-image?uitest-stage=readable")

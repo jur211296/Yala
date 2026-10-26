@@ -1,10 +1,10 @@
 ---
 id: csv-import-leaves-no-origin-mark-and-reuses-opposite-categories
-status: backlog
+status: done
 priority: medium
 area: "data, import"
 created: 2026-09-16
-updated: 2026-10-08
+updated: 2026-10-25
 source: "AC pendiente de `csv-import-rows-fall-in-the-chat-sign-sweep` (criterio 3), creado en el barrido /qa del 2026-09-16"
 ---
 
@@ -54,3 +54,19 @@ barrido lo usa como señal de lote. Una marca de origen explícita no rompe ning
 - `records-standalone-amount-discrepancy` — la parte de la categoría, medida.
 
 Triage 2026-10-08: abierto · medium → medium · las filas importadas siguen sin marca de origen (los cuatro `TransactionItem(` de `TransactionCSVImportService.swift:187/1107/1502/1663` toman `createdAt = Date.now`) y `CategoryImportHelper` sigue reusando por nombre sin `isIncome` (`:45-47`).
+
+## Resuelto en parte y descartado en parte (2026-10-25, lote 12.6, card d4od)
+
+**Criterio 2 (naturaleza de la categoría): hecho.** `CategoryImportHelper.resolveForImport` +
+`CategoryImportNatureLogic.choose`, usados por los tres caminos del importador (CSV, multimoneda y el de borradores
+que comparte XLSX). Orden: la categoría del signo que ya tiene la subcategoría; la contraria que ya la tiene (reembolso,
+o transferencia en «Otros», que se quedan donde están); la del signo aunque no la tenga; y si solo hay la contraria sin
+la subcategoría, en modo «crear» se crea la del signo («Otros › Bonificación» +1.500 ya no cae en la «Otros» de gasto)
+y en modo estricto la fila falla como antes. Con dos candidatas igual de buenas gana la de menor `sortOrder`.
+Tests: `CategoryImportNatureLogicTests` y `CSVImportCategoryNatureTests` (de punta a punta, con el control del modo
+estricto).
+
+**Criterio 1 (marca de origen): descartado aquí.** Pide un campo nuevo en `TransactionItem`, que es un despliegue del
+esquema de CloudKit a Production y una columna nueva del canal personal de la nube; los dos quedan fuera de un lote de
+la cola. Su único lector es el barrido one-shot del chat, y el hueco real que deja vivo —un CSV de una sola fila con un
+reembolso, en una instalación nueva— va a su ticket: `chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install`.

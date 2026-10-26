@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1064)
+## Index (1065)
 
 | id | status | path |
 |---|---|---|
@@ -196,6 +196,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-rows-sealed-before-the-fix-have-no-repair-path | done | tickets/done/chat-rows-sealed-before-the-fix-have-no-repair-path.md |
 | chat-rows-with-unsigned-amount-have-no-repair-path | done | tickets/done/chat-rows-with-unsigned-amount-have-no-repair-path.md |
 | chat-sends-every-past-turn-to-the-model | backlog | tickets/backlog/chat-sends-every-past-turn-to-the-model.md |
+| chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install | backlog | tickets/backlog/chat-sign-sweep-stays-armed-until-the-first-transaction-of-a-new-install.md |
 | chat-suggestions-context-counts-the-whole-group-expense | done | tickets/done/chat-suggestions-context-counts-the-whole-group-expense.md |
 | chat-suggestions-reject-the-users-own-recurring-payments | backlog | tickets/backlog/chat-suggestions-reject-the-users-own-recurring-payments.md |
 | chat-suggestions-show-merchants-in-capitals | backlog | tickets/backlog/chat-suggestions-show-merchants-in-capitals.md |
@@ -283,7 +284,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | corpus-de-test-de-staging-crece-sin-limite | done | tickets/done/corpus-de-test-de-staging-crece-sin-limite.md |
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
 | creategroup-throw-after-commit-loses-owner | done | tickets/done/creategroup-throw-after-commit-loses-owner.md |
-| csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | backlog | tickets/backlog/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
+| csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | done | tickets/done/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
 | currency-change-failure-is-silent-and-half-applied | done | tickets/done/currency-change-failure-is-silent-and-half-applied.md |
@@ -436,7 +437,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | backlog | tickets/backlog/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
-| group-expense-success-claims-a-bridge-write-that-did-not-happen | backlog | tickets/backlog/group-expense-success-claims-a-bridge-write-that-did-not-happen.md |
+| group-expense-success-claims-a-bridge-write-that-did-not-happen | done | tickets/done/group-expense-success-claims-a-bridge-write-that-did-not-happen.md |
 | group-expense-views-redesign | done | tickets/done/group-expense-views-redesign.md |
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
@@ -666,7 +667,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | mcp-connector-counts-future-dated-rows-in-todays-balance | backlog | tickets/backlog/mcp-connector-counts-future-dated-rows-in-todays-balance.md |
-| merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
+| merchant-memory-suggests-across-natures-in-three-more-places | done | tickets/done/merchant-memory-suggests-across-natures-in-three-more-places.md |
 | metrics-drain-purge-drops-unsent-events-when-the-spool-is-full | backlog | tickets/backlog/metrics-drain-purge-drops-unsent-events-when-the-spool-is-full.md |
 | migrate-attempt-session-survives-a-relaunch-mid-attempt | backlog | tickets/backlog/migrate-attempt-session-survives-a-relaunch-mid-attempt.md |
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
@@ -937,7 +938,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | share-image-reading-does-not-always-start | done | tickets/done/share-image-reading-does-not-always-start.md |
 | shared-photo-waits-silently-behind-an-open-panel-sheet | done | tickets/done/shared-photo-waits-silently-behind-an-open-panel-sheet.md |
-| shared-receipt-is-dropped-when-it-hits-the-pro-gate | backlog | tickets/backlog/shared-receipt-is-dropped-when-it-hits-the-pro-gate.md |
+| shared-receipt-is-dropped-when-it-hits-the-pro-gate | done | tickets/done/shared-receipt-is-dropped-when-it-hits-the-pro-gate.md |
 | shared-scheduled-expense-shows-twice-in-inbox | done | tickets/done/shared-scheduled-expense-shows-twice-in-inbox.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | sharing-several-photos-hides-yala | done | tickets/done/sharing-several-photos-hides-yala.md |

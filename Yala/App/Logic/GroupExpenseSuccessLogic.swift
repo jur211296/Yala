@@ -69,6 +69,19 @@ nonisolated enum GroupExpensePersonalOutcome: Equatable {
     case none
 }
 
+/// Lo que el puente dejó en el store para UN gasto de grupo, leído después de guardarlo
+/// (`GroupExpenseBridgeTraceReader`). Es la prueba con la que `confirmedOutcome` deja hablar a la pantalla de éxito.
+nonisolated struct GroupExpenseBridgeTrace: Equatable {
+    /// La cuenta de la transacción real (cuenta que no es de sistema) con este gasto; `nil` si no hay.
+    var realAccountName: String?
+    /// Hay una transacción en la cuenta virtual de Grupos con importe negativo: tu parte como gasto de grupo.
+    var hasVirtualShare: Bool
+    /// Hay un borrador «registrar también en tu Yala» pendiente en la Bandeja para este gasto.
+    var hasPendingOptInDraft: Bool
+    /// El puente falló y el gasto quedó marcado para reintentarlo.
+    var bridgePending: Bool
+}
+
 /// Cómo terminó el «¿Registrar también en tu Yala personal?» (puente apagado y pagaste tú).
 ///
 /// UX 2.2 · L13-7 (decisión B de Jürgen, 2026-10-18): «Sí, registrar» pide la cuenta ahí mismo y registra de verdad; el
@@ -117,6 +130,34 @@ extension GroupExpenseSuccessLogic {
             return .waitingInInbox
         case .declined:
             return share
+        }
+    }
+
+    /// La línea «qué se apuntó en tus finanzas» solo si el puente lo escribió de verdad (card dx3m, ticket
+    /// `group-expense-success-claims-a-bridge-write-that-did-not-happen`).
+    ///
+    /// `personalOutcome` espeja las ramas de `GroupTransactionBridge.bridgeExpense` sin leer lo que hizo, y hay seis
+    /// casos en que el puente no escribe nada: el dominio de Grupos sellado, el grupo oculto, el gasto en el libro de
+    /// conservados al desasociar, sin miembro propio resuelto, sin contexto, o un error. En los seis el store queda sin
+    /// rastro de este gasto, así que la línea se confirma contra ese rastro y, sin él, se calla.
+    ///
+    /// - Parameter trace: lo que hay en el store para este gasto; `nil` si no se pudo leer (se calla: no se sabe).
+    nonisolated static func confirmedOutcome(
+        _ claimed: GroupExpensePersonalOutcome,
+        trace: GroupExpenseBridgeTrace?
+    ) -> GroupExpensePersonalOutcome {
+        guard let trace, !trace.bridgePending else { return .none }
+        switch claimed {
+        case .chargedToAccount:
+            // La cuenta que se nombra es la de la transacción que quedó, no la elegida en el formulario.
+            guard let name = trace.realAccountName, !name.isEmpty else { return .none }
+            return .chargedToAccount(accountName: name)
+        case .waitingInInbox:
+            return trace.hasPendingOptInDraft ? .waitingInInbox : .none
+        case .shareAsGroupExpense:
+            return trace.hasVirtualShare ? claimed : .none
+        case .none:
+            return .none
         }
     }
 

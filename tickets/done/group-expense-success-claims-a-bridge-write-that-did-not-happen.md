@@ -1,10 +1,10 @@
 ---
 id: group-expense-success-claims-a-bridge-write-that-did-not-happen
-status: backlog
+status: done
 priority: low
 area: "groups, bridge, expense-form"
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-25
 source: "auditoría UX 2.2 · L13-3 (review adversarial de la implementación)"
 ---
 
@@ -29,3 +29,14 @@ en ese mismo PR.
 
 La línea de «qué se apuntó» sale de lo que el puente devolvió (o se calla cuando no escribió), con test de cada uno de los
 seis casos.
+
+## Resuelto (2026-10-25, lote 12.6, card dx3m)
+
+- La línea se confirma contra lo que quedó en el store para ese gasto (`GroupExpenseBridgeTraceReader`: transacción
+  real con su cuenta, virtual negativa de tu parte, borrador opt-in pendiente, `bridgePending`) con
+  `GroupExpenseSuccessLogic.confirmedOutcome`. Sin rastro, o con el reintento marcado, se calla. La cuenta que se
+  nombra es la de la transacción, no la elegida en el formulario.
+- Tests: `GroupExpenseSuccessConfirmedOutcomeTests` (los seis casos, con sus controles) y
+  `GroupExpenseSuccessBridgeTraceReaderTests` (puente real: grupo oculto y sin miembro propio no escriben y la línea
+  se calla; Caso A y Caso B la confirman). El sello del dominio no se puede montar en un test
+  (`isDomainOpenForBridge` lo ignora con `isRunningTests`): queda en la tabla.

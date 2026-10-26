@@ -3280,7 +3280,8 @@ final class AppBootstrapper {
             // evalúa, y los
             // dos tienen que responder por la misma persona o la imagen se re-emite contra un gate
             // que la va a diferir.
-            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
+            isHeldForProGate: SharedImageProGateHold.isHolding
         )
         SharedImageBreadcrumb.checked(site: site, found: pending != nil, willReEmit: willReEmit)
         guard willReEmit, let firstImageURL = pending else { return }
@@ -3331,8 +3332,20 @@ final class AppBootstrapper {
         // una foto registraba sin ser Pro. La foto se descarta: si se quedara en `PendingImages/`, la recuperación del
         // arranque volvería a enseñar el aviso en cada vuelta a la app. Con varias compartidas a la vez se va la tanda
         // entera: el aviso sale una vez, no una por foto.
+        //
+        // Desde el 2026-10-25 (card fazw) la tanda no se descarta aquí: se retiene mientras «Función Pro» está abierta.
+        // Si se compra, el Panel abre el registro por imagen con ella; si se cierra sin comprar, la descarta
+        // (`SharedImageProGateHold`). Mientras se retiene, la recuperación no la re-emite.
         guard FeatureGateService.shared.canAccess(.imageInput) else {
-            SharedContainerService.removePendingImageBatch(containing: url)
+            guard !SharedImageProGateHold.isHolding else {
+                // La puerta ya está abierta (o en cola) por otra tanda: una segunda no saca otra hoja encima.
+                if let held = SharedImageProGateHold.heldURL,
+                   !SharedContainerService.pendingImageBatch(containing: held).contains(url) {
+                    SharedContainerService.removePendingImageBatch(containing: url)
+                }
+                return
+            }
+            SharedImageProGateHold.hold(url)
             RouterEntryGate.shared.submit(.navigate(.panel))
             RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
             return

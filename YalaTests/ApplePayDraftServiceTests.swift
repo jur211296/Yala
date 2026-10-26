@@ -272,6 +272,28 @@ struct ApplePayDraftServiceTests {
         #expect(draft?.confidenceSubcategory == 0.8)
     }
 
+    /// Apple Pay siempre es gasto: una subcategoría de INGRESO que la memoria aprendió del comercio no se pone (ticket
+    /// `merchant-memory-suggests-across-natures-in-three-more-places`). El borrador nace sin subcategoría y la pide.
+    /// Los dos casos de arriba (subcategorías de gasto) son su control positivo.
+    @Test func merchantMemory_incomeSubcategory_isNotAssignedToAnApplePayExpense() throws {
+        let context = try makeTestContext()
+        let category = makeTestCategory(context: context, name: "Ingresos varios", isIncome: true)
+        let sub = makeTestSubcategory(context: context, name: "Reembolso empresa", category: category)
+        makeMerchantMemory(context: context, merchant: "Wong", subcategory: sub,
+                           countApproved: 6, countCorrected: 0)
+        try context.save()
+        enqueue(rawAmount: "$25", merchant: "Wong")
+
+        let created = ApplePayDraftService.processPending(context: context, pendingStoreDefaults: pendingDefaults, importQuiescent: true)
+
+        #expect(created == 1)
+        let draft = try #require(try fetchDrafts(context).first)
+        #expect(draft.subcategory == nil)
+        #expect(draft.confidenceSubcategory == nil)
+        #expect(draft.needsUserInput.contains(DraftInputRequirement.subcategory))
+        #expect((draft.amount ?? 0) < 0)
+    }
+
     @Test func merchantMemory_belowThreshold_noSubcategory() throws {
         let context = try makeTestContext()
         let category = makeTestCategory(context: context, name: "Ocio")
