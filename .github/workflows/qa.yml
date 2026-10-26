@@ -74,6 +74,10 @@ jobs:
         run: python3 qa/validate-coverage.py
       - name: Aislamiento de tests (makeTestContext( ⇒ .serialized)
         run: bash qa/check-test-isolation.sh
+      # El check anterior mira solo código: comentarios y cadenas no cuentan. Leía el fichero
+      # entero y una cabecera que NOMBRABA la función dejó #634 en cola toda una noche (26-oct).
+      - name: Aislamiento de tests, su banco (check-test-isolation-test.sh)
+        run: bash qa/check-test-isolation-test.sh
       # El candado que impide que un commit diga que lo escribió una IA vive en
       # `.githooks/commit-msg` (ADR-013; aquí es propio porque `core.hooksPath` local
       # sustituye al global, no se suma). Un candado sin banco de pruebas se relaja sin
@@ -96,9 +100,10 @@ jobs:
       - name: Simulador del runner (ci-simulador.sh)
         run: bash qa/scripts/ci-simulador-test.sh
       # El paso pure-logic del job `tests` repite SOLO sus rojos con este script. Lo que decide
-      # si un rojo se da por rescatado, y que un `.xcresult` raro nunca acabe repitiendo la suite
-      # entera, solo se ejerce cuando algo falla; su banco lo simula con `xcodebuild` y `xcrun`
-      # falsos.
+      # si un rojo se da por rescatado, que un `.xcresult` raro nunca acabe repitiendo la suite
+      # entera y que un arranque fallido del simulador la relance (y no repita el texto del error
+      # como si fuera un test) solo se ejerce cuando algo falla; su banco lo simula con
+      # `xcodebuild` y `xcrun` falsos.
       - name: Reintento de rojos (ci-reintentar-rojos.sh)
         run: bash qa/scripts/ci-reintentar-rojos-test.sh
       # Los unit del job `tests` BLOQUEAN desde el 2026-10-10: su rojo pone `tests` en rojo y el

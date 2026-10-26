@@ -203,7 +203,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-suggestions-show-merchants-in-capitals | backlog | tickets/backlog/chat-suggestions-show-merchants-in-capitals.md |
 | chat-top-transactions-per-subcategory-rank-by-native-amount | done | tickets/done/chat-top-transactions-per-subcategory-rank-by-native-amount.md |
 | chat-total-ignores-the-panel-groups-toggle | done | tickets/done/chat-total-ignores-the-panel-groups-toggle.md |
-| check-test-isolation-counts-comments | backlog | tickets/backlog/check-test-isolation-counts-comments.md |
+| check-test-isolation-counts-comments | done | tickets/done/check-test-isolation-counts-comments.md |
 | ci-2-2-builds-with-xcode-26-and-uses-ios-27-apis | done | tickets/done/ci-2-2-builds-with-xcode-26-and-uses-ios-27-apis.md |
 | ci-allowlist-no-cubre-encargos-ni-qa-scripts | discarded | tickets/discarded/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
