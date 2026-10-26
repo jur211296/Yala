@@ -34,14 +34,14 @@ struct RecentRecordsWidget: View {
     private static let shortDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
+        formatter.setLocalizedDateFormatFromTemplate("dMMM")
         return formatter
     }()
 
     private static let secondaryDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = AppLocale.current
-        formatter.dateFormat = "d MMM"
+        formatter.setLocalizedDateFormatFromTemplate("dMMM")
         return formatter
     }()
 

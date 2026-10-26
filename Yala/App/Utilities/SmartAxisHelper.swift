@@ -20,7 +20,8 @@ enum SmartAxisHelper {
         if let f = formatterCache[key] { return f }
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = format
+        // Plantilla, no formato fijo: el orden de día y mes es el de cada idioma («Oct 13» en en-US; lote 12.4).
+        f.setLocalizedDateFormatFromTemplate(format)
         formatterCache[key] = f
         return f
     }
@@ -150,9 +151,9 @@ enum SmartAxisHelper {
         if let grouping = forceGrouping {
             switch grouping {
             case .month:
-                dateFormat = multipleYears ? "MMM yy" : "MMM"
+                dateFormat = multipleYears ? "MMMyy" : "MMM"
             case .weekOfYear:
-                dateFormat = "d MMM"
+                dateFormat = "dMMM"
             default:
                 dateFormat = spanBasedFormat(days: days, multipleYears: multipleYears, isSinglePoint: startDate == endDate)
             }
@@ -168,11 +169,11 @@ enum SmartAxisHelper {
 
     private static func spanBasedFormat(days: Double, multipleYears: Bool, isSinglePoint: Bool) -> String {
         if isSinglePoint || days == 0 {
-            return multipleYears ? "d MMM yy" : "d MMM"
+            return multipleYears ? "dMMMyy" : "dMMM"
         } else if days > 60 {
-            return multipleYears ? "MMM yy" : "MMM"
+            return multipleYears ? "MMMyy" : "MMM"
         } else if days > 14 {
-            return "d MMM"
+            return "dMMM"
         } else {
             return "d"
         }

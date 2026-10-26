@@ -1,10 +1,10 @@
 ---
 id: export-file-insides-still-say-transacciones
-status: backlog
+status: done
 priority: very-low
 area: "export, copy, l10n"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-25
 source: "lote decidido 2.2 · 03 (L20-4), visto fuera de lo decidido"
 ---
 
@@ -26,3 +26,9 @@ con sus palabras), así que conviene decidirlo junto: pestaña con `l20d.export.
 ## Hecho cuando
 
 La pestaña del Excel y el archivo de grupos usan las palabras y la fecha del idioma de la app, con test.
+
+## Resuelto (lote 12.4, 2026-10-25)
+
+- La pestaña del Excel se llama con la palabra del archivo en el idioma de la app (`l20d.export.fileStem`: «Registros», «Records», «Einträge», «记录»…), limpia de lo que Excel rechaza (`[]:*?/\`, más de 31 caracteres) y escapada en el XML. La plantilla de importación hereda el mismo nombre.
+- El CSV de grupos se llama `Yala_Grupos_17-oct-2026.csv` con `ExportRecordsLogic.fileName` (palabra `groups.title` y fecha del idioma), como el de Registros.
+- Lo fija `ExportFileInsidesTests` (XML de la pestaña, nombre válido en los 16 idiomas, nombre del CSV y orden de en-US).

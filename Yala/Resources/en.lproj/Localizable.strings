@@ -448,10 +448,10 @@
 "settings.favorites" = "Favorites";
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Favorite Budgets";
-"settings.budgetsFavoritesInfo" = "Favorite budgets appear in the Budgets card on the Home tab (3 in medium, 5 in large).";
+"settings.budgetsFavoritesInfo" = "Favorite budgets appear in the Budgets card on the Panel (3 in medium, 5 in large).";
 "settings.budgetsFavoritesEmptyHint" = "Create budgets in the Planning tab.";
 "settings.budgetsFavoritesReorder" = "Reorder favorites";
-"budgets.favorites.previewTitle" = "This is how it will look on the Home tab";
+"budgets.favorites.previewTitle" = "This is how it will look on the Panel";
 "budgets.favorites.previewEmpty" = "Select favorites to see the preview";
 "settings.tabBarConfig" = "Bottom tabs";
 "settings.tabBarConfigInfo" = "Choose which tabs you see at the bottom and in what order.";
@@ -657,7 +657,7 @@
 "export.column.note.description" = "What you wrote in the note.";
 "common.next" = "Next";
 "settings.versionInfo" = "Version %1$@ (Build %2$@)";
-"tab.panel" = "Home";
+"tab.panel" = "Panel";
 "tab.statistics" = "Statistics";
 "tab.planning" = "Planning";
 "tab.more" = "More";
@@ -740,7 +740,7 @@
 "widget.today" = "Today";
 
 // Widget Preferences
-"widget.preferences.description" = "Choose what you want to see on your dashboard and in what order.";
+"widget.preferences.description" = "Choose what you want to see on your Panel and in what order.";
 "widget.resetLayout" = "Reset to original layout";
 "widget.alwaysVisible" = "Always visible";
 "widget.fixedPosition" = "Fixed position";
@@ -1004,7 +1004,7 @@
 "need.unclassified" = "Unclassified";
 "need.essential.desc" = "What you can't stop paying: rent, power, food.";
 "need.priority.desc" = "Worth it, but you can adjust it: gym, internet.";
-"need.optional.desc" = "Treats and splurges: nights out, takeaway.";
+"need.optional.desc" = "Treats and splurges: nights out, takeout.";
 "need.unclassified.desc" = "Not decided yet.";
 
 
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "Indicators";
 "settings.sectionFormat" = "Number Format";
 "settings.defaultPeriod" = "Default Period";
-"settings.defaultPeriodDescription" = "The period Home, Records and Statistics open with. You can change it for a while from the period selector.";
+"settings.defaultPeriodDescription" = "The period the Panel, Records and Statistics open with. You can change it for a while from the period selector.";
 "settings.colorfulIcons" = "Colorful Icons";
 "settings.colorfulIconsDescription" = "Show colored icons in the profile section, iOS Settings style.";
 "settings.colorfulIconsDisabledByTheme" = "Automatically disabled by the current theme.";
@@ -1699,9 +1699,9 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Help hints";
-"settings.widgetHintsDescription" = "Shows the “?” button next to charts, explaining each one. You'll see it on Home, in Statistics and in Planning.";
+"settings.widgetHintsDescription" = "Shows the “?” button next to charts, explaining each one. You'll see it on the Panel, in Statistics and in Planning.";
 "settings.showVariations" = "Compare with previous period";
-"settings.showVariationsDescription" = "Shows how much each figure went up or down compared with the previous period. You'll see it on Home, in Statistics and in reports.";
+"settings.showVariationsDescription" = "Shows how much each figure went up or down compared with the previous period. You'll see it on the Panel, in Statistics and in reports.";
 "settings.averageLine" = "Average line on charts";
 "settings.averageLineDescription" = "Show an average line on bar charts.";
 "settings.averageLine.off" = "None";
@@ -2095,7 +2095,7 @@
 "subscription.feature.currencies" = "All currencies and exchange rates";
 "subscription.feature.themes" = "Custom themes";
 "subscription.feature.export" = "Export to Excel and CSV";
-"subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.";
+"subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless canceled at least 24 hours before the end of the current period.";
 "subscription.termsLink" = "Terms of Use & Privacy Policy";
 "subscription.termsOfUseLink" = "Terms of Use";
 "subscription.privacyPolicyLink" = "Privacy Policy";
@@ -2185,7 +2185,7 @@
 "faq.whatIsYala.q" = "What is Yala?";
 "faq.whatIsYala.a" = "Yala is your personal finance app. It helps you track expenses and income, organize your money by categories and tags, create budgets, and see clear reports of how your finances are doing.";
 "faq.howToRecord.q" = "How do I record an expense?";
-"faq.howToRecord.a" = "On Home, tap New record to type the amount, or Voice or Photo to dictate it or read a receipt. Yala fills in the details for you.";
+"faq.howToRecord.a" = "On the Panel, tap New record to type the amount, or Voice or Photo to dictate it or read a receipt. Yala fills in the details for you.";
 "faq.multiCurrency.q" = "Can I use multiple currencies?";
 "faq.multiCurrency.a" = "Yes. Yala has 54 currencies. Each account uses its own, and Yala converts totals to your main currency. Choose your main currency, and up to 2 secondary ones to compare, in Settings > Currency & Exchange.";
 "faq.changeCategory.q" = "How do I change an expense's category?";
@@ -2644,7 +2644,7 @@
 "tutorials.createAccount.intro.title" = "What is an account?";
 "tutorials.createAccount.intro.desc" = "Set up your bank, wallet, or card to track where your money lives.";
 "tutorials.createAccount.step0.title" = "Create a new account";
-"tutorials.createAccount.step1.title" = "Or create it from Home";
+"tutorials.createAccount.step1.title" = "Or create it from the Panel";
 "tutorials.createAccount.step2.title" = "Fill in the details";
 "tutorials.createAccount.completion.title" = "Now you know how to create an account";
 "tutorials.createAccount.completion.desc" = "Split your money into accounts (bank, cash, card) to see how much is in each one. You can edit them anytime.";
@@ -2695,7 +2695,7 @@
 "tutorials.createBudgets.intro.desc" = "Set spending limits and get notified when you're close.";
 "tutorials.createBudgets.step0.title" = "Open Planning";
 "tutorials.createBudgets.step1.title" = "Configure your budget";
-"tutorials.createBudgets.step2.title" = "Show it on Home";
+"tutorials.createBudgets.step2.title" = "Show it on the Panel";
 "tutorials.createBudgets.step3.title" = "Edit it whenever";
 "tutorials.createBudgets.completion.title" = "Now you know how to create a budget";
 "tutorials.createBudgets.completion.desc" = "With a budget, you see right away how much you have left to spend, and Yala lets you know when you're getting close to the limit.";
@@ -2722,14 +2722,14 @@
 "tutorials.createFavorites.completion.desc" = "A favorite logs the expenses you repeat in one tap. You can have as many as you like.";
 
 // 9. editPanel (3 steps)
-"tutorials.editPanel.title" = "Customize the panel";
-"tutorials.editPanel.intro.title" = "Your panel, your way";
-"tutorials.editPanel.intro.desc" = "Customize which widgets appear on your panel.";
-"tutorials.editPanel.step0.title" = "Open the panel";
+"tutorials.editPanel.title" = "Customize the Panel";
+"tutorials.editPanel.intro.title" = "Your Panel, your way";
+"tutorials.editPanel.intro.desc" = "Customize which widgets appear on your Panel.";
+"tutorials.editPanel.step0.title" = "Open the Panel";
 "tutorials.editPanel.step1.title" = "Customize the widgets";
 "tutorials.editPanel.step2.title" = "Reset if you want";
-"tutorials.editPanel.completion.title" = "Now you know how to customize Home";
-"tutorials.editPanel.completion.desc" = "Home shows what you choose, in the order you want. You can change it anytime.";
+"tutorials.editPanel.completion.title" = "Now you know how to customize the Panel";
+"tutorials.editPanel.completion.desc" = "Your Panel shows what you choose, in the order you want. You can change it anytime.";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "Panel filters";
@@ -2765,7 +2765,7 @@
 
 // Tutorial step descriptions (re-expanded)
 "tutorials.createAccount.step0.desc" = "In Settings, go to Accounts and tap + to create a new one.";
-"tutorials.createAccount.step1.desc" = "On Home, under Your finances, swipe through your accounts to the end and tap Add.";
+"tutorials.createAccount.step1.desc" = "On the Panel, under Your finances, swipe through your accounts to the end and tap Add.";
 "tutorials.createAccount.step2.desc" = "Fill in the details for your new account and tap Save.";
 "tutorials.createCategories.step0.desc" = "In Settings, go to Categories and tap + to create a new one.";
 "tutorials.createCategories.step1.desc" = "Remember that there must always be subcategories associated with a category to be able to create it.";
@@ -2773,15 +2773,15 @@
 "tutorials.createCategories.step3.desc" = "Customize your category's icon and color to your liking whenever you want.";
 "tutorials.createTags.step0.desc" = "In Settings, go to Tags and tap + to create a new one.";
 "tutorials.createTags.step1.desc" = "Customize your tag to your liking: give it a name, icon, and color.";
-"tutorials.createRecord.step0.desc" = "On Home, tap New record. To dictate or read a receipt, tap Voice or Photo.";
+"tutorials.createRecord.step0.desc" = "On the Panel, tap New record. To dictate or read a receipt, tap Voice or Photo.";
 "tutorials.createRecord.step1.desc" = "You can record expenses, income, and even transfers between accounts. Exchange rates are calculated automatically in real time.";
 "tutorials.createRecord.step2.desc" = "Fill in the required fields: amount, account, and subcategory. You can also add a description and any tags you want.";
 "tutorials.createRecord.step3.desc" = "Use quick shortcuts: @ for account, ! for category, and # for tag. Start typing to refine your search within each shortcut.";
 "tutorials.importData.step0.desc" = "In Settings, under Data, tap Import File.";
 "tutorials.importData.step1.desc" = "You can import CSV or Excel as many times as you want following the default template, which you can download right there. If there's data in various currencies, it will ask you to select the accounts for each one.";
 "tutorials.createBudgets.step0.desc" = "In the menu select Planning and make sure you're on the Budgets tab. Use the + button to create a new one.";
-"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
-"tutorials.createBudgets.step2.desc" = "Turn on “Show in widget” to see it in the Budgets widget on Home.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: weekly, monthly, yearly, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
+"tutorials.createBudgets.step2.desc" = "Turn on “Show in widget” to see it in the Budgets widget on the Panel.";
 "tutorials.createBudgets.step3.desc" = "Remember you can always come back to edit your budget by tapping it.";
 "tutorials.createScheduledPayments.step0.desc" = "In the menu select Planning and make sure you're on the Scheduled Payments tab. Use the + button to create a new one.";
 "tutorials.createScheduledPayments.step1.desc" = "Fill in your payment name, amount, note (optional), account, subcategory, and tags (optional).";
@@ -2791,8 +2791,8 @@
 "tutorials.createFavorites.step0.desc" = "In New Record, tap “Favorite” below the amount to save what you’ve entered so far as a favorite.";
 "tutorials.createFavorites.step1.desc" = "Next time, tap the favorite in the row at the top of the form: the fields you saved fill in automatically.";
 "tutorials.editPanel.step0.desc" = "Go to the main screen where you see your expense summary with all available widgets.";
-"tutorials.editPanel.step1.desc" = "Tap the grid button next to each Home section to choose which widgets to see and in what order.";
-"tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset\" within customization.";
+"tutorials.editPanel.step1.desc" = "Tap the grid button next to each Panel section to choose which widgets to see and in what order.";
+"tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset to original layout\" within customization.";
 "tutorials.panelFiltering.step0.desc" = "Get the most out of Yala's interactive charts. Almost all panels are filterable by category, need, among others. Play with them and find what works best for you.";
 "tutorials.panelFiltering.step1.desc" = "You have a filter bar where you'll see all the applied filters. You can remove them individually or all at once whenever you want.";
 "tutorials.panelFiltering.step2.desc" = "In the different views of the app you'll see you can filter to your liking with the charts.";
@@ -2923,7 +2923,7 @@
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ takes %d%% of your shared spending. Dominant.";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominates your shared expenses (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "Most of your shared expenses (%2$d%%) are in %1$@";
-"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Only eat together?";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Do you only eat together?";
 "insights.ruleSharedMoM.normal" = "Your shared spending went up %@ vs the previous period";
 "insights.ruleSharedMoM.considerate" = "Shared spending up %@ — check if there were extra expenses";
 "insights.ruleSharedMoM.sarcastic" = "Shared spending +%@. What were you celebrating?";
@@ -4205,7 +4205,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "What are you seeing?";
 "panel.widgetInfo.periodComparison.whatA" = "Your current period's balance, income or expenses side by side with the previous period. Helps you see at a glance if the trend is improving.";
 "panel.widgetInfo.periodComparison.howQ" = "What does it compare against?";
-"panel.widgetInfo.periodComparison.howA" = "Tap M to compare against the previous month or Y for the previous year. Your choice also applies to variations across the rest of the Panel.";
+"panel.widgetInfo.periodComparison.howA" = "Tap P-1 to compare against the previous period or Y-1 for the same period of the previous year. Your choice also applies to variations across the rest of the Panel.";
 "panel.widgetInfo.sankey.title" = "Money flow";
 "panel.widgetInfo.sankey.chip1" = "Flow";
 "panel.widgetInfo.sankey.chip2" = "By need";
@@ -4364,7 +4364,7 @@
 "whatsNew.v21.logging.title" = "Logging has never been easier";
 "whatsNew.v21.logging.description" = "Talk to it, snap a photo, or text it like a friend. Yala understands what you spent and logs it for you, so keeping track takes seconds.";
 "whatsNew.v21.data.title" = "Your data, your rules";
-"whatsNew.v21.data.description" = "You choose where your information lives: in your private iCloud or in the Yala cloud, so it's on all your devices. Plus, a redesigned Home screen and Yala in full screen on your iPad.";
+"whatsNew.v21.data.description" = "You choose where your information lives: in your private iCloud or in the Yala cloud, so it's on all your devices. Plus, a redesigned Panel and Yala in full screen on your iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -5638,7 +5638,7 @@
 "welcome.privateICloud.wipeAction" = "Start fresh";
 
 /* Private branch iCloud gate: body of the second confirmation before deleting */
-"welcome.privateICloud.wipeConfirmBody" = "Your records, accounts and budgets go from iCloud. No copy is left and we can't get them back afterwards.";
+"welcome.privateICloud.wipeConfirmBody" = "Your records, accounts, and budgets will be deleted from iCloud. No copy is left and we can't recover them afterward.";
 
 /* Private branch iCloud gate: safe button on the second confirmation */
 "welcome.privateICloud.wipeConfirmKeep" = "Never mind";
@@ -5695,7 +5695,7 @@
 "groups.fullActivation.chooserSubtitle" = "Your groups stay as they are. Choose where your personal data will live.";
 "groups.fullActivation.cloudBody" = "We'll use the same account you already use for your groups, not a new one. Your data lives on our servers, and our team can see it to give you support.";
 "groups.fullActivation.historyTitle" = "Bring in your group expenses?";
-"groups.fullActivation.historyBody" = "We bring in only your share of each expense. It will count on Home, in your budgets and in Statistics.";
+"groups.fullActivation.historyBody" = "We bring in only your share of each expense. It will count on the Panel, in your budgets and in Statistics.";
 "groups.fullActivation.historyShow" = "Yes, show them";
 "groups.fullActivation.historyKeepInGroups" = "No, keep them in Groups";
 "groups.fullActivation.historyFootnote" = "This also applies to the ones you add later. You can change it anytime in Groups Settings.";
@@ -5785,7 +5785,7 @@
 "storage.groups.detachKeep" = "Keep the expenses I paid";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "Remove it all from Home";
+"storage.groups.detachRemove" = "Remove it all from the Panel";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "Unlinking…";
@@ -6900,7 +6900,7 @@
 "setup.step.skipped" = "Skipped. Tap to try it";
 "setup.step.tryAgain" = "Try it";
 "setup.complete.basics.title" = "You know the basics of Yala";
-"setup.complete.basics.subtitle" = "Whenever you like, try voice or photo with the buttons at the top of Home.";
+"setup.complete.basics.subtitle" = "Whenever you like, try voice or photo with the buttons at the top of the Panel.";
 "setup.nextStepLabel" = "Next step";
 "setup.start" = "Start";
 "setup.showAllSteps" = "See all %d steps";
@@ -6915,7 +6915,7 @@
 "notificationPrimer.scheduled.benefit" = "A reminder before each scheduled payment is due, so it doesn't slip by.";
 "notificationPrimer.budget.title" = "Want an alert when you're near the limit?";
 "notificationPrimer.budget.benefit" = "We'll let you know when you reach the percentages you chose. Without this permission, the alert can't reach you.";
-"whatsNew.v22.panel.title" = "A clearer Home";
+"whatsNew.v22.panel.title" = "A clearer Panel";
 "whatsNew.v22.panel.description" = "The big number says what it measures, your accounts fit at a glance and notices show up one at a time.";
 "whatsNew.v22.inbox.title" = "Voice, photo and Inbox";
 "whatsNew.v22.inbox.description" = "What you dictate or photograph lands in your Inbox saying where it came from, and you can save everything that's ready in one go.";
@@ -7119,7 +7119,7 @@
 "budgets.l9.activateAlerts" = "Turn on alerts";
 "budgets.l9.alertsOffInNotifications" = "Alerts off in Notifications";
 "budgets.l9.showInWidget" = "Show in widget";
-"budgets.l9.showInWidgetHint" = "Appears in the Budgets widget on Home.";
+"budgets.l9.showInWidgetHint" = "Appears in the Budgets widget on the Panel.";
 "budgets.l9.hideFromWidget" = "Remove from widget";
 "budgets.l9.deleteTitle" = "Delete “%@”?";
 "budgets.l9.historyTitle.weekly" = "What you spent each week against your limit";
@@ -7130,7 +7130,7 @@
 "budgets.l9.freePlanSheet" = "The free plan includes %lld active budgets. Turn one off or upgrade to Pro.";
 "budgets.l9.seePro" = "See Pro";
 "budgets.l9.chooseWhich" = "Choose which";
-"budgets.l9.previewEmpty" = "Star up to 3 budgets and you'll see your Home tab card here.";
+"budgets.l9.previewEmpty" = "Star up to 3 budgets and you'll see your Panel card here.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "Overdue";
@@ -8115,9 +8115,9 @@
 "l15.rates.search" = "Search currency";
 "l15.personalization.voiceLanguageFooter" = "The language you speak to Yala in when you log by voice.";
 "l15.personalization.colorfulIconsFooter" = "You'll see them in the icons in Settings and More.";
-"l15.personalization.averageLineFooter" = "You'll see it in the charts on Home.";
+"l15.personalization.averageLineFooter" = "You'll see it in the charts on the Panel.";
 "l15.personalization.currencyFormatFooter" = "How amounts are written throughout the app: with the symbol (S/) or the code (PEN).";
-"l15.tabBar.rules" = "Home always comes first. There's room for 3 more, plus More and Search.";
+"l15.tabBar.rules" = "Panel always comes first. There's room for 3 more, plus More and Search.";
 "l15.permissions.title" = "Yala permissions";
 "l15.permissions.footer" = "Yala asks for each permission the first time you use something that needs it.";
 "l15.permissions.notAskedHint" = "We'll ask the first time you use it.";

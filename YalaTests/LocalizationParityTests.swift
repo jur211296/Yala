@@ -55,17 +55,14 @@ struct LocalizationParityTests {
     }
 
     @Test func variants_areSubsetOfParent() {
-        // Variantes regionales (parent != nil) no deben tener keys ajenas al padre.
-        // El "universo" del padre es `.strings ∪ .stringsdict`: una variante puede
-        // materializar como entrada flat en `.strings` un plural que el padre define
-        // en `.stringsdict` (la variante no puede tener `.stringsdict` propio, ver
-        // `variants_doNotCreateOwnStringsdict`). Esa flat es la degradación graciosa
-        // que evita la key cruda cuando la variante es el idioma de sistema — válida,
-        // no un orphan. (p.ej. `groups.member.activeCount` vive en el stringsdict del
-        // padre y como flat en la variante.)
+        // Variantes regionales (parent != nil) no deben tener keys ajenas al padre. Desde el lote 12.4 cada variante
+        // tiene su `.stringsdict` (copia adaptada del padre), así que los dos universos son `.strings ∪ .stringsdict`.
+        // Antes la variante llevaba el plural como línea plana con la forma `other`, y con la variante como idioma
+        // del sistema decía «1 seleccionados».
         for variant in SupportedLocale.allCases where variant.parent != nil {
             guard let parent = variant.parent else { continue }
             let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
+                .union(StringsFileParser.parseStringsdictKeys(forLocale: variant.code))
             let parentKeys = Set(StringsFileParser.parseStrings(forLocale: parent.code).keys)
                 .union(StringsFileParser.parseStringsdictKeys(forLocale: parent.code))
 
@@ -81,20 +78,18 @@ struct LocalizationParityTests {
     /// y los ~290 `NSLocalizedString` directos ni siquiera pasan por `ls()`. Combinado con
     /// `variants_areSubsetOfParent`, esto fuerza paridad exacta variante == padre.
     ///
-    /// El universo del padre es `.strings ∪ .stringsdict`: las keys plurales (que el
-    /// padre define en `.stringsdict`) también deben existir en la variante, pero como
-    /// entrada flat en `.strings` — la variante no puede tener `.stringsdict` propio
-    /// (`variants_doNotCreateOwnStringsdict`), así que materializa la forma "other".
-    /// Sin esto, un plural saldría crudo con la variante como idioma de sistema.
+    /// El universo es `.strings ∪ .stringsdict` en los dos lados: los plurales del padre viven en el `.stringsdict`
+    /// propio de la variante (lote 12.4). Sin esto, un plural saldría crudo con la variante como idioma de sistema.
     @Test func variants_haveAllKeys_fromParent() {
         for variant in SupportedLocale.allCases where variant.parent != nil {
             guard let parent = variant.parent else { continue }
             let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
+                .union(StringsFileParser.parseStringsdictKeys(forLocale: variant.code))
             let parentKeys = Set(StringsFileParser.parseStrings(forLocale: parent.code).keys)
                 .union(StringsFileParser.parseStringsdictKeys(forLocale: parent.code))
 
             let missing = parentKeys.subtracting(variantKeys)
-            #expect(missing.isEmpty, "Variant '\(variant.code)' is missing \(missing.count) keys from parent '\(parent.code)' (.strings ∪ .stringsdict) — con idioma de sistema se verían CRUDAS. Materializa los valores del padre (plurales como flat 'other'): \(missing.sorted().prefix(5))")
+            #expect(missing.isEmpty, "Variant '\(variant.code)' is missing \(missing.count) keys from parent '\(parent.code)' (.strings ∪ .stringsdict) — con idioma de sistema se verían CRUDAS. Materializa los valores del padre (los plurales, en su .stringsdict): \(missing.sorted().prefix(5))")
         }
     }
 
@@ -157,26 +152,33 @@ struct LocalizationParityTests {
         }
     }
 
-    /// Las flats de degradación de plurales en variantes (la forma `other` del padre
-    /// materializada en `.strings` — ver `variants_haveAllKeys_fromParent`) deben conservar
-    /// los placeholders del plural del padre. `placeholders_matchAcrossLocales` NO las cubre:
-    /// itera el reference `es`, donde estas keys son stringsdict-only. Comparte con
-    /// `extractPlaceholders` la limitación de no capturar `%@` aislado — suficiente para los
-    /// plurales actuales, todos con un `%d` de conteo que ancla la comparación.
-    @Test func variantPluralFlats_matchParentPlaceholders() {
+    /// Los plurales de cada variante (su `.stringsdict` propio desde el lote 12.4) conservan los placeholders del
+    /// plural del padre. `placeholders_matchAcrossLocales` NO los cubre: itera el `.strings` del reference.
+    @Test func variantPlurals_matchParentPlaceholders() {
         for variant in SupportedLocale.allCases where variant.parent != nil {
             guard let parent = variant.parent else { continue }
             let parentPlurals = StringsFileParser.parseStringsdictOtherPlaceholders(forLocale: parent.code)
-            let variantStrings = StringsFileParser.parseStrings(forLocale: variant.code)
-
+            let variantPlurals = StringsFileParser.parseStringsdictOtherPlaceholders(forLocale: variant.code)
+            #expect(!variantPlurals.isEmpty, "Variant '\(variant.code)' sin .stringsdict")
             for (key, parentPlaceholders) in parentPlurals {
-                // Presencia ya enforzada por variants_haveAllKeys_fromParent.
-                guard let flat = variantStrings[key] else { continue }
-                let flatPlaceholders = StringsFileParser.extractPlaceholders(from: flat)
-                #expect(flatPlaceholders.sorted() == parentPlaceholders.sorted(),
-                        "Variant '\(variant.code)' key '\(key)': flat placeholders \(flatPlaceholders.sorted()) ≠ parent .stringsdict 'other' \(parentPlaceholders.sorted())")
+                guard let mine = variantPlurals[key] else { continue }  // presencia: variants_haveAllKeys_fromParent
+                #expect(mine.sorted() == parentPlaceholders.sorted(),
+                        "Variant '\(variant.code)' key '\(key)': \(mine.sorted()) ≠ padre \(parentPlaceholders.sorted())")
             }
         }
+    }
+
+    /// Card «En es-ES, es-AR, en-GB y pt-PT los recuentos de uno salen en plural» (lote 12.4). Con la variante como
+    /// idioma del sistema iOS resuelve SU `.lproj`, y la línea plana con la forma `other` daba «1 seleccionados».
+    /// Se mide con el bundle de cada variante, que es lo que lee `Bundle.main` en ese caso.
+    @Test(arguments: [("es-ES", "1 seleccionado", "3 seleccionados"), ("es-AR", "1 seleccionado", "3 seleccionados"),
+                      ("pt-PT", "1 selecionado", "3 selecionados"), ("en-GB", "1 selected", "3 selected")])
+    func variant_countOfOne_isSingular(_ code: String, _ one: String, _ three: String) throws {
+        let path = try #require(Bundle.main.path(forResource: code, ofType: "lproj"))
+        let bundle = try #require(Bundle(path: path))
+        let format = NSLocalizedString("records.selectedCount", bundle: bundle, comment: "")
+        #expect(String.localizedStringWithFormat(format, 1) == one)
+        #expect(String.localizedStringWithFormat(format, 3) == three)
     }
 
     // MARK: - empty values
@@ -259,6 +261,80 @@ struct LocalizationParityTests {
             }
         }
     }
+
+    // MARK: - Terminología: una sola forma por idioma (decisión de Jürgen, 2026-10-26)
+
+    /// Cómo se llama la pestaña Panel en cada idioma. La decisión fue renombrar la pestaña a «Panel» en todos (antes
+    /// «Home», «Accueil», «Übersicht», «Início»…, mientras la prosa ya decía «Panel»), con la palabra que su prosa usaba.
+    private static let panelWord: [String: String] = [
+        "es": "Panel", "es-419": "Panel", "es-ES": "Panel", "es-AR": "Panel", "en": "Panel", "en-GB": "Panel",
+        "de": "Panel", "fr": "Panel", "it": "Panel", "nl": "Panel", "pl": "Panel",
+        "pt": "Painel", "pt-BR": "Painel", "pt-PT": "Painel", "ja": "パネル", "zh-Hans": "面板",
+    ]
+
+    /// El asistente se llama según el idioma, y cada idioma con un solo nombre.
+    private static let assistantName: [String: String] = [
+        "es": "Yala IA", "es-419": "Yala IA", "es-ES": "Yala IA", "es-AR": "Yala IA", "fr": "Yala IA", "it": "Yala IA",
+        "pt": "Yala IA", "pt-BR": "Yala IA", "pt-PT": "Yala IA", "de": "Yala KI",
+        "en": "Yala AI", "en-GB": "Yala AI", "nl": "Yala AI", "pl": "Yala AI", "ja": "Yala AI", "zh-Hans": "Yala AI",
+    ]
+
+    /// Nombres de la pantalla de ajustes descartados por idioma: la pantalla tiene uno y los avisos que mandan a ella
+    /// (o a la app Ajustes del iPhone, que iOS llama igual en ese idioma) usan ese.
+    private static let discardedSettingsNames: [String: [String]] = [
+        "pt": ["Configurações"], "pt-BR": ["Configurações"], "pt-PT": ["Ajustes"], "fr": ["Paramètres"],
+    ]
+
+    @Test func everyLocale_hasATermEntry() {
+        let codes = Set(SupportedLocale.allCases.map(\.code))
+        #expect(Set(Self.panelWord.keys) == codes, "panelWord no cubre los idiomas soportados")
+        #expect(Set(Self.assistantName.keys) == codes, "assistantName no cubre los idiomas soportados")
+    }
+
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func tabPanel_isNamedPanel(_ code: String) throws {
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        let word = try #require(Self.panelWord[code])
+        #expect(strings["tab.panel"] == word, "\(code): la pestaña se llama «\(strings["tab.panel"] ?? "nil")», no «\(word)»")
+    }
+
+    /// Todo texto que en es-419 nombra el Panel lo nombra con la palabra de la pestaña en cada idioma (en polaco
+    /// declinada: «Panelu» contiene «Panel»).
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func textsThatNameThePanel_useTheTabWord(_ code: String) throws {
+        let reference = StringsFileParser.parseStrings(forLocale: "es-419")
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        let word = try #require(Self.panelWord[code])
+        let keys = reference.filter { $0.value.range(of: #"\bPanel\b"#, options: .regularExpression) != nil }.keys
+        #expect(keys.count > 30, "es-419: se esperaban decenas de textos con «Panel»; ¿bundle?")
+        for key in keys.sorted() {
+            guard let value = strings[key] else { continue }
+            #expect(value.contains(word), "\(code) · \(key): no nombra el Panel como «\(word)»: \(value)")
+        }
+    }
+
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func settingsScreen_hasOneName(_ code: String) {
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        #expect(strings["settings.title"] == strings["profile.title"], "\(code): la pantalla de ajustes tiene dos nombres")
+        for discarded in Self.discardedSettingsNames[code] ?? [] {
+            let offenders = strings.filter { $0.value.contains(discarded) }.keys.sorted()
+            #expect(offenders.isEmpty, "\(code): «\(discarded)» en \(offenders)")
+        }
+    }
+
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func assistant_hasOneName(_ code: String) throws {
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        let name = try #require(Self.assistantName[code])
+        let others = Set(Self.assistantName.values).subtracting([name])
+        #expect(strings.values.contains { $0.contains(name) }, "\(code): ningún texto nombra a «\(name)»")
+        for other in others.sorted() {
+            let offenders = strings.filter { $0.value.contains(other) }.keys.sorted()
+            #expect(offenders.isEmpty, "\(code): «\(other)» en \(offenders); el asistente aquí es «\(name)»")
+        }
+    }
+
 }
 
 struct BundleLocaleDriftTests {
@@ -276,9 +352,18 @@ struct BundleLocaleDriftTests {
 
 struct StringsdictParityTests {
 
+    @Test func variants_haveTheSamePluralKeysAsTheirParent() {
+        for variant in SupportedLocale.allCases where variant.parent != nil {
+            guard let parent = variant.parent else { continue }
+            let mine = StringsFileParser.parseStringsdictKeys(forLocale: variant.code)
+            let theirs = StringsFileParser.parseStringsdictKeys(forLocale: parent.code)
+            #expect(mine == theirs, "Plurales de '\(variant.code)': faltan \(theirs.subtracting(mine).sorted().prefix(5)), sobran \(mine.subtracting(theirs).sorted().prefix(5))")
+        }
+    }
+
     @Test func baseLocalesWithStringsdict_haveSameKeys() {
-        // Variantes regionales (pt-PT, etc.) NO crean stringsdict propio (heredan
-        // del padre). Solo locales BASE deben tener paridad de keys plurales.
+        // Las variantes regionales tienen su propio stringsdict desde el lote 12.4 y se comparan con su padre
+        // (`variants_haveTheSamePluralKeysAsTheirParent`). Aquí, los BASE contra el reference.
         let referenceKeys = StringsFileParser.parseStringsdictKeys(forLocale: "es")
         #expect(referenceKeys.count >= 20, "Expected ~22 plural keys in es.stringsdict, got \(referenceKeys.count)")
 
@@ -316,13 +401,18 @@ struct StringsdictParityTests {
         #expect(countDict["other"] != nil, "pl plural rule 'other' missing (decimals)")
     }
 
-    @Test func variants_doNotCreateOwnStringsdict() {
-        // Trade-off documentado en M4: stringsdict es all-or-nothing por archivo.
-        // Variantes regionales NO crean stringsdict propio salvo que las reglas
-        // plurales difieran del padre (no es el caso de pt-PT/es-ES/es-AR/en-GB).
+    /// Sustituye a `variants_doNotCreateOwnStringsdict` (M4), que exigía lo contrario: «stringsdict es all-or-nothing
+    /// por archivo, y las variantes heredan del padre». La premisa de la herencia es falsa con la variante como idioma
+    /// del SISTEMA (`.claude/rules/l10n.md`: iOS no hace fallback por clave), y la salida que se tomó —la línea plana
+    /// con la forma `other`— decía «1 seleccionados». Desde el lote 12.4 la variante lleva el `.stringsdict` ENTERO
+    /// (el coste que M4 quería evitar, asumido) y aquí se exige que no le falte ninguna forma del padre.
+    @Test func variants_ownStringsdict_hasEveryPluralFormOfTheParent() {
         for variant in SupportedLocale.allCases where variant.parent != nil {
-            let keys = StringsFileParser.parseStringsdictKeys(forLocale: variant.code)
-            #expect(keys.isEmpty, "Variant '\(variant.code)' must NOT have its own stringsdict (would force duplicating ALL plurals from parent)")
+            guard let parent = variant.parent else { continue }
+            let mine = StringsFileParser.parseStringsdictOtherPlaceholders(forLocale: variant.code)
+            let theirs = StringsFileParser.parseStringsdictOtherPlaceholders(forLocale: parent.code)
+            #expect(!mine.isEmpty, "Variant '\(variant.code)' sin .stringsdict: con la variante como idioma del sistema los plurales salen con la forma de muchos")
+            #expect(Set(mine.keys) == Set(theirs.keys), "Variant '\(variant.code)': plurales distintos de '\(parent.code)'")
         }
     }
 }

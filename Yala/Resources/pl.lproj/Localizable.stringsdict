@@ -357,7 +357,7 @@
 			<key>few</key>
 			<string>%d dni pozostały</string>
 			<key>many</key>
-			<string>%d dni pozostałych</string>
+			<string>%d dni pozostało</string>
 			<key>other</key>
 			<string>%d dnia pozostały</string>
 		</dict>
@@ -575,7 +575,7 @@
 			<key>one</key>
 			<string>%d aktywny członek</string>
 			<key>few</key>
-			<string>%d aktywni członkowie</string>
+			<string>%d aktywnych członków</string>
 			<key>many</key>
 			<string>%d aktywnych członków</string>
 			<key>other</key>
@@ -615,7 +615,7 @@
 			<key>one</key>
 			<string>%d członek</string>
 			<key>few</key>
-			<string>%d członkowie</string>
+			<string>%d członków</string>
 			<key>many</key>
 			<string>%d członków</string>
 			<key>other</key>

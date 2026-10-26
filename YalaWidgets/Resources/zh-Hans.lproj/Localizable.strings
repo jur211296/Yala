@@ -17,7 +17,7 @@
 "widget.gallery.cashFlow" = "收入与支出";
 "widget.gallery.cashFlow.desc" = "本期的收入与支出。轻点在趋势中查看。";
 "widget.gallery.balance" = "可用";
-"widget.gallery.balance.desc" = "你的可用资金及其走势。轻点查看首页。";
+"widget.gallery.balance.desc" = "你的可用资金及其走势。轻点查看面板。";
 "widget.gallery.budgets" = "预算";
 "widget.gallery.budgets.desc" = "你的预算进度。轻点查看预算。";
 "widget.gallery.latestRecords" = "最新记录";
@@ -35,7 +35,7 @@
 
 // MARK: - Gallery (Lock Screen accessory widgets)
 "widget.gallery.accessoryBalance" = "可用";
-"widget.gallery.accessoryBalance.desc" = "在锁定屏幕上显示可用资金。轻点查看首页。";
+"widget.gallery.accessoryBalance.desc" = "在锁定屏幕上显示可用资金。轻点查看面板。";
 "widget.gallery.accessoryExpense" = "支出";
 "widget.gallery.accessoryExpense.desc" = "在锁定屏幕上显示支出。轻点查看统计中的概览。";
 "widget.gallery.accessoryBudget" = "预算";
@@ -149,7 +149,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "本月概览";
-"widget.gallery.monthSummary.desc" = "本月的余额、按分类的支出和预算。轻点查看首页。";
+"widget.gallery.monthSummary.desc" = "本月的余额、按分类的支出和预算。轻点查看面板。";
 "widget.ui.monthSummary" = "本月概览";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */

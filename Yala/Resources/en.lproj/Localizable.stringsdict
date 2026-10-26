@@ -1175,9 +1175,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>You’ll change in %d record:</string>
+			<string>You’ll change this in %d record:</string>
 			<key>other</key>
-			<string>You’ll change in %d records:</string>
+			<string>You’ll change this in %d records:</string>
 		</dict>
 	</dict>
 	<key>records.l8b.bulk.apply</key>

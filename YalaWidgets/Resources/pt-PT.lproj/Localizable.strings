@@ -16,7 +16,7 @@
 "widget.gallery.cashFlow" = "Entradas e saídas";
 "widget.gallery.cashFlow.desc" = "O que entrou e saiu no período. Toca para ver em Tendências.";
 "widget.gallery.balance" = "Disponível";
-"widget.gallery.balance.desc" = "O teu dinheiro disponível e a tendência. Toca para ver o Início.";
+"widget.gallery.balance.desc" = "O teu dinheiro disponível e a tendência. Toca para ver o Painel.";
 "widget.gallery.budgets" = "Orçamentos";
 "widget.gallery.budgets.desc" = "Como vão os teus orçamentos. Toca para ver Orçamentos.";
 "widget.gallery.latestRecords" = "Últimos Registros";
@@ -34,7 +34,7 @@
 
 // MARK: - Gallery (Lock Screen accessory widgets)
 "widget.gallery.accessoryBalance" = "Disponível";
-"widget.gallery.accessoryBalance.desc" = "O teu dinheiro disponível no ecrã bloqueado. Toca para ver o Início.";
+"widget.gallery.accessoryBalance.desc" = "O teu dinheiro disponível no ecrã bloqueado. Toca para ver o Painel.";
 "widget.gallery.accessoryExpense" = "Despesas";
 "widget.gallery.accessoryExpense.desc" = "As tuas despesas no ecrã bloqueado. Toca para ver o Resumo de Estatísticas.";
 "widget.gallery.accessoryBudget" = "Orçamento";
@@ -148,7 +148,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "Resumo do mês";
-"widget.gallery.monthSummary.desc" = "O teu saldo, despesas por categoria e orçamentos do mês. Toca para ver o Início.";
+"widget.gallery.monthSummary.desc" = "O teu saldo, despesas por categoria e orçamentos do mês. Toca para ver o Painel.";
 "widget.ui.monthSummary" = "Resumo do mês";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */

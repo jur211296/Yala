@@ -17,7 +17,7 @@
 "widget.gallery.cashFlow" = "入金と出金";
 "widget.gallery.cashFlow.desc" = "期間内の入金と出金。タップすると推移で表示します。";
 "widget.gallery.balance" = "利用可能";
-"widget.gallery.balance.desc" = "使えるお金とその推移。タップするとホームを表示します。";
+"widget.gallery.balance.desc" = "使えるお金とその推移。タップするとパネルを表示します。";
 "widget.gallery.budgets" = "予算";
 "widget.gallery.budgets.desc" = "予算の進み具合。タップすると予算を表示します。";
 "widget.gallery.latestRecords" = "最新の記録";
@@ -35,7 +35,7 @@
 
 // MARK: - Gallery (Lock Screen accessory widgets)
 "widget.gallery.accessoryBalance" = "利用可能";
-"widget.gallery.accessoryBalance.desc" = "ロック画面に使えるお金を表示。タップするとホームを表示します。";
+"widget.gallery.accessoryBalance.desc" = "ロック画面に使えるお金を表示。タップするとパネルを表示します。";
 "widget.gallery.accessoryExpense" = "支出";
 "widget.gallery.accessoryExpense.desc" = "ロック画面に支出を表示。タップすると統計の概要を表示します。";
 "widget.gallery.accessoryBudget" = "予算";
@@ -149,7 +149,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "今月のまとめ";
-"widget.gallery.monthSummary.desc" = "今月の残高、カテゴリ別の支出、予算。タップするとホームを表示します。";
+"widget.gallery.monthSummary.desc" = "今月の残高、カテゴリ別の支出、予算。タップするとパネルを表示します。";
 "widget.ui.monthSummary" = "今月のまとめ";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */

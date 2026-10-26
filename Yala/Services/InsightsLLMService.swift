@@ -37,7 +37,7 @@ enum InsightsLLMError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .noAPIKey: return "OpenAI API key not configured"
+        case .noAPIKey: return "AI service not configured"
         case .notProUser: return "Pro subscription required"
         case .noAIConsent: return "AI data consent not given"
         case .offline: return "No internet connection"

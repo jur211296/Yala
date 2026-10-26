@@ -17,7 +17,7 @@
 "widget.gallery.cashFlow" = "Entrées et sorties";
 "widget.gallery.cashFlow.desc" = "Ce qui est entré et sorti sur la période. Touche pour le voir dans Tendances.";
 "widget.gallery.balance" = "Disponible";
-"widget.gallery.balance.desc" = "Ton argent disponible et sa tendance. Touche pour voir l'Accueil.";
+"widget.gallery.balance.desc" = "Ton argent disponible et sa tendance. Touche pour voir le Panel.";
 "widget.gallery.budgets" = "Budgets";
 "widget.gallery.budgets.desc" = "Où en sont tes budgets. Touche pour voir Budgets.";
 "widget.gallery.latestRecords" = "Derniers registres";
@@ -35,7 +35,7 @@
 
 // MARK: - Gallery (Lock Screen accessory widgets)
 "widget.gallery.accessoryBalance" = "Disponible";
-"widget.gallery.accessoryBalance.desc" = "Ton argent disponible sur l'écran verrouillé. Touche pour voir l'Accueil.";
+"widget.gallery.accessoryBalance.desc" = "Ton argent disponible sur l'écran verrouillé. Touche pour voir le Panel.";
 "widget.gallery.accessoryExpense" = "Dépenses";
 "widget.gallery.accessoryExpense.desc" = "Tes dépenses sur l'écran verrouillé. Touche pour voir l'Aperçu des Statistiques.";
 "widget.gallery.accessoryBudget" = "Budget";
@@ -149,7 +149,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "Résumé du mois";
-"widget.gallery.monthSummary.desc" = "Ton solde, tes dépenses par catégorie et tes budgets du mois. Touche pour voir l'Accueil.";
+"widget.gallery.monthSummary.desc" = "Ton solde, tes dépenses par catégorie et tes budgets du mois. Touche pour voir le Panel.";
 "widget.ui.monthSummary" = "Résumé du mois";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */

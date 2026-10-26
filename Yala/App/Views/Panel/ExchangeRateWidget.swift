@@ -133,7 +133,10 @@ struct ExchangeRateWidget: View {
     private static let dateDayTimeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM, HH:mm"
+        // Día y mes por plantilla (orden de cada idioma); la hora, como estaba. La plantilla con hora mete «at» en
+        // inglés y no cabe.
+        f.setLocalizedDateFormatFromTemplate("dMMM")
+        f.dateFormat = (f.dateFormat ?? "d MMM") + ", HH:mm"
         return f
     }()
 
@@ -500,21 +503,21 @@ struct ExchangeRateWidget: View {
     private static let tooltipDayFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "EEE d MMM"
+        f.setLocalizedDateFormatFromTemplate("EEEdMMM")
         return f
     }()
 
     private static let tooltipWeekFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "d MMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("dMMMy")
         return f
     }()
 
     private static let tooltipMonthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = AppLocale.current
-        f.dateFormat = "MMM yyyy"
+        f.setLocalizedDateFormatFromTemplate("MMMy")
         return f
     }()
 
