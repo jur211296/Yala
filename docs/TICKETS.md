@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1071)
+## Index (1072)
 
 | id | status | path |
 |---|---|---|
@@ -285,6 +285,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | corpus-de-test-de-staging-crece-sin-limite | done | tickets/done/corpus-de-test-de-staging-crece-sin-limite.md |
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
 | creategroup-throw-after-commit-loses-owner | done | tickets/done/creategroup-throw-after-commit-loses-owner.md |
+| credit-card-statement-cycle | backlog | tickets/backlog/credit-card-statement-cycle.md |
 | csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | done | tickets/done/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
