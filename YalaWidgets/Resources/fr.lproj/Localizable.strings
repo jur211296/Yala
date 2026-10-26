@@ -99,6 +99,7 @@
 "widget.ui.expenses" = "Dépenses";
 "widget.ui.balance" = "Solde";
 "widget.ui.netFlow" = "Flux net";
+"widget.ui.spent" = "Dépensé";
 "widget.ui.cashFlow" = "Entrées et sorties";
 "widget.ui.total" = "Total";
 "widget.ui.ofLimit" = "sur %@";

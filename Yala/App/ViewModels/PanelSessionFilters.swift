@@ -131,8 +131,9 @@ final class PanelSessionFilters: Filterable {
         isExpensesOnlyMode: Bool,
         natures: Set<TransactionNature>
     ) -> Bool {
-        let forced = isExpensesOnlyMode && natures == [.expense] ? 1 : 0
-        return activeFilterCount - forced > 0
+        FilterControlBarLogic.userFilterCount(
+            activeFilterCount: activeFilterCount, isExpensesOnlyMode: isExpensesOnlyMode, natures: natures
+        ) > 0
     }
 
     func clearFilters() {

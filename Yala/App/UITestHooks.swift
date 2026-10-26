@@ -1225,6 +1225,10 @@ final class UITestHooks {
     /// propio. Ver `DevSeedGroups.FichaCasa`.
     nonisolated static var marketingSeed: Bool { hasArg("-uitest-seed-marketing") }
 
+    /// `-uitest-expenses-only`: con `-uitest-reset`, arranca en modo «Solo gastos» (sin pasar por Ajustes). Lo usa
+    /// `ExpensesOnlyHeroesUITests` (auditoría «Solo gastos», 2026-10-26).
+    nonisolated static var expensesOnly: Bool { hasArg("-uitest-expenses-only") }
+
     nonisolated private static func hasArg(_ flag: String) -> Bool {
         #if DEBUG
         return isActive && ProcessInfo.processInfo.arguments.contains(flag)

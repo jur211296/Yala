@@ -215,30 +215,40 @@ struct InsightsTabView: View {
     private func heroSummary(_ summary: PeriodSummary) -> some View {
         let hasRecords = summary.transactionCount > 0
 
-        let showsFigure = !sessionState.isExpensesOnlyMode && hasRecords
+        // En «Solo gastos» la cifra es lo gastado, con su variación, como en el Panel (decisión A de Jürgen del
+        // 2026-10-26): el neto, sin ingresos, no diría nada. Antes el hero se quedaba sin cifra.
+        let expensesOnly = sessionState.isExpensesOnlyMode
+        let showsFigure = hasRecords
 
         // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
         // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
         SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
             StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
         } caption: {
-            // Qué es la cifra. Aquí siempre es el neto: el hero no se pinta en
-            // modo solo-gastos, así que no hay caso de un solo lado.
+            // Qué es la cifra: el neto, o el gasto en «Solo gastos».
             if showsFigure {
-                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights.text)
+                HeroHeaderLabel(text: StatsHeroCaptionLogic.insights(expensesOnly: expensesOnly).text)
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } figure: {
             if showsFigure {
                 AmountText(
-                    value: summary.netBalance,
+                    value: expensesOnly ? summary.totalExpense : summary.netBalance,
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: summary.amountsAreApproximate
+                    isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate
                 )
             }
         } detail: {
-            incomeExpenseChips(summary)
+            // En «Solo gastos» la fila de entradas y salidas sería solo el gasto, que ya es la cifra grande: queda su
+            // variación, con la lectura del Panel.
+            if expensesOnly {
+                if hasRecords {
+                    ExpensesOnlyHeroVariation(variation: summary.expenseVariation)
+                }
+            } else {
+                incomeExpenseChips(summary)
+            }
 
             if let sub = RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
                 Text(localizedMotivational(sub))

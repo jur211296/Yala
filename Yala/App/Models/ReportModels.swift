@@ -86,6 +86,12 @@ enum ReportGroupingDimension: String, CaseIterable, Identifiable {
         }
     }
 
+    /// En modo «Solo gastos» la fila de tipo solo tiene «Gastos», y llamarla «Ingresos y gastos» prometía una que no
+    /// sale (decisión A de Jürgen del 2026-10-26, auditoría «Solo gastos» L5).
+    func displayName(expensesOnly: Bool) -> String {
+        self == .tipo && expensesOnly ? L10n.Report.expense : displayName
+    }
+
     /// Un valor de ejemplo de este nivel, para el «Así se verá la tabla» de la hoja de desglosar (UX 2.2 · L18-4).
     var exampleValue: String {
         switch self {

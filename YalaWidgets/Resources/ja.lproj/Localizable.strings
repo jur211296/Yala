@@ -99,6 +99,7 @@
 "widget.ui.expenses" = "支出";
 "widget.ui.balance" = "残高";
 "widget.ui.netFlow" = "純フロー";
+"widget.ui.spent" = "支出済み";
 "widget.ui.cashFlow" = "入金と出金";
 "widget.ui.total" = "合計";
 "widget.ui.ofLimit" = "/ %@";

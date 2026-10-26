@@ -112,8 +112,11 @@ struct ApproximateMarkWiringTests {
     @Test("El hero de Estadísticas pasa la marca")
     func insightsHeroPassesTheMark() throws {
         let src = try Self.source("Yala/App/Views/Statistics/InsightsTabView.swift")
-        #expect(src.contains("isEstimate: summary.amountsAreApproximate"), """
-            Pinta `summary.netBalance`, que agrega los dos lados.
+        // Desde el 2026-10-26 la cifra es el gasto en «Solo gastos» (auditoría, decisión A): la marca sigue al número
+        // en los dos modos, emparejada con él.
+        #expect(src.contains("value: expensesOnly ? summary.totalExpense : summary.netBalance"))
+        #expect(src.contains("isEstimate: expensesOnly ? summary.expenseAmountsAreApproximate : summary.amountsAreApproximate"), """
+            Pinta `summary.netBalance`, que agrega los dos lados (o el gasto en «Solo gastos»).
             """)
     }
 
@@ -278,7 +281,9 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     @Test("Registros pasa la marca en sus tres importes")
     func recordsPassesTheMark() throws {
         let src = try Self.code("Yala/App/Views/Statistics/RecordsTabView.swift")
-        #expect(src.contains("isEstimate: recordsSummary.balanceIsApproximate"))
+        // La cifra grande es el gasto en «Solo gastos» (2026-10-26): la marca sigue al número, emparejada con él.
+        #expect(src.contains("value: expensesOnly ? recordsSummary.expense : recordsSummary.balance"))
+        #expect(src.contains("isEstimate: expensesOnly ? recordsSummary.expenseIsApproximate : recordsSummary.balanceIsApproximate"))
         #expect(src.contains("isEstimate: recordsSummary.incomeIsApproximate"))
         #expect(src.contains("isEstimate: recordsSummary.expenseIsApproximate"))
 

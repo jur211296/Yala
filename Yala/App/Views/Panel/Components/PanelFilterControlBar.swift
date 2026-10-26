@@ -46,7 +46,9 @@ struct PanelFilterControlBar: View {
         let hasCurrencyFilter = !viewModel.selectedCurrencies.isEmpty
         let hasAmountFilter = viewModel.amountCondition.isActive
         let hasNoteFilter = !viewModel.searchText.isEmpty
+        // En «Solo gastos» la naturaleza la fija la app, no el usuario: ni cuenta ni sale píldora (L3, 2026-10-26).
         let hasTransactionNatureFilter = sessionState.selectedTransactionNatures.count == 1
+            && !sessionState.isExpensesOnlyMode
         // Lo oculto («Sin X») también es un filtro activo, uno por cápsula: con solo eso la barra tiene que salir, y con
         // dos cápsulas, la ✕ de «borrar todo».
         let excludedChipCount = (sessionState.excludedAccountIDs.isEmpty ? 0 : 1)
@@ -195,7 +197,7 @@ struct PanelFilterControlBar: View {
                         )
 
                         // Transaction Nature Chip
-                        if sessionState.selectedTransactionNatures.count == 1,
+                        if hasTransactionNatureFilter,
                            let transactionNature = sessionState.selectedTransactionNatures.first {
                             FilterChipView(
                                 transactionNature: transactionNature,

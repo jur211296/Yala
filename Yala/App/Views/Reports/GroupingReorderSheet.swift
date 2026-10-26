@@ -14,6 +14,7 @@ import SwiftUI
 struct GroupingReorderSheet: View {
 
     @Binding var state: ReportGroupingState
+    @Environment(SessionState.self) private var sessionState
     @Environment(\.dismiss) private var dismiss
 
     /// «Gastos › Alimentación › Supermercados» con los niveles activos, en su orden.
@@ -79,7 +80,7 @@ struct GroupingReorderSheet: View {
                                         .foregroundStyle(.primary)
                                         .frame(width: DS.FormRow.iconWidth)
 
-                                    Text(dimension.displayName)
+                                    Text(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.primary)
                                 }
@@ -127,7 +128,7 @@ struct GroupingReorderSheet: View {
                 .foregroundStyle(.primary)
                 .frame(width: DS.FormRow.iconWidth)
 
-            Text(dimension.displayName)
+            Text(dimension.displayName(expensesOnly: sessionState.isExpensesOnlyMode))
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
         }

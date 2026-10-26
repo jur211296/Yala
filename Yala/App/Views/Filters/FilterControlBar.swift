@@ -70,7 +70,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
             if panelStyle {
                 if FilterControlBarLogic.shouldRenderPanelSection(
                     panelStyle: true,
-                    activeFilterCount: viewModel.activeFilterCount
+                    activeFilterCount: viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode)
                 ) {
                     PanelSection(title: L10n.Panel.FilterBar.sectionTitle, compact: true) {
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -303,7 +303,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
             }
 
             // Clear all button
-            if viewModel.activeFilterCount > 1 {
+            if viewModel.userFilterCount(isExpensesOnlyMode: sessionState.isExpensesOnlyMode) > 1 {
                 Button {
                     dsWithAnimation(reduceMotion) {
                         viewModel.clearFilters()

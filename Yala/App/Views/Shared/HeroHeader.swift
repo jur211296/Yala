@@ -75,3 +75,27 @@ struct HeroHeaderLabel: View {
             .lineLimit(2)
     }
 }
+
+/// La variación bajo la cifra del hero en modo «Solo gastos»: el chip del gasto y «vs período anterior», la misma
+/// línea que pinta el hero del Panel (`HeroMonthView`). Las pestañas de Estadísticas la usan para que su cabecera
+/// sea la del Panel (decisión A de Jürgen del 2026-10-26, auditoría «Solo gastos»).
+///
+/// Sin variación (primer período, «Todo el tiempo») o con las variaciones apagadas no pinta nada: el texto solo,
+/// sin chip, quedaría huérfano. Por eso se comprueba `showVariations` aquí y no se confía en que el chip se oculte.
+struct ExpensesOnlyHeroVariation: View {
+    let variation: Double?
+    @Environment(AppPreferences.self) private var appPreferences
+
+    var body: some View {
+        if appPreferences.showVariations, let variation {
+            HStack(spacing: DS.Spacing.xs) {
+                VariationChip(variation: variation, size: .small, isExpenseContext: true)
+                Text(L10n.Statistics.vsPreviousPeriod)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("stats_hero_expense_variation")
+        }
+    }
+}
