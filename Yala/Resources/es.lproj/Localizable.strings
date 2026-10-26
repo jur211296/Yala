@@ -164,7 +164,7 @@
 "cashFlow.title" = "Entradas y salidas";
 "cashFlow.income" = "Ingresos";
 "cashFlow.expense" = "Gastos";
-"cashFlow.net" = "Yala";
+"cashFlow.net" = "Neto";
 
 // MARK: - Categories
 
@@ -452,7 +452,7 @@
 "settings.budgetsFavoritesEmptyHint" = "Crea presupuestos en la pestaña Planificación.";
 "settings.budgetsFavoritesReorder" = "Ordenar favoritos";
 "budgets.favorites.previewTitle" = "Así se verá en el Panel";
-"budgets.favorites.previewEmpty" = "Selecciona favoritos para ver el preview";
+"budgets.favorites.previewEmpty" = "Selecciona favoritos para ver la vista previa";
 "settings.tabBarConfig" = "Pestañas de abajo";
 "settings.tabBarConfigInfo" = "Elige qué pestañas ves abajo y en qué orden.";
 "settings.tabBarConfigActive" = "En la barra";
@@ -1059,7 +1059,7 @@
 "insights.activeSubscriptions" = "Suscripciones activas";
 "insights.budgetsAtRisk" = "Presupuestos en riesgo";
 "insights.yearOverYear" = "Comparativa anual";
-"insights.yearComparison" = "Ano pasado: %@. Este ano: %@.";
+"insights.yearComparison" = "Año pasado: %@. Este año: %@.";
 "insights.intelligentInsights" = "Observaciones";
 "insights.funFact" = "Dato curioso";
 "insights.emptyTitle" = "Sin datos aún";
@@ -1074,8 +1074,8 @@
 "insights.activate" = "Activar";
 "insights.goToSettings" = "Ir a ajustes";
 "insights.notInterested" = "No me interesa";
-"insights.offlineCached" = "Sin conexion. Mostrando ultimo analisis.";
-"insights.offlineNoCache" = "Sin conexion. Los insights personalizados estaran disponibles al conectarte.";
+"insights.offlineCached" = "Sin conexión. Mostrando último análisis.";
+"insights.offlineNoCache" = "Sin conexión. Los insights personalizados estarán disponibles al conectarte.";
 
 "settings.organization" = "Organización";
 "settings.preferences" = "Preferencias";
@@ -2333,7 +2333,7 @@
 "tutorials.importData.step0.desc" = "En Ajustes, dentro de Datos, toca Importar archivo.";
 "tutorials.importData.step1.desc" = "Puedes importar CSV o Excel cuantas veces quieras siguiendo la plantilla predeterminada, que puedes descargar ahí mismo. Si hay datos en varias monedas, te pedirá seleccionar las cuentas para cada una.";
 "tutorials.createBudgets.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Presupuestos. Usa el botón + para crear uno nuevo.";
-"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: diario, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
+"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: semanal, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
 "tutorials.createBudgets.step2.desc" = "Activa «Mostrar en el widget» para verlo en el widget de Presupuestos del Panel.";
 "tutorials.createBudgets.step3.desc" = "Recuerda que siempre podrás volver para editar tu presupuesto tocándolo.";
 "tutorials.createScheduledPayments.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Pagos Planificados. Usa el botón + para crear uno nuevo.";
@@ -2345,7 +2345,7 @@
 "tutorials.createFavorites.step1.desc" = "La próxima vez, toca el favorito en la fila de arriba del formulario: los campos que guardaste se completan solos.";
 "tutorials.editPanel.step0.desc" = "Ve a la pantalla principal donde ves tu resumen de gastos con todos los widgets disponibles.";
 "tutorials.editPanel.step1.desc" = "Toca el botón de cuadritos junto a cada sección del Panel para elegir qué widgets ver y en qué orden.";
-"tutorials.editPanel.step2.desc" = "Recuerda que siempre puedes volver al orden predeterminado tocando \"Restablecer\" dentro de la personalización.";
+"tutorials.editPanel.step2.desc" = "Recuerda que siempre puedes volver al orden predeterminado tocando \"Restablecer disposición original\" dentro de la personalización.";
 "tutorials.panelFiltering.step0.desc" = "Saca el máximo provecho a los gráficos interactivos de Yala. Casi todos los paneles son filtrables por categoría, necesidad, entre otros. Juega con ellos y encuentra lo que más te sirva.";
 "tutorials.panelFiltering.step1.desc" = "Cuentas con una barra de filtros donde irás viendo todos los filtros aplicados. Puedes removerlos individualmente o todos a la vez cuando quieras.";
 "tutorials.panelFiltering.step2.desc" = "En las distintas vistas de la aplicación verás que puedes ir filtrando a tu gusto con los gráficos.";
@@ -2700,7 +2700,7 @@
 "subcategory.delivery" = "Delivery";
 "subcategory.restaurants" = "Restaurantes";
 "subcategory.supplements" = "Suplementos alimenticios";
-"subcategory.supermarkets" = "Supermercados y bodegas";
+"subcategory.supermarkets" = "Supermercados y tiendas";
 "subcategory.personalCare" = "Cuidado personal y belleza";
 "subcategory.pharmacy" = "Farmacia y botiquín";
 "subcategory.homeDecor" = "Hogar y decoración";
@@ -2925,7 +2925,7 @@
 "whatsNew.v11.exclude.description" = "Filtra excluyendo lo que no quieres ver en lugar de seleccionar todo.";
 "whatsNew.v12.cashFlow.title" = "Flujo de caja";
 "whatsNew.v12.cashFlow.description" = "Proyecta tu saldo futuro con una tabla interactiva y 7 métodos de estimación.";
-"whatsNew.v12.comparative.title" = "Reporte Comparativa";
+"whatsNew.v12.comparative.title" = "Reporte comparativo";
 "whatsNew.v12.comparative.description" = "Compara ingresos y gastos entre períodos con tablas dinámicas y filtros avanzados.";
 "whatsNew.v12.themes.title" = "Temas PRO";
 "whatsNew.v12.themes.description" = "Personaliza la app con los nuevos temas Minimalista y Translúcido.";
@@ -4189,7 +4189,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.periodComparison.whatA" = "El balance, ingresos o gastos de tu período actual al lado del período anterior. Así ves de un vistazo si la tendencia va mejorando.";
 "panel.widgetInfo.periodComparison.howQ" = "¿Con qué se compara?";
-"panel.widgetInfo.periodComparison.howA" = "Toca M para comparar contra el mes anterior o A contra el año anterior. La elección se aplica también a las variaciones del resto del Panel.";
+"panel.widgetInfo.periodComparison.howA" = "Toca P-1 para comparar contra el período anterior o A-1 contra el mismo período del año anterior. La elección se aplica también a las variaciones del resto del Panel.";
 "panel.widgetInfo.sankey.title" = "Flujo del dinero";
 "panel.widgetInfo.sankey.chip1" = "Flujo";
 "panel.widgetInfo.sankey.chip2" = "Por necesidad";
@@ -4272,7 +4272,7 @@
 
 /* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
 "split.totalLabel" = "Total";
-"split.you" = "Tu";
+"split.you" = "Tú";
 "split.rest" = "Resto";
 "split.percentSuffix %@" = "(%@%%)";
 "split.sharesSuffix %d %d" = "(%d/%d partes)";

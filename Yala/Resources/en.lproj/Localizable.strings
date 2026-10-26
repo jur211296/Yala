@@ -1004,7 +1004,7 @@
 "need.unclassified" = "Unclassified";
 "need.essential.desc" = "What you can't stop paying: rent, power, food.";
 "need.priority.desc" = "Worth it, but you can adjust it: gym, internet.";
-"need.optional.desc" = "Treats and splurges: nights out, takeaway.";
+"need.optional.desc" = "Treats and splurges: nights out, takeout.";
 "need.unclassified.desc" = "Not decided yet.";
 
 
@@ -2095,7 +2095,7 @@
 "subscription.feature.currencies" = "All currencies and exchange rates";
 "subscription.feature.themes" = "Custom themes";
 "subscription.feature.export" = "Export to Excel and CSV";
-"subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless cancelled at least 24 hours before the end of the current period.";
+"subscription.legalFooter" = "Payment is charged to your Apple account. Subscription auto-renews unless canceled at least 24 hours before the end of the current period.";
 "subscription.termsLink" = "Terms of Use & Privacy Policy";
 "subscription.termsOfUseLink" = "Terms of Use";
 "subscription.privacyPolicyLink" = "Privacy Policy";
@@ -2780,7 +2780,7 @@
 "tutorials.importData.step0.desc" = "In Settings, under Data, tap Import File.";
 "tutorials.importData.step1.desc" = "You can import CSV or Excel as many times as you want following the default template, which you can download right there. If there's data in various currencies, it will ask you to select the accounts for each one.";
 "tutorials.createBudgets.step0.desc" = "In the menu select Planning and make sure you're on the Budgets tab. Use the + button to create a new one.";
-"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
+"tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: weekly, monthly, yearly, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
 "tutorials.createBudgets.step2.desc" = "Turn on “Show in widget” to see it in the Budgets widget on Home.";
 "tutorials.createBudgets.step3.desc" = "Remember you can always come back to edit your budget by tapping it.";
 "tutorials.createScheduledPayments.step0.desc" = "In the menu select Planning and make sure you're on the Scheduled Payments tab. Use the + button to create a new one.";
@@ -2792,7 +2792,7 @@
 "tutorials.createFavorites.step1.desc" = "Next time, tap the favorite in the row at the top of the form: the fields you saved fill in automatically.";
 "tutorials.editPanel.step0.desc" = "Go to the main screen where you see your expense summary with all available widgets.";
 "tutorials.editPanel.step1.desc" = "Tap the grid button next to each Home section to choose which widgets to see and in what order.";
-"tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset\" within customization.";
+"tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset to original layout\" within customization.";
 "tutorials.panelFiltering.step0.desc" = "Get the most out of Yala's interactive charts. Almost all panels are filterable by category, need, among others. Play with them and find what works best for you.";
 "tutorials.panelFiltering.step1.desc" = "You have a filter bar where you'll see all the applied filters. You can remove them individually or all at once whenever you want.";
 "tutorials.panelFiltering.step2.desc" = "In the different views of the app you'll see you can filter to your liking with the charts.";
@@ -2923,7 +2923,7 @@
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ takes %d%% of your shared spending. Dominant.";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominates your shared expenses (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "Most of your shared expenses (%2$d%%) are in %1$@";
-"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Only eat together?";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Do you only eat together?";
 "insights.ruleSharedMoM.normal" = "Your shared spending went up %@ vs the previous period";
 "insights.ruleSharedMoM.considerate" = "Shared spending up %@ — check if there were extra expenses";
 "insights.ruleSharedMoM.sarcastic" = "Shared spending +%@. What were you celebrating?";
@@ -4205,7 +4205,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "What are you seeing?";
 "panel.widgetInfo.periodComparison.whatA" = "Your current period's balance, income or expenses side by side with the previous period. Helps you see at a glance if the trend is improving.";
 "panel.widgetInfo.periodComparison.howQ" = "What does it compare against?";
-"panel.widgetInfo.periodComparison.howA" = "Tap M to compare against the previous month or Y for the previous year. Your choice also applies to variations across the rest of the Panel.";
+"panel.widgetInfo.periodComparison.howA" = "Tap P-1 to compare against the previous period or Y-1 for the same period of the previous year. Your choice also applies to variations across the rest of the Panel.";
 "panel.widgetInfo.sankey.title" = "Money flow";
 "panel.widgetInfo.sankey.chip1" = "Flow";
 "panel.widgetInfo.sankey.chip2" = "By need";
@@ -5638,7 +5638,7 @@
 "welcome.privateICloud.wipeAction" = "Start fresh";
 
 /* Private branch iCloud gate: body of the second confirmation before deleting */
-"welcome.privateICloud.wipeConfirmBody" = "Your records, accounts and budgets go from iCloud. No copy is left and we can't get them back afterwards.";
+"welcome.privateICloud.wipeConfirmBody" = "Your records, accounts, and budgets will be deleted from iCloud. No copy is left and we can't recover them afterward.";
 
 /* Private branch iCloud gate: safe button on the second confirmation */
 "welcome.privateICloud.wipeConfirmKeep" = "Never mind";

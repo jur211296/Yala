@@ -27,7 +27,7 @@ enum TranscriptionError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noAPIKey:
-            return "OpenAI API key not configured"
+            return "AI service not configured"
         case .emptyAudio:
             return "Audio data is empty"
         case .transcriptionFailed(let message):

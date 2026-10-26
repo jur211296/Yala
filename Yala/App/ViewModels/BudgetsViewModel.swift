@@ -18,7 +18,7 @@ final class BudgetsViewModel {
 
     private static let weekDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "d MMM"
+        f.setLocalizedDateFormatFromTemplate("dMMM")
         return f
     }()
 

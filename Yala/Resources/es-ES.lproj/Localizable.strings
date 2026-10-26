@@ -121,10 +121,6 @@
 "welcome.restore.foundTitle" = "¡Hola %@! Qué bien volver a verte.";
 "welcome.restore.foundTitleAnonymous" = "¡Qué bien volver a verte!";
 "welcome.restore.foundBody" = "Esto vuelve a este teléfono:";
-"welcome.restore.foundAccounts" = "%d cuentas";
-"welcome.restore.foundTransactions" = "%d registros";
-"welcome.restore.foundBudgets" = "%d presupuestos";
-"welcome.restore.foundGroups" = "%d grupos compartidos";
 "welcome.restore.continue" = "Continuar";
 "welcome.restore.notFoundTitle" = "No encontramos tus datos";
 "welcome.restore.notFoundBody" = "No hay datos asociados a tu cuenta de iCloud. ¿Quieres empezar desde cero?";
@@ -177,9 +173,6 @@
 "welcome.hero.cards.more.body" = "Vamos a descubrirlo juntos.";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
-"groups.member.activeCount" = "%d miembros activos";
-"groups.member.pendingCount" = "%d solicitudes pendientes";
-"groups.member.pendingRequestsCount" = "%d solicitudes";
 
 // MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "Continuar";
@@ -788,7 +781,7 @@
 "budgets.empty.message" = "Crea presupuestos para controlar mejor tus gastos.";
 "budgets.empty.title" = "Aún no tienes presupuestos";
 "budgets.exceeded.encouragement" = "Pasaste tu presupuesto, ¡el próximo período será mejor!";
-"budgets.favorites.previewEmpty" = "Selecciona favoritos para ver el preview";
+"budgets.favorites.previewEmpty" = "Selecciona favoritos para ver la vista previa";
 "budgets.favorites.previewTitle" = "Así se verá en el Panel";
 "budgets.includeSharedExpenses" = "Contar mi parte de los gastos de grupo";
 "budgets.includeSharedExpensesHint" = "Si lo apagas, solo cuentan tus gastos personales.";
@@ -824,7 +817,7 @@
 "bulkEdit.successMessage" = "Registros actualizados";
 "cashFlow.expense" = "Gastos";
 "cashFlow.income" = "Ingresos";
-"cashFlow.net" = "Yala";
+"cashFlow.net" = "Neto";
 "cashFlow.netFlow" = "Flujo neto";
 "cashFlow.title" = "Entradas y salidas";
 "cashFlowPlan.accumulated" = "Acumulado";
@@ -985,7 +978,6 @@
 "category.activeSubcategories" = "Subcategorías activas";
 "category.addOneSubcategory" = "Añade al menos una subcategoría";
 "category.addSubcategory" = "Añadir subcategoría";
-"category.cannotDeleteMessage" = "Esta categoría tiene subcategorías con %d transacciones. Para eliminarla, primero elimina o transfiere las transacciones desde cada subcategoría.";
 "category.cannotDeleteTitle" = "No se puede eliminar";
 "category.delete" = "Eliminar categoría";
 "category.deleteConfirmMessage" = "Se eliminarán la categoría y todas sus subcategorías. Esta acción no se puede deshacer.";
@@ -1701,11 +1693,6 @@
 "import.templateGenerated" = "Plantilla generada";
 "import.templateGeneratedMessage" = "La encuentras donde la guardaste (por ejemplo, en Archivos). Ábrela con Numbers o Excel, cambia las filas de ejemplo por las tuyas y vuelve aquí para importarla.";
 "import.title" = "Importar registros";
-"inbox.alert.message.mixed.automations" = "%d registros automáticos";
-"inbox.alert.message.mixed.scheduled" = "%d pagos";
-"inbox.alert.message.mixed.subscriptions" = "%d suscripciones";
-"inbox.alert.message.scheduled" = "Se añadieron %d pagos planificados a tu bandeja.";
-"inbox.alert.message.subscriptions" = "Se añadieron %d suscripciones a tu bandeja.";
 "inbox.alert.title.automations" = "¡Nuevos registros automáticos!";
 "inbox.alert.title.mixed" = "¡Nuevos registros en tu bandeja!";
 "inbox.alert.title.scheduled" = "¡Tienes pagos pendientes!";
@@ -1714,7 +1701,6 @@
 "inbox.approveAll" = "Guardar todo";
 "inbox.approveNext" = "Guardar el siguiente";
 "inbox.approveSuccess" = "Registro guardado";
-"inbox.approveableCount" = "%1$d de %2$d listos para guardar";
 "inbox.archived" = "Archivados";
 "inbox.backToInbox" = "Volver a bandeja";
 "inbox.bulkHint" = "Toca ✓ para elegir varios a la vez";
@@ -1724,7 +1710,6 @@
 "inbox.cannotApprove" = "No se puede guardar";
 "inbox.createAnyway" = "Guardar de todas formas";
 "inbox.delete" = "Eliminar";
-"inbox.deleteConfirmMessage" = "¿Estás seguro de eliminar %d borradores?";
 "inbox.deleteMessage" = "Esta acción no se puede deshacer.";
 "inbox.deleteTitle" = "Eliminar borrador";
 "inbox.discardChanges" = "Descartar";
@@ -1752,11 +1737,9 @@
 "inbox.noPending" = "Sin borradores pendientes";
 "inbox.noPendingDescription" = "Aquí llega lo que Yala apunte por ti: voz, fotos, Apple Pay, Siri y pagos planificados.";
 "inbox.pending" = "Pendientes";
-"inbox.pendingBadge" = "%d pendientes";
 "inbox.reject" = "Descartar";
 "inbox.returnToPending" = "Volver a pendientes";
 "inbox.saveLater" = "Dejar para después";
-"inbox.selectedCount" = "%d seleccionados";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automatización";
 "inbox.sourceEmail" = "Correo";
@@ -1813,8 +1796,8 @@
 "insights.needDistribution" = "Distribución del gasto por necesidad";
 "insights.notInterested" = "No me interesa";
 "insights.ofTotal" = "del total";
-"insights.offlineCached" = "Sin conexion. Mostrando ultimo analisis.";
-"insights.offlineNoCache" = "Sin conexion. Los insights personalizados estaran disponibles al conectarte.";
+"insights.offlineCached" = "Sin conexión. Mostrando último análisis.";
+"insights.offlineNoCache" = "Sin conexión. Los insights personalizados estarán disponibles al conectarte.";
 "insights.pendingPayments" = "Pagos pendientes";
 "insights.perDay" = "por día";
 "insights.quickStats" = "Resumen rápido";
@@ -1866,7 +1849,7 @@
 "insights.topCategory" = "Categoría principal";
 "insights.topSubcategory" = "Subcategoría principal";
 "insights.weekdayAverage" = "Gasto promedio por día";
-"insights.yearComparison" = "Ano pasado: %@. Este ano: %@.";
+"insights.yearComparison" = "Año pasado: %@. Este año: %@.";
 "insights.yearOverYear" = "Comparativa anual";
 "listViewType.categories" = "Categorías";
 "listViewType.subcategories" = "Subcategorías";
@@ -1962,7 +1945,6 @@
 "notifications.scheduledPayment.overdue" = "Ya pasó la fecha de %1$@ por %2$@ — ¿ya lo cubriste? 👀";
 "notifications.scheduledPayment.overdue.income" = "Esperabas %1$@ de %2$@ — ¿ya llegó? 👀";
 "notifications.scheduledPayments.hint" = "Te avisaremos cuando tengas pagos próximos";
-"notifications.scheduledPayments.summaryBody" = "Pagos planificados para hoy: %d 📅";
 "notifications.scheduledPayments.name" = "Pagos planificados";
 "notifications.section.custom" = "Personalizados";
 "notifications.section.reminders" = "Recordatorios";
@@ -2318,7 +2300,7 @@
 "panel.widgetInfo.expensesByNeed.title" = "Distribución por necesidad";
 "panel.widgetInfo.periodComparison.chip1" = "Comparación";
 "panel.widgetInfo.periodComparison.chip2" = "Sigue el período elegido";
-"panel.widgetInfo.periodComparison.howA" = "Toca M para comparar contra el mes anterior o A contra el año anterior. La elección se aplica también a las variaciones del resto del Panel.";
+"panel.widgetInfo.periodComparison.howA" = "Toca P-1 para comparar contra el período anterior o A-1 contra el mismo período del año anterior. La elección se aplica también a las variaciones del resto del Panel.";
 "panel.widgetInfo.periodComparison.howQ" = "¿Con qué se compara?";
 "panel.widgetInfo.periodComparison.title" = "Comparativa de período";
 "panel.widgetInfo.periodComparison.whatA" = "El balance, ingresos o gastos de tu período actual al lado del período anterior. Así ves de un vistazo si la tendencia va mejorando.";
@@ -2621,7 +2603,6 @@
 "search.filter.subcategory" = "Subcategoría";
 "search.filter.tag" = "Etiqueta";
 "search.noResults" = "No encontramos resultados";
-"search.resultsCount" = "%d resultados";
 "search.tryAnotherTerm" = "Prueba con otro término de búsqueda";
 "settings.accounts" = "Cuentas";
 "settings.aiFeatures" = "Funcionalidades con IA";
@@ -2888,7 +2869,7 @@
 "split.typePercentage" = "Porcentaje";
 "split.typeShares" = "Proporciones";
 "split.useAmount" = "Usar monto";
-"split.you" = "Tu";
+"split.you" = "Tú";
 "split.youPaidAll" = "Pagaste todo";
 "split.yourPart" = "Tu parte";
 "split.yourPortion" = "Tu parte";
@@ -3001,7 +2982,6 @@
 "subcategory.deleteConfirmTitle" = "¿Eliminar subcategoría?";
 "subcategory.deleteTransactions" = "Eliminar registros";
 "subcategory.deleteTransactionsConfirm" = "Eliminar";
-"subcategory.deleteTransactionsConfirmMessage" = "Se eliminarán permanentemente %d transacciones. Esta acción no se puede deshacer.";
 "subcategory.deleteTransactionsConfirmTitle" = "¿Eliminar registros?";
 "subcategory.deleteTransactionsDesc" = "Se eliminarán para siempre todos sus registros";
 "subcategory.delivery" = "Delivery";
@@ -3051,12 +3031,11 @@
 "subcategory.sports" = "Deportes y recreación";
 "subcategory.streaming" = "Streaming y plataformas";
 "subcategory.subsidies" = "Ayudas y subvenciones";
-"subcategory.supermarkets" = "Supermercados y bodegas";
+"subcategory.supermarkets" = "Supermercados y tiendas";
 "subcategory.supplements" = "Suplementos alimenticios";
 "subcategory.supportStaff" = "Personal de apoyo";
 "subcategory.taxes" = "Impuestos";
 "subcategory.tech" = "Tecnología y accesorios";
-"subcategory.transferDescription" = "Hay %1$d transacciones en \"%2$@\". Elige qué hacer con ellas antes de eliminar.";
 "subcategory.transferHeader" = "Esta subcategoría tiene registros";
 "subcategory.transferTitle" = "Mover registros";
 "subcategory.transferToSpecific" = "Transferir a otra subcategoría";
@@ -3296,7 +3275,7 @@
 "tutorials.createBudgets.intro.title" = "¿Qué es un presupuesto?";
 "tutorials.createBudgets.step0.desc" = "En el menú selecciona Planificación y asegúrate de estar en la pestaña de Presupuestos. Usa el botón + para crear uno nuevo.";
 "tutorials.createBudgets.step0.title" = "Abre Planificación";
-"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: diario, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
+"tutorials.createBudgets.step1.desc" = "Ponle nombre, monto y define el periodo: semanal, mensual, anual o único (para un viaje, evento, etc). Elige qué cuentas, categorías, etiquetas y necesidades quieres seguir. Activa las notificaciones si quieres avisos en ciertos umbrales.";
 "tutorials.createBudgets.step1.title" = "Configura tu presupuesto";
 "tutorials.createBudgets.step2.desc" = "Activa «Mostrar en el widget» para verlo en el widget de Presupuestos del Panel.";
 "tutorials.createBudgets.step2.title" = "Muéstralo en el Panel";
@@ -3370,7 +3349,7 @@
 "tutorials.editPanel.step0.title" = "Abre el panel";
 "tutorials.editPanel.step1.desc" = "Toca el botón de cuadraditos junto a cada sección del Panel para elegir qué widgets ver y en qué orden.";
 "tutorials.editPanel.step1.title" = "Personaliza los widgets";
-"tutorials.editPanel.step2.desc" = "Recuerda que siempre puedes volver al orden predeterminado tocando \"Restablecer\" dentro de la personalización.";
+"tutorials.editPanel.step2.desc" = "Recuerda que siempre puedes volver al orden predeterminado tocando \"Restablecer disposición original\" dentro de la personalización.";
 "tutorials.editPanel.step2.title" = "Restablece si quieres";
 "tutorials.editPanel.title" = "Personalizar el panel";
 "tutorials.importData.completion.desc" = "Al importar, Yala te dice qué entró y qué no. Revisa tus registros después para confirmarlo.";
@@ -3483,7 +3462,7 @@
 "whatsNew.v12.cashFlow.description" = "Proyecta tu saldo futuro con una tabla interactiva y 7 métodos de estimación.";
 "whatsNew.v12.cashFlow.title" = "Flujo de caja";
 "whatsNew.v12.comparative.description" = "Compara ingresos y gastos entre períodos con tablas dinámicas y filtros avanzados.";
-"whatsNew.v12.comparative.title" = "Reporte Comparativa";
+"whatsNew.v12.comparative.title" = "Informe comparativo";
 "whatsNew.v12.moreForYou.description" = "Ahora con 4 cuentas gratis y 30 días de prueba.";
 "whatsNew.v12.moreForYou.title" = "Más para ti";
 "whatsNew.v12.scheduled.description" = "Ahora con montos variables y la opción de omitir ocurrencias.";
@@ -3558,30 +3537,6 @@
 "widgetType.trend" = "Tendencias";
 "widgetType.weekdayBar" = "Promedio diario";
 
-// MARK: Plurales — degradación flat (forma "other" del .stringsdict del padre; las variantes no pueden tener .stringsdict propio)
-"export.subcategoriesSelected" = "%d subcategorías seleccionadas";
-"filters.subcategoriesSelectedCount" = "%d subcategorías seleccionadas";
-"groups.activate.importPrompt" = "Tienes %d gastos compartidos. ¿Quieres agregarlos a tus registros?";
-"groups.nudge.dormantNewExpenses.message" = "Tu grupo tiene %d gastos nuevos desde tu última visita.";
-"icloud.detail.stalledTitle" = "Hace %d días que no sincronizamos";
-"icloud.syncIndicator.stalled" = "Llevamos %d días sin guardar en iCloud";
-"import.recordsImported" = "%d registros importados correctamente.";
-"inbox.alert.message.automations" = "Se añadieron %d registros automáticos a tu bandeja.";
-"insights.ruleSharedFrequency.considerate" = "%d gastos compartidos — compartes bastante con tu grupo";
-"insights.ruleSharedFrequency.normal" = "Tienes %d gastos compartidos este periodo";
-"insights.ruleSharedFrequency.sarcastic" = "%d gastos compartidos. ¿Hacen TODO juntos?";
-"milestone.title" = "¡%d registros!";
-"panel.panorama.collapsedSummary" = "Tienes %1$@ en %2$d cuentas";
-"records.deleteConfirmTitle" = "¿Eliminar %d registros?";
-"scheduled.due.days.ago" = "Hace %d días";
-"scheduled.due.in.days" = "En %d días";
-"scheduled.widget.count" = "%d pagos activos";
-"scheduled.widget.daysAgo" = "Hace %d días";
-"scheduled.widget.inDays" = "En %d días";
-"subscription.downgrade.selectAccounts" = "Selecciona %d cuentas para conservar";
-"subscription.downgrade.selectBudgets" = "Selecciona %d presupuestos para conservar";
-"subscription.trial.daysRemaining" = "Quedan %d días";
-"tutorials.stepsCount" = "%d pasos";
 
 /* VoiceOver: expand a collapsible row */
 "accessibility.expand" = "Expandir";
@@ -3763,7 +3718,6 @@
 "groups.detail.yourBalance" = "Tu balance";
 "groups.detail.settledUp" = "Están a mano";
 "groups.options.ownerOnlyHint" = "Solo el organizador del grupo puede cambiar esto";
-"groups.detail.memberCount" = "%d miembros";
 
 /* Split sheet header title (equal mode) */
 "groups.expense.splitSheet.equalTitle" = "Por partes iguales";
@@ -3870,7 +3824,6 @@
 "storage.revert.ineligible" = "Ahora mismo no puedes volver a iCloud desde este dispositivo.";
 "storage.sync.title" = "Sincronización";
 "storage.sync.upToDate" = "Todo sincronizado";
-"storage.sync.needsSignIn" = "Inicia sesión para subir %d cambios";
 "storage.sync.signInButton" = "Iniciar sesión";
 "storage.progress.migrating" = "Activando la nube…";
 "storage.progress.reverting" = "Volviendo a iCloud…";
@@ -4894,7 +4847,6 @@
 "account.currencyChange.progressSubtitle" = "Aplicando el tipo de cambio de cada fecha";
 
 /* Plural del padre materializado flat: la variante no lleva .stringsdict propio */
-"account.currencyChange.confirmTitle" = "¿Convertir %d registros?";
 
 /* Rates could not be fetched */
 "account.currencyChange.ratesUnavailableTitle" = "No se pudo convertir";
@@ -4984,7 +4936,6 @@
 "welcome.privateICloud.lateKeep" = "Déjalo así";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categorías";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "muchos datos guardados";
@@ -5374,7 +5325,6 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Inicia sesión para subir tus cambios";
-"storage.sync.waitingForConnection" = "%d cambios esperando conexión";
 "storage.sync.waitingForConnectionUncounted" = "Cambios esperando conexión";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
@@ -5725,7 +5675,7 @@
 "welcome.privateICloud.cancelledInCloudBody" = "Pediste empezar de cero y borrar tus datos de iCloud, pero el borrado no terminó antes de que tus datos pasaran a la nube, y ya no se hará. Puede que algo de lo que ibas a borrar siga en iCloud o haya pasado a tu cuenta de Yala.";
 
 /* Inbox: title of the notice that a settlement already approved to a real account changed its amount */
-"inbox.groupSettlementAmountChange.title" = "Ha cambiado el monto";
+"inbox.groupSettlementAmountChange.title" = "Ha cambiado el importe";
 
 /* Notice banner, the other person paid me. 1 person, 2 group, 3 amount reviewed, 4 new amount, 5 account, 6 amount in that account */
 "inbox.groupSettlementAmountChange.bannerReceived" = "Ha cambiado el pago de %1$@ en «%2$@»: era %3$@ y ahora es %4$@. En %5$@ tienes registrados %6$@.";
@@ -5863,7 +5813,6 @@
 "onboarding.accountName.allTogether" = "Mi dinero %@";
 "account.deleteConfirmTitle" = "¿Eliminar «%@»?";
 "account.deleteConfirmMessageEmpty" = "No tiene registros. No se puede deshacer.";
-"account.deleteConfirmMessage" = "Tiene %d registros. No se borran: quedan en Registros, sin cuenta. Si solo quieres dejar de verla, archívala. No se puede deshacer.";
 
 // Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
 "panel.voiceShort" = "Voz";
@@ -5876,8 +5825,6 @@
 "bulkEdit.cannotEditGroupRecords" = "Algunos registros elegidos vienen de un grupo, y eso se cambia desde el grupo. Quítalos de la selección o edítalos uno a uno.";
 "records.groupRecordsOnlyTitle" = "Estos registros vienen de un grupo";
 "records.groupRecordsDeleteFromGroup" = "Se borran desde el grupo, para que las cuentas de todos sigan cuadrando.";
-"records.selectedCount" = "%d seleccionados";
-"records.groupRecordsKept" = "%d vienen de un grupo y no se borran aquí: se borran desde el grupo.";
 
 // Presupuestos (auditoría UX 2.2, lote 9)
 "budgets.state.active" = "Activo";
@@ -5891,10 +5838,6 @@
 /* Pagos planificados — auditoría UX 2.2, lote 10 */
 "scheduled.active" = "Activo";
 "scheduled.editor.save.missing" = "Para guardar, completa: %@";
-"scheduled.frequency.every.days" = "Cada %d días";
-"scheduled.frequency.every.weeks" = "Cada %d semanas";
-"scheduled.frequency.every.months" = "Cada %d meses";
-"scheduled.frequency.every.years" = "Cada %d años";
 "notifications.scheduledPayment.dueTomorrow" = "Mañana toca pagar %1$@ por %2$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "Mañana llega %1$@ de %2$@ 📅";
 "scheduled.filter.empty" = "Ningún pago con este filtro";
@@ -6337,14 +6280,6 @@
 "import.error.xlsxOpen" = "No pudimos abrir el archivo de Excel. Guárdalo otra vez como .xlsx y vuelve a probar.";
 "import.error.xlsxNoSheets" = "El archivo de Excel no tiene ninguna hoja.";
 "import.error.xlsxRead" = "No pudimos leer la hoja del archivo de Excel. Guárdalo otra vez como .xlsx y vuelve a probar.";
-"records.count" = "%d registros";
-"category.cannotDelete.records" = "Tiene %d registros.";
-"tag.deleteConfirm.message" = "Se quitará de %d registros; los registros no se borran. No se puede deshacer.";
-"import.preview.failuresHeader" = "%d filas no van a entrar";
-"import.preview.more" = "… y %d más";
-"import.preview.futureIgnored" = "%d filas tienen fecha futura y se dejan fuera.";
-"import.preview.importButton" = "Importar %d registros";
-"import.result.notImported" = "%d filas no entraron:";
 "records.l8.deleteNamedTitle" = "¿Eliminar «%@»?";
 "records.l8.deleteTransferAlsoPair" = "También se borra su otra mitad, en la otra cuenta.";
 "records.l8.deleteFromGroupHint" = "Para borrarlo, hazlo desde el grupo.";
@@ -6411,16 +6346,6 @@
 "records.l8b.bulk.blockedTitle" = "No se puede cambiar";
 "records.l8b.bulk.discardChange" = "Descartar este cambio";
 "records.l8b.bulk.nothingPendingHint" = "Elige primero qué cambiar.";
-"records.l8b.duplicates.count" = "%d posibles duplicados";
-"records.l8b.duplicates.groups" = "%d grupos";
-"records.l8b.duplicates.groupSize" = "%d registros iguales";
-"records.l8b.duplicates.removeTitle" = "¿Quitar %d repetidos?";
-"records.l8b.duplicates.keptShared" = "%d vienen de Grupos y se quedan: se borran desde ahí.";
-"records.l8b.bulk.title" = "Editar %d registros";
-"records.l8b.bulk.distinctAccounts" = "%d cuentas distintas";
-"records.l8b.bulk.distinctSubcategories" = "%d subcategorías distintas";
-"records.l8b.bulk.summaryTitle" = "Vas a cambiar en %d registros:";
-"records.l8b.bulk.apply" = "Aplicar a %d registros";
 "records.l8.bulkSaveFailed" = "No se pudo guardar. No se cambió nada; vuelve a probar.";
 "records.l8.duplicatesMatchedOn" = "Coinciden en %@, en la misma cuenta.";
 
@@ -6886,8 +6811,6 @@
 "l20d.groups.leaveAll.confirmAction" = "Salir de todos";
 "l20d.groups.leaveAll.confirmMessage" = "Vas a salir de %@.";
 "l20d.groups.leaveAll.confirmMessageGeneric" = "Vas a salir de todos los grupos en los que no tienes saldos pendientes.";
-"l20d.export.willExport" = "Saldrán %d registros";
-"l20d.export.exportCount" = "Exportar %d registros";
 
 /* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
 "uxcs.removeDeviceData.row" = "Quitar mis datos de este iPhone";
@@ -6934,9 +6857,6 @@
 "l20n.icloud.openSettings" = "Abrir Ajustes del iPhone";
 "l20n.icloud.mailSubject" = "Yala: iCloud no sincroniza";
 "l20n.icloud.contactFooter" = "Si sigue así, escríbenos: el correo ya lleva el detalle técnico para que podamos ayudarte.";
-"l20n.count.records" = "%d registros";
-"l20n.count.accounts" = "%d cuentas";
-"l20n.count.budgets" = "%d presupuestos";
 
 /* Auditoría UX 2.2 · lote decidido 06 — Yala Pro: paywall, prueba gratis, fin de la prueba y Pro activo (2026-10-19) */
 "uxpro.paywall.subtitle" = "Apunta en segundos, sin límites";
@@ -7069,7 +6989,6 @@
 "shortcut.applePay.notification.title" = "Pago de %1$@ en %2$@ por revisar";
 "shortcut.applePay.notification.titleNoMerchant" = "Pago de %@ por revisar";
 "shortcut.applePay.notification.body" = "Tócalo para aprobarlo.";
-"stepGuide.remaining" = "Te faltan %d pasos · tu avance se guarda";
 
 /* VoiceOver: el cambio entre dos períodos redondea a cero */
 "accessibility.variationNoChange" = "Sin cambio";

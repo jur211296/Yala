@@ -1,0 +1,15 @@
+[
+ {
+  "k": "insights.yearComparison",
+  "categoria": "terminologia",
+  "gravedad": "media",
+  "propuesta": "Poprzedni rok: %@. Ten rok: %@.",
+  "motivo": "«Ostatni rok» significa «los últimos 12 meses» y no «el año pasado»; la app usa «Poprzedni rok» para period.lastYear.",
+  "fuente": "llm",
+  "actual": "Ostatni rok: %@. Ten rok: %@.",
+  "protegida": false,
+  "placeholders_ok": true,
+  "aplicada": false,
+  "no_aplicada_por": "categoría terminologia"
+ }
+]
