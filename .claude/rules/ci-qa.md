@@ -26,6 +26,11 @@ El ruleset de `2.1` exige tres checks: `tests`, `coverage-index` y `gateway`. El
 - **Un flaky se cubre con reintento acotado, nunca con advisory.** Los dos pasos usan
   `ci-reintentar-rojos.sh`: repite solo los casos rojos, hasta 3 vueltas, y en un PR verde no cuesta
   nada. El flaky lleva su ticket (hoy `spike-r3-eje-4b-flaky-en-suite-completa`).
+- **Un arranque fallido del simulador no es un test (2026-10-26).** Si una vuelta no corre ningún
+  test real, el script relanza la selección entera dentro de sus 3 vueltas; un caso cuyo
+  identificador lleva espacios («Yala encountered an error») es el texto de un error y no se repite
+  nunca. Antes lo repetía dos veces como `-only-testing`, con 0 tests y el paso en rojo (run
+  38969099625). Banco: `ci-reintentar-rojos-test.sh`, casos 14-20.
 - **Nunca `-retry-tests-on-failure` en un paso de unit.** Con Swift Testing repite la selección
   entera, no el caso: un rojo triplica el paso y el tope del job lo cancela.
 - **Context-based corre aunque pure-logic salga en rojo** (`if: !cancelled() && build ok`). Si se
