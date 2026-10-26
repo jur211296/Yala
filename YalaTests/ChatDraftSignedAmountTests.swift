@@ -14,7 +14,7 @@
 //  además, como diagnóstico, no como criterio.
 //
 //  Es el mismo CALCULADOR que alimenta el Panel, no la misma LLAMADA: el Panel le pasa las cuentas
-//  ya filtradas por `PanelTotalAccountsLogic` más `selectedAccountIDs`/`isExcludeMode`. Aquí se le
+//  ya filtradas por `PanelTotalAccountsLogic` más `selectedAccountIDs`/`excludedAccountIDs`. Aquí se le
 //  llama con los filtros por defecto a propósito, que es lo que mantiene el caso independiente de
 //  `SessionState.shared`.
 //

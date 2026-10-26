@@ -666,9 +666,15 @@ final class PanelViewModel {
         set { SessionState.shared.selectedTransactionNatures = newValue }
     }
 
-    var isExcludeMode: Bool {
-        get { SessionState.shared.isExcludeMode }
-        set { SessionState.shared.isExcludeMode = newValue }
+    /// Cómo está una cuenta en el filtro: incluida, oculta o ninguna. Para pintar la tarjeta y decidir su menú.
+    func accountMembership(_ id: PersistentIdentifier) -> EntityFilterMembership {
+        EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs).membership(of: id)
+    }
+
+    /// Las cuentas OCULTAS («Sin X»). Conviven con `selectedAccountIDs`, que son las incluidas (opción B, 2026-10-25).
+    var excludedAccountIDs: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedAccountIDs }
+        set { SessionState.shared.excludedAccountIDs = newValue }
     }
 
     // Need, CashFlow, LatestRecords, Budgets — now struct-backed (see computed accessors above)
@@ -1149,17 +1155,14 @@ final class PanelViewModel {
         let effectiveAccounts = PanelTotalAccountsLogic.accountsForTotal(
             accounts,
             includeGroups: includeGroups,
-            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(
-                selectedAccountIDs: self.selectedAccountIDs,
-                isExcludeMode: self.isExcludeMode
-            )
+            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: self.selectedAccountIDs)
         )
         return LiveBalanceCalculator.liveBalanceBreakdown(
             accounts: effectiveAccounts,
             transactions: transactions,
             preferredCurrencyCode: defaultCurrencyCode,
             selectedAccountIDs: self.selectedAccountIDs,
-            isExcludeMode: self.isExcludeMode
+            excludedAccountIDs: self.excludedAccountIDs
         )
     }
 
@@ -1260,6 +1263,24 @@ final class PanelViewModel {
     }
 
     // MARK: - Trend & Balance Status Logic
+
+    /// Las categorías y subcategorías OCULTAS: salen de las tartas y de los totales (las incluidas solo atenúan).
+    var excludedCategoryIDs: Set<PersistentIdentifier> { SessionState.shared.excludedCategoryIDs }
+    var excludedSubcategoryIDs: Set<PersistentIdentifier> { SessionState.shared.excludedSubcategoryIDs }
+
+    /// Filtros por dimensión (incluidos + ocultos), para los recortes escritos a mano de las tartas del Panel.
+    private var needFilter: EntityFilter<SubcategoryNeed> {
+        EntityFilter(included: SessionState.shared.selectedNeeds, excluded: SessionState.shared.excludedNeeds)
+    }
+    private var currencyFilter: EntityFilter<CurrencyCode> {
+        EntityFilter(included: selectedCurrencies, excluded: SessionState.shared.excludedCurrencies)
+    }
+    private var tagUUIDFilter: EntityFilter<UUID> {
+        EntityFilter(
+            included: Set(tags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)),
+            excluded: Set(tags.filter { SessionState.shared.excludedTags.contains($0.persistentModelID) }.map(\.id))
+        )
+    }
 
     var selectedCategoryID: PersistentIdentifier? {
         get { SessionState.shared.selectedCategoryIDs.first }
@@ -1510,14 +1531,10 @@ final class PanelViewModel {
         // Espeja `StatisticsViewModel.computeEligibleAccounts`: el filtro es un
         // conjunto y las dos pantallas tienen que resolverlo igual, o sus
         // números vuelven a divergir.
+        let accountFilter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
         let eligible = accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
-            if selectedAccountIDs.isEmpty { return true }
-            if isExcludeMode {
-                return !selectedAccountIDs.contains(account.persistentModelID)
-            } else {
-                return selectedAccountIDs.contains(account.persistentModelID)
-            }
+            return accountFilter.matches(account.persistentModelID)
         }
         return (eligible, Set(eligible.map { $0.persistentModelID }))
     }
@@ -1532,6 +1549,12 @@ final class PanelViewModel {
         // categoría/subcategoría excluyen las TX bridgeadas de grupo (pata real + virtual).
         let includeGroupTxs = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let calendar = Calendar.current
+        // Una vez, fuera del bucle: cada lectura de estos filtros recorre el catálogo de etiquetas.
+        let needFilter = self.needFilter
+        let tagUUIDFilter = self.tagUUIDFilter
+        let currencyFilter = self.currencyFilter
+        let excludedCategoryIDs = self.excludedCategoryIDs
+        let excludedSubcategoryIDs = self.excludedSubcategoryIDs
         return transactions.filter { transaction in
             guard let account = transaction.account else { return false }
             if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
@@ -1549,48 +1572,33 @@ final class PanelViewModel {
                 if !calendar.isDate(transaction.date, inSameDayAs: focus) { return false }
             }
 
-            // Category/Subcategory filters excluded for pie dimming behavior,
-            // EXCEPT when filtering comes from a budget selection or exclude mode
+            // Lo INCLUIDO de categoría/subcategoría no recorta las tartas: las atenúa (salvo un presupuesto, que sí
+            // recorta). Lo OCULTO sí sale, como en Distribución: «Ocultar Comida» la quita de la tarta.
             if selectedBudgetID != nil && !selectedSubcategoryIDs.isEmpty {
                 guard let subID = transaction.subcategory?.persistentModelID,
                     selectedSubcategoryIDs.contains(subID)
                 else { return false }
-            } else if isExcludeMode {
-                if let selectedCatID = selectedCategoryID,
-                   transaction.category?.persistentModelID == selectedCatID {
-                    return false
-                }
-                if !selectedSubcategoryIDs.isEmpty,
-                   let subID = transaction.subcategory?.persistentModelID,
-                   selectedSubcategoryIDs.contains(subID) {
-                    return false
-                }
+            }
+            if let catID = transaction.category?.persistentModelID, excludedCategoryIDs.contains(catID) {
+                return false
+            }
+            if let subID = transaction.subcategory?.persistentModelID, excludedSubcategoryIDs.contains(subID) {
+                return false
             }
 
-            // Need Filter (still applies to pie charts)
-            if let need = selectedNeed {
-                if let sub = transaction.subcategory {
-                    if sub.need != need { return false }
-                } else {
-                    if need != .unclassified { return false }
-                }
-            }
+            // Need Filter (still applies to pie charts): incluidas y ocultas.
+            if !needFilter.matches(transaction.subcategory?.need ?? .unclassified) { return false }
 
             // Tag Filter — CSV-mirror SSOT (sobrevive CloudKit lazy hydration).
-            if !selectedTags.isEmpty {
-                let selectedUUIDs = Set(
-                    tags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)
-                )
+            if tagUUIDFilter.isActive {
                 let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
-                if txTagUUIDs.isDisjoint(with: selectedUUIDs) { return false }
+                if !tagUUIDFilter.matchesAny(txTagUUIDs) { return false }
             }
 
-            // Currency Filter
-            if !selectedCurrencies.isEmpty {
-                guard let txCurrency = CurrencyCode(rawValue: transaction.currencyCode) else {
-                    return false
-                }
-                if !selectedCurrencies.contains(txCurrency) { return false }
+            // Currency Filter: incluidas y ocultas.
+            if currencyFilter.isActive,
+               !currencyFilter.matches(CurrencyCode(rawValue: transaction.currencyCode)) {
+                return false
             }
 
             // Amount Filter
@@ -1611,14 +1619,9 @@ final class PanelViewModel {
 
     /// Pre-compute need-filtered transactions for pie widgets
     private func buildNeedFilteredTransactions(from pieContextTransactions: [TransactionItem]) -> [TransactionItem] {
-        guard let need = selectedNeed else { return pieContextTransactions }
-        return pieContextTransactions.filter { txn in
-            if let sub = txn.subcategory {
-                return sub.need == need
-            } else {
-                return need == .unclassified
-            }
-        }
+        let filter = needFilter
+        guard filter.isActive else { return pieContextTransactions }
+        return pieContextTransactions.filter { filter.matches($0.subcategory?.need ?? .unclassified) }
     }
 
     /// Pre-compute fully-filtered transactions (need + subcategory)
@@ -1661,14 +1664,20 @@ final class PanelViewModel {
         criteria.selectedTags = selectedTags
         // CSV-mirror SSOT: poblar tagUUIDs desde el catálogo local. Sobrevive
         // CloudKit lazy hydration de la M2M `transaction.tags`.
-        let selectedTagObjects = tags.filter { selectedTags.contains($0.persistentModelID) }
-        criteria.populateTagUUIDs(from: selectedTagObjects)
+        criteria.excludedTags = SessionState.shared.excludedTags
+        criteria.populateTagUUIDs(fromCatalog: tags)
         criteria.selectedCurrencies = selectedCurrencies
-        criteria.isExcludeMode = isExcludeMode
+        criteria.excludedCurrencies = SessionState.shared.excludedCurrencies
         criteria.amountCondition = amountCondition
         criteria.searchText = searchText
         criteria.dateInterval = dateInterval
 
+        // Lo OCULTO sale siempre, también del período anterior (`includeCategories: false`): si no, la tarta de este
+        // período no tiene «Comida» y la del anterior sí, y la variación sale bajando sin que nada bajara. Lo que
+        // `includeCategories` deja fuera es lo INCLUIDO, que en las tartas atenúa en vez de recortar.
+        criteria.excludedCategories = excludedCategoryIDs
+        criteria.excludedSubcategories = excludedSubcategoryIDs
+        criteria.excludedNeeds = SessionState.shared.excludedNeeds
         if includeCategories {
             criteria.selectedCategories = SessionState.shared.selectedCategoryIDs
             criteria.selectedSubcategories = selectedSubcategoryIDs
@@ -1739,8 +1748,7 @@ final class PanelViewModel {
         let balanceAccounts = PanelBalanceScopeLogic.accounts(
             eligible: eligibleAccounts,
             includeGroups: appPreferences?.includeGroupsInPanelTotal ?? true,
-            selectedAccountIDs: selectedAccountIDs,
-            isExcludeMode: isExcludeMode
+            selectedAccountIDs: selectedAccountIDs
         )
         let balanceTransactions = PanelBalanceScopeLogic.transactions(
             transactions,
@@ -2166,6 +2174,105 @@ final class PanelViewModel {
 
     // State for Filter Logic
     var isCategorySelectionImplicit: Bool = false
+
+    // MARK: - Tocar un segmento: «Ver solo» / «Ocultar» (propuesta A, 2026-10-25)
+
+    /// Lo que pregunta el Panel al tocar un segmento de una tarta o un top. «Ver solo» y «Quitar el filtro» reusan las
+    /// ramas de los toggles de siempre (la categoría que se elige sola al ver solo una subcategoría, y que se va con ella);
+    /// «Ocultar» va a `SessionState`.
+    func segmentChoice(
+        for target: SegmentFilterTarget,
+        name: String,
+        amountText: String?
+    ) -> SegmentFilterChoice {
+        let session = SessionState.shared
+        let membership = session.membership(of: target)
+        switch target {
+        case .category(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in
+                    guard let self else { return }
+                    // Las subcategorías vistas solas de OTRA categoría dejarían la pantalla en 0 (Transporte ∧
+                    // Restaurantes): se van, como en Distribución. Las de esta se quedan.
+                    self.dropIncludedSubcategories(outside: id)
+                    self.selectedCategoryID = id
+                    self.isCategorySelectionImplicit = false
+                },
+                hide: { [weak self] in
+                    // Ocultar la categoría de una subcategoría vista sola dejaba «Solo Restaurantes» + «Sin Comida»: 0.
+                    self?.dropIncludedSubcategories(inside: id)
+                    if self?.selectedCategoryID == id { self?.isCategorySelectionImplicit = false }
+                    session.hide(target)
+                },
+                clear: { [weak self] in
+                    if self?.selectedCategoryID == id {
+                        self?.selectedCategoryID = nil
+                        self?.isCategorySelectionImplicit = false
+                    }
+                    session.clearFilter(target)
+                }
+            )
+        case .subcategory(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in
+                    guard let self else { return }
+                    // Desde «oculta» o sin filtro: la rama de elegir del toggle (fija la categoría implícita).
+                    if !self.selectedSubcategoryIDs.contains(id) { self.toggleSubcategoryFilterFromPanel(id) }
+                },
+                hide: { [weak self] in
+                    self?.dropImplicitCategory(ifOnlySubcategory: id)
+                    session.hide(target)
+                },
+                clear: { [weak self] in
+                    self?.dropImplicitCategory(ifOnlySubcategory: id)
+                    session.clearFilter(target)
+                }
+            )
+        case .tag(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedTags = [id] }
+            )
+        case .need(let need):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedNeed = need }
+            )
+        case .account(let id):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedAccountID = id }
+            )
+        case .currency(let code):
+            return SegmentFilterChoice(
+                target: target, name: name, amountText: amountText, membership: membership,
+                showOnly: { [weak self] in self?.selectedCurrencies = [code] }
+            )
+        }
+    }
+
+    /// Quita de lo visto solo las subcategorías de esa categoría (`inside`) o de las demás (`outside`).
+    private func dropIncludedSubcategories(inside categoryID: PersistentIdentifier) {
+        let parents = Dictionary(allSubcategories.map { ($0.persistentModelID, $0.category?.persistentModelID) }) { a, _ in a }
+        let keep = selectedSubcategoryIDs.filter { parents[$0] ?? nil != categoryID }
+        if keep != selectedSubcategoryIDs { selectedSubcategoryIDs = keep }
+    }
+
+    private func dropIncludedSubcategories(outside categoryID: PersistentIdentifier) {
+        let parents = Dictionary(allSubcategories.map { ($0.persistentModelID, $0.category?.persistentModelID) }) { a, _ in a }
+        let keep = selectedSubcategoryIDs.filter { parents[$0] ?? nil == categoryID }
+        if keep != selectedSubcategoryIDs { selectedSubcategoryIDs = keep }
+    }
+
+    /// Si la subcategoría que se quita u oculta era la única vista sola y su categoría se había elegido sola por ella,
+    /// la categoría se va también: sin esto quedaba «Solo Transporte» sin que nadie lo pidiera.
+    private func dropImplicitCategory(ifOnlySubcategory id: PersistentIdentifier) {
+        guard isCategorySelectionImplicit, selectedSubcategoryIDs == [id] else { return }
+        selectedCategoryID = nil
+        isCategorySelectionImplicit = false
+    }
 
     // Helper to toggle Category explicitly (from Widget)
     func toggleCategoryFilter(_ id: PersistentIdentifier) {

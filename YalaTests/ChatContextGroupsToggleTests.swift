@@ -98,12 +98,12 @@ struct ChatContextGroupsToggleTests {
 
         let session = SessionState.shared
         let savedIDs = session.selectedAccountIDs
-        let savedExclude = session.isExcludeMode
+        let savedExclude = session.excludedFilterSets
         session.selectedAccountIDs = []
-        session.isExcludeMode = false
+        session.excludedFilterSets = .none
         defer {
             session.selectedAccountIDs = savedIDs
-            session.isExcludeMode = savedExclude
+            session.excludedFilterSets = savedExclude
         }
 
         let panel = PanelViewModel()

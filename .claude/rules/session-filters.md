@@ -9,6 +9,10 @@ paths:
   - "Yala/App/Logic/Calculators/**"
   - "Yala/App/Views/Panel/**"
   - "Yala/App/Views/Records/RecordsFiltersView.swift"
+  - "Yala/App/Views/Statistics/CategoriesTabView.swift"
+  - "Yala/App/Views/Filters/**"
+  - "Yala/Services/FilterService.swift"
+  - "Yala/App/Logic/EntityFilter.swift"
 ---
 # Filtros de sesión
 
@@ -44,15 +48,31 @@ así que *por ese camino* nunca hay dos. Eso no acota el estado: **no son los ú
 Antes de asumir «aquí solo puede haber uno», busca **todos** los escritores de esa clave. La
 comprobación cuesta un grep y el bug de arriba vivió porque nadie la hizo.
 
-## `isExcludeMode` viaja con el conjunto
+## Incluidos y excluidos viajan juntos
 
-El conjunto no significa nada sin el modo: los mismos IDs significan «solo estas» o «todas menos
-estas». Una función que recibe el conjunto y no el modo **invierte el filtro** en cuanto el usuario
-activa «excluir» — que se activa desde Registros → Filtros junto con las cuentas, en el mismo
-commit.
+Desde el 2026-10-25 (opción B de Jürgen, ticket `stats-filter-segment-tap-should-ask-include-or-exclude`) cada
+dimensión tiene **dos** conjuntos: los `selected*` son los INCLUIDOS («Solo X») y los `excluded*` los EXCLUIDOS
+(«Sin X»), en `SessionState`, en `FilterCriteria` y en `Filterable`. Ya no hay modo global (`isExcludeMode` se borró):
+«Solo Comida» y «Sin Uber» conviven. La regla de coincidencia es UNA, `EntityFilter.matches`: si hay incluidos, el id
+tiene que estar; nunca puede estar en excluidos. Un mismo id no puede estar en los dos conjuntos: `SessionState` lo
+saca del otro al escribirlo (el último gana; `performBatchFilterUpdate` lo apaga mientras la hoja de Registros vuelca
+las dos listas, ya disjuntas).
 
-Al pasar un filtro de entidad a un calculador, pasa los dos. `LiveBalanceCalculator` los toma
-juntos por esto.
+- **Un conjunto sin su gemelo pierde la mitad del filtro.** Al construir un `FilterCriteria` a mano pasa los `excluded*`
+  (o usa `SessionState.applyEntityFilters(to:)`), y las etiquetas con `populateTagUUIDs(fromCatalog:)`, que rellena las
+  dos listas; `populateTagUUIDs(from:)` solo rellena las incluidas. Un calculador recibe el `EntityFilter` o los dos
+  conjuntos, nunca uno solo. `LiveBalanceCalculator` toma `selectedAccountIDs` y `excludedAccountIDs`.
+- **«Hay filtro de cuentas» para el interruptor de Grupos cuenta solo las INCLUIDAS** (`hasAccountFilter`): «todas menos
+  éstas» sigue siendo un agregado. Igual que hacía el modo excluir.
+- **En las tartas y tops, lo incluido de categoría/subcategoría atenúa y lo excluido sale de los datos**, en el Panel
+  (`buildPieContextTransactions`) y en Distribución (`calculateData`), período actual y anterior igual. Los widgets ya
+  no conocen ningún modo: reciben los datos sin lo oculto.
+- **Tocar un segmento pregunta** «Ver solo X / Ocultar X» (`SegmentFilterChoiceSheet`, host `.segmentFilterChoiceHost()`
+  en Distribución y en el Panel). Un gesto nuevo que escriba el filtro pasa por ahí, no por un toggle propio.
+- **Los filtros de sesión no se guardan en disco** (medido el 2026-10-25): no hay migración de estado. El asistente de
+  Exportar conserva su propio «Mostrar solo / Ocultar» local, a propósito.
+
+La paridad de pantallas con los dos tipos a la vez la fija `CombinedFiltersScreenParityTests`.
 
 ## Las dos pantallas resuelven la elegibilidad igual
 
@@ -61,10 +81,8 @@ seguir siendo la misma regla:
 
 ```swift
 guard !account.excludeFromStatistics else { return false }
-if selectedAccountIDs.isEmpty { return true }
-return isExcludeMode
-    ? !selectedAccountIDs.contains(account.persistentModelID)
-    : selectedAccountIDs.contains(account.persistentModelID)
+return EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
+    .matches(account.persistentModelID)
 ```
 
 Si tocas una, toca la otra. `BalanceKPIParityTests` fija la paridad y falla si divergen.

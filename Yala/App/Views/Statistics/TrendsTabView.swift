@@ -193,7 +193,7 @@ struct TrendsTabView: View {
         .onChange(of: trendsViewModel.selectedCurrencies)      { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.amountCondition)         { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.searchText)              { scheduleTrendsRecalc() }
-        .onChange(of: trendsViewModel.isExcludeMode)           { scheduleTrendsRecalc() }
+        .onChange(of: sessionState.excludedFilterSets)         { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedMetric)          { scheduleTrendsRecalc() }
         .onChange(of: sessionState.comparisonMode)             { scheduleTrendsRecalc() }
         .onChange(of: sessionState.selectedTransactionNatures) { scheduleTrendsRecalc() }
@@ -604,10 +604,9 @@ struct TrendsTabView: View {
     }
 
     /// Check if any category/subcategory/need filters are active
-    /// In exclude mode, these filters remove items rather than restricting to them,
-    /// so they don't imply a specific nature context
+    /// Solo lo INCLUIDO cuenta: ocultar una categoría quita cosas en vez de acotar a ellas,
+    /// así que no implica un contexto de gasto o ingreso.
     private var hasCategoryFilters: Bool {
-        guard !sessionState.isExcludeMode else { return false }
         return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
             || !sessionState.selectedNeeds.isEmpty
@@ -1457,15 +1456,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: effectiveInterval
         )
-        criteria.populateTagUUIDs(
-            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: tags)
 
         let filtered = FilterService.filterForTrends(
             transactions: allTransactions,
@@ -1593,15 +1595,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: interval
         )
-        criteria.populateTagUUIDs(
-            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: tags)
 
         // Filter transactions (reuse fetchedTransactions from above)
         let filtered = FilterService.filterForTrends(
@@ -1706,15 +1711,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: previousInterval
         )
-        previousCriteria.populateTagUUIDs(
-            from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
-        )
+        previousCriteria.populateTagUUIDs(fromCatalog: tags)
 
         // Filter transactions for previous period
         let previousFilteredRaw = FilterService.filterForTrends(
@@ -1781,11 +1789,12 @@ struct TrendsTabView: View {
             customRange: sessionState.customDateRange
         )
 
-        // Get eligible accounts (archived accounts still count; same as StatisticsViewModel)
+        // Get eligible accounts (archived accounts still count; same as StatisticsViewModel): incluidas y ocultas.
+        let accountFilter = EntityFilter(
+            included: trendsViewModel.selectedAccounts, excluded: trendsViewModel.excludedAccounts
+        )
         let eligibleAccounts = accounts.filter { account in
-            !account.excludeFromStatistics
-                && (trendsViewModel.selectedAccounts.isEmpty
-                    || trendsViewModel.selectedAccounts.contains(account.persistentModelID))
+            !account.excludeFromStatistics && accountFilter.matches(account.persistentModelID)
         }
 
         // For balance: we need ALL transactions (no date filter) to calculate running balance
@@ -1800,15 +1809,18 @@ struct TrendsTabView: View {
             selectedTags: trendsViewModel.selectedTags,
             selectedNeeds: trendsViewModel.selectedNeeds,
             selectedCurrencies: trendsViewModel.selectedCurrencies,
-            isExcludeMode: trendsViewModel.isExcludeMode,
+            excludedAccounts: trendsViewModel.excludedAccounts,
+            excludedCategories: trendsViewModel.excludedCategories,
+            excludedSubcategories: trendsViewModel.excludedSubcategories,
+            excludedTags: trendsViewModel.excludedTags,
+            excludedNeeds: trendsViewModel.excludedNeeds,
+            excludedCurrencies: trendsViewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: isBalanceMetric ? nil : currentInterval
         )
-        baseCriteria.populateTagUUIDs(
-            from: tags.filter { baseCriteria.selectedTags.contains($0.persistentModelID) }
-        )
+        baseCriteria.populateTagUUIDs(fromCatalog: tags)
 
         // For balance: filter by account/category but NOT by date, pass ALL transactions
         // For income/expense: filter by date too
@@ -1859,15 +1871,18 @@ struct TrendsTabView: View {
                 selectedTags: trendsViewModel.selectedTags,
                 selectedNeeds: trendsViewModel.selectedNeeds,
                 selectedCurrencies: trendsViewModel.selectedCurrencies,
-                isExcludeMode: trendsViewModel.isExcludeMode,
+                excludedAccounts: trendsViewModel.excludedAccounts,
+                excludedCategories: trendsViewModel.excludedCategories,
+                excludedSubcategories: trendsViewModel.excludedSubcategories,
+                excludedTags: trendsViewModel.excludedTags,
+                excludedNeeds: trendsViewModel.excludedNeeds,
+                excludedCurrencies: trendsViewModel.excludedCurrencies,
                 transactionTypeFilter: .all,
                 amountCondition: trendsViewModel.amountCondition,
                 searchText: trendsViewModel.searchText,
                 dateInterval: previousInterval
             )
-            previousCriteria.populateTagUUIDs(
-                from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
-            )
+            previousCriteria.populateTagUUIDs(fromCatalog: tags)
             previousFiltered = FilterService.filterForTrends(
                 transactions: allTransactions,
                 accounts: accounts,

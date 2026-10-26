@@ -381,8 +381,7 @@ struct AccountDetailSheet: View {
         if PanelAccountCardLogic.showsFilterAction(
             // Filtrar desde la ficha filtra la tarjeta (su principal), elija la línea que elija: la misma regla que el
             // carrusel. El filtro de sesión le añade sus líneas (entrega 3).
-            isSelected: viewModel.selectedAccountIDs.contains(account.persistentModelID),
-            isExcludeMode: viewModel.isExcludeMode
+            membership: viewModel.accountMembership(account.persistentModelID)
         ) {
             YalaSecondaryButton(L10n.Keyboard.filterByAccount, icon: "line.3.horizontal.decrease.circle") {
                 viewModel.selectedAccountID = account.persistentModelID

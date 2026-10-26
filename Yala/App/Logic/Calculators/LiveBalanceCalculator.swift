@@ -74,8 +74,8 @@ struct LiveBalanceCalculator {
         /// los números del período, para que el «≈» signifique una sola cosa en todo el Panel.
         let amountsAreApproximate: Bool
 
-        /// Las cuentas que este desglose acabó sumando, ya resueltas (contables, filtro de
-        /// selección e `isExcludeMode` aplicados).
+        /// Las cuentas que este desglose acabó sumando, ya resueltas (contables y filtro de
+        /// cuentas —incluidas y excluidas— aplicado).
         ///
         /// Se expone para que el cálculo de ganancia/pérdida cambiaria recorra **exactamente** las
         /// mismas transacciones que este saldo. El FX P&L es una resta contra ese saldo: si cada
@@ -118,7 +118,7 @@ struct LiveBalanceCalculator {
         transactions: [TransactionItem],
         preferredCurrencyCode: String,
         selectedAccountIDs: Set<PersistentIdentifier> = [],
-        isExcludeMode: Bool = false,
+        excludedAccountIDs: Set<PersistentIdentifier> = [],
         asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Double {
@@ -127,7 +127,7 @@ struct LiveBalanceCalculator {
             transactions: transactions,
             preferredCurrencyCode: preferredCurrencyCode,
             selectedAccountIDs: selectedAccountIDs,
-            isExcludeMode: isExcludeMode,
+            excludedAccountIDs: excludedAccountIDs,
             asOf: now,
             converter: converter
         )
@@ -142,14 +142,15 @@ struct LiveBalanceCalculator {
     /// presupuesto vuelca su conjunto resuelto), y colapsarlo a un elemento
     /// hacía que el saldo del Panel mostrase UNA cuenta —cuál, no era estable,
     /// porque `Set.first` no lo es— mientras Distribución sumaba todas.
-    /// `isExcludeMode` viaja con el conjunto por la misma razón: sin él, "excluir
-    /// la cuenta A" enseñaba justamente el saldo de A.
+    /// Las cuentas OCULTAS viajan con él por la misma razón: sin ellas, "ocultar la
+    /// cuenta A" enseñaba justamente el saldo de A. Las dos listas conviven (opción B,
+    /// 2026-10-25) y se resuelven con `EntityFilter.matches`, la regla de toda la app.
     static func liveBalanceBreakdown(
         accounts: [Account],
         transactions: [TransactionItem],
         preferredCurrencyCode: String,
         selectedAccountIDs: Set<PersistentIdentifier> = [],
-        isExcludeMode: Bool = false,
+        excludedAccountIDs: Set<PersistentIdentifier> = [],
         asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Breakdown {
@@ -160,21 +161,14 @@ struct LiveBalanceCalculator {
                 .map { $0.persistentModelID }
         )
 
-        let eligibleAccountIDs: Set<PersistentIdentifier>
-        if selectedAccountIDs.isEmpty {
-            eligibleAccountIDs = countableIDs
-        } else if isExcludeMode {
-            // "Todas menos las seleccionadas". Si se excluyen todas, el saldo es
-            // 0 y no el total: aquí NO hay fallback, igual que en Estadísticas.
-            eligibleAccountIDs = countableIDs.subtracting(selectedAccountIDs)
-        } else {
-            // Una selección que no resuelve a ninguna cuenta contable (la única elegida está excluida de estadísticas)
-            // da 0, no el total: decisión A de Jürgen del 2026-10-08 (ticket
-            // `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Hasta entonces este saldo caía al
-            // total agregado —herencia de `BalanceHelper.displayedBalance`— mientras los widgets del Panel y
-            // Estadísticas daban 0, y la misma pantalla se contradecía.
-            eligibleAccountIDs = countableIDs.intersection(selectedAccountIDs)
-        }
+        // "Solo estas" y "todas menos estas", a la vez. Si se ocultan todas, el saldo es 0 y no el total: aquí NO hay
+        // fallback, igual que en Estadísticas. Y una selección que no resuelve a ninguna cuenta contable (la única
+        // elegida está excluida de estadísticas) da 0, no el total: decisión A de Jürgen del 2026-10-08 (ticket
+        // `saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas`). Hasta entonces este saldo caía al
+        // total agregado —herencia de `BalanceHelper.displayedBalance`— mientras los widgets del Panel y
+        // Estadísticas daban 0, y la misma pantalla se contradecía.
+        let accountFilter = EntityFilter(included: selectedAccountIDs, excluded: excludedAccountIDs)
+        let eligibleAccountIDs = countableIDs.filter { accountFilter.matches($0) }
 
         let cutoff = TodayCutoff(asOf: now)
         var nativeBalances: [String: Decimal] = [:]

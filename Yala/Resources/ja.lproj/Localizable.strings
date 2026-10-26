@@ -7053,10 +7053,6 @@
 "filters.l8.discardMessage" = "選んだ内容は適用されません。";
 "filters.l8.keepChoosing" = "選択を続ける";
 "filters.l8.discard" = "破棄";
-"filters.l8.switchToExcludeTitle" = "「非表示」に切り替えますか？";
-"filters.l8.switchToIncludeTitle" = "「選んだものだけ」に切り替えますか？";
-"filters.l8.switchMessage" = "選んだものは解除されます。";
-"filters.l8.switchConfirm" = "切り替える";
 "filters.l8.typeLivesInShowOnly" = "支出だけ・収入だけを見るには「選んだものだけ」を使います。";
 "filters.l8.amountTitle" = "金額";
 "filters.l8.amountNeedsOneCurrency" = "金額で絞り込むには、上で通貨を1つだけ選んでください。";
@@ -8403,3 +8399,22 @@
 
 /* Nota bajo «Desasociarla y seguir»: el desasociar no alcanza la copia local de otro dispositivo */
 "storage.migrateBlock.detachNote" = "別のデバイスでこのアカウントをグループに使っている場合、そちらではリンクされたままです。";
+
+
+/* Tocar un segmento: ver solo ese valor. %@ = nombre */
+"filters.segment.showOnly" = "%@だけ表示";
+
+/* Tocar un segmento: ocultar ese valor. %@ = nombre */
+"filters.segment.hide" = "%@を非表示";
+
+/* Tocar un segmento ya filtrado: quitar su filtro */
+"filters.segment.clear" = "フィルタを解除";
+
+/* Cápsula de un filtro de «ver solo». %@ = nombre */
+"filters.segment.chipIncluded" = "%@のみ";
+
+/* VoiceOver: valor de la cápsula de un filtro de «ver solo» */
+"filters.segment.chipIncludedValue" = "これだけを表示中";
+
+/* Hoja de Filtros: las dos pestañas se combinan */
+"filters.segment.combineHint" = "組み合わせられます。一部だけを表示しながら、別のものを非表示にできます。";

@@ -7041,10 +7041,6 @@
 "filters.l8.discardMessage" = "O que você escolheu não será aplicado.";
 "filters.l8.keepChoosing" = "Continuar escolhendo";
 "filters.l8.discard" = "Descartar";
-"filters.l8.switchToExcludeTitle" = "Mudar para “Ocultar”?";
-"filters.l8.switchToIncludeTitle" = "Mudar para “Mostrar só”?";
-"filters.l8.switchMessage" = "O que você marcou será removido.";
-"filters.l8.switchConfirm" = "Mudar";
 "filters.l8.typeLivesInShowOnly" = "Para ver só despesas ou só receitas, use “Mostrar só”.";
 "filters.l8.amountTitle" = "Valor";
 "filters.l8.amountNeedsOneCurrency" = "Para filtrar por valor, escolha uma só moeda acima.";
@@ -8391,3 +8387,22 @@
 
 /* Nota bajo «Desasociarla y seguir»: el desasociar no alcanza la copia local de otro dispositivo */
 "storage.migrateBlock.detachNote" = "Se você usa essa conta para seus grupos em outro dispositivo, lá ela continua vinculada.";
+
+
+/* Tocar un segmento: ver solo ese valor. %@ = nombre */
+"filters.segment.showOnly" = "Ver só %@";
+
+/* Tocar un segmento: ocultar ese valor. %@ = nombre */
+"filters.segment.hide" = "Ocultar %@";
+
+/* Tocar un segmento ya filtrado: quitar su filtro */
+"filters.segment.clear" = "Remover filtro";
+
+/* Cápsula de un filtro de «ver solo». %@ = nombre */
+"filters.segment.chipIncluded" = "Só %@";
+
+/* VoiceOver: valor de la cápsula de un filtro de «ver solo» */
+"filters.segment.chipIncludedValue" = "só isto aparece";
+
+/* Hoja de Filtros: las dos pestañas se combinan */
+"filters.segment.combineHint" = "Dá para combinar: ver só algumas coisas e ocultar outras ao mesmo tempo.";

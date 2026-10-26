@@ -22,7 +22,9 @@ enum PlannedOccurrenceBuilder {
     ///   - filteredTransactions: Transactions already filtered by the Sankey criteria.
     ///   - interval: Sankey period interval.
     ///   - selectedAccounts: When non-empty, only SPs whose `account` is in this set are considered.
-    ///     Tags/currencies/needs do not filter SPs (they don't categorize the same way as tx).
+    ///   - excludedAccounts, excludedCategories, excludedSubcategories: lo OCULTO del filtro de sesión (2026-10-25). Un
+    ///     pago de una cuenta, categoría o subcategoría oculta no entra: si no, «Sin Comida» volvía a pintar Comida en
+    ///     la rama de Planificados. Tags/currencies/needs do not filter SPs (they don't categorize the same way as tx).
     ///   - defaultCurrencyCode: User's preferred currency code (target of conversion).
     ///   - converter: Currency converter for non-default-currency SPs.
     /// - Returns: Flat list of `PlannedOccurrence` with amounts in `defaultCurrencyCode`.
@@ -31,6 +33,9 @@ enum PlannedOccurrenceBuilder {
         filteredTransactions: [TransactionItem],
         interval: DateInterval,
         selectedAccounts: Set<PersistentIdentifier>,
+        excludedAccounts: Set<PersistentIdentifier> = [],
+        excludedCategories: Set<PersistentIdentifier> = [],
+        excludedSubcategories: Set<PersistentIdentifier> = [],
         defaultCurrencyCode: String,
         converter: any CurrencyConverting,
         calendar: Calendar = .current
@@ -58,6 +63,9 @@ enum PlannedOccurrenceBuilder {
                 guard let accountID = sp.account?.persistentModelID,
                       selectedAccounts.contains(accountID) else { continue }
             }
+            if let accountID = sp.account?.persistentModelID, excludedAccounts.contains(accountID) { continue }
+            if let subID = sp.subcategory?.persistentModelID, excludedSubcategories.contains(subID) { continue }
+            if let catID = sp.subcategory?.category?.persistentModelID, excludedCategories.contains(catID) { continue }
 
             let kind: PlannedKind = (sp.paymentCategory == "subscription") ? .subscription : .recurring
             let categoryID = sp.subcategory?.category?.persistentModelID

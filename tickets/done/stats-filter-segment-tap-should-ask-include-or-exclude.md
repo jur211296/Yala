@@ -1,10 +1,10 @@
 ---
 id: stats-filter-segment-tap-should-ask-include-or-exclude
-status: backlog
+status: done
 priority: medium
 area: "statistics, filters, ux"
 created: 2026-09-17
-updated: 2026-10-08
+updated: 2026-10-25
 source: "UX Jürgen 2026-09-17 (bugs de experiencia sin ticket)"
 ---
 
@@ -124,3 +124,20 @@ con «Cancelar» visible (no un `confirmationDialog` anclado al segmento, que en
 `confirmationDialog` anclado), y la barra pinta los dos tipos de filtro a la vez (lila / contorno rojo, cada uno con su
 ✕). Se implementa con el modelo de la opción B de arriba, en una sesión y un PR propios: siguiente paso, lanzar esa
 sesión con este `/spec`.
+
+## Implementado (2026-10-25, sesión `segmento-grafica-ver-solo-ocultar-2-2`)
+
+- **Modelo.** Los `selected*` de `SessionState`, `FilterCriteria` y `Filterable` son los incluidos; los `excluded*`
+  nuevos, los ocultos. `isExcludeMode` se borró (el compilador señaló cada lectura). Regla única `EntityFilter.matches`;
+  un id no puede estar en las dos listas (el último que escribe gana).
+- **Migración.** Medido: los filtros de sesión no se guardan en disco (ni UserDefaults ni App Group), así que no hay
+  estado que migrar. Lo que ya hacía el usuario sigue igual: ver solo → incluidos; ocultar → excluidos. Exportar
+  conserva su propio «Mostrar solo / Ocultar» local (diferido del /spec).
+- **Gesto.** Tartas, tops, lista de Detalle, Sankey y necesidades, en Distribución y en el Panel, abren
+  `SegmentFilterChoiceSheet`: «Ver solo X» / «Ocultar X» (o «Quitar el filtro» si ya está filtrado) y «Cancelar». Hoja
+  corta propia: un `.alert` no admite botones con texto dinámico y un `confirmationDialog` no pinta «Cancelar» (iOS 26).
+- **Barra.** «Solo X» en lila y «Sin X» con el contorno rojo, una cápsula por valor oculto, a la vez (`ExcludedFilterChips`).
+- **Hoja de Registros.** El segmento «Mostrar solo / Ocultar» decide qué lista editas; cambiarlo ya no pregunta ni
+  vacía. Un valor que está en la otra lista se ve con su contorno.
+- **Tests.** `CombinedEntityFilterTests`, `CombinedFiltersScreenParityTests` (Registros, Estadísticas y Panel con
+  «Solo A y B» + «Sin Uber» + «Sin Viaje»; saldo con «Sin B»), `SegmentFilterChoiceUITests`.

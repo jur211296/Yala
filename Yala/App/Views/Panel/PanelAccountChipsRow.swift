@@ -46,8 +46,8 @@ struct PanelAccountChipsRow: View {
     private func chip(for card: AccountCard<Account>, index: Int) -> some View {
         let account = card.head
         // Manda la principal, como en la tarjeta del carrusel (`AccountsCarouselView`).
-        let isSelected = viewModel.selectedAccountIDs.contains(account.persistentModelID)
-        let style = PanelAccountCardLogic.style(isSelected: isSelected, isExcludeMode: viewModel.isExcludeMode)
+        let membership = viewModel.accountMembership(account.persistentModelID)
+        let style = PanelAccountCardLogic.style(membership: membership)
         let color = account.isSystemAccount ? Color(.systemGray) : Color(hex: account.colorHex)
         let isFilled = style == .tinted
         let foreground = isFilled ? Color.contrastingText(for: color) : theme.primaryText
@@ -110,7 +110,7 @@ struct PanelAccountChipsRow: View {
         .accessibilityIdentifier("panel_account_chip_\(index)")
         .pointerHighlight(cornerRadius: nil)
         .contextMenu {
-            if PanelAccountCardLogic.showsFilterAction(isSelected: isSelected, isExcludeMode: viewModel.isExcludeMode) {
+            if PanelAccountCardLogic.showsFilterAction(membership: membership) {
                 Button(L10n.Keyboard.filterByAccount, systemImage: "line.3.horizontal.decrease.circle") {
                     viewModel.selectedAccountID = account.persistentModelID
                 }

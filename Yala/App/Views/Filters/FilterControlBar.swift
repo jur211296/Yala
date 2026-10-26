@@ -88,10 +88,6 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         periodSelector
                     }
 
-                    if viewModel.isExcludeMode {
-                        ExcludeModeBadge()
-                    }
-
                     if viewModel.hasActiveFilters {
                         ScrollView(.horizontal, showsIndicators: false) {
                             chipsContent
@@ -133,7 +129,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
-                .excludeMode(viewModel.isExcludeMode)
+                .filterMembership(.included)
                 .opensFilters(openFilters)
                 .glassEffectID("chip.account", in: chipNamespace)
             }
@@ -154,7 +150,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
-                .excludeMode(viewModel.isExcludeMode)
+                .filterMembership(.included)
                 .opensFilters(openFilters)
                 .glassEffectID("chip.category", in: chipNamespace)
             } else if !viewModel.selectedCategories.isEmpty {
@@ -170,7 +166,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                             onFilterChange?()
                         }
                     )
-                    .excludeMode(viewModel.isExcludeMode)
+                    .filterMembership(.included)
                     .opensFilters(openFilters)
                     .glassEffectID("chip.category", in: chipNamespace)
                 }
@@ -191,7 +187,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
-                .excludeMode(viewModel.isExcludeMode)
+                .filterMembership(.included)
                 .opensFilters(openFilters)
                 .glassEffectID("chip.subcategory", in: chipNamespace)
             }
@@ -207,7 +203,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
-                .excludeMode(viewModel.isExcludeMode)
+                .filterMembership(.included)
                 .opensFilters(openFilters)
                 .glassEffectID("chip.tag.\(chip.tagID.hashValue)", in: chipNamespace)
             }
@@ -221,10 +217,22 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
-                .excludeMode(viewModel.isExcludeMode)
+                .filterMembership(.included)
                 .opensFilters(openFilters)
                 .glassEffectID("chip.need.\(chipData.need.rawValue)", in: chipNamespace)
             }
+
+            // Lo oculto («Sin X»), una cápsula por valor, junto a lo de «Solo X» de arriba.
+            ExcludedFilterChips(
+                sessionState: sessionState,
+                accounts: accounts,
+                categories: categories,
+                subcategories: allSubcategories,
+                tags: tags,
+                onOpenFilters: openFilters,
+                onFilterChange: onFilterChange,
+                namespace: chipNamespace
+            )
 
             // Transaction nature chip (hidden in expenses-only mode)
             if !sessionState.isExpensesOnlyMode,
@@ -263,7 +271,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
-                .excludeMode(viewModel.isExcludeMode)
+                .filterMembership(.included)
                 .opensFilters(openFilters)
                 .glassEffectID("chip.currency.\(currency.rawValue)", in: chipNamespace)
             }

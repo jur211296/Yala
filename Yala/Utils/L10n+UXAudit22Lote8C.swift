@@ -40,10 +40,6 @@ extension L10n {
             static var keepChoosing: String { l8c("filters.l8.keepChoosing") }
             static var discard: String { l8c("filters.l8.discard") }
 
-            static var switchToExcludeTitle: String { l8c("filters.l8.switchToExcludeTitle") }
-            static var switchToIncludeTitle: String { l8c("filters.l8.switchToIncludeTitle") }
-            static var switchMessage: String { l8c("filters.l8.switchMessage") }
-            static var switchConfirm: String { l8c("filters.l8.switchConfirm") }
 
             /// En «Ocultar» no está la fila Tipo: dice dónde se elige.
             static var typeLivesInShowOnly: String { l8c("filters.l8.typeLivesInShowOnly") }

@@ -74,9 +74,34 @@ final class FinancialReportViewModel: Filterable {
         set { SessionState.shared.searchText = newValue }
     }
 
-    var isExcludeMode: Bool {
-        get { SessionState.shared.isExcludeMode }
-        set { SessionState.shared.isExcludeMode = newValue }
+    var excludedAccounts: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedAccountIDs }
+        set { SessionState.shared.excludedAccountIDs = newValue }
+    }
+
+    var excludedCategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedCategoryIDs }
+        set { SessionState.shared.excludedCategoryIDs = newValue }
+    }
+
+    var excludedSubcategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedSubcategoryIDs }
+        set { SessionState.shared.excludedSubcategoryIDs = newValue }
+    }
+
+    var excludedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.excludedNeeds }
+        set { SessionState.shared.excludedNeeds = newValue }
+    }
+
+    var excludedTags: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedTags }
+        set { SessionState.shared.excludedTags = newValue }
+    }
+
+    var excludedCurrencies: Set<CurrencyCode> {
+        get { SessionState.shared.excludedCurrencies }
+        set { SessionState.shared.excludedCurrencies = newValue }
     }
 
     var sharedExpenseFilter: SharedExpenseFilter = .all
@@ -181,15 +206,18 @@ final class FinancialReportViewModel: Filterable {
                 selectedNeeds: selectedNeeds,
                 selectedTransactionNatures: selectedTransactionNatures,
                 selectedCurrencies: selectedCurrencies,
-                isExcludeMode: isExcludeMode,
+                excludedAccounts: excludedAccounts,
+                excludedCategories: excludedCategories,
+                excludedSubcategories: excludedSubcategories,
+                excludedTags: excludedTags,
+                excludedNeeds: excludedNeeds,
+                excludedCurrencies: excludedCurrencies,
                 transactionTypeFilter: Self.transactionTypeFilter(expensesOnly: resolvedExpensesOnly),
                 amountCondition: amountCondition,
                 searchText: searchText,
                 dateInterval: dateInterval
             )
-            criteria.populateTagUUIDs(
-                from: allTags.filter { selectedTags.contains($0.persistentModelID) }
-            )
+            criteria.populateTagUUIDs(fromCatalog: allTags)
             return criteria
         }
 

@@ -1949,7 +1949,7 @@ struct NewTransactionView: View {
         model.accountPrefillFilter = TransactionAccountPrefillLogic.Filter(
             accountIDs: selection,
             shownAccountIDs: sessionState.shownAccountSelection(selection),
-            isExcludeMode: sessionState.isExcludeMode
+            excludedAccountIDs: sessionState.excludedAccountIDs
         )
         model.lastUsedAccountShortcutID = LastUsedAccountStore.read()
     }

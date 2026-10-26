@@ -3,13 +3,15 @@
 //  Yala
 //
 //  Lo que la hoja de Filtros necesita saber sin pintar nada (auditoría UX 2.2, lote 8, L8-16): si lo elegido cambió
-//  desde que se abrió, si cambiar de modo borraría algo y qué dice cada sección cuando no hay nada marcado.
+//  desde que se abrió y qué dice cada sección cuando no hay nada marcado. Desde el 2026-10-25 «Mostrar solo» y
+//  «Ocultar» conviven: cambiar de pestaña ya no vacía nada, solo decide qué lista editas.
 //
 
 import Foundation
 import SwiftData
 
-/// Lo elegido en la hoja de Filtros, tal como se aplicaría con «Aplicar».
+/// Lo elegido en la hoja de Filtros, tal como se aplicaría con «Aplicar»: lo de «Mostrar solo» y lo de «Ocultar». La
+/// pestaña que está a la vista no es parte de lo elegido: cambiarla no cuenta como cambio.
 struct RecordsFiltersDraft: Equatable {
     var accounts: Set<PersistentIdentifier> = []
     var categories: Set<PersistentIdentifier> = []
@@ -20,7 +22,12 @@ struct RecordsFiltersDraft: Equatable {
     var currencies: Set<CurrencyCode> = []
     var amountCondition: AmountFilterCondition = .any
     var noteText: String = ""
-    var isExcludeMode: Bool = false
+    var excludedAccounts: Set<PersistentIdentifier> = []
+    var excludedCategories: Set<PersistentIdentifier> = []
+    var excludedSubcategories: Set<PersistentIdentifier> = []
+    var excludedTags: Set<PersistentIdentifier> = []
+    var excludedNeeds: Set<SubcategoryNeed> = []
+    var excludedCurrencies: Set<CurrencyCode> = []
 }
 
 enum RecordsFiltersDraftLogic {
@@ -30,21 +37,6 @@ enum RecordsFiltersDraftLogic {
     static func hasChanges(current: RecordsFiltersDraft, original: RecordsFiltersDraft?) -> Bool {
         guard let original else { return false }
         return current != original
-    }
-
-    /// Cambiar entre «Mostrar solo» y «Ocultar» vacía lo elegido: solo se pregunta si hay algo que se perdería.
-    /// Con «solo gastos» puesto, el Tipo lo fija la app (`[.expense]`) y no cuenta como elegido por la persona.
-    static func modeSwitchWouldClear(_ draft: RecordsFiltersDraft, isExpensesOnlyMode: Bool) -> Bool {
-        let hasNatures = isExpensesOnlyMode ? false : !draft.transactionNatures.isEmpty
-        return !draft.accounts.isEmpty
-            || !draft.categories.isEmpty
-            || !draft.subcategories.isEmpty
-            || !draft.tags.isEmpty
-            || !draft.needs.isEmpty
-            || !draft.currencies.isEmpty
-            || hasNatures
-            || draft.amountCondition != .any
-            || !draft.noteText.isEmpty
     }
 }
 

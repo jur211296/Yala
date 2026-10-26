@@ -16,10 +16,9 @@ import Testing
 struct PanelAccountCardLogicTests {
 
     @Test func style_followsTheFilter() {
-        #expect(PanelAccountCardLogic.style(isSelected: false, isExcludeMode: false) == .plain)
-        #expect(PanelAccountCardLogic.style(isSelected: false, isExcludeMode: true) == .plain)
-        #expect(PanelAccountCardLogic.style(isSelected: true, isExcludeMode: false) == .tinted)
-        #expect(PanelAccountCardLogic.style(isSelected: true, isExcludeMode: true) == .excluded)
+        #expect(PanelAccountCardLogic.style(membership: .none) == .plain)
+        #expect(PanelAccountCardLogic.style(membership: .included) == .tinted)
+        #expect(PanelAccountCardLogic.style(membership: .excluded) == .excluded)
     }
 
     @Test func subtitle_isTypeAndCurrency_orCurrencyAlone() {
@@ -60,11 +59,10 @@ struct PanelAccountCardLogicTests {
         #expect(!PanelAccountCardLogic.showsConversion(kind: .spent, accountCurrency: "USD", defaultCurrency: "PEN"))
     }
 
-    @Test func filterAction_onlyWhenNotFilteredAndIncluding() {
-        #expect(PanelAccountCardLogic.showsFilterAction(isSelected: false, isExcludeMode: false))
-        #expect(!PanelAccountCardLogic.showsFilterAction(isSelected: true, isExcludeMode: false))
-        #expect(!PanelAccountCardLogic.showsFilterAction(isSelected: false, isExcludeMode: true))
-        #expect(!PanelAccountCardLogic.showsFilterAction(isSelected: true, isExcludeMode: true))
+    @Test func filterAction_onlyWhenTheAccountIsNotInTheFilter() {
+        #expect(PanelAccountCardLogic.showsFilterAction(membership: .none))
+        #expect(!PanelAccountCardLogic.showsFilterAction(membership: .included))
+        #expect(!PanelAccountCardLogic.showsFilterAction(membership: .excluded))
     }
 
     @Test func systemAccounts_areNotEditable() {

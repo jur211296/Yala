@@ -46,8 +46,14 @@ protocol Filterable: AnyObject {
     /// Number of active filter types (for badge)
     var activeFilterCount: Int { get }
 
-    /// Exclude mode for entity filters
-    var isExcludeMode: Bool { get set }
+    // Lo oculto de cada dimensión («Sin X»). Convive con los `selected*` de arriba, que son los incluidos («Solo X»).
+    // Sustituye al antiguo `isExcludeMode` global (opción B, 2026-10-25).
+    var excludedAccounts: Set<PersistentIdentifier> { get set }
+    var excludedCategories: Set<PersistentIdentifier> { get set }
+    var excludedSubcategories: Set<PersistentIdentifier> { get set }
+    var excludedNeeds: Set<SubcategoryNeed> { get set }
+    var excludedTags: Set<PersistentIdentifier> { get set }
+    var excludedCurrencies: Set<CurrencyCode> { get set }
 
     /// Selected transaction natures (income/expense chips)
     var selectedTransactionNatures: Set<TransactionNature> { get set }
@@ -70,7 +76,7 @@ extension Filterable {
     /// IMPORTANT: this default does NOT populate `selectedTagUUIDs` (no access to
     /// `[Tag]` catalog from the protocol). Consumers that pass the result to
     /// `FilterService.matchesCriteria` / `filterForTrends` MUST either:
-    ///   - call `criteria.populateTagUUIDs(from: allTags)` before use, or
+    ///   - call `criteria.populateTagUUIDs(fromCatalog: allTags)` before use, or
     ///   - use `filterCriteria(withTagCatalog:)` overload that does it for them.
     /// Otherwise tag-filter matching is silently skipped (CSV-mirror SSOT).
     var filterCriteria: FilterCriteria {
@@ -82,7 +88,12 @@ extension Filterable {
         c.selectedNeeds = selectedNeeds
         c.selectedTransactionNatures = selectedTransactionNatures
         c.selectedCurrencies = selectedCurrencies
-        c.isExcludeMode = isExcludeMode
+        c.excludedAccounts = excludedAccounts
+        c.excludedCategories = excludedCategories
+        c.excludedSubcategories = excludedSubcategories
+        c.excludedNeeds = excludedNeeds
+        c.excludedTags = excludedTags
+        c.excludedCurrencies = excludedCurrencies
         c.amountCondition = amountCondition
         c.searchText = searchText
         c.sharedExpenseFilter = sharedExpenseFilter
@@ -93,9 +104,7 @@ extension Filterable {
     /// catalog. Required when the result will be passed to `FilterService`.
     func filterCriteria(withTagCatalog allTags: [Tag]) -> FilterCriteria {
         var c = filterCriteria
-        c.populateTagUUIDs(
-            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
-        )
+        c.populateTagUUIDs(fromCatalog: allTags)
         return c
     }
 
@@ -120,7 +129,12 @@ extension Filterable {
         selectedCurrencies.removeAll()
         amountCondition = .any
         searchText = ""
-        isExcludeMode = false
+        excludedAccounts.removeAll()
+        excludedCategories.removeAll()
+        excludedSubcategories.removeAll()
+        excludedNeeds.removeAll()
+        excludedTags.removeAll()
+        excludedCurrencies.removeAll()
         sharedExpenseFilter = .all
     }
 }

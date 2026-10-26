@@ -20,7 +20,6 @@ struct SubcategoriesPieWidget: View {
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
-    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -45,12 +44,6 @@ struct SubcategoriesPieWidget: View {
     // Filtered total based on selected subcategories
     private var filteredTotalExpense: Double {
         guard !selectedSubcategoryIDs.isEmpty else { return totalExpense }
-        if isExcludeMode {
-            return subcategories
-                .filter { guard let id = $0.persistentID else { return true }
-                    return !selectedSubcategoryIDs.contains(id) }
-                .reduce(0) { $0 + $1.amount }
-        }
         return subcategories
             .filter { guard let id = $0.persistentID else { return false }
                 return selectedSubcategoryIDs.contains(id) }
@@ -382,12 +375,7 @@ struct SubcategoriesPieWidget: View {
             .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
-    // In exclude mode, excluded items are removed — show labels normally by percentage.
-    // In include mode, show only selected items' labels.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if isExcludeMode {
-            return item.percentage > 4.0
-        }
         if !selectedSubcategoryIDs.isEmpty {
             guard let id = item.persistentID else { return false }
             return selectedSubcategoryIDs.contains(id)
@@ -625,18 +613,12 @@ struct SubcategoriesPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
-        // In exclude mode, excluded items are already removed — no dimming needed
-        if isExcludeMode { return false }
         guard !selectedSubcategoryIDs.isEmpty else { return false }
         guard let itemPersistentID = item.persistentID else { return true }  // Dim "Restante" when something is selected
         return !selectedSubcategoryIDs.contains(itemPersistentID)
     }
 
     private func currentCenterItem(_ chartData: [PieChartData]) -> PieChartData? {
-        if isExcludeMode {
-            // Excluded items already removed; show first visible item
-            return chartData.first
-        }
         if !selectedSubcategoryIDs.isEmpty {
             return chartData.first { $0.persistentID == selectedSubcategoryIDs.first }
         }
@@ -670,15 +652,8 @@ struct SubcategoriesPieWidget: View {
         let maxVisible = 9
 
         // Filter out items with non-finite or zero amounts
-        var validSubcategories = subcategories.filter { $0.amount.isFinite && $0.amount > 0 }
+        let validSubcategories = subcategories.filter { $0.amount.isFinite && $0.amount > 0 }
 
-        // In exclude mode, remove excluded items entirely
-        if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
-            validSubcategories = validSubcategories.filter {
-                guard let id = $0.persistentID else { return true }
-                return !selectedSubcategoryIDs.contains(id)
-            }
-        }
 
         // Recalculate total from visible items
         let visibleTotal = validSubcategories.reduce(0) { $0 + $1.amount }

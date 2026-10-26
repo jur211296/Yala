@@ -54,11 +54,20 @@ struct FilterCriteria: Hashable, Sendable {
     /// Selected currencies for filtering (empty = all currencies)
     var selectedCurrencies: Set<CurrencyCode> = []
 
-    // MARK: - Mode
+    // MARK: - Excluded (opción B, 2026-10-25)
 
-    /// When true, selected entity filters act as exclusion (hide matching items)
-    /// When false (default), selected entity filters act as inclusion (show only matching items)
-    var isExcludeMode: Bool = false
+    // Los `selected*` de arriba son los INCLUIDOS («solo estos»). Estos son los excluidos («todos menos estos») de cada
+    // dimensión, y conviven con ellos: ya no hay un modo global que dé a todos los conjuntos un solo significado. La regla
+    // de coincidencia es `EntityFilter.matches` (vía los `*Filter` de abajo).
+
+    var excludedAccounts: Set<PersistentIdentifier> = []
+    var excludedCategories: Set<PersistentIdentifier> = []
+    var excludedSubcategories: Set<PersistentIdentifier> = []
+    var excludedTags: Set<PersistentIdentifier> = []
+    /// Espejo CSV de `excludedTags`, como `selectedTagUUIDs` lo es de `selectedTags`.
+    var excludedTagUUIDs: Set<UUID> = []
+    var excludedNeeds: Set<SubcategoryNeed> = []
+    var excludedCurrencies: Set<CurrencyCode> = []
 
     // MARK: - Value Filters
 
@@ -93,6 +102,7 @@ struct FilterCriteria: Hashable, Sendable {
             || !selectedSubcategories.isEmpty
             || !selectedNeeds.isEmpty
             || !selectedTags.isEmpty
+            || hasExcludedEntities
             || transactionTypeFilter != .all
             || amountCondition.isActive
             || !selectedCurrencies.isEmpty
@@ -108,6 +118,12 @@ struct FilterCriteria: Hashable, Sendable {
         if !selectedCategories.isEmpty || !selectedSubcategories.isEmpty { count += 1 }
         if !selectedNeeds.isEmpty { count += 1 }
         if !selectedTags.isEmpty { count += 1 }
+        // Lo oculto cuenta aparte y por valor: en la barra cada uno es su cápsula («Sin X») junto a «Solo Y», y con dos
+        // cápsulas tiene que salir la ✕ de «borrar todo». Las cuentas, una vez: el conjunto lleva las líneas de una
+        // tarjeta, que se pintan con ella.
+        if !excludedAccounts.isEmpty { count += 1 }
+        count += excludedCategories.count + excludedSubcategories.count
+        count += excludedNeeds.count + excludedTags.count + excludedCurrencies.count
         if transactionTypeFilter != .all { count += 1 }
         if amountCondition.isActive { count += 1 }
         if !selectedCurrencies.isEmpty { count += 1 }
@@ -115,6 +131,33 @@ struct FilterCriteria: Hashable, Sendable {
         if !searchText.isEmpty { count += 1 }
         if sharedExpenseFilter != .all { count += 1 }
         return count
+    }
+
+    /// Hay algo oculto en alguna dimensión.
+    var hasExcludedEntities: Bool {
+        !excludedAccounts.isEmpty || !excludedCategories.isEmpty || !excludedSubcategories.isEmpty
+            || !excludedTags.isEmpty || !excludedNeeds.isEmpty || !excludedCurrencies.isEmpty
+    }
+
+    // MARK: - Filtro por dimensión
+
+    var accountFilter: EntityFilter<PersistentIdentifier> {
+        EntityFilter(included: selectedAccounts, excluded: excludedAccounts)
+    }
+    var categoryFilter: EntityFilter<PersistentIdentifier> {
+        EntityFilter(included: selectedCategories, excluded: excludedCategories)
+    }
+    var subcategoryFilter: EntityFilter<PersistentIdentifier> {
+        EntityFilter(included: selectedSubcategories, excluded: excludedSubcategories)
+    }
+    var tagUUIDFilter: EntityFilter<UUID> {
+        EntityFilter(included: selectedTagUUIDs, excluded: excludedTagUUIDs)
+    }
+    var needFilter: EntityFilter<SubcategoryNeed> {
+        EntityFilter(included: selectedNeeds, excluded: excludedNeeds)
+    }
+    var currencyFilter: EntityFilter<CurrencyCode> {
+        EntityFilter(included: selectedCurrencies, excluded: excludedCurrencies)
     }
 
     // MARK: - Factory
@@ -132,6 +175,14 @@ struct FilterCriteria: Hashable, Sendable {
         selectedTagUUIDs = Set(tags.map(\.id))
     }
 
+    /// Rellena los espejos CSV de las etiquetas incluidas Y excluidas desde el catálogo. Es la forma segura: cada
+    /// builder que antes llamaba `populateTagUUIDs(from: catálogo filtrado por selectedTags)` debe poblar también las
+    /// excluidas, o el filtro de ocultar etiquetas no recortaría nada.
+    mutating func populateTagUUIDs(fromCatalog allTags: [Tag]) {
+        selectedTagUUIDs = Set(allTags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id))
+        excludedTagUUIDs = Set(allTags.filter { excludedTags.contains($0.persistentModelID) }.map(\.id))
+    }
+
     /// Clear all filters
     mutating func clearAll() {
         selectedAccounts.removeAll()
@@ -143,7 +194,13 @@ struct FilterCriteria: Hashable, Sendable {
         selectedTagUUIDs.removeAll()
         selectedCurrencies.removeAll()
         transactionTypeFilter = .all
-        isExcludeMode = false
+        excludedAccounts.removeAll()
+        excludedCategories.removeAll()
+        excludedSubcategories.removeAll()
+        excludedTags.removeAll()
+        excludedTagUUIDs.removeAll()
+        excludedNeeds.removeAll()
+        excludedCurrencies.removeAll()
         amountCondition = .any
         searchText = ""
         sharedExpenseFilter = .all
@@ -226,25 +283,19 @@ struct FilterService {
             guard interval.contains(transaction.date) else { return false }
         }
 
-        let isExclude = criteria.isExcludeMode
-
-        // Entity filters (account, category, subcategory, nature, currency)
-        if !matchesEntityFilter(transaction.account?.persistentModelID, selected: criteria.selectedAccounts, isExclude: isExclude) { return false }
-        if !matchesEntityFilter(transaction.category?.persistentModelID, selected: criteria.selectedCategories, isExclude: isExclude) { return false }
-        if !matchesEntityFilter(transaction.subcategory?.persistentModelID, selected: criteria.selectedSubcategories, isExclude: isExclude) { return false }
+        // Entity filters (account, category, subcategory, nature, currency): incluidos y excluidos a la vez.
+        if !criteria.accountFilter.matches(transaction.account?.persistentModelID) { return false }
+        if !criteria.categoryFilter.matches(transaction.category?.persistentModelID) { return false }
+        if !criteria.subcategoryFilter.matches(transaction.subcategory?.persistentModelID) { return false }
         // Transactions without subcategory are treated as .unclassified (consistent with PanelVM behavior)
-        if !matchesEntityFilter(transaction.subcategory?.need ?? .unclassified, selected: criteria.selectedNeeds, isExclude: isExclude) { return false }
+        if !criteria.needFilter.matches(transaction.subcategory?.need ?? .unclassified) { return false }
 
-        // Tags filter (ANY match semantics). CSV-mirror SSOT vía `selectedTagUUIDs`
-        // (poblado por `FilterCriteria.populateTagUUIDs(from:)` en cada builder).
-        if !criteria.selectedTagUUIDs.isEmpty {
+        // Tags filter (ANY match semantics). CSV-mirror SSOT vía `selectedTagUUIDs` / `excludedTagUUIDs`
+        // (poblados por `FilterCriteria.populateTagUUIDs(fromCatalog:)` en cada builder).
+        let tagFilter = criteria.tagUUIDFilter
+        if tagFilter.isActive {
             let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
-            let hasOverlap = !txTagUUIDs.isDisjoint(with: criteria.selectedTagUUIDs)
-            if isExclude {
-                if hasOverlap { return false }
-            } else {
-                guard hasOverlap else { return false }
-            }
+            guard tagFilter.matchesAny(txTagUUIDs) else { return false }
         }
 
         // Ingreso o gasto con la regla de toda la app (`TransactionClassificationLogic`). Hasta el 2026-10-23 un
@@ -252,7 +303,7 @@ struct FilterService {
         // filtrar, sin que ningún filtro dijera que lo escondía (decisión de Jürgen del 2026-09-06).
         let isIncome = TransactionClassificationLogic.isIncome(transaction)
 
-        // Transaction type filter (NOT affected by exclude mode)
+        // Transaction type filter (no tiene «ocultar»)
         switch criteria.transactionTypeFilter {
         case .all:
             break
@@ -266,7 +317,7 @@ struct FilterService {
         }
 
         // Transaction nature filter (income/expense chips)
-        // Always "include" semantics — exclude mode does NOT apply to transaction type
+        // Always "include" semantics — el tipo de movimiento no tiene «ocultar»
         // Empty = all, both selected = all, exactly 1 = filter
         if criteria.selectedTransactionNatures.count == 1 {
             if criteria.selectedTransactionNatures.contains(.income) {
@@ -276,12 +327,12 @@ struct FilterService {
             }
         }
 
-        // Amount filter (absolute value) — NOT affected by exclude mode
+        // Amount filter (absolute value) — no tiene «ocultar»
         let amount = Decimal(transaction.amount)
         guard criteria.amountCondition.matches(abs(amount)) else { return false }
 
         // Currency filter
-        if !matchesEntityFilter(CurrencyCode(rawValue: transaction.currencyCode), selected: criteria.selectedCurrencies, isExclude: isExclude) { return false }
+        if !criteria.currencyFilter.matches(CurrencyCode(rawValue: transaction.currencyCode)) { return false }
 
         // Search text filter (note only — GlobalSearchView handles broad multi-field search)
         if !criteria.searchText.isEmpty {
@@ -304,23 +355,6 @@ struct FilterService {
 
     // MARK: - Filter for Trends (Accounts Pre-filtering)
 
-    // MARK: - Entity Filter Helper
-
-    /// Checks if a transaction value matches an entity filter set, respecting exclude mode.
-    /// Returns true if the transaction should be included, false if it should be filtered out.
-    private static func matchesEntityFilter<T: Hashable>(
-        _ value: T?, selected: Set<T>, isExclude: Bool
-    ) -> Bool {
-        guard !selected.isEmpty else { return true }
-        if isExclude {
-            if let value, selected.contains(value) { return false }
-            return true
-        } else {
-            guard let value, selected.contains(value) else { return false }
-            return true
-        }
-    }
-
     /// Filters transactions for trend calculations, considering account eligibility.
     ///
     /// - Parameters:
@@ -341,14 +375,10 @@ struct FilterService {
             ?? (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool)
             ?? true
         // Determine eligible accounts (not excluded from statistics; archived accounts still count)
+        let accountFilter = criteria.accountFilter
         let eligibleAccounts = accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
-            if criteria.selectedAccounts.isEmpty { return true }
-            if criteria.isExcludeMode {
-                return !criteria.selectedAccounts.contains(account.persistentModelID)
-            } else {
-                return criteria.selectedAccounts.contains(account.persistentModelID)
-            }
+            return accountFilter.matches(account.persistentModelID)
         }
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
 
