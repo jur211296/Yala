@@ -71,3 +71,19 @@ Las cuatro decisiones que esperan a Jürgen:
 
 No se tocan: el fondo índigo→negro fijo (`WelcomeFlowStyle`), el Hero con logo y carrusel, y la forma de los
 selectores. Solo D2-B choca con ellos.
+
+## Decisión de Jürgen (2026-10-26)
+
+**D1 A, D2 B, D3 A, D4 A**, sobre el lienzo.
+
+- **D1 A:** `WelcomeFormButton` pasa a cápsula y 15 pt medium (la letra de `YalaPrimaryButton`); conserva blanco lleno
+  y contorno.
+- **D2 B: levanta la decisión del 15-sep sobre el serif.** `DS.Typography.welcomeHeadline` deja de ser serif y los
+  selectores usan el titular sans de la app. De la referencia del 15-sep sigue en pie el resto: una tarjeta y ningún
+  botón recomendado. Asumido al anotarlo: la alineación a la izquierda de los selectores y el titular centrado del
+  onboarding se quedan como están; si al verlo en el simulador piden igualarse, se pregunta.
+- **D3 A:** los pasos del onboarding que eligen entre opciones agrupan las filas en una tarjeta con separadores; la
+  marca de elegido se queda.
+- **D4 A:** los tres textos de la tabla de arriba, en los 16 idiomas.
+
+Siguiente: sesión de implementación, con capturas del antes y el después en el simulador.
