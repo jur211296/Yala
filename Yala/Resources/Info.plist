@@ -18,6 +18,8 @@
 	<string>$(APP_GROUP_IDENTIFIER)</string>
 	<key>URL_SCHEME</key>
 	<string>$(URL_SCHEME)</string>
+	<key>SENTRY_DSN</key>
+	<string>$(SENTRY_DSN)</string>
 	<key>GIDClientID</key>
 	<string>$(GID_CLIENT_ID)</string>
 	<key>NSMicrophoneUsageDescription</key>
