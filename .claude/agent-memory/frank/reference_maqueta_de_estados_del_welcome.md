@@ -22,4 +22,8 @@ Receta medida el 2026-10-14 (auditoría UX 2.2, lote 6; parche en
 - Separar maqueta de arreglo: copia los ficheros enteros a un directorio aparte ANTES de revertir los trozos de
   maqueta; el parche se reconstruye después con `git diff` contra el commit.
 
+- **Capturas sin maqueta (medido el 2026-10-26):** con `-uitest -uitest-reset`, «Ya tengo una cuenta» se salta su
+  selector y cae en «Activa iCloud»; añade `-uitest-cloud-chooser` para ver los botones Apple/Google/Restaurar. «Es mi
+  primera vez» se salta el selector de dónde guardar y abre el paso 1 del onboarding.
+
 Relacionado: [[maqueta-de-variantes-por-xcuitest]], [[auditoria-ux-lote-propone-no-implementa]].
