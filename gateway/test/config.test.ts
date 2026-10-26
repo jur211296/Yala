@@ -197,11 +197,10 @@ describe("wrangler.toml · percents de rollout DESPLEGADOS en producción", () =
     expect(varIn("env.production.vars", "GROUPS_BACKEND_ROLLOUT_PERCENT")).toBe("100");
   });
 
-  // Yala IA con herramientas: APAGADO en los dos entornos hasta que Jürgen decida el texto de consentimiento
-  // (docs/ai-cloud-vs-private-2026-10.md). `toBe("0")` y no `toBeUndefined()`: la línea explícita es la que dice que
-  // está apagado a propósito, y borrarla también rompe este test.
-  it("el camino ampliado de Yala IA está apagado en staging y en producción", () => {
-    expect(varIn("vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("0");
+  // Yala IA con herramientas: staging al 100 (QA previo a 2.2); producción en 0 hasta 2.2 publicada
+  // (docs/ai-cloud-vs-private-2026-10.md §7). `toBe` explícito: borrar la línea también rompe este test.
+  it("el camino ampliado de Yala IA está al 100 en staging y apagado en producción", () => {
+    expect(varIn("vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("100");
     expect(varIn("env.production.vars", "AI_CLOUD_EXPLORE_ROLLOUT_PERCENT")).toBe("0");
   });
 
