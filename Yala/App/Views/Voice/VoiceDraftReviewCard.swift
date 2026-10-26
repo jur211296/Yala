@@ -230,12 +230,14 @@ struct VoiceDraftReviewCard: View {
     /// El borrador guarda el importe con signo: negativo es gasto.
     private var isExpense: Bool { (draft.amount ?? -1) < 0 }
 
-    /// Con su signo, como en la Bandeja y el Panel (UX 2.2 · L4-14): «S/ 25.00» a secas no decía si Yala lo entendió
-    /// como gasto o como ingreso.
+    /// Sin signo, como en 2.1: «S/ -251.81» en «Esto leí» parecía un error de lectura (card ex73, 2026-10-25). Lo que
+    /// dice si es gasto o ingreso es el color: el ingreso va teñido y el gasto en el color del texto. La Bandeja conserva
+    /// el signo (UX 2.2 · L4-14).
     private var formattedAmount: String {
         guard let amount = draft.amount else { return "–" }
         let code = draft.account?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue
-        return appPreferences.currency(amount, currencyCode: code, forceFullPrecision: true)
+        return appPreferences.currency(
+            VoiceEntryFlowLogic.reviewDisplayedAmount(amount), currencyCode: code, forceFullPrecision: true)
     }
 
     /// Se colorea la excepción, no la norma: el gasto va en el color del texto y el ingreso en el tono oscurecido que

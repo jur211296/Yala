@@ -491,62 +491,26 @@ enum TransactionCSVImportService {
             let category: Category
             let subcategory: Subcategory
 
-            if allowCreatingNewCategories {
-                // Modo original: crear categorías/subcategorías nuevas si no existen.
-                category = try CategoryImportHelper.fetchOrCreateCategory(
-                    named: trimmedCategory,
-                    isIncome: isIncome,
-                    in: context
+            // Por nombre Y naturaleza: con «Otros» de gasto y de ingreso, la del signo de la fila; un reembolso o una
+            // transferencia se quedan en la categoría que ya tiene su subcategoría (`CategoryImportNatureLogic.choose`).
+            switch try CategoryImportHelper.resolveForImport(
+                categoryName: trimmedCategory,
+                subcategoryName: trimmedSubcategory,
+                isIncome: isIncome,
+                allowCreating: allowCreatingNewCategories,
+                in: context
+            ) {
+            case .resolved(let resolvedCategory, let resolvedSubcategory):
+                category = resolvedCategory
+                subcategory = resolvedSubcategory
+            case .unknownCategory:
+                throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
+            case .unknownSubcategory:
+                throw ImportError.unknownSubcategory(
+                    row: rowNumber,
+                    categoryName: trimmedCategory,
+                    name: trimmedSubcategory
                 )
-
-                subcategory = try CategoryImportHelper.fetchOrCreateSubcategory(
-                    named: trimmedSubcategory,
-                    in: category,
-                    isIncome: isIncome,
-                    in: context
-                )
-            } else {
-                // Modo estricto: solo se permiten categorías existentes.
-                // Busca por nombre sin filtrar por isIncome para soportar categorías
-                // "neutrales" como "Otros" que contienen transferencias.
-                let categoryDescriptor = FetchDescriptor<Category>(
-                    predicate: #Predicate { cat in
-                        cat.name == trimmedCategory
-                    }
-                )
-                let fetchedCategories = try context.fetch(categoryDescriptor)
-
-                guard let existingCategory = fetchedCategories.first else {
-                    throw ImportError.unknownCategory(
-                        row: rowNumber,
-                        name: trimmedCategory
-                    )
-                }
-
-                category = existingCategory
-
-                // Buscamos subcategorías por nombre y luego filtramos por categoría
-                // en memoria para evitar problemas con relaciones en #Predicate.
-                let subcategoryDescriptor = FetchDescriptor<Subcategory>(
-                    predicate: #Predicate { sub in
-                        sub.name == trimmedSubcategory
-                    }
-                )
-                let fetchedSubcategories = try context.fetch(subcategoryDescriptor)
-
-                guard
-                    let existingSubcategory = fetchedSubcategories.first(where: {
-                        $0.category === category
-                    })
-                else {
-                    throw ImportError.unknownSubcategory(
-                        row: rowNumber,
-                        categoryName: trimmedCategory,
-                        name: trimmedSubcategory
-                    )
-                }
-
-                subcategory = existingSubcategory
             }
 
             // 5.7 Resolver etiquetas (tags) a partir de la columna opcional
@@ -733,46 +697,26 @@ enum TransactionCSVImportService {
         let category: Category
         let subcategory: Subcategory
 
-        if allowCreatingNewCategories {
-            category = try CategoryImportHelper.fetchOrCreateCategory(
-                named: trimmedCategory,
-                isIncome: isIncome,
-                in: context
+        // Por nombre Y naturaleza: con «Otros» de gasto y de ingreso, la del signo de la fila; un reembolso o una
+        // transferencia se quedan en la categoría que ya tiene su subcategoría (`CategoryImportNatureLogic.choose`).
+        switch try CategoryImportHelper.resolveForImport(
+            categoryName: trimmedCategory,
+            subcategoryName: trimmedSubcategory,
+            isIncome: isIncome,
+            allowCreating: allowCreatingNewCategories,
+            in: context
+        ) {
+        case .resolved(let resolvedCategory, let resolvedSubcategory):
+            category = resolvedCategory
+            subcategory = resolvedSubcategory
+        case .unknownCategory:
+            throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
+        case .unknownSubcategory:
+            throw ImportError.unknownSubcategory(
+                row: rowNumber,
+                categoryName: trimmedCategory,
+                name: trimmedSubcategory
             )
-            subcategory = try CategoryImportHelper.fetchOrCreateSubcategory(
-                named: trimmedSubcategory,
-                in: category,
-                isIncome: isIncome,
-                in: context
-            )
-        } else {
-            let categoryDescriptor = FetchDescriptor<Category>(
-                predicate: #Predicate { cat in
-                    cat.name == trimmedCategory
-                }
-            )
-            let fetchedCategories = try context.fetch(categoryDescriptor)
-
-            guard let existingCategory = fetchedCategories.first else {
-                throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
-            }
-            category = existingCategory
-
-            let subcategoryDescriptor = FetchDescriptor<Subcategory>(
-                predicate: #Predicate { sub in
-                    sub.name == trimmedSubcategory
-                }
-            )
-            let fetchedSubcategories = try context.fetch(subcategoryDescriptor)
-
-            guard let existingSubcategory = fetchedSubcategories.first(where: { $0.category === category }) else {
-                throw ImportError.unknownSubcategory(
-                    row: rowNumber,
-                    categoryName: trimmedCategory,
-                    name: trimmedSubcategory
-                )
-            }
-            subcategory = existingSubcategory
         }
 
         // 7. Resolver etiquetas (tags)
@@ -1426,48 +1370,26 @@ enum TransactionCSVImportService {
             let category: Category
             let subcategory: Subcategory
 
-            if allowCreatingNewCategories {
-                category = try CategoryImportHelper.fetchOrCreateCategory(
-                    named: trimmedCategory,
-                    isIncome: isIncome,
-                    in: context
+            // Por nombre Y naturaleza: con «Otros» de gasto y de ingreso, la del signo de la fila; un reembolso o una
+            // transferencia se quedan en la categoría que ya tiene su subcategoría (`CategoryImportNatureLogic.choose`).
+            switch try CategoryImportHelper.resolveForImport(
+                categoryName: trimmedCategory,
+                subcategoryName: trimmedSubcategory,
+                isIncome: isIncome,
+                allowCreating: allowCreatingNewCategories,
+                in: context
+            ) {
+            case .resolved(let resolvedCategory, let resolvedSubcategory):
+                category = resolvedCategory
+                subcategory = resolvedSubcategory
+            case .unknownCategory:
+                throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
+            case .unknownSubcategory:
+                throw ImportError.unknownSubcategory(
+                    row: rowNumber,
+                    categoryName: trimmedCategory,
+                    name: trimmedSubcategory
                 )
-                subcategory = try CategoryImportHelper.fetchOrCreateSubcategory(
-                    named: trimmedSubcategory,
-                    in: category,
-                    isIncome: isIncome,
-                    in: context
-                )
-            } else {
-                // Busca por nombre sin filtrar por isIncome para soportar categorías
-                // "neutrales" como "Otros" que contienen transferencias.
-                let categoryDescriptor = FetchDescriptor<Category>(
-                    predicate: #Predicate { cat in
-                        cat.name == trimmedCategory
-                    }
-                )
-                let fetchedCategories = try context.fetch(categoryDescriptor)
-
-                guard let existingCategory = fetchedCategories.first else {
-                    throw ImportError.unknownCategory(row: rowNumber, name: trimmedCategory)
-                }
-                category = existingCategory
-
-                let subcategoryDescriptor = FetchDescriptor<Subcategory>(
-                    predicate: #Predicate { sub in
-                        sub.name == trimmedSubcategory
-                    }
-                )
-                let fetchedSubcategories = try context.fetch(subcategoryDescriptor)
-
-                guard let existingSubcategory = fetchedSubcategories.first(where: { $0.category === category }) else {
-                    throw ImportError.unknownSubcategory(
-                        row: rowNumber,
-                        categoryName: trimmedCategory,
-                        name: trimmedSubcategory
-                    )
-                }
-                subcategory = existingSubcategory
             }
 
             // Resolver tags

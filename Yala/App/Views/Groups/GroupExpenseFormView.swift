@@ -1085,18 +1085,37 @@ struct GroupExpenseFormView: View {
             // lastCreatedExpenseID: non-nil solo en la rama de creación.
             isEditMode: viewModel.lastCreatedExpenseID == nil,
             currentUserMemberID: viewModel.currentUserMemberID,
-            personalOutcome: GroupExpenseSuccessLogic.personalOutcome(
-                isCaseA: viewModel.isCaseA,
-                isGroupsOnlySession: viewModel.isGroupsOnlySession,
-                bridgeEnabled: viewModel.effectiveBridgeEnabled,
-                accountName: viewModel.selectedAccount?.name,
-                isCreation: viewModel.lastCreatedExpenseID != nil,
-                optIn: optIn,
-                myShare: viewModel.currentUserMemberID.flatMap { me in
-                    shares.first(where: { $0.memberID == me })?.amount
-                } ?? 0
+            // Lo que la pantalla diría, confirmado contra lo que el puente dejó escrito (card dx3m).
+            personalOutcome: GroupExpenseSuccessLogic.confirmedOutcome(
+                GroupExpenseSuccessLogic.personalOutcome(
+                    isCaseA: viewModel.isCaseA,
+                    isGroupsOnlySession: viewModel.isGroupsOnlySession,
+                    bridgeEnabled: viewModel.effectiveBridgeEnabled,
+                    accountName: viewModel.selectedAccount?.name,
+                    isCreation: viewModel.lastCreatedExpenseID != nil,
+                    optIn: optIn,
+                    myShare: viewModel.currentUserMemberID.flatMap { me in
+                        shares.first(where: { $0.memberID == me })?.amount
+                    } ?? 0
+                ),
+                trace: bridgeTrace()
             )
         )
+    }
+
+    /// Lo que el puente dejó para el gasto que se acaba de guardar (creado o editado); `nil` si no se pudo leer.
+    private func bridgeTrace() -> GroupExpenseBridgeTrace? {
+        guard let expenseID = viewModel.lastCreatedExpenseID ?? viewModel.editingExpense?.id.uuidString else {
+            return nil
+        }
+        do {
+            return try GroupExpenseBridgeTraceReader.read(expenseID: expenseID, context: modelContext)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseFormView: Error: no se pudo leer lo que escribió el puente: \(error)")
+            #endif
+            return nil
+        }
     }
 
     /// "Crear otro gasto": reinicia el VM a un form limpio del mismo grupo y vuelve al formulario.

@@ -326,7 +326,22 @@ extension View {
     ) -> some View {
         modifier(ProUpgradeSheetModifier(
             isPresented: isPresented, feature: feature, context: context,
-            preview: preview, source: source, onUnlocked: onUnlocked))
+            preview: preview, source: source, onClosedWithoutUnlock: nil, onUnlocked: onUnlocked))
+    }
+
+    /// La misma hoja, con lo que hacer si se cierra sin comprar (la foto compartida retenida, card fazw). Sobrecarga
+    /// aparte, con las dos salidas etiquetadas: un parámetro nuevo delante de `onUnlocked` cambiaba a qué cierre se
+    /// enganchaba el `{ … }` final de los demás llamadores.
+    func proUpgradeSheet(
+        isPresented: Binding<Bool>,
+        feature: ProFeature,
+        context: UpgradeContext,
+        onClosedWithoutUnlock: @escaping () -> Void,
+        onUnlocked: @escaping () -> Void
+    ) -> some View {
+        modifier(ProUpgradeSheetModifier(
+            isPresented: isPresented, feature: feature, context: context,
+            preview: nil, source: "featureGate", onClosedWithoutUnlock: onClosedWithoutUnlock, onUnlocked: onUnlocked))
     }
 }
 
@@ -336,6 +351,8 @@ private struct ProUpgradeSheetModifier: ViewModifier {
     let context: UpgradeContext
     let preview: ProGatePreview?
     let source: String
+    /// Se cerró sin comprar (o sin que la compra dejara Pro activo). Lo usa la foto compartida retenida (card fazw).
+    let onClosedWithoutUnlock: (() -> Void)?
     let onUnlocked: (() -> Void)?
 
     @State private var purchased = false
@@ -351,7 +368,7 @@ private struct ProUpgradeSheetModifier: ViewModifier {
     private func handleDismiss() {
         let opens = purchased && FeatureGateService.shared.isProUser
         purchased = false
-        if opens { onUnlocked?() }
+        if opens { onUnlocked?() } else { onClosedWithoutUnlock?() }
     }
 }
 

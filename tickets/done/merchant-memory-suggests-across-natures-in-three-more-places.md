@@ -1,10 +1,10 @@
 ---
 id: merchant-memory-suggests-across-natures-in-three-more-places
-status: backlog
+status: done
 priority: medium
 area: "inbox"
 created: 2026-09-08
-updated: 2026-10-08
+updated: 2026-10-25
 source: barrido del patrón en chat-draft-sign-can-contradict-its-subcategory (2026-09-08)
 ---
 
@@ -65,3 +65,13 @@ a la naturaleza contraria, y eso no se ha contado en datos reales.
 Las tres llamadas siguen sin filtro de naturaleza: `ApplePayDraftService.swift:102`, `VoiceRecordingView.swift:776` (antes `:762`) e `InboxDraftEditSheet.swift:839`. `MerchantMemoryService.suggest(for:)` (`:51`) sigue sin parámetro de tipo.
 
 Triage 2026-10-08: abierto · medium → medium · las tres superficies siguen llamando a `suggest(for:)` sin `matchesNature` (`ApplePayDraftService.swift:102`, `VoiceRecordingView.swift:776`, `InboxDraftEditSheet.swift:839`).
+
+## Resuelto (2026-10-25, lote 12.6, card k5jh)
+
+- El filtro sube a un sitio: `MerchantMemoryService.suggest(for:isExpense:)`, con el criterio de
+  `DraftBuilder.matchesNature` (manda el tipo). Apple Pay (`isExpense: true`), la voz (`parsed.isExpense`) y la hoja de
+  la Bandeja (`isExpense`) lo usan; `suggest(for:)` a secas queda para `DraftBuilder`, que ya filtraba.
+- Descartada, el borrador nace sin subcategoría y la pide, como sin memoria del comercio.
+- Tests: `ApplePayDraftServiceTests.merchantMemory_incomeSubcategory_isNotAssignedToAnApplePayExpense` (de punta a
+  punta; sus dos vecinos de gasto son el control) y `MerchantMemoryNatureFilterTests` (servicio con control positivo
+  en los dos sentidos + cableado de voz, Bandeja y Apple Pay).

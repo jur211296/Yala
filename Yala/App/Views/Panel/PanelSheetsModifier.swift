@@ -183,9 +183,18 @@ struct PanelSheetsModifier: ViewModifier {
             .proUpgradeSheet(isPresented: $sheets.showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
                 openAIEntryAfterUnlock(.voice)
             }
-            .proUpgradeSheet(isPresented: $sheets.showUpgradeForImage, feature: .imageInput, context: .proFeature) {
-                openAIEntryAfterUnlock(.image)
-            }
+            // Si la hoja salió por una foto compartida (card fazw), comprar abre el registro por imagen con esa foto y
+            // cerrar sin comprar la descarta.
+            .proUpgradeSheet(
+                isPresented: $sheets.showUpgradeForImage, feature: .imageInput, context: .proFeature,
+                onClosedWithoutUnlock: { SharedImageProGateHold.discard() },
+                onUnlocked: {
+                    if let shared = SharedImageProGateHold.takeForUnlock() {
+                        navigation.pendingSharedImageURL = shared
+                    }
+                    openAIEntryAfterUnlock(.image)
+                }
+            )
             .proUpgradeSheet(isPresented: $sheets.showUpgradeForAccounts, feature: .accounts, context: .limitReached) {
                 sheets.accountFormSheet = AccountFormSheet(account: nil)
             }

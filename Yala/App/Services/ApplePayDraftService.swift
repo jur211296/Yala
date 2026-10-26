@@ -101,7 +101,8 @@ struct ApplePayDraftService {
             var matchedSubcategory: Subcategory?
             var subcategoryConfidence: Double?
             if !merchant.isEmpty {
-                switch MerchantMemoryService(modelContext: context).suggest(for: merchant) {
+                // Apple Pay siempre es gasto: una subcategoría de ingreso aprendida del comercio no vale aquí.
+                switch MerchantMemoryService(modelContext: context).suggest(for: merchant, isExpense: true) {
                 case .autoAssign(let sub):
                     matchedSubcategory = sub
                     subcategoryConfidence = 0.95

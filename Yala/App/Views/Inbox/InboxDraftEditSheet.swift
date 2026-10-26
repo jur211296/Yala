@@ -879,7 +879,7 @@ struct InboxDraftEditSheet: View {
         merchantSuggestedSubcategory = nil
         if selectedSubcategory == nil && !note.trimmingCharacters(in: .whitespaces).isEmpty {
             let merchantService = MerchantMemoryService(modelContext: modelContext)
-            let suggestion = merchantService.suggest(for: note)
+            let suggestion = merchantService.suggest(for: note, isExpense: isExpense)
             switch suggestion {
             case .suggest(let subcategory), .autoAssign(let subcategory):
                 selectedSubcategory = subcategory

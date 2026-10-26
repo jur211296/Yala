@@ -53,6 +53,14 @@ struct VoiceDraftReadiness: Equatable {
 
 enum VoiceEntryFlowLogic {
 
+    // MARK: - Importe en «Esto leí»
+
+    /// El importe que pinta la tarjeta de revisión de voz y foto: sin signo, como en 2.1 (card ex73). El borrador lo
+    /// guarda con signo (negativo es gasto) y eso no cambia; solo cambia cómo se enseña.
+    static func reviewDisplayedAmount(_ signedAmount: Double) -> Double {
+        abs(signedAmount)
+    }
+
     // MARK: - Fallos
 
     static func failure(for error: RecordingError) -> VoiceEntryFailure {

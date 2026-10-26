@@ -68,6 +68,25 @@ final class MerchantMemoryService {
         }
     }
 
+    /// Como `suggest(for:)`, pero descarta la subcategoría que contradiga el tipo del borrador: **manda el tipo**,
+    /// con el mismo criterio que el chat, Siri y visión (`DraftBuilder.matchesNature`).
+    ///
+    /// La memoria guarda `comercio → subcategoría` sin naturaleza, así que un comercio aprendido sobre ingresos le
+    /// rellenaba a un gasto una subcategoría de ingreso (o al revés) en Apple Pay, la voz y la Bandeja. La fila entraba
+    /// con el signo contrario a su categoría: Registros y Estadísticas la restaban como un reembolso y el widget de
+    /// inicio, que solo mira el signo, la sumaba (ticket `merchant-memory-suggests-across-natures-in-three-more-places`).
+    /// Descartada, el borrador nace sin subcategoría y pide elegirla, igual que sin memoria de ese comercio.
+    func suggest(for merchantRaw: String, isExpense: Bool) -> MerchantSuggestion {
+        switch suggest(for: merchantRaw) {
+        case .autoAssign(let sub):
+            return DraftBuilder.matchesNature(sub, isExpense: isExpense) ? .autoAssign(sub) : .none
+        case .suggest(let sub):
+            return DraftBuilder.matchesNature(sub, isExpense: isExpense) ? .suggest(sub) : .none
+        case .none:
+            return .none
+        }
+    }
+
     // MARK: - Update Memory
 
     /// Actualiza la memoria al aprobar un draft.
