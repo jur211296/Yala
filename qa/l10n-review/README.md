@@ -53,7 +53,9 @@ paridad, placeholders y los arreglos fijados.
 ## Lo que la primera corrida dejó fuera (2026-10-25)
 
 - **Terminología**: ~1.000 propuestas, ninguna aplicada. La más repetida es que la prosa dice «Panel» mientras la
-  pestaña se llama «Home», «Accueil», «Início»… en 10 idiomas; y pt-BR mezcla «Ajustes» y «Configurações». Son
-  decisiones de copy: ticket `l10n-terminology-follows-the-tab-names`.
+  pestaña se llama «Home», «Accueil», «Início»… en 10 idiomas; y pt-BR mezcla «Ajustes» y «Configurações».
+  Resuelto el 2026-10-26 a mano, clave a clave (ticket `l10n-terminology-follows-the-tab-names`): la pestaña es «Panel»
+  en todos los idiomas y pt-BR dice «Ajustes». Las guardas de `LocalizationParityTests` lo fijan; `apply.py` sigue sin
+  aplicar terminología.
 - Las propuestas de gravedad baja.
 - Los catálogos de los widgets (`YalaWidgets/Resources`): no entran todavía en `review.py`.

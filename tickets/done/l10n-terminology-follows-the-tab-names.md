@@ -1,10 +1,10 @@
 ---
 id: l10n-terminology-follows-the-tab-names
-status: backlog
+status: done
 priority: low
 area: l10n, copy
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-26
 source: revisión de traducciones con Sonnet del lote 12.4 (`qa/l10n-review/informes/2026-10-25/`), categoría «terminologia»
 ---
 
@@ -34,3 +34,17 @@ bloque habría mezclado más.
 
 Con eso, `qa/l10n-review/apply.py` puede aplicar las propuestas de `terminologia` filtradas por la decisión (están en
 los `<idioma>.json` del informe, con `no_aplicada_por: categoría terminologia`).
+
+## Resuelto (2026-10-26)
+
+Jürgen eligió B en las tres: la pestaña se llama «Panel» en todos los idiomas (Painel en pt, パネル en ja, 面板 en
+zh); pt-BR dice «Ajustes»; el asistente se nombra según el idioma (Yala AI / Yala KI / Yala IA).
+
+- No se aplicaron las propuestas de `terminologia` del informe (se contradecían): se midió cada idioma y se reescribió
+  clave a clave. ~400 textos de app y widgets en 12 idiomas; la pantalla de inicio del iPhone, su botón y «hogar» no
+  cambian.
+- pt-BR: 13 «Configurações» → «Ajustes». De paso, pt-PT: 8 «Ajustes» → «Definições» y fr: 2 «Paramètres» →
+  «Réglages», para que cada idioma nombre la pantalla de una sola forma.
+- El asistente ya tenía un solo nombre por idioma tras el lote 12.4: las «excepciones» eran comentarios del catálogo.
+- Guardas en `LocalizationParityTests`: `tabPanel_isNamedPanel`, `textsThatNameThePanel_useTheTabWord`,
+  `settingsScreen_hasOneName`, `assistant_hasOneName`.
