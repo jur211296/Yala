@@ -419,9 +419,9 @@ final class InsightsViewModel {
             result["category_tree"] = categories.visibleCategoryTreeLabels()
         }
 
-        // Highest expense
+        // Highest expense: su subcategoría o categoría, nunca la nota libre (card `ve42`).
         if let highest = data.quickStats.highestExpense {
-            result["highest_expense"] = ["amount": Int(highest.amount), "description": highest.note] as [String: Any]
+            result["highest_expense"] = ["amount": Int(highest.amount), "description": highest.categoryLabel] as [String: Any]
         }
 
         // Highest average weekday

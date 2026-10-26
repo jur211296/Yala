@@ -299,6 +299,10 @@ final class CloudAccountClient {
 
     /// Hint de encaminamiento barato (§f.1) — NO la garantía anti-doble-siembra (esa la da `claim`).
     func exists(jwt: String) async -> ExistsOutcome {
+        #if DEBUG
+        // Seam de XCUITest (card er5c): la respuesta fingida sale ANTES de la red. Solo con `-uitest`.
+        if let fake = UITestHooks.fakeAccountExists { return fake.outcome }
+        #endif
         var request = URLRequest(url: baseURL.appendingPathComponent("account/exists"))
         request.httpMethod = "GET"
         request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")

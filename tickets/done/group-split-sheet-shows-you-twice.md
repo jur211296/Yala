@@ -1,10 +1,10 @@
 ---
 id: group-split-sheet-shows-you-twice
-status: backlog
+status: done
 priority: low
 area: "groups, copy"
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-10-25
 source: "auditoría UX 2.2 · lote 10 (pagos planificados)"
 ---
 
@@ -15,3 +15,7 @@ Medido el 2026-10-14 desde un pago planificado compartido (lote 10, captura `10.
 ## Hecho cuando
 
 Tu fila dice «Tú» una sola vez.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Arreglado en el PR #543: `GroupSplitMemberList` ya no añade «(Tú)» si el nombre ya es «Tú». No tenía card: se cierra sin crearla.

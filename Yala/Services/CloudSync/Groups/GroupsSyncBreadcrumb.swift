@@ -188,13 +188,9 @@ enum GroupsSyncBreadcrumb {
     }
 
     // MARK: - Partición POR-GRUPO (G5-A)
-
-    /// [C2] Un enqueue a CKSyncEngine se SALTÓ porque el grupo es del canal BACKEND (`isBackendGroup`) — sus
-    /// records NUNCA deben ir a CloudKit (sync por el canal backend). `site` = slug del choke point
-    /// (`enqueueSave`/`enqueueDeletion`/`createZone`/`createShare`/`zoneRecovery`/`recordRecovery`). Sin PII.
-    static func groupsCkEnqueueSkippedBackendGroup(site: String) {
-        logger.notice("GroupsSync ckEnqueueSkippedBackendGroup site=\(site, privacy: .public)")
-    }
+    //
+    // Los cuatro rastros `groupsCk*` de esta partición (el lado CloudKit) se retiraron el 2026-10-25 (card `yf9t`):
+    // los emitía `SplitSyncManager`, que se fue con el transporte CloudKit de Grupos, y no tenían llamador.
 
     /// [C2-bis] El drain del canal backend SALTÓ un change porque su `group_id` NO pertenece a un grupo
     /// backend (grupo CloudKit vivo bajo flag ON, o tombstone de un grupo ya borrado localmente) — evita
@@ -202,31 +198,6 @@ enum GroupsSyncBreadcrumb {
     /// `entity` = slug del `entity_type` (tabla/clase, sin PII). El group_id JAMÁS se loguea.
     static func groupsDrainSkippedNonBackendGroup(entity: String) {
         logger.notice("GroupsSync drainSkippedNonBackendGroup entity=\(entity, privacy: .public)")
-    }
-
-    /// [G6-3 C2] El uploader encoló el MARCADOR de migración (`GroupMeta` con `movedToBackendAt` +
-    /// `backendReInviteToken`) a CKSyncEngine — la ÚNICA escritura CloudKit legítima sobre un grupo
-    /// `isBackendGroup=true`. Sin PII (jamás el group_id ni el token).
-    static func groupsCkMigrationMarkerEnqueued() {
-        logger.notice("GroupsSync ckMigrationMarkerEnqueued — marcador de migración encolado (única escritura CK legítima post-freeze)")
-    }
-
-    /// [G6-3 C2] El GUARD SIMÉTRICO de PULL saltó aplicar un record CloudKit fetcheado cuyo grupo local es
-    /// `isBackendGroup=true` (ya migrado) — la zona CloudKit queda como red de SOLO-LECTURA: un miembro
-    /// rezagado o el eco del propio marcador NO pisa las ediciones backend post-migración. `site` =
-    /// `applyRemote`/`conflict`/`bridge`. `reason` distingue en Console.app qué invariante disparó el
-    /// descarte (`backendGroup`/`deletion`/`backendZone`). Sin PII.
-    static func groupsCkPullSkippedBackendGroup(site: String, reason: String = "backendZone") {
-        logger.notice("GroupsSync ckPullSkippedBackendGroup site=\(site, privacy: .public) reason=\(reason, privacy: .public)")
-    }
-
-    /// [C-4] Un batch de records fetcheados NO llegó a persistir (save fallido / handler sin contexto)
-    /// con el token del engine YA avanzado: CloudKit no lo re-entrega. Invalida el testigo del ciclo ⇒
-    /// la migración a backend NO arranca en esta sesión. `reason` = `save-failed` | `no-context`.
-    /// Sin PII. Fuera de `#if DEBUG` como todo `SplitSync*`/`GroupsSync*` (excepción consciente: el
-    /// comportamiento solo se valida del todo en CloudKit Production vía Console.app).
-    static func groupsCkFetchApplyFailed(reason: String) {
-        logger.notice("GroupsSync ckFetchApplyFailed reason=\(reason, privacy: .public) — token avanzado sin apply; migración diferida")
     }
 
     // MARK: - Ciclo de vida del loop (H-2026-07-18-4)

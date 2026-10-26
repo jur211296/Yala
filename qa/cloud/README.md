@@ -1606,6 +1606,41 @@ positiva decide.** Y el sesgo es adverso: para emitir, un device necesita al men
 las paradas, así que el perfil más afectado —solo grupos CloudKit legacy con el canal quieto— es justo el que
 no reporta.
 
+### Canarios del propio gateway (2026-10-25, card `9f9u`)
+
+Hasta ese día los canarios del gateway eran `console.log` y solo existían con `wrangler tail` abierto: si los avisos de
+Grupos dejaban de llegar, nadie se enteraba. Ahora `gateway/src/serverCanary.ts` los escribe en el **mismo dataset**, con
+la forma de arriba y **`blob4 = 'gateway'`** (la app pone ahí su versión, así que no se mezclan). El detalle nunca
+lleva tokens ni nada del usuario. La lista es cerrada (`SERVER_CANARIES`) y `gateway/test/serverCanary.unit.test.ts`
+exige que cada nombre salga aquí:
+
+| Canario | Cuándo | `blob3` / `double1` |
+|---|---|---|
+| `groupFanoutDelivered` | una fila por fan-out con tokens | `double1` = avisos entregados |
+| `groupApnsSendFailed` | APNs no entregó por algo que no es un token muerto | `status/reason` |
+| `groupPushTokenPruned` | token muerto (`BadDeviceToken`/`Unregistered`), podado | motivo |
+| `groupPushTokenPruneFailed` | el podado falló | estado HTTP |
+| `groupFanoutTokensRpcFailed` | la RPC de tokens respondió no-2xx | `rpc/status` |
+| `groupFanoutApnsNotConfigured` | fan-out sin `APNS_KEY_ID`/`APNS_AUTH_KEY` | — |
+| `groupFanoutPushRoleMissing` | fan-out sin `PUSH_ROLE_JWT` | — |
+| `pushTokenRegisterFailed` | `POST /push/register` falló contra PostgREST | estado HTTP |
+| `groupSyncCoherenceGroupPartial` | delta de Grupos con una unidad de coherencia a medias | entidad |
+| `cloudSyncCoherenceGroupPartial` | delta personal con una unidad de coherencia a medias | entidad |
+
+```sql
+-- ¿Están llegando los avisos de Grupos? Entregados frente a fallos, por día.
+SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) AS day, blob2 AS canary,
+       sum(_sample_interval * double1) AS n
+FROM yala_metrics
+WHERE blob1 = 'canary' AND blob4 = 'gateway'
+GROUP BY day, canary ORDER BY day DESC, n DESC;
+```
+
+**Lo que esto NO ve:** con el permiso de notificaciones apagado APNs responde 200 y el aviso cuenta como entregado.
+Eso solo se distingue guardando `authorization_status` al registrar el token (ticket
+`push-token-does-not-record-the-notification-permission`). **Hasta que se despliegue el Worker con este cambio, la
+serie está vacía**: el silencio no dice nada antes de esa fecha.
+
 Residuales documentados: evento retenido en el spool offline del cliente se estampa el día del ENVÍO
 (distorsión solo offline multi-día); sin rate-limit por IP (D2 — validación estricta + AE barato);
 alerting = consulta manual del dashboard (D5, paridad con lo que había). Tests:

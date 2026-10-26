@@ -1,10 +1,10 @@
 ---
 id: whats-new-2-0-still-calls-groups-beta
-status: backlog
+status: discarded
 priority: low
 area: l10n
 created: 2026-10-16
-updated: 2026-10-16
+updated: 2026-10-25
 source: encargo 2026-10-16-textos-2-1 (Frank)
 ---
 
@@ -25,3 +25,7 @@ histórico, o quitar «(Beta)» para que no contradiga a la web si alguien las v
 ## Hecho cuando
 
 La decisión está tomada y, si es quitarlo, la clave dice «Grupos» en los 16 idiomas.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Descartado: Jürgen decidió el 2026-10-18 no tocar las Novedades de 2.0 (card y6jj).

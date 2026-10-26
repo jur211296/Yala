@@ -151,6 +151,8 @@ describe("fanOutGroupPush — units offline", () => {
     // banner pobre por el rico. Sin esta aserción, quitarlo dejaría el test verde con la alerta sola.
     expect(payload.aps["content-available"]).toBe(1);
     expect(payload.yala.kind).toBe("groups-sync");
+    // Card x6p9: tocar el aviso abre ESE grupo, con el group_id del servidor tal cual.
+    expect(payload.deepLink).toBe("groups/g-1");
   });
 
   it("dedup cross-grupo: un member en 2 grupos del batch recibe UN solo push", async () => {
@@ -168,6 +170,9 @@ describe("fanOutGroupPush — units offline", () => {
     // 2 grupos → 2 RPCs de tokens, pero el token repetido → 1 solo push a Apple.
     expect(calls.filter((c) => c.url.includes("/rpc/get_group_push_tokens")).length).toBe(2);
     expect(calls.filter((c) => c.url.includes("push.apple.com")).length).toBe(1);
+    // Dos grupos para el mismo teléfono: no hay «el» grupo del aviso → la lista de Grupos.
+    const payload = JSON.parse(calls.find((c) => c.url.includes("push.apple.com"))!.init?.body as string);
+    expect(payload.deepLink).toBe("groups");
   });
 
   it("cap de 50: 60 tokens distintos → exactamente 50 pushes a Apple", async () => {
@@ -285,6 +290,8 @@ describe("fanOutGroupPush — audiencias (g8_03)", () => {
 
     const payload = JSON.parse(calls.find((c) => c.url.includes("push.apple.com"))!.init?.body as string);
     expect(payload.aps.alert["loc-key"]).toBe("notifications.groups.remotePendingRequest");
+    expect(payload.yala.kind).toBe("groups-membership");
+    expect(payload.deepLink).toBe("groups/g-1");
   });
 
   it("audiencia `member` → get_group_member_push_tokens por member_key, y SIN excluir a nadie", async () => {
@@ -311,6 +318,8 @@ describe("fanOutGroupPush — audiencias (g8_03)", () => {
 
     const payload = JSON.parse(calls.find((c) => c.url.includes("push.apple.com"))!.init?.body as string);
     expect(payload.aps.alert["loc-key"]).toBe("notifications.groups.remoteMembershipUpdate");
+    expect(payload.yala.kind).toBe("groups-membership");
+    expect(payload.deepLink).toBe("groups/g-1");
   });
 
   it("sin audiencia explícita → sigue siendo co-members (el llamador de siempre no cambia)", async () => {

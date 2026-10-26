@@ -42,6 +42,11 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
   OpenAI». Una fila de otro proveedor necesita su `LEGACY_OVERRIDES` de OpenAI, o `routeFor` lanza (test en
   `ai.routing.test.ts`). Encender otro proveedor exige además los textos de permisos y consentimiento en los 16 idiomas,
   la política de privacidad web publicada (producción de la web sigue a la rama 1.0), DPA y clave como secret.
+  **La política va primero, y lo vigila un test** (2026-10-25, card `buer`): `gateway/test/ai.policy-providers.test.ts`
+  exige que cada proveedor de una fila activa (`ROUTES` + `LEGACY_OVERRIDES`) salga en `privacyProvidersText` de los seis
+  idiomas de la web. Encender Gemini sin tocar la política lo pone rojo en el job `gateway` del CI. El orden: política
+  en `Web/` (es de Lola) → publicada en 1.0 → fila a `ROUTES`. Su control negativo se retira el día que la política
+  nombre a Gemini.
 - **Las filas `managed` ignoran los parámetros del cuerpo** (modelo, temperatura, formato): manda la fila. Un
   `maxOutputTokens` demasiado bajo trunca el JSON y la app lo rechaza: se fija con el p99 del banco ×2.
 

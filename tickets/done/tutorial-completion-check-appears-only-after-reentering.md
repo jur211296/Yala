@@ -1,10 +1,10 @@
 ---
 id: tutorial-completion-check-appears-only-after-reentering
-status: backlog
+status: done
 area: "ux, tutoriales"
 priority: low
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-25
 source: "Barrido de QA 2.1 (Frank, 2026-10-15), visto en el simulador"
 ---
 
@@ -32,3 +32,7 @@ Visto en el barrido de QA del 2026-10-15 en el simulador (Yala Dev, iPhone 17 Pr
 ## Hecho cuando
 
 Al pulsar «Listo» en cualquier tutorial, la lista muestra el ✓ en cuanto vuelves, sin salir y entrar.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+4fcb2e731 (L16-16): `TutorialsListView` relee `completed` en `.onAppear`. No tenía card: se cierra sin crearla.

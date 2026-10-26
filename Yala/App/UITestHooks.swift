@@ -275,6 +275,45 @@ final class UITestHooks {
         #endif
     }
 
+    /// Valor de `-uitest-fake-account-exists <new|complete|groupsOnly|offline>` (card er5c, ticket
+    /// `no-test-seam-for-account-exists-blocks-xcuitest-of-identity`): finge el INICIO DE SESIÓN del Welcome y la
+    /// RESPUESTA de `GET /account/exists`, para recorrer las celdas del bloque [I] sin SIWA ni red.
+    ///
+    /// - `CloudAuthService.signIn` no presenta Apple ni Google: deja una sesión fingida (`hasSession` y un
+    ///   `currentUserID` fijo) que `signOut()` retira. `accessToken()` sigue en `nil`, así que ningún cliente del canal
+    ///   manda nada (el mismo principio que `-uitest-fake-cloud-session`).
+    /// - `CloudAccountClient.exists` contesta el valor elegido ANTES de tocar la red: `new` = no existe, `complete` /
+    ///   `groupsOnly` = existe de ese tipo, `offline` = fallo de red. Nunca un camino de producción: el getter es `nil`
+    ///   fuera de DEBUG y sin `-uitest`.
+    ///
+    /// **Finge la entrada, no la decisión**: qué pantalla sale lo decide la tabla [I] de siempre. Un valor desconocido
+    /// se ignora.
+    nonisolated static var fakeAccountExists: FakeAccountExists? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-fake-account-exists", from: ProcessInfo.processInfo.arguments)
+            .flatMap(FakeAccountExists.init(rawValue:))
+        #else
+        return nil
+        #endif
+    }
+
+    nonisolated enum FakeAccountExists: String {
+        case new, complete, groupsOnly, offline
+
+        /// El `userID` de la sesión fingida: no es un uuid de Supabase a propósito, para que no case con nada real.
+        static let userID = "uitest-fake-account"
+
+        @MainActor var outcome: ExistsOutcome {
+            switch self {
+            case .new:        .exists(false, kind: nil)
+            case .complete:   .exists(true, kind: .complete)
+            case .groupsOnly: .exists(true, kind: .groupsOnly)
+            case .offline:    .transient(detail: "uitest: offline")
+            }
+        }
+    }
+
     /// Valor de `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado»
     /// mide en vez de salir de largo, con iCloud «sin cuenta» y la LECTURA del teléfono fingida (ticket
     /// `private-gate-device-notice-has-no-forward-exit`). En el simulador esa pantalla es inalcanzable por construcción

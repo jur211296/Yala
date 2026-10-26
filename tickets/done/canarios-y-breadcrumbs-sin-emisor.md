@@ -1,10 +1,10 @@
 ---
 id: canarios-y-breadcrumbs-sin-emisor
-status: backlog
+status: done
 priority: medium
 area: qa
 created: 2026-09-02
-updated: 2026-10-08
+updated: 2026-10-25
 ---
 
 # Hay 19 señales de vigilancia que no las emite nadie, y dos tickets las usan como prueba de que todo va bien
@@ -289,3 +289,18 @@ emite `siriEntryRoute` (`route=<server|onDevice|upgrade> model=<estado>`) en cad
 cada lectura con el modelo del iPhone, por `MetricsService.canaryFromIntent` (al spool si el servicio no arrancó en ese
 proceso). El bug de abril (el gate leía «sin Pro» a usuarios Pro) se vería como un salto de `route=upgrade` frente a
 `route=server` tras un release; no lo separa por persona, porque la señal lee el mismo App Group que el gate. El resto de este ticket (11 canarios y 8 rastros huérfanos, sus citas en `coverage-index.json`) sigue igual.
+
+## Hecho (2026-10-25, lote 12.7, card yf9t)
+
+- **A (borrar)**: los 8 canarios de Grupos-CloudKit y los 4 rastros `groupsCk*` retirados (los emitía `SplitSyncManager`).
+  Los 4 `groupsIdentity*` se quedan con el aviso que ya llevaban.
+- **B**: `inviteReEmittedFromStore` / `invitePendingExpired` y sus dos envoltorios, retirados: el canal backend no tiene
+  almacén de invitaciones pendientes que re-emitir ni caducar. `cloudkitBudgetCSVMirrorRebuilt`, retirado: la reconstrucción
+  del espejo CSV de presupuestos sigue viva (`AppBootstrapper.migrateShortcutIDsAndRebuildCSVMirrors`) y ya emite
+  `appEntityShortcutIDsRegenerated`, que cubre esa pasada entera; el síntoma lo sigue viendo `budgetFiltersAppearEmpty`.
+- **C (Siri)**: hecho el 2026-10-21 (`siriEntryRoute`).
+- **`cloudReverseDegradedNoMap`**: ahora existe y lo emite `CloudMigrationController.reverseEligibility` una vez por
+  proceso al decidir `degradedNoMap`; los dos documentos de diseño que lo daban por vivo ya dicen la verdad.
+- **Índice de cobertura**: las cinco citas a señales muertas quedan marcadas `[RETIRADO 2026-10-25 … no es cobertura]`.
+- **Red para que no vuelva**: `YalaTests/MetricsSignalsHaveEmittersTests` se pone rojo si un `case` de `MetricsCanary` o
+  una función de `GroupsSyncBreadcrumb` se queda sin llamador real fuera de su fichero (lista blanca: los 4 `groupsIdentity*`).

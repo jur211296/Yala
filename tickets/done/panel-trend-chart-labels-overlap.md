@@ -1,10 +1,10 @@
 ---
 id: panel-trend-chart-labels-overlap
-status: qa
+status: done
 area: panel
 priority: low
 created: 2026-10-13
-updated: 2026-10-17
+updated: 2026-10-25
 source: auditoría UX 2.2, lote 3 (el Panel)
 ---
 
@@ -43,3 +43,7 @@ cambio transversal que necesita su propio barrido de capturas, fuera del alcance
 
 **QA:** «Todo el tiempo» con seed `realista` en el Panel y en Estadísticas › Tendencias: sin fechas pisadas y «Hoy»
 sin tapar la escala. Unit: `UXAudit22Lote3LogicTests` (axis_*).
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+`SmartAxisHelper.droppingCrowdedNeighbors` con tres casos en `UXAudit22Lote3LogicTests` (PR #537); su card (L3-17) está en done.

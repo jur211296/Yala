@@ -803,8 +803,10 @@ final class StoreKitManager {
             return
         }
         if let days = UITestHooks.proTrialDays {
-            // Dos horas de más: `trialDaysRemaining` trunca y un «3 días» exacto daría 2.
-            let end = Calendar.current.date(byAdding: .hour, value: days * 24 + 2, to: .now)
+            // Mediodía del día N: `trialDaysRemaining` cuenta días de CALENDARIO, así que «ahora + N días + 2 h» daba
+            // N + 1 a partir de las 22:00 (el XCUITest del banner salía rojo de noche).
+            let calendar = Calendar.current
+            let end = calendar.date(byAdding: .hour, value: days * 24 + 12, to: calendar.startOfDay(for: .now))
             isInTrial = true
             trialEndDate = end
             activePlan = ProActivePlan(isYearly: true, expirationDate: end, isTrial: true, willAutoRenew: true)

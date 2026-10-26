@@ -245,7 +245,18 @@ struct GoogleCredentialReuseWiringTests {
     func dispatch_triesTheCredentialThenTheSheet() throws {
         let dispatch = Self.lines(try Self.body(
             of: "reusingGoogleCredential reusable: GoogleSignInCredential? = nil) async throws {", in: Self.authPath))
-        #expect(Array(dispatch.prefix(6)) == [
+        // Delante, el seam de XCUITest de la card er5c (`-uitest-fake-account-exists`), solo en DEBUG y sin red. Se fija
+        // entero: un `return` que se colara fuera del `if` dejaría sin iniciar sesión a todo el mundo.
+        #expect(Array(dispatch.prefix(7)) == [
+            "#if DEBUG",
+            "if UITestHooks.fakeAccountExists != nil {",
+            "uitestFakeAccountSignedIn = true",
+            "NotificationCenter.default.post(name: Self.sessionDidChangeNotification, object: nil)",
+            "return",
+            "}",
+            "#endif",
+        ])
+        #expect(Array(dispatch.dropFirst(7).prefix(6)) == [
             "switch provider {",
             "case .apple: try await signInWithApple()",
             "case .google:",

@@ -1,6 +1,6 @@
 ---
 id: session-redesign-implementation-order
-status: backlog
+status: done
 priority: high
 area: "proceso, modo-nube, onboarding, groups, settings"
 created: 2026-09-09
@@ -77,3 +77,7 @@ Reglas fijas para CADA paso:
       `session-redesign-web-and-store-copy` **no cuenta**: es de Lola y se cierra por su cuenta.
 - [ ] La matriz con todas sus filas marcadas como verificadas.
 - [ ] `docs/sessions/2026-09-09-*` movidos a `docs/sessions/_archive/`.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Los 12 pasos y el paso 0 están en `tickets/done/` (card 9mfx en done). Los tres `docs/sessions/2026-09-09-*` pasan a `docs/sessions/_archive/`, como pide su criterio de cierre.

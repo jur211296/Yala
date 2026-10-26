@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1069)
+## Index (1070)
 
 | id | status | path |
 |---|---|---|
@@ -62,7 +62,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare | done | tickets/done/account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
-| account-goldens-freeze-read-test-times-out | backlog | tickets/backlog/account-goldens-freeze-read-test-times-out.md |
+| account-goldens-freeze-read-test-times-out | done | tickets/done/account-goldens-freeze-read-test-times-out.md |
 | account-line-relink-can-diverge-when-two-phones-repair-the-same-collapse | backlog | tickets/backlog/account-line-relink-can-diverge-when-two-phones-repair-the-same-collapse.md |
 | accounts-need-more-visibility-in-the-ui | backlog | tickets/backlog/accounts-need-more-visibility-in-the-ui.md |
 | accounts-settings-list-redesign | backlog | tickets/backlog/accounts-settings-list-redesign.md |
@@ -124,6 +124,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox | backlog | tickets/backlog/apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | done | tickets/done/applepay-shortcut-warm-launch-empty-data.md |
+| applied-amount-filter-keeps-filtering-after-its-currency-changes | backlog | tickets/backlog/applied-amount-filter-keeps-filtering-after-its-currency-changes.md |
 | apply-better-ui-emil-design-eng-rules-to-redesigns | discarded | tickets/discarded/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
 | apply-overwrites-a-pending-local-write-without-its-guards | done | tickets/done/apply-overwrites-a-pending-local-write-without-its-guards.md |
 | apppreferences-rewritten-on-launch | done | tickets/done/apppreferences-rewritten-on-launch.md |
@@ -150,7 +151,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | born-cloud-signup-into-existing-account-relaunch-says-nothing | backlog | tickets/backlog/born-cloud-signup-into-existing-account-relaunch-says-nothing.md |
 | born-cloud-signup-lands-on-existing-account-silently | done | tickets/done/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
-| branch-2-2-merges-without-waiting-for-ci | backlog | tickets/backlog/branch-2-2-merges-without-waiting-for-ci.md |
+| branch-2-2-merges-without-waiting-for-ci | done | tickets/done/branch-2-2-merges-without-waiting-for-ci.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
@@ -161,7 +162,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bulk-move-to-another-currency-account-relabels-the-amount | backlog | tickets/backlog/bulk-move-to-another-currency-account-relabels-the-amount.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | can-run-domain-reads-the-filler-phase-before-the-journal-connects | backlog | tickets/backlog/can-run-domain-reads-the-filler-phase-before-the-journal-connects.md |
-| canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
+| canarios-y-breadcrumbs-sin-emisor | done | tickets/done/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
@@ -367,6 +368,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-file-insides-still-say-transacciones | backlog | tickets/backlog/export-file-insides-still-say-transacciones.md |
 | export-filters-reset-when-the-text-size-changes | backlog | tickets/backlog/export-filters-reset-when-the-text-size-changes.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
+| export-wizard-amount-filter-in-hidden-currency | backlog | tickets/backlog/export-wizard-amount-filter-in-hidden-currency.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | exported-csv-cannot-be-imported-back | backlog | tickets/backlog/exported-csv-cannot-be-imported-back.md |
 | external-entry-panel-link-loses-the-typed-amount-intermittently | backlog | tickets/backlog/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
@@ -380,7 +382,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
 | first-expense-practice-alert-tears-down-the-success-screen | done | tickets/done/first-expense-practice-alert-tears-down-the-success-screen.md |
-| first-panel-says-available-zero-next-to-the-opening-balance | qa | tickets/qa/first-panel-says-available-zero-next-to-the-opening-balance.md |
+| first-panel-says-available-zero-next-to-the-opening-balance | done | tickets/done/first-panel-says-available-zero-next-to-the-opening-balance.md |
 | first-photo-after-install-fails-on-a-shared-burst-limit | qa | tickets/qa/first-photo-after-install-fails-on-a-shared-burst-limit.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
@@ -426,7 +428,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gate-never-reads-test-file-warnings | backlog | tickets/backlog/gate-never-reads-test-file-warnings.md |
 | gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade | backlog | tickets/backlog/gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade.md |
 | gateway-does-not-record-ai-token-usage | backlog | tickets/backlog/gateway-does-not-record-ai-token-usage.md |
-| gateway-has-no-telemetry | backlog | tickets/backlog/gateway-has-no-telemetry.md |
+| gateway-has-no-telemetry | done | tickets/done/gateway-has-no-telemetry.md |
 | gateway-proxies-any-model-and-any-length | done | tickets/done/gateway-proxies-any-model-and-any-length.md |
 | gateway-push-accepts-non-finite-numbers | backlog | tickets/backlog/gateway-push-accepts-non-finite-numbers.md |
 | gateway-typecheck-roto-y-fuera-del-ci | discarded | tickets/discarded/gateway-typecheck-roto-y-fuera-del-ci.md |
@@ -442,7 +444,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | group-presence-predicates-disagree-on-archived-and-hidden | backlog | tickets/backlog/group-presence-predicates-disagree-on-archived-and-hidden.md |
-| group-split-sheet-shows-you-twice | backlog | tickets/backlog/group-split-sheet-shows-you-twice.md |
+| group-split-sheet-shows-you-twice | done | tickets/done/group-split-sheet-shows-you-twice.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |
 | groups-actions-read-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/groups-actions-read-an-offline-token-refresh-as-a-session-expiry.md |
@@ -485,7 +487,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
 | groups-guest-currency-from-region | discarded | tickets/discarded/groups-guest-currency-from-region.md |
 | groups-has-no-cadence-when-the-personal-runtime-is-stopped | backlog | tickets/backlog/groups-has-no-cadence-when-the-personal-runtime-is-stopped.md |
-| groups-history-cutoff-needs-synced-state | backlog | tickets/backlog/groups-history-cutoff-needs-synced-state.md |
+| groups-history-cutoff-needs-synced-state | discarded | tickets/discarded/groups-history-cutoff-needs-synced-state.md |
 | groups-import-splitwise-tricount | backlog | tickets/backlog/groups-import-splitwise-tricount.md |
 | groups-in-group-search | backlog | tickets/backlog/groups-in-group-search.md |
 | groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe | done | tickets/done/groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe.md |
@@ -526,7 +528,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-push-reads-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | groups-reassociation-does-not-restore-the-bridge-link | backlog | tickets/backlog/groups-reassociation-does-not-restore-the-bridge-link.md |
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
-| groups-reject-can-expel-a-member-approved-elsewhere | backlog | tickets/backlog/groups-reject-can-expel-a-member-approved-elsewhere.md |
+| groups-reject-can-expel-a-member-approved-elsewhere | discarded | tickets/discarded/groups-reject-can-expel-a-member-approved-elsewhere.md |
 | groups-set-member-role-deploy | qa | tickets/qa/groups-set-member-role-deploy.md |
 | groups-settlement-reminder | done | tickets/done/groups-settlement-reminder.md |
 | groups-settlement-reminder-discoverability | done | tickets/done/groups-settlement-reminder-discoverability.md |
@@ -573,7 +575,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-offers-the-groups-system-account | done | tickets/done/import-offers-the-groups-system-account.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
 | in-app-privacy-copy-says-data-never-leaves-the-device | done | tickets/done/in-app-privacy-copy-says-data-never-leaves-the-device.md |
-| inbox-alert-scheduled-count-has-no-singular | backlog | tickets/backlog/inbox-alert-scheduled-count-has-no-singular.md |
+| inbox-alert-scheduled-count-has-no-singular | done | tickets/done/inbox-alert-scheduled-count-has-no-singular.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
@@ -588,7 +590,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
 | insights-budgets-at-risk-compute-spent-on-their-own | backlog | tickets/backlog/insights-budgets-at-risk-compute-spent-on-their-own.md |
-| insights-cards-send-the-note-of-the-largest-expense | backlog | tickets/backlog/insights-cards-send-the-note-of-the-largest-expense.md |
+| insights-cards-send-the-note-of-the-largest-expense | done | tickets/done/insights-cards-send-the-note-of-the-largest-expense.md |
 | insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | done | tickets/done/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
 | insights-rate-limit-runs-before-the-cache | backlog | tickets/backlog/insights-rate-limit-runs-before-the-cache.md |
@@ -663,7 +665,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration | backlog | tickets/backlog/local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
-| maintab-drain-publishes-its-sheet-after-contentview-may-drain | backlog | tickets/backlog/maintab-drain-publishes-its-sheet-after-contentview-may-drain.md |
+| maintab-drain-publishes-its-sheet-after-contentview-may-drain | done | tickets/done/maintab-drain-publishes-its-sheet-after-contentview-may-drain.md |
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | mcp-connector-counts-future-dated-rows-in-todays-balance | backlog | tickets/backlog/mcp-connector-counts-future-dated-rows-in-todays-balance.md |
@@ -696,7 +698,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | done | tickets/done/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
-| no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
+| no-test-seam-for-account-exists-blocks-xcuitest-of-identity | done | tickets/done/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
 | notification-day-choice-capitalizes-every-word | backlog | tickets/backlog/notification-day-choice-capitalizes-every-word.md |
 | notification-dedup-deletes-all-custom-reminders-but-one | done | tickets/done/notification-dedup-deletes-all-custom-reminders-but-one.md |
@@ -706,10 +708,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | onboarding-sigue-los-estilos-del-resto-de-la-app | backlog | tickets/backlog/onboarding-sigue-los-estilos-del-resto-de-la-app.md |
-| one-off-scheduled-payment-row-says-monthly | qa | tickets/qa/one-off-scheduled-payment-row-says-monthly.md |
+| one-off-scheduled-payment-row-says-monthly | done | tickets/done/one-off-scheduled-payment-row-says-monthly.md |
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
-| opening-balance-ticks-the-first-expense-step | backlog | tickets/backlog/opening-balance-ticks-the-first-expense-step.md |
+| opening-balance-ticks-the-first-expense-step | done | tickets/done/opening-balance-ticks-the-first-expense-step.md |
 | orphan-alerts-behind-fullscreen-covers | backlog | tickets/backlog/orphan-alerts-behind-fullscreen-covers.md |
 | orphaned-group-records-stay-out-of-the-notice | done | tickets/done/orphaned-group-records-stay-out-of-the-notice.md |
 | owner-preferences-return-via-ikv-after-private-sign-out | backlog | tickets/backlog/owner-preferences-return-via-ikv-after-private-sign-out.md |
@@ -722,12 +724,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | done | tickets/done/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
+| panel-pies-ignore-hidden-currency-and-compare-signed-amount | backlog | tickets/backlog/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |
 | panel-stayed-filtered-after-removing-the-account-chip | backlog | tickets/backlog/panel-stayed-filtered-after-removing-the-account-chip.md |
-| panel-trend-chart-labels-overlap | qa | tickets/qa/panel-trend-chart-labels-overlap.md |
+| panel-trend-chart-labels-overlap | done | tickets/done/panel-trend-chart-labels-overlap.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | backlog | tickets/backlog/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
-| paywall-storekit-alert-is-never-cleared | backlog | tickets/backlog/paywall-storekit-alert-is-never-cleared.md |
+| paywall-storekit-alert-is-never-cleared | done | tickets/done/paywall-storekit-alert-is-never-cleared.md |
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
 | pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
@@ -783,7 +786,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | backlog | tickets/backlog/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
 | pt-pt-needs-a-native-review-after-the-pt-br-sweep | backlog | tickets/backlog/pt-pt-needs-a-native-review-after-the-pt-br-sweep.md |
-| push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
+| push-client-ignores-yala-kind | done | tickets/done/push-client-ignores-yala-kind.md |
+| push-token-does-not-record-the-notification-permission | backlog | tickets/backlog/push-token-does-not-record-the-notification-permission.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
 | qa-cloud-readme-sin-entradas-g13-04-y-g13-05 | backlog | tickets/backlog/qa-cloud-readme-sin-entradas-g13-04-y-g13-05.md |
 | qa-de-producto-toca-el-simulador-sin-cola | discarded | tickets/discarded/qa-de-producto-toca-el-simulador-sin-cola.md |
@@ -903,9 +907,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
 | scheduled-payment-once-labeled-monthly | done | tickets/done/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payment-pending-deletion-loses-undo-on-a-second-delete | backlog | tickets/backlog/scheduled-payment-pending-deletion-loses-undo-on-a-second-delete.md |
-| panel-pies-ignore-hidden-currency-and-compare-signed-amount | backlog | tickets/backlog/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
-| export-wizard-amount-filter-in-hidden-currency | backlog | tickets/backlog/export-wizard-amount-filter-in-hidden-currency.md |
-| applied-amount-filter-keeps-filtering-after-its-currency-changes | backlog | tickets/backlog/applied-amount-filter-keeps-filtering-after-its-currency-changes.md |
 | scheduled-payment-save-does-nothing-when-a-field-is-missing | done | tickets/done/scheduled-payment-save-does-nothing-when-a-field-is-missing.md |
 | scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | done | tickets/done/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
 | scheduled-payment-start-date-is-ignored-by-the-calendar | backlog | tickets/backlog/scheduled-payment-start-date-is-ignored-by-the-calendar.md |
@@ -921,7 +922,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | secondary-visitor-writes-owner-domain | discarded | tickets/discarded/secondary-visitor-writes-owner-domain.md |
 | seeds-de-grupos-no-escriben-userid-ni-memberkey | backlog | tickets/backlog/seeds-de-grupos-no-escriben-userid-ni-memberkey.md |
 | session-exits-one-verb-per-session | done | tickets/done/session-exits-one-verb-per-session.md |
-| session-redesign-implementation-order | backlog | tickets/backlog/session-redesign-implementation-order.md |
+| session-redesign-implementation-order | done | tickets/done/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | done | tickets/done/session-redesign-web-and-store-copy.md |
 | settings-adopt-stalled-before-the-claim-keeps-the-session | done | tickets/done/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
 | settings-footer-shows-a-fixed-version-1-0-0 | done | tickets/done/settings-footer-shows-a-fixed-version-1-0-0.md |
@@ -1018,7 +1019,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-insight-title-capitalizes-the-period-mid-sentence | done | tickets/done/trends-insight-title-capitalizes-the-period-mid-sentence.md |
 | trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
 | trial-says-30-days-for-a-one-month-offer | done | tickets/done/trial-says-30-days-for-a-one-month-offer.md |
-| tutorial-completion-check-appears-only-after-reentering | backlog | tickets/backlog/tutorial-completion-check-appears-only-after-reentering.md |
+| tutorial-completion-check-appears-only-after-reentering | done | tickets/done/tutorial-completion-check-appears-only-after-reentering.md |
 | two-account-drafts-for-one-group-expense-can-create-two-real-legs | done | tickets/done/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
@@ -1079,7 +1080,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-to-cloud-entry-closes-and-reopens-whole-screens | done | tickets/done/welcome-to-cloud-entry-closes-and-reopens-whole-screens.md |
 | welcome-to-pro-still-lists-the-old-feature-names | done | tickets/done/welcome-to-pro-still-lists-the-old-feature-names.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | done | tickets/done/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
-| whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
+| whats-new-2-0-still-calls-groups-beta | discarded | tickets/discarded/whats-new-2-0-still-calls-groups-beta.md |
 | whats-new-2-2-review-before-release | backlog | tickets/backlog/whats-new-2-2-review-before-release.md |
 | whats-new-yields-to-a-pending-trial-offer-after-updating | done | tickets/done/whats-new-yields-to-a-pending-trial-offer-after-updating.md |
 | white-text-on-the-brand-indigo-is-just-below-aa | done | tickets/done/white-text-on-the-brand-indigo-is-just-below-aa.md |

@@ -91,6 +91,16 @@ final class CloudIdentityDiscovery {
         self.now = now
     }
 
+    /// Seam de XCUITest (card er5c): la sesión fingida no tiene token, y `exists` contesta antes de usarlo. Nunca sale a
+    /// la red: con el seam, `CloudAccountClient.exists` no la toca.
+    private static var uitestFakeJWT: String? {
+        #if DEBUG
+        return UITestHooks.fakeAccountExists == nil ? nil : "uitest-fake-jwt"
+        #else
+        return nil
+        #endif
+    }
+
     /// Pregunta por la identidad viva y devuelve el resultado que ve la tabla.
     ///
     /// - Parameter gate: la puerta que pregunta. Decide **solo** qué se asume cuando la cuenta existe y el
@@ -101,7 +111,7 @@ final class CloudIdentityDiscovery {
             // puerta, volviendo a firmar.
             return .unavailable(retryable: false)
         }
-        guard let jwt = await jwtProvider() else { return .unavailable(retryable: true) }
+        guard let jwt = await jwtProvider() ?? Self.uitestFakeJWT else { return .unavailable(retryable: true) }
 
         // Paso 6 · el faro tal como estaba ANTES de preguntar. Si otro dispositivo del Apple ID lo reescribe
         // mientras la petición está en vuelo, esta respuesta ya no habla de él (ver `clearBeaconIfItsAccountIsGone`).

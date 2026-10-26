@@ -1,10 +1,10 @@
 ---
 id: push-client-ignores-yala-kind
-status: backlog
+status: done
 priority: medium
 area: grupos, notifications
 created: 2026-09-03
-updated: 2026-10-08
+updated: 2026-10-25
 source: medido al cablear el push de membresía (g8_03, 2026-09-03)
 ---
 
@@ -57,3 +57,18 @@ está resuelto.
 - `NotificationService.swift:64-66` sí entiende `groups/<uuid>`.
 
 Triage 2026-10-08: abierto · medium → medium · el gateway sigue sin mandar `deepLink` (`routes.ts:289`) y el cliente no hace `switch` por `kind` (`YalaAppDelegate.swift:67-76`).
+
+## Hecho (2026-10-25, lote 12.7, card x6p9)
+
+- **Gateway**: el fan-out manda `deepLink` por dispositivo: `groups/<group_id>` con el `group_id` del servidor TAL CUAL
+  (`SplitGroup-<uuid>`), o `groups` si ese teléfono recibe el aviso por varios grupos de la tanda. El `kind` sale de la
+  audiencia: `groups-sync` (co-members) o `groups-membership` (admins / la persona respondida). Los kinds viven en
+  `GROUP_PUSH_KINDS` (`gateway/src/groups/routes.ts`). Tests en `gateway/test/push.fanout.unit.test.ts`.
+- **App**: `YalaAppDelegate` solo sincroniza con un kind conocido (`GroupsPushKind.triggersGroupsSync`); el de depuración
+  o uno nuevo devuelven `.noData`. Grupos abre el grupo pendiente por id local **o** por `cloudKitZoneID`
+  (`GroupDeepLinkMatch`): pelar el prefijo no servía, porque en un grupo que llegó por el canal backend el `id` local no
+  es ese uuid. De paso arregla el atajo del puente de gastos (`NewTransactionView.handleBridgedCTA`), que ya mandaba el
+  `zoneID` y no abría nada.
+- **Contrato**: `YalaTests/GroupsPushKindContractTests` lee `GROUP_PUSH_KINDS` del TS y lo compara con el enum Swift.
+- **Despliegue**: el lado del gateway llega a la flota cuando Jürgen despliegue el Worker; hasta entonces las versiones
+  nuevas reciben `groups-sync` sin `deepLink`, que siguen entendiendo.

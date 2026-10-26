@@ -1814,7 +1814,8 @@ final class AppBootstrapper {
     /// El ≥3 es señal SUAVE: los ~8 call-sites concurrentes comparten el contador y puede alcanzarse
     /// dentro de UN solo boot (ver doc de `bootSaveDeferCountKey`) — el canario dice "varios boot-saves
     /// difirieron sin que nada resolviera entremedio", no "N boots consecutivos rotos".
-    /// Espeja el `cloudkitGroupSyncNoImportPromote` de grupos para la rama empty-store.
+    /// Espejaba el `cloudkitGroupSyncNoImportPromote` de grupos (retirado con el transporte CloudKit de Grupos) para la
+    /// rama empty-store.
     private func recordBootSaveGateOutcome(_ decision: BootSaveGateLogic.Decision) {
         let defaults = UserDefaults.standard
         let key = Self.bootSaveDeferCountKey
@@ -1840,7 +1841,7 @@ final class AppBootstrapper {
         // Resolvió → red sana: resetea el contador consecutivo.
         if defaults.integer(forKey: key) != 0 { defaults.set(0, forKey: key) }
         if decision == .runEmptyStore {
-            // Espejo del `cloudkitGroupSyncNoImportPromote` de grupos: el gate abrió porque NINGÚN import
+            // Espejo del antiguo `cloudkitGroupSyncNoImportPromote` de grupos: el gate abrió porque NINGÚN import
             // apareció dentro de la gracia (store vacío / fresh-start wipe), no porque el import se asentara.
             logger.notice("boot-save gate resolved via empty-store escape (no personal import appeared within grace)")
         }

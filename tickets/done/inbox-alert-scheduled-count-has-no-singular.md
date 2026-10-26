@@ -1,10 +1,10 @@
 ---
 id: inbox-alert-scheduled-count-has-no-singular
-status: backlog
+status: done
 area: "l10n, bandeja"
 priority: low
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-25
 source: "Barrido de QA 2.1 (Frank, 2026-10-15), visto en el simulador"
 ---
 
@@ -31,3 +31,7 @@ vez» que vencía ese día. Captura: `~/Claude/worktrees/_capturas/2026-10-15-ba
 ## Hecho cuando
 
 Con 1 pago o 1 suscripción el aviso sale en singular en los 16 idiomas, y la batería de paridad de l10n sigue verde.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+`inbox.alert.message.scheduled` y `.subscriptions` están en el `.stringsdict` de los 12 idiomas base desde e3993094b; las variantes regionales las trae el PR #627. No tenía card: se cierra sin crearla.
