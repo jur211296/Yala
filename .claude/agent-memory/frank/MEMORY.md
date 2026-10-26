@@ -118,7 +118,7 @@
 - [Maqueta de variantes por XCUITest](reference_maqueta_de_variantes_por_xcuitest.md) — `-mockv N` + PNG al Mac; `launchForUITest` pisa args: `extraArguments:`.
 - [Forzar preferencias en el simulador](reference_forzar_preferencias_en_el_simulador.md) — matar cfprefsd del runtime y plistlib; plutil rompe claves con puntos.
 - [axe no toca una ventana propia](feedback_axe_no_toca_una_ventana_propia.md) — un aviso en UIWindow aparte: veredicto por XCUITest y dedo.
-- [Auto-merge en 2.2 no espera al CI](feedback_auto_merge_en_2_2_no_espera_al_ci.md) — 2.2 no exige checks: fusiona al instante.
+- [En cola no es «entrará»](feedback_auto_merge_en_2_2_no_espera_al_ci.md) — 2.2 exige tests, coverage-index y gateway; #634 se atascó un día.
 - [Tests del conector mcp/ en local](reference_mcp_tests_en_local.md) — un calculador compartido rompe el golden; npm ci --prefer-offline + regenerar.
 - [Sentry por API: tokens y dónde](reference_sentry_tokens_y_api.md) — Chrome sin sesión; lectura en ~/Secrets, completo en el Llavero `sentry-yala`.
 - [Entradas de fuera en el simulador](reference_entradas_de_fuera_en_el_simulador.md) — widget = URL; Siri se ejecuta en Atajos; push sin permiso no va.

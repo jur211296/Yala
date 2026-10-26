@@ -712,6 +712,9 @@ struct PanelView: View {
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
                             onOpenFilters: { sheets.showFilters = true }
                         )
+                        // Tocar un segmento de una tarta o un top pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25),
+                        // como en Distribución: el mismo gesto no escribe distinto según la pantalla.
+                        .segmentFilterChoiceHost()
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
                     .readsVerticalFold($headerFold)

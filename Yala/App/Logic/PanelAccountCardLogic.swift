@@ -16,15 +16,18 @@ nonisolated enum PanelAccountCardLogic {
     enum Style: Equatable {
         /// Sin filtro sobre ella: tarjeta de siempre, el color de la cuenta solo en el icono.
         case plain
-        /// La cuenta está dentro del filtro (modo incluir): rellena de su color y con «Filtrando» (UX 2.2 · L3-16).
+        /// La cuenta está entre las incluidas («Solo X»): rellena de su color y con «Filtrando» (UX 2.2 · L3-16).
         case tinted
-        /// La cuenta está excluida (modo excluir): atenuada, con el signo menos.
+        /// La cuenta está oculta («Sin X»): atenuada, con el signo menos.
         case excluded
     }
 
-    static func style(isSelected: Bool, isExcludeMode: Bool) -> Style {
-        guard isSelected else { return .plain }
-        return isExcludeMode ? .excluded : .tinted
+    static func style(membership: EntityFilterMembership) -> Style {
+        switch membership {
+        case .none: return .plain
+        case .included: return .tinted
+        case .excluded: return .excluded
+        }
     }
 
     // MARK: - Qué dice el número
@@ -103,10 +106,10 @@ nonisolated enum PanelAccountCardLogic {
     // MARK: - Ficha de cuenta
 
     /// «Filtrar por esta cuenta» en la ficha: la misma regla que el menú contextual de la tarjeta. Con la cuenta ya
-    /// filtrada no hay nada que hacer, y en modo excluir «filtrar» significaría lo contrario; quitar o excluir se hace
-    /// desde el chip o desde la hoja de filtros de la toolbar.
-    static func showsFilterAction(isSelected: Bool, isExcludeMode: Bool) -> Bool {
-        !isSelected && !isExcludeMode
+    /// filtrada —incluida u oculta— no hay nada que hacer; quitar u ocultar se hace desde el chip o desde la hoja de
+    /// filtros de la toolbar.
+    static func showsFilterAction(membership: EntityFilterMembership) -> Bool {
+        membership == .none
     }
 
     /// Las cuentas de sistema (`Grupos [moneda]`) no se editan: la ficha no ofrece «Editar».

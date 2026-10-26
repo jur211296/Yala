@@ -40,36 +40,44 @@ struct RecordsAmountFilterCurrencyLogicTests {
 
     /// El bug: en «Ocultar», con USD marcado, el monto filtraba en USD, la moneda que se oculta.
     @Test func exclude_withOneHidden_usesTheOtherOne() {
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [.usd], available: available, isExcludeMode: true) == .pen)
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [.pen], available: available, isExcludeMode: true) == .usd)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [.usd], available: available) == .pen)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [.pen], available: available) == .usd)
     }
 
     /// Con tres monedas y una oculta quedan dos a la vista: no hay una sola en la que comparar.
     @Test func exclude_leavingSeveral_orNone_hasNoAmountCurrency() {
         let three: [CurrencyCode] = [.pen, .usd, .eur]
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [.usd], available: three, isExcludeMode: true) == nil)
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [.pen, .usd], available: available, isExcludeMode: true) == nil)
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [], available: available, isExcludeMode: true) == nil)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [.usd], available: three) == nil)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [.pen, .usd], available: available) == nil)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [], available: available) == nil)
     }
 
     /// Sin nada oculto y una sola moneda en los registros, esa.
     @Test func exclude_nothingHidden_singleCurrency() {
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [], available: [.pen], isExcludeMode: true) == .pen)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [], available: [.pen]) == .pen)
     }
 
     /// «Mostrar solo» sigue como estaba: la marcada, o la única que tienen los registros.
     @Test func include_keepsItsRule() {
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [.usd], available: available, isExcludeMode: false) == .usd)
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [], available: [.pen], isExcludeMode: false) == .pen)
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [], available: available, isExcludeMode: false) == nil)
-        #expect(RecordsAmountFilterCurrencyLogic.currency(selected: [.pen, .usd], available: available, isExcludeMode: false) == nil)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [.usd], excluded: [], available: available) == .usd)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [], available: [.pen]) == .pen)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [], excluded: [], available: available) == nil)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [.pen, .usd], excluded: [], available: available) == nil)
     }
 
-    /// La hoja de filtros decide con esta regla y le pasa el modo; y en «Ocultar» la línea de ayuda es la suya.
-    @Test func filtersSheet_usesTheRuleWithTheMode() throws {
+    /// «Mostrar solo» y «Ocultar» a la vez (opción B, 2026-10-25): la marcada, salvo que también esté oculta.
+    @Test func includedAndExcluded_together() {
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [.usd], excluded: [.pen], available: available) == .usd)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [.usd, .pen], excluded: [.pen], available: available) == .usd)
+        #expect(RecordsAmountFilterCurrencyLogic.currency(included: [.usd], excluded: [.usd], available: available) == nil)
+    }
+
+    /// La hoja de filtros decide con esta regla y le pasa las dos listas; y en «Ocultar» la línea de ayuda es la suya.
+    @Test func filtersSheet_usesTheRuleWithBothLists() throws {
         let code = codeOnly(try source("Yala/App/Views/Records/RecordsFiltersView.swift"))
         #expect(code.contains("RecordsAmountFilterCurrencyLogic.currency("))
-        #expect(code.contains("isExcludeMode: localIsExcludeMode"))
+        #expect(code.contains("included: localSelectedCurrencies"))
+        #expect(code.contains("excluded: localExcludedCurrencies"))
         #expect(code.contains("? L10n.UXL8C.Filters.amountNeedsOneVisibleCurrency"))
         #expect(!code.contains("if localSelectedCurrencies.count == 1 { return localSelectedCurrencies.first }"))
     }

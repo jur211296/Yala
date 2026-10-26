@@ -33,9 +33,9 @@ final class StatisticsViewModel: Filterable {
 
     // MARK: - Trend Locking Logic
 
-    // Check if any category/subcategory/need filters are active
+    // Check if any category/subcategory/need filters are active. Solo los INCLUIDOS: ocultar una categoría no convierte
+    // la vista en «solo gastos» (antes, con el modo excluir, tampoco).
     var hasCategoryFilters: Bool {
-        guard !isExcludeMode else { return false }
         return !selectedCategories.isEmpty || !selectedSubcategories.isEmpty || !selectedNeeds.isEmpty
     }
 
@@ -124,9 +124,34 @@ final class StatisticsViewModel: Filterable {
         set { SessionState.shared.searchText = newValue }
     }
 
-    var isExcludeMode: Bool {
-        get { SessionState.shared.isExcludeMode }
-        set { SessionState.shared.isExcludeMode = newValue }
+    var excludedAccounts: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedAccountIDs }
+        set { SessionState.shared.excludedAccountIDs = newValue }
+    }
+
+    var excludedCategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedCategoryIDs }
+        set { SessionState.shared.excludedCategoryIDs = newValue }
+    }
+
+    var excludedSubcategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedSubcategoryIDs }
+        set { SessionState.shared.excludedSubcategoryIDs = newValue }
+    }
+
+    var excludedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.excludedNeeds }
+        set { SessionState.shared.excludedNeeds = newValue }
+    }
+
+    var excludedTags: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedTags }
+        set { SessionState.shared.excludedTags = newValue }
+    }
+
+    var excludedCurrencies: Set<CurrencyCode> {
+        get { SessionState.shared.excludedCurrencies }
+        set { SessionState.shared.excludedCurrencies = newValue }
     }
 
     var sharedExpenseFilter: SharedExpenseFilter = .all
@@ -298,7 +323,12 @@ final class StatisticsViewModel: Filterable {
         selectedCurrencies.removeAll()
         searchText = ""
         amountCondition = .any
-        isExcludeMode = false
+        excludedAccounts.removeAll()
+        excludedCategories.removeAll()
+        excludedSubcategories.removeAll()
+        excludedNeeds.removeAll()
+        excludedTags.removeAll()
+        excludedCurrencies.removeAll()
     }
 
     // MARK: - Period Interval
@@ -327,7 +357,25 @@ final class StatisticsViewModel: Filterable {
         let needs: Set<SubcategoryNeed>
         let amountCondition: AmountFilterCondition
         let searchText: String
-        let isExcludeMode: Bool
+        /// Lo oculto de cada dimensión: ocultar una cuenta, etiqueta, categoría… cambia el flujo.
+        let excluded: ExcludedEntitiesKey
+    }
+
+    /// Los excluidos de todas las dimensiones, como clave de recálculo.
+    struct ExcludedEntitiesKey: Equatable {
+        let accounts: Set<PersistentIdentifier>
+        let categories: Set<PersistentIdentifier>
+        let subcategories: Set<PersistentIdentifier>
+        let tags: Set<PersistentIdentifier>
+        let needs: Set<SubcategoryNeed>
+        let currencies: Set<CurrencyCode>
+    }
+
+    var excludedEntitiesKey: ExcludedEntitiesKey {
+        ExcludedEntitiesKey(
+            accounts: excludedAccounts, categories: excludedCategories, subcategories: excludedSubcategories,
+            tags: excludedTags, needs: excludedNeeds, currencies: excludedCurrencies
+        )
     }
 
     var sankeyInputKey: SankeyInputKey {
@@ -340,7 +388,7 @@ final class StatisticsViewModel: Filterable {
             needs: selectedNeeds,
             amountCondition: amountCondition,
             searchText: searchText,
-            isExcludeMode: isExcludeMode
+            excluded: excludedEntitiesKey
         )
     }
 
@@ -481,15 +529,18 @@ final class StatisticsViewModel: Filterable {
             selectedTags: selectedTags,
             selectedNeeds: selectedNeeds,
             selectedCurrencies: selectedCurrencies,
-            isExcludeMode: isExcludeMode,
+            excludedAccounts: excludedAccounts,
+            excludedCategories: excludedCategories,
+            excludedSubcategories: excludedSubcategories,
+            excludedTags: excludedTags,
+            excludedNeeds: excludedNeeds,
+            excludedCurrencies: excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: amountCondition,
             searchText: searchText,
             dateInterval: DateInterval(start: first.start, end: last.end)
         )
-        criteria.populateTagUUIDs(
-            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: allTags)
 
         var hasher = Hasher()
         hasher.combine(criteria.hashValue)
@@ -573,6 +624,9 @@ final class StatisticsViewModel: Filterable {
                 filteredTransactions: filtered,
                 interval: plannedInterval,
                 selectedAccounts: selectedAccounts,
+                excludedAccounts: excludedAccounts,
+                excludedCategories: excludedCategories,
+                excludedSubcategories: excludedSubcategories,
                 defaultCurrencyCode: defaultCurrencyCode,
                 converter: CurrencyConverter.shared
             )
@@ -593,7 +647,8 @@ final class StatisticsViewModel: Filterable {
     }
 
     /// Build a FilterCriteria dedicated to the Sankey widget:
-    /// - Excludes `selectedCategories`/`selectedSubcategories` (tap filters don't shrink the flow).
+    /// - Omits the INCLUDED `selectedCategories`/`selectedSubcategories` (tap filters don't shrink the flow); the
+    ///   excluded ones do leave it.
     /// - Always sets `dateInterval: interval` (unlike `buildTrendFilterCriteria`, which sets nil for `.balance`).
     private func buildSankeyFilterCriteria(interval: DateInterval, allTags: [Tag]) -> FilterCriteria {
         var criteria = FilterCriteria(
@@ -603,15 +658,20 @@ final class StatisticsViewModel: Filterable {
             selectedTags: selectedTags,
             selectedNeeds: selectedNeeds,
             selectedCurrencies: selectedCurrencies,
-            isExcludeMode: isExcludeMode,
+            excludedAccounts: excludedAccounts,
+            // Lo OCULTO sí sale del flujo, como de la tarta: «Ocultar Comida» la quita. Lo elegido con «Ver solo» no
+            // recorta el flujo; la vista atenúa el resto.
+            excludedCategories: excludedCategories,
+            excludedSubcategories: excludedSubcategories,
+            excludedTags: excludedTags,
+            excludedNeeds: excludedNeeds,
+            excludedCurrencies: excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: amountCondition,
             searchText: searchText,
             dateInterval: interval
         )
-        criteria.populateTagUUIDs(
-            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: allTags)
         return criteria
     }
 
@@ -627,28 +687,27 @@ final class StatisticsViewModel: Filterable {
             selectedTags: selectedTags,
             selectedNeeds: selectedNeeds,
             selectedCurrencies: selectedCurrencies,
-            isExcludeMode: isExcludeMode,
+            excludedAccounts: excludedAccounts,
+            excludedCategories: excludedCategories,
+            excludedSubcategories: excludedSubcategories,
+            excludedTags: excludedTags,
+            excludedNeeds: excludedNeeds,
+            excludedCurrencies: excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: amountCondition,
             searchText: searchText,
             dateInterval: isBalanceMetric ? nil : interval
         )
-        criteria.populateTagUUIDs(
-            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: allTags)
         return criteria
     }
 
     /// Compute eligible accounts for trend calculations (archived accounts still count)
     private func computeEligibleAccounts(from accounts: [Account]) -> [Account] {
-        accounts.filter { account in
+        let accountFilter = EntityFilter(included: selectedAccounts, excluded: excludedAccounts)
+        return accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
-            if selectedAccounts.isEmpty { return true }
-            if isExcludeMode {
-                return !selectedAccounts.contains(account.persistentModelID)
-            } else {
-                return selectedAccounts.contains(account.persistentModelID)
-            }
+            return accountFilter.matches(account.persistentModelID)
         }
     }
 
@@ -665,9 +724,8 @@ final class StatisticsViewModel: Filterable {
     /// - **Sin `BridgedTransactionFilter`.** Igual que el Panel: el toggle de
     ///   "incluir gastos de grupo en estadísticas" no aplica al saldo, porque el
     ///   saldo refleja montos reales que sí están en la cuenta.
-    /// - **Cuentas pre-filtradas**, por eso el criteria va con `selectedAccounts`
-    ///   vacío: filtrar dos veces por cuenta no cambia el resultado, pero deja
-    ///   dos sitios donde la regla puede divergir.
+    /// - **Cuentas pre-filtradas** y **sin chips**: un saldo es lo que hay en las
+    ///   cuentas (decisión del 2026-10-22), igual que en el Panel.
     ///
     /// Límite conocido: con **dos o más cuentas seleccionadas** el número puede
     /// no coincidir con el Panel, porque el Panel colapsa la selección a su
@@ -686,17 +744,14 @@ final class StatisticsViewModel: Filterable {
         let eligibleAccountIDs = Set(eligibleAccounts.map { $0.persistentModelID })
         let interval = panelDateInterval
 
-        var criteria = buildTrendFilterCriteria(interval: interval, allTags: allTags)
-        criteria.selectedAccounts = []
-        // Explícito, no heredado de `selectedMetric`: este KPI necesita el
-        // histórico completo aunque lo llame alguien con otra métrica activa.
-        criteria.dateInterval = nil
-
+        // Un saldo es lo que hay en las cuentas (decisión de Jürgen del 2026-10-22, la del saldo del Panel): todos los
+        // movimientos de las cuentas elegibles, sin recorte de fecha y SIN los chips de categoría, etiqueta, moneda,
+        // importe o nota. Hasta el 2026-10-25 este KPI sí los aplicaba y, con «Ocultar Comida» a un toque en la tarta,
+        // el saldo de Distribución bajaba en todo lo gastado en Comida mientras el del Panel no se movía. `allTags` se
+        // queda en la firma: los llamadores no cambian.
         let balanceTransactions = transactions.filter { transaction in
-            guard let account = transaction.account,
-                eligibleAccountIDs.contains(account.persistentModelID)
-            else { return false }
-            return FilterService.matchesCriteria(transaction, criteria: criteria)
+            guard let account = transaction.account else { return false }
+            return eligibleAccountIDs.contains(account.persistentModelID)
         }
 
         return BalanceKPICalculator.result(

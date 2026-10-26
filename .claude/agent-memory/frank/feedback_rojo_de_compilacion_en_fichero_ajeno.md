@@ -24,3 +24,9 @@ build: verde, sin tocar el diff.
 **How to apply:** si el rojo está en un fichero que no tocaste y el mensaje no tiene que ver con tu cambio, relanza el
 build tal cual antes de bisecar, con `-destination 'platform=iOS Simulator,id=<udid>'`. Si se repite y editaste el árbol
 durante un build anterior, `clean` antes de bisecar. Solo si cae también limpio es tuyo. Relacionado: [[regresion-aparente-se-mide-contra-la-base]].
+
+**Cuarta vez, 2026-10-26 (S6, ajuste kjzs sobre #634): ni relanzar ni `clean` lo curaron.** Mismo
+`PanelFilterControlBar` (`Set(selectedSubsByID.compactMap { $0.category })`), tres rojos seguidos, el último en limpio
+y por id. El body había crecido con #634 y Xcode 27.1 dejó de ver ahí la conformidad. Se quitó el `Set` de modelos
+(`distinctParents`, deduplica por `persistentModelID`) y compiló. ⇒ si cae limpio, no bisecar el diff: sacar el `Set`/
+`Dictionary` de `@Model` del `body` a un helper.

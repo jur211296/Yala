@@ -41,10 +41,10 @@ struct PanelBalanceScopeTests {
     private func arriba(includeGroups: Bool, selected: Set<PersistentIdentifier> = [], exclude: Bool = false) -> Double {
         let cuentas = PanelTotalAccountsLogic.accountsForTotal(
             [banco, grupos], includeGroups: includeGroups,
-            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: selected, isExcludeMode: exclude))
+            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(selectedAccountIDs: exclude ? [] : selected))
         let breakdown = LiveBalanceCalculator.liveBalanceBreakdown(
             accounts: cuentas, transactions: movimientos, preferredCurrencyCode: "PEN",
-            selectedAccountIDs: selected, isExcludeMode: exclude)
+            selectedAccountIDs: exclude ? [] : selected, excludedAccountIDs: exclude ? selected : [])
         return NSDecimalNumber(decimal: breakdown.convertedTotal).doubleValue
     }
 
@@ -52,7 +52,7 @@ struct PanelBalanceScopeTests {
     private func hoja(includeGroups: Bool, eligible: [Account], selected: Set<PersistentIdentifier> = [],
                       exclude: Bool = false) -> Double? {
         let cuentas = PanelBalanceScopeLogic.accounts(
-            eligible: eligible, includeGroups: includeGroups, selectedAccountIDs: selected, isExcludeMode: exclude)
+            eligible: eligible, includeGroups: includeGroups, selectedAccountIDs: exclude ? [] : selected)
         let filas = PanelBalanceScopeLogic.transactions(movimientos, accountIDs: Set(cuentas.map(\.persistentModelID)))
         return LiveBalanceCalculator.liveBalanceOverride(
             for: .balance, interval: DateInterval(start: .distantPast, end: .distantFuture),

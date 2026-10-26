@@ -21,6 +21,8 @@ struct CategoriesTabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25). Lo monta `DetailContainerView`.
+    @Environment(\.askSegmentFilter) private var askSegmentFilter
 
     // MARK: - Data (passed from parent)
 
@@ -609,18 +611,10 @@ struct CategoriesTabView: View {
                 CategoriesPieWidget(
                     categories: categorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryIDs: viewModel.isExcludeMode
-                        ? viewModel.selectedCategories  // Exclude: only directly excluded categories
-                        : effectiveCategoryIDsForDim,   // Include: dimming with derived parent
+                    selectedCategoryIDs: effectiveCategoryIDsForDim,
                     onSelectCategory: { categoryID in
-                        if viewModel.selectedCategories.contains(categoryID) {
-                            viewModel.selectedCategories.remove(categoryID)
-                        } else {
-                            viewModel.selectedCategories = [categoryID]
-                        }
-                        viewModel.selectedSubcategories.removeAll()
+                        askAboutCategory(categoryID)
                     },
-                    isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
                     headerInfoButton: AnyView(WidgetInfoButton(kind: .categoriesPie)),
                     period: viewModel.detailPeriod,
@@ -651,15 +645,8 @@ struct CategoriesTabView: View {
                     selectedCategoryID: effectiveCategoryID,
                     selectedSubcategoryIDs: viewModel.selectedSubcategories,
                     onSelectSubcategory: { subcategoryID in
-                        if viewModel.selectedSubcategories.contains(subcategoryID) {
-                            viewModel.selectedSubcategories.remove(subcategoryID)
-                        } else {
-                            viewModel.selectedSubcategories = [subcategoryID]
-                        }
-                        // Clear category filter — subcategory selection is more specific
-                        viewModel.selectedCategories.removeAll()
+                        askAboutSubcategory(subcategoryID)
                     },
-                    isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
                     headerInfoButton: AnyView(WidgetInfoButton(kind: .subcategoriesPie)),
                     period: viewModel.detailPeriod,
@@ -689,13 +676,8 @@ struct CategoriesTabView: View {
                     currencyCode: defaultCurrencyCode,
                     selectedTagIDs: viewModel.selectedTags,
                     onSelectTag: { tagID in
-                        if viewModel.selectedTags.contains(tagID) {
-                            viewModel.selectedTags.remove(tagID)
-                        } else {
-                            viewModel.selectedTags = [tagID]
-                        }
+                        askAboutTag(tagID)
                     },
-                    isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
                     headerInfoButton: AnyView(WidgetInfoButton(kind: .tagsPie)),
                     period: viewModel.detailPeriod,
@@ -755,10 +737,10 @@ struct CategoriesTabView: View {
                 selectedSubcategoryIDs: viewModel.selectedSubcategories,
                 selectedPoolNodeIDs: selectedSankeyPoolNodeIDs,
                 onTapCategory: { catID in
-                    dsWithAnimation(reduceMotion) { toggleSankeyCategory(catID) }
+                    askAboutCategory(catID)
                 },
                 onTapSubcategory: { subID in
-                    dsWithAnimation(reduceMotion) { toggleSankeySubcategory(subID) }
+                    askAboutSubcategory(subID)
                 },
                 onTapPoolNode: { nodeID in
                     dsWithAnimation(reduceMotion) { toggleSankeyPoolNode(nodeID) }
@@ -785,21 +767,76 @@ struct CategoriesTabView: View {
         )
     }
 
-    private func toggleSankeyCategory(_ catID: PersistentIdentifier) {
-        if viewModel.selectedCategories.contains(catID) {
-            viewModel.selectedCategories.remove(catID)
+    // MARK: - Tocar un segmento: «Ver solo» / «Ocultar» (propuesta A, 2026-10-25)
+
+    // Tartas, lista de Detalle, Sankey y necesidades preguntan qué hacer con lo tocado. «Ver solo» hace lo que hacía el
+    // toque de antes; «Ocultar» y «Quitar el filtro» van a `SessionState`. Sin host (una vista previa), ver solo.
+
+    private func askAboutSegment(
+        _ target: SegmentFilterTarget,
+        name: String,
+        amount: Double?,
+        hide: (() -> Void)? = nil,
+        showOnly: @escaping () -> Void
+    ) {
+        let choice = SegmentFilterChoice(
+            target: target,
+            name: name,
+            amountText: amount.map { appPreferences.currency($0, currencyCode: defaultCurrencyCode) },
+            membership: sessionState.membership(of: target),
+            showOnly: showOnly,
+            hide: hide
+        )
+        if let askSegmentFilter {
+            askSegmentFilter(choice)
         } else {
-            viewModel.selectedCategories = [catID]
+            dsWithAnimation(reduceMotion) { showOnly() }
+        }
+    }
+
+    private func askAboutCategory(_ categoryID: PersistentIdentifier) {
+        let summary = categorySpending.first { $0.id == categoryID }
+        let name = summary?.name ?? categories.first { $0.persistentModelID == categoryID }?.name ?? ""
+        askAboutSegment(
+            .category(categoryID), name: name, amount: summary?.amount,
+            hide: {
+                // Ocultar la categoría de una subcategoría vista sola dejaba «Solo Restaurantes» + «Sin Comida»: todo
+                // a 0. Esas subcategorías se van con ella.
+                let inside = Set(allSubcategories.filter { $0.category?.persistentModelID == categoryID }
+                    .map(\.persistentModelID))
+                viewModel.selectedSubcategories.subtract(inside)
+                sessionState.hide(.category(categoryID))
+            }
+        ) {
+            viewModel.selectedCategories = [categoryID]
+            // Ver solo una categoría deja de lado las subcategorías que se veían solas; las ocultas siguen ocultas.
             viewModel.selectedSubcategories.removeAll()
         }
     }
 
-    private func toggleSankeySubcategory(_ subID: PersistentIdentifier) {
-        if viewModel.selectedSubcategories.contains(subID) {
-            viewModel.selectedSubcategories.remove(subID)
-        } else {
-            viewModel.selectedSubcategories = [subID]
+    private func askAboutSubcategory(_ subcategoryID: PersistentIdentifier) {
+        let summary = subcategorySpending.first { $0.persistentID == subcategoryID }
+        let name = summary?.subcategoryName
+            ?? allSubcategories.first { $0.persistentModelID == subcategoryID }?.name ?? ""
+        askAboutSegment(.subcategory(subcategoryID), name: name, amount: summary?.amount) {
+            viewModel.selectedSubcategories = [subcategoryID]
+            // La subcategoría es más concreta que la categoría que se veía sola.
             viewModel.selectedCategories.removeAll()
+        }
+    }
+
+    private func askAboutTag(_ tagID: PersistentIdentifier) {
+        let summary = tagSpending.first { $0.id == tagID }
+        let name = summary?.tag.name ?? tags.first { $0.persistentModelID == tagID }?.name ?? ""
+        askAboutSegment(.tag(tagID), name: name, amount: summary?.amount) {
+            viewModel.selectedTags = [tagID]
+        }
+    }
+
+    private func askAboutNeed(_ need: SubcategoryNeed) {
+        let amount = needTrendPoints.reduce(0) { $0 + $1.amount(for: need) }
+        askAboutSegment(.need(need), name: need.displayName, amount: amount) {
+            selectedNeed = need
         }
     }
 
@@ -861,13 +898,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNeed: { need in
-                dsWithAnimation(reduceMotion) {
-                    if selectedNeed == need {
-                        selectedNeed = nil
-                    } else {
-                        selectedNeed = need
-                    }
-                }
+                askAboutNeed(need)
             },
             onShowDetail: nil,
             period: viewModel.detailPeriod,
@@ -889,13 +920,7 @@ struct CategoriesTabView: View {
             grouping: needGrouping,
             interval: viewModel.panelDateInterval,
             onSelectNeed: { need in
-                dsWithAnimation(reduceMotion) {
-                    if selectedNeed == need {
-                        selectedNeed = nil
-                    } else {
-                        selectedNeed = need
-                    }
-                }
+                askAboutNeed(need)
             },
             onShowDetail: nil,
             period: viewModel.detailPeriod,
@@ -958,17 +983,11 @@ struct CategoriesTabView: View {
                     categories: categorySpending,
                     currencyCode: defaultCurrencyCode,
                     selectedCategoryIDs: effectiveCategoryIDsForDim,
-                    isExcludeMode: viewModel.isExcludeMode,
                     isExpanded: isListExpanded,
                     showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
                     onToggleExpanded: { isListExpanded.toggle() },
                     onSelectCategory: { categoryID in
-                        if viewModel.selectedCategories.contains(categoryID) {
-                            viewModel.selectedCategories.remove(categoryID)
-                        } else {
-                            viewModel.selectedCategories = [categoryID]
-                        }
-                        viewModel.selectedSubcategories.removeAll()
+                        askAboutCategory(categoryID)
                     }
                 )
             }
@@ -984,22 +1003,13 @@ struct CategoriesTabView: View {
                 AllSubcategoriesListContent(
                     subcategories: subcategorySpending,
                     currencyCode: defaultCurrencyCode,
-                    selectedCategoryIDs: viewModel.isExcludeMode
-                        ? viewModel.selectedCategories
-                        : effectiveCategoryIDsForDim,
+                    selectedCategoryIDs: effectiveCategoryIDsForDim,
                     selectedSubcategoryIDs: viewModel.selectedSubcategories,
-                    isExcludeMode: viewModel.isExcludeMode,
                     isExpanded: isListExpanded,
                     showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
                     onToggleExpanded: { isListExpanded.toggle() },
                     onSelectSubcategory: { subcategoryID in
-                        if viewModel.selectedSubcategories.contains(subcategoryID) {
-                            viewModel.selectedSubcategories.remove(subcategoryID)
-                        } else {
-                            viewModel.selectedSubcategories = [subcategoryID]
-                        }
-                        // Clear category filter — subcategory selection is more specific
-                        viewModel.selectedCategories.removeAll()
+                        askAboutSubcategory(subcategoryID)
                     }
                 )
             }
@@ -1056,7 +1066,6 @@ struct CategoriesTabView: View {
     /// - When income mode is active (category breakdown not useful for income)
     private var shouldLockToSubcategories: Bool {
         if isIncomeMode { return true }
-        if viewModel.isExcludeMode { return false }
         return !viewModel.selectedCategories.isEmpty || !viewModel.selectedSubcategories.isEmpty
     }
 
@@ -1352,25 +1361,28 @@ struct CategoriesTabView: View {
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 
         // Build filter criteria for pie charts
-        // Include mode: show all categories/subcategories with dim (no filter)
-        // Exclude mode: actually exclude selected categories/subcategories from data
+        // Lo INCLUIDO de categoría/subcategoría no recorta: se ven todas y se atenúa el resto.
+        // Lo OCULTO sí sale de los datos (`excludedCategories`/`excludedSubcategories`).
         var pieChartCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
-            selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
-            selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
+            selectedCategories: [],
+            selectedSubcategories: [],
             selectedTags: viewModel.selectedTags,
             selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
-            isExcludeMode: viewModel.isExcludeMode,
+            excludedAccounts: viewModel.excludedAccounts,
+            excludedCategories: viewModel.excludedCategories,
+            excludedSubcategories: viewModel.excludedSubcategories,
+            excludedTags: viewModel.excludedTags,
+            excludedNeeds: viewModel.excludedNeeds,
+            excludedCurrencies: viewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: interval
         )
-        pieChartCriteria.populateTagUUIDs(
-            from: allTags.filter { pieChartCriteria.selectedTags.contains($0.persistentModelID) }
-        )
+        pieChartCriteria.populateTagUUIDs(fromCatalog: allTags)
 
         // Filter transactions for pie charts (show all categories/subcategories)
         let pieFiltered = FilterService.filterForTrends(
@@ -1388,15 +1400,18 @@ struct CategoriesTabView: View {
             selectedNeeds: [],  // Don't filter by need - show all with dim
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
-            isExcludeMode: viewModel.isExcludeMode,
+            excludedAccounts: viewModel.excludedAccounts,
+            excludedCategories: viewModel.excludedCategories,
+            excludedSubcategories: viewModel.excludedSubcategories,
+            excludedTags: viewModel.excludedTags,
+            excludedNeeds: viewModel.excludedNeeds,
+            excludedCurrencies: viewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: interval
         )
-        needCriteria.populateTagUUIDs(
-            from: allTags.filter { needCriteria.selectedTags.contains($0.persistentModelID) }
-        )
+        needCriteria.populateTagUUIDs(fromCatalog: allTags)
 
         // Filter transactions for need widget
         let needFiltered = FilterService.filterForTrends(
@@ -1442,10 +1457,7 @@ struct CategoriesTabView: View {
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]
-        if viewModel.isExcludeMode {
-            // pieFiltered already excludes the right transactions via pieChartCriteria
-            subcategoryTransactions = pieFiltered
-        } else if let categoryID = effectiveCategoryID {
+        if let categoryID = effectiveCategoryID {
             // Filter to only show subcategories of selected category
             subcategoryTransactions = pieFiltered.filter { $0.category?.persistentModelID == categoryID }
         } else {
@@ -1464,7 +1476,7 @@ struct CategoriesTabView: View {
 
         // Calculate tag spending — respects category/subcategory filters but shows ALL tags
         // selectedTags=[] intentional → tagCriteria.selectedTagUUIDs stays empty (no tag filter applied).
-        let tagCriteria = FilterCriteria(
+        var tagCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
@@ -1472,12 +1484,20 @@ struct CategoriesTabView: View {
             selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
-            isExcludeMode: viewModel.isExcludeMode,
+            excludedAccounts: viewModel.excludedAccounts,
+            excludedCategories: viewModel.excludedCategories,
+            excludedSubcategories: viewModel.excludedSubcategories,
+            excludedTags: viewModel.excludedTags,
+            excludedNeeds: viewModel.excludedNeeds,
+            excludedCurrencies: viewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: interval
         )
+        // Las etiquetas OCULTAS salen de la tarta de Etiquetas (las incluidas solo atenúan): sin el espejo de UUIDs el
+        // filtro de etiquetas no recortaría nada.
+        tagCriteria.populateTagUUIDs(fromCatalog: allTags)
         let tagFiltered = FilterService.filterForTrends(
             transactions: allTransactions, accounts: accounts, criteria: tagCriteria
         )
@@ -1573,24 +1593,27 @@ struct CategoriesTabView: View {
 
         // Build filter criteria for previous period
         // Include mode: show all (no filter) for comparison
-        // Exclude mode: exclude selected categories/subcategories for consistent comparison
+        // Lo oculto («Sin X») también sale del período anterior, para comparar lo mismo con lo mismo
         var criteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
-            selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
-            selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
+            selectedCategories: [],
+            selectedSubcategories: [],
             selectedTags: viewModel.selectedTags,
             selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
-            isExcludeMode: viewModel.isExcludeMode,
+            excludedAccounts: viewModel.excludedAccounts,
+            excludedCategories: viewModel.excludedCategories,
+            excludedSubcategories: viewModel.excludedSubcategories,
+            excludedTags: viewModel.excludedTags,
+            excludedNeeds: viewModel.excludedNeeds,
+            excludedCurrencies: viewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: previousInterval
         )
-        criteria.populateTagUUIDs(
-            from: allTags.filter { criteria.selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: allTags)
 
         // Filter transactions for previous period, then WTD/MTD al weekday/día equivalente
         let previousFiltered = alignedPrevious(
@@ -1624,10 +1647,7 @@ struct CategoriesTabView: View {
 
         // Calculate previous period subcategory spending (filter by category if selected)
         let prevSubcategoryTransactions: [TransactionItem]
-        if viewModel.isExcludeMode {
-            // previousFiltered already excludes the right transactions via criteria
-            prevSubcategoryTransactions = previousFiltered
-        } else if let categoryID = effectiveCategoryID {
+        if let categoryID = effectiveCategoryID {
             prevSubcategoryTransactions = previousFiltered.filter { $0.category?.persistentModelID == categoryID }
         } else {
             prevSubcategoryTransactions = previousFiltered
@@ -1657,7 +1677,9 @@ struct CategoriesTabView: View {
         }
 
         // Calculate previous period tag spending — respects category/subcategory filters
-        let prevTagCriteria = FilterCriteria(
+        // El mismo criterio que la tarta actual (`tagCriteria`), con lo oculto incluido: si no, la variación compara un
+        // período sin lo oculto contra otro con él.
+        var prevTagCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
@@ -1665,11 +1687,18 @@ struct CategoriesTabView: View {
             selectedNeeds: viewModel.selectedNeeds,
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
+            excludedAccounts: viewModel.excludedAccounts,
+            excludedCategories: viewModel.excludedCategories,
+            excludedSubcategories: viewModel.excludedSubcategories,
+            excludedTags: viewModel.excludedTags,
+            excludedNeeds: viewModel.excludedNeeds,
+            excludedCurrencies: viewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: previousInterval
         )
+        prevTagCriteria.populateTagUUIDs(fromCatalog: allTags)
         let prevTagFiltered = alignedPrevious(
             FilterService.filterForTrends(
                 transactions: allTransactions, accounts: accounts, criteria: prevTagCriteria
@@ -1705,15 +1734,18 @@ struct CategoriesTabView: View {
             selectedNeeds: [],  // Don't filter by nature
             selectedTransactionNatures: viewModel.selectedTransactionNatures,
             selectedCurrencies: viewModel.selectedCurrencies,
-            isExcludeMode: viewModel.isExcludeMode,
+            excludedAccounts: viewModel.excludedAccounts,
+            excludedCategories: viewModel.excludedCategories,
+            excludedSubcategories: viewModel.excludedSubcategories,
+            excludedTags: viewModel.excludedTags,
+            excludedNeeds: viewModel.excludedNeeds,
+            excludedCurrencies: viewModel.excludedCurrencies,
             transactionTypeFilter: .all,
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: previousInterval
         )
-        prevNeedCriteria.populateTagUUIDs(
-            from: allTags.filter { prevNeedCriteria.selectedTags.contains($0.persistentModelID) }
-        )
+        prevNeedCriteria.populateTagUUIDs(fromCatalog: allTags)
         // NeedTrendHelper cuenta solo gasto → corte gasto-only (igual que el Panel).
         let prevNeedFiltered = alignedPrevious(
             FilterService.filterForTrends(
@@ -1807,18 +1839,14 @@ private struct AllCategoriesListContent: View {
     let categories: [CategorySpendingSummary]
     let currencyCode: String
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
-    var isExcludeMode: Bool = false
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
     @Environment(\.yalaTheme) private var theme
 
-    /// Visible categories: in exclude mode, excluded items are hidden entirely
+    /// Lo oculto («Sin X») ya llega fuera de `categories`: lo recorta el cálculo de la pantalla.
     private var visibleCategories: [CategorySpendingSummary] {
-        if isExcludeMode && !selectedCategoryIDs.isEmpty {
-            return categories.filter { !$0.isSelected(in: selectedCategoryIDs) }
-        }
         return categories
     }
 
@@ -1836,8 +1864,7 @@ private struct AllCategoriesListContent: View {
                 ForEach(displayedCategories) { summary in
                     let isSelected = summary.isSelected(in: selectedCategoryIDs)
                     let isAnySelected = !selectedCategoryIDs.isEmpty
-                    // In exclude mode, excluded items are already hidden — no dimming
-                    let shouldDim = !isExcludeMode && isAnySelected && !isSelected
+                    let shouldDim = isAnySelected && !isSelected
 
                     Button {
                         // «Sin categoría» no tiene categoría que filtrar: no hace nada.
@@ -1855,6 +1882,7 @@ private struct AllCategoriesListContent: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("distribution_category_row")
                 }
 
                 if showExpandButton {
@@ -1892,21 +1920,14 @@ private struct AllSubcategoriesListContent: View {
     let currencyCode: String
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
-    var isExcludeMode: Bool = false
     var isExpanded: Bool
     var showVariation: Bool = true
     var onToggleExpanded: (() -> Void)?
     var onSelectSubcategory: ((PersistentIdentifier) -> Void)?
     @Environment(\.yalaTheme) private var theme
 
-    /// Visible subcategories: in exclude mode, excluded items are hidden entirely
+    /// Lo oculto («Sin X») ya llega fuera de `subcategories`: lo recorta el cálculo de la pantalla.
     private var visibleSubcategories: [SubcategorySpendingSummary] {
-        if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
-            return subcategories.filter {
-                guard let id = $0.persistentID else { return true }
-                return !selectedSubcategoryIDs.contains(id)
-            }
-        }
         return subcategories
     }
 
@@ -1930,8 +1951,8 @@ private struct AllSubcategoriesListContent: View {
                         selectedCategoryIDs.isEmpty
                         || (summary.category?.persistentModelID).map { selectedCategoryIDs.contains($0) } ?? false
 
-                    // In exclude mode, excluded items are already hidden — only dim for include mode or category mismatch
-                    let shouldDim = (!isExcludeMode && isAnySelected && !isSelected) || !belongsToSelectedCategory
+                    // Lo oculto ya llega fuera; se atenúa lo no incluido o lo de otra categoría
+                    let shouldDim = (isAnySelected && !isSelected) || !belongsToSelectedCategory
 
                     Button {
                         if let persistentID = summary.persistentID {
@@ -2178,7 +2199,7 @@ private struct CategoriesFilterRecalcObservers: ViewModifier {
             .onChange(of: viewModel.selectedCurrencies) { onRecalc() }
             .onChange(of: viewModel.amountCondition) { onRecalc() }
             .onChange(of: viewModel.searchText) { onRecalc() }
-            .onChange(of: viewModel.isExcludeMode) { onRecalc() }
+            .onChange(of: viewModel.excludedEntitiesKey) { onRecalc() }
             .onChange(of: viewModel.selectedTransactionNatures) { onRecalc() }
     }
 }

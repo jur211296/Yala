@@ -521,74 +521,59 @@ final class InsightsViewModel {
         categories: [Category],
         tags: [Tag]
     ) -> [String: Any] {
-        let mode = criteria.isExcludeMode ? "exclude" : "include"
-        var filters: [String: Any] = ["mode": mode]
+        // Incluidos («Solo …») y ocultos («Excluyendo …») conviven desde el 2026-10-25 (opción B). `mode` sigue
+        // diciendo "include" o "exclude" cuando solo hay de un tipo —lo que espera el prompt de siempre— y "mixed"
+        // cuando hay de los dos. Las listas de ocultos van en sus propias claves (`excluded_*`).
+        var filters: [String: Any] = [:]
         var descriptions: [String] = []
+        var hasIncluded = false
+        var hasExcluded = false
 
-        // Accounts
-        if !criteria.selectedAccounts.isEmpty {
-            let names = accounts
-                .filter { criteria.selectedAccounts.contains($0.persistentModelID) }
-                .map { $0.name }
-            if !names.isEmpty {
-                filters["accounts"] = names
-                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
-                descriptions.append("\(verb) cuentas: \(names.joined(separator: ", "))")
+        func describe(_ key: String, label: String, included: [String], excluded: [String]) {
+            if !included.isEmpty {
+                hasIncluded = true
+                filters[key] = included
+                descriptions.append("Solo \(label): \(included.joined(separator: ", "))")
+            }
+            if !excluded.isEmpty {
+                hasExcluded = true
+                filters["excluded_\(key)"] = excluded
+                descriptions.append("Excluyendo \(label): \(excluded.joined(separator: ", "))")
             }
         }
 
-        // Categories
-        if !criteria.selectedCategories.isEmpty {
-            let names = categories
-                .filter { criteria.selectedCategories.contains($0.persistentModelID) }
-                .map { $0.name }
-            if !names.isEmpty {
-                filters["categories"] = names
-                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
-                descriptions.append("\(verb) categorías: \(names.joined(separator: ", "))")
-            }
-        }
-
-        // Subcategories
-        if !criteria.selectedSubcategories.isEmpty {
-            let names = categories
-                .flatMap { $0.subcategories ?? [] }
-                .filter { criteria.selectedSubcategories.contains($0.persistentModelID) }
-                .map { $0.name }
-            if !names.isEmpty {
-                filters["subcategories"] = names
-                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
-                descriptions.append("\(verb) subcategorías: \(names.joined(separator: ", "))")
-            }
-        }
-
-        // Tags
-        if !criteria.selectedTags.isEmpty {
-            let names = tags
-                .filter { criteria.selectedTags.contains($0.persistentModelID) }
-                .map { $0.name }
-            if !names.isEmpty {
-                filters["tags"] = names
-                let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
-                descriptions.append("\(verb) etiquetas: \(names.joined(separator: ", "))")
-            }
-        }
-
-        // Needs
-        if !criteria.selectedNeeds.isEmpty {
-            let names = criteria.selectedNeeds.map { $0.displayName }
-            filters["needs"] = names
-            let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
-            descriptions.append("\(verb) naturalezas: \(names.joined(separator: ", "))")
-        }
-
-        // Currencies
-        if !criteria.selectedCurrencies.isEmpty {
-            let codes = criteria.selectedCurrencies.map { $0.rawValue }
-            filters["currencies"] = codes
-            let verb = criteria.isExcludeMode ? "Excluyendo" : "Solo"
-            descriptions.append("\(verb) monedas: \(codes.joined(separator: ", "))")
-        }
+        let allSubcategories = categories.flatMap { $0.subcategories ?? [] }
+        describe(
+            "accounts", label: "cuentas",
+            included: accounts.filter { criteria.selectedAccounts.contains($0.persistentModelID) }.map(\.name),
+            excluded: accounts.filter { criteria.excludedAccounts.contains($0.persistentModelID) }.map(\.name)
+        )
+        describe(
+            "categories", label: "categorías",
+            included: categories.filter { criteria.selectedCategories.contains($0.persistentModelID) }.map(\.name),
+            excluded: categories.filter { criteria.excludedCategories.contains($0.persistentModelID) }.map(\.name)
+        )
+        describe(
+            "subcategories", label: "subcategorías",
+            included: allSubcategories.filter { criteria.selectedSubcategories.contains($0.persistentModelID) }.map(\.name),
+            excluded: allSubcategories.filter { criteria.excludedSubcategories.contains($0.persistentModelID) }.map(\.name)
+        )
+        describe(
+            "tags", label: "etiquetas",
+            included: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }.map(\.name),
+            excluded: tags.filter { criteria.excludedTags.contains($0.persistentModelID) }.map(\.name)
+        )
+        describe(
+            "needs", label: "naturalezas",
+            included: criteria.selectedNeeds.map(\.displayName).sorted(),
+            excluded: criteria.excludedNeeds.map(\.displayName).sorted()
+        )
+        describe(
+            "currencies", label: "monedas",
+            included: criteria.selectedCurrencies.map(\.rawValue).sorted(),
+            excluded: criteria.excludedCurrencies.map(\.rawValue).sorted()
+        )
+        filters["mode"] = hasIncluded && hasExcluded ? "mixed" : (hasExcluded ? "exclude" : "include")
 
         // Transaction nature (income/expense) — always include semantics
         if criteria.selectedTransactionNatures.count == 1,

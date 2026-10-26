@@ -87,7 +87,7 @@ struct AccountsCarouselView: View {
             // Registros el carrusel marcaba una sola, y el saldo ya suma las dos. Con líneas, manda la principal: filtrar
             // desde la tarjeta pone la principal y el filtro de sesión le añade sus líneas (entrega 3), así que el saldo
             // filtrado es el de la tarjeta entera. Marcarla por una línea elegida sola la enseñaría con un saldo parcial.
-            let isSelected = viewModel.selectedAccountIDs.contains(account.persistentModelID)
+            let membership = viewModel.accountMembership(account.persistentModelID)
 
             Button {
                 onOpenAccount(account)
@@ -97,8 +97,7 @@ struct AccountsCarouselView: View {
                     currentBalance: isExpensesOnlyMode
                         ? accountPeriodExpenses[account.persistentModelID] ?? 0
                         : accountBalances[account.persistentModelID] ?? 0,
-                    isSelected: isSelected,
-                    isExcludeMode: viewModel.isExcludeMode,
+                    filterMembership: membership,
                     isExpensesOnlyMode: isExpensesOnlyMode,
                     periodName: viewModel.selectedPeriod.displayName,
                     lines: card.hasLines
@@ -110,8 +109,8 @@ struct AccountsCarouselView: View {
             .pointerHighlight(cornerRadius: DS.Radius.xl)
             // Clic secundario en el iPad, pulsación larga en el iPhone: filtrar y editar sin pasar por la ficha.
             .contextMenu {
-                // En modo exclusión el toque invierte su sentido; ahí «filtrar» confundiría, así que no se ofrece.
-                if !isSelected && !viewModel.isExcludeMode {
+                // Solo si la cuenta no está ya en el filtro (incluida u oculta): quitarla se hace desde su cápsula.
+                if PanelAccountCardLogic.showsFilterAction(membership: membership) {
                     Button(L10n.Keyboard.filterByAccount, systemImage: "line.3.horizontal.decrease.circle") {
                         viewModel.selectedAccountID = account.persistentModelID
                     }

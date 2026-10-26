@@ -146,6 +146,8 @@ struct FinancialReportView: View {
         .onChange(of: sessionState.selectedNeeds) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.selectedTransactionNatures) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.selectedCurrencies) { _, _ in scheduleRecalculate() }
+        // Lo oculto («Sin X») también cambia el informe; antes vivía en los mismos conjuntos que lo incluido.
+        .onChange(of: sessionState.excludedFilterSets) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.dataVersion) { _, _ in scheduleRecalculate() }
         .onChange(of: viewModel.groupingState.activeDimensions) { _, _ in scheduleRecalculate() }
         .onChange(of: transactions.count) { _, _ in scheduleRecalculate() }

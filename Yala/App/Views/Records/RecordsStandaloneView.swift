@@ -707,7 +707,7 @@ private struct RecordsSessionObservers2b: ViewModifier {
         content
             .onChange(of: sessionState.amountCondition) { _, _ in recalculateData() }
             .onChange(of: sessionState.searchText) { _, _ in recalculateData() }
-            .onChange(of: sessionState.isExcludeMode) { _, _ in recalculateData() }
+            .onChange(of: sessionState.excludedFilterSets) { _, _ in recalculateData() }
             .onChange(of: sessionState.customDateRange) { _, _ in recalculateData() }
             .onChange(of: dataViewModel.allTransactions) { recalculateData() }
     }

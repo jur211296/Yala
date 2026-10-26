@@ -19,7 +19,6 @@ struct CategoriesPieWidget: View {
     var selectedCategoryIDs: Set<PersistentIdentifier> = []
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
-    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -44,12 +43,6 @@ struct CategoriesPieWidget: View {
     // Filtered total based on selected categories
     private var filteredTotalExpense: Double {
         guard !selectedCategoryIDs.isEmpty else { return totalExpense }
-        if isExcludeMode {
-            // Excluded items removed — total is sum of remaining visible items
-            return categories
-                .filter { !$0.isSelected(in: selectedCategoryIDs) }
-                .reduce(0) { $0 + $1.amount }
-        }
         return categories
             .filter { $0.isSelected(in: selectedCategoryIDs) }
             .reduce(0) { $0 + $1.amount }
@@ -386,13 +379,7 @@ struct CategoriesPieWidget: View {
             .transition(.opacity.combined(with: .scale(scale: 0.9)))
     }
 
-    // Logic: In exclude mode, excluded items are removed — show labels normally by percentage.
-    // In include mode, show only selected items' labels.
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if isExcludeMode {
-            // Excluded items already removed from data; show labels by percentage threshold
-            return item.percentage > 4.0
-        }
         if !selectedCategoryIDs.isEmpty {
             guard let id = item.id else { return false }
             return selectedCategoryIDs.contains(id)
@@ -636,18 +623,12 @@ struct CategoriesPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
-        // In exclude mode, excluded items are already removed from chart data — no dimming needed
-        if isExcludeMode { return false }
         guard !selectedCategoryIDs.isEmpty else { return false }
         guard let id = item.id else { return true }
         return !selectedCategoryIDs.contains(id)
     }
 
     private func currentCenterItem(_ chartData: [PieChartData]) -> PieChartData? {
-        if isExcludeMode {
-            // Excluded items already removed; show first visible item
-            return chartData.first
-        }
         if !selectedCategoryIDs.isEmpty {
             return chartData.first { $0.id == selectedCategoryIDs.first }
         }
@@ -679,14 +660,7 @@ struct CategoriesPieWidget: View {
         // For Medium, show all categories (no grouping). For Large, allow more slices.
         let threshold = size == .large ? 12 : 20
 
-        // In exclude mode, remove excluded items entirely (they disappear from the chart)
-        let visibleCategories: [CategorySpendingSummary]
-        if isExcludeMode && !selectedCategoryIDs.isEmpty {
-            visibleCategories = categories.filter { !$0.isSelected(in: selectedCategoryIDs) }
-        } else {
-            visibleCategories = categories
-        }
-
+        let visibleCategories: [CategorySpendingSummary] = categories
         // Recalculate total from visible items only
         let visibleTotal = visibleCategories.reduce(0) { $0 + $1.amount }
 

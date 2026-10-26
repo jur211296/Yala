@@ -94,9 +94,34 @@ final class RecordsViewModel: Filterable {
     }
 
     /// Exclude mode for entity filters
-    var isExcludeMode: Bool {
-        get { SessionState.shared.isExcludeMode }
-        set { SessionState.shared.isExcludeMode = newValue }
+    var excludedAccounts: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedAccountIDs }
+        set { SessionState.shared.excludedAccountIDs = newValue }
+    }
+
+    var excludedCategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedCategoryIDs }
+        set { SessionState.shared.excludedCategoryIDs = newValue }
+    }
+
+    var excludedSubcategories: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedSubcategoryIDs }
+        set { SessionState.shared.excludedSubcategoryIDs = newValue }
+    }
+
+    var excludedNeeds: Set<SubcategoryNeed> {
+        get { SessionState.shared.excludedNeeds }
+        set { SessionState.shared.excludedNeeds = newValue }
+    }
+
+    var excludedTags: Set<PersistentIdentifier> {
+        get { SessionState.shared.excludedTags }
+        set { SessionState.shared.excludedTags = newValue }
+    }
+
+    var excludedCurrencies: Set<CurrencyCode> {
+        get { SessionState.shared.excludedCurrencies }
+        set { SessionState.shared.excludedCurrencies = newValue }
     }
 
     var sharedExpenseFilter: SharedExpenseFilter = .all
@@ -292,15 +317,18 @@ final class RecordsViewModel: Filterable {
             selectedNeeds: selectedNeeds,
             selectedTransactionNatures: effectiveTransactionNatures,
             selectedCurrencies: selectedCurrencies,
-            isExcludeMode: isExcludeMode,
+            excludedAccounts: excludedAccounts,
+            excludedCategories: excludedCategories,
+            excludedSubcategories: excludedSubcategories,
+            excludedTags: excludedTags,
+            excludedNeeds: excludedNeeds,
+            excludedCurrencies: excludedCurrencies,
             transactionTypeFilter: transactionTypeFilter,
             amountCondition: amountCondition,
             searchText: searchText,
             dateInterval: effectiveDateInterval()
         )
-        criteria.populateTagUUIDs(
-            from: tags.filter { selectedTags.contains($0.persistentModelID) }
-        )
+        criteria.populateTagUUIDs(fromCatalog: tags)
 
         // A0-Bridge: respeta toggle global "incluir transacciones de grupos en feed".
         // Si OFF, oculta TX bridgeadas (splitExpenseID/splitSettlementID != nil).
@@ -727,7 +755,12 @@ final class RecordsViewModel: Filterable {
         }
         selectedTags.removeAll()
         transactionTypeFilter = .all
-        isExcludeMode = false
+        excludedAccounts.removeAll()
+        excludedCategories.removeAll()
+        excludedSubcategories.removeAll()
+        excludedNeeds.removeAll()
+        excludedTags.removeAll()
+        excludedCurrencies.removeAll()
         amountCondition = .any
         // period = .thisMonth // Do not reset period
         selectedCurrencies = []

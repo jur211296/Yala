@@ -10,9 +10,9 @@ import Foundation
 
 /// La regla de la cuenta precargada, en este orden:
 ///
-/// 1. El filtro de cuentas es de UNA cuenta (modo incluir) → esa.
+/// 1. El filtro de cuentas incluye UNA cuenta («Solo X») → esa.
 /// 2. La última cuenta usada (`LastUsedAccountStore`), si sigue activa y el filtro no la deja fuera: con varias
-///    filtradas, solo si está entre ellas; en modo excluir, solo si no es una de las excluidas.
+///    filtradas, solo si está entre ellas; y nunca si es una de las ocultas.
 /// 3. Solo hay una cuenta → esa.
 /// 4. Vacía.
 ///
@@ -37,13 +37,14 @@ nonisolated enum TransactionAccountPrefillLogic {
 
     /// El filtro de cuentas tal como lo tiene `SessionState`.
     struct Filter<ID: Hashable> {
-        /// El conjunto entero (la tarjeta con sus líneas): para saber si una cuenta está dentro.
+        /// Las INCLUIDAS, conjunto entero (la tarjeta con sus líneas): para saber si una cuenta está dentro.
         let accountIDs: Set<ID>
-        /// La selección tal como se pinta (cada tarjeta una vez): para saber si el filtro es de UNA cuenta.
+        /// Las incluidas tal como se pintan (cada tarjeta una vez): para saber si el filtro es de UNA cuenta.
         let shownAccountIDs: Set<ID>
-        let isExcludeMode: Bool
+        /// Las ocultas («Sin X»). Conviven con las incluidas desde el 2026-10-25.
+        let excludedAccountIDs: Set<ID>
 
-        static var none: Filter { Filter(accountIDs: [], shownAccountIDs: [], isExcludeMode: false) }
+        static var none: Filter { Filter(accountIDs: [], shownAccountIDs: [], excludedAccountIDs: []) }
     }
 
     /// La cuenta de un gasto o un ingreso nuevo (y el origen de una transferencia).
@@ -55,7 +56,7 @@ nonisolated enum TransactionAccountPrefillLogic {
         let allowed = candidates.filter { $0.isActive && passes($0.id, filter: filter) }
 
         // (1) Filtro de una cuenta.
-        if !filter.isExcludeMode, filter.shownAccountIDs.count == 1, let only = filter.shownAccountIDs.first,
+        if filter.shownAccountIDs.count == 1, let only = filter.shownAccountIDs.first,
            allowed.contains(where: { $0.id == only }) {
             return only
         }
@@ -77,7 +78,7 @@ nonisolated enum TransactionAccountPrefillLogic {
     }
 
     /// El destino de una transferencia: vacío, salvo que haya exactamente dos cuentas; entonces, la que no es el origen.
-    /// Solo el modo excluir lo impide (nunca una excluida): con el Panel filtrado por el origen, la otra cuenta queda
+    /// Solo ocultarla lo impide (nunca una oculta): con el Panel filtrado por el origen, la otra cuenta queda
     /// fuera del filtro y es justo adonde se pasa el dinero.
     static func transferDestination<ID: Hashable>(
         candidates: [Candidate<ID>],
@@ -88,13 +89,13 @@ nonisolated enum TransactionAccountPrefillLogic {
         guard choosable.count == 2, let source,
               choosable.contains(where: { $0.id == source }),
               let other = choosable.first(where: { $0.id != source }),
-              !(filter.isExcludeMode && filter.accountIDs.contains(other.id)) else { return nil }
+              !filter.excludedAccountIDs.contains(other.id) else { return nil }
         return other.id
     }
 
-    /// ¿El filtro deja dentro esta cuenta? Sin filtro, todas; en modo incluir, las del conjunto; en excluir, las demás.
+    /// ¿El filtro deja dentro esta cuenta? Si hay incluidas, tiene que estar entre ellas; y nunca entre las ocultas.
     static func passes<ID: Hashable>(_ id: ID, filter: Filter<ID>) -> Bool {
-        guard !filter.accountIDs.isEmpty else { return true }
-        return filter.isExcludeMode ? !filter.accountIDs.contains(id) : filter.accountIDs.contains(id)
+        if !filter.accountIDs.isEmpty, !filter.accountIDs.contains(id) { return false }
+        return !filter.excludedAccountIDs.contains(id)
     }
 }

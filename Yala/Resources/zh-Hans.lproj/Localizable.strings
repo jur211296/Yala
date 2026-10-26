@@ -7053,10 +7053,6 @@
 "filters.l8.discardMessage" = "你的选择不会生效。";
 "filters.l8.keepChoosing" = "继续选择";
 "filters.l8.discard" = "放弃";
-"filters.l8.switchToExcludeTitle" = "切换到“隐藏”吗？";
-"filters.l8.switchToIncludeTitle" = "切换到“只显示”吗？";
-"filters.l8.switchMessage" = "已选的内容会被清除。";
-"filters.l8.switchConfirm" = "切换";
 "filters.l8.typeLivesInShowOnly" = "只看支出或只看收入，请用“只显示”。";
 "filters.l8.amountTitle" = "金额";
 "filters.l8.amountNeedsOneCurrency" = "要按金额筛选，请在上方只选一种货币。";
@@ -8403,3 +8399,22 @@
 
 /* Nota bajo «Desasociarla y seguir»: el desasociar no alcanza la copia local de otro dispositivo */
 "storage.migrateBlock.detachNote" = "如果你在其他设备上为群组使用这个账户，那里仍会保持关联。";
+
+
+/* Tocar un segmento: ver solo ese valor. %@ = nombre */
+"filters.segment.showOnly" = "只显示%@";
+
+/* Tocar un segmento: ocultar ese valor. %@ = nombre */
+"filters.segment.hide" = "隐藏%@";
+
+/* Tocar un segmento ya filtrado: quitar su filtro */
+"filters.segment.clear" = "移除筛选";
+
+/* Cápsula de un filtro de «ver solo». %@ = nombre */
+"filters.segment.chipIncluded" = "仅%@";
+
+/* VoiceOver: valor de la cápsula de un filtro de «ver solo» */
+"filters.segment.chipIncludedValue" = "只显示此项";
+
+/* Hoja de Filtros: las dos pestañas se combinan */
+"filters.segment.combineHint" = "两者可以组合：只显示某些内容的同时隐藏其他内容。";

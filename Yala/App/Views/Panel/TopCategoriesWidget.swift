@@ -20,7 +20,6 @@ struct TopCategoriesWidget: View {
 
     // Filter State
     var selectedCategoryID: PersistentIdentifier?
-    var isExcludeMode: Bool = false
     var onSelectCategory: ((PersistentIdentifier) -> Void)?
 
     // Placeholder for future navigation
@@ -183,13 +182,7 @@ struct TopCategoriesWidget: View {
 
     private func categoriesList(limit: Int) -> some View {
         VStack(spacing: DS.Spacing.lg) {
-            // In exclude mode, hide excluded items entirely
-            let visibleCategories: [CategorySpendingSummary] = {
-                if isExcludeMode, let excludedID = selectedCategoryID {
-                    return categories.filter { $0.id != excludedID }
-                }
-                return categories
-            }()
+            let visibleCategories: [CategorySpendingSummary] = categories
 
             if let maxAmount = visibleCategories.first?.amount {
                 let displayedCategories =
@@ -197,8 +190,7 @@ struct TopCategoriesWidget: View {
                 ForEach(displayedCategories) { summary in
                     let isSelected = selectedCategoryID != nil && selectedCategoryID == summary.id
                     let isAnySelected = selectedCategoryID != nil
-                    // In exclude mode, excluded items are hidden — no dimming needed
-                    let shouldDim = !isExcludeMode && isAnySelected && !isSelected
+                    let shouldDim = isAnySelected && !isSelected
 
                     Button {
                         // «Sin categoría» no tiene categoría que filtrar: no hace nada.
@@ -228,14 +220,7 @@ struct TopCategoriesWidget: View {
             if categories.isEmpty {
                 smallEmptyState
             } else {
-                // En exclude mode, el item excluido se esconde (espejo del largeLayout);
-                // en modo normal todos son visibles y el dim se aplica por row.
-                let visibleCategories: [CategorySpendingSummary] = {
-                    if isExcludeMode, let excludedID = selectedCategoryID {
-                        return categories.filter { $0.id != excludedID }
-                    }
-                    return categories
-                }()
+                let visibleCategories: [CategorySpendingSummary] = categories
 
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     PanelSmallWidgetHeader(
@@ -261,7 +246,7 @@ struct TopCategoriesWidget: View {
         let color = Color(hex: summary.colorHex)
         let clampedPercentage = max(0, min(100, summary.percentage))
         let isSelected = selectedCategoryID != nil && selectedCategoryID == summary.id
-        let shouldDim = !isExcludeMode && selectedCategoryID != nil && !isSelected
+        let shouldDim = selectedCategoryID != nil && !isSelected
 
         Button {
             // «Sin categoría» no tiene categoría que filtrar: no hace nada.

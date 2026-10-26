@@ -19,7 +19,6 @@ struct TagsPieWidget: View {
     var selectedTagIDs: Set<PersistentIdentifier> = []
     var onSelectTag: ((PersistentIdentifier) -> Void)?
     var onShowDetail: (() -> Void)? = nil
-    var isExcludeMode: Bool = false
 
     var size: WidgetSize = .medium
 
@@ -42,11 +41,6 @@ struct TagsPieWidget: View {
 
     private var filteredTotalExpense: Double {
         guard !selectedTagIDs.isEmpty else { return totalExpense }
-        if isExcludeMode {
-            return tags
-                .filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
-                .reduce(0) { $0 + $1.amount }
-        }
         return tags
             .filter { selectedTagIDs.contains($0.tag.persistentModelID) }
             .reduce(0) { $0 + $1.amount }
@@ -353,10 +347,6 @@ struct TagsPieWidget: View {
     }
 
     private func shouldShowLabel(for item: PieChartData) -> Bool {
-        if isExcludeMode {
-            // Excluded items already removed; show labels by percentage threshold
-            return item.percentage > 4.0
-        }
         if !selectedTagIDs.isEmpty {
             guard let id = item.id else { return false }
             return selectedTagIDs.contains(id)
@@ -578,8 +568,6 @@ struct TagsPieWidget: View {
     }
 
     private func isDimmed(_ item: PieChartData) -> Bool {
-        // In exclude mode, excluded items are already removed — no dimming needed
-        if isExcludeMode { return false }
         guard !selectedTagIDs.isEmpty else { return false }
         guard let id = item.id else { return true }
         return !selectedTagIDs.contains(id)
@@ -609,14 +597,7 @@ struct TagsPieWidget: View {
     private func processChartData() -> [PieChartData] {
         let threshold = size == .large ? 12 : 20
 
-        // In exclude mode, remove excluded items entirely
-        let visibleTags: [TagSpendingSummary]
-        if isExcludeMode && !selectedTagIDs.isEmpty {
-            visibleTags = tags.filter { !selectedTagIDs.contains($0.tag.persistentModelID) }
-        } else {
-            visibleTags = tags
-        }
-
+        let visibleTags: [TagSpendingSummary] = tags
         // Recalculate total from visible items
         let visibleTotal = visibleTags.reduce(0) { $0 + $1.amount }
 

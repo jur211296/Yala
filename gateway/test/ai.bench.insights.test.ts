@@ -155,6 +155,18 @@ describe("cuerpos = los de la app", () => {
     expect(sinPais).toContain("País del usuario: no especificado — usa español neutro.");
   });
 
+  it("Insights: «Solo» y «Excluyendo» a la vez entran como «mixed», con la rama propia del prompt (opción B)", () => {
+    const filters = { mode: "include" as const, categories: ["Comida"], excluded: { accounts: ["Ahorros"] } };
+    expect(cardsPayload({ ...baseCards, filters }).active_filters).toEqual({
+      mode: "mixed", categories: ["Comida"], excluded_accounts: ["Ahorros"],
+      summary: "Excluyendo cuentas: Ahorros. Solo categorías: Comida",
+    });
+    const sys = msgs(cardsBody({ ...baseCards, filters }))[0].content;
+    expect(sys).toContain("FILTROS ACTIVOS (INCLUSIÓN Y EXCLUSIÓN): Excluyendo cuentas: Ahorros. Solo categorías: Comida\nIMPORTANTE:");
+    const solo = msgs(cardsBody({ ...baseCards, filters: { mode: "include", categories: ["Comida"] } }))[0].content;
+    expect(solo).toContain("FILTROS ACTIVOS (INCLUSIÓN): Solo categorías: Comida\nIMPORTANTE:");
+  });
+
   it("Insights: los datos son los de `buildAggregatedData` (orden del Swift, `Int()` trunca, N/A, barra escapada)", () => {
     const user = msgs(cardsBody({ ...baseCards, filters: { mode: "include", categories: ["Comida"] } }))[1].content;
     expect(user.startsWith("Datos financieros del periodo:\n{")).toBe(true);

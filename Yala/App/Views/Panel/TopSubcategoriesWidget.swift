@@ -42,7 +42,6 @@ struct TopSubcategoriesWidget: View {
 
     // Selected Subcategory IDs (for dimming others) - uses PersistentIdentifier for uniqueness
     var selectedSubcategoryIDs: Set<PersistentIdentifier> = []
-    var isExcludeMode: Bool = false
 
     // Navigation Action
     var onShowMore: (() -> Void)? = nil
@@ -293,24 +292,14 @@ struct TopSubcategoriesWidget: View {
                 return subcategories
             }()
 
-            // In exclude mode, hide excluded items entirely
-            let visibleSubcategories: [SubcategorySpendingSummary] = {
-                if isExcludeMode && !selectedSubcategoryIDs.isEmpty {
-                    return filteredSubcategories.filter {
-                        guard let id = $0.persistentID else { return true }
-                        return !selectedSubcategoryIDs.contains(id)
-                    }
-                }
-                return filteredSubcategories
-            }()
+            let visibleSubcategories: [SubcategorySpendingSummary] = filteredSubcategories
 
             // Find max amount for bar scaling from visible list
             if let maxAmount = visibleSubcategories.first?.amount {
                 let displayed = Array(visibleSubcategories.prefix(limit))
                 ForEach(displayed) { summary in
                     let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
-                    // In exclude mode, excluded items are hidden — no dimming needed
-                    let isDimmed = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
+                    let isDimmed = !selectedSubcategoryIDs.isEmpty && !isSelected
 
                     Button {
                         if let persistentID = summary.persistentID {
@@ -359,7 +348,7 @@ struct TopSubcategoriesWidget: View {
     }
 
     /// PP2-06: aplica el filtro global de categoría (consistencia con medium/large)
-    /// y esconde los excluidos en exclude mode. No aplica `localCategoryFilterID`
+    /// (lo oculto ya llega fuera de los datos). No aplica `localCategoryFilterID`
     /// porque el picker no está disponible en `.small`.
     private var visibleSubcategoriesForSmall: [SubcategorySpendingSummary] {
         let globallyFiltered: [SubcategorySpendingSummary] = {
@@ -369,12 +358,6 @@ struct TopSubcategoriesWidget: View {
             return subcategories
         }()
 
-        if isExcludeMode, !selectedSubcategoryIDs.isEmpty {
-            return globallyFiltered.filter {
-                guard let id = $0.persistentID else { return true }
-                return !selectedSubcategoryIDs.contains(id)
-            }
-        }
         return globallyFiltered
     }
 
@@ -383,7 +366,7 @@ struct TopSubcategoriesWidget: View {
         let color = Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex)
         let clampedPercentage = max(0, min(100, summary.percentageOfTotal))
         let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
-        let shouldDim = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
+        let shouldDim = !selectedSubcategoryIDs.isEmpty && !isSelected
 
         Button {
             if let persistentID = summary.persistentID {

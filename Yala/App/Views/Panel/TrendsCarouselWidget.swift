@@ -35,8 +35,8 @@ struct TrendsCarouselWidget: View {
 
     // MARK: - Data
 
+    /// Solo lo INCLUIDO («Solo Comida») convierte la vista en gastos; ocultar una categoría no.
     private var hasCategoryFilters: Bool {
-        guard !sessionState.isExcludeMode else { return false }
         return !sessionState.selectedCategoryIDs.isEmpty
             || !sessionState.selectedSubcategoryIDs.isEmpty
             || !sessionState.selectedNeeds.isEmpty

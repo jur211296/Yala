@@ -444,6 +444,8 @@ struct DetailContainerView: View {
                 insightsViewModel: insightsViewModel,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
+            // Tocar un segmento pregunta «Ver solo / Ocultar» (propuesta A, 2026-10-25).
+            .segmentFilterChoiceHost()
             .accessibilityIdentifier("stats_tab_categories")
         case .records:
             recordsContent
@@ -935,7 +937,7 @@ private struct SessionStateObservers: ViewModifier {
             .onChange(of: sessionState.selectedPeriod) { recalculateData() }
             .onChange(of: sessionState.selectedAccountIDs) { recalculateData() }
             .onChange(of: sessionState.selectedCategoryIDs) {
-                if !sessionState.isExcludeMode && !sessionState.selectedCategoryIDs.isEmpty {
+                if !sessionState.selectedCategoryIDs.isEmpty {
                     let selectedCats = categories.filter {
                         sessionState.selectedCategoryIDs.contains($0.persistentModelID)
                     }
@@ -946,13 +948,13 @@ private struct SessionStateObservers: ViewModifier {
                 recalculateData()
             }
             .onChange(of: sessionState.selectedNeeds) {
-                if !sessionState.isExcludeMode && !sessionState.selectedNeeds.isEmpty {
+                if !sessionState.selectedNeeds.isEmpty {
                     sessionState.selectedTransactionNatures = [.expense]
                 }
                 recalculateData()
             }
             .onChange(of: sessionState.selectedSubcategoryIDs) {
-                if !sessionState.isExcludeMode && !sessionState.selectedSubcategoryIDs.isEmpty {
+                if !sessionState.selectedSubcategoryIDs.isEmpty {
                     let selectedSubs = subcategories.filter {
                         sessionState.selectedSubcategoryIDs.contains($0.persistentModelID)
                     }
@@ -967,7 +969,7 @@ private struct SessionStateObservers: ViewModifier {
             .onChange(of: sessionState.selectedTransactionNatures) { recalculateData() }
             .onChange(of: sessionState.amountCondition) { recalculateData() }
             .onChange(of: sessionState.searchText) { recalculateData() }
-            .onChange(of: sessionState.isExcludeMode) { recalculateData() }
+            .onChange(of: sessionState.excludedFilterSets) { recalculateData() }
             .onChange(of: sessionState.selectedTrendMetric) { recalculateData() }
             .onChange(of: sessionState.customDateRange) { recalculateData() }
     }

@@ -20,7 +20,6 @@ struct BudgetsWidget: View {
 
     /// Currently selected budget ID for highlighting
     var selectedBudgetID: PersistentIdentifier?
-    var isExcludeMode: Bool = false
 
     // Interaction callbacks
     var onSelectBudget: ((Budget) -> Void)?
@@ -127,7 +126,7 @@ struct BudgetsWidget: View {
             ForEach(displayedBudgets) { summary in
                 let isSelected = selectedBudgetID == summary.budget.persistentModelID
                 let isAnySelected = selectedBudgetID != nil
-                let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
+                let shouldDim = isAnySelected && !isSelected
 
                 Button {
                     DS.Haptic.selection()
@@ -176,13 +175,7 @@ struct BudgetsWidget: View {
             if budgets.isEmpty {
                 smallEmptyState
             } else {
-                // A8: exclude mode oculta el budget excluido (espejo del patrón de TopCategoriesWidget).
-                let visibleBudgets: [BudgetSummary] = {
-                    if isExcludeMode, let excludedID = selectedBudgetID {
-                        return budgets.filter { $0.budget.persistentModelID != excludedID }
-                    }
-                    return budgets
-                }()
+                let visibleBudgets: [BudgetSummary] = budgets
 
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     PanelSmallWidgetHeader(
@@ -214,7 +207,7 @@ struct BudgetsWidget: View {
         let clampedPercentage = max(0, min(100, summary.percentage))
         let isSelected = selectedBudgetID == summary.budget.persistentModelID
         let isAnySelected = selectedBudgetID != nil
-        let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
+        let shouldDim = isAnySelected && !isSelected
 
         Button {
             DS.Haptic.selection()

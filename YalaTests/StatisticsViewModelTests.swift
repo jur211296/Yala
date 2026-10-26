@@ -137,18 +137,13 @@ struct StatisticsViewModelTests {
         #expect(vm.hasCategoryFilters == true)
     }
 
-    @MainActor @Test func hasCategoryFilters_falseInExcludeMode() {
+    @MainActor @Test func hasCategoryFilters_falseWhenNeedsAreOnlyHidden() {
         let vm = makeVM()
-        // Set exclude mode FIRST (didSet clears selections)
-        vm.isExcludeMode = true
-        // Then set needs so they survive
-        vm.selectedNeeds = [.essential]
-        // Sanity: needs are actually populated
-        #expect(vm.selectedNeeds == [.essential])
-        // Guard clause returns false despite active filters
+        defer { vm.excludedNeeds.removeAll() }
+        // Ocultar una necesidad quita cosas, no acota a ellas: no convierte la vista en «solo gastos».
+        vm.excludedNeeds = [.essential]
+        #expect(vm.excludedNeeds == [.essential])
         #expect(vm.hasCategoryFilters == false)
-        // Cleanup singleton state
-        vm.isExcludeMode = false
     }
 
     // MARK: - clearFilters
@@ -157,7 +152,8 @@ struct StatisticsViewModelTests {
         let vm = makeVM()
         vm.selectedNeeds = [.essential]
         vm.searchText = "test"
-        vm.isExcludeMode = true
+        vm.excludedTags = []
+        vm.excludedNeeds = [.optional]
 
         vm.clearFilters()
 
@@ -169,7 +165,7 @@ struct StatisticsViewModelTests {
         #expect(vm.selectedTransactionNatures.isEmpty)
         #expect(vm.selectedCurrencies.isEmpty)
         #expect(vm.searchText == "")
-        #expect(vm.isExcludeMode == false)
+        #expect(vm.excludedNeeds.isEmpty)
     }
 
     // MARK: - setMetricManually
