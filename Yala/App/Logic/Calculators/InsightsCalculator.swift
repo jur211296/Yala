@@ -82,7 +82,12 @@ struct QuickStats {
 
 struct HighestExpenseInfo {
     let amount: Double
+    /// Lo que se enseña en pantalla: la nota del gasto, o su subcategoría/categoría si no tiene.
     let note: String
+    /// Lo que viaja a la IA: subcategoría, categoría o «sin categoría». **Nunca la nota**, que es texto libre de la
+    /// persona y el permiso de Observaciones promete agregados (card `ve42`, ticket
+    /// `insights-cards-send-the-note-of-the-largest-expense`).
+    let categoryLabel: String
 }
 
 struct HighestAvgWeekdayInfo {
@@ -559,7 +564,7 @@ struct InsightsCalculator {
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> HighestExpenseInfo? {
-        var highest: (amount: Double, note: String)? = nil
+        var highest: (amount: Double, note: String, categoryLabel: String)? = nil
 
         for tx in transactions {
             guard !adjustment.isSuppressed(tx) else { continue }
@@ -570,13 +575,14 @@ struct InsightsCalculator {
             let amount = txAmount(tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter)
 
             if highest.map({ amount > $0.amount }) ?? true {
-                let note = tx.note ?? tx.subcategory?.name ?? tx.category?.name ?? L10n.Report.uncategorized
-                highest = (amount, note)
+                let categoryLabel = tx.subcategory?.name ?? tx.category?.name ?? L10n.Report.uncategorized
+                let note = tx.note ?? categoryLabel
+                highest = (amount, note, categoryLabel)
             }
         }
 
         guard let h = highest else { return nil }
-        return HighestExpenseInfo(amount: h.amount, note: h.note)
+        return HighestExpenseInfo(amount: h.amount, note: h.note, categoryLabel: h.categoryLabel)
     }
 
     /// El tramo sobre el que se cuentan los días de un promedio. Es el intervalo del período, salvo en «Todo el tiempo»,

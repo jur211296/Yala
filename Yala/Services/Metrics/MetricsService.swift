@@ -41,7 +41,6 @@ enum MetricsCanary: String {
     case cloudkitDuplicateDetected
     case cloudkitTransferOrphanRepaired
     case cloudkitTransferCollisionDetected
-    case cloudkitBudgetCSVMirrorRebuilt
     case budgetFiltersAppearEmpty
     case appEntityShortcutIDsRegenerated
     case tagCatalogRebuilt
@@ -93,14 +92,11 @@ enum MetricsCanary: String {
     /// pierde el aviso, que vuelve en el arranque siguiente, y no la sesión. Sin `detail`.
     case appleIDCloseNoticeNotPresented
     case iCloudRestoreOutcome
-    case cloudkitGroupSyncGateHardCap
-    case cloudkitGroupSyncPromotedToAuto
-    case cloudkitGroupSyncNoImportPromote
-    case cloudkitGroupZoneRecovered
-    case cloudkitGroupRecordsRecovered
-    case cloudkitGroupRecordSaveRejected
-    case cloudkitGroupEnqueueDroppedNoEngine
-    case groupsIdentityBootMismatch
+    /// La vuelta a iCloud se le niega a un teléfono en la nube SIN mapa de CloudKit y sin marca born-cloud
+    /// (`ReverseEligibility.degradedNoMap`): un migrado que perdió el mapa, la población a la que volver le
+    /// resucitaría borrados. Una vez por proceso (la pantalla decide cada segundo). Lo prometía el diseño desde
+    /// septiembre y nadie lo emitía (card `yf9t`). Sin `detail`.
+    case cloudReverseDegradedNoMap
     /// El gate de boot-saves del store personal (`awaitPersonalImportForBootSave`) difirió ≥3 veces
     /// CONSECUTIVAS sin que ningún save resolviera entremedio — señal SUAVE: los ~8 boot-tasks
     /// concurrentes comparten el contador (resets intercalados), así que el umbral puede alcanzarse
@@ -336,8 +332,6 @@ enum MetricsCanary: String {
     /// relevara a la bienvenida, y volvió la bienvenida normal. `detail` = cómo se abrió (`cold`/`warm`). >0 sostenido =
     /// algo vuelve a retrasar el encaminamiento de la invitación en el arranque.
     case inviteOpeningCeilingReached
-    case inviteReEmittedFromStore
-    case invitePendingExpired
 
     // Reparador de tasas provisionales (arranque)
     /// El barrido de arranque recorrió la cola de transacciones con tasa provisional y **no curó
@@ -952,14 +946,6 @@ extension MetricsService {
 
     static func routingWelcomeChainSuperseded(intentID: String) {
         canary(.routingWelcomeChainSuperseded, detail: intentID)
-    }
-
-    static func inviteReEmittedFromStore() {
-        canary(.inviteReEmittedFromStore)
-    }
-
-    static func invitePendingExpired() {
-        canary(.invitePendingExpired)
     }
 
     static func cloudkitTransferOrphanRepaired(orphansCleared: Int, pairedCount: Int) {

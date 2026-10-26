@@ -1,10 +1,10 @@
 ---
 id: paywall-storekit-alert-is-never-cleared
-status: backlog
+status: done
 priority: low
 area: pro, paywall, storekit
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-25
 source: lote decidido 2.2 · 06 — Yala Pro (encargo 2026-10-19-lote-decidido-2-2-06-yala-pro, PR #561)
 ---
 
@@ -21,3 +21,10 @@ El lote 06 lo arregló en «Función Pro» (`UpgradePromptSheet.clearStoreAlert(
 ## Arreglo
 
 Vaciar los dos al cerrar la alerta en las dos vistas, con el mismo molde.
+
+## Hecho (2026-10-25, lote 12.7, card y5zz)
+
+`SubscriptionView` y `ProTrialOfferSheet` vacían `errorMessage` y `alertTitle` al cerrar el aviso, con el molde de
+`UpgradePromptSheet.clearStoreAlert()`. Lo fija `YalaTests/StoreKitAlertClearedOnDismissTests`: recorre `Yala/` entero,
+exige que todo `.alert(store.alertTitle …` llame a `clearStoreAlert()` en su botón y que esa función vacíe los dos
+campos, y cuenta las tres vistas (una cuarta que copie el aviso entra sola en el scan).

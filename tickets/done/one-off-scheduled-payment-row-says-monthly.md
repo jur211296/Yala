@@ -1,10 +1,10 @@
 ---
 id: one-off-scheduled-payment-row-says-monthly
-status: qa
+status: done
 priority: medium
 area: "pagos-programados"
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-10-25
 source: "auditoría UX 2.2 · lote 4 (voz, foto, compartir y la Bandeja), 2026-10-14; encontrado fuera del lote"
 ---
 
@@ -33,3 +33,7 @@ Un pago con `isRecurring == false` dice «Una vez» (o nada) en su fila, con tes
 La fila de la lista, el detalle, Ajustes › Pagos planificados y el flujo de caja nombran la frecuencia con una sola regla (`ScheduledPaymentDetailLogic.frequencyText`): «Una sola vez», «Mensual» o «Cada 2 meses». Medido en el simulador creando un pago «una sola vez» a mano (`B1-despues-lista.png` en la entrega del lote 10). Tests: `ScheduledPaymentDetailLogicTests`, `ScheduledPaymentWiringTests`. Falta el QA en un iPhone.
 
 Es el mismo bug que `scheduled-payment-once-labeled-monthly`.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Arreglado en el PR #503 (`ScheduledPaymentDetailLogic.frequencyText`, con tests); su card (lote 10 · B1, 159d) está en done sin pedir iPhone.

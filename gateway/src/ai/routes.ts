@@ -322,6 +322,10 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
  * política de privacidad web publicada, DPA y nivel de pago, la clave como secret del Worker y su `LEGACY_OVERRIDES` de
  * OpenAI). No las lee ningún código: encender una = moverla a `ROUTES` y poner en `LEGACY_OVERRIDES` la fila de OpenAI
  * que hoy está en `ROUTES`.
+ *
+ * **Primero la política**: `test/ai.policy-providers.test.ts` se pone rojo si una fila activa usa un proveedor que la
+ * lista de proveedores de la política web (`Web/src/i18n/translations.ts`, seis idiomas) no nombra. Se actualiza y se
+ * publica la política (rama 1.0) ANTES de encender; nunca se relaja el test para encender.
  */
 export const PREPARED_ROUTES: Readonly<Partial<Record<TaskId, ManagedRoute>>> = {
   // Tendencias, banco del 2026-10-07: 100 % como gpt-6.1-sol, a un tercio del precio (1,47 USD por 1 000; ~2,95 desde el

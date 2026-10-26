@@ -1,10 +1,10 @@
 ---
 id: first-panel-says-available-zero-next-to-the-opening-balance
-status: qa
+status: done
 area: panel
 priority: low
 created: 2026-10-13
-updated: 2026-10-17
+updated: 2026-10-25
 source: auditoría UX 2.2, pasada UI del lote 1 (primera vez y onboarding)
 ---
 
@@ -46,3 +46,7 @@ línea «Entró − salió» cuadra con la cifra. Captura en `_capturas/2026-10-
 «Quitar del Panel la línea «Entró … − salió …» bajo el hero»): repetía los importes de las pastillas de encima. El mensaje
 sin movimientos («Aún no tienes registros…» y «Tienes S/ … en tus cuentas») sigue igual. Al probar este ticket, la cifra
 cuadra con las pastillas «Entró»/«Salió».
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Variante 2 implementada (PR #537) y vista en el simulador; su card (L3-1, dg5z) está en done.

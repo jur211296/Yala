@@ -1358,6 +1358,17 @@ struct ContentView: View {
             dismissWelcomeChainForSupersedingIntent(for: next.id)
             applyContentViewReadiness()  // recompute síncrono → markReady(.contentView)
         }
+        // **La matriz se re-mide VIVA antes de drenar** (card pvwt, ticket
+        // `maintab-drain-publishes-its-sheet-after-contentview-may-drain`). El router dice «listo» con lo que la matriz
+        // supo en su último `onChange`; una hoja que MainTab acaba de abrir publica `isMainTabModalVisible` en la misma
+        // vuelta, pero la matriz solo se entera por su observador, que puede correr DESPUÉS del `onChange(of: revision)`
+        // (el orden que en iOS 26.5 destapó el ticket hermano). Tapada de verdad, se bloquea en el acto y no se drena:
+        // al soltarse, la liberación de siempre sube la `revision` y drena.
+        // Por `update…`, que con la matriz tapada bloquea en el acto y nunca libera aquí dentro.
+        if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil {
+            updateContentViewReadiness()
+            return
+        }
         // Los diferibles esperan a que se cierre la hoja; los críticos que vengan detrás salen igual.
         guard let intent = AppRouter.shared.drainNext(
             for: .contentView, in: navigation.id, skipping: heldForForeignPresentation)
@@ -4417,6 +4428,13 @@ struct MainTabView: View {
         guard let intent = AppRouter.shared.drainNext(for: .mainTab, in: navigation.id) else { return }
         RouterHoldCanary.shared.noteDrained(intentID: intent.id)
         handleMainTabIntent(intent)
+        // La hoja que el manejador acaba de abrir se publica en ESTA vuelta, no en el `onChange` de su flag (card pvwt):
+        // en esa ventana el drenaje de `.contentView` veía la matriz libre y podía sacar un aviso encima. Sin re-drenar:
+        // `drainNext` ya subió la `revision`. Lee el `@State` real, así que un manejador que decide no presentar no deja
+        // el flag puesto.
+        if navigation.isMainTabModalVisible != ownModalVisible {
+            navigation.isMainTabModalVisible = ownModalVisible
+        }
     }
 
     /// Cerrar una hoja de otra pestaña no cambia nada que `MainTabView` observe: se vuelve a mirar cada 300 ms mientras

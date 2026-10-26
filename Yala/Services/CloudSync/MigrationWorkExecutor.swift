@@ -162,9 +162,8 @@ extension SyncPullClient: ReverseTombstoneSource {
 /// mapa. El precio es un falso negativo conservador —un born-cloud que entra en un SEGUNDO dispositivo no
 /// verá el botón—, con ticket propio.
 ///
-/// El canario `cloudReverseDegradedNoMap` que este docblock prometía **no lo emite nadie** (medido: cero
-/// llamadores en `Yala/`, y no es ni un caso de `MetricsCanary`); no se añade aquí para no ampliar el
-/// alcance → anotado en `canarios-y-breadcrumbs-sin-emisor`.
+/// El canario `cloudReverseDegradedNoMap` lo emite desde el 2026-10-25 `CloudMigrationController.reverseEligibility`
+/// (una vez por proceso) al decidir `degradedNoMap`: hasta ese día este docblock lo prometía y no existía (card `yf9t`).
 nonisolated enum ReverseEligibility {
     enum Decision: Equatable {
         case eligible

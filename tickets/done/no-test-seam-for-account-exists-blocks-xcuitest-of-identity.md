@@ -1,10 +1,10 @@
 ---
 id: no-test-seam-for-account-exists-blocks-xcuitest-of-identity
-status: backlog
+status: done
 priority: medium
 area: "testing, modo-nube, onboarding"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-10-25
 source: "medido durante `cloud-sign-in-discovers-account-kind` (bloque [I])"
 ---
 
@@ -54,3 +54,21 @@ que hoy solo verifica el owner en device pasan a ser deterministas.
 - El área `cloud-born-cloud-signup` de `qa/coverage-index.json` sigue `manual`.
 
 Triage 2026-10-08: abierto · medium → medium · sigue sin seam de `/account/exists` para el Welcome; el único seam de identidad (`-uitest-fake-migration-identity`) cubre solo la puerta de Ajustes.
+
+## Hecho (2026-10-25, lote 12.7, card er5c)
+
+`-uitest-fake-account-exists <new|complete|groupsOnly|offline>` (`UITestHooks.fakeAccountExists`, solo DEBUG y solo con
+`-uitest`): `CloudAuthService.signIn` deja una sesión fingida sin presentar Apple ni Google (con `currentUserID` fijo y SIN
+token), y `CloudAccountClient.exists` contesta el valor elegido antes de tocar la red. Nada sale a la red: `exists` es el
+único que recibe el JWT fingido de `CloudIdentityDiscovery`, y contesta antes de usarlo. Qué pantalla sale lo decide la
+tabla [I] de siempre.
+
+`YalaUITests/Flows/WelcomeAccountExistsUITests` (5 casos, en verde):
+- [x] «Ya tengo cuenta» + cuenta inexistente → «No encontramos una cuenta» con «Crear mi cuenta» (y su control sin App
+      Attest: solo «Volver»).
+- [x] «Ya tengo cuenta» + solo grupos → la cadena de Grupos (su consentimiento), sin adopt.
+- [x] Puerta de Grupos de un teléfono privado + cuenta completa → el bloqueo. Que no escriba ninguna key lo fija el
+      `guard destino != .blockedAccountIsComplete` del callback de éxito (`GroupsBackendInviteModifier`); el XCUITest
+      no puede leer `UserDefaults`.
+- [x] Sin red → «Reintentar», nunca «no tienes cuenta».
+- [x] `cloud-born-cloud-signup` en `qa/coverage-index.json` gana estos casos.

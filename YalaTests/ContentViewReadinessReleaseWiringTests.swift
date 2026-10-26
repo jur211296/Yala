@@ -113,6 +113,29 @@ struct ContentViewReadinessReleaseWiringTests {
         #expect(Self.occurrences(of: "defer {", in: drain) == 1)
     }
 
+    @Test func drain_remeasuresTheLiveMatrix_beforeDraining() throws {
+        // Card pvwt (ticket `maintab-drain-publishes-its-sheet-after-contentview-may-drain`): el router puede decir
+        // «listo» con una hoja de MainTab ya abierta y aún no observada por la matriz. El drenaje re-mide la matriz VIVA,
+        // tras el derribo B4-04 (que la deja libre a propósito) y antes de `drainNext`, y si está tapada bloquea por
+        // `update…` (nunca libera aquí) y no drena. Mutante: quitar el guard o moverlo detrás de `drainNext`.
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let drain = try Self.body(of: "private func drainContentViewIntents()", in: vista)
+        let guardText = "if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil { updateContentViewReadiness() return }"
+        let guardRange = try #require(drain.range(of: guardText))
+        let welcome = try #require(drain.range(of: "dismissWelcomeChainForSupersedingIntent(for: next.id)"))
+        let drainNext = try #require(drain.range(of: "AppRouter.shared.drainNext("))
+        #expect(welcome.upperBound < guardRange.lowerBound)
+        #expect(guardRange.upperBound < drainNext.lowerBound)
+    }
+
+    @Test func mainTabDrain_publishesItsSheetInTheSameTurn() throws {
+        // La otra mitad de pvwt: MainTab publica la hoja que su manejador acaba de abrir justo después de manejarlo,
+        // leyendo el `@State` real (`ownModalVisible`), no un `true` fijo que se quedaría puesto si no presenta nada.
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let drain = try Self.body(of: "private func drainMainTabIntents()", in: vista)
+        #expect(drain.hasSuffix("handleMainTabIntent(intent) if navigation.isMainTabModalVisible != ownModalVisible { navigation.isMainTabModalVisible = ownModalVisible }"))
+    }
+
     @Test func observers_recomputeThroughTheDeferredRelease() throws {
         // Los 28 `onChange` de `ReadinessGateObservers` son justo los que corrían dentro de la actualización.
         let vista = try Self.code("Yala/App/ContentView.swift")

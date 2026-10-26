@@ -1,10 +1,10 @@
 ---
 id: opening-balance-ticks-the-first-expense-step
-status: backlog
+status: done
 area: onboarding
 priority: medium
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-25
 source: auditoría UX 2.2, lote 2 (apuntar un movimiento a mano)
 ---
 
@@ -36,3 +36,7 @@ verdad de alguien que pasó por el onboarding.
 Si «primer gasto» cuenta solo los registros que la persona apunta (sin los de sistema), el paso quedaría pendiente
 hasta el primer gasto real y el aviso «¿Era de prueba?» aparecería entonces. Eso cambia cuándo sale ese aviso, que
 tuvo su propio bug (`first-expense-practice-alert-tears-down-the-success-screen`, cerrado): conviene probarlo junto.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+b5b2f3e87 (lote 5): el checklist solo cuenta registros del usuario (`SetupChecklistManager.countsAsUserRecord`), con tests en `SetupChecklistManagerTests`. No tenía card: se cierra sin crearla.

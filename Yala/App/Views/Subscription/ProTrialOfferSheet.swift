@@ -68,7 +68,9 @@ struct ProTrialOfferSheet: View {
             await loadProductsWithTimeout()
         }
         .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {
-            Button(L10n.Common.ok, role: .cancel) {}
+            // Vaciar el aviso al cerrarlo: con el mismo error otra vez, el `onChange` no volvía a saltar,
+            // y un título viejo titulaba el error siguiente (molde de `UpgradePromptSheet`).
+            Button(L10n.Common.ok, role: .cancel) { clearStoreAlert() }
         } message: {
             Text(store.errorMessage ?? "")
         }
@@ -92,6 +94,11 @@ struct ProTrialOfferSheet: View {
     }
 
     // MARK: - Helpers
+
+    private func clearStoreAlert() {
+        store.errorMessage = nil
+        store.alertTitle = nil
+    }
 
     private func loadProductsWithTimeout() async {
         await store.loadProducts()

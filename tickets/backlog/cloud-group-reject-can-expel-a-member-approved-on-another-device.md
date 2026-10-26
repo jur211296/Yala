@@ -22,3 +22,9 @@ Apruebo una solicitud en el iPad y, antes de que el iPhone se entere, la rechazo
 ## Lo que habría que decidir
 
 Si vale un RPC `reject_member` que solo actúe sobre `pendingApproval` (migración aditiva + allowlist y aviso del gateway, en los dos entornos), o se deja.
+
+## Cruce con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Absorbe a su duplicado `groups-reject-can-expel-a-member-approved-elsewhere` (descartado). Sigue sin `reject_member` en el
+gateway y `GroupService.rejectMember` sigue usando `remove(...)`. **El riesgo creció**: desde `set_member_role` (g22_01) un
+grupo puede tener varios administradores, así que «aprobado en otro dispositivo» ya no es solo el del mismo admin.

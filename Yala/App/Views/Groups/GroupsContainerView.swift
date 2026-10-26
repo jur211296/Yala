@@ -679,9 +679,11 @@ struct GroupsContainerView: View {
     }
 
     private func openPendingGroupIfAvailable() {
+        // El id local o el `group_id` del servidor: el push de Grupos trae el segundo (card `x6p9`).
         guard let groupID = navigation.pendingGroupID,
-              let uuid = UUID(uuidString: groupID),
-              let group = viewModel.activeGroups.first(where: { $0.id == uuid })
+              let group = viewModel.activeGroups.first(where: {
+                  GroupDeepLinkMatch.matches(pendingID: groupID, groupID: $0.id, zoneID: $0.cloudKitZoneID)
+              })
         else { return }
 
         navigation.pendingGroupID = nil

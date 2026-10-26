@@ -1,10 +1,10 @@
 ---
 id: gateway-has-no-telemetry
-status: backlog
+status: done
 priority: medium
 area: cloud, qa
 created: 2026-09-03
-updated: 2026-10-08
+updated: 2026-10-25
 source: medido por el panel de diseño de notificaciones (2026-09-03)
 ---
 
@@ -51,3 +51,16 @@ que eso sólo se ve guardando `authorization_status` al registrar el token. Va e
 - Gemelo relacionado, no duplicado: `gateway-does-not-record-ai-token-usage`. Los dos se arreglan con el mismo molde.
 
 Triage 2026-10-08: abierto · medium → medium · ningún camino del gateway llama a `writeDataPoint` (solo `metrics.ts:102`) y los canarios de push y sync siguen siendo `console.log` (`groups/routes.ts:303`).
+
+## Hecho (2026-10-25, lote 12.7, card 9f9u)
+
+`gateway/src/serverCanary.ts` escribe los canarios del gateway en Analytics Engine (mismo dataset y forma que
+`POST /metrics`, con `blob4 = 'gateway'`): push fallido, token podado y podado fallido, RPC de tokens no-2xx, fan-out sin
+APNs o sin `PUSH_ROLE_JWT`, registro de token fallido, las dos coherencias parciales, y una fila por fan-out con los
+avisos ENTREGADOS (`groupFanoutDelivered`, la serie que contesta «¿están llegando?»). Lista cerrada en `SERVER_CANARIES`;
+`gateway/test/serverCanary.unit.test.ts` (9 casos) fija la forma, cada emisión y que todos están documentados en
+`qa/cloud/README.md` § «Canarios del propio gateway», con su query.
+
+Fuera, con ticket propio: `authorization_status` al registrar el token
+(`push-token-does-not-record-the-notification-permission`), porque pide columna nueva en Supabase. La serie empieza a
+llenarse cuando se despliegue el Worker.

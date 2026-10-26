@@ -2234,7 +2234,7 @@ final class CloudMigrationController {
             #endif
             hasCKMap = nil
         }
-        return ReverseEligibility.decide(
+        let decision = ReverseEligibility.decide(
             // M1: modo PERSISTIDO del dueño — la reversa es SU travesía; una sesión secundaria
             // jamás debe volverse elegible por el `.cloud` efectivo derivado del descriptor.
             storageMode: Self.readPersistedStorageMode(),
@@ -2244,6 +2244,12 @@ final class CloudMigrationController {
             // un 2.º device adoptado y lo borra un botón DEBUG). Ver `StorageModePersistence.bornCloudKey`.
             isBornCloud: Self.readIsBornCloud(),
             journaledPhase: journaledPhase)
+        // Cuántos teléfonos quedan sin vuelta por no tener mapa (card `yf9t`). Una vez por proceso: esto corre en
+        // cada refresco de la pantalla.
+        if decision == .degradedNoMap {
+            MetricsService.canaryOnce(.cloudReverseDegradedNoMap, key: "process")
+        }
+        return decision
     }
 
     /// ¿El mirror local trae el marcador del líder? (P6: la card de `.icloud`+notStarted cambia a copy de

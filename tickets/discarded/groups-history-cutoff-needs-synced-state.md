@@ -1,11 +1,11 @@
 ---
 id: groups-history-cutoff-needs-synced-state
-status: backlog
+status: discarded
 priority: very-low
 area: "groups, bridge"
 created: 2026-09-11
 source: "paso 8 del rediseño de sesiones (`full-mode-activation-must-ask-where-personal-data-lives`), decisión D8 del Paso 0"
-updated: 2026-10-08
+updated: 2026-10-25
 ---
 
 # «No traer mis gastos de grupo» también oculta los que vengan después
@@ -57,3 +57,7 @@ gastos de grupo que ya existían».
 - **Recomendación: B** — el copy ya es honesto y el cambio es reversible en Ajustes; A es un cambio de dinero caro. Con B no queda trabajo (se descartaría), por eso `very-low`.
 
 Triage 2026-10-08: abierto · medium → very-low · Comportamiento sin cambios, pero el copy ya lo dice desde 697b5c9a1 («Vale también para los que registres después»); solo falta que Jürgen elija entre corte sincronizado o dejarlo.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Descartado sin trabajo: Jürgen aceptó la opción B del triage («dejar el corte como está»), card m43h; el aviso del copy ya está desde 697b5c9a1.

@@ -12,6 +12,7 @@
  *   header SEPARADO (`X-Yala-Attest-Session`) porque `Authorization` transporta el JWT de Supabase.
  */
 import type { Context } from "hono";
+import { serverCanary } from "../serverCanary";
 import type { Env } from "../env";
 import { jsonError } from "../errors";
 import { verifySessionToken, type SessionClaims } from "../attest/session";
@@ -218,6 +219,7 @@ async function applyOneDelta(c: Ctx, auth: AuthedUser, delta: SyncDelta): Promis
     if (shape.type === "coherence_group_partial") {
       // Canario cloudSyncCoherenceGroupPartial (§d.4bis/§j.4): >0 = write-site sin auditar.
       console.log(`[canary] cloudSyncCoherenceGroupPartial entity=${delta.entity_type} group=${shape.group ?? "?"} (${shape.detail})`);
+      serverCanary(c.env, "cloudSyncCoherenceGroupPartial", delta.entity_type);
       return {
         ...base,
         reason: `coherence_group_partial:${shape.group ?? shape.detail}`,

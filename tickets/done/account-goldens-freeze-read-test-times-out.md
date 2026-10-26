@@ -1,10 +1,10 @@
 ---
 id: account-goldens-freeze-read-test-times-out
-status: backlog
+status: done
 priority: medium
 area: qa, cloud
 created: 2026-09-03
-updated: 2026-10-08
+updated: 2026-10-25
 source: aparecido al correr la batería del gateway con credenciales vivas (2026-09-03)
 ---
 
@@ -120,3 +120,16 @@ npx vitest run test/account.goldens.test.ts -t "20. la cuenta congelada"
 - No corrido en este triage: pide credenciales de staging.
 
 Triage 2026-10-08: abierto · medium → medium · el golden 20 sigue con el timeout de 5 s por defecto y sin medir por qué tarda 9 s; la batería convive con un rojo conocido.
+
+## Hecho (2026-10-25, lote 12.7, card si8z)
+
+**Medido** con un `console.time` por GET, la cuenta congelada, contra staging: `/sync/pull?since=0&limit=1` 2,2 s,
+`/sync/merkle` 1,1 s, `/prefs/pull?since=0` 0,2 s — 3,4 s en total (los 9,3 s del 10-sep eran el corpus de B creciendo,
+cerrado el 12-oct con el relevo al custodio). El test lleva ahora su plazo (`{ timeout: 20_000 }`, el doble de lo peor
+medido) y el cuerpo de la respuesta en el mensaje: el invariante se comprueba de verdad.
+
+**Y al comprobarlo salió rojo, por otra cosa**: `/sync/merkle` → 502 `merkle upstream 400 (favorite_payments)`, igual con
+la cuenta congelada que descongelada. No es el freeze: el Worker de `2.2` ya pide `favorite_payments.destination_account_ref`
+(g24_01, `manifest_version: 4`) y en staging la migración no está aplicada (`docs/RUNBOOK-staging-ddl.md`, card da5d en
+«blocked», la aplica Jürgen). El rojo nombra su causa y se pone verde al aplicar g24_01 en staging; anotado en la card da5d.
+El CI no lo ve (sin credenciales, los goldens salen `skipped`).

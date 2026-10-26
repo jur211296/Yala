@@ -113,7 +113,14 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         }
         // 2) ¿Es nuestro? Contrato con el gateway: key top-level "yala" (jamás "ck").
         if let yala = userInfo["yala"] as? [AnyHashable: Any] {
-            PushBreadcrumb.received(kind: .yala(kind: yala["kind"] as? String))
+            let kind = yala["kind"] as? String
+            PushBreadcrumb.received(kind: .yala(kind: kind))
+            // Solo un kind que la app conoce baja los cambios de Grupos (card `x6p9`): el de depuración o uno nuevo
+            // del gateway no disparan un ciclo que nadie pidió.
+            guard GroupsPushKind.triggersGroupsSync(kind: kind) else {
+                completionHandler(.noData)
+                return
+            }
             // G8-2: disparar UN ciclo del canal, acotado por timeout (iOS da ~30s; 20s de margen).
             // Con el flag OFF / sin sesión / canal no arrancado, `syncNowFromPush` retorna rápido →
             // `.noData`. ⚠️ Cambio observable byte-consciente: HOY esta rama devolvía `.newData`

@@ -1,6 +1,6 @@
 ---
 id: groups-reject-can-expel-a-member-approved-elsewhere
-status: backlog
+status: discarded
 priority: low
 area: "groups, backend"
 created: 2026-10-16
@@ -34,3 +34,7 @@ sale así puede volver a entrar con el enlace: el re-join la deja otra vez pendi
 Un RPC `reject_member(p_group_id, p_member_key)` que exija `status = 'pendingApproval'` y devuelva
 `yala_member_not_found` en otro caso, y que `rejectMember` lo use. Es un cambio de servidor con deploy, fuera de una
 sesión de auditoría.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Duplicado de `cloud-group-reject-can-expel-a-member-approved-on-another-device`, que sigue abierto con su card. Lo que cuenta este ticket (un solo admin por grupo) ya no vale desde `set_member_role`: el riesgo es mayor, y está anotado allí.

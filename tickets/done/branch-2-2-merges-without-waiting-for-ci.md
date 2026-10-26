@@ -1,10 +1,10 @@
 ---
 id: branch-2-2-merges-without-waiting-for-ci
-status: backlog
+status: done
 priority: high
 area: "ci, proceso"
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-25
 source: barrido de QA 2.2 y arreglo del CI de 2.2 (PR #555), 2026-10-18
 ---
 
@@ -26,3 +26,7 @@ esta vez no entró nada roto. Fue suerte, no red.
 
 Añadir `refs/heads/2.2` al ruleset de `2.1`, o crear uno igual para `2.2`. Es un cambio de reglas del repositorio: lo
 decide Jürgen.
+
+## Cerrado en el cruce de tickets con el tablero (2026-10-25, lote 12.7, card oayf)
+
+Medido con `gh api`: el ruleset de `2.2` exige `tests` y `coverage-index` (decisión de Jürgen del 19-oct, card zggb en done).

@@ -44,6 +44,7 @@ import type {
 } from "./types";
 import type { SyncDeltaResult } from "../sync/types";
 import { sendPush } from "../push/apns";
+import { serverCanary } from "../serverCanary";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -185,6 +186,35 @@ export type FanOutAudience =
   /** Una persona concreta por su `member_key`, SIN filtro de status. Para «te respondieron». */
   | { kind: "member"; memberKey: string };
 
+/**
+ * Los `kind` que el gateway pone en `yala.kind`. **Contrato con la app**: `GroupsPushKind` (Swift) declara los
+ * mismos y `GroupsPushKindContractTests` lee este bloque. Uno nuevo se añade aquí y allí el mismo día; la app no
+ * sincroniza por un kind que no conoce (card `x6p9`).
+ * - `groups-sync`: actividad en un grupo (gastos, liquidaciones, cambios del grupo). La app baja los cambios.
+ * - `groups-membership`: alguien pide entrar, o te responden. También baja: el pendiente o el alta llegan por el pull.
+ */
+export const GROUP_PUSH_KINDS = ["groups-sync", "groups-membership"] as const;
+export type GroupPushKind = (typeof GROUP_PUSH_KINDS)[number];
+
+/** El `kind` de cada audiencia: los co-members ven actividad; admins y la persona afectada, membresía. */
+export function pushKindFor(audience: FanOutAudience): GroupPushKind {
+  return audience.kind === "coMembers" ? "groups-sync" : "groups-membership";
+}
+
+/**
+ * El `deepLink` que abre el grupo al tocar el aviso: `groups/<group_id>`, con el `group_id` del servidor TAL CUAL
+ * (`SplitGroup-<uuid>`). No se pela a uuid: en un grupo que llegó por el canal backend el `id` local NO es ese uuid
+ * (`SplitGroupZone.zoneName`), y la app lo resuelve por su `cloudKitZoneID`. Con varios grupos para el mismo
+ * dispositivo en una tanda, la lista de Grupos: no hay un grupo que sea «el» del aviso.
+ */
+export function groupDeepLink(groupIds: ReadonlySet<string>): string {
+  if (groupIds.size === 1) {
+    const [only] = groupIds;
+    return `groups/${only}`;
+  }
+  return "groups";
+}
+
 export async function fanOutGroupPush(
   env: Env,
   auth: { userJWT: string; sub: string },
@@ -201,18 +231,20 @@ export async function fanOutGroupPush(
   // Prod arranca así hasta que el owner cargue APNS_KEY_ID/APNS_AUTH_KEY (pendiente-owner en wrangler.toml).
   if (!env.APNS_AUTH_KEY || !env.APNS_KEY_ID) {
     console.log("[groups-fanout] APNs no configurado (sin APNS_KEY_ID/APNS_AUTH_KEY) — fan-out no-op");
+    serverCanary(env, "groupFanoutApnsNotConfigured");
     return;
   }
   // Short-circuit si falta la credencial de máquina (G8-3): sin PUSH_ROLE_JWT los RPCs responden 403 (los
   // revocamos de authenticated) → el fan-out no puede resolver tokens. Mismo trato que el de APNs (1 log).
   if (!env.PUSH_ROLE_JWT) {
     console.log("[groups-fanout] PUSH_ROLE_JWT ausente — fan-out no-op (credencial de máquina no configurada)");
+    serverCanary(env, "groupFanoutPushRoleMissing");
     return;
   }
   const machineJWT = env.PUSH_ROLE_JWT;
 
   // Recolectar tokens de todos los grupos del batch; dedup por device_token (un member en 2 grupos → 1 push).
-  const targets = new Map<string, { userId: string; deviceToken: string; platform: string }>();
+  const targets = new Map<string, { userId: string; deviceToken: string; platform: string; groupIds: Set<string> }>();
   for (const gid of groupIds) {
     // La RPC y sus args los elige la AUDIENCIA. Estuvieron hardcodeados mientras hubo un solo caso;
     // el nombre viaja en el log de error para que un 403 diga cuál de las tres falló (los grants son
@@ -229,6 +261,7 @@ export async function fanOutGroupPush(
     const { ok, status, body } = await callRpc(env, machineJWT, rpc, args);
     if (!ok) {
       console.log(`[groups-fanout] ${rpc} upstream ${status} group=${gid}`);
+      serverCanary(env, "groupFanoutTokensRpcFailed", `${rpc}/${status}`);
       continue;
     }
     for (const row of Array.isArray(body) ? (body as Record<string, unknown>[]) : []) {
@@ -236,7 +269,9 @@ export async function fanOutGroupPush(
       const userId = typeof row.user_id === "string" ? row.user_id : "";
       const platform = typeof row.platform === "string" ? row.platform : "ios-prod";
       if (!deviceToken || !userId) continue;
-      if (!targets.has(deviceToken)) targets.set(deviceToken, { userId, deviceToken, platform });
+      const known = targets.get(deviceToken);
+      if (known) known.groupIds.add(gid);
+      else targets.set(deviceToken, { userId, deviceToken, platform, groupIds: new Set([gid]) });
     }
   }
 
@@ -246,6 +281,7 @@ export async function fanOutGroupPush(
     list = list.slice(0, FANOUT_TOKEN_CAP);
   }
 
+  let delivered = 0;
   for (const t of list) {
     const result = await sendPush(env, {
       deviceToken: t.deviceToken,
@@ -288,24 +324,36 @@ export async function fanOutGroupPush(
           sound: "default",
           "content-available": 1,
         },
-        yala: { kind: "groups-sync" },
+        yala: { kind: pushKindFor(audience) },
+        // Tocar el aviso abre el grupo (`NotificationService.didReceive` lee esta clave). Card `x6p9`.
+        deepLink: groupDeepLink(t.groupIds),
       },
     });
-    if (result.delivered) continue;
+    if (result.delivered) {
+      delivered++;
+      continue;
+    }
 
     const reason = apnsReason(result.body);
     if (reason === "BadDeviceToken" || reason === "Unregistered") {
+      serverCanary(env, "groupPushTokenPruned", reason);
       // Token muerto → prune best-effort con la credencial de máquina (G8-3: prune_push_token solo callable
       // por yala_push tras g8_02; el guard de radio de G8-1 se retiró — solo el Worker confiable la llama).
       const pruned = await callRpc(env, machineJWT, "prune_push_token", { p_user_id: t.userId, p_device_token: t.deviceToken });
-      if (!pruned.ok) console.log(`[groups-fanout] prune upstream ${pruned.status} token=${t.deviceToken.slice(0, 8)}`);
+      if (!pruned.ok) {
+        console.log(`[groups-fanout] prune upstream ${pruned.status} token=${t.deviceToken.slice(0, 8)}`);
+        serverCanary(env, "groupPushTokenPruneFailed", String(pruned.status));
+      }
     } else {
       // Canario §12 (server-side): observable en wrangler tail. SIN el token completo (prefijo ≤8 chars).
       console.log(
         `[canary] groupApnsSendFailed status=${result.status ?? "-"} reason=${reason ?? result.transportError?.slice(0, 40) ?? "?"} token=${t.deviceToken.slice(0, 8)}`,
       );
+      serverCanary(env, "groupApnsSendFailed", `${result.status ?? "-"}/${reason ?? (result.transportError ? "transport" : "?")}`);
     }
   }
+  // Una fila por fan-out (no por aviso) con cuántos salieron: la serie que contesta «¿están llegando?».
+  if (list.length > 0) serverCanary(env, "groupFanoutDelivered", "", delivered);
 }
 
 /** Extrae el `reason` del body JSON de APNs ({"reason":"BadDeviceToken"} etc.). undefined si no parsea. */
@@ -371,6 +419,7 @@ async function applyOneGroupDelta(
   if (shape) {
     if (shape.type === "coherence_group_partial") {
       console.log(`[canary] groupSyncCoherenceGroupPartial entity=${delta.entity_type} group=${shape.group ?? "?"} (${shape.detail})`);
+      serverCanary(c.env, "groupSyncCoherenceGroupPartial", delta.entity_type);
       return { ...base, reason: `coherence_group_partial:${shape.group ?? shape.detail}`, outcome: { http: 422 } };
     }
     return { ...base, reason: `${shape.type}:${shape.detail}` };

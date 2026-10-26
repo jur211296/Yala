@@ -203,7 +203,10 @@ final class CloudAuthService: NSObject {
     /// El `sub` de la sesión (owner-scoping). Formato lowercase (== `uuid` text de Postgres/JWT).
     /// `nil` = sin sesión. `currentSession` puede estar expirado pero el `user.id` no cambia.
     var currentUserID: String? {
-        client?.currentSession?.user.id.uuidString.lowercased()
+        #if DEBUG
+        if uitestFakeAccountSignedIn { return UITestHooks.FakeAccountExists.userID }
+        #endif
+        return client?.currentSession?.user.id.uuidString.lowercased()
     }
 
     /// UX 2.2 · L20-9: el correo de la cuenta de la sesión, para enseñarlo en «Tu cuenta de Yala». Solo lectura y solo
@@ -247,12 +250,15 @@ final class CloudAuthService: NSObject {
     /// sigue haciendo CERO tráfico. Ver `UITestHooks.fakeCloudSession` para el porqué del seam.
     var hasSession: Bool {
         #if DEBUG
-        if UITestHooks.fakeCloudSession || uitestDelayedSessionArrived { return true }
+        if UITestHooks.fakeCloudSession || uitestDelayedSessionArrived || uitestFakeAccountSignedIn { return true }
         #endif
         return client?.currentSession != nil
     }
 
     #if DEBUG
+    /// Seam de la card er5c (`UITestHooks.fakeAccountExists`): el Welcome «firmó» sin Apple ni Google. Lo retira `signOut()`.
+    private var uitestFakeAccountSignedIn = false
+
     /// Seam de la card nve0 (`UITestHooks.fakeCloudSessionDelaySeconds`): `true` desde que vence el reloj.
     private var uitestDelayedSessionArrived = false
     private var uitestDelayedSessionArmed = false
@@ -389,6 +395,14 @@ final class CloudAuthService: NSObject {
     /// la hoja de siempre. Con Apple se ignora.
     func signIn(with provider: CloudSignInProvider,
                 reusingGoogleCredential reusable: GoogleSignInCredential? = nil) async throws {
+        #if DEBUG
+        // Seam de XCUITest (card er5c): sin hoja de Apple ni de Google. Sin token: nada sale a la red.
+        if UITestHooks.fakeAccountExists != nil {
+            uitestFakeAccountSignedIn = true
+            NotificationCenter.default.post(name: Self.sessionDidChangeNotification, object: nil)
+            return
+        }
+        #endif
         switch provider {
         case .apple: try await signInWithApple()
         case .google:
@@ -628,6 +642,9 @@ final class CloudAuthService: NSObject {
     /// borrado no queda nada que fechar.
     @discardableResult
     func signOut(returningToPreviousAccount: Bool = false) async -> Bool {
+        #if DEBUG
+        uitestFakeAccountSignedIn = false
+        #endif
         // ANTES del guard a propósito: el `return` de abajo se dispara cuando el backend no está
         // configurado (`client == nil`), y entonces todo lo que viene después no corre. El tipo de
         // cuenta cacheado no depende del backend para ser basura una vez cerrada la sesión, así que
