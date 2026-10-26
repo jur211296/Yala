@@ -1,10 +1,10 @@
 ---
 id: worktree-stamp-depends-on-whether-a-rename-is-staged
-status: backlog
+status: done
 priority: low
 area: qa, tooling
 created: 2026-10-22
-updated: 2026-10-22
+updated: 2026-10-26
 source: encargo «bugs de cifras y de entrada» (2026-10-22), al commitear tras /gate
 ---
 
@@ -23,3 +23,11 @@ temporal) también lo bloquea.
 
 Listar con `git diff HEAD --name-only --no-renames -z` y añadir el caso al banco `qa/scripts/worktree-stamp-test.sh`
 (sellar con el rename staged, desstagearlo, la huella no cambia).
+
+## Cerrado 2026-10-26 (encargo ci-gate-reintentos-sello)
+
+`--no-renames` en `qa/scripts/worktree-stamp.sh` (y en el filtro de `.swift` de `precommit-gate.sh`). Casos H e I nuevos en
+`qa/scripts/worktree-stamp-test.sh`: movido a mano = movido y staged = `git mv`; copiar ≠ mover (el lado viejo cuenta como
+`ausente`); mover y editar cambia la huella. 11/11 con el arreglo; contra el script viejo, 2 rojos. De punta a punta en
+un repo desechable: mover un `.swift`, sellar, `git add` → el pre-commit pasa (en la base, «el codigo cambio desde que
+paso /gate»).

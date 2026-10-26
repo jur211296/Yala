@@ -1015,7 +1015,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | tags-none-label-has-the-wrong-gender | backlog | tickets/backlog/tags-none-label-has-the-wrong-gender.md |
 | tests-borran-el-store-sqlite-abierto | backlog | tickets/backlog/tests-borran-el-store-sqlite-abierto.md |
 | the-gate-destination-no-longer-resolves-on-this-mac | discarded | tickets/discarded/the-gate-destination-no-longer-resolves-on-this-mac.md |
-| the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | backlog | tickets/backlog/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |
+| the-gate-stamp-hides-the-deleted-side-of-a-staged-rename | done | tickets/done/the-gate-stamp-hides-the-deleted-side-of-a-staged-rename.md |
 | transaction-save-helper-flake-one-per-suite | discarded | tickets/discarded/transaction-save-helper-flake-one-per-suite.md |
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | trends-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/trends-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
@@ -1112,8 +1112,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | done | tickets/done/wire-decoder-accepts-non-finite-money.md |
-| worktree-stamp-depends-on-whether-a-rename-is-staged | backlog | tickets/backlog/worktree-stamp-depends-on-whether-a-rename-is-staged.md |
-| worktree-stamp-reads-a-staged-rename-as-a-code-change | backlog | tickets/backlog/worktree-stamp-reads-a-staged-rename-as-a-code-change.md |
+| worktree-stamp-depends-on-whether-a-rename-is-staged | done | tickets/done/worktree-stamp-depends-on-whether-a-rename-is-staged.md |
+| worktree-stamp-reads-a-staged-rename-as-a-code-change | done | tickets/done/worktree-stamp-reads-a-staged-rename-as-a-code-change.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | xcode-27-1-with-the-iphone-duo-simulator | done | tickets/done/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |

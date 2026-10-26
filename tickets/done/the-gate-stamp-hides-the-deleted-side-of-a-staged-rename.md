@@ -1,10 +1,10 @@
 ---
 id: the-gate-stamp-hides-the-deleted-side-of-a-staged-rename
-status: backlog
+status: done
 priority: low
 area: "qa, gate"
 created: 2026-09-23
-updated: 2026-10-08
+updated: 2026-10-26
 source: "cierre de `dangling-ref-repair-is-lost-when-its-row-cannot-be-read` (2026-09-23), medido al commitear"
 ---
 
@@ -34,8 +34,8 @@ huella mientras forme parte de un rename en el índice (lo que se sella no descr
 
 ## Criterios de aceptación
 
-- [ ] Mover un rename entre índice y árbol no cambia la huella.
-- [ ] El lado borrado de un rename aparece en la huella.
+- [x] Mover un rename entre índice y árbol no cambia la huella.
+- [x] El lado borrado de un rename aparece en la huella.
 
 ## 2026-10-08 · otra vez, en un commit con tickets movidos
 
@@ -48,3 +48,11 @@ así que el disco no había cambiado. Se re-selló sobre el mismo contenido.
 - `qa/scripts/worktree-stamp.sh:35` sigue con `git diff HEAD --name-only -z`, sin `--no-renames`. Ni el script ni su test tienen commits desde el 2026-09-23.
 
 Triage 2026-10-08: abierto · low → low · sigue pasando y volvió a morder el 8-oct en un commit con tickets movidos, pero cuesta un re-sellado y la baja que no se ve está en un renombrado.
+
+## Cerrado 2026-10-26 (encargo ci-gate-reintentos-sello)
+
+`--no-renames` en `qa/scripts/worktree-stamp.sh` (y en el filtro de `.swift` de `precommit-gate.sh`). Casos H e I nuevos en
+`qa/scripts/worktree-stamp-test.sh`: movido a mano = movido y staged = `git mv`; copiar ≠ mover (el lado viejo cuenta como
+`ausente`); mover y editar cambia la huella. 11/11 con el arreglo; contra el script viejo, 2 rojos. De punta a punta en
+un repo desechable: mover un `.swift`, sellar, `git add` → el pre-commit pasa (en la base, «el codigo cambio desde que
+paso /gate»).
