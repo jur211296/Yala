@@ -848,9 +848,9 @@
         "F-FIL-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/FiltersUITests || 2026-10-25 (opción B + propuesta A, ticket stats-filter-segment-tap-should-ask-include-or-exclude): cada dimensión guarda incluidos («Solo X») y excluidos («Sin X») a la vez (EntityFilter; isExcludeMode borrado); tocar un segmento pregunta «Ver solo / Ocultar» (SegmentFilterChoiceSheet); la barra pinta los dos tipos. unit:YalaTests/CombinedEntityFilterTests,CombinedFiltersScreenParityTests; xcuitest:YalaUITests/SegmentFilterChoiceUITests,AdvancedFiltersUITests,UXAudit22Lote8CUITests#test_filters_showOnlyAndHide_combine",
+      "coverage": "xcuitest:YalaUITests/FiltersUITests || 2026-10-25 (opción B + propuesta A, ticket stats-filter-segment-tap-should-ask-include-or-exclude): cada dimensión guarda incluidos («Solo X») y excluidos («Sin X») a la vez (EntityFilter; isExcludeMode borrado); tocar un segmento pregunta «Ver solo / Ocultar» (SegmentFilterChoiceSheet); la barra pinta los dos tipos. unit:YalaTests/CombinedEntityFilterTests,CombinedFiltersScreenParityTests; xcuitest:YalaUITests/SegmentFilterChoiceUITests,AdvancedFiltersUITests,UXAudit22Lote8CUITests#test_filters_showOnlyAndHide_combine | 2026-10-26 (card kjzs, decisión de Jürgen): tocar un segmento solo pregunta «Ver solo / Ocultar» si hay algo oculto en alguna dimensión; sin nada oculto el toque ve solo lo tocado, o quita el filtro si ya se veía solo, sin hoja (SegmentFilterChoiceLogic.directAction en el host común de Panel y Distribución). unit:YalaTests/CombinedEntityFilterTests (SegmentFilterChoiceLogicTests, SegmentFilterChoiceHostWiringTests); xcuitest:YalaUITests/SegmentFilterChoiceUITests.",
       "owner": "",
-      "lastVerified": "2026-10-25"
+      "lastVerified": "2026-10-26"
     },
     {
       "area": "form-help-banners",

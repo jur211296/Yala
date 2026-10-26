@@ -76,6 +76,66 @@ struct SegmentFilterChoiceLogicTests {
         #expect(SegmentFilterChoiceLogic.actions(for: .included) == [.hide, .clear])
         #expect(SegmentFilterChoiceLogic.actions(for: .excluded) == [.showOnly, .clear])
     }
+
+    // Decisión de Jürgen del 2026-10-26 (card kjzs): el default es incluir; solo se pregunta si hay algo oculto.
+
+    @Test func without_hidden_filters_the_tap_shows_only_without_asking() {
+        #expect(SegmentFilterChoiceLogic.directAction(for: .none, hasHiddenFilters: false) == .showOnly)
+    }
+
+    @Test func without_hidden_filters_tapping_what_is_shown_alone_clears_it() {
+        // El toque de antes de la pregunta: tocar otra vez lo que se veía solo lo quitaba.
+        #expect(SegmentFilterChoiceLogic.directAction(for: .included, hasHiddenFilters: false) == .clear)
+    }
+
+    @Test func with_something_hidden_the_tap_always_asks() {
+        for membership in [EntityFilterMembership.none, .included, .excluded] {
+            #expect(SegmentFilterChoiceLogic.directAction(for: membership, hasHiddenFilters: true) == nil)
+        }
+    }
+
+    @Test func a_hidden_segment_never_skips_the_question() {
+        #expect(SegmentFilterChoiceLogic.directAction(for: .excluded, hasHiddenFilters: false) == nil)
+    }
+
+    /// «Hay algo oculto» es cualquier dimensión de la sesión, no solo la del segmento tocado.
+    @MainActor
+    @Test func hidden_in_another_dimension_counts() {
+        let session = SessionState()
+        #expect(!session.hasExcludedFilters)
+        session.excludedCurrencies = [.usd]
+        #expect(session.hasExcludedFilters)
+        let direct = SegmentFilterChoiceLogic.directAction(for: .none, hasHiddenFilters: session.hasExcludedFilters)
+        #expect(direct == nil)
+    }
+}
+
+// MARK: - El cableado del toque
+
+/// Panel y Distribución preguntan por el mismo host. Revertir el host a «presentar siempre» deja verde toda la lógica de
+/// arriba, que es justo el ajuste de la card kjzs: por eso este source-scan.
+@Suite("Tocar un segmento · el host decide si pregunta")
+struct SegmentFilterChoiceHostWiringTests {
+
+    private static func source(_ path: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+    }
+
+    @Test func the_host_asks_only_when_directAction_says_so() throws {
+        let sheet = try Self.source("Yala/App/Views/Filters/SegmentFilterChoiceSheet.swift")
+        let host = try #require(sheet.range(of: "private struct SegmentFilterChoiceHostModifier"))
+        let body = String(sheet[host.lowerBound...])
+        #expect(body.contains("SegmentFilterChoiceLogic.directAction("))
+        #expect(body.contains("hasHiddenFilters: sessionState.hasExcludedFilters"))
+    }
+
+    @Test func panel_and_distribution_hang_the_host() throws {
+        #expect(try Self.source("Yala/App/Views/Panel/PanelView.swift").contains(".segmentFilterChoiceHost()"))
+        #expect(try Self.source("Yala/App/Views/Statistics/DetailContainerView.swift").contains(".segmentFilterChoiceHost()"))
+    }
 }
 
 // MARK: - El estado de sesión

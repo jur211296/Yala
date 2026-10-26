@@ -7,6 +7,9 @@
 //  día el toque escribía en el modo activo sin preguntar: con «excluir» puesto, tocar un segmento lo excluía y no había
 //  forma de ver solo ese.
 //
+//  Solo pregunta si hay algo oculto (decisión de Jürgen del 2026-10-26, card `segmento-solo-preguntar…-kjzs`): sin
+//  nada oculto el toque hace lo de siempre sin hoja — «Ver solo X», o quitar el filtro si X ya se veía solo.
+//
 //  Es una hoja corta propia y no un `.alert` ni un `confirmationDialog`: los botones de un `.alert` no admiten texto
 //  dinámico («Ver solo Comida») sin romper flujos ajenos, y un `confirmationDialog` anclado no pinta «Cancelar» en iOS 26
 //  (las dos trampas, medidas, en `swiftui-ds.md`).
@@ -53,6 +56,18 @@ enum SegmentFilterChoiceLogic {
         case .excluded: return [.showOnly, .clear]
         }
     }
+
+    /// Lo que hace el toque sin preguntar, o `nil` si hay que preguntar. Con algo oculto en cualquier dimensión, pregunta
+    /// siempre. Sin nada oculto, el toque de antes de la pregunta: ver solo lo tocado, o quitarlo si ya se veía solo.
+    static func directAction(for membership: EntityFilterMembership, hasHiddenFilters: Bool) -> Action? {
+        guard !hasHiddenFilters else { return nil }
+        switch membership {
+        case .none: return .showOnly
+        case .included: return .clear
+        // Algo oculto es un filtro oculto: no llega aquí con `hasHiddenFilters` en falso. Si llegara, que pregunte.
+        case .excluded: return nil
+        }
+    }
 }
 
 // MARK: - Entorno
@@ -85,24 +100,34 @@ private struct SegmentFilterChoiceHostModifier: ViewModifier {
         content
             .environment(\.askSegmentFilter) { newChoice in
                 DS.Haptic.selection()
-                choice = newChoice
+                if let action = SegmentFilterChoiceLogic.directAction(
+                    for: newChoice.membership, hasHiddenFilters: sessionState.hasExcludedFilters
+                ) {
+                    perform(action, on: newChoice)
+                } else {
+                    choice = newChoice
+                }
             }
             .sheet(item: $choice) { current in
                 SegmentFilterChoiceSheet(choice: current) { action in
                     choice = nil
-                    dsWithAnimation(reduceMotion) {
-                        switch action {
-                        case .showOnly: current.showOnly()
-                        case .hide:
-                            if let hide = current.hide { hide() } else { sessionState.hide(current.target) }
-                        case .clear:
-                            if let clear = current.clear { clear() } else { sessionState.clearFilter(current.target) }
-                        }
-                    }
+                    perform(action, on: current)
                 } onCancel: {
                     choice = nil
                 }
             }
+    }
+
+    private func perform(_ action: SegmentFilterChoiceLogic.Action, on current: SegmentFilterChoice) {
+        dsWithAnimation(reduceMotion) {
+            switch action {
+            case .showOnly: current.showOnly()
+            case .hide:
+                if let hide = current.hide { hide() } else { sessionState.hide(current.target) }
+            case .clear:
+                if let clear = current.clear { clear() } else { sessionState.clearFilter(current.target) }
+            }
+        }
     }
 }
 

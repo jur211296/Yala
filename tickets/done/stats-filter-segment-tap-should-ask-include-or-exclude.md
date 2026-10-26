@@ -4,7 +4,7 @@ status: done
 priority: medium
 area: "statistics, filters, ux"
 created: 2026-09-17
-updated: 2026-10-25
+updated: 2026-10-26
 source: "UX Jürgen 2026-09-17 (bugs de experiencia sin ticket)"
 ---
 
@@ -141,3 +141,9 @@ sesión con este `/spec`.
   vacía. Un valor que está en la otra lista se ve con su contorno.
 - **Tests.** `CombinedEntityFilterTests`, `CombinedFiltersScreenParityTests` (Registros, Estadísticas y Panel con
   «Solo A y B» + «Sin Uber» + «Sin Viaje»; saldo con «Sin B»), `SegmentFilterChoiceUITests`.
+
+## Ajuste 2026-10-26 (card kjzs)
+
+Jürgen validó #634 salvo un punto: preguntar sin ningún filtro puesto. Ahora el toque solo pregunta si hay algo oculto
+en alguna dimensión; sin nada oculto ve solo lo tocado, o quita el filtro si ya se veía solo, sin hoja. Vive en el host
+común (`SegmentFilterChoiceLogic.directAction`), así que Panel y Distribución hacen lo mismo.

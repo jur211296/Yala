@@ -68,7 +68,10 @@ las dos listas, ya disjuntas).
   (`buildPieContextTransactions`) y en Distribución (`calculateData`), período actual y anterior igual. Los widgets ya
   no conocen ningún modo: reciben los datos sin lo oculto.
 - **Tocar un segmento pregunta** «Ver solo X / Ocultar X» (`SegmentFilterChoiceSheet`, host `.segmentFilterChoiceHost()`
-  en Distribución y en el Panel). Un gesto nuevo que escriba el filtro pasa por ahí, no por un toggle propio.
+  en Distribución y en el Panel) **solo si hay algo oculto** en alguna dimensión (`hasExcludedFilters`; Jürgen,
+  2026-10-26). Sin nada oculto el toque no pregunta: ve solo lo tocado, o quita el filtro si ya se veía solo
+  (`SegmentFilterChoiceLogic.directAction`). Un gesto nuevo que escriba el filtro pasa por ese host, no por un toggle
+  propio: así hereda las dos ramas.
 - **Los filtros de sesión no se guardan en disco** (medido el 2026-10-25): no hay migración de estado. El asistente de
   Exportar conserva su propio «Mostrar solo / Ocultar» local, a propósito.
 
