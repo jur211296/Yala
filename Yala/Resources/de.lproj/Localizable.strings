@@ -2391,10 +2391,10 @@
 "icloud.privacyNote" = "Deine Daten werden privat in deinem persönlichen iCloud-Konto gespeichert. Yala hat keinen Zugriff darauf.";
 "icloud.statusSynced" = "Synchronisiert";
 "icloud.statusSyncing" = "Synchronisierung...";
-"icloud.statusNoAccount" = "iCloud ist auf diesem iPhone nicht aktiv";
+"icloud.statusNoAccount" = "iCloud ist auf diesem Gerät nicht aktiv";
 "icloud.statusError" = "Synchronisierungsfehler";
 "icloud.lastSync" = "Letzte Synchronisierung: %@";
-"icloud.noAccountWarning" = "Um deine Daten in iCloud zu sichern, melde dich ganz oben in den iPhone-Einstellungen mit deinem Apple Account an.";
+"icloud.noAccountWarning" = "Um deine Daten in iCloud zu sichern, melde dich ganz oben in den Einstellungen mit deinem Apple Account an.";
 "icloud.syncingData" = "Daten werden synchronisiert...";
 "icloud.syncingDescription" = "Wir laden deine Daten aus iCloud.";
 "icloud.syncing.skip" = "Als neu einrichten";
@@ -2406,7 +2406,7 @@
 "icloud.detail.upToDate" = "Alles aktuell — zuletzt synchronisiert %@";
 "icloud.detail.errorTitle" = "Wir speichern gerade nicht in iCloud";
 "icloud.detail.errorMessage" = "Du bist offline oder iCloud ist nicht verfügbar. Deine Daten sind auf diesem Gerät sicher und werden synchronisiert, sobald es geht.";
-"icloud.detail.stalledMessage" = "Deine letzten Änderungen sind weiterhin sicher auf diesem iPhone, aber noch nicht in iCloud angekommen.";
+"icloud.detail.stalledMessage" = "Deine letzten Änderungen sind weiterhin sicher auf diesem Gerät, aber noch nicht in iCloud angekommen.";
 "icloud.detail.technicalCode" = "Technisches Detail: %@";
 "icloud.detail.cta.retry" = "Jetzt erneut versuchen";
 "icloud.detail.cta.diagnose" = "Prüfen und reparieren";
@@ -4592,7 +4592,7 @@
 "storage.confirm.migrate2Body" = "Die Cloud wird für dieses Gerät aktiviert.";
 "storage.confirm.migrate2Confirm" = "Ja, Cloud aktivieren";
 "storage.confirm.revertTitle" = "Zurück zu iCloud?";
-"storage.confirm.revertBody" = "Deine Daten liegen wieder auf diesem iPhone und in deiner iCloud. Du verlierst nichts.";
+"storage.confirm.revertBody" = "Deine Daten liegen wieder auf diesem Gerät und in deiner iCloud. Du verlierst nichts.";
 "storage.confirm.revertContinue" = "Weiter";
 "storage.confirm.revert2Title" = "Bist du sicher?";
 "storage.confirm.revert2Body" = "Die Cloud wird für dieses Gerät deaktiviert.";
@@ -4854,7 +4854,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Dein Yala-Konto in der Cloud, wenn du es mit deinem Google-Konto erstellt hast.";
-"welcome.existing.usedOnThisDeviceNote" = "Die du auf diesem iPhone verwendet hast";
+"welcome.existing.usedOnThisDeviceNote" = "Die du auf diesem Gerät verwendet hast";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Verwende dasselbe Google-Konto, mit dem du dein Cloud-Konto erstellt hast.";
@@ -6088,7 +6088,7 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Deine letzten Änderungen haben die Cloud nicht erreicht. Sie bleiben auf diesem Telefon gespeichert und gehen nicht verloren – versuch es später noch einmal.";
 "settings.signOutCloudSessionExpired" = "Deine Sitzung ist abgelaufen und einige Änderungen wurden noch nicht in die Cloud hochgeladen. Es geht nichts verloren: Öffne „Wo deine Daten liegen“ hier in den Einstellungen, tippe auf „Anmelden“ und versuche es danach noch einmal.";
-"settings.signOutSessionSurvived" = "Du bist auf diesem iPhone noch angemeldet, deshalb wurde nichts gelöscht. Versuch es noch einmal.";
+"settings.signOutSessionSurvived" = "Du bist auf diesem Gerät noch angemeldet, deshalb wurde nichts gelöscht. Versuch es noch einmal.";
 "settings.signOutMigrationInFlight" = "Der Umzug deiner Daten zwischen iCloud und der Cloud ist noch nicht abgeschlossen, und wenn du dich jetzt abmeldest, könnte gelöscht werden, was noch hochgeladen werden muss – deshalb wurde nichts gelöscht. Öffne „Wo deine Daten liegen“ in den Einstellungen und schließe ihn dort ab (wenn er fehlgeschlagen ist, tippe auf „Erneut versuchen“); versuche es danach noch einmal.";
 "settings.signOutMigrationUnreadable" = "Wir konnten nicht prüfen, wie weit der Umzug deiner Daten zwischen iCloud und der Cloud ist, und wenn du dich jetzt abmeldest, könnte gelöscht werden, was noch hochgeladen werden muss – deshalb wurde nichts gelöscht. Schließe Yala vollständig und öffne es erneut; wenn es so bleibt, aktualisiere es im App Store und versuche es noch einmal.";
 
@@ -6680,8 +6680,8 @@
 "storage.revert.prior.wipeFailed" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in der Cloud. Prüf deine Verbindung und versuch es noch einmal.";
 "storage.revert.prior.wipeStopped" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in der Cloud. Was schon gelöscht ist, bleibt gelöscht: Versuch es noch einmal, dann machen wir mit dem Rest weiter.";
 "storage.revert.prior.wiping" = "Alte Daten werden gelöscht… bisher %d";
-"storage.revert.prior.noAccountTitle" = "Melde dich auf diesem iPhone bei iCloud an";
-"storage.revert.prior.noAccountBody" = "Vor der Rückkehr prüfen wir, was in deiner iCloud liegt, und dieses iPhone ist nicht bei iCloud angemeldet. Melde dich in den iPhone-Einstellungen an und versuch es noch einmal.";
+"storage.revert.prior.noAccountTitle" = "Melde dich auf diesem Gerät bei iCloud an";
+"storage.revert.prior.noAccountBody" = "Vor der Rückkehr prüfen wir, was in deiner iCloud liegt, und dieses Gerät ist nicht bei iCloud angemeldet. Melde dich in den Einstellungen an und versuch es noch einmal.";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "Hier entfernen";
@@ -7440,7 +7440,7 @@
 "siri.query.period.thisYear" = "dieses Jahr";
 "siri.entity.account" = "Konto";
 "siri.query.noData" = "Öffne Yala einmal und frag mich noch mal.";
-"siri.query.groupsOnly" = "Auf diesem iPhone hat Yala nur deine Gruppen.";
+"siri.query.groupsOnly" = "Auf diesem Gerät hat Yala nur deine Gruppen.";
 "siri.query.stale" = "Deine Zahlen für diesen Zeitraum sind nicht aktuell. Öffne Yala und frag mich noch mal.";
 "siri.query.spending.thisWeek" = "Diese Woche hast du %@ ausgegeben.";
 "siri.query.spending.thisMonth" = "Diesen Monat hast du %@ ausgegeben.";
@@ -7550,9 +7550,9 @@
 "l20d.groups.leaveAll.confirmMessageGeneric" = "Du verlässt alle Gruppen, in denen du keine offenen Salden hast.";
 
 /* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
-"uxcs.removeDeviceData.row" = "Meine Daten von diesem iPhone entfernen";
+"uxcs.removeDeviceData.row" = "Meine Daten von diesem Gerät entfernen";
 "uxcs.removeDeviceData.subtitle" = "Sie bleiben in deiner iCloud";
-"uxcs.removeDeviceData.sheetTitle" = "Deine Daten von diesem iPhone entfernen?";
+"uxcs.removeDeviceData.sheetTitle" = "Deine Daten von diesem Gerät entfernen?";
 "uxcs.removeDeviceData.confirm" = "Meine Daten entfernen";
 "uxcs.signOutUpload.title" = "Deine Änderungen werden in iCloud hochgeladen …";
 "uxcs.signOutUpload.pending" = "Noch hochzuladende Änderungen: %d";
@@ -7575,10 +7575,10 @@
 "l20n.sheet.continueCurrent" = "Mit deinem aktuellen Konto fortfahren";
 "l20n.relaunch.almostTitle" = "Fast geschafft";
 "l20n.relaunch.doneSignedOut" = "Abgemeldet";
-"l20n.relaunch.afterSignOut" = "Wenn du sie wieder öffnest, entfernt Yala deine Daten vollständig von diesem iPhone.";
-"l20n.relaunch.afterGroupsOnly" = "Deine persönlichen Daten bleiben auf diesem iPhone.";
+"l20n.relaunch.afterSignOut" = "Wenn du sie wieder öffnest, entfernt Yala deine Daten vollständig von diesem Gerät.";
+"l20n.relaunch.afterGroupsOnly" = "Deine persönlichen Daten bleiben auf diesem Gerät.";
 "l20n.relaunch.doneInCloud" = "Deine Daten sind schon in deinem Cloud-Konto";
-"l20n.relaunch.doneOnPhone" = "Deine Daten sind schon auf diesem iPhone";
+"l20n.relaunch.doneOnPhone" = "Deine Daten sind schon auf diesem Gerät";
 "l20n.relaunch.afterToICloud" = "Wenn du sie wieder öffnest, werden sie in deine iCloud hochgeladen.";
 "l20n.relaunch.doneReverseStopped" = "Die Rückkehr zu iCloud wurde gestoppt";
 "l20n.relaunch.pending" = "Öffne Yala erneut";
@@ -7591,7 +7591,7 @@
 "l20n.relaunch.pendingA11y" = "Noch offen: Öffne Yala erneut";
 "l20n.relaunch.mismatchMessage" = "Yala wurde geöffnet, bevor iCloud bereit war. Um deine Daten zu synchronisieren, schließe die App und öffne sie erneut:\n\n%@";
 "l20n.icloud.noAccountDetail" = "Deine Daten bleiben nur hier.";
-"l20n.icloud.openSettings" = "iPhone-Einstellungen öffnen";
+"l20n.icloud.openSettings" = "Einstellungen öffnen";
 "l20n.icloud.mailSubject" = "Yala: iCloud synchronisiert nicht";
 "l20n.icloud.contactFooter" = "Wenn es so bleibt, schreib uns: Die E-Mail enthält schon das technische Detail, damit wir helfen können.";
 
@@ -7608,7 +7608,7 @@
 "uxpro.trial.chargeYearly" = "Bleibst du, werden %@ pro Jahr fällig.";
 "uxpro.trial.chargeMonthly" = "Bleibst du, werden %@ pro Monat fällig.";
 "uxpro.trial.cancelTitle" = "Bis einen Tag vorher";
-"uxpro.trial.cancelBody" = "Kündige in den iPhone-Einstellungen und es wird nichts berechnet.";
+"uxpro.trial.cancelBody" = "Kündige in den Einstellungen und es wird nichts berechnet.";
 "uxpro.cta.startTrialDays" = "%lld Tage gratis testen";
 "uxpro.included.title" = "Was Pro enthält";
 "uxpro.feature.voice" = "Per Sprache erfassen";
@@ -8140,15 +8140,15 @@
 "l15.faq.yalaAI.q" = "Was ist Yala KI?";
 "l15.faq.yalaAI.a" = "Das ist der Assistent von Yala Pro. Du fragst ihn nach deinen Finanzen („Wie viel habe ich diesen Monat für Kaffee ausgegeben?“) oder erzählst ihm von einer Ausgabe, und er erfasst sie für dich. Um zu antworten, sendet er das Nötige an einen KI-Dienst; das entscheidest du unter Einstellungen > KI-Datenschutz und Daten.";
 "l15.faq.whereData.q" = "Wo werden meine Daten gespeichert?";
-"l15.faq.whereData.a" = "Wenn du deine private iCloud gewählt hast, auf deinem iPhone und in deiner iCloud: Yala sieht sie nicht. Wenn du ein Konto in der Cloud hast, auf den Servern von Yala, und du meldest dich auf einem anderen iPhone mit Apple oder Google an. Was du in einer Gruppe erfasst, wird in der Cloud gespeichert, damit die Gruppe es sieht.";
+"l15.faq.whereData.a" = "Wenn du deine private iCloud gewählt hast, auf deinem Gerät und in deiner iCloud: Yala sieht sie nicht. Wenn du ein Konto in der Cloud hast, auf den Servern von Yala, und du meldest dich auf einem anderen Gerät mit Apple oder Google an. Was du in einer Gruppe erfasst, wird in der Cloud gespeichert, damit die Gruppe es sieht.";
 "l15.faq.faceID.q" = "Kann ich Yala mit Face ID schützen?";
 "l15.faq.faceID.a" = "Ja, mit der Sperre von iOS: Halte das Yala-Symbol auf deinem Home-Bildschirm gedrückt und tippe auf „Face ID anfordern“. Yala sieht dein Gesicht nie: iOS prüft es. Die Anleitung findest du unter Einstellungen > Mit Face ID schützen.";
 "l15.faq.widgets.q" = "Wie füge ich ein Yala-Widget hinzu?";
 "l15.faq.widgets.a" = "Halte eine freie Stelle auf deinem Home-Bildschirm gedrückt, tippe auf „Bearbeiten“ > „Widget hinzufügen“ und suche nach Yala. Es gibt Widgets für Saldo, Ausgaben, Kategorien, Monatsübersicht und letzte Einträge, auch für den Sperrbildschirm.";
-"l15.support.sendFooter" = "Deine Mail-App öffnet sich, um sie an %@ zu senden. Dabei sind die Version von Yala und iOS, das Modell deines iPhone, das Design und die Sprache, damit wir dir besser helfen können.";
+"l15.support.sendFooter" = "Deine Mail-App öffnet sich, um sie an %@ zu senden. Dabei sind die Version von Yala und iOS, das Modell deines Geräts, das Design und die Sprache, damit wir dir besser helfen können.";
 "l15.removeData.noCopyConfirm" = "Entfernen und löschen";
 "l15.removeData.exportDiscard" = "Meine Daten trotzdem entfernen";
-"l15.removeData.exportPending" = "Änderungen auf diesem iPhone, die noch nicht in iCloud angekommen sind: %d. Wenn du deine Daten jetzt entfernst, gehen sie verloren.";
+"l15.removeData.exportPending" = "Änderungen auf diesem Gerät, die noch nicht in iCloud angekommen sind: %d. Wenn du deine Daten jetzt entfernst, gehen sie verloren.";
 "l15.removeData.exportPendingUnknown" = "Wir konnten nicht bestätigen, dass deine letzten Änderungen in iCloud angekommen sind. Wenn du deine Daten jetzt entfernst, könnten sie verloren gehen.";
 "l15.pro.themeResetNote" = "Dein Design wechselt wieder zu Liquid Glass.";
 "l15.pro.oneMonthThenYearly" = "1 Monat gratis, dann %@ pro Jahr";
@@ -8156,9 +8156,9 @@
 "l15.pro.startTrialOneMonth" = "1 Monat gratis testen";
 "l15.pro.gateStartTrialOneMonth" = "Pro 1 Monat gratis testen";
 "l15.pro.settingsFreeWithTrialOneMonth" = "Kostenlos · 1 Monat gratis testen";
-"welcome.cloud.otherAccountUsedTitle" = "Dieses iPhone hat schon ein anderes Konto genutzt";
-"welcome.cloud.otherAccountUsedBody" = "Auf diesem iPhone wurde schon ein Yala-Konto genutzt, das mit %1$@ erstellt wurde, und das von %2$@ ist ein anderes. Möchtest du wirklich ein anderes Konto nutzen? Um beim gewohnten zu bleiben, melde dich mit %1$@ an.";
-"welcome.cloud.otherAccountUsedBodyGeneric" = "Auf diesem iPhone wurde schon ein Yala-Konto genutzt, das mit einer anderen Methode erstellt wurde, und das von %@ ist ein anderes. Möchtest du wirklich ein anderes Konto nutzen? Um beim gewohnten zu bleiben, melde dich mit der Methode von damals an.";
+"welcome.cloud.otherAccountUsedTitle" = "Dieses Gerät hat schon ein anderes Konto genutzt";
+"welcome.cloud.otherAccountUsedBody" = "Auf diesem Gerät wurde schon ein Yala-Konto genutzt, das mit %1$@ erstellt wurde, und das von %2$@ ist ein anderes. Möchtest du wirklich ein anderes Konto nutzen? Um beim gewohnten zu bleiben, melde dich mit %1$@ an.";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "Auf diesem Gerät wurde schon ein Yala-Konto genutzt, das mit einer anderen Methode erstellt wurde, und das von %@ ist ein anderes. Möchtest du wirklich ein anderes Konto nutzen? Um beim gewohnten zu bleiben, melde dich mit der Methode von damals an.";
 
 /* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
 /* Insignia del rol en Miembros (una sola palabra para el rol) */
@@ -8368,7 +8368,7 @@
 "storage.steps.uploadedCount" = "%1$@ von %2$@";
 
 /* Pendientes de Jürgen 2.2 (2026-10-23): idioma híbrido (L16-5) y Face ID en Permisos (L16-14) */
-"pj22.language.inIOSFooter" = "Öffnet die iPhone-Einstellungen. Dort ändern sich auch „Suchen“ und die Datumsangaben.";
+"pj22.language.inIOSFooter" = "Öffnet die Einstellungen. Dort ändern sich auch „Suchen“ und die Datumsangaben.";
 "pj22.permissions.faceID" = "Face ID";
 "pj22.permissions.faceIDDetail" = "iOS schaltet es ein, damit nur du Yala öffnen kannst.";
 "pj22.permissions.faceIDSeeHow" = "So geht’s";

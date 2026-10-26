@@ -1,10 +1,10 @@
 ---
 id: copy-names-the-iphone-outside-groups-storage
-status: backlog
+status: done
 priority: low
 area: "copy, l10n, ipad"
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-26
 source: "lote 12.1 Grupos (card i9r1), barrido del mismo patrón"
 ---
 
@@ -33,3 +33,13 @@ Dos clases distintas, y no se arreglan igual:
    basta «Ajustes» a secas. Decisión de copy de Jürgen.
 
 Script de textos por JSON (molde del lote 12.1) y `LocalizationParityTests`.
+
+## Hecho (2026-10-26, card hxah)
+
+- Eran **24** claves en español, no 23 (`pj22.language.inIOSFooter` también decía «Ajustes del iPhone»). En polaco el grep
+  sin raíz no las veía: escribe «iPhonie» / «iPhone’a».
+- «este iPhone», «tu iPhone», «otro iPhone» y «el modelo de tu iPhone» → «este dispositivo» y compañía, en los 16
+  idiomas, con el término de i9r1 (de Gerät, fr appareil, nl apparaat, pl urządzenie, ja この端末, zh 这台设备).
+- «Ajustes del iPhone» → «Ajustes» a secas, con el nombre de la app en cada idioma (pt-PT Definições).
+- Fuera, a ticket propio: ~79 claves dicen «este teléfono» con el mismo fallo en el iPad
+  (`copy-names-this-phone-outside-groups`).

@@ -668,7 +668,7 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertLessThan(google.frame.minY, apple.frame.minY, "Con el faro de Google, Google va primero.")
 
         let note = app.descendants(matching: .any)["welcome_existing_used_on_this_device"]
-        XCTAssertTrue(note.exists, "Falta «La que usaste en este iPhone».")
+        XCTAssertTrue(note.exists, "Falta «La que usaste en este dispositivo».")
         XCTAssertGreaterThan(note.frame.minY, google.frame.minY, "La nota va bajo el botón de Google…")
         XCTAssertLessThan(note.frame.minY, apple.frame.minY, "…y antes del de Apple.")
     }

@@ -2395,10 +2395,10 @@
 "icloud.privacyNote" = "データはあなた個人のiCloudアカウントに非公開で保存されます。Yalaがアクセスすることはありません。";
 "icloud.statusSynced" = "同期済み";
 "icloud.statusSyncing" = "同期中...";
-"icloud.statusNoAccount" = "この iPhone では iCloud がオンになっていません";
+"icloud.statusNoAccount" = "この端末では iCloud がオンになっていません";
 "icloud.statusError" = "同期エラー";
 "icloud.lastSync" = "最終同期: %@";
-"icloud.noAccountWarning" = "データを iCloud に保存するには、iPhone の設定のいちばん上で Apple アカウントにサインインしてください。";
+"icloud.noAccountWarning" = "データを iCloud に保存するには、設定のいちばん上で Apple アカウントにサインインしてください。";
 "icloud.syncingData" = "データを同期中...";
 "icloud.syncingDescription" = "iCloudから情報を取得しています。";
 "icloud.syncing.skip" = "新規としてセットアップ";
@@ -2410,7 +2410,7 @@
 "icloud.detail.upToDate" = "最新の状態 — 最終同期 %@";
 "icloud.detail.errorTitle" = "現在iCloudに保存されていません";
 "icloud.detail.errorMessage" = "オフラインかiCloudが利用できません。データはこのデバイスに安全に保存されており、可能になり次第同期します。";
-"icloud.detail.stalledMessage" = "最近の変更はこの iPhone に安全に残っていますが、まだ iCloud に届いていません。";
+"icloud.detail.stalledMessage" = "最近の変更はこの端末に安全に残っていますが、まだ iCloud に届いていません。";
 "icloud.detail.technicalCode" = "技術詳細: %@";
 "icloud.detail.cta.retry" = "今すぐ再試行";
 "icloud.detail.cta.diagnose" = "確認と修復";
@@ -4604,7 +4604,7 @@
 "storage.confirm.migrate2Body" = "この端末でクラウドが有効になります。";
 "storage.confirm.migrate2Confirm" = "はい、クラウドを有効化";
 "storage.confirm.revertTitle" = "iCloud に戻しますか？";
-"storage.confirm.revertBody" = "データはこの iPhone とあなたの iCloud に戻ります。何も失いません。";
+"storage.confirm.revertBody" = "データはこの端末とあなたの iCloud に戻ります。何も失いません。";
 "storage.confirm.revertContinue" = "続ける";
 "storage.confirm.revert2Title" = "よろしいですか？";
 "storage.confirm.revert2Body" = "この端末でクラウドが無効になります。";
@@ -4866,7 +4866,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Googleアカウントで作成した場合の、クラウド上のYalaアカウントです。";
-"welcome.existing.usedOnThisDeviceNote" = "このiPhoneで使った方法";
+"welcome.existing.usedOnThisDeviceNote" = "この端末で使った方法";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
@@ -6100,7 +6100,7 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "最新の変更がクラウドに届きませんでした。変更はこの端末に残っていて失われません。しばらくしてからもう一度お試しください。";
 "settings.signOutCloudSessionExpired" = "セッションの有効期限が切れ、まだクラウドにアップロードされていない変更があります。変更は失われません。この設定画面の「データの保存先」を開いて「サインイン」をタップし、その後もう一度お試しください。";
-"settings.signOutSessionSurvived" = "この iPhone ではまだサインインしたままのため、何も削除されていません。もう一度お試しください。";
+"settings.signOutSessionSurvived" = "この端末ではまだサインインしたままのため、何も削除されていません。もう一度お試しください。";
 "settings.signOutMigrationInFlight" = "iCloud とクラウドの間のデータ移行がまだ完了していません。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。設定の「データの保存先」を開き、そこで完了させてください（失敗している場合は「再試行」をタップ）。その後、もう一度お試しください。";
 "settings.signOutMigrationUnreadable" = "iCloud とクラウドの間のデータ移行の状況を確認できませんでした。今サインアウトすると、まだアップロードされていないデータが削除されるおそれがあるため、何も削除していません。Yala を完全に終了してもう一度開いてください。変わらない場合は、App Store で Yala をアップデートしてから、もう一度お試しください。";
 
@@ -6692,8 +6692,8 @@
 "storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
 "storage.revert.prior.wipeStopped" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
 "storage.revert.prior.wiping" = "以前のデータを削除しています…（%d 件完了）";
-"storage.revert.prior.noAccountTitle" = "この iPhone で iCloud にサインインしてください";
-"storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この iPhone は iCloud にサインインしていません。iPhone の設定からサインインして、もう一度お試しください。";
+"storage.revert.prior.noAccountTitle" = "この端末で iCloud にサインインしてください";
+"storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この端末は iCloud にサインインしていません。設定からサインインして、もう一度お試しください。";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "この端末で非表示";
@@ -7452,7 +7452,7 @@
 "siri.query.period.thisYear" = "今年";
 "siri.entity.account" = "口座";
 "siri.query.noData" = "一度Yalaを開いてから、もう一度聞いてください。";
-"siri.query.groupsOnly" = "このiPhoneのYalaにはグループしかありません。";
+"siri.query.groupsOnly" = "この端末のYalaにはグループしかありません。";
 "siri.query.stale" = "その期間の数字が最新ではありません。Yalaを開いてから、もう一度聞いてください。";
 "siri.query.spending.thisWeek" = "今週の支出は%@です。";
 "siri.query.spending.thisMonth" = "今月の支出は%@です。";
@@ -7562,9 +7562,9 @@
 "l20d.groups.leaveAll.confirmMessageGeneric" = "未精算の残高がないすべてのグループから退出します。";
 
 /* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
-"uxcs.removeDeviceData.row" = "このiPhoneから自分のデータを削除";
+"uxcs.removeDeviceData.row" = "この端末から自分のデータを削除";
 "uxcs.removeDeviceData.subtitle" = "iCloudには残ります";
-"uxcs.removeDeviceData.sheetTitle" = "このiPhoneからデータを削除しますか？";
+"uxcs.removeDeviceData.sheetTitle" = "この端末からデータを削除しますか？";
 "uxcs.removeDeviceData.confirm" = "データを削除";
 "uxcs.signOutUpload.title" = "変更をiCloudにアップロード中…";
 "uxcs.signOutUpload.pending" = "アップロード待ちの変更：%d件";
@@ -7587,10 +7587,10 @@
 "l20n.sheet.continueCurrent" = "今のアカウントで続ける";
 "l20n.relaunch.almostTitle" = "あと少しです";
 "l20n.relaunch.doneSignedOut" = "サインアウトしました";
-"l20n.relaunch.afterSignOut" = "もう一度開くと、Yala がこの iPhone からデータを取り除き終えます。";
-"l20n.relaunch.afterGroupsOnly" = "個人のデータはこの iPhone に残ります。";
+"l20n.relaunch.afterSignOut" = "もう一度開くと、Yala がこの端末からデータを取り除き終えます。";
+"l20n.relaunch.afterGroupsOnly" = "個人のデータはこの端末に残ります。";
 "l20n.relaunch.doneInCloud" = "データはすでにクラウドのアカウントにあります";
-"l20n.relaunch.doneOnPhone" = "データはすでにこの iPhone にあります";
+"l20n.relaunch.doneOnPhone" = "データはすでにこの端末にあります";
 "l20n.relaunch.afterToICloud" = "もう一度開くと、iCloud へのアップロードが始まります。";
 "l20n.relaunch.doneReverseStopped" = "iCloud への切り替えは止まりました";
 "l20n.relaunch.pending" = "Yala をもう一度開く";
@@ -7603,7 +7603,7 @@
 "l20n.relaunch.pendingA11y" = "残り：Yala をもう一度開く";
 "l20n.relaunch.mismatchMessage" = "iCloud の準備ができる前に Yala が開きました。データを同期するには、Yala を閉じてもう一度開いてください：\n\n%@";
 "l20n.icloud.noAccountDetail" = "データはこの端末にだけ保存されます。";
-"l20n.icloud.openSettings" = "iPhone の設定を開く";
+"l20n.icloud.openSettings" = "設定を開く";
 "l20n.icloud.mailSubject" = "Yala：iCloud が同期しません";
 "l20n.icloud.contactFooter" = "このままなら、ご連絡ください。サポートできるよう、メールには技術的な詳細がすでに入っています。";
 
@@ -7620,7 +7620,7 @@
 "uxpro.trial.chargeYearly" = "続ける場合は年額%@が請求されます。";
 "uxpro.trial.chargeMonthly" = "続ける場合は月額%@が請求されます。";
 "uxpro.trial.cancelTitle" = "前日まで";
-"uxpro.trial.cancelBody" = "iPhoneの設定からキャンセルすれば、料金はかかりません。";
+"uxpro.trial.cancelBody" = "設定からキャンセルすれば、料金はかかりません。";
 "uxpro.cta.startTrialDays" = "%lld日間無料で試す";
 "uxpro.included.title" = "Proに含まれるもの";
 "uxpro.feature.voice" = "話して記録";
@@ -8152,15 +8152,15 @@
 "l15.faq.yalaAI.q" = "Yala AIとは？";
 "l15.faq.yalaAI.a" = "Yala Proのアシスタントです。お金のことを質問したり（「今月コーヒーにいくら使った？」）、支出を伝えて記録してもらったりできます。回答のために必要な情報をAIサービスに送信します。これは「設定 > AIプライバシーとデータ」で決められます。";
 "l15.faq.whereData.q" = "データはどこに保存される？";
-"l15.faq.whereData.a" = "プライベートなiCloudを選んだ場合は、iPhoneとiCloudに保存され、Yalaからは見えません。クラウドのアカウントを使う場合はYalaのサーバーに保存され、別のiPhoneからもAppleまたはGoogleでサインインできます。グループで記録した内容は、グループで見られるようクラウドに保存されます。";
+"l15.faq.whereData.a" = "プライベートなiCloudを選んだ場合は、端末とiCloudに保存され、Yalaからは見えません。クラウドのアカウントを使う場合はYalaのサーバーに保存され、別の端末からもAppleまたはGoogleでサインインできます。グループで記録した内容は、グループで見られるようクラウドに保存されます。";
 "l15.faq.faceID.q" = "Face IDでYalaを保護できる？";
 "l15.faq.faceID.a" = "はい、iOSのロック機能を使います。ホーム画面でYalaのアイコンを長押しし、「Face IDを要求」をタップします。Yalaがあなたの顔を見ることはなく、確認はiOSが行います。手順は「設定 > Face IDで保護」にあります。";
 "l15.faq.widgets.q" = "Yalaのウィジェットを追加するには？";
 "l15.faq.widgets.a" = "ホーム画面の何もないところを長押しし、「編集」>「ウィジェットを追加」をタップしてYalaを検索します。残高、支出、カテゴリー、月のまとめ、最近の記録のウィジェットがあり、ロック画面用もあります。";
-"l15.support.sendFooter" = "メールが開き、%@ 宛てに送信します。より的確にサポートするため、YalaとiOSのバージョン、iPhoneの機種、テーマ、言語が添えられます。";
+"l15.support.sendFooter" = "メールが開き、%@ 宛てに送信します。より的確にサポートするため、YalaとiOSのバージョン、端末の機種、テーマ、言語が添えられます。";
 "l15.removeData.noCopyConfirm" = "取り除いて削除";
 "l15.removeData.exportDiscard" = "それでもデータを削除";
-"l15.removeData.exportPending" = "まだiCloudに届いていないこのiPhoneの変更：%d件。今データを削除すると、失われます。";
+"l15.removeData.exportPending" = "まだiCloudに届いていないこの端末の変更：%d件。今データを削除すると、失われます。";
 "l15.removeData.exportPendingUnknown" = "最近の変更がiCloudに届いたか確認できませんでした。今データを削除すると、失われるおそれがあります。";
 "l15.pro.themeResetNote" = "テーマはLiquid Glassに戻ります。";
 "l15.pro.oneMonthThenYearly" = "1か月無料、その後は年額%@";
@@ -8168,9 +8168,9 @@
 "l15.pro.startTrialOneMonth" = "1か月無料で試す";
 "l15.pro.gateStartTrialOneMonth" = "Proを1か月無料で試す";
 "l15.pro.settingsFreeWithTrialOneMonth" = "無料・1か月の無料トライアル";
-"welcome.cloud.otherAccountUsedTitle" = "このiPhoneでは別のアカウントが使われています";
-"welcome.cloud.otherAccountUsedBody" = "このiPhoneでは、%1$@で作成したYalaのアカウントがすでに使われています。%2$@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、%1$@でサインインしてください。";
-"welcome.cloud.otherAccountUsedBodyGeneric" = "このiPhoneでは、別の方法で作成したYalaのアカウントがすでに使われています。%@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、前回と同じ方法でサインインしてください。";
+"welcome.cloud.otherAccountUsedTitle" = "この端末では別のアカウントが使われています";
+"welcome.cloud.otherAccountUsedBody" = "この端末では、%1$@で作成したYalaのアカウントがすでに使われています。%2$@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、%1$@でサインインしてください。";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "この端末では、別の方法で作成したYalaのアカウントがすでに使われています。%@のアカウントはそれとは別のものです。別のアカウントを使ってもよろしいですか？いつものアカウントを使い続けるには、前回と同じ方法でサインインしてください。";
 
 /* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
 /* Insignia del rol en Miembros (una sola palabra para el rol) */
@@ -8380,7 +8380,7 @@
 "storage.steps.uploadedCount" = "%2$@ 件中 %1$@ 件";
 
 /* Pendientes de Jürgen 2.2 (2026-10-23): idioma híbrido (L16-5) y Face ID en Permisos (L16-14) */
-"pj22.language.inIOSFooter" = "iPhoneの設定が開きます。「検索」と日付の表示も一緒に変わります。";
+"pj22.language.inIOSFooter" = "設定が開きます。「検索」と日付の表示も一緒に変わります。";
 "pj22.permissions.faceID" = "Face ID";
 "pj22.permissions.faceIDDetail" = "iOSで設定すると、あなただけがYalaを開けるようになります。";
 "pj22.permissions.faceIDSeeHow" = "方法を見る";
