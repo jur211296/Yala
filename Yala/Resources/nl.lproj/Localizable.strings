@@ -2395,10 +2395,10 @@
 "icloud.privacyNote" = "Je gegevens worden privé bewaard op je persoonlijke iCloud-account. Yala heeft er geen toegang toe.";
 "icloud.statusSynced" = "Gesynchroniseerd";
 "icloud.statusSyncing" = "Bezig met synchroniseren...";
-"icloud.statusNoAccount" = "iCloud is niet actief op deze iPhone";
+"icloud.statusNoAccount" = "iCloud is niet actief op dit apparaat";
 "icloud.statusError" = "Synchronisatiefout";
 "icloud.lastSync" = "Laatste synchronisatie: %@";
-"icloud.noAccountWarning" = "Log helemaal bovenaan in de iPhone-instellingen in met je Apple Account om je gegevens in iCloud te bewaren.";
+"icloud.noAccountWarning" = "Log helemaal bovenaan in Instellingen in met je Apple Account om je gegevens in iCloud te bewaren.";
 "icloud.syncingData" = "Je gegevens worden gesynchroniseerd...";
 "icloud.syncingDescription" = "We halen je gegevens op uit iCloud.";
 "icloud.syncing.skip" = "Als nieuw instellen";
@@ -2410,7 +2410,7 @@
 "icloud.detail.upToDate" = "Helemaal bij — laatst gesynchroniseerd %@";
 "icloud.detail.errorTitle" = "We slaan op dit moment niets op in iCloud";
 "icloud.detail.errorMessage" = "Je bent offline of iCloud is niet beschikbaar. Je gegevens staan veilig op dit apparaat en synchroniseren zodra het kan.";
-"icloud.detail.stalledMessage" = "Je recente wijzigingen staan nog veilig op deze iPhone, maar zijn nog niet in iCloud aangekomen.";
+"icloud.detail.stalledMessage" = "Je recente wijzigingen staan nog veilig op dit apparaat, maar zijn nog niet in iCloud aangekomen.";
 "icloud.detail.technicalCode" = "Technisch detail: %@";
 "icloud.detail.cta.retry" = "Nu opnieuw proberen";
 "icloud.detail.cta.diagnose" = "Controleren en herstellen";
@@ -4604,7 +4604,7 @@
 "storage.confirm.migrate2Body" = "De cloud wordt ingeschakeld voor dit apparaat.";
 "storage.confirm.migrate2Confirm" = "Ja, cloud inschakelen";
 "storage.confirm.revertTitle" = "Terug naar iCloud?";
-"storage.confirm.revertBody" = "Je gegevens staan weer op deze iPhone en in je iCloud. Je verliest niets.";
+"storage.confirm.revertBody" = "Je gegevens staan weer op dit apparaat en in je iCloud. Je verliest niets.";
 "storage.confirm.revertContinue" = "Doorgaan";
 "storage.confirm.revert2Title" = "Weet je het zeker?";
 "storage.confirm.revert2Body" = "De cloud wordt uitgeschakeld voor dit apparaat.";
@@ -4866,7 +4866,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Je Yala-account in de cloud, als je het met je Google-account hebt gemaakt.";
-"welcome.existing.usedOnThisDeviceNote" = "Die je op deze iPhone hebt gebruikt";
+"welcome.existing.usedOnThisDeviceNote" = "Die je op dit apparaat hebt gebruikt";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Gebruik hetzelfde Google-account waarmee je je cloudaccount hebt gemaakt.";
@@ -6100,7 +6100,7 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "Je laatste wijzigingen zijn niet in de cloud aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
 "settings.signOutCloudSessionExpired" = "Je sessie is verlopen en sommige wijzigingen zijn nog niet naar de cloud geüpload. Er gaat niets verloren: open ‘Waar je gegevens staan’, hier in Instellingen, tik op ‘Aanmelden’ en probeer het daarna opnieuw.";
-"settings.signOutSessionSurvived" = "Je bent nog ingelogd op deze iPhone, dus er is niets verwijderd. Probeer het opnieuw.";
+"settings.signOutSessionSurvived" = "Je bent nog ingelogd op dit apparaat, dus er is niets verwijderd. Probeer het opnieuw.";
 "settings.signOutMigrationInFlight" = "De overstap van je gegevens tussen iCloud en de cloud is nog niet afgerond, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Open ‘Waar je gegevens staan’, in Instellingen, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
 "settings.signOutMigrationUnreadable" = "We konden niet controleren hoe ver de overstap van je gegevens tussen iCloud en de cloud is, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
 
@@ -6692,8 +6692,8 @@
 "storage.revert.prior.wipeFailed" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Controleer je verbinding en probeer het opnieuw.";
 "storage.revert.prior.wipeStopped" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Wat al verwijderd is, blijft verwijderd: probeer het opnieuw en we gaan verder met de rest.";
 "storage.revert.prior.wiping" = "Oude gegevens worden verwijderd… %d tot nu toe";
-"storage.revert.prior.noAccountTitle" = "Log in bij iCloud op deze iPhone";
-"storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en deze iPhone is niet ingelogd bij iCloud. Log in via Instellingen op de iPhone en probeer het opnieuw.";
+"storage.revert.prior.noAccountTitle" = "Log in bij iCloud op dit apparaat";
+"storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en dit apparaat is niet ingelogd bij iCloud. Log in via Instellingen en probeer het opnieuw.";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "Hier verwijderen";
@@ -7452,7 +7452,7 @@
 "siri.query.period.thisYear" = "dit jaar";
 "siri.entity.account" = "Rekening";
 "siri.query.noData" = "Open Yala één keer en vraag het me opnieuw.";
-"siri.query.groupsOnly" = "Op deze iPhone heeft Yala alleen je groepen.";
+"siri.query.groupsOnly" = "Op dit apparaat heeft Yala alleen je groepen.";
 "siri.query.stale" = "Je cijfers van die periode zijn niet bijgewerkt. Open Yala en vraag het me opnieuw.";
 "siri.query.spending.thisWeek" = "Deze week heb je %@ uitgegeven.";
 "siri.query.spending.thisMonth" = "Deze maand heb je %@ uitgegeven.";
@@ -7562,9 +7562,9 @@
 "l20d.groups.leaveAll.confirmMessageGeneric" = "Je verlaat alle groepen waarin je geen openstaand saldo hebt.";
 
 /* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
-"uxcs.removeDeviceData.row" = "Mijn gegevens van deze iPhone verwijderen";
+"uxcs.removeDeviceData.row" = "Mijn gegevens van dit apparaat verwijderen";
 "uxcs.removeDeviceData.subtitle" = "Ze blijven in je iCloud";
-"uxcs.removeDeviceData.sheetTitle" = "Je gegevens van deze iPhone verwijderen?";
+"uxcs.removeDeviceData.sheetTitle" = "Je gegevens van dit apparaat verwijderen?";
 "uxcs.removeDeviceData.confirm" = "Mijn gegevens verwijderen";
 "uxcs.signOutUpload.title" = "Je wijzigingen worden naar iCloud geüpload…";
 "uxcs.signOutUpload.pending" = "Nog te uploaden wijzigingen: %d";
@@ -7587,10 +7587,10 @@
 "l20n.sheet.continueCurrent" = "Doorgaan met je huidige account";
 "l20n.relaunch.almostTitle" = "Bijna klaar";
 "l20n.relaunch.doneSignedOut" = "Afgemeld";
-"l20n.relaunch.afterSignOut" = "Als je de app opnieuw opent, haalt Yala je gegevens helemaal van deze iPhone.";
-"l20n.relaunch.afterGroupsOnly" = "Je persoonlijke gegevens blijven op deze iPhone.";
+"l20n.relaunch.afterSignOut" = "Als je de app opnieuw opent, haalt Yala je gegevens helemaal van dit apparaat.";
+"l20n.relaunch.afterGroupsOnly" = "Je persoonlijke gegevens blijven op dit apparaat.";
 "l20n.relaunch.doneInCloud" = "Je gegevens staan al in je cloudaccount";
-"l20n.relaunch.doneOnPhone" = "Je gegevens staan al op deze iPhone";
+"l20n.relaunch.doneOnPhone" = "Je gegevens staan al op dit apparaat";
 "l20n.relaunch.afterToICloud" = "Als je de app opnieuw opent, worden ze naar je iCloud geüpload.";
 "l20n.relaunch.doneReverseStopped" = "De terugkeer naar iCloud is gestopt";
 "l20n.relaunch.pending" = "Open Yala opnieuw";
@@ -7603,7 +7603,7 @@
 "l20n.relaunch.pendingA11y" = "Nog te doen: open Yala opnieuw";
 "l20n.relaunch.mismatchMessage" = "Yala werd geopend voordat iCloud klaar was. Sluit de app en open hem opnieuw om je gegevens te synchroniseren:\n\n%@";
 "l20n.icloud.noAccountDetail" = "Je gegevens blijven alleen hier.";
-"l20n.icloud.openSettings" = "iPhone-instellingen openen";
+"l20n.icloud.openSettings" = "Instellingen openen";
 "l20n.icloud.mailSubject" = "Yala: iCloud synchroniseert niet";
 "l20n.icloud.contactFooter" = "Blijft het zo, schrijf ons dan: de e-mail bevat al het technische detail zodat we kunnen helpen.";
 
@@ -7620,7 +7620,7 @@
 "uxpro.trial.chargeYearly" = "Blijf je, dan betaal je %@ per jaar.";
 "uxpro.trial.chargeMonthly" = "Blijf je, dan betaal je %@ per maand.";
 "uxpro.trial.cancelTitle" = "Tot een dag van tevoren";
-"uxpro.trial.cancelBody" = "Zeg op in Instellingen op je iPhone en je betaalt niets.";
+"uxpro.trial.cancelBody" = "Zeg op in Instellingen en je betaalt niets.";
 "uxpro.cta.startTrialDays" = "%lld dagen gratis proberen";
 "uxpro.included.title" = "Wat Pro bevat";
 "uxpro.feature.voice" = "Noteer met je stem";
@@ -8152,15 +8152,15 @@
 "l15.faq.yalaAI.q" = "Wat is Yala AI?";
 "l15.faq.yalaAI.a" = "Het is de assistent van Yala Pro. Je stelt hem vragen over je financiën (‘hoeveel heb ik deze maand aan koffie uitgegeven?’) of vertelt hem over een uitgave en hij noteert die voor je. Om te antwoorden stuurt hij het nodige naar een AI-dienst; dat bepaal je in Instellingen > AI-privacy & gegevens.";
 "l15.faq.whereData.q" = "Waar worden mijn gegevens bewaard?";
-"l15.faq.whereData.a" = "Als je je privé-iCloud hebt gekozen: op je iPhone en in je iCloud, en Yala ziet ze niet. Als je een account in de cloud hebt: op de servers van Yala, en je logt in op een andere iPhone met Apple of Google. Wat je in een groep invoert, wordt in de cloud bewaard zodat de groep het ziet.";
+"l15.faq.whereData.a" = "Als je je privé-iCloud hebt gekozen: op je apparaat en in je iCloud, en Yala ziet ze niet. Als je een account in de cloud hebt: op de servers van Yala, en je logt in op een ander apparaat met Apple of Google. Wat je in een groep invoert, wordt in de cloud bewaard zodat de groep het ziet.";
 "l15.faq.faceID.q" = "Kan ik Yala beveiligen met Face ID?";
 "l15.faq.faceID.a" = "Ja, met de vergrendeling van iOS: houd het Yala-icoon op je beginscherm ingedrukt en tik op ‘Vereis Face ID’. Yala ziet je gezicht nooit: iOS controleert het. De uitleg vind je in Instellingen > Beveiligen met Face ID.";
 "l15.faq.widgets.q" = "Hoe voeg ik een Yala-widget toe?";
 "l15.faq.widgets.a" = "Houd een lege plek op je beginscherm ingedrukt, tik op ‘Wijzig’ > ‘Voeg widget toe’ en zoek naar Yala. Er zijn widgets voor saldo, uitgaven, categorieën, maandoverzicht en laatste boekingen, en ook voor het toegangsscherm.";
-"l15.support.sendFooter" = "Je e-mailapp opent om het naar %@ te sturen. We sturen je Yala- en iOS-versie, je iPhone-model, thema en taal mee, zodat we je beter kunnen helpen.";
+"l15.support.sendFooter" = "Je e-mailapp opent om het naar %@ te sturen. We sturen je Yala- en iOS-versie, je apparaatmodel, thema en taal mee, zodat we je beter kunnen helpen.";
 "l15.removeData.noCopyConfirm" = "Verwijderen en wissen";
 "l15.removeData.exportDiscard" = "Toch mijn gegevens verwijderen";
-"l15.removeData.exportPending" = "Wijzigingen van deze iPhone die nog niet in iCloud zijn aangekomen: %d. Als je je gegevens nu verwijdert, gaan ze verloren.";
+"l15.removeData.exportPending" = "Wijzigingen van dit apparaat die nog niet in iCloud zijn aangekomen: %d. Als je je gegevens nu verwijdert, gaan ze verloren.";
 "l15.removeData.exportPendingUnknown" = "We konden niet bevestigen dat je laatste wijzigingen in iCloud zijn aangekomen. Als je je gegevens nu verwijdert, kunnen ze verloren gaan.";
 "l15.pro.themeResetNote" = "Je thema gaat terug naar Liquid Glass.";
 "l15.pro.oneMonthThenYearly" = "1 maand gratis, daarna %@ per jaar";
@@ -8168,9 +8168,9 @@
 "l15.pro.startTrialOneMonth" = "1 maand gratis proberen";
 "l15.pro.gateStartTrialOneMonth" = "Pro 1 maand gratis proberen";
 "l15.pro.settingsFreeWithTrialOneMonth" = "Gratis · 1 maand gratis proberen";
-"welcome.cloud.otherAccountUsedTitle" = "Deze iPhone heeft al een ander account gebruikt";
-"welcome.cloud.otherAccountUsedBody" = "Op deze iPhone is al een Yala-account gebruikt dat met %1$@ is gemaakt, en dat van %2$@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met %1$@ om je vertrouwde account te blijven gebruiken.";
-"welcome.cloud.otherAccountUsedBodyGeneric" = "Op deze iPhone is al een Yala-account gebruikt dat met een andere methode is gemaakt, en dat van %@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met de methode van toen om je vertrouwde account te blijven gebruiken.";
+"welcome.cloud.otherAccountUsedTitle" = "Dit apparaat heeft al een ander account gebruikt";
+"welcome.cloud.otherAccountUsedBody" = "Op dit apparaat is al een Yala-account gebruikt dat met %1$@ is gemaakt, en dat van %2$@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met %1$@ om je vertrouwde account te blijven gebruiken.";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "Op dit apparaat is al een Yala-account gebruikt dat met een andere methode is gemaakt, en dat van %@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met de methode van toen om je vertrouwde account te blijven gebruiken.";
 
 /* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
 /* Insignia del rol en Miembros (una sola palabra para el rol) */
@@ -8380,7 +8380,7 @@
 "storage.steps.uploadedCount" = "%1$@ van %2$@";
 
 /* Pendientes de Jürgen 2.2 (2026-10-23): idioma híbrido (L16-5) y Face ID en Permisos (L16-14) */
-"pj22.language.inIOSFooter" = "Opent de iPhone-instellingen, waar ook ‘Zoeken’ en de datums meeveranderen.";
+"pj22.language.inIOSFooter" = "Opent Instellingen, waar ook ‘Zoeken’ en de datums meeveranderen.";
 "pj22.permissions.faceID" = "Face ID";
 "pj22.permissions.faceIDDetail" = "iOS zet het aan, zodat alleen jij Yala kunt openen.";
 "pj22.permissions.faceIDSeeHow" = "Bekijk hoe";

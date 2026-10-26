@@ -2395,10 +2395,10 @@
 "icloud.privacyNote" = "你的数据私密存储在你的个人 iCloud 账号中。Yala 无法访问。";
 "icloud.statusSynced" = "已同步";
 "icloud.statusSyncing" = "正在同步...";
-"icloud.statusNoAccount" = "这台 iPhone 未启用 iCloud";
+"icloud.statusNoAccount" = "这台设备未启用 iCloud";
 "icloud.statusError" = "同步错误";
 "icloud.lastSync" = "上次同步:%@";
-"icloud.noAccountWarning" = "要把数据保存到 iCloud，请在 iPhone 设置的最上方登录你的 Apple 账户。";
+"icloud.noAccountWarning" = "要把数据保存到 iCloud，请在“设置”的最上方登录你的 Apple 账户。";
 "icloud.syncingData" = "正在同步你的数据...";
 "icloud.syncingDescription" = "我们正在从 iCloud 取回你的信息。";
 "icloud.syncing.skip" = "作为新设备设置";
@@ -2410,7 +2410,7 @@
 "icloud.detail.upToDate" = "全部同步 — 上次同步 %@";
 "icloud.detail.errorTitle" = "目前未保存到 iCloud";
 "icloud.detail.errorMessage" = "你处于离线状态或 iCloud 不可用。你的数据在本设备上是安全的,可用时会同步。";
-"icloud.detail.stalledMessage" = "你最近的更改仍安全地保存在这台 iPhone 上，但还没有到达 iCloud。";
+"icloud.detail.stalledMessage" = "你最近的更改仍安全地保存在这台设备上，但还没有到达 iCloud。";
 "icloud.detail.technicalCode" = "技术详情:%@";
 "icloud.detail.cta.retry" = "立即重试";
 "icloud.detail.cta.diagnose" = "检查并修复";
@@ -4604,7 +4604,7 @@
 "storage.confirm.migrate2Body" = "将在此设备上启用云端。";
 "storage.confirm.migrate2Confirm" = "是，启用云端";
 "storage.confirm.revertTitle" = "返回 iCloud？";
-"storage.confirm.revertBody" = "你的数据会回到这台 iPhone 和你的 iCloud 中。你不会丢失任何东西。";
+"storage.confirm.revertBody" = "你的数据会回到这台设备和你的 iCloud 中。你不会丢失任何东西。";
 "storage.confirm.revertContinue" = "继续";
 "storage.confirm.revert2Title" = "确定吗？";
 "storage.confirm.revert2Body" = "将在此设备上停用云端。";
@@ -4866,7 +4866,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "云端的 Yala 账户（如果你是用 Google 账号创建的）。";
-"welcome.existing.usedOnThisDeviceNote" = "你在这台 iPhone 上用过的方式";
+"welcome.existing.usedOnThisDeviceNote" = "你在这台设备上用过的方式";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "请使用创建云端账户时的同一个 Google 账号。";
@@ -6100,7 +6100,7 @@
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
 "settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台手机上，不会丢失，过一会儿再试试。";
 "settings.signOutCloudSessionExpired" = "你的登录已过期，还有更改尚未上传到云端。这些更改不会丢失：请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”，然后再试一次。";
-"settings.signOutSessionSurvived" = "你在这台 iPhone 上仍处于登录状态，因此没有删除任何内容。请再试一次。";
+"settings.signOutSessionSurvived" = "你在这台设备上仍处于登录状态，因此没有删除任何内容。请再试一次。";
 "settings.signOutMigrationInFlight" = "你的数据在 iCloud 与云端之间的迁移尚未完成，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请打开“设置”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
 "settings.signOutMigrationUnreadable" = "我们无法确认你的数据在 iCloud 与云端之间的迁移进度，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
 
@@ -6692,8 +6692,8 @@
 "storage.revert.prior.wipeFailed" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。请检查网络后再试一次。";
 "storage.revert.prior.wipeStopped" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。已删除的数据不会恢复：再试一次，我们会继续删除剩下的部分。";
 "storage.revert.prior.wiping" = "正在删除以前的数据…已删除 %d 条";
-"storage.revert.prior.noAccountTitle" = "请在这部 iPhone 上登录 iCloud";
-"storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这部 iPhone 没有登录 iCloud。请在 iPhone 的“设置”中登录后再试一次。";
+"storage.revert.prior.noAccountTitle" = "请在这台设备上登录 iCloud";
+"storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这台设备没有登录 iCloud。请在“设置”中登录后再试一次。";
 
 /* Swipe action: hides a group expense draft from the Inbox on this phone only */
 "inbox.hideHere" = "在此移除";
@@ -7452,7 +7452,7 @@
 "siri.query.period.thisYear" = "今年";
 "siri.entity.account" = "账户";
 "siri.query.noData" = "请先打开一次 Yala，再问我。";
-"siri.query.groupsOnly" = "在这台 iPhone 上，Yala 只有你的群组。";
+"siri.query.groupsOnly" = "在这台设备上，Yala 只有你的群组。";
 "siri.query.stale" = "这段时间的数据不是最新的。请打开 Yala 后再问我。";
 "siri.query.spending.thisWeek" = "本周你已花费 %@。";
 "siri.query.spending.thisMonth" = "本月你已花费 %@。";
@@ -7562,9 +7562,9 @@
 "l20d.groups.leaveAll.confirmMessageGeneric" = "你将退出所有没有未结余额的群组。";
 
 /* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
-"uxcs.removeDeviceData.row" = "从这台 iPhone 移除我的数据";
+"uxcs.removeDeviceData.row" = "从这台设备移除我的数据";
 "uxcs.removeDeviceData.subtitle" = "它们仍保留在你的 iCloud 中";
-"uxcs.removeDeviceData.sheetTitle" = "要从这台 iPhone 移除你的数据吗？";
+"uxcs.removeDeviceData.sheetTitle" = "要从这台设备移除你的数据吗？";
 "uxcs.removeDeviceData.confirm" = "移除我的数据";
 "uxcs.signOutUpload.title" = "正在将你的更改上传到 iCloud…";
 "uxcs.signOutUpload.pending" = "待上传的更改：%d 项";
@@ -7587,10 +7587,10 @@
 "l20n.sheet.continueCurrent" = "使用当前账户继续";
 "l20n.relaunch.almostTitle" = "快完成了";
 "l20n.relaunch.doneSignedOut" = "已退出登录";
-"l20n.relaunch.afterSignOut" = "再次打开后，Yala 会完成从这台 iPhone 上移除你的数据。";
-"l20n.relaunch.afterGroupsOnly" = "你的个人数据仍保留在这台 iPhone 上。";
+"l20n.relaunch.afterSignOut" = "再次打开后，Yala 会完成从这台设备上移除你的数据。";
+"l20n.relaunch.afterGroupsOnly" = "你的个人数据仍保留在这台设备上。";
 "l20n.relaunch.doneInCloud" = "你的数据已在你的云端账户中";
-"l20n.relaunch.doneOnPhone" = "你的数据已在这台 iPhone 上";
+"l20n.relaunch.doneOnPhone" = "你的数据已在这台设备上";
 "l20n.relaunch.afterToICloud" = "再次打开后，数据会开始上传到你的 iCloud。";
 "l20n.relaunch.doneReverseStopped" = "返回 iCloud 已停止";
 "l20n.relaunch.pending" = "重新打开 Yala";
@@ -7603,7 +7603,7 @@
 "l20n.relaunch.pendingA11y" = "待完成：重新打开 Yala";
 "l20n.relaunch.mismatchMessage" = "Yala 在 iCloud 准备好之前就打开了。要同步你的数据，请关闭 Yala 并重新打开：\n\n%@";
 "l20n.icloud.noAccountDetail" = "你的数据只保存在这里。";
-"l20n.icloud.openSettings" = "打开 iPhone 设置";
+"l20n.icloud.openSettings" = "打开“设置”";
 "l20n.icloud.mailSubject" = "Yala：iCloud 未同步";
 "l20n.icloud.contactFooter" = "如果一直这样，请联系我们：邮件里已附上技术详情，方便我们帮你。";
 
@@ -7620,7 +7620,7 @@
 "uxpro.trial.chargeYearly" = "如果继续使用,将按每年 %@ 扣费。";
 "uxpro.trial.chargeMonthly" = "如果继续使用,将按每月 %@ 扣费。";
 "uxpro.trial.cancelTitle" = "最晚提前一天";
-"uxpro.trial.cancelBody" = "在 iPhone 的“设置”中取消,就不会扣费。";
+"uxpro.trial.cancelBody" = "在“设置”中取消,就不会扣费。";
 "uxpro.cta.startTrialDays" = "免费试用 %lld 天";
 "uxpro.included.title" = "Pro 包含什么";
 "uxpro.feature.voice" = "开口记账";
@@ -8152,15 +8152,15 @@
 "l15.faq.yalaAI.q" = "Yala AI 是什么？";
 "l15.faq.yalaAI.a" = "它是 Yala Pro 的助手。你可以问它关于财务的问题（“这个月我在咖啡上花了多少？”），或告诉它一笔支出，它会替你记下来。为了回答，它会把必要的信息发送给一项 AI 服务；你可以在「设置 > AI 隐私与数据」中决定。";
 "l15.faq.whereData.q" = "我的数据保存在哪里？";
-"l15.faq.whereData.a" = "如果你选择了私人 iCloud，数据保存在你的 iPhone 和你的 iCloud 中：Yala 看不到。如果你有云端账户，数据保存在 Yala 的服务器上，你可以在另一台 iPhone 上用 Apple 或 Google 登录。你在群组里记下的内容会保存在云端，让群组成员看到。";
+"l15.faq.whereData.a" = "如果你选择了私人 iCloud，数据保存在你的设备和你的 iCloud 中：Yala 看不到。如果你有云端账户，数据保存在 Yala 的服务器上，你可以在另一台设备上用 Apple 或 Google 登录。你在群组里记下的内容会保存在云端，让群组成员看到。";
 "l15.faq.faceID.q" = "可以用面容 ID 保护 Yala 吗？";
 "l15.faq.faceID.a" = "可以，使用 iOS 的锁定功能：在主屏幕上按住 Yala 图标，然后点按“需要面容 ID”。Yala 永远看不到你的面容：由 iOS 进行验证。操作指南在「设置 > 用面容 ID 保护」中。";
 "l15.faq.widgets.q" = "怎么添加 Yala 小组件？";
 "l15.faq.widgets.a" = "在主屏幕的空白处按住，点按“编辑”>“添加小组件”，然后搜索 Yala。有余额、支出、类别、月度摘要和最近记录小组件，也有适用于锁定屏幕的小组件。";
-"l15.support.sendFooter" = "将打开你的邮件，发送到 %@。邮件会附上 Yala 和 iOS 的版本、你的 iPhone 型号、主题和语言，方便我们更好地帮你。";
+"l15.support.sendFooter" = "将打开你的邮件，发送到 %@。邮件会附上 Yala 和 iOS 的版本、你的设备型号、主题和语言，方便我们更好地帮你。";
 "l15.removeData.noCopyConfirm" = "移除并删除";
 "l15.removeData.exportDiscard" = "仍然移除我的数据";
-"l15.removeData.exportPending" = "这台 iPhone 上尚未同步到 iCloud 的更改：%d 项。如果现在移除你的数据，这些更改会丢失。";
+"l15.removeData.exportPending" = "这台设备上尚未同步到 iCloud 的更改：%d 项。如果现在移除你的数据，这些更改会丢失。";
 "l15.removeData.exportPendingUnknown" = "我们无法确认你最近的更改已同步到 iCloud。如果现在移除你的数据，这些更改可能会丢失。";
 "l15.pro.themeResetNote" = "你的主题会恢复为 Liquid Glass。";
 "l15.pro.oneMonthThenYearly" = "免费 1 个月，之后每年 %@";
@@ -8168,9 +8168,9 @@
 "l15.pro.startTrialOneMonth" = "免费试用 1 个月";
 "l15.pro.gateStartTrialOneMonth" = "免费试用 Pro 1 个月";
 "l15.pro.settingsFreeWithTrialOneMonth" = "免费 · 可免费试用 1 个月";
-"welcome.cloud.otherAccountUsedTitle" = "这台 iPhone 已使用过另一个账户";
-"welcome.cloud.otherAccountUsedBody" = "这台 iPhone 上已使用过一个通过 %1$@ 创建的 Yala 账户，而 %2$@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请通过 %1$@ 登录。";
-"welcome.cloud.otherAccountUsedBodyGeneric" = "这台 iPhone 上已使用过一个通过其他方式创建的 Yala 账户，而 %@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请用当时的方式登录。";
+"welcome.cloud.otherAccountUsedTitle" = "这台设备已使用过另一个账户";
+"welcome.cloud.otherAccountUsedBody" = "这台设备上已使用过一个通过 %1$@ 创建的 Yala 账户，而 %2$@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请通过 %1$@ 登录。";
+"welcome.cloud.otherAccountUsedBodyGeneric" = "这台设备上已使用过一个通过其他方式创建的 Yala 账户，而 %@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请用当时的方式登录。";
 
 /* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
 /* Insignia del rol en Miembros (una sola palabra para el rol) */
@@ -8380,7 +8380,7 @@
 "storage.steps.uploadedCount" = "%1$@ / %2$@";
 
 /* Pendientes de Jürgen 2.2 (2026-10-23): idioma híbrido (L16-5) y Face ID en Permisos (L16-14) */
-"pj22.language.inIOSFooter" = "将打开 iPhone 设置，“搜索”和日期也会一起切换。";
+"pj22.language.inIOSFooter" = "将打开“设置”，“搜索”和日期也会一起切换。";
 "pj22.permissions.faceID" = "面容 ID";
 "pj22.permissions.faceIDDetail" = "由 iOS 开启，只有你能打开 Yala。";
 "pj22.permissions.faceIDSeeHow" = "查看方法";

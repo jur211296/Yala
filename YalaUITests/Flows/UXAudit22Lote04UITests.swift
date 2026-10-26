@@ -25,7 +25,7 @@ final class UXAudit22Lote04UITests: XCTestCase {
         return element
     }
 
-    // MARK: - L20-6 · sin cuenta de Yala, «Quitar mis datos de este iPhone», sola y al final
+    // MARK: - L20-6 · sin cuenta de Yala, «Quitar mis datos de este dispositivo», sola y al final
 
     /// Celda privada sin cuenta (seed `minimal`, sin sesión): la fila de salida se llama por lo que hace, va DEBAJO de
     /// «Legal» (su propia tarjeta, separada de «Calificar») y su hoja lleva el mismo verbo.
@@ -37,7 +37,7 @@ final class UXAudit22Lote04UITests: XCTestCase {
 
         let row = scrollTo(app, "profile_security_signout")
         XCTAssertTrue(row.waitForExistence(timeout: 5), "No está la fila de salida en Ajustes.")
-        XCTAssertTrue(row.label.contains("Quitar mis datos de este iPhone"), "La fila no dice qué hace: \(row.label)")
+        XCTAssertTrue(row.label.contains("Quitar mis datos de este dispositivo"), "La fila no dice qué hace: \(row.label)")
         XCTAssertFalse(row.label.contains("Cerrar sesión"), "Sin cuenta de Yala la fila sigue diciendo «Cerrar sesión».")
 
         let terms = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Términos de uso")).firstMatch
@@ -47,7 +47,7 @@ final class UXAudit22Lote04UITests: XCTestCase {
             """)
 
         row.tap()
-        XCTAssertTrue(app.staticTexts["¿Quitar tus datos de este iPhone?"].waitForExistence(timeout: 5),
+        XCTAssertTrue(app.staticTexts["¿Quitar tus datos de este dispositivo?"].waitForExistence(timeout: 5),
                       "La hoja de la fila no lleva su verbo.")
         let confirm = app.buttons["destructive_scope_confirm"]
         XCTAssertTrue(confirm.exists)

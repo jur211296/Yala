@@ -513,6 +513,31 @@ enum GroupBridgeSystemRole {
     static let subcategoryOpeningBalanceDebt = "openingBalanceDebt"   // "debo" (expense)
 }
 
+/// Nombres que tuvieron las subcategorías de sistema antes de corregir su texto (molde de «Sin asignar», lote 12.4).
+/// La subcategoría se guarda con el texto del idioma y luego se BUSCA por nombre: sin esto, quien ya la tenía con el
+/// nombre viejo recibía una segunda al volver a sembrar. No se renombra lo guardado: otro aparato con otro idioma
+/// dejaría de reconocerla y sembraría la suya.
+///
+/// pt-PT, 2026-10-26: los dos saldos iniciales decían «você» (trato de Brasil). El valor viejo sigue siendo el de pt-BR.
+enum SystemSubcategoryNameLogic {
+    static let legacyNamesByRole: [String: Set<String>] = [
+        GroupBridgeSystemRole.subcategoryOpeningBalanceOwed: ["Saldo inicial (devem a você)"],
+        GroupBridgeSystemRole.subcategoryOpeningBalanceDebt: ["Saldo inicial (você deve)"],
+    ]
+
+    /// ¿`name` es la subcategoría de sistema del rol? Con el nombre de hoy o con uno que tuvo antes.
+    static func matches(_ name: String, role: String, current: String) -> Bool {
+        name == current || (legacyNamesByRole[role]?.contains(name) ?? false)
+    }
+
+    /// Nombres viejos de la clave `subcategory.system.<rol>`; vacío para cualquier otra clave.
+    static func legacyNames(forLocalizationKey key: String) -> Set<String> {
+        let prefix = "subcategory.system."
+        guard key.hasPrefix(prefix) else { return [] }
+        return legacyNamesByRole[String(key.dropFirst(prefix.count))] ?? []
+    }
+}
+
 func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
     [
         // Categoría sistema EXPENSE
@@ -655,11 +680,15 @@ func seedSystemGroupCategoriesIfNeeded(
             }
 
             // Crear subcategorías faltantes
-            let existingSubNames = Set((category.subcategories ?? []).map(\.name))
+            let existingSubs = category.subcategories ?? []
             for (subIndex, subDef) in definition.subcategories.enumerated() {
-                if existingSubNames.contains(subDef.name) {
+                // Acepta también el nombre que tuvo antes (`SystemSubcategoryNameLogic`): si no, una corrección de
+                // texto le siembra una segunda a quien ya la tenía.
+                if let existing = existingSubs.first(where: {
+                    SystemSubcategoryNameLogic.matches($0.name, role: subDef.role, current: subDef.name)
+                }) {
                     // Asegurar isSystem en subcat existente
-                    if let existing = category.subcategories?.first(where: { $0.name == subDef.name }), !existing.isSystem {
+                    if !existing.isSystem {
                         existing.isSystem = true
                     }
                     continue
