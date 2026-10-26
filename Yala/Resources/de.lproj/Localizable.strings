@@ -446,10 +446,10 @@
 "settings.favorites" = "Favoriten";
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budget-Favoriten";
-"settings.budgetsFavoritesInfo" = "Budget-Favoriten erscheinen in der Budget-Karte der Übersicht (3 bei mittel, 5 bei groß).";
+"settings.budgetsFavoritesInfo" = "Budget-Favoriten erscheinen in der Budget-Karte des Panels (3 bei mittel, 5 bei groß).";
 "settings.budgetsFavoritesEmptyHint" = "Erstelle Budgets im Tab Planung.";
 "settings.budgetsFavoritesReorder" = "Favoriten sortieren";
-"budgets.favorites.previewTitle" = "So sieht es in der Übersicht aus";
+"budgets.favorites.previewTitle" = "So sieht es im Panel aus";
 "budgets.favorites.previewEmpty" = "Wähle Favoriten, um die Vorschau zu sehen";
 "settings.tabBarConfig" = "Tabs unten";
 "settings.tabBarConfigInfo" = "Wähle, welche Tabs du unten siehst und in welcher Reihenfolge.";
@@ -655,7 +655,7 @@
 "export.column.note.description" = "Was du in die Notiz geschrieben hast.";
 "common.next" = "Weiter";
 "settings.versionInfo" = "Version %1$@ (Build %2$@)";
-"tab.panel" = "Übersicht";
+"tab.panel" = "Panel";
 "tab.statistics" = "Statistiken";
 "tab.planning" = "Planung";
 "tab.more" = "Mehr";
@@ -738,7 +738,7 @@
 "widget.today" = "Heute";
 
 // Widget Preferences
-"widget.preferences.description" = "Wähle, was du in deiner Hauptübersicht sehen möchtest und in welcher Reihenfolge.";
+"widget.preferences.description" = "Wähle, was du in deinem Panel sehen möchtest und in welcher Reihenfolge.";
 "widget.resetLayout" = "Ursprüngliche Anordnung wiederherstellen";
 "widget.alwaysVisible" = "Immer sichtbar";
 "widget.fixedPosition" = "Feste Position";
@@ -1159,7 +1159,7 @@
 "settings.sectionIndicators" = "Indikatoren";
 "settings.sectionFormat" = "Zahlenformat";
 "settings.defaultPeriod" = "Standardzeitraum";
-"settings.defaultPeriodDescription" = "Mit diesem Zeitraum öffnen sich Übersicht, Einträge und Statistiken. Über die Zeitraumauswahl kannst du ihn vorübergehend ändern.";
+"settings.defaultPeriodDescription" = "Mit diesem Zeitraum öffnen sich Panel, Einträge und Statistiken. Über die Zeitraumauswahl kannst du ihn vorübergehend ändern.";
 "settings.colorfulIcons" = "Farbige Symbole";
 "settings.colorfulIconsDescription" = "Zeigt farbige Symbole im Profilbereich an, im Stil der iOS-Einstellungen.";
 "settings.colorfulIconsDisabledByTheme" = "Automatisch durch das aktuelle Design deaktiviert.";
@@ -1700,9 +1700,9 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Hilfetexte";
-"settings.widgetHintsDescription" = "Zeigt die Schaltfläche „?“ neben den Diagrammen, die jedes davon erklärt. Zu sehen in der Übersicht, in Statistiken und in Planung.";
+"settings.widgetHintsDescription" = "Zeigt die Schaltfläche „?“ neben den Diagrammen, die jedes davon erklärt. Zu sehen im Panel, in Statistiken und in Planung.";
 "settings.showVariations" = "Mit dem Vorzeitraum vergleichen";
-"settings.showVariationsDescription" = "Zeigt, wie viel jede Zahl gegenüber dem Vorzeitraum gestiegen oder gesunken ist. Zu sehen in der Übersicht, in Statistiken und in den Berichten.";
+"settings.showVariationsDescription" = "Zeigt, wie viel jede Zahl gegenüber dem Vorzeitraum gestiegen oder gesunken ist. Zu sehen im Panel, in Statistiken und in den Berichten.";
 "settings.averageLine" = "Durchschnittslinie in Diagrammen";
 "settings.averageLineDescription" = "Zeigt eine Durchschnittslinie in Balkendiagrammen.";
 "settings.averageLine.off" = "Keine";
@@ -2181,7 +2181,7 @@
 "faq.whatIsYala.q" = "Was ist Yala?";
 "faq.whatIsYala.a" = "Yala ist deine App für persönliche Finanzen. Sie hilft dir, Ausgaben und Einnahmen zu erfassen, dein Geld nach Kategorien und Tags zu organisieren, Budgets zu erstellen und klare Berichte deiner Finanzen zu sehen.";
 "faq.howToRecord.q" = "Wie erfasse ich eine Ausgabe?";
-"faq.howToRecord.a" = "Tippe in der Übersicht auf „Neuer Eintrag“, um den Betrag einzugeben, oder auf Sprache oder Foto, um ihn zu diktieren oder einen Beleg zu lesen. Yala füllt die Details für dich aus.";
+"faq.howToRecord.a" = "Tippe im Panel auf „Neuer Eintrag“, um den Betrag einzugeben, oder auf Sprache oder Foto, um ihn zu diktieren oder einen Beleg zu lesen. Yala füllt die Details für dich aus.";
 "faq.multiCurrency.q" = "Kann ich mehrere Währungen nutzen?";
 "faq.multiCurrency.a" = "Ja. Yala hat 54 Währungen. Jedes Konto läuft in seiner eigenen, und Yala rechnet die Summen in deine Hauptwährung um. Deine Hauptwährung und bis zu 2 Nebenwährungen zum Vergleichen wählst du unter Einstellungen > Währung und Wechselkurs.";
 "faq.changeCategory.q" = "Wie ändere ich die Kategorie einer Ausgabe?";
@@ -2579,7 +2579,7 @@
 "tutorials.createAccount.intro.title" = "Was ist ein Konto?";
 "tutorials.createAccount.intro.desc" = "Richte deine Bank, dein Wallet oder deine Karte ein, um zu sehen, wo dein Geld ist.";
 "tutorials.createAccount.step0.title" = "Erstelle ein neues Konto";
-"tutorials.createAccount.step1.title" = "Oder erstelle es in der Übersicht";
+"tutorials.createAccount.step1.title" = "Oder erstelle es im Panel";
 "tutorials.createAccount.step2.title" = "Fülle die Daten aus";
 "tutorials.createAccount.completion.title" = "Jetzt weißt du, wie du ein Konto erstellst";
 "tutorials.createAccount.completion.desc" = "Teile dein Geld auf Konten auf (Bank, Bargeld, Karte), um zu sehen, wie viel auf jedem ist. Du kannst sie jederzeit bearbeiten.";
@@ -2630,7 +2630,7 @@
 "tutorials.createBudgets.intro.desc" = "Setze Ausgabenlimits und werde benachrichtigt, wenn du nahe dran bist.";
 "tutorials.createBudgets.step0.title" = "Öffne Planung";
 "tutorials.createBudgets.step1.title" = "Konfiguriere dein Budget";
-"tutorials.createBudgets.step2.title" = "Zeig es in der Übersicht";
+"tutorials.createBudgets.step2.title" = "Zeig es im Panel";
 "tutorials.createBudgets.step3.title" = "Bearbeite es, wann immer du möchtest";
 "tutorials.createBudgets.completion.title" = "Jetzt weißt du, wie du ein Budget erstellst";
 "tutorials.createBudgets.completion.desc" = "Mit einem Budget siehst du sofort, wie viel du noch ausgeben kannst, und Yala sagt dir Bescheid, wenn du dich dem Limit näherst.";
@@ -2663,8 +2663,8 @@
 "tutorials.editPanel.step0.title" = "Öffne das Panel";
 "tutorials.editPanel.step1.title" = "Passe die Widgets an";
 "tutorials.editPanel.step2.title" = "Setze zurück, wenn du möchtest";
-"tutorials.editPanel.completion.title" = "Jetzt weißt du, wie du die Übersicht anpasst";
-"tutorials.editPanel.completion.desc" = "Deine Übersicht zeigt, was du auswählst, in der Reihenfolge, die du willst. Du kannst sie jederzeit ändern.";
+"tutorials.editPanel.completion.title" = "Jetzt weißt du, wie du das Panel anpasst";
+"tutorials.editPanel.completion.desc" = "Dein Panel zeigt, was du auswählst, in der Reihenfolge, die du willst. Du kannst es jederzeit ändern.";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "Panel-Filter";
@@ -2700,7 +2700,7 @@
 
 // Tutorial step descriptions (re-expanded)
 "tutorials.createAccount.step0.desc" = "Öffne in den Einstellungen Konten und tippe auf +, um ein neues zu erstellen.";
-"tutorials.createAccount.step1.desc" = "Wische in der Übersicht unter Deine Finanzen durch deine Konten bis zum Ende und tippe auf Hinzufügen.";
+"tutorials.createAccount.step1.desc" = "Wische im Panel unter Deine Finanzen durch deine Konten bis zum Ende und tippe auf Hinzufügen.";
 "tutorials.createAccount.step2.desc" = "Fülle die Daten für dein neues Konto aus und tippe auf Speichern.";
 "tutorials.createCategories.step0.desc" = "Öffne in den Einstellungen Kategorien und tippe auf +, um eine neue zu erstellen.";
 "tutorials.createCategories.step1.desc" = "Denke daran, dass einer Kategorie immer Unterkategorien zugeordnet sein müssen, um sie erstellen zu können.";
@@ -2708,7 +2708,7 @@
 "tutorials.createCategories.step3.desc" = "Passe Symbol und Farbe deiner Kategorie nach Belieben an, wann immer du möchtest.";
 "tutorials.createTags.step0.desc" = "Öffne in den Einstellungen Tags und tippe auf +, um ein neues zu erstellen.";
 "tutorials.createTags.step1.desc" = "Passe das Tag nach Belieben an: gib einen Namen, ein Symbol und eine Farbe ein.";
-"tutorials.createRecord.step0.desc" = "Tippe in der Übersicht auf „Neuer Eintrag“. Zum Diktieren oder Lesen eines Belegs tippe auf Sprache oder Foto.";
+"tutorials.createRecord.step0.desc" = "Tippe im Panel auf „Neuer Eintrag“. Zum Diktieren oder Lesen eines Belegs tippe auf Sprache oder Foto.";
 "tutorials.createRecord.step1.desc" = "Du kannst Ausgaben, Einnahmen und sogar Überweisungen zwischen Konten erfassen. Wechselkurse werden automatisch in Echtzeit berechnet.";
 "tutorials.createRecord.step2.desc" = "Fülle die Pflichtfelder aus: Betrag, Konto und Unterkategorie. Du kannst auch eine Beschreibung und die gewünschten Tags hinzufügen.";
 "tutorials.createRecord.step3.desc" = "Nutze die Schnellzugriffe: @ für Konto, ! für Kategorie und # für Tag. Beginne zu tippen, um die Suche innerhalb jedes Schnellzugriffs zu verfeinern.";
@@ -2716,7 +2716,7 @@
 "tutorials.importData.step1.desc" = "Du kannst CSV oder Excel so oft importieren, wie du möchtest, indem du der Standardvorlage folgst, die du dort herunterladen kannst. Wenn es Daten in verschiedenen Währungen gibt, wirst du aufgefordert, die Konten für jede auszuwählen.";
 "tutorials.createBudgets.step0.desc" = "Wähle im Menü Planung und stelle sicher, dass du auf dem Tab Budgets bist. Nutze die Schaltfläche +, um ein neues zu erstellen.";
 "tutorials.createBudgets.step1.desc" = "Gib einen Namen, Betrag und den Zeitraum ein: wöchentlich, monatlich, jährlich oder einmalig (für eine Reise, Event, etc.). Wähle, welche Konten, Kategorien, Tags und Bedarfe du verfolgen möchtest. Aktiviere Benachrichtigungen, wenn du bei bestimmten Schwellenwerten benachrichtigt werden möchtest.";
-"tutorials.createBudgets.step2.desc" = "Aktiviere „Im Widget zeigen“, um es im Budgets-Widget der Übersicht zu sehen.";
+"tutorials.createBudgets.step2.desc" = "Aktiviere „Im Widget zeigen“, um es im Budgets-Widget des Panels zu sehen.";
 "tutorials.createBudgets.step3.desc" = "Denke daran, dass du jederzeit zurückkehren kannst, um dein Budget zu bearbeiten, indem du darauf tippst.";
 "tutorials.createScheduledPayments.step0.desc" = "Wähle im Menü Planung und stelle sicher, dass du auf dem Tab Geplante Zahlungen bist. Nutze die Schaltfläche +, um eine neue zu erstellen.";
 "tutorials.createScheduledPayments.step1.desc" = "Fülle den Namen deiner Zahlung, Betrag, Notiz (optional), Konto, Unterkategorie und Tags (optional) aus.";
@@ -2726,7 +2726,7 @@
 "tutorials.createFavorites.step0.desc" = "Tippe in „Neuer Eintrag“ unter dem Betrag auf „Favorit“, um deine bisherigen Eingaben als Favoriten zu speichern.";
 "tutorials.createFavorites.step1.desc" = "Tippe beim nächsten Mal in der Leiste oben im Formular auf den Favoriten: Die gespeicherten Felder füllen sich automatisch aus.";
 "tutorials.editPanel.step0.desc" = "Gehe zum Hauptbildschirm, wo du deine Ausgabenübersicht mit allen verfügbaren Widgets siehst.";
-"tutorials.editPanel.step1.desc" = "Tippe auf die Kästchen-Schaltfläche neben jedem Bereich der Übersicht, um zu wählen, welche Widgets du siehst und in welcher Reihenfolge.";
+"tutorials.editPanel.step1.desc" = "Tippe auf die Kästchen-Schaltfläche neben jedem Bereich des Panels, um zu wählen, welche Widgets du siehst und in welcher Reihenfolge.";
 "tutorials.editPanel.step2.desc" = "Denke daran, dass du jederzeit zur Standardreihenfolge zurückkehren kannst, indem du innerhalb der Anpassung auf \"Ursprüngliche Anordnung wiederherstellen\" tippst.";
 "tutorials.panelFiltering.step0.desc" = "Hol das Beste aus den interaktiven Diagrammen von Yala heraus. Fast alle Panels können nach Kategorie, Bedarf und mehr gefiltert werden. Spiele mit ihnen und finde heraus, was dir am meisten nützt.";
 "tutorials.panelFiltering.step1.desc" = "Du hast eine Filterleiste, in der du alle angewendeten Filter sehen wirst. Du kannst sie einzeln oder alle auf einmal entfernen, wann immer du möchtest.";
@@ -4358,7 +4358,7 @@
 "whatsNew.v21.logging.title" = "Erfassen war noch nie so einfach";
 "whatsNew.v21.logging.description" = "Sprich mit Yala, mach ein Foto oder schreib wie mit einem Freund. Yala versteht, was du ausgegeben hast, und trägt es für dich ein – so behältst du deine Finanzen in Sekunden im Blick.";
 "whatsNew.v21.data.title" = "Deine Daten, deine Regeln";
-"whatsNew.v21.data.description" = "Du entscheidest, wo deine Daten liegen: in deiner privaten iCloud oder in der Yala-Cloud, damit du sie auf all deinen Geräten hast. Dazu eine neu gestaltete Übersicht und Yala im Vollbild auf deinem iPad.";
+"whatsNew.v21.data.description" = "Du entscheidest, wo deine Daten liegen: in deiner privaten iCloud oder in der Yala-Cloud, damit du sie auf all deinen Geräten hast. Dazu ein neu gestaltetes Panel und Yala im Vollbild auf deinem iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs.";
@@ -5689,7 +5689,7 @@
 "groups.fullActivation.chooserSubtitle" = "Deine Gruppen bleiben, wie sie sind. Wähle, wo deine persönlichen Daten gespeichert werden.";
 "groups.fullActivation.cloudBody" = "Wir nutzen dasselbe Konto, das du schon für deine Gruppen verwendest – kein neues. Deine Daten liegen auf unseren Servern, und unser Team kann sie einsehen, um dir zu helfen.";
 "groups.fullActivation.historyTitle" = "Sollen wir deine Gruppenausgaben übernehmen?";
-"groups.fullActivation.historyBody" = "Wir übernehmen nur deinen Anteil an jeder Ausgabe. Er zählt in der Übersicht, in deinen Budgets und in den Statistiken.";
+"groups.fullActivation.historyBody" = "Wir übernehmen nur deinen Anteil an jeder Ausgabe. Er zählt in deinem Panel, in deinen Budgets und in den Statistiken.";
 "groups.fullActivation.historyShow" = "Ja, anzeigen";
 "groups.fullActivation.historyKeepInGroups" = "Nein, nur in Gruppen";
 "groups.fullActivation.historyFootnote" = "Das gilt auch für die, die du später einträgst. Du kannst das jederzeit in den Gruppeneinstellungen ändern.";
@@ -5779,7 +5779,7 @@
 "storage.groups.detachKeep" = "Die Ausgaben behalten, die ich bezahlt habe";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "Alles aus der Übersicht entfernen";
+"storage.groups.detachRemove" = "Alles aus dem Panel entfernen";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "Wird getrennt …";
@@ -6894,7 +6894,7 @@
 "setup.step.skipped" = "Übersprungen. Tippe, um es auszuprobieren";
 "setup.step.tryAgain" = "Ausprobieren";
 "setup.complete.basics.title" = "Du kennst jetzt die Grundlagen von Yala";
-"setup.complete.basics.subtitle" = "Probier Sprache oder Foto jederzeit mit den Tasten oben in der Übersicht aus.";
+"setup.complete.basics.subtitle" = "Probier Sprache oder Foto jederzeit mit den Tasten oben im Panel aus.";
 "setup.nextStepLabel" = "Nächster Schritt";
 "setup.start" = "Loslegen";
 "setup.showAllSteps" = "Alle %d Schritte ansehen";
@@ -6909,7 +6909,7 @@
 "notificationPrimer.scheduled.benefit" = "Eine Erinnerung, bevor eine geplante Zahlung fällig wird, damit du sie nicht verpasst.";
 "notificationPrimer.budget.title" = "Sollen wir dich warnen, wenn du dich dem Limit näherst?";
 "notificationPrimer.budget.benefit" = "Wir melden uns, wenn du die gewählten Prozentsätze erreichst. Ohne diese Erlaubnis kommt die Warnung nicht an.";
-"whatsNew.v22.panel.title" = "Eine klarere Übersicht";
+"whatsNew.v22.panel.title" = "Ein klareres Panel";
 "whatsNew.v22.panel.description" = "Die große Zahl sagt, was sie misst, deine Konten siehst du auf einen Blick und Hinweise kommen einzeln.";
 "whatsNew.v22.inbox.title" = "Sprache, Foto und Posteingang";
 "whatsNew.v22.inbox.description" = "Was du diktierst oder fotografierst, landet im Posteingang mit seiner Herkunft, und alles Fertige speicherst du auf einmal.";
@@ -7113,7 +7113,7 @@
 "budgets.l9.activateAlerts" = "Warnungen aktivieren";
 "budgets.l9.alertsOffInNotifications" = "Warnungen in den Mitteilungen aus";
 "budgets.l9.showInWidget" = "Im Widget zeigen";
-"budgets.l9.showInWidgetHint" = "Erscheint im Budget-Widget in der Übersicht.";
+"budgets.l9.showInWidgetHint" = "Erscheint im Budget-Widget im Panel.";
 "budgets.l9.hideFromWidget" = "Aus dem Widget entfernen";
 "budgets.l9.deleteTitle" = "„%@“ löschen?";
 "budgets.l9.historyTitle.weekly" = "Was du jede Woche ausgegeben hast, verglichen mit deinem Limit";
@@ -7124,7 +7124,7 @@
 "budgets.l9.freePlanSheet" = "Im kostenlosen Plan hast du %lld aktive Budgets. Deaktiviere eines oder wechsle zu Pro.";
 "budgets.l9.seePro" = "Pro ansehen";
 "budgets.l9.chooseWhich" = "Auswählen";
-"budgets.l9.previewEmpty" = "Markiere bis zu 3 Budgets mit dem Stern, dann siehst du hier deine Karte der Übersicht.";
+"budgets.l9.previewEmpty" = "Markiere bis zu 3 Budgets mit dem Stern, dann siehst du hier deine Karte im Panel.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "Überfällig";
@@ -8109,9 +8109,9 @@
 "l15.rates.search" = "Währung suchen";
 "l15.personalization.voiceLanguageFooter" = "Die Sprache, in der du mit Yala sprichst, wenn du per Sprache erfasst.";
 "l15.personalization.colorfulIconsFooter" = "Zu sehen bei den Symbolen in Einstellungen und Mehr.";
-"l15.personalization.averageLineFooter" = "Zu sehen in den Diagrammen der Übersicht.";
+"l15.personalization.averageLineFooter" = "Zu sehen in den Diagrammen des Panels.";
 "l15.personalization.currencyFormatFooter" = "Wie Beträge in der ganzen App geschrieben werden: mit dem Symbol (S/) oder mit dem Code (PEN).";
-"l15.tabBar.rules" = "Übersicht steht immer an erster Stelle. Platz ist für 3, dazu Mehr und Suchen.";
+"l15.tabBar.rules" = "Panel steht immer an erster Stelle. Platz ist für 3, dazu Mehr und Suchen.";
 "l15.permissions.title" = "Berechtigungen von Yala";
 "l15.permissions.footer" = "Yala fragt dich nach jeder Berechtigung, wenn du zum ersten Mal etwas nutzt, das sie braucht.";
 "l15.permissions.notAskedHint" = "Wir fragen dich, wenn du es zum ersten Mal nutzt.";

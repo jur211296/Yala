@@ -448,10 +448,10 @@
 "settings.favorites" = "お気に入り";
 "settings.budgets" = "予算";
 "settings.budgetsFavorites" = "お気に入りの予算";
-"settings.budgetsFavoritesInfo" = "お気に入りの予算はホームの予算カードに表示されます（中サイズで3件、大サイズで5件）。";
+"settings.budgetsFavoritesInfo" = "お気に入りの予算はパネルの予算カードに表示されます（中サイズで3件、大サイズで5件）。";
 "settings.budgetsFavoritesEmptyHint" = "計画タブで予算を作成してください。";
 "settings.budgetsFavoritesReorder" = "お気に入りを並び替え";
-"budgets.favorites.previewTitle" = "ホームでの表示";
+"budgets.favorites.previewTitle" = "パネルでの表示";
 "budgets.favorites.previewEmpty" = "プレビューを見るにはお気に入りを選択してください";
 "settings.tabBarConfig" = "下部のタブ";
 "settings.tabBarConfigInfo" = "下に表示するタブと順番を選んでください。";
@@ -657,7 +657,7 @@
 "export.column.note.description" = "メモに書いた内容。";
 "common.next" = "次へ";
 "settings.versionInfo" = "バージョン%1$@ (ビルド%2$@)";
-"tab.panel" = "ホーム";
+"tab.panel" = "パネル";
 "tab.statistics" = "統計";
 "tab.planning" = "計画";
 "tab.more" = "もっと見る";
@@ -740,7 +740,7 @@
 "widget.today" = "今日";
 
 // Widget Preferences
-"widget.preferences.description" = "ダッシュボードに表示する内容と順序を選んでください。";
+"widget.preferences.description" = "パネルに表示する内容と順序を選んでください。";
 "widget.resetLayout" = "元のレイアウトに戻す";
 "widget.alwaysVisible" = "常に表示";
 "widget.fixedPosition" = "固定位置";
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "指標";
 "settings.sectionFormat" = "数値の形式";
 "settings.defaultPeriod" = "既定の期間";
-"settings.defaultPeriodDescription" = "ホーム、記録、統計を開いたときの期間です。期間セレクタで一時的に変更できます。";
+"settings.defaultPeriodDescription" = "パネル、記録、統計を開いたときの期間です。期間セレクタで一時的に変更できます。";
 "settings.colorfulIcons" = "カラフルアイコン";
 "settings.colorfulIconsDescription" = "プロフィールセクションにiOS設定アプリ風のカラーアイコンを表示します。";
 "settings.colorfulIconsDisabledByTheme" = "現在のテーマにより自動的に無効になっています。";
@@ -1699,9 +1699,9 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "ヘルプヒント";
-"settings.widgetHintsDescription" = "グラフの横に「?」ボタンを表示し、各グラフの説明を確認できます。ホーム、統計、計画で表示されます。";
+"settings.widgetHintsDescription" = "グラフの横に「?」ボタンを表示し、各グラフの説明を確認できます。パネル、統計、計画で表示されます。";
 "settings.showVariations" = "前の期間と比較";
-"settings.showVariationsDescription" = "各数値が前の期間からどれだけ増減したかを表示します。ホーム、統計、レポートで表示されます。";
+"settings.showVariationsDescription" = "各数値が前の期間からどれだけ増減したかを表示します。パネル、統計、レポートで表示されます。";
 "settings.averageLine" = "グラフの平均線";
 "settings.averageLineDescription" = "棒グラフに平均線を表示します。";
 "settings.averageLine.off" = "なし";
@@ -2185,7 +2185,7 @@
 "faq.whatIsYala.q" = "Yalaとは？";
 "faq.whatIsYala.a" = "Yalaは個人向けの資産管理アプリです。支出と収入の追跡、カテゴリーやタグでの整理、予算作成、明確なレポートでお金の状況を把握できます。";
 "faq.howToRecord.q" = "支出はどう記録する？";
-"faq.howToRecord.a" = "ホームで「新規記録」をタップして金額を入力するか、「音声」か「写真」で口述やレシートの読み取りができます。詳細はYalaが埋めてくれます。";
+"faq.howToRecord.a" = "パネルで「新規記録」をタップして金額を入力するか、「音声」か「写真」で口述やレシートの読み取りができます。詳細はYalaが埋めてくれます。";
 "faq.multiCurrency.q" = "複数通貨は使える？";
 "faq.multiCurrency.a" = "はい。Yalaは54通貨に対応しています。口座ごとに通貨を設定でき、合計はメイン通貨に換算されます。メイン通貨と、比較用の副通貨（最大2つ）は「設定 > 通貨と為替」で選べます。";
 "faq.changeCategory.q" = "支出のカテゴリーはどう変更する？";
@@ -2597,7 +2597,7 @@
 "tutorials.createAccount.intro.title" = "口座とは？";
 "tutorials.createAccount.intro.desc" = "銀行、財布、カードを設定して、お金がどこにあるかを管理します。";
 "tutorials.createAccount.step0.title" = "新規口座を作成";
-"tutorials.createAccount.step1.title" = "またはホームから作成";
+"tutorials.createAccount.step1.title" = "またはパネルから作成";
 "tutorials.createAccount.step2.title" = "詳細を入力";
 "tutorials.createAccount.completion.title" = "口座の作り方がわかりました";
 "tutorials.createAccount.completion.desc" = "お金を口座（銀行、現金、カード）に分けると、それぞれにいくらあるかがわかります。いつでも編集できます。";
@@ -2648,7 +2648,7 @@
 "tutorials.createBudgets.intro.desc" = "支出の上限を設定し、近づいたら通知を受け取れます。";
 "tutorials.createBudgets.step0.title" = "計画を開く";
 "tutorials.createBudgets.step1.title" = "予算を設定";
-"tutorials.createBudgets.step2.title" = "ホームに表示";
+"tutorials.createBudgets.step2.title" = "パネルに表示";
 "tutorials.createBudgets.step3.title" = "いつでも編集";
 "tutorials.createBudgets.completion.title" = "予算の作り方がわかりました";
 "tutorials.createBudgets.completion.desc" = "予算があれば、あといくら使えるかがすぐわかります。上限に近づくとYalaがお知らせします。";
@@ -2681,8 +2681,8 @@
 "tutorials.editPanel.step0.title" = "パネルを開く";
 "tutorials.editPanel.step1.title" = "ウィジェットをカスタマイズ";
 "tutorials.editPanel.step2.title" = "必要ならリセット";
-"tutorials.editPanel.completion.title" = "ホームのカスタマイズ方法がわかりました";
-"tutorials.editPanel.completion.desc" = "ホームには、選んだものを好きな順番で表示できます。いつでも変更できます。";
+"tutorials.editPanel.completion.title" = "パネルのカスタマイズ方法がわかりました";
+"tutorials.editPanel.completion.desc" = "パネルには、選んだものを好きな順番で表示できます。いつでも変更できます。";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "パネルのフィルター";
@@ -2718,7 +2718,7 @@
 
 // Tutorial step descriptions (re-expanded)
 "tutorials.createAccount.step0.desc" = "設定で「口座」を開き、+をタップして新しい口座を作成します。";
-"tutorials.createAccount.step1.desc" = "ホームの「資産状況」で口座を最後までスワイプし、「追加」をタップします。";
+"tutorials.createAccount.step1.desc" = "パネルの「資産状況」で口座を最後までスワイプし、「追加」をタップします。";
 "tutorials.createAccount.step2.desc" = "新しい口座の詳細を入力し、保存をタップします。";
 "tutorials.createCategories.step0.desc" = "設定で「カテゴリー」を開き、+をタップして新しいカテゴリーを作成します。";
 "tutorials.createCategories.step1.desc" = "カテゴリーを作成するには、必ずサブカテゴリーが関連付けられている必要があります。";
@@ -2726,7 +2726,7 @@
 "tutorials.createCategories.step3.desc" = "カテゴリーのアイコンと色をいつでも好みにカスタマイズできます。";
 "tutorials.createTags.step0.desc" = "設定で「タグ」を開き、+をタップして新しいタグを作成します。";
 "tutorials.createTags.step1.desc" = "タグを好みにカスタマイズ: 名前、アイコン、色を設定します。";
-"tutorials.createRecord.step0.desc" = "ホームで「新規記録」をタップ。音声入力やレシートの読み取りは「音声」か「写真」から。";
+"tutorials.createRecord.step0.desc" = "パネルで「新規記録」をタップ。音声入力やレシートの読み取りは「音声」か「写真」から。";
 "tutorials.createRecord.step1.desc" = "支出、収入、口座間振替を記録できます。為替レートはリアルタイムで自動計算されます。";
 "tutorials.createRecord.step2.desc" = "必須項目を入力: 金額、口座、サブカテゴリー。説明やタグも追加できます。";
 "tutorials.createRecord.step3.desc" = "クイックショートカット: @で口座、!でカテゴリー、#でタグ。各ショートカット内で入力すると検索が絞り込まれます。";
@@ -2734,7 +2734,7 @@
 "tutorials.importData.step1.desc" = "デフォルトテンプレート(ここからダウンロード可能)に沿って、CSVやExcelを何度でもインポートできます。複数通貨のデータがある場合は通貨ごとに口座を選択するよう求められます。";
 "tutorials.createBudgets.step0.desc" = "メニューで計画を選び、予算タブで+ボタンを使って新規作成します。";
 "tutorials.createBudgets.step1.desc" = "名前、金額、期間(毎週・毎月・毎年・1回限り、旅行やイベントなど)を設定。追跡したい口座、カテゴリー、タグ、必要度を選択。閾値で通知を受けたい場合は通知をオンにします。";
-"tutorials.createBudgets.step2.desc" = "「ウィジェットに表示」をオンにすると、ホームの予算ウィジェットに表示されます。";
+"tutorials.createBudgets.step2.desc" = "「ウィジェットに表示」をオンにすると、パネルの予算ウィジェットに表示されます。";
 "tutorials.createBudgets.step3.desc" = "予算をタップすればいつでも編集に戻れます。";
 "tutorials.createScheduledPayments.step0.desc" = "メニューで計画を選び、予定支払いタブで+ボタンを使って新規作成します。";
 "tutorials.createScheduledPayments.step1.desc" = "支払い名、金額、メモ(任意)、口座、サブカテゴリー、タグ(任意)を入力します。";
@@ -2744,7 +2744,7 @@
 "tutorials.createFavorites.step0.desc" = "新規記録で金額の下にある「お気に入り」をタップすると、入力中の内容をお気に入りとして保存できます。";
 "tutorials.createFavorites.step1.desc" = "次回はフォーム上部の列にあるお気に入りをタップすると、保存した項目が自動で入力されます。";
 "tutorials.editPanel.step0.desc" = "メイン画面に移動すると、利用可能なすべてのウィジェットで支出のサマリーが表示されます。";
-"tutorials.editPanel.step1.desc" = "ホームの各セクションの横にある四角いボタンをタップすると、表示するウィジェットと順番を選べます。";
+"tutorials.editPanel.step1.desc" = "パネルの各セクションの横にある四角いボタンをタップすると、表示するウィジェットと順番を選べます。";
 "tutorials.editPanel.step2.desc" = "カスタマイズ内の「元のレイアウトに戻す」をタップすればいつでも既定の順序に戻せます。";
 "tutorials.panelFiltering.step0.desc" = "Yalaのインタラクティブグラフを最大限活用しましょう。ほぼすべてのパネルがカテゴリーや必要度でフィルター可能です。色々試して、自分に合うものを見つけてください。";
 "tutorials.panelFiltering.step1.desc" = "フィルターバーで適用中のフィルターをすべて確認できます。個別または一括でいつでも削除可能です。";
@@ -4370,7 +4370,7 @@
 "whatsNew.v21.logging.title" = "記録がこんなに簡単に";
 "whatsNew.v21.logging.description" = "話しかけても、写真を撮っても、友だちにメッセージするように書いても大丈夫。Yala が使った内容を理解して記録するので、家計の管理はほんの数秒です。";
 "whatsNew.v21.data.title" = "あなたのデータは、あなたのルールで";
-"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。プライベートな iCloud か、Yala のクラウドか。すべてのデバイスで使えます。さらに、新しくなったホームと、iPad での Yala のフルスクリーン表示も。";
+"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。プライベートな iCloud か、Yala のクラウドか。すべてのデバイスで使えます。さらに、新しくなったパネルと、iPad での Yala のフルスクリーン表示も。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -5701,7 +5701,7 @@
 "groups.fullActivation.chooserSubtitle" = "グループはそのままです。個人データの保存場所を選んでください。";
 "groups.fullActivation.cloudBody" = "グループで使っているアカウントをそのまま使います。新しいアカウントは作りません。データは私たちのサーバーに保存され、サポートのために私たちのチームが見ることがあります。";
 "groups.fullActivation.historyTitle" = "グループの支出も表示しますか？";
-"groups.fullActivation.historyBody" = "各支出のうちあなたの負担分だけを取り込みます。「ホーム」、予算、「統計」に反映されます。";
+"groups.fullActivation.historyBody" = "各支出のうちあなたの負担分だけを取り込みます。「パネル」、予算、「統計」に反映されます。";
 "groups.fullActivation.historyShow" = "はい、表示する";
 "groups.fullActivation.historyKeepInGroups" = "いいえ、グループだけにする";
 "groups.fullActivation.historyFootnote" = "今後登録する支出にも適用されます。グループ設定からいつでも変更できます。";
@@ -5791,7 +5791,7 @@
 "storage.groups.detachKeep" = "自分が払った支出を残す";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "「ホーム」からすべて削除";
+"storage.groups.detachRemove" = "「パネル」からすべて削除";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "リンクを解除しています…";
@@ -6906,7 +6906,7 @@
 "setup.step.skipped" = "スキップしました。タップして試せます";
 "setup.step.tryAgain" = "試す";
 "setup.complete.basics.title" = "Yalaの基本はばっちりです";
-"setup.complete.basics.subtitle" = "音声や写真は、ホーム上部のボタンからいつでも試せます。";
+"setup.complete.basics.subtitle" = "音声や写真は、パネル上部のボタンからいつでも試せます。";
 "setup.nextStepLabel" = "次のステップ";
 "setup.start" = "始める";
 "setup.showAllSteps" = "全%dステップを見る";
@@ -6921,7 +6921,7 @@
 "notificationPrimer.scheduled.benefit" = "予定した支払いの期日前にお知らせするので、払い忘れを防げます。";
 "notificationPrimer.budget.title" = "上限に近づいたらお知らせしましょうか？";
 "notificationPrimer.budget.benefit" = "選んだ割合に達したらお知らせします。この許可がないと、通知は届きません。";
-"whatsNew.v22.panel.title" = "見やすくなったホーム";
+"whatsNew.v22.panel.title" = "見やすくなったパネル";
 "whatsNew.v22.panel.description" = "大きな数字が何を表すか分かり、口座はひと目で確認でき、お知らせは一つずつ表示されます。";
 "whatsNew.v22.inbox.title" = "音声・写真・受信箱";
 "whatsNew.v22.inbox.description" = "音声や写真で取り込んだものは、出どころ付きで受信箱に届きます。準備できたものはまとめて保存できます。";
@@ -7125,7 +7125,7 @@
 "budgets.l9.activateAlerts" = "アラートをオンにする";
 "budgets.l9.alertsOffInNotifications" = "通知でアラートがオフ";
 "budgets.l9.showInWidget" = "ウィジェットに表示";
-"budgets.l9.showInWidgetHint" = "ホームの予算ウィジェットに表示されます。";
+"budgets.l9.showInWidgetHint" = "パネルの予算ウィジェットに表示されます。";
 "budgets.l9.hideFromWidget" = "ウィジェットから外す";
 "budgets.l9.deleteTitle" = "「%@」を削除しますか？";
 "budgets.l9.historyTitle.weekly" = "毎週の支出と上限の比較";
@@ -7136,7 +7136,7 @@
 "budgets.l9.freePlanSheet" = "無料プランで有効にできる予算は%lld件です。1件をオフにするか、Proにアップグレードしてください。";
 "budgets.l9.seePro" = "Proを見る";
 "budgets.l9.chooseWhich" = "選ぶ";
-"budgets.l9.previewEmpty" = "スターを付けた予算（最大3件）のホームのカードがここに表示されます。";
+"budgets.l9.previewEmpty" = "スターを付けた予算（最大3件）のパネルのカードがここに表示されます。";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "期限切れ";
@@ -8121,9 +8121,9 @@
 "l15.rates.search" = "通貨を検索";
 "l15.personalization.voiceLanguageFooter" = "音声で記録するときに、Yalaに話しかける言語です。";
 "l15.personalization.colorfulIconsFooter" = "設定と「もっと見る」のアイコンに反映されます。";
-"l15.personalization.averageLineFooter" = "ホームのグラフに表示されます。";
+"l15.personalization.averageLineFooter" = "パネルのグラフに表示されます。";
 "l15.personalization.currencyFormatFooter" = "アプリ全体での金額の表記です。記号（S/）かコード（PEN）を選べます。";
-"l15.tabBar.rules" = "ホームは常に先頭です。ほかに3つと、「もっと見る」「検索」を置けます。";
+"l15.tabBar.rules" = "パネルは常に先頭です。ほかに3つと、「もっと見る」「検索」を置けます。";
 "l15.permissions.title" = "Yalaの権限";
 "l15.permissions.footer" = "Yalaは、各権限が必要な機能を初めて使うときに許可を求めます。";
 "l15.permissions.notAskedHint" = "初めて使うときに許可をお願いします。";

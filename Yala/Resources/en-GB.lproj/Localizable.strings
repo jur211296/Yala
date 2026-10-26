@@ -39,7 +39,7 @@
 "favorites.saveDescription" = "Your usual expenses, one tap away.";
 "settings.favorites" = "Favourites";
 "settings.budgetsFavorites" = "Favourite Budgets";
-"settings.budgetsFavoritesInfo" = "Favourite budgets appear in the Budgets card on the Home tab (3 in medium, 5 in large).";
+"settings.budgetsFavoritesInfo" = "Favourite budgets appear in the Budgets card on the Panel (3 in medium, 5 in large).";
 "settings.budgetsFavoritesReorder" = "Reorder favourites";
 "budgets.favorites.previewEmpty" = "Select favourites to see the preview";
 "settings.tabBarConfig" = "Bottom tabs";
@@ -79,20 +79,20 @@
 "tutorials.createCategories.intro.desc" = "Organise your expenses by type to see where your money goes.";
 "tutorials.createCategories.step3.title" = "Customise your category";
 "tutorials.createTags.step1.title" = "Customise your tag";
-"tutorials.createBudgets.step2.title" = "Show it on Home";
+"tutorials.createBudgets.step2.title" = "Show it on the Panel";
 "tutorials.createFavorites.title" = "Favourites";
 "tutorials.createFavorites.intro.title" = "What are favourites?";
 "tutorials.createFavorites.step0.title" = "Create a favourite";
 "tutorials.createFavorites.completion.title" = "Now you know how to use favourites";
 "tutorials.createFavorites.completion.desc" = "A favourite logs the expenses you repeat in one tap. You can have as many as you like.";
-"tutorials.editPanel.title" = "Customise the panel";
-"tutorials.editPanel.intro.desc" = "Customise which widgets appear on your panel.";
+"tutorials.editPanel.title" = "Customise the Panel";
+"tutorials.editPanel.intro.desc" = "Customise which widgets appear on your Panel.";
 "tutorials.editPanel.step1.title" = "Customise the widgets";
-"tutorials.editPanel.completion.title" = "Now you know how to customise Home";
+"tutorials.editPanel.completion.title" = "Now you know how to customise the Panel";
 "tutorials.createCategories.step3.desc" = "Customise your category's icon and colour to your liking whenever you want.";
 "tutorials.createTags.step1.desc" = "Customise your tag to your liking: give it a name, icon, and colour.";
 "tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: weekly, monthly, yearly, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and needs you want to track. Turn on notifications if you want alerts at certain thresholds.";
-"tutorials.createBudgets.step2.desc" = "Turn on ‘Show in widget’ to see it in the Budgets widget on Home.";
+"tutorials.createBudgets.step2.desc" = "Turn on ‘Show in widget’ to see it in the Budgets widget on the Panel.";
 "tutorials.createFavorites.step0.desc" = "In New Record, tap ‘Favourite’ below the amount to save what you’ve entered so far as a favourite.";
 "tutorials.createFavorites.step1.desc" = "Next time, tap the favourite in the row at the top of the form: the fields you saved fill in automatically.";
 "aiSettings.title" = "Yala AI tone";
@@ -844,7 +844,7 @@
 "budgets.empty.message" = "Create budgets to better control your spending.";
 "budgets.empty.title" = "You don't have any budgets yet";
 "budgets.exceeded.encouragement" = "You went over budget — next period will be better!";
-"budgets.favorites.previewTitle" = "This is how it will look on the Home tab";
+"budgets.favorites.previewTitle" = "This is how it will look on the Panel";
 "budgets.includeSharedExpenses" = "Count my share of group expenses";
 "budgets.includeSharedExpensesHint" = "When off, only your personal expenses count.";
 "budgets.new" = "New Budget";
@@ -1495,7 +1495,7 @@
 "faq.deleteData.a" = "Yes. In Settings > Wipe Data you can delete all your information. This action cannot be undone, so we recommend exporting a backup first.";
 "faq.deleteData.q" = "Can I delete all my data?";
 "faq.exportData.q" = "How do I export my data?";
-"faq.howToRecord.a" = "On Home, tap New record to type the amount, or Voice or Photo to dictate it or read a receipt. Yala fills in the details for you.";
+"faq.howToRecord.a" = "On the Panel, tap New record to type the amount, or Voice or Photo to dictate it or read a receipt. Yala fills in the details for you.";
 "faq.howToRecord.q" = "How do I record an expense?";
 "faq.importData.a" = "Yes. Go to Settings > Import File and upload a CSV or Excel file. Yala detects the columns automatically and lets you assign accounts by currency.";
 "faq.importData.q" = "Can I import my data?";
@@ -2681,7 +2681,7 @@
 "settings.decimalsTwo" = "2 decimals";
 "settings.defaultCurrency" = "Default Currency";
 "settings.defaultPeriod" = "Default Period";
-"settings.defaultPeriodDescription" = "The period Home, Records and Statistics open with. You can change it for a while from the period selector.";
+"settings.defaultPeriodDescription" = "The period the Panel, Records and Statistics open with. You can change it for a while from the period selector.";
 "settings.delete" = "Delete";
 "settings.deleteAllData" = "Wipe my data";
 "settings.deleteAllDataAction" = "Wipe permanently";
@@ -2739,7 +2739,7 @@
 "settings.security" = "Security & Privacy";
 "settings.showMoreCurrencies" = "Show more currencies";
 "settings.showVariations" = "Compare with previous period";
-"settings.showVariationsDescription" = "Shows how much each figure went up or down compared with the previous period. You'll see it on Home, in Statistics and in reports.";
+"settings.showVariationsDescription" = "Shows how much each figure went up or down compared with the previous period. You'll see it on the Panel, in Statistics and in reports.";
 "settings.siriShortcuts" = "Siri & Shortcuts";
 "settings.subscriptions" = "Manage Subscriptions";
 "settings.sunday" = "Sunday";
@@ -2767,7 +2767,7 @@
 "settings.voiceInputEnabled" = "Voice Input";
 "settings.voiceLanguage" = "Voice Language";
 "settings.widgetHints" = "Help hints";
-"settings.widgetHintsDescription" = "Shows the “?” button next to charts, explaining each one. You'll see it on Home, in Statistics and in Planning.";
+"settings.widgetHintsDescription" = "Shows the “?” button next to charts, explaining each one. You'll see it on the Panel, in Statistics and in Planning.";
 "settings.wipeData" = "Clear Data";
 "setup.collapse" = "Minimize";
 "setup.complete.subtitle" = "You completed all steps. Yala is ready for you.";
@@ -3138,7 +3138,7 @@
 "support.typeImprovement" = "Improvement";
 "tab.groups" = "Groups";
 "tab.more" = "More";
-"tab.panel" = "Home";
+"tab.panel" = "Panel";
 "tab.planning" = "Planning";
 "tab.records" = "Records";
 "tab.reports" = "Reports";
@@ -3279,8 +3279,8 @@
 "tutorials.createAccount.intro.title" = "What is an account?";
 "tutorials.createAccount.step0.desc" = "In Settings, go to Accounts and tap + to create a new one.";
 "tutorials.createAccount.step0.title" = "Create a new account";
-"tutorials.createAccount.step1.desc" = "On Home, under Your finances, swipe through your accounts to the end and tap Add.";
-"tutorials.createAccount.step1.title" = "Or create it from Home";
+"tutorials.createAccount.step1.desc" = "On the Panel, under Your finances, swipe through your accounts to the end and tap Add.";
+"tutorials.createAccount.step1.title" = "Or create it from the Panel";
 "tutorials.createAccount.step2.desc" = "Fill in the details for your new account and tap Save.";
 "tutorials.createAccount.step2.title" = "Fill in the details";
 "tutorials.createAccount.title" = "Create an account";
@@ -3310,7 +3310,7 @@
 "tutorials.createRecord.completion.title" = "Now you know how to record an expense";
 "tutorials.createRecord.intro.desc" = "Every expense you record helps you understand your finances better.";
 "tutorials.createRecord.intro.title" = "Manual recording";
-"tutorials.createRecord.step0.desc" = "On Home, tap New record. To dictate or read a receipt, tap Voice or Photo.";
+"tutorials.createRecord.step0.desc" = "On the Panel, tap New record. To dictate or read a receipt, tap Voice or Photo.";
 "tutorials.createRecord.step0.title" = "Tap New record";
 "tutorials.createRecord.step1.desc" = "You can record expenses, income, and even transfers between accounts. Exchange rates are calculated automatically in real time.";
 "tutorials.createRecord.step1.title" = "Choose the record type";
@@ -3342,11 +3342,11 @@
 "tutorials.createTags.step0.title" = "Go to Tags";
 "tutorials.createTags.title" = "Create tags";
 "tutorials.done" = "Done";
-"tutorials.editPanel.completion.desc" = "Home shows what you choose, in the order you want. You can change it at any time.";
-"tutorials.editPanel.intro.title" = "Your panel, your way";
+"tutorials.editPanel.completion.desc" = "Your Panel shows what you choose, in the order you want. You can change it at any time.";
+"tutorials.editPanel.intro.title" = "Your Panel, your way";
 "tutorials.editPanel.step0.desc" = "Go to the main screen where you see your expense summary with all available widgets.";
-"tutorials.editPanel.step0.title" = "Open the panel";
-"tutorials.editPanel.step1.desc" = "Tap the grid button next to each Home section to choose which widgets to see and in what order.";
+"tutorials.editPanel.step0.title" = "Open the Panel";
+"tutorials.editPanel.step1.desc" = "Tap the grid button next to each Panel section to choose which widgets to see and in what order.";
 "tutorials.editPanel.step2.desc" = "Remember you can always return to the default order by tapping \"Reset to original layout\" within customization.";
 "tutorials.editPanel.step2.title" = "Reset if you want";
 "tutorials.importData.completion.desc" = "When you import, Yala tells you what came in and what didn't. Check your records afterwards to confirm.";
@@ -3506,7 +3506,7 @@
 "widget.of" = "of %@";
 "widget.ofExpense" = "of expense";
 "widget.ofTotal" = "of total";
-"widget.preferences.description" = "Choose what you want to see on your dashboard and in what order.";
+"widget.preferences.description" = "Choose what you want to see on your Panel and in what order.";
 "widget.recordsWillAppear" = "When you add records, they will appear here.";
 "widget.resetLayout" = "Reset to original layout";
 "widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
@@ -3600,7 +3600,7 @@
 "whatsNew.v21.logging.title" = "Logging has never been easier";
 "whatsNew.v21.logging.description" = "Talk to it, snap a photo, or text it like a friend. Yala understands what you spent and logs it for you, so keeping track takes seconds.";
 "whatsNew.v21.data.title" = "Your data, your rules";
-"whatsNew.v21.data.description" = "You choose where your information lives: in your private iCloud or in the Yala cloud, so it's on all your devices. Plus, a redesigned Home screen and Yala in full screen on your iPad.";
+"whatsNew.v21.data.description" = "You choose where your information lives: in your private iCloud or in the Yala cloud, so it's on all your devices. Plus, a redesigned Panel and Yala in full screen on your iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4932,7 +4932,7 @@
 "groups.fullActivation.chooserSubtitle" = "Your groups stay as they are. Choose where your personal data will live.";
 "groups.fullActivation.cloudBody" = "We'll use the same account you already use for your groups, not a new one. Your data lives on our servers, and our team can see it to give you support.";
 "groups.fullActivation.historyTitle" = "Bring in your group expenses?";
-"groups.fullActivation.historyBody" = "We bring in only your share of each expense. It will count on Home, in your budgets and in Statistics.";
+"groups.fullActivation.historyBody" = "We bring in only your share of each expense. It will count on the Panel, in your budgets and in Statistics.";
 "groups.fullActivation.historyShow" = "Yes, show them";
 "groups.fullActivation.historyKeepInGroups" = "No, keep them in Groups";
 "groups.fullActivation.historyFootnote" = "This also applies to the ones you add later. You can change it at any time in Groups Settings.";
@@ -5022,7 +5022,7 @@
 "storage.groups.detachKeep" = "Keep the expenses I paid";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "Remove it all from Home";
+"storage.groups.detachRemove" = "Remove it all from the Panel";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "Unlinking…";
@@ -6137,7 +6137,7 @@
 "setup.step.skipped" = "Skipped. Tap to try it";
 "setup.step.tryAgain" = "Try it";
 "setup.complete.basics.title" = "You know the basics of Yala";
-"setup.complete.basics.subtitle" = "Whenever you like, try voice or photo with the buttons at the top of Home.";
+"setup.complete.basics.subtitle" = "Whenever you like, try voice or photo with the buttons at the top of the Panel.";
 "setup.nextStepLabel" = "Next step";
 "setup.start" = "Start";
 "setup.showAllSteps" = "See all %d steps";
@@ -6152,7 +6152,7 @@
 "notificationPrimer.scheduled.benefit" = "A reminder before each scheduled payment is due, so it doesn't slip by.";
 "notificationPrimer.budget.title" = "Want an alert when you're near the limit?";
 "notificationPrimer.budget.benefit" = "We'll let you know when you reach the percentages you chose. Without this permission, the alert can't reach you.";
-"whatsNew.v22.panel.title" = "A clearer Home";
+"whatsNew.v22.panel.title" = "A clearer Panel";
 "whatsNew.v22.panel.description" = "The big number says what it measures, your accounts fit at a glance and notices show up one at a time.";
 "whatsNew.v22.inbox.title" = "Voice, photo and Inbox";
 "whatsNew.v22.inbox.description" = "What you dictate or photograph lands in your Inbox saying where it came from, and you can save everything that's ready in one go.";
@@ -6356,7 +6356,7 @@
 "budgets.l9.activateAlerts" = "Turn on alerts";
 "budgets.l9.alertsOffInNotifications" = "Alerts off in Notifications";
 "budgets.l9.showInWidget" = "Show in widget";
-"budgets.l9.showInWidgetHint" = "Appears in the Budgets widget on Home.";
+"budgets.l9.showInWidgetHint" = "Appears in the Budgets widget on the Panel.";
 "budgets.l9.hideFromWidget" = "Remove from widget";
 "budgets.l9.deleteTitle" = "Delete “%@”?";
 "budgets.l9.historyTitle.weekly" = "What you spent each week against your limit";
@@ -6367,7 +6367,7 @@
 "budgets.l9.freePlanSheet" = "The free plan includes %lld active budgets. Turn one off or upgrade to Pro.";
 "budgets.l9.seePro" = "See Pro";
 "budgets.l9.chooseWhich" = "Choose which";
-"budgets.l9.previewEmpty" = "Star up to 3 budgets and you'll see your Home tab card here.";
+"budgets.l9.previewEmpty" = "Star up to 3 budgets and you'll see your Panel card here.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "Overdue";
@@ -7352,9 +7352,9 @@
 "l15.rates.search" = "Search currency";
 "l15.personalization.voiceLanguageFooter" = "The language you speak to Yala in when you log by voice.";
 "l15.personalization.colorfulIconsFooter" = "You'll see them in the icons in Settings and More.";
-"l15.personalization.averageLineFooter" = "You'll see it in the charts on Home.";
+"l15.personalization.averageLineFooter" = "You'll see it in the charts on the Panel.";
 "l15.personalization.currencyFormatFooter" = "How amounts are written throughout the app: with the symbol (S/) or the code (PEN).";
-"l15.tabBar.rules" = "Home always comes first. There's room for 3 more, plus More and Search.";
+"l15.tabBar.rules" = "Panel always comes first. There's room for 3 more, plus More and Search.";
 "l15.permissions.title" = "Yala permissions";
 "l15.permissions.footer" = "Yala asks for each permission the first time you use something that needs it.";
 "l15.permissions.notAskedHint" = "We'll ask the first time you use it.";

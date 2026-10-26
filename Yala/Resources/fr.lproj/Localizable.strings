@@ -446,10 +446,10 @@
 "settings.favorites" = "Favoris";
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budgets favoris";
-"settings.budgetsFavoritesInfo" = "Les budgets favoris apparaissent dans la carte Budgets de l’Accueil (3 en moyen, 5 en grand).";
+"settings.budgetsFavoritesInfo" = "Les budgets favoris apparaissent dans la carte Budgets du Panel (3 en moyen, 5 en grand).";
 "settings.budgetsFavoritesEmptyHint" = "Créez des budgets dans l'onglet Planification.";
 "settings.budgetsFavoritesReorder" = "Réordonner les favoris";
-"budgets.favorites.previewTitle" = "Voici l’aperçu dans l’Accueil";
+"budgets.favorites.previewTitle" = "Voici l’aperçu dans le Panel";
 "budgets.favorites.previewEmpty" = "Sélectionnez des favoris pour voir l'aperçu";
 "settings.tabBarConfig" = "Onglets du bas";
 "settings.tabBarConfigInfo" = "Choisis quels onglets tu vois en bas et dans quel ordre.";
@@ -523,7 +523,7 @@
 "budgets.includeSharedExpenses" = "Compter ma part des dépenses de groupe";
 "budgets.includeSharedExpensesHint" = "Désactivé, seules tes dépenses personnelles comptent.";
 "budgets.widget.noFavorites.title" = "Aucun favori";
-"budgets.widget.noFavorites.message" = "Marquez des budgets comme favoris dans Paramètres > Budgets pour les voir ici.";
+"budgets.widget.noFavorites.message" = "Marquez des budgets comme favoris dans Réglages > Budgets pour les voir ici.";
 "budgets.widget.selectFavorites" = "Sélectionner les favoris";
 "budgets.alerts.title" = "Alertes";
 "budgets.alerts.enable" = "Notifier à l'atteinte de la limite";
@@ -655,7 +655,7 @@
 "export.column.note.description" = "Ce que tu as écrit dans la note.";
 "common.next" = "Suivant";
 "settings.versionInfo" = "Version %1$@ (Build %2$@)";
-"tab.panel" = "Accueil";
+"tab.panel" = "Panel";
 "tab.statistics" = "Statistiques";
 "tab.planning" = "Planification";
 "tab.more" = "Plus";
@@ -738,7 +738,7 @@
 "widget.today" = "Aujourd'hui";
 
 // Widget Preferences
-"widget.preferences.description" = "Choisis ce que tu veux voir sur ton tableau de bord et dans quel ordre.";
+"widget.preferences.description" = "Choisis ce que tu veux voir sur ton Panel et dans quel ordre.";
 "widget.resetLayout" = "Réinitialiser la disposition";
 "widget.alwaysVisible" = "Toujours visible";
 "widget.fixedPosition" = "Position fixe";
@@ -1159,7 +1159,7 @@
 "settings.sectionIndicators" = "Indicateurs";
 "settings.sectionFormat" = "Format des montants";
 "settings.defaultPeriod" = "Période par défaut";
-"settings.defaultPeriodDescription" = "C’est la période avec laquelle s’ouvrent l’Accueil, Enregistrements et Statistiques. Tu peux la changer un moment depuis le sélecteur de période.";
+"settings.defaultPeriodDescription" = "C’est la période avec laquelle s’ouvrent le Panel, Enregistrements et Statistiques. Tu peux la changer un moment depuis le sélecteur de période.";
 "settings.colorfulIcons" = "Icônes colorées";
 "settings.colorfulIconsDescription" = "Affiche des icônes colorées dans la section profil, comme dans les Réglages iOS.";
 "settings.colorfulIconsDisabledByTheme" = "Désactivé automatiquement par le thème actuel.";
@@ -1700,9 +1700,9 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Textes d'aide";
-"settings.widgetHintsDescription" = "Affiche le bouton « ? » à côté des graphiques, qui explique chacun d’eux. Tu le vois sur l’Accueil, dans Statistiques et dans Planification.";
+"settings.widgetHintsDescription" = "Affiche le bouton « ? » à côté des graphiques, qui explique chacun d’eux. Tu le vois sur le Panel, dans Statistiques et dans Planification.";
 "settings.showVariations" = "Comparer avec la période précédente";
-"settings.showVariationsDescription" = "Montre de combien chaque chiffre a monté ou baissé par rapport à la période précédente. Tu le vois sur l’Accueil, dans Statistiques et dans les rapports.";
+"settings.showVariationsDescription" = "Montre de combien chaque chiffre a monté ou baissé par rapport à la période précédente. Tu le vois sur le Panel, dans Statistiques et dans les rapports.";
 "settings.averageLine" = "Ligne de moyenne sur les graphiques";
 "settings.averageLineDescription" = "Affiche une ligne de moyenne sur les graphiques à barres.";
 "settings.averageLine.off" = "Aucune";
@@ -2183,7 +2183,7 @@
 "faq.whatIsYala.q" = "Qu'est-ce que Yala ?";
 "faq.whatIsYala.a" = "Yala est ton app de finances personnelles. Elle t'aide à suivre dépenses et revenus, organiser ton argent par catégories et étiquettes, créer des budgets et voir des rapports clairs de tes finances.";
 "faq.howToRecord.q" = "Comment enregistrer une dépense ?";
-"faq.howToRecord.a" = "Sur l'Accueil, touche Nouvel enregistrement pour saisir le montant, ou Voix ou Photo pour le dicter ou lire un reçu. Yala remplit les détails pour toi.";
+"faq.howToRecord.a" = "Sur le Panel, touche Nouvel enregistrement pour saisir le montant, ou Voix ou Photo pour le dicter ou lire un reçu. Yala remplit les détails pour toi.";
 "faq.multiCurrency.q" = "Puis-je utiliser plusieurs devises ?";
 "faq.multiCurrency.a" = "Oui. Yala propose 54 devises. Chaque compte est dans la sienne et Yala convertit les totaux dans ta devise principale. Tu choisis la principale, et jusqu’à 2 secondaires pour comparer, dans Réglages > Devise et change.";
 "faq.changeCategory.q" = "Comment changer la catégorie d'une dépense ?";
@@ -2578,7 +2578,7 @@
 "tutorials.createAccount.intro.title" = "Qu'est-ce qu'un compte ?";
 "tutorials.createAccount.intro.desc" = "Configure ta banque, portefeuille ou carte pour suivre ton argent.";
 "tutorials.createAccount.step0.title" = "Crée un nouveau compte";
-"tutorials.createAccount.step1.title" = "Ou crée-le depuis l’Accueil";
+"tutorials.createAccount.step1.title" = "Ou crée-le depuis le Panel";
 "tutorials.createAccount.step2.title" = "Complète les informations";
 "tutorials.createAccount.completion.title" = "Tu sais maintenant créer un compte";
 "tutorials.createAccount.completion.desc" = "Répartis ton argent en comptes (banque, espèces, carte) pour voir combien il y a sur chacun. Tu peux les modifier quand tu veux.";
@@ -2629,7 +2629,7 @@
 "tutorials.createBudgets.intro.desc" = "Fixe des limites de dépenses et sois alerté quand tu t'en approches.";
 "tutorials.createBudgets.step0.title" = "Ouvre Planification";
 "tutorials.createBudgets.step1.title" = "Configure ton budget";
-"tutorials.createBudgets.step2.title" = "Affiche-le dans l'Accueil";
+"tutorials.createBudgets.step2.title" = "Affiche-le dans le Panel";
 "tutorials.createBudgets.step3.title" = "Modifie-le quand tu veux";
 "tutorials.createBudgets.completion.title" = "Tu sais maintenant créer un budget";
 "tutorials.createBudgets.completion.desc" = "Avec un budget, tu vois tout de suite combien il te reste à dépenser, et Yala te prévient si tu approches de la limite.";
@@ -2656,17 +2656,17 @@
 "tutorials.createFavorites.completion.desc" = "Un favori note en une touche les dépenses que tu répètes. Tu peux en avoir autant que tu veux.";
 
 // 9. editPanel (3 steps)
-"tutorials.editPanel.title" = "Personnaliser le panneau";
-"tutorials.editPanel.intro.title" = "Ton panneau, à ta façon";
-"tutorials.editPanel.intro.desc" = "Personnalise les widgets qui apparaissent sur ton panneau.";
-"tutorials.editPanel.step0.title" = "Ouvre le panneau";
+"tutorials.editPanel.title" = "Personnaliser le Panel";
+"tutorials.editPanel.intro.title" = "Ton Panel, à ta façon";
+"tutorials.editPanel.intro.desc" = "Personnalise les widgets qui apparaissent sur ton Panel.";
+"tutorials.editPanel.step0.title" = "Ouvre le Panel";
 "tutorials.editPanel.step1.title" = "Personnalise les widgets";
 "tutorials.editPanel.step2.title" = "Réinitialise si tu veux";
-"tutorials.editPanel.completion.title" = "Tu sais maintenant personnaliser l’Accueil";
-"tutorials.editPanel.completion.desc" = "Ton Accueil affiche ce que tu choisis, dans l’ordre que tu veux. Tu peux le changer quand tu veux.";
+"tutorials.editPanel.completion.title" = "Tu sais maintenant personnaliser le Panel";
+"tutorials.editPanel.completion.desc" = "Ton Panel affiche ce que tu choisis, dans l’ordre que tu veux. Tu peux le changer quand tu veux.";
 
 // 10. panelFiltering (5 steps)
-"tutorials.panelFiltering.title" = "Filtres du panneau";
+"tutorials.panelFiltering.title" = "Filtres du Panel";
 "tutorials.panelFiltering.intro.title" = "Filtre pour trouver";
 "tutorials.panelFiltering.intro.desc" = "Filtre par compte, catégorie, tag ou période pour une analyse détaillée.";
 "tutorials.panelFiltering.step0.title" = "Touche les graphiques pour filtrer";
@@ -2699,7 +2699,7 @@
 
 // Tutorial step descriptions (re-expanded)
 "tutorials.createAccount.step0.desc" = "Dans Réglages, ouvre Comptes et touche + pour en créer un nouveau.";
-"tutorials.createAccount.step1.desc" = "Sur l’Accueil, dans Tes finances, fais défiler tes comptes jusqu’au bout et touche Ajouter.";
+"tutorials.createAccount.step1.desc" = "Sur le Panel, dans Tes finances, fais défiler tes comptes jusqu’au bout et touche Ajouter.";
 "tutorials.createAccount.step2.desc" = "Complète les informations pour ton nouveau compte et touche Enregistrer.";
 "tutorials.createCategories.step0.desc" = "Dans Réglages, ouvre Catégories et touche + pour en créer une nouvelle.";
 "tutorials.createCategories.step1.desc" = "N'oublie pas qu'il doit toujours y avoir des sous-catégories associées à une catégorie pour pouvoir la créer.";
@@ -2707,7 +2707,7 @@
 "tutorials.createCategories.step3.desc" = "Personnalise l'icône et la couleur de ta catégorie comme tu veux quand tu veux.";
 "tutorials.createTags.step0.desc" = "Dans Réglages, ouvre Étiquettes et touche + pour en créer une nouvelle.";
 "tutorials.createTags.step1.desc" = "Personnalise l'étiquette comme tu veux : donne-lui un nom, une icône et une couleur.";
-"tutorials.createRecord.step0.desc" = "Sur l'Accueil, touche Nouvel enregistrement. Pour dicter ou lire un reçu, touche Voix ou Photo.";
+"tutorials.createRecord.step0.desc" = "Sur le Panel, touche Nouvel enregistrement. Pour dicter ou lire un reçu, touche Voix ou Photo.";
 "tutorials.createRecord.step1.desc" = "Tu peux enregistrer des dépenses, des revenus et même des transferts entre comptes. Les taux de change se calculent automatiquement en temps réel.";
 "tutorials.createRecord.step2.desc" = "Complète les champs obligatoires : montant, compte et sous-catégorie. Tu peux aussi ajouter une description et les étiquettes que tu veux.";
 "tutorials.createRecord.step3.desc" = "Utilise les raccourcis rapides : @ pour compte, ! pour catégorie et # pour étiquette. Commence à écrire pour affiner la recherche dans chaque raccourci.";
@@ -2715,7 +2715,7 @@
 "tutorials.importData.step1.desc" = "Tu peux importer CSV ou Excel autant de fois que tu veux en suivant le modèle prédéfini, que tu peux télécharger directement là. S'il y a des données dans différentes devises, il te demandera de sélectionner les comptes pour chacune.";
 "tutorials.createBudgets.step0.desc" = "Dans le menu sélectionne Planification et assure-toi d'être dans l'onglet Budgets. Utilise le bouton + pour en créer un nouveau.";
 "tutorials.createBudgets.step1.desc" = "Donne-lui un nom, un montant et définis la période : hebdomadaire, mensuel, annuel ou unique (pour un voyage, événement, etc). Choisis quels comptes, catégories, étiquettes et besoins tu veux suivre. Active les notifications si tu veux des alertes à certains seuils.";
-"tutorials.createBudgets.step2.desc" = "Active « Afficher dans le widget » pour le voir dans le widget Budgets de l'Accueil.";
+"tutorials.createBudgets.step2.desc" = "Active « Afficher dans le widget » pour le voir dans le widget Budgets du Panel.";
 "tutorials.createBudgets.step3.desc" = "N'oublie pas que tu pourras toujours revenir pour modifier ton budget en le touchant.";
 "tutorials.createScheduledPayments.step0.desc" = "Dans le menu sélectionne Planification et assure-toi d'être dans l'onglet Paiements planifiés. Utilise le bouton + pour en créer un nouveau.";
 "tutorials.createScheduledPayments.step1.desc" = "Complète le nom de ton paiement, montant, note (optionnel), compte, sous-catégorie et étiquettes (optionnel).";
@@ -2725,7 +2725,7 @@
 "tutorials.createFavorites.step0.desc" = "Dans Nouvel enregistrement, touche « Favori », sous le montant, pour enregistrer comme favori ce que tu as déjà saisi.";
 "tutorials.createFavorites.step1.desc" = "La prochaine fois, touche le favori dans la rangée en haut du formulaire : les champs enregistrés se remplissent tout seuls.";
 "tutorials.editPanel.step0.desc" = "Va à l'écran principal où tu vois ton résumé de dépenses avec tous les widgets disponibles.";
-"tutorials.editPanel.step1.desc" = "Touche le bouton à petits carrés à côté de chaque section de l’Accueil pour choisir quels widgets voir et dans quel ordre.";
+"tutorials.editPanel.step1.desc" = "Touche le bouton à petits carrés à côté de chaque section du Panel pour choisir quels widgets voir et dans quel ordre.";
 "tutorials.editPanel.step2.desc" = "N'oublie pas que tu peux toujours revenir à l'ordre par défaut en touchant « Réinitialiser la disposition » dans la personnalisation.";
 "tutorials.panelFiltering.step0.desc" = "Tire le meilleur parti des graphiques interactifs de Yala. Presque tous les panneaux sont filtrables par catégorie, besoin, entre autres. Joue avec eux et trouve ce qui te sert le mieux.";
 "tutorials.panelFiltering.step1.desc" = "Tu as une barre de filtres où tu verras tous les filtres appliqués. Tu peux les retirer individuellement ou tous à la fois quand tu veux.";
@@ -3005,7 +3005,7 @@
 "groups.form.defaultSplitType" = "Répartition par défaut";
 "groups.form.membersCanInvite" = "Les membres peuvent inviter";
 "groups.form.membersCanInviteHint" = "Permet à tout membre d'ajouter des personnes au groupe";
-"groups.settings.title" = "Paramètres du groupe";
+"groups.settings.title" = "Réglages du groupe";
 "groups.settings.members" = "Membres";
 "groups.settings.addMember" = "Ajouter un membre";
 "groups.settings.addMemberPrompt" = "Nom du membre";
@@ -3517,7 +3517,7 @@
 "shortcut.siriNatural.success.partial" = "Enregistré %1$lld sur %2$lld (certains non compris). Vérifie ta boîte.";
 
 /* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
-"panel.widgetInfo.addToPanel" = "Ajouter au tableau";
+"panel.widgetInfo.addToPanel" = "Ajouter au Panel";
 
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "Entrées et sorties";
@@ -3613,7 +3613,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panneau par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panel par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3625,7 +3625,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "Comment interagir avec le graphique ?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panneau par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panel par cette catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Répartition par sous-catégorie";
@@ -3649,7 +3649,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panneau par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panel par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3661,7 +3661,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "Comment interagir avec le graphique ?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panneau par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panel par cette sous-catégorie. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Répartition par étiquette";
@@ -3685,7 +3685,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panneau par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Touche une bulle pour filtrer le reste du Panel par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3697,7 +3697,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "Comment interagir avec le graphique ?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panneau par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Touche une portion du donut, une bulle ou une ligne de la légende pour filtrer le reste du Panel par cette étiquette. Appuie longuement sur une bulle pour voir son nom complet.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Répartition par besoin";
@@ -3721,7 +3721,7 @@
 "panel.widgetInfo.expensesByNeed.smallHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — ExpensesByNeed S: respuesta */
-"panel.widgetInfo.expensesByNeed.smallHowA" = "Touche une ligne pour filtrer le reste du Panneau par ce type de besoin. Touche-la à nouveau pour retirer le filtre.";
+"panel.widgetInfo.expensesByNeed.smallHowA" = "Touche une ligne pour filtrer le reste du Panel par ce type de besoin. Touche-la à nouveau pour retirer le filtre.";
 
 /* Panel Polish #2 — ExpensesByNeed M: pregunta */
 "panel.widgetInfo.expensesByNeed.mediumWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3733,7 +3733,7 @@
 "panel.widgetInfo.expensesByNeed.mediumHowQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — ExpensesByNeed M: respuesta */
-"panel.widgetInfo.expensesByNeed.mediumHowA" = "Touche une barre pour filtrer le reste du Panneau par ce type de besoin. Touche-la à nouveau pour retirer le filtre.";
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "Touche une barre pour filtrer le reste du Panel par ce type de besoin. Touche-la à nouveau pour retirer le filtre.";
 
 /* Panel Polish #2 — ExpensesByNeed L: pregunta */
 "panel.widgetInfo.expensesByNeed.largeWhatQ" = "Qu'est-ce que tu vois ?";
@@ -3745,7 +3745,7 @@
 "panel.widgetInfo.expensesByNeed.largeHowQ" = "Comment interagir avec le graphique ?";
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
-"panel.widgetInfo.expensesByNeed.largeHowA" = "Fais glisser ton doigt sur les barres pour voir la répartition d'un instant donné — combien d'essentiel, de prioritaire, etc., avec le total. Touche un chip de la légende pour n'afficher que ce type de besoin et filtrer le Panneau.";
+"panel.widgetInfo.expensesByNeed.largeHowA" = "Fais glisser ton doigt sur les barres pour voir la répartition d'un instant donné — combien d'essentiel, de prioritaire, etc., avec le total. Touche un chip de la légende pour n'afficher que ce type de besoin et filtrer le Panel.";
 
 /* Panel Polish #2 — Title sheet pedagógico TopCategories */
 "panel.widgetInfo.topCategories.title" = "Catégories principales";
@@ -3775,7 +3775,7 @@
 "panel.widgetInfo.topCategories.howQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
-"panel.widgetInfo.topCategories.howA" = "Touche une ligne pour filtrer le reste du Panneau par cette catégorie. Touche-la à nouveau pour retirer le filtre.";
+"panel.widgetInfo.topCategories.howA" = "Touche une ligne pour filtrer le reste du Panel par cette catégorie. Touche-la à nouveau pour retirer le filtre.";
 
 /* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
 "panel.widgetInfo.topSubcategories.title" = "Sous-catégories principales";
@@ -3805,10 +3805,10 @@
 "panel.widgetInfo.topSubcategories.howQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
-"panel.widgetInfo.topSubcategories.smallHowA" = "Touche une ligne pour filtrer le reste du Panneau par cette sous-catégorie.";
+"panel.widgetInfo.topSubcategories.smallHowA" = "Touche une ligne pour filtrer le reste du Panel par cette sous-catégorie.";
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
-"panel.widgetInfo.topSubcategories.regularHowA" = "Touche une ligne pour filtrer le reste du Panneau par cette sous-catégorie. Utilise les chips en haut pour restreindre la liste à une catégorie — ou, si une catégorie est déjà filtrée dans un autre widget, le sélecteur reste verrouillé sur celle-ci.";
+"panel.widgetInfo.topSubcategories.regularHowA" = "Touche une ligne pour filtrer le reste du Panel par cette sous-catégorie. Utilise les chips en haut pour restreindre la liste à une catégorie — ou, si une catégorie est déjà filtrée dans un autre widget, le sélecteur reste verrouillé sur celle-ci.";
 
 /* Panel Polish #2 — Title sheet pedagógico RecentRecords */
 "panel.widgetInfo.recentRecords.title" = "Derniers enregistrements";
@@ -3883,7 +3883,7 @@
 "panel.widgetInfo.budgets.howQ" = "Comment interagir ?";
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
-"panel.widgetInfo.budgets.howA" = "Touche un budget pour filtrer le reste du Panneau par les enregistrements de sa catégorie ou de son étiquette. Touche-le à nouveau pour retirer le filtre.";
+"panel.widgetInfo.budgets.howA" = "Touche un budget pour filtrer le reste du Panel par les enregistrements de sa catégorie ou de son étiquette. Touche-le à nouveau pour retirer le filtre.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "Taux de change";
@@ -4200,7 +4200,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "Que vois-tu ici ?";
 "panel.widgetInfo.periodComparison.whatA" = "Le solde, les revenus ou les dépenses de ta période actuelle aux côtés de la période précédente. Tu vois d'un coup d'œil si la tendance s'améliore.";
 "panel.widgetInfo.periodComparison.howQ" = "Avec quoi se compare-t-elle ?";
-"panel.widgetInfo.periodComparison.howA" = "Touche P-1 pour comparer avec la période précédente ou A-1 avec la même période de l'année précédente. Ton choix s'applique aussi aux variations du reste du Panneau.";
+"panel.widgetInfo.periodComparison.howA" = "Touche P-1 pour comparer avec la période précédente ou A-1 avec la même période de l'année précédente. Ton choix s'applique aussi aux variations du reste du Panel.";
 "panel.widgetInfo.sankey.title" = "Flux d'argent";
 "panel.widgetInfo.sankey.chip1" = "Flux";
 "panel.widgetInfo.sankey.chip2" = "Par besoin";
@@ -4208,7 +4208,7 @@
 "panel.widgetInfo.sankey.whatQ" = "Que vois-tu ici ?";
 "panel.widgetInfo.sankey.whatA" = "Le parcours de ton argent sur la période : par où il entre (revenus) et où il va, regroupé par type de besoin. Plus le ruban est large, plus le mouvement est important.";
 "panel.widgetInfo.sankey.howQ" = "Comment interagir ?";
-"panel.widgetInfo.sankey.howA" = "Touchez une catégorie, sous-catégorie ou branche pour filtrer le reste du Panneau selon ce parcours. Touchez à nouveau pour retirer le filtre.";
+"panel.widgetInfo.sankey.howA" = "Touchez une catégorie, sous-catégorie ou branche pour filtrer le reste du Panel selon ce parcours. Touchez à nouveau pour retirer le filtre.";
 
 // MARK: GroupsOnboarding-keys
 "groups.onboarding.progressLabel" = "Étape %1$d sur %2$d";
@@ -4250,7 +4250,7 @@
 "groups.globalSettings.bridgeToggleLabel" = "Enregistrer les dépenses de groupe dans mes comptes personnels";
 "groups.globalSettings.bridgeCaption" = "Quand cette option est active, chaque dépense que tu payes ou règles est aussi enregistrée dans le compte personnel que tu choisis. Ton solde reflète la réalité.";
 "groups.globalSettings.visibilitySectionTitle" = "Visibilité";
-"groups.globalSettings.visibilityCaption" = "Choisis si les enregistrements des groupes apparaissent dans ton Tableau de bord, tes statistiques et Enregistrements.";
+"groups.globalSettings.visibilityCaption" = "Choisis si les enregistrements des groupes apparaissent dans ton Panel, tes statistiques et Enregistrements.";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Inclure les enregistrements des groupes dans Enregistrements";
 "groups.settings.personalIntegrationSectionTitle" = "Refléter dans tes comptes";
 "groups.settings.personalIntegrationToggleLabel" = "Enregistrer les dépenses de ce groupe dans mes comptes personnels";
@@ -4359,7 +4359,7 @@
 "whatsNew.v21.logging.title" = "Noter n'a jamais été aussi simple";
 "whatsNew.v21.logging.description" = "Parle-lui, prends une photo ou écris-lui comme à un ami. Yala comprend ce que tu as dépensé et l'enregistre pour toi : tenir tes comptes ne prend que quelques secondes.";
 "whatsNew.v21.data.title" = "Tes données, tes règles";
-"whatsNew.v21.data.description" = "C'est toi qui choisis où vivent tes informations : dans ton iCloud privé ou dans le cloud de Yala, pour les retrouver sur tous tes appareils. En plus, un Accueil repensé et Yala en plein écran sur ton iPad.";
+"whatsNew.v21.data.description" = "C'est toi qui choisis où vivent tes informations : dans ton iCloud privé ou dans le cloud de Yala, pour les retrouver sur tous tes appareils. En plus, un Panel repensé et Yala en plein écran sur ton iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -5690,7 +5690,7 @@
 "groups.fullActivation.chooserSubtitle" = "Tes groupes ne changent pas. Choisis où garder tes données personnelles.";
 "groups.fullActivation.cloudBody" = "Nous utiliserons le même compte que pour tes groupes, pas un nouveau. Tes données sont sur nos serveurs et notre équipe peut les consulter pour t'aider.";
 "groups.fullActivation.historyTitle" = "On ajoute tes dépenses de groupe ?";
-"groups.fullActivation.historyBody" = "On ne reprend que ta part de chaque dépense. Elle comptera dans Accueil, tes budgets et Statistiques.";
+"groups.fullActivation.historyBody" = "On ne reprend que ta part de chaque dépense. Elle comptera dans ton Panel, tes budgets et Statistiques.";
 "groups.fullActivation.historyShow" = "Oui, les afficher";
 "groups.fullActivation.historyKeepInGroups" = "Non, les garder dans Groupes";
 "groups.fullActivation.historyFootnote" = "Ça vaut aussi pour celles que tu ajouteras ensuite. Tu peux changer ça quand tu veux dans les Réglages des groupes.";
@@ -5780,7 +5780,7 @@
 "storage.groups.detachKeep" = "Garder les dépenses que j'ai payées";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "Tout retirer d'Accueil";
+"storage.groups.detachRemove" = "Tout retirer du Panel";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "Dissociation…";
@@ -6895,7 +6895,7 @@
 "setup.step.skipped" = "Passé. Touche pour l'essayer";
 "setup.step.tryAgain" = "Essayer";
 "setup.complete.basics.title" = "Tu connais l'essentiel de Yala";
-"setup.complete.basics.subtitle" = "Quand tu veux, essaie la voix ou la photo avec les boutons en haut de l'Accueil.";
+"setup.complete.basics.subtitle" = "Quand tu veux, essaie la voix ou la photo avec les boutons en haut du Panel.";
 "setup.nextStepLabel" = "Étape suivante";
 "setup.start" = "Commencer";
 "setup.showAllSteps" = "Voir les %d étapes";
@@ -6910,7 +6910,7 @@
 "notificationPrimer.scheduled.benefit" = "Un rappel avant l'échéance de chaque paiement planifié, pour ne rien oublier.";
 "notificationPrimer.budget.title" = "On te prévient quand tu approches de la limite ?";
 "notificationPrimer.budget.benefit" = "On te prévient quand tu atteins les pourcentages choisis. Sans cette autorisation, l'alerte ne t'arrive pas.";
-"whatsNew.v22.panel.title" = "Un Accueil plus clair";
+"whatsNew.v22.panel.title" = "Un Panel plus clair";
 "whatsNew.v22.panel.description" = "Le grand chiffre dit ce qu'il mesure, tes comptes se voient d'un coup d'œil et les avis arrivent un par un.";
 "whatsNew.v22.inbox.title" = "Voix, photo et boîte de réception";
 "whatsNew.v22.inbox.description" = "Ce que tu dictes ou photographies arrive dans la boîte de réception avec son origine, et tu peux tout enregistrer d'un coup.";
@@ -7114,7 +7114,7 @@
 "budgets.l9.activateAlerts" = "Activer les alertes";
 "budgets.l9.alertsOffInNotifications" = "Alertes désactivées dans Notifications";
 "budgets.l9.showInWidget" = "Afficher dans le widget";
-"budgets.l9.showInWidgetHint" = "Apparaît dans le widget Budgets de l’Accueil.";
+"budgets.l9.showInWidgetHint" = "Apparaît dans le widget Budgets du Panel.";
 "budgets.l9.hideFromWidget" = "Retirer du widget";
 "budgets.l9.deleteTitle" = "Supprimer « %@ » ?";
 "budgets.l9.historyTitle.weekly" = "Ce que tu as dépensé chaque semaine face à ta limite";
@@ -7125,7 +7125,7 @@
 "budgets.l9.freePlanSheet" = "Avec l’offre gratuite, tu as %lld budgets actifs. Désactive-en un ou passe à Pro.";
 "budgets.l9.seePro" = "Voir Pro";
 "budgets.l9.chooseWhich" = "Choisir lesquels";
-"budgets.l9.previewEmpty" = "Marque jusqu’à 3 budgets d’une étoile pour voir ici ta carte de l’Accueil.";
+"budgets.l9.previewEmpty" = "Marque jusqu’à 3 budgets d’une étoile pour voir ici ta carte du Panel.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "En retard";
@@ -8110,9 +8110,9 @@
 "l15.rates.search" = "Rechercher une devise";
 "l15.personalization.voiceLanguageFooter" = "La langue dans laquelle tu parles à Yala quand tu notes à la voix.";
 "l15.personalization.colorfulIconsFooter" = "Tu le vois sur les icônes de Réglages et de Plus.";
-"l15.personalization.averageLineFooter" = "Tu le vois sur les graphiques de l’Accueil.";
+"l15.personalization.averageLineFooter" = "Tu le vois sur les graphiques du Panel.";
 "l15.personalization.currencyFormatFooter" = "Comment les montants s’écrivent dans toute l’app : avec le symbole (S/) ou avec le code (PEN).";
-"l15.tabBar.rules" = "Accueil reste toujours en premier. Il y a de la place pour 3, en plus de Plus et Rechercher.";
+"l15.tabBar.rules" = "Panel reste toujours en premier. Il y a de la place pour 3, en plus de Plus et Rechercher.";
 "l15.permissions.title" = "Autorisations de Yala";
 "l15.permissions.footer" = "Yala te demande chaque autorisation la première fois que tu utilises ce qui en a besoin.";
 "l15.permissions.notAskedHint" = "On te le demandera la première fois que tu l’utiliseras.";

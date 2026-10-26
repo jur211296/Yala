@@ -135,8 +135,8 @@
 "welcome.restore.errorTitle" = "Algo correu mal";
 "welcome.restore.errorBody" = "Não conseguimos procurar os teus dados no iCloud. Tenta de novo ou configura do zero.";
 "welcome.restore.iCloudDisabledTitle" = "Ativa o iCloud para continuar";
-"welcome.restore.iCloudDisabledBody" = "Precisas do iCloud ativo para recuperar os teus dados. Ativa-o nos Ajustes e tenta novamente.";
-"welcome.restore.openSettings" = "Abrir Ajustes";
+"welcome.restore.iCloudDisabledBody" = "Precisas do iCloud ativo para recuperar os teus dados. Ativa-o nas Definições e tenta novamente.";
+"welcome.restore.openSettings" = "Abrir Definições";
 "welcome.restore.startFreshConfirm.title" = "Começar do zero?";
 "welcome.restore.startFreshConfirm.body" = "Ainda não se apaga nada. Antes de começar, verificamos o que está guardado e, se encontrarmos algo, perguntamos-te o que fazer com isso.";
 "welcome.restore.startFreshConfirm.confirm" = "Sim, começar do zero";
@@ -767,7 +767,7 @@
 "budgets.empty.title" = "Sem orçamentos";
 "budgets.exceeded.encouragement" = "Passaste do orçamento — o próximo período será melhor!";
 "budgets.favorites.previewEmpty" = "Seleciona favoritos para ver a pré-visualização";
-"budgets.favorites.previewTitle" = "Assim vai aparecer no Início";
+"budgets.favorites.previewTitle" = "Assim vai aparecer no Painel";
 "budgets.includeSharedExpenses" = "Contar a minha parte dos gastos do grupo";
 "budgets.includeSharedExpensesHint" = "Se o desligares, só contam os teus gastos pessoais.";
 "budgets.new" = "Novo orçamento";
@@ -1430,7 +1430,7 @@
 "faq.deleteData.q" = "Posso apagar todos os meus dados?";
 "faq.exportData.a" = "Vai a Definições > Exportar registos e escolhe o formato CSV ou Excel. Podes descarregar todos os teus registos para os analisar numa folha de cálculo ou guardar como cópia de segurança.";
 "faq.exportData.q" = "Como exporto meus dados?";
-"faq.howToRecord.a" = "No Início, toca em Novo registo para escreveres o valor, ou em Voz ou Foto para o ditares ou leres um recibo. O Yala preenche os detalhes por ti.";
+"faq.howToRecord.a" = "No Painel, toca em Novo registo para escreveres o valor, ou em Voz ou Foto para o ditares ou leres um recibo. O Yala preenche os detalhes por ti.";
 "faq.howToRecord.q" = "Como registo um gasto?";
 "faq.importData.a" = "Sim. Vai a Definições > Importar ficheiro e envia um ficheiro CSV ou Excel. O Yala deteta as colunas automaticamente e deixa-te atribuir contas por moeda.";
 "faq.importData.q" = "Posso importar meus dados?";
@@ -1521,11 +1521,11 @@
 "groups.globalSettings.bridgeSectionTitle" = "Refletir nas tuas contas";
 "groups.globalSettings.bridgeToggleLabel" = "Registar despesas de grupos nas minhas contas pessoais";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Incluir registos de grupos em Registos";
-"groups.globalSettings.title" = "Ajustes de Grupos";
+"groups.globalSettings.title" = "Definições de Grupos";
 "groups.globalSettings.visibilityCaption" = "Escolhe se os registos de grupos aparecem no teu Painel, estatísticas e Registos.";
 "groups.globalSettings.visibilitySectionTitle" = "Visibilidade";
 "groups.onboarding.step2.bridgeAwareness" = "Quando pagas uma despesa, também a registamos na tua conta pessoal automaticamente — para que o teu saldo reflita sempre a realidade.";
-"groups.settings.personalIntegrationHintBlockedByGlobal" = "Para ativar esta opção aqui, ative primeiro em Ajustes de Grupos.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Para ativar esta opção aqui, ative primeiro nas Definições de Grupos.";
 "groups.settings.personalIntegrationHintInheritOn" = "Herdas a tua definição geral (Ativado).";
 "groups.settings.personalIntegrationHintLocalOff" = "Só neste grupo: desativado.";
 "groups.settings.personalIntegrationSectionTitle" = "Refletir nas tuas contas";
@@ -2630,7 +2630,7 @@
 "settings.budgets" = "Orçamentos";
 "settings.budgetsFavorites" = "Orçamentos favoritos";
 "settings.budgetsFavoritesEmptyHint" = "Cria orçamentos no separador Planeamento.";
-"settings.budgetsFavoritesInfo" = "Os orçamentos favoritos aparecem no cartão de Orçamentos do Início (3 no médio, 5 no grande).";
+"settings.budgetsFavoritesInfo" = "Os orçamentos favoritos aparecem no cartão de Orçamentos do Painel (3 no médio, 5 no grande).";
 "settings.budgetsFavoritesReorder" = "Ordenar favoritos";
 "settings.cancel" = "Cancelar";
 "settings.categories" = "Categorias";
@@ -2659,7 +2659,7 @@
 "settings.decimalsTwo" = "2 decimais";
 "settings.defaultCurrency" = "Moeda padrão";
 "settings.defaultPeriod" = "Período padrão";
-"settings.defaultPeriodDescription" = "É o período com que abrem o Início, Registos e Estatísticas. Podes mudá-lo por uns momentos no seletor de período.";
+"settings.defaultPeriodDescription" = "É o período com que abrem o Painel, Registos e Estatísticas. Podes mudá-lo por uns momentos no seletor de período.";
 "settings.delete" = "Eliminar";
 "settings.deleteAllData" = "Limpar os meus dados";
 "settings.deleteAllDataAction" = "Limpar definitivamente";
@@ -2718,7 +2718,7 @@
 "settings.security" = "Segurança e privacidade";
 "settings.showMoreCurrencies" = "Ver mais moedas";
 "settings.showVariations" = "Comparar com o período anterior";
-"settings.showVariationsDescription" = "Mostra quanto cada valor subiu ou desceu em relação ao período anterior. Aparece no Início, em Estatísticas e nos relatórios.";
+"settings.showVariationsDescription" = "Mostra quanto cada valor subiu ou desceu em relação ao período anterior. Aparece no Painel, em Estatísticas e nos relatórios.";
 "settings.siriShortcuts" = "Siri e Atalhos";
 "settings.subscriptions" = "Gerir subscrições";
 "settings.sunday" = "Domingo";
@@ -2747,7 +2747,7 @@
 "settings.voiceInputEnabled" = "Entrada por voz";
 "settings.voiceLanguage" = "Idioma da voz";
 "settings.widgetHints" = "Textos de ajuda";
-"settings.widgetHintsDescription" = "Mostra o botão “?” ao lado dos gráficos, com a explicação de cada um. Aparece no Início, em Estatísticas e em Planeamento.";
+"settings.widgetHintsDescription" = "Mostra o botão “?” ao lado dos gráficos, com a explicação de cada um. Aparece no Painel, em Estatísticas e em Planeamento.";
 "settings.wipeData" = "Limpar dados";
 "setup.collapse" = "Minimizar";
 "setup.complete.subtitle" = "Completaste todos os passos. O Yala está pronto para ti.";
@@ -3118,7 +3118,7 @@
 "support.typeImprovement" = "Melhoria";
 "tab.groups" = "Grupos";
 "tab.more" = "Mais";
-"tab.panel" = "Início";
+"tab.panel" = "Painel";
 "tab.planning" = "Planeamento";
 "tab.records" = "Registos";
 "tab.reports" = "Relatórios";
@@ -3264,8 +3264,8 @@
 "tutorials.createAccount.intro.title" = "O que é uma conta?";
 "tutorials.createAccount.step0.desc" = "Nas Definições, entra em Contas e toca em + para criar uma nova.";
 "tutorials.createAccount.step0.title" = "Cria uma nova conta";
-"tutorials.createAccount.step1.desc" = "No Início, em Tuas finanças, desliza as tuas contas até ao fim e toca em Adicionar.";
-"tutorials.createAccount.step1.title" = "Ou cria-a a partir do Início";
+"tutorials.createAccount.step1.desc" = "No Painel, em Tuas finanças, desliza as tuas contas até ao fim e toca em Adicionar.";
+"tutorials.createAccount.step1.title" = "Ou cria-a a partir do Painel";
 "tutorials.createAccount.step2.desc" = "Preenche os dados para a tua nova conta e toca em Guardar.";
 "tutorials.createAccount.step2.title" = "Preenche os dados";
 "tutorials.createAccount.title" = "Criar uma conta";
@@ -3277,8 +3277,8 @@
 "tutorials.createBudgets.step0.title" = "Abre Planeamento";
 "tutorials.createBudgets.step1.desc" = "Dá-lhe nome, montante e define o período: semanal, mensal, anual ou único (para uma viagem, evento, etc). Escolhe que contas, categorias, etiquetas e necessidades queres acompanhar. Ativa as notificações se quiseres avisos em certos limiares.";
 "tutorials.createBudgets.step1.title" = "Configura o teu orçamento";
-"tutorials.createBudgets.step2.desc" = "Ativa «Mostrar no widget» para o veres no widget de Orçamentos do Início.";
-"tutorials.createBudgets.step2.title" = "Mostra-o no Início";
+"tutorials.createBudgets.step2.desc" = "Ativa «Mostrar no widget» para o veres no widget de Orçamentos do Painel.";
+"tutorials.createBudgets.step2.title" = "Mostra-o no Painel";
 "tutorials.createBudgets.step3.desc" = "Lembra-te que sempre poderás voltar para editar o teu orçamento tocando nele.";
 "tutorials.createBudgets.step3.title" = "Edita-o quando quiseres";
 "tutorials.createBudgets.title" = "Criar orçamentos";
@@ -3308,7 +3308,7 @@
 "tutorials.createRecord.completion.title" = "Já sabes registar uma despesa";
 "tutorials.createRecord.intro.desc" = "Cada gasto registado ajuda-te a perceber melhor as tuas finanças.";
 "tutorials.createRecord.intro.title" = "Registo manual";
-"tutorials.createRecord.step0.desc" = "No Início, toca em Novo registo. Para ditar ou ler um recibo, toca em Voz ou Foto.";
+"tutorials.createRecord.step0.desc" = "No Painel, toca em Novo registo. Para ditar ou ler um recibo, toca em Voz ou Foto.";
 "tutorials.createRecord.step0.title" = "Toca em Novo registo";
 "tutorials.createRecord.step1.desc" = "Podes registar despesas, receitas e inclusive transferências entre contas. As taxas de câmbio são calculadas automaticamente em tempo real.";
 "tutorials.createRecord.step1.title" = "Escolhe o tipo de registo";
@@ -3342,17 +3342,17 @@
 "tutorials.createTags.step1.title" = "Personaliza a tua etiqueta";
 "tutorials.createTags.title" = "Criar etiquetas";
 "tutorials.done" = "Concluído";
-"tutorials.editPanel.completion.desc" = "O teu painel mostra o que escolheres, pela ordem que quiseres. Podes mudá-lo quando quiseres.";
-"tutorials.editPanel.completion.title" = "Já sabes personalizar o painel";
-"tutorials.editPanel.intro.desc" = "Personaliza quais os widgets que aparecem no teu painel.";
-"tutorials.editPanel.intro.title" = "O teu painel, à tua maneira";
+"tutorials.editPanel.completion.desc" = "O teu Painel mostra o que escolheres, pela ordem que quiseres. Podes mudá-lo quando quiseres.";
+"tutorials.editPanel.completion.title" = "Já sabes personalizar o Painel";
+"tutorials.editPanel.intro.desc" = "Personaliza quais os widgets que aparecem no teu Painel.";
+"tutorials.editPanel.intro.title" = "O teu Painel, à tua maneira";
 "tutorials.editPanel.step0.desc" = "Vai ao ecrã principal onde vês o teu resumo de despesas com todos os widgets disponíveis.";
-"tutorials.editPanel.step0.title" = "Abre o painel";
-"tutorials.editPanel.step1.desc" = "Toca no botão de quadradinhos ao lado de cada secção do painel para escolheres que widgets ver e por que ordem.";
+"tutorials.editPanel.step0.title" = "Abre o Painel";
+"tutorials.editPanel.step1.desc" = "Toca no botão de quadradinhos ao lado de cada secção do Painel para escolheres que widgets ver e por que ordem.";
 "tutorials.editPanel.step1.title" = "Personaliza os widgets";
 "tutorials.editPanel.step2.desc" = "Lembra-te que sempre podes voltar à ordem predeterminada tocando em \"Restaurar layout original\" dentro da personalização.";
 "tutorials.editPanel.step2.title" = "Restabelece se quiseres";
-"tutorials.editPanel.title" = "Personalizar o painel";
+"tutorials.editPanel.title" = "Personalizar o Painel";
 "tutorials.importData.completion.desc" = "Ao importar, o Yala diz-te o que entrou e o que não entrou. Revê os teus registos depois para confirmar.";
 "tutorials.importData.completion.title" = "Já sabes importar os teus dados";
 "tutorials.importData.intro.desc" = "Traz os teus gastos de uma folha de cálculo ou de outra app em segundos.";
@@ -3391,7 +3391,7 @@
 "tutorials.panelFiltering.step3.title" = "Vê filtros em todas as vistas";
 "tutorials.panelFiltering.step4.desc" = "Em algumas vistas também contarás com uma secção de filtros na parte superior para que filtres a teu gosto ou removas todos com um único botão.";
 "tutorials.panelFiltering.step4.title" = "Usa os filtros rápidos";
-"tutorials.panelFiltering.title" = "Filtros do painel";
+"tutorials.panelFiltering.title" = "Filtros do Painel";
 "tutorials.previous" = "Anterior";
 "tutorials.start" = "Começar";
 "tutorials.stepLabel %d" = "Passo %d";
@@ -3511,7 +3511,7 @@
 "widget.of" = "de %@";
 "widget.ofExpense" = "da despesa";
 "widget.ofTotal" = "do total";
-"widget.preferences.description" = "Escolhe o que queres ver no teu painel e por que ordem.";
+"widget.preferences.description" = "Escolhe o que queres ver no teu Painel e por que ordem.";
 "widget.recordsWillAppear" = "Quando tiveres registos, aparecerão aqui.";
 "widget.resetLayout" = "Restaurar layout original";
 "widget.selectCurrencies" = "Selecione até 2 moedas para comparar com %@";
@@ -3605,7 +3605,7 @@
 "whatsNew.v21.logging.title" = "Registar nunca foi tão fácil";
 "whatsNew.v21.logging.description" = "Fala, tira uma fotografia ou escreve como a um amigo. O Yala percebe o que gastaste e regista por ti, para que gerir as tuas contas demore segundos.";
 "whatsNew.v21.data.title" = "Os teus dados, as tuas regras";
-"whatsNew.v21.data.description" = "Tu escolhes onde vive a tua informação: no teu iCloud privado ou na nuvem do Yala, para a teres em todos os teus dispositivos. E ainda: um ecrã Início renovado e o Yala em ecrã inteiro no teu iPad.";
+"whatsNew.v21.data.description" = "Tu escolhes onde vive a tua informação: no teu iCloud privado ou na nuvem do Yala, para a teres em todos os teus dispositivos. E ainda: um Painel renovado e o Yala em ecrã inteiro no teu iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4937,10 +4937,10 @@
 "groups.fullActivation.chooserSubtitle" = "Os teus grupos ficam iguais. Escolhe onde vão ficar os teus dados pessoais.";
 "groups.fullActivation.cloudBody" = "Vamos usar a mesma conta que já usas nos teus grupos, não uma nova. Os teus dados ficam nos nossos servidores e a nossa equipa pode vê-los para te dar apoio.";
 "groups.fullActivation.historyTitle" = "Trazemos as tuas despesas de grupo?";
-"groups.fullActivation.historyBody" = "Trazemos só a tua parte de cada despesa. Vai contar no Início, nos teus orçamentos e em Estatísticas.";
+"groups.fullActivation.historyBody" = "Trazemos só a tua parte de cada despesa. Vai contar no Painel, nos teus orçamentos e em Estatísticas.";
 "groups.fullActivation.historyShow" = "Sim, mostrar";
 "groups.fullActivation.historyKeepInGroups" = "Não, deixar em Grupos";
-"groups.fullActivation.historyFootnote" = "Vale também para as que registares depois. Podes mudar isto quando quiseres em Ajustes de Grupos.";
+"groups.fullActivation.historyFootnote" = "Vale também para as que registares depois. Podes mudar isto quando quiseres nas Definições de Grupos.";
 "groups.fullActivation.promoting" = "A ativar a tua conta…";
 "groups.fullActivation.failedTitle" = "Não conseguimos ativar a tua conta";
 "groups.fullActivation.failedBody" = "Verifica a tua ligação e tenta outra vez. Ainda não mudámos nada.";
@@ -5027,7 +5027,7 @@
 "storage.groups.detachKeep" = "Manter as despesas que paguei";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "Tirar tudo do Início";
+"storage.groups.detachRemove" = "Tirar tudo do Painel";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "A desvincular…";
@@ -5139,7 +5139,7 @@
 "welcome.privateICloud.discardUnverifiedBack" = "Voltar atrás";
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
-"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Este telemóvel tem o iCloud desligado, por isso não conseguimos ver se já tinhas guardado alguma coisa e não apagámos nada. Liga-o nos Ajustes e tenta outra vez, ou volta atrás e decide quando quiseres.";
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Este telemóvel tem o iCloud desligado, por isso não conseguimos ver se já tinhas guardado alguma coisa e não apagámos nada. Liga-o nas Definições e tenta outra vez, ou volta atrás e decide quando quiseres.";
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "Apagam-se do iCloud, por isso desaparecem dos teus outros dispositivos que guardam ali os teus dados pessoais";
@@ -6142,7 +6142,7 @@
 "setup.step.skipped" = "Saltaste este passo. Toca para experimentar";
 "setup.step.tryAgain" = "Experimentar";
 "setup.complete.basics.title" = "Já conheces o essencial do Yala";
-"setup.complete.basics.subtitle" = "Quando quiseres, experimenta a voz ou a foto nos botões no topo do Início.";
+"setup.complete.basics.subtitle" = "Quando quiseres, experimenta a voz ou a foto nos botões no topo do Painel.";
 "setup.nextStepLabel" = "Próximo passo";
 "setup.start" = "Começar";
 "setup.showAllSteps" = "Ver os %d passos";
@@ -6157,7 +6157,7 @@
 "notificationPrimer.scheduled.benefit" = "Um aviso antes do vencimento de cada pagamento planeado, para não se esquecer.";
 "notificationPrimer.budget.title" = "Queres um aviso quando te aproximares do limite?";
 "notificationPrimer.budget.benefit" = "Avisamos-te quando chegares às percentagens que escolheste. Sem esta permissão, o alerta não te chega.";
-"whatsNew.v22.panel.title" = "Um Início mais claro";
+"whatsNew.v22.panel.title" = "Um Painel mais claro";
 "whatsNew.v22.panel.description" = "O número grande diz o que mede, as tuas contas veem-se de relance e os avisos chegam um de cada vez.";
 "whatsNew.v22.inbox.title" = "Voz, foto e Caixa de Entrada";
 "whatsNew.v22.inbox.description" = "O que ditas ou fotografas chega à Caixa de Entrada a dizer de onde veio, e podes guardar de uma vez tudo o que está pronto.";
@@ -6207,10 +6207,10 @@
 "account.currencyChange.includesInitialBalance" = "Inclui o teu saldo inicial.";
 "account.currencyChange.balanceLine" = "O teu saldo vai passar de %1$@ para %2$@.";
 "account.secondaryCurrency.addTitle" = "Ver %@ no teu Painel?";
-"account.secondaryCurrency.addMessage" = "Adicionaste uma conta em %1$@. Queres ver no Início quanto vale 1 %1$@ em %2$@? Podes alterar em %3$@ > %4$@.";
+"account.secondaryCurrency.addMessage" = "Adicionaste uma conta em %1$@. Queres ver no teu Painel quanto vale 1 %1$@ em %2$@? Podes alterar em %3$@ > %4$@.";
 "account.secondaryCurrency.addAccept" = "Ver no Painel";
 "account.secondaryCurrency.replaceTitle" = "O teu Painel já mostra duas moedas";
-"account.secondaryCurrency.replaceMessage" = "O Início mostra quanto valem %1$@ e %2$@, e cabem duas. Trocas uma por %3$@?";
+"account.secondaryCurrency.replaceMessage" = "O teu Painel mostra quanto valem %1$@ e %2$@, e cabem duas. Trocas uma por %3$@?";
 "account.secondaryCurrency.replaceButton" = "Trocar %1$@ por %2$@";
 "account.secondaryCurrency.keep" = "Deixar como está";
 "currencyPicker.current" = "A atual";
@@ -6361,7 +6361,7 @@
 "budgets.l9.activateAlerts" = "Ativar alertas";
 "budgets.l9.alertsOffInNotifications" = "Alertas desligados em Notificações";
 "budgets.l9.showInWidget" = "Mostrar no widget";
-"budgets.l9.showInWidgetHint" = "Aparece no widget de Orçamentos do Início.";
+"budgets.l9.showInWidgetHint" = "Aparece no widget de Orçamentos do Painel.";
 "budgets.l9.hideFromWidget" = "Tirar do widget";
 "budgets.l9.deleteTitle" = "Eliminar «%@»?";
 "budgets.l9.historyTitle.weekly" = "O que gastaste em cada semana face ao teu limite";
@@ -6372,7 +6372,7 @@
 "budgets.l9.freePlanSheet" = "No plano gratuito tens %lld ativos. Desativa um ou passa para o Pro.";
 "budgets.l9.seePro" = "Ver Pro";
 "budgets.l9.chooseWhich" = "Escolher quais";
-"budgets.l9.previewEmpty" = "Marca até 3 orçamentos com a estrela e verás aqui o teu cartão do Início.";
+"budgets.l9.previewEmpty" = "Marca até 3 orçamentos com a estrela e verás aqui o teu cartão do Painel.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "Vencido";
@@ -7183,7 +7183,7 @@
 "groups.bridge.deleteConfirmMessage" = "Registos que serão eliminados: %d. Não é possível desfazer.";
 
 /* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
-"groups.settings.openGroupsSettings" = "Abrir Ajustes de Grupos";
+"groups.settings.openGroupsSettings" = "Abrir Definições de Grupos";
 
 /* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
 "inbox.groupDraft.linkTitle" = "Já anotaste?";
@@ -7200,7 +7200,7 @@
 /* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
 
 /* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
-"groups.d13.bridgeOff" = "Se não quiseres, desativa em Ajustes de Grupos.";
+"groups.d13.bridgeOff" = "Se não quiseres, desativa nas Definições de Grupos.";
 
 /* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
 "groups.d13.signin.eitherWay" = "Se já tens conta, entras; se não, é criada.";
@@ -7357,9 +7357,9 @@
 "l15.rates.search" = "Pesquisar moeda";
 "l15.personalization.voiceLanguageFooter" = "O idioma em que falas com o Yala quando registas por voz.";
 "l15.personalization.colorfulIconsFooter" = "Aparece nos ícones das Definições e de Mais.";
-"l15.personalization.averageLineFooter" = "Aparece nos gráficos do Início.";
+"l15.personalization.averageLineFooter" = "Aparece nos gráficos do Painel.";
 "l15.personalization.currencyFormatFooter" = "Como os valores aparecem em toda a app: com o símbolo (S/) ou com o código (PEN).";
-"l15.tabBar.rules" = "Início fica sempre em primeiro. Cabem mais 3, além de Mais e Pesquisar.";
+"l15.tabBar.rules" = "Painel fica sempre em primeiro. Cabem mais 3, além de Mais e Pesquisar.";
 "l15.permissions.title" = "Permissões do Yala";
 "l15.permissions.footer" = "O Yala pede-te cada permissão na primeira vez que usas o que precisa dela.";
 "l15.permissions.notAskedHint" = "Vamos pedir-te na primeira vez que o usares.";

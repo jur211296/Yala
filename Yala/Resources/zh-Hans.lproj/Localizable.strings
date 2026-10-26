@@ -448,10 +448,10 @@
 "settings.favorites" = "收藏";
 "settings.budgets" = "预算";
 "settings.budgetsFavorites" = "收藏的预算";
-"settings.budgetsFavoritesInfo" = "收藏的预算会显示在首页的预算卡片中（中等显示 3 个，大显示 5 个）。";
+"settings.budgetsFavoritesInfo" = "收藏的预算会显示在面板的预算卡片中（中等显示 3 个，大显示 5 个）。";
 "settings.budgetsFavoritesEmptyHint" = "在「计划」标签页创建预算。";
 "settings.budgetsFavoritesReorder" = "重新排序收藏";
-"budgets.favorites.previewTitle" = "在首页中将显示成这样";
+"budgets.favorites.previewTitle" = "在面板中将显示成这样";
 "budgets.favorites.previewEmpty" = "选择收藏以查看预览";
 "settings.tabBarConfig" = "底部标签页";
 "settings.tabBarConfigInfo" = "选择底部显示哪些标签页及其顺序。";
@@ -657,7 +657,7 @@
 "export.column.note.description" = "你在备注中写的内容。";
 "common.next" = "下一步";
 "settings.versionInfo" = "版本 %1$@ (Build %2$@)";
-"tab.panel" = "首页";
+"tab.panel" = "面板";
 "tab.statistics" = "统计";
 "tab.planning" = "计划";
 "tab.more" = "更多";
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "指标";
 "settings.sectionFormat" = "数字格式";
 "settings.defaultPeriod" = "默认时段";
-"settings.defaultPeriodDescription" = "首页、记录和统计打开时使用的时段。你可以通过时段选择器临时更改。";
+"settings.defaultPeriodDescription" = "面板、记录和统计打开时使用的时段。你可以通过时段选择器临时更改。";
 "settings.colorfulIcons" = "彩色图标";
 "settings.colorfulIconsDescription" = "在个人资料版块中显示彩色图标,类似 iOS 设置的风格。";
 "settings.colorfulIconsDisabledByTheme" = "已被当前主题自动禁用。";
@@ -1699,9 +1699,9 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "帮助提示";
-"settings.widgetHintsDescription" = "在图表旁显示“?”按钮，说明每张图表的含义。在首页、统计和计划中可见。";
+"settings.widgetHintsDescription" = "在图表旁显示“?”按钮，说明每张图表的含义。在面板、统计和计划中可见。";
 "settings.showVariations" = "与上一时段对比";
-"settings.showVariationsDescription" = "显示每个数字比上一时段升降了多少。在首页、统计和报表中可见。";
+"settings.showVariationsDescription" = "显示每个数字比上一时段升降了多少。在面板、统计和报表中可见。";
 "settings.averageLine" = "图表平均线";
 "settings.averageLineDescription" = "在柱状图上显示平均线。";
 "settings.averageLine.off" = "无";
@@ -2185,7 +2185,7 @@
 "faq.whatIsYala.q" = "什么是 Yala?";
 "faq.whatIsYala.a" = "Yala 是你的个人理财应用。它帮你跟踪支出和收入、按类别和标签整理钱、创建预算,并清晰看到财务状况。";
 "faq.howToRecord.q" = "我怎么记录一笔支出?";
-"faq.howToRecord.a" = "在首页点按“新记录”输入金额，或点按“语音”“照片”口述或识别收据。Yala 会替你填好详情。";
+"faq.howToRecord.a" = "在面板上点按“新记录”输入金额，或点按“语音”“照片”口述或识别收据。Yala 会替你填好详情。";
 "faq.multiCurrency.q" = "我可以使用多种货币吗?";
 "faq.multiCurrency.a" = "可以。Yala 支持 54 种货币。每个账户使用自己的货币，Yala 会把总计换算成你的主货币。你可以在「设置 > 货币与汇率」中选择主货币，以及最多 2 种用于对比的次要货币。";
 "faq.changeCategory.q" = "我怎么更改一笔支出的类别?";
@@ -2597,7 +2597,7 @@
 "tutorials.createAccount.intro.title" = "什么是账户?";
 "tutorials.createAccount.intro.desc" = "设置你的银行、钱包或卡片以跟踪钱在哪里。";
 "tutorials.createAccount.step0.title" = "创建一个新账户";
-"tutorials.createAccount.step1.title" = "或在首页创建";
+"tutorials.createAccount.step1.title" = "或在面板上创建";
 "tutorials.createAccount.step2.title" = "填写详情";
 "tutorials.createAccount.completion.title" = "现在你知道怎么创建账户了";
 "tutorials.createAccount.completion.desc" = "把钱分到不同账户（银行、现金、卡），就能看到每个账户里有多少。你可以随时编辑它们。";
@@ -2648,7 +2648,7 @@
 "tutorials.createBudgets.intro.desc" = "设置支出上限,在接近时获得通知。";
 "tutorials.createBudgets.step0.title" = "打开「计划」";
 "tutorials.createBudgets.step1.title" = "配置你的预算";
-"tutorials.createBudgets.step2.title" = "在首页显示";
+"tutorials.createBudgets.step2.title" = "在面板上显示";
 "tutorials.createBudgets.step3.title" = "随时编辑";
 "tutorials.createBudgets.completion.title" = "现在你知道怎么创建预算了";
 "tutorials.createBudgets.completion.desc" = "有了预算，你能随时看到还能花多少，接近上限时 Yala 会提醒你。";
@@ -2681,8 +2681,8 @@
 "tutorials.editPanel.step0.title" = "打开面板";
 "tutorials.editPanel.step1.title" = "自定义小组件";
 "tutorials.editPanel.step2.title" = "需要时重置";
-"tutorials.editPanel.completion.title" = "现在你知道怎么自定义首页了";
-"tutorials.editPanel.completion.desc" = "首页会按你想要的顺序显示你选择的内容。你随时可以更改。";
+"tutorials.editPanel.completion.title" = "现在你知道怎么自定义面板了";
+"tutorials.editPanel.completion.desc" = "面板会按你想要的顺序显示你选择的内容。你随时可以更改。";
 
 // 10. panelFiltering (5 steps)
 "tutorials.panelFiltering.title" = "面板筛选";
@@ -2718,7 +2718,7 @@
 
 // Tutorial step descriptions (re-expanded)
 "tutorials.createAccount.step0.desc" = "在设置中进入“账户”，点按 + 新建一个。";
-"tutorials.createAccount.step1.desc" = "在首页的“你的财务”中，把账户滑到最后，点按“添加”。";
+"tutorials.createAccount.step1.desc" = "在面板的“你的财务”中，把账户滑到最后，点按“添加”。";
 "tutorials.createAccount.step2.desc" = "填写新账户的详情然后点击保存。";
 "tutorials.createCategories.step0.desc" = "在设置中进入“类别”，点按 + 新建一个。";
 "tutorials.createCategories.step1.desc" = "记住:类别必须始终关联子类别才能创建。";
@@ -2726,7 +2726,7 @@
 "tutorials.createCategories.step3.desc" = "随时按你喜好自定义类别的图标和颜色。";
 "tutorials.createTags.step0.desc" = "在设置中进入“标签”，点按 + 新建一个。";
 "tutorials.createTags.step1.desc" = "按你的喜好自定义标签:取名字、图标和颜色。";
-"tutorials.createRecord.step0.desc" = "在首页点按“新记录”。要口述或识别收据，点按“语音”或“照片”。";
+"tutorials.createRecord.step0.desc" = "在面板上点按“新记录”。要口述或识别收据，点按“语音”或“照片”。";
 "tutorials.createRecord.step1.desc" = "你可以记录支出、收入,甚至账户间转账。汇率会实时自动计算。";
 "tutorials.createRecord.step2.desc" = "填写必填字段:金额、账户、子类别。你也可以添加描述和任意标签。";
 "tutorials.createRecord.step3.desc" = "使用快捷键:@ 是账户、! 是类别、# 是标签。开始输入即可在每个快捷范围内细化搜索。";
@@ -2734,7 +2734,7 @@
 "tutorials.importData.step1.desc" = "你可以按默认模板多次导入 CSV 或 Excel,模板可以在那里下载。如果数据涉及多种货币,会请你为每种货币选择账户。";
 "tutorials.createBudgets.step0.desc" = "在菜单选择「计划」并切到「预算」标签。用 + 按钮创建一个新预算。";
 "tutorials.createBudgets.step1.desc" = "为它命名、设金额并定义周期:每周、每月、每年或一次性(用于旅行、活动等)。选择要跟踪的账户、类别、标签和需求。如果想在某些进度获得提醒,打开通知。";
-"tutorials.createBudgets.step2.desc" = "打开「在小组件中显示」，即可在首页的预算小组件中看到它。";
+"tutorials.createBudgets.step2.desc" = "打开「在小组件中显示」，即可在面板的预算小组件中看到它。";
 "tutorials.createBudgets.step3.desc" = "记住你随时可以点击预算回来编辑。";
 "tutorials.createScheduledPayments.step0.desc" = "在菜单选择「计划」并切到「计划付款」标签。用 + 按钮创建一个新付款。";
 "tutorials.createScheduledPayments.step1.desc" = "填写付款名称、金额、备注(可选)、账户、子类别和标签(可选)。";
@@ -2744,7 +2744,7 @@
 "tutorials.createFavorites.step0.desc" = "在新记录中，点击金额下方的「收藏」，即可将已填写的内容保存为收藏。";
 "tutorials.createFavorites.step1.desc" = "下次在表单顶部的那一行点击收藏，已保存的字段会自动填好。";
 "tutorials.editPanel.step0.desc" = "前往主屏幕,看到所有可用小组件的支出摘要。";
-"tutorials.editPanel.step1.desc" = "点按首页每个版块旁的方格按钮，选择要显示的小组件及其顺序。";
+"tutorials.editPanel.step1.desc" = "点按面板每个版块旁的方格按钮，选择要显示的小组件及其顺序。";
 "tutorials.editPanel.step2.desc" = "记住:在自定义中点击「恢复原始布局」即可恢复默认顺序。";
 "tutorials.panelFiltering.step0.desc" = "充分利用 Yala 的交互式图表。几乎所有面板都可按类别、需求等筛选。多多尝试,找到最适合你的。";
 "tutorials.panelFiltering.step1.desc" = "你有一个筛选栏显示所有已应用的筛选。你随时可以单个移除或一次清除全部。";
@@ -4370,7 +4370,7 @@
 "whatsNew.v21.logging.title" = "记账从未如此简单";
 "whatsNew.v21.logging.description" = "对它说话、拍张照片，或者像跟朋友聊天一样打字。Yala 能听懂你花了什么，并帮你记下来，管好账只需几秒。";
 "whatsNew.v21.data.title" = "你的数据，你做主";
-"whatsNew.v21.data.description" = "信息存在哪里由你决定：你的私人 iCloud，或 Yala 云端，让它在你的所有设备上随时可用。此外，还有全新的首页，以及在 iPad 上全屏使用 Yala。";
+"whatsNew.v21.data.description" = "信息存在哪里由你决定：你的私人 iCloud，或 Yala 云端，让它在你的所有设备上随时可用。此外，还有全新的面板，以及在 iPad 上全屏使用 Yala。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -5701,7 +5701,7 @@
 "groups.fullActivation.chooserSubtitle" = "你的群组保持不变。选择你的个人数据存放在哪里。";
 "groups.fullActivation.cloudBody" = "我们会使用你在群组中已经在用的同一个账户，而不是新建一个。数据保存在我们的服务器上，我们的团队可以查看，用于为你提供支持。";
 "groups.fullActivation.historyTitle" = "要带上你的群组支出吗？";
-"groups.fullActivation.historyBody" = "我们只导入你在每笔支出中承担的部分，它会计入「首页」、你的预算和「统计」。";
+"groups.fullActivation.historyBody" = "我们只导入你在每笔支出中承担的部分，它会计入「面板」、你的预算和「统计」。";
 "groups.fullActivation.historyShow" = "是，显示";
 "groups.fullActivation.historyKeepInGroups" = "不，只留在群组中";
 "groups.fullActivation.historyFootnote" = "这也适用于之后记录的支出。你随时可以在群组设置中更改。";
@@ -5791,7 +5791,7 @@
 "storage.groups.detachKeep" = "保留我付的支出";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "从「首页」移除全部";
+"storage.groups.detachRemove" = "从「面板」移除全部";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "正在取消关联…";
@@ -6906,7 +6906,7 @@
 "setup.step.skipped" = "已跳过。点按即可试用";
 "setup.step.tryAgain" = "试试";
 "setup.complete.basics.title" = "你已掌握 Yala 的基础";
-"setup.complete.basics.subtitle" = "随时可以用首页顶部的按钮试试语音或照片。";
+"setup.complete.basics.subtitle" = "随时可以用面板顶部的按钮试试语音或照片。";
 "setup.nextStepLabel" = "下一步";
 "setup.start" = "开始";
 "setup.showAllSteps" = "查看全部 %d 个步骤";
@@ -6921,7 +6921,7 @@
 "notificationPrimer.scheduled.benefit" = "每笔计划付款到期前提醒你，不会错过。";
 "notificationPrimer.budget.title" = "接近上限时要提醒你吗？";
 "notificationPrimer.budget.benefit" = "达到你选的百分比时提醒你。没有这个权限，提醒就收不到。";
-"whatsNew.v22.panel.title" = "更清晰的首页";
+"whatsNew.v22.panel.title" = "更清晰的面板";
 "whatsNew.v22.panel.description" = "大数字会说明它算的是什么，账户一眼就能看清，提示也一条一条地出现。";
 "whatsNew.v22.inbox.title" = "语音、照片和收件箱";
 "whatsNew.v22.inbox.description" = "你口述或拍下的内容会带着来源进入收件箱，准备好的可以一次全部保存。";
@@ -7125,7 +7125,7 @@
 "budgets.l9.activateAlerts" = "开启提醒";
 "budgets.l9.alertsOffInNotifications" = "“通知”中已关闭提醒";
 "budgets.l9.showInWidget" = "在小组件中显示";
-"budgets.l9.showInWidgetHint" = "显示在首页的预算小组件中。";
+"budgets.l9.showInWidgetHint" = "显示在面板的预算小组件中。";
 "budgets.l9.hideFromWidget" = "从小组件移除";
 "budgets.l9.deleteTitle" = "删除“%@”?";
 "budgets.l9.historyTitle.weekly" = "你每周的支出与上限对比";
@@ -7136,7 +7136,7 @@
 "budgets.l9.freePlanSheet" = "免费计划可启用 %lld 个预算。停用一个,或升级到 Pro。";
 "budgets.l9.seePro" = "查看 Pro";
 "budgets.l9.chooseWhich" = "选择";
-"budgets.l9.previewEmpty" = "用星标标记最多 3 个预算，就能在这里看到你的首页卡片。";
+"budgets.l9.previewEmpty" = "用星标标记最多 3 个预算，就能在这里看到你的面板卡片。";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "已逾期";
@@ -8121,9 +8121,9 @@
 "l15.rates.search" = "搜索货币";
 "l15.personalization.voiceLanguageFooter" = "你用语音记账时对 Yala 说的语言。";
 "l15.personalization.colorfulIconsFooter" = "用于“设置”和“更多”中的图标。";
-"l15.personalization.averageLineFooter" = "显示在首页的图表中。";
+"l15.personalization.averageLineFooter" = "显示在面板的图表中。";
 "l15.personalization.currencyFormatFooter" = "整个应用中金额的写法：用符号（S/）或代码（PEN）。";
-"l15.tabBar.rules" = "首页始终排在第一位。另外还能放 3 个，加上“更多”和“搜索”。";
+"l15.tabBar.rules" = "面板始终排在第一位。另外还能放 3 个，加上“更多”和“搜索”。";
 "l15.permissions.title" = "Yala 的权限";
 "l15.permissions.footer" = "你第一次使用需要某项权限的功能时，Yala 才会请求该权限。";
 "l15.permissions.notAskedHint" = "你第一次使用时我们会请求。";

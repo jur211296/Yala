@@ -55,7 +55,7 @@
 "panel.periodComparison.vs %@" = "vs %@";
 "panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
 "panel.periodComparison.requiresPeriod" = "Kies een maand of periode om te vergelijken";
-"panel.sectionsConfig.title" = "Paneel instellen";
+"panel.sectionsConfig.title" = "Panel instellen";
 "panel.sectionsConfig.footer" = "Verberg de secties die je niet nodig hebt. Je kunt ze altijd weer aanzetten.";
 "panel.sectionsConfig.emptySection" = "Alle widgets verborgen";
 "panel.sectionsConfig.restoreWidgets %@" = "Herstel %@ widgets";
@@ -448,10 +448,10 @@
 "settings.favorites" = "Favorieten";
 "settings.budgets" = "Budgetten";
 "settings.budgetsFavorites" = "Favoriete budgetten";
-"settings.budgetsFavoritesInfo" = "Favoriete budgetten verschijnen in de Budgetten-kaart op Start (3 in medium, 5 in groot).";
+"settings.budgetsFavoritesInfo" = "Favoriete budgetten verschijnen in de Budgetten-kaart op het Panel (3 in medium, 5 in groot).";
 "settings.budgetsFavoritesEmptyHint" = "Maak budgetten aan in het tabblad Planning.";
 "settings.budgetsFavoritesReorder" = "Volgorde favorieten wijzigen";
-"budgets.favorites.previewTitle" = "Zo ziet het eruit op Start";
+"budgets.favorites.previewTitle" = "Zo ziet het eruit op het Panel";
 "budgets.favorites.previewEmpty" = "Selecteer favorieten om het voorbeeld te zien";
 "settings.tabBarConfig" = "Tabbladen onderaan";
 "settings.tabBarConfigInfo" = "Kies welke tabbladen je onderaan ziet en in welke volgorde.";
@@ -657,7 +657,7 @@
 "export.column.note.description" = "Wat je in de notitie schreef.";
 "common.next" = "Volgende";
 "settings.versionInfo" = "Versie %1$@ (Build %2$@)";
-"tab.panel" = "Start";
+"tab.panel" = "Panel";
 "tab.statistics" = "Statistieken";
 "tab.planning" = "Planning";
 "tab.more" = "Meer";
@@ -691,7 +691,7 @@
 "common.moreOptions" = "Meer opties";
 "common.comingSoon" = "Binnenkort";
 "panel.greeting" = "Hoi, %@";
-"panel.title" = "Paneel van %@";
+"panel.title" = "Panel van %@";
 "panel.fabVoice" = "Spraak";
 "panel.fabImage" = "Afbeelding";
 "panel.fabManual" = "Handmatig";
@@ -740,7 +740,7 @@
 "widget.today" = "Vandaag";
 
 // Widget Preferences
-"widget.preferences.description" = "Kies wat je op je dashboard wilt zien en in welke volgorde.";
+"widget.preferences.description" = "Kies wat je op je Panel wilt zien en in welke volgorde.";
 "widget.resetLayout" = "Terug naar oorspronkelijke indeling";
 "widget.alwaysVisible" = "Altijd zichtbaar";
 "widget.fixedPosition" = "Vaste positie";
@@ -1157,7 +1157,7 @@
 "settings.sectionIndicators" = "Indicatoren";
 "settings.sectionFormat" = "Getalformaat";
 "settings.defaultPeriod" = "Standaardperiode";
-"settings.defaultPeriodDescription" = "De periode waarmee Start, Boekingen en Statistieken openen. Je kunt die even wijzigen via de periodekiezer.";
+"settings.defaultPeriodDescription" = "De periode waarmee het Panel, Boekingen en Statistieken openen. Je kunt die even wijzigen via de periodekiezer.";
 "settings.colorfulIcons" = "Kleurrijke iconen";
 "settings.colorfulIconsDescription" = "Toon gekleurde iconen in het profielmenu, in iOS-stijl.";
 "settings.colorfulIconsDisabledByTheme" = "Automatisch uitgeschakeld door het huidige thema.";
@@ -1616,7 +1616,7 @@
 "accessibility.nextPeriod" = "Volgende periode";
 "accessibility.previousPeriod" = "Vorige periode";
 "accessibility.widgetPreferences" = "Widget-voorkeuren";
-"accessibility.sectionsConfig" = "Paneel instellen";
+"accessibility.sectionsConfig" = "Panel instellen";
 "accessibility.toggleSection %@" = "%@ tonen";
 "accessibility.sectionPrefsButton %@" = "Voorkeuren %@";
 "accessibility.createAccountFirst" = "Maak minstens één rekening en één categorie";
@@ -1699,9 +1699,9 @@
 // MARK: - Widget Hints
 
 "settings.widgetHints" = "Helphints";
-"settings.widgetHintsDescription" = "Toont de knop ‘?’ naast de grafieken, met uitleg over elke grafiek. Je ziet het op Start, in Statistieken en in Planning.";
+"settings.widgetHintsDescription" = "Toont de knop ‘?’ naast de grafieken, met uitleg over elke grafiek. Je ziet het op het Panel, in Statistieken en in Planning.";
 "settings.showVariations" = "Vergelijken met vorige periode";
-"settings.showVariationsDescription" = "Toont hoeveel elk bedrag steeg of daalde ten opzichte van de vorige periode. Je ziet het op Start, in Statistieken en in rapporten.";
+"settings.showVariationsDescription" = "Toont hoeveel elk bedrag steeg of daalde ten opzichte van de vorige periode. Je ziet het op het Panel, in Statistieken en in rapporten.";
 "settings.averageLine" = "Gemiddelde lijn in grafieken";
 "settings.averageLineDescription" = "Toon een gemiddelde lijn op staafgrafieken.";
 "settings.averageLine.off" = "Geen";
@@ -2185,7 +2185,7 @@
 "faq.whatIsYala.q" = "Wat is Yala?";
 "faq.whatIsYala.a" = "Yala is je app voor persoonlijke financiën. Hij helpt je uitgaven en inkomsten bijhouden, je geld ordenen op categorie en label, budgetten maken en duidelijke rapporten zien van hoe je financiën ervoor staan.";
 "faq.howToRecord.q" = "Hoe boek ik een uitgave?";
-"faq.howToRecord.a" = "Tik op Start op Nieuwe boeking om het bedrag in te typen, of op Spraak of Foto om het in te spreken of een bonnetje te lezen. Yala vult de details voor je in.";
+"faq.howToRecord.a" = "Tik op het Panel op Nieuwe boeking om het bedrag in te typen, of op Spraak of Foto om het in te spreken of een bonnetje te lezen. Yala vult de details voor je in.";
 "faq.multiCurrency.q" = "Kan ik meerdere valuta's gebruiken?";
 "faq.multiCurrency.a" = "Ja. Yala heeft 54 valuta's. Elke rekening heeft haar eigen valuta en Yala rekent de totalen om naar je hoofdvaluta. Je kiest je hoofdvaluta, en tot 2 secundaire om te vergelijken, in Instellingen > Valuta & wisselkoers.";
 "faq.changeCategory.q" = "Hoe wijzig ik de categorie van een uitgave?";
@@ -2597,7 +2597,7 @@
 "tutorials.createAccount.intro.title" = "Wat is een rekening?";
 "tutorials.createAccount.intro.desc" = "Stel je bank, portemonnee of kaart in om bij te houden waar je geld staat.";
 "tutorials.createAccount.step0.title" = "Maak een nieuwe rekening";
-"tutorials.createAccount.step1.title" = "Of maak hem aan vanaf Start";
+"tutorials.createAccount.step1.title" = "Of maak hem aan vanaf het Panel";
 "tutorials.createAccount.step2.title" = "Vul de gegevens in";
 "tutorials.createAccount.completion.title" = "Nu weet je hoe je een rekening aanmaakt";
 "tutorials.createAccount.completion.desc" = "Verdeel je geld over rekeningen (bank, contant, kaart) om te zien hoeveel er op elke rekening staat. Je kunt ze altijd bewerken.";
@@ -2648,7 +2648,7 @@
 "tutorials.createBudgets.intro.desc" = "Stel uitgavengrenzen in en krijg een melding als je in de buurt komt.";
 "tutorials.createBudgets.step0.title" = "Open Planning";
 "tutorials.createBudgets.step1.title" = "Stel je budget in";
-"tutorials.createBudgets.step2.title" = "Toon het op Start";
+"tutorials.createBudgets.step2.title" = "Toon het op het Panel";
 "tutorials.createBudgets.step3.title" = "Bewerk wanneer je wilt";
 "tutorials.createBudgets.completion.title" = "Nu weet je hoe je een budget aanmaakt";
 "tutorials.createBudgets.completion.desc" = "Met een budget zie je meteen hoeveel je nog kunt uitgeven, en Yala laat het je weten als je de limiet nadert.";
@@ -2675,17 +2675,17 @@
 "tutorials.createFavorites.completion.desc" = "Met een favoriet boek je een uitgave die je vaak doet in één tik. Je kunt er zoveel hebben als je wilt.";
 
 // 9. editPanel (3 steps)
-"tutorials.editPanel.title" = "Pas het paneel aan";
-"tutorials.editPanel.intro.title" = "Jouw paneel, jouw stijl";
-"tutorials.editPanel.intro.desc" = "Pas aan welke widgets op je paneel verschijnen.";
-"tutorials.editPanel.step0.title" = "Open het paneel";
+"tutorials.editPanel.title" = "Pas het Panel aan";
+"tutorials.editPanel.intro.title" = "Jouw Panel, jouw stijl";
+"tutorials.editPanel.intro.desc" = "Pas aan welke widgets op je Panel verschijnen.";
+"tutorials.editPanel.step0.title" = "Open het Panel";
 "tutorials.editPanel.step1.title" = "Pas de widgets aan";
 "tutorials.editPanel.step2.title" = "Reset als je wilt";
-"tutorials.editPanel.completion.title" = "Nu weet je hoe je Start aanpast";
-"tutorials.editPanel.completion.desc" = "Start toont wat je kiest, in de volgorde die jij wilt. Je kunt het altijd wijzigen.";
+"tutorials.editPanel.completion.title" = "Nu weet je hoe je het Panel aanpast";
+"tutorials.editPanel.completion.desc" = "Je Panel toont wat je kiest, in de volgorde die jij wilt. Je kunt het altijd wijzigen.";
 
 // 10. panelFiltering (5 steps)
-"tutorials.panelFiltering.title" = "Paneelfilters";
+"tutorials.panelFiltering.title" = "Panelfilters";
 "tutorials.panelFiltering.intro.title" = "Filter om te vinden";
 "tutorials.panelFiltering.intro.desc" = "Filter per rekening, categorie, label of periode voor diepere analyses.";
 "tutorials.panelFiltering.step0.title" = "Tik op grafieken om te filteren";
@@ -2718,7 +2718,7 @@
 
 // Tutorial step descriptions (re-expanded)
 "tutorials.createAccount.step0.desc" = "Ga in Instellingen naar Rekeningen en tik op + om een nieuwe aan te maken.";
-"tutorials.createAccount.step1.desc" = "Veeg op Start, bij Je financiën, door je rekeningen tot het einde en tik op Toevoegen.";
+"tutorials.createAccount.step1.desc" = "Veeg op het Panel, bij Je financiën, door je rekeningen tot het einde en tik op Toevoegen.";
 "tutorials.createAccount.step2.desc" = "Vul de gegevens van je nieuwe rekening in en tik op Opslaan.";
 "tutorials.createCategories.step0.desc" = "Ga in Instellingen naar Categorieën en tik op + om een nieuwe aan te maken.";
 "tutorials.createCategories.step1.desc" = "Onthoud dat er altijd subcategorieën aan een categorie gekoppeld moeten zijn om hem aan te maken.";
@@ -2726,7 +2726,7 @@
 "tutorials.createCategories.step3.desc" = "Pas het icoon en de kleur van je categorie aan zoals jij wilt, wanneer je maar wilt.";
 "tutorials.createTags.step0.desc" = "Ga in Instellingen naar Labels en tik op + om een nieuw label aan te maken.";
 "tutorials.createTags.step1.desc" = "Pas je label aan naar jouw smaak: geef het een naam, icoon en kleur.";
-"tutorials.createRecord.step0.desc" = "Tik op Start op Nieuwe boeking. Om te dicteren of een bonnetje te lezen, tik je op Spraak of Foto.";
+"tutorials.createRecord.step0.desc" = "Tik op het Panel op Nieuwe boeking. Om te dicteren of een bonnetje te lezen, tik je op Spraak of Foto.";
 "tutorials.createRecord.step1.desc" = "Je kunt uitgaven, inkomsten en zelfs overschrijvingen tussen rekeningen boeken. Wisselkoersen worden automatisch en in realtime berekend.";
 "tutorials.createRecord.step2.desc" = "Vul de verplichte velden in: bedrag, rekening en subcategorie. Je kunt ook een omschrijving en labels toevoegen.";
 "tutorials.createRecord.step3.desc" = "Gebruik snelle shortcuts: @ voor rekening, ! voor categorie en # voor label. Begin met typen om je zoekopdracht binnen elke shortcut te verfijnen.";
@@ -2734,7 +2734,7 @@
 "tutorials.importData.step1.desc" = "Je kunt zo vaak je wilt CSV of Excel importeren met het standaardsjabloon, dat je daar kunt downloaden. Bij gegevens in meerdere valuta's vraagt de app je per valuta een rekening te kiezen.";
 "tutorials.createBudgets.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Budgetten staat. Gebruik de +-knop om er een nieuw aan te maken.";
 "tutorials.createBudgets.step1.desc" = "Geef hem een naam, bedrag en bepaal de periode: wekelijks, maandelijks, jaarlijks of eenmalig (voor een reis, evenement, enz.). Kies welke rekeningen, categorieën, labels en behoeften je wilt volgen. Zet meldingen aan voor waarschuwingen bij bepaalde drempels.";
-"tutorials.createBudgets.step2.desc" = "Zet ‘In widget tonen’ aan om het in de Budgetten-widget op Start te zien.";
+"tutorials.createBudgets.step2.desc" = "Zet ‘In widget tonen’ aan om het in de Budgetten-widget op het Panel te zien.";
 "tutorials.createBudgets.step3.desc" = "Onthoud dat je altijd kunt terugkomen om je budget te bewerken door erop te tikken.";
 "tutorials.createScheduledPayments.step0.desc" = "In het menu kies je Planning en zorg je dat je op het tabblad Geplande betalingen staat. Gebruik de +-knop om er een nieuwe aan te maken.";
 "tutorials.createScheduledPayments.step1.desc" = "Vul de naam van je betaling, het bedrag, een notitie (optioneel), de rekening, subcategorie en labels (optioneel) in.";
@@ -2744,7 +2744,7 @@
 "tutorials.createFavorites.step0.desc" = "Tik in Nieuwe boeking onder het bedrag op ‘Favoriet’ om wat je al hebt ingevuld als favoriet op te slaan.";
 "tutorials.createFavorites.step1.desc" = "Tik de volgende keer op de favoriet in de rij bovenaan het formulier: de velden die je hebt opgeslagen, worden vanzelf ingevuld.";
 "tutorials.editPanel.step0.desc" = "Ga naar het hoofdscherm waar je je uitgavenoverzicht ziet met alle beschikbare widgets.";
-"tutorials.editPanel.step1.desc" = "Tik op de knop met vierkantjes naast elke sectie op Start om te kiezen welke widgets je ziet en in welke volgorde.";
+"tutorials.editPanel.step1.desc" = "Tik op de knop met vierkantjes naast elke sectie op het Panel om te kiezen welke widgets je ziet en in welke volgorde.";
 "tutorials.editPanel.step2.desc" = "Onthoud dat je altijd kunt terugkeren naar de standaardvolgorde door binnen 'Aanpassen' op \"Terug naar oorspronkelijke indeling\" te tikken.";
 "tutorials.panelFiltering.step0.desc" = "Haal het beste uit Yala's interactieve grafieken. Bijna alle panelen zijn filterbaar per categorie, behoefte en meer. Speel ermee en vind wat voor jou werkt.";
 "tutorials.panelFiltering.step1.desc" = "Je hebt een filterbalk waarin je alle toegepaste filters ziet. Je kunt ze individueel of allemaal tegelijk verwijderen wanneer je wilt.";
@@ -3527,7 +3527,7 @@
 "shortcut.siriNatural.success.partial" = "%1$lld van %2$lld geboekt (sommige kon ik niet begrijpen). Check je inbox.";
 
 /* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
-"panel.widgetInfo.addToPanel" = "Toevoegen aan paneel";
+"panel.widgetInfo.addToPanel" = "Toevoegen aan het Panel";
 
 /* Panel Polish #2 — Title sheet pedagógico CashFlow */
 "panel.widgetInfo.cashFlow.title" = "In en uit";
@@ -3623,7 +3623,7 @@
 "panel.widgetInfo.categoriesPie.smallHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.smallHowA" = "Tik op een bol om de rest van het Paneel te filteren op die categorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.categoriesPie.smallHowA" = "Tik op een bol om de rest van het Panel te filteren op die categorie. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.largeWhatQ" = "Wat zie je?";
@@ -3635,7 +3635,7 @@
 "panel.widgetInfo.categoriesPie.largeHowQ" = "Hoe gebruik ik de grafiek?";
 
 /* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
-"panel.widgetInfo.categoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Paneel te filteren op die categorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.categoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Panel te filteren op die categorie. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
 "panel.widgetInfo.subcategoriesPie.title" = "Verdeling per subcategorie";
@@ -3659,7 +3659,7 @@
 "panel.widgetInfo.subcategoriesPie.smallHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — SubcategoriesPie S: respuesta */
-"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tik op een bol om de rest van het Paneel te filteren op die subcategorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tik op een bol om de rest van het Panel te filteren op die subcategorie. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — SubcategoriesPie L: pregunta */
 "panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Wat zie je?";
@@ -3671,7 +3671,7 @@
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "Hoe gebruik ik de grafiek?";
 
 /* Panel Polish #2 — SubcategoriesPie L: respuesta */
-"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Paneel te filteren op die subcategorie. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Panel te filteren op die subcategorie. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — Title sheet pedagógico TagsPie */
 "panel.widgetInfo.tagsPie.title" = "Verdeling per tag";
@@ -3695,7 +3695,7 @@
 "panel.widgetInfo.tagsPie.smallHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — TagsPie S: respuesta */
-"panel.widgetInfo.tagsPie.smallHowA" = "Tik op een bol om de rest van het Paneel te filteren op die tag. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.tagsPie.smallHowA" = "Tik op een bol om de rest van het Panel te filteren op die tag. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — TagsPie L: pregunta */
 "panel.widgetInfo.tagsPie.largeWhatQ" = "Wat zie je?";
@@ -3707,7 +3707,7 @@
 "panel.widgetInfo.tagsPie.largeHowQ" = "Hoe gebruik ik de grafiek?";
 
 /* Panel Polish #2 — TagsPie L: respuesta */
-"panel.widgetInfo.tagsPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Paneel te filteren op die tag. Houd een bol ingedrukt om de volledige naam te zien.";
+"panel.widgetInfo.tagsPie.largeHowA" = "Tik op een schijf van de donut, een bol of een regel in de legenda om de rest van het Panel te filteren op die tag. Houd een bol ingedrukt om de volledige naam te zien.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
 "panel.widgetInfo.expensesByNeed.title" = "Verdeling per behoefte";
@@ -3731,7 +3731,7 @@
 "panel.widgetInfo.expensesByNeed.smallHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — ExpensesByNeed S: respuesta */
-"panel.widgetInfo.expensesByNeed.smallHowA" = "Tik op een rij om de rest van het Paneel te filteren op dat type behoefte. Tik er nogmaals op om het filter op te heffen.";
+"panel.widgetInfo.expensesByNeed.smallHowA" = "Tik op een rij om de rest van het Panel te filteren op dat type behoefte. Tik er nogmaals op om het filter op te heffen.";
 
 /* Panel Polish #2 — ExpensesByNeed M: pregunta */
 "panel.widgetInfo.expensesByNeed.mediumWhatQ" = "Wat zie je?";
@@ -3743,7 +3743,7 @@
 "panel.widgetInfo.expensesByNeed.mediumHowQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — ExpensesByNeed M: respuesta */
-"panel.widgetInfo.expensesByNeed.mediumHowA" = "Tik op een balk om de rest van het Paneel te filteren op dat type behoefte. Tik er nogmaals op om het filter op te heffen.";
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "Tik op een balk om de rest van het Panel te filteren op dat type behoefte. Tik er nogmaals op om het filter op te heffen.";
 
 /* Panel Polish #2 — ExpensesByNeed L: pregunta */
 "panel.widgetInfo.expensesByNeed.largeWhatQ" = "Wat zie je?";
@@ -3755,7 +3755,7 @@
 "panel.widgetInfo.expensesByNeed.largeHowQ" = "Hoe gebruik ik de grafiek?";
 
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
-"panel.widgetInfo.expensesByNeed.largeHowA" = "Veeg met je vinger over de balken om de uitsplitsing van een moment te zien — hoeveel essentieel, prioritair, enz., met het totaal. Tik op een chip in de legenda om alleen dat type behoefte te tonen en het Paneel te filteren.";
+"panel.widgetInfo.expensesByNeed.largeHowA" = "Veeg met je vinger over de balken om de uitsplitsing van een moment te zien — hoeveel essentieel, prioritair, enz., met het totaal. Tik op een chip in de legenda om alleen dat type behoefte te tonen en het Panel te filteren.";
 
 /* Panel Polish #2 — Title sheet pedagógico TopCategories */
 "panel.widgetInfo.topCategories.title" = "Belangrijkste categorieën";
@@ -3785,7 +3785,7 @@
 "panel.widgetInfo.topCategories.howQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
-"panel.widgetInfo.topCategories.howA" = "Tik op een rij om de rest van het Paneel te filteren op die categorie. Tik er nogmaals op om het filter op te heffen.";
+"panel.widgetInfo.topCategories.howA" = "Tik op een rij om de rest van het Panel te filteren op die categorie. Tik er nogmaals op om het filter op te heffen.";
 
 /* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
 "panel.widgetInfo.topSubcategories.title" = "Belangrijkste subcategorieën";
@@ -3815,10 +3815,10 @@
 "panel.widgetInfo.topSubcategories.howQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
-"panel.widgetInfo.topSubcategories.smallHowA" = "Tik op een rij om de rest van het Paneel te filteren op die subcategorie.";
+"panel.widgetInfo.topSubcategories.smallHowA" = "Tik op een rij om de rest van het Panel te filteren op die subcategorie.";
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
-"panel.widgetInfo.topSubcategories.regularHowA" = "Tik op een rij om de rest van het Paneel te filteren op die subcategorie. Gebruik de chips boven om de lijst te beperken tot één categorie — of, als er al een categorie is gefilterd in een ander widget, blijft de selector vergrendeld op die categorie.";
+"panel.widgetInfo.topSubcategories.regularHowA" = "Tik op een rij om de rest van het Panel te filteren op die subcategorie. Gebruik de chips boven om de lijst te beperken tot één categorie — of, als er al een categorie is gefilterd in een ander widget, blijft de selector vergrendeld op die categorie.";
 
 /* Panel Polish #2 — Title sheet pedagógico RecentRecords */
 "panel.widgetInfo.recentRecords.title" = "Recente boekingen";
@@ -3893,7 +3893,7 @@
 "panel.widgetInfo.budgets.howQ" = "Hoe gebruik ik dit?";
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
-"panel.widgetInfo.budgets.howA" = "Tik op een budget om de rest van het Paneel te filteren op de boekingen van zijn categorie of tag. Tik er nogmaals op om het filter op te heffen.";
+"panel.widgetInfo.budgets.howA" = "Tik op een budget om de rest van het Panel te filteren op de boekingen van zijn categorie of tag. Tik er nogmaals op om het filter op te heffen.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "Wisselkoers";
@@ -3994,7 +3994,7 @@
 "groups.globalSettings.bridgeToggleLabel" = "Groepsuitgaven vastleggen op mijn persoonlijke rekeningen";
 "groups.globalSettings.bridgeCaption" = "Als dit aanstaat, wordt elke uitgave die je betaalt of afrekent ook vastgelegd op de persoonlijke rekening die je kiest. Je saldo weerspiegelt de werkelijkheid.";
 "groups.globalSettings.visibilitySectionTitle" = "Zichtbaarheid";
-"groups.globalSettings.visibilityCaption" = "Bepaal of groepsboekingen verschijnen in je Paneel, statistieken en Boekingen.";
+"groups.globalSettings.visibilityCaption" = "Bepaal of groepsboekingen verschijnen in je Panel, statistieken en Boekingen.";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Groepsboekingen opnemen in Boekingen";
 
 // MARK: - A0-Bridge System Categories & Subcategories (Groepen)
@@ -4231,7 +4231,7 @@
 "panel.widgetInfo.periodComparison.whatQ" = "Wat zie je hier?";
 "panel.widgetInfo.periodComparison.whatA" = "Het saldo, de inkomsten of uitgaven van je huidige periode naast de vorige periode. Zo zie je in één oogopslag of de trend verbetert.";
 "panel.widgetInfo.periodComparison.howQ" = "Waarmee wordt vergeleken?";
-"panel.widgetInfo.periodComparison.howA" = "Tik op P-1 om met de vorige periode te vergelijken of op J-1 voor hetzelfde periode een jaar eerder. Je keuze geldt ook voor de afwijkingen in de rest van het Paneel.";
+"panel.widgetInfo.periodComparison.howA" = "Tik op P-1 om met de vorige periode te vergelijken of op J-1 voor hetzelfde periode een jaar eerder. Je keuze geldt ook voor de afwijkingen in de rest van het Panel.";
 "panel.widgetInfo.sankey.title" = "Geldstroom";
 "panel.widgetInfo.sankey.chip1" = "Stroom";
 "panel.widgetInfo.sankey.chip2" = "Per behoefte";
@@ -4239,7 +4239,7 @@
 "panel.widgetInfo.sankey.whatQ" = "Wat zie je hier?";
 "panel.widgetInfo.sankey.whatA" = "De route van je geld in deze periode: waar het binnenkomt (inkomsten) en waar het naartoe gaat, gegroepeerd per type behoefte. Hoe breder het lint, hoe groter het bedrag.";
 "panel.widgetInfo.sankey.howQ" = "Hoe gebruik ik dit?";
-"panel.widgetInfo.sankey.howA" = "Tik op een categorie, subcategorie of tak om de rest van het Paneel op dat traject te filteren. Tik nogmaals om het filter te verwijderen.";
+"panel.widgetInfo.sankey.howA" = "Tik op een categorie, subcategorie of tak om de rest van het Panel op dat traject te filteren. Tik nogmaals om het filter te verwijderen.";
 
 // MARK: GroupsOnboarding-keys
 "groups.onboarding.progressLabel" = "Stap %1$d van %2$d";
@@ -4370,7 +4370,7 @@
 "whatsNew.v21.logging.title" = "Bijhouden was nog nooit zo makkelijk";
 "whatsNew.v21.logging.description" = "Praat ertegen, maak een foto of typ zoals aan een vriend. Yala begrijpt wat je hebt uitgegeven en legt het voor je vast, zodat je je geldzaken in een paar seconden bijhoudt.";
 "whatsNew.v21.data.title" = "Jouw gegevens, jouw regels";
-"whatsNew.v21.data.description" = "Jij kiest waar je gegevens staan: in je privé-iCloud of in de Yala-cloud, zodat je ze op al je apparaten hebt. Plus een vernieuwd Start-scherm en Yala op volledig scherm op je iPad.";
+"whatsNew.v21.data.description" = "Jij kiest waar je gegevens staan: in je privé-iCloud of in de Yala-cloud, zodat je ze op al je apparaten hebt. Plus een vernieuwd Panel en Yala op volledig scherm op je iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -5701,7 +5701,7 @@
 "groups.fullActivation.chooserSubtitle" = "Je groepen blijven zoals ze zijn. Kies waar je persoonlijke gegevens komen te staan.";
 "groups.fullActivation.cloudBody" = "We gebruiken hetzelfde account dat je al voor je groepen gebruikt, geen nieuw. Je gegevens staan op onze servers en ons team kan ze inzien om je te helpen.";
 "groups.fullActivation.historyTitle" = "Zullen we je groepsuitgaven meenemen?";
-"groups.fullActivation.historyBody" = "We nemen alleen jouw deel van elke uitgave over. Dat telt mee in Start, je budgetten en Statistieken.";
+"groups.fullActivation.historyBody" = "We nemen alleen jouw deel van elke uitgave over. Dat telt mee in je Panel, je budgetten en Statistieken.";
 "groups.fullActivation.historyShow" = "Ja, toon ze";
 "groups.fullActivation.historyKeepInGroups" = "Nee, laat ze in Groepen";
 "groups.fullActivation.historyFootnote" = "Dit geldt ook voor de uitgaven die je later toevoegt. Je kunt dit altijd wijzigen in Groepsinstellingen.";
@@ -5791,7 +5791,7 @@
 "storage.groups.detachKeep" = "Uitgaven bewaren die ik heb betaald";
 
 /* Botón: quitar del Panel los gastos de grupo */
-"storage.groups.detachRemove" = "Alles uit Start verwijderen";
+"storage.groups.detachRemove" = "Alles uit het Panel verwijderen";
 
 /* Progreso mientras se desasocia */
 "storage.groups.detachWorking" = "Wordt ontkoppeld…";
@@ -5839,7 +5839,7 @@
 "storage.groups.detachPurgeFailedTitle" = "Ontkoppelen is niet gelukt";
 
 /* Aviso: cuerpo del fallo del borrado al desasociar */
-"storage.groups.detachPurgeFailedBody" = "Je groepen staan nog op dit apparaat en het account is niet ontkoppeld. Je keuze voor de posten in het Paneel is al doorgevoerd en we hebben je bij dat account afgemeld. Probeer het opnieuw om het af te ronden.";
+"storage.groups.detachPurgeFailedBody" = "Je groepen staan nog op dit apparaat en het account is niet ontkoppeld. Je keuze voor de posten in het Panel is al doorgevoerd en we hebben je bij dat account afgemeld. Probeer het opnieuw om het af te ronden.";
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
 "storage.groups.detachBlockedBridge" = "We konden de posten van je groepen op dit apparaat niet controleren. Er is niets ontkoppeld. Probeer het opnieuw.";
@@ -6906,7 +6906,7 @@
 "setup.step.skipped" = "Overgeslagen. Tik om het te proberen";
 "setup.step.tryAgain" = "Proberen";
 "setup.complete.basics.title" = "Je kent de basis van Yala";
-"setup.complete.basics.subtitle" = "Probeer spraak of foto wanneer je wilt met de knoppen bovenaan Start.";
+"setup.complete.basics.subtitle" = "Probeer spraak of foto wanneer je wilt met de knoppen bovenaan het Panel.";
 "setup.nextStepLabel" = "Volgende stap";
 "setup.start" = "Beginnen";
 "setup.showAllSteps" = "Alle %d stappen bekijken";
@@ -6921,7 +6921,7 @@
 "notificationPrimer.scheduled.benefit" = "Een herinnering voordat een geplande betaling vervalt, zodat je niets mist.";
 "notificationPrimer.budget.title" = "Zullen we je waarschuwen als je de limiet nadert?";
 "notificationPrimer.budget.benefit" = "We laten het je weten als je de gekozen percentages bereikt. Zonder deze toestemming komt de waarschuwing niet aan.";
-"whatsNew.v22.panel.title" = "Een duidelijker Start";
+"whatsNew.v22.panel.title" = "Een duidelijker Panel";
 "whatsNew.v22.panel.description" = "Het grote getal zegt wat het meet, je rekeningen zie je in één oogopslag en meldingen komen één voor één.";
 "whatsNew.v22.inbox.title" = "Spraak, foto en inbox";
 "whatsNew.v22.inbox.description" = "Wat je inspreekt of fotografeert komt in je inbox met de bron erbij, en alles wat klaar is bewaar je in één keer.";
@@ -7125,7 +7125,7 @@
 "budgets.l9.activateAlerts" = "Meldingen aanzetten";
 "budgets.l9.alertsOffInNotifications" = "Meldingen uit in Meldingen";
 "budgets.l9.showInWidget" = "In widget tonen";
-"budgets.l9.showInWidgetHint" = "Verschijnt in de Budgetten-widget op Start.";
+"budgets.l9.showInWidgetHint" = "Verschijnt in de Budgetten-widget op het Panel.";
 "budgets.l9.hideFromWidget" = "Uit widget halen";
 "budgets.l9.deleteTitle" = "‘%@’ verwijderen?";
 "budgets.l9.historyTitle.weekly" = "Wat je elke week uitgaf tegenover je limiet";
@@ -7136,7 +7136,7 @@
 "budgets.l9.freePlanSheet" = "In het gratis abonnement heb je %lld actieve budgetten. Zet er een uit of stap over op Pro.";
 "budgets.l9.seePro" = "Pro bekijken";
 "budgets.l9.chooseWhich" = "Kies welke";
-"budgets.l9.previewEmpty" = "Markeer tot 3 budgetten met de ster en hier zie je je kaart op Start.";
+"budgets.l9.previewEmpty" = "Markeer tot 3 budgetten met de ster en hier zie je je kaart op het Panel.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "Achterstallig";
@@ -8121,9 +8121,9 @@
 "l15.rates.search" = "Valuta zoeken";
 "l15.personalization.voiceLanguageFooter" = "De taal waarin je tegen Yala praat als je met je stem noteert.";
 "l15.personalization.colorfulIconsFooter" = "Je ziet ze in de iconen van Instellingen en Meer.";
-"l15.personalization.averageLineFooter" = "Je ziet het in de grafieken op Start.";
+"l15.personalization.averageLineFooter" = "Je ziet het in de grafieken op het Panel.";
 "l15.personalization.currencyFormatFooter" = "Hoe bedragen in de hele app worden geschreven: met het symbool (S/) of met de code (PEN).";
-"l15.tabBar.rules" = "Start staat altijd eerst. Er passen er nog 3 bij, plus Meer en Zoeken.";
+"l15.tabBar.rules" = "Panel staat altijd eerst. Er passen er nog 3 bij, plus Meer en Zoeken.";
 "l15.permissions.title" = "Toestemmingen van Yala";
 "l15.permissions.footer" = "Yala vraagt elke toestemming de eerste keer dat je iets gebruikt wat die nodig heeft.";
 "l15.permissions.notAskedHint" = "We vragen het de eerste keer dat je het gebruikt.";

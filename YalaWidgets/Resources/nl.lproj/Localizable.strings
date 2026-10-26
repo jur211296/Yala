@@ -17,7 +17,7 @@
 "widget.gallery.cashFlow" = "In en uit";
 "widget.gallery.cashFlow.desc" = "Wat er deze periode in- en uitging. Tik om het in Trends te zien.";
 "widget.gallery.balance" = "Beschikbaar";
-"widget.gallery.balance.desc" = "Je beschikbare geld en het verloop. Tik om Start te zien.";
+"widget.gallery.balance.desc" = "Je beschikbare geld en het verloop. Tik om het Panel te zien.";
 "widget.gallery.budgets" = "Budgetten";
 "widget.gallery.budgets.desc" = "Hoe je budgetten ervoor staan. Tik om Budgetten te zien.";
 "widget.gallery.latestRecords" = "Recente boekingen";
@@ -35,7 +35,7 @@
 
 // MARK: - Gallery (Lock Screen accessory widgets)
 "widget.gallery.accessoryBalance" = "Beschikbaar";
-"widget.gallery.accessoryBalance.desc" = "Je beschikbare geld op het toegangsscherm. Tik om Start te zien.";
+"widget.gallery.accessoryBalance.desc" = "Je beschikbare geld op het toegangsscherm. Tik om het Panel te zien.";
 "widget.gallery.accessoryExpense" = "Uitgaven";
 "widget.gallery.accessoryExpense.desc" = "Je uitgaven op het toegangsscherm. Tik om het Overzicht in Statistieken te zien.";
 "widget.gallery.accessoryBudget" = "Budget";
@@ -149,7 +149,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "Maandoverzicht";
-"widget.gallery.monthSummary.desc" = "Je saldo, uitgaven per categorie en budgetten van de maand. Tik om Start te zien.";
+"widget.gallery.monthSummary.desc" = "Je saldo, uitgaven per categorie en budgetten van de maand. Tik om het Panel te zien.";
 "widget.ui.monthSummary" = "Maandoverzicht";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */

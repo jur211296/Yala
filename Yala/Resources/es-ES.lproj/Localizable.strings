@@ -3343,15 +3343,15 @@
 "tutorials.done" = "Listo";
 "tutorials.editPanel.completion.desc" = "Tu Panel muestra lo que elijas, en el orden que quieras. Puedes cambiarlo cuando quieras.";
 "tutorials.editPanel.completion.title" = "Ya sabes cómo personalizar el Panel";
-"tutorials.editPanel.intro.desc" = "Personaliza qué widgets aparecen en tu panel.";
-"tutorials.editPanel.intro.title" = "Tu panel, a tu manera";
+"tutorials.editPanel.intro.desc" = "Personaliza qué widgets aparecen en tu Panel.";
+"tutorials.editPanel.intro.title" = "Tu Panel, a tu manera";
 "tutorials.editPanel.step0.desc" = "Ve a la pantalla principal donde ves tu resumen de gastos con todos los widgets disponibles.";
-"tutorials.editPanel.step0.title" = "Abre el panel";
+"tutorials.editPanel.step0.title" = "Abre el Panel";
 "tutorials.editPanel.step1.desc" = "Toca el botón de cuadraditos junto a cada sección del Panel para elegir qué widgets ver y en qué orden.";
 "tutorials.editPanel.step1.title" = "Personaliza los widgets";
 "tutorials.editPanel.step2.desc" = "Recuerda que siempre puedes volver al orden predeterminado tocando \"Restablecer disposición original\" dentro de la personalización.";
 "tutorials.editPanel.step2.title" = "Restablece si quieres";
-"tutorials.editPanel.title" = "Personalizar el panel";
+"tutorials.editPanel.title" = "Personalizar el Panel";
 "tutorials.importData.completion.desc" = "Al importar, Yala te dice qué entró y qué no. Revisa tus registros después para confirmarlo.";
 "tutorials.importData.completion.title" = "Ya sabes cómo importar tus datos";
 "tutorials.importData.intro.desc" = "Trae tus gastos de una hoja de cálculo u otra app en segundos.";
@@ -3390,7 +3390,7 @@
 "tutorials.panelFiltering.step3.title" = "Ve filtros en todas las vistas";
 "tutorials.panelFiltering.step4.desc" = "En algunas vistas también contarás con una sección de filtros en la parte superior para que filtres a tu gusto o remuevas todos con un solo botón.";
 "tutorials.panelFiltering.step4.title" = "Usa los filtros rápidos";
-"tutorials.panelFiltering.title" = "Filtros del panel";
+"tutorials.panelFiltering.title" = "Filtros del Panel";
 "tutorials.previous" = "Anterior";
 "tutorials.start" = "Empezar";
 "tutorials.stepLabel %d" = "Paso %d";
@@ -3510,7 +3510,7 @@
 "widget.of" = "de %@";
 "widget.ofExpense" = "del gasto";
 "widget.ofTotal" = "del total";
-"widget.preferences.description" = "Elige qué quieres ver en tu panel principal y en qué orden.";
+"widget.preferences.description" = "Elige qué quieres ver en tu Panel y en qué orden.";
 "widget.recordsWillAppear" = "Cuando tengas registros, aparecerán aquí";
 "widget.resetLayout" = "Restablecer disposición original";
 "widget.selectCurrencies" = "Selecciona hasta 2 monedas para comparar con %@";
@@ -3604,7 +3604,7 @@
 "whatsNew.v21.logging.title" = "Apuntar nunca fue tan fácil";
 "whatsNew.v21.logging.description" = "Háblale, hazle una foto o escríbele como a un amigo. Yala entiende lo que has gastado y lo registra por ti, para que llevar tus cuentas sea cuestión de segundos.";
 "whatsNew.v21.data.title" = "Tus datos, tus reglas";
-"whatsNew.v21.data.description" = "Tú eliges dónde vive tu información: en tu iCloud privado o en la nube de Yala, para tenerla en todos tus dispositivos. Además, un panel renovado y Yala a pantalla completa en tu iPad.";
+"whatsNew.v21.data.description" = "Tú eliges dónde vive tu información: en tu iCloud privado o en la nube de Yala, para tenerla en todos tus dispositivos. Además, un Panel renovado y Yala a pantalla completa en tu iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";

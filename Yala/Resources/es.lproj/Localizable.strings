@@ -740,7 +740,7 @@
 "widget.today" = "Hoy";
 
 // Widget Preferences
-"widget.preferences.description" = "Elige qué quieres ver en tu panel principal y en qué orden.";
+"widget.preferences.description" = "Elige qué quieres ver en tu Panel y en qué orden.";
 "widget.resetLayout" = "Restablecer disposición original";
 "widget.alwaysVisible" = "Siempre visible";
 "widget.fixedPosition" = "Posición fija";
@@ -2275,17 +2275,17 @@
 "tutorials.createFavorites.completion.desc" = "Un favorito apunta en un toque los gastos que repites. Puedes tener los que quieras.";
 
 // 9. editPanel (3 steps)
-"tutorials.editPanel.title" = "Personalizar el panel";
-"tutorials.editPanel.intro.title" = "Tu panel, a tu manera";
-"tutorials.editPanel.intro.desc" = "Personaliza qué widgets aparecen en tu panel.";
-"tutorials.editPanel.step0.title" = "Abre el panel";
+"tutorials.editPanel.title" = "Personalizar el Panel";
+"tutorials.editPanel.intro.title" = "Tu Panel, a tu manera";
+"tutorials.editPanel.intro.desc" = "Personaliza qué widgets aparecen en tu Panel.";
+"tutorials.editPanel.step0.title" = "Abre el Panel";
 "tutorials.editPanel.step1.title" = "Personaliza los widgets";
 "tutorials.editPanel.step2.title" = "Restablece si quieres";
 "tutorials.editPanel.completion.title" = "Ya sabes cómo personalizar el Panel";
 "tutorials.editPanel.completion.desc" = "Tu Panel muestra lo que elijas, en el orden que quieras. Puedes cambiarlo cuando quieras.";
 
 // 10. panelFiltering (5 steps)
-"tutorials.panelFiltering.title" = "Filtros del panel";
+"tutorials.panelFiltering.title" = "Filtros del Panel";
 "tutorials.panelFiltering.intro.title" = "Filtra para encontrar";
 "tutorials.panelFiltering.intro.desc" = "Filtra por cuenta, categoría, etiqueta o periodo para análisis detallado.";
 "tutorials.panelFiltering.step0.title" = "Toca los gráficos para filtrar";
@@ -4372,7 +4372,7 @@
 "whatsNew.v21.logging.title" = "Anotar nunca fue tan fácil";
 "whatsNew.v21.logging.description" = "Háblale, tómale foto o escríbele como a un amigo. Yala entiende lo que gastaste y lo registra por ti, para que llevar tus cuentas tome segundos.";
 "whatsNew.v21.data.title" = "Tus datos, tus reglas";
-"whatsNew.v21.data.description" = "Tú eliges dónde vive tu información: en tu iCloud privado o en la nube de Yala, para tenerla en todos tus dispositivos. Además, un panel renovado y Yala a pantalla completa en tu iPad.";
+"whatsNew.v21.data.description" = "Tú eliges dónde vive tu información: en tu iCloud privado o en la nube de Yala, para tenerla en todos tus dispositivos. Además, un Panel renovado y Yala a pantalla completa en tu iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";

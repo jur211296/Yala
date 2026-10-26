@@ -261,6 +261,80 @@ struct LocalizationParityTests {
             }
         }
     }
+
+    // MARK: - Terminología: una sola forma por idioma (decisión de Jürgen, 2026-10-26)
+
+    /// Cómo se llama la pestaña Panel en cada idioma. La decisión fue renombrar la pestaña a «Panel» en todos (antes
+    /// «Home», «Accueil», «Übersicht», «Início»…, mientras la prosa ya decía «Panel»), con la palabra que su prosa usaba.
+    private static let panelWord: [String: String] = [
+        "es": "Panel", "es-419": "Panel", "es-ES": "Panel", "es-AR": "Panel", "en": "Panel", "en-GB": "Panel",
+        "de": "Panel", "fr": "Panel", "it": "Panel", "nl": "Panel", "pl": "Panel",
+        "pt": "Painel", "pt-BR": "Painel", "pt-PT": "Painel", "ja": "パネル", "zh-Hans": "面板",
+    ]
+
+    /// El asistente se llama según el idioma, y cada idioma con un solo nombre.
+    private static let assistantName: [String: String] = [
+        "es": "Yala IA", "es-419": "Yala IA", "es-ES": "Yala IA", "es-AR": "Yala IA", "fr": "Yala IA", "it": "Yala IA",
+        "pt": "Yala IA", "pt-BR": "Yala IA", "pt-PT": "Yala IA", "de": "Yala KI",
+        "en": "Yala AI", "en-GB": "Yala AI", "nl": "Yala AI", "pl": "Yala AI", "ja": "Yala AI", "zh-Hans": "Yala AI",
+    ]
+
+    /// Nombres de la pantalla de ajustes descartados por idioma: la pantalla tiene uno y los avisos que mandan a ella
+    /// (o a la app Ajustes del iPhone, que iOS llama igual en ese idioma) usan ese.
+    private static let discardedSettingsNames: [String: [String]] = [
+        "pt": ["Configurações"], "pt-BR": ["Configurações"], "pt-PT": ["Ajustes"], "fr": ["Paramètres"],
+    ]
+
+    @Test func everyLocale_hasATermEntry() {
+        let codes = Set(SupportedLocale.allCases.map(\.code))
+        #expect(Set(Self.panelWord.keys) == codes, "panelWord no cubre los idiomas soportados")
+        #expect(Set(Self.assistantName.keys) == codes, "assistantName no cubre los idiomas soportados")
+    }
+
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func tabPanel_isNamedPanel(_ code: String) throws {
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        let word = try #require(Self.panelWord[code])
+        #expect(strings["tab.panel"] == word, "\(code): la pestaña se llama «\(strings["tab.panel"] ?? "nil")», no «\(word)»")
+    }
+
+    /// Todo texto que en es-419 nombra el Panel lo nombra con la palabra de la pestaña en cada idioma (en polaco
+    /// declinada: «Panelu» contiene «Panel»).
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func textsThatNameThePanel_useTheTabWord(_ code: String) throws {
+        let reference = StringsFileParser.parseStrings(forLocale: "es-419")
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        let word = try #require(Self.panelWord[code])
+        let keys = reference.filter { $0.value.range(of: #"\bPanel\b"#, options: .regularExpression) != nil }.keys
+        #expect(keys.count > 30, "es-419: se esperaban decenas de textos con «Panel»; ¿bundle?")
+        for key in keys.sorted() {
+            guard let value = strings[key] else { continue }
+            #expect(value.contains(word), "\(code) · \(key): no nombra el Panel como «\(word)»: \(value)")
+        }
+    }
+
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func settingsScreen_hasOneName(_ code: String) {
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        #expect(strings["settings.title"] == strings["profile.title"], "\(code): la pantalla de ajustes tiene dos nombres")
+        for discarded in Self.discardedSettingsNames[code] ?? [] {
+            let offenders = strings.filter { $0.value.contains(discarded) }.keys.sorted()
+            #expect(offenders.isEmpty, "\(code): «\(discarded)» en \(offenders)")
+        }
+    }
+
+    @Test(arguments: SupportedLocale.allCases.map(\.code))
+    func assistant_hasOneName(_ code: String) throws {
+        let strings = StringsFileParser.parseStrings(forLocale: code)
+        let name = try #require(Self.assistantName[code])
+        let others = Set(Self.assistantName.values).subtracting([name])
+        #expect(strings.values.contains { $0.contains(name) }, "\(code): ningún texto nombra a «\(name)»")
+        for other in others.sorted() {
+            let offenders = strings.filter { $0.value.contains(other) }.keys.sorted()
+            #expect(offenders.isEmpty, "\(code): «\(other)» en \(offenders); el asistente aquí es «\(name)»")
+        }
+    }
+
 }
 
 struct BundleLocaleDriftTests {

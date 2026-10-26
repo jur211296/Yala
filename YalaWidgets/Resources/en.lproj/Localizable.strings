@@ -17,7 +17,7 @@
 "widget.gallery.cashFlow" = "Money in and out";
 "widget.gallery.cashFlow.desc" = "What came in and went out this period. Tap to see it in Trends.";
 "widget.gallery.balance" = "Available";
-"widget.gallery.balance.desc" = "Your available money and its trend. Tap to see Home.";
+"widget.gallery.balance.desc" = "Your available money and its trend. Tap to see the Panel.";
 "widget.gallery.budgets" = "Budgets";
 "widget.gallery.budgets.desc" = "How your budgets are going. Tap to see Budgets.";
 "widget.gallery.latestRecords" = "Latest Records";
@@ -35,7 +35,7 @@
 
 // MARK: - Gallery (Lock Screen accessory widgets)
 "widget.gallery.accessoryBalance" = "Available";
-"widget.gallery.accessoryBalance.desc" = "Your available money on the Lock Screen. Tap to see Home.";
+"widget.gallery.accessoryBalance.desc" = "Your available money on the Lock Screen. Tap to see the Panel.";
 "widget.gallery.accessoryExpense" = "Expenses";
 "widget.gallery.accessoryExpense.desc" = "Your spending on the Lock Screen. Tap to see the Statistics Overview.";
 "widget.gallery.accessoryBudget" = "Budget";
@@ -149,7 +149,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "Monthly Summary";
-"widget.gallery.monthSummary.desc" = "Your balance, spending by category and budgets for the month. Tap to see Home.";
+"widget.gallery.monthSummary.desc" = "Your balance, spending by category and budgets for the month. Tap to see the Panel.";
 "widget.ui.monthSummary" = "Monthly Summary";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
