@@ -280,7 +280,9 @@ enum GroupBridgeSystemEntities {
 
     private static func localizedNames(forKey key: String) -> Set<String> {
         if let cached = localizedNamesCache[key] { return cached }
+        // Más los nombres que tuvo antes: hoy pt-BR aún conserva el viejo de pt-PT, pero no depende de eso.
         let names = L10n.allLocalizedValues(forKey: key)
+            .union(SystemSubcategoryNameLogic.legacyNames(forLocalizationKey: key))
         localizedNamesCache[key] = names
         return names
     }

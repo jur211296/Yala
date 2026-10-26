@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1075)
+## Index (1077)
 
 | id | status | path |
 |---|---|---|
@@ -283,7 +283,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | backlog | tickets/backlog/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
-| copy-names-the-iphone-outside-groups-storage | backlog | tickets/backlog/copy-names-the-iphone-outside-groups-storage.md |
+| copy-names-the-iphone-outside-groups-storage | done | tickets/done/copy-names-the-iphone-outside-groups-storage.md |
+| copy-names-this-phone-outside-groups | backlog | tickets/backlog/copy-names-this-phone-outside-groups.md |
 | corpus-de-test-de-staging-crece-sin-limite | done | tickets/done/corpus-de-test-de-staging-crece-sin-limite.md |
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
 | creategroup-throw-after-commit-loses-owner | done | tickets/done/creategroup-throw-after-commit-loses-owner.md |
@@ -789,6 +790,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | backlog | tickets/backlog/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
+| pt-pt-group-system-names-keep-the-brazilian-voce | done | tickets/done/pt-pt-group-system-names-keep-the-brazilian-voce.md |
 | pt-pt-needs-a-native-review-after-the-pt-br-sweep | backlog | tickets/backlog/pt-pt-needs-a-native-review-after-the-pt-br-sweep.md |
 | push-client-ignores-yala-kind | done | tickets/done/push-client-ignores-yala-kind.md |
 | push-token-does-not-record-the-notification-permission | backlog | tickets/backlog/push-token-does-not-record-the-notification-permission.md |

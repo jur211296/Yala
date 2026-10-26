@@ -3737,8 +3737,8 @@
 "panel.fabGroup" = "Grupo";
 
 // MARK: OpeningBalance-keys (saldo inicial)
-"subcategory.system.openingBalanceOwed" = "Saldo inicial (devem a você)";
-"subcategory.system.openingBalanceDebt" = "Saldo inicial (você deve)";
+"subcategory.system.openingBalanceOwed" = "Saldo inicial (devem-te)";
+"subcategory.system.openingBalanceDebt" = "Saldo inicial (deves)";
 "groups.openingBalance.entryDescription" = "Saldo inicial";
 "groups.openingBalance.feedRow" = "%1$@ deve a %2$@";
 "groups.openingBalance.editorTitle" = "Saldo inicial";
