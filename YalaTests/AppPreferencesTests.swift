@@ -6,8 +6,9 @@
 //  diferencial ante notificación sin cambio real, y ausencia de retain cycle con observers.
 //
 //  Cada test usa un `UserDefaults(suiteName:)` aislado con UUID para evitar contaminación
-//  cruzada entre tests. No se verifica el path iCloud (PreferenceSyncService.shared) —
-//  los tests usan el singleton real pero el efecto de interés es el local UserDefaults.
+//  cruzada entre tests. Con un almacén aislado, `AppPreferences` no publica a
+//  `PreferenceSyncService` (que escribe en `.standard` y en iCloud KV): lo fija
+//  `isolatedStore_doesNotPublishToTheRealStores`.
 //
 
 import Foundation
@@ -25,6 +26,46 @@ struct AppPreferencesTests {
     private static func makeSuite() -> UserDefaults {
         let suiteName = "AppPreferencesTests.\(UUID().uuidString)"
         return UserDefaults(suiteName: suiteName)!
+    }
+
+    // MARK: - Almacén aislado: no publica
+
+    /// Con un almacén que no es `.standard`, una preferencia sincronizada se queda en ese almacén: no llega al
+    /// `UserDefaults.standard` ni al iCloud KV del simulador. Hasta el 2026-10-26 sí llegaba —`PreferenceSyncService`
+    /// escribe en `.standard`— y cada corrida de esta suite dejaba «solo gastos» en `true` en el simulador: el
+    /// `SessionState` lo leía al nacer y el resumen de Registros descartaba los ingresos en la suite completa
+    /// (ticket `records-summary-approximate-mark-fails-only-alongside-group-suites`). Un caso por cada `persist*`.
+    ///
+    /// No limpia `.standard` al entrar (otra suite podría estar leyéndolo): elige un valor final distinto del que
+    /// hay, así que una publicación lo cambiaría. Lo que haya, se restaura igual al salir.
+    @Test func isolatedStore_doesNotPublishToTheRealStores() {
+        let standard = UserDefaults.standard
+        let iKV = NSUbiquitousKeyValueStore.default
+        let keys = [AppPreferences.Keys.expensesOnlyMode, AppPreferences.Keys.defaultCurrencyCode,
+                    AppPreferences.Keys.decimalPlaces]
+        let before = keys.map { (standard.object(forKey: $0), iKV.object(forKey: $0)) }
+        defer {
+            for (key, (local, remote)) in zip(keys, before) {
+                if let local { standard.set(local, forKey: key) } else { standard.removeObject(forKey: key) }
+                if let remote { iKV.set(remote, forKey: key) } else { iKV.removeObject(forKey: key) }
+            }
+        }
+
+        let prefs = AppPreferences(defaults: Self.makeSuite())
+        // Bool: el valor final es el contrario del que hay. Partiendo de `false`, hace falta pasar por `true`.
+        let soloGastos = !(standard.object(forKey: AppPreferences.Keys.expensesOnlyMode) as? Bool ?? false)
+        if !soloGastos { prefs.expensesOnlyMode = true }
+        prefs.expensesOnlyMode = soloGastos
+        prefs.defaultCurrencyCode = standard.string(forKey: AppPreferences.Keys.defaultCurrencyCode) == "USD" ? .eur : .usd
+        prefs.decimalPlaces = standard.object(forKey: AppPreferences.Keys.decimalPlaces) as? Int == 3 ? 1 : 3
+
+        for (key, (local, remote)) in zip(keys, before) {
+            #expect(String(describing: standard.object(forKey: key)) == String(describing: local),
+                    "«\(key)» de un almacén aislado llegó al `UserDefaults.standard` del simulador.")
+            #expect(String(describing: iKV.object(forKey: key)) == String(describing: remote),
+                    "«\(key)» de un almacén aislado llegó al iCloud KV del simulador.")
+        }
+        #expect(prefs.expensesOnlyMode == soloGastos, "En su propio almacén sí se guarda.")
     }
 
     // MARK: - Init — load defaults

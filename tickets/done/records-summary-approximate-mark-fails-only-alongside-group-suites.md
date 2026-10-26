@@ -1,10 +1,10 @@
 ---
 id: records-summary-approximate-mark-fails-only-alongside-group-suites
-status: backlog
+status: done
 priority: medium
 area: "testing, currency"
 created: 2026-09-15
-updated: 2026-10-08
+updated: 2026-10-26
 source: "gate de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15): único rojo de la suite completa"
 ---
 
@@ -83,3 +83,28 @@ Mismo test, mismas dos líneas (`:1115`, `:1118`). Suite completa de `YalaTests`
 - La vecina que escribe el estado sigue sin identificar.
 
 Triage 2026-10-08: abierto · medium → medium · sin arreglo: `RecordsSummaryApproximateMarkTests` (`:1091`) sigue sin fijar las preferencias globales que lee `applyFilters`, y la vecina escritora sigue sin nombre.
+
+## Resuelto (2026-10-26, sesión «tests rojos 2.2»)
+
+**Lo que cruza: «solo gastos» (`expensesOnlyMode`).** Con él puesto, `RecordsViewModel.applyFilters` deja solo los
+gastos (`SessionState.shared.isExpensesOnlyMode` → `[.expense]`): el saldo sale −999.000 y sin marca. Son justo los dos
+`#expect` que caían (en el fichero de entonces, `:1115` era `s.balance == 1_000` y `:1118` `s.balanceIsApproximate`;
+el ticket los leyó como «ingresos no marca» y «saldo sí marca»). Los otros tres casos de la suite no tienen ingresos que
+perder, por eso solo caía este.
+
+**Quién lo escribe: `AppPreferencesTests`** (`set_allBooleans_persistAndReload`), y con él cualquier test que cree un
+`AppPreferences` con almacén aislado. El almacén era aislado, pero toda preferencia sincronizada se publicaba además por
+`PreferenceSyncService.shared`, que escribe en el `UserDefaults.standard` real del simulador y en iCloud KV. Medido con
+una sonda KVO temporal: la clave pasa a `true` durante esa suite y ahí se queda; los `SessionState()` que nacen después
+la leen en `true`, y el ciclo de prefs la copia a `.shared`. Pasaba igual con otras 31 preferencias sincronizadas
+(entre ellas `includeGroupTransactionsInFeed`, la primera sospechosa de arriba, que escribe `AppPreferencesGroupTogglesTests`):
+12 suites crean `AppPreferences` aislado y fijan alguna.
+
+**Arreglo, en los dos lados:**
+- `AppPreferences` solo publica a `PreferenceSyncService` si su almacén es `.standard` (`publishesToSync`). En la app
+  siempre lo es; un `AppPreferences` aislado ya no planta nada en el simulador. Lo fija
+  `AppPreferencesTests.isolatedStore_doesNotPublishToTheRealStores` (un caso por cada `persist*`).
+- `RecordsSummaryApproximateMarkTests` entra sin «solo gastos» y sin filtros de sesión, y los restaura al salir.
+
+Suite completa de `YalaTests` verde tres veces el mismo día (11.645 y 11.646 tests en 1.265 suites); la suite sola,
+también. Mutantes en el PR.

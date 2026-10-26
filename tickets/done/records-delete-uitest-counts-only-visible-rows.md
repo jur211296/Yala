@@ -1,10 +1,10 @@
 ---
 id: records-delete-uitest-counts-only-visible-rows
-status: backlog
+status: done
 priority: medium
 area: testing, records
 created: 2026-10-18
-updated: 2026-10-20
+updated: 2026-10-26
 source: gate de la implementación UX 2.2 · lotes 11 y 16 (encargo 2026-10-18-implementar-2-2-l11-l16-estadisticas-y-ajustes)
 ---
 
@@ -31,3 +31,11 @@ El caso distingue «se borró» de «no se borró» con cualquier tamaño de sem
 
 Sigue rojo en la suite completa de UI del merge (centinela «estuviste solo», 445 casos, «("13") is not less than
 ("13")»), aislado sobre la rama del merge y aislado sobre `origin/2.2` limpio (`bb2e66a8c`). No lo trae el merge.
+
+## Cerrado sin cambios (2026-10-26, sesión «tests rojos 2.2»)
+
+Ya estaba arreglado por `82264815a` (2026-10-20, lote decidido 2.2 · 08): el caso guarda la etiqueta de la primera fila
+y espera a que no quede ninguna `record_row` con esa etiqueta, en vez de contar filas. Así distingue «se borró» de «no
+se borró» con cualquier tamaño de semilla, también con el borrado diferido de «Deshacer» (L15-13), que saca la fila en
+el acto. El «13 is not less than 13» del remedido del 2026-10-20 era anterior a ese commit. Medido hoy sobre
+`origin/2.2` (`be99a2256`): **4 de 4 verde**.
