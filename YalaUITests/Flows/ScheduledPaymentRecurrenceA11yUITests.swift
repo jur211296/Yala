@@ -37,7 +37,7 @@ final class ScheduledPaymentRecurrenceA11yUITests: XCTestCase {
 
         app.openScheduledPaymentsList()
 
-        let addButton = app.buttons["scheduled_payments_create_fab"]
+        let addButton = app.buttons["scheduled_payments_create_button"]
         XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció el + de Pagos planificados.")
         addButton.tap()
 

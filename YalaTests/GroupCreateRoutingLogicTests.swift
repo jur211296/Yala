@@ -146,17 +146,18 @@ struct GroupCreateRoutingWiringTests {
             """)
     }
 
-    // MARK: - El choke-point: las CUATRO entradas pasan por él
+    // MARK: - El choke-point: las CINCO entradas pasan por él
 
-    @Test("MUTACIÓN (c): las cuatro entradas de creación pasan por `requestCreateGroup`")
-    func allFourEntryPointsGoThroughTheGate() throws {
+    @Test("MUTACIÓN (c): las cinco entradas de creación pasan por `requestCreateGroup`")
+    func allEntryPointsGoThroughTheGate() throws {
         let code = try Self.code(Self.containerView)
 
-        // Empty state, FAB simple, FAB expandible y el `pendingNewGroupForm` del Welcome. El conteo
+        // Empty state, «Nuevo grupo» de arriba (card kzhe, 2026-10-26), FAB simple, FAB expandible y el
+        // `pendingNewGroupForm` del Welcome. El conteo
         // esperado es lo que impide que una entrada nueva se cuelgue del form sin pasar por el gate —
         // y lo que hace caer este test si alguien borra una llamada en vez de re-cablearla.
         let calls = code.components(separatedBy: "await requestCreateGroup()").count - 1
-        #expect(calls == 4, "se esperaban 4 entradas por el choke-point, encontradas: \(calls)")
+        #expect(calls == 5, "se esperaban 5 entradas por el choke-point, encontradas: \(calls)")
 
         // El gate es el ÚNICO que decide en esta vista: nadie puede leer la tabla por su cuenta y
         // saltarse el refresh forzado.

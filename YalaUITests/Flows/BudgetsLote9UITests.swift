@@ -43,8 +43,8 @@ final class BudgetsLote9UITests: XCTestCase {
         XCTAssertTrue(listPicker.waitForExistence(timeout: 15), "No se montó el selector de tipo de la lista.")
         listPicker.buttons.element(boundBy: 2).tap()
 
-        let fab = app.buttons["budgets_create_fab"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_fab.")
+        let fab = app.buttons["budgets_create_button"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_button.")
         fab.tap()
 
         let editorPicker = app.segmentedControls["budget_editor_period_picker"]

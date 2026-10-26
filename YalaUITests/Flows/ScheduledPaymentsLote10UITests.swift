@@ -119,7 +119,7 @@ final class ScheduledPaymentsLote10UITests: XCTestCase {
         let app = XCUIApplication()
         launch(app)
         app.openScheduledPaymentsList()
-        app.buttons["scheduled_payments_create_fab"].tap()
+        app.buttons["scheduled_payments_create_button"].tap()
         let save = app.buttons["toolbar_save_button"]
         XCTAssertTrue(save.waitForExistence(timeout: 5), "No se abrió el editor.")
         XCTAssertTrue(save.isEnabled, "El ✓ debe poder tocarse aunque falte algo.")

@@ -117,11 +117,9 @@ final class GroupsCrearDecididoUITests: XCTestCase {
     // MARK: - Helpers
 
     private func openNewGroupForm(in app: XCUIApplication) {
-        let fab = app.buttons["groups_fab_new"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 30), "No apareció el botón + de Grupos.")
-        fab.tap()
-        let newGroup = app.buttons["groups_fab_new_group"]
-        XCTAssertTrue(newGroup.waitForExistence(timeout: 5), "El botón + no ofreció «Nuevo grupo».")
+        // Desde la card kzhe «Nuevo grupo» está arriba, bajo el resumen.
+        let newGroup = app.buttons["groups_action_new_group"]
+        XCTAssertTrue(newGroup.waitForExistence(timeout: 30), "No apareció «Nuevo grupo» arriba en Grupos.")
         newGroup.tap()
     }
 }

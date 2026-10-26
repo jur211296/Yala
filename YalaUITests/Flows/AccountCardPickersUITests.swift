@@ -98,7 +98,7 @@ final class AccountCardPickersUITests: XCTestCase {
         let planningTab = app.tabBars.buttons.element(boundBy: 2)
         XCTAssertTrue(planningTab.waitForExistence(timeout: 10))
         planningTab.tap()
-        let fab = app.buttons["budgets_create_fab"]
+        let fab = app.buttons["budgets_create_button"]
         XCTAssertTrue(fab.waitForExistence(timeout: 5))
         fab.tap()
 

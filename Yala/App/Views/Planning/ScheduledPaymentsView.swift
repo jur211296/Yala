@@ -23,6 +23,8 @@ struct ScheduledPaymentsView: View {
     @State private var paymentEditorClosedToken = 0
     /// El pago recién creado, para avisar al cerrar el editor cuándo es su primer pago (UX 2.2 · L10-5).
     @State private var newlySavedPaymentID: UUID?
+    /// El «+» flotante, solo cuando el scroll se lleva «Nuevo pago planificado» de arriba (card kzhe).
+    @State private var showFloatingNew = false
 
     var body: some View {
         ZStack {
@@ -40,13 +42,17 @@ struct ScheduledPaymentsView: View {
                         payments: filteredPaymentsForCurrentTab,
                         tab: viewModel.selectedTab,
                         currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                        onRefresh: { refreshData() }
+                        onRefresh: { refreshData() },
+                        showsFloatingNew: $showFloatingNew
                     )
                 }
             }
 
-            // FAB button for new payment
-            newPaymentFAB
+            // FAB button for new payment: solo cuando el scroll se lleva el botón de arriba (card kzhe).
+            if showFloatingNew {
+                newPaymentFAB
+                    .transition(.opacity)
+            }
         }
         .yalaScreenBackground(.panel)
         .sheet(isPresented: $viewModel.showPaymentEditor, onDismiss: {

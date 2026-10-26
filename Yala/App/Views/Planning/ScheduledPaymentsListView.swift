@@ -20,6 +20,8 @@ struct ScheduledPaymentsListView: View {
     let tab: ScheduledPaymentsTab
     let currencyCode: String
     let onRefresh: () -> Void
+    /// `true` cuando el scroll se lleva «Nuevo pago planificado» de arriba: entonces sale el «+» flotante (card kzhe).
+    @Binding var showsFloatingNew: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var viewModeNamespace
@@ -33,6 +35,19 @@ struct ScheduledPaymentsListView: View {
         VStack(spacing: DS.Spacing.xs) {
             heroSection
                 .padding(.bottom, DS.Spacing.xs)
+
+            // La acción principal arriba, bajo el hero, como en el Panel; el flotante solo al bajar (card kzhe).
+            TopPrimaryActionPill(
+                title: L10n.Accessibility.newPayment,
+                systemImage: "plus",
+                accessibilityIdentifier: "scheduled_payments_create_button"
+            ) {
+                viewModel.createNewPayment()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.xs)
+            .revealsFloatingActionWhenScrolledAway($showsFloatingNew)
 
             PeriodNavigationHeader(
                 currentLabel: viewModel.monthYearLabel,

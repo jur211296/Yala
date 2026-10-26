@@ -6,7 +6,8 @@
 //  el FAB de refinamiento con IA (sparkles, "fab_chat"). Hasta el 2026-10-03 aparecía SOLO
 //  en la tab Registros de Estadísticas; desde la decisión de alinear Estadísticas con el Panel
 //  (ticket `distribution-subviews-miss-the-new-panel-hero`) va en las cuatro pestañas, así que
-//  el segundo caso afirma ahora que está también fuera de Registros. NO lo toca, porque abrir
+//  el segundo caso afirma ahora que está también fuera de Registros. Desde la card kzhe (2026-10-26) la entrada a
+//  la vista es la píldora «Yala IA» de la fila bajo el hero (`stats_action_ai`); el flotante solo sale al bajar. NO lo toca, porque abrir
 //  el chat dispara red/LLM o el flujo de consentimiento (no determinista). Lanza en Pro para
 //  evitar el estado bloqueado. Seed `minimal`. El recorrido entero —las cuatro pestañas y las
 //  subvistas de Distribución— vive en `StatisticsHeroLikePanelUITests`.
@@ -42,7 +43,7 @@ final class SmartRefinementFabUITests: XCTestCase {
         openStatsRecords(app)
 
         XCTAssertTrue(
-            app.buttons["fab_chat"].waitForExistence(timeout: 5),
+            app.buttons["stats_action_ai"].waitForExistence(timeout: 5),
             "El FAB de refinamiento IA no apareció en la tab Registros."
         )
     }
@@ -60,13 +61,13 @@ final class SmartRefinementFabUITests: XCTestCase {
             "La tab Insights no montó."
         )
         XCTAssertTrue(
-            app.buttons["fab_chat"].waitForExistence(timeout: 5),
+            app.buttons["stats_action_ai"].waitForExistence(timeout: 5),
             "El FAB de Yala IA tiene que estar también en Insights, como en el Panel."
         )
 
         openStatsRecords(app)
         XCTAssertTrue(
-            app.buttons["fab_chat"].waitForExistence(timeout: 5),
+            app.buttons["stats_action_ai"].waitForExistence(timeout: 5),
             "El FAB de refinamiento no apareció al cambiar a Registros."
         )
     }
