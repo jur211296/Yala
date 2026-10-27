@@ -65,6 +65,13 @@ final class AppPreferences {
     // MARK: - Dependencies
 
     private let defaults: UserDefaults
+    /// Si este almacén es el que refleja `PreferenceSyncService` (`local`, que es `.standard`). Solo entonces se
+    /// publica una preferencia sincronizada: publicar escribe ADEMÁS en `.standard` y en iCloud KV, y desde un
+    /// `AppPreferences` con otro almacén eso planta en el teléfono un valor que nadie eligió. En la app el almacén es
+    /// siempre `.standard` y nada cambia; lo pagaban los tests con almacén aislado, que dejaban «solo gastos»,
+    /// «incluir gastos de grupo» o la divisa en el `UserDefaults` real del simulador para las suites de después
+    /// (ticket `records-summary-approximate-mark-fails-only-alongside-group-suites`).
+    private let publishesToSync: Bool
 
     /// Verdadero SOLO mientras corre `loadFromDefaults()`. Es lo que hace que cargar no escriba;
     /// el porqué —y por qué un `guard oldValue != nuevo` no basta— está en su docblock.
@@ -916,6 +923,7 @@ final class AppPreferences {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        self.publishesToSync = defaults === UserDefaults.standard
 
         // Carga inicial ANTES de registrar observers (mitiga race con notificaciones
         // tempranas durante bootstrap). No persiste nada: `loadFromDefaults` levanta
@@ -1334,7 +1342,7 @@ final class AppPreferences {
     private func persistString(_ value: String, forKey key: String, synced: Bool) {
         guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
-        if synced {
+        if synced && publishesToSync {
             PreferenceSyncService.shared.set(string: value, forKey: key)
         }
     }
@@ -1342,7 +1350,7 @@ final class AppPreferences {
     private func persistBool(_ value: Bool, forKey key: String, synced: Bool) {
         guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
-        if synced {
+        if synced && publishesToSync {
             PreferenceSyncService.shared.set(bool: value, forKey: key)
         }
     }
@@ -1350,7 +1358,7 @@ final class AppPreferences {
     private func persistInt(_ value: Int, forKey key: String, synced: Bool) {
         guard !isLoadingFromDefaults else { return }
         defaults.set(value, forKey: key)
-        if synced {
+        if synced && publishesToSync {
             PreferenceSyncService.shared.set(int: value, forKey: key)
         }
     }

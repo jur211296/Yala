@@ -7,7 +7,7 @@
 //  - L8-4: Duplicar y Eliminar al pie del detalle; Duplicar abre la copia.
 //  - L8-7: borrar pregunta en una alerta que nombra el registro y trae Cancelar, desde el detalle y desde el menú.
 //  - L8-8: la copia se titula «Duplicar registro».
-//  - L8-9: «Cambiar subcategoría» marca la actual y, al elegir otra, avisa con Deshacer.
+//  - L8-9: «Cambiar categoría» (antes «Cambiar subcategoría») marca la actual y, al elegir otra, avisa con Deshacer.
 //  - L8-12: «Seleccionar» a la vista, la línea de ayuda y la barra con Eliminar y Editar con texto.
 //  Seed `minimal`, idioma fijo de la suite (es-419).
 //
@@ -130,9 +130,11 @@ final class RecordsLote8UITests: XCTestCase {
         XCTAssertTrue(change.waitForExistence(timeout: 5), "El menú no ofrece cambiar la categoría.")
         change.tap()
 
+        // La hoja se titula «Cambiar categoría» desde el lote decidido 2.2 · 02 (`records.l8.changeSubcategoryTitle`),
+        // igual que la entrada del menú.
+        let sheetTitle = app.navigationBars["Cambiar categoría"]
         let sheet = app.otherElements["record_subcategory_change_sheet"].firstMatch
-        XCTAssertTrue(app.navigationBars["Cambiar subcategoría"].waitForExistence(timeout: 5),
-                      "La hoja no se titula «Cambiar subcategoría».")
+        XCTAssertTrue(sheetTitle.waitForExistence(timeout: 5), "La hoja no se titula «Cambiar categoría».")
         XCTAssertTrue(app.descendants(matching: .any)["record_subcategory_change_record"].exists || sheet.exists,
                       "La hoja no dice qué registro cambia.")
 
@@ -152,7 +154,7 @@ final class RecordsLote8UITests: XCTestCase {
 
         let undo = app.buttons["record_subcategory_change_undo"]
         XCTAssertTrue(undo.waitForExistence(timeout: 5), "Tras elegir no salió el aviso con Deshacer.")
-        XCTAssertTrue(app.navigationBars["Cambiar subcategoría"].waitForNonExistence(timeout: 5), "La hoja no se cerró.")
+        XCTAssertTrue(sheetTitle.waitForNonExistence(timeout: 5), "La hoja no se cerró.")
         undo.tap()
         XCTAssertTrue(undo.waitForNonExistence(timeout: 5), "Deshacer no retiró el aviso.")
     }

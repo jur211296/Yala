@@ -1,11 +1,11 @@
 ---
 id: tag-sheet-new-name-field-never-idles-in-xcuitest
-status: backlog
+status: done
 priority: low
 area: "transactions, tags, testing"
 created: 2026-10-23
 source: "lote decidido 2.2 · 02, sesión B (gate del formulario)"
-updated: 2026-10-23
+updated: 2026-10-26
 ---
 
 # Al escribir en «Nueva etiqueta», XCUITest a veces no ve la app en reposo
@@ -24,3 +24,21 @@ updated: 2026-10-23
 
 - Se sabe qué anima sin parar (Instruments o un mutante que fije el detent a `.large` al enfocar el campo).
 - Diez corridas seguidas del caso sin una sola espera de 60 s.
+
+## Cerrado sin reproducir (2026-10-26, sesión «tests rojos 2.2»)
+
+Sobre `origin/2.2` (`be99a2256`), iPhone 17 Pro, iOS 27.0: **16 corridas del caso y ni una espera de 60 s**
+(«App animations complete notification not received» = 0 en todos los logs), todas en 25-30 s:
+
+| Condición | Corridas |
+|---|---|
+| suelta, primera tras arrancar el simulador | 1 |
+| justo después de la suite unitaria entera en el mismo arranque (la del gate del 23-oct) | 10 seguidas |
+| con `HardwareKeyboardLastSeen = 1` escrito en el simulador (modo teclado físico, `.claude/rules/testing.md`) | 2 |
+| dentro de su suite entera (`TransactionFormDecided02BUITests`, 6 casos × 3) | 3 |
+
+**Qué animaba: no se sabe**, porque no se pudo reproducir; el mutante del detent no discrimina nada si la espera no
+sale. No se tocó producto. Lo que cambió en el formulario desde la medición (`77f62f037`, 23-oct) es el lote 12.3
+(`3076a6ce9`, accesibilidad y formularios que dicen qué falta). La prueba del teclado físico no verificó que el
+simulador aplicara el modo (sin `cfprefsd` reiniciado). Si vuelve a salir, el log del gate con el caso basta para
+reabrir: la espera es por gesto y deja la línea de arriba.

@@ -1000,12 +1000,43 @@ struct ApproximateMarkNewProducersTests {
 @Suite("Marca de aproximado · el resumen de Registros", .serialized)
 struct RecordsSummaryApproximateMarkTests {
 
-    /// `period` vive en `SessionState.shared`. Se fija a `.allTime` para que el intervalo no dependa
-    /// de la fecha de hoy, y se restaura: es estado global.
+    /// `applyFilters` lee de `SessionState.shared` el período, los filtros de sesión y «solo gastos». Se entra con
+    /// todo el período, sin filtros y sin «solo gastos», y se restaura al salir: es estado global.
+    ///
+    /// «Solo gastos» no es teórico (medido el 2026-10-26): `SessionState` lo lee del `UserDefaults.standard` del
+    /// simulador al nacer y el ciclo de prefs lo copia a `.shared`, y hasta ese día los tests con `AppPreferences`
+    /// aislado lo dejaban en `true` allí. Con él puesto, `applyFilters` descarta los ingresos: el saldo sale
+    /// −999.000 sin marca y el caso del saldo pequeño caía solo en la suite completa.
     private func conPeriodoCompleto(_ cuerpo: () throws -> Void) rethrows {
-        let anterior = SessionState.shared.selectedPeriod
-        SessionState.shared.selectedPeriod = .allTime
-        defer { SessionState.shared.selectedPeriod = anterior }
+        let session = SessionState.shared
+        let periodo = session.selectedPeriod
+        let soloGastos = session.isExpensesOnlyMode
+        let incluidos = (session.selectedAccountIDs, session.selectedCategoryIDs, session.selectedSubcategoryIDs,
+                         session.selectedNeeds, session.selectedTransactionNatures, session.selectedTags,
+                         session.selectedCurrencies, session.amountCondition, session.searchText)
+        let excluidos = session.excludedFilterSets
+        let presupuesto = session.selectedBudgetID
+        let globales = session.globalFilters
+        // «Solo gastos» primero: su `didSet` reescribe `selectedTransactionNatures`, que se limpia después.
+        session.isExpensesOnlyMode = false
+        session.clearFilters()
+        session.selectedPeriod = .allTime
+        defer {
+            session.isExpensesOnlyMode = soloGastos
+            session.selectedAccountIDs = incluidos.0
+            session.selectedCategoryIDs = incluidos.1
+            session.selectedSubcategoryIDs = incluidos.2
+            session.selectedNeeds = incluidos.3
+            session.selectedTransactionNatures = incluidos.4
+            session.selectedTags = incluidos.5
+            session.selectedCurrencies = incluidos.6
+            session.amountCondition = incluidos.7
+            session.searchText = incluidos.8
+            session.excludedFilterSets = excluidos
+            session.selectedBudgetID = presupuesto
+            session.globalFilters = globales
+            session.selectedPeriod = periodo
+        }
         try cuerpo()
     }
 
