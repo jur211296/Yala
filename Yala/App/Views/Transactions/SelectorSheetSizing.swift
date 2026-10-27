@@ -61,9 +61,13 @@ private struct SelectorSheetSizingModifier: ViewModifier {
         if detents.isEmpty {
             content
         } else {
+            // El material va como VISTA (`presentationBackground { … }`), no como estilo
+            // (`presentationBackground(.thickMaterial)`): con el estilo, una hoja pedida desde otra hoja que ya está
+            // encima de una tercera —«Detalles» de un registro de Yala IA— no llegaba a presentarse en iOS 27.0;
+            // SwiftUI la construía y UIKit no la mostraba (ticket `chat-draft-details-rows-dont-open-their-selector`).
             content
                 .yalaSheetDetents(detents, selection: $selectedDetent)
-                .presentationBackground(SelectorSheetSizing.mediumHeightMaterial)
+                .presentationBackground { Rectangle().fill(SelectorSheetSizing.mediumHeightMaterial) }
         }
     }
 }

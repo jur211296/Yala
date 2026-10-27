@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-10-07
-updated: 2026-10-09
+updated: 2026-10-27
 source: rojo del gate de advisory-ui-tests-fail-every-retry, bisecado contra la base
 ---
 
@@ -60,3 +60,12 @@ invalid») en vez de devolver `false` (medido en el primer lote). Verde en lote 
 
 Queda la mitad de producto: si en un iPhone de 402 pt la fila enseña algún indicio de que hay un chip más a la derecha.
 Por eso el ticket sigue abierto, ahora solo por eso.
+
+## 2026-10-27 · el test vuelve a estar rojo, con otro mensaje
+
+Ahora falla en la línea 124 con «No se montó el selector de `new_transaction_tags_chip` con filas (`tag_selector_row_…`)»:
+el chip se alcanza, pero el selector de etiquetas no enseña filas. Medido en `iPhone 17 Pro` iOS 27.0 con el simulador
+recién borrado: **rojo con la base `origin/2.2` @ `12601e455`** y rojo igual con el cambio del encargo
+`yala-ia-detalles-selector` (que cambia cómo se pinta el fondo de estos selectores). Es preexistente; no se persiguió
+en ese encargo. Hipótesis sin medir: con la semilla de los tests no hay etiquetas, y el selector vacío no tiene filas
+`tag_selector_row_` que esperar.

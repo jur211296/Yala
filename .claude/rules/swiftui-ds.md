@@ -173,6 +173,15 @@ paths:
   contenido quepa o se desplace dentro, y el usuario la estira. Si un fondo se deriva del detent elegido, fíjalo a la
   altura real, no a la pedida.
 
+- **`.presentationBackground(<material>)` como ESTILO impide presentar la hoja cuando la pide otra hoja que ya está
+  sobre una hoja (medido el 2026-10-27, iOS 27.0).** En «Detalles» de un registro de Yala IA (hoja sobre la hoja del
+  chat), Categoría, Cuenta y Etiquetas —los tres selectores con `SelectorSheetSizing.mediumFirst`— no abrían: SwiftUI
+  construía el selector y UIKit no lo mostraba. Fecha, sin ese modificador, sí. Sin error ni aviso en el log. Desde
+  Nuevo registro (un nivel menos) abrían bien, y por eso #602 lo metió sin que nadie lo viera. ⇒ **el material va como
+  VISTA: `.presentationBackground { Rectangle().fill(.thickMaterial) }`**, que pinta lo mismo (diferencia medida de
+  ≤ 8/255 en la cabecera) y presenta en los tres niveles. Lo fijan los cuatro casos `test_draftDetails_*` de
+  `ChatMessagingLayoutUITests`.
+
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
 - **Swift Charts `.annotation { }` NO propaga environment objects `@Observable`** → el contenido de una annotation de un mark (`BarMark`/`LineMark`/etc.) se hostea fuera del árbol de la vista; una sub-View que lea `@Environment(AppPreferences.self)` (ej. `AmountText`) NO lo resuelve y dispara `SIGTRAP` (`_assertionFailure` en `EnvironmentValues.subscript.getter`) al renderizar — sin crash log claro. Dentro de annotations usar `Text(...)` con el valor YA resuelto del callsite (`appPreferences.currency(...)` desde `self`) o un formatter estático (`YalaFormatter`), NUNCA una sub-View con `@Environment`. **`.chartOverlay { }` SÍ propaga** (ahí `AmountText` funciona, ej. `CashFlowWidget`). Causa del crash del chip Estadísticas en grupos (`8bb5ace8`).
