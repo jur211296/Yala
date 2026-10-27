@@ -26,16 +26,31 @@ nonisolated enum GroupsOnlyViewMark {
         defaults.bool(forKey: userDefaultsKey)
     }
 
-    static func set(_ value: Bool, _ defaults: UserDefaults = .standard) {
+    /// Cuándo empezó la pausa (encargo S11e, 2026-10-27): al volver, los pagos programados que vencieron desde ese día
+    /// no aparecen de golpe (`ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause`). Vive y muere con la marca.
+    static let sinceUserDefaultsKey = "usageMode.groupsOnlyViewSince"
+
+    static func set(_ value: Bool, _ defaults: UserDefaults = .standard, now: Date = .now) {
         if value {
             defaults.set(true, forKey: userDefaultsKey)
+            // Reafirmar la marca no mueve el inicio de la pausa.
+            if defaults.object(forKey: sinceUserDefaultsKey) == nil {
+                defaults.set(now, forKey: sinceUserDefaultsKey)
+            }
         } else {
-            defaults.removeObject(forKey: userDefaultsKey)
+            clear(defaults)
         }
     }
 
     static func clear(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: userDefaultsKey)
+        defaults.removeObject(forKey: sinceUserDefaultsKey)
+    }
+
+    /// El inicio de la pausa. `nil` sin marca, o con una marca que puso un build anterior a la fecha.
+    static func since(_ defaults: UserDefaults = .standard) -> Date? {
+        guard isOn(defaults) else { return nil }
+        return defaults.object(forKey: sinceUserDefaultsKey) as? Date
     }
 }
 

@@ -107,6 +107,16 @@ struct ApplePayTransactionIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        // Con Yala solo en grupos no se registra nada (encargo S11e): el borrador caería en una Bandeja que esa shell no
+        // enseña. El aviso dice cómo volver, y su toque abre la vuelta o la activación. El pago no se encola.
+        if case .blocked(let entry) = GroupsOnlyIntentGate.current() {
+            await NotificationService.shared.sendNotification(
+                title: NSLocalizedString(GroupsOnlyIntentGate.applePayTitleKey, comment: ""),
+                body: NSLocalizedString(GroupsOnlyIntentGate.applePayBodyKey(for: entry), comment: ""),
+                deepLink: GroupsOnlyIntentGate.activationDeepLink
+            )
+            return .result()
+        }
         guard let amountString = amount else {
             await notifyFailure()
             return .result()
@@ -200,6 +210,12 @@ struct SiriNaturalEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        // Step 0: con Yala solo en grupos no se anota (encargo S11e). Antes que Pro y antes de pedir el texto: dictarlo
+        // para tirarlo sería perderlo. Siri lo dice y abre Yala en la vuelta o la activación.
+        if case .blocked(let entry) = GroupsOnlyIntentGate.current() {
+            return .result(dialog: await openFullModeActivation(entry), view: EmptyView())
+        }
+
         // Step 1: ¿Pro? Se mira ANTES de pedir el texto: sin Pro, dictarlo para tirarlo era perderlo. Sin Pro, Siri lo
         // dice y abre Yala en la hoja de Pro de la voz (auditoría UX 2.2, lote 15, L15-6, opción B). Si el modelo del
         // iPhone está listo, el usuario gratis anota igual leyendo el texto en el teléfono (`SiriOnDeviceEntry`,
@@ -353,6 +369,25 @@ struct SiriNaturalEntryIntent: AppIntent {
             return dialog
         }
         if let url = WidgetURLHelper.url(for: "voice-entry") {
+            await UIApplication.shared.open(url)
+        }
+        return dialog
+    }
+
+    /// Con Yala solo en grupos: Siri dice el aviso y Yala se abre en la vuelta a Yala completo (o en su activación), por
+    /// el enlace de siempre. Si la persona no deja abrir Yala, Siri se queda en el aviso. Mismo molde que `openProSheet`.
+    @MainActor
+    private func openFullModeActivation(_ entry: UsageModeLogic.ReturnEntry) async -> IntentDialog {
+        let dialog = IntentSpeech.resolved(GroupsOnlyIntentGate.message(for: entry))
+        do {
+            try await continueInForeground(nil, alwaysConfirm: false)
+        } catch {
+            #if DEBUG
+            print("SiriNaturalEntryIntent: no se abrió Yala para volver a Yala completo: \(error)")
+            #endif
+            return dialog
+        }
+        if let url = WidgetURLHelper.url(for: GroupsOnlyIntentGate.activationDeepLink) {
             await UIApplication.shared.open(url)
         }
         return dialog

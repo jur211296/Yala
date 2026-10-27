@@ -148,6 +148,10 @@ struct SpendingQueryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        // Con Yala solo en grupos, Siri no cuenta finanzas: dice cómo volver (encargo S11e).
+        if case .blocked(let entry) = GroupsOnlyIntentGate.current() {
+            return .result(dialog: IntentSpeech.resolved(GroupsOnlyIntentGate.message(for: entry)))
+        }
         let answer = SiriFinanceAnswerLogic.spending(
             snapshot: SiriFinanceSnapshotStore.read(from: SiriFinanceSnapshotStore.sharedDefaults),
             groupsOnly: SiriQueryContext.isGroupsOnlySession(),
@@ -174,6 +178,10 @@ struct BalanceQueryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        // Con Yala solo en grupos, Siri no cuenta finanzas: dice cómo volver (encargo S11e).
+        if case .blocked(let entry) = GroupsOnlyIntentGate.current() {
+            return .result(dialog: IntentSpeech.resolved(GroupsOnlyIntentGate.message(for: entry)))
+        }
         let answer = SiriFinanceAnswerLogic.balance(
             snapshot: SiriFinanceSnapshotStore.read(from: SiriFinanceSnapshotStore.sharedDefaults),
             groupsOnly: SiriQueryContext.isGroupsOnlySession(),
@@ -203,6 +211,13 @@ struct OpenAccountIntent: OpenIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        // Con Yala solo en grupos no hay cuentas que enseñar: abre la vuelta a Yala completo (encargo S11e).
+        if case .blocked = GroupsOnlyIntentGate.current() {
+            if let url = WidgetURLHelper.url(for: GroupsOnlyIntentGate.activationDeepLink) {
+                await UIApplication.shared.open(url)
+            }
+            return .result()
+        }
         if let url = SiriAccountDeepLink.url(forAccountID: target.id) {
             await UIApplication.shared.open(url)
         }

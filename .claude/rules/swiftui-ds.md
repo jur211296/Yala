@@ -47,6 +47,10 @@ paths:
   llegando a los registros. La puerta destacada de Ajustes y Más distingue los dos orígenes con
   `UsageModeLogic.returnEntry`, y el intent `.presentFullModeActivation` es la VUELTA cuando hay sesión privada
   (`SessionState.isGroupsOnlyByChoice`). Un productor nuevo de avisos personales mira `PersonalRemindersPause` primero.
+  **Y un intent nuevo de Apple Pay o Siri que deje un borrador o conteste con finanzas mira `GroupsOnlyIntentGate`
+  primero** (encargo S11e, 2026-10-27): en esa shell la Bandeja no se ve, así que dice «Activa / Vuelve a Yala
+  completo» y su enlace es `activate-full`. Al volver, los pagos programados que vencieron en la pausa no salen
+  (`ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause`, antes de levantar la marca y tras `processDuePayments`).
 
 ## Gotchas de vistas
 

@@ -8459,3 +8459,10 @@
 "usageMode.account.start" = "Beginnen";
 "usageMode.account.working" = "Opnieuw beginnen…";
 "usageMode.error" = "Opnieuw beginnen is niet gelukt. Probeer het nog eens.";
+
+// MARK: - Apple Pay y Siri con Yala solo en grupos (encargo S11e)
+"intent.groupsOnly.activate" = "Je hebt geen volledige Yala. Activeer het om dit te gebruiken.";
+"intent.groupsOnly.comeBack" = "Je ziet alleen je groepen. Ga terug naar volledige Yala om dit te gebruiken.";
+"intent.groupsOnly.applePay.title" = "Betaling niet vastgelegd";
+"intent.groupsOnly.applePay.activate" = "Je hebt geen volledige Yala. Activeer het om je Apple Pay-betalingen vast te leggen.";
+"intent.groupsOnly.applePay.comeBack" = "Je ziet alleen je groepen. Ga terug naar volledige Yala om je Apple Pay-betalingen vast te leggen.";
