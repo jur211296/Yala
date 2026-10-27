@@ -159,6 +159,57 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         XCTAssertTrue(accountRow.waitForExistence(timeout: 10), "Tras elegir cuenta se vuelve a la hoja de detalles.")
     }
 
+    // Los otros tres datos de «Detalles» abren también su selector de Nuevo registro (ticket
+    // `chat-draft-details-rows-dont-open-their-selector`): con la hoja de detalles encima, SwiftUI construía el
+    // selector y UIKit no lo presentaba. Un caso por campo, para que el rojo diga cuál.
+
+    /// Abre «Detalles» del primer registro propuesto.
+    private func openDraftDetails() -> XCUIApplication {
+        let app = openChat(drafts: true)
+        let details = app.buttons.matching(identifier: "chat_draft_details").firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 10), "Falta «Detalles» en la card.")
+        details.tap()
+        XCTAssertTrue(app.buttons["chat_draft_detail_account"].waitForExistence(timeout: 10), "No se abrió la hoja de detalles.")
+        return app
+    }
+
+    /// «Categoría» abre la rejilla de subcategorías de Nuevo registro; elegir una vuelve a «Detalles».
+    func test_draftDetails_categoryRow_opensTheSubcategorySelector() {
+        let app = openDraftDetails()
+        app.chooseFirstSelectorRow(chip: "chat_draft_detail_subcategory", rowPrefix: "subcategory_selector_row_", timeout: 10)
+        XCTAssertTrue(
+            app.buttons["chat_draft_detail_subcategory"].waitForExistence(timeout: 10),
+            "Tras elegir categoría se vuelve a la hoja de detalles."
+        )
+    }
+
+    /// «Fecha» abre el calendario de Nuevo registro; guardar vuelve a «Detalles».
+    func test_draftDetails_dateRow_opensTheDatePicker() {
+        let app = openDraftDetails()
+        let row = app.buttons["chat_draft_detail_date"]
+        XCTAssertTrue(app.waitForSettledLayout(of: row, timeout: 10), "La fila de fecha no dejó de moverse.")
+        row.tap()
+        let calendar = app.descendants(matching: .any)["date_picker_calendar"]
+        XCTAssertTrue(calendar.waitForExistence(timeout: 10), "«Fecha» no abrió el calendario de Nuevo registro.")
+        app.buttons.matching(identifier: "toolbar_save_button").firstMatch.tap()
+        XCTAssertTrue(calendar.waitForNonExistence(timeout: 10), "Guardar no cerró el calendario.")
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Tras guardar la fecha se vuelve a la hoja de detalles.")
+    }
+
+    /// «Etiquetas» abre el selector de etiquetas de Nuevo registro; guardar vuelve a «Detalles».
+    func test_draftDetails_tagsRow_opensTheTagSelector() {
+        let app = openDraftDetails()
+        let row = app.buttons["chat_draft_detail_tags"]
+        XCTAssertTrue(app.waitForSettledLayout(of: row, timeout: 10), "La fila de etiquetas no dejó de moverse.")
+        row.tap()
+        // «Crear» está siempre, haya etiquetas o no: es lo que dice que el selector se montó.
+        let create = app.buttons["tag_selector_create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 10), "«Etiquetas» no abrió el selector de etiquetas de Nuevo registro.")
+        app.buttons.matching(identifier: "toolbar_save_button").firstMatch.tap()
+        XCTAssertTrue(create.waitForNonExistence(timeout: 10), "Guardar no cerró el selector de etiquetas.")
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Tras guardar las etiquetas se vuelve a la hoja de detalles.")
+    }
+
     /// La hoja de detalles escribe la divisa como la tarjeta del chat: con el formato «Símbolo» (el de fábrica),
     /// «S/» y no «PEN». Antes pintaba siempre el código (lote 14 de la auditoría UX 2.2).
     func test_draftDetails_currencyFollowsTheSymbolPreference() {

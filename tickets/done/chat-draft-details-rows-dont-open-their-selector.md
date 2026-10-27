@@ -1,6 +1,6 @@
 ---
 id: chat-draft-details-rows-dont-open-their-selector
-status: backlog
+status: done
 priority: high
 area: yala-ia
 created: 2026-10-27
@@ -41,3 +41,21 @@ con el XCUITest de arriba como oráculo, empezando por `221791927^1` contra `221
 
 Los cuatro campos de «Detalles» abren su selector y `test_draftDetails_opensSheet_withTheNewRecordAccountSelector` está
 verde. Antes de publicar 2.2: es una regresión de 2.2 que no está en 2.1.
+
+## Resuelto (2026-10-27, sesión «yala-ia-detalles-selector»)
+
+- **La hipótesis del lote 07 era falsa.** Con el XCUITest de oráculo, `e06bfff0c` (merge de #571, el lote 07 en 2.2) da
+  verde. La bisección en primer padre `e06bfff0c..f23ddacad` da como primer rojo **#602** (`43daa3354`, lote decidido
+  2.2 · 02, formulario sesión B). Ese merge sí compila con Xcode 27: el error de `ImportIntroSheet.swift` que salió en
+  una primera medición era del build incremental.
+- **La causa:** #602 añadió `.presentationBackground(.thickMaterial)` (estilo) a `SelectorSheetSizing.mediumFirst`, el
+  tamaño de los selectores de categoría, cuenta y etiquetas. Con ese modificador, una hoja pedida desde «Detalles» —una
+  hoja que ya está sobre la hoja del chat— no llega a presentarse. Fecha no lo lleva: en un arranque limpio abre bien
+  (medido); lo que se vio a mano era tocar Fecha después de otro campo, con la presentación anterior atascada.
+  Experimento: sin el modificador, los cuatro abren.
+- **El arreglo:** el mismo material como vista, `.presentationBackground { Rectangle().fill(.thickMaterial) }`. Los
+  cuatro abren y la hoja a media altura de Nuevo registro se ve igual (diferencia ≤ 8/255 en la cabecera, sin monto
+  legible detrás: L2-22 se mantiene).
+- **Tests:** tres casos nuevos en `ChatMessagingLayoutUITests` (categoría, fecha, etiquetas) junto al de cuenta. En la
+  base, 3 rojos (categoría, cuenta, etiquetas) y fecha verde; con el arreglo, 4 verdes. La trampa queda en
+  `.claude/rules/swiftui-ds.md`.

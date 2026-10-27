@@ -52,3 +52,12 @@ aislado y repetido. Si el próximo gate también sale verde, mirar si el `erase`
 ## Re-medido (2026-10-27)
 
 Sigue rojo, en lote y aislado, con el centinela en 0, en la rama del encargo `onboarding-estilos-implementar` (que no toca el formulario de registro). Mismo mensaje de la línea 66.
+
+## Re-medido (2026-10-27, encargo `yala-ia-detalles-selector`)
+
+En el gate (13 suites, 70 casos, centinela en 0, `iPhone 17 Pro` iOS 27.0) el mismo «`new_transaction_account_chip` no
+dejó de moverse» tumbó **tres** casos de suites distintas: `EdgeCasesUITests.test_extremeMinimumAmountSaves`,
+`FirstExpensePracticeAlertUITests.test_firstExpense_showsSuccessScreenBeforePracticeAlert` y
+`NewTransactionTypeSelectorUITests.test_retappingTheSelectedType_keepsTheSubcategory`. Repetidos los tres juntos tras
+`simctl erase`, pasan **verdes con la base `12601e455` y verdes con el cambio de la rama**. Apunta a lo que ya sugería la
+entrada del lote 2: el rojo aparece con el simulador cargado de una corrida larga y desaparece con uno recién borrado.

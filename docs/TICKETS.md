@@ -188,7 +188,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-creates-only-one-transaction-per-message | backlog | tickets/backlog/chat-creates-only-one-transaction-per-message.md |
 | chat-dictation-looks-poor | done | tickets/done/chat-dictation-looks-poor.md |
 | chat-draft-card-redesign | done | tickets/done/chat-draft-card-redesign.md |
-| chat-draft-details-rows-dont-open-their-selector | backlog | tickets/backlog/chat-draft-details-rows-dont-open-their-selector.md |
+| chat-draft-details-rows-dont-open-their-selector | done | tickets/done/chat-draft-details-rows-dont-open-their-selector.md |
 | chat-draft-drops-the-expense-sign | done | tickets/done/chat-draft-drops-the-expense-sign.md |
 | chat-draft-sign-can-contradict-its-subcategory | done | tickets/done/chat-draft-sign-can-contradict-its-subcategory.md |
 | chat-draft-stamps-its-own-currency-not-the-account | done | tickets/done/chat-draft-stamps-its-own-currency-not-the-account.md |
