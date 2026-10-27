@@ -796,6 +796,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | push-client-ignores-yala-kind | done | tickets/done/push-client-ignores-yala-kind.md |
 | push-token-does-not-record-the-notification-permission | backlog | tickets/backlog/push-token-does-not-record-the-notification-permission.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
+| qa-2-2-se-cancela-tests-unitarios-context-based | qa | tickets/qa/qa-2-2-se-cancela-tests-unitarios-context-based.md |
 | qa-cloud-readme-sin-entradas-g13-04-y-g13-05 | backlog | tickets/backlog/qa-cloud-readme-sin-entradas-g13-04-y-g13-05.md |
 | qa-de-producto-toca-el-simulador-sin-cola | discarded | tickets/discarded/qa-de-producto-toca-el-simulador-sin-cola.md |
 | qa-folder-keeps-evidence-of-tickets-that-already-left | backlog | tickets/backlog/qa-folder-keeps-evidence-of-tickets-that-already-left.md |
