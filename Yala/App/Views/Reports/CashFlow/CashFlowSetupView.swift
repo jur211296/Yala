@@ -548,7 +548,7 @@ struct CashFlowMethodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large], selection: $selectedDetent)
+        .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Helpers

@@ -37,8 +37,7 @@ struct GroupStatsView: View {
         } else {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
-                    statsSelectors
-                    summaryCards
+                    statsHero
                     if viewModel.isAllCurrencies {
                         allCurrenciesContent
                     } else {
@@ -103,18 +102,7 @@ struct GroupStatsView: View {
         }
     }
 
-    // MARK: - Selectors (moneda + período, estilo menú)
-
-    private var statsSelectors: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            if viewModel.availableCurrencies.count > 1 {
-                currencyMenu
-            }
-            periodMenu
-            Spacer()
-        }
-        .padding(.horizontal, DS.Spacing.sm)
-    }
+    // MARK: - Selectores (moneda + período, con la cápsula de Estadísticas)
 
     private var currencyMenu: some View {
         Menu {
@@ -141,7 +129,7 @@ struct GroupStatsView: View {
                 }
             }
         } label: {
-            statsMenuLabel(icon: nil, text: currencyMenuLabelText)
+            PeriodSelectorLabel(title: currencyMenuLabelText, icon: nil)
         }
     }
 
@@ -166,24 +154,8 @@ struct GroupStatsView: View {
                 }
             }
         } label: {
-            statsMenuLabel(icon: "calendar", text: viewModel.selectedPeriod.displayName)
+            PeriodSelectorLabel(title: viewModel.selectedPeriod.displayName)
         }
-    }
-
-    private func statsMenuLabel(icon: String?, text: String) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            if let icon {
-                Image(systemName: icon).font(DS.Typography.labelSmall)
-            }
-            Text(text).font(DS.Typography.labelSmall)
-            Image(systemName: "chevron.down").font(DS.Typography.labelTiny)
-        }
-        .foregroundStyle(.thPrimaryText)
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
-        .glassEffect(.regular.interactive(), in: .capsule)
-        .contentShape(Capsule())
-        .fixedSize()
     }
 
     /// Símbolo o código de la moneda según la preferencia del usuario.
@@ -194,67 +166,75 @@ struct GroupStatsView: View {
         }
     }
 
-    // MARK: - Summary Cards
+    // MARK: - Hero (lienzo «Una sola Yala», 4A)
 
-    private var summaryCards: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.md) {
-            summaryCard(
-                title: L10n.Groups.Stats.totalSpent,
-                amounts: viewModel.totalsByCurrency,
-                color: .primary
-            )
-
-            summaryCard(
-                title: L10n.Groups.Stats.myPortion,
-                hint: L10n.Groups.Stats.myPortionHint,
-                amounts: viewModel.myPortionsByCurrency.map { (currencyCode: $0.currencyCode, total: $0.amount) },
-                color: theme.accent
-            )
+    /// La cabecera de Estadísticas: «Total gastado» con la cápsula del período a su derecha (y la de divisa, solo si el
+    /// grupo tiene más de una), la cifra de 36 pt y debajo lo tuyo. Antes, dos menús propios y dos tarjetas.
+    private var statsHero: some View {
+        HeroHeader {
+            HeroHeaderLabel(text: L10n.Groups.Stats.totalSpent)
+        } period: {
+            HStack(spacing: DS.Spacing.sm) {
+                if viewModel.availableCurrencies.count > 1 {
+                    currencyMenu
+                }
+                periodMenu
+            }
+        } content: {
+            let totals = viewModel.totalsByCurrency
+            if let first = totals.first {
+                heroAmount(first.total, currencyCode: first.currencyCode)
+            } else {
+                heroAmount(0, currencyCode: viewModel.activeCurrencyCode)
+            }
+            if totals.count > 1 {
+                Text("+ " + totals.dropFirst()
+                    .map { appPreferences.currency($0.total, currencyCode: $0.currencyCode) }
+                    .joined(separator: " + "))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            myPortionLine
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("group_stats_hero")
     }
 
-    /// Tarjeta de resumen: un monto por moneda apilado (todas las monedas del período).
-    /// - Parameter hint: UX 2.2 · L13-13 — bajo «Mi parte», «lo que te tocaba»: no es lo que pagaste.
-    private func summaryCard(
-        title: String, hint: String? = nil, amounts: [(currencyCode: String, total: Double)], color: Color
-    ) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+    private func heroAmount(_ value: Double, currencyCode: String) -> some View {
+        AmountText(
+            value: value,
+            currencyCode: currencyCode,
+            font: DS.Typography.panelHeroAmount,
+            secondaryFont: DS.Typography.panelHeroAmountSecondary,
+            forceFullPrecision: true
+        )
+    }
+
+    /// «Mi parte: S/ 410.00 + $ 123.34», con «lo que te tocaba» debajo (UX 2.2 · L13-13: no es lo que pagaste).
+    @ViewBuilder
+    private var myPortionLine: some View {
+        let portions = viewModel.myPortionsByCurrency
+        if !portions.isEmpty {
             VStack(alignment: .leading, spacing: DS.Spacing.none) {
-                Text(title)
+                Text("\(L10n.Groups.Stats.myPortion): " + portions
+                    .map { appPreferences.currency($0.amount, currencyCode: $0.currencyCode) }
+                    .joined(separator: " + "))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                Text(L10n.Groups.Stats.myPortionHint)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
-                if let hint {
-                    Text(hint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
-                }
             }
-
-            if amounts.isEmpty {
-                Text(appPreferences.currency(0, currencyCode: viewModel.activeCurrencyCode))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(color)
-            } else {
-                ForEach(amounts, id: \.currencyCode) { entry in
-                    Text(appPreferences.currency(entry.total, currencyCode: entry.currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(color)
-                }
-            }
+            .accessibilityElement(children: .combine)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .panelCard()
     }
 
     // MARK: - Section header (patrón del resto de la app: título externo al card)
 
-    /// Header externo de sección (título sobre el card), igual que `TrendsTabView`.
+    /// El título de sección de la app (`YalaSectionHeader`), sobre la tarjeta.
     private func sectionHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(DS.Typography.headline)
-            Spacer()
-        }
+        YalaSectionHeader(title)
+            .accessibilityAddTraits(.isHeader)
     }
 
     /// Encabezado de contexto: identifica la moneda y el período activos. Da
@@ -285,7 +265,8 @@ struct GroupStatsView: View {
                     x: .value("amount", member.totalPaid),
                     y: .value("member", member.displayName)
                 )
-                .foregroundStyle(theme.accent.gradient)
+                // El acento liso de la app, como las barras de Distribución (antes, en degradado).
+                .foregroundStyle(theme.accent)
                 .cornerRadius(DS.Radius.xs)
                 .annotation(position: .trailing) {
                     // El contenido de `.annotation` se hostea fuera del árbol de

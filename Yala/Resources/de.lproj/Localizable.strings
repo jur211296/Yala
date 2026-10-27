@@ -7283,6 +7283,8 @@
 "groups.l13.summary.iOweDetail" = "Niemand schuldet dir etwas.";
 "groups.l13.summary.alsoOwe" = "Und du schuldest %@.";
 "groups.l13.summary.settledDetail" = "Niemand schuldet dir etwas und du schuldest nichts.";
+"groups.hero.allOwedToMe" = "In deinen Gruppen schuldet man dir";
+"groups.hero.allIOwe" = "In deinen Gruppen schuldest du";
 "groups.l13.settleUp.title" = "Zum Ausgleichen";
 "groups.l13.you" = "Du";
 "groups.l13.settle" = "Ausgleichen";

@@ -68,6 +68,9 @@ extension L10n {
             String(format: l1213("groups.l13.summary.alsoOwe"), amounts)
         }
         static var summarySettledDetail: String { l1213("groups.l13.summary.settledDetail") }
+        /// Lienzo «Una sola Yala» (3A): el rótulo de la cifra grande de la lista de grupos.
+        static var heroAllOwedToMe: String { l1213("groups.hero.allOwedToMe") }
+        static var heroAllIOwe: String { l1213("groups.hero.allIOwe") }
         static var settleUpTitle: String { l1213("groups.l13.settleUp.title") }
         static var you: String { l1213("groups.l13.you") }
         static var settle: String { l1213("groups.l13.settle") }

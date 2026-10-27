@@ -7295,6 +7295,8 @@
 "groups.l13.summary.iOweDetail" = "あなたに借りがある人はいません。";
 "groups.l13.summary.alsoOwe" = "あなたも%@払う必要があります。";
 "groups.l13.summary.settledDetail" = "貸し借りはありません。";
+"groups.hero.allOwedToMe" = "あなたのグループであなたが受け取る額";
+"groups.hero.allIOwe" = "あなたのグループであなたが払う額";
 "groups.l13.settleUp.title" = "精算するには";
 "groups.l13.you" = "あなた";
 "groups.l13.settle" = "精算";

@@ -53,7 +53,7 @@ struct CashFlowOthersSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large], selection: $selectedDetent)
+        .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Description

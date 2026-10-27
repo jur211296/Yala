@@ -79,7 +79,7 @@ struct CashFlowLineConfigSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large], selection: $selectedDetent)
+        .yalaSheetDetents([.medium, .large], selection: $selectedDetent)
         .confirmationDialog(
             L10n.CashFlowPlan.deleteLineConfirmation,
             isPresented: $showDeleteConfirmation,

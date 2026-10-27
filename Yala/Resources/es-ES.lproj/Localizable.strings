@@ -6617,6 +6617,8 @@
 "groups.l13.summary.iOweDetail" = "Nadie te debe nada.";
 "groups.l13.summary.alsoOwe" = "Y tú debes %@.";
 "groups.l13.summary.settledDetail" = "Nadie te debe y tú no debes nada.";
+"groups.hero.allOwedToMe" = "En tus grupos te deben";
+"groups.hero.allIOwe" = "En tus grupos debes";
 "groups.l13.settleUp.title" = "Para quedar a mano";
 "groups.l13.you" = "Tú";
 "groups.l13.settle" = "Saldar";

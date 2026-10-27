@@ -2,9 +2,8 @@
 //  GroupSummaryHeader.swift
 //  Yala
 //
-//  Resumen global de la lista de grupos: misma banda inline que el detalle de un grupo
-//  ("Te deben X" / "Debes Y" / "Te deben X · Debes Y" / "Están a mano"), pero sin card
-//  ni chevron. A diferencia del detalle, el global NO se netea (se debe a personas
+//  Resumen global de la lista de grupos: la cifra grande de la app (`GroupBalanceHero`), como el detalle de un
+//  grupo, sin tocarse. A diferencia del detalle, el global NO se netea (se debe a personas
 //  distintas en grupos distintos): mantiene ambos lados → cae en el caso de ambos lados.
 //
 
@@ -15,11 +14,8 @@ struct GroupSummaryHeader: View {
     let summary: GroupGlobalSummary
 
     var body: some View {
-        GroupHeaderBalanceBar(
-            balance: headerBalance,
-            debtsWereConverted: false,
-            onTap: nil
-        )
+        // Lienzo «Una sola Yala»: la cifra grande del Panel, no la línea pequeña de antes.
+        GroupBalanceHero(balance: headerBalance, scope: .allGroups)
     }
 
     /// Mapea el resumen global (ambos lados por separado, por moneda) al modelo de la banda.

@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Componente que muestra el monto de un gasto compartido desde la perspectiva
-//  personal del current user (.youAreOwed / .youOwe / .notIncluded).
+//  personal del current user (.youAreOwed / .youOwe / .notIncluded): cifra y pastilla, como Registros.
 //
 
 import SwiftUI
@@ -17,43 +17,52 @@ struct GroupExpenseAmountView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        // Al final de la fila en horizontal; al inicio cuando la fila se apila (tamaños de accesibilidad).
-        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
-            Text(captionText)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-
+        // Como la columna derecha de una fila de Registros (lienzo «Una sola Yala», 1A): la cifra arriba —turquesa si
+        // te deben, en el color del texto si debes: solo se colorea lo que entra— y la relación en la pastilla de
+        // debajo, donde Registros pone la necesidad. Al final de la fila en horizontal; al inicio cuando se apila.
+        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
             switch status {
             case .youAreOwed(let amount):
                 AmountText(
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(DS.Semantic.successForeground)
+                    tint: .color(Color.amountTint(isIncome: true)),
+                    forceFullPrecision: true
                 )
+                relationPill(L10n.Groups.Summary.owedToMe, dot: Color.priorityNeed)
             case .youOwe(let amount):
                 AmountText(
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(Color.hotPink)
+                    tint: .color(Color.amountTint(isIncome: false)),
+                    forceFullPrecision: true
                 )
-            case .notIncluded, .identityUnresolved:
-                // `identityUnresolved`: sin identidad resuelta no se afirma nada sobre la
-                // participación. Comparte el EmptyView con `notIncluded`, pero por un motivo
-                // distinto — aquí no es que no participe, es que aún no se sabe.
+                relationPill(L10n.Groups.Summary.iOwe, dot: Color.secondary)
+            case .notIncluded:
+                relationPill(L10n.Groups.Expense.notIncluded, dot: nil)
+            case .identityUnresolved:
+                // Sin identidad resuelta no se afirma nada sobre la participación: ni cifra ni pastilla.
                 EmptyView()
             }
         }
     }
 
-    private var captionText: String {
-        switch status {
-        case .youAreOwed: return L10n.Groups.Expense.youAreOwed
-        case .youOwe: return L10n.Groups.Expense.youOwe
-        case .notIncluded: return L10n.Groups.Expense.notIncluded
-        // Sin caption: la fila no pinta texto de perspectiva mientras no se sepa quién soy.
-        case .identityUnresolved: return ""
+    /// La pastilla de la necesidad de `RecordRowView`, con la relación en vez de la necesidad.
+    private func relationPill(_ text: String, dot: Color?) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            if let dot {
+                Circle()
+                    .fill(dot)
+                    .frame(width: DS.Chip.dotSize - 2, height: DS.Chip.dotSize - 2)
+            }
+            Text(text)
+                .font(DS.Typography.labelTiny)
+                .foregroundStyle(.secondary)
         }
+        .padding(.horizontal, DS.Chip.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Capsule().fill((dot ?? Color.secondary).opacity(0.1)))
     }
 }

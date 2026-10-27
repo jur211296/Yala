@@ -125,9 +125,9 @@ struct GroupTwoPersonSplitView: View {
         return choice.debtText(otherName: otherName, amountStr: amountStr)
     }
 
-    /// Verde (te deben) / hot pink (debes) — misma convención que `GroupHeaderBalanceBar`.
+    /// Turquesa si te deben y el color del texto si debes: solo se colorea lo que entra (lienzo «Una sola Yala»).
     private func debtColor(for choice: TwoPersonSplitOptions.Choice) -> Color {
-        choice.debtDirection == .theyOweMe ? DS.Semantic.successForeground : .hotPink
+        Color.amountTint(isIncome: choice.debtDirection == .theyOweMe)
     }
 
     private func accessibilityLabel(for choice: TwoPersonSplitOptions.Choice, subtitle: String?) -> String {

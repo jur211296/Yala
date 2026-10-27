@@ -484,44 +484,13 @@ struct GroupDetailView: View {
         .scrollClipDisabled()
     }
 
-    @ViewBuilder
     private func navigationChipButton(for tab: GroupDetailTab) -> some View {
-        let isSelected = selectedTab == tab
-
-        Button {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                selectedTab = tab
-            }
-        } label: {
-            // Icono en las tres y nombre solo en la elegida, como las pestañas de Estadísticas (UX 2.2 · L12-1, decisión
-            // B de Jürgen del 2026-10-18: la solución de L11-1). Con los tres nombres «Estadísticas» salía cortada contra
-            // el borde de un iPhone 17 Pro.
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: tab.icon)
-                    .font(DS.Typography.subheadline)
-                    .accessibilityHidden(true)
-                if isSelected {
-                    Text(tab.displayName)
-                        .font(DS.Typography.label)
-                        .lineLimit(1)
-                }
-            }
-            .padding(.horizontal, isSelected ? DS.Spacing.lg : DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.sm)
-            .frame(minWidth: 44)
-            .foregroundStyle(isSelected ? theme.onAccent : .primary)
-            .background(
-                Capsule()
-                    .fill(isSelected ? theme.accent : Color.clear)
-            )
-            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        // Icono en las tres y nombre solo en la elegida, como las pestañas de Estadísticas (UX 2.2 · L12-1, decisión
+        // B de Jürgen del 2026-10-18: la solución de L11-1). Con los tres nombres «Estadísticas» salía cortada contra
+        // el borde de un iPhone 17 Pro.
+        NavigationChipButton(title: tab.displayName, icon: tab.icon, isSelected: selectedTab == tab) {
+            selectedTab = tab
         }
-        .buttonStyle(.plain)
-        // El nombre se lee aunque el chip enseñe solo el icono.
-        .accessibilityLabel(tab.displayName)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("group_detail_tab_\(tab.rawValue)")
     }
 

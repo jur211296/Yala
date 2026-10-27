@@ -11,14 +11,18 @@ import SwiftUI
 /// Animation explicitly disabled to prevent clipping issues during period changes.
 struct PeriodSelectorLabel: View {
     let title: String
+    /// `nil`: sin icono (la cápsula de divisa de Estadísticas del grupo, que va al lado de la del período).
+    var icon: String? = "calendar"
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: "calendar")
-                .font(DS.Typography.labelSmall)
-                .accessibilityHidden(true)
+            if let icon {
+                Image(systemName: icon)
+                    .font(DS.Typography.labelSmall)
+                    .accessibilityHidden(true)
+            }
             Text(title)
                 .font(DS.Typography.labelSmall)
                 .multilineTextAlignment(.center)

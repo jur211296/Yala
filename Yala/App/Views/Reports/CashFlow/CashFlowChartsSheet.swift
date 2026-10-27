@@ -766,8 +766,8 @@ struct CashFlowChartsSheet: View {
             }
             content()
         }
-        .padding(DS.Spacing.lg)
-        .solidCard()
+        // La tarjeta de las gráficas de Tendencias (lienzo «Una sola Yala», 6A).
+        .panelCard()
     }
 
     private var needMoreDataView: some View {

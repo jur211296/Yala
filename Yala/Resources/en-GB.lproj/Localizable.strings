@@ -6601,6 +6601,8 @@
 "groups.l13.summary.iOweDetail" = "Nobody owes you anything.";
 "groups.l13.summary.alsoOwe" = "And you owe %@.";
 "groups.l13.summary.settledDetail" = "Nobody owes you and you don't owe anything.";
+"groups.hero.allOwedToMe" = "In your groups you're owed";
+"groups.hero.allIOwe" = "In your groups you owe";
 "groups.l13.settleUp.title" = "To settle up";
 "groups.l13.you" = "You";
 "groups.l13.settle" = "Settle";
