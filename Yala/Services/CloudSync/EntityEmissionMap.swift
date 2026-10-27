@@ -568,6 +568,17 @@ enum EntityEmissionMap {
             ColumnEmitter("parent_account_id", since: SyncCapability.accountLinksSince) { m, _ in
                 Emit.ref(m.parentAccountID)
             },
+            // Card nmtk: el día de corte (nil = sin corte) y los días de antelación del aviso. Columnas posteriores al
+            // lanzamiento: no viajan hasta que el backend anuncia la versión que las conoce.
+            ColumnEmitter("credit_card_statement_day", since: SyncCapability.creditCardCycleSince) { m, _ in
+                Emit.int(m.creditCardStatementDay)
+            },
+            // 0 viaja como NULL: la columna nace NULL en toda cuenta que el servidor ya tenía, y la hoja del Merkle del
+            // servidor dice `null`. Con `0` en la del teléfono, `accounts` divergía para siempre (lo cazó la review). El
+            // applier lee NULL como 0.
+            ColumnEmitter("credit_card_reminder_days_before", since: SyncCapability.creditCardCycleSince) { m, _ in
+                Emit.int(m.creditCardReminderDaysBefore == 0 ? nil : m.creditCardReminderDaysBefore)
+            },
         ],
         columnKeyPaths: [
             \Account.name: ["name"],
@@ -583,6 +594,8 @@ enum EntityEmissionMap {
             \Account.creditCardPaymentReminder: ["credit_card_payment_reminder"],
             \Account.creditCardPaymentDay: ["credit_card_payment_day"],
             \Account.parentAccountID: ["parent_account_id"],
+            \Account.creditCardStatementDay: ["credit_card_statement_day"],
+            \Account.creditCardReminderDaysBefore: ["credit_card_reminder_days_before"],
         ]
     )
 

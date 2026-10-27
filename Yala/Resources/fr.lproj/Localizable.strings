@@ -1435,7 +1435,7 @@
 "account.changeInitialBalanceName" = "Modifier le solde initial";
 "account.changeInitialBalanceDesc" = "Indiquez avec combien le compte a commencé et nous recalculerons son solde d'aujourd'hui à partir de vos enregistrements. Utilisez ceci si le solde de départ était faux.";
 "account.creditCard.sectionTitle" = "Carte de credit";
-"account.creditCard.paymentReminder" = "Rappeler a la date de paiement";
+"account.creditCard.paymentReminder" = "Me rappeler avant de payer";
 "account.creditCard.paymentDay" = "Jour de paiement";
 "account.creditCard.paymentNotification" = "C'est le jour de payer ta carte %@ 💳";
 "category.others" = "Autres";
@@ -8473,3 +8473,28 @@
 "voice.live.transcriptAccessibility" = "Ce que l’iPhone comprend";
 "settings.wipeLandingToast" = "C’est fait, tu repars de zéro. Crée ton premier compte pour enregistrer.";
 "icloud.remoteWipeKeptSetup" = "Tu as vidé tes données depuis un autre appareil.";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "Jour d'arrêté";
+"account.creditCard.statementDayNone" = "Non défini";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "Ce que tu dépenses jusqu'au %1$d, tu le paies le %2$d du mois suivant.";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "Ce que tu dépenses jusqu'au %1$d, tu le paies le %2$d du même mois.";
+"account.creditCard.cycleFooterNoStatement" = "Avec le jour d'arrêté, la fiche de la carte sépare ce qui est facturé de ce qui ira sur le prochain relevé.";
+"account.creditCard.reminderSection" = "Rappel";
+"account.creditCard.reminderWhen" = "Quand";
+"account.creditCard.reminderSameDay" = "Le jour même";
+"account.creditCard.reminderOneDayBefore" = "1 jour avant";
+"account.creditCard.reminderDaysBefore %d" = "%d jours avant";
+"account.creditCard.reminderFooterNext %@" = "On te le rappelle le %@ avec le montant à payer.";
+"account.creditCard.reminderFooterNoStatement" = "Sans jour d'arrêté, on te le rappelle le jour du paiement, sans le montant.";
+"creditCardStatement.title %@" = "Relevé · arrêté le %@";
+"creditCardStatement.billed" = "Facturé";
+"creditCardStatement.unbilled" = "À facturer";
+"creditCardStatement.payBy %@" = "À payer avant le %@";
+"creditCardStatement.overdue %@" = "Échu le %@";
+"creditCardStatement.nothingDue" = "Plus rien à payer";
+"creditCardStatement.nextStatement %@" = "Ira sur le relevé du %@";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "Paie %1$@ avant le %2$@.";
+"creditCardStatement.reminderDueToday %@" = "Paiement dû aujourd'hui : %@.";
+"creditCardStatement.reminderPayByNoAmount %@" = "Paie ta carte avant le %@.";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Paiement %1$@ · %2$@";
+"cashFlowPlan.cardPaymentNote" = "Déjà compté dans les dépenses du mois de l'achat : il n'est pas déduit une deuxième fois.";

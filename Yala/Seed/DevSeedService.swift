@@ -102,6 +102,10 @@ enum DevSeedProfile: String {
     /// Tarjeta con varias divisas (entrega 2): «Visa QA» en soles con su línea en dólares, más dos cuentas sueltas.
     /// Ver `DevSeedAccountLines`.
     case tarjetaDosLineas = "tarjeta-dos-lineas"
+    /// `.tarjetaDosLineas` con día de corte (card nmtk): un corte hace 10 días, lo facturado antes y lo gastado después,
+    /// el aviso 3 días antes y tres meses de sueldo y gastos para que el flujo de caja proponga un plan. Ver
+    /// `DevSeedAccountLines.createWithStatement`.
+    case tarjetaCorte = "tarjeta-corte"
     /// El formulario de registro tras un onboarding de una sola cuenta: categorías y «Cuenta Principal», sin registros
     /// (UX 2.2 · L2-1 y L2-6). Ver `DevSeedTransactionForm`.
     case unaCuenta = "una-cuenta"
@@ -123,7 +127,7 @@ enum DevSeedProfile: String {
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
              .sinCategoriasConGrupos, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
-             .tarjetaDosLineas, .unaCuenta, .formulario: return 7
+             .tarjetaDosLineas, .tarjetaCorte, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
         case .realista, .ficha, .rendimiento: return 730
         case .pesado: return 3650
@@ -180,7 +184,7 @@ final class DevSeedService {
             return
         }
         if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta
-            || profile == .tarjetaDosLineas {
+            || profile == .tarjetaDosLineas || profile == .tarjetaCorte {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
             // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
@@ -191,6 +195,8 @@ final class DevSeedService {
             DevSeedExchangeRates.create(startDate: start, endDate: end, rng: &rng, in: context)
             if profile == .tarjetaDosLineas {
                 DevSeedAccountLines.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .tarjetaCorte {
+                DevSeedAccountLines.createWithStatement(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .movimientosSinCuenta {
                 DevSeedAccountRemoval.createOrphaned(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .pataDeGrupoSinCuenta {

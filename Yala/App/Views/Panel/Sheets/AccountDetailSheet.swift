@@ -37,6 +37,8 @@ struct AccountDetailSheet: View {
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var summary: AccountDetailCalculator.Summary?
     @State private var reconciliation: AccountDetailCalculator.Reconciliation?
+    /// El estado de cuenta de la tarjeta (card nmtk). `nil` = no es una tarjeta con día de corte.
+    @State private var statement: CreditCardStatementSummary.Card?
     @Environment(CurrencyConverter.self) private var currencyConverter
     /// Tarjeta con varias divisas: la línea que enseñan la cuenta del período, la curva y los movimientos. `nil` = la
     /// principal. Cada línea es una cuenta de una divisa: sus cálculos no cambian de premisa.
@@ -95,6 +97,7 @@ struct AccountDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     hero
+                    statementBlock
                     linePicker
                     balanceEquation
                     filterButton
@@ -219,6 +222,17 @@ struct AccountDetailSheet: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Estado de cuenta (card nmtk, D2-A)
+
+    /// Bajo la cabecera: lo facturado en el último corte y lo que entra en el siguiente, de todas las divisas de la
+    /// tarjeta. En «solo gastos» no va, como la cuenta del saldo: ese modo no lleva saldos.
+    @ViewBuilder
+    private var statementBlock: some View {
+        if let statement, !isExpensesOnlyMode {
+            CreditCardStatementBlock(card: statement)
+        }
     }
 
     // MARK: - Tarjeta con varias divisas
@@ -612,6 +626,7 @@ struct AccountDetailSheet: View {
         }
         summary = result
         reconciliation = AccountDetailCalculator.reconciliation(entries: entries, interval: interval, calendar: calendar)
+        statement = CreditCardStatementSummary.card(head: account, members: cardMembers, now: now, calendar: calendar)
     }
 
     private static func title(for tx: TransactionItem) -> String {

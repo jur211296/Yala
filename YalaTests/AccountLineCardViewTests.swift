@@ -334,10 +334,10 @@ struct AccountLineCardViewTests {
         loose.creditCardPaymentReminder = true
         try context.save()
 
-        let service = ScheduledPaymentNotificationService(
-            tracker: ScheduledPaymentNotificationTracker(defaults: try isolatedDefaults()))
-        let remindable = service.remindableAccounts([visa, usd, loose], context: context)
-        #expect(Set(remindable.map(\.shortcutID)) == [visa.shortcutID, loose.shortcutID])
+        // Desde la card nmtk avisa la TARJETA, con sus líneas dentro (cada una con su importe): nunca la línea sola.
+        let remindable = CreditCardReminderScheduler.remindableCards([visa, usd, loose])
+        #expect(Set(remindable.map(\.head.shortcutID)) == [visa.shortcutID, loose.shortcutID])
+        #expect(remindable.first { $0.head.shortcutID == visa.shortcutID }?.lines.map(\.shortcutID) == [usd.shortcutID])
     }
 
     @Test func paymentReminder_orphanLine_stillNotifies() throws {
@@ -346,9 +346,7 @@ struct AccountLineCardViewTests {
         orphan.creditCardPaymentReminder = true
         orphan.parentAccountID = UUID()
         try context.save()
-        let service = ScheduledPaymentNotificationService(
-            tracker: ScheduledPaymentNotificationTracker(defaults: try isolatedDefaults()))
-        #expect(service.remindableAccounts([orphan], context: context).count == 1)
+        #expect(CreditCardReminderScheduler.remindableCards([orphan]).count == 1)
     }
 
     // MARK: - Panel: rótulo de la tarjeta

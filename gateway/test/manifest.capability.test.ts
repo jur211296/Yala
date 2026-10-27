@@ -12,6 +12,10 @@
  *
  * Desde el 2026-10-25 (card da5d) hay una v4: `favorite_payments.destination_account_ref`, el destino de un favorito de
  * transferencia. `v3` es todo menos esa columna, y `v4` el set completo.
+ *
+ * Desde el 2026-10-27 (card nmtk) hay una v5: `accounts.credit_card_statement_day` y
+ * `accounts.credit_card_reminder_days_before`, el día de corte de una tarjeta y los días de antelación de su aviso. `v4`
+ * es todo menos esas dos, y `v5` el set completo.
  */
 import { describe, expect, it } from "vitest";
 import { canonRowC1, merkleColumns } from "../src/sync/canon";
@@ -60,8 +64,8 @@ const ACCOUNT_ROW = {
 };
 
 describe("capability-set por versión del manifest", () => {
-  it("el Worker anuncia la versión 4, y ninguna columna es posterior a ella", () => {
-    expect(MANIFEST_VERSION).toBe(4);
+  it("el Worker anuncia la versión 5, y ninguna columna es posterior a ella", () => {
+    expect(MANIFEST_VERSION).toBe(5);
     for (const spec of Object.values(manifest.entities)) {
       for (const c of Object.values(spec.columns) as Array<{ since?: number }>) {
         expect(c.since ?? 1).toBeLessThanOrEqual(MANIFEST_VERSION);
@@ -69,7 +73,7 @@ describe("capability-set por versión del manifest", () => {
     }
   });
 
-  it("una columna por versión: parent_account_id (2), amount_changes_raw (3) y destination_account_ref (4)", () => {
+  it("las columnas posteriores: parent_account_id (2), amount_changes_raw (3), destination_account_ref (4) y las dos de la tarjeta (5)", () => {
     const later: string[] = [];
     for (const [entity, spec] of Object.entries(manifest.entities)) {
       for (const [col, c] of Object.entries(spec.columns) as Array<[string, { since?: number }]>) {
@@ -77,6 +81,8 @@ describe("capability-set por versión del manifest", () => {
       }
     }
     expect(later.sort()).toEqual([
+      "accounts.credit_card_reminder_days_before@5",
+      "accounts.credit_card_statement_day@5",
       "accounts.parent_account_id@2",
       "cashflow_lines.amount_changes_raw@3",
       "favorite_payments.destination_account_ref@4",
@@ -117,10 +123,54 @@ describe("capability-set por versión del manifest", () => {
     );
   });
 
-  it("v4, vN mayor, full y ausente = set completo", () => {
-    for (const raw of ["v4", "v99", "full", null]) {
+  it("v4 = todo menos las dos columnas de la tarjeta: el destino del favorito sí", () => {
+    const cap = resolveCapabilitySet("v4");
+    expect(cap.columns).toBeDefined();
+    expect([...(cap.columns!.favorite_payments ?? [])]).toContain("destination_account_ref");
+    const accounts = [...(cap.columns!.accounts ?? [])];
+    expect(accounts).toContain("parent_account_id");
+    expect(accounts.sort()).toEqual(
+      Object.keys(manifest.entities.accounts.columns)
+        .filter((c) => c !== "credit_card_statement_day" && c !== "credit_card_reminder_days_before")
+        .sort(),
+    );
+  });
+
+  it("v5, vN mayor, full y ausente = set completo", () => {
+    for (const raw of ["v5", "v99", "full", null]) {
       expect(resolveCapabilitySet(raw)).toEqual({});
     }
+  });
+
+  it("el pull de v4 no baja el día de corte ni los días del aviso; el de v5 sí", () => {
+    const row = { ...ACCOUNT_ROW, credit_card_statement_day: 15, credit_card_reminder_days_before: 3 };
+    const stored = { name: HLC, credit_card_statement_day: HLC, credit_card_reminder_days_before: HLC };
+    const v4 = projectRowToDelta("accounts", row, stored, resolveCapabilitySet("v4"));
+    expect(v4.fields).not.toHaveProperty("credit_card_statement_day");
+    expect(v4.fields).not.toHaveProperty("credit_card_reminder_days_before");
+    expect(v4.field_hlcs).not.toHaveProperty("credit_card_statement_day");
+    const v5 = projectRowToDelta("accounts", row, stored, resolveCapabilitySet("v5"));
+    expect(v5.fields.credit_card_statement_day).toBe(15);
+    expect(v5.fields.credit_card_reminder_days_before).toBe(3);
+    expect(v5.field_hlcs.credit_card_statement_day).toBe(HLC);
+  });
+
+  it("el Merkle de v4 no hashea las columnas de la tarjeta; el de v5 sí (como null en una cuenta sin corte)", () => {
+    const v4 = merkleColumns("accounts", resolveCapabilitySet("v4"));
+    expect(v4).not.toContain("credit_card_statement_day");
+    expect(canonRowC1("accounts", ACCOUNT_ROW, v4)).not.toContain("credit_card_statement_day");
+    const v5 = merkleColumns("accounts", resolveCapabilitySet("v5"));
+    expect(v5).toContain("credit_card_statement_day");
+    expect(canonRowC1("accounts", ACCOUNT_ROW, v5)).toContain('"credit_card_statement_day":null');
+  });
+
+  it("un push con las columnas de la tarjeta tiene forma válida (columnas safe, cada una su unidad)", () => {
+    const err = validateUpsertShape(
+      "accounts",
+      { credit_card_statement_day: 15, credit_card_reminder_days_before: 3 },
+      { credit_card_statement_day: HLC, credit_card_reminder_days_before: HLC },
+    );
+    expect(err).toBeNull();
   });
 
   it("el pull de v3 no baja el destino del favorito; el de v4 sí", () => {

@@ -146,7 +146,7 @@ struct AccountLineSyncTests {
         defer { restoreCapability() }
         SyncCapability.recordBackendManifestVersion(7)
         #expect(SyncCapability.declaredLevel == SyncCapability.clientManifestVersion)
-        #expect(SyncCapability.declaredLevel == 4, "v4: el destino de un favorito de transferencia (card da5d)")
+        #expect(SyncCapability.declaredLevel == 5, "v5: el día de corte y el aviso de la tarjeta (card nmtk)")
     }
 
     @Test func capability_workerRolledBack_goesBackToV1() {
@@ -191,7 +191,7 @@ struct AccountLineSyncTests {
         }
         #expect(fromManifest == EntityEmissionMap.sinceCatalog)
         #expect(fromManifest == [
-            "accounts": ["parent_account_id": 2],
+            "accounts": ["parent_account_id": 2, "credit_card_statement_day": 5, "credit_card_reminder_days_before": 5],
             "cashflow_lines": ["amount_changes_raw": 3],
             "favorite_payments": ["destination_account_ref": 4],
         ], "control: el test lee algo")

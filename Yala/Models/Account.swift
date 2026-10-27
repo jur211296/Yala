@@ -39,6 +39,16 @@ final class Account {
     // Credit card specific
     var creditCardPaymentReminder: Bool = false
     var creditCardPaymentDay: Int = 1
+    /// Día de corte de la tarjeta (1…28): separa lo FACTURADO de lo POR FACTURAR y da el importe del aviso
+    /// (`CreditCardStatementLogic`, card nmtk). `nil` = sin día de corte, como toda tarjeta de antes de 2.2: la ficha se
+    /// queda sin estado de cuenta y el aviso solo puede ser el mismo día, sin importe.
+    /// CloudKit: campo nuevo `CD_creditCardStatementDay` (los cuatro `.ckdb`), desplegado a Production antes de que un
+    /// build lo escriba. Modo Nube: `accounts.credit_card_statement_day`, `since: 5`.
+    var creditCardStatementDay: Int?
+    /// Cuántos días antes del pago avisar: 0 (el mismo día), 1, 3 o 5 (`CreditCardStatementLogic.reminderLeadOptions`).
+    /// Sin día de corte se lee como 0. CloudKit: `CD_creditCardReminderDaysBefore`. Modo Nube:
+    /// `accounts.credit_card_reminder_days_before`, `since: 5`.
+    var creditCardReminderDaysBefore: Int = 0
 
     /// Tarjeta con varias divisas: si esta cuenta es una LÍNEA en otra divisa, el `shortcutID` de la cuenta
     /// principal de la tarjeta. `nil` = cuenta normal o principal. UUID crudo y no relación, a propósito: una

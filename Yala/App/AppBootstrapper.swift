@@ -1416,6 +1416,8 @@ final class AppBootstrapper {
         entityDeletionService.setContext(nil)
         transactionService.setContext(nil)
         ScheduledPaymentNotificationService.shared.setContext(nil)
+        // Card nmtk: sin soltarlo, un `incrementDataVersion` del swap programaría avisos con la cuenta que se va.
+        CreditCardReminderScheduler.shared.setContext(nil)
         NudgeService.shared.setContext(nil)
         UserSegmentService.shared.setContext(nil)
         GroupService.shared.setContext(nil)
@@ -3475,8 +3477,11 @@ final class AppBootstrapper {
         ScheduledPaymentNotificationService.shared.setContext(context)
         await ScheduledPaymentNotificationService.shared.checkAllPaymentNotifications()
 
-        // Check credit card payment reminders
-        await ScheduledPaymentNotificationService.shared.checkAndNotifyCreditCardPayments()
+        // El aviso antes de pagar la tarjeta, PROGRAMADO (card nmtk). Sustituye al canal «al abrir el día de pago»: deja
+        // en el centro de iOS el aviso con lo facturado, y si el de hoy debía haber salido ya y nunca se programó, lo
+        // manda una vez.
+        CreditCardReminderScheduler.shared.setContext(context)
+        await CreditCardReminderScheduler.shared.replan()
 
         // Re-plan de las summaries diarias AGENDADAS (canal híbrido D1): convergencia
         // idempotente en cada boot/foreground — también absorbe cambios remotos de CloudSync.

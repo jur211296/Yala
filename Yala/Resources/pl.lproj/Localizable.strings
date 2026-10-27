@@ -1434,7 +1434,7 @@
 "account.changeInitialBalanceName" = "Zmień saldo początkowe";
 "account.changeInitialBalanceDesc" = "Wpisz, od jakiej kwoty zaczęło się konto, a przeliczymy dzisiejsze saldo na podstawie Twoich wpisów. Użyj tego, jeśli saldo początkowe było błędne.";
 "account.creditCard.sectionTitle" = "Karta kredytowa";
-"account.creditCard.paymentReminder" = "Przypomnij w dniu płatności";
+"account.creditCard.paymentReminder" = "Przypomnij przed płatnością";
 "account.creditCard.paymentDay" = "Dzień płatności";
 "account.creditCard.paymentNotification" = "Czas zapłacić kartą kredytową %@ 💳";
 "category.others" = "Inne";
@@ -8484,3 +8484,28 @@
 "voice.live.transcriptAccessibility" = "Co rozpoznaje iPhone";
 "settings.wipeLandingToast" = "Gotowe, zaczynasz od zera. Utwórz pierwsze konto, aby zapisywać.";
 "icloud.remoteWipeKeptSetup" = "Dane zostały wyczyszczone na innym urządzeniu.";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "Dzień zamknięcia cyklu";
+"account.creditCard.statementDayNone" = "Nie ustawiono";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "To, co wydasz do %1$d. dnia, płacisz %2$d. dnia następnego miesiąca.";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "To, co wydasz do %1$d. dnia, płacisz %2$d. dnia tego samego miesiąca.";
+"account.creditCard.cycleFooterNoStatement" = "Z dniem zamknięcia cyklu karta pokazuje osobno to, co już jest na wyciągu, i to, co trafi na następny.";
+"account.creditCard.reminderSection" = "Przypomnienie";
+"account.creditCard.reminderWhen" = "Kiedy";
+"account.creditCard.reminderSameDay" = "W tym samym dniu";
+"account.creditCard.reminderOneDayBefore" = "1 dzień wcześniej";
+"account.creditCard.reminderDaysBefore %d" = "%d dni wcześniej";
+"account.creditCard.reminderFooterNext %@" = "Przypomnimy ci %@, ile masz do zapłaty.";
+"account.creditCard.reminderFooterNoStatement" = "Bez dnia zamknięcia cyklu przypomnimy ci w dniu płatności, bez kwoty.";
+"creditCardStatement.title %@" = "Wyciąg · zamknięcie %@";
+"creditCardStatement.billed" = "Na wyciągu";
+"creditCardStatement.unbilled" = "Do rozliczenia";
+"creditCardStatement.payBy %@" = "Zapłać do %@";
+"creditCardStatement.overdue %@" = "Termin minął %@";
+"creditCardStatement.nothingDue" = "Nic do zapłaty";
+"creditCardStatement.nextStatement %@" = "Trafi na wyciąg z %@";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "Zapłać %1$@ do %2$@.";
+"creditCardStatement.reminderDueToday %@" = "Dziś termin płatności: %@.";
+"creditCardStatement.reminderPayByNoAmount %@" = "Zapłać kartę do %@.";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Spłata %1$@ · %2$@";
+"cashFlowPlan.cardPaymentNote" = "Jest już w wydatkach z miesiąca zakupu: nie odejmujemy go drugi raz.";

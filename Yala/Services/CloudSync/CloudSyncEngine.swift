@@ -3087,6 +3087,12 @@ final class CloudSyncEngine {
                let favorite = model as? FavoritePayment, let favoriteSyncID = favorite.syncID {
                 SyncCapability.noteSuppressedFavoriteDestination(favoriteSyncID)
             }
+            // Y con el día de corte o los días de aviso de una tarjeta (v5, card nmtk), también cuando se quitan.
+            if level < SyncCapability.creditCardCycleSince,
+               !changedColumns.isDisjoint(with: SyncCapability.creditCardCycleColumns),
+               let account = model as? Account {
+                SyncCapability.noteSuppressedCreditCardCycle(account.shortcutID, columns: changedColumns)
+            }
             changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,

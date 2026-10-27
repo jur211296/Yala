@@ -2,6 +2,8 @@
 description: Cómo decide la app si un movimiento es ingreso o gasto, cómo se suma, qué filas entran en un saldo y de dónde sale lo gastado de un presupuesto. Una sola regla por cifra; se carga al tocar calculadores, ViewModels de pantallas con totales, widgets y filtros.
 paths:
   - "Yala/App/Logic/Calculators/**"
+  - "Yala/App/Logic/CreditCardStatement*.swift"
+  - "Yala/Services/CreditCardReminderScheduler.swift"
   - "Yala/App/Logic/TransactionClassificationLogic.swift"
   - "Yala/App/Logic/AccountSpendingLogic.swift"
   - "Yala/App/Logic/Helpers/**"
@@ -86,3 +88,12 @@ Observaciones calcula por su cuenta (`InsightsCalculator.calculateCommitments`; 
 `PanelBudgetPlanningParityTests`, `WidgetBalanceAccountlessParityTests` y `ExcludedAccountSelectionTests`. Un fixture de
 paridad tiene que traer las dos filas que separan las reglas: un movimiento sin categoría de cada signo y uno de signo
 contrario a su categoría. Sin ellas todas las reglas dan lo mismo y el test no prueba nada.
+
+## `balanceAdjustmentType != nil` NO quiere decir «ajuste de saldo» (2026-10-27)
+
+El campo tiene tres valores: `initial_balance`, `adjustment` y `transfer` (`TransactionItem.adjustmentTypeTransfer`, las
+DOS patas de una transferencia y el import CSV). Para separar «corrige el saldo» de «movimiento real», compara contra los
+dos primeros (`InitialBalanceService.typeInitialBalance` / `.typeAdjustment`), nunca contra `nil`. Lo pagó el estado de
+cuenta de la tarjeta (card nmtk): con `!= nil`, pagar la tarjeta con una transferencia —la forma normal— no bajaba lo
+facturado, y el aviso anunciaba una deuda ya pagada. Lo cazó la review; lo fija
+`CreditCardReminderSchedulerTests.unaTransferenciaALaTarjeta_esUnPago` (`CreditCardReminderScheduler.isBalanceAdjustment`).

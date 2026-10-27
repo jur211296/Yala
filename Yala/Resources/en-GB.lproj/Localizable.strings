@@ -707,7 +707,7 @@
 "account.configure" = "Configure Account";
 "account.creditCard.paymentDay" = "Payment day";
 "account.creditCard.paymentNotification" = "Time to pay your credit card %@ 💳";
-"account.creditCard.paymentReminder" = "Remind on payment date";
+"account.creditCard.paymentReminder" = "Remind me before paying";
 "account.creditCard.sectionTitle" = "Credit card";
 "account.currency" = "Currency";
 "account.currentBalance" = "Current balance";
@@ -7802,3 +7802,28 @@
 "voice.live.transcriptAccessibility" = "What your iPhone is picking up";
 "settings.wipeLandingToast" = "Done, you’re starting fresh. Create your first account to start recording.";
 "icloud.remoteWipeKeptSetup" = "You cleared your data from another device.";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "Statement day";
+"account.creditCard.statementDayNone" = "Not set";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "What you spend up to the %1$d, you pay on the %2$d of the following month.";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "What you spend up to the %1$d, you pay on the %2$d of the same month.";
+"account.creditCard.cycleFooterNoStatement" = "With the statement day, the card's page separates what's on your statement from what goes on the next one.";
+"account.creditCard.reminderSection" = "Reminder";
+"account.creditCard.reminderWhen" = "When";
+"account.creditCard.reminderSameDay" = "On the day";
+"account.creditCard.reminderOneDayBefore" = "1 day before";
+"account.creditCard.reminderDaysBefore %d" = "%d days before";
+"account.creditCard.reminderFooterNext %@" = "We'll remind you on %@ with what you need to pay.";
+"account.creditCard.reminderFooterNoStatement" = "Without a statement day, we'll remind you on the payment day, without the amount.";
+"creditCardStatement.title %@" = "Statement · closed %@";
+"creditCardStatement.billed" = "On your statement";
+"creditCardStatement.unbilled" = "Not yet billed";
+"creditCardStatement.payBy %@" = "Pay by %@";
+"creditCardStatement.overdue %@" = "Was due %@";
+"creditCardStatement.nothingDue" = "Nothing left to pay";
+"creditCardStatement.nextStatement %@" = "Goes on the %@ statement";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "Pay %1$@ by %2$@.";
+"creditCardStatement.reminderDueToday %@" = "Payment due today: %@.";
+"creditCardStatement.reminderPayByNoAmount %@" = "Pay your card by %@.";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "%1$@ payment · %2$@";
+"cashFlowPlan.cardPaymentNote" = "Already in your expenses for the month you bought: it isn't subtracted again.";

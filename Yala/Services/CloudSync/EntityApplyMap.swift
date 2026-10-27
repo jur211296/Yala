@@ -128,6 +128,13 @@ private enum Apply {
     static func intOpt<M>(_ kp: ReferenceWritableKeyPath<M, Int?>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.int(v) }
     }
+    /// int → `Int` donde NULL significa 0 (el emisor manda 0 como NULL para casar con las filas que nacieron sin la
+    /// columna). Un valor que no es entero tampoco pisa nada.
+    static func intNullAsZero<M>(_ kp: ReferenceWritableKeyPath<M, Int>) -> ColumnApplier<M> {
+        ColumnApplier { m, v, _ in
+            if case .null = v { m[keyPath: kp] = 0 } else if let i = WireValueDecoder.int(v) { m[keyPath: kp] = i }
+        }
+    }
     static func dateReq<M>(_ kp: ReferenceWritableKeyPath<M, Date>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in if let d = WireValueDecoder.date(v) { m[keyPath: kp] = d } }
     }
@@ -547,6 +554,10 @@ enum EntityApplyMap {
             "credit_card_payment_day": Apply.intReq(\.creditCardPaymentDay),
             // Tarjeta con varias divisas (`since: 2`): solo llega si este teléfono pidió `v2` (`SyncCapability`).
             "parent_account_id": Apply.uuidOpt(\.parentAccountID),
+            // Card nmtk (`since: 5`): solo llegan si este teléfono pidió `v5` (`SyncCapability`). En los días de aviso,
+            // NULL es 0: así viaja el «mismo día» (`EntityEmissionMap.account`).
+            "credit_card_statement_day": Apply.intOpt(\.creditCardStatementDay),
+            "credit_card_reminder_days_before": Apply.intNullAsZero(\.creditCardReminderDaysBefore),
         ]
     )
 

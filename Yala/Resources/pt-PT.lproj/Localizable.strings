@@ -624,7 +624,7 @@
 "account.configure" = "Configurar conta";
 "account.creditCard.paymentDay" = "Dia de pagamento";
 "account.creditCard.paymentNotification" = "Hoje é dia de pagar seu cartão %@ 💳";
-"account.creditCard.paymentReminder" = "Avisar na data de pagamento";
+"account.creditCard.paymentReminder" = "Avisar-me antes de pagar";
 "account.creditCard.sectionTitle" = "Cartão de crédito";
 "account.currency" = "Moeda";
 "account.currentBalance" = "Saldo atual";
@@ -7807,3 +7807,28 @@
 "voice.live.transcriptAccessibility" = "O que o iPhone está a perceber";
 "settings.wipeLandingToast" = "Pronto, começaste do zero. Cria a tua primeira conta para registar.";
 "icloud.remoteWipeKeptSetup" = "Apagaste os teus dados noutro dispositivo.";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "Dia de fecho";
+"account.creditCard.statementDayNone" = "Não definido";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "O que gastares até ao dia %1$d pagas no dia %2$d do mês seguinte.";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "O que gastares até ao dia %1$d pagas no dia %2$d do mesmo mês.";
+"account.creditCard.cycleFooterNoStatement" = "Com o dia de fecho, a ficha do cartão separa o que já está no extrato do que entra no próximo.";
+"account.creditCard.reminderSection" = "Aviso";
+"account.creditCard.reminderWhen" = "Quando";
+"account.creditCard.reminderSameDay" = "No próprio dia";
+"account.creditCard.reminderOneDayBefore" = "1 dia antes";
+"account.creditCard.reminderDaysBefore %d" = "%d dias antes";
+"account.creditCard.reminderFooterNext %@" = "Avisamos-te a %@ com o valor a pagar.";
+"account.creditCard.reminderFooterNoStatement" = "Sem dia de fecho, avisamos-te no dia do pagamento, sem o valor.";
+"creditCardStatement.title %@" = "Extrato · fecho a %@";
+"creditCardStatement.billed" = "No extrato";
+"creditCardStatement.unbilled" = "Próximo extrato";
+"creditCardStatement.payBy %@" = "Paga até %@";
+"creditCardStatement.overdue %@" = "Venceu a %@";
+"creditCardStatement.nothingDue" = "Nada pendente deste extrato";
+"creditCardStatement.nextStatement %@" = "Entra no extrato de %@";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "Paga %1$@ até %2$@.";
+"creditCardStatement.reminderDueToday %@" = "O pagamento vence hoje: %@.";
+"creditCardStatement.reminderPayByNoAmount %@" = "Paga o teu cartão até %@.";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Pagamento de %1$@ · %2$@";
+"cashFlowPlan.cardPaymentNote" = "Já está nos gastos do mês em que compraste: não é descontado outra vez.";

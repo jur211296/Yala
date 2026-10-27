@@ -150,6 +150,12 @@ final class ScheduledPaymentNotificationTracker {
         defaults.set(true, forKey: creditCardKey(accountID: accountID, date: date))
     }
 
+    /// Retira la marca: el aviso programado de ese día se quitó del centro SIN haber disparado (cambió la hora, la
+    /// antelación o se pagó). Sin esto, el aviso de hoy movido a una hora ya pasada no salía nunca (card nmtk, review).
+    func clearNotifiedCreditCard(accountID: UUID, date: Date) {
+        defaults.removeObject(forKey: creditCardKey(accountID: accountID, date: date))
+    }
+
     // MARK: - Cleanup
 
     /// Clean up old entries (> 30 days) de AMBAS familias de keys. `now` se inyecta

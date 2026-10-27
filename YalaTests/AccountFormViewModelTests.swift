@@ -11,6 +11,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct AccountFormViewModelTests {
 
     // MARK: - isNameValid
@@ -185,6 +186,75 @@ struct AccountFormViewModelTests {
         #expect(vm.creditCardPaymentReminder == true)
         #expect(vm.creditCardPaymentDay == 15)
         #expect(vm.selectedType == .creditCard)
+    }
+
+    // MARK: - Día de corte y aviso (card nmtk)
+
+    @MainActor @Test func creditCard_statementDayAndLead_loadFromAccount_andOutOfRangeValuesReadAsUnset() {
+        let account = Account(name: "Visa", currencyCode: "PEN", colorHex: "#FF0080", iconName: "creditcard.fill",
+                              type: AccountType.creditCard.rawValue)
+        account.creditCardStatementDay = 15
+        account.creditCardReminderDaysBefore = 3
+        let vm = AccountFormViewModel(accountToEdit: account, existingNames: [])
+        #expect(vm.creditCardStatementDay == 15)
+        #expect(vm.creditCardReminderDaysBefore == 3)
+
+        account.creditCardStatementDay = 31
+        account.creditCardReminderDaysBefore = 2
+        let odd = AccountFormViewModel(accountToEdit: account, existingNames: [])
+        #expect(odd.creditCardStatementDay == nil)
+        #expect(odd.creditCardReminderDaysBefore == 0)
+    }
+
+    /// Sin día de corte el aviso solo puede ser el mismo día: el selector ofrece solo esa opción y lo que se guarda es 0
+    /// aunque quedara elegido otro valor de antes.
+    @MainActor @Test func creditCard_withoutStatementDay_leadIsSameDay() {
+        let vm = AccountFormViewModel(accountToEdit: nil, existingNames: [])
+        vm.creditCardStatementDay = 15
+        vm.creditCardReminderDaysBefore = 5
+        #expect(vm.creditCardReminderLeadOptions == [0, 1, 3, 5])
+        #expect(vm.effectiveCreditCardReminderDaysBefore == 5)
+        vm.creditCardStatementDay = nil
+        #expect(vm.creditCardReminderLeadOptions == [0])
+        #expect(vm.effectiveCreditCardReminderDaysBefore == 0)
+    }
+
+    @MainActor @Test func creditCard_nextReminderDay_isThreeDaysBeforeThePayment() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/Lima"))
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 27, hour: 10)))
+        let vm = AccountFormViewModel(accountToEdit: nil, existingNames: [])
+        vm.creditCardPaymentReminder = true
+        vm.creditCardStatementDay = 15
+        vm.creditCardPaymentDay = 5
+        vm.creditCardReminderDaysBefore = 3
+        #expect(vm.nextCreditCardReminderDay(now: now, calendar: calendar)
+                == calendar.date(from: DateComponents(year: 2026, month: 11, day: 2)))
+        vm.creditCardPaymentReminder = false
+        #expect(vm.nextCreditCardReminderDay(now: now, calendar: calendar) == nil)
+    }
+
+    /// Guardar la tarjeta escribe los dos campos; cambiarla a otro tipo los limpia.
+    @MainActor @Test func creditCard_savesStatementDayAndLead_andAnotherTypeClearsThem() throws {
+        let context = try makeTestContext()
+        let account = Account(name: "Visa", currencyCode: "PEN", colorHex: "#FF0080", iconName: "creditcard.fill",
+                              type: AccountType.creditCard.rawValue)
+        context.insert(account)
+        try context.save()
+        let vm = AccountFormViewModel(accountToEdit: account, existingNames: [])
+        vm.creditCardStatementDay = 20
+        vm.creditCardPaymentDay = 10
+        vm.creditCardReminderDaysBefore = 5
+        #expect(vm.saveAccount(context: context))
+        #expect(account.creditCardStatementDay == 20)
+        #expect(account.creditCardPaymentDay == 10)
+        #expect(account.creditCardReminderDaysBefore == 5)
+
+        let other = AccountFormViewModel(accountToEdit: account, existingNames: [])
+        other.selectedType = .checking
+        #expect(other.saveAccount(context: context))
+        #expect(account.creditCardStatementDay == nil)
+        #expect(account.creditCardReminderDaysBefore == 0)
     }
 
     // Cambio de modo: byEntry → changeInitialBalance pre-llena, changeInitialBalance → byEntry limpia

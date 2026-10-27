@@ -21,6 +21,8 @@ DEFINE SCHEMA
         CD_colorHex                  STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_creditCardPaymentDay      INT64 QUERYABLE SORTABLE,
         CD_creditCardPaymentReminder INT64 QUERYABLE SORTABLE,
+        CD_creditCardReminderDaysBefore INT64,
+        CD_creditCardStatementDay INT64,
         CD_currencyCode              STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_entityName                STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_excludeFromStatistics     INT64 QUERYABLE SORTABLE,

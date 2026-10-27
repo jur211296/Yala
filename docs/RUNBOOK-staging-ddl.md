@@ -583,6 +583,38 @@ entorno, va primero (su sección, arriba).
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
 
+## `g26_01_credit_card_cycle.sql` — el día de corte y el aviso de la tarjeta (PREPARADA, sin aplicar)
+
+**Ni staging ni producción.** La sesión que lo escribió (card nmtk) no despliega backend. **Lo aplica Jürgen** o una sesión
+de despliegues autorizada. **Va después de g24_01**: el Worker v5 pide también la columna de g24_01.
+
+Qué es: `accounts.credit_card_statement_day integer` y `accounts.credit_card_reminder_days_before integer`, nullable. Van
+con el Worker de `manifest_version: 5` (`qa/cloud/README.md`, entrada g26_01).
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select column_name from information_schema.columns
+    where table_schema = 'public' and table_name = 'accounts'
+      and column_name in ('credit_card_statement_day', 'credit_card_reminder_days_before');
+   ```
+   Si ya salen las dos, salta al paso 4.
+2. **Aplicar.** *New query* → pega `qa/cloud/g26_01_credit_card_cycle.sql` entero → *Run*. Tiene que salir el aviso
+   `g26_01 OK · accounts.credit_card_statement_day y credit_card_reminder_days_before integer nullable, grants heredados`.
+   Con un error no se aplicó nada (va en transacción): para y avisa a Frank.
+3. **Comprobar.** Repite la consulta del paso 1: salen las dos.
+4. **Desplegar el Worker, SOLO después del paso 3** (y de g24_01), desde `2.2` con este cambio mergeado: `cd gateway && npm
+   ci && npm run deploy:staging` (staging) o `npm run deploy:production`. El `predeploy` tiene que decir
+   `check-manifest-not-older: OK (desplegado v4, este árbol v5)` (o `v3` si g24_01 tampoco estaba). Apunta el
+   `Current Version ID` y el anterior.
+5. **Comprobar el Worker.** `curl -s -A yala <url del gateway>/config` trae `"sync":{"manifestVersion":5,"groupsManifestVersion":2}`. Con un iPhone
+   con esta build en la nube, `npx wrangler tail` (con `--env production` en producción) no debe enseñar
+   `[sync-merkle] … 502`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columnas: `g26_01_rollback.sql`, idempotente, que aborta
+si alguna cuenta ya tiene día de corte o días de aviso.
+
 ## `g24_01_favorite_destination.sql` — el destino de un favorito de transferencia (PREPARADA, sin aplicar)
 
 **Ni staging ni producción.** La sesión que lo escribió (lote 12.2, card da5d) no despliega backend. **Lo aplica Jürgen**

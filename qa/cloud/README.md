@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-10-27` [g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)](#g2601--accountscreditcardstatementday-y-creditcardreminderdaysbefore-el-corte-de-la-tarjeta-2026-10-27)
 - `2026-10-25` [g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)](#g2401--favoritepaymentsdestinationaccountref-el-destino-de-un-favorito-de-transferencia-2026-10-25)
 - `2026-10-21` [g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-1](#g2101--cashflowlinesamountchangesraw-los-cambios-desde-este-mes-del-flujo-de-caja-2026-10-21)
 - `2026-10-21` [g22_01 — `set_member_role`: hacer o quitar administrador en un grupo de la nube (2026-10-21)](#g2201--setmemberrole-hacer-o-quitar-administrador-en-un-grupo-de-la-nube-2026-10-21)
@@ -1851,6 +1852,23 @@ teléfono de otro admin la app ofrece quitarle el admin al creador (el servidor 
 **El orden: g22_01 → Worker con `set_member_role` en la allowlist → app.** Al revés no se escribe nada: sin DDL, el
 gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app enseña en los dos el error genérico. El
 §2 no depende del orden: no cambia la forma de ninguna respuesta.
+
+## g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`, como g24_01). Fichero:
+`qa/cloud/g26_01_credit_card_cycle.sql`; marcha atrás `qa/cloud/g26_01_rollback.sql` (idempotente, solo sin valores,
+bajo lock). Card nmtk.
+
+Qué cambia: dos columnas `integer` nullable en `accounts`: el día de corte (1…28, NULL = sin corte) y los días de
+antelación del aviso (0, 1, 3, 5). Grants heredados (la migración lo comprueba). No toca ningún RPC.
+
+**Cuarto `since` del manifest**: las dos llevan `"since": 5` y el manifest `manifest_version: 5`, con el mecanismo de
+g24_01 (proyección por versión, anuncio y subida con reemisión de lo apuntado,
+`SyncCapability.noteSuppressedCreditCardCycle`, las dos columnas juntas). Lo fijan `CreditCardCycleSyncTests` y
+`gateway/test/manifest.capability.test.ts`.
+
+**El orden: g26_01 → Worker v5 → app.** El Worker v5 sirve las columnas de la v2 a la v5. La app puede salir antes: con un
+Worker v4 declara v4 y no emite ni hashea las columnas. g24_01 va antes (el Worker v5 también pide su columna).
 
 ## g24_01 — `favorite_payments.destination_account_ref`: el destino de un favorito de transferencia (2026-10-25)
 
