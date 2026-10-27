@@ -486,8 +486,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-entry-on-a-mirrored-store-still-blocks-the-owner | done | tickets/done/groups-entry-on-a-mirrored-store-still-blocks-the-owner.md |
 | groups-equal-split-shows-not-participating-on-peer | done | tickets/done/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | done | tickets/done/groups-expense-notif-only-on-foreground.md |
-| groups-fab-group-with-only-pending-groups-says-nothing | backlog | tickets/backlog/groups-fab-group-with-only-pending-groups-says-nothing.md |
-| groups-form-and-settings-name-the-same-options-differently | backlog | tickets/backlog/groups-form-and-settings-name-the-same-options-differently.md |
+| groups-fab-group-with-only-pending-groups-says-nothing | done | tickets/done/groups-fab-group-with-only-pending-groups-says-nothing.md |
+| groups-form-and-settings-name-the-same-options-differently | done | tickets/done/groups-form-and-settings-name-the-same-options-differently.md |
 | groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing | backlog | tickets/backlog/groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing.md |
 | groups-gate-wipe-failed-notice-can-outlive-its-attempt | backlog | tickets/backlog/groups-gate-wipe-failed-notice-can-outlive-its-attempt.md |
 | groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
