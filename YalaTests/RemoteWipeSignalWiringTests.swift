@@ -650,8 +650,10 @@ struct RemoteWipeSignalWiringTests {
                                                 + "GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults)) }"), """
             «Vaciar datos» ya no escribe el reparto, lo escribe sin avisar al parque o con otra hora que la de la señal.             Cuerpo encontrado: \(cuerpo.prefix(600))
             """)
-        let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: false, "
-                                              + "broadcastSignal: broadcastSignal, signalTimestamp: signalTimestamp)"),
+        let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: "
+                                              + "keepsPersonSettings, broadcastSignal: broadcastSignal, resetsPreferences: "
+                                              + "!keepsPersonSettings, signalTimestamp: signalTimestamp, keepsReminders: "
+                                              + "keepsPersonSettings)"),
                                  "el vaciado ya no emite la señal con la hora del reparto")
         #expect(reparte.upperBound <= borra.lowerBound, "el reparto se escribe después de la señal y del borrado")
         #expect(fuente.contains("PreferenceSyncService.shared.signalWipeInitiated(at: signalTimestamp ?? .now)"),

@@ -8408,3 +8408,42 @@
 
 /* Hoja de Filtros: las dos pestañas se combinan */
 "filters.segment.combineHint" = "Beides lässt sich kombinieren: Du kannst manches allein zeigen und anderes gleichzeitig ausblenden.";
+
+/* Cómo usas Yala: completo ↔ solo grupos (card p0iu) */
+"usageMode.row.title" = "Wie du Yala nutzt";
+"usageMode.full.title" = "Volles Yala";
+"usageMode.full.body" = "Deine Konten, Einträge, Budgets und Gruppen.";
+"usageMode.groupsOnly.title" = "Nur Gruppen";
+"usageMode.groupsOnly.body" = "Du siehst nur deine Gruppen. Deine Konten und Einträge bleiben gespeichert, nichts wird gelöscht.";
+"usageMode.groupsOnly.bodyNew" = "Du siehst nur deine Gruppen.";
+"usageMode.screen.intro" = "Wähle, was du in der App siehst. Beim Wechseln wird nichts gelöscht.";
+"usageMode.screen.footer" = "Du kannst das jederzeit ändern. Wenn du zu vollem Yala zurückkehrst, ist alles so, wie du es verlassen hast.";
+"usageMode.leave.title" = "Yala nur für Gruppen nutzen?";
+"usageMode.leave.body" = "Du siehst nur noch deine Gruppen. Deine Konten, Einträge und Budgets werden nicht gelöscht: Sie bleiben gespeichert und kommen zurück, wenn du zu vollem Yala zurückkehrst.";
+"usageMode.leave.groupsStay" = "Deine Gruppen und ihre Mitteilungen bleiben unverändert.";
+"usageMode.leave.paused" = "Deine Erinnerungen und geplanten Zahlungen werden pausiert.";
+"usageMode.leave.pro" = "Dein Pro-Abo bleibt aktiv. Wenn du es nicht nutzt, kannst du es in den Einstellungen deines Geräts kündigen.";
+"usageMode.leave.confirm" = "Nur Gruppen nutzen";
+"usageMode.back.title" = "Zurück zu vollem Yala";
+"usageMode.back.subtitle" = "Deine Konten und Einträge warten auf dich";
+"usageMode.back.toast" = "Du hast wieder volles Yala";
+"usageMode.back.range" = "Vom %1$@ bis %2$@, in %3$@.";
+"usageMode.back.rangeSameDay" = "Am %1$@, in %2$@.";
+"usageMode.back.keepTitle" = "Weitermachen, wo ich aufgehört habe";
+"usageMode.back.keepBody" = "Deine Konten, Einträge und Budgets kommen unverändert zurück.";
+"usageMode.back.freshTitle" = "Neu anfangen";
+"usageMode.back.freshBody" = "Deine Konten, Einträge und Budgets werden gelöscht. Deine Gruppen bleiben unberührt.";
+"usageMode.back.continue" = "Weiter";
+"usageMode.back.notNow" = "Nicht jetzt";
+"usageMode.fresh.confirmTitle" = "Sicher? Das ist endgültig.";
+"usageMode.fresh.confirmICloud" = "Gelöscht werden %1$@, %2$@ und %3$@ von diesem Gerät und aus deiner iCloud. Deine Gruppen bleiben unberührt.";
+"usageMode.fresh.confirmCloud" = "Gelöscht werden %1$@, %2$@ und %3$@ von diesem Gerät und aus deinem Yala-Konto. Deine Gruppen bleiben unberührt.";
+"usageMode.fresh.confirmButton" = "Löschen und neu anfangen";
+"usageMode.account.title" = "Was ist dein Hauptkonto?";
+"usageMode.account.body" = "Du fängst mit einem Konto neu an. Die anderen fügst du hinzu, wann du willst.";
+"usageMode.account.nameLabel" = "Kontoname";
+"usageMode.account.currency" = "Währung";
+"usageMode.account.footnote" = "Name und Währung stammen aus deinen bisherigen Daten. Dein Name, deine Mitteilungen und Einstellungen bleiben: Die Begrüßung kommt nicht noch einmal.";
+"usageMode.account.start" = "Los geht’s";
+"usageMode.account.working" = "Neuanfang läuft…";
+"usageMode.error" = "Der Neuanfang hat nicht geklappt. Versuche es noch einmal.";

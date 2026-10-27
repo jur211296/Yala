@@ -726,11 +726,33 @@ class SessionState {
         didSet {
             // El widget no ve esta marca: se la publica el embudo, también cuando el espejo solo se re-lee
             // (`refreshPrivateSessionMirror`), porque lo que el widget enseña depende del valor, no de quién lo escribió.
-            WidgetDataCache.publishSessionShell(hasPrivateSession: hasPrivateSession)
+            WidgetDataCache.publishSessionShell(
+                hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)
+            // La marca de vista muere con la sesión (`PrivateSessionMark.set(false)`): el espejo, con ella.
+            if !hasPrivateSession && prefersGroupsOnlyView {
+                isRefreshingGroupsOnlyViewMirror = true
+                prefersGroupsOnlyView = false
+                isRefreshingGroupsOnlyViewMirror = false
+            }
             guard !isRefreshingPrivateSessionMirror else { return }
             PrivateSessionMark.set(hasPrivateSession)
         }
     }
+
+    /// **«Solo grupos» elegido sobre Yala completo** (card p0iu): el espejo OBSERVABLE de `GroupsOnlyViewMark`, y el
+    /// embudo de sus escrituras. Asignar aquí PERSISTE la marca. Solo cambia la shell (`effectiveShellMode`) y la pausa
+    /// de los avisos personales; los gates de datos siguen leyendo `hasPrivateSession`. Quien la enciende y la apaga
+    /// con todos sus efectos es `UsageModeService`.
+    var prefersGroupsOnlyView: Bool = GroupsOnlyViewMark.isOn() {
+        didSet {
+            WidgetDataCache.publishSessionShell(
+                hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)
+            guard !isRefreshingGroupsOnlyViewMirror else { return }
+            GroupsOnlyViewMark.set(prefersGroupsOnlyView)
+        }
+    }
+
+    @ObservationIgnored private var isRefreshingGroupsOnlyViewMirror = false
 
     /// Re-lee la marca y pone el espejo al día **sin persistir nada**.
     ///
@@ -747,6 +769,13 @@ class SessionState {
     /// la marca, así que una asignación volvería a persistir justo lo que se acaba de borrar y la
     /// AUSENCIA —que es lo que hace estricto a `confirmedPrivateSession`— no existiría nunca.
     func refreshPrivateSessionMirror() {
+        // La marca de vista muere por los mismos caminos (`PrivateSessionMark.clear`), y tampoco pasa por aquí.
+        let vistaPersistida = GroupsOnlyViewMark.isOn()
+        if vistaPersistida != prefersGroupsOnlyView {
+            isRefreshingGroupsOnlyViewMirror = true
+            prefersGroupsOnlyView = vistaPersistida
+            isRefreshingGroupsOnlyViewMirror = false
+        }
         let persistido = PrivateSessionMark.hasPrivateSession()
         guard persistido != hasPrivateSession else { return }
         isRefreshingPrivateSessionMirror = true
@@ -761,8 +790,17 @@ class SessionState {
     /// Modo EFECTIVO de la shell (tab bar + visibilidad de secciones personales), derivado del eje 1:
     /// sin vida personal en este teléfono, la app es solo Grupos.
     var effectiveShellMode: ShellMode {
-        ShellModeLogic.effective(hasPrivateSession: hasPrivateSession)
+        ShellModeLogic.effective(hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)
     }
+
+    /// «Solo grupos» elegido sobre una sesión privada viva: la vuelta no es «Activar Yala completo» sino «Volver».
+    var isGroupsOnlyByChoice: Bool { hasPrivateSession && prefersGroupsOnlyView }
+
+    /// Card p0iu · lo que cuenta la hoja de la vuelta. Vive aquí, en un `@Observable`, y no en un `@State` de
+    /// `ContentView`: la hoja se presenta con `.sheet(isPresented:)` y su contenido sale de este valor, y con un
+    /// `@State` que el `body` no lee el cierre se queda con el valor de antes (`swiftui-ds.md`, «Gotchas de vistas»):
+    /// la hoja enseñaría la activación —la bienvenida— a quien vuelve. `nil` = la activación de siempre.
+    var returnToFullSummary: UsageModeLogic.SavedSummary?
 
     /// Conveniencia: `effectiveShellMode == .groupsFocused`.
     var isGroupsFocusedShell: Bool { effectiveShellMode == .groupsFocused }

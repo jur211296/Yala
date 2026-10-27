@@ -19,6 +19,10 @@ struct ScheduledPaymentDraftService {
     /// Returns the number of drafts created
     @discardableResult
     static func processDuePayments(context: ModelContext) -> Int {
+        // Card p0iu (decisión 2 de Jürgen): los pagos programados se pausan mientras dura «Solo grupos» sobre Yala
+        // completo, también los de grupo (sus borradores caen en la bandeja, que no se ve). No se pierde ninguno: al
+        // volver, `UsageModeService` llama aquí y los vencidos de la pausa se procesan como los de un arranque tardío.
+        guard !PersonalRemindersPause.isPaused() else { return 0 }
         // Gate de quiescencia: crea InboxDrafts + `save()` del store personal; diferir durante el
         // import del restore de iCloud (idempotente: re-evalúa los vencimientos en el próximo arranque).
         guard iCloudSyncService.shared.isImportQuiescent else {

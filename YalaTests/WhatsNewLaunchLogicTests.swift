@@ -125,7 +125,7 @@ struct WhatsNewLaunchLogicTests {
             .joined(separator: "\n")
         #expect(body.contains("""
             switch WhatsNewLaunchLogic.returningUserSheet(
-            hasPrivateSession: SessionState.shared.hasPrivateSession,
+            hasPrivateSession: !SessionState.shared.isGroupsFocusedShell,
             whatsNewPending: whatsNew != nil,
             trialOfferPending: SessionState.shared.needsPostOnboardingTrial,
             isPro: FeatureGateService.shared.isProUser) {

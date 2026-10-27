@@ -80,6 +80,8 @@ final class ScheduledPaymentNotificationService {
     /// Single entry point: checks all scheduled payment notifications (overdue, due today, upcoming).
     /// Fetches payments, paid status, and notification config once to avoid redundant queries.
     func checkAllPaymentNotifications() async {
+        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        guard !PersonalRemindersPause.isPaused() else { return }
         guard let context = modelContext else { return }
         guard await isAuthorized() else { return }
 
@@ -506,6 +508,8 @@ final class ScheduledPaymentNotificationService {
     /// cuando el item está activo (era la notif "de las 8am" del ticket) y el fail-closed
     /// ante fetch-error.
     func checkAndNotifyCreditCardPayments() async {
+        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        guard !PersonalRemindersPause.isPaused() else { return }
         guard let context = modelContext else { return }
         guard await isAuthorized() else { return }
 

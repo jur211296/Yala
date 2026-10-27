@@ -8409,3 +8409,42 @@
 
 /* Hoja de Filtros: las dos pestañas se combinan */
 "filters.segment.combineHint" = "Les deux se combinent : vous pouvez afficher seulement certains éléments et en masquer d’autres en même temps.";
+
+/* Cómo usas Yala: completo ↔ solo grupos (card p0iu) */
+"usageMode.row.title" = "Comment tu utilises Yala";
+"usageMode.full.title" = "Yala complet";
+"usageMode.full.body" = "Tes comptes, enregistrements, budgets et groupes.";
+"usageMode.groupsOnly.title" = "Groupes uniquement";
+"usageMode.groupsOnly.body" = "Tu ne vois que tes groupes. Tes comptes et enregistrements restent sauvegardés, rien n’est effacé.";
+"usageMode.groupsOnly.bodyNew" = "Tu ne vois que tes groupes.";
+"usageMode.screen.intro" = "Choisis ce que tu vois dans l’app. Changer n’efface rien.";
+"usageMode.screen.footer" = "Tu peux changer quand tu veux. En revenant à Yala complet, tout est comme tu l’as laissé.";
+"usageMode.leave.title" = "Utiliser Yala seulement pour les groupes ?";
+"usageMode.leave.body" = "Tu ne verras que tes groupes. Tes comptes, enregistrements et budgets ne sont pas effacés : ils restent sauvegardés et reviennent quand tu repasses à Yala complet.";
+"usageMode.leave.groupsStay" = "Tes groupes et leurs alertes ne changent pas.";
+"usageMode.leave.paused" = "Tes rappels et paiements programmés sont mis en pause.";
+"usageMode.leave.pro" = "Ton abonnement Pro reste actif. Si tu ne vas pas l’utiliser, tu peux l’annuler dans les Réglages de ton appareil.";
+"usageMode.leave.confirm" = "Utiliser seulement les groupes";
+"usageMode.back.title" = "Revenir à Yala complet";
+"usageMode.back.subtitle" = "Tes comptes et enregistrements t’attendent";
+"usageMode.back.toast" = "Tu as de nouveau Yala complet";
+"usageMode.back.range" = "Du %1$@ au %2$@, sur %3$@.";
+"usageMode.back.rangeSameDay" = "Le %1$@, sur %2$@.";
+"usageMode.back.keepTitle" = "Reprendre là où je m’étais arrêté";
+"usageMode.back.keepBody" = "Tes comptes, enregistrements et budgets reviennent tels quels.";
+"usageMode.back.freshTitle" = "Repartir de zéro";
+"usageMode.back.freshBody" = "Tes comptes, enregistrements et budgets sont effacés. Tes groupes ne sont pas touchés.";
+"usageMode.back.continue" = "Continuer";
+"usageMode.back.notNow" = "Pas maintenant";
+"usageMode.fresh.confirmTitle" = "Tu es sûr ? C’est définitif.";
+"usageMode.fresh.confirmICloud" = "Cela efface %1$@, %2$@ et %3$@ de cet appareil et de ton iCloud. Tes groupes ne sont pas touchés.";
+"usageMode.fresh.confirmCloud" = "Cela efface %1$@, %2$@ et %3$@ de cet appareil et de ton compte Yala. Tes groupes ne sont pas touchés.";
+"usageMode.fresh.confirmButton" = "Effacer et repartir de zéro";
+"usageMode.account.title" = "Quel est ton compte principal ?";
+"usageMode.account.body" = "Tu repars de zéro avec un compte. Tu ajouteras les autres quand tu voudras.";
+"usageMode.account.nameLabel" = "Nom du compte";
+"usageMode.account.currency" = "Devise";
+"usageMode.account.footnote" = "Le nom et la devise reprennent ce que tu avais. Ton nom, tes alertes et tes préférences restent : l’accueil ne se répète pas.";
+"usageMode.account.start" = "Commencer";
+"usageMode.account.working" = "On repart de zéro…";
+"usageMode.error" = "Impossible de repartir de zéro. Réessaie.";

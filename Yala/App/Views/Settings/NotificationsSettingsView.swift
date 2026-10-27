@@ -17,7 +17,7 @@ struct NotificationsSettingsView: View {
 
     @State private var viewModel = NotificationsSettingsViewModel()
 
-    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
+    private var isGroupsOnlyShell: Bool { SessionState.shared.isGroupsFocusedShell }
 
     /// En solo-grupos solo la notificación de grupos (event-driven); el resto son
     /// recordatorios/reportes/pagos personales. Regla en `GroupsOnlyVisibilityPolicy`.

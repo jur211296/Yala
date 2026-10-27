@@ -262,7 +262,8 @@ enum WidgetDataCache {
         // La foto de Siri sale de los MISMOS números, en su propia clave (`SiriFinanceSnapshot`): así Siri y los widgets
         // dicen lo mismo y viven y mueren juntos (ver `clearCache`).
         SiriFinanceSnapshotStore.write(built.siri, to: sharedDefaults)
-        publishSessionShell(hasPrivateSession: PrivateSessionMark.hasPrivateSession())
+        publishSessionShell(hasPrivateSession: PrivateSessionMark.hasPrivateSession(),
+                            prefersGroupsOnlyView: GroupsOnlyViewMark.isOn())
 
         // Trigger widget refresh
         WidgetCenter.shared.reloadAllTimelines()
@@ -313,14 +314,19 @@ enum WidgetDataCache {
     /// Dos llamadores, y los dos hacen falta: `updateCache` (cubre el arranque, y con él al que actualiza la app ya en
     /// solo grupos) y el `didSet` de `SessionState.hasPrivateSession`, el embudo del eje, que cubre activar Yala completo
     /// o entrar por un grupo con la app abierta. Sin el segundo, el widget seguiría invitando hasta el siguiente arranque.
-    static func publishSessionShell(hasPrivateSession: Bool) {
-        publishSessionShell(hasPrivateSession: hasPrivateSession, in: sharedDefaults)
+    ///
+    /// Desde la card p0iu cuenta también «Solo grupos» elegido sobre Yala completo: el widget enseña lo mismo que la shell.
+    static func publishSessionShell(hasPrivateSession: Bool, prefersGroupsOnlyView: Bool) {
+        publishSessionShell(hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView,
+                            in: sharedDefaults)
     }
 
     @discardableResult
-    static func publishSessionShell(hasPrivateSession: Bool, in defaults: UserDefaults?) -> Bool {
+    static func publishSessionShell(hasPrivateSession: Bool, prefersGroupsOnlyView: Bool,
+                                    in defaults: UserDefaults?) -> Bool {
         guard let defaults else { return false }
-        let groupsOnly = ShellModeLogic.effective(hasPrivateSession: hasPrivateSession) == .groupsFocused
+        let groupsOnly = ShellModeLogic.effective(
+            hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView) == .groupsFocused
         guard defaults.object(forKey: groupsOnlySessionKey) as? Bool != groupsOnly else { return false }
         defaults.set(groupsOnly, forKey: groupsOnlySessionKey)
         WidgetCenter.shared.reloadAllTimelines()

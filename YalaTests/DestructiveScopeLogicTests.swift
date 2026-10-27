@@ -382,8 +382,10 @@ struct SignOutRowIdentifiersTests {
             "context: context, signaledAt: signalTimestamp, kv: divisionStore,",
             "domainOpen: GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults))",
             "}",
-            "try wipeAllUserData" + "(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal,",
-            "signalTimestamp: signalTimestamp)",
+            // Card p0iu: «Empezar de cero» conserva a la persona (`keepsPersonSettings`) por el MISMO cuerpo.
+            "try wipeAllUserData" + "(in: context, reseedInitialData: keepsPersonSettings, broadcastSignal: broadcastSignal,",
+            "resetsPreferences: !keepsPersonSettings, signalTimestamp: signalTimestamp,",
+            "keepsReminders: keepsPersonSettings)",
         ], """
             el cuerpo cambió. Las dos peticiones van ANTES del borrado (uno que lanza, o un proceso que muere, después de
             borrar las transacciones dejaría los gastos de grupo sin nadie que los pida) y las liquidaciones ANTES que la

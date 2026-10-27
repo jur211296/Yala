@@ -222,11 +222,31 @@ struct RemoteWipeSurfacesWiringTests {
     @Test func elEmbudoDelEjePublicaParaElWidget() throws {
         let lines = Self.codeLines(try Self.source("Yala/App/Models/SessionState.swift"))
         let start = try #require(lines.firstIndex { $0.hasPrefix("var hasPrivateSession: Bool = PrivateSessionMark") })
-        #expect(Array(lines[(start + 1)...(start + 5)]) == [
+        #expect(Array(lines[(start + 1)...(start + 11)]) == [
             "didSet {",
-            "WidgetDataCache.publishSessionShell(hasPrivateSession: hasPrivateSession)",
+            "WidgetDataCache.publishSessionShell(",
+            "hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)",
+            "if !hasPrivateSession && prefersGroupsOnlyView {",
+            "isRefreshingGroupsOnlyViewMirror = true",
+            "prefersGroupsOnlyView = false",
+            "isRefreshingGroupsOnlyViewMirror = false",
+            "}",
             "guard !isRefreshingPrivateSessionMirror else { return }",
             "PrivateSessionMark.set(hasPrivateSession)",
+            "}",
+        ])
+    }
+
+    /// Y el embudo de «Solo grupos» sobre Yala completo (card p0iu) también publica: el widget enseña lo que la shell.
+    @Test func elEmbudoDeLaVistaSoloGruposPublicaParaElWidget() throws {
+        let lines = Self.codeLines(try Self.source("Yala/App/Models/SessionState.swift"))
+        let start = try #require(lines.firstIndex { $0.hasPrefix("var prefersGroupsOnlyView: Bool = GroupsOnlyViewMark") })
+        #expect(Array(lines[(start + 1)...(start + 6)]) == [
+            "didSet {",
+            "WidgetDataCache.publishSessionShell(",
+            "hasPrivateSession: hasPrivateSession, prefersGroupsOnlyView: prefersGroupsOnlyView)",
+            "guard !isRefreshingGroupsOnlyViewMirror else { return }",
+            "GroupsOnlyViewMark.set(prefersGroupsOnlyView)",
             "}",
         ])
     }
@@ -240,18 +260,27 @@ struct WidgetGroupsOnlyInviteTests {
 
     @Test func publica_soloGrupos_yLoRetiraAlActivar() {
         let appGroup = makeIsolatedDefaults(prefix: "test.widget.groupsonly")
-        #expect(WidgetDataCache.publishSessionShell(hasPrivateSession: false, in: appGroup))
+        #expect(WidgetDataCache.publishSessionShell(hasPrivateSession: false, prefersGroupsOnlyView: false, in: appGroup))
         #expect(appGroup.object(forKey: WidgetDataCache.groupsOnlySessionKey) as? Bool == true)
         // Sin cambio no reescribe ni recarga las líneas de tiempo.
-        #expect(!WidgetDataCache.publishSessionShell(hasPrivateSession: false, in: appGroup))
-        #expect(WidgetDataCache.publishSessionShell(hasPrivateSession: true, in: appGroup))
+        #expect(!WidgetDataCache.publishSessionShell(hasPrivateSession: false, prefersGroupsOnlyView: false, in: appGroup))
+        #expect(WidgetDataCache.publishSessionShell(hasPrivateSession: true, prefersGroupsOnlyView: false, in: appGroup))
+        #expect(appGroup.object(forKey: WidgetDataCache.groupsOnlySessionKey) as? Bool == false)
+    }
+
+    /// «Solo grupos» elegido sobre Yala completo (card p0iu): el widget invita igual, y lo retira al volver.
+    @Test func soloGruposPorEleccion_tambienInvita_yLoRetiraAlVolver() {
+        let appGroup = makeIsolatedDefaults(prefix: "test.widget.groupsonly.choice")
+        #expect(WidgetDataCache.publishSessionShell(hasPrivateSession: true, prefersGroupsOnlyView: true, in: appGroup))
+        #expect(appGroup.object(forKey: WidgetDataCache.groupsOnlySessionKey) as? Bool == true)
+        #expect(WidgetDataCache.publishSessionShell(hasPrivateSession: true, prefersGroupsOnlyView: false, in: appGroup))
         #expect(appGroup.object(forKey: WidgetDataCache.groupsOnlySessionKey) as? Bool == false)
     }
 
     /// Vaciar los datos no cambia quién usa el teléfono: el borrado del snapshot no se lleva la clave.
     @Test func vaciarElSnapshotNoTocaLaInvitacion() {
         let appGroup = makeIsolatedDefaults(prefix: "test.widget.groupsonly.clear")
-        WidgetDataCache.publishSessionShell(hasPrivateSession: false, in: appGroup)
+        WidgetDataCache.publishSessionShell(hasPrivateSession: false, prefersGroupsOnlyView: false, in: appGroup)
         appGroup.set(Data("x".utf8), forKey: WidgetDataCache.cacheKey)
         WidgetDataCache.clearCache(in: appGroup)
         #expect(appGroup.data(forKey: WidgetDataCache.cacheKey) == nil)

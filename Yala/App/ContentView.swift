@@ -160,6 +160,10 @@ struct ContentView: View {
     /// arriba y por la misma regla.
     @State private var showGroupsEducational: Bool = false
     @State private var showFullModeActivation: Bool = false
+    /// Card p0iu · el aviso «Ya tienes Yala completo de nuevo» sale cuando la hoja de la vuelta ya bajó.
+    @State private var pendingReturnToFullToast = false
+    /// Card p0iu · una vuelta en marcha (espera a que Ajustes se vaya): un segundo toque no lanza otra.
+    @State private var isReturningToFull = false
     /// Paso 8 · «Primera vez → nube» descubrió una cuenta solo-grupos: cuando su sesión quede montada en este
     /// dispositivo (`hasCompletedOnboarding` pasa a `true` en modo solo-grupos) se le ofrece «Activar Yala
     /// completo» (ADR §7). En memoria a propósito: es una OFERTA, no una decisión sobre datos — si la app muere
@@ -779,7 +783,20 @@ struct ContentView: View {
                 }
             }
         }
-        .sheet(isPresented: $showFullModeActivation) {
+        .sheet(isPresented: $showFullModeActivation, onDismiss: settleReturnToFullSheet) {
+            if let returnToFullSummary = SessionState.shared.returnToFullSummary {
+                ReturnToFullYalaView(
+                    summary: returnToFullSummary,
+                    onFinished: { outcome in
+                        pendingReturnToFullToast = true
+                        // «Empezar de cero» ya volvió dentro de su borrado; «Seguir donde lo dejé» vuelve aquí.
+                        if outcome == .keptEverything {
+                            Task { @MainActor in await UsageModeService.returnToFull(context: modelContext) }
+                        }
+                        showFullModeActivation = false
+                    },
+                    onNotNow: { showFullModeActivation = false })
+            } else {
             FullModeActivationView(
                 // Paso 8 · la puerta privada de la activación borra SOLO la zona de iCloud. El store de una
                 // sesión solo-grupos nunca espejó —lo local es suyo—, y el borrado local (`wipeAllUserData`)
@@ -835,6 +852,7 @@ struct ContentView: View {
                 showFullModeActivation = false
             }
             .environment(SessionState.shared)
+            }
         }
         // Inbox alert as fullScreenCover (appears over any sheet).
         // Driven by @State set by the .contentView drain handler.
@@ -1457,7 +1475,16 @@ struct ContentView: View {
         case .remoteOnboardingCompleted:
             handleRemoteOnboardingCompleted()
         case .presentFullModeActivation:
-            showFullModeActivation = true
+            // Card p0iu: con la sesión privada viva y «Solo grupos» elegido, el intent es la VUELTA, no la activación
+            // (que repetiría la bienvenida). Lo piden Ajustes, Más, «Cómo usas Yala», el widget y el enlace.
+            if SessionState.shared.isGroupsOnlyByChoice {
+                beginReturnToFull()
+            } else if SessionState.shared.isGroupsFocusedShell {
+                SessionState.shared.returnToFullSummary = nil
+                showFullModeActivation = true
+            }
+            // Con Yala completo ya puesto (un toque del widget que esperó en la cola mientras la vuelta terminaba), no hay
+            // nada que activar: abrir la activación sobre una sesión completa repetiría la bienvenida.
         // G4-invites (A2): flujo backend sign-in → consent → (onboarding fresco) → join.
         // **El drenado NO mira `groupsBackendEnabled`, y es a propósito.** El kill lo respeta cada PRODUCTOR
         // antes de emitir: crear grupo y su form (`GroupCreateRoutingLogic`), los empty states y el educativo
@@ -1843,6 +1870,68 @@ struct ContentView: View {
         return WelcomePrivateICloudGateLogic.deviceDataReading(
             personal: personal, groups: groups,
             groupsKeptForThisPerson: LateNoticeKeptGroupsMark.vouchesNow())
+    }
+
+    /// Card p0iu · la vuelta a Yala completo. Sin registros guardados no se pregunta nada (decisión 3 de Jürgen): vuelve y
+    /// avisa. Con registros, la hoja de la activación enseña la vuelta. Si el recuento no se deja leer, vuelve sin
+    /// preguntar: conservarlo todo es la salida que no pierde nada, y «Empezar de cero» sigue en «Vaciar datos».
+    ///
+    /// **Espera a que la ventana no tenga nada presentado** (review de p0iu): desde Ajustes, el botón cierra la hoja y
+    /// pide la vuelta, y el router NO retiene este intent (`RouterConsumerGateLogic`, para que «Activar» salga encima de
+    /// Ajustes). Presentar la pregunta con Ajustes aún bajando hace que UIKit la rechace y deje el blocker
+    /// `fullModeActivation` puesto para siempre; cambiar la shell con Ajustes encima puede desmontar a quien la presenta.
+    /// Molde de `SettingsReturnOpening`: esperar el hueco, pedir la hoja y comprobar que llegó.
+    private func beginReturnToFull() {
+        guard !isReturningToFull else { return }
+        isReturningToFull = true
+        Task { @MainActor in
+            defer { isReturningToFull = false }
+            let pause: () async -> Void = {
+                do { try await Task.sleep(for: SettingsReturnOpening.pollInterval) } catch {}
+            }
+            // La ventana libre, como mucho lo que espera `SettingsReturnOpening` (3 s); vencido, se sigue igual.
+            for _ in 0..<SettingsReturnOpening.slotWaitPolls where ModalPresentationProbe.isAnythingPresented {
+                await pause()
+            }
+            // Otra vuelta (o un cierre de sesión) pudo cambiarlo mientras se esperaba.
+            guard SessionState.shared.isGroupsOnlyByChoice else { return }
+            let summary: UsageModeLogic.SavedSummary
+            do {
+                summary = try UsageModeService.savedSummary(context: modelContext)
+            } catch {
+                #if DEBUG
+                print("ContentView: Error counting saved records for the return: \(error)")
+                #endif
+                summary = UsageModeLogic.SavedSummary(records: 0, accounts: 0, budgets: 0)
+            }
+            switch UsageModeLogic.returnRoute(savedRecords: summary.records) {
+            case .direct:
+                await UsageModeService.returnToFull(context: modelContext)
+                showPositiveToast(L10n.UsageMode.backToast)
+            case .ask:
+                SessionState.shared.returnToFullSummary = summary
+                let outcome = await SettingsReturnOpening.run(
+                    isWindowPresenting: { ModalPresentationProbe.isAnythingPresented },
+                    open: { showFullModeActivation = true },
+                    release: { showFullModeActivation = false },
+                    pause: pause)
+                if outcome != .presented {
+                    SessionState.shared.returnToFullSummary = nil
+                    #if DEBUG
+                    print("ContentView: la hoja de la vuelta no llegó a presentarse (\(outcome))")
+                    #endif
+                }
+            }
+        }
+    }
+
+    /// Card p0iu · al bajar la hoja: el aviso de la vuelta, si la vuelta terminó, y la hoja otra vez libre para la
+    /// activación de siempre.
+    private func settleReturnToFullSheet() {
+        SessionState.shared.returnToFullSummary = nil
+        guard pendingReturnToFullToast else { return }
+        pendingReturnToFullToast = false
+        showPositiveToast(L10n.UsageMode.backToast)
     }
 
     /// Show a positive confirmation toast for ~3s. Used for remote onboarding
@@ -2920,7 +3009,8 @@ struct ContentView: View {
         // .returningUserSheet`): al actualizar con la oferta pendiente, Novedades salía en el segundo arranque.
         let whatsNew = whatsNewDataIfPending()
         switch WhatsNewLaunchLogic.returningUserSheet(
-            hasPrivateSession: SessionState.shared.hasPrivateSession,
+            // Quien eligió «Solo grupos» sobre Yala completo tampoco: Novedades y la prueba hablan de lo que no ve (p0iu).
+            hasPrivateSession: !SessionState.shared.isGroupsFocusedShell,
             whatsNewPending: whatsNew != nil,
             trialOfferPending: SessionState.shared.needsPostOnboardingTrial,
             isPro: FeatureGateService.shared.isProUser) {
@@ -4159,8 +4249,7 @@ struct MainTabView: View {
     /// El eje 1 se lee del espejo OBSERVABLE de `SessionState` y no de la marca persistida: esta
     /// propiedad se recalcula cuando SwiftUI observa un cambio, y un point-read no lo provocaría.
     private var reduceToGroupsOnly: Bool {
-        ShellModeLogic.effective(
-            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
+        sessionState.isGroupsFocusedShell
     }
 
     private var modeConfig: TabBarConfiguration {

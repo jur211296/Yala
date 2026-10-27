@@ -1292,5 +1292,85 @@
 			<string>Noch %d Schritte · dein Fortschritt wird gespeichert</string>
 		</dict>
 	</dict>
+	<key>usageMode.back.savedTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Du hast %d gespeicherten Eintrag</string>
+			<key>other</key>
+			<string>Du hast %d gespeicherte Einträge</string>
+		</dict>
+	</dict>
+	<key>usageMode.back.savedQuestion</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Was machen wir damit?</string>
+			<key>other</key>
+			<string>Was machen wir damit?</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d Eintrag</string>
+			<key>other</key>
+			<string>%d Einträge</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d Konto</string>
+			<key>other</key>
+			<string>%d Konten</string>
+		</dict>
+	</dict>
+	<key>usageMode.count.budgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d Budget</string>
+			<key>other</key>
+			<string>%d Budgets</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

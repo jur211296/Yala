@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1078)
+## Index (1084)
 
 | id | status | path |
 |---|---|---|
@@ -513,6 +513,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-next-column-needs-the-capability-level-in-the-drain | backlog | tickets/backlog/groups-next-column-needs-the-capability-level-in-the-drain.md |
 | groups-notifications-permission-skipped-when-the-group-arrives-another-way | qa | tickets/qa/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
+| groups-only-by-choice-holds-group-scheduled-payments | backlog | tickets/backlog/groups-only-by-choice-holds-group-scheduled-payments.md |
+| groups-only-by-choice-still-shows-apple-pay-and-siri-banners | backlog | tickets/backlog/groups-only-by-choice-still-shows-apple-pay-and-siri-banners.md |
+| groups-only-by-choice-unmounts-forms-in-other-windows | backlog | tickets/backlog/groups-only-by-choice-unmounts-forms-in-other-windows.md |
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | done | tickets/done/groups-only-second-launch-mounts-icloud-mirror.md |
 | groups-only-session-storage-screen-says-data-lives-in-icloud | done | tickets/done/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
@@ -1032,6 +1035,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | two-account-drafts-for-one-group-expense-can-create-two-real-legs | done | tickets/done/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
+| ui-suite-2-2-five-tests-red-on-the-base | backlog | tickets/backlog/ui-suite-2-2-five-tests-red-on-the-base.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
 | uitest-relaunch-without-reset-can-lose-the-new-user-panel | backlog | tickets/backlog/uitest-relaunch-without-reset-can-lose-the-new-user-panel.md |
 | uitest-reset-keeps-the-sign-out-wipe-arm | backlog | tickets/backlog/uitest-reset-keeps-the-sign-out-wipe-arm.md |
@@ -1045,6 +1049,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | unit-tests-write-group-amounts-into-the-real-app-group-mirror | backlog | tickets/backlog/unit-tests-write-group-amounts-into-the-real-app-group-mirror.md |
 | update-banner-appstore-criteria | done | tickets/done/update-banner-appstore-criteria.md |
 | upload-order-sorts-by-hlc-test-fails-in-ci | done | tickets/done/upload-order-sorts-by-hlc-test-fails-in-ci.md |
+| usage-mode-full-to-groups-only-and-back | qa | tickets/qa/usage-mode-full-to-groups-only-and-back.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | verify-reads-a-failed-local-fetch-as-an-empty-outbox | done | tickets/done/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
 | views-reading-the-cloud-session-do-not-repaint-when-it-changes | backlog | tickets/backlog/views-reading-the-cloud-session-do-not-repaint-when-it-changes.md |

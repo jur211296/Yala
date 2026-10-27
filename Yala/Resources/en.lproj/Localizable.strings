@@ -8414,3 +8414,42 @@
 
 /* Hoja de Filtros: las dos pestañas se combinan */
 "filters.segment.combineHint" = "They combine: you can show only some things and hide others at the same time.";
+
+/* Cómo usas Yala: completo ↔ solo grupos (card p0iu) */
+"usageMode.row.title" = "How you use Yala";
+"usageMode.full.title" = "Full Yala";
+"usageMode.full.body" = "Your accounts, records, budgets, and groups.";
+"usageMode.groupsOnly.title" = "Groups only";
+"usageMode.groupsOnly.body" = "You see only your groups. Your accounts and records stay saved; nothing is erased.";
+"usageMode.groupsOnly.bodyNew" = "You see only your groups.";
+"usageMode.screen.intro" = "Choose what you see in the app. Switching doesn’t erase anything.";
+"usageMode.screen.footer" = "You can change this anytime. When you go back to full Yala, everything is as you left it.";
+"usageMode.leave.title" = "Use Yala just for groups?";
+"usageMode.leave.body" = "You’ll see only your groups. Your accounts, records, and budgets aren’t erased: they stay saved and come back when you return to full Yala.";
+"usageMode.leave.groupsStay" = "Your groups and their alerts stay the same.";
+"usageMode.leave.paused" = "Your reminders and scheduled payments are paused.";
+"usageMode.leave.pro" = "Your Pro subscription stays active. If you won’t use it, you can cancel it in your device’s Settings.";
+"usageMode.leave.confirm" = "Use groups only";
+"usageMode.back.title" = "Back to full Yala";
+"usageMode.back.subtitle" = "Your accounts and records are waiting";
+"usageMode.back.toast" = "You have full Yala again";
+"usageMode.back.range" = "From %1$@ to %2$@, in %3$@.";
+"usageMode.back.rangeSameDay" = "On %1$@, in %2$@.";
+"usageMode.back.keepTitle" = "Pick up where I left off";
+"usageMode.back.keepBody" = "Your accounts, records, and budgets come back as they were.";
+"usageMode.back.freshTitle" = "Start from scratch";
+"usageMode.back.freshBody" = "Your accounts, records, and budgets are erased. Your groups aren’t touched.";
+"usageMode.back.continue" = "Continue";
+"usageMode.back.notNow" = "Not now";
+"usageMode.fresh.confirmTitle" = "Are you sure? This is permanent.";
+"usageMode.fresh.confirmICloud" = "This erases %1$@, %2$@, and %3$@ from this device and from your iCloud. Your groups aren’t touched.";
+"usageMode.fresh.confirmCloud" = "This erases %1$@, %2$@, and %3$@ from this device and from your Yala account. Your groups aren’t touched.";
+"usageMode.fresh.confirmButton" = "Erase and start from scratch";
+"usageMode.account.title" = "What’s your main account?";
+"usageMode.account.body" = "You start from scratch with one account. Add the others whenever you like.";
+"usageMode.account.nameLabel" = "Account name";
+"usageMode.account.currency" = "Currency";
+"usageMode.account.footnote" = "The name and currency come from what you had. Your name, alerts, and preferences stay: you won’t see the welcome again.";
+"usageMode.account.start" = "Start";
+"usageMode.account.working" = "Starting from scratch…";
+"usageMode.error" = "We couldn’t start from scratch. Try again.";

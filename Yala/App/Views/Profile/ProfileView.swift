@@ -681,16 +681,16 @@ struct ProfileView: View {
     }
 
     /// GC-08: en modo solo-grupos el perfil se reduce a lo esencial de grupos +
-    /// opciones universales; se ocultan las filas de finanzas personales.
+    /// opciones universales; se ocultan las filas de finanzas personales. Desde la card p0iu, también cuando la
+    /// persona eligió «Solo grupos» sobre Yala completo: la misma pregunta que la shell, del espejo observable.
     private var isGroupsOnlyShell: Bool {
-        !SessionState.shared.hasPrivateSession
+        sessionState.isGroupsFocusedShell
     }
 
     /// Shell reducida a Grupos: oculta la sección «Organización» (finanzas personales).
-    /// Reactivo por el espejo observable del eje 1.
+    /// Reactivo por los espejos observables del eje 1 y de la vista «Solo grupos».
     private var isGroupsFocusedShell: Bool {
-        ShellModeLogic.effective(
-            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
+        sessionState.isGroupsFocusedShell
     }
 
     /// Gatea la fila «Activar Yala completo». Es la MISMA pregunta que `isGroupsFocusedShell` y por eso
@@ -1327,6 +1327,8 @@ struct ProfileView: View {
                 AIPrivacySettingsView()
             case .permissions:
                 PermissionsSettingsView()
+            case .usageMode:
+                UsageModeSettingsView(onLeaveSettings: { intents in leaveSettings(then: intents) })
             case .storageMode:
                 // Paso 10 · el CTA de asociar cierra ESTE sheet y emite el intent: el sheet del
                 // sign-in de Grupos tiene dueño único (`GroupsBackendInviteModifier`, anclado en
@@ -1379,7 +1381,7 @@ struct ProfileView: View {
     private func paintsOwnBackButton(_ destination: ProfileDestination) -> Bool {
         switch destination {
         case .accounts, .categories, .tags, .themes, .personalization, .appIcon, .notifications, .budgets,
-             .subscription, .tips, .faq, .siriShortcuts, .permissions:
+             .subscription, .tips, .faq, .siriShortcuts, .permissions, .usageMode:
             true
         case .currency, .favorites, .userDataReset, .faceIDProtectionGuide, .iCloudSync, .aiPrivacy, .storageMode,
              .yalaAccount:
@@ -1504,12 +1506,25 @@ struct ProfileView: View {
     /// UX 2.2 · L19-15 (decisión de Jürgen, 2026-10-18): en solo grupos, la puerta al resto de Yala se DESTACA. Era una fila
     /// más sobre tarjeta blanca; ahora va rellena del color de la app (el mismo relleno que `YalaPrimaryButton`), con el
     /// texto en blanco. Sin degradado ni brillo.
+    ///
+    /// Card p0iu: quien eligió «Solo grupos» sobre Yala completo ve «Volver a Yala completo · Tus cuentas y registros te
+    /// esperan», y el toque cierra Ajustes antes de pedir la vuelta: puede acabar sin hoja, cambiando la shell, y eso no se
+    /// hace con Ajustes encima (molde de «Vaciar datos»). El router NO retiene este intent: es `ContentView` quien espera
+    /// a que la hoja se haya ido (`beginReturnToFull`).
+    private var returnEntry: UsageModeLogic.ReturnEntry {
+        UsageModeLogic.returnEntry(hasPrivateSession: sessionState.hasPrivateSession)
+    }
+
     private var activateFullYalaSection: some View {
         Button {
-            RouterEntryGate.shared.submit(.presentFullModeActivation)
+            if returnEntry == .comeBack {
+                leaveSettings(then: [.presentFullModeActivation])
+            } else {
+                RouterEntryGate.shared.submit(.presentFullModeActivation)
+            }
         } label: {
             HStack(spacing: DS.FormRow.iconSpacing) {
-                Image(systemName: "sparkles")
+                Image(systemName: returnEntry == .comeBack ? "arrow.uturn.backward" : "sparkles")
                     .font(DS.Typography.label)
                     .foregroundStyle(theme.onAccent)
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
@@ -1520,11 +1535,11 @@ struct ProfileView: View {
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Groups.Activate.title)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backTitle : L10n.Groups.Activate.title)
                         .font(DS.Typography.bodyBold)
                         .foregroundStyle(theme.onAccent)
 
-                    Text(L10n.Groups.Activate.subtitle)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backSubtitle : L10n.Groups.Activate.subtitle)
                         .font(DS.Typography.caption)
                         .foregroundStyle(theme.onAccent.opacity(0.85))
                 }
@@ -1607,6 +1622,17 @@ struct ProfileView: View {
     private var preferenciasSection: some View {
         SectionBox(title: L10n.Settings.preferences) {
             VStack(spacing: DS.Spacing.none) {
+                // «Cómo usas Yala» (card p0iu, entrada A): la primera, y en los dos modos — el mismo sitio sirve para ir y
+                // para volver. El subtítulo dice el modo de ahora.
+                settingsLink(ProfileDestination.usageMode) {
+                    settingsRowContent(
+                        icon: "square.grid.2x2.fill", title: L10n.UsageMode.rowTitle,
+                        subtitle: isGroupsFocusedShell ? L10n.UsageMode.groupsOnlyTitle : L10n.UsageMode.fullTitle,
+                        iconColor: theme.accent)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_usage_mode")
+                SubsectionDivider()
                 // Personalización (formato, calendario, modo solo-gastos…) es de
                 // finanzas personales: oculta en solo-grupos.
                 if !isGroupsOnlyShell {

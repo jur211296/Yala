@@ -59,7 +59,8 @@ final class DataWipeService {
         broadcastSignal: Bool = true,
         resetsPreferences: Bool = true,
         remoteWipeCut: RemoteWipeCutLogic.Cut? = nil,
-        signalTimestamp: Date? = nil
+        signalTimestamp: Date? = nil,
+        keepsReminders: Bool = false
     ) throws {
         #if DEBUG
         // Seam de QA (`-uitest-fail-wipe`): lanza ANTES de tocar nada, así que los datos quedan
@@ -122,8 +123,12 @@ final class DataWipeService {
         }
         try context.save()
 
-        // 1.1d Eliminar notificaciones personalizadas y resetear default
-        if let notifications = rows.notifications {
+        // 1.1d Eliminar notificaciones personalizadas y resetear default — salvo en «Empezar de cero» de la vuelta a
+        // Yala completo (card p0iu), que promete que «tus avisos y tus preferencias se quedan»: los avisos no son filas
+        // del corpus que se tira, son cómo la persona quiere que Yala le hable.
+        if keepsReminders {
+            // Se quedan tal cual.
+        } else if let notifications = rows.notifications {
             NotificationService.shared.deleteNotifications(notifications, context: context)
         } else {
             NotificationService.shared.deleteAllNotifications(context: context)
@@ -338,9 +343,14 @@ final class DataWipeService {
     /// y la señal sale con esa hora. El receptor repone el resto (`GroupsRemoteWipeDivision`). Sin grupos, el reparto va
     /// vacío y el receptor repone todo. Va antes del borrado: se calcula sobre los grupos, que el borrado conserva, pero un
     /// fallo después dejaría la señal sin reparto.
+    ///
+    /// **`keepsPersonSettings`** (card p0iu, «Empezar de cero» al volver de «Solo grupos»): borra las mismas filas pero
+    /// conserva lo que describe a la PERSONA —nombre, divisa, tema, onboarding hecho, avisos— y resiembra las categorías,
+    /// porque no se repite la bienvenida que las sembraría. Es el corte de `resetsPreferences: false`.
     static func wipePersonalDataKeepingGroups(
         in context: ModelContext,
         broadcastSignal: Bool,
+        keepsPersonSettings: Bool = false,
         defaults: UserDefaults = .standard,
         divisionStore: OwnerKeyValueWriting = GroupsRemoteWipeDivision.defaultStore
     ) throws {
@@ -352,8 +362,9 @@ final class DataWipeService {
                 context: context, signaledAt: signalTimestamp, kv: divisionStore,
                 domainOpen: GroupTransactionBridge.isDomainOpenForBridge(defaults: defaults))
         }
-        try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: broadcastSignal,
-                            signalTimestamp: signalTimestamp)
+        try wipeAllUserData(in: context, reseedInitialData: keepsPersonSettings, broadcastSignal: broadcastSignal,
+                            resetsPreferences: !keepsPersonSettings, signalTimestamp: signalTimestamp,
+                            keepsReminders: keepsPersonSettings)
     }
 
     /// **El «Vaciar datos» de OTRO dispositivo del Apple ID, aplicado aquí: el mismo borrado, sin volver a señalizar, y
@@ -1094,6 +1105,9 @@ final class DataWipeService {
         // incondicional, así que la invitada llega aquí sin un solo guard: con `.standard` clavado,
         // «Vaciar mis datos» le borraba al DUEÑO sus ~114 preferencias.
         removeUserPreferenceKeys(from: UserDefaults.standard)
+        // El barrido se llevó la marca de «Solo grupos» (card p0iu): su espejo observable la sigue, o la shell se quedaría
+        // reducida sobre el onboarding personal hasta el siguiente arranque. Solo re-lee; no persiste nada.
+        SessionState.shared.refreshPrivateSessionMirror()
 
         ProTourManager.shared.reset()                                // Re-show pro tour
 
@@ -1238,6 +1252,8 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.tabConfigJSON)  // Layout custom de tabs ("tabBarConfiguration")
         defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
         defaults.removeObject(forKey: "customPeriodEnd")
+        // «Solo grupos» sobre Yala completo (card p0iu): vaciar manda al onboarding personal, que es Yala completo.
+        defaults.removeObject(forKey: GroupsOnlyViewMark.userDefaultsKey)
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true
