@@ -1,10 +1,10 @@
 ---
 id: groups-fab-group-with-only-pending-groups-says-nothing
-status: backlog
+status: done
 area: groups
 priority: medium
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-27
 source: auditoría UX 2.2 · L13-8 (lo que la decisión B no cubre)
 ---
 
@@ -27,3 +27,11 @@ Qué ve esa persona: el aviso de «esperando aprobación» que ya existe en la p
 
 - Condición de la hoja nueva: `FABStackView.hasNoActiveGroups()` (sin archivados ni borrados para todos).
 - Eligibilidad del gasto: `GroupsViewModel.eligibleGroupsForExpense()`.
+
+## Cierre (2026-10-27, PR #654)
+
+Decisión de Jürgen (2026-10-26): reutilizar el aviso de la pestaña. Sin grupo donde apuntar y con alguno pendiente de
+aprobación, «Grupo» del + enseña «Esperando aprobación» y retira la petición (recarga una vez antes de decidir). Solo
+archivados, sin pendientes: sigue la hoja de L13-8. Red:
+`GroupPendingMemberDoorUITests#test_panelGroupWithOnlyPendingGroup_explainsInsteadOfWaiting` (rojo sobre la base);
+control: `GroupsSmokeUITests#test_groupExpenseFromPanelFAB`.

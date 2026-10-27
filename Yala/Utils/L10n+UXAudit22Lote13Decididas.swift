@@ -42,8 +42,6 @@ extension L10n {
         static var namePlaceholder: String { l13d("groups.d13.form.namePlaceholder") }
         static var simplify: String { l13d("groups.d13.form.simplify") }
         static var simplifyHint: String { l13d("groups.d13.form.simplifyHint") }
-        static var singleCurrency: String { l13d("groups.d13.form.singleCurrency") }
-        static var splitType: String { l13d("groups.d13.form.splitType") }
 
         // MARK: - L12-12 · el nombre de la persona dentro del formulario de su primer grupo
 

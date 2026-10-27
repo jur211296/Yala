@@ -749,6 +749,21 @@ struct GroupsContainerView: View {
             }
             wantedGroup = match
         }
+        // k26u · «Grupo» del + sin grupo donde apuntar ya y con alguno esperando tu aprobación: se avisa con la misma
+        // puerta que la tarjeta y se retira la petición. Antes aterrizaba aquí en silencio y el gasto saltaba solo
+        // horas después, al llegar la aprobación. La recarga va primero: la aprobación pudo bajar hace un instante y
+        // la caché de miembros ir por detrás. Sin pendientes (grupos aún sin cargar) se sigue esperando, como antes.
+        if wantedGroup == nil, eligibles.isEmpty,
+           viewModel.activeGroups.contains(where: { !viewModel.canOpenDetail(for: $0) }) {
+            viewModel.loadData()
+            eligibles = viewModel.eligibleGroupsForExpense()
+            if eligibles.isEmpty,
+               viewModel.activeGroups.contains(where: { !viewModel.canOpenDetail(for: $0) }) {
+                navigation.pendingNewGroupExpense = false
+                showPendingApprovalNotice = true
+                return
+            }
+        }
         guard let initial = wantedGroup ?? eligibles.first else { return }
         navigation.pendingNewGroupExpense = false
         navigation.pendingNewGroupExpenseGroupID = nil

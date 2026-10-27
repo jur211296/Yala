@@ -278,9 +278,10 @@ struct GroupFormView: View {
                 Divider()
                     .padding(.leading, DS.FormRow.paddingH)
 
-                // Show debts in single currency
+                // Ver las deudas en una sola moneda — mismas claves que Ajustes del grupo (avq3): crear y ajustar
+                // nombran igual la misma opción, y al compartir clave no pueden volver a divergir.
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.GroupsCreate.singleCurrency, isOn: $showDebtsInSingleCurrency)
+                    Toggle(L10n.UXL19.singleCurrency, isOn: $showDebtsInSingleCurrency)
                         .font(DS.Typography.body)
                         .accessibilityIdentifier("group_form_single_currency_toggle")
 
@@ -330,7 +331,7 @@ struct GroupFormView: View {
 
                 // Default split type
                 HStack {
-                    Text(L10n.GroupsCreate.splitType)
+                    Text(L10n.UXL19.splitType)
                         .font(DS.Typography.body)
 
                     Spacer()
