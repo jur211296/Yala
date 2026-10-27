@@ -16,7 +16,7 @@ struct ThemeSettingsView: View {
 
     private let featureGate = FeatureGateService.shared
 
-    private var isGroupsOnlyShell: Bool { !SessionState.shared.hasPrivateSession }
+    private var isGroupsOnlyShell: Bool { SessionState.shared.isGroupsFocusedShell }
 
     @State private var showUpgradeSheet = false
     /// El tema Pro que se tocó: el muro lo enseña (UX 2.2 · L16-11) y, si se compra ahí, se aplica (L17-9).

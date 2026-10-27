@@ -3208,6 +3208,9 @@ final class AppBootstrapper {
     }
 
     private func checkForPendingInboxDrafts(context: ModelContext) {
+        // Card p0iu: en «Solo grupos» la Bandeja no se ve; el aviso esperaría a quien no puede abrirla. Sin firmar nada,
+        // así que al volver a Yala completo el primer plano siguiente avisa de lo pendiente.
+        guard !PersonalRemindersPause.isPaused() else { return }
         // Idempotency via per-draft signatures (createdAt + sourceType).
         // Legacy Date-based watermark is dropped on migration — the first
         // post-upgrade check emits an alert for all real pending drafts
@@ -3382,7 +3385,9 @@ final class AppBootstrapper {
         let activeItems = fetchActiveNotifications(context: context)
 
         // If there are active items but fewer pending (reinstall/update case), reschedule
-        if !activeItems.isEmpty && pending.count < activeItems.count {
+        // En «Solo grupos» sobre Yala completo (card p0iu) los recordatorios están en pausa: siempre faltarían, y
+        // reprogramar barrería en cada primer plano los avisos de grupos que esperan su segundo de vida.
+        if !activeItems.isEmpty && pending.count < activeItems.count && !PersonalRemindersPause.isPaused() {
             await NotificationService.shared.rescheduleAllNotifications(items: activeItems)
         }
 

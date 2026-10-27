@@ -7737,3 +7737,47 @@
 
 /* Hoja de Filtros: las dos pestañas se combinan */
 "filters.segment.combineHint" = "Podes combinar: ver só algumas coisas e ocultar outras ao mesmo tempo.";
+
+/* Cómo usas Yala: completo ↔ solo grupos (card p0iu) */
+"usageMode.row.title" = "Como usas o Yala";
+"usageMode.full.title" = "Yala completo";
+"usageMode.full.body" = "As tuas contas, registos, orçamentos e grupos.";
+"usageMode.groupsOnly.title" = "Só grupos";
+"usageMode.groupsOnly.body" = "Vês só os teus grupos. As tuas contas e registos ficam guardados, nada é apagado.";
+"usageMode.groupsOnly.bodyNew" = "Vês só os teus grupos.";
+"usageMode.screen.intro" = "Escolhe o que vês na app. Mudar não apaga nada.";
+"usageMode.screen.footer" = "Podes mudar quando quiseres. Ao voltar ao Yala completo, tudo fica como deixaste.";
+"usageMode.leave.title" = "Usar o Yala só para grupos?";
+"usageMode.leave.body" = "Vais ver só os teus grupos. As tuas contas, registos e orçamentos não são apagados: ficam guardados e voltam quando regressares ao Yala completo.";
+"usageMode.leave.groupsStay" = "Os teus grupos e os respetivos avisos ficam iguais.";
+"usageMode.leave.paused" = "Os teus lembretes e pagamentos programados ficam em pausa.";
+"usageMode.leave.pro" = "A tua subscrição Pro continua ativa. Se não a fores usar, podes cancelá-la nas Definições do teu dispositivo.";
+"usageMode.leave.confirm" = "Usar só grupos";
+"usageMode.back.title" = "Voltar ao Yala completo";
+"usageMode.back.subtitle" = "As tuas contas e registos esperam por ti";
+"usageMode.back.toast" = "Tens o Yala completo de novo";
+"usageMode.back.range" = "De %1$@ a %2$@, em %3$@.";
+"usageMode.back.rangeSameDay" = "A %1$@, em %2$@.";
+"usageMode.back.keepTitle" = "Continuar onde parei";
+"usageMode.back.keepBody" = "As tuas contas, registos e orçamentos voltam tal como estavam.";
+"usageMode.back.freshTitle" = "Começar do zero";
+"usageMode.back.freshBody" = "As tuas contas, registos e orçamentos são apagados. Os teus grupos não são alterados.";
+"usageMode.back.continue" = "Continuar";
+"usageMode.back.notNow" = "Agora não";
+"usageMode.fresh.confirmTitle" = "Tens a certeza? Isto é definitivo.";
+"usageMode.fresh.confirmICloud" = "Vão ser apagados %1$@, %2$@ e %3$@ deste dispositivo e do teu iCloud. Os teus grupos não são alterados.";
+"usageMode.fresh.confirmCloud" = "Vão ser apagados %1$@, %2$@ e %3$@ deste dispositivo e da tua conta Yala. Os teus grupos não são alterados.";
+"usageMode.fresh.confirmButton" = "Apagar e começar do zero";
+"usageMode.account.title" = "Qual é a tua conta principal?";
+"usageMode.account.body" = "Começas do zero com uma conta. As outras adicionas quando quiseres.";
+"usageMode.account.nameLabel" = "Nome da conta";
+"usageMode.account.currency" = "Moeda";
+"usageMode.account.footnote" = "O nome e a moeda vêm do que tinhas. O teu nome, os teus avisos e as tuas preferências ficam: as boas-vindas não se repetem.";
+"usageMode.account.start" = "Começar";
+"usageMode.account.working" = "A começar do zero…";
+"usageMode.error" = "Não conseguimos começar do zero. Tenta outra vez.";
+"usageMode.back.savedTitle" = "Tens %d registos guardados";
+"usageMode.back.savedQuestion" = "O que fazemos com eles?";
+"usageMode.count.records" = "%d registos";
+"usageMode.count.accounts" = "%d contas";
+"usageMode.count.budgets" = "%d orçamentos";

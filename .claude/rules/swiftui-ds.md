@@ -38,6 +38,16 @@ paths:
 - **Corolario en Estadísticas (medido el 2026-10-09): la señal de «datos nuevos» es `DetailContainerViewModel.dataGeneration`, no `allTransactions.count` ni `dataVersion`.** `.count` no ve una edición en sitio (mismas filas) y `dataVersion` salta 150 ms antes de la recarga del contenedor, así que quien lo observe lee los arrays viejos. Y la señal no puede avanzar en cada recarga: el contenedor recarga **dos veces por alta** (al guardar, por `dataVersion`, y al cerrar la pantalla de éxito, por el `onDisappear` del sheet), y un contador por recarga duplicaba el recálculo de Distribución. Por eso solo avanza si la recarga trae algo (otro `dataVersion` o arrays distintos). Una pestaña que precalcule cuelga de ella (`CategoriesTabView` y, desde el 2026-10-25, `TrendsTabView`).
 
 
+- **«Solo grupos» tiene dos orígenes desde el 2026-10-26 (card p0iu), y la shell los lee juntos.** Sin sesión privada
+  (`!hasPrivateSession`, el eje) o con sesión privada y «Solo grupos» elegido en «Cómo usas Yala» (`GroupsOnlyViewMark`,
+  espejo `SessionState.prefersGroupsOnlyView`). ⇒ **un gate de SHELL o de visibilidad lee
+  `sessionState.isGroupsFocusedShell`**, nunca `!hasPrivateSession`: con la lectura vieja, quien eligió solo grupos vería
+  filas, pestañas o temas de la app completa. **Un gate de DATOS sigue leyendo el eje** (bridge, borrados, cierre de
+  sesión, la cuenta de los formularios de grupo): la vista no apaga la sesión, y por eso los gastos de grupo siguen
+  llegando a los registros. La puerta destacada de Ajustes y Más distingue los dos orígenes con
+  `UsageModeLogic.returnEntry`, y el intent `.presentFullModeActivation` es la VUELTA cuando hay sesión privada
+  (`SessionState.isGroupsOnlyByChoice`). Un productor nuevo de avisos personales mira `PersonalRemindersPause` primero.
+
 ## Gotchas de vistas
 
 - **`.sheet(isPresented:)` con el contenido sacado de OTRO `@State` sale VACÍA si el `body` no lee ese estado fuera del

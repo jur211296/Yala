@@ -8420,3 +8420,42 @@
 
 /* Hoja de Filtros: las dos pestañas se combinan */
 "filters.segment.combineHint" = "Je kunt ze combineren: sommige dingen alleen tonen en andere tegelijk verbergen.";
+
+/* Cómo usas Yala: completo ↔ solo grupos (card p0iu) */
+"usageMode.row.title" = "Hoe je Yala gebruikt";
+"usageMode.full.title" = "Volledige Yala";
+"usageMode.full.body" = "Je rekeningen, boekingen, budgetten en groepen.";
+"usageMode.groupsOnly.title" = "Alleen groepen";
+"usageMode.groupsOnly.body" = "Je ziet alleen je groepen. Je rekeningen en boekingen blijven bewaard, er wordt niets gewist.";
+"usageMode.groupsOnly.bodyNew" = "Je ziet alleen je groepen.";
+"usageMode.screen.intro" = "Kies wat je in de app ziet. Wisselen wist niets.";
+"usageMode.screen.footer" = "Je kunt dit altijd wijzigen. Als je teruggaat naar volledige Yala, is alles zoals je het achterliet.";
+"usageMode.leave.title" = "Yala alleen voor groepen gebruiken?";
+"usageMode.leave.body" = "Je ziet alleen nog je groepen. Je rekeningen, boekingen en budgetten worden niet gewist: ze blijven bewaard en komen terug als je teruggaat naar volledige Yala.";
+"usageMode.leave.groupsStay" = "Je groepen en hun meldingen blijven hetzelfde.";
+"usageMode.leave.paused" = "Je herinneringen en geplande betalingen worden gepauzeerd.";
+"usageMode.leave.pro" = "Je Pro-abonnement blijft actief. Gebruik je het niet, dan kun je het opzeggen in de Instellingen van je apparaat.";
+"usageMode.leave.confirm" = "Alleen groepen gebruiken";
+"usageMode.back.title" = "Terug naar volledige Yala";
+"usageMode.back.subtitle" = "Je rekeningen en boekingen wachten op je";
+"usageMode.back.toast" = "Je hebt weer volledige Yala";
+"usageMode.back.range" = "Van %1$@ tot %2$@, in %3$@.";
+"usageMode.back.rangeSameDay" = "Op %1$@, in %2$@.";
+"usageMode.back.keepTitle" = "Verdergaan waar ik was";
+"usageMode.back.keepBody" = "Je rekeningen, boekingen en budgetten komen terug zoals ze waren.";
+"usageMode.back.freshTitle" = "Opnieuw beginnen";
+"usageMode.back.freshBody" = "Je rekeningen, boekingen en budgetten worden gewist. Je groepen blijven onaangeroerd.";
+"usageMode.back.continue" = "Doorgaan";
+"usageMode.back.notNow" = "Niet nu";
+"usageMode.fresh.confirmTitle" = "Zeker weten? Dit is definitief.";
+"usageMode.fresh.confirmICloud" = "Dit wist %1$@, %2$@ en %3$@ van dit apparaat en uit je iCloud. Je groepen blijven onaangeroerd.";
+"usageMode.fresh.confirmCloud" = "Dit wist %1$@, %2$@ en %3$@ van dit apparaat en uit je Yala-account. Je groepen blijven onaangeroerd.";
+"usageMode.fresh.confirmButton" = "Wissen en opnieuw beginnen";
+"usageMode.account.title" = "Wat is je hoofdrekening?";
+"usageMode.account.body" = "Je begint opnieuw met één rekening. De andere voeg je toe wanneer je wilt.";
+"usageMode.account.nameLabel" = "Naam van rekening";
+"usageMode.account.currency" = "Valuta";
+"usageMode.account.footnote" = "De naam en valuta komen van wat je had. Je naam, meldingen en voorkeuren blijven: het welkom komt niet opnieuw.";
+"usageMode.account.start" = "Beginnen";
+"usageMode.account.working" = "Opnieuw beginnen…";
+"usageMode.error" = "Opnieuw beginnen is niet gelukt. Probeer het nog eens.";

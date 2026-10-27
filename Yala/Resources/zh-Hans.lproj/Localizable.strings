@@ -8420,3 +8420,42 @@
 
 /* Hoja de Filtros: las dos pestañas se combinan */
 "filters.segment.combineHint" = "两者可以组合：只显示某些内容的同时隐藏其他内容。";
+
+/* Cómo usas Yala: completo ↔ solo grupos (card p0iu) */
+"usageMode.row.title" = "你如何使用 Yala";
+"usageMode.full.title" = "完整 Yala";
+"usageMode.full.body" = "你的账户、记录、预算和群组。";
+"usageMode.groupsOnly.title" = "仅群组";
+"usageMode.groupsOnly.body" = "你只会看到群组。你的账户和记录会保留，不会被删除。";
+"usageMode.groupsOnly.bodyNew" = "你只会看到群组。";
+"usageMode.screen.intro" = "选择你在应用中看到的内容。切换不会删除任何内容。";
+"usageMode.screen.footer" = "你可以随时更改。回到完整 Yala 时，一切都保持原样。";
+"usageMode.leave.title" = "仅将 Yala 用于群组？";
+"usageMode.leave.body" = "你将只看到群组。你的账户、记录和预算不会被删除：它们会保留，在你回到完整 Yala 时恢复。";
+"usageMode.leave.groupsStay" = "你的群组及其通知保持不变。";
+"usageMode.leave.paused" = "你的提醒和计划付款将暂停。";
+"usageMode.leave.pro" = "你的 Pro 订阅仍然有效。如果不再使用，可以在设备的“设置”中取消。";
+"usageMode.leave.confirm" = "仅使用群组";
+"usageMode.back.title" = "回到完整 Yala";
+"usageMode.back.subtitle" = "你的账户和记录都还在";
+"usageMode.back.toast" = "你又拥有完整 Yala 了";
+"usageMode.back.range" = "%1$@ 至 %2$@，共 %3$@。";
+"usageMode.back.rangeSameDay" = "%1$@，共 %2$@。";
+"usageMode.back.keepTitle" = "从上次离开的地方继续";
+"usageMode.back.keepBody" = "你的账户、记录和预算原样恢复。";
+"usageMode.back.freshTitle" = "从头开始";
+"usageMode.back.freshBody" = "你的账户、记录和预算将被删除。群组不受影响。";
+"usageMode.back.continue" = "继续";
+"usageMode.back.notNow" = "以后再说";
+"usageMode.fresh.confirmTitle" = "确定吗？此操作无法撤销。";
+"usageMode.fresh.confirmICloud" = "将从此设备和你的 iCloud 中删除%1$@、%2$@和%3$@。群组不受影响。";
+"usageMode.fresh.confirmCloud" = "将从此设备和你的 Yala 账户中删除%1$@、%2$@和%3$@。群组不受影响。";
+"usageMode.fresh.confirmButton" = "删除并从头开始";
+"usageMode.account.title" = "你的主账户是哪个？";
+"usageMode.account.body" = "你将用一个账户从头开始。其他账户可以随时添加。";
+"usageMode.account.nameLabel" = "账户名称";
+"usageMode.account.currency" = "货币";
+"usageMode.account.footnote" = "名称和货币沿用你之前的设置。你的名字、通知和偏好都会保留：不会再次显示欢迎页。";
+"usageMode.account.start" = "开始";
+"usageMode.account.working" = "正在从头开始…";
+"usageMode.error" = "无法从头开始。请重试。";

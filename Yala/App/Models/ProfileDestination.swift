@@ -29,6 +29,8 @@ enum ProfileDestination: Hashable {
     case iCloudSync
     case siriShortcuts
     case aiPrivacy
+    /// «Cómo usas Yala» (card p0iu): Yala completo o solo grupos, en las dos direcciones.
+    case usageMode
     /// «Permisos de Yala» (UX 2.2 · L16-14): estado de cada permiso y un botón por permiso a Configuración.
     case permissions
     /// Modo Nube (I14): elección/gestión de almacenamiento (iCloud privado ↔ nube). Su fila la gobierna

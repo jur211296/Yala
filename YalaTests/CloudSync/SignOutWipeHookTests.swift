@@ -656,7 +656,9 @@ struct SignOutNotificationWiringTests {
         let src = try Self.source("Yala/Services/NotificationService.swift")
         #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { return }").count - 1 == 1)
         #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { return false }").count - 1 == 1)
-        #expect(src.components(separatedBy: "guard !isPersonalWipeArmed else { break }").count - 1 == 1)
+        // Card p0iu: el `add` de los resúmenes mira además la pausa de «Solo grupos», en la misma guarda.
+        #expect(src.components(separatedBy: "guard !isPersonalWipeArmed, !PersonalRemindersPause.isPaused() else { break }")
+            .count - 1 == 1)
         #expect(src.contains("StorageModePersistence.isSignOutWipeArmed()"))
         // El camino solo-grupos conserva los recordatorios personales: su arm JAMÁS entra al guard.
         #expect(!src.contains("isGroupsOnlyWipeArmed"))

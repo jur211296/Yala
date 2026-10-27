@@ -123,6 +123,9 @@ nonisolated enum PrivateSessionMark {
         defaults.set(value, forKey: userDefaultsKey)
         if !value { PrivateSessionAppleIDWitness.clear(defaults) }
         if !value { clearBornFromFullActivation(defaults) }
+        // «Solo grupos» elegido sobre Yala completo es una vista ENCIMA de la sesión privada: sin ella no hay nada que
+        // ocultar, y una marca huérfana dejaría en solo grupos a quien active Yala completo después (card p0iu).
+        if !value { GroupsOnlyViewMark.clear(defaults) }
     }
 
     /// El dispositivo vuelve a «recién instalado».
@@ -130,6 +133,7 @@ nonisolated enum PrivateSessionMark {
         defaults.removeObject(forKey: userDefaultsKey)
         PrivateSessionAppleIDWitness.clear(defaults)
         clearBornFromFullActivation(defaults)
+        GroupsOnlyViewMark.clear(defaults)
     }
 
     // MARK: - De dónde nació la sesión

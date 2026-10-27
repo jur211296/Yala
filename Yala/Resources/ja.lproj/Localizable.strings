@@ -8420,3 +8420,42 @@
 
 /* Hoja de Filtros: las dos pestañas se combinan */
 "filters.segment.combineHint" = "組み合わせられます。一部だけを表示しながら、別のものを非表示にできます。";
+
+/* Cómo usas Yala: completo ↔ solo grupos (card p0iu) */
+"usageMode.row.title" = "Yalaの使い方";
+"usageMode.full.title" = "Yalaの全機能";
+"usageMode.full.body" = "口座・記録・予算・グループ。";
+"usageMode.groupsOnly.title" = "グループのみ";
+"usageMode.groupsOnly.body" = "グループだけが表示されます。口座と記録は保存されたままで、消去されません。";
+"usageMode.groupsOnly.bodyNew" = "グループだけが表示されます。";
+"usageMode.screen.intro" = "アプリに表示する内容を選んでください。切り替えても何も消去されません。";
+"usageMode.screen.footer" = "いつでも変更できます。全機能に戻すと、すべて元のままです。";
+"usageMode.leave.title" = "Yalaをグループ専用にしますか？";
+"usageMode.leave.body" = "グループだけが表示されるようになります。口座・記録・予算は消去されず保存されたままで、全機能に戻すと元どおりになります。";
+"usageMode.leave.groupsStay" = "グループとその通知はこれまでどおりです。";
+"usageMode.leave.paused" = "リマインダーと予定の支払いは一時停止されます。";
+"usageMode.leave.pro" = "Proサブスクリプションは有効なままです。使わない場合は、デバイスの「設定」から解約できます。";
+"usageMode.leave.confirm" = "グループのみにする";
+"usageMode.back.title" = "Yalaの全機能に戻る";
+"usageMode.back.subtitle" = "口座と記録はそのまま残っています";
+"usageMode.back.toast" = "Yalaの全機能に戻りました";
+"usageMode.back.range" = "%1$@〜%2$@、%3$@。";
+"usageMode.back.rangeSameDay" = "%1$@、%2$@。";
+"usageMode.back.keepTitle" = "前回の続きから";
+"usageMode.back.keepBody" = "口座・記録・予算がそのまま戻ります。";
+"usageMode.back.freshTitle" = "最初からやり直す";
+"usageMode.back.freshBody" = "口座・記録・予算が消去されます。グループには影響しません。";
+"usageMode.back.continue" = "続ける";
+"usageMode.back.notNow" = "今はしない";
+"usageMode.fresh.confirmTitle" = "本当によろしいですか？元に戻せません。";
+"usageMode.fresh.confirmICloud" = "このデバイスと iCloud から、%1$@・%2$@・%3$@を消去します。グループには影響しません。";
+"usageMode.fresh.confirmCloud" = "このデバイスと Yala アカウントから、%1$@・%2$@・%3$@を消去します。グループには影響しません。";
+"usageMode.fresh.confirmButton" = "消去して最初からやり直す";
+"usageMode.account.title" = "メインの口座はどれですか？";
+"usageMode.account.body" = "口座1つで最初から始めます。ほかの口座はいつでも追加できます。";
+"usageMode.account.nameLabel" = "口座名";
+"usageMode.account.currency" = "通貨";
+"usageMode.account.footnote" = "名前と通貨は以前のものを使います。名前・通知・設定はそのままで、ようこそ画面は表示されません。";
+"usageMode.account.start" = "始める";
+"usageMode.account.working" = "最初からやり直しています…";
+"usageMode.error" = "やり直せませんでした。もう一度お試しください。";

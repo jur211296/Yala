@@ -190,6 +190,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             return
         }
 
+        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los recordatorios personales esperan
+        // (`PersonalRemindersPause`). Solo llegan aquí los repetitivos (fin del día, almuerzo, personalizados): los de
+        // grupos son dinámicos y salen arriba. Al volver, `UsageModeService` los reprograma.
+        if PersonalRemindersPause.isPaused() {
+            await cancelNotification(for: item)
+            return
+        }
+
         // Check permission first
         guard await isAuthorized() else { return }
         // §5.2.1 — choke point: con un wipe personal armado, este `item` pertenece a la cuenta saliente
@@ -231,6 +239,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                     trigger: trigger
                 )
 
+                // La pausa, también en el instante del `add` (como `isPersonalWipeArmed`): una pasada que ya iba en
+                // marcha al entrar en «Solo grupos» no puede agendar detrás de la cancelación (review p0iu).
+                guard !PersonalRemindersPause.isPaused() else { return }
                 do {
                     try await notificationCenter.add(request)
                 } catch {
@@ -249,6 +260,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                 trigger: trigger
             )
 
+            guard !PersonalRemindersPause.isPaused() else { return }
             do {
                 try await notificationCenter.add(request)
             } catch {
@@ -369,6 +381,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         // Anti doble-banner: marca de hoy + ningún pending de hoy vivo ⇒ ya disparó.
         var effectivePlans = plans
+        // Card p0iu: en «Solo grupos» sobre Yala completo se retiran las pendientes (arriba) y no se agenda ninguna.
+        if PersonalRemindersPause.isPaused() { effectivePlans = [] }
         if todayAlreadyMarked && !removedDayKeys.contains(todayKey) {
             effectivePlans.removeAll { $0.dayKey == todayKey }
         }
@@ -390,7 +404,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             // §5.2.1 — mismo choke point que sendNotification, evaluado POR ITERACIÓN (el
             // invariante de `isPersonalWipeArmed`: "en el instante del add"): un arm que
             // aterrice a mitad del loop corta las iteraciones restantes.
-            guard !isPersonalWipeArmed else { break }
+            guard !isPersonalWipeArmed, !PersonalRemindersPause.isPaused() else { break }
             // El `now` del planner envejece durante los round-trips al center: un trigger
             // con fecha ya pasada es aceptado por add() pero JAMÁS dispara — no agendarlo
             // (la oportunista dueToday cubre el día como fallback, que es el diseño).
@@ -493,6 +507,24 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             .map(\.request.identifier)
         guard !groupIDs.isEmpty else { return }
         notificationCenter.removeDeliveredNotifications(withIdentifiers: groupIDs)
+    }
+
+    /// Retira lo PENDIENTE que no es de Grupos (card p0iu): al pasar a «Solo grupos» sobre Yala completo, los
+    /// recordatorios repetitivos ya agendados dejarían de esperar a la pausa. Los avisos de grupos llevan el enlace
+    /// `groups/<uuid>` y se quedan. Lo entregado no se toca: es historial de la persona.
+    ///
+    /// **Los resúmenes de pagos (`spDailySummary_*`) no se retiran aquí**: los retira un replan con la pausa puesta
+    /// (`replaceScheduledPaymentSummaries`), que es quien reconcilia sus marcas del tracker. Retirarlos a mano dejaba la
+    /// marca de hoy viva, y al volver el replan creía que el resumen de hoy ya había salido: ese día no llegaba ningún
+    /// aviso de los pagos que vencen (review adversarial de p0iu).
+    func cancelPendingPersonalNotifications() async {
+        let pending = await notificationCenter.pendingNotificationRequests()
+        let personal = pending
+            .filter { ($0.content.userInfo["deepLink"] as? String)?.hasPrefix("groups/") != true }
+            .map(\.identifier)
+            .filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) }
+        guard !personal.isEmpty else { return }
+        notificationCenter.removePendingNotificationRequests(withIdentifiers: personal)
     }
 
     /// Cancel any previously scheduled dynamic notifications (reports)

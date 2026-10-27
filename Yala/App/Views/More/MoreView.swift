@@ -57,8 +57,7 @@ struct MoreView: View {
     /// GC-08: sin sesión privada en este teléfono solo Grupos es accesible; el dashboard personal se
     /// oculta y se muestra el CTA «Activar Yala completo». Reactivo por el espejo observable del eje.
     private var isGroupsFocusedShell: Bool {
-        ShellModeLogic.effective(
-            hasPrivateSession: sessionState.hasPrivateSession) == .groupsFocused
+        sessionState.isGroupsFocusedShell
     }
 
     private let gridColumns = [
@@ -289,6 +288,12 @@ struct MoreView: View {
 
     // MARK: - Activate Full Yala (GC-08)
 
+    /// Card p0iu: quien eligió «Solo grupos» sobre Yala completo ve «Volver a Yala completo»; el mismo intent lleva a la
+    /// vuelta (`ContentView`), no a la activación.
+    private var returnEntry: UsageModeLogic.ReturnEntry {
+        UsageModeLogic.returnEntry(hasPrivateSession: sessionState.hasPrivateSession)
+    }
+
     private var activateFullYalaButton: some View {
         Button {
             RouterEntryGate.shared.submit(.presentFullModeActivation)
@@ -304,11 +309,11 @@ struct MoreView: View {
                     )
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Groups.Activate.title)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backTitle : L10n.Groups.Activate.title)
                         .font(DS.Typography.body)
                         .foregroundStyle(.primary)
 
-                    Text(L10n.Groups.Activate.subtitle)
+                    Text(returnEntry == .comeBack ? L10n.UsageMode.backSubtitle : L10n.Groups.Activate.subtitle)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                 }

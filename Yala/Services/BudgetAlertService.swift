@@ -39,6 +39,8 @@ final class BudgetAlertService {
 
     /// Check all budgets with alerts enabled and notify if thresholds crossed
     func checkBudgetsAndNotify() async {
+        // Card p0iu: los presupuestos PERSONALES no avisan en «Solo grupos»; los de grupo van por `GroupBudgetAlertService`.
+        guard !PersonalRemindersPause.isPaused() else { return }
         // Check global toggle first (default false, enabled via onboarding)
         let globalEnabled = UserDefaults.standard.bool(forKey: "budgetAlertsEnabled")
         guard globalEnabled else { return }

@@ -28,9 +28,12 @@ struct GlobalSearchView: View {
             ZStack {
                 if isDataReady {
                     // Lo que espera su borrado con «Deshacer» no sale en Buscar (`RecordPendingDeletion`).
+                    // Card p0iu: en «Solo grupos» elegido sobre Yala completo los registros siguen en el teléfono pero no
+                    // se ven, tampoco aquí. Sin sesión privada no hay registros personales que buscar.
                     SearchContentView(
                         searchText: $searchText,
-                        transactions: RecordPendingDeletion.shared.visible(allTransactions)
+                        transactions: sessionState.isGroupsOnlyByChoice
+                            ? [] : RecordPendingDeletion.shared.visible(allTransactions)
                     )
                 } else {
                     // Loading state - subtle animation

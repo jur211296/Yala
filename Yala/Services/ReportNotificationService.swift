@@ -96,6 +96,8 @@ final class ReportNotificationService {
 
     /// Sends report notifications that are due based on their configuration
     func sendDueReports(context: ModelContext) async {
+        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        guard !PersonalRemindersPause.isPaused() else { return }
         guard !isSendingReports else { return }
         isSendingReports = true
         defer { isSendingReports = false }
