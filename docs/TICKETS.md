@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1084)
+## Index (1086)
 
 | id | status | path |
 |---|---|---|
@@ -188,6 +188,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-creates-only-one-transaction-per-message | backlog | tickets/backlog/chat-creates-only-one-transaction-per-message.md |
 | chat-dictation-looks-poor | done | tickets/done/chat-dictation-looks-poor.md |
 | chat-draft-card-redesign | done | tickets/done/chat-draft-card-redesign.md |
+| chat-draft-details-rows-dont-open-their-selector | backlog | tickets/backlog/chat-draft-details-rows-dont-open-their-selector.md |
 | chat-draft-drops-the-expense-sign | done | tickets/done/chat-draft-drops-the-expense-sign.md |
 | chat-draft-sign-can-contradict-its-subcategory | done | tickets/done/chat-draft-sign-can-contradict-its-subcategory.md |
 | chat-draft-stamps-its-own-currency-not-the-account | done | tickets/done/chat-draft-stamps-its-own-currency-not-the-account.md |
@@ -602,6 +603,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | done | tickets/done/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
 | insights-rate-limit-runs-before-the-cache | backlog | tickets/backlog/insights-rate-limit-runs-before-the-cache.md |
+| insights-to-pay-this-month-leaves-out-the-rest-of-the-month | backlog | tickets/backlog/insights-to-pay-this-month-leaves-out-the-rest-of-the-month.md |
 | invite-aasa-requires-s-param | backlog | tickets/backlog/invite-aasa-requires-s-param.md |
 | invite-and-app-notices-present-over-other-tab-sheets | done | tickets/done/invite-and-app-notices-present-over-other-tab-sheets.md |
 | invite-backend-stale-config | done | tickets/done/invite-backend-stale-config.md |
@@ -1035,7 +1037,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | two-account-drafts-for-one-group-expense-can-create-two-real-legs | done | tickets/done/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
-| ui-suite-2-2-five-tests-red-on-the-base | backlog | tickets/backlog/ui-suite-2-2-five-tests-red-on-the-base.md |
+| ui-suite-2-2-five-tests-red-on-the-base | done | tickets/done/ui-suite-2-2-five-tests-red-on-the-base.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
 | uitest-relaunch-without-reset-can-lose-the-new-user-panel | backlog | tickets/backlog/uitest-relaunch-without-reset-can-lose-the-new-user-panel.md |
 | uitest-reset-keeps-the-sign-out-wipe-arm | backlog | tickets/backlog/uitest-reset-keeps-the-sign-out-wipe-arm.md |

@@ -1,6 +1,6 @@
 ---
 id: ui-suite-2-2-five-tests-red-on-the-base
-status: backlog
+status: done
 priority: medium
 area: testing
 created: 2026-10-27
@@ -40,3 +40,16 @@ El séptimo, `TransactionsCrudUITests/test_recordSelectorsOpenAtMediumDetent`, y
 ## Hecho cuando
 
 Cada uno de los cinco está verde en la punta de 2.2, o tiene su propio ticket con la causa medida.
+
+## 2026-10-27 · Resuelto: cuatro arreglados, uno con ticket
+
+Medido en el iPhone 17 Pro (iOS 27.0) sobre `origin/2.2` @ 279d1510b, con vídeo del `.xcresult` y la nocturna de
+`qa.yml` como historial. Ninguno de los cinco era un rojo «de entorno».
+
+| Caso | Causa medida | Qué se hizo |
+|---|---|---|
+| `test_needSection_…` | El ejemplo de «Opcional» cambió el 23-oct (lote 2 · B, `77f62f037`): «Gustos y caprichos.» → «Gustos y caprichos: salidas, delivery.». | El test espera el texto vigente. Verde. |
+| `test_summary_showsWhatYouStillHaveToPay_…` | Depende del día: la sección cuenta los pagos que vencen dentro de «Este mes», que cierra hoy; solo salía los días en que vencía un pago de la semilla. Verde el 22-oct, rojo desde el 23. | Se lanza con `-uitest-scheduled-due-today`. Verde. La pregunta de producto (¿«falta pagar» hasta fin de mes?) va a `insights-to-pay-this-month-leaves-out-the-rest-of-the-month`. |
+| `test_proObservations_withoutConsent_…` | `scrollTo` subía la píldora «Detalle \| Observaciones» hasta debajo de la barra de chips; `isHittable` seguía en `true` y el toque caía en el chip «Registros» (visto en el vídeo). Su hermano `test_proObservations_doNotAskForATap` salía **verde sin mirar Observaciones**: afirma una ausencia. | Helper `openObservations`: arrastres cortos hasta la mitad de la pantalla y comprobación de que la píldora quedó elegida (`isSelected`). Los dos, verdes. |
+| `test_duplicates_removeRepeated_…` | Depende del día: el grupo de días distintos lo ponía la semilla `minimal`, que cambia con el día del mes y de la semana. Hoy no había ningún par. | La copia hecha a mano se fecha «Antier», así el grupo lo crea el test; sobra quitar «Nota». Verde, y el mutante `rowDateCaption → nil` lo pone rojo. |
+| `test_draftDetails_opensSheet_…` | **Bug de producto**: en Yala IA › «Detalles», ninguna fila abre su selector. SwiftUI construye la hoja y UIKit no la presenta. Regresión entre la nocturna del 21-oct (verde) y la del 23-oct (roja). | Ticket `chat-draft-details-rows-dont-open-their-selector` (high), con lo medido y el siguiente paso (bisecar). El test se queda en rojo a propósito: es la red del bug. |

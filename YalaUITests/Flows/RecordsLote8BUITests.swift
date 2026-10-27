@@ -64,8 +64,11 @@ final class RecordsLote8BUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         openRecordsList(app)
 
-        // 1. Un duplicado a mano: detalle → Editar → Duplicar → Guardar. La copia lleva la fecha de hoy, así que
-        //    luego se quita «Fecha» de los criterios.
+        // 1. Un duplicado a mano: detalle → Editar → Duplicar → «Antier» → Guardar. La copia va a otro día que el
+        //    registro más reciente, así que luego se quita «Fecha» de los criterios y el grupo junta dos días. Antes
+        //    la copia salía con la fecha de hoy y el grupo de días distintos tenía que ponerlo la semilla, que cambia
+        //    con el día del mes: el caso salía verde unos días y rojo otros (ticket
+        //    `ui-suite-2-2-five-tests-red-on-the-base`).
         app.buttons.matching(identifier: "record_row").element(boundBy: 0).tap()
         let editButton = app.buttons["transaction_detail_edit"]
         XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No se montó el sheet de detalle.")
@@ -73,6 +76,13 @@ final class RecordsLote8BUITests: XCTestCase {
         let duplicate = app.buttons["new_transaction_duplicate_action"]
         XCTAssertTrue(duplicate.waitForExistence(timeout: 5), "El editor no ofreció Duplicar.")
         duplicate.tap()
+        let dateChip = app.buttons["new_transaction_date_chip"]
+        XCTAssertTrue(dateChip.waitForExistence(timeout: 5), "La copia no ofreció cambiar la fecha.")
+        dateChip.tap()
+        let dayBeforeYesterday = app.buttons["date_quick_dayBeforeYesterday"]
+        XCTAssertTrue(dayBeforeYesterday.waitForExistence(timeout: 5), "La hoja de fecha no trajo «Antier».")
+        dayBeforeYesterday.tap()
+        XCTAssertTrue(dayBeforeYesterday.waitForNonExistence(timeout: 5), "La hoja de fecha no se cerró.")
         let save = app.buttons["new_transaction_save"]
         XCTAssertTrue(save.waitForExistence(timeout: 5), "Falta Guardar en el editor.")
         save.tap()
@@ -104,14 +114,8 @@ final class RecordsLote8BUITests: XCTestCase {
         XCTAssertTrue(dateCriterion.waitForExistence(timeout: 5), "«Coincidir por» no ofreció «Fecha».")
         dateCriterion.tap()
 
-        // Sin «Fecha» ni «Nota», un grupo junta días distintos (la semilla tiene dos compras iguales en días distintos):
-        // cada fila de ese grupo dice el suyo (lote 12.5, ticket `duplicates-mode-rows-dont-say-their-date`).
-        menu.tap()
-        XCTAssertTrue(matchBy.waitForExistence(timeout: 5), "El menú no ofreció «Coincidir por» la segunda vez.")
-        matchBy.tap()
-        let noteCriterion = app.buttons["Nota"].firstMatch
-        XCTAssertTrue(noteCriterion.waitForExistence(timeout: 5), "«Coincidir por» no ofreció «Nota».")
-        noteCriterion.tap()
+        // Sin «Fecha», el grupo de la copia junta dos días: cada fila de ese grupo dice el suyo (lote 12.5, ticket
+        // `duplicates-mode-rows-dont-say-their-date`).
         let rowWithDate = app.buttons.matching(
             NSPredicate(format: "identifier == 'record_row' AND label MATCHES '.*20[0-9][0-9].*'")).firstMatch
         XCTAssertTrue(rowWithDate.waitForExistence(timeout: 5),
