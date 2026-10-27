@@ -4046,7 +4046,7 @@
 "welcome.chooser.title" = "你好！你想用 Yala 做什么？";
 "welcome.chooser.subtitle" = "选择你的起点，接下来我们一起走。";
 "welcome.chooser.optionNew.title" = "我第一次使用 Yala";
-"welcome.chooser.optionNew.body" = "和我从零开始吧。我会一步步帮你配置好一切。";
+"welcome.chooser.optionNew.body" = "从零开始。我们一步步引导你。";
 "welcome.chooser.optionExisting.title" = "我已经有账户了";
 "welcome.chooser.optionExisting.body" = "我以前用过 Yala，想恢复我的数据，不管在 iCloud 还是在我的账户里。";
 "welcome.chooser.optionInvite.title" = "和朋友分摊费用";

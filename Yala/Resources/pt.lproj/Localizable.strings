@@ -4014,11 +4014,11 @@
 "welcome.chooser.title" = "Oi! O que você quer fazer no Yala?";
 "welcome.chooser.subtitle" = "Escolha seu ponto de partida e seguimos daí.";
 "welcome.chooser.optionNew.title" = "É a minha primeira vez no Yala";
-"welcome.chooser.optionNew.body" = "Comece do zero comigo. Te ajudo a configurar tudo passo a passo.";
+"welcome.chooser.optionNew.body" = "Comece do zero. Guiamos você passo a passo.";
 "welcome.chooser.optionExisting.title" = "Já tenho conta";
 "welcome.chooser.optionExisting.body" = "Já usei o Yala e quero recuperar meus dados, do iCloud ou da minha conta.";
 "welcome.chooser.optionInvite.title" = "Dividir despesas com amigos";
-"welcome.chooser.optionInvite.body" = "Viagens, república, rolês: crie um grupo ou entre no dos seus amigos. Sem precisar controlar suas finanças.";
+"welcome.chooser.optionInvite.body" = "Viagens, casa compartilhada, passeios: crie um grupo ou entre no dos seus amigos. Sem precisar controlar suas finanças.";
 
 "welcome.restore.searching" = "Buscando seus dados no iCloud…";
 "welcome.restore.searchingTip" = "Pode levar alguns segundos.";

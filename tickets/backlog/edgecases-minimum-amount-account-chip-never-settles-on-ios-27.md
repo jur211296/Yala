@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "qa, xcuitest, transactions"
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-27
 owner: frank
 deadline: 2026-10-20
 source: "gate del lote 1 de la auditoría UX 2.2 (encargo 2026-10-13-auditoria-ux-2-2-lote-1-primera-vez)"
@@ -48,3 +48,7 @@ En el gate del lote 2 (rama `encargo/2026-10-13-auditoria-ux-2-2-lote-2-apuntar-
 que toca el formulario de registro) `test_extremeMinimumAmountSaves` pasó en 39,5 s dentro de una corrida de 15 suites
 (39 tests, 0 fallos, centinela en 0, simulador recién borrado). Un verde no cierra el ticket: el rojo del lote 1 fue
 aislado y repetido. Si el próximo gate también sale verde, mirar si el `erase` previo del simulador es lo que cambia.
+
+## Re-medido (2026-10-27)
+
+Sigue rojo, en lote y aislado, con el centinela en 0, en la rama del encargo `onboarding-estilos-implementar` (que no toca el formulario de registro). Mismo mensaje de la línea 66.

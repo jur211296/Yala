@@ -4046,7 +4046,7 @@
 "welcome.chooser.title" = "こんにちは！Yalaで何をしたいですか？";
 "welcome.chooser.subtitle" = "スタート地点を選んでください。あとは一緒に進みましょう。";
 "welcome.chooser.optionNew.title" = "Yalaを使うのは初めてです";
-"welcome.chooser.optionNew.body" = "ゼロから始めましょう。一緒にステップごとに設定していきます。";
+"welcome.chooser.optionNew.body" = "ゼロから始めましょう。ステップごとにご案内します。";
 "welcome.chooser.optionExisting.title" = "すでにアカウントがあります";
 "welcome.chooser.optionExisting.body" = "Yalaを使ったことがあります。iCloudでもアカウントでも、データを復元したいです。";
 "welcome.chooser.optionInvite.title" = "友達と割り勘したい";

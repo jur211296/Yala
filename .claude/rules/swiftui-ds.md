@@ -262,10 +262,12 @@ paths:
   en `value`): uno en la raíz pisaría los de dentro.
 
 - **Una pantalla de ENTRADA del Welcome es un `WelcomeFormScreen`** (`Views/Onboarding/WelcomeForm.swift`,
-  2026-10-02, referencia del 15-sep): titular serif (`DS.Typography.welcomeHeadline`) sin logo, lo que se elige en
+  2026-10-02, referencia del 15-sep): titular grande sans (`DS.Typography.welcomeHeadline`, el `largeTitle` de la app:
+  Jürgen retiró el serif el 2026-10-26) sin logo, lo que se elige en
   UNA tarjeta (`welcomeFormCard()` o filas con `WelcomeOptionDivider`), y fuera solo la pregunta de pie. Fondo, el
-  degradado fijo de siempre. Pesos de botón con `WelcomeFormButton`: `.filled` (blanco) para lo que se propone,
-  `.outline` para la salida sin cuenta de Yala. Donde Jürgen decidió que nada se recomienda («Es mi primera vez»),
+  degradado fijo de siempre. Pesos de botón con `WelcomeFormButton`, cápsula con la letra de `YalaPrimaryButton`:
+  `.filled` (blanco) para lo que se propone, `.outline` para la salida sin cuenta de Yala. Los pasos del onboarding que
+  eligen entre opciones van también en UNA tarjeta con separadores (`OnboardingView.optionCard`), no una por opción. Donde Jürgen decidió que nada se recomienda («Es mi primera vez»),
   mismo peso para todas. El Hero y las fases de progreso/error siguen con logo. **El «Volver» del Welcome no crece
   más allá de `xxxLarge`** (Large Content Viewer, como una barra de navegación): a AX5 medía ~80 pt y tapaba el
   titular y el logo de las puertas.

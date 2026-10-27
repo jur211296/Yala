@@ -378,7 +378,7 @@ struct WelcomeCloudSignInView: View {
 
     // MARK: - Contenido por fase
 
-    /// **El intro tiene la forma de la referencia del 15-sep** (`WelcomeForm.swift`): titular serif sin
+    /// **El intro tiene la forma de la referencia del 15-sep** (`WelcomeForm.swift`): titular sin
     /// logo y una tarjeta con lo que se pulsa. Las demás fases —progreso, error, relanzamiento— no son una
     /// pantalla de entrada y se quedan con el logo centrado de siempre.
     @ViewBuilder

@@ -271,11 +271,11 @@
 "welcome.chooser.title" = "¡Hola! ¿Qué querés hacer en Yala?";
 "welcome.chooser.subtitle" = "Elegí tu punto de partida y seguimos desde ahí.";
 "welcome.chooser.optionNew.title" = "Es mi primera vez en Yala";
-"welcome.chooser.optionNew.body" = "Empezá desde cero conmigo. Te ayudo a configurar todo paso a paso.";
+"welcome.chooser.optionNew.body" = "Empezá desde cero. Te guiamos paso a paso.";
 "welcome.chooser.optionExisting.title" = "Ya tengo una cuenta";
 "welcome.chooser.optionExisting.body" = "Ya usé Yala antes y quiero recuperar mis datos, estén en iCloud o en mi cuenta.";
 "welcome.chooser.optionInvite.title" = "Dividir gastos con amigos";
-"welcome.chooser.optionInvite.body" = "Viajes, depto, salidas: creá un grupo o entrá al de tus amigos. Sin llevar tus finanzas.";
+"welcome.chooser.optionInvite.body" = "Viajes, casa compartida, salidas: creá un grupo o entrá al de tus amigos. Sin llevar tus finanzas.";
 
 "welcome.restore.searching" = "Buscando tus datos en iCloud…";
 "welcome.restore.searchingTip" = "Puede tardar unos segundos.";
@@ -333,7 +333,7 @@
 "welcome.hero.cards.import.title" = "Importá tu historial";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Listo.";
 "welcome.hero.cards.icloud.title" = "iCloud privado";
-"welcome.hero.cards.icloud.body" = "Tu info, en tu iCloud.";
+"welcome.hero.cards.icloud.body" = "Tus datos, en tu iCloud.";
 "welcome.hero.cards.more.title" = "Y mucho más";
 "welcome.hero.cards.more.body" = "Vamos a descubrirlo juntos.";
 

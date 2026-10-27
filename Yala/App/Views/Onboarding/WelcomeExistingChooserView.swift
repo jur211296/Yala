@@ -9,7 +9,7 @@
 //  container hace bypass directo (WelcomeAccountChoiceLogic.bypass) y este
 //  screen ni se monta, preservando el flujo actual de producción.
 //
-//  **Es el «¡Hola de nuevo!» de la referencia del 15-sep** (`WelcomeForm.swift`): titular serif, una
+//  **Es el «¡Hola de nuevo!» de la referencia del 15-sep** (`WelcomeForm.swift`): titular grande, una
 //  tarjeta con los dos caminos y la pregunta de pie. Dentro de la tarjeta, Apple y Google LLENOS y con la
 //  misma forma —prominencia equivalente, guideline 4.8— y, tras el «o», Restaurar desde iCloud con
 //  CONTORNO: es la entrada sin cuenta de Yala, que es lo que la referencia hace con «Explorar sin cuenta».

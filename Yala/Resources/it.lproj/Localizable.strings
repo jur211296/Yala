@@ -4044,7 +4044,7 @@
 "welcome.chooser.title" = "Ciao! Cosa vuoi fare in Yala?";
 "welcome.chooser.subtitle" = "Scegli il tuo punto di partenza e proseguiamo insieme.";
 "welcome.chooser.optionNew.title" = "È la mia prima volta su Yala";
-"welcome.chooser.optionNew.body" = "Iniziamo da zero. Ti aiuto a configurare tutto passo dopo passo.";
+"welcome.chooser.optionNew.body" = "Parti da zero. Ti guidiamo passo dopo passo.";
 "welcome.chooser.optionExisting.title" = "Ho già un account";
 "welcome.chooser.optionExisting.body" = "Ho già usato Yala e voglio recuperare i miei dati, da iCloud o dal mio account.";
 "welcome.chooser.optionInvite.title" = "Dividere le spese con gli amici";

@@ -1,10 +1,10 @@
 ---
 id: onboarding-sigue-los-estilos-del-resto-de-la-app
-status: backlog
+status: qa
 priority: high
 area: "onboarding, welcome, design-system"
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-27
 source: "Jürgen, sesión «iPhone Duo cerrado interactivo · cortes», 2026-10-25"
 ---
 
@@ -87,3 +87,33 @@ selectores. Solo D2-B choca con ellos.
 - **D4 A:** los tres textos de la tabla de arriba, en los 16 idiomas.
 
 Siguiente: sesión de implementación, con capturas del antes y el después en el simulador.
+
+## Implementado (2026-10-27)
+
+- **D1:** los botones blanco lleno y de contorno del Welcome («Ya tengo una cuenta», entrada a la nube) son cápsulas
+  con la letra de «Empezar» (15 pt medium).
+- **D2:** el titular de los selectores deja el serif y usa el titular sans de la app. Alineaciones sin tocar.
+- **D3:** «¿Para qué usarás Yala?», «¿Dónde está tu dinero?» y las categorías agrupan sus opciones en una tarjeta
+  con separadores; la opción elegida se sigue marcando. El paso del saldo inicial **no** se agrupa: cada opción abre
+  su formulario debajo y la tarjeta rosa de énfasis es una decisión previa (L1UI-2).
+- **D4:** los tres textos, en los 16 idiomas. En portugués de Brasil también se neutralizó «república/rolês».
+
+Capturas del antes y el después: `~/Claude/worktrees/_capturas/onboarding-estilos/`.
+
+**Pregunta abierta:** los selectores siguen alineados a la izquierda y el onboarding centrado. En el simulador no
+chirría; si en el iPhone te pide igualarlos, dilo y va a una card nueva.
+
+## Guion de QA en el iPhone
+
+Montaje: Yala Dev en tu iPhone de pruebas, borrada antes (mantén pulsado el icono → Eliminar app) para que arranque
+en el Welcome.
+
+1. Abre Yala Dev. En el carrusel del Hero, la tarjeta de iCloud dice «Tus datos, en tu iCloud.».
+2. Toca **Empezar**. El titular del selector ya no es serif.
+3. Bajo «Es mi primera vez en Yala» se lee «Empieza desde cero. Te guiamos paso a paso.».
+4. Bajo «Dividir gastos con amigos» se lee «Viajes, casa compartida, salidas…».
+5. Toca **Ya tengo una cuenta**: los botones de abajo son cápsulas, como «Empezar».
+6. Vuelve, entra por **Es mi primera vez** → privacidad total y sigue el onboarding. En «¿Para qué usarás Yala?»,
+   «¿Dónde está tu dinero?» y las categorías, las opciones van en una sola tarjeta con líneas finas entre ellas.
+   Toca varias: la marca de elegida aparece y se quita como antes.
+7. Termina el onboarding: llegas al Panel sin nada raro.

@@ -9,7 +9,7 @@
 //  El flag `hasShownWelcomeChooser` se setea SOLO tras tap consciente en una de
 //  las 3 cards (no en dismissals programáticos por race con CKShare).
 //
-//  Forma de la referencia del 15-sep (`WelcomeForm.swift`): titular serif sin logo y las tres ramas
+//  Forma de la referencia del 15-sep (`WelcomeForm.swift`): titular sin logo y las tres ramas
 //  como filas de UNA tarjeta. Sin pesos de botón: son tres caminos, ninguno se recomienda.
 //
 

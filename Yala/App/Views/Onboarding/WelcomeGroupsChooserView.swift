@@ -19,7 +19,7 @@
 //  matriz de readiness (regla 3 de Presentaciones, `.claude/rules/swiftui-ds.md`). El precedente literal
 //  es `.mirrorRelaunch`.
 //
-//  **Forma de la referencia del 15-sep (`WelcomeForm.swift`)**, como sus hermanos: titular serif sin logo
+//  **Forma de la referencia del 15-sep (`WelcomeForm.swift`)**, como sus hermanos: titular sin logo
 //  y los dos caminos como filas de UNA tarjeta, con el mismo peso. Se abre desde el Chooser, así que
 //  quedarse con el logo y las cards sueltas cortaba el recorrido a mitad.
 //
