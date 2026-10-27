@@ -51,5 +51,10 @@ Pasó el 2026-10-24: el tope de 45 min canceló cinco jobs en verde en seis día
 8 963 a 11 243 casos y el runner varía el doble de un run a otro). Un «context-based se cuelga»
 era el tope del job cortando el último paso. **Antes de buscar el cuelgue, lee los tiempos por
 paso de la API de Actions**: si el paso cancelado lleva un minuto y los anteriores se comieron el
-tope, no hay cuelgue. Hoy el tope es 60 para PR y nocturna. Ticket:
-`ci-tests-job-ceiling-cancels-green-runs`.
+tope, no hay cuelgue. Ticket: `ci-tests-job-ceiling-cancels-green-runs`.
+
+Volvió a pasar el 2026-10-26 (run 40422732167, tope 60): el tope sube a 80 y los de paso de build
+y pure-logic a 40 y 45, con la tabla re-medida en `qa.yml`. Esa vez había además un unit que salía
+a CloudKit y esperaba a `cloudd` (47 s a 6,5 min según el runner). **Un unit no habla con la red**:
+si un caso tarda decenas de segundos sin trabajo que lo explique, mira si espera a un servicio del
+sistema antes de subir el tope. Ticket: `qa-2-2-se-cancela-tests-unitarios-context-based`.

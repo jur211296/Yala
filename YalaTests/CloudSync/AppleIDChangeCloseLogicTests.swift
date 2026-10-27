@@ -230,9 +230,11 @@ struct PrivateSessionAppleIDWitnessTests {
         // la peor forma de contaminar: parece determinista.
         PrivateSessionAppleIDWitness.identityFetcher = { "_pegado" }
         PrivateSessionAppleIDWitness._testReset()
-        // En el simulador no hay cuenta de iCloud, así que el fetcher de producción falla y contesta
-        // `nil`. Lo que se mide es que YA NO devuelve `_pegado`.
-        #expect(await PrivateSessionAppleIDWitness.currentIdentity() != "_pegado")
+        // `nil` ES producción. Se mira el seam y no se llama: hasta el 2026-10-26 este caso llamaba a
+        // `currentIdentity()` y salía a CloudKit de verdad, a esperar el «no hay cuenta» de `cloudd`
+        // — de 47 s a 6,5 min según el runner, el grueso de la corrida que el tope de CI canceló
+        // (run 40422732167). Un unit no habla con la red.
+        #expect(PrivateSessionAppleIDWitness.identityFetcher == nil)
     }
 }
 

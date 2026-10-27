@@ -309,7 +309,7 @@ jobs:
     if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
     runs-on: xcode-27
     # ------------------------------------------------------------------------------
-    # TOPES DE TIEMPO (2026-09-07; tabla rehecha el 2026-10-09 y el 2026-10-24). Sin `timeout-minutes` GitHub aplica su default de
+    # TOPES DE TIEMPO (2026-09-07; tabla rehecha el 2026-10-09, el 2026-10-24 y el 2026-10-26). Sin `timeout-minutes` GitHub aplica su default de
     # **360 minutos**, y este job no tenia ninguno: ni aqui ni a nivel de workflow. El
     # problema que eso creaba no era el gasto sino el DIAGNOSTICO — un cuelgue real era
     # indistinguible de una corrida lenta, y nadie se enteraba hasta las seis horas.
@@ -326,6 +326,30 @@ jobs:
     #   Unit context-based           1,8 · 2,9 · 4,0 · 5,6          10
     #   JOB `tests` (PR y nocturna)  23,7 · 36,0 · 41,7 · 44,2      60   (PR en 45 hasta el 24-oct)
     #   UI, suite entera en serie    ~141 (estimado)                 —   ← ya no corre asi; ver job `ui`
+    #
+    # RE-MEDIDA DEL 2026-10-26 (ticket qa-2-2-se-cancela-tests-unitarios-context-based), sobre los
+    # jobs `tests` de todas las ramas del 24 al 26-oct: 67 builds, 66 pure-logic y 65 jobs en verde.
+    # Es la tabla que manda hoy; la de arriba queda como historia:
+    #
+    #   paso / conjunto              medido                       tope
+    #   Build for testing            11,2 · 14,0 · 18,9 · 28,6      40   (30 hasta el 26-oct)
+    #   Unit pure-logic              12,2 · 16,5 · 21,1 · 30,9      45   (35 hasta el 26-oct)
+    #   Unit context-based           1,9 · 2,4 · 3,5 · 4,3          10
+    #   JOB `tests` (PR y nocturna)  26,5 · 34,6 · 42,0 · 53,5      80   (60 hasta el 26-oct)
+    #
+    # POR QUE SUBIO OTRA VEZ (2026-10-26). Mismo diagnostico que el 24-oct, y otra vez el encargo
+    # decia «context-based se cuelga»: en el run 40422732167 (push a 2.2, HEAD 85c5a77) el paso
+    # llevaba 1,8 min cuando el tope de 60 cancelo el job, con build (28,6) y pure-logic (30,9, todo
+    # en verde) ya gastados. Dos causas, y se arreglan las dos:
+    #   · UN UNIT QUE SALIA A CLOUDKIT. «`_testReset` devuelve el seam a produccion» llamaba al fetch
+    #     real de `PrivateSessionAppleIDWitness` y esperaba el «no hay cuenta» de `cloudd`: 47 s en
+    #     un run normal, 393 s en ese. Era el unico unit lento por espera y no por trabajo (los
+    #     siguientes, ~50 s, son escaneos de codigo fuente y su tiempo es estable). Ya no sale.
+    #   · EL RUNNER. El build de 28,6 min es el mismo codigo que en otros runs compila en 14: la
+    #     variacion del runner sigue siendo el doble de un run a otro, y la nocturna 40094866869 ya
+    #     cerro en verde a 53,5 con tope 60. Los topes vuelven a ~1,4-1,5x el maximo verde.
+    # Lo que NO se hizo: quitar el tope, ni dar por bueno un cuelgue. Un cuelgue real sigue cortando
+    # en el tope de su PASO (10 min en context-based), que deja el job vivo para contarlo.
     #
     # POR QUE SUBIO EL TOPE DEL JOB (2026-10-24, ticket ci-tests-job-ceiling-cancels-green-runs).
     # El encargo decia «context-based se cuelga en CI». No se colgaba: en el run 39982719207 el tope
@@ -375,13 +399,14 @@ jobs:
     # cuatro pasos, y su desenlace es mas tosco a proposito.
     #
     # PR y nocturna comparten tope desde el 2026-10-24: corren lo mismo (la UI ya no vive aqui) y la
-    # nocturna ya no tarda mas que un PR (32-41 min las cuatro del 20 al 23-oct). 60 es ~1,35x el
-    # maximo verde y deja ~15 min para un runner lento mas un flaky rescatado por
+    # nocturna ya no tarda mas que un PR (32-41 min las cuatro del 20 al 23-oct). 80 (desde el
+    # 2026-10-26; era 60) es ~1,5x el maximo verde (53,5) y ~1,2x el run lento cancelado (63,6, que
+    # habria cerrado en ~66), y deja sitio para un runner lento mas un flaky rescatado por
     # `ci-reintentar-rojos.sh` (~5,5 min el 7-oct). Hasta ese dia era una expresion (PR 45,
     # nocturna 60); si vuelven a divergir, `timeout-minutes` la admite (comprobado con actionlint
     # 1.7.12, que rechaza el texto plano con «expecting a single ${{...}} expression or float
     # number literal»).
-    timeout-minutes: 60
+    timeout-minutes: 80
     # Los tests de intervalos construyen sus expectativas con un calendario fijado a
     # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
     # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
@@ -484,8 +509,9 @@ jobs:
         run: bash qa/scripts/ci-simulador.sh
       - name: Build for testing
         id: build
-        # 30 desde el 2026-10-24 (era 25 y el maximo medido ya llegaba a 22,8). Ver «TOPES DE TIEMPO».
-        timeout-minutes: 30
+        # 40 desde el 2026-10-26 (era 30 y el maximo verde llego a 28,6; 25 hasta el 24-oct).
+        # Ver «TOPES DE TIEMPO».
+        timeout-minutes: 40
         run: |
           xcodebuild build-for-testing \
             -scheme "Yala Dev" \
@@ -514,8 +540,9 @@ jobs:
       # diagnósticos: el `.xcresult` y el log bastan.
       - name: Unit tests (YalaTests pure-logic)
         id: unit_pure
-        # 35 desde el 2026-10-24 (era 30: maximo verde 24,4 mas las vueltas de un flaky rescatado).
-        timeout-minutes: 35
+        # 45 desde el 2026-10-26 (era 35 y el maximo verde llego a 30,9; 30 hasta el 24-oct, con
+        # maximo 24,4). Holgura para las vueltas de un flaky rescatado. Ver «TOPES DE TIEMPO».
+        timeout-minutes: 45
         run: |
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 -- \
             test-without-building \
