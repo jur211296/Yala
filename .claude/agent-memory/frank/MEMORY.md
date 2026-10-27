@@ -46,6 +46,7 @@
 - [Una lectura del body basta para todo el body](feedback_una_lectura_del_body_basta_para_todo_el_body.md) — mutar un repintado: quita todas las lecturas del @State en ese body.
 - [Un seam de reloj arranca bajo el splash](feedback_un_seam_de_reloj_arranca_bajo_el_splash.md) — onAppear no es visible: N=2 vencía tapado; verde con el arreglo antes de fiarte.
 - [Ver un fallo de XCUITest en vídeo](reference_ver_un_fallo_de_xcuitest_en_video.md) — xcresult → mp4 → ffmpeg último fotograma; los .txt no ven las hojas.
+- [Fechar un rojo con la nocturna](reference_fechar_un_rojo_con_la_nocturna.md) — `gh run view --log` de qa.yml da el veredicto por caso y día; acota antes de bisecar.
 - [Un seam de contador dispara sus one-shots](feedback_un_seam_de_contador_dispara_sus_one_shots.md) — fijar «5 registros» sin primer ni checklist sacaba hojas encima.
 - [La decisión vive en la nota de la card](feedback_la_decision_vive_en_la_nota_de_la_card.md) — `listar --json` no trae `note`: `tablero ver` antes de lanzar.
 - [Agentes en paralelo: textos por JSON](feedback_agentes_en_paralelo_merge_de_textos.md) — textos como JSON + script, no `union`; el barrido cazó 6 defectos que no ven.

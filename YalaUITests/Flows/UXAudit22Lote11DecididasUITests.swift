@@ -21,9 +21,12 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
 
-    private func launchStatistics(pro: Bool = false, insightsAIConsent: Bool = false) -> XCUIApplication {
+    private func launchStatistics(
+        pro: Bool = false, insightsAIConsent: Bool = false, extraArguments: [String] = []
+    ) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(pro: pro, seed: "realista", deeplink: "statistics", insightsAIConsent: insightsAIConsent)
+        app.launchForUITest(pro: pro, seed: "realista", deeplink: "statistics", insightsAIConsent: insightsAIConsent,
+                            extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
         return app
     }
@@ -49,10 +52,39 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
         return target.exists
     }
 
+    /// Abre Observaciones desde la píldora «Detalle | Observaciones» del Resumen. `scrollTo` no vale aquí: su `swipeUp`
+    /// la subía hasta debajo de la barra de chips, `isHittable` seguía en `true` y el toque caía en el chip «Registros»
+    /// (medido en vídeo el 2026-10-27). Con la pantalla equivocada, el caso que pide el botón salía rojo y el que pide
+    /// su ausencia salía verde sin mirar Observaciones. Arrastres cortos hasta dejarla en la mitad de la pantalla, y
+    /// comprobar que quedó elegida.
+    private func openObservations(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let observations = app.buttons["Observaciones"].firstMatch
+        let window = app.windows.firstMatch.frame
+        let band = (window.height * 0.3)...(window.height * 0.7)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        for _ in 0..<12 {
+            if observations.exists, band.contains(observations.frame.midY) { break }
+            if observations.exists, observations.frame.midY < band.lowerBound {
+                end.press(forDuration: 0.05, thenDragTo: start, withVelocity: .slow, thenHoldForDuration: 0.2)
+            } else {
+                start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
+            }
+        }
+        XCTAssertTrue(observations.exists && band.contains(observations.frame.midY),
+                      "La píldora Observaciones no quedó a la vista.", file: file, line: line)
+        observations.tap()
+        XCTAssertTrue(observations.wait(for: \.isSelected, toEqual: true, timeout: 5),
+                      "El toque no eligió Observaciones.", file: file, line: line)
+    }
+
     // MARK: - L11-5 · L11-6
 
     func test_summary_showsWhatYouStillHaveToPay_andBudgetsWithTheirAmounts() {
-        let app = launchStatistics()
+        // «Este mes» cierra hoy a las 23:59:59 y la sección cuenta los pagos que vencen dentro del período: con los de
+        // la semilla (días 3 a 28) salía solo los días en que vencía uno. El pago que vence HOY la hace independiente
+        // del día en que corre (ticket `ui-suite-2-2-five-tests-red-on-the-base`).
+        let app = launchStatistics(extraArguments: ["-uitest-scheduled-due-today"])
         chooseThisMonth(app)
 
         let toPay = element(app, "insights_to_pay_header")
@@ -80,7 +112,9 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
         header.tap()
         let purpose = element(app, "insights_need_purpose")
         XCTAssertTrue(scrollTo(app, purpose), "Falta la línea con el para qué.")
-        XCTAssertTrue(app.staticTexts["Gustos y caprichos."].exists, "Falta el ejemplo de «Opcional».")
+        // El texto es `need.optional.desc`, el mismo del selector de necesidad del formulario: desde el lote 2 · B
+        // (2026-10-23) lleva ejemplos tras los dos puntos.
+        XCTAssertTrue(app.staticTexts["Gustos y caprichos: salidas, delivery."].exists, "Falta el ejemplo de «Opcional».")
     }
 
     // MARK: - L11-7
@@ -90,9 +124,7 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
         let app = launchStatistics(pro: true, insightsAIConsent: true)
         chooseThisMonth(app)
 
-        let observations = app.buttons["Observaciones"].firstMatch
-        XCTAssertTrue(scrollTo(app, observations), "Falta la píldora Observaciones.")
-        observations.tap()
+        openObservations(app)
 
         XCTAssertFalse(
             app.staticTexts["Toca el botón de arriba para generar observaciones con IA"].waitForExistence(timeout: 3),
@@ -107,9 +139,7 @@ final class UXAudit22Lote11DecididasUITests: XCTestCase {
         let app = launchStatistics(pro: true)
         chooseThisMonth(app)
 
-        let observations = app.buttons["Observaciones"].firstMatch
-        XCTAssertTrue(scrollTo(app, observations), "Falta la píldora Observaciones.")
-        observations.tap()
+        openObservations(app)
         XCTAssertTrue(element(app, "insights_observations_generate_ai").waitForExistence(timeout: 5),
                       "Falta «Generar con IA» en Observaciones.")
     }
