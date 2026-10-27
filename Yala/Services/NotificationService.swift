@@ -72,6 +72,15 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// probar el camino entero del toque en frío (`NotificationColdLaunchTapTests`).
     @MainActor
     static func routeTap(deepLink destination: String, targetSessionID: String?) {
+        // El aviso de Apple Pay con Yala solo en grupos (encargo S11e): abre la vuelta a Yala completo o su activación.
+        // Si la persona ya volvió, `ContentView` no hace nada con él.
+        if destination == GroupsOnlyIntentGate.activationDeepLink {
+            if let targetSessionID {
+                SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
+            }
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
+            return
+        }
         guard let dest = parseDestination(destination) else { return }
         // Una alerta de presupuesto lleva su id (`budgets/<uuid>`): se apunta antes de navegar y Presupuestos abre ese
         // detalle al llegar (UX 2.2 · L9-5).

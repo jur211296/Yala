@@ -53,6 +53,33 @@ nonisolated enum UsageModeLogic {
         splitExpenseID == nil && splitSettlementID == nil && balanceAdjustmentType == nil
     }
 
+    // MARK: - Los pagos programados que vencieron durante la pausa
+
+    /// ¿Se saltan, al volver, los vencimientos de este pago que cayeron durante «Solo grupos»? (decisión de Jürgen del
+    /// 2026-10-27, encargo S11e: al volver no aparecen de golpe; cada pago sigue en su próxima fecha, los de grupo y los
+    /// personales.) `true` ⇒ la próxima fecha pasa al primer vencimiento desde hoy, sin borrador.
+    ///
+    /// Se mira el primer vencimiento que aún no salió a la Bandeja: la próxima fecha, o la siguiente si ya hay un
+    /// borrador pendiente (ese borrador cubre la próxima fecha, y aprobarlo o descartarlo con la fecha ya por delante no
+    /// la vuelve a avanzar: `ScheduledDraftOccurrenceLogic.approvalAdvancesPointer`). Sin mirar la siguiente, un
+    /// borrador de antes de la pausa dejaba salir después, uno a uno, todo lo de la pausa (review adversarial de S11e).
+    ///
+    /// - Un pago de una vez no tiene próxima fecha: saltarlo lo apagaría sin que nadie lo viera. Sale al volver.
+    /// - Si ese primer vencimiento es anterior a la pausa, no venció durante ella: sigue el camino normal (la vuelta
+    ///   saca su borrador y vuelve a preguntar con él pendiente). `pauseStartDay == nil` (marca de un build sin la
+    ///   fecha): todo lo anterior a hoy.
+    /// - El de hoy es el ciclo normal.
+    static func skipsOccurrencesMissedDuringPause(isActive: Bool, isRecurring: Bool, hasPendingDraft: Bool,
+                                                  nextDueDay: Date, followingDueDay: Date?, pauseStartDay: Date?,
+                                                  today: Date) -> Bool {
+        guard isActive, isRecurring, nextDueDay < today else { return false }
+        guard let firstNotShown = hasPendingDraft ? followingDueDay : nextDueDay, firstNotShown < today else {
+            return false
+        }
+        if let pauseStartDay, firstNotShown < pauseStartDay { return false }
+        return true
+    }
+
     // MARK: - La cuenta principal de «Empezar de cero»
 
     struct AccountCandidate: Equatable {

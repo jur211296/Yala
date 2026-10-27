@@ -8459,3 +8459,10 @@
 "usageMode.account.start" = "Zacznij";
 "usageMode.account.working" = "Zaczynamy od zera…";
 "usageMode.error" = "Nie udało się zacząć od zera. Spróbuj ponownie.";
+
+// MARK: - Apple Pay y Siri con Yala solo en grupos (encargo S11e)
+"intent.groupsOnly.activate" = "Nie masz pełnej Yala. Aktywuj ją, aby korzystać z tej funkcji.";
+"intent.groupsOnly.comeBack" = "Widzisz tylko swoje grupy. Wróć do pełnej Yala, aby korzystać z tej funkcji.";
+"intent.groupsOnly.applePay.title" = "Płatność niezapisana";
+"intent.groupsOnly.applePay.activate" = "Nie masz pełnej Yala. Aktywuj ją, aby zapisywać płatności Apple Pay.";
+"intent.groupsOnly.applePay.comeBack" = "Widzisz tylko swoje grupy. Wróć do pełnej Yala, aby zapisywać płatności Apple Pay.";

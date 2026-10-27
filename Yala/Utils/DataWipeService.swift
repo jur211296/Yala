@@ -1253,7 +1253,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
         defaults.removeObject(forKey: "customPeriodEnd")
         // «Solo grupos» sobre Yala completo (card p0iu): vaciar manda al onboarding personal, que es Yala completo.
-        defaults.removeObject(forKey: GroupsOnlyViewMark.userDefaultsKey)
+        GroupsOnlyViewMark.clear(defaults)
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true

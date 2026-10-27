@@ -7785,3 +7785,10 @@
 "usageMode.count.records" = "%d registros";
 "usageMode.count.accounts" = "%d cuentas";
 "usageMode.count.budgets" = "%d presupuestos";
+
+// MARK: - Apple Pay y Siri con Yala solo en grupos (encargo S11e)
+"intent.groupsOnly.activate" = "No tenés Yala completo. Activalo para usar esta función.";
+"intent.groupsOnly.comeBack" = "Ahora ves solo tus grupos. Volvé a Yala completo para usar esta función.";
+"intent.groupsOnly.applePay.title" = "Pago sin registrar";
+"intent.groupsOnly.applePay.activate" = "No tenés Yala completo. Activalo para registrar tus pagos con Apple Pay.";
+"intent.groupsOnly.applePay.comeBack" = "Ahora ves solo tus grupos. Volvé a Yala completo para registrar tus pagos con Apple Pay.";

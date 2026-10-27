@@ -52,25 +52,42 @@ enum UsageModeService {
             firstDate: dates.min(), lastDate: dates.max())
     }
 
-    /// «Seguir donde lo dejé» y la vuelta sin registros: la shell vuelve entera, los avisos se reprograman y los pagos
-    /// programados que vencieron durante la pausa se procesan. Todas las ventanas van al Panel.
+    /// «Seguir donde lo dejé» y la vuelta sin registros: la shell vuelve entera y los avisos se reprograman. Los pagos
+    /// programados que vencieron durante la pausa NO se procesan: cada uno sigue en su próxima fecha (encargo S11e).
+    /// Todas las ventanas van al Panel.
     static func returnToFull(context: ModelContext) async {
         let sessionState = SessionState.shared
+        // Antes de levantar la pausa (encargo S11e): lo que venció durante ella no sale de golpe. Con la marca aún puesta,
+        // un kill aquí no deja que el siguiente arranque lo saque todo. Sin marca no hubo pausa que contener: saltar
+        // «todo lo anterior a hoy» se llevaría vencimientos que nunca estuvieron pausados.
+        let pause = GroupsOnlyViewMark.isOn() ? PausedPayments(since: GroupsOnlyViewMark.since()) : nil
+        if let pause {
+            ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause(context: context, pausedSince: pause.since)
+        }
         sessionState.prefersGroupsOnlyView = false
         for navigation in SceneRegistry.shared.allNavigations {
             navigation.selectMainTab(.panel)
         }
-        await resumePersonalReminders(context: context)
+        await resumePersonalReminders(context: context, pause: pause)
     }
 
-    /// Lo que la pausa dejó AGENDADO, de vuelta: los borradores de los pagos vencidos, los recordatorios repetitivos y los
-    /// resúmenes de pagos. **Los avisos inmediatos (vencidos, tarjeta, presupuestos) no se disparan aquí**: los manda el
+    /// El inicio de la pausa que la vuelta acaba de levantar (`nil` dentro = marca de un build sin la fecha).
+    private struct PausedPayments {
+        let since: Date?
+    }
+
+    /// Lo que la pausa dejó AGENDADO, de vuelta: los borradores de los pagos que vencen hoy, los recordatorios repetitivos
+    /// y los resúmenes de pagos. **Los avisos inmediatos (vencidos, tarjeta, presupuestos) no se disparan aquí**: los manda el
     /// siguiente primer plano por su camino de siempre (`AppBootstrapper.ensureNotificationsScheduled`), que tiene su
     /// cadencia y sus marcas. Lanzarlos aquí era una ráfaga con la persona dentro de la app y, si la vuelta coincidía con
     /// ese primer plano, banners duplicados (review adversarial de p0iu). Los informes que tocaban durante la pausa no se
     /// recuperan: pausa es pausa.
-    private static func resumePersonalReminders(context: ModelContext) async {
+    private static func resumePersonalReminders(context: ModelContext, pause: PausedPayments?) async {
         ScheduledPaymentDraftService.processDuePayments(context: context)
+        // Lo que acaba de salir es de antes de la pausa; lo de la pausa que venía detrás, se salta (encargo S11e).
+        if let pause {
+            ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause(context: context, pausedSince: pause.since)
+        }
         do {
             let items = try context.fetch(FetchDescriptor<NotificationItem>())
             await NotificationService.shared.rescheduleAllNotifications(items: items.filter(\.isActive))

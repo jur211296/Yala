@@ -78,6 +78,100 @@ struct UsageModeLogicTests {
     }
 }
 
+// MARK: - Los pagos que vencieron durante la pausa (encargo S11e)
+
+struct UsageModePausedPaymentsLogicTests {
+
+    private let calendar = Calendar(identifier: .gregorian)
+    private func day(_ d: Int) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 10, day: d)) ?? .distantPast
+    }
+
+    private func skips(isActive: Bool = true, isRecurring: Bool = true, hasPendingDraft: Bool = false,
+                       due: Int, following: Int? = nil, pauseStart: Int?, today: Int = 27) -> Bool {
+        UsageModeLogic.skipsOccurrencesMissedDuringPause(
+            isActive: isActive, isRecurring: isRecurring, hasPendingDraft: hasPendingDraft,
+            nextDueDay: day(due), followingDueDay: following.map(day), pauseStartDay: pauseStart.map(day),
+            today: day(today))
+    }
+
+    @Test func venceDuranteLaPausa_seSalta() {
+        #expect(skips(due: 20, pauseStart: 10))
+        #expect(skips(due: 10, pauseStart: 10), "el día en que empezó la pausa ya cuenta")
+        #expect(skips(due: 26, pauseStart: 10), "ayer también")
+    }
+
+    @Test func loDeHoy_loDeAntesDeLaPausa_yLoQueNoHaVencido_noSeTocan() {
+        #expect(!skips(due: 27, pauseStart: 10), "hoy es el ciclo normal")
+        #expect(!skips(due: 30, pauseStart: 10))
+        #expect(!skips(due: 9, pauseStart: 10), "venció antes de la pausa")
+    }
+
+    @Test func sinFechaDeInicio_todoLoAnteriorAHoy() {
+        #expect(skips(due: 1, pauseStart: nil))
+        #expect(!skips(due: 27, pauseStart: nil))
+    }
+
+    @Test func pagoUnico_eInactivo_noSeTocan() {
+        #expect(!skips(isRecurring: false, due: 20, pauseStart: 10))
+        #expect(!skips(isActive: false, due: 20, pauseStart: 10))
+    }
+
+    /// Review adversarial de S11e: con un borrador pendiente, lo que decide es el vencimiento SIGUIENTE. Sin mirarlo, un
+    /// borrador de antes de la pausa dejaba salir después, uno a uno, todo lo de la pausa.
+    @Test func conBorradorPendiente_decideElVencimientoSiguiente() {
+        #expect(skips(hasPendingDraft: true, due: 5, following: 12, pauseStart: 10), "lo que viene detrás es de la pausa")
+        #expect(skips(hasPendingDraft: true, due: 15, following: 22, pauseStart: 10))
+        #expect(!skips(hasPendingDraft: true, due: 15, following: 27, pauseStart: 10), "lo siguiente es hoy: ciclo normal")
+        #expect(!skips(hasPendingDraft: true, due: 15, following: nil, pauseStart: 10), "la serie acaba en el pendiente")
+        #expect(!skips(hasPendingDraft: true, due: 2, following: 9, pauseStart: 10), "lo siguiente también es de antes")
+        #expect(!skips(hasPendingDraft: false, due: 5, following: 12, pauseStart: 10),
+                "sin borrador, el de antes de la pausa sale primero por el camino normal")
+    }
+}
+
+// MARK: - Apple Pay y Siri con Yala solo en grupos (encargo S11e)
+
+struct GroupsOnlyIntentGateTests {
+
+    @Test func laMismaDecisionQueLaShell() {
+        #expect(GroupsOnlyIntentGate.verdict(hasPrivateSession: true, prefersGroupsOnlyView: false) == .allowed)
+        #expect(GroupsOnlyIntentGate.verdict(hasPrivateSession: true, prefersGroupsOnlyView: true) == .blocked(.comeBack))
+        #expect(GroupsOnlyIntentGate.verdict(hasPrivateSession: false, prefersGroupsOnlyView: false) == .blocked(.activate))
+        #expect(GroupsOnlyIntentGate.verdict(hasPrivateSession: false, prefersGroupsOnlyView: true) == .blocked(.activate))
+    }
+
+    @Test func leeLasMarcas_yUnTelefonoNuevoSigueConSiri() {
+        let defaults = makeIsolatedDefaults(prefix: "test.usagemode.gate")
+        #expect(GroupsOnlyIntentGate.current(defaults) == .allowed, "sin marca escrita, la sesión privada se presume")
+        PrivateSessionMark.set(true, defaults)
+        GroupsOnlyViewMark.set(true, defaults)
+        #expect(GroupsOnlyIntentGate.current(defaults) == .blocked(.comeBack))
+        PrivateSessionMark.set(false, defaults)
+        #expect(GroupsOnlyIntentGate.current(defaults) == .blocked(.activate))
+    }
+
+    /// Las cinco claves, con valor y sin la jerga de sesiones, en los dieciséis idiomas.
+    @Test func losTextosExistenEnTodosLosIdiomas() throws {
+        let keys = [GroupsOnlyIntentGate.messageKey(for: .activate), GroupsOnlyIntentGate.messageKey(for: .comeBack),
+                    GroupsOnlyIntentGate.applePayTitleKey, GroupsOnlyIntentGate.applePayBodyKey(for: .activate),
+                    GroupsOnlyIntentGate.applePayBodyKey(for: .comeBack)]
+        let resources = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Yala/Resources")
+        let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path)
+            .filter { $0.hasSuffix(".lproj") }
+        #expect(locales.count == 16)
+        for locale in locales {
+            let url = resources.appendingPathComponent(locale).appendingPathComponent("Localizable.strings")
+            let table = try #require(NSDictionary(contentsOf: url) as? [String: String], "\(locale) no se lee")
+            for key in keys {
+                let value = try #require(table[key], "\(locale) no tiene \(key)")
+                #expect(!value.isEmpty && !value.lowercased().contains("solo grupos"), "\(locale) · \(key): \(value)")
+            }
+        }
+    }
+}
+
 // MARK: - La marca de vista vive encima de la sesión privada
 
 @MainActor
@@ -111,12 +205,35 @@ struct GroupsOnlyViewMarkTests {
         #expect(!GroupsOnlyViewMark.isOn(defaults))
     }
 
-    /// «Vaciar datos» y el borrado del cierre de sesión barren la marca con las preferencias.
+    /// «Vaciar datos» y el borrado del cierre de sesión barren la marca con las preferencias, y su fecha con ella.
     @Test func elBarridoDePreferenciasSeLaLleva() {
         let defaults = makeIsolatedDefaults(prefix: "test.usagemode.sweep")
         GroupsOnlyViewMark.set(true, defaults)
         DataWipeService.removeUserPreferenceKeys(from: defaults)
         #expect(!GroupsOnlyViewMark.isOn(defaults))
+        #expect(defaults.object(forKey: GroupsOnlyViewMark.sinceUserDefaultsKey) == nil)
+    }
+
+    /// Encargo S11e: la marca apunta cuándo empezó la pausa. Reafirmarla no la mueve, y muere con ella por todos los
+    /// caminos.
+    @Test func apuntaElInicioDeLaPausa_unaVez_yMuereConLaMarca() {
+        let defaults = makeIsolatedDefaults(prefix: "test.usagemode.since")
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(GroupsOnlyViewMark.since(defaults) == nil)
+        GroupsOnlyViewMark.set(true, defaults, now: start)
+        GroupsOnlyViewMark.set(true, defaults, now: start.addingTimeInterval(86_400))
+        #expect(GroupsOnlyViewMark.since(defaults) == start)
+        GroupsOnlyViewMark.set(false, defaults)
+        #expect(defaults.object(forKey: GroupsOnlyViewMark.sinceUserDefaultsKey) == nil)
+
+        PrivateSessionMark.set(true, defaults)
+        GroupsOnlyViewMark.set(true, defaults, now: start)
+        PrivateSessionMark.set(false, defaults)
+        #expect(defaults.object(forKey: GroupsOnlyViewMark.sinceUserDefaultsKey) == nil)
+
+        // Una marca de un build sin fecha: la vuelta salta todo lo anterior a hoy.
+        defaults.set(true, forKey: GroupsOnlyViewMark.userDefaultsKey)
+        #expect(GroupsOnlyViewMark.since(defaults) == nil)
     }
 
     /// Del teléfono, no del Apple ID: no viaja por el canal de preferencias.
@@ -195,6 +312,72 @@ struct UsageModeWiringTests {
             "showFullModeActivation = true",
             "}",
         ])
+    }
+
+    /// Encargo S11e: la vuelta salta lo que venció en la pausa ANTES de levantarla (un kill entre las dos no deja que el
+    /// arranque siguiente lo saque todo), y con la fecha que apuntó la marca.
+    @Test func laVueltaSaltaLoVencido_antesDeLevantarLaPausa_yTrasSacarLoDeAntes() throws {
+        let src = try Self.source("Yala/App/Services/UsageModeService.swift")
+        let skipLine = "ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause(context: context, pausedSince: pause.since)"
+        let body = try Self.lines(of: "static func returnToFull(context: ModelContext) async {", in: src, take: 6)
+        #expect(Array(body[1...4]) == [
+            "let pause = GroupsOnlyViewMark.isOn() ? PausedPayments(since: GroupsOnlyViewMark.since()) : nil",
+            "if let pause {",
+            skipLine,
+            "}",
+        ], "sin marca no se salta nada, y con ella se salta antes de levantarla")
+        #expect(body[5] == "sessionState.prefersGroupsOnlyView = false")
+        let resume = try Self.lines(of: "private static func resumePersonalReminders(context: ModelContext, pause: PausedPayments?) async {",
+                                    in: src, take: 4)
+        #expect(resume == [
+            "ScheduledPaymentDraftService.processDuePayments(context: context)",
+            "if let pause {",
+            skipLine,
+            "}",
+        ])
+    }
+
+    /// Apple Pay y «anotar con Siri» miran la puerta ANTES de encolar nada; Siri, antes de Pro y de pedir el texto.
+    @Test func applePayYSiri_miranLaPuertaPrimero() throws {
+        let src = try Self.source("Yala/App/Intents/QuickExpenseIntent.swift")
+        let applePay = try Self.lines(of: "struct ApplePayTransactionIntent: AppIntent {", in: src, take: 400)
+        let applePayPerform = try #require(applePay.firstIndex { $0 == "func perform() async throws -> some IntentResult {" })
+        #expect(applePay[applePayPerform + 1] == "if case .blocked(let entry) = GroupsOnlyIntentGate.current() {")
+        let gateEnd = try #require(applePay[applePayPerform...].firstIndex { $0 == "return .result()" })
+        #expect(applePay[applePayPerform..<gateEnd].contains("deepLink: GroupsOnlyIntentGate.activationDeepLink"))
+        #expect(!applePay[applePayPerform..<gateEnd].contains { $0.contains("ApplePayPendingStore.append") })
+
+        let siri = try Self.lines(of: "func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {",
+                                  in: src, take: 3)
+        #expect(siri == [
+            "if case .blocked(let entry) = GroupsOnlyIntentGate.current() {",
+            "return .result(dialog: await openFullModeActivation(entry), view: EmptyView())",
+            "}",
+        ])
+    }
+
+    /// Las dos preguntas de Siri dicen el aviso antes de leer la foto de las finanzas.
+    @Test func lasPreguntasDeSiri_miranLaPuertaPrimero() throws {
+        let src = try Self.source("Yala/App/Intents/SiriQueryIntents.swift")
+        for intent in ["struct SpendingQueryIntent: AppIntent {", "struct BalanceQueryIntent: AppIntent {"] {
+            let body = try Self.lines(of: intent, in: src, take: 30)
+            let perform = try #require(body.firstIndex { $0 == "func perform() async throws -> some IntentResult & ProvidesDialog {" })
+            #expect(Array(body[(perform + 1)...(perform + 3)]) == [
+                "if case .blocked(let entry) = GroupsOnlyIntentGate.current() {",
+                "return .result(dialog: IntentSpeech.resolved(GroupsOnlyIntentGate.message(for: entry)))",
+                "}",
+            ], "\(intent)")
+        }
+    }
+
+    /// El toque del aviso de Apple Pay abre la vuelta (o la activación), antes de buscar un destino de pestaña.
+    @Test func elToqueDelAvisoDeApplePay_abreLaVuelta() throws {
+        let body = try Self.lines(of: "static func routeTap(deepLink destination: String, targetSessionID: String?) {",
+                                  in: try Self.source("Yala/Services/NotificationService.swift"), take: 8)
+        #expect(body.first == "if destination == GroupsOnlyIntentGate.activationDeepLink {")
+        let submit = try #require(body.firstIndex { $0 == "RouterEntryGate.shared.submit(.presentFullModeActivation)" })
+        #expect(body[submit + 1] == "return")
+        #expect(GroupsOnlyIntentGate.activationDeepLink == "activate-full")
     }
 
     /// La ida pone la marca ANTES de retirar lo pendiente: con ella puesta, ningún productor vuelve a agendar.

@@ -20,8 +20,9 @@ struct ScheduledPaymentDraftService {
     @discardableResult
     static func processDuePayments(context: ModelContext) -> Int {
         // Card p0iu (decisión 2 de Jürgen): los pagos programados se pausan mientras dura «Solo grupos» sobre Yala
-        // completo, también los de grupo (sus borradores caen en la bandeja, que no se ve). No se pierde ninguno: al
-        // volver, `UsageModeService` llama aquí y los vencidos de la pausa se procesan como los de un arranque tardío.
+        // completo, también los de grupo (sus borradores caen en la bandeja, que no se ve). Al volver no salen de golpe
+        // (encargo S11e, 2026-10-27): `UsageModeService` salta antes lo que venció durante la pausa
+        // (`skipOccurrencesMissedDuringPause`) y luego llama aquí, que solo saca lo de hoy.
         guard !PersonalRemindersPause.isPaused() else { return 0 }
         // Gate de quiescencia: crea InboxDrafts + `save()` del store personal; diferir durante el
         // import del restore de iCloud (idempotente: re-evalúa los vencimientos en el próximo arranque).
@@ -120,6 +121,95 @@ struct ScheduledPaymentDraftService {
         }
 
         return draftsCreated
+    }
+
+    // MARK: - Vuelta de «Solo grupos»
+
+    /// Lleva cada pago recurrente a su primer vencimiento desde hoy, sin borrador, cuando lo que se salta venció durante
+    /// la pausa de «Solo grupos» (encargo S11e, decisión de Jürgen del 2026-10-27: al volver no aparecen de golpe; siguen
+    /// suspendidos hasta su ciclo normal). Qué pago entra lo decide `UsageModeLogic.skipsOccurrencesMissedDuringPause`.
+    ///
+    /// **Avanza `nextDueDate`, no marca fechas saltadas**: `skippedDates` viaja, y en otro dispositivo en Yala completo
+    /// `archiveDraftsOfDismissedOccurrences` archivaría los borradores que ese dispositivo sí sacó durante la pausa.
+    /// No mira `PersonalRemindersPause`: la vuelta lo llama ANTES de levantarla, para que un kill entre las dos no deje
+    /// que el siguiente arranque saque todo de golpe, y otra vez DESPUÉS de `processDuePayments`, que saca el borrador
+    /// del vencimiento de antes de la pausa: con él pendiente, lo de la pausa que venía detrás ya se puede saltar.
+    /// Devuelve cuántos pagos movió.
+    @discardableResult
+    static func skipOccurrencesMissedDuringPause(context: ModelContext, pausedSince: Date?, now: Date = .now) -> Int {
+        // Mismo gate que `processDuePayments`: no se guarda el store personal durante el import del restore de iCloud.
+        // Residual aceptado: volver justo en esa ventana deja que el siguiente arranque saque lo vencido como antes.
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause", "import not quiescent")
+            return 0
+        }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        let pauseStartDay = pausedSince.map { calendar.startOfDay(for: $0) }
+
+        let candidates: [ScheduledPayment]
+        let pendingPaymentIDs: Set<String>
+        do {
+            candidates = try context.fetch(FetchDescriptor<ScheduledPayment>(predicate: #Predicate<ScheduledPayment> {
+                $0.isActive && $0.isRecurring && $0.nextDueDate < today
+            }))
+            guard !candidates.isEmpty else { return 0 }
+            let pending = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceScheduledPaymentID != nil
+            }))
+            pendingPaymentIDs = Set(pending.compactMap(\.sourceScheduledPaymentID))
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching payments missed during the pause: \(error)")
+            #endif
+            return 0
+        }
+
+        var moved = 0
+        for payment in candidates {
+            let hasPendingDraft = pendingPaymentIDs.contains(payment.id.uuidString)
+            guard UsageModeLogic.skipsOccurrencesMissedDuringPause(
+                isActive: payment.isActive, isRecurring: payment.isRecurring, hasPendingDraft: hasPendingDraft,
+                nextDueDay: calendar.startOfDay(for: payment.nextDueDate),
+                followingDueDay: hasPendingDraft ? followingDueDay(of: payment, calendar: calendar) : nil,
+                pauseStartDay: pauseStartDay, today: today
+            ) else { continue }
+            // Un pago con su serie terminada sale apagado (`advanceToNextDueDate` mira `endDate`). El tope y la fecha que
+            // no avanza cubren una recurrencia ilegible.
+            var steps = 0
+            while payment.isActive, calendar.startOfDay(for: payment.nextDueDate) < today, steps < 10_000 {
+                let before = payment.nextDueDate
+                advanceToNextDueDate(payment: payment)
+                guard payment.nextDueDate != before else { break }
+                steps += 1
+            }
+            moved += 1
+        }
+        guard moved > 0 else { return 0 }
+        do {
+            SaveBreadcrumb.willSave("ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause")
+            try context.save()
+            SaveBreadcrumb.didSave("ScheduledPaymentDraftService.skipOccurrencesMissedDuringPause")
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error saving payments missed during the pause: \(error)")
+            #endif
+            return 0
+        }
+        return moved
+    }
+
+    /// El vencimiento que sigue a la próxima fecha, sin tocar el pago (`nil` si la serie acaba ahí).
+    private static func followingDueDay(of payment: ScheduledPayment, calendar: Calendar) -> Date? {
+        let nextDueDate = payment.nextDueDate
+        let isActive = payment.isActive
+        defer {
+            payment.nextDueDate = nextDueDate
+            payment.isActive = isActive
+        }
+        advanceToNextDueDate(payment: payment)
+        guard payment.isActive, payment.nextDueDate != nextDueDate else { return nil }
+        return calendar.startOfDay(for: payment.nextDueDate)
     }
 
     // MARK: - Dismissed Occurrences

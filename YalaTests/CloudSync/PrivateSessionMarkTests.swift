@@ -513,8 +513,8 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 19, """
-            el eje 1 tiene DIECINUEVE consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 20, """
+            el eje 1 tiene VEINTE consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 
@@ -553,6 +553,11 @@ struct PrivateSessionMarkWiringTests {
             lectura que el registrador del arranque —es el mismo constructor— y sus tres llamadores la acaban de
             escribir en `true` en el mismo gesto: ahí las dos lecturas coinciden, porque solo difieren con la marca
             AUSENTE.
+
+            El vigésimo (2026-10-27, encargo S11e) es `GroupsOnlyIntentGate.current`: Apple Pay y Siri no
+            funcionan con la shell de solo grupos. Con la MISMA lectura que la shell (`ShellModeLogic`): su `true`
+            de más deja a Siri y Apple Pay como estaban, que es el lado que conserva; no alcanza datos fuera del
+            teléfono.
             """)
     }
 

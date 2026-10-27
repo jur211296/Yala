@@ -513,8 +513,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-next-column-needs-the-capability-level-in-the-drain | backlog | tickets/backlog/groups-next-column-needs-the-capability-level-in-the-drain.md |
 | groups-notifications-permission-skipped-when-the-group-arrives-another-way | qa | tickets/qa/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
-| groups-only-by-choice-holds-group-scheduled-payments | backlog | tickets/backlog/groups-only-by-choice-holds-group-scheduled-payments.md |
-| groups-only-by-choice-still-shows-apple-pay-and-siri-banners | backlog | tickets/backlog/groups-only-by-choice-still-shows-apple-pay-and-siri-banners.md |
+| groups-only-by-choice-holds-group-scheduled-payments | done | tickets/done/groups-only-by-choice-holds-group-scheduled-payments.md |
+| groups-only-by-choice-still-shows-apple-pay-and-siri-banners | qa | tickets/qa/groups-only-by-choice-still-shows-apple-pay-and-siri-banners.md |
 | groups-only-by-choice-unmounts-forms-in-other-windows | backlog | tickets/backlog/groups-only-by-choice-unmounts-forms-in-other-windows.md |
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | done | tickets/done/groups-only-second-launch-mounts-icloud-mirror.md |
