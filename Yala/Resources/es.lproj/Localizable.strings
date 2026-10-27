@@ -7990,12 +7990,6 @@
 /* L12-9 · qué hace «Menos pagos entre ustedes». */
 "groups.d13.form.simplifyHint" = "Yala junta las deudas para que haya menos transferencias.";
 
-/* L12-9 · «Moneda única para deudas» con palabras de persona. */
-"groups.d13.form.singleCurrency" = "Todo en una moneda";
-
-/* L12-9 · «División predeterminada» con palabras de persona. */
-"groups.d13.form.splitType" = "Cómo se reparte casi siempre";
-
 /* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
 "groups.d13.form.yourName" = "Tu nombre en el grupo";
 

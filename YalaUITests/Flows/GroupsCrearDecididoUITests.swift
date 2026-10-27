@@ -72,8 +72,11 @@ final class GroupsCrearDecididoUITests: XCTestCase {
         more.tap()
         XCTAssertTrue(simplify.waitForExistence(timeout: 5),
                       "«Más opciones» no despliega «Menos pagos entre ustedes» (antes «Simplificar deudas»).")
-        XCTAssertTrue(app.switches["Todo en una moneda"].exists, "Falta «Todo en una moneda».")
-        XCTAssertTrue(app.staticTexts["Cómo se reparte casi siempre"].exists, "Falta «Cómo se reparte casi siempre».")
+        // avq3 · mismas palabras que en Ajustes del grupo (L19-7): crear y ajustar nombran igual la misma opción.
+        XCTAssertTrue(app.switches["Ver las deudas en una sola moneda"].exists,
+                      "Falta «Ver las deudas en una sola moneda»: crear no dice lo mismo que Ajustes del grupo (avq3).")
+        XCTAssertTrue(app.staticTexts["Cómo se reparte un gasto nuevo"].exists,
+                      "Falta «Cómo se reparte un gasto nuevo»: crear no dice lo mismo que Ajustes del grupo (avq3).")
     }
 
     /// **L12-11 · si para crear hubo que aceptar, al terminar vuelve al formulario.** Con sesión y sin consentimiento,
