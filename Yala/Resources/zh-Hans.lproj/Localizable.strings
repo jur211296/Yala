@@ -7295,6 +7295,8 @@
 "groups.l13.summary.iOweDetail" = "没有人欠你。";
 "groups.l13.summary.alsoOwe" = "你也欠 %@。";
 "groups.l13.summary.settledDetail" = "没有人欠你，你也不欠别人。";
+"groups.hero.allOwedToMe" = "在你的群组里别人欠你";
+"groups.hero.allIOwe" = "在你的群组里你欠";
 "groups.l13.settleUp.title" = "要两清";
 "groups.l13.you" = "你";
 "groups.l13.settle" = "结清";

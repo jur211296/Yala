@@ -7284,6 +7284,8 @@
 "groups.l13.summary.iOweDetail" = "Personne ne te doit rien.";
 "groups.l13.summary.alsoOwe" = "Et tu dois %@.";
 "groups.l13.summary.settledDetail" = "Personne ne te doit rien et tu ne dois rien.";
+"groups.hero.allOwedToMe" = "Dans tes groupes, on te doit";
+"groups.hero.allIOwe" = "Dans tes groupes, tu dois";
 "groups.l13.settleUp.title" = "Pour être quittes";
 "groups.l13.you" = "Toi";
 "groups.l13.settle" = "Régler";

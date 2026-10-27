@@ -62,21 +62,26 @@ struct GroupRecordsView: View {
             )
         } else {
             ScrollView {
-                LazyVStack(spacing: DS.Spacing.lg, pinnedViews: .sectionHeaders) {
-                    // Banda de balance: primer elemento del scroll → se va con los registros (no fija).
+                // Separación de filas y cabecera de día de Registros (lienzo «Una sola Yala»): antes, el doble de aire.
+                LazyVStack(spacing: DS.Spacing.sm, pinnedViews: .sectionHeaders) {
+                    // La cifra grande del grupo (3A), la misma que en Saldos: primer elemento del scroll, se va con
+                    // los registros (no fija). Tocarla lleva a Saldos.
                     if let headerBalance, let onTapBalance {
-                        GroupHeaderBalanceBar(
+                        GroupBalanceHero(
                             balance: headerBalance,
-                            debtsWereConverted: debtsWereConverted,
+                            scope: .group,
+                            isEstimate: debtsWereConverted,
                             onTap: onTapBalance
                         )
+                        .padding(.bottom, DS.Spacing.sm)
                     }
                     // Presupuesto del grupo (G14). Deliberadamente COMPACTA: la primera fila de gastos
                     // tiene que seguir siendo alcanzable sin scroll (`GroupsSmokeUITests` la tapea así).
                     if let budgetProgress {
                         budgetCard(budgetProgress)
+                            .padding(.bottom, DS.Spacing.sm)
                     }
-                    ForEach(groupedByDate, id: \.key) { dateString, dayItems in
+                    ForEach(groupedByDate, id: \.key) { day, dayItems in
                         Section {
                             ForEach(dayItems, id: \.id) { item in
                                 switch item {
@@ -122,7 +127,10 @@ struct GroupRecordsView: View {
                                 }
                             }
                         } header: {
-                            sectionHeader(dateString)
+                            RecordDateSectionView(
+                                date: day,
+                                includesYear: !Calendar.current.isDate(day, equalTo: .now, toGranularity: .year)
+                            )
                         }
                     }
                 }
@@ -345,16 +353,25 @@ struct GroupRecordsView: View {
         // Preguntar por `isGeneric` como los demás call-sites (review H-9 M1): hoy `colorHex != nil`
         // ⟺ `!isGeneric` por construcción, pero la señal contractual del resolver es `isGeneric` —
         // no depender del invariante estructural del tuple.
+        // Círculo LLENO de 40 con el icono en blanco, como `RecordRowView` (lienzo «Una sola Yala»): antes, el
+        // dibujo de color sobre un círculo al 12 %.
         if !resolved.isGeneric, let colorHex = resolved.colorHex {
-            let color = Color(hex: colorHex)
-            Image(systemName: resolved.iconName)
-                .font(DS.Typography.label)
-                .foregroundStyle(color)
-                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
-                .background(Circle().fill(color.opacity(0.12)))
+            filledIcon(resolved.iconName, fill: Color(hex: colorHex))
         } else {
             splitTypeBadge(expense.splitType)
         }
+    }
+
+    private func filledIcon(_ name: String, fill: Color, foreground: Color = .white) -> some View {
+        ZStack {
+            Circle()
+                .fill(fill)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
+            Image(systemName: name)
+                .font(DS.Typography.label)
+                .foregroundStyle(foreground)
+        }
+        .accessibilityHidden(true)
     }
 
     /// Icono+color del bridge personal (TX1 con subcat manual no-sistema), o `nil` si no hay bridge.
@@ -377,43 +394,20 @@ struct GroupRecordsView: View {
         default: "equal.circle.fill"
         }
 
-        return Image(systemName: icon)
-            .font(DS.Typography.label)
-            .foregroundStyle(.thAccentText)
-            .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
-            .background(Circle().fill(.thAccent.opacity(0.12)))
-    }
-
-    // MARK: - Section Header
-
-    private func sectionHeader(_ dateString: String) -> some View {
-        HStack {
-            Text(dateString)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .padding(.vertical, DS.Spacing.xs)
-        .padding(.horizontal, DS.Spacing.xs)
+        return filledIcon(icon, fill: theme.accent, foreground: theme.onAccent)
     }
 
     // MARK: - Grouping
-
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
 
     /// Feed mixto: gastos + liquidaciones confirmadas (filtro en `GroupFeedItem.feedItems`).
     private var feedItems: [GroupFeedItem] {
         GroupFeedItem.feedItems(expenses: expenses, settlements: settlements)
     }
 
-    private var groupedByDate: [(key: String, value: [GroupFeedItem])] {
+    private var groupedByDate: [(key: Date, value: [GroupFeedItem])] {
+        let calendar = Calendar.current
         let grouped = Dictionary(grouping: feedItems) { item in
-            Self.dateFormatter.string(from: item.date)
+            calendar.startOfDay(for: item.date)
         }
 
         // Días en orden descendente; dentro de cada día el más reciente arriba y
@@ -421,9 +415,6 @@ struct GroupRecordsView: View {
         // (FilterService.groupByDate).
         return grouped
             .map { (key: $0.key, value: $0.value.sorted { $0.sortTimestamp > $1.sortTimestamp }) }
-            .sorted { lhs, rhs in
-                guard let lDate = lhs.value.first?.date, let rDate = rhs.value.first?.date else { return false }
-                return lDate > rDate
-            }
+            .sorted { $0.key > $1.key }
     }
 }

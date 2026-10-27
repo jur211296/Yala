@@ -199,7 +199,8 @@ struct GroupCardView: View {
                         label: L10n.Groups.Summary.owedToMe,
                         amounts: grouped.owedToMe,
                         overflow: grouped.owedToMeOverflow,
-                        color: DS.Semantic.successForeground
+                        // Solo se colorea lo que entra, en el turquesa de la app (lienzo «Una sola Yala»).
+                        color: Color.amountTint(isIncome: true)
                     )
                 }
                 if !grouped.iOwe.isEmpty {
@@ -207,7 +208,7 @@ struct GroupCardView: View {
                         label: L10n.Groups.Summary.iOwe,
                         amounts: grouped.iOwe,
                         overflow: grouped.iOweOverflow,
-                        color: Color.hotPink
+                        color: Color.amountTint(isIncome: false)
                     )
                 }
             }

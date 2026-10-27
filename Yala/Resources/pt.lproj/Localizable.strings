@@ -7283,6 +7283,8 @@
 "groups.l13.summary.iOweDetail" = "Ninguém te deve nada.";
 "groups.l13.summary.alsoOwe" = "E você deve %@.";
 "groups.l13.summary.settledDetail" = "Ninguém te deve e você não deve nada.";
+"groups.hero.allOwedToMe" = "Nos seus grupos te devem";
+"groups.hero.allIOwe" = "Nos seus grupos você deve";
 "groups.l13.settleUp.title" = "Para ficar quite";
 "groups.l13.you" = "Você";
 "groups.l13.settle" = "Quitar";

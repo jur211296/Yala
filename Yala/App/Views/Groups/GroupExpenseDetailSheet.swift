@@ -54,7 +54,8 @@ struct GroupExpenseDetailSheet: View {
 
     var body: some View {
         detailContent
-            .yalaSheetDetents([.large])
+            // A media pantalla, como el detalle de un registro (lienzo «Una sola Yala»); se estira para ver el resto.
+            .yalaSheetDetents([.medium, .large])
             .presentationDragIndicator(.visible)
     }
 
@@ -91,7 +92,7 @@ struct GroupExpenseDetailSheet: View {
                     .accessibilityIdentifier("group_expense_detail_edit")
                 }
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(.partialSheet)
         }
         .accessibilityIdentifier("group_expense_detail_sheet")
     }
@@ -272,13 +273,14 @@ struct GroupExpenseDetailSheet: View {
             yourPartContent(
                 sentence: L10n.Groups.Card.youOwe(payerName),
                 amount: amount,
-                tint: Color.hotPink
+                // Lo que debes en el color del texto y lo que te deben en turquesa, como la fila de la lista.
+                tint: Color.amountTint(isIncome: false)
             )
         case .youAreOwed(let amount):
             yourPartContent(
                 sentence: owedToYouSentence,
                 amount: amount,
-                tint: DS.Semantic.successForeground
+                tint: Color.amountTint(isIncome: true)
             )
         case .notIncluded:
             yourPartContent(sentence: L10n.Groups.Expense.notIncluded, amount: nil, tint: .primary)

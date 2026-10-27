@@ -157,34 +157,12 @@ struct PlanningView: View {
         .fadesTowardVerticalBar()
     }
 
-    @ViewBuilder
     private func navigationChipButton(for tab: PlanningTab) -> some View {
-        let isSelected = selectedTab == tab
-
-        Button {
-            // Disable animations to prevent navigation title flickering
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                selectedTab = tab
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: tab.icon)
-                    .font(DS.Typography.subheadline)
-                Text(tab.displayName)
-                    .font(DS.Typography.label)
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? theme.onAccent : .primary)
-            .background(
-                Capsule()
-                    .fill(isSelected ? theme.accent : Color.clear)
-            )
-            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        NavigationChipButton(
+            title: tab.displayName, icon: tab.icon, isSelected: selectedTab == tab, showsTitleWhenUnselected: true
+        ) {
+            selectedTab = tab
         }
-        .buttonStyle(.plain)
         .accessibilityIdentifier("planning_chip_\(tab.rawValue)")
     }
 

@@ -180,33 +180,12 @@ struct FinancialReportView: View {
         }
     }
 
-    @ViewBuilder
     private func navigationChipButton(for tab: ReportTab) -> some View {
-        let isSelected = effectiveReportTab == tab
-
-        Button {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                navigation.selectedReportTab = tab
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: tab.icon)
-                    .font(DS.Typography.subheadline)
-                Text(tab.title)
-                    .font(DS.Typography.label)
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
-            .foregroundStyle(isSelected ? theme.onAccent : .primary)
-            .background(
-                Capsule()
-                    .fill(isSelected ? theme.accent : Color.clear)
-            )
-            .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
+        NavigationChipButton(
+            title: tab.title, icon: tab.icon, isSelected: effectiveReportTab == tab, showsTitleWhenUnselected: true
+        ) {
+            navigation.selectedReportTab = tab
         }
-        .buttonStyle(.plain)
         .accessibilityIdentifier("report_chip_\(tab.rawValue)")
     }
 

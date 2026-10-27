@@ -7295,6 +7295,8 @@
 "groups.l13.summary.iOweDetail" = "Niemand is jou iets schuldig.";
 "groups.l13.summary.alsoOwe" = "En jij moet nog %@ betalen.";
 "groups.l13.summary.settledDetail" = "Niemand is jou iets schuldig en jij niemand.";
+"groups.hero.allOwedToMe" = "In je groepen krijg je nog";
+"groups.hero.allIOwe" = "In je groepen moet je nog betalen";
 "groups.l13.settleUp.title" = "Om quitte te staan";
 "groups.l13.you" = "Jij";
 "groups.l13.settle" = "Verrekenen";

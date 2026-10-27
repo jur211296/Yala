@@ -207,62 +207,14 @@ struct GroupBalancesView: View {
 
     // MARK: - L13-1 · Lo tuyo, arriba
 
+    /// La misma cifra grande que en Gastos (lienzo «Una sola Yala», 3A): antes, una tarjeta en cristal teñido.
     private func summaryCard(_ summary: GroupBalancesPresentationLogic.Summary) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(summaryCaption(summary.kind))
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-
-            switch summary.kind {
-            case .owedToMe:
-                amountsLine(summary.owedToMe, isEstimate: debtsWereConverted)
-            case .iOwe:
-                amountsLine(summary.iOwe, isEstimate: debtsWereConverted)
-            case .settled:
-                EmptyView()
-            }
-
-            Text(summaryDetail(summary))
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(DS.Spacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            Color.electricIndigo.opacity(0.22),
-            in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+        GroupBalanceHero(
+            owedToMe: summary.owedToMe,
+            iOwe: summary.iOwe,
+            scope: .group,
+            isEstimate: debtsWereConverted
         )
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("group_balance_summary")
-    }
-
-    private func amountsLine(_ amounts: [GroupBalancesPresentationLogic.CurrencyAmount], isEstimate: Bool) -> some View {
-        Text(joined(amounts, isEstimate: isEstimate))
-            .font(DS.Typography.title2.weight(.bold))
-            .foregroundStyle(.primary)
-            .minimumScaleFactor(0.7)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func summaryCaption(_ kind: GroupBalancesPresentationLogic.Summary.Kind) -> String {
-        switch kind {
-        case .owedToMe: L10n.UXL13.summaryOwedToMe
-        case .iOwe: L10n.UXL13.summaryIOwe
-        case .settled: L10n.UXL13.summarySettled
-        }
-    }
-
-    private func summaryDetail(_ summary: GroupBalancesPresentationLogic.Summary) -> String {
-        switch summary.kind {
-        case .owedToMe:
-            summary.iOwe.isEmpty
-                ? L10n.UXL13.summaryOwedToMeDetail
-                : L10n.UXL13.summaryAlsoOwe(joined(summary.iOwe, isEstimate: debtsWereConverted))
-        case .iOwe: L10n.UXL13.summaryIOweDetail
-        case .settled: L10n.UXL13.summarySettledDetail
-        }
     }
 
     // MARK: - L13-1 · Para quedar a mano
@@ -270,9 +222,7 @@ struct GroupBalancesView: View {
     private var debtsSection: some View {
         let cards = GroupBalancesPresentationLogic.debtCards(debts: debts, currentUserMemberID: currentUserMemberID)
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.UXL13.settleUpTitle)
-                .font(DS.Typography.headline)
-                .padding(.leading, DS.Spacing.sm)
+            YalaSectionHeader(L10n.UXL13.settleUpTitle)
                 .accessibilityAddTraits(.isHeader)
 
             VStack(spacing: DS.Spacing.md) {
@@ -308,13 +258,9 @@ struct GroupBalancesView: View {
                 }
             }
         }
-        .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            card.involvesMe ? Color.electricIndigo.opacity(0.16) : Color.clear,
-            in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-        )
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        // Tarjeta de la app, como un presupuesto (lienzo «Una sola Yala»): antes, cristal teñido de índigo.
+        .panelCard()
         // Sin identificador en la tarjeta: en un contenedor pisa el de su botón «Saldar» (regla de `testing.md`).
     }
 
@@ -366,13 +312,14 @@ struct GroupBalancesView: View {
         }
     }
 
+    /// El botón de acento de la app («Nuevo registro», «Crear mi plan»), no la cápsula rosa de antes.
     private var settleLabel: some View {
         Text(L10n.UXL13.settle)
             .font(DS.Typography.subheadlineEmphasized)
-            .foregroundStyle(.white)
+            .foregroundStyle(theme.onAccent)
             .padding(.horizontal, DS.Spacing.lg)
-            .frame(minHeight: 36)
-            .background(Color.hotPink, in: Capsule())
+            .frame(minHeight: 44)
+            .background(theme.accent, in: Capsule())
             .contentShape(Capsule())
     }
 
@@ -403,9 +350,8 @@ struct GroupBalancesView: View {
 
     private func settlementsSection(_ listed: [SplitSettlement]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Groups.Balance.settlements)
-                .font(DS.Typography.headline)
-                .padding(.leading, DS.Spacing.sm)
+            YalaSectionHeader(L10n.Groups.Balance.settlements)
+                .accessibilityAddTraits(.isHeader)
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(listed, id: \.id) { settlement in
@@ -540,16 +486,5 @@ struct GroupBalancesView: View {
                 .foregroundStyle(Color(hex: groupColorHex))
         }
         .accessibilityHidden(true)
-    }
-}
-
-// MARK: - Shared Balance Color
-
-extension Color {
-    /// Color for net balance: green (owed to), hotPink (owes), secondary (zero).
-    static func groupBalance(_ net: Double) -> Color {
-        if net > 0.01 { return DS.Semantic.successForeground }
-        if net < -0.01 { return .hotPink }
-        return .secondary
     }
 }

@@ -7295,6 +7295,8 @@
 "groups.l13.summary.iOweDetail" = "Nikt nie jest ci nic winien.";
 "groups.l13.summary.alsoOwe" = "A ty jesteś winien %@.";
 "groups.l13.summary.settledDetail" = "Nikt nie jest ci nic winien, a ty nikomu.";
+"groups.hero.allOwedToMe" = "W twoich grupach należy ci się";
+"groups.hero.allIOwe" = "W twoich grupach jesteś winien";
 "groups.l13.settleUp.title" = "Żeby się rozliczyć";
 "groups.l13.you" = "Ty";
 "groups.l13.settle" = "Rozlicz";
