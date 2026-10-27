@@ -42,7 +42,7 @@
 //  elegir y la decisión de Jürgen (2026-09-09) es enseñarle el chooser ENTERO; si en ese momento solo
 //  hubiera una card visible, se ve esa una — `evenCardHeight` ya contempla el caso.
 //
-//  **Forma de la referencia del 15-sep (`WelcomeForm.swift`), sin sus pesos.** Titular serif sin logo y
+//  **Forma de la referencia del 15-sep (`WelcomeForm.swift`), sin sus pesos.** Titular sin logo y
 //  las dos opciones como filas de UNA tarjeta, con el MISMO peso: la referencia pinta lleno el camino
 //  recomendado y con contorno la salida sin cuenta, y aquí eso contradiría la decisión 1 de arriba
 //  —ninguna se recomienda—. La opción privada es la salida sin cuenta de Yala y queda dentro de la

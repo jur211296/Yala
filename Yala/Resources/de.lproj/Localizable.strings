@@ -4014,7 +4014,7 @@
 "welcome.chooser.title" = "Hallo! Was möchten Sie in Yala tun?";
 "welcome.chooser.subtitle" = "Wählen Sie Ihren Startpunkt, den Rest machen wir gemeinsam.";
 "welcome.chooser.optionNew.title" = "Ich bin zum ersten Mal bei Yala";
-"welcome.chooser.optionNew.body" = "Beginnen Sie mit mir bei null. Ich helfe Ihnen, alles Schritt für Schritt einzurichten.";
+"welcome.chooser.optionNew.body" = "Beginnen Sie bei null. Wir führen Sie Schritt für Schritt.";
 "welcome.chooser.optionExisting.title" = "Ich habe bereits ein Konto";
 "welcome.chooser.optionExisting.body" = "Ich habe Yala schon benutzt und möchte meine Daten zurück – aus iCloud oder aus meinem Konto.";
 "welcome.chooser.optionInvite.title" = "Ausgaben mit Freunden teilen";

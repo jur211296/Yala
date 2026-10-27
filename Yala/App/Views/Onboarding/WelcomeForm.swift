@@ -3,7 +3,7 @@
 //  Yala
 //
 //  La forma de las pantallas de ENTRADA del Welcome, sacada de la referencia del 15-sep
-//  (`docs/design/referencias/2026-09-15-onboarding-login-referencia.jpg`): titular en serif y una
+//  (`docs/design/referencias/2026-09-15-onboarding-login-referencia.jpg`): titular grande (sans desde el 26-oct) y una
 //  línea que dice las formas de entrar, sin logo; todo lo que se elige vive en UNA tarjeta de borde
 //  fino y sin sombra; fuera de ella solo queda la pregunta de pie.
 //
@@ -37,7 +37,7 @@ enum WelcomeFormLayout {
 
 // MARK: - Pantalla
 
-/// Fondo del Welcome + columna con scroll: titular serif, subtítulo y el contenido (la tarjeta y,
+/// Fondo del Welcome + columna con scroll: titular, subtítulo y el contenido (la tarjeta y,
 /// si la hay, la pregunta de pie). El scroll no es decoración: con Dynamic Type grande el titular y
 /// la tarjeta no caben en un iPhone SE, y las pantallas de antes, con `Spacer`s, recortaban.
 struct WelcomeFormScreen<Content: View>: View {
@@ -172,6 +172,9 @@ enum WelcomeOptionRowMetrics {
 
 /// Botón de la tarjeta, con el PESO como parámetro y no el color (rasgo 4 de la referencia).
 ///
+/// Cápsula y letra de `YalaPrimaryButton` (`DS.Typography.label`, 15 pt medium) desde el 2026-10-26 (D1 A de
+/// Jürgen): antes era un rectángulo redondeado en 17 pt semibold y convivía en el Welcome con la cápsula de la app.
+///
 /// Dos pesos y no tres: el tercero de la captura —gris pasivo hasta que hay datos— es el «Entrar» de
 /// un formulario con campos, y el Welcome de Yala no tiene campos que rellenar. Se añadirá cuando
 /// exista una pantalla que lo use; uno sin caller es una promesa que nadie prueba.
@@ -203,7 +206,7 @@ struct WelcomeFormButton: View {
             HStack(spacing: DS.Spacing.sm) {
                 iconView
                 Text(title)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.label)
                     .multilineTextAlignment(.center)
             }
             .foregroundStyle(foreground)
@@ -212,7 +215,7 @@ struct WelcomeFormButton: View {
             .frame(maxWidth: .infinity, minHeight: WelcomeFormLayout.buttonHeight)
             .background(background)
             .overlay(border)
-            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -222,7 +225,7 @@ struct WelcomeFormButton: View {
         switch icon {
         case .system(let name):
             Image(systemName: name)
-                .font(DS.Typography.headline)
+                .font(DS.Typography.label)
                 .accessibilityHidden(true)
         case .asset(let name):
             Image(name)
@@ -248,7 +251,7 @@ struct WelcomeFormButton: View {
     private var background: some View {
         switch weight {
         case .filled:
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous).fill(.white)
+            Capsule().fill(.white)
         case .outline:
             Color.clear
         }
@@ -260,7 +263,7 @@ struct WelcomeFormButton: View {
         case .filled:
             EmptyView()
         case .outline:
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+            Capsule()
                 .stroke(.white.opacity(0.35), lineWidth: 1)
         }
     }

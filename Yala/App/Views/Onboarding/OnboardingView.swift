@@ -520,7 +520,7 @@ struct OnboardingView: View {
                     }
                     .padding(.top, DS.Spacing.xl)
 
-                    VStack(spacing: DS.Spacing.sm) {
+                    optionCard {
                         // La marca y el efecto del tap salen de la MISMA decisión pura
                         // (`OnboardingPurposeSelectionLogic`): el bug de C5 no era que los dos
                         // predicados estuvieran mal, era que eran DISTINTOS —`!expensesOnlyMode`
@@ -533,12 +533,15 @@ struct OnboardingView: View {
                             iconColor: .priorityNeed,
                             title: L10n.Onboarding.purposeControl,
                             description: L10n.Onboarding.purposeControlDesc,
-                            accessibilityId: "onboarding_purpose_control"
+                            accessibilityId: "onboarding_purpose_control",
+                            grouped: true
                         ) {
                             if OnboardingPurposeSelectionLogic.shouldSelectFullControl(from: selectedUsageMode) {
                                 selectedUsageMode = .fullControl
                             }
                         }
+
+                        optionDivider
 
                         binaryCard(
                             isSelected: OnboardingPurposeSelectionLogic.isSelected(.expenses, mode: selectedUsageMode),
@@ -546,7 +549,8 @@ struct OnboardingView: View {
                             iconColor: .essentialNeed,
                             title: L10n.Onboarding.purposeExpenses,
                             description: L10n.Onboarding.purposeExpensesDesc,
-                            accessibilityId: "onboarding_purpose_expenses"
+                            accessibilityId: "onboarding_purpose_expenses",
+                            grouped: true
                         ) {
                             selectedUsageMode = .expensesOnly
                             selectedMindset = "cashFlow"
@@ -582,15 +586,19 @@ struct OnboardingView: View {
         description: String,
         accessibilityId: String,
         emphasis: Bool = false,
+        grouped: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         let style = binaryCardStyle(isSelected: isSelected, emphasis: emphasis, iconColor: iconColor)
+        // En una `optionCard` la fila no lleva forma ni borde propios: la tarjeta los pone. Sin elegir, transparente
+        // sobre el relleno de la tarjeta; elegida, el mismo índigo que la tarjeta suelta, recortado por la de fuera.
+        let rowShape = RoundedRectangle(cornerRadius: grouped ? 0 : DS.Radius.xl, style: .continuous)
         return Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
                 ZStack {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                         .fill(style.iconChip)
-                        .frame(width: 44, height: 44)
+                        .frame(width: Self.optionIconSize, height: Self.optionIconSize)
                     Image(systemName: icon)
                         .font(.system(size: 20, weight: .semibold)) // A11Y-DT: card icon
                         .foregroundStyle(style.iconTint)
@@ -627,12 +635,10 @@ struct OnboardingView: View {
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(style.fill)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(style.stroke, lineWidth: 1)
-            )
+            .contentShape(Rectangle())
+            .background(grouped && !isSelected ? Color.clear : style.fill)
+            .clipShape(rowShape)
+            .overlay(rowShape.stroke(grouped ? Color.clear : style.stroke, lineWidth: 1))
             .animation(
                 reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.3, dampingFraction: 0.7),
                 value: isSelected
@@ -673,6 +679,28 @@ struct OnboardingView: View {
         )
     }
 
+    /// El cuadro del icono de cada opción. El separador de `optionCard` arranca detrás de él.
+    private static let optionIconSize: CGFloat = 44
+
+    /// Las opciones de un paso que elige entre varias, en UNA tarjeta con separadores, como los selectores del Welcome
+    /// y las listas de Ajustes (D3 A de Jürgen, 2026-10-26). Antes cada opción era su propia tarjeta.
+    private func optionCard<Rows: View>(@ViewBuilder _ rows: () -> Rows) -> some View {
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+        return VStack(spacing: 0) { rows() }
+            .background(cardFill)
+            .clipShape(shape)
+            .overlay(shape.stroke(cardStroke, lineWidth: 1))
+    }
+
+    /// Línea entre dos filas de una `optionCard`: arranca donde arranca el texto, con el icono como columna propia.
+    private var optionDivider: some View {
+        Rectangle()
+            .fill(cardStroke)
+            .frame(height: 1)
+            .padding(.leading, DS.Spacing.md + Self.optionIconSize + DS.Spacing.md)
+            .accessibilityHidden(true)
+    }
+
     // MARK: - Step 3: ¿Dónde está tu dinero? (una sola cuenta o un tipo)
 
     /// «¿Cómo organizas?» y «Tipo de cuenta» en una sola pantalla (UX 2.2 · L1-9, decisión de Jürgen del
@@ -704,26 +732,29 @@ struct OnboardingView: View {
                     }
                     .padding(.top, DS.Spacing.xl)
 
-                    VStack(spacing: DS.Spacing.sm) {
+                    optionCard {
                         binaryCard(
                             isSelected: selectedAccountChoice == .single,
                             icon: "creditcard",
                             iconColor: .hotPink,
                             title: L10n.Onboarding.accountsSingle,
                             description: L10n.Onboarding.accountsSingleDesc,
-                            accessibilityId: "onboarding_accounts_single"
+                            accessibilityId: "onboarding_accounts_single",
+                            grouped: true
                         ) {
                             selectAccountChoice(.single)
                         }
 
                         ForEach(OnboardingAccountChoiceLogic.accountTypes) { type in
+                            optionDivider
                             binaryCard(
                                 isSelected: selectedAccountChoice == .type(type),
                                 icon: iconName(for: type),
                                 iconColor: iconTint(for: type),
                                 title: type.localizedName,
                                 description: type.typeDescription,
-                                accessibilityId: "onboarding_account_type_\(type.rawValue)"
+                                accessibilityId: "onboarding_account_type_\(type.rawValue)",
+                                grouped: true
                             ) {
                                 selectAccountChoice(.type(type))
                             }
@@ -1434,17 +1465,20 @@ struct OnboardingView: View {
                     .padding(.horizontal, DS.Spacing.xl)
 
                     // Selection buttons
-                    VStack(spacing: DS.Spacing.sm) {
+                    optionCard {
                         binaryCard(
                             isSelected: loadSeedCategories,
                             icon: "checkmark.circle",
                             iconColor: .priorityNeed,
                             title: L10n.Onboarding.categoriesYes,
                             description: L10n.Onboarding.categoriesRecommended,
-                            accessibilityId: "onboarding_categories_yes"
+                            accessibilityId: "onboarding_categories_yes",
+                            grouped: true
                         ) {
                             loadSeedCategories = true
                         }
+
+                        optionDivider
 
                         binaryCard(
                             isSelected: !loadSeedCategories,
@@ -1452,7 +1486,8 @@ struct OnboardingView: View {
                             iconColor: .secondary,
                             title: L10n.Onboarding.categoriesNo,
                             description: "",
-                            accessibilityId: "onboarding_categories_no"
+                            accessibilityId: "onboarding_categories_no",
+                            grouped: true
                         ) {
                             loadSeedCategories = false
                         }

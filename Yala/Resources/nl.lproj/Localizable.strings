@@ -4046,7 +4046,7 @@
 "welcome.chooser.title" = "Hoi! Wat wil je doen in Yala?";
 "welcome.chooser.subtitle" = "Kies je startpunt, daarna gaan we samen verder.";
 "welcome.chooser.optionNew.title" = "Dit is mijn eerste keer in Yala";
-"welcome.chooser.optionNew.body" = "Begin met mij vanaf nul. Ik help je stap voor stap alles in te stellen.";
+"welcome.chooser.optionNew.body" = "Begin vanaf nul. We begeleiden je stap voor stap.";
 "welcome.chooser.optionExisting.title" = "Ik heb al een account";
 "welcome.chooser.optionExisting.body" = "Ik heb Yala eerder gebruikt en wil mijn gegevens terug, uit iCloud of uit mijn account.";
 "welcome.chooser.optionInvite.title" = "Kosten met vrienden delen";
