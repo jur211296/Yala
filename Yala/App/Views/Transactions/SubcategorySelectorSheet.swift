@@ -66,7 +66,8 @@ struct SubcategorySelectorSheet: View {
                             message: L10n.Empty.activateCategoriesMessage,
                             actionTitle: L10n.Empty.activateCategoriesAction,
                             action: {
-                                seedCategoriesIfNeeded(in: modelContext)
+                                // Una petición: el centinela de la semilla no la anula (card omw5).
+                                seedDefaultCategoriesOnUserRequest(in: modelContext)
                                 seedSystemGroupCategoriesIfNeeded(in: modelContext)
                                 viewModel.loadData()
                             }

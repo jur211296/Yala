@@ -27,9 +27,14 @@ struct PanelQuickActionsRow: View {
     /// registrar nada, igual que `FABStackView` cae a su estado deshabilitado.
     let canCreateRecords: Bool
     /// Sin ninguna cuenta activa, la fila apagada se sustituye por la salida (UX 2.2 · L3-10, variante 2): un botón
-    /// rosa relleno «Crea tu primera cuenta». Con cuentas pero sin subcategorías visibles la fila sigue apagada.
+    /// rosa relleno «Crea tu primera cuenta».
     var hasAccounts: Bool = true
     var onCreateFirstAccount: () -> Void = {}
+    /// Con cuentas pero sin ninguna subcategoría visible, la misma salida para lo que falta: «Crear categorías» y una
+    /// línea que dice por qué (card omw5). Antes la fila se quedaba apagada sin explicación tras un onboarding cuya
+    /// semilla no corrió. Lo decide `PanelQuickActionsGateLogic`; la cuenta va primero.
+    var needsCategories: Bool = false
+    var onCreateCategories: () -> Void = {}
     let isVoiceLocked: Bool
     let isImageLocked: Bool
     let isChatLocked: Bool
@@ -60,10 +65,12 @@ struct PanelQuickActionsRow: View {
     @ScaledMetric(relativeTo: .subheadline) private var captionIconHeight: CGFloat = 18
 
     var body: some View {
-        if hasAccounts {
-            actionsRow
-        } else {
+        if !hasAccounts {
             createFirstAccount
+        } else if needsCategories {
+            createCategories
+        } else {
+            actionsRow
         }
     }
 
@@ -73,13 +80,43 @@ struct PanelQuickActionsRow: View {
     /// solo aparecía al desplegar «Tus finanzas». Relleno rosa de marca (`emphasisPinkFill`, AA con blanco), sin
     /// degradado ni brillo, y una línea de invitación debajo.
     private var createFirstAccount: some View {
+        missingStepCTA(
+            title: L10n.Panel.createFirstAccount,
+            icon: "creditcard.fill",
+            hint: L10n.Panel.createFirstAccountHint,
+            identifier: "panel_create_first_account",
+            action: onCreateFirstAccount
+        )
+    }
+
+    // MARK: - Sin categorías (card omw5)
+
+    private var createCategories: some View {
+        missingStepCTA(
+            title: L10n.Empty.activateCategoriesAction,
+            icon: "tag.fill",
+            hint: L10n.Panel.createCategoriesHint,
+            identifier: "\(identifierPrefix)_create_categories",
+            action: onCreateCategories
+        )
+    }
+
+    /// El botón rosa relleno de lo que falta para registrar, con su línea debajo. Lo comparten la cuenta y las
+    /// categorías para que las dos salidas se vean y se lean igual.
+    private func missingStepCTA(
+        title: String,
+        icon: String,
+        hint: String,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Button(action: onCreateFirstAccount) {
+            Button(action: action) {
                 HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "creditcard.fill")
+                    Image(systemName: icon)
                         .font(DS.Typography.label)
                         .accessibilityHidden(true)
-                    Text(L10n.Panel.createFirstAccount)
+                    Text(title)
                         .font(DS.Typography.label)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
@@ -91,10 +128,10 @@ struct PanelQuickActionsRow: View {
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            .accessibilityHint(L10n.Panel.createFirstAccountHint)
-            .accessibilityIdentifier("panel_create_first_account")
+            .accessibilityHint(hint)
+            .accessibilityIdentifier(identifier)
 
-            Text(L10n.Panel.createFirstAccountHint)
+            Text(hint)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

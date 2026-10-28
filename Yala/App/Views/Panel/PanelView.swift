@@ -523,6 +523,18 @@ struct PanelView: View {
         return flags
     }
 
+    /// «Crear categorías» de la fila (card omw5): sin categorías propias las crea aquí mismo y la fila vuelve; con
+    /// categorías pero ninguna subcategoría visible, abre Ajustes › Categorías.
+    private func createCategoriesFromPanel() {
+        switch viewModel.createCategoriesAction() {
+        case .seedDefaults:
+            DS.Haptic.success()
+        case .openCategoriesSettings:
+            sheets.settingsInitialDestination = .categories
+            sheets.isPresentingSettings = true
+        }
+    }
+
     @ViewBuilder
     private func noticeView(_ notice: PanelNotice) -> some View {
         switch notice {
@@ -647,6 +659,8 @@ struct PanelView: View {
                             canCreateRecords: viewModel.canUseVoiceInput,
                             hasAccounts: viewModel.accounts.contains { !$0.isArchived },
                             onCreateFirstAccount: { sheets.accountFormSheet = AccountFormSheet(account: nil) },
+                            needsCategories: viewModel.quickActionsState == .needsCategories,
+                            onCreateCategories: { createCategoriesFromPanel() },
                             isVoiceLocked: isVoiceLocked,
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),

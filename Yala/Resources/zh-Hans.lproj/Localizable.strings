@@ -8460,3 +8460,6 @@
 "intent.groupsOnly.applePay.title" = "付款未记录";
 "intent.groupsOnly.applePay.activate" = "你还没有完整 Yala。激活后即可记录 Apple Pay 付款。";
 "intent.groupsOnly.applePay.comeBack" = "你现在只看到群组。回到完整 Yala 即可记录 Apple Pay 付款。";
+
+/* Line under the create-categories button on the Panel: there is an account but no category to record with */
+"panel.createCategoriesHint" = "每笔记录都要归入一个类别，而你还没有任何类别。";

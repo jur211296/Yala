@@ -1006,6 +1006,8 @@ enum L10n {
         /// Botón rosa del Panel sin cuentas, en lugar de la fila de acciones apagada (UX 2.2 · L3-10).
         static var createFirstAccount: String { ls("panel.createFirstAccount", comment: "Panel with no accounts: pink button that creates the first account") }
         static var createFirstAccountHint: String { ls("panel.createFirstAccountHint", comment: "Line under the create-first-account button on the Panel") }
+        /// Línea bajo «Crear categorías» del Panel: hay cuenta pero ninguna categoría con la que registrar (card omw5).
+        static var createCategoriesHint: String { ls("panel.createCategoriesHint", comment: "Line under the create-categories button on the Panel: there is an account but no category to record with") }
 
         /// Palabra bajo el icono de voz y de foto en la fila de acciones del Panel (UX 2.2 · L4-1). Corta a
         /// propósito: va debajo del icono, dentro del mismo botón, y no puede ensanchar la fila.

@@ -66,6 +66,10 @@ enum DevSeedProfile: String {
     /// (`SetupChecklistManager.markFirstCreation` lo ofrece solo si lo guardado es lo único de su tipo). Ver
     /// `FirstExpensePracticeAlertUITests`.
     case sinRegistros = "sin-registros"
+    /// Lo que dejaba un onboarding cuya semilla de categorías no corrió (card omw5): cuentas, ninguna categoría y el
+    /// centinela de la semilla puesto, como en un teléfono que ya sembró en una vida anterior. Ver
+    /// `PanelCreateCategoriesUITests`.
+    case sinCategorias = "sin-categorias"
     /// Capturas de la ficha de la App Store en es-MX: tres grupos con nombres de México, montos en MXN y
     /// saldos abiertos, sin vida personal (la captura es de Grupos y una cuenta en PEN delataría el seed).
     /// Ver `DevSeedGroups.createFichaMX`.
@@ -108,7 +112,7 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
              .tarjetaDosLineas, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
@@ -207,6 +211,18 @@ final class DevSeedService {
             do { try context.save() } catch {
                 print("DevSeedService: \(profile.rawValue) save error: \(error)")
             }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
+        if profile == .sinCategorias {
+            defer { isSeeding = false }
+            _ = DevSeedAccounts.create(in: context)
+            do { try context.save() } catch {
+                print("DevSeedService: sin-categorias save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: CategorySeedSentinel.currentKey)
             UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
             hasSeeded = true
             SessionState.shared.incrementDataVersion()

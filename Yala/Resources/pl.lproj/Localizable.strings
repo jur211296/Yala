@@ -8460,3 +8460,6 @@
 "intent.groupsOnly.applePay.title" = "Płatność niezapisana";
 "intent.groupsOnly.applePay.activate" = "Nie masz pełnej Yala. Aktywuj ją, aby zapisywać płatności Apple Pay.";
 "intent.groupsOnly.applePay.comeBack" = "Widzisz tylko swoje grupy. Wróć do pełnej Yala, aby zapisywać płatności Apple Pay.";
+
+/* Line under the create-categories button on the Panel: there is an account but no category to record with */
+"panel.createCategoriesHint" = "Każdy wpis trafia do kategorii, a nie masz jeszcze żadnej.";

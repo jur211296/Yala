@@ -69,3 +69,6 @@ recién borrado: **rojo con la base `origin/2.2` @ `12601e455`** y rojo igual co
 `yala-ia-detalles-selector` (que cambia cómo se pinta el fondo de estos selectores). Es preexistente; no se persiguió
 en ese encargo. Hipótesis sin medir: con la semilla de los tests no hay etiquetas, y el selector vacío no tiene filas
 `tag_selector_row_` que esperar.
+
+**Confirmado de nuevo el 2026-10-27** en el gate de `nuevo-registro-inactivo-post-onboarding` (card omw5): mismo
+mensaje, rojo con la base `d89a68061` recompilada (1 de 1, centinela en 0) y con la rama (en lote y aislado).
