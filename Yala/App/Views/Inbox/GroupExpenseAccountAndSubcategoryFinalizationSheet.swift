@@ -43,9 +43,10 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
-    /// Card 9o4n: el gasto ya estaba en las cuentas (otro borrador lo aprobó). El «OK» del aviso cierra la hoja, y el
-    /// borrador se retira al desaparecer: con la hoja montada, borrarlo la tumbaría.
-    @State private var retiresDraftOnClose: Bool = false
+    /// Cards 9o4n y ouka: el gasto ya estaba en las cuentas (otro borrador lo aprobó) o ya no existe (borrado en remoto
+    /// con la hoja abierta). El «OK» del aviso cierra la hoja, y el borrador se retira al desaparecer: con la hoja
+    /// montada, borrarlo la tumbaría.
+    @State private var retirementOnClose: GroupExpenseDraftRetirement? = nil
     /// UX 2.2 · L13-15: movimientos que ya apuntaste y pueden ser este gasto.
     @State private var linkCandidates: [TransactionItem] = []
 
@@ -107,12 +108,12 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
                 )
             }
             .alert(L10n.Common.error, isPresented: $showSaveError) {
-                Button(L10n.Common.ok) { closeIfAlreadyRegistered() }
+                Button(L10n.Common.ok) { closeIfDraftRetires() }
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
             .onAppear { loadMetadata() }
-            .onDisappear { retireDraftIfAlreadyRegistered() }
+            .onDisappear { retireDraftOnClose() }
         }
     }
 
@@ -186,6 +187,7 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
             #if DEBUG
             print("GroupExpenseAccountAndSubcategoryFinalizationSheet: link failed: \(error)")
             #endif
+            retirementOnClose = GroupExpenseDraftRetirement(after: error)
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
         }
@@ -205,23 +207,24 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
             #if DEBUG
             print("GroupExpenseAccountAndSubcategoryFinalizationSheet: approve failed: \(error)")
             #endif
-            if case DraftServiceError.groupExpenseAlreadyRegistered = error { retiresDraftOnClose = true }
+            retirementOnClose = GroupExpenseDraftRetirement(after: error)
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
         }
     }
 
-    private func closeIfAlreadyRegistered() {
-        guard retiresDraftOnClose else { return }
+    private func closeIfDraftRetires() {
+        guard retirementOnClose != nil else { return }
         dismiss()
     }
 
-    /// Al desaparecer la hoja, y solo tras `groupExpenseAlreadyRegistered`: el servicio vuelve a medir antes de borrar.
-    private func retireDraftIfAlreadyRegistered() {
-        guard retiresDraftOnClose else { return }
-        retiresDraftOnClose = false
+    /// Al desaparecer la hoja, y solo tras `groupExpenseAlreadyRegistered` o `groupExpenseTargetMissing`: el servicio
+    /// vuelve a medir antes de borrar.
+    private func retireDraftOnClose() {
+        guard let retirement = retirementOnClose else { return }
+        retirementOnClose = nil
         do {
-            try DraftService.shared.retireGroupExpenseDraftIfAlreadyRegistered(draft)
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: retirement)
         } catch {
             #if DEBUG
             print("GroupExpenseAccountAndSubcategoryFinalizationSheet: retire failed: \(error)")

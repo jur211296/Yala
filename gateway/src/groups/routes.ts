@@ -526,6 +526,18 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
   }
   const memberGroupIds = Array.from(new Set(mem.rows.map((r) => String(r.group_id))));
 
+  // 1-bis. Card y1cd: de qué grupos es DUEÑO quien llama. Sin esto, quien hereda un grupo por el servidor (el dueño
+  // borró su cuenta y `groups_forget_user` le pasó la propiedad, o se la transfirieron) seguía sin poder invitar: el
+  // cliente decide «dueño» con un dato local que nadie le corregía. Una lectura más por pull; `owner_user_id` es texto
+  // plano y la RLS de `split_groups` ya acota a los grupos de los que es miembro.
+  const ownQ = `select=group_id&owner_user_id=eq.${auth.sub}&deleted=eq.false`;
+  const own = await getRows(c.env, auth.userJWT, "split_groups", ownQ);
+  if (!own.ok) {
+    return jsonError("yala_unavailable", `pull owners upstream ${own.status}`, 502);
+  }
+  const memberSet = new Set(memberGroupIds);
+  const ownedGroupIds = Array.from(new Set(own.rows.map((r) => String(r.group_id)))).filter((g) => memberSet.has(g));
+
   const outCursors: Record<string, number> = {};
   const deltas: PulledGroupDelta[] = [];
 
@@ -617,6 +629,7 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
     cursors: outCursors,
     memberships: memberGroupIds,
     manifest_version: GROUP_MANIFEST_VERSION,
+    owned_groups: ownedGroupIds,
   };
   return c.json(resp);
 }

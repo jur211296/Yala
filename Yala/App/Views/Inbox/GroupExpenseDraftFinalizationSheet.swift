@@ -34,6 +34,9 @@ struct GroupExpenseDraftFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
+    /// Card ouka: el gasto ya no existe (borrado en remoto con la hoja abierta). El «OK» del aviso cierra la hoja, y el
+    /// borrador se retira al desaparecer: con la hoja montada, borrarlo la tumbaría.
+    @State private var retirementOnClose: GroupExpenseDraftRetirement? = nil
 
     // MARK: - Body
 
@@ -74,11 +77,12 @@ struct GroupExpenseDraftFinalizationSheet: View {
                 )
             }
             .alert(L10n.Common.error, isPresented: $showSaveError) {
-                Button(L10n.Common.ok) {}
+                Button(L10n.Common.ok) { closeIfDraftRetires() }
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
             .onAppear { loadMetadata() }
+            .onDisappear { retireDraftOnClose() }
         }
     }
 
@@ -114,8 +118,27 @@ struct GroupExpenseDraftFinalizationSheet: View {
             #if DEBUG
             print("GroupExpenseDraftFinalizationSheet: approve failed: \(error)")
             #endif
+            retirementOnClose = GroupExpenseDraftRetirement(after: error)
             saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
+        }
+    }
+
+    private func closeIfDraftRetires() {
+        guard retirementOnClose != nil else { return }
+        dismiss()
+    }
+
+    /// Al desaparecer la hoja, y solo tras `groupExpenseTargetMissing`: el servicio vuelve a medir antes de borrar.
+    private func retireDraftOnClose() {
+        guard let retirement = retirementOnClose else { return }
+        retirementOnClose = nil
+        do {
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: retirement)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseDraftFinalizationSheet: retire failed: \(error)")
+            #endif
         }
     }
 }

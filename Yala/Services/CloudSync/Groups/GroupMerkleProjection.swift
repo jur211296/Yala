@@ -140,8 +140,10 @@ enum GroupMerkleProjection {
     ) throws -> String {
         var fields: [String: CanonValue] = [:]
         let calendar = Calendar(identifier: .gregorian)  // irrelevante: grupos no derivan `local_day`
-        for emitter in emission.emitters
-        where GroupsSyncCapability.since(table: emission.table, column: emitter.column) <= capabilityLevel {
+        // Card u8cl (pieza 4): por grupo de coherencia ENTERO, como el Worker (`droppedGroupsFor`). Columna a columna, la
+        // primera `since` posterior dentro de un grupo dejaba aquí media unidad y en el Worker ninguna.
+        let kept = GroupsSyncCapability.keptColumns(of: emission, level: capabilityLevel)
+        for emitter in emission.emitters where kept.contains(emitter.column) {
             fields[emitter.column] = emitter.build(model, calendar)
         }
         return try encodeGroupCanonC1(fields, groupedColumns: Set(emission.groupByColumn.keys))

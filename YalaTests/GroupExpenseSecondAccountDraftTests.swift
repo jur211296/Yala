@@ -199,23 +199,198 @@ struct GroupExpenseSecondAccountDraftTests {
         }
     }
 
-    /// Las dos hojas de la Bandeja retiran el borrador al CERRARSE, nunca en el `catch` (con la hoja montada).
-    @Test("las dos hojas retiran el borrador al desaparecer")
+    /// Las tres hojas de la Bandeja retiran el borrador al CERRARSE, nunca en el `catch` (con la hoja montada).
+    @Test("las hojas retiran el borrador al desaparecer")
     func sheets_retireOnDisappear() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        for name in ["GroupExpenseAccountFinalizationSheet", "GroupExpenseAccountAndSubcategoryFinalizationSheet"] {
+        for name in ["GroupExpenseAccountFinalizationSheet", "GroupExpenseAccountAndSubcategoryFinalizationSheet",
+                     "GroupExpenseDraftFinalizationSheet"] {
             let code = try String(contentsOf: root.appendingPathComponent("Yala/App/Views/Inbox/\(name).swift"),
                                   encoding: .utf8)
-            #expect(code.contains(".onDisappear { retireDraftIfAlreadyRegistered() }"), "\(name)")
-            #expect(code.contains("if case DraftServiceError.groupExpenseAlreadyRegistered = error { retiresDraftOnClose = true }"),
-                    "\(name)")
-            #expect(code.contains("Button(L10n.Common.ok) { closeIfAlreadyRegistered() }"), "\(name)")
+            #expect(code.contains(".onDisappear { retireDraftOnClose() }"), "\(name)")
+            #expect(code.contains("retirementOnClose = GroupExpenseDraftRetirement(after: error)"), "\(name)")
+            #expect(code.contains("Button(L10n.Common.ok) { closeIfDraftRetires() }"), "\(name)")
+            #expect(code.contains("try DraftService.shared.retireGroupExpenseDraft(draft, after: retirement)"), "\(name)")
         }
         let service = try String(contentsOf: root.appendingPathComponent("Yala/Services/DraftService.swift"),
                                  encoding: .utf8)
         let guardStart = try #require(service.range(of: "if try hasRealLeg(splitID: splitID, in: context) {"))
         let guardBody = service[guardStart.upperBound...].prefix(400)
         #expect(!guardBody.contains("deleteInboxDraftPruningRow"), "el servicio vuelve a borrar con la hoja montada")
+        // Card ouka: el gasto ausente tampoco borra con la hoja montada.
+        let goneStart = try #require(service.range(of: "guard let expense = try context.fetch(expenseDescriptor).first else {"))
+        let goneBody = service[goneStart.upperBound...].prefix(500)
+        #expect(!goneBody.contains("deleteInboxDraftPruningRow"), "el gasto ausente borra el borrador con la hoja montada")
+        #expect(goneBody.contains("throw DraftServiceError.groupExpenseTargetMissing"))
+    }
+
+    /// El motivo de la retirada sale del error: solo esos dos lo piden; cualquier otro deja el borrador para reintentar.
+    @Test("solo los dos errores de gasto resuelto piden retirar el borrador")
+    func retirement_onlyForTheTwoResolvedErrors() {
+        #expect(GroupExpenseDraftRetirement(after: DraftServiceError.groupExpenseAlreadyRegistered) == .alreadyRegistered)
+        #expect(GroupExpenseDraftRetirement(after: DraftServiceError.groupExpenseTargetMissing) == .targetGone)
+        #expect(GroupExpenseDraftRetirement(after: DraftServiceError.missingAccount) == nil)
+        #expect(GroupExpenseDraftRetirement(after: DraftServiceError.groupExpenseLinkNoLongerMatches) == nil)
+    }
+
+    // MARK: - Card ouka: el gasto desaparece con la hoja abierta
+
+    /// Borra el gasto como lo haría el pull de un borrado remoto, sin tocar el borrador (la hoja sigue montada).
+    private func deleteExpenseRemotely(_ context: ModelContext, _ f: Fixture) throws {
+        let expenseID = f.expense.id
+        for share in try context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.expenseID == expenseID })) {
+            context.delete(share)
+        }
+        context.delete(f.expense)
+        try context.save()
+    }
+
+    @Test("borrador de cuenta con el gasto borrado: lanza su error y NO borra el borrador; la hoja lo retira al cerrar")
+    func accountDraft_expenseGone_keepsTheDraftUntilTheSheetCloses() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) {
+            let draft = try insertAccountDraft(context, f, account: f.bank, optIn: false)
+            let idStr = f.expense.id.uuidString
+            try deleteExpenseRemotely(context, f)
+
+            do {
+                _ = try DraftService.shared.approveDraft(draft, currencyConverter: CurrencyConverter())
+                Issue.record("aprobar con el gasto borrado no lanzó")
+            } catch DraftServiceError.groupExpenseTargetMissing {
+                // Lo esperado: su propio error, no `missingAccount`.
+            } catch {
+                Issue.record("error inesperado: \(error)")
+            }
+            let left = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.splitExpenseID == idStr }))
+            #expect(left.count == 1, "el servicio borró el borrador con su hoja aún montada")
+            #expect(!draft.isDeleted)
+            #expect(!context.hasChanges, "quedó un borrado pendiente que el próximo save aplicaría con la hoja montada")
+            // La hoja lee el borrador para pintar su alerta: tiene que seguir leyéndose.
+            #expect(draft.amount == -90)
+
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: .targetGone)
+            let afterClose = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == idStr }))
+            #expect(afterClose.isEmpty, "al cerrar la hoja, el borrador sin gasto sigue en la Bandeja")
+        }
+    }
+
+    /// La retirada vuelve a medir: con el gasto de vuelta (un pull que lo trae otra vez), el borrador se queda.
+    @Test("con el gasto presente, retirar por gasto ausente no hace nada")
+    func retireTargetGone_withTheExpensePresent_keepsTheDraft() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) {
+            let draft = try insertAccountDraft(context, f, account: f.bank, optIn: false)
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: .targetGone)
+            #expect(try drafts(context, f).count == 1)
+        }
+    }
+
+    /// El borrador-puntero de subcategoría (sin cuenta pendiente), sin ninguna transacción del gasto.
+    private func insertSubcategoryPointerDraft(_ context: ModelContext, _ f: Fixture) throws -> InboxDraft {
+        let category = Category(name: "Comida", colorHex: "#333333", isIncome: false)
+        context.insert(category)
+        let sub = Subcategory(name: "Restaurantes", category: category)
+        context.insert(sub)
+        let draft = InboxDraft(
+            note: f.expense.expenseDescription,
+            amount: -30,
+            date: f.expense.date,
+            sourceType: .groupExpense,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            needsUserInput: [DraftInputRequirement.subcategory],
+            splitExpenseID: f.expense.id.uuidString,
+            splitGroupZoneID: f.expense.groupZoneID,
+            originGroupName: f.group.name
+        )
+        draft.subcategory = sub
+        context.insert(draft)
+        try context.save()
+        return draft
+    }
+
+    @Test("borrador-puntero de subcategoría sin ninguna transacción: lanza y NO borra; la hoja lo retira al cerrar")
+    func subcategoryPointer_noTransaction_keepsTheDraftUntilTheSheetCloses() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) {
+            let draft = try insertSubcategoryPointerDraft(context, f)
+            let idStr = f.expense.id.uuidString
+            try deleteExpenseRemotely(context, f)
+
+            do {
+                _ = try DraftService.shared.approveDraft(draft, currencyConverter: CurrencyConverter())
+                Issue.record("aprobar el puntero sin transacción no lanzó")
+            } catch DraftServiceError.groupExpenseTargetMissing {
+                // Lo esperado.
+            } catch {
+                Issue.record("error inesperado: \(error)")
+            }
+            let left = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.splitExpenseID == idStr }))
+            #expect(left.count == 1, "el servicio borró el puntero con su hoja aún montada")
+            #expect(!draft.isDeleted)
+
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: .targetGone)
+            let afterClose = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == idStr }))
+            #expect(afterClose.isEmpty)
+        }
+    }
+
+    /// Sin hoja (aprobar en bloque o deslizando) no hay nada montado que proteger: el borrador sin gasto se retira en el
+    /// acto, como antes (review adversarial del 2026-10-28).
+    @Test("aprobar en bloque un puntero sin gasto lo retira en el acto")
+    func bulkApprove_pointerWithoutExpense_isRetired() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) {
+            let draft = try insertSubcategoryPointerDraft(context, f)
+            draft.account = f.cash
+            try context.save()
+            let idStr = f.expense.id.uuidString
+            try deleteExpenseRemotely(context, f)
+            let approved = try DraftService.shared.bulkApprove([draft], currencyConverter: CurrencyConverter())
+            #expect(approved.isEmpty)
+            let left = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.splitExpenseID == idStr }))
+            #expect(left.isEmpty, "el borrador sin gasto se quedó en la Bandeja tras aprobar en bloque")
+        }
+    }
+
+    /// Control del puntero: con una transacción del gasto ya clasificada, la aprobación es idempotente (devuelve la
+    /// existente y retira el borrador en el acto, que es un éxito y cierra la hoja). Y retirar por gasto ausente, no.
+    @Test("puntero con la transacción ya clasificada: éxito idempotente, y la retirada por ausente no lo toca")
+    func subcategoryPointer_alreadyClassified_isRedundantSuccess() throws {
+        let dir = try freshDir()
+        defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let f = try makeFixture(context)
+        try withEnvironment(context) {
+            let draft = try insertSubcategoryPointerDraft(context, f)
+            let classified = TransactionItem(date: f.expense.date, amount: -30, currencyCode: "USD", note: nil,
+                                             category: nil, subcategory: draft.subcategory, account: f.cash)
+            classified.splitExpenseID = f.expense.id.uuidString
+            context.insert(classified)
+            try context.save()
+
+            try DraftService.shared.retireGroupExpenseDraft(draft, after: .targetGone)
+            #expect(try drafts(context, f).count == 1, "retiró un puntero cuya transacción existe")
+
+            let tx = try DraftService.shared.approveDraft(draft, currencyConverter: CurrencyConverter())
+            #expect(tx.persistentModelID == classified.persistentModelID)
+            #expect(try drafts(context, f).isEmpty)
+        }
     }
 
     /// Control: con un solo borrador la aprobación sigue creando su pata. Sin él, un arreglo que rechazara TODA

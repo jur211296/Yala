@@ -38,6 +38,12 @@ export interface GroupPullResponse {
   memberships: string[];
   /** Versión del group_capability_manifest de este Worker (el cliente declara la menor entre la suya y ésta). */
   manifest_version: number;
+  /**
+   * Card y1cd: los group_ids de `memberships` cuyo `owner_user_id` es quien llama. Es lo único que dice a un teléfono que
+   * ES el dueño cuando la propiedad le llega por el servidor (`groups_forget_user` o `transfer_group_ownership` de otro):
+   * `isOwner` es local y `owner_user_id` no está en el manifest. Ausente en un Worker anterior: el cliente no toca nada.
+   */
+  owned_groups: string[];
 }
 
 /** GET /groups/merkle?group_id=<gid> — response (dos canales, acotado a UN grupo). */

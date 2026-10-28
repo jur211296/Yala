@@ -1,10 +1,10 @@
 ---
 id: groups-next-column-needs-the-capability-level-in-the-drain
-status: backlog
+status: done
 priority: medium
 area: "groups, cloudsync, gateway"
 created: 2026-10-24
-updated: 2026-10-24
+updated: 2026-10-28
 source: "lote 12.1 Grupos (card k5ve): lo que la versión de columnas de Grupos deja para la primera columna con `since: 3`"
 ---
 
@@ -30,3 +30,17 @@ es todo el manifest, así que cuatro cosas no muerden todavía. Muerden el día 
    `budget_limit_amount` es `safe` y el nivel es siempre 2 (review adversarial del lote 12.1).
 
 Hecho cuando: las cuatro piezas existen con su test, o la primera columna con `since: 3` las trae en el mismo PR.
+
+## Hecho (2026-10-28, card u8cl)
+
+Las cuatro piezas, cada una con su test: (1) el drain emite con `GroupsSyncCapability.emission(_:upTo:)` y
+`capabilityLevel: GroupsSyncCapability.declaredLevel`; (2) `GroupsSyncCapability` apunta lo filtrado con valor y pide la
+subida al cruzar de versión, y `GroupsSyncClient.applyCapabilityUpgradeIfPending` (antes del push del ciclo) lo re-encola y
+vuelve a bajar desde 0 los grupos con fila local; (3) `/config` publica `sync.groupsManifestVersion` y
+`check-manifest-not-older.mjs` para con cualquiera de los dos manifests más viejo (`gateway/scripts/manifest-guard.mjs`);
+(4) la poda es por grupo de coherencia entero (`GroupsSyncCapability.keptColumns`) en la emisión y en la hoja del Merkle.
+Tests: `GroupsNextColumnPiecesTests` (Swift) y `gateway/test/manifestGuard.test.ts`. No se añadió ninguna columna `since: 3`.
+
+Review adversarial (2026-10-28), tres arreglos: la subida solo se cumple con el drain COMPLETO (el re-pull desde 0 pisaría
+una edición aún en el History); durante su re-pull, un gasto que ya estaba no avisa de «modificado»
+(`capabilityRepullZones`); y el residual aceptado: un kill a mitad del re-pull deja el resto con avisos, como antes.

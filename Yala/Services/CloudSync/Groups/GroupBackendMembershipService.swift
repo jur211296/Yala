@@ -133,13 +133,19 @@ final class GroupBackendMembershipService {
         )
         // C1 write-site (1): grupo del canal BACKEND → particiona enqueue/drain/routing (C2-C5).
         group.isBackendGroup = true
+
+        // Card y1ru · un reintento tras una respuesta perdida reusa la zona del intento pendiente con el mismo nombre
+        // (`PendingGroupCreationStore.reusableZone`): acuñar otra creaba un SEGUNDO grupo si el primer toque ya se había
+        // guardado. La identidad local (`id`) no cambia: en un grupo del backend la zona no se deriva de ella.
+        let creatorID = currentUserID()
+        let reusedZone = creatorID.flatMap { PendingGroupCreationStore.reusableZone(userID: $0, name: name) }
+        if let reusedZone { group.cloudKitZoneID = reusedZone }
         let zoneID = group.cloudKitZoneID
 
         // Card 5d22 · el intento se apunta ANTES del RPC: si el servidor lo guarda y la respuesta se pierde, la zona que
         // baje después la adopta el pull como dueño (`adoptPendingCreations`). Sin `sub` no se apunta: no habría con qué
         // atarlo a esta persona.
-        let creatorID = currentUserID()
-        if let creatorID { PendingGroupCreationStore.record(zoneID: zoneID, userID: creatorID) }
+        if let creatorID { PendingGroupCreationStore.record(zoneID: zoneID, userID: creatorID, name: name) }
 
         // RPC PRIMERO. Un throw aquí NO ha tocado el contexto todavía.
         let result: CreateGroupResult
@@ -156,14 +162,22 @@ final class GroupBackendMembershipService {
                 showDebtsInSingleCurrency: showDebtsInSingleCurrency,
                 membersCanInvite: membersCanInvite
             )
+        } catch GroupsRPCError.groupExists where reusedZone != nil {
+            // Card y1ru · la zona reusada ya existe en el servidor: es el grupo del toque anterior, que se guardó y perdió
+            // la respuesta. Es el éxito: el `member_key` del dueño es el `sub` (el servidor lo fuerza), y la zona solo
+            // se reusa con la misma sesión que la apuntó. Una zona acuñada ahora no puede existir: ahí sigue siendo error.
+            result = CreateGroupResult(groupID: zoneID, memberKey: creatorID ?? "")
         } catch {
             if Self.createMayHaveCommitted(error) {
                 // Ambiguo: el servidor pudo guardarlo. El intento se queda, y si un pull ya trajo la zona durante el
                 // `await`, se adopta ahora mismo (el pull no la volverá a traer).
                 Self.adoptPendingCreations(context: context, currentUserID: creatorID)
-            } else {
+            } else if reusedZone == nil {
                 PendingGroupCreationStore.remove(zoneID: zoneID)
             }
+            // Card y1ru: con una zona REUSADA, un rechazo claro de ESTE toque (sesión caducada, canal apagado…) no dice
+            // nada del toque anterior, que pudo guardarse: el apunte se queda para que el pull lo adopte (review
+            // adversarial del 2026-10-28). Sin él, el grupo guardado bajaba sin dueño y el siguiente «Crear» hacía otro.
             throw error
         }
         // A partir de aquí el pull PUDO correr (ver el header). Todo lo que sigue resuelve por identidad

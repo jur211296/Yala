@@ -126,6 +126,9 @@ final class GroupsSyncClient {
     /// El registro de sesiones de la vuelta de drain EN CURSO (`performDrain` lo lee al empezar y `appendRow` fecha cada
     /// transacción contra él). `nil` fuera de un drain, o sin registro.
     private var drainSignInLog: SessionSignInLog?
+    /// Card u8cl: grupos que la subida de versión vuelve a bajar desde 0. Mientras dure ese re-pull no avisan de «gasto
+    /// modificado». En memoria a propósito: un kill a mitad deja el resto del re-pull con avisos, que es lo de antes.
+    private(set) var capabilityRepullZones: Set<String> = []
     private var isDraining = false
     private var pendingDrain = false
     private var bridgeRetryTask: Task<Void, Never>?
@@ -699,7 +702,19 @@ final class GroupsSyncClient {
         // veredicto del ciclo sale del PULL siempre que el push no pare (línea de abajo), así que sin bajarlo un
         // push fallido de hace tres ciclos convertiría el `save()` local de éste en «no llegaron al servidor».
         lastCycleFailedUpload = false
-        drainOnce(context: context)
+        let drained = drainOnce(context: context)
+        // Card u8cl (pieza 2): la subida de versión del manifest de Grupos, ANTES del push (lo re-encolado sube en este
+        // mismo ciclo, por delante del re-pull que lo pisaría en pantalla). Si no se pudo cumplir, la petición se queda y
+        // el ciclo se corta: re-bajar sin haber encolado pisaría lo que este teléfono no subió. Y solo con el drain
+        // COMPLETO: el apply de Grupos decide por LWW, y una edición que sigue en el History sin traducir no tiene HLC
+        // nuevo, así que el re-pull desde 0 la pisaría (review adversarial del 2026-10-28). La petición espera al ciclo
+        // siguiente.
+        do {
+            if drained { try applyCapabilityUpgradeIfPending(context: context) }
+        } catch {
+            GroupsSyncBreadcrumb.groupsCapabilityUpgradeFailed(errorType: String(describing: type(of: error)))
+            return GroupsSyncCadence.outcome(pull: .transient)
+        }
         let push = await pushPending(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push
         if let stop = GroupsSyncCadence.stopOutcome(push: push) { return stop }
@@ -1390,8 +1405,27 @@ final class GroupsSyncClient {
     ) throws {
         try appendRow(op: .upsert, syncID: syncID, groupID: groupID, entityType: entityType,
                       tx: tx, rows: &rows, seen: &seen) { hlc in
-            let result = DeltaEmitter.emit(model: model, emission: emission,
-                                           changedColumns: changedColumns, hlc: hlc)
+            // Card u8cl (piezas 1 y 4): la emisión de la versión que habla el canal de GRUPOS, por grupo de coherencia
+            // entero, y con su nivel explícito: el default de `emit` es el del canal PERSONAL.
+            let level = GroupsSyncCapability.declaredLevel
+            let restricted = GroupsSyncCapability.emission(emission, upTo: level)
+            // Pieza 2: lo que se queda fuera y tiene valor se apunta, para re-encolarlo al subir de versión.
+            let calendar = Calendar(identifier: .gregorian)
+            let suppressed = Set(emission.emitters.filter { emitter in
+                changedColumns.contains(emitter.column) && !restricted.columns.contains(emitter.column)
+                    && emitter.build(model, calendar) != .null
+            }.map(\.column))
+            if !suppressed.isEmpty {
+                GroupsSyncCapability.noteSuppressed(
+                    entityType: entityType, syncID: syncID, groupID: groupID,
+                    ownerUserID: GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: drainSignInLog),
+                    columns: suppressed)
+            }
+            let result = DeltaEmitter.emit(model: model, emission: restricted,
+                                           changedColumns: changedColumns, hlc: hlc, capabilityLevel: level)
+            // Un cambio que SOLO tocó columnas que esta versión no conoce no deja nada que subir: sin fila (un upsert
+            // vacío no diría nada al servidor). Queda apuntado arriba para la subida.
+            if !suppressed.isEmpty, result.fields.isEmpty { return nil }
             let fieldsJSON: String
             do {
                 fieldsJSON = try Canonc1Codec.encode(result.fields,
@@ -1437,6 +1471,115 @@ final class GroupsSyncClient {
             createdAt: now(),
             ownerUserID: GroupsOutboxOwnershipLogic.owner(transactionAt: tx.timestamp, log: drainSignInLog)
         ))
+    }
+
+    // MARK: - Card u8cl · subida de versión del manifest de Grupos (pieza 2)
+
+    /// Cumple la subida de versión si está pedida y el teléfono ya habla esa versión (`GroupsSyncCapability.upgradeDue`).
+    /// Molde `CloudSyncEngine.applyCapabilityUpgradeIfPending` del canal personal, en este orden:
+    ///  1. **re-encola lo que el drain no pudo subir** (`GroupsSyncCapability.suppressedRows`): una fila por fila apuntada,
+    ///     con SOLO las columnas apuntadas y el valor de ahora, con el dueño que el drain le dio. Reemitir a ciegas «toda
+    ///     fila con valor» subiría con HLC fresco copias viejas y pisaría cambios de otros teléfonos;
+    ///  2. **vuelve a bajar desde 0 los grupos que hay aquí**: lo que bajó con la versión vieja llegó sin la columna, y el
+    ///     cursor ya pasó de largo. No es el reset externo que prohíbe la regla del cursor de Grupos: corre antes del push
+    ///     y del pull, así que ninguna página en vuelo lo pisa, y solo toca grupos con fila local, así que tras «Empezar de
+    ///     cero» el cursor sigue siendo la barrera (un grupo borrado aquí no vuelve a bajar por esto);
+    ///  3. retira la petición y lo apuntado.
+    /// Devuelve `true` si la cumplió. LANZA si no pudo leer, encolar o mover los cursores: la petición sigue puesta.
+    ///
+    /// Residual aceptado, el del personal: lo re-encolado sale con el HLC de AHORA. Solo existe si la app habló la versión
+    /// vieja con valores en la columna nueva, es decir, si la app salió antes que el Worker.
+    @discardableResult
+    func applyCapabilityUpgradeIfPending(context: ModelContext) throws -> Bool {
+        guard GroupsSyncCapability.upgradeDue, let target = GroupsSyncCapability.upgradePendingLevel else { return false }
+        let level = GroupsSyncCapability.declaredLevel
+        let cursor = try loadOrCreateCursor(context)
+        loadClock(from: cursor)
+        let backendZoneIDs = try backendGroupZoneIDs(context)
+        let pending = GroupsSyncCapability.suppressedRows.values.sorted { $0.key < $1.key }
+        var seen = try existingOutboxKeys(context)
+        var rows: [PendingGroupRow] = []
+        for entry in pending where backendZoneIDs.contains(entry.groupID) {
+            let id = entry.syncID
+            let row: PendingGroupRow?
+            switch entry.entityType {
+            case GroupSyncEntityType.splitExpense:
+                row = try reemissionRow(
+                    entry, model: context.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitExpense, level: level, seen: &seen)
+            case GroupSyncEntityType.splitShare:
+                row = try reemissionRow(
+                    entry, model: context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitShare, level: level, seen: &seen)
+            case GroupSyncEntityType.splitSettlement:
+                row = try reemissionRow(
+                    entry,
+                    model: context.fetch(FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitSettlement, level: level, seen: &seen)
+            case GroupSyncEntityType.splitGroup:
+                row = try reemissionRow(
+                    entry, model: context.fetch(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == id })).first,
+                    emission: GroupEntityEmissionMap.splitGroup, level: level, seen: &seen)
+            default:
+                row = nil
+            }
+            if let row { rows.append(row) }
+        }
+        if !rows.isEmpty {
+            // Regla Q3: el espejo del App Group antes del insert+save, en la misma vuelta síncrona, como el drain.
+            writeMirror(rows: rows)
+            try saveWithAuthor(context) {
+                for row in rows { context.insert(row.makeModel()) }
+                cursor.clockLatestHLC = clock.latest?.description
+            }
+        }
+        // Ya en el outbox: se retira aquí y no al final, para que un fallo al mover los cursores no lo re-encole otra vez.
+        GroupsSyncCapability.clearSuppressed(pending)
+
+        let localZones = Set(try context.fetch(FetchDescriptor<SplitGroup>()).map(\.cloudKitZoneID))
+        var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
+        let resetGroupIDs = maxSeqByGroup.keys.filter { localZones.contains($0) && maxSeqByGroup[$0] != 0 }
+        if !resetGroupIDs.isEmpty {
+            for gid in resetGroupIDs { maxSeqByGroup[gid] = 0 }
+            try saveWithAuthor(context) { cursor.groupCursorsJSON = encodeCursors(maxSeqByGroup) }
+        }
+        // El re-pull vuelve a bajar todos los gastos de esos grupos, y el apply lee cada uno que ya existe como «gasto
+        // modificado»: sin esto, cada persona recibiría un aviso por grupo el día de la subida (review adversarial).
+        capabilityRepullZones.formUnion(resetGroupIDs)
+
+        GroupsSyncCapability.clearUpgrade(level: target)
+        GroupsSyncBreadcrumb.groupsCapabilityUpgradeApplied(
+            level: level, reemitted: rows.count, groupsReset: resetGroupIDs.count)
+        return true
+    }
+
+    /// La fila que re-encola una entrada apuntada, o `nil` si ya no hay nada que subir (la fila se borró, o ninguna de sus
+    /// columnas existe aún en `level`). Un rechazo del codec también es `nil`, como en el drain: no subiría nunca.
+    private func reemissionRow<T: AnyObject>(
+        _ entry: GroupsSyncCapability.SuppressedRow, model: T?, emission: EntityEmission<T>, level: Int,
+        seen: inout Set<String>
+    ) throws -> PendingGroupRow? {
+        guard let model else { return nil }
+        let restricted = GroupsSyncCapability.emission(emission, upTo: level)
+        let columns = Set(entry.columns).intersection(restricted.columns)
+        guard !columns.isEmpty else { return nil }
+        let hlc = try clock.sendLocal(eventTime: now()).description
+        guard seen.insert(dedupKey(syncID: entry.syncID, hlc: hlc, op: .upsert)).inserted else { return nil }
+        let result = DeltaEmitter.emit(model: model, emission: restricted, changedColumns: columns, hlc: hlc,
+                                       capabilityLevel: level)
+        let fieldsJSON: String
+        do {
+            fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: Set(restricted.groupByColumn.keys))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: codec c1 rechazó la re-emisión de \(entry.entityType, privacy: .public): \(error)")
+            #endif
+            return nil
+        }
+        return PendingGroupRow(
+            syncID: entry.syncID, groupID: entry.groupID, entityType: entry.entityType, op: .upsert, hlc: hlc,
+            clientMutationID: UUID(), fieldsJSON: fieldsJSON, fieldHlcsJSON: encodeFieldHlcs(result.fieldHlcs),
+            author: "", createdAt: now(), ownerUserID: entry.ownerUserID)
     }
 
     // MARK: - Lookups
@@ -2377,6 +2520,8 @@ final class GroupsSyncClient {
                         completeInitialMemberImport(context: context)
                         onRemoteChangesApplied()
                     }
+                    // Card u8cl: el re-pull de la subida terminó; desde aquí, un gasto que cambia vuelve a avisar.
+                    capabilityRepullZones.removeAll()
                     return .completed(pages: pages, deltasApplied: totalDeltas)
                 }
                 pages += 1
@@ -2526,6 +2671,7 @@ final class GroupsSyncClient {
             // zona en cuanto el status pasa a `removed`), así que su página típica es EXACTAMENTE la del
             // ciclo idle: salir aquí sin mirarla es lo que hacía que la señal no llegara nunca a aplicarse.
             reconcileLostMemberships(page, cursor: cursor, context: context)
+            reconcileOwnership(page, context: context)
             return true
         }
 
@@ -2616,6 +2762,8 @@ final class GroupsSyncClient {
                                                             reason: clockRejections.firstReason ?? "")
         }
 
+        // Card y1cd: quién es dueño, después del save de la página (un grupo recién bajado ya tiene su fila).
+        reconcileOwnership(page, context: context)
         // H-2026-07-18-3: canario del reset por re-join (solo tras un save exitoso — el catch retornó arriba).
         if !cursorResetGroupIDs.isEmpty {
             GroupsSyncBreadcrumb.groupsRejoinCursorReset(groups: cursorResetGroupIDs.count)
@@ -2631,6 +2779,11 @@ final class GroupsSyncClient {
         // 2.1: notificaciones locales de grupo. Post-save (como el canal CloudKit, que las procesaba en
         // `processPendingRemoteChanges` tras persistir): un save fallido retornó arriba y no notifica nada
         // que el usuario no tenga en el store.
+        // Card u8cl: durante el re-pull de la subida de versión, lo que «cambia» en un gasto que ya estaba es la columna
+        // nueva que baja por primera vez, no una edición de nadie: no avisa.
+        if !capabilityRepullZones.isEmpty {
+            notify.modifiedExpenses.removeAll { capabilityRepullZones.contains($0.zone) }
+        }
         let changes = resolveNotificationChanges(notify, context: context)
         if !changes.isEmpty { onRemoteChanges(changes) }
         // ORDEN: el CONGELADO va PRIMERO, el des-puenteo después. Una misma página puede traer el tombstone
@@ -2704,6 +2857,52 @@ final class GroupsSyncClient {
     /// POST-SAVE y jamás dentro del `saveWithAuthor`, molde de `publishTrackedJoinPhaseIfNeeded`: el
     /// `rollback()` del `catch` revertiría el grafo de la página y esto habría borrado un grupo sobre un
     /// estado que no está en disco.
+    /// Card y1cd · **quién es dueño de cada grupo, según el servidor** (`owned_groups` del pull). `isOwner` (grupo) e
+    /// `isGroupOwner` (el miembro propio) son LOCALES y el pull no los escribe, así que la propiedad que llega por el
+    /// servidor —el dueño borró su cuenta y `groups_forget_user` se la pasó a otro, o se la transfirieron— no llegaba
+    /// nunca: la heredera seguía sin «Invitar» (invitar exige `group.isOwner`), y quien la cedió seguía viéndose dueño.
+    ///
+    /// Solo con el campo presente (un Worker anterior no lo manda: nada se toca) y solo sobre los grupos de `memberships`
+    /// (de los demás el servidor no dice nada en esta página). Escribe solo lo que cambia, bajo el autor del canal: son
+    /// datos locales que el drain no emite. `internal` para los tests.
+    func reconcileOwnership(_ page: GroupPulledPage, context: ModelContext) {
+        guard let owned = page.ownedGroups.map(Set.init), let memberships = page.memberships else { return }
+        let zones = Set(memberships)
+        // El miembro propio: con sesión, SOLO el de su `sub` (`isCurrentUser` puede seguir puesto en la fila de otra cuenta
+        // que estuvo antes en el teléfono hasta que `GroupService.refreshCurrentUserFlags` la apague: review adversarial).
+        // Sin `sub`, el marcado como propio.
+        let sessionSub = currentUserIDProvider().flatMap { $0.isEmpty ? nil : $0 }
+        do {
+            var changed = 0
+            for group in try context.fetch(FetchDescriptor<SplitGroup>()) where zones.contains(group.cloudKitZoneID) {
+                let isOwner = owned.contains(group.cloudKitZoneID)
+                if group.isOwner != isOwner {
+                    group.isOwner = isOwner
+                    changed += 1
+                }
+            }
+            for member in try context.fetch(FetchDescriptor<SplitMember>())
+            where zones.contains(member.groupZoneID)
+                && (sessionSub.map { member.userID == $0 } ?? member.isCurrentUser) {
+                let isOwner = owned.contains(member.groupZoneID)
+                if member.isGroupOwner != isOwner {
+                    member.isGroupOwner = isOwner
+                    changed += 1
+                }
+            }
+            // Solo con algo que cambiar: esto corre en CADA página, y un save sin nada es una transacción para nada.
+            guard changed > 0 else { return }
+            try saveWithAuthor(context) { }
+            GroupsSyncBreadcrumb.groupsOwnershipReconciled(rows: changed)
+        } catch {
+            // Sin `rollback()`: el contexto es el compartido. Lo que no se pudo guardar se reintenta en la página
+            // siguiente, que vuelve a traer `owned_groups`.
+            #if DEBUG
+            logger.error("GroupsSync: reconciliar la propiedad de los grupos falló: \(error)")
+            #endif
+        }
+    }
+
     private func reconcileLostMemberships(
         _ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext
     ) {
@@ -3609,7 +3808,8 @@ final class GroupsSyncClient {
             // SIN `?? []`: la ausencia del campo se propaga como `nil` y `reconcileLostMemberships` no
             // toca nada. Ver el docblock de `GroupPulledPage`.
             memberships: decoded.memberships,
-            manifestVersion: decoded.manifestVersion
+            manifestVersion: decoded.manifestVersion,
+            ownedGroups: decoded.ownedGroups
         )
     }
 
@@ -4055,6 +4255,9 @@ struct GroupPulledPage: Equatable {
     /// Versión del `group_capability_manifest.json` que anunció el Worker (`GroupsSyncCapability`). `nil` = un Worker
     /// anterior a esto. `var` con default para no romper el init memberwise de los tests.
     var manifestVersion: Int? = nil
+    /// Card y1cd: los grupos de `memberships` de los que esta cuenta es DUEÑA (`owned_groups`). `nil` = un Worker anterior
+    /// a esto: no se toca `isOwner`. `var` con default para no romper el init memberwise de los tests.
+    var ownedGroups: [String]? = nil
 }
 
 private struct RawGroupPullResponse: Decodable {
@@ -4062,12 +4265,14 @@ private struct RawGroupPullResponse: Decodable {
     let cursors: [String: Int64]?
     let memberships: [String]?
     let manifestVersion: Int?
+    let ownedGroups: [String]?
 
     enum CodingKeys: String, CodingKey {
         case deltas
         case cursors
         case memberships
         case manifestVersion = "manifest_version"
+        case ownedGroups = "owned_groups"
     }
 }
 

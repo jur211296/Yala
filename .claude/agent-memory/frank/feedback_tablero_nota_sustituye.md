@@ -29,3 +29,7 @@ del subcomando (`tablero editar <id> --agente frank …`); delante, `tablero` lo
 sangría de 14 espacios de las continuaciones de campo; un parser que solo acepta líneas sangradas lo descarta. Se perdió
 la decisión B de Jürgen en `ldqu` y se repuso. Para leer la nota en un script: todo lo que va entre `note` y la
 siguiente línea que empiece por un nombre de campo conocido (`contexto`, `siguientePaso`, `hechaCuando`, `origin`…).
+
+**Y un `ver | grep enlaces` no enseña los enlaces (2026-10-28):** los enlaces del segundo en adelante salen en líneas de
+continuación sin la palabra `enlaces`; el grep enseñó solo el ticket y borré el «PR #623» de tres cards. Se repuso porque
+`editar` imprime el antes. Para leerlos, `ver` entero, o la línea `EDITADA … enlaces: [antes] → [después]` del propio comando.

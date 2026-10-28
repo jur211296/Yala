@@ -1128,6 +1128,10 @@ struct InboxView: View {
             #if DEBUG
             print("InboxView: Error approving draft: \(error)")
             #endif
+            // Card ouka: deslizando no hay hoja montada; el borrador cuyo gasto ya no está se retira en el acto.
+            if case DraftServiceError.groupExpenseTargetMissing = error {
+                draftService.retireStaleGroupExpenseDraftWithoutSheet(draft)
+            }
         }
     }
 

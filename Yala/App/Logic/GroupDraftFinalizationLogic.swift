@@ -106,13 +106,14 @@ enum GroupDraftFinalizationLogic {
         /// El draft es redundante → borrarlo y devolver la TX existente (idempotente).
         case discardRedundant
         /// No existe NINGUNA TX para ese `splitExpenseID` (el expense se borró remotamente).
-        /// Borrar el draft stale y lanzar error claro (la sheet lo muestra).
-        case deleteStaleAndThrow
+        /// Lanzar error claro (la sheet lo muestra) SIN borrar el draft: la hoja sigue montada y pinta su alerta
+        /// leyendo el `@Model` (card ouka). La hoja lo retira al cerrarse.
+        case throwAndRetireOnClose
     }
 
     /// - Parameter existsAnyTxForSplitID: ¿hay CUALQUIER TX con ese `splitExpenseID`,
     ///   independientemente de su subcategoría?
     static func resolveMissingPointerTarget(existsAnyTxForSplitID: Bool) -> StalePointerResolution {
-        existsAnyTxForSplitID ? .discardRedundant : .deleteStaleAndThrow
+        existsAnyTxForSplitID ? .discardRedundant : .throwAndRetireOnClose
     }
 }

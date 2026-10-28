@@ -183,6 +183,21 @@ enum GroupsSyncBreadcrumb {
     /// su cursor por-grupo a 0 → el próximo pull re-visita el contenido que RLS ocultaba mientras estaba
     /// pendiente (el cursor había avanzado sin bajar ese contenido). `> 0` esporádico = re-join sano;
     /// sostenido = revisar aprobaciones. Sin PII (solo el count — JAMÁS el group_id).
+    /// Card u8cl: la subida de versión del manifest de Grupos se cumplió (filas re-encoladas y grupos que vuelven a bajar).
+    static func groupsCapabilityUpgradeApplied(level: Int, reemitted: Int, groupsReset: Int) {
+        logger.notice("GroupsSync capabilityUpgradeApplied level=\(level, privacy: .public) reemitted=\(reemitted, privacy: .public) groupsReset=\(groupsReset, privacy: .public)")
+    }
+
+    /// Card u8cl: la subida no se pudo cumplir (lectura, encolado o cursores); la petición se queda y el ciclo se corta.
+    static func groupsCapabilityUpgradeFailed(errorType: String) {
+        logger.error("GroupsSync capabilityUpgradeFailed error=\(errorType, privacy: .public)")
+    }
+
+    /// Card y1cd: el pull corrigió quién es dueño de algún grupo (filas de grupo + miembro propio que cambiaron).
+    static func groupsOwnershipReconciled(rows: Int) {
+        logger.notice("GroupsSync ownershipReconciled rows=\(rows, privacy: .public)")
+    }
+
     static func groupsRejoinCursorReset(groups: Int) {
         logger.notice("GroupsSync rejoinCursorReset groups=\(groups, privacy: .public) — re-join pendingApproval→active; cursor por-grupo reseteado para re-pull del hueco")
     }

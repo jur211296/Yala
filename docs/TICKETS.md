@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1089)
+## Index (1095)
 
 | id | status | path |
 |---|---|---|
@@ -139,6 +139,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | attest-copy-still-says-the-security-check-our-server-requires | done | tickets/done/attest-copy-still-says-the-security-check-our-server-requires.md |
 | attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
 | attest-session-token-rejected-by-the-gateway-stays-cached | qa | tickets/qa/attest-session-token-rejected-by-the-gateway-stays-cached.md |
+| auth-user-deletion-outside-forget-user-leaves-groups-without-admin | backlog | tickets/backlog/auth-user-deletion-outside-forget-user-leaves-groups-without-admin.md |
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | done | tickets/done/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
@@ -445,7 +446,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
 | group-expense-detail-like-record-detail | backlog | tickets/backlog/group-expense-detail-like-record-detail.md |
-| group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | backlog | tickets/backlog/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
+| group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
 | group-expense-success-claims-a-bridge-write-that-did-not-happen | done | tickets/done/group-expense-success-claims-a-bridge-write-that-did-not-happen.md |
 | group-expense-views-redesign | done | tickets/done/group-expense-views-redesign.md |
@@ -456,6 +457,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |
 | groups-actions-read-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/groups-actions-read-an-offline-token-refresh-as-a-session-expiry.md |
+| groups-always-an-admin-after-create-or-wipe | qa | tickets/qa/groups-always-an-admin-after-create-or-wipe.md |
 | groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-archived-group-rejects-join | done | tickets/done/groups-archived-group-rejects-join.md |
 | groups-archived-still-accepts-changes | done | tickets/done/groups-archived-still-accepts-changes.md |
@@ -507,13 +509,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight | backlog | tickets/backlog/groups-join-reconcile-can-clear-an-invite-while-its-join-is-in-flight.md |
 | groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start | done | tickets/done/groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start.md |
 | groups-killswitch-403-blocks-detach-forever | done | tickets/done/groups-killswitch-403-blocks-detach-forever.md |
+| groups-last-admin-can-leave-or-be-removed-in-a-group-without-creator | backlog | tickets/backlog/groups-last-admin-can-leave-or-be-removed-in-a-group-without-creator.md |
 | groups-leave-rpc-error-10 | done | tickets/done/groups-leave-rpc-error-10.md |
 | groups-legacy-consent-keys-survive-a-person-handover | done | tickets/done/groups-legacy-consent-keys-survive-a-person-handover.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
 | groups-merkle-reads-an-unreadable-table-as-an-empty-one | done | tickets/done/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
-| groups-next-column-needs-the-capability-level-in-the-drain | backlog | tickets/backlog/groups-next-column-needs-the-capability-level-in-the-drain.md |
+| groups-next-column-needs-the-capability-level-in-the-drain | done | tickets/done/groups-next-column-needs-the-capability-level-in-the-drain.md |
 | groups-notifications-permission-skipped-when-the-group-arrives-another-way | qa | tickets/qa/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-by-choice-holds-group-scheduled-payments | done | tickets/done/groups-only-by-choice-holds-group-scheduled-payments.md |
@@ -687,6 +690,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-before-the-groups-association-arrives-splits-the-accounts | backlog | tickets/backlog/migrate-before-the-groups-association-arrives-splits-the-accounts.md |
 | migrate-card-keeps-promising-an-account-the-check-refused | done | tickets/done/migrate-card-keeps-promising-an-account-the-check-refused.md |
 | migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling | backlog | tickets/backlog/migrate-claim-does-not-announce-a-definitive-cause-before-its-ceiling.md |
+| migrate-group-can-create-a-group-with-an-owner-and-no-admin | backlog | tickets/backlog/migrate-group-can-create-a-group-with-an-owner-and-no-admin.md |
 | migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account | backlog | tickets/backlog/migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account.md |
 | migration-activation-ceiling-drops-origin-pending-effects | backlog | tickets/backlog/migration-activation-ceiling-drops-origin-pending-effects.md |
 | migration-activation-drops-pending-effects-it-never-restores | done | tickets/done/migration-activation-drops-pending-effects-it-never-restores.md |
@@ -875,7 +879,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
 | retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | done | tickets/done/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
-| retrying-a-group-creation-after-a-lost-response-creates-a-second-group | backlog | tickets/backlog/retrying-a-group-creation-after-a-lost-response-creates-a-second-group.md |
+| retrying-a-group-creation-after-a-lost-response-creates-a-second-group | done | tickets/done/retrying-a-group-creation-after-a-lost-response-creates-a-second-group.md |
 | returning-groups-entry-asks-consent-and-name-again | qa | tickets/qa/returning-groups-entry-asks-consent-and-name-again.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
 | reverse-before-mount-has-no-way-to-abandon-the-return | done | tickets/done/reverse-before-mount-has-no-way-to-abandon-the-return.md |
@@ -1138,3 +1142,4 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
 | yearly-scheduled-payment-on-feb-29-skips-common-years | backlog | tickets/backlog/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
+
