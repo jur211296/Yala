@@ -40,6 +40,10 @@
 - [Encargo sin simulador y el gate](feedback_encargo_sin_simulador_y_el_gate.md) — el gate lo necesita: se pregunta; aprobó usarlo solo para el gate, en cola.
 - [Revisión por dispositivo sin saltar](feedback_revision_por_dispositivo_sin_saltar.md) — Duo entero primero; lo del iPhone se apunta y va al final.
 ## Cómo mido y cómo entrego
+- [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
+- [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».
+- [Gate con globs anchos: subconjunto declarado](feedback_gate_globs_ancho_subconjunto.md) — ContentView/PanelView piden ~90 suites; corre las que ejercen y dilo.
+- [Forzar una preferencia en un lanzamiento](reference_forzar_una_preferencia_en_un_lanzamiento.md) — `-clave NO` gana al dominio de registro de -uitest.
 - [Upload OK no es build aceptado](feedback_upload_ok_no_es_build_aceptado.md) — mira `asc builds uploads list`; altool validate no vio 23 ITMS-90626.
 - [Un timeout tapa el rojo de detrás](feedback_un_timeout_tapa_el_rojo_de_detras.md) — con plazo, el golden 20 salió rojo por g24_01; instrumenta y nombra la causa en el mensaje.
 - [El «antes» del iPhone, con git archive](feedback_antes_del_iphone_con_git_archive.md) — base aparte, no `git checkout --`; diff de píxeles con el molde.

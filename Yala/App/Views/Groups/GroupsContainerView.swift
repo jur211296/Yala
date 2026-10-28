@@ -175,8 +175,9 @@ struct GroupsContainerView: View {
                             if GroupNotificationsOptInLogic.listMountsCard(
                                 isWelcomeGroupFormOpen: navigation.isWelcomeGroupFormOpen,
                                 inviteSheetPending: groupAwaitingInviteSheet != nil || groupReadyToInvite != nil) {
+                                // Sin margen propio (card rj3b, 2026-10-28): el del scroll (`scrollViewGlassEdges`) ya lo
+                                // pone, y con los dos quedaba 16 pt más adentro que las tarjetas de grupo.
                                 GroupNotificationsOptInCard(onlyIfNeverSeen: true)
-                                    .padding(.horizontal, DS.Spacing.lg)
                             }
 
                             // LazyVStack sólo alrededor de las TARJETAS: con VStack, SwiftUI
@@ -1173,7 +1174,8 @@ struct GroupsContainerView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, DS.Spacing.lg)
+        // Sin margen propio (card rj3b, 2026-10-28): el del scroll ya lo pone; con los dos, «Nuevo gasto» y «Nuevo grupo»
+        // quedaban 16 pt más adentro que las tarjetas de grupo, que son la referencia.
         .revealsFloatingActionWhenScrolledAway($showFloatingActions)
     }
 

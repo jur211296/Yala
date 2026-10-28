@@ -60,6 +60,23 @@ struct GroupNotificationsOptInCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
+                // Card rj3b (Jürgen, 2026-10-28): en la lista la tarjeta no se podía quitar. Ya está marcada como vista
+                // al salir (`hasSeenGroupsNotificationPrompt`), así que cerrarla solo adelanta su salida: no vuelve.
+                // En «está listo» y «Ya estás en» no hace falta: se van con su pantalla.
+                if onlyIfNeverSeen {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.25)) { showsCard = false }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(DS.Spacing.xs)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Action.close)
+                    .accessibilityIdentifier("group_notifications_dismiss")
+                }
             }
 
             switch state {

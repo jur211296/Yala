@@ -59,9 +59,13 @@ struct ReturningUserBeginnerTipsTests {
         movimiento(creadoEl: entrada.addingTimeInterval(-86_400 * 90), en: context)
         try context.save()
 
-        let decision = ReturningUserBeginnerTips.settleIfPending(context: context, now: entrada, defaults: defaults)
+        var checklistDismissed = 0
+        let decision = ReturningUserBeginnerTips.settleIfPending(
+            context: context, now: entrada, defaults: defaults, dismissSetupChecklist: { checklistDismissed += 1 })
 
         #expect(decision == .markSeen)
+        // Card ds09: «Primeros pasos» se retira con los tips, una vez.
+        #expect(checklistDismissed == 1)
         for key in ReturningUserBeginnerTips.seenKeys {
             #expect(defaults.bool(forKey: key), "\(key) no quedó como visto")
         }
@@ -78,10 +82,13 @@ struct ReturningUserBeginnerTipsTests {
         movimiento(creadoEl: entrada.addingTimeInterval(60), en: context)
         try context.save()
 
+        var checklistDismissed = 0
         let decision = ReturningUserBeginnerTips.settleIfPending(
-            context: context, now: entrada.addingTimeInterval(120), defaults: defaults)
+            context: context, now: entrada.addingTimeInterval(120), defaults: defaults,
+            dismissSetupChecklist: { checklistDismissed += 1 })
 
         #expect(decision == .keepWaiting)
+        #expect(checklistDismissed == 0)
         #expect(!defaults.bool(forKey: "guide.panel.dismissed"))
         #expect(defaults.object(forKey: ReturningUserBeginnerTips.pendingKey) != nil)
     }
@@ -93,7 +100,11 @@ struct ReturningUserBeginnerTipsTests {
         movimiento(creadoEl: entrada.addingTimeInterval(-86_400), en: context)
         try context.save()
 
-        #expect(ReturningUserBeginnerTips.settleIfPending(context: context, now: entrada, defaults: defaults) == .nothingPending)
+        var checklistDismissed = 0
+        #expect(ReturningUserBeginnerTips.settleIfPending(
+            context: context, now: entrada, defaults: defaults,
+            dismissSetupChecklist: { checklistDismissed += 1 }) == .nothingPending)
+        #expect(checklistDismissed == 0)
         #expect(!defaults.bool(forKey: "guide.panel.dismissed"))
     }
 

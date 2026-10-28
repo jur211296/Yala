@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1095)
+## Index (1098)
 
 | id | status | path |
 |---|---|---|
@@ -512,6 +512,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-last-admin-can-leave-or-be-removed-in-a-group-without-creator | backlog | tickets/backlog/groups-last-admin-can-leave-or-be-removed-in-a-group-without-creator.md |
 | groups-leave-rpc-error-10 | done | tickets/done/groups-leave-rpc-error-10.md |
 | groups-legacy-consent-keys-survive-a-person-handover | done | tickets/done/groups-legacy-consent-keys-survive-a-person-handover.md |
+| groups-list-notifications-card-cannot-be-dismissed | qa | tickets/qa/groups-list-notifications-card-cannot-be-dismissed.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
@@ -743,6 +744,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
 | panel-pies-amount-filter-uses-signed-amount | backlog | tickets/backlog/panel-pies-amount-filter-uses-signed-amount.md |
 | panel-pies-ignore-hidden-currency-and-compare-signed-amount | backlog | tickets/backlog/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
+| panel-says-nothing-when-cloud-sync-needs-sign-in | qa | tickets/qa/panel-says-nothing-when-cloud-sync-needs-sign-in.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |
 | panel-stayed-filtered-after-removing-the-account-chip | backlog | tickets/backlog/panel-stayed-filtered-after-removing-the-account-chip.md |
 | panel-trend-chart-labels-overlap | done | tickets/done/panel-trend-chart-labels-overlap.md |
@@ -972,6 +974,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
 | sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches | backlog | tickets/backlog/sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches.md |
 | sign-out-exits-do-not-verify-the-cloud-session-closed | done | tickets/done/sign-out-exits-do-not-verify-the-cloud-session-closed.md |
+| sign-out-in-place-leaves-a-screen-with-nothing-to-tap | qa | tickets/qa/sign-out-in-place-leaves-a-screen-with-nothing-to-tap.md |
 | sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration | backlog | tickets/backlog/sign-out-migration-copy-does-not-fit-a-failed-or-waiting-migration.md |
 | sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate | done | tickets/done/sign-out-push-all-runs-a-sync-cycle-past-the-migration-gate.md |
 | sign-out-wipe-abort-in-icloud-says-nothing | backlog | tickets/backlog/sign-out-wipe-abort-in-icloud-says-nothing.md |

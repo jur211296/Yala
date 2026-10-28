@@ -6,6 +6,7 @@
 //  Three states: expanded (full list), collapsed (progress bar only), completed (celebration).
 //
 
+import SwiftData
 import SwiftUI
 
 struct SetupChecklistCard: View {
@@ -13,6 +14,7 @@ struct SetupChecklistCard: View {
     // MARK: - Environment
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - Properties
 
@@ -43,6 +45,11 @@ struct SetupChecklistCard: View {
             }
             .animation(.easeInOut(duration: 0.3), value: manager.isCollapsed)
             .animation(.easeInOut(duration: 0.3), value: manager.isAllComplete)
+            // Card ds09: quien volvió por «Ya tengo una cuenta» con datos no ve Primeros pasos. Pregunta al aparecer y
+            // cada vez que cambia el progreso: los datos que llegan marcan solos el primer paso (el «1 de 7» que vio
+            // Jürgen), que es justo cuando ya se puede decidir. Si se resuelve, la tarjeta se retira
+            // (`ReturningUserBeginnerTips`).
+            .task(id: manager.completedCount) { ReturningUserBeginnerTips.settleIfPending(context: modelContext) }
             .onChange(of: manager.isAllComplete) { _, isComplete in
                 if isComplete {
                     showCelebration = true

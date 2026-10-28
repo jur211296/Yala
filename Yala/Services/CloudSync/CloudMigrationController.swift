@@ -2012,6 +2012,13 @@ final class CloudMigrationController {
     /// `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door`): con solo cambios de grupos no salía, y el cierre de
     /// sesión mandaba a volver a entrar sin ninguna puerta a la vista. La decisión vive en `SyncSignInBannerLogic.decide`.
     private func refreshSyncBanner() {
+        #if DEBUG
+        if UITestHooks.fakeSyncNeedsSignIn {
+            syncNeedsSignIn = true
+            pendingUploadCount = 5006
+            return
+        }
+        #endif
         let banner = Self.syncSignInBanner(context: context, isCloud: CloudSyncFlags.storageMode == .cloud,
                                            runtimeState: CloudSyncRuntime.shared?.state,
                                            hasSession: CloudAuthService.shared.hasSession)

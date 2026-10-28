@@ -144,8 +144,15 @@ extension ReopenOnlyForPrivateICloudWiringTests {
     @Test func awaitingRelaunch_keepsTheWelcomeDestinationForTheNextLaunch() throws {
         let src = try Self.source("Yala/App/ContentView.swift")
         let cuerpo = try #require(Self.body(of: "private func presentNextOnboardingScreen() {", in: src))
-        let first = cuerpo.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.first { !$0.isEmpty }
-        #expect(first == "guard CloudSessionSignOut.shared.phase != .awaitingRelaunch else { return }")
+        let lines = cuerpo.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        // Desde la card 7e60 (2026-10-28) el `guard` apunta lo que calla —para retomarlo si el cambio en caliente sale y la
+        // fase vuelve a reposo— y no hace NADA más: ni consume el destino ni presenta.
+        #expect(Array(lines.prefix(4)) == [
+            "guard CloudSessionSignOut.shared.phase != .awaitingRelaunch else {",
+            "onboardingRoutingDeferredForRelaunch = true",
+            "return",
+            "}",
+        ])
     }
 
     /// El cambio en caliente no hereda la cancelación de quien lo pide (la puerta del Welcome lo pide desde un `.task`

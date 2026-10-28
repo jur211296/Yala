@@ -34,6 +34,9 @@ struct PanelView: View {
     /// condiciones las lee `CloudAttestNotice.isShowing` vivas, en el body (ticket
     /// `cloud-tab-does-not-say-this-phone-cannot-sync-personal-data`).
     @State private var attestVerdictIsTerminal = false
+    /// Card pz4v: el aviso de «inicia sesión», copiado del controller por `cloudSignInNoticeWatcher` (ver
+    /// `CloudSignInNotice.current`). `nil` = no sale.
+    @State private var syncSignInNotice: CloudSignInNotice.PanelValue?
     /// Solo para el punto del botón de filtros: lee los filtros de `SessionState`, no guarda nada.
     @State private var panelFilters = PanelSessionFilters()
 
@@ -299,6 +302,8 @@ struct PanelView: View {
                 // Mantiene al día el veredicto del attest (los tres momentos, en el propio modifier). El
                 // decisivo es el aviso del store: el 401 llega con el Panel delante.
                 .cloudAttestVerdictWatcher($attestVerdictIsTerminal)
+                // Card pz4v: mantiene al día el aviso de «inicia sesión» (los momentos, en el propio modifier).
+                .cloudSignInNoticeWatcher($syncSignInNotice)
                 .yalaSkeleton(!viewModel.isReady)
                 // Title aparece solo tras scrollear (ver `showInlineTitle`),
                 // evitando duplicación con el saludo del hero al inicio.
@@ -643,6 +648,17 @@ struct PanelView: View {
                             CloudAttestNoticeBanner(accessibilityID: "panel_attest_terminal_banner")
                                 .padding(DS.Spacing.md)
                                 .glassEffect(.regular)
+                        } else if let syncSignInNotice {
+                            // Card pz4v: la sesión de la nube caducó y hay cambios esperando. Mismo sitio que el del
+                            // attest, y nunca a la vez: re-firmar no arregla un attest roto.
+                            CloudSignInNoticeBanner(pendingCount: syncSignInNotice.pendingCount) {
+                                SyncSignInRequest.pending = true
+                                sheets.settingsInitialDestination = .storageMode
+                                sheets.isPresentingSettings = true
+                            }
+                            .padding(DS.Spacing.md)
+                            // Rectángulo y no la cápsula por defecto: con un botón dentro, la cápsula le come las esquinas.
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
                         }
 
                         // Gated on `heroWidget.data != nil` inside the section
