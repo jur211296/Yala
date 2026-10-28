@@ -291,6 +291,12 @@ final class SceneNavigation: Identifiable {
     /// (Clase D). Default "splash": el splash siempre cubre el boot antes del primer recompute.
     var shellModalBlocker: String? = "splash"
 
+    /// True mientras el editor de Más (desde donde se elige la barra de pestañas) está abierto en esta ventana. Lo
+    /// escribe SOLO `MoreView`, y `MainTabView` lo baja al desmontarse. Mientras dura, la barra sigue con la
+    /// configuración que tenía montada y se vuelve a montar con la nueva al cerrarse el editor (card fozu): montarla
+    /// en caliente cerraba la app o dejaba pestañas en negro, y montarla con el editor abierto lo cerraba de golpe.
+    var isEditingTabBarLayout: Bool = false
+
     /// True mientras MainTabView tiene un sheet propio presentado (downgrade /
     /// trialExpired / milestone). Escrito SOLO por MainTabView. Consultado por
     /// el guard de `.panel` y por la matriz de readiness del shell (cross-node:

@@ -121,8 +121,11 @@ struct MoreView: View {
             ProfileView()
                 .transaction { $0.animation = nil }
         }
-        .sheet(isPresented: $showEditor) {
+        .sheet(isPresented: $showEditor, onDismiss: { navigation.isEditingTabBarLayout = false }) {
             MoreEditorSheet()
+                // La barra de pestañas espera a que se cierre el editor para montar lo elegido (card fozu).
+                .onAppear { navigation.isEditingTabBarLayout = true }
+                .onDisappear { navigation.isEditingTabBarLayout = false }
         }
     }
 

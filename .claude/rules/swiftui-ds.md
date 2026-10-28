@@ -356,6 +356,14 @@ paths:
     `shownTabs` incluye siempre la seleccionada, y **la shell de solo grupos sigue QUITANDO** en vez de ocultar: ahí
     la selección puede quedarse en Panel (lo cazó `GroupInviteOnboardingUITests`). Buscar (los 50 ms de una pestaña
     temporal) y Más (al ensanchar con Más elegida) también se quitan, no se ocultan.
+  - **Cambiar la configuración guardada con la barra viva también la tumba** (card fozu, 2026-10-27, iOS 27.0):
+    guardar otra barra reordena las seis montadas y cambia cuáles van ocultas, y cambiar solo Estadísticas por
+    Registros cerraba la app al guardar (`-[UITab viewController]` desde `setTabs:animated:`, 2 de 2); Jürgen vio
+    Grupos y Registros en negro hasta matar la app. ⇒ **la `TabView` lleva `.id(tabConfig.activeTabs)`**: con otra
+    configuración nace de nuevo, como en un arranque. Y mientras el editor de Más está abierto
+    (`SceneNavigation.isEditingTabBarLayout`) la barra se queda con la que tenía (`TabBarLayoutFreeze`): remontarla al
+    guardar cerraba el editor de golpe. Un escritor nuevo de la configuración con la app abierta pasa por ahí, no la
+    cambia en sitio. Test: `CustomTabBarUITests`.
   El orden es el mismo en los dos tamaños y en el iPhone la barra no cambia (medido al píxel). **Barra lateral plana,
   sin `TabSection`**: una sección que solo exista en regular cambia el árbol en cada redimensionado, y una permanente
   reordena la barra del iPhone, que el usuario ordena a mano (`TabBarConfigView`).

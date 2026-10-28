@@ -4242,8 +4242,13 @@ struct MainTabView: View {
     /// pestaña). Ver `scheduleForeignPresentationRedrain`.
     @State private var foreignPresentationRedrain: Task<Void, Never>?
 
+    /// La configuración que la barra tiene MONTADA mientras el editor de Más está abierto; `nil` fuera de él, y entonces
+    /// la barra sigue a la guardada. Al cerrarse el editor vuelve a `nil` y la barra se monta de nuevo con lo elegido
+    /// (`.id(tabConfig.activeTabs)`, card fozu). Ver `SceneNavigation.isEditingTabBarLayout`.
+    @State private var frozenTabConfigJSON: String?
+
     private var tabConfig: TabBarConfiguration {
-        TabBarConfiguration.fromJSON(tabConfigJSON)
+        TabBarConfiguration.fromJSON(frozenTabConfigJSON ?? tabConfigJSON)
     }
 
     /// El eje 1 se lee del espejo OBSERVABLE de `SessionState` y no de la marca persistida: esta
@@ -4359,6 +4364,19 @@ struct MainTabView: View {
                     }
                 }
             }
+            // La barra que el usuario elige se monta de NUEVO, no se recoloca en caliente (card fozu, 2026-10-27).
+            // Guardar otra configuración reordena las seis páginas montadas y cambia cuáles van ocultas; UIKit no
+            // aguanta ese cambio sobre una barra viva: cambiar Estadísticas por Registros cerraba la app al guardar
+            // (`-[UITab viewController]` desde `setTabs:animated:`, medido 2 de 2 en iOS 27.0), y Jürgen vio Grupos y
+            // Registros en negro hasta matar la app. Con otra identidad la `TabView` nace con el orden nuevo, como en
+            // un arranque. Solo la configuración GUARDADA: la pestaña temporal y la shell de solo grupos siguen
+            // cambiando en sitio, como antes. Con el editor de Más abierto la barra se queda como estaba
+            // (`frozenTabConfigJSON`): montarla de nuevo ahí cerraba el editor al guardar.
+            .id(tabConfig.activeTabs)
+            .modifier(TabBarLayoutFreeze(
+                isEditing: navigation.isEditingTabBarLayout,
+                storedJSON: tabConfigJSON,
+                frozenJSON: $frozenTabConfigJSON))
             .tabViewStyle(.sidebarAdaptable)
             // La pestaña elegida es texto e icono sobre la barra: el acento de texto (card 1c9w).
             .tint(theme.accentText)
@@ -4422,6 +4440,7 @@ struct MainTabView: View {
             // retenía `.panel` y la matriz del shell para el resto de la sesión (review adversarial, 2026-10-02).
             .onDisappear {
                 navigation.isMainTabModalVisible = false
+                navigation.isEditingTabBarLayout = false
                 cancelForeignPresentationRedrain()
             }
             .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
@@ -4694,6 +4713,18 @@ struct MainTabView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+/// Congela la barra de pestañas mientras el editor de Más está abierto: guarda la configuración montada al abrirse y la
+/// suelta al cerrarse, para que la barra se monte de nuevo con lo elegido sin llevarse el editor por delante (card fozu).
+private struct TabBarLayoutFreeze: ViewModifier {
+    let isEditing: Bool
+    let storedJSON: String
+    @Binding var frozenJSON: String?
+
+    func body(content: Content) -> some View {
+        content.onChange(of: isEditing, initial: true) { _, editing in frozenJSON = editing ? storedJSON : nil }
     }
 }
 
