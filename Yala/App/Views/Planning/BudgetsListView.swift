@@ -50,14 +50,8 @@ struct BudgetsListView: View {
                         }
                     }
 
-                    // Segmented Picker período (Weekly/Monthly/Yearly/Unique).
-                    // SIN padding horizontal externo — las cards de BudgetRowView usan
-                    // `.padding(.lg)` INTERNO y `.solidCard` sin padding externo, así
-                    // llegan al borde del ScrollView. El picker debe igualar ese ancho.
-                    periodTypeSegmentedControl
-
-                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). Encima del período,
-                    // como en Pagos planificados (Jürgen, 2026-10-26, card 91in).
+                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). Encima del selector de tipo
+                    // (Semanal / Mensual / Anual / Único), no entre él y el período (Jürgen, 2026-10-28, card 91in).
                     TopPrimaryActionPill(
                         title: L10n.Accessibility.newBudget,
                         systemImage: "plus",
@@ -67,6 +61,12 @@ struct BudgetsListView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, DS.Spacing.xs)
                     .revealsFloatingActionWhenScrolledAway($showFloatingNew)
+
+                    // Segmented Picker período (Weekly/Monthly/Yearly/Unique).
+                    // SIN padding horizontal externo — las cards de BudgetRowView usan
+                    // `.padding(.lg)` INTERNO y `.solidCard` sin padding externo, así
+                    // llegan al borde del ScrollView. El picker debe igualar ese ancho.
+                    periodTypeSegmentedControl
 
                     // PeriodNavigationHeader shared (oculto en .unique mode)
                     if selectedSegment != 3 {

@@ -766,7 +766,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
 | personal-sync-does-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/personal-sync-does-not-retry-a-401-with-a-forced-token-refresh.md |
 | personal-sync-reads-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/personal-sync-reads-an-offline-token-refresh-as-a-session-expiry.md |
-| personalization-shows-two-back-buttons | backlog | tickets/backlog/personalization-shows-two-back-buttons.md |
+| personalization-shows-two-back-buttons | done | tickets/done/personalization-shows-two-back-buttons.md |
 | phone-with-the-clock-behind-loses-after-seeing-the-row | backlog | tickets/backlog/phone-with-the-clock-behind-loses-after-seeing-the-row.md |
 | pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
 | post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
