@@ -183,6 +183,16 @@ final class ExportFiltersStepViewModel {
         return CurrencyCode.allCases.filter { accountCurrencies.contains($0) }
     }
 
+    /// En «Ocultar», las monedas de lo que QUEDA a la vista: las de las cuentas que no se ocultan. En ese modo las cuentas
+    /// marcadas son las que desaparecen, así que `availableCurrencies(selectedAccounts:)` daría las de lo oculto (review
+    /// del lote panel-filtros-moneda, 2026-10-28). Las archivadas cuentan: sus registros también se exportan.
+    func currenciesLeftInView(hiding selectedAccounts: Set<PersistentIdentifier>) -> [CurrencyCode] {
+        let hidden = Set(exportedAccounts(selectedAccounts: selectedAccounts).map(\.persistentModelID))
+        let shown = Set(allAccounts.filter { !hidden.contains($0.persistentModelID) }
+            .map { CurrencyCode(rawValue: $0.currencyCode) ?? .pen })
+        return CurrencyCode.allCases.filter { shown.contains($0) }
+    }
+
     func subcategories(for category: Category) -> [Subcategory] {
         allSubcategories.filter { sub in
             sub.category == category && sub.isVisible

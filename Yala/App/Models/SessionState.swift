@@ -389,7 +389,10 @@ class SessionState {
 
     /// Selected currencies (empty = all currencies)
     var selectedCurrencies: Set<CurrencyCode> = [] {
-        didSet { if overlaps(excludedCurrencies, selectedCurrencies) { excludedCurrencies.subtract(selectedCurrencies) } }
+        didSet {
+            if overlaps(excludedCurrencies, selectedCurrencies) { excludedCurrencies.subtract(selectedCurrencies) }
+            revalidateAmountCurrency()
+        }
     }
 
     // MARK: - Lo oculto (opción B de Jürgen, 2026-10-12)
@@ -418,7 +421,10 @@ class SessionState {
         didSet { if overlaps(selectedTags, excludedTags) { selectedTags.subtract(excludedTags) } }
     }
     var excludedCurrencies: Set<CurrencyCode> = [] {
-        didSet { if overlaps(selectedCurrencies, excludedCurrencies) { selectedCurrencies.subtract(excludedCurrencies) } }
+        didSet {
+            if overlaps(selectedCurrencies, excludedCurrencies) { selectedCurrencies.subtract(excludedCurrencies) }
+            revalidateAmountCurrency()
+        }
     }
 
     /// ¿Hay que quitar del otro conjunto lo que acaba de entrar en este? El último en escribir gana. Se comprueba ANTES de
@@ -550,7 +556,46 @@ class SessionState {
     }
 
     /// Amount filter condition
-    var amountCondition: AmountFilterCondition = .any
+    var amountCondition: AmountFilterCondition = .any {
+        didSet { if !amountCondition.isActive, amountCurrency != nil { amountCurrency = nil } }
+    }
+
+    /// La moneda en la que compara el monto aplicado: la única que quedaba a la vista al aplicarlo
+    /// (`RecordsAmountFilterCurrencyLogic`). El monto compara cada registro en SU moneda, así que solo vale mientras esa
+    /// siga siendo la única a la vista. `nil` con un monto activo: lo escribió alguien que no sabe la moneda (tests, un
+    /// escritor nuevo) y la guarda no lo toca. **Un escritor nuevo de un monto activo pasa por `applyAmountFilter`.**
+    private(set) var amountCurrency: CurrencyCode?
+
+    /// Aplica un monto con la moneda en la que compara. Lo escribe la hoja de Registros › Filtros.
+    func applyAmountFilter(_ condition: AmountFilterCondition, in currency: CurrencyCode?) {
+        amountCondition = condition
+        amountCurrency = condition.isActive ? currency : nil
+    }
+
+    /// Las monedas con registros (`CurrenciesWithRecords`, la cuenta de la hoja). Lo instala el arranque; sin él (tests de
+    /// unidad), la guarda del monto no actúa. `nil` del cierre: no se pudo contar, y tampoco actúa.
+    @ObservationIgnored var currenciesWithRecords: (() -> [CurrencyCode]?)?
+
+    func installCurrenciesWithRecordsSource(_ context: ModelContext) {
+        currenciesWithRecords = { [weak context] in
+            guard let context else { return nil }
+            return CurrenciesWithRecords.load(in: context)
+        }
+    }
+
+    /// Vacía el monto cuando su moneda deja de ser la única a la vista, lo cambie quien lo cambie: la ✕ de una moneda en la
+    /// barra, «Ver solo / Ocultar» desde un segmento, o el primer registro en una moneda nueva (ticket
+    /// `applied-amount-filter-keeps-filtering-after-its-currency-changes`). Hasta el 2026-10-28 solo lo decidía la hoja
+    /// al aplicar, y el monto seguía comparando cada registro en su propia moneda. Vaciar y no avisar: la cápsula del
+    /// monto desaparece de la barra, que es lo que se ve.
+    func revalidateAmountCurrency() {
+        guard !isBatchingFilterUpdate, amountCondition.isActive, let stamped = amountCurrency,
+              let available = currenciesWithRecords?() else { return }
+        guard !RecordsAmountFilterCurrencyLogic.keepsAmount(
+            appliedIn: stamped, included: selectedCurrencies, excluded: excludedCurrencies, available: available
+        ) else { return }
+        amountCondition = .any
+    }
 
     /// Search text for note filtering
     var searchText: String = ""
@@ -587,6 +632,8 @@ class SessionState {
         isBatchingFilterUpdate = true
         block()
         isBatchingFilterUpdate = false
+        // Con las dos listas y el monto ya escritos: la guarda no actuó a mitad del volcado.
+        revalidateAmountCurrency()
     }
 
     // MARK: - Actions
@@ -619,6 +666,24 @@ class SessionState {
     func forgetDeletedAccount(_ id: PersistentIdentifier) {
         if selectedAccountIDs.contains(id) { selectedAccountIDs.remove(id) }
         if excludedAccountIDs.contains(id) { excludedAccountIDs.remove(id) }
+    }
+
+    /// Lo mismo para categorías, subcategorías y etiquetas (ticket `combined-filters-edge-cases-after-option-b`, borde 2):
+    /// un valor oculto que se borra dejaba su id en `excluded*`, y la barra del Panel salía sin cápsulas y sin ✕ porque
+    /// `hasExcludedFilters` contaba el id y `ExcludedFilterChips` no encontraba nada que pintar. Se va de las dos listas.
+    /// Lo llaman los borrados de la persona (`EntityDeletionService` y la lista de Categorías de Ajustes); lo que borra
+    /// otro dispositivo, el deduplicador o una fusión deja el id, como con las cuentas.
+    func forgetDeletedFilterValues(
+        categories: Set<PersistentIdentifier> = [],
+        subcategories: Set<PersistentIdentifier> = [],
+        tags: Set<PersistentIdentifier> = []
+    ) {
+        if !selectedCategoryIDs.isDisjoint(with: categories) { selectedCategoryIDs.subtract(categories) }
+        if !excludedCategoryIDs.isDisjoint(with: categories) { excludedCategoryIDs.subtract(categories) }
+        if !selectedSubcategoryIDs.isDisjoint(with: subcategories) { selectedSubcategoryIDs.subtract(subcategories) }
+        if !excludedSubcategoryIDs.isDisjoint(with: subcategories) { excludedSubcategoryIDs.subtract(subcategories) }
+        if !selectedTags.isDisjoint(with: tags) { selectedTags.subtract(tags) }
+        if !excludedTags.isDisjoint(with: tags) { excludedTags.subtract(tags) }
     }
 
     /// Toggle account filter (single-select behavior for Panel compatibility)
@@ -843,6 +908,8 @@ class SessionState {
 
     func incrementDataVersion() {
         dataVersion += 1
+        // El primer registro en una moneda nueva cambia lo que queda a la vista sin tocar el filtro.
+        revalidateAmountCurrency()
     }
 
     /// Peticiones de asentamiento tras un borrado DELIBERADO hecho fuera de `ContentView` —hoy, «Vaciar datos»—. Lo

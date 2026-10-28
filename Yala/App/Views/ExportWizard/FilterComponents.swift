@@ -75,6 +75,8 @@ struct FilterSelectionRow: View {
 struct AmountFilterView: View {
     @Binding var condition: AmountFilterCondition
     var currencyCode: CurrencyCode?
+    /// Lo que dice sin moneda. `nil`: «Selecciona una única moneda…».
+    var noCurrencyMessage: String? = nil
 
     // Estados locales para los campos de texto
     @State private var value1: String = ""
@@ -161,7 +163,7 @@ struct AmountFilterView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                    Text(L10n.Export.selectSingleCurrency)
+                    Text(noCurrencyMessage ?? L10n.Export.selectSingleCurrency)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                 }

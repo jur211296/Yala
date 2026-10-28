@@ -23,6 +23,14 @@ struct CategorySelectorSheet: View {
 
     @Binding var selectedSubcategories: Set<PersistentIdentifier>
 
+    /// Las subcategorías que están en la OTRA lista de la hoja de Registros («Ocultar» mirando «Mostrar solo», o al revés).
+    /// Se marcan con el contorno de cuentas, etiquetas y monedas, también en la fila de su categoría plegada: elegir
+    /// Comida entera las pasa a esta lista, y antes no se veía que una ya estaba en la otra (ticket
+    /// `combined-filters-edge-cases-after-option-b`, borde 1). Exportar no tiene dos listas y lo deja vacío.
+    var otherListSubcategories: Set<PersistentIdentifier> = []
+    /// El color del contorno: rojo si la otra lista es la de lo oculto, el acento si es la de lo visto solo.
+    var otherListMarkColor: Color = .clear
+
     // MARK: - Local State
 
     @State private var expandedCategories: Set<PersistentIdentifier> = []
@@ -129,6 +137,7 @@ struct CategorySelectorSheet: View {
                             .foregroundStyle(.white)
                             .accessibilityHidden(true)
                     )
+                    .overlay { otherListMark(hasSubcategoryInOtherList(category)) }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(category.name)
@@ -196,6 +205,7 @@ struct CategorySelectorSheet: View {
                             .foregroundStyle(.white)
                             .accessibilityHidden(true)
                     )
+                    .overlay { otherListMark(otherListSubcategories.contains(subcategory.persistentModelID)) }
 
                 Text(subcategory.name)
                     .foregroundStyle(.primary)
@@ -220,6 +230,22 @@ struct CategorySelectorSheet: View {
     }
 
     // MARK: - Helpers
+
+    /// El contorno de lo que está en la otra lista, por fuera del círculo para no tapar el icono.
+    @ViewBuilder
+    private func otherListMark(_ isInOtherList: Bool) -> some View {
+        if isInOtherList {
+            Circle()
+                .strokeBorder(otherListMarkColor, lineWidth: 1.5)
+                .padding(-DS.Spacing.xxs)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func hasSubcategoryInOtherList(_ category: Category) -> Bool {
+        !otherListSubcategories.isEmpty
+            && visibleSubcategories(for: category).contains { otherListSubcategories.contains($0.persistentModelID) }
+    }
 
     private var visibleSubcategories: [Subcategory] {
         subcategories.filter { $0.isVisible }

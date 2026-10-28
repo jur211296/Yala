@@ -89,7 +89,7 @@ struct ExportRecordsView: View {
             selectedSubcategories: selectedSubcategories,
             selectedTags: selectedTags,
             selectedCurrencies: selectedCurrencies,
-            amountCondition: amountCondition,
+            amountCondition: effectiveAmountCondition,
             selectedPeriod: periodChoice.detailPeriod,
             customDateRange: customDateRange,
             noteContains: noteContains,
@@ -102,8 +102,22 @@ struct ExportRecordsView: View {
     }
 
     private var isAmountValid: Bool {
-        if case .between(let min, let max) = amountCondition { return min <= max }
+        if case .between(let min, let max) = effectiveAmountCondition { return min <= max }
         return true
+    }
+
+    /// La moneda del monto (`ExportRecordsLogic.amountCurrency`): nunca una oculta. En «Ocultar» las disponibles son las
+    /// de las cuentas que se exportan, no las de las marcadas (que se ocultan).
+    private var amountCurrencyCode: CurrencyCode? {
+        ExportRecordsLogic.amountCurrency(
+            marked: selectedCurrencies,
+            available: isExcludeMode ? viewModel.currenciesLeftInView(hiding: selectedAccounts) : availableCurrencies,
+            isExcludeMode: isExcludeMode
+        )
+    }
+
+    private var effectiveAmountCondition: AmountFilterCondition {
+        ExportRecordsLogic.effectiveAmount(amountCondition, currency: amountCurrencyCode)
     }
 
     private var canExport: Bool {
@@ -128,7 +142,7 @@ struct ExportRecordsView: View {
             selectedTags: selectedTags.count, allTags: viewModel.allTags.count,
             selectedNeeds: selectedNeeds.count, allNeeds: SubcategoryNeed.allCases.count,
             selectedCurrencies: chosenCurrencies, availableCurrencies: allCurrencies.count,
-            amountIsActive: amountCondition.isActive,
+            amountIsActive: effectiveAmountCondition.isActive,
             note: noteContains,
             isExcludeMode: isExcludeMode)
     }
@@ -397,7 +411,9 @@ struct ExportRecordsView: View {
             Divider().padding(.leading, DS.Spacing.lg)
             AmountFilterView(
                 condition: $amountCondition,
-                currencyCode: selectedCurrencies.count == 1 ? selectedCurrencies.first : nil
+                currencyCode: amountCurrencyCode,
+                // En «Ocultar» lo marcado es lo que desaparece: «elige una sola» diría lo contrario.
+                noCurrencyMessage: isExcludeMode ? L10n.UXL8C.Filters.amountNeedsOneVisibleCurrency : nil
             )
             Divider().padding(.leading, DS.Spacing.lg)
             noteContent

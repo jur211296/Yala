@@ -327,9 +327,8 @@ struct FilterService {
             }
         }
 
-        // Amount filter (absolute value) — no tiene «ocultar»
-        let amount = Decimal(transaction.amount)
-        guard criteria.amountCondition.matches(abs(amount)) else { return false }
+        // Amount filter (absolute value) — no tiene «ocultar». La regla vive en `AmountFilterCondition.matches(signedAmount:)`.
+        guard criteria.amountCondition.matches(signedAmount: transaction.amount) else { return false }
 
         // Currency filter
         if !criteria.currencyFilter.matches(CurrencyCode(rawValue: transaction.currencyCode)) { return false }

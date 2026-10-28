@@ -7,7 +7,7 @@ import Foundation
 /// que queda sin ocultar de las que tienen registros. Hasta el 2026-10-25 «Ocultar» con una moneda marcada filtraba en
 /// esa misma moneda, la que se estaba ocultando (ticket `hidden-single-currency-still-filters-the-amount-in-it`). Desde
 /// ese día las dos listas conviven (opción B) y la regla mira las dos.
-enum RecordsAmountFilterCurrencyLogic {
+nonisolated enum RecordsAmountFilterCurrencyLogic {
     /// - Parameters:
     ///   - included: monedas de «Mostrar solo».
     ///   - excluded: monedas de «Ocultar».
@@ -25,5 +25,16 @@ enum RecordsAmountFilterCurrencyLogic {
         }
         let visible = available.filter { !excluded.contains($0) }
         return visible.count == 1 ? visible.first : nil
+    }
+
+    /// ¿Sigue valiendo un monto aplicado en `appliedIn`? Solo si esa sigue siendo la única moneda a la vista: con otra, o
+    /// con varias, compararía cada registro en su propia moneda (`SessionState.revalidateAmountCurrency`).
+    static func keepsAmount(
+        appliedIn currency: CurrencyCode,
+        included: Set<CurrencyCode>,
+        excluded: Set<CurrencyCode>,
+        available: [CurrencyCode]
+    ) -> Bool {
+        self.currency(included: included, excluded: excluded, available: available) == currency
     }
 }

@@ -1,10 +1,10 @@
 ---
 id: panel-pies-amount-filter-uses-signed-amount
-status: backlog
+status: done
 priority: medium
 area: "panel, filters"
 created: 2026-10-26
-updated: 2026-10-26
+updated: 2026-10-28
 source: "review adversarial de stats-filter-segment-tap-should-ask-include-or-exclude (2026-10-26), medido en el código"
 ---
 
@@ -27,3 +27,11 @@ del Panel. Las mismas cifras del mismo filtro no cuadran entre pantallas.
 
 Comparar `abs` también en el Panel (la regla de `FilterService`) y fijarlo en `CombinedFiltersScreenParityTests` con un
 caso de importe.
+
+## Resolución (2026-10-28, lote panel-filtros-moneda)
+
+Medido: con `origin/2.2` los casos de `PanelPiesFilterParityTests` salen rojos (las tartas solo dejaban pasar los
+ingresos con «Mayor a 100»). Arreglo: una sola regla del monto, `AmountFilterCondition.matches(signedAmount:)` (valor
+absoluto, la de `FilterService`), que usan `FilterService`, las tartas y tops del Panel (`buildPieContextTransactions`)
+y Exportar. La paridad Panel ↔ Registros la fija `PanelPiesFilterParityTests` (una fila por moneda, gasto e ingreso por
+encima y por debajo del umbral).

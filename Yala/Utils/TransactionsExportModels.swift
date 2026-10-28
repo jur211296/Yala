@@ -45,6 +45,15 @@ enum AmountFilterCondition: Hashable {
         }
     }
 
+    /// La regla del filtro de monto en toda la app: el importe SIN signo, en la moneda del registro. Un gasto de 150 es
+    /// «mayor que 100» igual que un ingreso de 150. La usan Registros, Estadísticas e Informe (`FilterService`), las
+    /// tartas y tops del Panel y Exportar; hasta el 2026-10-28 las dos últimas comparaban con signo y «Mayor a 100» dejaba
+    /// fuera todos los gastos (tickets `panel-pies-amount-filter-uses-signed-amount`,
+    /// `export-wizard-amount-filter-in-hidden-currency`). Un consumidor nuevo del monto pasa por aquí.
+    func matches(signedAmount: Double) -> Bool {
+        matches(abs(Decimal(signedAmount)))
+    }
+
     /// Indica si la condición aplica algún filtro real (distinto de "cualquiera").
     var isActive: Bool {
         switch self {

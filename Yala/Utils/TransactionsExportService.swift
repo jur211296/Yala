@@ -381,10 +381,8 @@ struct TransactionsExportService {
                 }
             }
 
-            // 5) Filtro por monto utilizando `AmountFilterCondition`.
-            // amount es Double en tu modelo, lo convertimos a Decimal para el filtro.
-            let amountDecimal = Decimal(transaction.amount)
-            if !filters.amountCondition.matches(amountDecimal) {
+            // 5) Filtro por monto: sin signo, la regla de `FilterService`. Con signo, «Mayor a 100» dejaba fuera los gastos.
+            if !filters.amountCondition.matches(signedAmount: transaction.amount) {
                 return false
             }
 
