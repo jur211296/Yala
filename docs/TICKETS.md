@@ -126,7 +126,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox | backlog | tickets/backlog/apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | done | tickets/done/applepay-shortcut-warm-launch-empty-data.md |
-| applied-amount-filter-keeps-filtering-after-its-currency-changes | backlog | tickets/backlog/applied-amount-filter-keeps-filtering-after-its-currency-changes.md |
+| applied-amount-filter-keeps-filtering-after-its-currency-changes | done | tickets/done/applied-amount-filter-keeps-filtering-after-its-currency-changes.md |
 | apply-better-ui-emil-design-eng-rules-to-redesigns | discarded | tickets/discarded/apply-better-ui-emil-design-eng-rules-to-redesigns.md |
 | apply-overwrites-a-pending-local-write-without-its-guards | done | tickets/done/apply-overwrites-a-pending-local-write-without-its-guards.md |
 | apppreferences-rewritten-on-launch | done | tickets/done/apppreferences-rewritten-on-launch.md |
@@ -280,7 +280,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
 | cobertura-ui-diaria-cuelga-del-push | discarded | tickets/discarded/cobertura-ui-diaria-cuelga-del-push.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | done | tickets/done/cola-b-redesigns-must-hold-up-at-ipad-width.md |
-| combined-filters-edge-cases-after-option-b | backlog | tickets/backlog/combined-filters-edge-cases-after-option-b.md |
+| combined-filters-edge-cases-after-option-b | done | tickets/done/combined-filters-edge-cases-after-option-b.md |
 | comparative-and-statistics-pick-the-comparison-with-different-controls | backlog | tickets/backlog/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
 | complete-account-invite-adopt-can-pull-groups-before-the-guard | backlog | tickets/backlog/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
@@ -376,7 +376,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-file-insides-still-say-transacciones | backlog | tickets/backlog/export-file-insides-still-say-transacciones.md |
 | export-filters-reset-when-the-text-size-changes | backlog | tickets/backlog/export-filters-reset-when-the-text-size-changes.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
-| export-wizard-amount-filter-in-hidden-currency | backlog | tickets/backlog/export-wizard-amount-filter-in-hidden-currency.md |
+| export-hide-mode-with-the-defaults-exports-nothing | backlog | tickets/backlog/export-hide-mode-with-the-defaults-exports-nothing.md |
+| export-wizard-amount-filter-in-hidden-currency | done | tickets/done/export-wizard-amount-filter-in-hidden-currency.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | exported-csv-cannot-be-imported-back | backlog | tickets/backlog/exported-csv-cannot-be-imported-back.md |
 | external-entry-panel-link-loses-the-typed-amount-intermittently | backlog | tickets/backlog/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
@@ -743,8 +744,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | done | tickets/done/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-new-record-greyed-out-silently-after-a-fresh-onboarding | done | tickets/done/panel-new-record-greyed-out-silently-after-a-fresh-onboarding.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
-| panel-pies-amount-filter-uses-signed-amount | backlog | tickets/backlog/panel-pies-amount-filter-uses-signed-amount.md |
-| panel-pies-ignore-hidden-currency-and-compare-signed-amount | backlog | tickets/backlog/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
+| panel-pies-amount-filter-uses-signed-amount | done | tickets/done/panel-pies-amount-filter-uses-signed-amount.md |
+| panel-pies-ignore-hidden-currency-and-compare-signed-amount | done | tickets/done/panel-pies-ignore-hidden-currency-and-compare-signed-amount.md |
 | panel-says-nothing-when-cloud-sync-needs-sign-in | qa | tickets/qa/panel-says-nothing-when-cloud-sync-needs-sign-in.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |
 | panel-stayed-filtered-after-removing-the-account-chip | backlog | tickets/backlog/panel-stayed-filtered-after-removing-the-account-chip.md |

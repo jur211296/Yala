@@ -1559,7 +1559,8 @@ final class PanelViewModel {
     }
 
     /// Build pie chart transactions: filtered WITHOUT category/subcategory for dimming behavior
-    private func buildPieContextTransactions(
+    /// Interno y no privado para `PanelPiesFilterParityTests`, que lo compara con Registros.
+    func buildPieContextTransactions(
         from transactions: [TransactionItem],
         eligibleAccountIDs: Set<PersistentIdentifier>,
         effectiveInterval: DateInterval
@@ -1620,11 +1621,9 @@ final class PanelViewModel {
                 return false
             }
 
-            // Amount Filter
-            if amountCondition.isActive {
-                let amountDecimal = Decimal(transaction.amount)
-                if !amountCondition.matches(amountDecimal) { return false }
-            }
+            // Monto: la regla de `FilterService`, sin signo. Con signo, «Mayor a 100» vaciaba las tartas de gasto
+            // (ticket `panel-pies-amount-filter-uses-signed-amount`).
+            if amountCondition.isActive, !amountCondition.matches(signedAmount: transaction.amount) { return false }
 
             // Search/Note Filter
             if !searchText.isEmpty {

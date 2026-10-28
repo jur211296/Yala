@@ -99,6 +99,8 @@ final class EntityDeletionService {
         }
 
         let context = try requireContext()
+        let categoryID = category.persistentModelID
+        let subcategoryIDs = Set(subcategories.map(\.persistentModelID))
 
         // Delete subcategories first to avoid SwiftUI @Query conflicts
         for subcategory in subcategories {
@@ -110,6 +112,8 @@ final class EntityDeletionService {
 
         try context.save()
         context.processPendingChanges()
+        // Después del guardado, como con las cuentas: un borrado que falla deja el filtro como estaba.
+        SessionState.shared.forgetDeletedFilterValues(categories: [categoryID], subcategories: subcategoryIDs)
     }
 
     // MARK: - Subcategory Deletion
@@ -124,8 +128,10 @@ final class EntityDeletionService {
         }
 
         let affectedBudgets = subcategory.budgets ?? []
+        let subcategoryID = subcategory.persistentModelID
         try delete(subcategory)
         reencodeBudgetCSVMirrors(in: affectedBudgets)
+        SessionState.shared.forgetDeletedFilterValues(subcategories: [subcategoryID])
     }
 
     // MARK: - Tag Deletion
@@ -141,6 +147,7 @@ final class EntityDeletionService {
     /// re-encode loop can be slow.
     func deleteTag(_ tag: Tag) throws {
         let context = try requireContext()
+        let tagID = tag.persistentModelID
         let affectedBudgets = tag.budgets ?? []
         let affectedTXs = tag.transactions ?? []
         let affectedDrafts = tag.inboxDrafts ?? []
@@ -172,6 +179,7 @@ final class EntityDeletionService {
         }
         try context.save()
         context.processPendingChanges()
+        SessionState.shared.forgetDeletedFilterValues(tags: [tagID])
         SessionState.shared.incrementDataVersion()
     }
 

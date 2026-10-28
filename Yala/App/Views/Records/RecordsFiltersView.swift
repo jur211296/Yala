@@ -708,7 +708,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         CategorySelectorSheet(
             categories: filtersViewModel.allCategories,
             subcategories: filtersViewModel.allSubcategories,
-            selectedSubcategories: Binding(get: { editSubcategories }, set: { editSubcategories = $0 })
+            selectedSubcategories: Binding(get: { editSubcategories }, set: { editSubcategories = $0 }),
+            otherListSubcategories: isEditingHidden ? localSelectedSubcategories : localExcludedSubcategories,
+            otherListMarkColor: isEditingHidden ? theme.accent : DS.Semantic.errorForeground
         )
     }
 
@@ -943,8 +945,11 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             recordsViewModel.excludedNeeds = localExcludedNeeds
             recordsViewModel.excludedCurrencies = localExcludedCurrencies
             // Sin una moneda a la vista la hoja dice que el monto no se puede usar: tampoco se aplica (review del lote
-            // 12.5: seguía filtrando cada registro en su propia moneda).
-            recordsViewModel.amountCondition = amountCurrencyCode == nil ? .any : localAmountCondition
+            // 12.5: seguía filtrando cada registro en su propia moneda). Con ella, el monto se guarda con su moneda, y
+            // `SessionState` lo vacía si deja de ser la única a la vista por otro camino.
+            SessionState.shared.applyAmountFilter(
+                amountCurrencyCode == nil ? .any : localAmountCondition, in: amountCurrencyCode
+            )
             recordsViewModel.searchText = localSearchText
         }
     }

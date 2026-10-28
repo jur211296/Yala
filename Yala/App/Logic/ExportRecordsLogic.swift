@@ -72,6 +72,30 @@ nonisolated enum ExportRecordsLogic {
         return result
     }
 
+    /// La moneda del monto en Exportar: la única que queda a la vista, con la regla de Registros › Filtros
+    /// (`RecordsAmountFilterCurrencyLogic`). El asistente tiene UN modo para todo: en «Ocultar» las monedas marcadas son
+    /// las que desaparecen. Hasta el 2026-10-28 el campo se etiquetaba con la marcada también en «Ocultar», la moneda
+    /// oculta (ticket `export-wizard-amount-filter-in-hidden-currency`). Una marcada que no está entre las disponibles no
+    /// cuenta: el asistente arranca con todas marcadas.
+    static func amountCurrency(
+        marked: Set<CurrencyCode>,
+        available: [CurrencyCode],
+        isExcludeMode: Bool
+    ) -> CurrencyCode? {
+        let marked = marked.intersection(available)
+        return RecordsAmountFilterCurrencyLogic.currency(
+            included: isExcludeMode ? [] : marked,
+            excluded: isExcludeMode ? marked : [],
+            available: available
+        )
+    }
+
+    /// El monto que se aplica: sin una sola moneda a la vista, ninguno. La sección dice que no se puede usar, y un monto
+    /// escrito con una moneda que sigue puesto al marcar otra compararía cada registro en su propia moneda.
+    static func effectiveAmount(_ condition: AmountFilterCondition, currency: CurrencyCode?) -> AmountFilterCondition {
+        currency == nil ? .any : condition
+    }
+
     /// La línea sobre el botón: cuántos registros saldrán, o que no sale ninguno.
     enum CountLine: Equatable {
         /// Aún contando (al abrir, o tras cambiar un filtro): sin cifra, y el botón dice solo «Exportar».

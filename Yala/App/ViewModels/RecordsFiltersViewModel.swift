@@ -111,28 +111,10 @@ final class RecordsFiltersViewModel {
 
     private func loadCurrenciesWithTransactions() {
         guard let context = modelContext else { return }
-
-        // Check each unique account currency with fetchCount (~1-3 queries, no objects materialized)
-        var codes = Set<String>()
-        for currencyCode in Set(allAccounts.map { $0.currencyCode }) {
-            let code = currencyCode
-            let descriptor = FetchDescriptor<TransactionItem>(
-                predicate: #Predicate<TransactionItem> { $0.currencyCode == code }
-            )
-            do {
-                if try context.fetchCount(descriptor) > 0 {
-                    codes.insert(code)
-                }
-            } catch {
-                #if DEBUG
-                print("RecordsFiltersViewModel: Error counting transactions for currency: \(error)")
-                #endif
-            }
-        }
-        // Maintain consistent order with CurrencyCode.allCases
-        currenciesWithTransactions = CurrencyCode.allCases.filter {
-            codes.contains($0.rawValue)
-        }
+        // La misma cuenta que la guarda del monto de `SessionState` (`CurrenciesWithRecords`).
+        currenciesWithTransactions = CurrenciesWithRecords.load(
+            accountCurrencyCodes: Set(allAccounts.map { $0.currencyCode }), in: context
+        ).currencies
     }
 
     // MARK: - Helper Methods

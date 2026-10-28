@@ -183,6 +183,8 @@ final class CategoriesSettingsListViewModel {
             return
         }
 
+        let categoryID = category.persistentModelID
+        let subcategoryIDs = Set((category.subcategories ?? []).map(\.persistentModelID))
         // Delete subcategories first to avoid SwiftUI @Query conflicts
         for subcategory in category.subcategories ?? [] {
             context.delete(subcategory)
@@ -192,6 +194,7 @@ final class CategoriesSettingsListViewModel {
         do {
             try context.save()
             context.processPendingChanges()
+            SessionState.shared.forgetDeletedFilterValues(categories: [categoryID], subcategories: subcategoryIDs)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
             loadCategories()

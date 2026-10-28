@@ -13,6 +13,8 @@ paths:
   - "Yala/App/Views/Filters/**"
   - "Yala/Services/FilterService.swift"
   - "Yala/App/Logic/EntityFilter.swift"
+  - "Yala/App/Views/ExportWizard/**"
+  - "Yala/Utils/TransactionsExportService.swift"
 ---
 # Filtros de sesión
 
@@ -74,8 +76,27 @@ las dos listas, ya disjuntas).
   propio: así hereda las dos ramas.
 - **Los filtros de sesión no se guardan en disco** (medido el 2026-10-25): no hay migración de estado. El asistente de
   Exportar conserva su propio «Mostrar solo / Ocultar» local, a propósito.
+- **Borrar un valor lo quita del filtro** (2026-10-28): categorías, subcategorías y etiquetas pasan por
+  `SessionState.forgetDeletedFilterValues` en los borrados de la persona (`EntityDeletionService` y la lista de Categorías
+  de Ajustes), como las cuentas. Un borrador nuevo pasa por ahí; lo que borra otro dispositivo o el deduplicador deja el id.
+- **Una línea suelta oculta con su tarjeta en «Solo» NO existe**: la normalización de `selectedAccountIDs` la vuelve a
+  meter. Hoy ningún gesto la ofrece (ningún segmento crea `.account`; la hoja no ofrece líneas de una tarjeta elegida).
+  Quien abra ese gesto arregla antes `AccountCardLogic.normalizedSelection` Y el volcado en bloque de la hoja, que
+  normaliza las cuentas con la otra lista todavía vieja (ticket `combined-filters-edge-cases-after-option-b`, borde 3).
 
-La paridad de pantallas con los dos tipos a la vez la fija `CombinedFiltersScreenParityTests`.
+La paridad de pantallas con los dos tipos a la vez la fija `CombinedFiltersScreenParityTests`; la de las tartas del Panel
+con Registros en moneda y monto, `PanelPiesFilterParityTests`.
+
+## El monto: sin signo y en UNA moneda
+
+- **Compara el importe sin signo**, en la moneda del registro: `AmountFilterCondition.matches(signedAmount:)`, que usan
+  `FilterService`, las tartas del Panel y Exportar. Con signo, «Mayor a 100» deja fuera todos los gastos.
+- **Solo vale con una moneda a la vista** (`RecordsAmountFilterCurrencyLogic`). La hoja aplica el monto con su moneda
+  (`SessionState.applyAmountFilter`) y `revalidateAmountCurrency` lo VACÍA si deja de ser la única a la vista, lo cambie
+  quien lo cambie: las dos listas de monedas, el fin de `performBatchFilterUpdate` e `incrementDataVersion` (el primer
+  registro en una moneda nueva). Las monedas con registros salen de `CurrenciesWithRecords`, la misma cuenta que la hoja:
+  si divergen, la guarda vacía el monto que la hoja acaba de aplicar. **Un escritor nuevo de un monto activo pasa por
+  `applyAmountFilter`**: sin moneda apuntada la guarda no lo toca.
 
 ## Las dos pantallas resuelven la elegibilidad igual
 

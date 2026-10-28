@@ -115,6 +115,8 @@ final class AppBootstrapper {
         // Tarjeta con varias divisas (entrega 3): el filtro de cuentas de sesión incluye las líneas de la tarjeta elegida, y
         // para eso necesita leer las cuentas del contenedor montado. Antes de nada que pueda escribir un filtro.
         SessionState.shared.installAccountLinesSource(context)
+        // Y las monedas con registros, para la guarda del monto (`revalidateAmountCurrency`).
+        SessionState.shared.installCurrenciesWithRecordsSource(context)
 
         let uiTestActive = UITestHooks.isActive
         // Nota: applyUITestHooksEarly (reset/pro/skip-onboarding) se aplica en
