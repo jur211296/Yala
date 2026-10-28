@@ -440,11 +440,13 @@ enum FinancialScoreCalculator {
         return clamp(Int(composite.rounded()))
     }
 
-    /// Intervalo natural del período para Compromisos. `.thisMonth` → mes
-    /// calendario completo (no truncado a hoy); `.thisYear` → año completo.
-    /// Otros períodos retornan el `fallback` recibido (ya cerrado o no aplica).
-    /// Expuesto como `static` para que los callers (PanelViewModel,
-    /// DetailContainerView) carguen `paidAmounts` para el mismo rango.
+    /// Intervalo natural del período para Compromisos. `.thisWeek` → semana
+    /// completa; `.thisMonth` → mes calendario completo (no truncado a hoy);
+    /// `.thisYear` → año completo. Otros períodos retornan el `fallback` recibido
+    /// (ya cerrado, móvil hasta hoy o sin fin).
+    /// Lo usa también «Lo que te falta pagar» de Estadísticas › Resumen
+    /// (`InsightsCalculator`, decisión A de Jürgen del 2026-10-27: hasta el fin del período).
+    /// Aquí `.thisWeek` no llega: la puntuación descarta los períodos cortos antes.
     static func commitmentsInterval(
         period: DetailPeriod, fallback: DateInterval, now: Date = .now, calendar: Calendar = .current
     ) -> DateInterval {
@@ -454,6 +456,9 @@ enum FinancialScoreCalculator {
             DateInterval(start: interval.start, end: max(interval.start, interval.end.addingTimeInterval(-1)))
         }
         switch period {
+        case .thisWeek:
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else { return fallback }
+            return closed(weekInterval)
         case .thisMonth:
             guard let monthInterval = calendar.dateInterval(of: .month, for: now) else { return fallback }
             return closed(monthInterval)

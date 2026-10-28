@@ -407,13 +407,17 @@ struct InsightsCalculator {
             subscriptionsTotal: subscriptionsTotal
         )
 
-        // Commitments
+        // Commitments. «Lo que te falta pagar» de un período EN CURSO cuenta hasta su final, no hasta hoy (decisión A de
+        // Jürgen, 2026-10-27; ticket `insights-to-pay-this-month-leaves-out-the-rest-of-the-month`): el alquiler del 28,
+        // visto el 27, no salía. Solo los pendientes; el resto de la pantalla sigue cerrando hoy.
+        let pendingPaymentsInterval = FinancialScoreCalculator.commitmentsInterval(
+            period: period, fallback: interval, now: now, calendar: userConfiguredCalendar())
         let commitments = calculateCommitments(
             budgets: budgets,
             scheduledPayments: scheduledPayments,
             periodTxns: periodTxns,
             allTransactions: transactions,
-            interval: interval,
+            pendingPaymentsInterval: pendingPaymentsInterval,
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
@@ -635,14 +639,14 @@ struct InsightsCalculator {
         scheduledPayments: [ScheduledPayment],
         periodTxns: [TransactionItem],
         allTransactions: [TransactionItem],
-        interval: DateInterval,
+        pendingPaymentsInterval: DateInterval,
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> Commitments {
         let now = Date.now
 
-        // Pending scheduled payments (due within period, not yet executed)
+        // Pending scheduled payments (due within period, not yet executed). En un período en curso, hasta su final.
         var pendingCount = 0
         var pendingAmount: Double = 0
         var subscriptionCount = 0
@@ -670,7 +674,7 @@ struct InsightsCalculator {
             }
 
             // Check if next due date is within period
-            if interval.contains(payment.nextDueDate) {
+            if pendingPaymentsInterval.contains(payment.nextDueDate) {
                 pendingCount += 1
                 pendingAmount += amount
                 if payment.paymentCategory == PaymentCategory.subscription.rawValue {
