@@ -37,42 +37,108 @@ extension View {
 ///
 /// `showsTitleWhenUnselected`: con `false`, el nombre solo en el elegido (Estadísticas y Grupos, decisiones L11-1 y
 /// L12-1: con todos los nombres el último se cortaba). Con `true`, en todos (Planificación y Reportes, donde caben).
+///
+/// El chip pinta `isSelected` tal cual: si cambia dentro de una transacción animada, la cápsula cambia de ancho y los
+/// vecinos se recolocan en el mismo movimiento. Para que eso se vea, la pantalla cambia de chip con
+/// `NavigationChipButton.switchTab` y `animatesSwitch`; sin ellos (Planificación, Reportes, Grupos) el cambio llega sin
+/// animación, como siempre.
 struct NavigationChipButton: View {
     let title: String
     let icon: String
     let isSelected: Bool
     var showsTitleWhenUnselected = false
+    /// `true` si la pantalla cambia de chip con `NavigationChipButton.switchTab`, que pone su propia animación. Con
+    /// `false`, el toque llega con las animaciones apagadas; y apagadas así, ninguna transacción anidada las enciende
+    /// (medido en el simulador, iOS 27.0: con `switchTab` dentro, la fila seguía saltando).
+    var animatesSwitch = false
     let action: () -> Void
 
     @Environment(\.yalaTheme) private var theme
 
+    private var showsTitle: Bool { isSelected || showsTitleWhenUnselected }
+
+    /// El nombre entra fundido cuando la cápsula ya ha empezado a abrir sitio, y se va en el acto: con un fundido de
+    /// salida asomaba un resto del nombre al borde de la cápsula mientras esta se cerraba (medido en el simulador).
+    private static let titleTransition: AnyTransition = .asymmetric(
+        insertion: .opacity.animation(.easeOut(duration: DS.Animation.fast).delay(0.08)),
+        removal: .identity
+    )
+
     var body: some View {
         Button {
-            // Sin animación: el título grande de la pantalla parpadeaba al cambiar de chip.
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) { action() }
+            if animatesSwitch {
+                action()
+            } else {
+                // Sin animación: el título grande de la pantalla parpadeaba al cambiar de chip.
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { action() }
+            }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: icon)
                     .font(DS.Typography.subheadline)
                     .accessibilityHidden(true)
-                if isSelected || showsTitleWhenUnselected {
+                if showsTitle {
                     Text(title)
                         .font(DS.Typography.label)
                         .lineLimit(1)
+                        .transition(Self.titleTransition)
                 }
             }
-            .padding(.horizontal, isSelected || showsTitleWhenUnselected ? DS.Spacing.lg : DS.Spacing.md)
+            .padding(.horizontal, showsTitle ? DS.Spacing.lg : DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
             .frame(minWidth: 44)
             .foregroundStyle(isSelected ? theme.onAccent : .primary)
             .background(Capsule().fill(isSelected ? theme.accent : Color.clear))
+            // Lo que se va (el nombre que sale) se recorta a la cápsula mientras esta se estrecha.
+            .clipShape(.capsule)
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
         // El nombre se lee aunque el chip enseñe solo el icono.
         .accessibilityLabel(title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+extension NavigationChipButton {
+    static let switchAnimation: Animation = .snappy(duration: DS.Animation.normal)
+
+    /// Cambia de chip en dos tiempos: primero se anima la fila (`chips`) y, cuando la animación termina, se monta la
+    /// pestaña (`content`), sin animación.
+    ///
+    /// **Por qué en dos tiempos.** Montar una pestaña de Estadísticas bloquea el hilo principal: medido en el vídeo de
+    /// Jürgen del 2026-10-27 (iPhone, 60 fps), la pantalla se queda quieta 0,12–0,27 s tras cada toque, y en el
+    /// simulador 0,67 s. Las animaciones de SwiftUI avanzan en ese mismo hilo, así que si la fila se anima a la vez que
+    /// se monta la pestaña, la animación transcurre entera durante el bloqueo y al volver a pintar ya ha terminado: el
+    /// chip nuevo aparece ancho y el viejo estrecho de un fotograma al siguiente, «a tirones». Con el montaje detrás,
+    /// el bloqueo cae cuando la fila ya está quieta.
+    ///
+    /// El contenido sigue sin animarse (con animación parpadeaba el título grande). Con Reducir movimiento, las dos
+    /// cosas cambian a la vez y sin animación, como antes. Un segundo toque antes de que acabe gana: la pestaña del
+    /// primero ya no se monta.
+    static func switchTab<Tab: Equatable>(
+        to tab: Tab,
+        chips: Binding<Tab>,
+        content: Binding<Tab>,
+        reduceMotion: Bool
+    ) {
+        guard chips.wrappedValue != tab || content.wrappedValue != tab else { return }
+        var quiet = Transaction()
+        quiet.disablesAnimations = true
+        guard !reduceMotion else {
+            withTransaction(quiet) {
+                chips.wrappedValue = tab
+                content.wrappedValue = tab
+            }
+            return
+        }
+        var animated = Transaction(animation: switchAnimation)
+        animated.addAnimationCompletion(criteria: .logicallyComplete) {
+            guard chips.wrappedValue == tab, content.wrappedValue != tab else { return }
+            withTransaction(quiet) { content.wrappedValue = tab }
+        }
+        withTransaction(animated) { chips.wrappedValue = tab }
     }
 }
