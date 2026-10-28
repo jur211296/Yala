@@ -447,6 +447,15 @@ struct StorageSettingsView: View {
         tapActivate(controller, isAdopt: true)
     }
 
+    /// Card pz4v: el aviso del Panel pidió iniciar sesión. Se consume siempre al llegar; arranca solo si nada está en
+    /// marcha, con el mismo gesto que el botón de la tarjeta.
+    private func beginSyncSignInFromPanelIfRequested(_ controller: CloudMigrationController) {
+        guard SyncSignInRequest.pending else { return }
+        SyncSignInRequest.pending = false
+        guard !controller.isWorking else { return }
+        Task { await controller.signInToResumeSync() }
+    }
+
     private func beginActivation(_ controller: CloudMigrationController, isAdopt: Bool) {
         consentPath = isAdopt ? .adopt : .migration
         activationPlan = nil
@@ -683,6 +692,9 @@ struct StorageSettingsView: View {
                     Task { await controller.signInToResumeSync() }
                 }
                 .accessibilityIdentifier("storage_sync_signin_button")
+                // Card pz4v: «Iniciar sesión» del aviso del Panel llega aquí y arranca lo mismo que este botón, una vez.
+                // Cuelga del botón: solo existe cuando la tarjeta pide firmar, así que no repite sus condiciones.
+                .onAppear { beginSyncSignInFromPanelIfRequested(controller) }
             case .waitingForConnection(let pending):
                 // Gris y sin botón: es pasajero y no hay nada que pulsar —sube solo con el siguiente ciclo sano—, así que
                 // ni el verde del check ni el naranja de la puerta de firmar.

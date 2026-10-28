@@ -119,6 +119,11 @@ struct ContentView: View {
     @State private var whatsNewData: (features: [WhatsNewFeature], version: String)?
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
     @State private var isInitialCheckDone: Bool = false
+    /// Card 7e60 (2026-10-28): `presentNextOnboardingScreen` se calló porque el cierre de sesión esperaba reabrir. Tras un
+    /// cierre que cambia el almacén EN CALIENTE (`PersonalContainerSwap`), este `ContentView` se monta y decide su pantalla
+    /// con la fase todavía en `.awaitingRelaunch` —vuelve a `.idle` al terminar el re-bootstrap—, así que el Welcome no se
+    /// presentaba nunca y la persona se quedaba ante una pantalla sin nada que tocar. Lo recoge `signOutPhaseChanged`.
+    @State private var onboardingRoutingDeferredForRelaunch = false
     @State private var showGroupInviteOnboarding: Bool = false
     /// Marca del invite (nombre/icono/color del grupo) para personalizar el welcome de
     /// `GroupInviteOnboardingView`. La FUENTE es `PendingJoinStore` — ver el drain de
@@ -1350,6 +1355,21 @@ struct ContentView: View {
         if ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) != nil {
             drainContentViewIntents()
         }
+        resumeOnboardingRoutingDeferredForRelaunch()
+    }
+
+    /// Card 7e60: el cierre se consumó en caliente y volvió a reposo sin pedir reabrir. Lo que el arranque calló esperando
+    /// el relanzamiento se hace ahora, una vez: con el onboarding sin hacer, el Welcome. Si el cambio abortó, la fase se
+    /// queda en `.awaitingRelaunch` y esto no corre: el cover terminal sigue mandando y el destino del arranque siguiente
+    /// queda intacto (el motivo del `guard` de `presentNextOnboardingScreen`).
+    @MainActor
+    private func resumeOnboardingRoutingDeferredForRelaunch() {
+        guard SignOutDeferredRoutingLogic.resumes(deferred: onboardingRoutingDeferredForRelaunch,
+                                                  phase: CloudSessionSignOut.shared.phase) else { return }
+        onboardingRoutingDeferredForRelaunch = false
+        // Las guardas de los otros que lo llaman: con el Welcome o la invitación ya puestos, ellos mandan.
+        guard !hasCompletedOnboarding, !showWelcomeFlow, !showGroupInviteOnboarding else { return }
+        presentNextOnboardingScreen()
     }
 
     /// Drains one `.contentView` intent per revision bump. Single-intent
@@ -3107,7 +3127,10 @@ struct ContentView: View {
         // cambio en caliente que abortó con el contenedor vivo: se repone y este `ContentView` se monta otra vez. Seguir
         // aquí consumiría el destino que el arranque siguiente necesita (la persona aterrizaba en la portada en vez de
         // volver a crear el grupo o a la invitación) y presentaría el Welcome contra el cover (lo cazó la review).
-        guard CloudSessionSignOut.shared.phase != .awaitingRelaunch else { return }
+        guard CloudSessionSignOut.shared.phase != .awaitingRelaunch else {
+            onboardingRoutingDeferredForRelaunch = true
+            return
+        }
         #if DEBUG
         // uitest: ir directo al OnboardingView (salta Welcome Hero/Chooser) para
         // testear el flujo de onboarding aislado.

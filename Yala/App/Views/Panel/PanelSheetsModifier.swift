@@ -79,6 +79,8 @@ struct PanelSheetsModifier: ViewModifier {
                 // Card vbf9: una petición del aviso que no llegó a la tarjeta (la pantalla cambió entretanto) no se queda
                 // armada para la próxima vez que la persona abra «Dónde viven tus datos» por su cuenta.
                 CloudAdoptOfferRequest.pending = false
+                // Card pz4v: lo mismo para el «Iniciar sesión» del aviso de sincronización.
+                SyncSignInRequest.pending = false
                 viewModel.reloadAndRecalculate()
             }) {
                 ProfileView(initialDestination: sheets.settingsInitialDestination)

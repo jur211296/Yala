@@ -8231,6 +8231,8 @@ enum L10n {
                 ls("storage.sync.waitingForConnectionUncounted", comment: "")
             }
             static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
+            /// La segunda línea del aviso del Panel (card pz4v): la primera es la misma de esta pantalla.
+            static var panelNoticeBody: String { ls("panel.syncSignIn.body", comment: "") }
         }
 
         /// Los pasos con su cifra de «Activar la nube» y «Volver a iCloud» (opción B, ticket

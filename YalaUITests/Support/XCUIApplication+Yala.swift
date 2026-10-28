@@ -72,6 +72,7 @@ extension XCUIApplication {
         bornCloudStorage: Bool = false,
         // `-uitest-adopted-cloud-storage`: la nube, pero la cuenta llegó desde otro dispositivo (card i9qh).
         adoptedCloudStorage: Bool = false,
+        syncNeedsSignIn: Bool = false,
         reversePriorICloud: String? = nil,
         reversePriorICloudWipe: String? = nil,
         cloudProgress: String? = nil,
@@ -282,6 +283,7 @@ extension XCUIApplication {
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
         if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
         if adoptedCloudStorage { args.append("-uitest-adopted-cloud-storage") }
+        if syncNeedsSignIn { args.append("-uitest-sync-needs-sign-in") }
         if let reversePriorICloud {
             args.append("-uitest-reverse-prior-icloud")
             args.append(reversePriorICloud)

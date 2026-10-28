@@ -64,11 +64,18 @@ enum ReturningUserBeginnerTips {
         defaults.set(now.timeIntervalSince1970, forKey: pendingKey)
     }
 
-    /// Si hay una entrada pendiente y ya llegó algún movimiento anterior a ella, marca los tips como vistos.
-    /// Barato sin nada pendiente: una lectura de `UserDefaults`.
+    /// Si hay una entrada pendiente y ya llegó algún movimiento anterior a ella, marca los tips como vistos y retira
+    /// «Primeros pasos». Barato sin nada pendiente: una lectura de `UserDefaults`.
+    ///
+    /// **«Primeros pasos» también** (card ds09, 2026-10-28): en el 2.º iPhone de Jürgen salió «1 de 7» tras volver por «Ya
+    /// tengo una cuenta» con el 1.º en 7 de 7. Su progreso es local, como el de los tips, y el borrado lo reinicia
+    /// (`SetupChecklistManager.resetAll`); el criterio es el mismo —llegar con datos—, así que se resuelve en el mismo sitio.
+    /// `dismissSetupChecklist` se inyecta para que los tests no escriban en el `UserDefaults` del proceso; `nil` es el de verdad.
     @MainActor
     @discardableResult
-    static func settleIfPending(context: ModelContext, now: Date = .now, defaults: UserDefaults = .standard) -> Decision {
+    static func settleIfPending(context: ModelContext, now: Date = .now, defaults: UserDefaults = .standard,
+                                dismissSetupChecklist: (() -> Void)? = nil)
+        -> Decision {
         guard let raw = defaults.object(forKey: pendingKey) as? Double else { return .nothingPending }
         let since = Date(timeIntervalSince1970: raw)
         var descriptor = FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.createdAt < since })
@@ -86,6 +93,7 @@ enum ReturningUserBeginnerTips {
         switch decision {
         case .markSeen:
             for key in seenKeys { defaults.set(true, forKey: key) }
+            if let dismissSetupChecklist { dismissSetupChecklist() } else { SetupChecklistManager.shared.dismissCompleted() }
             defaults.removeObject(forKey: pendingKey)
         case .giveUp:
             defaults.removeObject(forKey: pendingKey)

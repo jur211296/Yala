@@ -140,6 +140,15 @@ paths:
   siguiente bump: `wipeAllUserData` no bumpea `dataVersion`, así que quien borra re-mide
   (`settleSignalsAfterDeliberateWipe`).
 
+- **Un `guard` que CALLA el arranque en una fase transitoria necesita quien lo retome cuando la fase pasa (card 7e60,
+  2026-10-28).** `presentNextOnboardingScreen` se calla con el cierre de sesión en `.awaitingRelaunch` (para no consumir
+  el destino del relanzamiento). Tras un cierre que cambia el almacén EN CALIENTE, el `ContentView` nuevo se monta y
+  decide su pantalla en esa fase —`checkInitialSyncState` no espera a nada—, y la fase vuelve a `.idle` después: sin
+  quien lo retomara, ni Welcome ni app ni pantalla de reabrir, y la persona lo vivió como un crash sin informe en
+  Sentry. ⇒ un `guard` así apunta lo que calló y el `onChange` de la fase lo retoma
+  (`onboardingRoutingDeferredForRelaunch` + `SignOutDeferredRoutingLogic`). El simulador no lo reproduce: monta con
+  espejo y el cambio en caliente se salta.
+
 - **Una decisión del arranque que lea el eje de sesión NO puede tomarse en el splash (medido el 2026-10-19).**
   `checkInitialSyncState` corre en paralelo a `AppBootstrapper.bootstrap`, y el eje (`PrivateSessionMark`) lo escribe
   el backfill del bootstrap: decidido en el splash, el aviso en frío de «iCloud no está disponible» no salía en ningún

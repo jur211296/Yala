@@ -398,6 +398,12 @@ final class UITestHooks {
     /// ENTRADA, no la decisión, y no persiste nada. Solo DEBUG.
     nonisolated static var fakeAdoptedCloudStorage: Bool { hasArg("-uitest-adopted-cloud-storage") }
 
+    /// `-uitest-sync-needs-sign-in` (card pz4v): `CloudMigrationController.refreshSyncBanner` da la puerta de firmar por
+    /// encendida, con 5 006 cambios esperando —la cifra que vio Jürgen—. Sin esto el aviso del Panel es inalcanzable en el
+    /// simulador: pide una sesión de la nube real que caduque. Con `-uitest-born-cloud-storage` el canal se lee estable y
+    /// salen el aviso del Panel y la tarjeta de Ajustes. Finge solo esa lectura; no persiste nada. Solo DEBUG.
+    nonisolated static var fakeSyncNeedsSignIn: Bool { hasArg("-uitest-sync-needs-sign-in") }
+
     /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|noAccount>`: lo que contesta la pregunta a iCloud antes
     /// de «Volver a iCloud» (`ICloudPersonalCorpusProbe.foreignCorpusForReverse`), que en el simulador no tiene CloudKit.
     /// `found`: 12 registros, 2 cuentas y 1 presupuesto ajenos; `foundGroups`: solo 9 registros de grupos, el caso del QA

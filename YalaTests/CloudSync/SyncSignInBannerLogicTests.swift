@@ -355,7 +355,15 @@ struct SyncSignInBannerLogicTests {
             """)))
         let refresher = try Self.squashedBody(of: "private func refreshSyncBanner() {",
                                               in: "Yala/Services/CloudSync/CloudMigrationController.swift")
+        // El seam de la card pz4v va delante y solo en DEBUG (`UITestHooks.fakeSyncNeedsSignIn`).
         #expect(refresher == Self.squash("""
+            #if DEBUG
+            if UITestHooks.fakeSyncNeedsSignIn {
+            syncNeedsSignIn = true
+            pendingUploadCount = 5006
+            return
+            }
+            #endif
             let banner = Self.syncSignInBanner(context: context, isCloud: CloudSyncFlags.storageMode == .cloud,
             runtimeState: CloudSyncRuntime.shared?.state,
             hasSession: CloudAuthService.shared.hasSession)
@@ -364,5 +372,51 @@ struct SyncSignInBannerLogicTests {
             """))
         // El atajo viejo —«hay sesión y hay token ⇒ despierta»— solo sobrevive con el candado del dominio cerrado.
         #expect(Self.squash(body).components(separatedBy: "await CloudAuthService.shared.accessToken() != nil").count == 2)
+    }
+
+    // MARK: - Card pz4v: el aviso del Panel (2026-10-28)
+
+    @Test("MUTACIÓN: el aviso del Panel sale con la puerta de Ajustes encendida, el canal estable y sin el del attest")
+    func panelNotice_truthTable() {
+        #expect(SyncSignInBannerLogic.showsPanelNotice(needsSignIn: true, channelIsStable: true, attestNoticeShowing: false))
+        // Cada término apaga el aviso él solo: sin la puerta de Ajustes no hay a dónde mandar el botón; con el canal en
+        // vuelo la tarjeta de Ajustes no existe; con el attest roto re-firmar no arregla nada.
+        #expect(!SyncSignInBannerLogic.showsPanelNotice(needsSignIn: false, channelIsStable: true, attestNoticeShowing: false))
+        #expect(!SyncSignInBannerLogic.showsPanelNotice(needsSignIn: true, channelIsStable: false, attestNoticeShowing: false))
+        #expect(!SyncSignInBannerLogic.showsPanelNotice(needsSignIn: true, channelIsStable: true, attestNoticeShowing: true))
+    }
+
+    @Test("MUTACIÓN: el Panel pinta el aviso detrás del del attest, nunca a la vez, y su botón pide la firma a Ajustes")
+    func panelNotice_wiring() throws {
+        let panel = Self.squash(try Self.source("Yala/App/Views/Panel/PanelView.swift"))
+        #expect(panel.contains("""
+            CloudAttestNoticeBanner(accessibilityID: "panel_attest_terminal_banner") .padding(DS.Spacing.md) \
+            .glassEffect(.regular) } else if let syncSignInNotice {
+            """))
+        #expect(panel.contains("SyncSignInRequest.pending = true sheets.settingsInitialDestination = .storageMode"))
+        // El aviso lee un `@State` que el cableado rellena tras cada `refresh()`, nunca el estático del controller desde el
+        // body: `@Observable` no rastrea `CloudMigrationController.shared` (review adversarial del 2026-10-28).
+        #expect(panel.contains(".cloudSignInNoticeWatcher($syncSignInNotice)"))
+        let banner = Self.squash(try Self.source("Yala/App/Views/Panel/CloudSignInNoticeBanner.swift"))
+        #expect(banner.contains("""
+            CloudMigrationController.shared?.refresh() let now = CloudSignInNotice.current() if now != value { value = now }
+            """))
+        // Ajustes la consume en el botón de la tarjeta, que solo existe cuando la tarjeta pide firmar.
+        let storage = Self.squash(try Self.source("Yala/App/Views/Settings/StorageSettingsView.swift")
+            .split(separator: "\n").map { line in line.range(of: "//").map { String(line[..<$0.lowerBound]) } ?? String(line) }
+            .joined(separator: "\n"))
+        #expect(storage.contains("""
+            .accessibilityIdentifier("storage_sync_signin_button") .onAppear { beginSyncSignInFromPanelIfRequested(controller) }
+            """))
+        let consume = try Self.squashedBody(
+            of: "private func beginSyncSignInFromPanelIfRequested(_ controller: CloudMigrationController) {",
+            in: "Yala/App/Views/Settings/StorageSettingsView.swift")
+        #expect(consume == """
+            guard SyncSignInRequest.pending else { return } SyncSignInRequest.pending = false guard !controller.isWorking \
+            else { return } Task { await controller.signInToResumeSync() }
+            """)
+        // Cerrar Ajustes sin llegar a la tarjeta no deja la petición armada.
+        let sheets = Self.squash(try Self.source("Yala/App/Views/Panel/PanelSheetsModifier.swift"))
+        #expect(sheets.contains("SyncSignInRequest.pending = false"))
     }
 }

@@ -5367,6 +5367,9 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Iniciá sesión para subir tus cambios";
+
+/* Card pz4v: aviso del Panel cuando la sincronización espera a que vuelvas a iniciar sesión */
+"panel.syncSignIn.body" = "Lo que ves acá puede no estar al día con tu cuenta.";
 "storage.sync.waitingForConnection" = "%d cambios esperando conexión";
 "storage.sync.waitingForConnectionUncounted" = "Cambios esperando conexión";
 
