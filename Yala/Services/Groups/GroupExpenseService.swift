@@ -287,18 +287,47 @@ final class GroupExpenseService {
 
     /// Crea un saldo inicial "deudor le debe a acreedor `amount`" (owner-only).
     /// Se modela como un `SplitExpense` con `isOpeningBalance=true`: `paidBy = acreedor`,
-    /// una share = `[deudor: amount]`, `splitType = "exact"`, fechado en `group.createdAt`.
+    /// una share = `[deudor: amount]`, `splitType = "exact"`, fechado en `date` (card t3fq: la elige quien lo apunta;
+    /// hasta el 2026-10-28 era siempre `group.createdAt` y el registro caía al fondo del grupo).
     /// La suma del grupo queda en cero por construcción (la arista crea +amount y −amount).
+    ///
+    /// **Uno por pareja y moneda** (`OpeningBalanceEdgeLogic.replaceable`): si esas dos personas ya tienen un saldo
+    /// inicial en esa moneda, en cualquier sentido, se EDITA ése y se devuelve. Si el guard de liquidaciones no deja
+    /// editarlo, el nuevo se crea aparte: es lo que pasaba siempre, y el que estaba no se toca.
     @discardableResult
     func setOpeningBalance(
         in group: SplitGroup,
         debtorMemberID: String,
         creditorMemberID: String,
         amount: Double,
-        currencyCode: String
+        currencyCode: String,
+        date: Date
     ) throws -> SplitExpense {
         guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
         guard debtorMemberID != creditorMemberID else { throw GroupExpenseServiceError.invalidOpeningBalanceMembers }
+
+        if let existing = try openingBalanceToReplace(
+            in: group, memberA: debtorMemberID, memberB: creditorMemberID, currencyCode: currencyCode
+        ) {
+            do {
+                try updateOpeningBalance(
+                    existing,
+                    in: group,
+                    debtorMemberID: debtorMemberID,
+                    creditorMemberID: creditorMemberID,
+                    amount: amount,
+                    currencyCode: currencyCode,
+                    date: date
+                )
+                return existing
+            } catch GroupExpenseServiceError.expenseHasAssociatedSettlements {
+                // El que había ya no se puede tocar (un pago confirmado de alguno de los dos), así que el nuevo va
+                // aparte, como antes de esta regla. Sin esto, «Añadir» se paraba con el aviso de BORRAR un gasto.
+                #if DEBUG
+                print("GroupExpenseService: opening balance to replace is locked by a confirmed settlement; creating a new one")
+                #endif
+            }
+        }
 
         let expense = try createExpense(
             in: group,
@@ -306,7 +335,7 @@ final class GroupExpenseService {
             currencyCode: currencyCode,
             description: L10n.Groups.OpeningBalance.entryDescription,
             note: nil,
-            date: group.createdAt,
+            date: OpeningBalanceEdgeLogic.storedDate(date, now: Date.now),
             paidByMemberID: creditorMemberID,
             splitType: "exact",
             subcategoryName: nil,
@@ -317,15 +346,47 @@ final class GroupExpenseService {
         return expense
     }
 
+    /// El saldo inicial que uno nuevo entre `memberA` y `memberB` en `currencyCode` reemplaza (el más antiguo si
+    /// hubiera varios de antes de la regla), o `nil`.
+    private func openingBalanceToReplace(
+        in group: SplitGroup,
+        memberA: String,
+        memberB: String,
+        currencyCode: String
+    ) throws -> SplitExpense? {
+        let context = try requireContext()
+        let zoneID = group.cloudKitZoneID
+        let existing = try context.fetch(FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isOpeningBalance == true }
+        )).sorted { $0.createdAt < $1.createdAt }
+        var byID: [UUID: SplitExpense] = [:]
+        var edges: [OpeningBalanceEdgeLogic.Edge] = []
+        for expense in existing {
+            guard let debtor = try fetchShares(for: expense).first?.memberID else { continue }
+            byID[expense.id] = expense
+            edges.append(.init(
+                id: expense.id,
+                debtorMemberID: debtor,
+                creditorMemberID: expense.paidByMemberID,
+                currencyCode: expense.currencyCode
+            ))
+        }
+        return OpeningBalanceEdgeLogic.replaceable(
+            among: edges, memberA: memberA, memberB: memberB, currencyCode: currencyCode
+        ).flatMap { byID[$0.id] }
+    }
+
     /// Actualiza un saldo inicial existente (owner-only). Guard targeted: bloquea si una
     /// liquidación confirmada involucra al deudor o al acreedor de esta arista.
+    /// `date` es la fecha del saldo (card t3fq): editarlo ya no lo devuelve a `group.createdAt`.
     func updateOpeningBalance(
         _ expense: SplitExpense,
         in group: SplitGroup,
         debtorMemberID: String,
         creditorMemberID: String,
         amount: Double,
-        currencyCode: String
+        currencyCode: String,
+        date: Date
     ) throws {
         guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
         guard debtorMemberID != creditorMemberID else { throw GroupExpenseServiceError.invalidOpeningBalanceMembers }
@@ -345,7 +406,7 @@ final class GroupExpenseService {
             currencyCode: currencyCode,
             description: L10n.Groups.OpeningBalance.entryDescription,
             note: nil,
-            date: group.createdAt,
+            date: OpeningBalanceEdgeLogic.storedDate(date, now: Date.now),
             paidByMemberID: creditorMemberID,
             splitType: "exact",
             subcategoryName: nil,
@@ -356,7 +417,8 @@ final class GroupExpenseService {
 
     /// Elimina un saldo inicial existente (owner-only). Guard targeted (ver `updateOpeningBalance`).
     /// NO usa el guard global de `deleteExpense` (que bloquearía con cualquier liquidación,
-    /// porque los saldos van fechados en `group.createdAt`).
+    /// porque los saldos de antes de la card t3fq van fechados en `group.createdAt`, y los de después en la
+    /// fecha que se eligió, que puede ser anterior a cualquier liquidación).
     func removeOpeningBalance(_ expense: SplitExpense, in group: SplitGroup) throws {
         try validateGroupIsWritable(group)   // G6-3: no pasa por validateCurrentUserCanWrite (guard explícito).
         guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
