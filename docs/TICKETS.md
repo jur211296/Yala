@@ -605,7 +605,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | done | tickets/done/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
 | insights-rate-limit-runs-before-the-cache | backlog | tickets/backlog/insights-rate-limit-runs-before-the-cache.md |
-| insights-to-pay-this-month-leaves-out-the-rest-of-the-month | backlog | tickets/backlog/insights-to-pay-this-month-leaves-out-the-rest-of-the-month.md |
+| insights-to-pay-this-month-leaves-out-the-rest-of-the-month | done | tickets/done/insights-to-pay-this-month-leaves-out-the-rest-of-the-month.md |
 | invite-aasa-requires-s-param | backlog | tickets/backlog/invite-aasa-requires-s-param.md |
 | invite-and-app-notices-present-over-other-tab-sheets | done | tickets/done/invite-and-app-notices-present-over-other-tab-sheets.md |
 | invite-backend-stale-config | done | tickets/done/invite-backend-stale-config.md |

@@ -1,10 +1,10 @@
 ---
 id: insights-to-pay-this-month-leaves-out-the-rest-of-the-month
-status: backlog
+status: done
 priority: medium
 area: estadisticas
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-28
 source: "ui-suite-2-2-five-tests-red-on-the-base: UXAudit22Lote11DecididasUITests/test_summary_showsWhatYouStillHaveToPay_andBudgetsWithTheirAmounts"
 ---
 
@@ -37,3 +37,11 @@ esa respuesta.
 
 La decisión está tomada y, si es «hasta el final del período», el cálculo usa ese fin solo para los pendientes (el resto
 de la pantalla sigue cerrando hoy), con un unit test que lo fije en los dos lados de la frontera.
+
+## Resuelto (2026-10-28)
+
+Jürgen eligió **A · hasta el fin del período** (2026-10-27). «Lo que te falta pagar» de Esta semana, Este mes y Este año
+suma los pagos que vencen hasta el último segundo del período; Últimos 7 / 30 días, Todo el tiempo, Personalizado y los
+períodos cerrados no cambian. Solo los pendientes: el resto del Resumen sigue cerrando hoy. El intervalo sale de
+`FinancialScoreCalculator.commitmentsInterval`, que gana `.thisWeek`. Lo fija `InsightsToPayUntilPeriodEndTests`
+(cada frontera por los dos lados).
