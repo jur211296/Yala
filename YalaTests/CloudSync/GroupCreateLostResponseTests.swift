@@ -216,4 +216,148 @@ struct GroupCreateLostResponseTests {
             #expect(PendingGroupCreationStore.pending().isEmpty)
         }
     }
+
+    // MARK: - Card y1ru · el reintento reusa la zona del intento pendiente
+
+    private static let groupExistsJSON = #"{"error":{"code":"yala_group_exists"}}"#
+
+    @Test("respuesta perdida y reintento con el mismo nombre: un solo grupo, el del primer toque")
+    func retrySameName_afterLostResponse_leavesASingleGroup() async throws {
+        let dir = try freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try await withEnvironment {
+            let (first, firstSession) = makeService(#"{"error":"bad gateway"}"#, status: 502)
+            await #expect(throws: GroupsRPCError.transient(status: 502)) {
+                _ = try await first.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Alice",
+                                                context: context)
+            }
+            let zone = try sentZone(firstSession)
+
+            // El servidor YA lo guardó: el segundo toque recibe `yala_group_exists` por la misma zona.
+            let (second, secondSession) = makeService(Self.groupExistsJSON, status: 400)
+            let group = try await second.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Alice",
+                                                     context: context)
+            #expect(try sentZone(secondSession) == zone, "el reintento acuñó otra zona: el servidor crearía otro grupo")
+            #expect(group.cloudKitZoneID == zone)
+            #expect(group.isOwner)
+            let groups = try context.fetch(FetchDescriptor<SplitGroup>())
+            #expect(groups.count == 1, "quedan dos grupos")
+            let me = try #require(try context.fetch(FetchDescriptor<SplitMember>()).first)
+            #expect(me.memberKey == "sub-1" && me.isGroupOwner && me.isCurrentUser && me.role == "admin")
+            #expect(PendingGroupCreationStore.pending().isEmpty, "el intento ya resuelto no se retiró")
+
+            // Y el pull que trae después la zona no añade otro: adopta la fila que ya está.
+            GroupBackendMembershipService.adoptPendingCreations(context: context, currentUserID: "sub-1")
+            #expect(try context.fetch(FetchDescriptor<SplitGroup>()).count == 1)
+        }
+    }
+
+    /// Review adversarial (2026-10-28): un rechazo claro del REINTENTO no dice nada del primer toque, que pudo guardarse.
+    @Test("un reintento rechazado con la zona reusada no borra el apunte del primer toque")
+    func retryRejected_keepsTheFirstAttempt() async throws {
+        let dir = try freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try await withEnvironment {
+            let (first, firstSession) = makeService(#"{"error":"bad gateway"}"#, status: 502)
+            await #expect(throws: GroupsRPCError.transient(status: 502)) {
+                _ = try await first.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Alice",
+                                                context: context)
+            }
+            let zone = try sentZone(firstSession)
+            let (second, secondSession) = makeService(#"{"error":{"code":"yala_bad_input"}}"#, status: 400)
+            await #expect(throws: GroupsRPCError.badInput) {
+                _ = try await second.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Alice",
+                                                 context: context)
+            }
+            #expect(try sentZone(secondSession) == zone)
+            #expect(PendingGroupCreationStore.pending().map(\.zoneID) == [zone],
+                    "el reintento rechazado se llevó el apunte del toque que pudo guardarse")
+        }
+    }
+
+    /// Si el primer toque NO llegó a guardarse, el reintento crea el grupo con la misma zona, como un éxito normal.
+    @Test("reintento con el mismo nombre cuando el primero no se guardó: se crea con la misma zona")
+    func retrySameName_whenTheFirstDidNotCommit_createsWithTheSameZone() async throws {
+        let dir = try freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try await withEnvironment {
+            let (first, firstSession) = makeService(#"{"error":"bad gateway"}"#, status: 503)
+            await #expect(throws: GroupsRPCError.transient(status: 503)) {
+                _ = try await first.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Alice",
+                                                context: context)
+            }
+            let zone = try sentZone(firstSession)
+            let (second, secondSession) = makeService(#"{"group_id":"x","member_key":"sub-1"}"#, status: 200)
+            // Con espacios de más: el servidor recorta, y el intento compara el nombre recortado.
+            let group = try await second.createGroup(name: " Viaje ", currencyCode: "USD", displayName: "Alice",
+                                                     context: context)
+            #expect(try sentZone(secondSession) == zone)
+            #expect(group.cloudKitZoneID == zone)
+            #expect(try context.fetch(FetchDescriptor<SplitGroup>()).count == 1)
+            #expect(PendingGroupCreationStore.pending().isEmpty)
+        }
+    }
+
+    /// Decisión de la card: con el nombre cambiado entre toques se acuña una zona nueva (comportamiento de antes).
+    @Test("reintento con otro nombre: zona nueva, y el intento del primero se queda para el pull")
+    func retryDifferentName_mintsANewZone() async throws {
+        let dir = try freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try await withEnvironment {
+            let (first, firstSession) = makeService(#"{"error":"bad gateway"}"#, status: 502)
+            await #expect(throws: GroupsRPCError.transient(status: 502)) {
+                _ = try await first.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Alice",
+                                                context: context)
+            }
+            let zone = try sentZone(firstSession)
+            let (second, secondSession) = makeService(#"{"group_id":"x","member_key":"sub-1"}"#, status: 200)
+            _ = try await second.createGroup(name: "Viaje a Cusco", currencyCode: "USD", displayName: "Alice",
+                                             context: context)
+            #expect(try sentZone(secondSession) != zone, "con otro nombre se reusó la zona del primero")
+            #expect(PendingGroupCreationStore.pending().map(\.zoneID) == [zone],
+                    "el intento del primer toque se perdió: si se guardó, el pull ya no lo adopta")
+        }
+    }
+
+    /// La zona solo se reusa con la sesión que la apuntó: otra cuenta no puede «dar por creado» el grupo de otra.
+    @Test("con otra sesión no se reusa la zona")
+    func retryWithAnotherSession_mintsANewZone() async throws {
+        let dir = try freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try await withEnvironment {
+            PendingGroupCreationStore.record(zoneID: "SplitGroup-OTRA", userID: "sub-1", name: "Viaje")
+            let (service, session) = makeService(#"{"group_id":"x","member_key":"sub-2"}"#, status: 200, sub: "sub-2")
+            _ = try await service.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Bob", context: context)
+            #expect(try sentZone(session) != "SplitGroup-OTRA")
+        }
+    }
+
+    /// Control: `yala_group_exists` sobre una zona recién acuñada no es un éxito (no puede venir de un toque anterior).
+    @Test("sin intento que reusar, yala_group_exists sigue siendo error")
+    func groupExists_onAFreshZone_isStillAnError() async throws {
+        let dir = try freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        try await withEnvironment {
+            let (service, _) = makeService(Self.groupExistsJSON, status: 400)
+            await #expect(throws: GroupsRPCError.groupExists) {
+                _ = try await service.createGroup(name: "Viaje", currencyCode: "USD", displayName: "Alice",
+                                                  context: context)
+            }
+            let groups = try context.fetch(FetchDescriptor<SplitGroup>())
+            #expect(groups.isEmpty)
+            #expect(PendingGroupCreationStore.pending().isEmpty)
+        }
+    }
+
+    /// Un intento de antes de la y1ru (sin nombre) no se reusa nunca: no se sabe con qué nombre se pidió.
+    @Test("un intento sin nombre no se reusa")
+    func legacyAttemptWithoutName_isNeverReused() async {
+        await withEnvironment {
+            PendingGroupCreationStore.record(zoneID: "SplitGroup-L", userID: "sub-1")
+            #expect(PendingGroupCreationStore.reusableZone(userID: "sub-1", name: "Viaje") == nil)
+            PendingGroupCreationStore.record(zoneID: "SplitGroup-N", userID: "sub-1", name: "Viaje")
+            #expect(PendingGroupCreationStore.reusableZone(userID: "sub-1", name: "Viaje") == "SplitGroup-N")
+            #expect(PendingGroupCreationStore.reusableZone(userID: "sub-1", name: "viaje") == nil)
+        }
+    }
 }

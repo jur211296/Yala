@@ -15,6 +15,11 @@
 //  éxito (`GroupBackendMembershipService.adoptPendingCreations`). El `sub` es lo que impide atribuir el grupo a otra
 //  cuenta que entre después en el teléfono.
 //
+//  Card y1ru: el intento guarda también el NOMBRE con el que se pidió. Un reintento de «Crear» con el mismo nombre y la
+//  misma sesión reusa la zona del intento (`reusableZone`) en vez de acuñar otra: si el primer toque ya se guardó, el
+//  servidor contesta `yala_group_exists` y eso es el éxito; si no se guardó, se crea con esa zona. Con el nombre cambiado
+//  se acuña una zona nueva (es otro grupo, o la persona corrigió el nombre: ver el docblock de `reusableZone`).
+//
 //  Un registro por zona en `UserDefaults` (molde `PendingJoinStore`): sin PII más allá del `sub`, que el teléfono ya
 //  guarda en la sesión. Caduca a los 7 días: si en una semana la zona no bajó, el servidor no la tiene.
 //
@@ -29,6 +34,9 @@ nonisolated enum PendingGroupCreationStore {
         /// El `sub` de la sesión que lanzó el `create_group`; el servidor fuerza el `member_key` del dueño a ese valor.
         let userID: String
         let createdAt: Date
+        /// El nombre con el que se pidió (card y1ru), recortado como lo recorta el servidor. Opcional: los registros de
+        /// antes de la y1ru no lo llevan y nunca se reusan.
+        var name: String? = nil
     }
 
     static let key = "groups.pendingCreations"
@@ -37,10 +45,28 @@ nonisolated enum PendingGroupCreationStore {
     /// `UserDefaults` inyectable para tests (molde `PendingJoinStore.defaults`).
     nonisolated(unsafe) static var defaults: UserDefaults = .standard
 
-    static func record(zoneID: String, userID: String, now: Date = .now) {
+    static func record(zoneID: String, userID: String, name: String? = nil, now: Date = .now) {
         var entries = load()
-        entries[zoneID] = Entry(zoneID: zoneID, userID: userID, createdAt: now)
+        entries[zoneID] = Entry(zoneID: zoneID, userID: userID, createdAt: now, name: name.map(normalizedName))
         persist(entries)
+    }
+
+    /// Card y1ru · la zona de un intento vigente de ESTA sesión con el MISMO nombre, la más reciente. Es lo que reusa un
+    /// reintento de «Crear»: el servidor deduplica por zona (`yala_group_exists`), así que reusarla convierte el reintento
+    /// en idempotente. Con el nombre cambiado devuelve `nil` y se acuña otra zona: si el primer toque se guardó, quedan
+    /// dos grupos con nombres distintos, que la persona ve y distingue; reusar la zona con el nombre nuevo daría por
+    /// creado un grupo que en el servidor se llama como el primero.
+    static func reusableZone(userID: String, name: String, now: Date = .now) -> String? {
+        let wanted = normalizedName(name)
+        return pending(now: now)
+            .filter { $0.userID == userID && $0.name == wanted }
+            .max { $0.createdAt < $1.createdAt }?
+            .zoneID
+    }
+
+    /// El recorte de `create_group` (`btrim`): espacios a los dos lados.
+    private static func normalizedName(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespaces)
     }
 
     static func remove(zoneID: String) {

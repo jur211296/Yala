@@ -316,24 +316,26 @@ final class DraftService {
             // retorno idempotente; .first como fallback determinista si solo hubiera virtuales.
             let candidateTxs = try context.fetch(anyTxDescriptor)
             let existingTx = candidateTxs.first { $0.account?.isSystemAccount == false } ?? candidateTxs.first
-            cacheDisplayValues(draft)
-            deleteInboxDraftPruningRow(draft, in: context)
-            try context.save()
-            SessionState.shared.incrementDataVersion()
 
             if case .discardRedundant = GroupDraftFinalizationLogic.resolveMissingPointerTarget(
                 existsAnyTxForSplitID: existingTx != nil
             ), let existingTx {
-                // Idempotente: el draft era redundante (la TX ya existía, clasificada en otro device).
+                // Idempotente: el draft era redundante (la TX ya existía, clasificada en otro device). Es un éxito: la
+                // hoja se cierra en el acto, como con cualquier aprobación.
+                cacheDisplayValues(draft)
+                deleteInboxDraftPruningRow(draft, in: context)
+                try context.save()
+                SessionState.shared.incrementDataVersion()
                 logger.error(
                     "groupExpense draft for splitExpenseID=\(splitID, privacy: .public) already classified elsewhere; discarded redundant draft."
                 )
                 return existingTx
             }
-            // No existe ninguna TX → el expense desapareció. El draft stale ya se limpió arriba;
-            // propagar error claro (la sheet de finalización lo muestra en su catch).
+            // No existe ninguna TX → el expense desapareció. **El borrador NO se borra aquí** (card ouka): la hoja que
+            // lo muestra sigue montada y pinta su alerta leyendo el `@Model` —el SIGTRAP de `InboxRowPruneCoordinator`—.
+            // Lo retira la hoja al cerrarse (`retireGroupExpenseDraftIfTargetGone`), que vuelve a medir.
             logger.error(
-                "groupExpense draft target TX missing and no TX exists for splitExpenseID=\(splitID, privacy: .public); deleted stale draft."
+                "groupExpense draft target TX missing and no TX exists for splitExpenseID=\(splitID, privacy: .public); the sheet retires it on close."
             )
             throw DraftServiceError.groupExpenseTargetMissing
         }
@@ -531,6 +533,11 @@ final class DraftService {
                     #if DEBUG
                     print("DraftService.bulkApprove: group draft delegation failed: \(error)")
                     #endif
+                    // Card ouka: el gasto ya no está. Aquí no hay hoja montada, así que se retira en el acto (antes lo
+                    // hacía `approveDraft`, que ahora deja esa retirada a quien tiene la hoja).
+                    if case DraftServiceError.groupExpenseTargetMissing = error {
+                        retireStaleGroupExpenseDraftWithoutSheet(draft)
+                    }
                     // Resiliente: el draft queda pendiente para finalizar individual; sigue el resto.
                 }
                 continue
@@ -922,10 +929,10 @@ final class DraftService {
             predicate: #Predicate { $0.id == splitUUID }
         )
         guard let expense = try context.fetch(expenseDescriptor).first else {
-            // Expense origen ya no existe (sync race con remote delete) — limpia draft y aborta.
-            deleteInboxDraftPruningRow(draft, in: context)
-            try context.save()
-            throw DraftServiceError.missingAccount
+            // Expense origen ya no existe (sync race con remote delete). **El borrador NO se borra aquí** (card ouka,
+            // molde de 9o4n): la hoja sigue montada y pinta su alerta leyendo el `@Model`. Lanza su propio error y la
+            // hoja lo retira al cerrarse (`retireGroupExpenseDraftIfTargetGone`).
+            throw DraftServiceError.groupExpenseTargetMissing
         }
         let groupDescriptor = FetchDescriptor<SplitGroup>(
             predicate: #Predicate { $0.cloudKitZoneID == zoneID }
@@ -1053,6 +1060,59 @@ final class DraftService {
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
+    }
+
+    /// Lo que la hoja de la Bandeja llama al cerrarse, con el motivo que vio al fallar la aprobación (cards 9o4n y ouka).
+    func retireGroupExpenseDraft(_ draft: InboxDraft, after retirement: GroupExpenseDraftRetirement) throws {
+        switch retirement {
+        case .alreadyRegistered: try retireGroupExpenseDraftIfAlreadyRegistered(draft)
+        case .targetGone: try retireGroupExpenseDraftIfTargetGone(draft)
+        }
+    }
+
+    /// Card ouka · retira el borrador de un gasto de grupo cuyo gasto ya no está (borrado en remoto con la hoja abierta).
+    /// Lo llama la hoja de la Bandeja AL CERRARSE tras `groupExpenseTargetMissing`: con la hoja montada, borrarlo la
+    /// tumbaría. Vuelve a medir con el mismo criterio con el que lanzó la aprobación: si entretanto el gasto volvió (un
+    /// pull que lo trae de nuevo), el borrador se queda.
+    func retireGroupExpenseDraftIfTargetGone(_ draft: InboxDraft) throws {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              let splitID = draft.splitExpenseID,
+              try isGroupExpenseDraftTargetGone(draft, splitID: splitID, in: context) else { return }
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
+    /// Card ouka · la retirada para los caminos SIN hoja (deslizar para aprobar, aprobar en bloque): el borrador sin gasto
+    /// se retira en el acto, como hacía `approveDraft` antes. Un fallo deja el borrador, que la hoja retirará al abrirse.
+    func retireStaleGroupExpenseDraftWithoutSheet(_ draft: InboxDraft) {
+        do {
+            try retireGroupExpenseDraftIfTargetGone(draft)
+        } catch {
+            #if DEBUG
+            print("DraftService.retireStaleGroupExpenseDraftWithoutSheet: \(error)")
+            #endif
+        }
+    }
+
+    /// El criterio de «el gasto ya no está» de cada camino de `approveDraft`: el borrador de cuenta lo mide por el
+    /// `SplitExpense`; el borrador-puntero de subcategoría, por que no quede NINGUNA transacción del gasto (con una, la
+    /// aprobación lo da por redundante y no lanza).
+    private func isGroupExpenseDraftTargetGone(
+        _ draft: InboxDraft, splitID: String, in context: ModelContext
+    ) throws -> Bool {
+        if draft.needsUserInput.contains(DraftInputRequirement.account) {
+            guard UUID(uuidString: splitID) != nil else { return false }
+            return try fetchSplitExpense(splitID, in: context) == nil
+        }
+        let anyTx = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }
+        ))
+        return anyTx.isEmpty
     }
 
     // MARK: - «¿Ya lo apuntaste?» (UX 2.2 · L13-15)
@@ -1389,6 +1449,23 @@ final class DraftService {
 
 // MARK: - Errors
 
+/// Por qué la hoja de un borrador de gasto de grupo lo retira al cerrarse, y nunca con ella montada (cards 9o4n y ouka).
+enum GroupExpenseDraftRetirement: Equatable {
+    /// El gasto ya tiene su pata real: aprobarlo lo contaría dos veces.
+    case alreadyRegistered
+    /// El gasto se borró en remoto con la hoja abierta.
+    case targetGone
+
+    /// `nil` para cualquier otro fallo: el borrador se queda y la persona puede reintentar.
+    init?(after error: Error) {
+        switch error {
+        case DraftServiceError.groupExpenseAlreadyRegistered: self = .alreadyRegistered
+        case DraftServiceError.groupExpenseTargetMissing: self = .targetGone
+        default: return nil
+        }
+    }
+}
+
 enum DraftServiceError: LocalizedError {
     case noContext
     case missingAccount
@@ -1400,8 +1477,8 @@ enum DraftServiceError: LocalizedError {
     /// Solo se borran al eliminar el expense origen en el grupo.
     case cannotDeleteGroupDraft
     case cannotRejectGroupDraft
-    /// Draft-puntero `.groupExpense` cuyo expense origen se borró remotamente (no existe TX).
-    /// El draft stale ya se limpió; este error informa al usuario en la sheet de finalización.
+    /// Borrador `.groupExpense` cuyo gasto origen se borró remotamente. El borrador NO se borra al lanzar (la hoja sigue
+    /// montada): la hoja lo retira al cerrarse con `retireGroupExpenseDraftIfTargetGone` (card ouka).
     case groupExpenseTargetMissing
     /// `.groupScheduledExpense` solo se aprueba vía GroupExpenseFormView (crea el SplitExpense),
     /// nunca por el path genérico de approveDraft. Defensa interna — no debería alcanzar al usuario.
