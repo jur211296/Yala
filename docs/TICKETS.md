@@ -924,7 +924,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas | done | tickets/done/saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas.md |
 | save-as-favorite-from-a-mismatched-row-relabels-it | done | tickets/done/save-as-favorite-from-a-mismatched-row-relabels-it.md |
 | save-error-alert-lies-when-the-context-autosaves | backlog | tickets/backlog/save-error-alert-lies-when-the-context-autosaves.md |
-| saved-record-notice-covers-the-panel-plus-button | backlog | tickets/backlog/saved-record-notice-covers-the-panel-plus-button.md |
+| saved-record-notice-covers-the-panel-plus-button | done | tickets/done/saved-record-notice-covers-the-panel-plus-button.md |
 | saving-a-mismatched-transaction-relabels-it-without-converting | done | tickets/done/saving-a-mismatched-transaction-relabels-it-without-converting.md |
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |

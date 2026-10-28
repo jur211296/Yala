@@ -26,7 +26,18 @@ enum DraftDiscardUndoNotice {
     static let visibleDuration: Duration = UITestHooks.undoNoticeSeconds.map { .milliseconds(Int($0 * 1000)) } ?? .seconds(5)
 
     /// Hueco libre bajo el aviso: por encima de la barra de pestañas flotante y de los botones de pie de una hoja.
-    private static let bottomClearance: CGFloat = 72
+    private static let tabBarClearance: CGFloat = 72
+
+    /// Hueco libre bajo el aviso, por encima también de los botones flotantes de la página: Jürgen eligió el 2026-10-22
+    /// que el aviso vaya más arriba que el «+», en todas las pantallas (ticket
+    /// `saved-record-notice-covers-the-panel-plus-button`). Con 72 pt la franja caía sobre el «+» del Panel y su primer
+    /// toque no llegaba. Cuenta la pila más alta, Yala IA encima del «+» (`FABStackView`); con poco alto los dos van en
+    /// fila (UX 2.2 · L15-14) y basta uno. Medido en el iPhone 17 Pro: con 72 pt el aviso acaba casi en el borde de la
+    /// barra, así que la pila entera (`fabStackClearance`, con su margen inferior y aire) va encima: 11 pt sobre Yala IA.
+    static func bottomClearance(sceneHeight: CGFloat) -> CGFloat {
+        let buttons = DS.Adaptive.isShortContainer(height: sceneHeight) ? 1 : 2
+        return tabBarClearance + DS.Button.fabStackClearance(buttons: buttons)
+    }
 
     private static var window: UIWindow?
     private static var hideTask: Task<Void, Never>?
@@ -101,7 +112,7 @@ enum DraftDiscardUndoNotice {
         let window = UIWindow(windowScene: scene)
         window.frame = CGRect(
             x: 0,
-            y: bounds.height - safeArea.bottom - bottomClearance - size.height,
+            y: bounds.height - safeArea.bottom - bottomClearance(sceneHeight: bounds.height) - size.height,
             width: bounds.width,
             height: size.height
         )

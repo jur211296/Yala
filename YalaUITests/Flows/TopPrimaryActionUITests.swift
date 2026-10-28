@@ -40,6 +40,18 @@ final class TopPrimaryActionUITests: XCTestCase {
         let floating = app.buttons["budgets_create_fab"]
         XCTAssertFalse(floating.exists, "Con «Nuevo presupuesto» a la vista, el «+» flotante sobra: volvió a ser fijo.")
 
+        // Jürgen, 2026-10-26: «Nuevo presupuesto» va ENCIMA del navegador del período, como en Pagos planificados
+        // (selector de tipo › Nuevo › período).
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "presupuestos-nuevo-arriba"
+        shot.lifetime = .keepAlways
+        add(shot)
+        let picker = app.descendants(matching: .any)["budgets_period_type_picker"].firstMatch
+        let period = app.descendants(matching: .any)["period_navigation_label"].firstMatch
+        XCTAssertTrue(picker.exists && period.exists, "Control: el selector de tipo y el período se ven.")
+        XCTAssertLessThan(picker.frame.maxY, top.frame.minY, "«Nuevo presupuesto» va debajo del selector de tipo.")
+        XCTAssertLessThan(top.frame.maxY, period.frame.minY, "«Nuevo presupuesto» va encima del navegador del período.")
+
         XCTAssertTrue(
             scrollUntilFloatingShows(app, top: top, floating: floating),
             "Al bajar, el «+» flotante de Presupuestos no apareció.")

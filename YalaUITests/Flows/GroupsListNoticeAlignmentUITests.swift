@@ -31,6 +31,11 @@ final class GroupsListNoticeAlignmentUITests: XCTestCase {
         let newExpense = app.buttons["groups_action_new_expense"]
         XCTAssertTrue(groupCard.waitForExistence(timeout: 5) && newExpense.exists, "Faltan las tarjetas o los botones.")
 
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "grupos-alineacion"
+        shot.lifetime = .keepAlways
+        add(shot)
+
         // Las tarjetas de grupo son la referencia: mismo borde izquierdo y derecho para la tarjeta de avisos, y mismo borde
         // izquierdo para la fila de botones. Un punto de tolerancia por el redondeo de los marcos.
         XCTAssertEqual(card.frame.minX, groupCard.frame.minX, accuracy: 1, "La tarjeta de avisos no empieza donde las de grupo.")

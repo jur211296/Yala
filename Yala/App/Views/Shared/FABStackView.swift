@@ -61,6 +61,11 @@ struct FABStackView: View {
     private static let fabScaleTransition: AnyTransition = .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
 
     private func toggleMenu() {
+        // El menú crece hacia arriba y cae bajo la franja del aviso tras guardar: abrirlo es empezar el siguiente
+        // registro, así que el aviso se va, como al abrir otro formulario (`SavedRecordNotice`).
+        if !showFABMenu {
+            DraftDiscardUndoNotice.hide(noticeIdentifier: SavedRecordNotice.noticeIdentifier)
+        }
         dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu.toggle() }
     }
 
