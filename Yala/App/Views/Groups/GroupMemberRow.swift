@@ -40,6 +40,8 @@ struct GroupMemberRow: View {
     let onRemove: () -> Void
     var onApprove: (() -> Void)? = nil
     var onReject: (() -> Void)? = nil
+    /// Card t3fq: «Saldo inicial» en el menú de la persona. `nil` = no se ofrece (solo quien creó el grupo).
+    var onOpeningBalance: (() -> Void)? = nil
 
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
@@ -116,6 +118,15 @@ struct GroupMemberRow: View {
                                     Label(L10n.UXL19.removeAdmin, systemImage: "person.badge.minus")
                                 }
                             }
+                        }
+
+                        if let onOpeningBalance {
+                            Button {
+                                onOpeningBalance()
+                            } label: {
+                                Label(L10n.Groups.OpeningBalance.editorTitle, systemImage: "arrow.left.arrow.right")
+                            }
+                            .accessibilityIdentifier("group_member_opening_balance_\(member.displayName)")
                         }
 
                         Button(role: .destructive) {

@@ -73,11 +73,20 @@ struct GroupMembersView: View {
     @State private var actionErrorMessage: String = ""
 
     // Saldos iniciales (owner-only)
-    @State private var showOpeningBalanceEditor = false
-    @State private var openingBalanceToEdit: SplitExpense?
+    /// Qué abre el editor: un saldo que editar o una persona que poner en «Quién debe». `.sheet(item:)` y no
+    /// `isPresented` + otros dos `@State`: el menú de una persona (card t3fq) los cambia en el mismo toque, y con
+    /// `isPresented` la hoja puede salir con los de antes (regla de `swiftui-ds.md`).
+    @State private var openingBalanceRequest: OpeningBalanceRequest?
+    /// El miembro recién aceptado, guardado hasta que se conteste la pregunta de después de aceptar.
     @State private var openingBalancePrefillDebtor: String?
     @State private var showOpeningBalanceApprovalPrompt = false
     @State private var approvedMemberName: String = ""
+
+    private struct OpeningBalanceRequest: Identifiable {
+        let id = UUID()
+        var expense: SplitExpense?
+        var prefillDebtorMemberID: String?
+    }
 
     // MARK: - Body
 
@@ -127,14 +136,14 @@ struct GroupMembersView: View {
                     groupName: group.name,
                     url: item.url)])
             }
-            .sheet(isPresented: $showOpeningBalanceEditor, onDismiss: { viewModel.loadData() }) {
+            .sheet(item: $openingBalanceRequest, onDismiss: { viewModel.loadData() }) { request in
                 GroupOpeningBalanceFormView(
                     group: group,
                     members: viewModel.activeMembers,
                     memberNameLookup: viewModel.memberNameLookup,
-                    expenseToEdit: openingBalanceToEdit,
-                    existingDebtorMemberID: openingBalanceToEdit.flatMap { debtorID(for: $0) },
-                    prefillDebtorMemberID: openingBalanceToEdit == nil ? openingBalancePrefillDebtor : nil,
+                    expenseToEdit: request.expense,
+                    existingDebtorMemberID: request.expense.flatMap { debtorID(for: $0) },
+                    prefillDebtorMemberID: request.expense == nil ? request.prefillDebtorMemberID : nil,
                     onSave: { viewModel.loadData() }
                 )
                 .yalaSheetDetents([.large])
@@ -146,8 +155,8 @@ struct GroupMembersView: View {
                 titleVisibility: .visible
             ) {
                 Button(L10n.Groups.OpeningBalance.approvalPromptAdd) {
-                    openingBalanceToEdit = nil
-                    showOpeningBalanceEditor = true
+                    openingBalanceRequest = OpeningBalanceRequest(prefillDebtorMemberID: openingBalancePrefillDebtor)
+                    openingBalancePrefillDebtor = nil
                 }
                 .accessibilityIdentifier("opening_balance_prompt_add")
                 Button(L10n.Groups.OpeningBalance.approvalPromptSkip) {
@@ -286,6 +295,10 @@ struct GroupMembersView: View {
                     onReject: canActAsAdmin && member.isPendingApproval ? {
                         pendingActionMember = member
                         showRejectConfirm = true
+                    } : nil,
+                    // Card t3fq: el saldo inicial de esta persona, en cualquier momento, desde su menú.
+                    onOpeningBalance: group.isOwner && canActAsAdmin && member.isActive ? {
+                        openOpeningBalance(for: member)
                     } : nil
                 )
             }
@@ -443,6 +456,22 @@ struct GroupMembersView: View {
         viewModel.sharesForExpense(expense).first?.memberID
     }
 
+    /// Card t3fq · «Saldo inicial» desde el menú de una persona: edita su saldo si tiene uno, si no abre uno nuevo con
+    /// ella en «Quién debe» (`OpeningBalanceEdgeLogic.memberEntry`).
+    private func openOpeningBalance(for member: SplitMember) {
+        let expenses = openingExpenses
+        let edges = expenses.compactMap { e -> OpeningBalanceEdgeLogic.Edge? in
+            guard let debtor = debtorID(for: e) else { return nil }
+            return .init(id: e.id, debtorMemberID: debtor, creditorMemberID: e.paidByMemberID, currencyCode: e.currencyCode)
+        }
+        switch OpeningBalanceEdgeLogic.memberEntry(for: member.id.uuidString, among: edges) {
+        case .edit(let id):
+            openingBalanceRequest = OpeningBalanceRequest(expense: expenses.first { $0.id == id })
+        case .create(let debtor):
+            openingBalanceRequest = OpeningBalanceRequest(prefillDebtorMemberID: debtor)
+        }
+    }
+
     private struct RollupRow: Identifiable {
         let memberID: String
         let currencyCode: String
@@ -487,9 +516,7 @@ struct GroupMembersView: View {
             }
 
             Button {
-                openingBalanceToEdit = nil
-                openingBalancePrefillDebtor = nil
-                showOpeningBalanceEditor = true
+                openingBalanceRequest = OpeningBalanceRequest()
             } label: {
                 Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
                     .font(DS.Typography.label)
@@ -526,8 +553,7 @@ struct GroupMembersView: View {
         let creditorName = viewModel.memberNameLookup[expense.paidByMemberID] ?? "?"
         let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
         return Button {
-            openingBalanceToEdit = expense
-            showOpeningBalanceEditor = true
+            openingBalanceRequest = OpeningBalanceRequest(expense: expense)
         } label: {
             HStack(spacing: DS.Spacing.md) {
                 Text(L10n.Groups.OpeningBalance.feedRow(debtorName, creditorName))

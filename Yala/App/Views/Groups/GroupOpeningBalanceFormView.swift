@@ -3,8 +3,8 @@
 //  Yala
 //
 //  Editor de un saldo inicial (deuda de apertura) — owner-only. Define "quién debe a
-//  quién" + monto + moneda. Sin tipo de división, categoría ni descripción: un saldo
-//  inicial es una arista de deuda pura entre dos miembros existentes.
+//  quién" + monto + moneda + fecha (card t3fq). Sin tipo de división, categoría ni descripción:
+//  un saldo inicial es una arista de deuda pura entre dos miembros existentes.
 //
 
 import SwiftUI
@@ -31,6 +31,8 @@ struct GroupOpeningBalanceFormView: View {
     @State private var creditorMemberID: String
     @State private var amountString: String
     @State private var selectedCurrency: CurrencyCode
+    /// Card t3fq: la fecha del saldo, que es la del registro en el grupo. Al crear, hoy; al editar, la que tenía.
+    @State private var date: Date
 
     @State private var showDebtorPicker = false
     @State private var showCreditorPicker = false
@@ -64,11 +66,13 @@ struct GroupOpeningBalanceFormView: View {
             _amountString = State(initialValue: AmountInputHelper.formatWithGrouping(edit.amount))
             // Fallback a la moneda del grupo (no .usd) si el código guardado fuese inválido/legacy.
             _selectedCurrency = State(initialValue: CurrencyCode(rawValue: edit.currencyCode) ?? CurrencyCode(rawValue: group.currencyCode) ?? .usd)
+            _date = State(initialValue: edit.date)
         } else {
             _debtorMemberID = State(initialValue: prefillDebtorMemberID ?? "")
             _creditorMemberID = State(initialValue: "")
             _amountString = State(initialValue: "")
             _selectedCurrency = State(initialValue: CurrencyCode(rawValue: group.currencyCode) ?? .usd)
+            _date = State(initialValue: Date.now)
         }
     }
 
@@ -114,6 +118,7 @@ struct GroupOpeningBalanceFormView: View {
                         identifier: "opening_balance_creditor"
                     )
                     amountSection
+                    dateRow
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
@@ -233,6 +238,22 @@ struct GroupOpeningBalanceFormView: View {
         .padding(.vertical, DS.Spacing.lg)
     }
 
+    /// La fecha del saldo, en una tarjeta como las de las personas. Nada en el futuro: un saldo inicial es lo que ya
+    /// se debía.
+    private var dateRow: some View {
+        DatePicker(
+            L10n.Groups.OpeningBalance.dateLabel,
+            selection: $date,
+            in: ...Date.now,
+            displayedComponents: .date
+        )
+        .font(DS.Typography.body)
+        .padding(.horizontal, DS.FormRow.paddingH)
+        .padding(.vertical, DS.FormRow.paddingV)
+        .solidCard(padding: DS.Spacing.none, radius: DS.Radius.lg)
+        .accessibilityIdentifier("opening_balance_date")
+    }
+
     // MARK: - Qué falta (card rhgi)
 
     private func missingFieldMessage(_ missing: GroupOpeningBalanceMissingField) -> String {
@@ -289,7 +310,8 @@ struct GroupOpeningBalanceFormView: View {
                     debtorMemberID: debtorMemberID,
                     creditorMemberID: creditorMemberID,
                     amount: amountValue,
-                    currencyCode: selectedCurrency.rawValue
+                    currencyCode: selectedCurrency.rawValue,
+                    date: date
                 )
             } else {
                 try GroupExpenseService.shared.setOpeningBalance(
@@ -297,7 +319,8 @@ struct GroupOpeningBalanceFormView: View {
                     debtorMemberID: debtorMemberID,
                     creditorMemberID: creditorMemberID,
                     amount: amountValue,
-                    currencyCode: selectedCurrency.rawValue
+                    currencyCode: selectedCurrency.rawValue,
+                    date: date
                 )
             }
             DS.Haptic.success()

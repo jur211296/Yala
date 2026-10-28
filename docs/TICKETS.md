@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1098)
+## Index (1099)
 
 | id | status | path |
 |---|---|---|
@@ -527,6 +527,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-only-second-launch-mounts-icloud-mirror | done | tickets/done/groups-only-second-launch-mounts-icloud-mirror.md |
 | groups-only-session-storage-screen-says-data-lives-in-icloud | done | tickets/done/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
 | groups-only-sign-up-drops-a-language-chosen-just-before-it | backlog | tickets/backlog/groups-only-sign-up-drops-a-language-chosen-just-before-it.md |
+| groups-opening-balance-edit-can-duplicate-a-pair | backlog | tickets/backlog/groups-opening-balance-edit-can-duplicate-a-pair.md |
 | groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome | backlog | tickets/backlog/groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
 | groups-outbox-rows-without-a-live-session-have-no-exit | done | tickets/done/groups-outbox-rows-without-a-live-session-have-no-exit.md |
