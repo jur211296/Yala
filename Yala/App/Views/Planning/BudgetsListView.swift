@@ -56,6 +56,18 @@ struct BudgetsListView: View {
                     // llegan al borde del ScrollView. El picker debe igualar ese ancho.
                     periodTypeSegmentedControl
 
+                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). Encima del período,
+                    // como en Pagos planificados (Jürgen, 2026-10-26, card 91in).
+                    TopPrimaryActionPill(
+                        title: L10n.Accessibility.newBudget,
+                        systemImage: "plus",
+                        accessibilityIdentifier: "budgets_create_button",
+                        action: createBudget
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .revealsFloatingActionWhenScrolledAway($showFloatingNew)
+
                     // PeriodNavigationHeader shared (oculto en .unique mode)
                     if selectedSegment != 3 {
                         PeriodNavigationHeader(
@@ -72,17 +84,6 @@ struct BudgetsListView: View {
                         )
                         .padding(.horizontal, DS.Spacing.lg)
                     }
-
-                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe).
-                    TopPrimaryActionPill(
-                        title: L10n.Accessibility.newBudget,
-                        systemImage: "plus",
-                        accessibilityIdentifier: "budgets_create_button",
-                        action: createBudget
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .revealsFloatingActionWhenScrolledAway($showFloatingNew)
 
                     listContent
                 }

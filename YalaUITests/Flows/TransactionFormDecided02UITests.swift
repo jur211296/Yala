@@ -20,10 +20,11 @@ final class TransactionFormDecided02UITests: XCTestCase {
     // MARK: - Helpers
 
     @discardableResult
-    private func launch(seed: String = "minimal", saved: Int? = nil) -> XCUIApplication {
+    private func launch(seed: String = "minimal", saved: Int? = nil, noticeSeconds: Int? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         var extra: [String] = []
         if let saved { extra += ["-uitest-transactions-saved", String(saved)] }
+        if let noticeSeconds { extra += ["-uitest-undo-notice-seconds", String(noticeSeconds)] }
         app.launchForUITest(seed: seed, extraArguments: extra)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         return app
@@ -199,6 +200,44 @@ final class TransactionFormDecided02UITests: XCTestCase {
         panelNew.tap()
         XCTAssertTrue(app.textFields["new_transaction_amount"].waitForExistence(timeout: 5), "No se abrió el formulario.")
         XCTAssertTrue(notice.waitForNonExistence(timeout: 3), "Con otro formulario abierto, el aviso debía retirarse.")
+    }
+
+    /// Jürgen eligió A el 2026-10-22 (ticket `saved-record-notice-covers-the-panel-plus-button`): el aviso va por encima
+    /// de los botones flotantes. Con el aviso en pantalla, el «+» del Panel responde al PRIMER toque y su menú se puede
+    /// usar. El aviso se alarga a 30 s para que el plazo no decida el caso (`testing.md`).
+    func test_afterThreeRecords_thePlusTakesTheFirstTapWithTheNoticeVisible() {
+        let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
+        openForm(app)
+        typeAmount(app, "25")
+        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
+        app.buttons["new_transaction_save"].tap()
+        XCTAssertTrue(formIsGone(app))
+        let notice = element(app, "saved_record_notice")
+        XCTAssertTrue(notice.waitForExistence(timeout: 3), "Control: el aviso salió.")
+
+        let plus = app.buttons["fab_new_transaction"]
+        XCTAssertTrue(plus.waitForExistence(timeout: 5), "Control: el «+» flotante sigue en el Panel.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "aviso-tras-guardar-y-plus"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        // Ningún botón flotante queda bajo la franja del aviso.
+        var floating = [plus]
+        let chat = app.buttons["fab_chat"]
+        if chat.exists { floating.append(chat) }
+        for button in floating {
+            XCTAssertLessThanOrEqual(notice.frame.maxY, button.frame.minY,
+                                     "El aviso tapa «\(button.identifier)»: va por encima de los botones flotantes.")
+        }
+
+        plus.tap()
+        let manual = app.buttons["fab_manual"]
+        XCTAssertTrue(manual.waitForHittable(timeout: 3), "El primer toque al «+» no abrió su menú con el aviso visible.")
+        XCTAssertTrue(notice.waitForNonExistence(timeout: 3),
+                      "Con el menú del «+» abierto, el aviso de guardado debía retirarse: su franja caería sobre el menú.")
+        manual.tap()
+        XCTAssertTrue(app.textFields["new_transaction_amount"].waitForExistence(timeout: 5), "No se abrió el formulario.")
     }
 
     func test_afterThreeRecords_editFromTheNotice_opensTheRecord() {
