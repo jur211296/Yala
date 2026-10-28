@@ -20,3 +20,9 @@ pestañas a medio animar, no el layout.
 (>24 de diferencia) y la caja de lo distinto; mira a ojo lo que no dé 0 antes de culpar al cambio. Para poner la rama
 al día sin commit (el pre-commit exige el sello del gate): `git stash push -u -m <etiqueta>`, `git merge --ff-only`,
 `git stash apply <sha>` y soltar la entrada por su etiqueta.
+
+**Atajo medido el 2026-10-28 (card t3fq), cuando el «antes» es solo una captura y no un diff de píxeles:** copia de
+respaldo de MIS ficheros al scratchpad (`cp`), `git show HEAD:<f> > <f>` para los que cambié, aparta los tests nuevos
+que no compilarían contra la base y pon un XCUITest temporal de captura. Corre en el MISMO DerivedData (build
+incremental, minutos y sin gigas extra). Al acabar, `cp` de vuelta y `diff -q` fichero a fichero contra la copia antes
+de seguir. El clasificador no lo paró: no descarta trabajo, porque la copia existe antes de tocar nada.
