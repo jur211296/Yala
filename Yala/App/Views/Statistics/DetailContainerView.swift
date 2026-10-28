@@ -558,6 +558,9 @@ struct DetailContainerView: View {
             .padding(.horizontal, DS.Spacing.lg)
         }
         .fadesTowardVerticalBar()
+        // Al pulsar, el cristal interactivo del chip se hincha por encima de su cápsula; sin esto el scroll lo recortaba
+        // en recto arriba y abajo (QA de Jürgen, 2026-10-27). Cabe en el aire de `navigationChipsInset`. Grupos ya lo lleva.
+        .scrollClipDisabled()
     }
 
     private func navigationChipButton(for tab: DetailViewTab) -> some View {
