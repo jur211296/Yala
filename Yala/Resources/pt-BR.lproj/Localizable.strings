@@ -8448,3 +8448,6 @@
 "intent.groupsOnly.applePay.title" = "Pagamento não registrado";
 "intent.groupsOnly.applePay.activate" = "Você não tem o Yala completo. Ative-o para registrar seus pagamentos com Apple Pay.";
 "intent.groupsOnly.applePay.comeBack" = "Você está vendo só seus grupos. Volte para o Yala completo para registrar seus pagamentos com Apple Pay.";
+
+/* Line under the create-categories button on the Panel: there is an account but no category to record with */
+"panel.createCategoriesHint" = "Todo registro vai em uma categoria, e você ainda não tem nenhuma.";

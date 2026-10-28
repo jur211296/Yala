@@ -8460,3 +8460,6 @@
 "intent.groupsOnly.applePay.title" = "Betaling niet vastgelegd";
 "intent.groupsOnly.applePay.activate" = "Je hebt geen volledige Yala. Activeer het om je Apple Pay-betalingen vast te leggen.";
 "intent.groupsOnly.applePay.comeBack" = "Je ziet alleen je groepen. Ga terug naar volledige Yala om je Apple Pay-betalingen vast te leggen.";
+
+/* Line under the create-categories button on the Panel: there is an account but no category to record with */
+"panel.createCategoriesHint" = "Elke registratie hoort bij een categorie, en je hebt er nog geen.";

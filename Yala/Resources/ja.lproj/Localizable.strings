@@ -8460,3 +8460,6 @@
 "intent.groupsOnly.applePay.title" = "支払いは記録されていません";
 "intent.groupsOnly.applePay.activate" = "Yalaの全機能が有効になっていません。Apple Payの支払いを記録するには有効にしてください。";
 "intent.groupsOnly.applePay.comeBack" = "グループだけが表示されています。Apple Payの支払いを記録するにはYalaの全機能に戻ってください。";
+
+/* Line under the create-categories button on the Panel: there is an account but no category to record with */
+"panel.createCategoriesHint" = "記録はカテゴリごとに分けて保存します。まだカテゴリがありません。";

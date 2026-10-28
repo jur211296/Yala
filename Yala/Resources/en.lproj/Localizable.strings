@@ -8454,3 +8454,6 @@
 "intent.groupsOnly.applePay.title" = "Payment not recorded";
 "intent.groupsOnly.applePay.activate" = "You don't have full Yala. Activate it to record your Apple Pay payments.";
 "intent.groupsOnly.applePay.comeBack" = "You're seeing only your groups. Go back to full Yala to record your Apple Pay payments.";
+
+/* Line under the create-categories button on the Panel: there is an account but no category to record with */
+"panel.createCategoriesHint" = "Every record goes in a category, and you don’t have any yet.";

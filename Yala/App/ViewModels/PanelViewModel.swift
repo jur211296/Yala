@@ -1225,7 +1225,26 @@ final class PanelViewModel {
 
     /// Whether voice input can be used (requires active accounts and visible subcategories).
     var canUseVoiceInput: Bool {
-        accounts.contains { !$0.isArchived } && allSubcategories.contains { $0.isVisible }
+        quickActionsState == .ready
+    }
+
+    /// Qué enseña la fila de acciones bajo el hero: la fila, «Crea tu primera cuenta» o «Crear categorías» (card omw5).
+    var quickActionsState: PanelQuickActionsGateLogic.State {
+        PanelQuickActionsGateLogic.state(
+            hasActiveAccount: accounts.contains { !$0.isArchived },
+            hasVisibleSubcategory: allSubcategories.contains { $0.isVisible }
+        )
+    }
+
+    /// «Crear categorías» del Panel: crea las de siempre si no hay ninguna propia, o pide abrir Ajustes › Categorías.
+    func createCategoriesAction() -> PanelQuickActionsGateLogic.CreateCategoriesAction {
+        let action = PanelQuickActionsGateLogic.createCategoriesAction(
+            userCategoryCount: categories.filter { !$0.isSystem }.count)
+        guard action == .seedDefaults, let context = modelContext else { return action }
+        if seedDefaultCategoriesOnUserRequest(in: context) {
+            SessionState.shared.incrementDataVersion()
+        }
+        return action
     }
 
     // MARK: - Layout Logic

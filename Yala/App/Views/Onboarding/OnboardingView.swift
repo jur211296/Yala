@@ -1884,8 +1884,10 @@ struct OnboardingView: View {
         // Los tres términos son `willSeedCategories` y no `loadSeedCategories`: en visita el paso no se
         // muestra, así que la respuesta del usuario no existe y su default (`true`) mentiría. Ver el
         // docblock de la propiedad — de ahí sale también el saldo inicial que en secundaria se perdía.
+        // La persona acaba de decir «Sí»: es una petición, y el centinela de la semilla no la puede anular
+        // (card omw5 — con él puesto de una vida anterior, terminaba sin categorías y con «Nuevo registro» apagado).
         if willSeedCategories {
-            seedCategoriesIfNeeded(in: modelContext)
+            seedDefaultCategoriesOnUserRequest(in: modelContext)
         }
 
         if !willSeedCategories && !expensesOnlyMode {
