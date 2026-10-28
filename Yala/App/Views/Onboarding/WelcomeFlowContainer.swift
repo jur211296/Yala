@@ -603,8 +603,9 @@ struct WelcomeFlowContainer: View {
 
     private func goTo(_ next: WelcomeFlowStep) {
         guard step != next else { return }
-        let animation: Animation? = reduceMotion ? nil : .smooth(duration: 0.5, extraBounce: 0.1)
-        withAnimation(animation) {
+        // El mismo fundido que el cover entre los pasos y la entrada a la cuenta (card feer): no desplaza nada, así que
+        // vale también con «Reducir movimiento».
+        withAnimation(.easeInOut(duration: WelcomeCoverContentLogic.crossfadeSeconds)) {
             step = next
         }
     }

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1088)
+## Index (1089)
 
 | id | status | path |
 |---|---|---|
@@ -1097,6 +1097,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
 | welcome-sign-in-notes-say-the-account-is-bound-to-one-method | done | tickets/done/welcome-sign-in-notes-say-the-account-is-bound-to-one-method.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
+| welcome-steps-slide-in-from-the-top-with-a-black-flash | qa | tickets/qa/welcome-steps-slide-in-from-the-top-with-a-black-flash.md |
 | welcome-to-cloud-entry-closes-and-reopens-whole-screens | done | tickets/done/welcome-to-cloud-entry-closes-and-reopens-whole-screens.md |
 | welcome-to-pro-still-lists-the-old-feature-names | done | tickets/done/welcome-to-pro-still-lists-the-old-feature-names.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | done | tickets/done/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |

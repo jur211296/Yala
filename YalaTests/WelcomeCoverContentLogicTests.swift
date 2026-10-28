@@ -126,11 +126,46 @@ struct WelcomeCoverContentLogicTests {
         let cover = Self.flat(try Self.body(of: "private var welcomeCover: some View {", in: try Self.modifier))
         #expect(cover.hasPrefix("ZStack { LinearGradient(colors: DS.Gradients.heroIndigoBlack, startPoint: .top, endPoint: .bottom) .ignoresSafeArea() switch displayedWelcomeCoverContent {"),
                 "el degradado tiene que ir DEBAJO de las dos pantallas: \(cover)")
-        #expect(cover.contains("case .flow: welcomeFlowContainer .transition(.opacity)"))
-        #expect(cover.contains("case .cloudSignIn: welcomeCloudSignIn .transition(.opacity)"))
-        #expect(cover.hasSuffix(".animation(.easeInOut(duration: WelcomeCoverContentLogic.crossfadeSeconds), value: displayedWelcomeCoverContent)"))
+        // El `zIndex` es lo que deja ver fundirse a la pantalla que SALE (card feer): sin él, en el `ZStack` se pinta por
+        // debajo del degradado opaco y desaparece en un fotograma.
+        #expect(cover.contains("case .flow: welcomeFlowContainer .transition(.opacity) .zIndex(1)"))
+        #expect(cover.contains("case .cloudSignIn: welcomeCloudSignIn .transition(.opacity) .zIndex(1)"))
+        #expect(cover.hasSuffix(".animation(.easeInOut(duration: WelcomeCoverContentLogic.crossfadeSeconds), value: displayedWelcomeCoverContent) .welcomeNavigationHost()"),
+                "la pila de navegación va UNA vez, por encima de los pasos: \(cover)")
         // Con «Reducir movimiento» el fundido se queda (decisión A): nada lo apaga.
         #expect(!cover.contains("reduceMotion"))
+    }
+
+    // MARK: - Una pila para todos los pasos (card feer)
+
+    @Test("dentro de la pila del recorrido, el «‹» de un paso no abre otra pila; fuera, sí")
+    func backButtonReusesTheHostStack() throws {
+        let source = try Self.code("Yala/App/Views/Onboarding/WelcomeBackButton.swift")
+        let host = Self.flat(try Self.body(of: "private struct WelcomeNavigationHost: ViewModifier {", in: source))
+        #expect(host == "func body(content: Content) -> some View { NavigationStack { content .environment(\\.isInsideWelcomeNavigationHost, true) } }")
+        let button = try Self.body(of: "private struct WelcomeBackButton: ViewModifier {", in: source)
+        let body = Self.flat(try Self.body(of: "func body(content: Content) -> some View {", in: button))
+        #expect(body == "if isInsideHost { withBackButton(content) } else { NavigationStack { withBackButton(content) } }")
+        #expect(button.contains("@Environment(\\.isInsideWelcomeNavigationHost) private var isInsideHost"))
+    }
+
+    @Test("ningún paso del cover vuelve a montar su propia pila: la que sale desaparecería de golpe")
+    func noStepOfTheCoverOwnsAStack() throws {
+        let steps = ["WelcomeHeroView", "WelcomeChooserView", "WelcomeExistingChooserView", "WelcomeNewChooserView",
+                     "WelcomeGroupsChooserView", "WelcomeGroupsGateView", "WelcomePrivateICloudGateView",
+                     "WelcomeMirrorRelaunchView", "WelcomeInviteOpeningView", "WelcomeCloudSignInView",
+                     "WelcomeFlowContainer", "WelcomeForm", "WelcomeFlowLayout"]
+        for step in steps {
+            let source = try Self.code("Yala/App/Views/Onboarding/\(step).swift")
+            #expect(!source.contains("NavigationStack"), "\(step) monta una NavigationStack propia dentro del cover")
+        }
+    }
+
+    @Test("entre pasos, el mismo fundido que el cover, también con «Reducir movimiento»")
+    func stepsCrossfadeLikeTheCover() throws {
+        let container = try Self.code("Yala/App/Views/Onboarding/WelcomeFlowContainer.swift")
+        let goTo = Self.flat(try Self.body(of: "private func goTo(_ next: WelcomeFlowStep) {", in: container))
+        #expect(goTo == "guard step != next else { return } withAnimation(.easeInOut(duration: WelcomeCoverContentLogic.crossfadeSeconds)) { step = next }")
     }
 
     @Test("la limpieza del onDismiss viejo corre también al volver sin cerrar el cover, y el respaldo solo tras la entrada")

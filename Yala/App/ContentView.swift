@@ -3349,13 +3349,18 @@ private struct WelcomeFlowModifier: ViewModifier {
             case .flow:
                 welcomeFlowContainer
                     .transition(.opacity)
+                    .zIndex(1)
             case .cloudSignIn:
                 welcomeCloudSignIn
                     .transition(.opacity)
+                    .zIndex(1)
             }
         }
         .animation(.easeInOut(duration: WelcomeCoverContentLogic.crossfadeSeconds),
                    value: displayedWelcomeCoverContent)
+        // Una pila de navegación para todos los pasos, quieta como el degradado (card feer): con una por paso, la que
+        // salía desaparecía sin fundirse y la que entraba podía crecer desde la esquina con su fondo negro.
+        .welcomeNavigationHost()
     }
 
     /// Apunta lo que enseña el cover y, si la entrada a la cuenta acaba de irse a los pasos del Welcome sin cerrarlo
