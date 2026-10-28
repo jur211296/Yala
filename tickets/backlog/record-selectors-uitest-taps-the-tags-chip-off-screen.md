@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: testing
 created: 2026-10-07
-updated: 2026-10-27
+updated: 2026-10-28
 source: rojo del gate de advisory-ui-tests-fail-every-retry, bisecado contra la base
 ---
 
@@ -72,3 +72,7 @@ en ese encargo. Hipótesis sin medir: con la semilla de los tests no hay etiquet
 
 **Confirmado de nuevo el 2026-10-27** en el gate de `nuevo-registro-inactivo-post-onboarding` (card omw5): mismo
 mensaje, rojo con la base `d89a68061` recompilada (1 de 1, centinela en 0) y con la rama (en lote y aislado).
+
+**Y el 2026-10-28** en el gate de `grupos-bugs-columna-reintento-borrador` (Frank): mismo mensaje en la línea 124, en lote
+(1 de 157) y aislado con la rama, y **rojo con la base `d071f1657` extraída con `git archive` y compilada aparte** (1 de
+1, centinela en 0 en las tres corridas). Esa rama no toca etiquetas ni «Nuevo registro».
