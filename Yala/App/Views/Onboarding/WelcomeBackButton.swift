@@ -20,31 +20,63 @@ extension View {
     func welcomeBackButton(tint: Color, action: (() -> Void)?) -> some View {
         modifier(WelcomeBackButton(tint: tint, action: action))
     }
+
+    /// **La pila de navegación que comparten los pasos de un recorrido que cambia de pantalla fundiendo** (card feer,
+    /// 2026-10-28). Con una pila por pantalla, cada cambio de paso quitaba y ponía una pila de UIKit: la que salía
+    /// desaparecía de golpe, sin fundirse, y la que entraba podía crecer desde la esquina enseñando su fondo negro
+    /// (vídeo de Jürgen del 27-oct). Montada una vez por encima de los pasos, la pila no se mueve: los pasos cambian
+    /// dentro como vistas normales, y cada uno solo aporta su «‹» a la barra.
+    func welcomeNavigationHost() -> some View {
+        modifier(WelcomeNavigationHost())
+    }
 }
 
-/// Una pila de navegación propia por pantalla: el Welcome cambia de paso sustituyendo la vista (no hay pila
-/// común que empujar), y ninguna de las que lo llevan está dentro de otra.
-private struct WelcomeBackButton: ViewModifier {
-    let tint: Color
-    let action: (() -> Void)?
+extension EnvironmentValues {
+    /// Lo enciende `welcomeNavigationHost()`: las pantallas de debajo ya están dentro de la pila del recorrido.
+    @Entry var isInsideWelcomeNavigationHost = false
+}
 
+private struct WelcomeNavigationHost: ViewModifier {
     func body(content: Content) -> some View {
         NavigationStack {
             content
-                .toolbar {
-                    if let action {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                DS.Haptic.selection()
-                                action()
-                            } label: {
-                                Label(L10n.Welcome.Invite.back, systemImage: "chevron.backward")
-                                    .foregroundStyle(tint)
-                            }
-                            .accessibilityIdentifier("welcome_back_button")
+                .environment(\.isInsideWelcomeNavigationHost, true)
+        }
+    }
+}
+
+/// Fuera de `welcomeNavigationHost()` la pantalla monta su propia pila (la activación de Yala completo desde Grupos,
+/// que intercala pantallas con pila propia y no puede alojarlas dentro de otra). Dentro, solo pone su botón.
+private struct WelcomeBackButton: ViewModifier {
+    let tint: Color
+    let action: (() -> Void)?
+    @Environment(\.isInsideWelcomeNavigationHost) private var isInsideHost
+
+    func body(content: Content) -> some View {
+        if isInsideHost {
+            withBackButton(content)
+        } else {
+            NavigationStack {
+                withBackButton(content)
+            }
+        }
+    }
+
+    private func withBackButton(_ content: Content) -> some View {
+        content
+            .toolbar {
+                if let action {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            DS.Haptic.selection()
+                            action()
+                        } label: {
+                            Label(L10n.Welcome.Invite.back, systemImage: "chevron.backward")
+                                .foregroundStyle(tint)
                         }
+                        .accessibilityIdentifier("welcome_back_button")
                     }
                 }
-        }
+            }
     }
 }

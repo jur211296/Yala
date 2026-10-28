@@ -91,6 +91,9 @@ paths:
   volver de una pantalla a la otra ya no cierra nada: lo que limpiaba su `onDismiss` tiene que correr también al cambiar
   el contenido, y el respaldo del `onDismiss` solo si lo último pintado era esa pantalla. Mientras baja, el cover sigue
   pintando lo último, no lo que dicen los flags apagados. Molde: `WelcomeFlowModifier` + `WelcomeCoverContentLogic`.
+  **Y las dos pantallas llevan `.zIndex(1)` (medido el 2026-10-28, iOS 27.0, card feer)**: sin él, la que SALE se pinta
+  por debajo del degradado opaco del `ZStack` y desaparece en un fotograma; solo se veía fundirse la que entraba. Vale
+  para cualquier `ZStack` con un fondo opaco y un `switch` con `.transition` encima.
 - **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
   contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
   como contenido, sí (`FilterChipView`).
@@ -583,9 +586,14 @@ paths:
   pasan bajo la hora y la X, y lo eligió viéndolo. Los selectores del Welcome (`WelcomeFormScreen`) **no**: vio las
   dos y prefirió el ancho seguro, con el «‹» en la barra. Fuera de estas, la regla A sin excepciones: una pantalla
   nueva que la quiera saltar se pregunta.
-- **El «‹» del Welcome es un botón de barra del sistema** (`welcomeBackButton`, una `NavigationStack` por pantalla):
-  en el iPhone es el círculo de cristal de toda la app y en el Duo cerrado pasa a la barra vertical. Las pantallas de
-  formulario reservan el alto con la barra de navegación, no con un hueco fijo (`WelcomeFormLayout.topInset`).
+- **El «‹» del Welcome es un botón de barra del sistema** (`welcomeBackButton`): en el iPhone es el círculo de cristal
+  de toda la app y en el Duo cerrado pasa a la barra vertical. Las pantallas de formulario reservan el alto con la barra
+  de navegación, no con un hueco fijo (`WelcomeFormLayout.topInset`). **Dentro del cover del Welcome la pila es UNA,
+  montada por encima de los pasos (`welcomeNavigationHost()`), y un paso nunca abre la suya** (card feer, 2026-10-28):
+  con una pila por pantalla, cambiar de paso quitaba una pila de UIKit y ponía otra, y la que salía desaparecía en un
+  fotograma —sin fundirse— mientras la nueva, en el iPhone, crecía desde la esquina con negro alrededor. Fuera del host
+  (`FullModeActivationView`, que intercala pantallas con pila propia) `welcomeBackButton` sigue montando la suya. Lo fija
+  `WelcomeCoverContentLogicTests` (`noStepOfTheCoverOwnsAStack`).
 - **`.navigationBarBackButtonHidden(_:)` por fuera manda sobre el `swipeBack()` de la pantalla de dentro.** Ajustes
   lo ponía en `false` para todas sus pantallas y las trece que pintan su propio «‹» enseñaban dos (en la barra vertical
   del Duo se veían uno encima del otro). `ProfileView.paintsOwnBackButton(_:)` dice cuáles; una pantalla de Ajustes
