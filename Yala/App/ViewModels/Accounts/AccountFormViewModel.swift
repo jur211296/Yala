@@ -220,6 +220,18 @@ final class AccountFormViewModel {
     /// ven por ella). Auditoría UX 2.2, lote 7, L7-8.
     var secondaryCurrencySuggestion: SecondaryCurrencySuggestionLogic.Suggestion? = nil
 
+    // MARK: - Otra divisa tras crear (S12j)
+
+    /// La cuenta que este formulario acaba de crear; `nil` al editar o antes de guardar. Con ella la hoja ofrece añadir
+    /// una línea en otra divisa (Jürgen, 2026-10-27): «Otras divisas» solo salía al editar, y casi nadie edita.
+    private(set) var createdAccount: Account?
+
+    /// Tras crear, ¿se ofrece añadir otra divisa? Solo si la cuenta nueva puede tener líneas (de usuario, sin archivar).
+    var offersLineAfterCreate: Bool {
+        guard let createdAccount else { return false }
+        return AccountCardLogic.canHaveLines(AccountLineNode(createdAccount))
+    }
+
     // MARK: - Editar el saldo (L7-6)
 
     /// La pantalla «Editar el saldo» (pantalla 8 del rediseño de cuentas, auditoría UX 2.2, L7-6): al
@@ -714,6 +726,7 @@ final class AccountFormViewModel {
             return false
         }
 
+        var created: Account?
         if let account = accountToEdit {
             // Archivar la tarjeta con «también las líneas»: se leen ANTES de escribir `isArchived` en la principal (con
             // ella archivada sus líneas se leerían sueltas), y van en el mismo guardado.
@@ -766,6 +779,7 @@ final class AccountFormViewModel {
                 newAccount.creditCardPaymentDay = creditCardPaymentDay
             }
             context.insert(newAccount)
+            created = newAccount
 
             // Create initial balance transaction if amount specified
             if let initialAmount = parsedBalanceAmount, let sub = subcategory {
@@ -788,6 +802,7 @@ final class AccountFormViewModel {
             isShowingSaveError = true
             return false
         }
+        createdAccount = created
 
         // Suggest adding currency as secondary if applicable
         suggestSecondaryCurrencyIfNeeded()

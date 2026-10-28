@@ -7364,6 +7364,8 @@
 
 /* Button that adds a line in another currency to an account */
 "account.lines.add" = "Aggiungi una linea in un’altra valuta";
+"account.lines.offerTitle" = "Il tuo conto può avere più di una valuta";
+"account.lines.offerMessage %@" = "Vuoi aggiungere a %@ una linea in un’altra valuta? Ogni valuta ha il suo saldo e il conto compare una sola volta.";
 
 /* Button that links an existing account as a currency line */
 "account.lines.link" = "Collega un conto esistente";

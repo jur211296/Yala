@@ -59,6 +59,10 @@ final class AccountsCrudUITests: XCTestCase {
         let saveButton = app.buttons["toolbar_save_button"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "No apareció toolbar_save_button.")
         saveButton.tap()
+        // Desde S12j, tras crear la cuenta la hoja ofrece añadirle otra divisa: «Ahora no» la cierra como antes.
+        let notNow = app.buttons["account_line_offer_skip"]
+        XCTAssertTrue(notNow.waitForExistence(timeout: 5), "Tras crear la cuenta no se ofreció otra divisa.")
+        notNow.tap()
 
         XCTAssertTrue(
             app.buttons["accounts_row_\(accountName)"].waitForExistence(timeout: 5),

@@ -483,7 +483,8 @@ struct UXAudit22Decidido14WiringTests {
         #expect(members.contains("if canActAsAdmin && !viewModel.pendingApprovalMembers.isEmpty {\n                    Section {\n                        joinRequestsSection"))
         #expect(members.contains("canActAsAdmin ? viewModel.visibleMembers.filter { !$0.isPendingApproval } : viewModel.visibleMembers"))
         #expect(members.contains("ForEach(listedMembers, id: \\.id)"))
-        #expect(members.contains("Button(L10n.UXD14.requestsAccept) { performApprove() }\n                    .accessibilityIdentifier(\"group_member_approve_confirm\")"))
+        // S12j: la confirmación es una alerta con «Aceptar» destacado (`.defaultAction`), no un globo.
+        #expect(members.contains("Button(L10n.UXD14.requestsAccept) { performApprove() }\n                            .keyboardShortcut(.defaultAction)\n                            .accessibilityIdentifier(\"group_member_approve_confirm\")"))
 
         let detail = try Self.source("Yala/App/Views/Groups/GroupDetailView.swift")
         #expect(detail.contains("canReview: viewModel.isCurrentUserAdmin && !group.isMigratedFrozen"))

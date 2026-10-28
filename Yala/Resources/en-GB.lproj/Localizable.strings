@@ -6672,6 +6672,8 @@
 
 /* Button that adds a line in another currency to an account */
 "account.lines.add" = "Add a line in another currency";
+"account.lines.offerTitle" = "Your account can hold more than one currency";
+"account.lines.offerMessage %@" = "Want to add a line in another currency to %@? Each currency keeps its own balance and the account shows up once.";
 
 /* Button that links an existing account as a currency line */
 "account.lines.link" = "Link an existing account";

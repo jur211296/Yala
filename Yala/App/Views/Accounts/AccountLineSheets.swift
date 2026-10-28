@@ -289,3 +289,56 @@ struct LinkAccountLineSheet: View {
         .accessibilityIdentifier("account_link_candidate_\(account.name)")
     }
 }
+
+// MARK: - Ofrecer otra divisa tras crear (S12j)
+
+/// La cuenta recién creada, para la hoja «Añadir línea» que abre la pregunta de abajo.
+struct AccountLineOfferTarget: Identifiable {
+    let id = UUID()
+    let viewModel: AccountFormViewModel
+}
+
+/// Lo que enseña la hoja de «Nueva cuenta» tras guardar, si la cuenta puede tener líneas (Jürgen, 2026-10-27): que una
+/// cuenta puede llevar varias divisas y si quiere añadir una ahora. «Otras divisas» solo salía al editar la cuenta, y
+/// casi nadie la edita. «Añadir» abre la hoja de siempre sobre la cuenta nueva; «Ahora no» cierra como antes.
+struct AccountLineOfferView: View {
+    let accountName: String
+    let onAdd: () -> Void
+    let onSkip: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                Image(systemName: "dollarsign.arrow.circlepath")
+                    .font(DS.Typography.title)
+                    .foregroundStyle(.thAccentText)
+                    .accessibilityHidden(true)
+
+                VStack(spacing: DS.Spacing.sm) {
+                    Text(L10n.Account.Lines.offerTitle)
+                        .font(DS.Typography.title3)
+                        .fontWeight(.semibold)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("account_line_offer")
+                    Text(L10n.Account.Lines.offerMessage(accountName))
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(spacing: DS.Spacing.sm) {
+                    YalaPrimaryButton(L10n.Account.Lines.add, action: onAdd)
+                        .accessibilityIdentifier("account_line_offer_add")
+                    YalaSecondaryButton(L10n.Action.notNow, action: onSkip)
+                        .accessibilityIdentifier("account_line_offer_skip")
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.xxl)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+    }
+}

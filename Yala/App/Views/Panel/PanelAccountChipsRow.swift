@@ -170,21 +170,24 @@ struct PanelAccountChipsRow: View {
 
     // MARK: - Agregar
 
+    /// Misma pastilla que una cuenta (S12j, Jürgen 2026-10-27): el «+» ocupa el hueco del icono de cuenta, así que mide lo
+    /// mismo, y lleva el mismo cristal. Antes era una cápsula morada rellena, más baja y de otra familia que las demás.
     private var addChip: some View {
         Button(action: onAddAccount) {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: "plus")
                     .font(DS.Typography.caption)
                     .fontWeight(.bold)
+                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
                     .accessibilityHidden(true)
                 Text(L10n.PanelAccountCard.addChip)
                     .font(DS.Typography.subheadlineEmphasized)
                     .lineLimit(1)
             }
-            .foregroundStyle(Color.white)
+            .foregroundStyle(.thAccentText)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
-            .background(Capsule().fill(Color.selectedIndigoFill))
+            .glassEffect(.regular.interactive(), in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

@@ -7366,6 +7366,8 @@
 
 /* Button that adds a line in another currency to an account */
 "account.lines.add" = "添加其他币种子账户";
+"account.lines.offerTitle" = "你的账户可以有多种币种";
+"account.lines.offerMessage %@" = "要为 %@ 添加其他币种的子账户吗？每种币种各有余额，账户只显示一次。";
 
 /* Button that links an existing account as a currency line */
 "account.lines.link" = "关联已有账户";

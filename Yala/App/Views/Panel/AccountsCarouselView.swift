@@ -42,12 +42,19 @@ struct AccountsCarouselView: View {
 
         VStack(spacing: DS.Spacing.sm) {
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
+                // Todas las tarjetas miden lo que la más alta (S12j, Jürgen 2026-10-27): la de varias divisas trae una
+                // fila por divisa y el total, y a su lado las demás quedaban más bajas. El `HStack` toma el alto ideal
+                // de la más alta (`fixedSize` vertical) y cada tarjeta se estira hasta él (`maxHeight: .infinity` en
+                // `AccountCardView` y `AddAccountCardView`). No es `LazyHStack`: el perezoso no conoce el alto de las
+                // que aún no ha montado. Son las cuentas del usuario, pocas.
+                HStack(alignment: .top, spacing: DS.Spacing.md) {
                     ForEach(0..<totalCards, id: \.self) { index in
                         cardView(at: index, accounts: allCards)
                             .frame(width: cardWidth)
+                            .frame(maxHeight: .infinity)
                     }
                 }
+                .fixedSize(horizontal: false, vertical: true)
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByFew))

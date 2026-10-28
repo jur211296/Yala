@@ -7355,6 +7355,8 @@
 
 /* Button that adds a line in another currency to an account */
 "account.lines.add" = "Ajouter une ligne dans une autre devise";
+"account.lines.offerTitle" = "Ton compte peut avoir plus d’une devise";
+"account.lines.offerMessage %@" = "Tu veux ajouter à %@ une ligne dans une autre devise ? Chaque devise garde son propre solde et le compte n’apparaît qu’une fois.";
 
 /* Button that links an existing account as a currency line */
 "account.lines.link" = "Lier un compte existant";

@@ -195,15 +195,24 @@ struct GroupMembersView: View {
                 onCancel: { roleChangeMember = nil; roleChangeTarget = nil }
             ))
             // L19-1 · el mismo verbo que la tarjeta («Aceptar»): «Aprobar» en la confirmación eran dos palabras para un gesto.
-            .confirmationDialog(
-                pendingActionMember.map { L10n.UXD14.requestsAcceptConfirm($0.displayName) } ?? "",
-                isPresented: $showApproveConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.UXD14.requestsAccept) { performApprove() }
-                    .accessibilityIdentifier("group_member_approve_confirm")
-                Button(L10n.Common.cancel) { pendingActionMember = nil }
-                    .accessibilityIdentifier("group_member_approve_cancel")
+            // S12j (Jürgen 2026-10-27): era un `confirmationDialog`, que en iOS 26 sale como globo de cristal y dejaba ver
+            // el botón azul de detrás encima de «Aceptar», que no se leía. Ahora es una alerta centrada con «Aceptar»
+            // destacado (relleno morado) y, como en el consentimiento de IA (`AIConsentAlertModifier`), presentada desde
+            // un ancla con su propio tinte para que el texto del botón destacado salga blanco en oscuro.
+            .background {
+                Color.clear
+                    .alert(
+                        pendingActionMember.map { L10n.UXD14.requestsAcceptConfirm($0.displayName) } ?? "",
+                        isPresented: $showApproveConfirm
+                    ) {
+                        Button(L10n.UXD14.requestsAccept) { performApprove() }
+                            .keyboardShortcut(.defaultAction)
+                            .accessibilityIdentifier("group_member_approve_confirm")
+                        // Una alerta sí pinta su salida con `role: .cancel` (el globo no la pintaba: GroupsLote19).
+                        Button(L10n.Common.cancel, role: .cancel) { pendingActionMember = nil }
+                            .accessibilityIdentifier("group_member_approve_cancel")
+                    }
+                    .tint(Color.alertActionTint)
             }
             .confirmationDialog(
                 pendingActionMember.map { L10n.Groups.Member.rejectConfirm($0.displayName) } ?? "",

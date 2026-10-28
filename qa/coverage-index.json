@@ -28,8 +28,8 @@
       "none"
     ],
     "counts": {
-      "total": 137,
-      "deterministic": 44,
+      "total": 138,
+      "deterministic": 45,
       "agentic": 35,
       "manual": 58,
       "deterministicSinXCUITest": 0
@@ -3660,6 +3660,27 @@
       "coverage": "xcuitest:YalaUITests/UsageModeUITests | 2026-10-26 (card p0iu): Ajustes › «Cómo usas Yala» → «Solo grupos» con su hoja de ida; la vuelta sin registros (sin pregunta, aviso), con registros («Seguir donde lo dejé» por defecto) y «Empezar de cero» (doble confirmación + solo la cuenta principal). Unit: UsageModeTests (lógica, marca, pausa por source-scan) y UsageModeFreshStartWipeTests. La pausa de avisos en un iPhone real (notificaciones que no llegan en solo grupos y vuelven al volver) es device-QA. | 2026-10-27 (encargo S11e): al volver a Yala completo, los pagos programados (personales y de grupo) que vencieron durante la pausa no salen de golpe: cada recurrente sigue en su próxima fecha (unit:YalaTests/UsageModePausedPaymentsTests, con control sin el salto; lógica en UsageModeTests). Apple Pay y Siri (anotar, preguntar, abrir cuenta) con la shell de solo grupos dicen «Activa / Vuelve a Yala completo» y no dejan borrador (unit:GroupsOnlyIntentGateTests + source-scan en UsageModeWiringTests). La voz de Siri y la notificación de Apple Pay en un iPhone real son device-QA.",
       "owner": "",
       "lastVerified": "2026-10-27"
+    },
+    {
+      "area": "multi-currency-discovery-panel-add-accept-member",
+      "codeGlobs": [
+        "Yala/App/Views/Accounts/AccountFormView.swift",
+        "Yala/App/Views/Accounts/AccountLineSheets.swift",
+        "Yala/App/ViewModels/Accounts/AccountFormViewModel.swift",
+        "Yala/App/Views/Panel/AccountsCarouselView.swift",
+        "Yala/App/Views/Panel/AccountCardView.swift",
+        "Yala/App/Views/Panel/PanelAccountChipsRow.swift",
+        "Yala/App/Views/Groups/GroupMembersView.swift"
+      ],
+      "scenarioIDs": [
+        "i724",
+        "g4ap",
+        "nbzv"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/MultiCurrencyDiscoveryUITests | 2026-10-28 (encargo S12j): tras crear una cuenta la hoja ofrece añadirle otra divisa («Sí» abre «Añadir línea» sobre la cuenta nueva; «Ahora no» cierra como antes; editar no pregunta: unit:YalaTests/AccountLineOfferAfterCreateTests). «Tus finanzas» desplegada: todas las tarjetas del carrusel miden lo que la de varias divisas; plegada: «Agregar» mide lo que una pastilla de cuenta y lleva su cristal. «¿Aceptar a X en el grupo?» es una alerta centrada con «Aceptar» destacado (antes, globo de cristal que transparentaba). El tono del morado y la legibilidad en el iPhone de Jürgen son su visto bueno.",
+      "owner": "frank",
+      "lastVerified": "2026-10-28"
     }
   ]
 }

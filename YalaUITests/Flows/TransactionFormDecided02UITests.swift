@@ -250,6 +250,11 @@ final class TransactionFormDecided02UITests: XCTestCase {
         save.tap()
         if !name.waitForNonExistence(timeout: 3) { save.tap() }
         XCTAssertTrue(name.waitForNonExistence(timeout: 5), "El formulario de cuenta no se cerró al guardar.")
+        // Desde S12j, tras crear la cuenta la hoja ofrece añadirle otra divisa: «Ahora no» la cierra como antes.
+        let notNow = app.buttons["account_line_offer_skip"]
+        XCTAssertTrue(notNow.waitForExistence(timeout: 5), "Tras crear la cuenta no se ofreció otra divisa.")
+        XCTAssertTrue(notNow.waitForHittable(timeout: 5))
+        notNow.tap()
 
         let chip = app.buttons["new_transaction_destination_chip"]
         XCTAssertTrue(chip.waitForExistence(timeout: 8))
