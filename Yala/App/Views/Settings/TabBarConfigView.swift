@@ -225,6 +225,7 @@ struct TabBarConfigView: View {
             .buttonStyle(.plain)
             .disabled(!canActivate)
             .accessibilityHint(!canActivate ? L10n.Accessibility.tabLimitReached : "")
+            .accessibilityIdentifier("tabconfig_add_\(tab.id)")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
