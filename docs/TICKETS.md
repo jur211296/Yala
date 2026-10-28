@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1098)
+## Index (1103)
 
 | id | status | path |
 |---|---|---|
@@ -124,6 +124,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | apple-id-close-loss-notice-uitest-fails-on-2-1 | backlog | tickets/backlog/apple-id-close-loss-notice-uitest-fails-on-2-1.md |
 | apple-id-close-notice-does-not-say-what-else-the-close-does | done | tickets/done/apple-id-close-notice-does-not-say-what-else-the-close-does.md |
 | apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox | backlog | tickets/backlog/apple-pay-capture-in-a-groups-only-session-has-no-personal-inbox.md |
+| apple-pay-live-activity-inline-actions | backlog | tickets/backlog/apple-pay-live-activity-inline-actions.md |
 | apple-watch | backlog | tickets/backlog/apple-watch.md |
 | applepay-shortcut-warm-launch-empty-data | done | tickets/done/applepay-shortcut-warm-launch-empty-data.md |
 | applied-amount-filter-keeps-filtering-after-its-currency-changes | backlog | tickets/backlog/applied-amount-filter-keeps-filtering-after-its-currency-changes.md |
@@ -160,6 +161,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
 | budget-days-left-counts-today | done | tickets/done/budget-days-left-counts-today.md |
 | budget-interval-counts-next-period-midnight | done | tickets/done/budget-interval-counts-next-period-midnight.md |
+| budget-threshold-live-activity | backlog | tickets/backlog/budget-threshold-live-activity.md |
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | bulk-edit-uitests-fail-on-the-small-iphone | backlog | tickets/backlog/bulk-edit-uitests-fail-on-the-small-iphone.md |
 | bulk-move-to-another-currency-account-relabels-the-amount | backlog | tickets/backlog/bulk-move-to-another-currency-account-relabels-the-amount.md |
@@ -677,6 +679,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait | done | tickets/done/lineage-coverage-blocks-forever-after-a-row-deleted-during-the-wait.md |
 | lineage-enumeration-check-skips-tables-absent-from-the-merkle | discarded | tickets/discarded/lineage-enumeration-check-skips-tables-absent-from-the-merkle.md |
 | list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max | done | tickets/done/list-column-too-narrow-for-accessibility-text-on-a-turned-pro-max.md |
+| live-activity-base-and-apple-pay-presence | backlog | tickets/backlog/live-activity-base-and-apple-pay-presence.md |
 | live-anchor-breakdown-doubles-the-approximate-glyph | done | tickets/done/live-anchor-breakdown-doubles-the-approximate-glyph.md |
 | local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration | backlog | tickets/backlog/local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
@@ -928,6 +931,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
+| scheduled-payment-live-activity | backlog | tickets/backlog/scheduled-payment-live-activity.md |
 | scheduled-payment-once-labeled-monthly | done | tickets/done/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payment-pending-deletion-loses-undo-on-a-second-delete | backlog | tickets/backlog/scheduled-payment-pending-deletion-loses-undo-on-a-second-delete.md |
 | scheduled-payment-save-does-nothing-when-a-field-is-missing | done | tickets/done/scheduled-payment-save-does-nothing-when-a-field-is-missing.md |
@@ -1072,6 +1076,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | vision-reads-every-dollar-sign-as-usd | done | tickets/done/vision-reads-every-dollar-sign-as-usd.md |
 | voice-cancel-does-not-resume-other-apps-audio | done | tickets/done/voice-cancel-does-not-resume-other-apps-audio.md |
 | voice-entry-end-to-end | done | tickets/done/voice-entry-end-to-end.md |
+| voice-entry-live-activity | backlog | tickets/backlog/voice-entry-live-activity.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
