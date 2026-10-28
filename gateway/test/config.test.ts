@@ -24,6 +24,7 @@ interface ConfigBody {
   };
   sync: {
     manifestVersion: number;
+    groupsManifestVersion: number;
   };
 }
 
@@ -59,6 +60,7 @@ describe("GET /config — shape y semántica fail-closed", () => {
       },
       sync: {
         manifestVersion: 4,
+        groupsManifestVersion: 2,
       },
     });
   });

@@ -1,4 +1,5 @@
 import { MANIFEST_VERSION } from "./sync/manifest";
+import { GROUP_MANIFEST_VERSION } from "./groups/manifest";
 import type { Context } from "hono";
 import type { Env } from "./env";
 import { ROUTES } from "./ai/routes";
@@ -88,8 +89,11 @@ export function handleConfig(c: Ctx): Response {
     // Versión del capability_manifest de ESTE Worker. La app la lee del pull y del Merkle, no de aquí; aquí la lee
     // el guard de despliegue (`scripts/check-manifest-not-older.mjs`), que no deja desplegar un Worker con un
     // manifest más viejo que el que ya está: los teléfonos que hablan la versión nueva verían rechazadas sus filas.
+    // Y la del manifest de GRUPOS (card u8cl), por lo mismo: un Worker con el de Grupos más viejo poda o rechaza
+    // columnas que los teléfonos nuevos ya mandan.
     sync: {
       manifestVersion: MANIFEST_VERSION,
+      groupsManifestVersion: GROUP_MANIFEST_VERSION,
     },
   };
   return new Response(JSON.stringify(body), {
