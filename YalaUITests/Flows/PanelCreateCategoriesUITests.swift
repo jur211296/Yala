@@ -18,6 +18,27 @@ final class PanelCreateCategoriesUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// S12h (2026-10-27): quien tiene grupos tiene las subcategorías de sistema del puente, visibles. El selector no las
+    /// ofrece, y el Panel las contaba: «Nuevo registro» salía como si hubiera categorías y sin «Crear categorías».
+    func test_onlyGroupSystemCategories_stillOffersCreateCategories() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "sin-categorias-con-grupos")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let createCategories = app.buttons["panel_create_categories"]
+        let found = createCategories.waitForHittable(timeout: 15)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "panel-sin-categorias-con-grupos"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(found, "Con las categorías de sistema de Grupos y ninguna propia, el Panel no ofreció «Crear categorías».")
+        XCTAssertFalse(app.buttons["panel_action_new"].exists, "La fila de registrar salió sin nada que elegir.")
+
+        createCategories.tap()
+        XCTAssertTrue(app.buttons["panel_action_new"].waitForHittable(timeout: 10),
+                      "«Crear categorías» no creó las recomendadas: la fila no volvió.")
+    }
+
     func test_accountWithoutCategories_explainsAndCreatesThem_thenRecordingWorks() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "sin-categorias")

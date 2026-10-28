@@ -108,6 +108,54 @@ struct PanelCreateCategoriesTests {
         }
     }
 
+    // MARK: - 2 bis · Las subcategorías de sistema de Grupos no cuentan como «hay categorías» (S12h)
+
+    /// Crear o unirse a un grupo siembra las subcategorías del puente VISIBLES. El selector no las ofrece, así que la
+    /// fila del Panel tiene que seguir pidiendo categorías: si las contara, «Nuevo registro» quedaba sin nada que
+    /// elegir y sin el «Crear categorías» (el caso de Jürgen, con grupos, tras vaciar el 27-oct).
+    @Test func soloSubcategoriasSistemaDeGrupos_noCuentanParaRegistrar() throws {
+        let context = try makeTestContext()
+        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        seedSystemGroupCategoriesIfNeeded(in: context, defaults: defaults)
+        let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+        // Control: el escenario existe — hay subcategorías y alguna es visible.
+        #expect(subcategories.contains { $0.isVisible })
+        #expect(PanelQuickActionsGateLogic.hasPickableSubcategory(subcategories) == false)
+        #expect(PanelQuickActionsGateLogic.state(
+            hasActiveAccount: true,
+            hasVisibleSubcategory: PanelQuickActionsGateLogic.hasPickableSubcategory(subcategories)) == .needsCategories)
+    }
+
+    @Test func trasSembrarLasRecomendadas_hayAlgoQueElegir() throws {
+        let context = try makeTestContext()
+        let defaults = try #require(UserDefaults(suiteName: "test.\(UUID().uuidString)"))
+        seedSystemGroupCategoriesIfNeeded(in: context, defaults: defaults)
+        try withStaleSentinel {
+            #expect(seedDefaultCategoriesOnUserRequest(in: context))
+        }
+        let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+        #expect(PanelQuickActionsGateLogic.hasPickableSubcategory(subcategories))
+    }
+
+    @Test func unaSubcategoriaPropiaOculta_noCuenta() throws {
+        let context = try makeTestContext()
+        let category = Yala.Category(name: "Mía", colorHex: "#123456", isIncome: false)
+        context.insert(category)
+        let hidden = Subcategory(name: "Oculta", isVisible: false, category: category)
+        context.insert(hidden)
+        try context.save()
+        #expect(PanelQuickActionsGateLogic.hasPickableSubcategory([hidden]) == false)
+        hidden.isVisible = true
+        #expect(PanelQuickActionsGateLogic.hasPickableSubcategory([hidden]))
+    }
+
+    /// El Panel decide con la regla del selector, no con «alguna visible».
+    @Test func elPanel_decideConLaReglaDelSelector() throws {
+        let code = try Self.code("Yala/App/ViewModels/PanelViewModel.swift")
+        #expect(code.contains("hasVisibleSubcategory: PanelQuickActionsGateLogic.hasPickableSubcategory(allSubcategories)"))
+        #expect(!code.contains("allSubcategories.contains { $0.isVisible }"))
+    }
+
     // MARK: - 3 · El cableado (source-scan)
 
     private static func code(_ path: String) throws -> String {

@@ -4304,8 +4304,8 @@
 /* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudGroupsOnly" = "A tua conta Yala é eliminada";
 
-/* D4 Eliminar cuenta: fila grupos */
-"settings.deleteAccountScopeGroups" = "O teu nome passa a «Utilizador eliminado»";
+/* D4 Eliminar cuenta: fila grupos. Sales de cada grupo (el servidor te marca como retirado) y solo una invitación nueva te devuelve: S12h, 2026-10-27 */
+"settings.deleteAccountScopeGroups" = "Sais dos teus grupos e o teu nome passa a «Utilizador eliminado». Para voltares a um, vais precisar de um novo convite.";
 
 /* D4 Cerrar sesión (privado): fila dispositivo */
 "settings.signOutScopeDevicePrivate" = "Apagam-se deste dispositivo; antes acabamos de os enviar para o iCloud";

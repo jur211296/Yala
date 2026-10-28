@@ -171,8 +171,15 @@ final class UXAudit22Lote04UITests: XCTestCase {
         let delete = app.buttons["yala_account_delete"]
         XCTAssertTrue(delete.waitForExistence(timeout: 5))
         delete.tap()
-        XCTAssertTrue(app.staticTexts["Tu nombre pasa a «Usuario eliminado»"].waitForExistence(timeout: 5),
-                      "La hoja sigue diciendo «seguirás apareciendo» en vez de lo que pasa con tu nombre.")
+        // S12h (2026-10-27): la fila dice también que sales de los grupos y que volver pide una invitación nueva.
+        XCTAssertTrue(app.staticTexts[
+            "Sales de tus grupos y tu nombre pasa a «Usuario eliminado». Para volver a uno, te tienen que invitar otra vez."
+        ].waitForExistence(timeout: 5),
+                      "La hoja no dice que eliminar la cuenta te saca de tus grupos ni cómo se vuelve.")
+        let sheet = XCTAttachment(screenshot: app.screenshot())
+        sheet.name = "eliminar-cuenta-fila-grupos"
+        sheet.lifetime = .keepAlways
+        add(sheet)
         app.buttons["delete_account_continue"].tap()
 
         let body = app.alerts.staticTexts["Se borra tu cuenta de Yala. Lo de este teléfono se queda."].firstMatch

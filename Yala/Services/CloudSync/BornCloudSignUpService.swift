@@ -121,6 +121,12 @@ enum BornCloudBreadcrumb {
         logger.notice("BornCloud engineStartedInSession — startShared invocado tras el alta sin relanzamiento")
     }
 
+    /// S12h: el servidor dijo `existing_stable`, pero la cuenta la creó este teléfono y sigue dentro: el alta continúa
+    /// como alta (onboarding y categorías) en vez de adoptar su propia cuenta. Ver `AccountClaimDecision.bornCloudReclaimState`.
+    static func reclaimOfOwnAccount() {
+        logger.notice("BornCloud reclaimOfOwnAccount — existing_stable de la cuenta nacida aquí: sigue el alta")
+    }
+
     /// La tabla de `AccountClaimDecision` devolvió una acción que la rama born-cloud no puede producir.
     /// Hoy imposible; si aparece, alguien cambió la tabla sin mirar a este consumidor.
     static func unexpectedAction(_ action: String) {
@@ -236,6 +242,17 @@ final class BornCloudSignUpService {
 
         let userID = session.currentUserID
 
+        // S12h: la re-entrada del alta en la cuenta que este teléfono creó y en la que sigue (ver
+        // `AccountClaimDecision.bornCloudReclaimState`). El sello se lee ANTES de que el paso 4 lo reescriba.
+        let decisionState = AccountClaimDecision.bornCloudReclaimState(
+            claimState,
+            thisDeviceSeededThisAccount: userID.map { claimStore.action(forUserID: $0) == .seedBornCloud } ?? false,
+            deviceStillInBornCloudMode: StorageModePersistence.read(storageDefaults) == .cloud
+                && StorageModePersistence.isBornCloud(storageDefaults))
+        if decisionState != claimState {
+            BornCloudBreadcrumb.reclaimOfOwnAccount()
+        }
+
         // 2) Decisión §f.1 con los dos booleanos del faro leídos del faro REAL (nada hardcodeado).
         //    `providerMatchesBeacon` se DERIVA de `ProviderMismatchLogic` —la misma lógica sub-first que
         //    usa el Welcome (`WelcomeCloudSignInView.runSignInFlow`)— en vez de comparar aquí a mano: dos
@@ -254,7 +271,7 @@ final class BornCloudSignUpService {
         let providerMatchesBeacon = mismatchVerdict == .proceed
 
         let action = AccountClaimDecision.decide(
-            state: claimState,
+            state: decisionState,
             branch: .bornCloud,
             beaconSaysCloudActivated: beaconLinked,
             providerMatchesBeacon: providerMatchesBeacon)

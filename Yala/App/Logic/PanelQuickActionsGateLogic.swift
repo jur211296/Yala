@@ -21,6 +21,17 @@ enum PanelQuickActionsGateLogic {
         case needsCategories
     }
 
+    /// ¿Hay alguna subcategoría que se pueda elegir al registrar? La misma regla que el selector
+    /// (`ManualSubcategoryPickerLogic`), en gasto o en ingreso. Las de sistema —las del puente de Grupos, que se
+    /// siembran visibles al crear o unirse a un grupo— no cuentan: el selector no las ofrece, y contarlas dejaba la fila
+    /// en `.ready` con «Nuevo registro» sin nada que elegir y sin el «Crear categorías» (S12h, 2026-10-27).
+    static func hasPickableSubcategory(_ subcategories: [Subcategory]) -> Bool {
+        subcategories.contains {
+            ManualSubcategoryPickerLogic.isPickable($0, for: .expense)
+                || ManualSubcategoryPickerLogic.isPickable($0, for: .income)
+        }
+    }
+
     static func state(hasActiveAccount: Bool, hasVisibleSubcategory: Bool) -> State {
         guard hasActiveAccount else { return .needsAccount }
         guard hasVisibleSubcategory else { return .needsCategories }
