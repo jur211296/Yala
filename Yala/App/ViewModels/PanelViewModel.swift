@@ -1232,7 +1232,7 @@ final class PanelViewModel {
     var quickActionsState: PanelQuickActionsGateLogic.State {
         PanelQuickActionsGateLogic.state(
             hasActiveAccount: accounts.contains { !$0.isArchived },
-            hasVisibleSubcategory: allSubcategories.contains { $0.isVisible }
+            hasVisibleSubcategory: PanelQuickActionsGateLogic.hasPickableSubcategory(allSubcategories)
         )
     }
 

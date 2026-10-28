@@ -5023,8 +5023,8 @@
 /* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudGroupsOnly" = "你的 Yala 账户将被删除";
 
-/* D4 Eliminar cuenta: fila grupos */
-"settings.deleteAccountScopeGroups" = "你的名字会变成“已删除的用户”";
+/* D4 Eliminar cuenta: fila grupos. Sales de cada grupo (el servidor te marca como retirado) y solo una invitación nueva te devuelve: S12h, 2026-10-27 */
+"settings.deleteAccountScopeGroups" = "你会退出你的群组，你的名字会变成“已删除的用户”。要重新加入某个群组，需要再次被邀请。";
 
 /* D4 Cerrar sesión (privado): fila dispositivo */
 "settings.signOutScopeDevicePrivate" = "将从此设备删除；删除前我们会先完成上传到 iCloud";

@@ -70,6 +70,10 @@ enum DevSeedProfile: String {
     /// centinela de la semilla puesto, como en un teléfono que ya sembró en una vida anterior. Ver
     /// `PanelCreateCategoriesUITests`.
     case sinCategorias = "sin-categorias"
+    /// `.sinCategorias` con las categorías de sistema de Grupos, que crear o unirse a un grupo siembra VISIBLES (S12h,
+    /// 2026-10-27): el caso de quien tiene grupos y se quedó sin categorías propias. El selector no ofrece las de sistema,
+    /// así que el Panel tiene que seguir pidiendo categorías. Ver `PanelCreateCategoriesUITests`.
+    case sinCategoriasConGrupos = "sin-categorias-con-grupos"
     /// Capturas de la ficha de la App Store en es-MX: tres grupos con nombres de México, montos en MXN y
     /// saldos abiertos, sin vida personal (la captura es de Grupos y una cuenta en PEN delataría el seed).
     /// Ver `DevSeedGroups.createFichaMX`.
@@ -112,7 +116,8 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias, .fichaMX,
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .sinCategorias,
+             .sinCategoriasConGrupos, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
              .tarjetaDosLineas, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
@@ -216,9 +221,12 @@ final class DevSeedService {
             SessionState.shared.incrementDataVersion()
             return
         }
-        if profile == .sinCategorias {
+        if profile == .sinCategorias || profile == .sinCategoriasConGrupos {
             defer { isSeeding = false }
             _ = DevSeedAccounts.create(in: context)
+            if profile == .sinCategoriasConGrupos {
+                seedSystemGroupCategoriesIfNeeded(in: context)
+            }
             do { try context.save() } catch {
                 print("DevSeedService: sin-categorias save error: \(error)")
             }

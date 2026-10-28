@@ -59,6 +59,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-currency-change-leaves-scheduled-and-favorites-stale | done | tickets/done/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
 | account-deletion-can-still-orphan-records-that-arrive-later | done | tickets/done/account-deletion-can-still-orphan-records-that-arrive-later.md |
+| account-deletion-canary-never-arrives | backlog | tickets/backlog/account-deletion-canary-never-arrives.md |
 | account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare | done | tickets/done/account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
@@ -84,6 +85,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained | backlog | tickets/backlog/adopt-imports-between-the-reconcile-and-the-baseline-are-never-drained.md |
 | adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch | done | tickets/done/adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch.md |
 | adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit | backlog | tickets/backlog/adopt-orphan-with-a-fresh-hlc-beats-the-absent-leaders-edit.md |
+| adopt-over-a-device-already-in-cloud-mode-has-no-exit | backlog | tickets/backlog/adopt-over-a-device-already-in-cloud-mode-has-no-exit.md |
 | adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate | backlog | tickets/backlog/adopt-rekeyed-rows-without-a-unique-lineage-key-still-duplicate.md |
 | adopt-session-close-drops-the-mark-before-the-sign-out-lands | backlog | tickets/backlog/adopt-session-close-drops-the-mark-before-the-sign-out-lands.md |
 | adopt-terminal-claims-ready-without-checking-engine | backlog | tickets/backlog/adopt-terminal-claims-ready-without-checking-engine.md |
