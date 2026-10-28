@@ -30,10 +30,12 @@ struct GroupsLote19FixesTests {
     ])
     func dialogs_showAPlainCancel(path: String, cancelIDs: [String]) throws {
         let source = try Self.source(path)
-        // El único `role: .cancel` que queda es el de la ALERTA del presupuesto: una `.alert` sí pinta sus dos
-        // salidas. En un `confirmationDialog`, no.
+        // Los únicos `role: .cancel` que quedan son los de ALERTAS: la del presupuesto y, desde S12j (2026-10-28), la de
+        // aceptar a un miembro. Una `.alert` sí pinta sus dos salidas. En un `confirmationDialog`, no.
         let alertCancel = "Button(L10n.Action.save) { saveBudgetLimitFromInput() }\n                Button(L10n.Common.cancel, role: .cancel) {}"
+        let approveAlertCancel = "Button(L10n.Common.cancel, role: .cancel) { pendingActionMember = nil }\n                            .accessibilityIdentifier(\"group_member_approve_cancel\")"
         let withoutAlert = source.replacingOccurrences(of: alertCancel, with: "")
+            .replacingOccurrences(of: approveAlertCancel, with: "")
         #expect(!withoutAlert.contains("Button(L10n.Common.cancel, role: .cancel)"),
                 "\(path) vuelve a esconder la salida de un diálogo")
         #expect(!source.contains("approvalPromptSkip, role: .cancel"))

@@ -7380,6 +7380,8 @@
 
 /* Button that adds a line in another currency to an account */
 "account.lines.add" = "Añadir línea en otra divisa";
+"account.lines.offerTitle" = "Tu cuenta puede tener más de una divisa";
+"account.lines.offerMessage %@" = "¿Quieres añadir a %@ una línea en otra divisa? Cada divisa lleva su propio saldo y la cuenta se ve una sola vez.";
 
 /* Button that links an existing account as a currency line */
 "account.lines.link" = "Vincular cuenta existente";

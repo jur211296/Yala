@@ -7366,6 +7366,8 @@
 
 /* Button that adds a line in another currency to an account */
 "account.lines.add" = "Lijn in andere valuta toevoegen";
+"account.lines.offerTitle" = "Je rekening kan meer dan één valuta hebben";
+"account.lines.offerMessage %@" = "Wil je aan %@ een lijn in een andere valuta toevoegen? Elke valuta houdt zijn eigen saldo en de rekening verschijnt maar één keer.";
 
 /* Button that links an existing account as a currency line */
 "account.lines.link" = "Bestaande rekening koppelen";

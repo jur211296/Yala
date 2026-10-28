@@ -162,7 +162,8 @@ struct AccountCardView: View {
             }
         }
         .padding(DS.Spacing.lg)
-        .frame(maxWidth: .infinity, minHeight: Self.minHeight, alignment: .leading)
+        // `maxHeight: .infinity`: en el carrusel iguala el alto de la tarjeta más alta (`AccountsCarouselView`).
+        .frame(maxWidth: .infinity, minHeight: Self.minHeight, maxHeight: .infinity, alignment: .leading)
         .background {
             // La cuenta que filtra va rellena de su color sobre el fondo de la tarjeta; el texto de encima pasa a
             // `contrastingText(for:)`, así que el contraste sale del color que el usuario eligió para la cuenta.
@@ -360,7 +361,7 @@ struct AddAccountCardView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(DS.Spacing.lg)
-            .frame(maxWidth: .infinity, minHeight: AccountCardView.minHeight)
+            .frame(maxWidth: .infinity, minHeight: AccountCardView.minHeight, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(.thCard.opacity(0.95))

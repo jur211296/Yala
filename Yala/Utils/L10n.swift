@@ -3857,6 +3857,11 @@ enum L10n {
             static var sectionTitle: String { ls("account.lines.sectionTitle", comment: "") }
             static var sectionFooter: String { ls("account.lines.sectionFooter", comment: "") }
             static var add: String { ls("account.lines.add", comment: "") }
+            /// Tras crear una cuenta (S12j): la pregunta que descubre que puede tener varias divisas.
+            static var offerTitle: String { ls("account.lines.offerTitle", comment: "Title shown right after creating an account, offering to add a line in another currency") }
+            static func offerMessage(_ accountName: String) -> String {
+                String(format: ls("account.lines.offerMessage %@", comment: "Body of the post-create offer. %@ = the new account's name"), accountName)
+            }
             static var link: String { ls("account.lines.link", comment: "") }
             static var addTitle: String { ls("account.lines.addTitle", comment: "") }
             static func addFooter(_ lineName: String) -> String {

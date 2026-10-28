@@ -7366,6 +7366,8 @@
 
 /* Button that adds a line in another currency to an account */
 "account.lines.add" = "別の通貨の明細を追加";
+"account.lines.offerTitle" = "口座は複数の通貨を持てます";
+"account.lines.offerMessage %@" = "%@ に別の通貨の明細を追加しますか？通貨ごとに残高を持ち、口座は1つとして表示されます。";
 
 /* Button that links an existing account as a currency line */
 "account.lines.link" = "既存の口座をリンク";

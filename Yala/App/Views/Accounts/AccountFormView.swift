@@ -37,6 +37,13 @@ struct AccountFormView: View {
     @State private var showsLinkAccount: Bool = false
     /// Desvincular convierte la línea en otra cuenta que cuenta para el límite Free: sin hueco, se ofrece Pro.
     @State private var showsUpgradeToUnlink: Bool = false
+    /// Cuenta ya creada: la hoja pregunta si añadirle otra divisa en vez de cerrarse (S12j). Es una fase de esta hoja y
+    /// no un `.alert`: tras el aviso de divisa secundaria, dos alertas seguidas del mismo ancla pueden perder la segunda
+    /// (`swiftui-ds.md`), y el formulario se quedaría abierto con la cuenta guardada y un «Guardar» que la duplica.
+    @State private var isOfferingLine: Bool = false
+    /// «Añadir línea» sobre la cuenta recién creada, con su propio ViewModel de edición. `item` y no `isPresented`: la
+    /// hoja saca su contenido de este estado (`swiftui-ds.md`, hojas vacías).
+    @State private var lineOfferTarget: AccountLineOfferTarget?
     @FocusState private var focusedField: Field?
     /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
     @State private var selectedDetent: PresentationDetent = .medium
@@ -71,55 +78,17 @@ struct AccountFormView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                        generalSection
-                        ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
-                        currencySection
-                        // Tarjeta con varias divisas: una línea dice de qué tarjeta es; una tarjeta de crédito (o una
-                        // cuenta que ya tiene líneas) enseña «Otras divisas» a la vista (decisión 3 de Jürgen).
-                        if viewModel.isCurrencyLockedAsLine || viewModel.hasBrokenLink {
-                            lineMembershipSection
-                        } else if showsLinesUpFront {
-                            cardLinesSection
-                        }
-                        // Recordatorio y día de pago: solo la principal, o la notificación llegaría doble.
-                        if viewModel.selectedType == .creditCard && viewModel.ownsCardSettings {
-                            creditCardSection
-                        }
-                        if usesBalanceEditor {
-                            // «Editar el saldo» (pantalla 8 del rediseño, auditoría UX 2.2, L7-6).
-                            balanceEditSection
-                        } else {
-                            if viewModel.showAdjustmentMode {
-                                adjustmentSection
-                            }
-                            balanceSection
-                        }
-
-                        // La ayuda para calcular el saldo, con la tarjeta rosa del onboarding (L7-2, variante 1):
-                        // el enlace índigo de 15 pt que había aquí no se veía, y es donde la gente se atasca.
-                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
-                            guidedBalanceCard
-                        }
-
-                        if viewModel.isEditing {
-                            actionsSection
-                            // En el resto de tipos, «Otras divisas» está disponible pero más discreta: al final.
-                            if viewModel.canManageLines && !showsLinesUpFront {
-                                cardLinesSection
-                            }
-                        } else {
-                            // Al crear, «Archivar» no tiene sentido y «Excluir» es una decisión avanzada: va
-                            // plegado bajo «Más opciones», como en el rediseño aprobado (L7-4).
-                            newAccountMoreOptionsSection
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
-                    .dismissKeyboardOnTap()
+            Group {
+                if isOfferingLine {
+                    AccountLineOfferView(
+                        accountName: viewModel.createdAccount?.name ?? viewModel.trimmedName,
+                        onAdd: openLineOnCreatedAccount,
+                        onSkip: { dismiss() }
+                    )
+                } else {
+                    formContent
                 }
-                .scrollDismissesKeyboard(.interactively)
+            }
             .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             // «Nueva cuenta» o «Editar cuenta»: alta y edición compartían «Configurar cuenta» (L7-4).
             .navigationTitle(viewModel.isEditing ? L10n.Account.edit : L10n.Account.new)
@@ -130,8 +99,11 @@ struct AccountFormView: View {
                         requestClose()
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(action: { saveAccount() }, isDisabled: !viewModel.canSave)
+                // Con la cuenta ya creada no hay nada que guardar: otro toque la crearía dos veces.
+                if !isOfferingLine {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        YalaSaveButton(action: { saveAccount() }, isDisabled: !viewModel.canSave)
+                    }
                 }
             }
             .sheet(isPresented: $viewModel.isPresentingColorPicker) {
@@ -180,6 +152,10 @@ struct AccountFormView: View {
             }
             .sheet(isPresented: $showsLinkAccount) {
                 LinkAccountLineSheet(viewModel: viewModel)
+            }
+            // Al cerrar «Añadir línea» (con la línea o sin ella) termina el alta: se cierra el formulario.
+            .sheet(item: $lineOfferTarget, onDismiss: { dismiss() }) { target in
+                AddAccountLineSheet(viewModel: target.viewModel)
             }
             // Si compra Pro ahí, al cerrarse se desvincula la línea, que es lo que se quería (UX 2.2 · L17-9).
             .proUpgradeSheet(isPresented: $showsUpgradeToUnlink, feature: .accounts, context: .limitReached) {
@@ -237,9 +213,9 @@ struct AccountFormView: View {
             preferred: CurrencyDefaults.currentPreferred,
             onAccept: { new, old in
                 acceptSecondaryCurrency(new, replacing: old)
-                dismiss()
+                closeOrOfferLine()
             },
-            onDecline: { dismiss() }
+            onDecline: { closeOrOfferLine() }
         ))
         .modifier(DiscardAccountChangesAlert(isPresented: $showDiscardChangesAlert) { dismiss() })
         .modifier(AccountLinesAlerts(viewModel: viewModel))
@@ -311,15 +287,70 @@ struct AccountFormView: View {
         // A media conversión el histórico está partido entre dos divisas: cerrar el formulario ahí
         // dejaría la cuenta en un estado que ninguna pantalla sabe leer. Y con algo escrito, el gesto de
         // cerrar pregunta antes de tirarlo, como la X (L7-5).
-        .onSheetDismissAttempt(isActive: viewModel.isConvertingCurrency || viewModel.hasUnsavedChanges) {
+        // Con la cuenta ya creada (la pregunta de otra divisa) no queda nada que descartar.
+        .onSheetDismissAttempt(isActive: !isOfferingLine && (viewModel.isConvertingCurrency || viewModel.hasUnsavedChanges)) {
             guard !viewModel.isConvertingCurrency else { return }
             showDiscardChangesAlert = true
         }
     }
 
+    /// El formulario de siempre. Fuera del `body` desde S12j, que lo alterna con la pregunta de otra divisa: anidado
+    /// en el `if` del `body`, la expresión crecía (el CI compila con Xcode 26.6, que tipa peor: `swiftui-ds.md`).
+    private var formContent: some View {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                        generalSection
+                        ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
+                        currencySection
+                        // Tarjeta con varias divisas: una línea dice de qué tarjeta es; una tarjeta de crédito (o una
+                        // cuenta que ya tiene líneas) enseña «Otras divisas» a la vista (decisión 3 de Jürgen).
+                        if viewModel.isCurrencyLockedAsLine || viewModel.hasBrokenLink {
+                            lineMembershipSection
+                        } else if showsLinesUpFront {
+                            cardLinesSection
+                        }
+                        // Recordatorio y día de pago: solo la principal, o la notificación llegaría doble.
+                        if viewModel.selectedType == .creditCard && viewModel.ownsCardSettings {
+                            creditCardSection
+                        }
+                        if usesBalanceEditor {
+                            // «Editar el saldo» (pantalla 8 del rediseño, auditoría UX 2.2, L7-6).
+                            balanceEditSection
+                        } else {
+                            if viewModel.showAdjustmentMode {
+                                adjustmentSection
+                            }
+                            balanceSection
+                        }
+
+                        // La ayuda para calcular el saldo, con la tarjeta rosa del onboarding (L7-2, variante 1):
+                        // el enlace índigo de 15 pt que había aquí no se veía, y es donde la gente se atasca.
+                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
+                            guidedBalanceCard
+                        }
+
+                        if viewModel.isEditing {
+                            actionsSection
+                            // En el resto de tipos, «Otras divisas» está disponible pero más discreta: al final.
+                            if viewModel.canManageLines && !showsLinesUpFront {
+                                cardLinesSection
+                            }
+                        } else {
+                            // Al crear, «Archivar» no tiene sentido y «Excluir» es una decisión avanzada: va
+                            // plegado bajo «Más opciones», como en el rediseño aprobado (L7-4).
+                            newAccountMoreOptionsSection
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
+                    .dismissKeyboardOnTap()
+                }
+                .scrollDismissesKeyboard(.interactively)
+    }
+
     /// La X: con algo escrito pregunta «¿Descartar cambios?», como la Bandeja y Categorías (L7-5).
     private func requestClose() {
-        if viewModel.hasUnsavedChanges {
+        if !isOfferingLine && viewModel.hasUnsavedChanges {
             focusedField = nil
             showDiscardChangesAlert = true
         } else {
@@ -1217,10 +1248,32 @@ struct AccountFormView: View {
     private func saveAccount() {
         if viewModel.saveAccount(context: modelContext) {
             if viewModel.secondaryCurrencySuggestion == nil {
-                dismiss()
+                closeOrOfferLine()
             }
             // else: alert will show and dismiss after user responds
         }
+    }
+
+    /// Tras guardar: si se acaba de crear una cuenta que puede tener líneas, la hoja pregunta por otra divisa
+    /// (S12j); si no —editar, o una cuenta que no admite líneas—, se cierra como siempre.
+    private func closeOrOfferLine() {
+        if viewModel.offersLineAfterCreate {
+            focusedField = nil
+            isOfferingLine = true
+        } else {
+            dismiss()
+        }
+    }
+
+    /// «Añadir línea en otra divisa» sobre la cuenta recién creada: la hoja de siempre, con un ViewModel que la edita.
+    private func openLineOnCreatedAccount() {
+        guard let account = viewModel.createdAccount else {
+            dismiss()
+            return
+        }
+        let lineViewModel = AccountFormViewModel(accountToEdit: account, existingNames: [])
+        lineViewModel.setContext(modelContext)
+        lineOfferTarget = AccountLineOfferTarget(viewModel: lineViewModel)
     }
 
     /// El usuario dijo que sí: convierte y guarda.
