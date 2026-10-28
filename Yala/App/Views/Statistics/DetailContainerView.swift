@@ -41,6 +41,9 @@ struct DetailContainerView: View {
     // MARK: - Navigation State
 
     @State private var selectedTab: DetailViewTab = .records
+    /// El chip que pinta la fila. Va por delante de `selectedTab` mientras la fila se anima: la pestaña se monta
+    /// después (`NavigationChipButton.switchTab`).
+    @State private var chipsSelection: DetailViewTab = .records
 
     // MARK: - UI State
 
@@ -179,6 +182,7 @@ struct DetailContainerView: View {
         )
         _trendsViewModel = State(initialValue: StatisticsViewModel(context: trendsContext))
         _selectedTab = State(initialValue: initialTab)
+        _chipsSelection = State(initialValue: initialTab)
     }
 
     // MARK: - Body
@@ -253,6 +257,8 @@ struct DetailContainerView: View {
                 if selectedTab != newValue { selectedTab = newValue }
             }
             .onChange(of: selectedTab) { _, newTab in
+                // La pestaña también cambia desde fuera (avisos, enlaces, la otra columna): la fila la sigue.
+                if chipsSelection != newTab { chipsSelection = newTab }
                 // Cada subpestaña monta su scroll desde arriba, con su fila a la vista.
                 showFloatingActions = false
                 if newTab != .records {
@@ -558,8 +564,12 @@ struct DetailContainerView: View {
         // Cuatro chips con icono y solo el elegido con su nombre (UX 2.2 · L11-1, decisión de Jürgen del
         // 2026-10-15). Con los cuatro nombres, «Distribución» salía cortada y «Registros» quedaba entera fuera de
         // la pantalla de un iPhone 17 Pro, sin nada que dijera que la fila se desliza.
-        NavigationChipButton(title: tab.title, icon: tab.icon, isSelected: selectedTab == tab) {
-            selectedTab = tab
+        NavigationChipButton(
+            title: tab.title, icon: tab.icon, isSelected: chipsSelection == tab, animatesSwitch: true
+        ) {
+            NavigationChipButton.switchTab(
+                to: tab, chips: $chipsSelection, content: $selectedTab, reduceMotion: reduceMotion
+            )
         }
         .accessibilityIdentifier("detail_chip_\(tab.rawValue.lowercased())")
     }

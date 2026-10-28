@@ -231,6 +231,34 @@ paths:
 
 - **El `actions` builder de un `.alert` NO admite un label dependiente del `@State`, y lo que rompe no es la alerta: es la app.** Medido el 2026-09-06. Al dar título y botón dinámicos a la alerta de invitación de `ContentView` —para que el mismo anchor sirviera a dos avisos distintos— **dejó de completarse el guardado de una transacción**: `TransactionSuccessView` no llegaba a montarse y `dismissTransactionSuccess()` agotaba sus 10 s. El síntoma cae a pantallas que no tienen ninguna relación con la alerta, así que **el diagnóstico por lectura no llega**: hay que bisecar. Aislado con control en las DOS direcciones — `Button(String(localized: "common.ok"))` pasa (×2) · `Button(activeInviteError?.cta ?? …)` falla (×4) — y con el contraste que delimita el alcance: **el TÍTULO dinámico pasa sin problema**, así que la frontera está en el ViewBuilder de `actions`, no en la alerta entera. ⇒ **el texto de los botones de un `.alert` va literal**; si dos avisos comparten anchor, lo que puede variar es el título y el mensaje. Y el corolario de método, que es el caro: un cambio de presentación aparentemente inerte —la alerta estaba OCULTA— puede romper un flujo cualquiera de la app, así que **no basta con correr los XCUITest del área tocada**. Este rojo salió en `QuickActionsFavoritesUITests`, un área que ningún cruce de `codeGlobs` habría señalado como afectada por un cambio en invitaciones de grupo.
 
+## Animar dentro de una pestaña (medido el 2026-10-27, iOS 27.0, card `estadisticas-chips-animacion-6l5n`)
+
+- **`ContentView` anula la animación de toda transacción que cruza el `TabView`** (`.transaction { $0.animation = nil }`,
+  desde el 2026-01-15). Dentro de una pestaña, un `withAnimation` o un `withTransaction` animado **no animan nada**: la
+  píldora del período de Estadísticas saltaba de ancho en un fotograma con los dos, y animó en cuanto se quitó ese
+  apagado (prueba hecha y revertida: no se toca, es de toda la app). Lo que sí funciona es una animación **implícita**
+  dentro de la vista, `.animation(_:value:)`, que actúa por debajo del apagado. Las transiciones con su propia
+  `.animation` (`AnyTransition.opacity.animation(…)`) también pasan. La barra de chips de Estadísticas, que va en un
+  `safeAreaInset`, sí animó con `withTransaction`: la diferencia con el contenido del scroll no está aislada. ⇒ **en una
+  pestaña, anima con `.animation(_:value:)` y compruébalo en vídeo**, no con «compila».
+- **`disablesAnimations` no lo deshace una transacción anidada.** El botón de `NavigationChipButton` llama a su acción con
+  `disablesAnimations = true` (contra un parpadeo del título grande), y un `withTransaction(Transaction(animation:))`
+  dentro no animaba. Por eso existe `animatesSwitch`.
+- **El label de un `Menu` no se anima**: su tamaño llega en una pasada aparte, sin animación, y arrastra a lo de al lado.
+  Si lo que enseña tiene que animarse, se pinta fuera y el `Menu` va encima, transparente (`TrendsPeriodMenu` con
+  `titleMotion`).
+- **`GlassEffectContainer` alrededor de chips que cambian de ancho rompe la animación**: la cápsula nueva no crecía hasta
+  el final y la pulsación fundía chips vecinos. Fuera del contenedor, anima.
+- **Un cambio que recalcula la pantalla se come la animación que va a la vez**: las animaciones avanzan en el hilo
+  principal, y montar una pestaña de Estadísticas lo bloquea 0,12–0,27 s en el iPhone (vídeo de Jürgen, 60 fps). Se anima
+  primero lo pequeño y se aplica lo caro al terminar (`NavigationChipButton.switchTab`, `StatisticsPeriodControl.choose`).
+- **Un `Text` que cambia de valor con animación se funde con el anterior**: los dos quedan uno encima del otro («Este mes»
+  sobre «Mes pasado»). Un valor, una vista (`.id(valor)`) con salida `.identity`. Una salida con sentido no sirve: SwiftUI
+  la saca con la transición de su último fotograma, que es la del cambio anterior.
+- **Cómo se mide**: `simctl io recordVideo` escribe un fotograma solo cuando la pantalla cambia, así que los tiempos de
+  fotograma (`ffprobe -show_entries frame=pts_time`) dicen dónde hay bloqueo (hueco sin fotogramas) y una hoja de
+  contactos con `select='between(t,…)'` + `-fps_mode passthrough` enseña si hay interpolación o salto.
+
 ## iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO.
 - `.glassEffect()` para chips, barras flotantes, elementos translúcidos.

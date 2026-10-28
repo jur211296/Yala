@@ -8,9 +8,12 @@ struct TrendsPeriodMenu: View, Equatable {
     let customDateRange: DateInterval?
     let onSelect: (DetailPeriod) -> Void
     let onCustomTapped: () -> Void
+    /// `nil`: el título cambia sin animación (Panel, Informes). Ver `PeriodTitleMotion`.
+    var titleMotion: PeriodTitleMotion? = nil
 
     static func == (lhs: TrendsPeriodMenu, rhs: TrendsPeriodMenu) -> Bool {
         lhs.selectedPeriod == rhs.selectedPeriod
+            && lhs.titleMotion == rhs.titleMotion
             && lhs.customDateRange?.start == rhs.customDateRange?.start
             && lhs.customDateRange?.end == rhs.customDateRange?.end
     }
@@ -29,64 +32,87 @@ struct TrendsPeriodMenu: View, Equatable {
     }
 
     var body: some View {
-        Menu {
-            // Standard periods
-            ForEach(standardPeriods) { period in
-                Button {
-                    onSelect(period)
-                } label: {
-                    HStack {
-                        Text(period.displayName)
-                        if selectedPeriod == period {
-                            Image(systemName: "checkmark")
-                                .accessibilityHidden(true)
-                        }
+        if let titleMotion {
+            // La píldora se pinta FUERA del `Menu`, y el `Menu` va encima, transparente, solo para abrirse. El tamaño del
+            // label de un `Menu` lo calcula el sistema en una pasada aparte y sin animación (medido en el simulador,
+            // iOS 27.0): con la píldora dentro, por mucha animación que llevara el cambio, la píldora y las flechas de al
+            // lado saltaban al ancho nuevo en un fotograma.
+            PeriodSelectorLabel(title: displayTitle, titleMotion: titleMotion)
+                .accessibilityHidden(true)
+                .overlay {
+                    Menu {
+                        menuItems
+                    } label: {
+                        Color.clear
+                            .contentShape(Capsule())
                     }
+                    .accessibilityLabel(displayTitle)
                 }
+        } else {
+            Menu {
+                menuItems
+            } label: {
+                PeriodSelectorLabel(title: displayTitle)
             }
-
-            Divider()
-
-            // Custom period section
-            if let range = customDateRange {
-                // Show current range with checkmark if selected
-                Button {
-                    onSelect(.custom)
-                } label: {
-                    HStack {
-                        Text(formattedRange(range))
-                        if selectedPeriod == .custom {
-                            Image(systemName: "checkmark")
-                                .accessibilityHidden(true)
-                        }
-                    }
-                }
-
-                // Edit option
-                Button {
-                    onCustomTapped()
-                } label: {
-                    Text(L10n.Action.edit)
-                }
-            } else {
-                // No range yet - show "Personalizado" to create one
-                Button {
-                    onCustomTapped()
-                } label: {
-                    HStack {
-                        Text(L10n.Period.custom)
-                        if selectedPeriod == .custom {
-                            Image(systemName: "checkmark")
-                                .accessibilityHidden(true)
-                        }
-                    }
-                }
-            }
-        } label: {
-            PeriodSelectorLabel(title: displayTitle)
+            .transaction { $0.animation = nil }
+            .id("\(selectedPeriod.rawValue)-\(customDateRange?.start.timeIntervalSince1970 ?? 0)")
         }
-        .transaction { $0.animation = nil }
-        .id("\(selectedPeriod.rawValue)-\(customDateRange?.start.timeIntervalSince1970 ?? 0)")
+    }
+
+    @ViewBuilder
+    private var menuItems: some View {
+        // Standard periods
+        ForEach(standardPeriods) { period in
+            Button {
+                onSelect(period)
+            } label: {
+                HStack {
+                    Text(period.displayName)
+                    if selectedPeriod == period {
+                        Image(systemName: "checkmark")
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+        }
+
+        Divider()
+
+        // Custom period section
+        if let range = customDateRange {
+            // Show current range with checkmark if selected
+            Button {
+                onSelect(.custom)
+            } label: {
+                HStack {
+                    Text(formattedRange(range))
+                    if selectedPeriod == .custom {
+                        Image(systemName: "checkmark")
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+
+            // Edit option
+            Button {
+                onCustomTapped()
+            } label: {
+                Text(L10n.Action.edit)
+            }
+        } else {
+            // No range yet - show "Personalizado" to create one
+            Button {
+                onCustomTapped()
+            } label: {
+                HStack {
+                    Text(L10n.Period.custom)
+                    if selectedPeriod == .custom {
+                        Image(systemName: "checkmark")
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+        }
     }
 
     /// «agosto de 2026» si el rango es un mes entero, «2024» si es un año, y si no «1–27 dic» (con el año solo si no es
