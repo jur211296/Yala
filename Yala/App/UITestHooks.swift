@@ -214,7 +214,8 @@ final class UITestHooks {
 
     /// `-uitest-fake-cloud-session-after <segundos>` (card nve0): la sesión fingida de arriba, pero que APARECE con la
     /// pestaña Grupos delante, como al cerrarse la hoja de cuenta tras un inicio de sesión. El reloj lo arma
-    /// `CloudAuthService.armUITestDelayedFakeSession()` cuando la pestaña pinta «Crea tu cuenta»; al vencer, `hasSession`
+    /// `CloudAuthService.armUITestDelayedFakeSession()` cuando la pestaña pinta «Crea tu cuenta», o al aparecer Ajustes (card
+    /// n533; lo que llegue antes, una sola vez); al vencer, `hasSession`
     /// pasa a `true` y la sesión cambia como en un inicio de sesión real (`sessionEpoch`). Mismo alcance que su vecino: no
     /// toca `currentUserID` ni el token, así que tampoco hay tráfico. Un valor que no es un número se ignora. Solo DEBUG.
     /// `-uitest-slow-bootstrap <segundos>` (card apsn): el arranque tarda N segundos más en asentar, como en un iPhone

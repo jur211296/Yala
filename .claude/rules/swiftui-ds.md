@@ -31,7 +31,14 @@ paths:
   de sesión y dos veces en `signOut()` (antes y después de soltarla). La pestaña de Grupos se quedaba en «Crea tu cuenta»
   más de 10 s tras conectar la cuenta; la escucha con un contador que el body lee (`sessionRevision`). **Solo para
   repintar**: con las seis páginas montadas oye también los inicios de sesión que una puerta rechaza después (bloqueo [I]),
-  así que lo que se escribe al aceptar una sesión va en cada puerta. No cubre la sesión que el SDK borra solo.
+  así que lo que se escribe al aceptar una sesión va en cada puerta. No cubre la sesión que el SDK borra solo (ticket
+  `cloud-session-removed-by-the-sdk-does-not-announce-itself`). **Desde la card n533 (2026-10-28) el resto de lectores no
+  escucha el aviso: llama a `CloudSessionRevision.shared.track()` justo antes de leer `hasSession`** —el contador
+  `@Observable` que sube el único emisor del aviso—, y así se repinta el `body` que lo evalúe aunque no tenga estado
+  propio (una pantalla empujada, una función compartida por dos pantallas). Medido en Ajustes: sin él, «Tu cuenta de
+  Yala» no salía con la sesión ya conectada hasta cerrar y volver a abrir. **Una lectura nueva de la sesión que pinte,
+  con su `track()` y su fila en `CloudSessionRevisionWiringTests`**; la que solo decide al tocar o al aparecer no lo
+  necesita (`WelcomeGroupsGateView.exitCell`).
 
 - **Mover un cálculo del body a una propiedad del VM CORTA el live-binding a los `@Model` que ese cálculo leía.** Un body que recorre objetos SwiftData queda observando sus propiedades una a una, así que una mutación **en sitio** (mismo objeto, otro importe) repinta sola sin que nadie recargue. Al precalcular en el ViewModel eso se acaba: la vista pasa a observar únicamente la propiedad del cache, y el refresco depende **entero** de que todo mutador llegue al recálculo. Medido el 2026-09-06 al mover las deudas de la tarjeta de grupo a `GroupsViewModel.debtsByGroup` (`recalculate()`): la lista de Grupos ya no repinta por una mutación in-place suelta, y `GroupsSyncClient.pullUntilExhausted` tiene salidas tempranas (`.transient`, sesión caducada, cap de iteraciones) que dejan páginas **aplicadas y guardadas sin bumpear `dataVersion`** — ahí la cifra se sostiene vieja hasta el próximo `onAppear`, pull-to-refresh o bump. ⇒ **Al precalcular en un VM, comprueba primero que TODO camino de mutación desemboca en el recálculo**, y prefiere la mutación que bumpea a confiar en la observación accidental. Contrapartida medida: en esa lista el cálculo en el body costaba **~25 ms por tecla del buscador** con 30 grupos, más que un frame entero.
 

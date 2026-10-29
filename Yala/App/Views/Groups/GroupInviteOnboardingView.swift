@@ -354,7 +354,9 @@ struct GroupInviteOnboardingView: View {
 
     /// Qué hace «Unirme» ahora mismo (L12-17). Se lee vivo: la sesión y el consentimiento pueden cambiar con la hoja puesta.
     private var joinTapRoute: GroupInviteGroupFirstLogic.JoinTapRoute {
-        GroupInviteGroupFirstLogic.joinTapRoute(
+        // Card n533 · el aviso de «elegir cuenta» del body se lee con esto: atado a los cambios de sesión.
+        CloudSessionRevision.shared.track()
+        return GroupInviteGroupFirstLogic.joinTapRoute(
             hasPendingZone: pendingJoinZone != nil,
             hasSession: CloudAuthService.shared.hasSession,
             isConsented: GroupsConsentState.isAccepted)

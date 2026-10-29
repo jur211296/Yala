@@ -399,7 +399,7 @@ final class CloudAuthService: NSObject {
         // Seam de XCUITest (card er5c): sin hoja de Apple ni de Google. Sin token: nada sale a la red.
         if UITestHooks.fakeAccountExists != nil {
             uitestFakeAccountSignedIn = true
-            NotificationCenter.default.post(name: Self.sessionDidChangeNotification, object: nil)
+            Self.postSessionDidChange()
             return
         }
         #endif
@@ -705,7 +705,10 @@ final class CloudAuthService: NSObject {
         return gone
     }
 
+    /// El ÚNICO emisor del aviso, y el que sube `CloudSessionRevision` (card n533): las vistas que pintan con la sesión
+    /// leen ese contador, así que un aviso emitido por otro camino no las repintaría.
     private static func postSessionDidChange() {
+        CloudSessionRevision.shared.bump()
         NotificationCenter.default.post(name: sessionDidChangeNotification, object: nil)
     }
 

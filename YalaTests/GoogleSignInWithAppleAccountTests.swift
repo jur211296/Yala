@@ -251,7 +251,7 @@ struct GoogleCredentialReuseWiringTests {
             "#if DEBUG",
             "if UITestHooks.fakeAccountExists != nil {",
             "uitestFakeAccountSignedIn = true",
-            "NotificationCenter.default.post(name: Self.sessionDidChangeNotification, object: nil)",
+            "Self.postSessionDidChange()",
             "return",
             "}",
             "#endif",

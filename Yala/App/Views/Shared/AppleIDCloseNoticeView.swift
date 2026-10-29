@@ -396,7 +396,9 @@ struct AppleIDCloseNoticeView: View {
     /// `ProfileView.signOutRowPath` y `WelcomeGroupsGateView.exitCell`. Es una lectura fresca en cada acceso, y la
     /// usan los dos lados de la pregunta: lo que cuenta y lo que confirma.
     private var currentCell: CloudSignOutFlowLogic.Path {
-        CloudSignOutFlowLogic.path(
+        // Card n533 · la pregunta pinta con esta celda: atada a los cambios de sesión.
+        CloudSessionRevision.shared.track()
+        return CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             hasLiveSession: CloudAuthService.shared.hasSession,
             groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability,

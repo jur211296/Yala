@@ -290,6 +290,9 @@ struct GroupsOnboardingView: View {
 
     @ViewBuilder
     private var ctaSection: some View {
+        // Card n533 · el CTA de iniciar sesión se decide con la sesión, que no es observable: esto ata la sección a sus
+        // cambios.
+        let _ = CloudSessionRevision.shared.track()
         let label = currentStep == .privacy
             ? L10n.Groups.Onboarding.step3CTA
             : L10n.Action.continueAction
