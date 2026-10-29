@@ -3,7 +3,8 @@
 //  YalaWidgets
 //
 //  Widget showing upcoming scheduled payments.
-//  Medium: 3 payments. Large: 7. Default sorting (overdue first, then by date).
+//  Medium: 3 payments. Large: 7. Extragrande vertical (iPhone, iOS 27): el mes en calendario + 4 +
+//  lo que falta pagar este mes. Default sorting (overdue first, then by date).
 //  Configurable: selection mode (auto/custom).
 //
 
@@ -47,6 +48,18 @@ struct ScheduledPaymentsEntry: TimelineEntry {
     /// La persona no tiene ningún pago planificado: el widget invita a crear uno en vez de enseñar «Sin pagos
     /// pendientes» con un ✓, que se leía como «estás al día» (UX 2.2 · L15-2).
     var hasNoPayments: Bool = false
+    /// Divisa principal: la de «Te falta pagar este mes» del extragrande vertical.
+    var currencyCode: String = "PEN"
+    /// El mes de pagos que calculó la app (`WidgetDataCache.buildPaymentsMonth`); `nil` en una foto anterior a 2.2.
+    var paymentsMonth: WidgetPaymentsMonth?
+
+    /// El mes de pagos SOLO si es el mes de `date`: una foto de otro mes (la app no se abre desde el día 1) pintaría
+    /// días y una cifra que ya no son de este calendario.
+    func paymentsMonth(for date: Date, calendar: Calendar = .current) -> WidgetPaymentsMonth? {
+        guard let paymentsMonth,
+              calendar.isDate(paymentsMonth.monthStart, equalTo: date, toGranularity: .month) else { return nil }
+        return paymentsMonth
+    }
 
     static var placeholder: ScheduledPaymentsEntry {
         ScheduledPaymentsEntry(
@@ -138,7 +151,13 @@ struct ScheduledPaymentsEntry: TimelineEntry {
                 )
             ],
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true
+            isPlaceholder: true,
+            paymentsMonth: WidgetPaymentsMonth(
+                monthStart: Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date(),
+                pendingDays: [],
+                paidDays: [],
+                remainingToPay: 2_013.70
+            )
         )
     }
 }
@@ -171,9 +190,13 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
         return Timeline(entries: [entry], policy: .after(refreshDate))
     }
 
+    /// Filas del extragrande vertical: debajo del calendario caben cuatro.
+    static let extraLargePortraitLimit = 4
+
     /// Cuántas filas caben por tamaño.
     static func paymentLimit(for family: WidgetFamily) -> Int {
-        family == .systemLarge ? 7 : 3
+        if family.isExtraLargePortrait { return extraLargePortraitLimit }
+        return family == .systemLarge ? 7 : 3
     }
 
     private func createEntry(for configuration: ScheduledPaymentsWidgetIntent, family: WidgetFamily) -> ScheduledPaymentsEntry {
@@ -201,7 +224,9 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
             payments: payments,
             currencyDisplayFormat: displayFormat,
             isPlaceholder: false,
-            hasNoPayments: allPayments.isEmpty
+            hasNoPayments: allPayments.isEmpty,
+            currencyCode: WidgetDataService.getPreferredCurrency(),
+            paymentsMonth: WidgetDataService.getPaymentsMonth()
         )
     }
 }
@@ -213,6 +238,15 @@ struct ScheduledPaymentsWidgetView: View {
     var entry: ScheduledPaymentsEntry
 
     var body: some View {
+        if family.isExtraLargePortrait {
+            ScheduledPaymentsPortraitView(entry: entry)
+        } else {
+            list
+        }
+    }
+
+    /// Mediano y grande: la lista de próximos pagos.
+    private var list: some View {
         VStack(alignment: .leading, spacing: family == .systemLarge ? WDS.Spacing.md : WDS.Spacing.sm) {
             // Header
             WidgetHeader(
@@ -376,7 +410,7 @@ struct ScheduledPaymentsWidget: Widget {
         }
         .configurationDisplayName("widget.gallery.scheduledPayments")
         .description("widget.gallery.scheduledPayments.desc")
-        .supportedFamilies([.systemMedium, .systemLarge])
+        .supportedFamilies(WidgetFamilies.addingExtraLargePortrait([.systemMedium, .systemLarge]))
     }
 }
 

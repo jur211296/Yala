@@ -22,7 +22,7 @@ struct YalaWidgetsBundle: WidgetBundle {
         LatestRecordsWidget()
         ScheduledPaymentsWidget()
         BudgetsWidget()
-        MonthSummaryWidget()  // solo .systemExtraLarge (iPad)
+        MonthSummaryWidget()  // extragrande: iPad (.systemExtraLarge) e iPhone con iOS 27 (.systemExtraLargePortrait)
 
         // Lock Screen widgets (accessory)
         AccessoryBalanceWidget()

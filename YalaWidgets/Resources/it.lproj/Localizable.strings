@@ -166,3 +166,8 @@
 "widget.empty.noPaymentsYet" = "Non hai ancora pagamenti programmati";
 "widget.empty.noBudgetsYet" = "Non hai ancora budget";
 "widget.empty.createOne" = "Tocca per crearne uno";
+
+/* Widgets extragrandes verticales (iPhone, iOS 27) */
+"widget.ui.net" = "Netto";
+"widget.ui.byAccount" = "Per conto";
+"widget.ui.leftToPayThisMonth" = "Ancora da pagare questo mese";

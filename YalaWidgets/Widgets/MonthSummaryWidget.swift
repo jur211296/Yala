@@ -2,8 +2,9 @@
 //  MonthSummaryWidget.swift
 //  YalaWidgets
 //
-//  Widget extragrande (solo iPad): el mes en una pieza — balance, gasto del mes repartido por
-//  categoría y los presupuestos más apretados.
+//  Widget extragrande: el mes en una pieza — balance, gasto del mes repartido por categoría y los
+//  presupuestos más apretados. En iPad, el apaisado (`systemExtraLarge`); en el iPhone con iOS 27, el
+//  vertical (`systemExtraLargePortrait`, `MonthSummaryPortraitView`), que suma ingresos y neto.
 //
 //  No añade nada al DTO del App Group: todo sale de campos que ya viajan
 //  (`periodSummaries` / `thisMonthSummary`, `budgets`). Así un widget nuevo no puede apagar a los
@@ -26,6 +27,14 @@ struct MonthSummaryEntry: TimelineEntry {
     let currencyCode: String
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    /// Ingresos y neto del mes: solo los pinta el extragrande vertical. Al final y con default para que el placeholder
+    /// y las previews del de iPad no tengan que declararlos.
+    var totalIncome: Double = 0
+    var incomeIsApproximate: Bool = false
+    var netCashFlow: Double = 0
+    var netCashFlowIsApproximate: Bool = false
+    /// Modo «Solo gastos»: el vertical no enseña ingresos ni neto, como el resto de widgets.
+    var isExpensesOnly: Bool = false
 
     /// Categorías que caben en la leyenda; el resto se agrupa en «Otros».
     static let categoryLimit = 5
@@ -50,7 +59,9 @@ struct MonthSummaryEntry: TimelineEntry {
             budgets: Array(BudgetsEntry.placeholder.budgets.prefix(budgetLimit)),
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
-            isPlaceholder: true
+            isPlaceholder: true,
+            totalIncome: 5_200,
+            netCashFlow: 1_950
         )
     }
 }
@@ -77,6 +88,7 @@ struct MonthSummaryProvider: TimelineProvider {
     private func createEntry() -> MonthSummaryEntry {
         let summary = WidgetDataService.calculateSummary(for: .thisMonth)
         let totalExpense = summary?.totalExpense ?? 0
+        let isExpensesOnly = WidgetDataService.isExpensesOnlyMode
 
         return MonthSummaryEntry(
             date: Date(),
@@ -90,7 +102,12 @@ struct MonthSummaryProvider: TimelineProvider {
             ),
             currencyCode: WidgetDataService.getPreferredCurrency(),
             currencyDisplayFormat: WidgetDataService.getCurrencyDisplayFormat(),
-            isPlaceholder: false
+            isPlaceholder: false,
+            totalIncome: isExpensesOnly ? 0 : (summary?.totalIncome ?? 0),
+            incomeIsApproximate: isExpensesOnly ? false : (summary?.incomeIsApproximate ?? false),
+            netCashFlow: summary?.netCashFlow ?? 0,
+            netCashFlowIsApproximate: summary?.netCashFlowIsApproximate ?? false,
+            isExpensesOnly: isExpensesOnly
         )
     }
 
@@ -117,9 +134,19 @@ struct MonthSummaryProvider: TimelineProvider {
 // MARK: - Widget View
 
 struct MonthSummaryWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     var entry: MonthSummaryEntry
 
     var body: some View {
+        if family.isExtraLargePortrait {
+            MonthSummaryPortraitView(entry: entry)
+        } else {
+            landscape
+        }
+    }
+
+    /// El de iPad (`systemExtraLarge`): dos columnas, gasto a la izquierda y presupuestos a la derecha.
+    private var landscape: some View {
         VStack(alignment: .leading, spacing: WDS.Spacing.lg) {
             WidgetHeader(
                 title: String(localized: "widget.ui.monthSummary", bundle: .main),
@@ -128,14 +155,14 @@ struct MonthSummaryWidgetView: View {
             )
 
             HStack(alignment: .top, spacing: WDS.Spacing.xl) {
-                Link(destination: deepLink("statistics/categories")) {
+                Link(destination: MonthSummaryLinks.url("statistics/categories")) {
                     spendingColumn
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                 Divider()
 
-                Link(destination: deepLink("budgets")) {
+                Link(destination: MonthSummaryLinks.url("budgets")) {
                     budgetsColumn
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -167,7 +194,7 @@ struct MonthSummaryWidgetView: View {
             }
 
             if entry.categories.isEmpty {
-                emptyState(icon: "chart.pie", text: "widget.ui.noExpenses")
+                MonthSummaryEmptyState(icon: "chart.pie", text: "widget.ui.noExpenses")
             } else {
                 HStack(alignment: .center, spacing: WDS.Spacing.lg) {
                     WidgetSectorChart(
@@ -189,7 +216,7 @@ struct MonthSummaryWidgetView: View {
 
                     VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
                         ForEach(entry.categories, id: \.id) { category in
-                            categoryRow(category)
+                            MonthSummaryCategoryRow(category: category)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -218,7 +245,34 @@ struct MonthSummaryWidgetView: View {
         }
     }
 
-    private func categoryRow(_ category: WidgetCategory) -> some View {
+    // MARK: Columna derecha: presupuestos
+
+    private var budgetsColumn: some View {
+        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
+            Text("widget.ui.budgets", bundle: .main)
+                .font(WDS.Typography.label)
+                .foregroundStyle(.secondary)
+
+            if entry.budgets.isEmpty {
+                MonthSummaryEmptyState(icon: "chart.pie", text: "widget.ui.noBudgets")
+            } else {
+                ForEach(entry.budgets.prefix(MonthSummaryEntry.budgetLimit), id: \.id) { budget in
+                    BudgetRowView(budget: budget, displayFormat: entry.currencyDisplayFormat)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+// MARK: - Piezas compartidas por los dos tamaños
+
+/// Una categoría de la leyenda: punto de color, nombre y porcentaje.
+struct MonthSummaryCategoryRow: View {
+    let category: WidgetCategory
+
+    var body: some View {
         HStack(spacing: WDS.Spacing.sm) {
             Circle()
                 .fill(Color(hex: category.colorHex))
@@ -238,30 +292,13 @@ struct MonthSummaryWidgetView: View {
                 .fixedSize()
         }
     }
+}
 
-    // MARK: Columna derecha: presupuestos
+struct MonthSummaryEmptyState: View {
+    let icon: String
+    let text: LocalizedStringKey
 
-    private var budgetsColumn: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
-            Text("widget.ui.budgets", bundle: .main)
-                .font(WDS.Typography.label)
-                .foregroundStyle(.secondary)
-
-            if entry.budgets.isEmpty {
-                emptyState(icon: "chart.pie", text: "widget.ui.noBudgets")
-            } else {
-                ForEach(entry.budgets.prefix(MonthSummaryEntry.budgetLimit), id: \.id) { budget in
-                    BudgetRowView(budget: budget, displayFormat: entry.currencyDisplayFormat)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
-
-    // MARK: Piezas
-
-    private func emptyState(icon: String, text: LocalizedStringKey) -> some View {
+    var body: some View {
         VStack(spacing: WDS.Spacing.xs) {
             Image(systemName: icon)
                 .font(.title2) // A11Y-DT: widget empty state icon
@@ -272,10 +309,12 @@ struct MonthSummaryWidgetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
 
+enum MonthSummaryLinks {
     /// `Link` exige una URL no opcional. Si el helper no pudiera formarla, el toque cae en el Panel
     /// como el del resto del widget.
-    private func deepLink(_ path: String) -> URL {
+    static func url(_ path: String) -> URL {
         if let url = WidgetURLHelper.url(for: path) { return url }
         if let panel = WidgetURLHelper.url(for: "panel") { return panel }
         return URL(fileURLWithPath: "/")
@@ -296,7 +335,7 @@ struct MonthSummaryWidget: Widget {
         }
         .configurationDisplayName("widget.gallery.monthSummary")
         .description("widget.gallery.monthSummary.desc")
-        .supportedFamilies([.systemExtraLarge])
+        .supportedFamilies(WidgetFamilies.addingExtraLargePortrait([.systemExtraLarge]))
     }
 }
 

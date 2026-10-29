@@ -124,6 +124,28 @@ struct WidgetCashFlowPoint: Codable {
     let net: Double
 }
 
+/// Lo que entró y salió por UNA cuenta en un período: el reparto por cuenta del extragrande vertical de «Entradas y
+/// salidas» (iOS 27). Sale de la MISMA suma que los totales del resumen (`WidgetDataCache.buildPeriodSummary`), así que
+/// los netos de todas las cuentas suman `netCashFlow`. Ingresos y gastos van con signo, como los totales.
+struct WidgetAccountFlow: Codable {
+    let id: String
+    let name: String
+    let income: Double
+    let expense: Double
+    let net: Double
+}
+
+/// El mes de los pagos planificados para el calendario del extragrande vertical (iOS 27): qué días tienen un pago de
+/// gasto pendiente o ya pagado y cuánto falta pagar, en la divisa principal. Lo calcula la app
+/// (`WidgetDataCache.buildPaymentsMonth`) porque el widget no tiene las recurrencias ni los tipos de cambio.
+struct WidgetPaymentsMonth: Codable {
+    /// Inicio del mes al que se refiere: el widget no lo pinta si la foto es de otro mes.
+    let monthStart: Date
+    let pendingDays: [Int]
+    let paidDays: [Int]
+    let remainingToPay: Double
+}
+
 /// Precalculated summary for a period
 struct WidgetPeriodSummary: Codable {
     let totalIncome: Double
@@ -145,6 +167,10 @@ struct WidgetPeriodSummary: Codable {
     let expenseIsApproximate: Bool?
     let netCashFlowIsApproximate: Bool?
     let periodBalanceIsApproximate: Bool?
+
+    /// El reparto por cuenta (extragrande vertical de «Entradas y salidas»). **Opcional y con default**: las fotos
+    /// escritas antes de 2.2 no lo traen y decodifican igual; el widget solo esconde ese bloque.
+    var accountFlows: [WidgetAccountFlow]? = nil
 }
 
 /// Complete widget data snapshot
@@ -178,6 +204,10 @@ struct WidgetDataSnapshot: Codable {
     // Precalculated summaries for all periods (keyed by WidgetPeriod.rawValue)
     // Optional for backwards compatibility
     let periodSummaries: [String: WidgetPeriodSummary]?
+
+    /// El mes de los pagos planificados (extragrande vertical de «Pagos planificados»). **Opcional y con default**,
+    /// por la misma razón que `accountFlows`: una clave obligatoria nueva apagaría todos los widgets.
+    var paymentsMonth: WidgetPaymentsMonth? = nil
 }
 
 // MARK: - WidgetDataService
@@ -377,6 +407,12 @@ enum WidgetDataService {
         }
 
         return Array(payments.prefix(limit))
+    }
+
+    /// El mes de pagos planificados que calculó la app (extragrande vertical de «Pagos planificados»). `nil` sin foto o
+    /// con una foto anterior a 2.2.
+    static func getPaymentsMonth() -> WidgetPaymentsMonth? {
+        loadSnapshot()?.paymentsMonth
     }
 
     /// Returns trend data for chart (full structure with all granularities)
