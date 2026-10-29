@@ -1,10 +1,10 @@
 ---
 id: comparative-and-statistics-pick-the-comparison-with-different-controls
-status: backlog
+status: done
 priority: low
 area: reports
 created: 2026-10-21
-updated: 2026-10-23
+updated: 2026-10-28
 source: lote decidido 2.2 · 10 (L18-3), al implementar
 ---
 
@@ -32,3 +32,11 @@ Si se unifican (y con cuál de los dos), o si se quedan así.
 **Se unifican con los chips de la Comparativa.** Estadísticas cambia la frase con menú por los dos chips
 («Con el mes anterior» / «Con <mes> de <año pasado>»). El trabajo está en la card
 `tablero-estadisticas-elige-con-que-comparar-con-gvvl` (lista para lanzar).
+
+## Hecho (2026-10-28)
+
+Estadísticas (Resumen › Tus cifras y Distribución › Gráficas) elige con los mismos dos chips que la Comparativa:
+«Con el mes anterior» / «Con octubre de 2025». La frase «Comparado con el 1–28 de setiembre» queda encima como
+título y cambia al elegir. Los dos sitios usan el mismo componente (`ComparisonModeChips`) y el mismo estado, así que
+lo elegido en una pantalla sigue elegido en la otra. Se retiraron las opciones del menú viejo (siete textos en los 16
+idiomas). Red: `UXAudit22Lote11y16UITests#test_statistics_picksTheComparisonWithTheTwoChips`.

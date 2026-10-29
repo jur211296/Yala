@@ -19,9 +19,6 @@ struct ReportComparisonHeader: View {
     let previousTitle: String
     let yearAgoTitle: String
 
-    @Environment(SessionState.self) private var sessionState
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(heading)
@@ -32,17 +29,38 @@ struct ReportComparisonHeader: View {
                 .accessibilityIdentifier("report_comparison_heading")
 
             if showsChips {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DS.Spacing.sm) {
-                        chip(.month, title: previousTitle)
-                        chip(.year, title: yearAgoTitle)
-                    }
-                }
-                .fadesTowardVerticalBar()
-                .scrollClipDisabled()
+                ComparisonModeChips(
+                    previousTitle: previousTitle,
+                    yearAgoTitle: yearAgoTitle,
+                    identifierPrefix: "report_comparison_chip"
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Los dos chips de «con qué comparar» («Con el mes anterior» / «Con octubre de 2025»). Es el MISMO control en la
+/// Comparativa de Reportes y en Estadísticas (decisión de Jürgen del 2026-10-23): los dos escriben
+/// `SessionState.comparisonMode`, así que elegir en una pantalla deja elegido en la otra.
+struct ComparisonModeChips: View {
+    let previousTitle: String
+    let yearAgoTitle: String
+    /// Cada pantalla conserva sus identificadores: `<prefijo>_month` y `<prefijo>_year`.
+    let identifierPrefix: String
+
+    @Environment(SessionState.self) private var sessionState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Spacing.sm) {
+                chip(.month, title: previousTitle)
+                chip(.year, title: yearAgoTitle)
+            }
+        }
+        .fadesTowardVerticalBar()
+        .scrollClipDisabled()
     }
 
     private func chip(_ mode: ComparisonMode, title: String) -> some View {
@@ -56,7 +74,7 @@ struct ReportComparisonHeader: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityIdentifier("report_comparison_chip_\(mode.rawValue)")
+        .accessibilityIdentifier("\(identifierPrefix)_\(mode.rawValue)")
     }
 }
 

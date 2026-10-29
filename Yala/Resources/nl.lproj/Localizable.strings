@@ -7219,20 +7219,6 @@
 "stats.l11.period.rangeA11y" = "Dagen: %@";
 /* Estadísticas: con qué se comparan las cifras; %@ = «1–15 de septiembre» */
 "stats.l11.compare.with" = "Vergeleken met %@";
-/* Estadísticas: ayuda de accesibilidad del botón de comparación */
-"stats.l11.compare.hint" = "Kies of je vergelijkt met de vorige periode of met die van vorig jaar";
-/* Estadísticas: opción de comparación con la semana anterior */
-"stats.l11.compare.previousWeek" = "Vorige week";
-/* Estadísticas: opción de comparación con los 7 días anteriores */
-"stats.l11.compare.previous7Days" = "De 7 dagen ervoor";
-/* Estadísticas: opción de comparación con los 30 días anteriores */
-"stats.l11.compare.previous30Days" = "De 30 dagen ervoor";
-/* Estadísticas: opción de comparación con el mes anterior */
-"stats.l11.compare.previousMonth" = "Vorige maand";
-/* Estadísticas: opción de comparación con el período anterior (rango propio) */
-"stats.l11.compare.previousPeriod" = "Vorige periode";
-/* Estadísticas: opción de comparación con el mismo período del año pasado */
-"stats.l11.compare.previousYear" = "Vorig jaar";
 /* Tendencias: título de la tarjeta del gasto por día de la semana */
 "stats.l11.weekday.title" = "Uitgaven per dag van de week";
 /* Tendencias: rótulo de la cifra semanal (suma del gasto medio de cada día de la semana) */

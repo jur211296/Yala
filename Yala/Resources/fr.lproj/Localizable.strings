@@ -7208,20 +7208,6 @@
 "stats.l11.period.rangeA11y" = "Jours couverts : %@";
 /* Estadísticas: con qué se comparan las cifras; %@ = «1–15 de septiembre» */
 "stats.l11.compare.with" = "Comparé au %@";
-/* Estadísticas: ayuda de accesibilidad del botón de comparación */
-"stats.l11.compare.hint" = "Choisis de comparer avec la période précédente ou celle de l’an dernier";
-/* Estadísticas: opción de comparación con la semana anterior */
-"stats.l11.compare.previousWeek" = "Semaine précédente";
-/* Estadísticas: opción de comparación con los 7 días anteriores */
-"stats.l11.compare.previous7Days" = "Les 7 jours précédents";
-/* Estadísticas: opción de comparación con los 30 días anteriores */
-"stats.l11.compare.previous30Days" = "Les 30 jours précédents";
-/* Estadísticas: opción de comparación con el mes anterior */
-"stats.l11.compare.previousMonth" = "Mois précédent";
-/* Estadísticas: opción de comparación con el período anterior (rango propio) */
-"stats.l11.compare.previousPeriod" = "Période précédente";
-/* Estadísticas: opción de comparación con el mismo período del año pasado */
-"stats.l11.compare.previousYear" = "Année précédente";
 /* Tendencias: título de la tarjeta del gasto por día de la semana */
 "stats.l11.weekday.title" = "Dépenses par jour de la semaine";
 /* Tendencias: rótulo de la cifra semanal (suma del gasto medio de cada día de la semana) */

@@ -281,7 +281,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cobertura-ui-diaria-cuelga-del-push | discarded | tickets/discarded/cobertura-ui-diaria-cuelga-del-push.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | done | tickets/done/cola-b-redesigns-must-hold-up-at-ipad-width.md |
 | combined-filters-edge-cases-after-option-b | done | tickets/done/combined-filters-edge-cases-after-option-b.md |
-| comparative-and-statistics-pick-the-comparison-with-different-controls | backlog | tickets/backlog/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
+| comparative-and-statistics-pick-the-comparison-with-different-controls | done | tickets/done/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
 | complete-account-invite-adopt-can-pull-groups-before-the-guard | backlog | tickets/backlog/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |

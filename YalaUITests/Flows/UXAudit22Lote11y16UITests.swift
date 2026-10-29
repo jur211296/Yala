@@ -4,7 +4,7 @@
 //
 //  Implementación de la auditoría UX 2.2, lotes 11 (Estadísticas) y 16 (Ajustes): las cuatro pestañas caben, las
 //  flechas del período, el enlace con pestaña y período (y que ese período vale solo para la visita), y la
-//  confirmación antes de cambiar la moneda principal. Seed `minimal`.
+//  confirmación antes de cambiar la moneda principal, y los dos chips de con qué comparar (card gvvl). Seed `minimal`.
 //
 
 import XCTest
@@ -62,6 +62,47 @@ final class UXAudit22Lote11y16UITests: XCTestCase {
         next.tap()
         let back = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", original), object: range)
         XCTAssertEqual(XCTWaiter().wait(for: [back], timeout: 5), .completed, "La flecha de siguiente no volvió a «Este mes».")
+    }
+
+    /// Card gvvl (Jürgen, 2026-10-23): Estadísticas elige «con qué comparar» con los dos chips de la Comparativa, no con
+    /// la frase que abría un menú. La frase queda como título encima, y elegir un chip la cambia.
+    func test_statistics_picksTheComparisonWithTheTwoChips() {
+        let app = XCUIApplication()
+        app.launchForUITest(extraArguments: ["-defaultPeriod", "thisMonth"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        openStatistics(app)
+
+        let month = app.buttons["comparison_chip_month"]
+        let year = app.buttons["comparison_chip_year"]
+        let phrase = element(app, "comparison_phrase")
+        // Arrastres cortos hasta dejar los chips en la franja central: con un `swipeUp` quedaban bajo la barra de chips
+        // de pestañas y el toque caía encima (testing.md).
+        let window = app.windows.firstMatch.frame
+        var drags = 0
+        while drags < 12, !(year.exists && year.frame.midY > window.height * 0.3 && year.frame.midY < window.height * 0.7) {
+            let from = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+            from.press(forDuration: 0.05, thenDragTo: app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+            drags += 1
+        }
+        XCTAssertTrue(month.exists && year.exists, "Faltan los chips de con qué comparar.")
+        XCTAssertTrue(phrase.exists, "Falta la frase «Comparado con…».")
+        XCTAssertLessThanOrEqual(phrase.frame.maxY, month.frame.minY, "La frase tiene que ir encima de los chips.")
+        XCTAssertFalse(element(app, "comparison_mode_selector").exists, "Sigue el botón con menú de antes.")
+        XCTAssertTrue(month.isSelected, "Por defecto se compara con el período anterior.")
+
+        let monthPhrase = phrase.label
+        year.tap()
+        XCTAssertTrue(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: year)],
+                             timeout: 5) == .completed,
+            "El chip del año pasado no quedó elegido."
+        )
+        XCTAssertFalse(month.isSelected, "Los dos chips quedaron elegidos a la vez.")
+        XCTAssertNotEqual(phrase.label, monthPhrase, "La frase no dice con qué se compara ahora.")
+
+        month.tap()
+        let back = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", monthPhrase), object: phrase)
+        XCTAssertEqual(XCTWaiter().wait(for: [back], timeout: 5), .completed, "Volver al mes anterior no restauró la frase.")
     }
 
     /// L11-2: `statistics/trends` abría la última pestaña usada; solo se entendían `records` y `categories`.

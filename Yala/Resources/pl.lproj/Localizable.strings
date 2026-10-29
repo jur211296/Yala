@@ -7219,20 +7219,6 @@
 "stats.l11.period.rangeA11y" = "Obejmuje dni: %@";
 /* Estadísticas: con qué se comparan las cifras; %@ = «1–15 de septiembre» */
 "stats.l11.compare.with" = "W porównaniu z: %@";
-/* Estadísticas: ayuda de accesibilidad del botón de comparación */
-"stats.l11.compare.hint" = "Wybierz porównanie z poprzednim okresem lub z tym samym okresem rok temu";
-/* Estadísticas: opción de comparación con la semana anterior */
-"stats.l11.compare.previousWeek" = "Poprzedni tydzień";
-/* Estadísticas: opción de comparación con los 7 días anteriores */
-"stats.l11.compare.previous7Days" = "Poprzednie 7 dni";
-/* Estadísticas: opción de comparación con los 30 días anteriores */
-"stats.l11.compare.previous30Days" = "Poprzednie 30 dni";
-/* Estadísticas: opción de comparación con el mes anterior */
-"stats.l11.compare.previousMonth" = "Poprzedni miesiąc";
-/* Estadísticas: opción de comparación con el período anterior (rango propio) */
-"stats.l11.compare.previousPeriod" = "Poprzedni okres";
-/* Estadísticas: opción de comparación con el mismo período del año pasado */
-"stats.l11.compare.previousYear" = "Poprzedni rok";
 /* Tendencias: título de la tarjeta del gasto por día de la semana */
 "stats.l11.weekday.title" = "Wydatki według dnia tygodnia";
 /* Tendencias: rótulo de la cifra semanal (suma del gasto medio de cada día de la semana) */

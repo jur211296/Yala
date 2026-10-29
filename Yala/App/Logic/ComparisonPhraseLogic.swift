@@ -3,11 +3,11 @@
 //  Yala
 //
 //  UX 2.2 · L11-4. Estadísticas decía con qué compara con dos círculos, «P-1» y «A-1», y debajo «vs Set 26», que se lee
-//  como «el 26 de septiembre». Ahora lo dice una frase que hace de botón: «Comparado con el 1–15 de septiembre ▾», que
-//  abre las dos opciones. El tramo es el que de verdad entra en la comparación: con «Este mes», el mismo tramo de días
+//  como «el 26 de septiembre». Ahora lo dice la frase «Comparado con el 1–15 de septiembre», título de los dos chips
+//  que eligen con qué comparar (`ComparisonModeChips`, el mismo control que la Comparativa de Reportes). El tramo es el que de verdad entra en la comparación: con «Este mes», el mismo tramo de días
 //  del mes anterior (`DateAlignmentHelper.alignedPreviousInterval`), no el mes entero.
 //
-//  Lógica pura: el tramo, cómo se escribe y cómo se llama cada opción.
+//  Lógica pura: el tramo y cómo se escribe.
 //
 
 import Foundation
@@ -82,17 +82,5 @@ enum ComparisonPhraseLogic {
             period: period, mode: mode, customRange: customRange, dataEnd: dataEnd, now: now, calendar: calendar
         ) else { return nil }
         return L10n.UXL11.comparedWith(rangeText(interval, now: now, calendar: calendar, locale: locale))
-    }
-
-    /// El nombre de la opción «período anterior» según lo que se mira: con «Esta semana» compara con la semana
-    /// anterior, no con un mes. La de «año anterior» es igual para todos.
-    static func previousOptionTitle(for period: DetailPeriod) -> String {
-        switch period {
-        case .thisWeek: return L10n.UXL11.optionPreviousWeek
-        case .last7Days: return L10n.UXL11.optionPrevious7Days
-        case .last30Days: return L10n.UXL11.optionPrevious30Days
-        case .thisMonth, .lastMonth: return L10n.UXL11.optionPreviousMonth
-        case .thisYear, .lastYear, .allTime, .custom: return L10n.UXL11.optionPreviousPeriod
-        }
     }
 }
