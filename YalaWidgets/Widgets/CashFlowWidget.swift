@@ -3,7 +3,8 @@
 //  YalaWidgets
 //
 //  Widget showing net cash flow (income - expenses).
-//  Supports Small (KPI), Medium (KPI + bars), and Large (KPI + bidirectional chart).
+//  Supports Small (KPI), Medium (KPI + bars), Large (KPI + bidirectional chart) and, on iPhone with
+//  iOS 27, the extra-large portrait (`CashFlowPortraitView`: KPIs + chart + by account + net).
 //
 
 import WidgetKit
@@ -43,6 +44,8 @@ struct CashFlowEntry: TimelineEntry {
     /// (decisión A de Jürgen del 2026-10-26, auditoría «Solo gastos» L4). Antes decía «Flujo neto» con el gasto en
     /// negativo, el único sitio donde ese usuario veía un flujo.
     var isExpensesOnly: Bool = false
+    /// El reparto por cuenta del período (solo lo pinta el extragrande vertical). `nil` con una foto anterior a 2.2.
+    var accountFlows: [WidgetAccountFlow]? = nil
 
     /// El rótulo de la cifra grande: `fallbackKey` (flujo neto o flujo de caja, según el tamaño) o «Gastado».
     func kpiTitle(fallbackKey: String.LocalizationValue) -> String {
@@ -61,7 +64,13 @@ struct CashFlowEntry: TimelineEntry {
             currencyDisplayFormat: "symbol",
             cashFlowPoints: [],
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            // Solo lo pinta el extragrande vertical: así su vista previa de la galería enseña el reparto.
+            accountFlows: [
+                WidgetAccountFlow(id: "1", name: "Cuenta principal", income: 5000, expense: 2590, net: 2410),
+                WidgetAccountFlow(id: "2", name: "Tarjeta", income: 0, expense: 515, net: -515),
+                WidgetAccountFlow(id: "3", name: "Efectivo", income: 0, expense: 145, net: -145)
+            ]
         )
     }
 }
@@ -119,7 +128,8 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
             netCashFlowIsApproximate: isExpensesOnly
                 ? (summary?.expenseIsApproximate ?? false)
                 : (summary?.netCashFlowIsApproximate ?? false),
-            isExpensesOnly: isExpensesOnly
+            isExpensesOnly: isExpensesOnly,
+            accountFlows: summary?.accountFlows
         )
     }
 }
@@ -131,6 +141,15 @@ struct CashFlowWidgetView: View {
     var entry: CashFlowEntry
 
     var body: some View {
+        if family.isExtraLargePortrait {
+            CashFlowPortraitView(entry: entry)
+        } else {
+            sizedView
+        }
+    }
+
+    @ViewBuilder
+    private var sizedView: some View {
         switch family {
         case .systemSmall:
             SmallCashFlowView(entry: entry)
@@ -803,7 +822,7 @@ struct CashFlowWidget: Widget {
         }
         .configurationDisplayName("widget.gallery.cashFlow")
         .description("widget.gallery.cashFlow.desc")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies(WidgetFamilies.addingExtraLargePortrait([.systemSmall, .systemMedium, .systemLarge]))
     }
 }
 

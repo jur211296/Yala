@@ -165,3 +165,8 @@
 "widget.empty.noPaymentsYet" = "You don't have any scheduled payments yet";
 "widget.empty.noBudgetsYet" = "You don't have any budgets yet";
 "widget.empty.createOne" = "Tap to create one";
+
+/* Widgets extragrandes verticales (iPhone, iOS 27) */
+"widget.ui.net" = "Net";
+"widget.ui.byAccount" = "By account";
+"widget.ui.leftToPayThisMonth" = "Left to pay this month";

@@ -38,7 +38,8 @@ struct WidgetDTOParityTests {
     static let dtoNames = [
         "WidgetTransaction", "WidgetBudget", "WidgetScheduledPayment", "WidgetTrendPoint",
         "WidgetTrendData", "WidgetAccountBalance", "WidgetCategory", "WidgetSubcategory",
-        "WidgetCashFlowPoint", "WidgetPeriodSummary", "WidgetDataSnapshot"
+        "WidgetCashFlowPoint", "WidgetPeriodSummary", "WidgetDataSnapshot",
+        "WidgetAccountFlow", "WidgetPaymentsMonth"
     ]
 
     static let writerPath = "Yala/Services/WidgetDataCache.swift"
@@ -152,7 +153,9 @@ struct WidgetDTOParityTests {
             cashFlowPoints: [WidgetCashFlowPoint(date: date, income: 0, expense: 1, net: -1)],
             periodBalance: nil,
             incomeIsApproximate: nil, expenseIsApproximate: nil,
-            netCashFlowIsApproximate: nil, periodBalanceIsApproximate: nil
+            netCashFlowIsApproximate: nil, periodBalanceIsApproximate: nil,
+            // Opcional en las dos copias, pero con un elemento: si no, el recorrido no pasaría por su struct.
+            accountFlows: [WidgetAccountFlow(id: "a", name: "A", income: 0, expense: 1, net: -1)]
         )
         return WidgetDataSnapshot(
             lastUpdated: date,
@@ -177,7 +180,8 @@ struct WidgetDTOParityTests {
             ),
             thisMonthSummary: summary,
             allTimeSummary: summary,
-            periodSummaries: ["thisMonth": summary]
+            periodSummaries: ["thisMonth": summary],
+            paymentsMonth: WidgetPaymentsMonth(monthStart: date, pendingDays: [1], paidDays: [], remainingToPay: 1)
         )
     }
 

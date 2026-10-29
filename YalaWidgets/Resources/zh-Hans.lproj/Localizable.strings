@@ -166,3 +166,8 @@
 "widget.empty.noPaymentsYet" = "你还没有计划付款";
 "widget.empty.noBudgetsYet" = "你还没有预算";
 "widget.empty.createOne" = "轻点创建";
+
+/* Widgets extragrandes verticales (iPhone, iOS 27) */
+"widget.ui.net" = "净额";
+"widget.ui.byAccount" = "按账户";
+"widget.ui.leftToPayThisMonth" = "本月待付";

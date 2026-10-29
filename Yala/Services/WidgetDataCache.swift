@@ -146,6 +146,28 @@ struct WidgetCashFlowPoint: Codable {
     let net: Double
 }
 
+/// Lo que entró y salió por UNA cuenta en un período: el reparto por cuenta del extragrande vertical de «Entradas y
+/// salidas» (iOS 27). Sale de la MISMA suma que los totales del resumen (`WidgetDataCache.buildPeriodSummary`), así que
+/// los netos de todas las cuentas suman `netCashFlow`. Ingresos y gastos van con signo, como los totales.
+struct WidgetAccountFlow: Codable {
+    let id: String
+    let name: String
+    let income: Double
+    let expense: Double
+    let net: Double
+}
+
+/// El mes de los pagos planificados para el calendario del extragrande vertical (iOS 27): qué días tienen un pago de
+/// gasto pendiente o ya pagado y cuánto falta pagar, en la divisa principal. Lo calcula la app
+/// (`WidgetDataCache.buildPaymentsMonth`) porque el widget no tiene las recurrencias ni los tipos de cambio.
+struct WidgetPaymentsMonth: Codable {
+    /// Inicio del mes al que se refiere: el widget no lo pinta si la foto es de otro mes.
+    let monthStart: Date
+    let pendingDays: [Int]
+    let paidDays: [Int]
+    let remainingToPay: Double
+}
+
 /// Precalculated summary for a period
 struct WidgetPeriodSummary: Codable {
     let totalIncome: Double
@@ -177,6 +199,10 @@ struct WidgetPeriodSummary: Codable {
     let expenseIsApproximate: Bool?
     let netCashFlowIsApproximate: Bool?
     let periodBalanceIsApproximate: Bool?
+
+    /// El reparto por cuenta (extragrande vertical de «Entradas y salidas»). **Opcional y con default**: las fotos
+    /// escritas antes de 2.2 no lo traen y decodifican igual; el widget solo esconde ese bloque.
+    var accountFlows: [WidgetAccountFlow]? = nil
 }
 
 /// Complete widget data snapshot
@@ -208,6 +234,10 @@ struct WidgetDataSnapshot: Codable {
 
     // Precalculated summaries for all periods (keyed by period rawValue)
     let periodSummaries: [String: WidgetPeriodSummary]
+
+    /// El mes de los pagos planificados (extragrande vertical de «Pagos planificados»). **Opcional y con default**,
+    /// por la misma razón que `accountFlows`: una clave obligatoria nueva apagaría todos los widgets.
+    var paymentsMonth: WidgetPaymentsMonth? = nil
 
 }
 
@@ -564,6 +594,18 @@ enum WidgetDataCache {
             converter: converter
         )
 
+        // El mes de los pagos para el calendario del extragrande vertical de «Pagos planificados». Mismo «ahora» que
+        // los períodos: a caballo de medianoche del día 1 no puede salir el calendario de un mes y los totales de otro.
+        let paymentsMonth = buildPaymentsMonth(
+            payments: scheduledPayments,
+            paid: ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: scheduledPayments, month: periodsNow, context: context
+            ),
+            month: periodsNow,
+            currencyCode: preferredCurrency,
+            converter: converter
+        )
+
         let widgetSnapshot = WidgetDataSnapshot(
             lastUpdated: Date.now,
             preferredCurrencyCode: preferredCurrency,
@@ -576,7 +618,8 @@ enum WidgetDataCache {
             trendData: trendData,
             thisMonthSummary: thisMonthSummary,
             allTimeSummary: allTimeSummary,
-            periodSummaries: periodSummaries
+            periodSummaries: periodSummaries,
+            paymentsMonth: paymentsMonth
         )
 
         // Siri: todas las cuentas (las archivadas hacen falta para leer bien las líneas de una tarjeta), con el saldo
@@ -826,6 +869,60 @@ enum WidgetDataCache {
         }
     }
 
+    // MARK: - Mes de pagos (extragrande vertical de Pagos planificados)
+
+    /// El mes de `month` para el calendario del widget: días con pago pendiente y pagado, y lo que falta pagar en
+    /// `currencyCode`.
+    ///
+    /// La misma cuenta que la tarjeta de Pagos del Panel (`PanelViewModel`, total menos pagado): solo pagos de gasto,
+    /// cada ocurrencia del mes, las saltadas fuera, las pagadas al importe real del movimiento (las primeras del mes por
+    /// fecha) y las pendientes al importe planificado, convertido con la última tasa. El widget no podría: no tiene las
+    /// recurrencias ni los tipos de cambio.
+    static func buildPaymentsMonth(
+        payments: [ScheduledPayment],
+        paid: [String: [PaidOccurrenceInfo]],
+        month: Date,
+        currencyCode: String,
+        converter: CurrencyConverting,
+        calendar: Calendar = .current
+    ) -> WidgetPaymentsMonth {
+        let monthStart = calendar.dateInterval(of: .month, for: month)?.start ?? calendar.startOfDay(for: month)
+        var pendingDays: Set<Int> = []
+        var paidDays: Set<Int> = []
+        var remaining: Double = 0
+
+        func converted(_ amount: Double, from currency: String) -> Double {
+            guard currency != currencyCode, amount > 0 else { return amount }
+            let value = converter.convertWithLatestRate(Decimal(amount), from: currency, to: currencyCode)
+            return NSDecimalNumber(decimal: value).doubleValue
+        }
+
+        for payment in payments where payment.transactionType != "income" {
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: monthStart
+            ).sorted()
+            var paidInfos = paid[payment.id.uuidString] ?? []
+            for date in dates {
+                if payment.isDateSkipped(date) { continue }
+                let day = calendar.component(.day, from: date)
+                if !paidInfos.isEmpty {
+                    paidInfos.removeFirst()
+                    paidDays.insert(day)
+                } else {
+                    pendingDays.insert(day)
+                    remaining += converted(payment.amount, from: payment.currencyCode)
+                }
+            }
+        }
+
+        return WidgetPaymentsMonth(
+            monthStart: monthStart,
+            pendingDays: pendingDays.sorted(),
+            paidDays: paidDays.sorted(),
+            remainingToPay: remaining
+        )
+    }
+
     // MARK: - Period Summary Calculations
 
     static func buildPeriodSummary(
@@ -856,6 +953,10 @@ enum WidgetDataCache {
         // y pasaba de 100 % los porcentajes de las categorías, que suman magnitudes (lo cazó la review).
         var incomeTotalMagnitude: Double = 0
         var expenseTotalMagnitude: Double = 0
+        // El reparto por cuenta (extragrande vertical de «Entradas y salidas») se acumula en el MISMO bucle y con la
+        // misma suma, para que las cuentas sumen el neto. Las filas de producción llegan filtradas por
+        // `countsForWidgets`, que exige cuenta; una sin cuenta (solo en tests que llaman aquí a pelo) no entra.
+        var flowsByAccount: [PersistentIdentifier: (name: String, income: Double, expense: Double)] = [:]
 
         for tx in periodTransactions {
             if adjustment.isSuppressed(tx) { continue }
@@ -869,7 +970,8 @@ enum WidgetDataCache {
             let amount = resolved.value
             let approximate = resolved.approximateMagnitude
             // Con signo, como el Flujo de caja de la app: una devolución en una categoría de gasto resta del gasto.
-            if isIncomeTx(tx) {
+            let isIncome = isIncomeTx(tx)
+            if isIncome {
                 totalIncome += amount
                 incomeApproximateMagnitude += approximate
                 incomeTotalMagnitude += abs(amount)
@@ -878,9 +980,29 @@ enum WidgetDataCache {
                 expenseApproximateMagnitude += approximate
                 expenseTotalMagnitude += abs(amount)
             }
+            if let account = tx.account {
+                var flow = flowsByAccount[account.persistentModelID] ?? (account.name, 0, 0)
+                if isIncome { flow.income += amount } else { flow.expense -= amount }
+                flowsByAccount[account.persistentModelID] = flow
+            }
         }
 
         let netCashFlow = totalIncome - totalExpense
+        let accountFlows = flowsByAccount
+            .map { id, flow in
+                WidgetAccountFlow(
+                    id: id.hashValue.description,
+                    name: flow.name,
+                    income: flow.income,
+                    expense: flow.expense,
+                    net: flow.income - flow.expense
+                )
+            }
+            // De más a menos movimiento; a igualdad, por nombre, para que el orden no dependa del diccionario.
+            .sorted {
+                let lhs = abs($0.income) + abs($0.expense), rhs = abs($1.income) + abs($1.expense)
+                return lhs != rhs ? lhs > rhs : $0.name.localizedStandardCompare($1.name) == .orderedAscending
+            }
 
         // Calculate historical balance at end of period
         // This is the sum of ALL transactions up to periodEnd (not just period transactions)
@@ -977,7 +1099,8 @@ enum WidgetDataCache {
                     approximate: balanceApproximateMagnitude, total: periodBalance
                 )
                 // Sin `periodBalance` no hay número que marcar.
-                : false
+                : false,
+            accountFlows: accountFlows
         )
     }
 

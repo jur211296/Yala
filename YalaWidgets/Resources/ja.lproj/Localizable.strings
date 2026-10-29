@@ -166,3 +166,8 @@
 "widget.empty.noPaymentsYet" = "予定支払いはまだありません";
 "widget.empty.noBudgetsYet" = "予算はまだありません";
 "widget.empty.createOne" = "タップして作成";
+
+/* Widgets extragrandes verticales (iPhone, iOS 27) */
+"widget.ui.net" = "純額";
+"widget.ui.byAccount" = "口座別";
+"widget.ui.leftToPayThisMonth" = "今月の残りの支払い";

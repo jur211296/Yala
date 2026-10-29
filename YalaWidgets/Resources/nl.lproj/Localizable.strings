@@ -166,3 +166,8 @@
 "widget.empty.noPaymentsYet" = "Je hebt nog geen geplande betalingen";
 "widget.empty.noBudgetsYet" = "Je hebt nog geen budgetten";
 "widget.empty.createOne" = "Tik om er een te maken";
+
+/* Widgets extragrandes verticales (iPhone, iOS 27) */
+"widget.ui.net" = "Netto";
+"widget.ui.byAccount" = "Per rekening";
+"widget.ui.leftToPayThisMonth" = "Deze maand nog te betalen";
