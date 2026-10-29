@@ -7201,6 +7201,7 @@
 "scheduled.l10.delete.keepsRecords" = "記録は削除されません。";
 "scheduled.l10.deleted" = "「%@」を削除しました";
 "records.pendingDeletion.deletedMany" = "%d 件の記録を削除しました";
+"scheduled.pendingDeletion.deletedMany" = "%d 件の支払いを削除しました";
 "scheduled.l10.editor.moreOptions" = "その他のオプション";
 "scheduled.l10.editor.when" = "いつ";
 "scheduled.l10.editor.optional" = "任意";

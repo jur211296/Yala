@@ -7199,6 +7199,7 @@
 "scheduled.l10.delete.keepsRecords" = "Le tue registrazioni non vengono eliminate.";
 "scheduled.l10.deleted" = "Hai eliminato «%@»";
 "records.pendingDeletion.deletedMany" = "Hai eliminato %d registrazioni";
+"scheduled.pendingDeletion.deletedMany" = "Hai eliminato %d pagamenti";
 "scheduled.l10.editor.moreOptions" = "Altre opzioni";
 "scheduled.l10.editor.when" = "Quando";
 "scheduled.l10.editor.optional" = "Facoltativo";

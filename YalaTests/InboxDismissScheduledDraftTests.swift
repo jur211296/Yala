@@ -410,7 +410,11 @@ struct InboxDismissScheduledDraftTests {
         #expect(theirs.isShownInArchive, "se archiva, no se borra: tiene que verse en Archivados")
     }
 
-    @Test func otherDevicesDraftAlreadyHere_isArchivedTogetherWithMine_withoutWaitingForARelaunch() throws {
+    /// Desde el 2026-10-29 (ticket `scheduled-payment-identical-drafts-in-the-inbox`): con el borrador del otro
+    /// dispositivo ya en la Bandeja, descartar el mío quita SOLO el mío. El otro sigue reteniendo la ocurrencia, así que
+    /// no se salta; se salta al descartar el último. Hasta ese día se archivaban los dos (este test fijaba eso), y con los
+    /// borradores idénticos que deja cada dispositivo, descartar uno se llevaba todos.
+    @Test func otherDevicesDraftAlreadyHere_staysWhenIDismissMine_andTheLastOneSkips() throws {
         let context = try makeTestContext()
         let account = insertAccount(context)
         let payment = insertDuePayment(context, account: account)
@@ -433,8 +437,15 @@ struct InboxDismissScheduledDraftTests {
         try context.save()
 
         try withDraftService(context) { try DraftService.shared.rejectDraft(mine) }
-        #expect(theirs.status == .rejected, "el gemelo de la misma ocurrencia seguía en la Bandeja tras descartar")
-        #expect(theirs.isShownInArchive)
+        #expect(mine.status == .rejected)
+        #expect(theirs.status == .pending, "descartar uno se llevó el otro borrador de la Bandeja")
+        #expect(!payment.isDateSkipped(occurrence), "con otro pendiente reteniéndola, la ocurrencia no se salta")
+        #expect(otherDraft.status == .pending)
+
+        try withDraftService(context) { try DraftService.shared.rejectDraft(theirs) }
+        #expect(payment.isDateSkipped(occurrence), "descartado el último, la ocurrencia se salta")
+        relaunch(context)
+        #expect(try pending(of: payment, context).isEmpty, "el vencimiento descartado volvió a la Bandeja")
         #expect(otherDraft.status == .pending)
     }
 

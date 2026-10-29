@@ -96,6 +96,49 @@ enum ScheduledDraftOccurrenceLogic {
         return false
     }
 
+    // MARK: - Borradores idénticos de la misma ocurrencia
+
+    /// Lo que hace que dos borradores pendientes sean el MISMO: mismo pago, origen y ocurrencia, y el mismo contenido
+    /// (día, importe, nota, cuenta, subcategoría, etiquetas, evidencia, grupo). Los que crea cada dispositivo para el
+    /// mismo vencimiento salen iguales campo por campo; uno que la persona editó deja de serlo y no se funde.
+    struct DuplicateKey: Hashable {
+        let paymentID: String
+        let sourceTypeRaw: String
+        let occurrence: Date
+        let day: Date
+        let amount: Double?
+        let note: String
+        let accountID: UUID?
+        let subcategoryID: UUID?
+        let tagIDs: String
+        let evidence: String?
+        let groupZoneID: String?
+    }
+
+    /// Un borrador candidato al barrido: su clave, su `createdAt` (viaja igual a todos los dispositivos) y un índice
+    /// para devolverlo.
+    struct DuplicateCandidate {
+        let key: DuplicateKey
+        let createdAt: Date
+        let index: Int
+    }
+
+    /// Los borradores que sobran: en cada grupo de idénticos se queda el de menor `createdAt`, la MISMA regla en todos
+    /// los dispositivos, para que entre los dos no borren uno cada uno y se queden sin ninguno (regla «Fundir duplicados
+    /// que llegan de dos dispositivos»). Si los dos más antiguos están a menos de `tieTolerance` (iCloud redondea las
+    /// fechas), no se sabe cuál elegiría el otro dispositivo y el grupo no se toca.
+    static func duplicatesToRemove(
+        _ candidates: [DuplicateCandidate], tieTolerance: TimeInterval = 0.001
+    ) -> [Int] {
+        var losers: [Int] = []
+        for group in Dictionary(grouping: candidates, by: \.key).values where group.count > 1 {
+            let sorted = group.sorted { $0.createdAt < $1.createdAt }
+            guard sorted[1].createdAt.timeIntervalSince(sorted[0].createdAt) >= tieTolerance else { continue }
+            losers.append(contentsOf: sorted.dropFirst().map(\.index))
+        }
+        return losers.sorted()
+    }
+
     // MARK: - Calendario del pago
 
     /// Si `day` es una ocurrencia del pago anterior a `pointer`. Recorre hacia atrás desde la próxima fecha

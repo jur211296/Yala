@@ -930,8 +930,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
+| scheduled-payment-identical-drafts-in-the-inbox | qa | tickets/qa/scheduled-payment-identical-drafts-in-the-inbox.md |
 | scheduled-payment-once-labeled-monthly | done | tickets/done/scheduled-payment-once-labeled-monthly.md |
-| scheduled-payment-pending-deletion-loses-undo-on-a-second-delete | backlog | tickets/backlog/scheduled-payment-pending-deletion-loses-undo-on-a-second-delete.md |
+| scheduled-payment-pending-deletion-loses-undo-on-a-second-delete | done | tickets/done/scheduled-payment-pending-deletion-loses-undo-on-a-second-delete.md |
 | scheduled-payment-save-does-nothing-when-a-field-is-missing | done | tickets/done/scheduled-payment-save-does-nothing-when-a-field-is-missing.md |
 | scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | done | tickets/done/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
 | scheduled-payment-start-date-is-ignored-by-the-calendar | backlog | tickets/backlog/scheduled-payment-start-date-is-ignored-by-the-calendar.md |

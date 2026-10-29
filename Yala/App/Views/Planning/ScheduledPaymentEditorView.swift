@@ -1241,6 +1241,7 @@ struct ScheduledPaymentEditorView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(DS.Semantic.errorForeground)
+        .accessibilityIdentifier("scheduled_editor_delete")
         .padding(.top, DS.Spacing.lg)
     }
 
@@ -1753,8 +1754,25 @@ struct ScheduledPaymentEditorView: View {
         let editorViewModel = viewModel
         dismiss()
         onDelete?()
-        ScheduledPaymentPendingDeletion.shared.request(paymentID: payment.id, name: payment.name) {
-            _ = editorViewModel.deletePayment(payment)
+        let context = modelContext
+        ScheduledPaymentPendingDeletion.shared.request(
+            paymentID: payment.id,
+            name: payment.name,
+            refreshAfterUndo: { WidgetDataCache.updateCache(context: context) }
+        ) {
+            // Con un fetch antes, como los registros: si entretanto el pago se borró por otro camino (otro dispositivo,
+            // borrar su cuenta), el objeto capturado está muerto y leerlo puede tumbar la app.
+            let paymentID = payment.id
+            var stillThere = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentID })
+            stillThere.fetchLimit = 1
+            do {
+                guard let live = try context.fetch(stillThere).first else { return }
+                _ = editorViewModel.deletePayment(live)
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentEditorView: Error checking payment before delete: \(error)")
+                #endif
+            }
         }
     }
 }

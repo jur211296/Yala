@@ -7201,6 +7201,7 @@
 "scheduled.l10.delete.keepsRecords" = "你的记录不会被删除。";
 "scheduled.l10.deleted" = "已删除“%@”";
 "records.pendingDeletion.deletedMany" = "已删除 %d 条记录";
+"scheduled.pendingDeletion.deletedMany" = "已删除 %d 笔付款";
 "scheduled.l10.editor.moreOptions" = "更多选项";
 "scheduled.l10.editor.when" = "时间";
 "scheduled.l10.editor.optional" = "可选";

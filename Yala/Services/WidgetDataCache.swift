@@ -414,7 +414,8 @@ enum WidgetDataCache {
 
         var scheduledPayments: [ScheduledPayment] = []
         do {
-            scheduledPayments = try context.fetch(paymentDescriptor)
+            // Un pago que espera su borrado con «Deshacer» no cuenta en los widgets (`ScheduledPaymentPendingDeletion`).
+            scheduledPayments = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(paymentDescriptor))
         } catch {
             #if DEBUG
             print("WidgetDataCache: Error fetching scheduled payments: \(error)")

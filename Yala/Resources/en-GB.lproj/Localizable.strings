@@ -6508,6 +6508,7 @@
 "scheduled.l10.delete.keepsRecords" = "Your records aren’t deleted.";
 "scheduled.l10.deleted" = "You deleted “%@”";
 "records.pendingDeletion.deletedMany" = "You deleted %d records";
+"scheduled.pendingDeletion.deletedMany" = "You deleted %d payments";
 "scheduled.l10.editor.moreOptions" = "More options";
 "scheduled.l10.editor.when" = "When";
 "scheduled.l10.editor.optional" = "Optional";

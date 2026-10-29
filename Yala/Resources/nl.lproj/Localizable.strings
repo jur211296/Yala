@@ -7201,6 +7201,7 @@
 "scheduled.l10.delete.keepsRecords" = "Je registraties worden niet verwijderd.";
 "scheduled.l10.deleted" = "„%@” verwijderd";
 "records.pendingDeletion.deletedMany" = "%d boekingen verwijderd";
+"scheduled.pendingDeletion.deletedMany" = "%d betalingen verwijderd";
 "scheduled.l10.editor.moreOptions" = "Meer opties";
 "scheduled.l10.editor.when" = "Wanneer";
 "scheduled.l10.editor.optional" = "Optioneel";

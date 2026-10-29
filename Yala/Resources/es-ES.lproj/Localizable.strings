@@ -6524,6 +6524,7 @@
 "scheduled.l10.delete.keepsRecords" = "Tus registros no se borran.";
 "scheduled.l10.deleted" = "Eliminaste «%@»";
 "records.pendingDeletion.deletedMany" = "Eliminaste %d registros";
+"scheduled.pendingDeletion.deletedMany" = "Eliminaste %d pagos";
 "scheduled.l10.editor.moreOptions" = "Más opciones";
 "scheduled.l10.editor.when" = "Cuándo";
 "scheduled.l10.editor.optional" = "Opcional";

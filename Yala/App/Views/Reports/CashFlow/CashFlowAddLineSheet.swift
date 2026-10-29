@@ -23,7 +23,9 @@ struct CashFlowAddLineSheet: View {
     @State private var lineType: TransactionType = .expense
 
     @Query(sort: \Category.sortOrder) private var categories: [Category]
-    @Query(filter: #Predicate<ScheduledPayment> { $0.isActive }) private var scheduledPayments: [ScheduledPayment]
+    @Query(filter: #Predicate<ScheduledPayment> { $0.isActive }) private var storedScheduledPayments: [ScheduledPayment]
+    /// Sin el pago que espera su borrado con «Deshacer» (`ScheduledPaymentPendingDeletion`).
+    private var scheduledPayments: [ScheduledPayment] { ScheduledPaymentPendingDeletion.shared.visible(storedScheduledPayments) }
 
     var body: some View {
         NavigationStack {

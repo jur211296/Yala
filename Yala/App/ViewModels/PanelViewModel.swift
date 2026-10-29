@@ -504,7 +504,8 @@ final class PanelViewModel {
         )
         paymentsDesc.fetchLimit = 200
         do {
-            let fetched = try context.fetch(paymentsDesc)
+            // Un pago que espera su borrado con «Deshacer» no cuenta en ninguna cifra (`ScheduledPaymentPendingDeletion`).
+            let fetched = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(paymentsDesc))
             if fetched != scheduledPayments { scheduledPayments = fetched }
         } catch {
             #if DEBUG

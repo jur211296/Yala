@@ -7189,6 +7189,7 @@
 "scheduled.l10.delete.keepsRecords" = "Deine Einträge werden nicht gelöscht.";
 "scheduled.l10.deleted" = "„%@“ gelöscht";
 "records.pendingDeletion.deletedMany" = "%d Einträge gelöscht";
+"scheduled.pendingDeletion.deletedMany" = "%d Zahlungen gelöscht";
 "scheduled.l10.editor.moreOptions" = "Weitere Optionen";
 "scheduled.l10.editor.when" = "Wann";
 "scheduled.l10.editor.optional" = "Optional";
