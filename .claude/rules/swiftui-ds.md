@@ -164,6 +164,17 @@ paths:
   (`requestColdStartICloudNoticeAfterBootstrap`). Y su estado va en un tipo del PROCESO, no en `@State`: con varias
   ventanas la líder se remonta (ver «Varias ventanas»).
 
+- **Una fila que recibe un `@Model` no lo lee si ya está borrado (card f8rj, crash de TestFlight 2.2 (2), iOS 27.2).**
+  La fila observa su modelo y puede volver a pintarse con él borrado: bajo una hoja que lo borró («Eliminar para
+  siempre» del editor de la Bandeja), con la lista esperando a recargar por `dataVersion`, o porque una recarga devolvió
+  una fila que esperaba su borrado diferido. En el iPhone 27.x leer cualquier propiedad aborta (`_assertionFailure`
+  desde el getter); **en el simulador 27.0 no**, así que ningún XCUITest lo caza. ⇒ el `body` de la fila mira primero
+  `isDeleted || modelContext == nil` y no pinta nada (`InboxDraftRowView`, `RecordRowView`); quien borra con la fila
+  montada la poda antes (`DraftService.deleteInboxDraftPruningRow`); y una retirada optimista con borrado diferido
+  esconde lo que espera en cada recarga (`InboxViewModel.beginRemoval`, `RecordPendingDeletion`). Pin:
+  `DeletedModelRowGuardWiringTests`, `InboxPendingRemovalTests`. Un `.ips` de TestFlight sin dSYM no se simboliza
+  recompilando el commit: sale otro UUID y las direcciones caen en código sin relación (medido).
+
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
 - **`YalaFormatter` no auto-refresca prefs** — lee `UserDefaults` directo. Vista que lo use con `decimalPlaces` o `currencyDisplayFormat` debe inyectar `@Environment(AppPreferences.self)` y leer `let _ = appPreferences.X` en body para registrar dependencia.

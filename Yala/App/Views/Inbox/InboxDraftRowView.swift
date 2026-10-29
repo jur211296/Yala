@@ -25,6 +25,15 @@ struct InboxDraftRowView: View {
     @State private var settlementName: String?
 
     var body: some View {
+        // La fila observa su `InboxDraft` y puede volver a pintarse con él ya borrado (bajo una hoja, en la animación de
+        // salida, o borrado por otro camino): entonces no se lee nada de él, ni la etiqueta ni el identificador. Leerlo
+        // aborta la app (crash de TestFlight 2.2 (2), card f8rj).
+        if draft.isReadableInInbox {
+            row
+        }
+    }
+
+    private var row: some View {
         Button(action: onTap) {
             // A tamaños de accesibilidad el importe baja bajo el concepto (`AdaptiveRowStack`), como en
             // `RecordRowView`: en fila se cortaba («S/-…50»). Apilada, icono y texto quedan juntos en su propia fila.

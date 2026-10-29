@@ -1027,6 +1027,11 @@ struct InboxView: View {
         }
     }
 
+    /// Lo que espera el borrado (o el descarte) de verdad tras quitar la fila: deja terminar la animación. Un XCUITest
+    /// puede alargarlo (`UITestHooks.inboxRemovalDelaySeconds`).
+    static let removalDelay: Duration = UITestHooks.inboxRemovalDelaySeconds.map { .milliseconds(Int($0 * 1000)) }
+        ?? .milliseconds(400)
+
     /// Animate draft removal from UI, then persist after animation completes.
     /// Delay avoids accessing invalidated SwiftData relationships during animation.
     private func removeDraftWithAnimation(
@@ -1037,14 +1042,21 @@ struct InboxView: View {
     ) {
         UIImpactFeedbackGenerator(style: hapticStyle).impactOccurred()
 
+        // `beginRemoval` y no `removeDraft`: hasta que el borrado termine, ninguna recarga devuelve la fila. Con dos
+        // borrados seguidos, la recarga del primero volvía a montar el segundo justo antes de borrarlo (card f8rj).
+        let draftID = draft.persistentModelID
         dsWithAnimation(reduceMotion) {
-            viewModel.removeDraft(draft)
+            viewModel.beginRemoval(draft)
         }
 
         Task {
             do {
-                try await Task.sleep(for: .milliseconds(400))
-            } catch { return }
+                try await Task.sleep(for: Self.removalDelay)
+            } catch {
+                viewModel.endRemoval(id: draftID)
+                viewModel.loadData()
+                return
+            }
             draftService.setContext(modelContext)
             do {
                 try persist(draftService, draft)
@@ -1056,6 +1068,7 @@ struct InboxView: View {
             }
             // Recargar SIEMPRE, también si guardó bien: la retirada optimista lo quitó de `allDrafts`, y sin recargar
             // un borrador recién rechazado no salía en Archivados hasta cerrar y volver a abrir la Bandeja.
+            viewModel.endRemoval(id: draftID)
             viewModel.loadData()
         }
     }

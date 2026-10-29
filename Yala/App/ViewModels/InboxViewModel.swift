@@ -50,6 +50,11 @@ final class InboxViewModel {
     /// Gastos de grupo pendientes sin su grupo en este teléfono: se les ofrece «Quitar de aquí»
     /// (`InboxGroupDraftsHiddenHere`).
     private(set) var hideableHereIDs: Set<PersistentIdentifier> = []
+    /// Borradores que la Bandeja ya quitó de la lista y que se borran o descartan después de la animación
+    /// (`InboxView.removeDraftWithAnimation`). Una recarga en esa espera —la del borrado anterior, un `dataVersion`— no
+    /// los devuelve: su fila volvería a montarse y leería el `InboxDraft` cuando se borre (crash de TestFlight 2.2 (2),
+    /// card f8rj). Registros y Pagos planificados esconden igual lo que espera (`RecordPendingDeletion`).
+    @ObservationIgnored private var pendingRemovalIDs: Set<PersistentIdentifier> = []
 
     // MARK: - Setup
 
@@ -89,7 +94,9 @@ final class InboxViewModel {
 
         do {
             // Sin los gastos de grupo quitados de la Bandeja en este teléfono (`InboxGroupDraftsHiddenHere`).
-            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
+            let fetched = withoutPendingRemovals(
+                InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
+            )
             if fetched != allDrafts { allDrafts = fetched }
         } catch {
             #if DEBUG
@@ -108,7 +115,9 @@ final class InboxViewModel {
         descriptor.fetchLimit = 200
 
         do {
-            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
+            let fetched = withoutPendingRemovals(
+                InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
+            )
             if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG
@@ -117,16 +126,27 @@ final class InboxViewModel {
         }
     }
 
+    private func withoutPendingRemovals(_ drafts: [InboxDraft]) -> [InboxDraft] {
+        guard !pendingRemovalIDs.isEmpty else { return drafts }
+        return drafts.filter { !pendingRemovalIDs.contains($0.persistentModelID) }
+    }
+
+    /// Lo que la lista puede leer: un borrador borrado por otro camino (sincronización, un servicio en segundo plano)
+    /// sigue en el array cacheado hasta la próxima recarga, y leer cualquiera de sus propiedades tumba la app.
+    private var readableDrafts: [InboxDraft] {
+        allDrafts.filter(\.isReadableInInbox)
+    }
+
     // MARK: - Computed Properties
 
     func filteredDrafts(for filter: InboxFilter) -> [InboxDraft] {
         switch filter {
         case .pending:
-            return allDrafts.filter { $0.status == .pending }
+            return readableDrafts.filter { $0.status == .pending }
         case .archived:
             // Only show archived drafts that have cached values (to avoid crashes from invalid relationships),
             // plus rejected settlement drafts, which never had an account (`InboxDraft.isShownInArchive`).
-            return allDrafts.filter(\.isShownInArchive)
+            return readableDrafts.filter(\.isShownInArchive)
         }
     }
 
@@ -148,9 +168,9 @@ final class InboxViewModel {
     func countForFilter(_ filter: InboxFilter) -> Int {
         switch filter {
         case .pending:
-            return allDrafts.count(where: { $0.status == .pending })
+            return readableDrafts.count(where: { $0.status == .pending })
         case .archived:
-            return allDrafts.count(where: \.isShownInArchive)
+            return readableDrafts.count(where: \.isShownInArchive)
         }
     }
 
@@ -167,6 +187,19 @@ final class InboxViewModel {
 
     func removeDraft(_ draft: InboxDraft) {
         removeDraft(id: draft.persistentModelID)
+    }
+
+    /// Quita la fila de un borrador que se va a borrar o descartar DESPUÉS (tras la animación), y la deja fuera de toda
+    /// recarga hasta `endRemoval(id:)`.
+    func beginRemoval(_ draft: InboxDraft) {
+        pendingRemovalIDs.insert(draft.persistentModelID)
+        removeDraft(id: draft.persistentModelID)
+    }
+
+    /// El borrado o descarte diferido terminó (con éxito o no): la próxima recarga vuelve a enseñar lo que siga en la
+    /// base — un descartado, en Archivados; uno que no se pudo borrar, en su sitio.
+    func endRemoval(id: PersistentIdentifier) {
+        pendingRemovalIDs.remove(id)
     }
 
     /// Poda una fila del array cacheado por su id persistente. Usado por el
@@ -233,5 +266,14 @@ final class InboxViewModel {
         return grouped
             .map { (date: $0.key, indices: $0.value) }
             .sorted { $0.date > $1.date }
+    }
+}
+
+extension InboxDraft {
+    /// Se puede leer sin tumbar la app: ni marcado para borrar en su contexto ni ya borrado y guardado (sin contexto).
+    /// SwiftData aborta (`_assertionFailure`) al leer una propiedad de un modelo borrado, y una fila de la Bandeja puede
+    /// volver a pintarse con su borrador ya borrado (card f8rj; mismo molde que `BudgetDetailView.isBudgetValid`).
+    var isReadableInInbox: Bool {
+        !isDeleted && modelContext != nil
     }
 }

@@ -1185,6 +1185,21 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-inbox-removal-delay-seconds <N>`: alarga la espera entre quitar una fila de la Bandeja y borrarla o
+    /// descartarla de verdad (400 ms). Un XCUITest tarda más que eso entre dos gestos, y la carrera de dos borrados
+    /// seguidos (card f8rj, crash de TestFlight 2.2 (2)) solo se recorre si el segundo cae dentro de la espera del
+    /// primero. Solo cambia CUÁNTO espera, no qué decide nadie.
+    nonisolated static var inboxRemovalDelaySeconds: Double? {
+        #if DEBUG
+        guard isActive, let raw = parseValue(after: "-uitest-inbox-removal-delay-seconds", from: ProcessInfo.processInfo.arguments),
+              let seconds = Double(raw), seconds > 0
+        else { return nil }
+        return seconds
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-undo-notice-seconds <N>`: alarga el aviso con «Deshacer» (y con él el plazo de los borrados que esperan).
     /// En iOS 27 un XCUITest tarda más de los 5 s reales en borrar un segundo registro, y «dos borrados seguidos» no se
     /// podía recorrer. Solo cambia CUÁNTO dura, no qué decide nadie.

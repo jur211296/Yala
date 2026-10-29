@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1103)
+## Index (1106)
 
 | id | status | path |
 |---|---|---|
@@ -257,6 +257,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | done | tickets/done/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-progress-shows-real-steps-and-counts | qa | tickets/qa/cloud-progress-shows-real-steps-and-counts.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | done | tickets/done/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
+| cloud-session-removed-by-the-sdk-does-not-announce-itself | backlog | tickets/backlog/cloud-session-removed-by-the-sdk-does-not-announce-itself.md |
 | cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
 | cloud-sign-in-discovers-account-kind | done | tickets/done/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
@@ -398,6 +399,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
+| forms-read-their-deleted-model-while-closing | backlog | tickets/backlog/forms-read-their-deleted-model-while-closing.md |
 | forward-identity-capture-advances-when-it-could-not-read-any-row | backlog | tickets/backlog/forward-identity-capture-advances-when-it-could-not-read-any-row.md |
 | forward-migration-steps-have-no-ceiling-and-no-exit | done | tickets/done/forward-migration-steps-have-no-ceiling-and-no-exit.md |
 | forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass | backlog | tickets/backlog/forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass.md |
@@ -595,6 +597,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | inbox-alert-scheduled-count-has-no-singular | done | tickets/done/inbox-alert-scheduled-count-has-no-singular.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
+| inbox-deleting-two-drafts-in-a-row-crashes | qa | tickets/qa/inbox-deleting-two-drafts-in-a-row-crashes.md |
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | done | tickets/done/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | inbox-strings-show-a-python-dict-in-four-languages | done | tickets/done/inbox-strings-show-a-python-dict-in-four-languages.md |
@@ -1069,7 +1072,6 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | verify-reads-a-failed-local-fetch-as-an-empty-outbox | done | tickets/done/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
 | views-reading-the-cloud-session-do-not-repaint-when-it-changes | done | tickets/done/views-reading-the-cloud-session-do-not-repaint-when-it-changes.md |
-| cloud-session-removed-by-the-sdk-does-not-announce-itself | backlog | tickets/backlog/cloud-session-removed-by-the-sdk-does-not-announce-itself.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | done | tickets/done/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |
