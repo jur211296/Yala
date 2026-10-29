@@ -1,4 +1,5 @@
 {
+  "git": { "deploymentEnabled": { "encargo/**": false } },
   "headers": [
     {
       "source": "/.well-known/apple-app-site-association",
