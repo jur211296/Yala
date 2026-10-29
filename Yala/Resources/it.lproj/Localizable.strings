@@ -4060,7 +4060,7 @@
 "welcome.restore.searchingTip" = "Potrebbe richiedere qualche secondo.";
 "welcome.restore.foundTitle" = "Ciao %@! Bentornato.";
 "welcome.restore.foundTitleAnonymous" = "Bentornato!";
-"welcome.restore.foundBody" = "Ecco cosa torna su questo telefono:";
+"welcome.restore.foundBody" = "Ecco cosa torna su questo dispositivo:";
 "welcome.restore.continue" = "Continua";
 "welcome.restore.notFoundTitle" = "Nessun dato trovato";
 "welcome.restore.notFoundBody" = "Non ci sono dati collegati al tuo account iCloud. Vuoi ricominciare da zero?";
@@ -4620,7 +4620,7 @@
 "storage.errors.signIn" = "Non siamo riusciti ad accedere. Riprova.";
 "storage.consent.title" = "I tuoi dati nel cloud di Yala";
 "storage.consent.pointServers" = "Il nostro team può vederli per darti assistenza e funzioni intelligenti. Non usiamo la crittografia end-to-end.";
-"storage.consent.pointPhotos" = "Non vengono salvate nel cloud né viste su altri dispositivi. Se vuoi conservarle, salvale prima di cambiare telefono.";
+"storage.consent.pointPhotos" = "Non vengono salvate nel cloud né viste su altri dispositivi. Se vuoi conservarle, salvale prima di cambiare dispositivo.";
 "storage.consent.pointAccess" = "Senza dipendere da iCloud. Non c’è una password Yala né il recupero via email: se perdi quell’accesso, esporta prima i tuoi dati (Impostazioni → Esporta dati).";
 "storage.consent.footer" = "Puoi tornare alla modalità privata quando vuoi, senza perdere nulla.";
 "storage.consent.privacyLink" = "Vedi l’informativa sulla privacy";
@@ -5378,13 +5378,13 @@
 "groups.freshStartPending.title" = "Alcune modifiche dei tuoi gruppi devono ancora essere caricate";
 "groups.freshStartPending.lead" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server (%d) e ricominciare da zero le porterebbe via.";
 "groups.freshStartPending.leadUnknown" = "Non abbiamo cancellato nulla: alcune modifiche dei tuoi gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via.";
-"groups.freshStartPending.lossSessionExpired" = "Si possono caricare solo con l'account che le ha create, e la sua sessione non è più su questo telefono. Se non rientrerai con quell'account, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossSessionExpired" = "Si possono caricare solo con l'account che le ha create, e la sua sessione non è più su questo dispositivo. Se non rientrerai con quell'account, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
 "groups.freshStartPending.lossPermanent" = "L'account che le ha create non può più caricarle, e riprovare non risolverà. Puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
-"groups.freshStartPending.lossAttest" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi, quindi non possono essere caricate. Puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossAttest" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi, quindi non possono essere caricate. Puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
 "groups.freshStartPending.lossAction" = "Ricomincia da zero e perdile";
 "groups.freshStartPending.lossConfirmTitle" = "Perdere queste modifiche?";
-"groups.freshStartPending.lossConfirmBody" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
-"groups.freshStartPending.lossConfirmBodyUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo telefono. Nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBody" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo dispositivo senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo dispositivo. Nessuno del gruppo le vedrà e non si possono recuperare.";
 "groups.freshStartPending.lossConfirmAction" = "Perdile e ricomincia da zero";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
@@ -5633,7 +5633,7 @@
 "welcome.privateICloud.foundTitle" = "Hai già dei dati nel tuo iCloud";
 
 /* Private branch iCloud gate: body explaining the two ways out */
-"welcome.privateICloud.foundBody" = "Li hai salvati con questo stesso account Apple. Puoi recuperarli oppure ricominciare da zero, ma ricominciare li cancella anche da iCloud, non solo da questo telefono, e non si può annullare.";
+"welcome.privateICloud.foundBody" = "Li hai salvati con questo stesso account Apple. Puoi recuperarli oppure ricominciare da zero, ma ricominciare li cancella anche da iCloud, non solo da questo dispositivo, e non si può annullare.";
 
 /* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
 "welcome.privateICloud.foundSince" = "da %@";
@@ -5723,13 +5723,13 @@
 "groups.fullActivation.reinstallBody" = "Hai iniziato a usare Gruppi su questo dispositivo con una versione precedente di Yala. Per scegliere dove conservare le tue finanze, elimina l'app e reinstallala: i tuoi gruppi restano nel tuo account e i tuoi dati iCloud non vengono toccati.";
 
 /* Vuelta al neutro: progreso mientras se espera al export y se prepara el borrado */
-"welcome.groups.neutralWorking" = "Stiamo caricando le tue ultime modifiche su iCloud e preparando questo telefono per il tuo gruppo…";
+"welcome.groups.neutralWorking" = "Stiamo caricando le tue ultime modifiche su iCloud e preparando questo dispositivo per il tuo gruppo…";
 
 /* Vuelta al neutro sin copia: titulo del segundo gesto */
 "welcome.groups.neutralNoBackupTitle" = "Non abbiamo trovato una copia su iCloud";
 
 /* Vuelta al neutro sin copia: cuerpo del segundo gesto */
-"welcome.groups.neutralNoBackupBody" = "Per iniziare il tuo gruppo, questo telefono deve restare vuoto. Quello che c'è qui non è su iCloud: se continui, andrà perso.";
+"welcome.groups.neutralNoBackupBody" = "Per iniziare il tuo gruppo, questo dispositivo deve restare vuoto. Quello che c'è qui non è su iCloud: se continui, andrà perso.";
 
 /* Vuelta al neutro sin copia: boton destructivo del segundo gesto */
 "welcome.groups.neutralNoBackupCta" = "Continua ed elimina";
@@ -5753,16 +5753,16 @@
 "welcome.groups.neutralBlockedTitle" = "Alcune modifiche dei tuoi gruppi devono ancora essere caricate";
 
 /* Vuelta al neutro bloqueada: como desbloquearlo */
-"welcome.groups.neutralBlockedBody" = "Su questo telefono ci sono modifiche di un gruppo non ancora arrivate al server. Accedi di nuovo con quell'account per caricarle e poi potrai iniziare il tuo gruppo qui.";
+"welcome.groups.neutralBlockedBody" = "Su questo dispositivo ci sono modifiche di un gruppo non ancora arrivate al server. Accedi di nuovo con quell'account per caricarle e poi potrai iniziare il tuo gruppo qui.";
 
 /* Vuelta al neutro imposible en esta celda: titulo */
-"welcome.groups.neutralUnavailableTitle" = "Al momento non possiamo preparare questo telefono";
+"welcome.groups.neutralUnavailableTitle" = "Al momento non possiamo preparare questo dispositivo";
 
 /* Vuelta al neutro imposible en esta celda: cuerpo */
-"welcome.groups.neutralUnavailableBody" = "Su questo telefono c'è una sessione aperta che va chiusa dalle Impostazioni prima di iniziare un gruppo qui. Torna indietro: non è stato toccato nulla.";
+"welcome.groups.neutralUnavailableBody" = "Su questo dispositivo c'è una sessione aperta che va chiusa dalle Impostazioni prima di iniziare un gruppo qui. Torna indietro: non è stato toccato nulla.";
 
 /* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
-"welcome.groups.neutralMigrationBody" = "Non possiamo ancora confermare che il passaggio dei tuoi dati tra iCloud e il cloud sia terminato, e preparare questo telefono ora potrebbe eliminare ciò che resta da caricare. Torna indietro: non è stato toccato nulla.";
+"welcome.groups.neutralMigrationBody" = "Non possiamo ancora confermare che il passaggio dei tuoi dati tra iCloud e il cloud sia terminato, e preparare questo dispositivo ora potrebbe eliminare ciò che resta da caricare. Torna indietro: non è stato toccato nulla.";
 
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Gruppi";
@@ -5824,17 +5824,17 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "La tua sessione dei gruppi è scaduta. Accedi di nuovo e riprova.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "La tua sessione dei gruppi è scaduta e non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Non si perde nulla. Accedi di nuovo, chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova.";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi, e non è stato possibile preparare per il caricamento alcune delle ultime. Non si perde nulla. Per prepararle, chiudi e riapri Yala (se continua a succedere, aggiornala).";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Alcune modifiche dei gruppi su questo telefono sono state fatte con un altro account e si possono caricare solo con quell'account. Inoltre, non è stato possibile preparare per il caricamento alcune modifiche dei gruppi. Non si perde nulla. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle di quell'account si caricano solo se accedi con esso.";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi, e non è stato possibile preparare per il caricamento alcune delle ultime. Non si perde nulla. Per prepararle, chiudi e riapri Yala (se continua a succedere, aggiornala).";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Alcune modifiche dei gruppi su questo dispositivo sono state fatte con un altro account e si possono caricare solo con quell'account. Inoltre, non è stato possibile preparare per il caricamento alcune modifiche dei gruppi. Non si perde nulla. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle di quell'account si caricano solo se accedi con esso.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
-"welcome.groups.inviteNeutralTitle" = "Prima di unirti, questo telefono riparte da zero";
+"welcome.groups.inviteNeutralTitle" = "Prima di unirti, questo dispositivo riparte da zero";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "Qui ci sono dati salvati che si sincronizzano con un account iCloud. Perché le tue spese di gruppo non finiscano lì, li cancelleremo da questo telefono: la copia su iCloud resta intatta. Yala si riavvierà e proseguirai con il tuo invito.";
+"welcome.groups.inviteNeutralBody" = "Qui ci sono dati salvati che si sincronizzano con un account iCloud. Perché le tue spese di gruppo non finiscano lì, li cancelleremo da questo dispositivo: la copia su iCloud resta intatta. Yala si riavvierà e proseguirai con il tuo invito.";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
-"welcome.groups.inviteNeutralBodyNoBackup" = "Qui ci sono dati salvati e non abbiamo trovato una copia su iCloud. Perché le tue spese di gruppo non si mescolino con essi, vanno cancellati da questo telefono e non si potranno recuperare. Yala si riavvierà e proseguirai con il tuo invito.";
+"welcome.groups.inviteNeutralBodyNoBackup" = "Qui ci sono dati salvati e non abbiamo trovato una copia su iCloud. Perché le tue spese di gruppo non si mescolino con essi, vanno cancellati da questo dispositivo e non si potranno recuperare. Yala si riavvierà e proseguirai con il tuo invito.";
 
 /* Puerta del invitado: CTA destructivo que arranca la vuelta al neutro */
 "welcome.groups.inviteNeutralCta" = "Continua ed elimina";
@@ -5859,19 +5859,19 @@
 "storage.groups.detachBusy" = "Stai uscendo dall'account in questo momento. Finisci prima quello e riprova.";
 
 /* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
-"groups.errors.channelPaused" = "È una cosa nostra: i gruppi sono in pausa. Le tue modifiche restano su questo telefono e non si perde nulla; riprova tra poco.";
+"groups.errors.channelPaused" = "È una cosa nostra: i gruppi sono in pausa. Le tue modifiche restano su questo dispositivo e non si perde nulla; riprova tra poco.";
 
 /* Private gate: the phone already holds data from a previous stage */
-"welcome.privateICloud.foundDeviceTitle" = "Su questo telefono ci sono già dei dati";
+"welcome.privateICloud.foundDeviceTitle" = "Su questo dispositivo ci sono già dei dati";
 
 /* Private gate: body of the on-device data notice */
-"welcome.privateICloud.foundDeviceBody" = "Questo telefono ha già dati di prima: quello che si registrava in Yala finora. Se ricominci da zero, vengono tolti da questo telefono così il tuo Yala parte pulito.";
+"welcome.privateICloud.foundDeviceBody" = "Questo dispositivo ha già dati di prima: quello che si registrava in Yala finora. Se ricominci da zero, vengono tolti da questo dispositivo così il tuo Yala parte pulito.";
 
 /* Private gate: second confirmation for the on-device wipe */
-"welcome.privateICloud.wipeDeviceConfirmBody" = "Da questo telefono viene tolto tutto: spese, conti, budget, categorie e i tuoi gruppi. Sul telefono non resta nessuna copia.";
+"welcome.privateICloud.wipeDeviceConfirmBody" = "Da questo dispositivo viene tolto tutto: spese, conti, budget, categorie e i tuoi gruppi. Sul dispositivo non resta nessuna copia.";
 
 /* Private gate: progress while wiping the on-device corpus */
-"welcome.privateICloud.wipingDevice" = "Stiamo eliminando quello che c'era su questo telefono…";
+"welcome.privateICloud.wipingDevice" = "Stiamo eliminando quello che c'era su questo dispositivo…";
 
 /* Private gate: the on-device wipe failed */
 "welcome.privateICloud.wipeDeviceFailedBody" = "Non siamo riusciti a finire. Una parte dei tuoi dati potrebbe non esserci più e il resto essere ancora qui. Riprova; se fallisce di nuovo, chiudi Yala e riaprila.";
@@ -5883,16 +5883,16 @@
 "welcome.privateICloud.wipeRetry" = "Riprova";
 
 /* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
-"groups.errors.uploadRetryLater" = "Le ultime modifiche dei tuoi gruppi non sono arrivate al server. Restano salvate su questo telefono e non si perde nulla; riprova tra poco.";
+"groups.errors.uploadRetryLater" = "Le ultime modifiche dei tuoi gruppi non sono arrivate al server. Restano salvate su questo dispositivo e non si perde nulla; riprova tra poco.";
 
 /* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
-"groups.errors.captureUnfinished" = "Non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Restano salvate su questo telefono e non si perde nulla. Chiudi e riapri Yala; se continua a succedere, aggiornala.";
+"groups.errors.captureUnfinished" = "Non è stato possibile preparare per il caricamento alcune delle ultime modifiche dei tuoi gruppi. Restano salvate su questo dispositivo e non si perde nulla. Chiudi e riapri Yala; se continua a succedere, aggiornala.";
 
 /* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
 "icloud.appleIDChanged.title" = "Hai cambiato account iCloud";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "I dati di Yala su questo telefono appartengono al tuo account iCloud precedente e restano salvati lì. Per continuare a usare Yala bisogna rimuoverli da qui, e ciò che non è arrivato su quell'account non potrà più essere caricato.";
+"icloud.appleIDChanged.message" = "I dati di Yala su questo dispositivo appartengono al tuo account iCloud precedente e restano salvati lì. Per continuare a usare Yala bisogna rimuoverli da qui, e ciò che non è arrivato su quell'account non potrà più essere caricato.";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "Esci e rimuovi";
@@ -5907,34 +5907,34 @@
 "welcome.privateICloud.discardUnverifiedBack" = "Torna indietro";
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
-"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Su questo telefono iCloud è disattivato, quindi non abbiamo potuto vedere se avevi salvato qualcosa e non abbiamo cancellato niente. Attivalo in Impostazioni e riprova, oppure torna indietro e decidi quando vuoi.";
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Su questo dispositivo iCloud è disattivato, quindi non abbiamo potuto vedere se avevi salvato qualcosa e non abbiamo cancellato niente. Attivalo in Impostazioni e riprova, oppure torna indietro e decidi quando vuoi.";
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "Vengono eliminati da iCloud, quindi spariscono dagli altri tuoi dispositivi che tengono lì i tuoi dati personali";
 
 /* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
-"groups.errors.attestUnavailableTitle" = "Questo telefono non può sincronizzare i tuoi gruppi";
+"groups.errors.attestUnavailableTitle" = "Questo dispositivo non può sincronizzare i tuoi gruppi";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi. Modifiche che non sono arrivate: %d. Se esci ora, andranno perse e nessuno del gruppo le vedrà.";
+"groups.errors.attestUnavailableSignOutLoss" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi. Modifiche che non sono arrivate: %d. Se esci ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi, e alcune modifiche non sono arrivate. Se esci ora, andranno perse e nessuno del gruppo le vedrà.";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi, e alcune modifiche non sono arrivate. Se esci ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "Esci e perdile";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi, quindi quello che modifichi non arriva al gruppo. Usa un altro telefono nel frattempo.";
+"groups.errors.attestUnavailable" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi, quindi quello che modifichi non arriva al gruppo. Usa un altro dispositivo nel frattempo.";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
-"groups.errors.leaveAttestUnavailable" = "Questo telefono non può sincronizzare i tuoi gruppi, quindi non siamo riusciti a completare la tua uscita dal gruppo.";
+"groups.errors.leaveAttestUnavailable" = "Questo dispositivo non può sincronizzare i tuoi gruppi, quindi non siamo riusciti a completare la tua uscita dal gruppo.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi. Modifiche che non sono arrivate: %d. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralAttestLossBody" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi. Modifiche che non sono arrivate: %d. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi, e alcune modifiche non sono arrivate. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralAttestLossBodyUnknown" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi, e alcune modifiche non sono arrivate. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "Continua e perdile";
@@ -5943,20 +5943,20 @@
 "action.notNow" = "Non ora";
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
-"settings.signOutAttestTitle" = "Questo telefono non può sincronizzare i tuoi dati";
-"settings.signOutAttestMessage" = "Da un giorno questo telefono non riesce a inviare modifiche al tuo account nel cloud. Modifiche che non sono arrivate: %d. Prima di decidere, puoi esportare le tue registrazioni in un file. Se esci ora, queste modifiche andranno perse.";
-"settings.signOutAttestMessageUnknown" = "Da un giorno questo telefono non riesce a inviare modifiche al tuo account nel cloud, e alcune modifiche non sono arrivate. Prima di decidere, puoi esportare le tue registrazioni in un file. Se esci ora, queste modifiche andranno perse.";
+"settings.signOutAttestTitle" = "Questo dispositivo non può sincronizzare i tuoi dati";
+"settings.signOutAttestMessage" = "Da un giorno questo dispositivo non riesce a inviare modifiche al tuo account nel cloud. Modifiche che non sono arrivate: %d. Prima di decidere, puoi esportare le tue registrazioni in un file. Se esci ora, queste modifiche andranno perse.";
+"settings.signOutAttestMessageUnknown" = "Da un giorno questo dispositivo non riesce a inviare modifiche al tuo account nel cloud, e alcune modifiche non sono arrivate. Prima di decidere, puoi esportare le tue registrazioni in un file. Se esci ora, queste modifiche andranno perse.";
 "settings.signOutAttestExportButton" = "Esporta le mie registrazioni";
 "settings.signOutAttestLossButton" = "Esci e perdile";
-"settings.signOutAttestBlocked" = "Da un giorno questo telefono non riesce a inviare modifiche al tuo account nel cloud, quindi le tue modifiche non possono essere caricate.";
+"settings.signOutAttestBlocked" = "Da un giorno questo dispositivo non riesce a inviare modifiche al tuo account nel cloud, quindi le tue modifiche non possono essere caricate.";
 "settings.signOutAttestExportEmpty" = "Non hai registrazioni da esportare.";
 "settings.signOutAttestExportFailed" = "Non siamo riusciti a creare il file. Riprova.";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
-"groups.attestTerminalBanner" = "Da un giorno questo telefono non riesce a inviare modifiche ai tuoi gruppi. Nessuno del gruppo vedrà quello che registri qui: usa un altro telefono.";
+"groups.attestTerminalBanner" = "Da un giorno questo dispositivo non riesce a inviare modifiche ai tuoi gruppi. Nessuno del gruppo vedrà quello che registri qui: usa un altro dispositivo.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "Da un giorno questo telefono non riesce a inviare modifiche al tuo account nel cloud. Quello che registri qui viene salvato sul telefono, ma non arriva al tuo account: usa un altro telefono nel frattempo.";
+"settings.attestTerminalBanner" = "Da un giorno questo dispositivo non riesce a inviare modifiche al tuo account nel cloud. Quello che registri qui viene salvato sul dispositivo, ma non arriva al tuo account: usa un altro dispositivo nel frattempo.";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "Caricamento dei tuoi dati su iCloud. Puoi continuare a usare Yala.";
@@ -6012,7 +6012,7 @@
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Hai effettuato l'accesso con un altro account. Accedi con l'account da cui hai avviato il ritorno a iCloud.";
-"storage.errors.syncSignInOtherAccount" = "Hai effettuato l'accesso con un altro account, quindi non l'abbiamo mantenuto connesso. Accedi con l'account che usi per Yala su questo telefono.";
+"storage.errors.syncSignInOtherAccount" = "Hai effettuato l'accesso con un altro account, quindi non l'abbiamo mantenuto connesso. Accedi con l'account che usi per Yala su questo dispositivo.";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
 "welcome.restore.importIncompleteTitle" = "Stiamo ancora recuperando i tuoi dati";
@@ -6096,7 +6096,7 @@
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
 "settings.signOutSyncStoppedNeedsUpdate" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. Non siamo riusciti a verificare a che punto è il passaggio dei tuoi dati al cloud, quindi per ora non possiamo caricarle. Chiudi completamente Yala e riaprila; se non cambia nulla, aggiornala dall'App Store e riprova.";
-"settings.signOutCaptureUnfinished" = "Non è stato possibile preparare alcune delle tue ultime modifiche per il caricamento nel cloud. Restano salvate su questo telefono e non si perde nulla. Chiudi completamente Yala e riaprila; se non cambia nulla, aggiornala dall'App Store e riprova.";
+"settings.signOutCaptureUnfinished" = "Non è stato possibile preparare alcune delle tue ultime modifiche per il caricamento nel cloud. Restano salvate su questo dispositivo e non si perde nulla. Chiudi completamente Yala e riaprila; se non cambia nulla, aggiornala dall'App Store e riprova.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
 "settings.signOutSyncStoppedMidMigration" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. La sincronizzazione è in pausa perché il passaggio dei tuoi dati tra il cloud e iCloud non è terminato. Apri «Dove si trovano i tuoi dati», qui in Impostazioni, e completalo da lì (se non è riuscito, tocca «Riprova»); poi riprova.";
@@ -6105,7 +6105,7 @@
 "settings.signOutSyncStoppedNeedsRelaunch" = "Alcune modifiche non sono ancora state caricate nel cloud e non vogliamo che tu perda nulla. La sincronizzazione è in pausa finché non riapri Yala. Chiudila completamente (scorri via nel selettore app), riaprila e riprova.";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
-"settings.signOutUploadRetryLater" = "Le tue ultime modifiche non sono arrivate al cloud. Restano salvate su questo telefono e non si perde nulla; riprova tra poco.";
+"settings.signOutUploadRetryLater" = "Le tue ultime modifiche non sono arrivate al cloud. Restano salvate su questo dispositivo e non si perde nulla; riprova tra poco.";
 "settings.signOutCloudSessionExpired" = "La tua sessione è scaduta e alcune modifiche non sono ancora state caricate nel cloud. Non si perde nulla: apri «Dove si trovano i tuoi dati», qui in Impostazioni, tocca «Accedi» e poi riprova.";
 "settings.signOutSessionSurvived" = "Sei ancora connesso su questo dispositivo, quindi non è stato eliminato nulla. Riprova.";
 "settings.signOutMigrationInFlight" = "Il passaggio dei tuoi dati tra iCloud e il cloud non è ancora terminato, e uscire ora potrebbe eliminare ciò che resta da caricare, quindi non è stato eliminato nulla. Apri «Dove si trovano i tuoi dati», in Impostazioni, e completalo da lì (se non è riuscito, tocca «Riprova»); poi riprova.";
@@ -6115,24 +6115,24 @@
 "welcome.privateICloud.leftHalfwayTitle" = "L'eliminazione si è fermata a metà";
 
 /* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
-"welcome.privateICloud.leftHalfwayBody" = "Abbiamo già eliminato quello che c'era su iCloud, ma non siamo riusciti a finire su questo telefono: qui potrebbe esserci ancora tutto o parte di quello che avevi. Puoi tenere quello che è rimasto, oppure finire di eliminarlo e ricominciare da zero.";
+"welcome.privateICloud.leftHalfwayBody" = "Abbiamo già eliminato quello che c'era su iCloud, ma non siamo riusciti a finire su questo dispositivo: qui potrebbe esserci ancora tutto o parte di quello che avevi. Puoi tenere quello che è rimasto, oppure finire di eliminarlo e ricominciare da zero.";
 
 /* Button: finish the deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayFinish" = "Finisci di eliminare";
 
 /* Confirm body before finishing a deletion that was left halfway */
-"welcome.privateICloud.leftHalfwayConfirmBody" = "Quello che resta su questo telefono viene eliminato, anche ciò che hai creato nel frattempo, e ricominci da capo. Non resta nessuna copia.";
+"welcome.privateICloud.leftHalfwayConfirmBody" = "Quello che resta su questo dispositivo viene eliminato, anche ciò che hai creato nel frattempo, e ricominci da capo. Non resta nessuna copia.";
 
 /* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
-"groups.errors.groupsChangesFromAnotherAccount" = "Alcune modifiche dei gruppi su questo telefono sono state fatte con un altro account e si possono caricare solo con quell'account. Non si perde nulla: restano salvate qui finché non accedi con quell'account.";
+"groups.errors.groupsChangesFromAnotherAccount" = "Alcune modifiche dei gruppi su questo dispositivo sono state fatte con un altro account e si possono caricare solo con quell'account. Non si perde nulla: restano salvate qui finché non accedi con quell'account.";
 
 /* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
-"groups.errors.noSessionSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.noSessionSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo dispositivo: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"groups.errors.noSessionSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
-"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo telefono con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
-"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo telefono con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.noSessionSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo dispositivo: rientra con quell'account per caricarle. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo dispositivo con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo dispositivo con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non puoi, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "La tua sessione è scaduta. Modifiche dei tuoi gruppi non ancora caricate: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Impostazioni, e tocca «Accedi». Se non riesci ad accedere, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
@@ -6141,28 +6141,28 @@
 "settings.signOutCloudSessionExpiredGroupsLossUnknown" = "La tua sessione è scaduta e alcune modifiche dei tuoi gruppi non sono ancora state caricate. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Impostazioni, e tocca «Accedi». Se non riesci ad accedere, esci comunque e andranno perse; nessuno del gruppo le vedrà.";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
-"welcome.groups.neutralNoSessionLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralNoSessionLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo dispositivo. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"welcome.groups.neutralNoSessionLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo telefono. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
-"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo telefono con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
-"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo telefono con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Si caricano solo con l'account che le ha create, e la sua sessione non è aperta su questo dispositivo. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Modifiche dei gruppi non ancora caricate: %d. Alcune sono state fatte su questo dispositivo con un altro account e si caricano solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Alcune modifiche dei gruppi non sono ancora state caricate. Una parte è stata fatta su questo dispositivo con un altro account e si carica solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Se continui ora, andranno perse e nessuno del gruppo le vedrà.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Si possono caricare solo accedendo con l'account che ha fatto ciascuna, e la sessione aperta su questo telefono è di un altro account. Se non succederà, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
+"groups.freshStartPending.lossOtherAccount" = "Si possono caricare solo accedendo con l'account che ha fatto ciascuna, e la sessione aperta su questo dispositivo è di un altro account. Se non succederà, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Alcune sono state fatte con un altro account e si possono caricare solo con quell'account, e non è stato possibile preparare per il caricamento alcune di esse. Chiudi e riapri Yala (se continua a succedere, aggiornala) e riprova; quelle dell'altro account si caricano solo se accedi con esso. Se non lo farai, puoi ricominciare da zero e perderle: nessuno del gruppo le vedrà.";
 "groups.freshStartPending.titleNeutral" = "Alcune modifiche dei gruppi devono ancora essere caricate";
 "groups.freshStartPending.leadNeutral" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server (%d) e ricominciare da zero le porterebbe via.";
 "groups.freshStartPending.leadNeutralUnknown" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via.";
 "groups.freshStartPending.leadSplit" = "Non abbiamo cancellato nulla: alcune modifiche dei gruppi non sono ancora arrivate al nostro server e ricominciare da zero le porterebbe via. Tue: %1$d. Fatte con un altro account: %2$d.";
 "groups.freshStartPending.splitOwnPermanent" = "Il tuo account non può più caricare le tue, e riprovare non risolverà.";
-"groups.freshStartPending.splitOwnSessionExpired" = "Le tue si possono caricare solo con l'account che le ha fatte, e la sua sessione su questo telefono non è più valida.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Le tue si possono caricare solo con l'account che le ha fatte, e la sua sessione su questo dispositivo non è più valida.";
 "groups.freshStartPending.splitAnotherAccount" = "Quelle fatte con un altro account si possono caricare solo accedendo con l'account che ha fatto ciascuna; aspettare o riprovare non le carica.";
 "groups.freshStartPending.splitLossTail" = "Puoi ricominciare da zero e perderle tutte: nessuno del gruppo le vedrà.";
 "groups.freshStartPending.splitAfterOwnUpload" = "Se le tue verranno caricate, potrai ricominciare da zero e perdere solo quelle fatte con un altro account.";
-"groups.freshStartPending.lossConfirmBodySplit" = "Modifiche dei gruppi che vanno perse — tue: %1$d; fatte con un altro account: %2$d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
-"groups.freshStartPending.lossConfirmBodyNeutral" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo telefono senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
-"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo telefono. Nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Modifiche dei gruppi che vanno perse — tue: %1$d; fatte con un altro account: %2$d. Vengono cancellate da questo dispositivo senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Modifiche dei gruppi che vanno perse: %d. Vengono cancellate da questo dispositivo senza arrivare al server, nessuno del gruppo le vedrà e non si possono recuperare.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Le modifiche dei gruppi che non sono arrivate al server vengono cancellate da questo dispositivo. Nessuno del gruppo le vedrà e non si possono recuperare.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "La tua sessione è scaduta. Modifiche che non sono arrivate al tuo account nel cloud: %d. Per caricarle, apri «Dove si trovano i tuoi dati», qui in Impostazioni, e tocca «Accedi». Se non riesci ad accedere, prima di decidere puoi esportare le tue registrazioni in un file. Se esci ora, queste modifiche andranno perse.";
@@ -6188,19 +6188,19 @@
 "welcome.groups.inviteRelaunchBody" = "Il tuo account nel cloud finisce di prepararsi quando riapri Yala. Chiudila del tutto (trascinala fuori dal selettore delle app) e riaprila: il tuo invito è ancora salvato e riprenderai da lì.";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
-"welcome.groups.inviteCloudSignInTitle" = "Prima, accedi con l'account di questo telefono";
+"welcome.groups.inviteCloudSignInTitle" = "Prima, accedi con l'account di questo dispositivo";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
-"welcome.groups.inviteCloudSignInBody" = "Su questo telefono ci sono i dati di un account nel cloud senza accesso attivo, e le tue spese del gruppo finirebbero lì. Se è tuo, accedi con quell'account da «Ho già un account» e continuerai con il tuo invito. Se non lo è, unisciti dal tuo telefono.";
+"welcome.groups.inviteCloudSignInBody" = "Su questo dispositivo ci sono i dati di un account nel cloud senza accesso attivo, e le tue spese del gruppo finirebbero lì. Se è tuo, accedi con quell'account da «Ho già un account» e continuerai con il tuo invito. Se non lo è, unisciti dal tuo dispositivo.";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
-"welcome.groups.wipeFailedTitle" = "Non siamo riusciti a preparare questo telefono";
+"welcome.groups.wipeFailedTitle" = "Non siamo riusciti a preparare questo dispositivo";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
-"welcome.groups.wipeFailedBody" = "Alla riapertura di Yala non è stato possibile cancellare ciò che è salvato su questo telefono, quindi non è pronto per il tuo gruppo. Non riproveremo da soli: torna indietro e, se vuoi, riprova più tardi.";
+"welcome.groups.wipeFailedBody" = "Alla riapertura di Yala non è stato possibile cancellare ciò che è salvato su questo dispositivo, quindi non è pronto per il tuo gruppo. Non riproveremo da soli: torna indietro e, se vuoi, riprova più tardi.";
 
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
-"icloud.appleIDChanged.groupsLine" = "Verranno rimossi anche i gruppi su questo telefono.";
+"icloud.appleIDChanged.groupsLine" = "Verranno rimossi anche i gruppi su questo dispositivo.";
 
 /* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
 /* Keyboard menu (iPad, hold Cmd): go to a section */
@@ -6534,10 +6534,10 @@
 "insights.aiError.proRequired" = "Non siamo riusciti a confermare il tuo Yala Pro. Riprova tra un momento.";
 
 /* Private gate: reading the data already on this phone failed */
-"welcome.privateICloud.deviceUnreadableTitle" = "Non siamo riusciti a controllare questo telefono";
+"welcome.privateICloud.deviceUnreadableTitle" = "Non siamo riusciti a controllare questo dispositivo";
 
 /* Private gate: body when the phone's data could not be read */
-"welcome.privateICloud.deviceUnreadableBody" = "Qualcosa è andato storto controllando cosa c'è già su questo telefono, quindi non sappiamo se contiene dati. Non abbiamo toccato nulla. Riprova tra un momento.";
+"welcome.privateICloud.deviceUnreadableBody" = "Qualcosa è andato storto controllando cosa c'è già su questo dispositivo, quindi non sappiamo se contiene dati. Non abbiamo toccato nulla. Riprova tra un momento.";
 
 /* Private gate: secondary button that goes back to the choice */
 "welcome.privateICloud.deviceUnreadableBack" = "Indietro";
@@ -6546,7 +6546,7 @@
 "welcome.bornCloud.readyExistingAccountTitle" = "Avevi già un account e hai effettuato l'accesso.";
 
 /* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
-"welcome.privateICloud.noAccountProceedTitle" = "Su questo telefono iCloud è disattivato";
+"welcome.privateICloud.noAccountProceedTitle" = "Su questo dispositivo iCloud è disattivato";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
 "welcome.mirrorRelaunch.privacyNote" = "Così Yala si collega al tuo iCloud privato e i tuoi dati restano sempre privati: nessun altro può leggerli, nemmeno noi.";
@@ -6686,8 +6686,8 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "Controllo del tuo iCloud…";
 "storage.revert.prior.title" = "Il tuo iCloud ha già dati di Yala";
-"storage.revert.prior.body" = "L’iCloud di questo telefono ha dati di Yala che non sono nel tuo account: %@. Se li aggiungi, compariranno accanto ai tuoi. Se inizi senza, vengono eliminati dal tuo iCloud.";
-"storage.revert.prior.bodyNoCount" = "L’iCloud di questo telefono ha dati di Yala che non sono nel tuo account. Se li aggiungi, compariranno accanto ai tuoi. Se inizi senza, vengono eliminati dal tuo iCloud.";
+"storage.revert.prior.body" = "L’iCloud di questo dispositivo ha dati di Yala che non sono nel tuo account: %@. Se li aggiungi, compariranno accanto ai tuoi. Se inizi senza, vengono eliminati dal tuo iCloud.";
+"storage.revert.prior.bodyNoCount" = "L’iCloud di questo dispositivo ha dati di Yala che non sono nel tuo account. Se li aggiungi, compariranno accanto ai tuoi. Se inizi senza, vengono eliminati dal tuo iCloud.";
 "storage.revert.prior.groupRecords" = "%d registrazioni di gruppi";
 "storage.revert.prior.groupsNote" = "Le registrazioni dei gruppi potrebbero arrivare senza il loro gruppo.";
 "storage.revert.prior.merge" = "Aggiungili ai miei dati";
@@ -6707,7 +6707,7 @@
 "inbox.hideHere" = "Rimuovi qui";
 
 /* Accessibility hint for the hide-here swipe action */
-"inbox.hideHereHint" = "Lo rimuove solo su questo telefono. Se arriva il suo gruppo, ricompare.";
+"inbox.hideHereHint" = "Lo rimuove solo su questo dispositivo. Se arriva il suo gruppo, ricompare.";
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Le spese di gruppo in un'altra valuta passano così come sono, senza conversione: il loro importo lo decide il gruppo.";
@@ -6952,7 +6952,7 @@
 "welcome.restore.row.groups" = "Gruppi condivisi";
 "storage.consent.lead" = "Prima di continuare, tre cose da sapere:";
 "storage.consent.serversTitle" = "I tuoi dati stanno sui server di Yala";
-"storage.consent.photosTitle" = "Le foto delle tue ricevute restano su questo telefono";
+"storage.consent.photosTitle" = "Le foto delle tue ricevute restano su questo dispositivo";
 "storage.consent.accessTitle" = "Accedi con Apple o Google, da qualsiasi dispositivo";
 "storage.consent.acceptEnter" = "Ho capito, accedi al mio account";
 "storage.consent.acceptCreate" = "Ho capito, crea il mio account";
@@ -7570,11 +7570,11 @@
 "uxcs.signOutUpload.title" = "Caricamento delle tue modifiche su iCloud…";
 "uxcs.signOutUpload.pending" = "Modifiche ancora da caricare: %d";
 "uxcs.migrated.rejoinSentence" = "Questo gruppo si è trasferito. Accedi di nuovo per vederlo aggiornato.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Il tuo account Yala viene eliminato. Quello che c'è su questo telefono resta.";
+"uxcs.deleteAccount.finalGroupsOnly" = "Il tuo account Yala viene eliminato. Quello che c'è su questo dispositivo resta.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Prima di attivare il cloud";
-"l20n.sheet.anyPhoneTitle" = "Accedi da qualsiasi telefono";
+"l20n.sheet.anyPhoneTitle" = "Accedi da qualsiasi dispositivo";
 "l20n.sheet.anyPhoneDetail" = "Senza dipendere da iCloud.";
 "l20n.sheet.seesTitle" = "Yala può vedere i tuoi dati";
 "l20n.sheet.seesDetail" = "Per darti assistenza e funzioni intelligenti.";
@@ -8080,7 +8080,7 @@
 "image.entry.failure.busy.title" = "Un momento";
 
 /* card vv0k */
-"image.entry.failure.busy.message" = "Sono arrivate molte richieste di fila da questo telefono. Aspetta un minuto e riprova: la foto va bene.";
+"image.entry.failure.busy.message" = "Sono arrivate molte richieste di fila da questo dispositivo. Aspetta un minuto e riprova: la foto va bene.";
 
 /* card vv0k */
 "image.entry.failure.dailyLimit.title" = "Hai raggiunto il limite di oggi";
@@ -8092,7 +8092,7 @@
 "voice.failure.busy.title" = "Un momento";
 
 /* card vv0k */
-"voice.failure.busy.message" = "Sono arrivate molte richieste di fila da questo telefono. Aspetta un minuto e riprova con la stessa nota.";
+"voice.failure.busy.message" = "Sono arrivate molte richieste di fila da questo dispositivo. Aspetta un minuto e riprova con la stessa nota.";
 
 /* card vv0k */
 "voice.failure.dailyLimit.title" = "Hai raggiunto il limite di oggi";

@@ -5635,7 +5635,7 @@
 "welcome.privateICloud.foundTitle" = "iCloudにすでにデータがあります";
 
 /* Private branch iCloud gate: body explaining the two ways out */
-"welcome.privateICloud.foundBody" = "同じApple アカウントで保存したデータです。取り戻すこともできますし、最初から始めることもできます。ただし最初から始めると、この iPhone だけでなく iCloud からも削除され、元に戻せません。";
+"welcome.privateICloud.foundBody" = "同じApple アカウントで保存したデータです。取り戻すこともできますし、最初から始めることもできます。ただし最初から始めると、この端末だけでなく iCloud からも削除され、元に戻せません。";
 
 /* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
 "welcome.privateICloud.foundSince" = "%@から";
@@ -5894,7 +5894,7 @@
 "icloud.appleIDChanged.title" = "iCloud アカウントが変わりました";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "この電話の Yala のデータは以前の iCloud アカウントのもので、そちらに保存されたままです。Yala を使い続けるにはここから取り除く必要があり、そのアカウントに届いていないものはアップロードできなくなります。";
+"icloud.appleIDChanged.message" = "この端末の Yala のデータは以前の iCloud アカウントのもので、そちらに保存されたままです。Yala を使い続けるにはここから取り除く必要があり、そのアカウントに届いていないものはアップロードできなくなります。";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "サインアウトして削除";
@@ -5909,7 +5909,7 @@
 "welcome.privateICloud.discardUnverifiedBack" = "戻る";
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
-"welcome.privateICloud.discardUnverifiedNoAccountBody" = "この iPhone は iCloud がオフなので、以前に何か保存したか確認できず、何も削除していません。「設定」でオンにしてもう一度お試しいただくか、前に戻って、好きなときに決められます。";
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "この端末は iCloud がオフなので、以前に何か保存したか確認できず、何も削除していません。「設定」でオンにしてもう一度お試しいただくか、前に戻って、好きなときに決められます。";
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "iCloudから削除されるため、あなたの個人データをそこに保存している他のデバイスからも消えます";
@@ -6202,7 +6202,7 @@
 "welcome.groups.wipeFailedBody" = "Yala を開き直したときに、この端末に保存されている内容を消去できなかったため、この端末はまだグループに使える状態になっていません。自動ではもう一度試しません。戻って、よければ後でもう一度お試しください。";
 
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
-"icloud.appleIDChanged.groupsLine" = "この iPhone にあるグループも削除されます。";
+"icloud.appleIDChanged.groupsLine" = "この端末にあるグループも削除されます。";
 
 /* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
 /* Keyboard menu (iPad, hold Cmd): go to a section */
@@ -6548,7 +6548,7 @@
 "welcome.bornCloud.readyExistingAccountTitle" = "すでにアカウントをお持ちだったため、そのアカウントにログインしました。";
 
 /* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
-"welcome.privateICloud.noAccountProceedTitle" = "この iPhone は iCloud がオフです";
+"welcome.privateICloud.noAccountProceedTitle" = "この端末は iCloud がオフです";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
 "welcome.mirrorRelaunch.privacyNote" = "これで Yala があなただけの iCloud につながり、データはずっと非公開のままです。ほかの誰も読めません。私たちも読めません。";
@@ -7576,7 +7576,7 @@
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "クラウドをオンにする前に";
-"l20n.sheet.anyPhoneTitle" = "どの電話からでもログインできます";
+"l20n.sheet.anyPhoneTitle" = "どの端末からでもログインできます";
 "l20n.sheet.anyPhoneDetail" = "iCloud に頼らずに使えます。";
 "l20n.sheet.seesTitle" = "Yala はあなたのデータを見ることができます";
 "l20n.sheet.seesDetail" = "サポートやスマート機能を提供するためです。";

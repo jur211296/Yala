@@ -288,7 +288,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | contrasting-text-helper-is-not-wcag-on-tags-and-account-colors | backlog | tickets/backlog/contrasting-text-helper-is-not-wcag-on-tags-and-account-colors.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
 | copy-names-the-iphone-outside-groups-storage | done | tickets/done/copy-names-the-iphone-outside-groups-storage.md |
-| copy-names-this-phone-outside-groups | backlog | tickets/backlog/copy-names-this-phone-outside-groups.md |
+| copy-names-this-phone-outside-groups | done | tickets/done/copy-names-this-phone-outside-groups.md |
 | corpus-de-test-de-staging-crece-sin-limite | done | tickets/done/corpus-de-test-de-staging-crece-sin-limite.md |
 | coverage-index-meta-counts-drifted-from-reality | backlog | tickets/backlog/coverage-index-meta-counts-drifted-from-reality.md |
 | creategroup-throw-after-commit-loses-owner | done | tickets/done/creategroup-throw-after-commit-loses-owner.md |
@@ -1077,6 +1077,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | voice-cancel-does-not-resume-other-apps-audio | done | tickets/done/voice-cancel-does-not-resume-other-apps-audio.md |
 | voice-entry-end-to-end | done | tickets/done/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
+| voice-live-transcript-label-says-iphone-on-ipad | backlog | tickets/backlog/voice-live-transcript-label-says-iphone-on-ipad.md |
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
 | voice-transcription-model-choice | done | tickets/done/voice-transcription-model-choice.md |

@@ -4062,7 +4062,7 @@
 "welcome.restore.searchingTip" = "这可能需要几秒钟。";
 "welcome.restore.foundTitle" = "你好 %@！很高兴再次见到你。";
 "welcome.restore.foundTitleAnonymous" = "很高兴再次见到你！";
-"welcome.restore.foundBody" = "以下数据会回到这台手机：";
+"welcome.restore.foundBody" = "以下数据会回到这台设备：";
 "welcome.restore.continue" = "继续";
 "welcome.restore.notFoundTitle" = "未找到数据";
 "welcome.restore.notFoundBody" = "你的 iCloud 账户没有关联的数据。想要重新开始吗？";
@@ -4622,7 +4622,7 @@
 "storage.errors.signIn" = "无法登录。请重试。";
 "storage.consent.title" = "您在 Yala 云端的数据";
 "storage.consent.pointServers" = "我们的团队可以查看这些数据，以便为您提供支持和智能功能。我们不使用端到端加密。";
-"storage.consent.pointPhotos" = "不会备份到云端，也不会在其他设备上显示。如需保留，请在更换手机前先保存。";
+"storage.consent.pointPhotos" = "不会备份到云端，也不会在其他设备上显示。如需保留，请在更换设备前先保存。";
 "storage.consent.pointAccess" = "无需依赖 iCloud。没有 Yala 密码，也没有电子邮件找回：如果失去该登录方式，请先导出数据（设置 → 导出数据）。";
 "storage.consent.footer" = "您可以随时切换回私密模式，不会丢失任何内容。";
 "storage.consent.privacyLink" = "查看隐私政策";
@@ -5380,13 +5380,13 @@
 "groups.freshStartPending.title" = "还有群组更改尚未上传";
 "groups.freshStartPending.lead" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器（%d 项），从头开始会把它们一起清除。";
 "groups.freshStartPending.leadUnknown" = "我们没有删除任何内容：你的群组中有部分更改尚未到达我们的服务器，从头开始会把它们一起清除。";
-"groups.freshStartPending.lossSessionExpired" = "这些更改只能用创建它们的账户上传，而该账户的会话已不在这台手机上。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossSessionExpired" = "这些更改只能用创建它们的账户上传，而该账户的会话已不在这台设备上。如果你不会再用那个账户登录，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.lossPermanent" = "创建这些更改的账户已无法上传它们，重试也解决不了。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
-"groups.freshStartPending.lossAttest" = "这台手机已经一天无法向你的群组发送更改，所以它们无法上传。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossAttest" = "这台设备已经一天无法向你的群组发送更改，所以它们无法上传。你可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.lossAction" = "从头开始并丢失更改";
 "groups.freshStartPending.lossConfirmTitle" = "要丢失这些更改吗？";
-"groups.freshStartPending.lossConfirmBody" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
-"groups.freshStartPending.lossConfirmBodyUnknown" = "未到达服务器的群组更改会从这台手机上删除。群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBody" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台设备上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "未到达服务器的群组更改会从这台设备上删除。群组里的人都不会看到，也无法恢复。";
 "groups.freshStartPending.lossConfirmAction" = "丢失更改并从头开始";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
@@ -5635,7 +5635,7 @@
 "welcome.privateICloud.foundTitle" = "你的 iCloud 里已经有数据了";
 
 /* Private branch iCloud gate: body explaining the two ways out */
-"welcome.privateICloud.foundBody" = "这些是你用同一个 Apple 账户保存的。你可以把它们找回来，也可以从头开始——但从头开始会连 iCloud 里的一起删除，不只是这台手机，而且无法恢复。";
+"welcome.privateICloud.foundBody" = "这些是你用同一个 Apple 账户保存的。你可以把它们找回来，也可以从头开始——但从头开始会连 iCloud 里的一起删除，不只是这台设备，而且无法恢复。";
 
 /* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
 "welcome.privateICloud.foundSince" = "自 %@ 起";
@@ -5725,13 +5725,13 @@
 "groups.fullActivation.reinstallBody" = "你在这台设备上是用旧版本的 Yala 开始使用群组的。要选择财务数据的存放位置，请删除此应用后重新安装：你的群组会保留在账户中，iCloud 数据也不会被改动。";
 
 /* Vuelta al neutro: progreso mientras se espera al export y se prepara el borrado */
-"welcome.groups.neutralWorking" = "我们正在把你最近的更改上传到 iCloud，并为你的群组准备这台手机…";
+"welcome.groups.neutralWorking" = "我们正在把你最近的更改上传到 iCloud，并为你的群组准备这台设备…";
 
 /* Vuelta al neutro sin copia: titulo del segundo gesto */
 "welcome.groups.neutralNoBackupTitle" = "我们没有在 iCloud 中找到副本";
 
 /* Vuelta al neutro sin copia: cuerpo del segundo gesto */
-"welcome.groups.neutralNoBackupBody" = "要开始你的群组，这台手机需要清空。这里保存的内容不在 iCloud 中，如果继续就会丢失。";
+"welcome.groups.neutralNoBackupBody" = "要开始你的群组，这台设备需要清空。这里保存的内容不在 iCloud 中，如果继续就会丢失。";
 
 /* Vuelta al neutro sin copia: boton destructivo del segundo gesto */
 "welcome.groups.neutralNoBackupCta" = "继续并清除";
@@ -5755,16 +5755,16 @@
 "welcome.groups.neutralBlockedTitle" = "还有群组更改尚未上传";
 
 /* Vuelta al neutro bloqueada: como desbloquearlo */
-"welcome.groups.neutralBlockedBody" = "这台手机上有尚未上传到服务器的群组更改。请重新登录该账号让它们上传，之后就可以在这里创建群组了。";
+"welcome.groups.neutralBlockedBody" = "这台设备上有尚未上传到服务器的群组更改。请重新登录该账号让它们上传，之后就可以在这里创建群组了。";
 
 /* Vuelta al neutro imposible en esta celda: titulo */
-"welcome.groups.neutralUnavailableTitle" = "暂时无法准备这台手机";
+"welcome.groups.neutralUnavailableTitle" = "暂时无法准备这台设备";
 
 /* Vuelta al neutro imposible en esta celda: cuerpo */
-"welcome.groups.neutralUnavailableBody" = "这台手机上有一个未关闭的会话，需要先在“设置”中关闭，才能在这里创建群组。请返回：我们没有改动任何内容。";
+"welcome.groups.neutralUnavailableBody" = "这台设备上有一个未关闭的会话，需要先在“设置”中关闭，才能在这里创建群组。请返回：我们没有改动任何内容。";
 
 /* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
-"welcome.groups.neutralMigrationBody" = "我们还无法确认你的数据在 iCloud 与云端之间的迁移已经完成，现在设置这台手机可能会删除尚未上传的内容。请返回：我们没有改动任何内容。";
+"welcome.groups.neutralMigrationBody" = "我们还无法确认你的数据在 iCloud 与云端之间的迁移已经完成，现在设置这台设备可能会删除尚未上传的内容。请返回：我们没有改动任何内容。";
 
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "群组";
@@ -5826,17 +5826,17 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "你的群组登录已过期。请重新登录后再试。";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "你的群组登录已过期，而且你最近的部分群组更改无法准备好上传。更改不会丢失。请重新登录，关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次。";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "这台手机已经一天无法向你的群组发送更改，而且最近的部分更改无法准备好上传。更改不会丢失。要准备这些更改，请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala）。";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。此外，有些群组更改无法准备好上传。这些更改不会丢失。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；那个账户的更改只有用它登录后才会上传。";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "这台设备已经一天无法向你的群组发送更改，而且最近的部分更改无法准备好上传。更改不会丢失。要准备这些更改，请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala）。";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "这台设备上有一些群组更改是用另一个账户创建的，只能用那个账户上传。此外，有些群组更改无法准备好上传。这些更改不会丢失。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；那个账户的更改只有用它登录后才会上传。";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
-"welcome.groups.inviteNeutralTitle" = "加入之前，这部手机会被清空";
+"welcome.groups.inviteNeutralTitle" = "加入之前，这台设备会被清空";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "这里保存着与某个 iCloud 账户同步的数据。为了让你的群组支出不会进到那里，我们会把它从这部手机上删除：iCloud 中的副本保持不变。Yala 会重新启动，然后你继续完成邀请。";
+"welcome.groups.inviteNeutralBody" = "这里保存着与某个 iCloud 账户同步的数据。为了让你的群组支出不会进到那里，我们会把它从这台设备上删除：iCloud 中的副本保持不变。Yala 会重新启动，然后你继续完成邀请。";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
-"welcome.groups.inviteNeutralBodyNoBackup" = "这里保存着数据，而且我们没有在 iCloud 中找到副本。为了让你的群组支出不与它们混在一起，必须把它从这部手机上删除，并且无法恢复。Yala 会重新启动，然后你继续完成邀请。";
+"welcome.groups.inviteNeutralBodyNoBackup" = "这里保存着数据，而且我们没有在 iCloud 中找到副本。为了让你的群组支出不与它们混在一起，必须把它从这台设备上删除，并且无法恢复。Yala 会重新启动，然后你继续完成邀请。";
 
 /* Puerta del invitado: CTA destructivo que arranca la vuelta al neutro */
 "welcome.groups.inviteNeutralCta" = "继续并删除";
@@ -5861,19 +5861,19 @@
 "storage.groups.detachBusy" = "你正在退出登录。请先完成，然后再试一次。";
 
 /* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
-"groups.errors.channelPaused" = "这是我们这边的问题：群组暂时停用了。你的更改还在这台手机上，不会丢失，过一会儿再试试。";
+"groups.errors.channelPaused" = "这是我们这边的问题：群组暂时停用了。你的更改还在这台设备上，不会丢失，过一会儿再试试。";
 
 /* Private gate: the phone already holds data from a previous stage */
-"welcome.privateICloud.foundDeviceTitle" = "这台手机里已经有数据了";
+"welcome.privateICloud.foundDeviceTitle" = "这台设备里已经有数据了";
 
 /* Private gate: body of the on-device data notice */
-"welcome.privateICloud.foundDeviceBody" = "这台手机里已有之前的数据：也就是一直记在 Yala 里的内容。重新开始会把它们从这台手机上清掉，让你的 Yala 从头开始。";
+"welcome.privateICloud.foundDeviceBody" = "这台设备里已有之前的数据：也就是一直记在 Yala 里的内容。重新开始会把它们从这台设备上清掉，让你的 Yala 从头开始。";
 
 /* Private gate: second confirmation for the on-device wipe */
-"welcome.privateICloud.wipeDeviceConfirmBody" = "这台手机上的内容会被全部清掉：支出、账户、预算、分类，还有你的群组。手机上不会留下副本。";
+"welcome.privateICloud.wipeDeviceConfirmBody" = "这台设备上的内容会被全部清掉：支出、账户、预算、分类，还有你的群组。设备上不会留下副本。";
 
 /* Private gate: progress while wiping the on-device corpus */
-"welcome.privateICloud.wipingDevice" = "正在删除这台手机里的数据…";
+"welcome.privateICloud.wipingDevice" = "正在删除这台设备里的数据…";
 
 /* Private gate: the on-device wipe failed */
 "welcome.privateICloud.wipeDeviceFailedBody" = "没能完成。你的一部分数据可能已经清掉了，其余的还在。再试一次；如果又失败，关掉 Yala 再重新打开。";
@@ -5885,16 +5885,16 @@
 "welcome.privateICloud.wipeRetry" = "再试一次";
 
 /* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
-"groups.errors.uploadRetryLater" = "你最近的群组更改没有传到服务器。更改还在这台手机上，不会丢失，过一会儿再试试。";
+"groups.errors.uploadRetryLater" = "你最近的群组更改没有传到服务器。更改还在这台设备上，不会丢失，过一会儿再试试。";
 
 /* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
-"groups.errors.captureUnfinished" = "你最近的部分群组更改无法准备好上传。更改还在这台手机上，不会丢失。请关闭 Yala 后重新打开；如果仍然如此，请更新 Yala。";
+"groups.errors.captureUnfinished" = "你最近的部分群组更改无法准备好上传。更改还在这台设备上，不会丢失。请关闭 Yala 后重新打开；如果仍然如此，请更新 Yala。";
 
 /* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
 "icloud.appleIDChanged.title" = "你更换了 iCloud 账户";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "这台手机上的 Yala 数据属于你之前的 iCloud 账户，并仍保存在那里。要继续使用 Yala，需要把它们从这里移除，尚未到达该账户的内容将无法再上传。";
+"icloud.appleIDChanged.message" = "这台设备上的 Yala 数据属于你之前的 iCloud 账户，并仍保存在那里。要继续使用 Yala，需要把它们从这里移除，尚未到达该账户的内容将无法再上传。";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "退出并移除";
@@ -5909,34 +5909,34 @@
 "welcome.privateICloud.discardUnverifiedBack" = "返回";
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
-"welcome.privateICloud.discardUnverifiedNoAccountBody" = "这台手机没有开启 iCloud，所以我们无法确认你以前有没有保存过东西，也什么都没有删除。可以在「设置」里开启后再试一次，或者返回，想好了再决定。";
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "这台设备没有开启 iCloud，所以我们无法确认你以前有没有保存过东西，也什么都没有删除。可以在「设置」里开启后再试一次，或者返回，想好了再决定。";
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "将从 iCloud 删除，因此也会从其他在此存放你个人数据的设备上消失";
 
 /* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
-"groups.errors.attestUnavailableTitle" = "这台手机无法同步你的群组";
+"groups.errors.attestUnavailableTitle" = "这台设备无法同步你的群组";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "这台手机已经一天无法向你的群组发送更改。没有传上去的更改：%d 项。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.attestUnavailableSignOutLoss" = "这台设备已经一天无法向你的群组发送更改。没有传上去的更改：%d 项。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "这台手机已经一天无法向你的群组发送更改，有些更改没有传上去。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "这台设备已经一天无法向你的群组发送更改，有些更改没有传上去。现在退出登录，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "退出登录并丢失更改";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "这台手机已经一天无法向你的群组发送更改，所以你做的更改不会同步到群组。暂时请换一台手机使用。";
+"groups.errors.attestUnavailable" = "这台设备已经一天无法向你的群组发送更改，所以你做的更改不会同步到群组。暂时请换一台设备使用。";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
-"groups.errors.leaveAttestUnavailable" = "这台手机无法同步你的群组，所以未能完成退出群组。";
+"groups.errors.leaveAttestUnavailable" = "这台设备无法同步你的群组，所以未能完成退出群组。";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "这台手机已经一天无法向你的群组发送更改。没有传上去的更改：%d 项。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralAttestLossBody" = "这台设备已经一天无法向你的群组发送更改。没有传上去的更改：%d 项。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "这台手机已经一天无法向你的群组发送更改，有些更改没有传上去。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralAttestLossBodyUnknown" = "这台设备已经一天无法向你的群组发送更改，有些更改没有传上去。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "继续并丢失更改";
@@ -5945,20 +5945,20 @@
 "action.notNow" = "暂不";
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
-"settings.signOutAttestTitle" = "这台手机无法同步你的数据";
-"settings.signOutAttestMessage" = "这台手机已经一天无法向你的云端账户发送更改。没有传上去的更改：%d 项。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
-"settings.signOutAttestMessageUnknown" = "这台手机已经一天无法向你的云端账户发送更改，有些更改没有传上去。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutAttestTitle" = "这台设备无法同步你的数据";
+"settings.signOutAttestMessage" = "这台设备已经一天无法向你的云端账户发送更改。没有传上去的更改：%d 项。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
+"settings.signOutAttestMessageUnknown" = "这台设备已经一天无法向你的云端账户发送更改，有些更改没有传上去。做决定之前，你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
 "settings.signOutAttestExportButton" = "导出我的记录";
 "settings.signOutAttestLossButton" = "退出登录并丢失更改";
-"settings.signOutAttestBlocked" = "这台手机已经一天无法向你的云端账户发送更改，所以你的更改无法上传。";
+"settings.signOutAttestBlocked" = "这台设备已经一天无法向你的云端账户发送更改，所以你的更改无法上传。";
 "settings.signOutAttestExportEmpty" = "你没有可以导出的记录。";
 "settings.signOutAttestExportFailed" = "无法生成文件，请重试。";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
-"groups.attestTerminalBanner" = "这台手机已经一天无法向你的群组发送更改。你在这里记下的内容群组里没人能看到，请换一台手机。";
+"groups.attestTerminalBanner" = "这台设备已经一天无法向你的群组发送更改。你在这里记下的内容群组里没人能看到，请换一台设备。";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "这台手机已经一天无法向你的云端账户发送更改。你在这里记的账会存在手机上，但不会同步到你的账户，暂时请换一台手机使用。";
+"settings.attestTerminalBanner" = "这台设备已经一天无法向你的云端账户发送更改。你在这里记的账会存在设备上，但不会同步到你的账户，暂时请换一台设备使用。";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "正在将您的数据上传到 iCloud。您可以继续使用 Yala。";
@@ -6014,7 +6014,7 @@
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "你登录的是另一个账户。请使用开始返回 iCloud 时所用的账户登录。";
-"storage.errors.syncSignInOtherAccount" = "你登录的是另一个账户，因此我们没有保留该登录。请使用你在这台手机上使用 Yala 的账户登录。";
+"storage.errors.syncSignInOtherAccount" = "你登录的是另一个账户，因此我们没有保留该登录。请使用你在这台设备上使用 Yala 的账户登录。";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
 "welcome.restore.importIncompleteTitle" = "正在继续获取你的数据";
@@ -6098,7 +6098,7 @@
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
 "settings.signOutSyncStoppedNeedsUpdate" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。我们无法确认你的数据迁移到云端的进度，所以暂时无法上传这些更改。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
-"settings.signOutCaptureUnfinished" = "你最近的部分更改无法准备好上传到云端。更改还在这台手机上，不会丢失。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
+"settings.signOutCaptureUnfinished" = "你最近的部分更改无法准备好上传到云端。更改还在这台设备上，不会丢失。请彻底关闭 Yala 后重新打开；如果仍然如此，请在 App Store 更新 Yala 后重试。";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
 "settings.signOutSyncStoppedMidMigration" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。由于你的数据在云端与 iCloud 之间的迁移尚未完成，同步已暂停。请打开本页“设置”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
@@ -6107,7 +6107,7 @@
 "settings.signOutSyncStoppedNeedsRelaunch" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。在你重新打开 Yala 之前，同步会保持暂停。请彻底关闭 Yala（在应用切换器中划走），重新打开后再试一次。";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
-"settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台手机上，不会丢失，过一会儿再试试。";
+"settings.signOutUploadRetryLater" = "你最近的更改没有传到云端。更改还在这台设备上，不会丢失，过一会儿再试试。";
 "settings.signOutCloudSessionExpired" = "你的登录已过期，还有更改尚未上传到云端。这些更改不会丢失：请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”，然后再试一次。";
 "settings.signOutSessionSurvived" = "你在这台设备上仍处于登录状态，因此没有删除任何内容。请再试一次。";
 "settings.signOutMigrationInFlight" = "你的数据在 iCloud 与云端之间的迁移尚未完成，现在退出登录可能会删除尚未上传的内容，因此我们没有删除任何内容。请打开“设置”中的“你的数据存放在哪里”，在那里完成迁移（如果失败，请轻点“重试”），然后再试一次。";
@@ -6117,24 +6117,24 @@
 "welcome.privateICloud.leftHalfwayTitle" = "删除只完成了一半";
 
 /* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
-"welcome.privateICloud.leftHalfwayBody" = "iCloud 里的数据已经删除了，但这台手机上的没能删完：这里可能还留着你原来的全部或部分数据。你可以保留剩下的数据，也可以继续删完、从头开始。";
+"welcome.privateICloud.leftHalfwayBody" = "iCloud 里的数据已经删除了，但这台设备上的没能删完：这里可能还留着你原来的全部或部分数据。你可以保留剩下的数据，也可以继续删完、从头开始。";
 
 /* Button: finish the deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayFinish" = "继续删完";
 
 /* Confirm body before finishing a deletion that was left halfway */
-"welcome.privateICloud.leftHalfwayConfirmBody" = "这台手机上剩下的数据会被删除，包括之后新建的内容，然后你将从头开始。不会留下任何副本。";
+"welcome.privateICloud.leftHalfwayConfirmBody" = "这台设备上剩下的数据会被删除，包括之后新建的内容，然后你将从头开始。不会留下任何副本。";
 
 /* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
-"groups.errors.groupsChangesFromAnotherAccount" = "这台手机上有一些群组更改是用另一个账户创建的，只能用那个账户上传。这些更改不会丢失：在你用那个账户登录之前，它们会一直保存在这里。";
+"groups.errors.groupsChangesFromAnotherAccount" = "这台设备上有一些群组更改是用另一个账户创建的，只能用那个账户上传。这些更改不会丢失：在你用那个账户登录之前，它们会一直保存在这里。";
 
 /* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
-"groups.errors.noSessionSignOutLoss" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.noSessionSignOutLoss" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台设备上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"groups.errors.noSessionSignOutLossUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
-"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "尚未上传的群组更改：%d 项。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
-"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.noSessionSignOutLossUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台设备上打开：请用那个账户重新登录来上传。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "尚未上传的群组更改：%d 项。其中一些是在这台设备上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "还有尚未上传的群组更改。其中一些是在这台设备上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果无法做到，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "你的登录已过期。尚未上传的群组更改：%d 项。要上传它们，请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
@@ -6143,28 +6143,28 @@
 "settings.signOutCloudSessionExpiredGroupsLossUnknown" = "你的登录已过期，还有尚未上传的群组更改。要上传它们，请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，也可以直接退出登录，但这些更改会丢失，群组里的任何人都看不到。";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
-"welcome.groups.neutralNoSessionLossBody" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralNoSessionLossBody" = "尚未上传的群组更改：%d 项。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台设备上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"welcome.groups.neutralNoSessionLossBodyUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台手机上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
-"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "尚未上传的群组更改：%d 项。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
-"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "还有尚未上传的群组更改。其中一些是在这台手机上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "还有尚未上传的群组更改。这些更改只能用创建它们的账户上传，而该账户的会话没有在这台设备上打开。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "尚未上传的群组更改：%d 项。其中一些是在这台设备上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "还有尚未上传的群组更改。其中一些是在这台设备上用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。如果现在继续，这些更改会丢失，群组里的任何人都看不到。";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "这些更改只有用创建它们的那个账户登录才能上传，而这台手机上打开的会话属于另一个账户。如果做不到，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
+"groups.freshStartPending.lossOtherAccount" = "这些更改只有用创建它们的那个账户登录才能上传，而这台设备上打开的会话属于另一个账户。如果做不到，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "其中一些是用另一个账户创建的，只能用那个账户上传；另外，有些更改无法准备好上传。请关闭 Yala 后重新打开（如果仍然如此，请更新 Yala），然后再试一次；另一个账户的更改只有用该账户登录后才会上传。如果你不打算这样做，可以从头开始并丢失这些更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.titleNeutral" = "还有群组更改尚未上传";
 "groups.freshStartPending.leadNeutral" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器（%d 项），从头开始会把它们一起清除。";
 "groups.freshStartPending.leadNeutralUnknown" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器，从头开始会把它们一起清除。";
 "groups.freshStartPending.leadSplit" = "我们没有删除任何内容：有部分群组更改尚未到达我们的服务器，从头开始会把它们一起清除。你的：%1$d 项。用其他账户创建的：%2$d 项。";
 "groups.freshStartPending.splitOwnPermanent" = "你的账户已无法上传你的更改，重试也解决不了。";
-"groups.freshStartPending.splitOwnSessionExpired" = "你的更改只能用创建它们的账户上传，而它在这台手机上的会话已失效。";
+"groups.freshStartPending.splitOwnSessionExpired" = "你的更改只能用创建它们的账户上传，而它在这台设备上的会话已失效。";
 "groups.freshStartPending.splitAnotherAccount" = "用其他账户创建的更改，只有用创建它们的那个账户登录才能上传；等待或重试都不会上传它们。";
 "groups.freshStartPending.splitLossTail" = "你可以从头开始并丢失全部更改：群组里的人都不会看到它们。";
 "groups.freshStartPending.splitAfterOwnUpload" = "如果你的更改能上传，你就可以从头开始，只丢失用其他账户创建的更改。";
-"groups.freshStartPending.lossConfirmBodySplit" = "将丢失的群组更改——你的：%1$d 项；用其他账户创建的：%2$d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
-"groups.freshStartPending.lossConfirmBodyNeutral" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台手机上删除，群组里的人都不会看到，也无法恢复。";
-"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "未到达服务器的群组更改会从这台手机上删除。群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodySplit" = "将丢失的群组更改——你的：%1$d 项；用其他账户创建的：%2$d 项。它们会在未到达服务器的情况下从这台设备上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "将丢失的群组更改：%d 项。它们会在未到达服务器的情况下从这台设备上删除，群组里的人都不会看到，也无法恢复。";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "未到达服务器的群组更改会从这台设备上删除。群组里的人都不会看到，也无法恢复。";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "你的登录已过期。没有传到你云端账户的更改：%d 项。要上传它们，请打开本页“设置”中的“你的数据存放在哪里”，轻点“登录”。如果无法登录，做决定之前你可以先把记录导出到文件。现在退出登录，这些更改会丢失。";
@@ -6190,19 +6190,19 @@
 "welcome.groups.inviteRelaunchBody" = "重新打开 Yala 后，你的云端账户就会完成设置。请彻底关闭它（在 App 切换器中将其划走）并重新打开：你的邀请仍然保存着，你可以从那里继续。";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
-"welcome.groups.inviteCloudSignInTitle" = "请先用这部手机上的账户登录";
+"welcome.groups.inviteCloudSignInTitle" = "请先用这台设备上的账户登录";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
-"welcome.groups.inviteCloudSignInBody" = "这部手机上有一个未登录的云端账户的数据，你的群组支出会记到那个账户里。如果这是你的账户，请通过“我已经有账户了”登录，然后继续你的邀请。如果不是，请用你自己的手机加入。";
+"welcome.groups.inviteCloudSignInBody" = "这台设备上有一个未登录的云端账户的数据，你的群组支出会记到那个账户里。如果这是你的账户，请通过“我已经有账户了”登录，然后继续你的邀请。如果不是，请用你自己的设备加入。";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
-"welcome.groups.wipeFailedTitle" = "无法准备这台手机";
+"welcome.groups.wipeFailedTitle" = "无法准备这台设备";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
-"welcome.groups.wipeFailedBody" = "重新打开 Yala 时，未能清除这台手机上保存的内容，所以它还没有为你的群组准备好。我们不会自动重试：请返回，如果愿意，稍后再试一次。";
+"welcome.groups.wipeFailedBody" = "重新打开 Yala 时，未能清除这台设备上保存的内容，所以它还没有为你的群组准备好。我们不会自动重试：请返回，如果愿意，稍后再试一次。";
 
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
-"icloud.appleIDChanged.groupsLine" = "这台手机上的群组也会被移除。";
+"icloud.appleIDChanged.groupsLine" = "这台设备上的群组也会被移除。";
 
 /* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
 /* Keyboard menu (iPad, hold Cmd): go to a section */
@@ -6536,10 +6536,10 @@
 "insights.aiError.proRequired" = "无法确认你的 Yala Pro。请稍后再试。";
 
 /* Private gate: reading the data already on this phone failed */
-"welcome.privateICloud.deviceUnreadableTitle" = "无法检查这部手机";
+"welcome.privateICloud.deviceUnreadableTitle" = "无法检查这台设备";
 
 /* Private gate: body when the phone's data could not be read */
-"welcome.privateICloud.deviceUnreadableBody" = "检查这部手机上已有内容时出了点问题，所以我们不知道上面是否有数据。我们没有做任何改动。请稍后再试。";
+"welcome.privateICloud.deviceUnreadableBody" = "检查这台设备上已有内容时出了点问题，所以我们不知道上面是否有数据。我们没有做任何改动。请稍后再试。";
 
 /* Private gate: secondary button that goes back to the choice */
 "welcome.privateICloud.deviceUnreadableBack" = "返回";
@@ -6548,7 +6548,7 @@
 "welcome.bornCloud.readyExistingAccountTitle" = "你之前已有账户，现已登录该账户。";
 
 /* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
-"welcome.privateICloud.noAccountProceedTitle" = "这台手机没有开启 iCloud";
+"welcome.privateICloud.noAccountProceedTitle" = "这台设备没有开启 iCloud";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
 "welcome.mirrorRelaunch.privacyNote" = "这样 Yala 才能连接你的私人 iCloud，让你的数据始终保持私密：其他人都读不到，我们也一样。";
@@ -6688,8 +6688,8 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "正在检查你的 iCloud…";
 "storage.revert.prior.title" = "你的 iCloud 里已经有 Yala 数据";
-"storage.revert.prior.body" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据：%@。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
-"storage.revert.prior.bodyNoCount" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.body" = "这台设备的 iCloud 里有不在你账户中的 Yala 数据：%@。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.bodyNoCount" = "这台设备的 iCloud 里有不在你账户中的 Yala 数据。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
 "storage.revert.prior.groupRecords" = "%d 条群组记录";
 "storage.revert.prior.groupsNote" = "群组记录可能会在没有所属群组的情况下出现。";
 "storage.revert.prior.merge" = "合并到我的数据";
@@ -6709,7 +6709,7 @@
 "inbox.hideHere" = "在此移除";
 
 /* Accessibility hint for the hide-here swipe action */
-"inbox.hideHereHint" = "仅在这部手机上移除。如果它的群组到达，会重新显示。";
+"inbox.hideHereHint" = "仅在这台设备上移除。如果它的群组到达，会重新显示。";
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "其他货币的群组支出按原样移动，不做换算：金额由群组决定。";
@@ -6954,7 +6954,7 @@
 "welcome.restore.row.groups" = "共享群组";
 "storage.consent.lead" = "继续之前，有三件事需要了解：";
 "storage.consent.serversTitle" = "您的数据保存在 Yala 的服务器上";
-"storage.consent.photosTitle" = "收据照片会留在这台手机上";
+"storage.consent.photosTitle" = "收据照片会留在这台设备上";
 "storage.consent.accessTitle" = "使用 Apple 或 Google 登录，任何设备都可以";
 "storage.consent.acceptEnter" = "知道了，登录我的账户";
 "storage.consent.acceptCreate" = "知道了，创建我的账户";
@@ -7572,11 +7572,11 @@
 "uxcs.signOutUpload.title" = "正在将你的更改上传到 iCloud…";
 "uxcs.signOutUpload.pending" = "待上传的更改：%d 项";
 "uxcs.migrated.rejoinSentence" = "这个群组已迁移。请重新登录以查看最新内容。";
-"uxcs.deleteAccount.finalGroupsOnly" = "你的 Yala 账户将被删除。这台手机上的内容会保留。";
+"uxcs.deleteAccount.finalGroupsOnly" = "你的 Yala 账户将被删除。这台设备上的内容会保留。";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "开启云端之前";
-"l20n.sheet.anyPhoneTitle" = "可在任何手机上登录";
+"l20n.sheet.anyPhoneTitle" = "可在任何设备上登录";
 "l20n.sheet.anyPhoneDetail" = "无需依赖 iCloud。";
 "l20n.sheet.seesTitle" = "Yala 可以查看你的数据";
 "l20n.sheet.seesDetail" = "用于为你提供支持和智能功能。";
@@ -8082,7 +8082,7 @@
 "image.entry.failure.busy.title" = "请稍候";
 
 /* card vv0k */
-"image.entry.failure.busy.message" = "这台手机连续发出了很多请求。请等一分钟再试：照片没有问题。";
+"image.entry.failure.busy.message" = "这台设备连续发出了很多请求。请等一分钟再试：照片没有问题。";
 
 /* card vv0k */
 "image.entry.failure.dailyLimit.title" = "已达今日上限";
@@ -8094,7 +8094,7 @@
 "voice.failure.busy.title" = "请稍候";
 
 /* card vv0k */
-"voice.failure.busy.message" = "这台手机连续发出了很多请求。请等一分钟，再用同一条语音重试。";
+"voice.failure.busy.message" = "这台设备连续发出了很多请求。请等一分钟，再用同一条语音重试。";
 
 /* card vv0k */
 "voice.failure.dailyLimit.title" = "已达今日上限";
