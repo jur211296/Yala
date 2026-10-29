@@ -7057,6 +7057,10 @@ enum L10n {
         static var title: String {
             ls("voice.title", comment: "")
         }
+        /// Card tjws: la etiqueta de VoiceOver de la frase en vivo mientras se graba (lo que entiende el iPhone).
+        static var liveTranscriptAccessibility: String {
+            ls("voice.live.transcriptAccessibility", comment: "VoiceOver label for the live on-device transcript")
+        }
         static var recording: String {
             ls("voice.recording", comment: "")
         }

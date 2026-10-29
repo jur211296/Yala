@@ -6,7 +6,10 @@
 //  terminar, enseña lo entendido como la fila del registro para guardarlo ahí mismo.
 //
 //  Cuatro fases en la misma hoja, sin presentaciones encadenadas:
-//  1. **Escuchando** — el orbe del dictado de Yala IA (`VoiceListeningOrb`), el tiempo y Cancelar / Listo.
+//  1. **Escuchando** — la onda de barras que sigue el micrófono, el tiempo y la frase que va entendiendo el iPhone
+//     (propuesta A de la card tjws, 2026-10-25; `VoiceLiveListeningViews`), y Cancelar / Listo. La frase sale del
+//     reconocimiento de voz del propio iPhone (`LiveSpeechPreviewService`): no se guarda ni va a la IA, que sigue
+//     recibiendo el audio de `AudioRecorderService` como siempre.
 //  2. **Procesando** — el orbe gira y dice el paso; Cancelar cierra.
 //  3. **Lo entendido** — una `VoiceDraftReviewCard` por borrador. «Guardar» los aprueba por el camino de la Bandeja
 //     (`DraftService.approveDraft`); cerrar sin guardar los deja en la Bandeja, como siempre.
@@ -32,6 +35,14 @@ struct VoiceRecordingView: View {
 
     @State private var recorder = AudioRecorderService.shared
     @State private var networkMonitor = NetworkMonitor.shared
+    /// La frase en vivo (card tjws). Solo se pinta: lo que se transcribe y se lee sigue siendo el audio grabado.
+    @State private var livePreview = LiveSpeechPreviewService()
+    /// Niveles de la onda, del más viejo al más nuevo: uno por cada tick del tiempo de grabación (0,1 s).
+    @State private var waveLevels: [Double] = []
+    /// Seam `-uitest-voice-live`: el tiempo, el nivel y la frase de mentira mientras escucha.
+    @State private var demoDuration: TimeInterval = 0
+    @State private var demoText = ""
+    @State private var demoTask: Task<Void, Never>?
 
     @State private var phase: Phase = .starting
     @State private var processingStep = 0
@@ -115,6 +126,7 @@ struct VoiceRecordingView: View {
         HStack {
             if let skip = onSetupTrialSkipped, phase != .review, phase != .processing {
                 Button(L10n.SetupChecklist.skipStep) {
+                    stopLivePreview()
                     recorder.cancelRecording()
                     skip()
                     dismiss()
@@ -169,14 +181,13 @@ struct VoiceRecordingView: View {
             }
             .accessibilityElement(children: .combine)
 
-            VoiceListeningOrb(
-                isTranscribing: false,
-                duration: recorder.recordingDuration,
-                level: recorder.audioLevel,
-                accent: theme.accent,
-                reduceMotion: reduceMotion
-            )
+            VStack(spacing: DS.Spacing.sm) {
+                VoiceWaveform(levels: waveLevels, accent: theme.accent, reduceMotion: reduceMotion)
+                VoiceRecordingTimeLabel(duration: listeningDuration, reduceMotion: reduceMotion)
+            }
             .padding(.top, DS.Spacing.sm)
+
+            VoiceLiveTranscriptText(text: liveText)
 
             Spacer(minLength: DS.Spacing.lg)
 
@@ -190,7 +201,55 @@ struct VoiceRecordingView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("voice_listening_panel")
+        .onChange(of: recorder.recordingDuration) { _, _ in recordWaveLevel() }
     }
+
+    private var listeningDuration: TimeInterval {
+        demoTask != nil ? demoDuration : recorder.recordingDuration
+    }
+
+    private var liveText: String {
+        demoTask != nil ? demoText : livePreview.text
+    }
+
+    /// Un nivel por tick del tiempo de grabación: así la onda corre también en silencio, que no cambia `audioLevel`.
+    private func recordWaveLevel() {
+        guard phase == .listening, recorder.state == .recording else { return }
+        waveLevels = VoiceLiveListeningLogic.appending(recorder.audioLevel, to: waveLevels)
+    }
+
+    /// La frase en vivo y la onda se apagan ANTES de parar la grabación: el motor del reconocedor suelta la entrada
+    /// antes de que el grabador desactive la sesión de audio.
+    private func stopLivePreview() {
+        livePreview.stop()
+        demoTask?.cancel()
+        demoTask = nil
+    }
+
+    #if DEBUG
+    /// Seam `-uitest-voice-live`: nivel y frase de mentira, palabra a palabra, para ver y probar la hoja sin micro.
+    private func startDemoLivePreview() {
+        demoTask?.cancel()
+        demoDuration = 0
+        demoText = ""
+        let words = L10n.UITestDemo.Voice.lunchTranscript.split(whereSeparator: \.isWhitespace).map(String.init)
+        demoTask = Task { @MainActor in
+            let start = Date.now
+            while !Task.isCancelled {
+                let elapsed = Date.now.timeIntervalSince(start)
+                demoDuration = elapsed
+                waveLevels = VoiceLiveListeningLogic.appending(VoiceLiveListeningLogic.demoLevel(elapsed: elapsed), to: waveLevels)
+                let shown = VoiceLiveListeningLogic.demoWordCount(elapsed: elapsed, totalWords: words.count)
+                demoText = words.prefix(shown).joined(separator: " ")
+                do {
+                    try await Task.sleep(for: .milliseconds(100))
+                } catch {
+                    return
+                }
+            }
+        }
+    }
+    #endif
 
     // MARK: - Procesando
 
@@ -485,15 +544,18 @@ struct VoiceRecordingView: View {
             return
         }
         phase = .starting
+        waveLevels = []
         #if DEBUG
         if UITestHooks.voiceResult != nil {
             phase = .listening
+            if UITestHooks.voiceLivePreview { startDemoLivePreview() }
             return
         }
         #endif
         do {
             try await recorder.startRecording()
             phase = .listening
+            livePreview.start(languageCode: appPreferences.voiceLanguage.isoCode)
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         } catch let error as RecordingError {
             phase = .failure(VoiceEntryFlowLogic.failure(for: error))
@@ -506,7 +568,8 @@ struct VoiceRecordingView: View {
     }
 
     private func finishListening() async {
-        recordedDuration = recorder.recordingDuration
+        recordedDuration = listeningDuration
+        stopLivePreview()
         #if DEBUG
         if UITestHooks.voiceResult != nil {
             startProcessing(Data())
@@ -530,6 +593,7 @@ struct VoiceRecordingView: View {
 
     /// Cancelar mientras escucha descarta sin transcribir y cierra: no hay otra cosa que hacer en esta hoja.
     private func cancelListening() {
+        stopLivePreview()
         recorder.cancelRecording()
         dismiss()
     }
@@ -780,6 +844,7 @@ struct VoiceRecordingView: View {
     /// Al cerrar: suelta el micro si seguía abierto, corta lo que se estuviera procesando y, en la práctica guiada, da
     /// el paso por cumplido con el borrador que quedó en la Bandeja.
     private func tearDown() {
+        stopLivePreview()
         if recorder.state == .recording {
             recorder.cancelRecording()
         }

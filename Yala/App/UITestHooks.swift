@@ -877,6 +877,17 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-voice-live` (card tjws): junto a `-uitest-voice-result`, la hoja de voz pinta la onda con un nivel de
+    /// mentira y la frase en vivo con un texto fijo que aparece palabra a palabra, sin micro ni reconocedor (el simulador
+    /// no trae los modelos de voz).
+    nonisolated static var voiceLivePreview: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-voice-live")
+        #else
+        return false
+        #endif
+    }
+
     /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|busy|daily-limit|pages|pages-trial>`: el registro por imagen no abre
     /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó; `busy` y
     /// `daily-limit`: un 429 por ráfaga o por el cupo del día). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
