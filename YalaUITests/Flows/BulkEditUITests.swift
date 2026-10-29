@@ -36,7 +36,46 @@ final class BulkEditUITests: XCTestCase {
         }
         recordsChip.tap()
 
-        app.openRecordsSelectMode()
+        enterSelectMode(app)
+    }
+
+    /// Entra en el modo selección por «Seleccionar» de la barra de arriba (L8-12) y comprueba que entró.
+    ///
+    /// Antes entraba por el menú «···», y en el runner del CI el toque en «Seleccionar» del menú se perdía a veces: la
+    /// barra seguía en modo normal, tocar una fila abría su detalle y el caso moría en `bulk_edit_button` (nocturnas del
+    /// 26 al 29-oct). Sin comprobar el modo, el rojo salía tres pasos más tarde y apuntaba a la edición masiva.
+    private func enterSelectMode(_ app: XCUIApplication) {
+        let select = app.buttons["records_select_visible"]
+        XCTAssertTrue(select.waitForExistence(timeout: 10), "«Seleccionar» no está en la barra de Registros.")
+        select.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["records_selection_hint"].waitForExistence(timeout: 10),
+            "Tocar «Seleccionar» no activó el modo selección (records_selection_hint)."
+        )
+    }
+
+    /// Elige las dos primeras filas y espera a que la barra diga «2 seleccionados». Cada fila se toca cuando es
+    /// alcanzable: en el CI la primera salía a veces con el punto de impacto en `{-1, -1}` y el toque se perdía.
+    private func selectFirstTwoRows(_ app: XCUIApplication) {
+        let rows = app.buttons.matching(identifier: "record_row")
+        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "No hay filas de transacción para seleccionar.")
+        XCTAssertGreaterThanOrEqual(rows.count, 2, "El seed no produjo ≥2 transacciones para edición masiva.")
+        for index in 0..<2 {
+            let row = rows.element(boundBy: index)
+            XCTAssertTrue(row.waitForHittable(timeout: 10), "La fila \(index) no es alcanzable para elegirla.")
+            row.tap()
+        }
+        let count = app.staticTexts["records_selection_count"]
+        let two = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label BEGINSWITH '2'"), object: count)
+        XCTAssertEqual(XCTWaiter().wait(for: [two], timeout: 10), .completed,
+                       "Tras tocar dos filas la barra no dice «2 seleccionados» (dice «\(count.exists ? count.label : "nada")»).")
+    }
+
+    /// Abre «Editar» de la barra de selección.
+    private func openBulkEdit(_ app: XCUIApplication) {
+        let editButton = app.buttons["bulk_edit_button"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 10), "No apareció el botón de editar masivo.")
+        editButton.tap()
     }
 
     /// Smoke: modo selección → seleccionar 2 TX → editar masivo abre BulkEditSheet.
@@ -48,14 +87,8 @@ final class BulkEditUITests: XCTestCase {
 
         enterRecordsSelectionMode(app)
 
-        let rows = app.buttons.matching(identifier: "record_row")
-        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 5), "No hay filas de transacción (record_row) para seleccionar.")
-        rows.element(boundBy: 0).tap()
-        rows.element(boundBy: 1).tap()
-
-        let editButton = app.buttons["bulk_edit_button"]
-        XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No apareció el botón de editar masivo.")
-        editButton.tap()
+        selectFirstTwoRows(app)
+        openBulkEdit(app)
 
         XCTAssertTrue(
             app.buttons["bulk_edit_option_note"].waitForExistence(timeout: 5),
@@ -73,14 +106,10 @@ final class BulkEditUITests: XCTestCase {
         enterRecordsSelectionMode(app)
 
         // Seleccionar 2 transacciones (el seed minimal produce varias).
-        let rows = app.buttons.matching(identifier: "record_row")
-        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 5), "No hay filas de transacción para seleccionar.")
-        XCTAssertGreaterThanOrEqual(rows.count, 2, "El seed no produjo ≥2 transacciones para edición masiva.")
-        rows.element(boundBy: 0).tap()
-        rows.element(boundBy: 1).tap()
+        selectFirstTwoRows(app)
 
         // Abrir editar masivo → opción Nota.
-        app.buttons["bulk_edit_button"].tap()
+        openBulkEdit(app)
         let noteOption = app.buttons["bulk_edit_option_note"]
         XCTAssertTrue(noteOption.waitForExistence(timeout: 5), "No se montó BulkEditSheet (bulk_edit_option_note).")
         noteOption.tap()
@@ -121,11 +150,8 @@ final class BulkEditUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         enterRecordsSelectionMode(app)
-        let rows = app.buttons.matching(identifier: "record_row")
-        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 5), "No hay filas de transacción para seleccionar.")
-        rows.element(boundBy: 0).tap()
-        rows.element(boundBy: 1).tap()
-        app.buttons["bulk_edit_button"].tap()
+        selectFirstTwoRows(app)
+        openBulkEdit(app)
 
         let apply = app.buttons["bulk_edit_apply"]
         XCTAssertTrue(apply.waitForExistence(timeout: 5), "No se montó BulkEditSheet (bulk_edit_apply).")
@@ -148,11 +174,9 @@ final class BulkEditUITests: XCTestCase {
         )
 
         // Los mismos dos registros ya tienen esa cuenta.
-        app.openRecordsSelectMode()
-        XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 5), "No hay filas tras aplicar.")
-        rows.element(boundBy: 0).tap()
-        rows.element(boundBy: 1).tap()
-        app.buttons["bulk_edit_button"].tap()
+        enterSelectMode(app)
+        selectFirstTwoRows(app)
+        openBulkEdit(app)
         let accountOption = app.buttons["bulk_edit_option_account"]
         XCTAssertTrue(accountOption.waitForExistence(timeout: 5), "No se volvió a montar BulkEditSheet.")
         XCTAssertTrue(

@@ -281,7 +281,9 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
     /// Tras convertir un borrador, «Ver» del aviso cierra la Bandeja y abre el grupo al que fue.
     func test_convertDraft_viewOpensTheGroup() {
         let app = XCUIApplication()
-        app.launchForUITest(pro: true, seed: "grupos-invitado")
+        // «Ver» vive en un aviso de 5 s y antes de tocarlo se saca una captura: en un runner frío del CI no cabe.
+        // Molde: `UXAudit22Lote08UITests`.
+        app.launchForUITest(pro: true, seed: "grupos-invitado", extraArguments: ["-uitest-undo-notice-seconds", "30"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         let inbox = app.buttons["panel_inbox_button"]

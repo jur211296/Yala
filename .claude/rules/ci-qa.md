@@ -58,3 +58,20 @@ y pure-logic a 40 y 45, con la tabla re-medida en `qa.yml`. Esa vez había adem�
 a CloudKit y esperaba a `cloudd` (47 s a 6,5 min según el runner). **Un unit no habla con la red**:
 si un caso tarda decenas de segundos sin trabajo que lo explique, mira si espera a un servicio del
 sistema antes de subir el tope. Ticket: `qa-2-2-se-cancela-tests-unitarios-context-based`.
+
+## La UI se reparte en tandas, y una tanda que agota su tope no dice nada
+
+La UI de la nocturna va en tandas paralelas (job `ui`, matriz). Una tanda que agota los 110 min de
+su paso sale `failure` y el run sigue verde (advisory): **las suites que no llegó a abrir no
+aparecen en ningún sitio**. Pasó del 23 al 29-oct de 2026: las tres tandas se cortaban cada noche,
+~16 suites por tanda llevaban días sin correr, y la suite había pasado de 250 a 646 casos.
+
+- **Cuando una tanda se acerque a ~80 min de UI, se añade otra**, no se sube el tope. Las cifras y
+  la simulación están en `qa.yml` («POR QUE OCHO»). Cambiar el número toca la matriz, las salidas
+  `ui_N` y `UI_TANDAS` del aviso; `ci-ui-tandas-test.sh` falla si no cuadran.
+- **`max-parallel` deja un `macOS` libre para el CI de los PR**: GitHub sirve la nocturna de día.
+- **El primer test de cada tanda paga el arranque del simulador** si nadie lo calienta antes
+  (`ci-calentar-simulador.sh`). Un rojo que siempre cae en el primer caso de una tanda es eso, no
+  el test.
+- Para leer una tanda: `gh run view <run> --job <id> --log` (con `continue-on-error`,
+  `--log-failed` sale vacío) y `grep "Test Suite '.*' (passed|failed)"` dice hasta dónde llegó.

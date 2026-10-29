@@ -54,6 +54,16 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         XCTAssertTrue(amountField.waitForExistence(timeout: 10), "No se abrió Nuevo registro (new_transaction_amount).")
         amountField.tap()
         amountField.typeText("1234")
+        // Antes de mandar Yala al fondo, el importe tiene que haber llegado al campo. En un runner frío del CI el teclado
+        // seguía entrando al pulsar Inicio y el formulario volvía con «0.00» (nocturnas del 28 y 29-oct): el test leía
+        // como pérdida de datos un tecleo que no había terminado. Regla de `testing.md`: tocar algo justo después de
+        // `typeText` en iOS 27.
+        let typedIn = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value CONTAINS '1234' OR value CONTAINS '1.234' OR value CONTAINS '1,234'"),
+            object: amountField
+        )
+        XCTAssertEqual(XCTWaiter().wait(for: [typedIn], timeout: 10), .completed,
+                       "El importe no llegó al campo antes de salir de Yala (valor: «\((amountField.value as? String) ?? "")»).")
 
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")

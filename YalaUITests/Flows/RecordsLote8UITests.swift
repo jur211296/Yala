@@ -20,9 +20,9 @@ final class RecordsLote8UITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launchInRecords() -> XCUIApplication {
+    private func launchInRecords(extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(deeplink: "records")
+        app.launchForUITest(deeplink: "records", extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         XCTAssertTrue(firstRow(app).waitForExistence(timeout: 15), "No hay filas de registro.")
         return app
@@ -123,7 +123,9 @@ final class RecordsLote8UITests: XCTestCase {
     // MARK: - L8-9
 
     func test_changeSubcategory_marksTheCurrent_andUndoesFromTheNotice() {
-        let app = launchInRecords()
+        // El aviso dura 5 s y entre que sale y se toca «Deshacer» se espera a que la hoja se cierre: en un runner frío del
+        // CI no cabía (rojo 3 de 3 en las nocturnas del 23, 25 y 26-oct). Molde: `UXAudit22Lote08UITests`.
+        let app = launchInRecords(extraArguments: ["-uitest-undo-notice-seconds", "30"])
         firstRow(app).press(forDuration: 1.2)
 
         let change = app.buttons["Cambiar categoría"].firstMatch

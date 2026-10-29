@@ -120,7 +120,9 @@ final class InboxCrudUITests: XCTestCase {
     /// devuelve a pendientes y la Bandeja lo enseña sin cerrar y volver a abrir.
     func test_discardingFromEditorMenuOffersUndoThatBringsItBack() {
         let app = XCUIApplication()
-        app.launchForUITest()
+        // El aviso dura 5 s y aquí se espera además a que la fila se vaya: en un runner frío del CI eso pasaba de 5 s y
+        // «Deshacer» ya no estaba al tocarlo (nocturna 40899279330). Molde: `UXAudit22Lote08UITests`.
+        app.launchForUITest(extraArguments: ["-uitest-undo-notice-seconds", "30"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openInbox(app)
