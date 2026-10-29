@@ -52,7 +52,10 @@ nonisolated enum SiriSpendingPeriodOption: String, AppEnum {
 
 /// Una tarjeta del Panel tal como la conoce Siri: nombre y divisas, nunca el saldo (el saldo lo dice la acción, con el
 /// iPhone desbloqueado). El `id` es el `shortcutID` de la cuenta principal, que no cambia entre procesos.
-struct YalaAccountEntity: AppEntity {
+///
+/// `IndexedEntity` desde la card ste6: el resultado de Spotlight de cada cuenta lleva esta entidad asociada
+/// (`SpotlightIndexService`), así que Siri reconoce la cuenta que encontró en el índice.
+struct YalaAccountEntity: IndexedEntity {
     let id: String
     /// Propiedad del sistema: Atajos la ofrece («Nombre» de la cuenta) y App Intents Testing la lee.
     @Property(title: "account.name")
@@ -80,8 +83,8 @@ struct YalaAccountEntity: AppEntity {
     }
 }
 
-/// Busca por nombre en la foto de `SiriFinanceSnapshot`. Sin índice de Spotlight: los nombres solo salen del teléfono
-/// cuando Siri pregunta (opción C, pendiente de decisión).
+/// Busca por nombre en la foto de `SiriFinanceSnapshot`. Desde la opción C (card ste6) los nombres de las tarjetas
+/// están además en el índice de Spotlight (`SpotlightIndexService`), con la entidad asociada.
 struct YalaAccountEntityQuery: EntityStringQuery {
 
     func entities(for identifiers: [String]) async throws -> [YalaAccountEntity] {

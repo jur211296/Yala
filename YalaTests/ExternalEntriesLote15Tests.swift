@@ -61,7 +61,7 @@ struct SiriShortcutsScreenPhrasesTests {
         let provider = Repo.codeOnly(try Repo.text("Yala/App/Intents/AppShortcutsProvider.swift"))
         let keys = ["siriShortcuts.siri.phrase", "siriShortcuts.siri.alt1", "siriShortcuts.siri.alt2",
                     "siriShortcuts.phrase.quick", "siriShortcuts.phrase.voice", "siriShortcuts.phrase.image",
-                    "siriShortcuts.phrase.applePay"]
+                    "siriShortcuts.phrase.applePay", "siriShortcuts.phrase.spending", "siriShortcuts.phrase.balance"]
         for key in keys {
             let value = try #require(try Repo.string(key, lang: lang), "Falta \(key) en \(lang).")
             let phrase = Self.quoted(value)
@@ -69,6 +69,20 @@ struct SiriShortcutsScreenPhrasesTests {
             let registered = "\"\(phrase.dropLast(" Yala".count)) \\(.applicationName)\""
             #expect(provider.contains(registered),
                     "\(lang) · \(key): la pantalla enseña «\(phrase)» y Siri no la conoce (\(registered)).")
+        }
+    }
+
+    /// «Cuánto gasté» y «Mi saldo» salen en «Otros atajos» con el mismo molde: nombre de Atajos, descripción y frase
+    /// (card bthx). Cada pieza en los 16 idiomas.
+    @Test func lasDosPreguntas_tienenSuFilaConElMismoMolde() throws {
+        let view = Repo.codeOnly(try Repo.text("Yala/App/Views/Settings/SiriShortcutsView.swift"))
+        for kind in ["spending", "balance"] {
+            for key in ["shortcut.\(kind).shortTitle", "siriShortcuts.desc.\(kind)", "siriShortcuts.phrase.\(kind)"] {
+                #expect(view.contains("String(localized: \"\(key)\")"), "La pantalla no usa \(key).")
+                for lang in Repo.languages {
+                    #expect(try Repo.string(key, lang: lang)?.isEmpty == false, "Falta \(key) en \(lang).")
+                }
+            }
         }
     }
 

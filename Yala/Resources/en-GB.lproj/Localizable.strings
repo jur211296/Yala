@@ -2874,6 +2874,12 @@
 "siriShortcuts.faq.offlineQ" = "Does it work offline?";
 "siriShortcuts.faq.title" = "FAQ";
 "siriShortcuts.phrase.applePay" = "Record Apple Pay in Yala";
+"siriShortcuts.desc.spending" = "What you've spent this month, without opening the app.";
+"siriShortcuts.desc.balance" = "Your total balance or one account's, without opening the app.";
+"siriShortcuts.phrase.spending" = "How much did I spend in Yala";
+"siriShortcuts.phrase.balance" = "My balance in Yala";
+"spotlight.transaction.untitled" = "Transaction";
+"spotlight.account.kind" = "Account";
 "siriShortcuts.phrase.image" = "Record with photo or file in Yala";
 "siriShortcuts.phrase.quick" = "Record in Yala";
 "siriShortcuts.phrase.voice" = "Record with voice in Yala";

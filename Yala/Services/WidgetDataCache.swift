@@ -262,6 +262,9 @@ enum WidgetDataCache {
         // La foto de Siri sale de los MISMOS números, en su propia clave (`SiriFinanceSnapshot`): así Siri y los widgets
         // dicen lo mismo y viven y mueren juntos (ver `clearCache`).
         SiriFinanceSnapshotStore.write(built.siri, to: sharedDefaults)
+        // El índice de Spotlight (cuentas y movimientos, card ste6) se reconcilia con los mismos cambios y detrás de la
+        // misma puerta del borrado armado; se vacía en `clearCache()`.
+        SpotlightIndexService.scheduleReconcile(context: context)
         publishSessionShell(hasPrivateSession: PrivateSessionMark.hasPrivateSession(),
                             prefersGroupsOnlyView: GroupsOnlyViewMark.isOn())
 
@@ -298,6 +301,9 @@ enum WidgetDataCache {
     /// Clears the widget cache
     static func clearCache() {
         clearCache(in: sharedDefaults)
+        // Lo que la foto de Siri deja de saber, Spotlight deja de enseñarlo (card ste6). Va aquí y no en la variante con
+        // el store inyectado: esa la usan los tests de las purgas, y el índice es del teléfono.
+        SpotlightIndexService.clear()
     }
 
     /// Variante con el store inyectado: la usan los tests de las purgas para medir el vaciado sin tocar el App Group real.

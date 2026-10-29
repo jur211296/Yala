@@ -31,6 +31,13 @@ final class SiriShortcutsScreenUITests: XCTestCase {
         for name in ["Registrar por voz", "Foto o archivo", "Registrar pago de Apple Pay"] {
             XCTAssertTrue(app.staticTexts[name].exists, "Falta «\(name)».")
         }
+        // Las dos preguntas a Siri (card bthx), con su frase entre comillas, al final de «Otros atajos».
+        for (name, phrase) in [("Cuánto gasté", "«Cuánto gasté en Yala»"), ("Mi saldo", "«Mi saldo en Yala»")] {
+            let row = app.staticTexts[name]
+            scrollTo(row, in: app)
+            XCTAssertTrue(row.exists, "Falta «\(name)».")
+            XCTAssertTrue(app.staticTexts[phrase].exists, "Falta la frase \(phrase).")
+        }
         XCTAssertFalse(app.staticTexts["Registro rápido"].exists)
         XCTAssertFalse(app.staticTexts["Entrada por voz"].exists)
 
