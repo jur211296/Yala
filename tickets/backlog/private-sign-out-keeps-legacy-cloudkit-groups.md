@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: "groups, settings"
 created: 2026-09-11
-updated: 2026-10-08
+updated: 2026-10-29
 source: "paso 9 del rediseño de sesiones (`session-exits-one-verb-per-session`), decisión D10 del Paso 0"
 ---
 
@@ -27,3 +27,10 @@ Hoy la población es teórica: producción tuvo un fresh start el 2026-09-10.
 - Decisión que falta: **A.** borrarlos igual (ADR §5); **B.** conservarlos, como hoy, y escribirlo. Recomendada **B**: no tienen de dónde volver y borrar lo irrecuperable por coherencia no compensa con una población teórica. Con B solo queda escribir la decisión: por eso `very-low`.
 
 Triage 2026-10-08: abierto · low → very-low · sigue igual, pero la población es teórica y la opción recomendada (conservar) no cambia código: falta escribir la decisión.
+
+## La población ya no es teórica (2026-10-29)
+
+Pia tenía grupos de la era CloudKit y el reporte del 24-oct lo prueba. Conservarlos (opción B de arriba) deja un callejón
+en el Welcome: la puerta de Grupos los cuenta y la vuelta al neutro no se los lleva, así que pide borrar en cada arranque.
+El bucle y su arreglo tienen ticket propio: `welcome-groups-gate-loops-on-legacy-cloudkit-groups`. Esta decisión sigue
+siendo la del cierre desde Ajustes.
