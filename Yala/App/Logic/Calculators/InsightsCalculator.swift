@@ -687,44 +687,38 @@ struct InsightsCalculator {
             }
         }
 
-        // Budgets at risk (>75% spent) — pregroup expense transactions by category for efficiency
-        let expenseTxns = allTransactions.filter { $0.category?.isIncome == false && $0.balanceAdjustmentType == nil }
-        let txnsByCategory = Dictionary(grouping: expenseTxns, by: { $0.category?.persistentModelID })
-
+        // Budgets at risk. Lo gastado sale de la MISMA función que Planificación, el Panel y las alertas
+        // (`BudgetsViewModel.calculateSpending`), sobre los movimientos SIN el filtro de sesión de Estadísticas y en el
+        // periodo EN CURSO de cada presupuesto. Hasta el 2026-10-29 Observaciones filtraba por su cuenta: solo veía los
+        // presupuestos con categoría legada (los de subcategorías, etiquetas o cuentas no salían), ignoraba «Contar mi
+        // parte de los gastos de grupo» y dejaba fuera los gastos sin categoría (ticket
+        // `insights-budgets-at-risk-compute-spent-on-their-own`).
         var budgetsAtRisk: [BudgetAtRisk] = []
         var allBudgets: [BudgetAtRisk] = []
         for budget in budgets {
             guard budget.isActive else { continue }
             guard budget.limitAmount > 0 else { continue }
 
-            // Filter transactions within the budget's OWN current period (not the global Insights period)
-            let budgetTxns: [TransactionItem]
-            if let category = budget.category {
-                let budgetInterval = currentBudgetInterval(for: budget, now: now)
-                let categoryTxns = txnsByCategory[category.persistentModelID] ?? []
-                budgetTxns = categoryTxns.filter { budgetInterval.contains($0.date) }
-            } else {
-                continue
-            }
-
-            // Sum expenses in budget currency (proyectadas a "mi parte" en gastos de grupo).
-            let spent = budgetTxns.reduce(0.0) { sum, tx in
-                adjustment.isSuppressed(tx)
-                    ? sum
-                    : sum + txAmount(tx, currencyCode: budget.currencyCode, adjustment: adjustment, converter: converter)
-            }
+            let spent = BudgetsViewModel.calculateSpending(
+                budget: budget,
+                transactions: allTransactions,
+                interval: currentBudgetInterval(for: budget, now: now),
+                adjustment: adjustment,
+                converter: converter
+            )
 
             let usage = (spent / budget.limitAmount) * 100
             // Icon genérico en cold launch si M2M lazy nil — se auto-cura via hot
             // path upstream. Refactor con iconLookup precomputado: ver Backlog.
+            let display = budget.displayProperties
             let row = BudgetAtRisk(
                 id: budget.persistentModelID,
                 name: budget.name,
-                icon: budget.displayProperties.icon,
+                icon: display.icon,
                 usagePercent: usage,
                 spent: spent,
                 limit: budget.limitAmount,
-                colorHex: budget.category?.colorHex,
+                colorHex: budget.category?.colorHex ?? display.color,
                 currencyCode: budget.currencyCode
             )
             allBudgets.append(row)

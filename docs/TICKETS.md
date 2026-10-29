@@ -606,7 +606,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | indigo-small-text-on-the-light-background-is-4-46 | backlog | tickets/backlog/indigo-small-text-on-the-light-background-is-4-46.md |
 | initial-balance-date-move-leaves-converted-amount-stale | backlog | tickets/backlog/initial-balance-date-move-leaves-converted-amount-stale.md |
 | insights-and-trends-payload-labels-mislead-the-model | backlog | tickets/backlog/insights-and-trends-payload-labels-mislead-the-model.md |
-| insights-budgets-at-risk-compute-spent-on-their-own | backlog | tickets/backlog/insights-budgets-at-risk-compute-spent-on-their-own.md |
+| insights-budgets-at-risk-compute-spent-on-their-own | done | tickets/done/insights-budgets-at-risk-compute-spent-on-their-own.md |
 | insights-cards-send-the-note-of-the-largest-expense | done | tickets/done/insights-cards-send-the-note-of-the-largest-expense.md |
 | insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language | done | tickets/done/insights-cashflow-and-deviation-prompts-do-not-ask-for-the-language.md |
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
