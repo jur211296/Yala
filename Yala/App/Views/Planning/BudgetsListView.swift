@@ -50,23 +50,24 @@ struct BudgetsListView: View {
                         }
                     }
 
-                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). Encima del selector de tipo
-                    // (Semanal / Mensual / Anual / Único), no entre él y el período (Jürgen, 2026-10-28, card 91in).
-                    TopPrimaryActionPill(
-                        title: L10n.Accessibility.newBudget,
-                        systemImage: "plus",
-                        accessibilityIdentifier: "budgets_create_button",
-                        action: createBudget
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .revealsFloatingActionWhenScrolledAway($showFloatingNew)
+                    // La acción principal arriba, como en el Panel; el flotante solo al bajar (card kzhe). A su derecha y en la
+                    // misma fila, el selector de tipo (Semanal / Mensual / Anual / Único) con la píldora de calendario de las
+                    // demás pantallas, en vez del segmento a lo ancho (Jürgen, 2026-10-28, card ca00).
+                    HStack(spacing: DS.Spacing.sm) {
+                        TopPrimaryActionPill(
+                            title: L10n.Accessibility.newBudget,
+                            systemImage: "plus",
+                            accessibilityIdentifier: "budgets_create_button",
+                            action: createBudget
+                        )
+                        .revealsFloatingActionWhenScrolledAway($showFloatingNew)
 
-                    // Segmented Picker período (Weekly/Monthly/Yearly/Unique).
-                    // SIN padding horizontal externo — las cards de BudgetRowView usan
-                    // `.padding(.lg)` INTERNO y `.solidCard` sin padding externo, así
-                    // llegan al borde del ScrollView. El picker debe igualar ese ancho.
-                    periodTypeSegmentedControl
+                        Spacer(minLength: 0)
+
+                        periodTypeMenu
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Spacing.xs)
 
                     // PeriodNavigationHeader shared (oculto en .unique mode)
                     if selectedSegment != 3 {
@@ -166,17 +167,42 @@ struct BudgetsListView: View {
         }
     }
 
-    // MARK: - Period Type Segmented Control
+    // MARK: - Period Type Menu
 
-    private var periodTypeSegmentedControl: some View {
-        Picker(L10n.Budgets.periodTypeLabel, selection: $selectedSegment) {
-            Text(NSLocalizedString("budgets.period.weekly", comment: "")).tag(0)
-            Text(NSLocalizedString("budgets.period.monthly", comment: "")).tag(1)
-            Text(NSLocalizedString("budgets.period.yearly", comment: "")).tag(2)
-            Text(NSLocalizedString("budgets.period.unique", comment: "")).tag(3)
+    /// Las cuatro opciones del tipo, en el orden de siempre: 0=Semanal, 1=Mensual, 2=Anual, 3=Único.
+    private static let periodTypeOptions: [(tag: Int, key: String, id: String)] = [
+        (0, "budgets.period.weekly", "weekly"),
+        (1, "budgets.period.monthly", "monthly"),
+        (2, "budgets.period.yearly", "yearly"),
+        (3, "budgets.period.unique", "unique"),
+    ]
+
+    private var periodTypeTitle: String {
+        let key = Self.periodTypeOptions.first { $0.tag == selectedSegment }?.key ?? "budgets.period.monthly"
+        return NSLocalizedString(key, comment: "")
+    }
+
+    /// El mismo selector de período que Panel, Estadísticas o Grupos: píldora de calendario con un menú dentro.
+    private var periodTypeMenu: some View {
+        Menu {
+            ForEach(Self.periodTypeOptions, id: \.tag) { option in
+                Button {
+                    selectedSegment = option.tag
+                } label: {
+                    HStack {
+                        Text(NSLocalizedString(option.key, comment: ""))
+                        if selectedSegment == option.tag {
+                            Image(systemName: "checkmark").accessibilityHidden(true)
+                        }
+                    }
+                }
+                .accessibilityIdentifier("budgets_period_type_\(option.id)")
+            }
+        } label: {
+            PeriodSelectorLabel(title: periodTypeTitle)
         }
-        .pickerStyle(.segmented)
-        .frame(maxWidth: .infinity)
+        .accessibilityLabel(L10n.Budgets.periodTypeLabel)
+        .accessibilityValue(periodTypeTitle)
         .accessibilityIdentifier("budgets_period_type_picker")
         .onChange(of: selectedSegment) { _, newValue in
             switch newValue {
