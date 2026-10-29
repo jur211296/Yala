@@ -8462,3 +8462,6 @@
 
 /* Line under the create-categories button on the Panel: there is an account but no category to record with */
 "panel.createCategoriesHint" = "記録はカテゴリごとに分けて保存します。まだカテゴリがありません。";
+
+/* VoiceOver label for the live on-device transcript shown while recording a voice entry */
+"voice.live.transcriptAccessibility" = "iPhoneが聞き取っている内容";

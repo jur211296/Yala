@@ -8451,3 +8451,6 @@
 
 /* Line under the create-categories button on the Panel: there is an account but no category to record with */
 "panel.createCategoriesHint" = "Chaque enregistrement va dans une catégorie, et vous n’en avez pas encore.";
+
+/* VoiceOver label for the live on-device transcript shown while recording a voice entry */
+"voice.live.transcriptAccessibility" = "Ce que l’iPhone comprend";
