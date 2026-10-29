@@ -5923,13 +5923,16 @@
 "export.error.fileWriteFailed" = "No pudimos crear el archivo. Intentalo de nuevo.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "Eliminar «%@»";
-"account.removal.intro" = "Antes de eliminarla, elegí qué hacer con lo que tiene.";
+"account.removal.question" = "¿Qué hacemos con sus registros?";
+"account.removal.destinationLine" = "A %@";
+"account.removal.change" = "Cambiar";
+"account.removal.balanceChange" = "%1$@: %2$@ → %3$@";
+"account.removal.moveActionNamed" = "Mover y eliminar «%@»";
+"account.removal.recordCount" = "%d registros";
 "account.removal.countRecords" = "Registros";
 "account.removal.countScheduled" = "Pagos planificados";
 "account.removal.countFavorites" = "Pagos favoritos";
 "account.removal.countDrafts" = "Pendientes en la bandeja";
-"account.removal.choiceHeader" = "Qué hacemos con ello";
 "account.removal.moveTitle" = "Moverlo a otra cuenta";
 "account.removal.moveSubtitle" = "Recomendado. Tu historial y tu saldo se conservan.";
 "account.removal.noDestination" = "No tenés otra cuenta a la que moverlo.";
@@ -5942,7 +5945,6 @@
 "account.removal.collapsedNote" = "Las transferencias entre «%1$@» y «%2$@» se quitan: dentro de una misma cuenta no mueven dinero.";
 "account.removal.partnersNote" = "Las transferencias con otras cuentas se quedan en esas cuentas como registros normales.";
 "account.removal.plansNote" = "Los pagos planificados, favoritos y pendientes de la bandeja se quedan sin cuenta: la vas a elegir al usarlos.";
-"account.removal.moveAction" = "Mover y eliminar la cuenta";
 "account.removal.deleteAction" = "Borrar y eliminar la cuenta";
 "account.removal.confirmDeleteTitle" = "¿Borrar los registros?";
 "account.removal.confirmDeleteCount" = "Registros que se borran";

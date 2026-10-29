@@ -3664,9 +3664,6 @@ enum L10n {
 
         // MARK: - Eliminar con movimientos (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst)
         enum Removal {
-            static func title(_ name: String) -> String {
-                String(format: ls("account.removal.title", comment: ""), name)
-            }
             static func convertNote(_ to: String) -> String {
                 String(format: ls("account.removal.convertNote", comment: ""), to)
             }
@@ -3679,12 +3676,25 @@ enum L10n {
             static func collapsedNote(_ source: String, _ destination: String) -> String {
                 String(format: ls("account.removal.collapsedNote", comment: ""), source, destination)
             }
-            static var intro: String { ls("account.removal.intro", comment: "") }
+            /// Propuesta A de la card rd7z (2026-10-29): cabecera, pregunta y tarjeta de mover con su destino y saldo.
+            static var question: String { ls("account.removal.question", comment: "") }
+            static func recordCount(_ count: Int) -> String {
+                String.localizedStringWithFormat(ls("account.removal.recordCount", comment: ""), count)
+            }
+            static func destinationLine(_ name: String) -> String {
+                String(format: ls("account.removal.destinationLine", comment: ""), name)
+            }
+            static var change: String { ls("account.removal.change", comment: "") }
+            static func balanceChange(_ name: String, _ before: String, _ after: String) -> String {
+                String(format: ls("account.removal.balanceChange", comment: ""), name, before, after)
+            }
+            static func moveActionNamed(_ name: String) -> String {
+                String(format: ls("account.removal.moveActionNamed", comment: ""), name)
+            }
             static var countRecords: String { ls("account.removal.countRecords", comment: "") }
             static var countScheduled: String { ls("account.removal.countScheduled", comment: "") }
             static var countFavorites: String { ls("account.removal.countFavorites", comment: "") }
             static var countDrafts: String { ls("account.removal.countDrafts", comment: "") }
-            static var choiceHeader: String { ls("account.removal.choiceHeader", comment: "") }
             static var moveTitle: String { ls("account.removal.moveTitle", comment: "") }
             static var moveSubtitle: String { ls("account.removal.moveSubtitle", comment: "") }
             static var noDestination: String { ls("account.removal.noDestination", comment: "") }
@@ -3695,7 +3705,6 @@ enum L10n {
             static var destinationBlockedCurrency: String { ls("account.removal.destinationBlockedCurrency", comment: "") }
             static var partnersNote: String { ls("account.removal.partnersNote", comment: "") }
             static var plansNote: String { ls("account.removal.plansNote", comment: "") }
-            static var moveAction: String { ls("account.removal.moveAction", comment: "") }
             static var deleteAction: String { ls("account.removal.deleteAction", comment: "") }
             static var confirmDeleteTitle: String { ls("account.removal.confirmDeleteTitle", comment: "") }
             static var confirmDeleteCount: String { ls("account.removal.confirmDeleteCount", comment: "") }

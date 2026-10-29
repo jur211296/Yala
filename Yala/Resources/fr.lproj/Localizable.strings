@@ -6615,13 +6615,15 @@
 "export.error.fileWriteFailed" = "Impossible de créer le fichier. Réessaie.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "Supprimer « %@ »";
-"account.removal.intro" = "Avant de le supprimer, choisis quoi faire de son contenu.";
+"account.removal.question" = "Que fait-on de ses enregistrements ?";
+"account.removal.destinationLine" = "Vers %@";
+"account.removal.change" = "Changer";
+"account.removal.balanceChange" = "%1$@ : %2$@ → %3$@";
+"account.removal.moveActionNamed" = "Déplacer et supprimer « %@ »";
 "account.removal.countRecords" = "Enregistrements";
 "account.removal.countScheduled" = "Paiements planifiés";
 "account.removal.countFavorites" = "Paiements favoris";
 "account.removal.countDrafts" = "En attente dans la boîte de réception";
-"account.removal.choiceHeader" = "Que faire de son contenu";
 "account.removal.moveTitle" = "Le déplacer vers un autre compte";
 "account.removal.moveSubtitle" = "Recommandé. Ton historique et ton solde sont conservés.";
 "account.removal.noDestination" = "Tu n’as pas d’autre compte vers lequel le déplacer.";
@@ -6634,7 +6636,6 @@
 "account.removal.collapsedNote" = "Les virements entre « %1$@ » et « %2$@ » sont retirés : au sein d’un même compte, ils ne déplacent pas d’argent.";
 "account.removal.partnersNote" = "Les virements avec d’autres comptes restent dans ces comptes comme des enregistrements normaux.";
 "account.removal.plansNote" = "Les paiements planifiés, les favoris et les éléments en attente dans la boîte de réception restent sans compte : tu le choisiras en les utilisant.";
-"account.removal.moveAction" = "Déplacer et supprimer le compte";
 "account.removal.deleteAction" = "Supprimer les enregistrements et le compte";
 "account.removal.confirmDeleteTitle" = "Supprimer les enregistrements ?";
 "account.removal.confirmDeleteCount" = "Enregistrements supprimés";

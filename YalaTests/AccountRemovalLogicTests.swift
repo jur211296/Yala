@@ -157,4 +157,10 @@ struct AccountRemovalLogicTests {
         #expect(Logic.moveVerdict(inv, to: .init(id: "B", currencyCode: "USD"))
             == .allowed(movedRows: 0, convertedRows: 0, collapsedTransfers: 0, convertsPlans: true))
     }
+
+    /// El saldo del destino tras mover: lo de antes, más lo que entra, menos sus patas que se van con la pareja.
+    @Test func saldoTrasMover_sumaLoQueEntraYRestaLasPatasQuitadas() {
+        #expect(AccountRemovalLogic.balanceAfterMove(1050, incoming: [-25, -33, -30], removed: [50]) == 912)
+        #expect(AccountRemovalLogic.balanceAfterMove(0, incoming: [], removed: []) == 0)
+    }
 }

@@ -6626,13 +6626,15 @@
 "export.error.fileWriteFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "「%@」を削除";
-"account.removal.intro" = "削除する前に、中身をどうするか選んでください。";
+"account.removal.question" = "記録をどうしますか？";
+"account.removal.destinationLine" = "%@ へ";
+"account.removal.change" = "変更";
+"account.removal.balanceChange" = "%1$@：%2$@ → %3$@";
+"account.removal.moveActionNamed" = "移動して「%@」を削除";
 "account.removal.countRecords" = "記録";
 "account.removal.countScheduled" = "予定の支払い";
 "account.removal.countFavorites" = "お気に入りの支払い";
 "account.removal.countDrafts" = "受信トレイの保留中";
-"account.removal.choiceHeader" = "中身の扱い";
 "account.removal.moveTitle" = "別の口座に移動する";
 "account.removal.moveSubtitle" = "おすすめ。履歴と残高はそのまま残ります。";
 "account.removal.noDestination" = "移動先にできる口座がほかにありません。";
@@ -6645,7 +6647,6 @@
 "account.removal.collapsedNote" = "「%1$@」と「%2$@」の間の振替は削除されます。同じ口座内ではお金が動かないためです。";
 "account.removal.partnersNote" = "ほかの口座との振替は、その口座に通常の記録として残ります。";
 "account.removal.plansNote" = "予定の支払い、お気に入り、受信トレイの保留中の項目は口座なしになります。使うときに口座を選んでください。";
-"account.removal.moveAction" = "移動して口座を削除";
 "account.removal.deleteAction" = "記録と口座を削除";
 "account.removal.confirmDeleteTitle" = "記録を削除しますか？";
 "account.removal.confirmDeleteCount" = "削除される記録";

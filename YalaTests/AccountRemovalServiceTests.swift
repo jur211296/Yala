@@ -454,4 +454,74 @@ struct AccountRemovalServiceTests {
         let empty = try AccountRemovalService.inventory(of: f.usd, context: f.context).shape
         #expect(empty.needsQuestion == false)
     }
+
+    // MARK: - Saldo que enseña la hoja (propuesta A, card rd7z)
+
+    private func balance(of account: Account, _ context: ModelContext) throws -> Decimal {
+        AccountBalanceCalculator.currentBalance(for: account, allTransactions: try transactions(context))
+    }
+
+    /// Lo que la hoja promete es lo que la mudanza deja: con una transferencia con la pareja en el destino (se quita
+    /// entera) y otra con una tercera cuenta (entra).
+    @Test func previsionDelSaldo_mismaDivisa_coincideConLoQueDejaMover() async throws {
+        let f = try makeFixture()
+        let card = makeTestAccount(context: f.context, name: "Tarjeta", currencyCode: "PEN")
+        tx(f, -25, in: f.source, note: "Taxi")
+        tx(f, -33, in: f.source, note: "Teléfono")
+        tx(f, 1000, in: f.bank, note: "Sueldo")
+        _ = transfer(f, 50, from: f.source, to: f.bank)
+        _ = transfer(f, 30, from: f.source, to: card)
+        try f.context.save()
+
+        let inventory = try AccountRemovalService.inventory(of: f.source, context: f.context)
+        let previews = try AccountRemovalService.balancePreviews(
+            of: inventory, destinations: [f.bank, f.usd, card], context: f.context)
+        #expect(previews.source == -138)
+        let preview = try #require(previews.byDestination[f.bank.persistentModelID])
+        #expect(preview.before == 1050)
+        #expect(preview.after == 912)
+        #expect(preview.isApproximate == false)
+
+        try await AccountRemovalService.move(
+            f.source, to: f.bank, context: f.context, deleteAccount: deleteAccount(f.context))
+        #expect(try balance(of: f.bank, f.context) == preview.after)
+    }
+
+    /// A otra divisa, con la tasa de la fecha de cada fila (4 PEN = 1 USD): −100 PEN entran como −25 USD.
+    @Test func previsionDelSaldo_otraDivisa_convierteComoMover() async throws {
+        let f = try makeFixture()
+        tx(f, -100, in: f.source, note: "Mercado")
+        try f.context.save()
+
+        let inventory = try AccountRemovalService.inventory(of: f.source, context: f.context)
+        let previews = try AccountRemovalService.balancePreviews(
+            of: inventory, destinations: [f.bank, f.usd], context: f.context)
+        let preview = try #require(previews.byDestination[f.usd.persistentModelID])
+        #expect(preview.before == 0)
+        #expect(abs(NSDecimalNumber(decimal: preview.after).doubleValue - -25) < 0.0001)
+        #expect(preview.isApproximate == false)
+
+        try await AccountRemovalService.move(
+            f.source, to: f.usd, context: f.context, deleteAccount: deleteAccount(f.context))
+        let after = NSDecimalNumber(decimal: try balance(of: f.usd, f.context)).doubleValue
+        #expect(abs(after - NSDecimalNumber(decimal: preview.after).doubleValue) < 0.0001)
+    }
+
+    /// Un destino al que no se puede mover no tiene previsión, y lo fechado en el futuro no cuenta (como el saldo).
+    @Test func previsionDelSaldo_soloDestinosPermitidosYHastaHoy() throws {
+        let f = try makeFixture()
+        _ = transfer(f, 50, from: f.source, to: f.bank)
+        let future = makeTestTransaction(
+            context: f.context, amount: -7, date: Date.now.addingTimeInterval(86_400 * 30),
+            account: f.source, category: f.category, subcategory: f.sub, currencyCode: "PEN")
+        future.note = "Futuro"
+        try f.context.save()
+
+        let inventory = try AccountRemovalService.inventory(of: f.source, context: f.context)
+        let previews = try AccountRemovalService.balancePreviews(
+            of: inventory, destinations: [f.bank, f.usd], context: f.context)
+        #expect(previews.byDestination[f.usd.persistentModelID] == nil)
+        #expect(previews.source == -50)
+        #expect(previews.byDestination[f.bank.persistentModelID]?.after == 0)
+    }
 }
