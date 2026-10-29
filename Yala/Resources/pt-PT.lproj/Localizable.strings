@@ -6513,6 +6513,7 @@
 "scheduled.l10.delete.keepsRecords" = "Os teus registos não são eliminados.";
 "scheduled.l10.deleted" = "Eliminaste “%@”";
 "records.pendingDeletion.deletedMany" = "Eliminaste %d registos";
+"scheduled.pendingDeletion.deletedMany" = "Eliminaste %d pagamentos";
 "scheduled.l10.editor.moreOptions" = "Mais opções";
 "scheduled.l10.editor.when" = "Quando";
 "scheduled.l10.editor.optional" = "Opcional";

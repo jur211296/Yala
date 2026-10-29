@@ -162,4 +162,78 @@ final class ScheduledPaymentsLote10UITests: XCTestCase {
             "Tocar el aviso de la tarjeta no abrió su ficha."
         )
     }
+
+    // MARK: - Borrar con «Deshacer», dos seguidos (ticket `scheduled-payment-pending-deletion-loses-undo-on-a-second-delete`)
+
+    private func paymentRows(_ app: XCUIApplication) -> XCUIElementQuery {
+        app.buttons.matching(identifier: "scheduled_payment_row")
+    }
+
+    private func paymentRow(_ app: XCUIApplication, labeled label: String) -> XCUIElement {
+        paymentRows(app).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func waitUntil(_ timeout: TimeInterval = 6, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition(), Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+        return condition()
+    }
+
+    /// Abre la primera fila, entra al editor, borra y confirma. Devuelve la etiqueta de la fila borrada.
+    private func deleteFirstPayment(_ app: XCUIApplication) -> String {
+        let row = paymentRows(app).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "No hay filas de pagos.")
+        let label = row.label
+        row.tap()
+        XCTAssertTrue(element(app, "scheduled_detail_status").waitForExistence(timeout: 5), "No se abrió el detalle.")
+        let edit = app.navigationBars.buttons["Editar"].firstMatch
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "El detalle no ofrece «Editar».")
+        edit.tap()
+        let delete = app.buttons["scheduled_editor_delete"].firstMatch
+        var swipes = 0
+        while !(delete.exists && delete.isHittable), swipes < 12 {
+            app.swipeUp(velocity: .slow)
+            swipes += 1
+        }
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "El editor no ofrece «Eliminar pago».")
+        delete.tap()
+        let confirm = app.alerts.firstMatch.buttons["Eliminar"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "Eliminar no preguntó.")
+        confirm.tap()
+        XCTAssertTrue(
+            element(app, "scheduled_hero_pending").waitForExistence(timeout: 10), "Tras borrar no se volvió a la lista.")
+        return label
+    }
+
+    /// Dos borrados seguidos comparten aviso y su «Deshacer» devuelve los dos. Hasta el 2026-10-29 el aviso del segundo
+    /// le quitaba el «Deshacer» al primero, que se borraba sin vuelta.
+    func test_twoDeletionsInARow_undoBringsBothBack() {
+        let app = XCUIApplication()
+        // El aviso dura 30 s: borrar el segundo por el editor tarda más que los 5 s reales (regla de testing.md).
+        app.launchForUITest(pro: true, scheduledSeedDay: 1, extraArguments: ["-uitest-undo-notice-seconds", "30"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        app.openScheduledPaymentsList()
+
+        let first = deleteFirstPayment(app)
+        XCTAssertTrue(app.buttons["scheduled_deleted_undo"].waitForExistence(timeout: 5), "No salió el aviso del primero.")
+        XCTAssertTrue(waitUntil { !self.paymentRow(app, labeled: first).exists }, "El primero sigue en la lista.")
+        let second = deleteFirstPayment(app)
+        XCTAssertNotEqual(first, second, "Se borró dos veces el mismo pago.")
+        XCTAssertTrue(waitUntil { !self.paymentRow(app, labeled: second).exists }, "El segundo sigue en la lista.")
+
+        let undo = app.buttons["scheduled_deleted_undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "Tras el segundo borrado no hay «Deshacer».")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "scheduled-two-deletions-notice"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(
+            app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "2 pagos")).firstMatch.waitForExistence(timeout: 3),
+            "El aviso no dice que espera el borrado de los dos pagos.")
+        undo.tap()
+        XCTAssertTrue(waitUntil { self.paymentRow(app, labeled: second).exists }, "«Deshacer» no devolvió el segundo.")
+        XCTAssertTrue(waitUntil { self.paymentRow(app, labeled: first).exists }, "«Deshacer» no devolvió el primero.")
+    }
 }

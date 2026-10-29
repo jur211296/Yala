@@ -224,8 +224,7 @@ final class ScheduledPaymentsViewModel {
 
         do {
             // Un pago que espera su borrado con «Deshacer» ya no sale (UX 2.2 · L10-15).
-            let pendingDeletion = ScheduledPaymentPendingDeletion.shared.pendingIDs
-            let fetched = try context.fetch(descriptor).filter { !pendingDeletion.contains($0.id) }
+            let fetched = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(descriptor))
             if fetched != allPayments {
                 allPayments = fetched
                 // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)

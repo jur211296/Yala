@@ -1,10 +1,10 @@
 ---
 id: scheduled-payment-pending-deletion-loses-undo-on-a-second-delete
-status: backlog
+status: done
 priority: low
 area: "planning, deletion"
 created: 2026-10-25
-updated: 2026-10-25
+updated: 2026-10-29
 source: "cola 2.2 · lote 12.5, al cerrar record-pending-deletion-still-counts-outside-records"
 ---
 
@@ -27,3 +27,12 @@ que el lote 12.5 cerró en `RecordPendingDeletion`:
 El de registros (`RecordPendingDeletion`, 2026-10-25): un plazo compartido con aviso «Eliminaste N pagos · Deshacer»
 que devuelve todos, `visible(_:)` en las cargas que cuentan pagos, y el margen de 400 ms. Con test de lógica y XCUITest
 de dos borrados seguidos.
+
+## Cerrado (2026-10-29, sesión S25)
+
+`ScheduledPaymentPendingDeletion` sigue el molde de `RecordPendingDeletion`: un plazo compartido (tope 30 s) con aviso
+«Eliminaste N pagos · Deshacer» que devuelve todos, el borrado a `undoWindow + 400 ms`, la foto de los widgets rehecha al
+deshacer y `visible(_:)` en Planificación, Panel, Estadísticas (Insights y Distribución), widgets, Informe y flujo de caja
+(tabla, configuración y «añadir línea»). Fuera, a propósito: el chat de IA y los avisos programados (el plazo es de 5 s).
+Tests: `ScheduledPaymentPendingDeletionBatchTests` (lógica + cableado) y
+`ScheduledPaymentsLote10UITests#test_twoDeletionsInARow_undoBringsBothBack`.

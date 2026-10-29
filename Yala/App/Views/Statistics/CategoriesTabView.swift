@@ -38,7 +38,9 @@ struct CategoriesTabView: View {
     // MARK: - Scheduled Payments (for Sankey "Planificados" branch)
 
     /// Loaded internally — the parent view doesn't pass these.
-    @Query private var scheduledPayments: [ScheduledPayment]
+    @Query private var storedScheduledPayments: [ScheduledPayment]
+    /// Sin el pago que espera su borrado con «Deshacer» (`ScheduledPaymentPendingDeletion`): no cuenta en Distribución.
+    private var scheduledPayments: [ScheduledPayment] { ScheduledPaymentPendingDeletion.shared.visible(storedScheduledPayments) }
     /// Tags catalog for `TagSpendingCalculator` to resolve UUIDs from CSV mirror.
     @Query private var allTags: [Tag]
 

@@ -7201,6 +7201,7 @@
 "scheduled.l10.delete.keepsRecords" = "Twoje wpisy nie zostaną usunięte.";
 "scheduled.l10.deleted" = "Usunięto „%@”";
 "records.pendingDeletion.deletedMany" = "Usunięte wpisy: %d";
+"scheduled.pendingDeletion.deletedMany" = "Usunięte płatności: %d";
 "scheduled.l10.editor.moreOptions" = "Więcej opcji";
 "scheduled.l10.editor.when" = "Kiedy";
 "scheduled.l10.editor.optional" = "Opcjonalne";

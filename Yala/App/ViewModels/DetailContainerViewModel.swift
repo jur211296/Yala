@@ -146,7 +146,8 @@ final class DetailContainerViewModel {
             sortBy: [SortDescriptor(\.nextDueDate)]
         )
         do {
-            let fetched = try context.fetch(paymentsDescriptor)
+            // Un pago que espera su borrado con «Deshacer» no cuenta (`ScheduledPaymentPendingDeletion`).
+            let fetched = ScheduledPaymentPendingDeletion.shared.visible(try context.fetch(paymentsDescriptor))
             if fetched != scheduledPayments { scheduledPayments = fetched; changed = true }
         } catch {
             #if DEBUG

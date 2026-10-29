@@ -729,9 +729,10 @@ final class DraftService {
     /// Planificación. Un borrador ya archivado no retiene nada (borrarlo desde Archivados no salta otra
     /// ocurrencia), y el duplicado de una ocurrencia ya pagada tampoco.
     ///
-    /// Los demás pendientes de ESA ocurrencia —los que creó otro dispositivo antes de saber del descarte— se
-    /// archivan con él (rechazados, recuperables), como hace Planificación al saltar. No hace save (lo hace el
-    /// caller). Devuelve si saltó algo, para re-planear los avisos.
+    /// Si otro pendiente retiene ESA misma ocurrencia, no se salta nada y ese pendiente se queda en la Bandeja: descartar
+    /// quita solo el borrador descartado (desde el 2026-10-29; antes los archivaba todos). El que llega de otro
+    /// dispositivo DESPUÉS del salto lo archiva `processDuePayments`. No hace save (lo hace el caller). Devuelve si saltó
+    /// algo, para re-planear los avisos.
     ///
     /// Si la ocurrencia saltada es la próxima fecha y ya venció, la próxima fecha avanza en el acto, igual que hace
     /// `processDuePayments` con una fecha saltada: si esperara al arranque siguiente, «Adelantar» en Planificación
@@ -750,28 +751,34 @@ final class DraftService {
         guard let occurrence = ScheduledDraftOccurrenceLogic.occurrenceToSkipOnDismiss(
             draftDate: draftDate, schedule: schedule
         ) else { return false }
-        payment.skipDate(occurrence)
 
+        // Otro pendiente que retiene la misma ocurrencia la sigue cubriendo: descartar este no la salta ni toca a ese
+        // (ticket `scheduled-payment-identical-drafts-in-the-inbox`). Hasta el 2026-10-29 se archivaban todos, y con
+        // los borradores idénticos que deja cada dispositivo, descartar uno se llevaba los demás. La ocurrencia se salta
+        // al descartar el último; si la lectura falla, no se salta (el pendiente sigue y nada se recrea encima).
         let paymentID = payment.id.uuidString
         let draftID = draft.persistentModelID
         do {
-            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+            let others = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
                 $0.sourceScheduledPaymentID == paymentID && $0.statusRaw == "pending"
             }))
-            for sibling in siblings where sibling.persistentModelID != draftID
-                && ScheduledDraftOccurrenceLogic.holdsAnOccurrence(sibling.sourceType)
-                && ScheduledDraftOccurrenceLogic.heldOccurrence(
-                    draftDate: sibling.date ?? sibling.createdAt, schedule: schedule
-                ) == occurrence {
-                cacheDisplayValues(sibling)
-                sibling.status = .rejected
-                sibling.updatedAt = Date.now
+            let stillHeld = others.contains { other in
+                // `status` en memoria además del predicado: en un lote, el anterior ya está rechazado sin guardar. En iOS 27.0
+                // el fetch ya lo excluye (medido con el mutante, 2026-10-29); se queda por los runtimes donde no.
+                other.persistentModelID != draftID && !other.isDeleted && other.status == .pending
+                    && ScheduledDraftOccurrenceLogic.holdsAnOccurrence(other.sourceType)
+                    && ScheduledDraftOccurrenceLogic.heldOccurrence(
+                        draftDate: other.date ?? other.createdAt, schedule: schedule
+                    ) == occurrence
             }
+            if stillHeld { return false }
         } catch {
             #if DEBUG
-            print("DraftService: error fetching sibling drafts of a dismissed occurrence: \(error)")
+            print("DraftService: error fetching the other drafts of a dismissed occurrence: \(error)")
             #endif
+            return false
         }
+        payment.skipDate(occurrence)
 
         let today = Calendar.current.startOfDay(for: Date.now)
         if keepsTheOccurrenceDate, occurrence <= today,

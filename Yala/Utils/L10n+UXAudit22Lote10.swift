@@ -120,6 +120,8 @@ extension L10n {
         static func deleted(_ name: String) -> String { String(format: l10("scheduled.l10.deleted"), name) }
         /// Dos o más registros borrados seguidos comparten aviso: «Eliminaste 2 registros» (`RecordPendingDeletion`).
         static func deletedRecords(_ count: Int) -> String { String(format: l10("records.pendingDeletion.deletedMany"), count) }
+        /// Dos o más pagos planificados borrados seguidos comparten aviso: «Eliminaste 2 pagos» (`ScheduledPaymentPendingDeletion`).
+        static func deletedPayments(_ count: Int) -> String { String(format: l10("scheduled.pendingDeletion.deletedMany"), count) }
 
         // MARK: - Editor (L10-4, L10-16)
 

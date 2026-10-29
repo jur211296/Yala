@@ -52,8 +52,10 @@ struct ScheduledPaymentDraftService {
         }
 
         var draftsCreated = 0
+        // Antes de nada, un vencimiento con varios borradores idénticos (uno por dispositivo) se queda con uno.
+        var hasChanges = mergeIdenticalPendingDrafts(context: context)
         // Antes de crear nada: los pendientes de una ocurrencia que la persona ya descartó se archivan.
-        var hasChanges = archiveDraftsOfDismissedOccurrences(context: context)
+        if archiveDraftsOfDismissedOccurrences(context: context) { hasChanges = true }
         // Y los «elige categoría» que dejó aprobar un gasto compartido planificado antes del arreglo.
         if classifyPointersOfApprovedGroupPlannedExpenses(context: context) { hasChanges = true }
 
@@ -252,6 +254,74 @@ struct ScheduledPaymentDraftService {
             changed = true
         }
         return changed
+    }
+
+    // MARK: - Borradores idénticos
+
+    /// Si alguna ventana enseña la Bandeja o tiene algo presentado (el borrador abierto en su hoja, «Pagar ahora» en
+    /// Planificación). Así el barrido de idénticos espera a la pasada siguiente: la persona podría tener abierto justo
+    /// el que sobra, y borrarlo debajo de una hoja la deja con un objeto muerto. Los tests lo sustituyen.
+    static var inboxIsOnScreen: @MainActor () -> Bool = {
+        SceneRegistry.shared.allNavigations.contains(where: \.isInboxSheetVisible) || ModalPresentationProbe.isAnythingPresented
+    }
+
+    /// Funde los borradores PENDIENTES idénticos de la misma ocurrencia de un pago (ticket
+    /// `scheduled-payment-identical-drafts-in-the-inbox`, reporte de Jürgen del 2026-10-26 en 2.1). Cada dispositivo
+    /// materializa el vencimiento con lo que ve (`hasExistingDraft`), y el borrador del otro llega después por el espejo
+    /// de iCloud o por el pull de la nube: con dos o tres dispositivos, la Bandeja enseñaba dos o tres borradores
+    /// iguales. Se queda el de menor `createdAt` y los demás se BORRAN (son copias, no decisiones de la persona: en
+    /// Archivados solo serían ruido). Todos los dispositivos eligen el mismo, así que los borrados que viajan no se
+    /// llevan el que se queda. Uno editado ya no es idéntico y no se toca. Idempotente: con uno por ocurrencia no hace
+    /// nada. Devuelve si cambió algo.
+    static func mergeIdenticalPendingDrafts(context: ModelContext) -> Bool {
+        guard !inboxIsOnScreen() else { return false }
+        let drafts: [InboxDraft]
+        do {
+            drafts = try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate<InboxDraft> {
+                $0.statusRaw == "pending" && $0.sourceScheduledPaymentID != nil
+            }))
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching drafts to merge: \(error)")
+            #endif
+            return false
+        }
+        guard drafts.count > 1 else { return false }
+        let payments: [ScheduledPayment]
+        do {
+            payments = try context.fetch(FetchDescriptor<ScheduledPayment>())
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching payments to merge drafts: \(error)")
+            #endif
+            return false
+        }
+        let paymentsByID = Dictionary(payments.map { ($0.id.uuidString, $0) }, uniquingKeysWith: { first, _ in first })
+        let calendar = Calendar.current
+
+        var candidates: [ScheduledDraftOccurrenceLogic.DuplicateCandidate] = []
+        for (index, draft) in drafts.enumerated() where ScheduledDraftOccurrenceLogic.holdsAnOccurrence(draft.sourceType) {
+            guard let paymentID = draft.sourceScheduledPaymentID, let payment = paymentsByID[paymentID] else { continue }
+            let draftDate = draft.date ?? draft.createdAt
+            let key = ScheduledDraftOccurrenceLogic.DuplicateKey(
+                paymentID: paymentID,
+                sourceTypeRaw: draft.sourceTypeRaw,
+                occurrence: ScheduledDraftOccurrenceLogic.heldOccurrence(
+                    draftDate: draftDate, schedule: payment.occurrenceSchedule, calendar: calendar),
+                day: calendar.startOfDay(for: draftDate),
+                amount: draft.amount,
+                note: draft.note,
+                accountID: draft.account?.shortcutID,
+                subcategoryID: draft.subcategory?.shortcutID,
+                tagIDs: draft.tagIDs ?? "",
+                evidence: draft.evidence,
+                groupZoneID: draft.splitGroupZoneID
+            )
+            candidates.append(.init(key: key, createdAt: draft.createdAt, index: index))
+        }
+        let losers = ScheduledDraftOccurrenceLogic.duplicatesToRemove(candidates)
+        for index in losers { context.delete(drafts[index]) }
+        return !losers.isEmpty
     }
 
     // MARK: - Approved Group Planned Expenses

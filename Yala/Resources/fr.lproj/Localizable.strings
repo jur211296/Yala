@@ -7190,6 +7190,7 @@
 "scheduled.l10.delete.keepsRecords" = "Tes enregistrements ne sont pas supprimés.";
 "scheduled.l10.deleted" = "« %@ » supprimé";
 "records.pendingDeletion.deletedMany" = "%d enregistrements supprimés";
+"scheduled.pendingDeletion.deletedMany" = "%d paiements supprimés";
 "scheduled.l10.editor.moreOptions" = "Plus d’options";
 "scheduled.l10.editor.when" = "Quand";
 "scheduled.l10.editor.optional" = "Facultatif";

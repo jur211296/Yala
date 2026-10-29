@@ -44,7 +44,10 @@ struct FinancialReportView: View {
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query private var allSubcategories: [Subcategory]
     @Query private var tags: [Tag]
-    @Query private var scheduledPayments: [ScheduledPayment]
+    @Query private var storedScheduledPayments: [ScheduledPayment]
+    /// Sin el pago que espera su borrado con «Deshacer» (`ScheduledPaymentPendingDeletion`): ni en el Informe ni en el
+    /// flujo de caja.
+    private var scheduledPayments: [ScheduledPayment] { ScheduledPaymentPendingDeletion.shared.visible(storedScheduledPayments) }
 
     // MARK: - Preferences
 
