@@ -331,3 +331,4 @@
 - [El disco: los GB están DENTRO del simulador](reference_disco_cache_simulador.md) — cachés regenerables del device; tras mu…
 - [Adelantar un paso vuelve normal el caso «imposible»](feedback_adelantar_un_paso_vuelve_normal_el_caso_imposible.md) — consent antes de la sesión: el sin-sello lo heredaba otro.
 - [Yala Dev es Debug-Dev](reference_yala_dev_es_debug_dev.md) — `configuration Debug` (MCP o `xcodebuild -configuration`) compila producción sin DEV_BUILD.
+- [El negativo previo corre contra el arreglo](feedback_el_negativo_previo_corre_contra_el_arreglo.md) — seam de reloj: N por encima de la navegación, o con el arreglo cae el «aún no está».
