@@ -33,7 +33,7 @@ import { buildRateBook, CARRY_FORWARD_LOOKBACK, utcDateKey, type RateBook } from
 import { buildGroupAdjustment, type GroupAdjustment } from "./logic/groups";
 import { buildLookup, categoryOf, type Lookup } from "./logic/lookup";
 import { computeBalances } from "./logic/balances";
-import { storedConversionMissing, summarize } from "./logic/summary";
+import { storedConversionMissing, summarize, txKindOf } from "./logic/summary";
 import { budgetPeriod, budgetStatuses, isBudgetActive } from "./logic/budgets";
 import { listRecurring } from "./logic/recurring";
 import {
@@ -303,14 +303,6 @@ function matchIds<T extends { sync_id: string; name: string | null }>(rows: Iter
   return all.filter((r) => (r.name ?? "").toLocaleLowerCase("es").includes(n)).map((r) => r.sync_id);
 }
 
-function txKind(tx: TxRow, lookup: Lookup): "ajuste_de_saldo" | "transferencia" | "ingreso" | "gasto" | "sin_categoria" {
-  if (tx.balance_adjustment_type) return "ajuste_de_saldo";
-  if (tx.transfer_pair_id) return "transferencia";
-  const c = categoryOf(lookup, tx);
-  if (!c) return "sin_categoria";
-  return c.is_income === true ? "ingreso" : "gasto";
-}
-
 const buscarMovimientos: ToolCore = {
   name: "buscar_movimientos",
   title: "Buscar movimientos",
@@ -391,7 +383,7 @@ const buscarMovimientos: ToolCore = {
         divisa: tx.currency_code,
         importe_en_divisa_preferida: inPreferred === null ? null : round2(inPreferred),
         nota: tx.note,
-        tipo: txKind(tx, lookup),
+        tipo: txKindOf(tx, categoryOf(lookup, tx)),
         categoria: categoryOf(lookup, tx)?.name ?? null,
         subcategoria: sub?.name ?? null,
         cuenta: tx.account_ref ? (lookup.accounts.get(tx.account_ref)?.name ?? null) : null,

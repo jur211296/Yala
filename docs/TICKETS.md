@@ -1146,7 +1146,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | yala-dev-with-drive-off-mirrored-to-the-production-container | backlog | tickets/backlog/yala-dev-with-drive-off-mirrored-to-the-production-container.md |
 | yala-ia-answer-renders-model-links-as-tappable | done | tickets/done/yala-ia-answer-renders-model-links-as-tappable.md |
-| yala-ia-classifies-uncategorized-movements-as-expense | backlog | tickets/backlog/yala-ia-classifies-uncategorized-movements-as-expense.md |
+| yala-ia-classifies-uncategorized-movements-as-expense | done | tickets/done/yala-ia-classifies-uncategorized-movements-as-expense.md |
 | yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
 | yearly-scheduled-payment-on-feb-29-skips-common-years | backlog | tickets/backlog/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |

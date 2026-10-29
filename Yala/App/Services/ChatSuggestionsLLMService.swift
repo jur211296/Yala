@@ -316,12 +316,13 @@ final class ChatSuggestionsLLMService {
             let amount = abs(CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             ).value)
-            if tx.category?.isIncome == true {
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
+            if isIncome {
                 sums.totalIncome += amount
             } else {
                 sums.totalExpense += amount
             }
-            guard tx.category?.isIncome == false else { continue }
+            guard !isIncome else { continue }
             if let name = tx.category?.name {
                 sums.categories[name, default: 0] += amount
             }

@@ -256,6 +256,43 @@
             "suppressed" : true
           }
         },
+        "kinds" : {
+          "00000000-0000-4000-8000-00000000700a" : "ingreso",
+          "00000000-0000-4000-8000-00000000700b" : "ingreso",
+          "00000000-0000-4000-8000-00000000700c" : "ingreso",
+          "00000000-0000-4000-8000-00000000700d" : "gasto",
+          "00000000-0000-4000-8000-00000000700e" : "ingreso",
+          "00000000-0000-4000-8000-00000000700f" : "gasto",
+          "00000000-0000-4000-8000-00000000701a" : "gasto",
+          "00000000-0000-4000-8000-00000000701b" : "gasto",
+          "00000000-0000-4000-8000-00000000701c" : "ingreso",
+          "00000000-0000-4000-8000-00000000701d" : "ingreso",
+          "00000000-0000-4000-8000-00000000701e" : "gasto",
+          "00000000-0000-4000-8000-00000000701f" : "ingreso",
+          "00000000-0000-4000-8000-000000007001" : "ajuste_de_saldo",
+          "00000000-0000-4000-8000-000000007002" : "ajuste_de_saldo",
+          "00000000-0000-4000-8000-000000007003" : "ingreso",
+          "00000000-0000-4000-8000-000000007004" : "gasto",
+          "00000000-0000-4000-8000-000000007005" : "gasto",
+          "00000000-0000-4000-8000-000000007006" : "gasto",
+          "00000000-0000-4000-8000-000000007007" : "gasto",
+          "00000000-0000-4000-8000-000000007008" : "gasto",
+          "00000000-0000-4000-8000-000000007009" : "gasto",
+          "00000000-0000-4000-8000-000000007010" : "gasto",
+          "00000000-0000-4000-8000-000000007011" : "gasto",
+          "00000000-0000-4000-8000-000000007012" : "transferencia",
+          "00000000-0000-4000-8000-000000007013" : "transferencia",
+          "00000000-0000-4000-8000-000000007014" : "gasto",
+          "00000000-0000-4000-8000-000000007015" : "gasto",
+          "00000000-0000-4000-8000-000000007016" : "gasto",
+          "00000000-0000-4000-8000-000000007017" : "ingreso",
+          "00000000-0000-4000-8000-000000007018" : "gasto",
+          "00000000-0000-4000-8000-000000007019" : "gasto",
+          "00000000-0000-4000-8000-000000007020" : "gasto",
+          "00000000-0000-4000-8000-000000007021" : "ingreso",
+          "00000000-0000-4000-8000-000000007022" : "gasto",
+          "00000000-0000-4000-8000-000000007023" : "gasto"
+        },
         "periods" : {
           "anio_actual" : {
             "aproximado" : {
@@ -1551,6 +1588,11 @@
         "groups" : {
 
         },
+        "kinds" : {
+          "00000000-0000-4000-8000-000000007101" : "gasto",
+          "00000000-0000-4000-8000-000000007102" : "gasto",
+          "00000000-0000-4000-8000-000000007103" : "ingreso"
+        },
         "periods" : {
           "anio_actual" : {
             "aproximado" : {
@@ -1753,17 +1795,17 @@
           "to" : "PEN"
         }
       ],
-      "description" : "Tarjeta con varias divisas (entrega 4): una principal en soles con su línea en dólares, una línea rota (en la misma divisa que su principal, se lee suelta) y una cuenta suelta en dólares. El presupuesto de la tarjeta cuenta el gasto de su línea convertido; el de la línea sola, solo la línea; uno por la cuenta de la línea rota no arrastra a la principal, y la principal no arrastra a la línea rota.",
+      "description" : "Tarjeta con varias divisas (entrega 4): una principal en soles con su línea en dólares, una línea rota (en la misma divisa que su principal, se lee suelta) y una cuenta suelta en dólares. El presupuesto de la tarjeta cuenta el gasto de su línea convertido; el de la línea sola, solo la línea; uno por la cuenta de la línea rota no arrastra a la principal, y la principal no arrastra a la línea rota. Un ingreso SIN categoría (cuenta como ingreso por su signo, también en el `tipo`) y una transferencia con la forma que la app escribe (`balance_adjustment_type = \"transfer\"` y par): fuera de ingresos y gastos, y `tipo` transferencia.",
       "expected" : {
         "balances" : {
           "accounts" : {
-            "00000000-0000-4000-8000-000000001201" : 1750,
+            "00000000-0000-4000-8000-000000001201" : 1695,
             "00000000-0000-4000-8000-000000001202" : -80,
-            "00000000-0000-4000-8000-000000001203" : -40,
+            "00000000-0000-4000-8000-000000001203" : 60,
             "00000000-0000-4000-8000-000000001204" : -45
           },
           "aproximado" : true,
-          "total" : 1247.5
+          "total" : 1292.5
         },
         "budgets" : {
           "00000000-0000-4000-8000-000000006201" : 1546,
@@ -1780,6 +1822,16 @@
         "groups" : {
 
         },
+        "kinds" : {
+          "00000000-0000-4000-8000-000000007201" : "gasto",
+          "00000000-0000-4000-8000-000000007202" : "gasto",
+          "00000000-0000-4000-8000-000000007203" : "gasto",
+          "00000000-0000-4000-8000-000000007204" : "gasto",
+          "00000000-0000-4000-8000-000000007205" : "ingreso",
+          "00000000-0000-4000-8000-000000007206" : "ingreso",
+          "00000000-0000-4000-8000-000000007207" : "transferencia",
+          "00000000-0000-4000-8000-000000007208" : "transferencia"
+        },
         "periods" : {
           "anio_actual" : {
             "aproximado" : {
@@ -1789,9 +1841,9 @@
             },
             "gasto_medio_diario" : 6.8190660000000003,
             "gastos" : 1752.5,
-            "ingresos" : 3000,
-            "neto" : 1247.5,
-            "tasa_de_ahorro_pct" : 41.583333000000003
+            "ingresos" : 3045,
+            "neto" : 1292.5,
+            "tasa_de_ahorro_pct" : 42.446634000000003
           },
           "mes_actual" : {
             "aproximado" : {
@@ -1801,9 +1853,9 @@
             },
             "gasto_medio_diario" : 125.17857100000001,
             "gastos" : 1752.5,
-            "ingresos" : 3000,
-            "neto" : 1247.5,
-            "tasa_de_ahorro_pct" : 41.583333000000003
+            "ingresos" : 3045,
+            "neto" : 1292.5,
+            "tasa_de_ahorro_pct" : 42.446634000000003
           },
           "mes_pasado" : {
             "aproximado" : {
@@ -2094,6 +2146,72 @@
 
             ],
             "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001201",
+            "amount" : 45,
+            "amount_in_preferred_currency" : 45,
+            "balance_adjustment_type" : null,
+            "category_ref" : null,
+            "currency_code" : "PEN",
+            "date" : "2026-09-03T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : "Devolución sin categoría",
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007206",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001201",
+            "amount" : -100,
+            "amount_in_preferred_currency" : -100,
+            "balance_adjustment_type" : "transfer",
+            "category_ref" : null,
+            "currency_code" : "PEN",
+            "date" : "2026-09-04T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007207",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : "T2"
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001203",
+            "amount" : 100,
+            "amount_in_preferred_currency" : 100,
+            "balance_adjustment_type" : "transfer",
+            "category_ref" : null,
+            "currency_code" : "PEN",
+            "date" : "2026-09-04T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : null,
+            "subcategory_ref" : null,
+            "sync_id" : "00000000-0000-4000-8000-000000007208",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : "T2"
           }
         ]
       }

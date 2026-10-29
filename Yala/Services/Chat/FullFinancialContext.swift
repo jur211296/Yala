@@ -414,7 +414,8 @@ extension FullFinancialContext {
         }
     }
 
-    /// Bucket explícito para tx con `category == nil` — se mantienen visibles al LLM.
+    /// Bucket explícito para los GASTOS con `category == nil` — se mantienen visibles al LLM. Gasto o ingreso lo decide
+    /// el signo (`TransactionClassificationLogic`): un ingreso sin categoría va a `income_categories` como «Other».
     struct UncategorizedBucket: Codable, Equatable {
         let totalCurrentMonth: Double
         let txCountCurrentMonth: Int
