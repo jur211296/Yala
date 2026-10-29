@@ -59,6 +59,8 @@ struct YalaAccountView: View {
 
     private var model: YalaAccountLogic.Model {
         if let previewModel { return previewModel }
+        // Card n533 · ata el body a los cambios de sesión: `CloudAuthService` no es observable.
+        CloudSessionRevision.shared.track()
         return YalaAccountLogic.model(
             provider: rawProvider,
             storageMode: CloudSyncFlags.storageMode,

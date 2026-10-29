@@ -69,4 +69,28 @@ final class YalaAccountUITests: XCTestCase {
         XCTAssertFalse(app.buttons["profile_yala_account"].exists,
                        "'profile_yala_account' NO debe existir sin sesión backend (DARK).")
     }
+
+    /// Card n533 · la sesión que entra con Ajustes delante. `CloudAuthService` no es observable, así que la fila «Tu cuenta
+    /// de Yala» —que solo existe con sesión— no aparecía hasta cerrar y volver a abrir Ajustes: medido con este test antes
+    /// del arreglo (rojo en la espera de la fila). `-uitest-fake-cloud-session-after 25` hace llegar la sesión 25 s después
+    /// de abrir Ajustes, como cuando se conecta la cuenta desde una pantalla de dentro y se vuelve. 25 y no menos: bajar
+    /// hasta el final de Ajustes tarda más de 8 s en iOS 27.0, y con 8 la sesión llegaba antes de comprobar que no estaba.
+    func test_sessionArrivingWithSettingsOpen_showsTheYalaAccountRow() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", cloudSessionAfterSeconds: 25)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        app.openProfile()
+        // Al final de Ajustes antes de que llegue la sesión: sin ella, la fila no está.
+        let footer = app.descendants(matching: .any)["profile_version_footer"].firstMatch
+        var tries = 0
+        while !footer.exists && tries < 14 { app.swipeUp(); tries += 1 }
+        XCTAssertTrue(footer.exists, "No se llegó al final de Ajustes.")
+        let row = app.buttons["profile_yala_account"]
+        XCTAssertFalse(row.exists, "Sin sesión todavía, «Tu cuenta de Yala» no debe estar.")
+
+        // Los 25 s de la sesión, como mucho, más margen. Sin repintar, no llegaba nunca en esta corrida.
+        XCTAssertTrue(row.waitForExistence(timeout: 40),
+                      "Con la sesión ya conectada y Ajustes abierto, «Tu cuenta de Yala» debe aparecer sin cerrar Ajustes.")
+    }
 }

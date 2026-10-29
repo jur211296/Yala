@@ -465,7 +465,9 @@ struct ProfileView: View {
     /// preservados— mientras el dispatch resuelve `.groupsOnlySignOut` y arma el borrado del store de
     /// grupos: la hoja mentiría, y encima desaparecería la fila «Salir de Yala en este dispositivo».
     private var signOutRowPath: CloudSignOutFlowLogic.Path {
-        CloudSignOutFlowLogic.path(
+        // Card n533 · ata el body a los cambios de sesión: `CloudAuthService` no es observable.
+        CloudSessionRevision.shared.track()
+        return CloudSignOutFlowLogic.path(
             for: CloudSyncFlags.storageMode,
             hasLiveSession: CloudAuthService.shared.hasSession,
             groupsBackendEnabled: CloudSyncFlags.groupsBackendCompiledCapability,
@@ -560,7 +562,9 @@ struct ProfileView: View {
     /// es inerte fuera de DEBUG (`hasArg` → false) y solo lo fuerza a `true` para QA/XCUITest del diálogo
     /// D5 en el simulador, donde no hay sign-in backend real (SIWA/Google no corren). NO crea sesión real.
     private var deleteAccountRowHasSession: Bool {
-        UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
+        // Card n533 · sin esto, la sesión que entra con Ajustes abierto no sacaba «Tu cuenta de Yala» (medido).
+        CloudSessionRevision.shared.track()
+        return UITestHooks.fakeBackendSession || CloudAuthService.shared.hasSession
     }
 
     /// §3.3.5: la fila/pantalla "Tu cuenta de Yala" — con sesión backend viva, fuera de secundaria (M1,
@@ -963,6 +967,10 @@ struct ProfileView: View {
             .onAppear {
                 viewModel.setContext(modelContext)
                 profileStorage.migrateFromUserDefaultsIfNeeded()
+                #if DEBUG
+                // Seam de las cards nve0/n533: la sesión fingida que llega tarde, con Ajustes delante.
+                CloudAuthService.shared.armUITestDelayedFakeSession()
+                #endif
             }
     }
 

@@ -1067,7 +1067,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | usage-mode-full-to-groups-only-and-back | qa | tickets/qa/usage-mode-full-to-groups-only-and-back.md |
 | verify-dual-channel-zone-in-supabase | backlog | tickets/backlog/verify-dual-channel-zone-in-supabase.md |
 | verify-reads-a-failed-local-fetch-as-an-empty-outbox | done | tickets/done/verify-reads-a-failed-local-fetch-as-an-empty-outbox.md |
-| views-reading-the-cloud-session-do-not-repaint-when-it-changes | backlog | tickets/backlog/views-reading-the-cloud-session-do-not-repaint-when-it-changes.md |
+| views-reading-the-cloud-session-do-not-repaint-when-it-changes | done | tickets/done/views-reading-the-cloud-session-do-not-repaint-when-it-changes.md |
+| cloud-session-removed-by-the-sdk-does-not-announce-itself | backlog | tickets/backlog/cloud-session-removed-by-the-sdk-does-not-announce-itself.md |
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | done | tickets/done/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |

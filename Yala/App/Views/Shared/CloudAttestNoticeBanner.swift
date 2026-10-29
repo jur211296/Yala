@@ -79,6 +79,9 @@ enum CloudAttestNotice {
         // prueba llamándola directo en `CloudAttestNoticeLogicTests`, no a través de aquí—, así que un
         // mutante que se deje un operando muere igual.
         guard verdictIsTerminal else { return false }
+        // Card n533 · ata el body de quien pregunta (Panel, Almacenamiento) a los cambios de sesión. Detrás del guard:
+        // sin veredicto la sesión no decide nada, y el veredicto ya es un `@State` que repinta.
+        CloudSessionRevision.shared.track()
         return CloudAttestNoticeLogic.showsNotice(
             verdictIsTerminal: verdictIsTerminal,
             personalDataLivesInCloud: CloudSyncFlags.storageMode == .cloud,
