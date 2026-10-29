@@ -40,17 +40,23 @@ final class TopPrimaryActionUITests: XCTestCase {
         let floating = app.buttons["budgets_create_fab"]
         XCTAssertFalse(floating.exists, "Con «Nuevo presupuesto» a la vista, el «+» flotante sobra: volvió a ser fijo.")
 
-        // Jürgen, 2026-10-28 (card 91in): «Nuevo presupuesto» va ENCIMA del selector de tipo (Semanal / Mensual / Anual /
-        // Único), no entre él y el navegador del período (Nuevo › selector de tipo › período).
+        // Jürgen, 2026-10-28 (card ca00): el selector de tipo (Semanal / Mensual / Anual / Único) es la píldora de
+        // calendario de las demás pantallas, en la MISMA fila que «Nuevo presupuesto» y a su derecha; arranca en Mensual.
+        // Debajo, el navegador del período.
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "presupuestos-nuevo-arriba"
         shot.lifetime = .keepAlways
         add(shot)
-        let picker = app.descendants(matching: .any)["budgets_period_type_picker"].firstMatch
+        let picker = app.buttons["budgets_period_type_picker"]
         let period = app.descendants(matching: .any)["period_navigation_label"].firstMatch
         XCTAssertTrue(picker.exists && period.exists, "Control: el selector de tipo y el período se ven.")
-        XCTAssertLessThan(top.frame.maxY, picker.frame.minY, "«Nuevo presupuesto» va encima del selector de tipo.")
+        XCTAssertFalse(app.segmentedControls["budgets_period_type_picker"].exists,
+                       "Volvió el segmento de cuatro opciones a lo ancho.")
+        XCTAssertEqual(picker.frame.midY, top.frame.midY, accuracy: 2,
+                       "El selector de tipo no está a la altura de «Nuevo presupuesto».")
+        XCTAssertGreaterThan(picker.frame.minX, top.frame.maxX, "El selector de tipo va a la derecha de «Nuevo presupuesto».")
         XCTAssertLessThan(picker.frame.maxY, period.frame.minY, "El selector de tipo va encima del navegador del período.")
+        XCTAssertEqual(picker.value as? String, "Mensual", "El selector de tipo no arranca en Mensual.")
 
         XCTAssertTrue(
             scrollUntilFloatingShows(app, top: top, floating: floating),

@@ -39,9 +39,12 @@ final class BudgetsLote9UITests: XCTestCase {
         app.launchForUITest(pro: true, deeplink: "budgets")
         XCTAssertTrue(app.waitForUITestReady(timeout: 60), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        let listPicker = app.segmentedControls["budgets_period_type_picker"]
+        let listPicker = app.buttons["budgets_period_type_picker"]
         XCTAssertTrue(listPicker.waitForExistence(timeout: 15), "No se montó el selector de tipo de la lista.")
-        listPicker.buttons.element(boundBy: 2).tap()
+        listPicker.tap()
+        let yearlyOption = app.buttons["budgets_period_type_yearly"]
+        XCTAssertTrue(yearlyOption.waitForExistence(timeout: 5), "El menú del selector de tipo no ofrece Anual.")
+        yearlyOption.tap()
 
         let fab = app.buttons["budgets_create_button"]
         XCTAssertTrue(fab.waitForExistence(timeout: 5), "No apareció budgets_create_button.")
