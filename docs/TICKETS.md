@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1113)
+## Index (1131)
 
 | id | status | path |
 |---|---|---|
@@ -297,6 +297,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | credit-card-statement-cycle | backlog | tickets/backlog/credit-card-statement-cycle.md |
 | csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | done | tickets/done/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
+| csv-import-silently-swallows-rows-and-only-reads-utf8 | backlog | tickets/backlog/csv-import-silently-swallows-rows-and-only-reads-utf8.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
 | currency-change-failure-is-silent-and-half-applied | done | tickets/done/currency-change-failure-is-silent-and-half-applied.md |
 | currency-change-service-tests-mirror-the-logic | backlog | tickets/backlog/currency-change-service-tests-mirror-the-logic.md |
@@ -379,9 +380,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-filters-reset-when-the-text-size-changes | backlog | tickets/backlog/export-filters-reset-when-the-text-size-changes.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
 | export-hide-mode-with-the-defaults-exports-nothing | backlog | tickets/backlog/export-hide-mode-with-the-defaults-exports-nothing.md |
+| export-import-carry-record-kind-and-transfer-pair | backlog | tickets/backlog/export-import-carry-record-kind-and-transfer-pair.md |
+| export-import-lose-time-manual-rate-and-nature | backlog | tickets/backlog/export-import-lose-time-manual-rate-and-nature.md |
 | export-wizard-amount-filter-in-hidden-currency | done | tickets/done/export-wizard-amount-filter-in-hidden-currency.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | exported-csv-cannot-be-imported-back | backlog | tickets/backlog/exported-csv-cannot-be-imported-back.md |
+| exported-xlsx-stores-amounts-and-dates-as-text | backlog | tickets/backlog/exported-xlsx-stores-amounts-and-dates-as-text.md |
 | external-entry-panel-link-loses-the-typed-amount-intermittently | backlog | tickets/backlog/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | faq-says-long-press-starts-bulk-edit | done | tickets/done/faq-says-long-press-starts-bulk-edit.md |
@@ -590,10 +594,21 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | image-note-uses-bank-template-instead-of-merchant | done | tickets/done/image-note-uses-bank-template-instead-of-merchant.md |
 | image-reading-sends-the-full-resolution-photo | done | tickets/done/image-reading-sends-the-full-resolution-photo.md |
 | image-vision-error-still-names-the-ai-provider | backlog | tickets/backlog/image-vision-error-still-names-the-ai-provider.md |
+| import-account-column-by-name | backlog | tickets/backlog/import-account-column-by-name.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
+| import-cannot-be-undone | backlog | tickets/backlog/import-cannot-be-undone.md |
 | import-completed-alert-is-sometimes-lost | qa | tickets/qa/import-completed-alert-is-sometimes-lost.md |
+| import-failure-leaves-unsaved-inserts-in-the-main-context | backlog | tickets/backlog/import-failure-leaves-unsaved-inserts-in-the-main-context.md |
+| import-guesses-date-order-per-row | backlog | tickets/backlog/import-guesses-date-order-per-row.md |
+| import-has-no-duplicate-detection | backlog | tickets/backlog/import-has-no-duplicate-detection.md |
+| import-name-matching-is-exact | backlog | tickets/backlog/import-name-matching-is-exact.md |
+| import-of-thousands-of-rows-in-cloud-mode-is-unmeasured | backlog | tickets/backlog/import-of-thousands-of-rows-in-cloud-mode-is-unmeasured.md |
 | import-offers-the-groups-system-account | done | tickets/done/import-offers-the-groups-system-account.md |
+| import-preview-hides-what-it-will-create | backlog | tickets/backlog/import-preview-hides-what-it-will-create.md |
+| import-reads-thousands-as-decimals-and-drops-the-unicode-minus | backlog | tickets/backlog/import-reads-thousands-as-decimals-and-drops-the-unicode-minus.md |
+| import-runs-twice-on-the-main-thread | backlog | tickets/backlog/import-runs-twice-on-the-main-thread.md |
+| import-transfer-pairing-ignores-accounts-and-currency-changes | backlog | tickets/backlog/import-transfer-pairing-ignores-accounts-and-currency-changes.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
 | in-app-privacy-copy-says-data-never-leaves-the-device | done | tickets/done/in-app-privacy-copy-says-data-never-leaves-the-device.md |
 | inbox-alert-scheduled-count-has-no-singular | done | tickets/done/inbox-alert-scheduled-count-has-no-singular.md |
@@ -848,6 +863,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reentry-killswitch-closes-both-doors | done | tickets/done/reentry-killswitch-closes-both-doors.md |
 | regional-variants-show-the-plural-form-for-one | backlog | tickets/backlog/regional-variants-show-the-plural-form-for-one.md |
 | registros-calendario-cuenta-gastos-por-signo | done | tickets/done/registros-calendario-cuenta-gastos-por-signo.md |
+| reimported-group-legs-become-transfers | backlog | tickets/backlog/reimported-group-legs-become-transfers.md |
 | reinstall-mid-migration-has-no-exit-from-the-identity-gate | backlog | tickets/backlog/reinstall-mid-migration-has-no-exit-from-the-identity-gate.md |
 | reinstall-without-network-has-no-cloud-door | done | tickets/done/reinstall-without-network-has-no-cloud-door.md |
 | rejected-member-cold-tap-does-nothing | done | tickets/done/rejected-member-cold-tap-does-nothing.md |
@@ -1047,6 +1063,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | transfer-and-adjustment-subcategories-need-a-stable-role | backlog | tickets/backlog/transfer-and-adjustment-subcategories-need-a-stable-role.md |
 | transfer-subcategory-is-looked-up-in-the-current-language | backlog | tickets/backlog/transfer-subcategory-is-looked-up-in-the-current-language.md |
+| transfer-subcategory-unrecognized-in-five-languages | backlog | tickets/backlog/transfer-subcategory-unrecognized-in-five-languages.md |
 | trends-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/trends-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | trends-cards-ignore-an-in-place-amount-edit | done | tickets/done/trends-cards-ignore-an-in-place-amount-edit.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
@@ -1153,6 +1170,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | xcode-27-1-with-the-iphone-duo-simulator | done | tickets/done/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
+| xlsx-with-inline-text-cannot-be-opened | backlog | tickets/backlog/xlsx-with-inline-text-cannot-be-opened.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
 | yala-dev-with-drive-off-mirrored-to-the-production-container | backlog | tickets/backlog/yala-dev-with-drive-off-mirrored-to-the-production-container.md |
 | yala-ia-answer-renders-model-links-as-tappable | done | tickets/done/yala-ia-answer-renders-model-links-as-tappable.md |
