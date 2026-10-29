@@ -2797,6 +2797,12 @@
 "siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
 "siriShortcuts.phrase.image" = "用照片或文件在 Yala 中记录";
 "siriShortcuts.phrase.applePay" = "在 Yala 记录一笔付款";
+"siriShortcuts.desc.spending" = "本月花了多少，无需打开应用。";
+"siriShortcuts.desc.balance" = "总余额或某个账户的余额，无需打开应用。";
+"siriShortcuts.phrase.spending" = "我在 Yala 花了多少";
+"siriShortcuts.phrase.balance" = "我在 Yala 的余额";
+"spotlight.transaction.untitled" = "交易";
+"spotlight.account.kind" = "账户";
 "siriShortcuts.faq.title" = "常见问题";
 "siriShortcuts.faq.activateQ" = "我怎么激活 Siri?";
 "siriShortcuts.faq.activateA" = "自动激活。只需对 Siri 说出对应短语,Yala 就会处理你的请求。";

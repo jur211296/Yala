@@ -2236,6 +2236,9 @@ final class AppBootstrapper {
         // rehace para que lo que llegó a su fecha entre.
         WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
 
+        // Lo que llegó sincronizado mientras la app no estaba delante entra (o sale) del índice de Spotlight (card ste6).
+        SpotlightIndexService.scheduleReconcile(context: context)
+
         // Quien volvió por «Ya tengo una cuenta»: si sus datos ya llegaron, los tips de principiante se dan por vistos.
         ReturningUserBeginnerTips.settleIfPending(context: context)
 
@@ -2742,6 +2745,12 @@ final class AppBootstrapper {
             }
 
         case "records":
+            // `records/<token>`: un resultado de Spotlight abre ese registro (card ste6). El id espera hasta que la
+            // ventana que drena Registros lo recoge, como el de la ficha de una cuenta.
+            if let token = SpotlightRecordLink.token(fromDeepLink: "records" + url.path),
+               let recordID = SpotlightRecordLink.identifier(fromToken: token) {
+                SpotlightRecordTarget.shared.request(recordID)
+            }
             setOrDeferDeepLink(.recordsStandalone)
 
         case "accounts":

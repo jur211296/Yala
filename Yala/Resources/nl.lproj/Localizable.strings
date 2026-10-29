@@ -2797,6 +2797,12 @@
 "siriShortcuts.phrase.voice" = "Boeken met spraak in Yala";
 "siriShortcuts.phrase.image" = "Boeken met foto of bestand in Yala";
 "siriShortcuts.phrase.applePay" = "Boek een betaling in Yala";
+"siriShortcuts.desc.spending" = "Wat je deze maand hebt uitgegeven, zonder de app te openen.";
+"siriShortcuts.desc.balance" = "Je totale saldo of dat van één rekening, zonder de app te openen.";
+"siriShortcuts.phrase.spending" = "Hoeveel heb ik uitgegeven in Yala";
+"siriShortcuts.phrase.balance" = "Mijn saldo in Yala";
+"spotlight.transaction.untitled" = "Boeking";
+"spotlight.account.kind" = "Rekening";
 "siriShortcuts.faq.title" = "Veelgestelde vragen";
 "siriShortcuts.faq.activateQ" = "Hoe activeer ik Siri?";
 "siriShortcuts.faq.activateA" = "Het is automatisch. Zeg de zin gewoon tegen Siri en Yala verwerkt je verzoek.";

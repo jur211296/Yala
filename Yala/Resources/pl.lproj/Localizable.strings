@@ -2797,6 +2797,12 @@
 "siriShortcuts.phrase.voice" = "Zapisz głosem w Yala";
 "siriShortcuts.phrase.image" = "Zapisz ze zdjęcia lub pliku w Yala";
 "siriShortcuts.phrase.applePay" = "Zapisz płatność w Yala";
+"siriShortcuts.desc.spending" = "Ile wydałeś w tym miesiącu, bez otwierania aplikacji.";
+"siriShortcuts.desc.balance" = "Saldo łączne lub jednego konta, bez otwierania aplikacji.";
+"siriShortcuts.phrase.spending" = "Ile wydałem w Yala";
+"siriShortcuts.phrase.balance" = "Moje saldo w Yala";
+"spotlight.transaction.untitled" = "Transakcja";
+"spotlight.account.kind" = "Konto";
 "siriShortcuts.faq.title" = "FAQ";
 "siriShortcuts.faq.activateQ" = "Jak aktywować Siri?";
 "siriShortcuts.faq.activateA" = "Robi się automatycznie. Wystarczy powiedzieć frazę do Siri, a Yala przetworzy żądanie.";

@@ -6,6 +6,7 @@
 //  adaptativo).
 //
 
+import CoreSpotlight
 import SwiftData
 import SwiftUI
 import UIKit
@@ -188,9 +189,19 @@ struct WindowURLEntry: ViewModifier {
     @Environment(SceneNavigation.self) private var navigation
 
     func body(content: Content) -> some View {
-        content.onOpenURL { url in
-            SceneRegistry.shared.noteFocused(navigation.id)
-            handle(url)
-        }
+        content
+            .onOpenURL { url in
+                SceneRegistry.shared.noteFocused(navigation.id)
+                handle(url)
+            }
+            // Tocar un resultado de Spotlight (card ste6) entra por el mismo camino que su enlace: la ficha de la
+            // cuenta (`accounts/<id>`) o el registro (`records/<syncID>`).
+            .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                guard let identifier = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String,
+                      let link = SpotlightIndexLogic.deepLink(forIdentifier: identifier),
+                      let url = WidgetURLHelper.url(for: link) else { return }
+                SceneRegistry.shared.noteFocused(navigation.id)
+                handle(url)
+            }
     }
 }

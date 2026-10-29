@@ -536,7 +536,9 @@ struct SiriPhrasesPortugueseTests {
         ("siriShortcuts.phrase.quick", "QuickExpenseIntent"),
         ("siriShortcuts.phrase.voice", "VoiceEntryIntent"),
         ("siriShortcuts.phrase.image", "ImageEntryIntent"),
-        ("siriShortcuts.phrase.applePay", "ApplePayTransactionIntent")
+        ("siriShortcuts.phrase.applePay", "ApplePayTransactionIntent"),
+        ("siriShortcuts.phrase.spending", "SpendingQueryIntent"),
+        ("siriShortcuts.phrase.balance", "BalanceQueryIntent")
     ]
 
     /// Lo que va entre comillas en un consejo como «Sage: "…" und diktiere dann den Betrag» (comillas rectas, „“ o 「」);

@@ -207,6 +207,28 @@ struct SiriShortcutsView: View {
                     description: String(localized: "siriShortcuts.desc.applePay"),
                     phrase: String(localized: "siriShortcuts.phrase.applePay")
                 )
+
+                // Las dos preguntas que Siri contesta sin abrir la app (#552), con el mismo molde (card bthx, opción A de
+                // Jürgen del 2026-10-21). Gratis, como los widgets: sin insignia Pro.
+                Divider().padding(.horizontal, DS.Spacing.lg)
+
+                shortcutRow(
+                    icon: "chart.bar.fill",
+                    iconColor: .orange,
+                    name: String(localized: "shortcut.spending.shortTitle"),
+                    description: String(localized: "siriShortcuts.desc.spending"),
+                    phrase: String(localized: "siriShortcuts.phrase.spending")
+                )
+
+                Divider().padding(.horizontal, DS.Spacing.lg)
+
+                shortcutRow(
+                    icon: "banknote.fill",
+                    iconColor: .green,
+                    name: String(localized: "shortcut.balance.shortTitle"),
+                    description: String(localized: "siriShortcuts.desc.balance"),
+                    phrase: String(localized: "siriShortcuts.phrase.balance")
+                )
                 // Hasta el lote 15 de la auditoría UX 2.2 había una fila «Automatización» con la frase «Registra desde
                 // automatización en Yala»: esa acción no existe en `AppShortcutsProvider`. La automatización real es la
                 // de Apple Pay, que ya tiene su fila.

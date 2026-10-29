@@ -985,13 +985,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | signout-blocked-alert-button-has-no-test-identifier | backlog | tickets/backlog/signout-blocked-alert-button-has-no-test-identifier.md |
 | signout-pending-copy-says-wait-seconds-when-offline | done | tickets/done/signout-pending-copy-says-wait-seconds-when-offline.md |
 | single-item-active-toggle-uses-the-plural-filter-label | backlog | tickets/backlog/single-item-active-toggle-uses-the-plural-filter-label.md |
-| siri-ai-content-in-spotlight-and-pro-decision | backlog | tickets/backlog/siri-ai-content-in-spotlight-and-pro-decision.md |
+| siri-ai-content-in-spotlight-and-pro-decision | qa | tickets/qa/siri-ai-content-in-spotlight-and-pro-decision.md |
 | siri-ai-integration-ios-27 | qa | tickets/qa/siri-ai-integration-ios-27.md |
 | siri-ai-visual-redesign | discarded | tickets/discarded/siri-ai-visual-redesign.md |
 | siri-free-users-on-device-model-awaits-decision | qa | tickets/qa/siri-free-users-on-device-model-awaits-decision.md |
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-phrases-shown-in-portuguese-do-not-trigger-siri | qa | tickets/qa/siri-phrases-shown-in-portuguese-do-not-trigger-siri.md |
-| siri-settings-screen-does-not-show-the-new-questions | backlog | tickets/backlog/siri-settings-screen-does-not-show-the-new-questions.md |
+| siri-settings-screen-does-not-show-the-new-questions | done | tickets/done/siri-settings-screen-does-not-show-the-new-questions.md |
 | siri-settings-screen-lists-phrases-siri-does-not-know | qa | tickets/qa/siri-settings-screen-lists-phrases-siri-does-not-know.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | done | tickets/done/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | small-screen-leftovers-after-the-iphone-se-audit | backlog | tickets/backlog/small-screen-leftovers-after-the-iphone-se-audit.md |

@@ -4650,6 +4650,11 @@ struct MainTabView: View {
                 navigation.selectedPlanningTab = .scheduledPayments
                 navigation.selectMainTab(.planning)
             case .recordsStandalone:
+                // Un resultado de Spotlight abre su registro en ESTA ventana (card ste6). Si ya no está, Registros lo
+                // olvida al no encontrarlo entre lo cargado (`RecordsPendingRecordObserver`).
+                if let recordID = SpotlightRecordTarget.shared.consume() {
+                    navigation.pendingRecordID = recordID
+                }
                 navigation.selectMainTab(.records)
             case .groups, .groupDetail:
                 sessionState.enteredViaGroupNotification = true

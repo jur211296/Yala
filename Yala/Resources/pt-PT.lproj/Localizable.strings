@@ -2855,6 +2855,12 @@
 "siriShortcuts.faq.offlineQ" = "Funciona sem internet?";
 "siriShortcuts.faq.title" = "Perguntas frequentes";
 "siriShortcuts.phrase.applePay" = "Regista um pagamento no Yala";
+"siriShortcuts.desc.spending" = "Quanto gastaste este mês, sem abrir a app.";
+"siriShortcuts.desc.balance" = "O teu saldo total ou o de uma conta, sem abrir a app.";
+"siriShortcuts.phrase.spending" = "Quanto gastei no Yala";
+"siriShortcuts.phrase.balance" = "O meu saldo no Yala";
+"spotlight.transaction.untitled" = "Movimento";
+"spotlight.account.kind" = "Conta";
 "siriShortcuts.phrase.image" = "Regista com foto ou ficheiro no Yala";
 "siriShortcuts.phrase.quick" = "Regista no Yala";
 "siriShortcuts.phrase.voice" = "Regista com voz no Yala";

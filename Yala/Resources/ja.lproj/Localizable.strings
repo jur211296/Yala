@@ -2797,6 +2797,12 @@
 "siriShortcuts.phrase.voice" = "Yalaに音声で記録";
 "siriShortcuts.phrase.image" = "Yalaに写真やファイルで記録";
 "siriShortcuts.phrase.applePay" = "Yalaに支払いを記録";
+"siriShortcuts.desc.spending" = "今月の支出を、アプリを開かずに確認できます。";
+"siriShortcuts.desc.balance" = "合計残高や口座ごとの残高を、アプリを開かずに確認できます。";
+"siriShortcuts.phrase.spending" = "Yalaでいくら使った";
+"siriShortcuts.phrase.balance" = "Yalaの残高";
+"spotlight.transaction.untitled" = "取引";
+"spotlight.account.kind" = "口座";
 "siriShortcuts.faq.title" = "よくある質問";
 "siriShortcuts.faq.activateQ" = "Siriはどう有効化する？";
 "siriShortcuts.faq.activateA" = "自動です。フレーズをSiriに話しかければ、Yalaがリクエストを処理します。";
