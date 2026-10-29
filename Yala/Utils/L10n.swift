@@ -7932,12 +7932,14 @@ enum L10n {
         static var v21DataTitle: String { ls("whatsNew.v21.data.title", comment: "") }
         static var v21DataDescription: String { ls("whatsNew.v21.data.description", comment: "") }
         // 2.2 (UX 2.2 · L5-15). Texto a revisar antes de publicar: ticket `whats-new-2-2-review-before-release`.
-        static var v22PanelTitle: String { ls("whatsNew.v22.panel.title", comment: "") }
-        static var v22PanelDescription: String { ls("whatsNew.v22.panel.description", comment: "") }
-        static var v22InboxTitle: String { ls("whatsNew.v22.inbox.title", comment: "") }
-        static var v22InboxDescription: String { ls("whatsNew.v22.inbox.description", comment: "") }
-        static var v22FirstStepsTitle: String { ls("whatsNew.v22.firstSteps.title", comment: "") }
-        static var v22FirstStepsDescription: String { ls("whatsNew.v22.firstSteps.description", comment: "") }
+        static var v22DualCurrencyTitle: String { ls("whatsNew.v22.dualCurrency.title", comment: "") }
+        static var v22DualCurrencyDescription: String { ls("whatsNew.v22.dualCurrency.description", comment: "") }
+        static var v22SiriTitle: String { ls("whatsNew.v22.siri.title", comment: "") }
+        static var v22SiriDescription: String { ls("whatsNew.v22.siri.description", comment: "") }
+        static var v22FasterEntryTitle: String { ls("whatsNew.v22.fasterEntry.title", comment: "") }
+        static var v22FasterEntryDescription: String { ls("whatsNew.v22.fasterEntry.description", comment: "") }
+        static var v22LeftToPayTitle: String { ls("whatsNew.v22.leftToPay.title", comment: "") }
+        static var v22LeftToPayDescription: String { ls("whatsNew.v22.leftToPay.description", comment: "") }
     }
 
     // MARK: - App Update

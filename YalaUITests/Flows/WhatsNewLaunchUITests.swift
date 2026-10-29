@@ -16,17 +16,19 @@ final class WhatsNewLaunchUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Un usuario de 2.0.4 que actualiza ve la hoja con las tres tarjetas de 2.1, y no vuelve a verla.
-    func test_updateFrom2_0_showsTheSheetOnce() {
+    /// Un usuario de 2.1 que actualiza ve la hoja de 2.2 con sus cuatro tarjetas, y no vuelve a verla
+    /// (card `tablero-la-hoja-de-novedades-de-2-2-pasa-a-cuatr-mbcb`).
+    func test_updateFrom2_1_showsTheSheetOnce() {
         let app = XCUIApplication()
-        app.launchForUITest(lastSeenAppVersion: "2.0.4")
+        app.launchForUITest(lastSeenAppVersion: "2.1.3")
 
         let title = app.staticTexts["whats_new_title"]
-        XCTAssertTrue(title.waitForExistence(timeout: 60), "La hoja de Novedades no salió al venir de 2.0.4.")
-        XCTAssertEqual(app.staticTexts["whats_new_feature_title_0"].label, "Grupos")
-        XCTAssertEqual(app.staticTexts["whats_new_feature_title_1"].label, "Anotar nunca fue tan fácil")
-        XCTAssertEqual(app.staticTexts["whats_new_feature_title_2"].label, "Tus datos, tus reglas")
-        XCTAssertFalse(app.staticTexts["whats_new_feature_title_3"].exists, "La hoja de 2.1 tiene tres tarjetas.")
+        XCTAssertTrue(title.waitForExistence(timeout: 60), "La hoja de Novedades no salió al venir de 2.1.3.")
+        XCTAssertEqual(app.staticTexts["whats_new_feature_title_0"].label, "Tu tarjeta en dos monedas")
+        XCTAssertEqual(app.staticTexts["whats_new_feature_title_1"].label, "Pregúntale a Siri")
+        XCTAssertEqual(app.staticTexts["whats_new_feature_title_2"].label, "Anotar en menos toques")
+        XCTAssertEqual(app.staticTexts["whats_new_feature_title_3"].label, "Lo que te falta pagar")
+        XCTAssertFalse(app.staticTexts["whats_new_feature_title_4"].exists, "La hoja de 2.2 tiene cuatro tarjetas.")
 
         app.buttons["whats_new_continue"].tap()
         XCTAssertTrue(title.waitForNonExistence(timeout: 10), "La hoja no se cerró con Continuar.")

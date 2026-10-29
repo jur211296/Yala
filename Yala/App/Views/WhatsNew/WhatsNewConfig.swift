@@ -146,27 +146,33 @@ enum WhatsNewConfig {
 
     // MARK: - Version 2.2
 
-    /// Solo lo que ya está en 2.2 (lotes 3, 4 y 5 de la auditoría UX). 2.2 sigue recibiendo trabajo: el texto se
-    /// revisa antes de publicar (ticket `whats-new-2-2-review-before-release`).
+    /// Las cuatro que se ven en el día a día (brief del 23-oct, card mbcb): tarjeta en dos monedas (#547–#550),
+    /// Siri (#552, #584), anotar en menos toques (#600, #602) y lo que te falta pagar (#543).
     // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
     private static let version2_2: [WhatsNewFeature] = [
         WhatsNewFeature(
-            icon: "house.fill",
+            icon: "creditcard.fill",
             iconColor: .indigo,
-            title: L10n.WhatsNew.v22PanelTitle,
-            description: L10n.WhatsNew.v22PanelDescription
+            title: L10n.WhatsNew.v22DualCurrencyTitle,
+            description: L10n.WhatsNew.v22DualCurrencyDescription
         ),
         WhatsNewFeature(
-            icon: "tray.fill",
+            icon: "waveform",
+            iconColor: .pink,
+            title: L10n.WhatsNew.v22SiriTitle,
+            description: L10n.WhatsNew.v22SiriDescription
+        ),
+        WhatsNewFeature(
+            icon: "square.and.pencil",
             iconColor: .orange,
-            title: L10n.WhatsNew.v22InboxTitle,
-            description: L10n.WhatsNew.v22InboxDescription
+            title: L10n.WhatsNew.v22FasterEntryTitle,
+            description: L10n.WhatsNew.v22FasterEntryDescription
         ),
         WhatsNewFeature(
-            icon: "checklist",
+            icon: "calendar.badge.checkmark",
             iconColor: .green,
-            title: L10n.WhatsNew.v22FirstStepsTitle,
-            description: L10n.WhatsNew.v22FirstStepsDescription
+            title: L10n.WhatsNew.v22LeftToPayTitle,
+            description: L10n.WhatsNew.v22LeftToPayDescription
         ),
     ]
 }
