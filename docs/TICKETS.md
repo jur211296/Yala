@@ -1112,7 +1112,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-to-pro-still-lists-the-old-feature-names | done | tickets/done/welcome-to-pro-still-lists-the-old-feature-names.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | done | tickets/done/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | discarded | tickets/discarded/whats-new-2-0-still-calls-groups-beta.md |
-| whats-new-2-2-review-before-release | backlog | tickets/backlog/whats-new-2-2-review-before-release.md |
+| whats-new-2-2-review-before-release | done | tickets/done/whats-new-2-2-review-before-release.md |
 | whats-new-yields-to-a-pending-trial-offer-after-updating | done | tickets/done/whats-new-yields-to-a-pending-trial-offer-after-updating.md |
 | white-text-on-the-brand-indigo-is-just-below-aa | done | tickets/done/white-text-on-the-brand-indigo-is-just-below-aa.md |
 | white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa | done | tickets/done/white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa.md |

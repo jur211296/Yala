@@ -89,7 +89,7 @@ struct UXAudit22Lote5LogicTests {
 
     @Test func whatsNew_2_2_hasContent_andHotfixesShareIt() throws {
         let features = try #require(WhatsNewConfig.features(for: "2.2"))
-        #expect(features.count == 3)
+        #expect(features.count == 4)
         #expect(WhatsNewConfig.features(for: "2.2.1") == features)
     }
 

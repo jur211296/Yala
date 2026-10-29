@@ -1,10 +1,10 @@
 ---
 id: whats-new-2-2-review-before-release
-status: backlog
+status: done
 priority: medium
 area: "copy, l10n, novedades"
 created: 2026-10-17
-updated: 2026-10-23
+updated: 2026-10-28
 source: "auditoría UX 2.2 · lote 5 (L5-15), implementación del 2026-10-17"
 ---
 
@@ -25,3 +25,17 @@ plan. La parte A (hoja de la app: tarjeta en dos monedas, Siri, anotar en menos 
 card `tablero-la-hoja-de-novedades-de-2-2-pasa-a-cuatr-mbcb`. La parte B (notas de la App Store, 7 idiomas) es de
 Lola: card `tablero-notas-de-la-version-2-2-para-la-app-stor-itof` y encargo
 `~/Claude/casa/encargos/2026-10-23-de-frank-para-lola-novedades-2-2-app-store.md`.
+
+## 2026-10-28 · Hecho
+
+La hoja de 2.2 enseña las cuatro tarjetas del brief (tarjeta en dos monedas, Siri, anotar en menos toques, lo que te
+falta pagar) en los 16 idiomas. `WhatsNewLaunchUITests/test_updateFrom2_1_showsTheSheetOnce` comprueba las cuatro
+viniendo de 2.1.3; el test anterior esperaba la hoja de 2.1 y estaba rojo desde que la versión es 2.2.
+
+Revisado lo que entró en 2.2 del 23 al 28-oct (PRs #612 a #672): nada contradice las cuatro tarjetas. «Lo que te falta
+pagar» ahora cuenta hasta el fin del período (#663), lo que encaja con «este mes». Lo grande que llegó y no está en la
+hoja: «Cómo usas Yala» › Solo grupos (#649, #652) y Yala en el iPhone Duo (#622, #624, #628). Se quedan fuera porque el
+brief fija cuatro tarjetas; si Jürgen quiere una quinta, es otra card.
+
+Lo regional: es-ES dice «euros y dólares» y «¿cuánto he gastado…?»; es-AR, «pesos y dólares» con voseo; el resto de
+idiomas dice «dos monedas» sin nombrarlas.
