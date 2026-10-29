@@ -259,6 +259,55 @@ struct LocalizationParityTests {
             }
         }
     }
+
+    // MARK: - «este teléfono» también sale en el iPad
+
+    /// Claves donde la palabra «teléfono» es correcta: no nombran el aparato
+    /// en el que corre Yala (la categoría de gasto, datos de demo, «media móvil»).
+    private static let phoneWordAllowedKeys: Set<String> = [
+        "subcategory.phone",
+        "subcategory.occasionalMobility",
+        "devseed.spPhone",
+        "devseed.notePhonePlan",
+        "devseed.budgetMobility",
+        "cashFlowPlan.chartRollingAvg",
+    ]
+
+    /// La palabra «teléfono» de cada idioma. El aparato se nombra «dispositivo»
+    /// con el término de i9r1 (Gerät, appareil, apparaat, urządzenie, 端末, 设备).
+    private static func phoneWordPattern(forLocale code: String) -> String {
+        switch code.split(separator: "-").first.map(String.init) ?? code {
+        case "es": return #"tel[ée]fono|m[óo]vil|celular"#
+        case "en": return #"\bphones?\b|\bmobile\b"#
+        case "de": return #"Telefon|Handy|Smartphone"#
+        case "fr": return #"t[ée]l[ée]phone|\bportable\b"#
+        case "it": return #"telefon|cellulare|smartphone"#
+        case "pt": return #"telefone|celular|telem[óo]vel"#
+        case "nl": return #"telefoon|mobieltje"#
+        case "pl": return #"telefon|komórk|smartfon"#
+        case "ja": return #"電話|スマホ|携帯|この ?iPhone"#
+        case "zh": return #"手机|电话|这[台部] ?iPhone"#
+        default: return #"\bphones?\b"#
+        }
+    }
+
+    /// Unas 75 frases decían «este teléfono» y salían igual en el iPad
+    /// (copy-names-this-phone-outside-groups). Un texto nuevo que nombre el
+    /// aparato como teléfono vuelve a romperlo en cualquier idioma.
+    @Test func noPhoneWord_namesTheDevice_inAnyLocale() throws {
+        for locale in SupportedLocale.allCases {
+            let strings = StringsFileParser.parseStrings(forLocale: locale.code)
+            #expect(!strings.isEmpty, "Locale '\(locale.code)' has zero strings")
+            let regex = try Regex(Self.phoneWordPattern(forLocale: locale.code)).ignoresCase()
+            let offenders = strings
+                .filter { !Self.phoneWordAllowedKeys.contains($0.key) && $0.value.contains(regex) }
+                .keys.sorted()
+            #expect(
+                offenders.isEmpty,
+                "Locale '\(locale.code)' names the device as a phone in \(offenders.count) keys (use «dispositivo»): \(offenders.prefix(8))"
+            )
+        }
+    }
 }
 
 struct BundleLocaleDriftTests {

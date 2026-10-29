@@ -259,9 +259,9 @@ struct GroupsDetachTwoCausesWiringTests {
         let attest = try #require(es["storage.groups.detachBlockedAttestAndCaptureUnfinished"])
         // Lote decidido 2.2 · 15 (D16): los avisos de App Attest siguen el molde de L19-18 —qué no puede hacer el teléfono
         // y desde cuándo—, no «la verificación de seguridad que pide nuestro servidor».
-        #expect(attest.hasPrefix("Este teléfono no puede enviar cambios a tus grupos desde hace un día"))
+        #expect(attest.hasPrefix("Este dispositivo no puede enviar cambios a tus grupos desde hace un día"))
         let other = try #require(es["storage.groups.detachBlockedOtherAccountAndCaptureUnfinished"])
-        #expect(other.hasPrefix("Hay cambios de grupos que se apuntaron en este teléfono con otra cuenta, y solo se pueden subir con ella."))
+        #expect(other.hasPrefix("Hay cambios de grupos que se apuntaron en este dispositivo con otra cuenta, y solo se pueden subir con ella."))
         for text in [attest, other] {
             #expect(text.contains("no se pudieron preparar para subirlos"), "el gemelo no nombra el drain atascado: \(text)")
             #expect(text.lowercased().contains("cierra y vuelve a abrir yala (si sigue pasando, actualízala)"),

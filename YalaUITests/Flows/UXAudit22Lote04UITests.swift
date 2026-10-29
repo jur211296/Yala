@@ -182,7 +182,7 @@ final class UXAudit22Lote04UITests: XCTestCase {
         add(sheet)
         app.buttons["delete_account_continue"].tap()
 
-        let body = app.alerts.staticTexts["Se borra tu cuenta de Yala. Lo de este teléfono se queda."].firstMatch
+        let body = app.alerts.staticTexts["Se borra tu cuenta de Yala. Lo de este dispositivo se queda."].firstMatch
         XCTAssertTrue(body.waitForExistence(timeout: 5), """
             La alerta final no habla de su celda: en la cuenta de grupos con datos personales, lo de este teléfono se queda.
             """)

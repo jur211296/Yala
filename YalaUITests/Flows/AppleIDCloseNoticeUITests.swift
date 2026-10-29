@@ -48,7 +48,7 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
     /// La frase de los grupos (`icloud.appleIDChanged.groupsLine`, en es). Va dentro del mensaje de la pregunta, así que
     /// se busca por su texto y no por identificador: el de la cabecera pisa el de sus hijos.
     private func groupsLine(_ app: XCUIApplication) -> XCUIElement {
-        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "También se quitan los grupos que hay en este teléfono"))
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "También se quitan los grupos que hay en este dispositivo"))
             .firstMatch
     }
 

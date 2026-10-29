@@ -4062,7 +4062,7 @@
 "welcome.restore.searchingTip" = "Dit kan een paar seconden duren.";
 "welcome.restore.foundTitle" = "Hoi %@! Fijn dat je terug bent.";
 "welcome.restore.foundTitleAnonymous" = "Fijn dat je terug bent!";
-"welcome.restore.foundBody" = "Dit komt terug op deze telefoon:";
+"welcome.restore.foundBody" = "Dit komt terug op dit apparaat:";
 "welcome.restore.continue" = "Doorgaan";
 "welcome.restore.notFoundTitle" = "Geen gegevens gevonden";
 "welcome.restore.notFoundBody" = "Er zijn geen gegevens gekoppeld aan je iCloud-account. Wil je opnieuw beginnen?";
@@ -4622,7 +4622,7 @@
 "storage.errors.signIn" = "We konden je niet aanmelden. Probeer het opnieuw.";
 "storage.consent.title" = "Je gegevens in de Yala-cloud";
 "storage.consent.pointServers" = "Ons team kan ze inzien om je ondersteuning en slimme functies te bieden. We gebruiken geen eind-tot-eindversleuteling.";
-"storage.consent.pointPhotos" = "Ze worden niet in de cloud bewaard en niet op andere apparaten getoond. Wil je ze bewaren, sla ze dan op voordat je van telefoon wisselt.";
+"storage.consent.pointPhotos" = "Ze worden niet in de cloud bewaard en niet op andere apparaten getoond. Wil je ze bewaren, sla ze dan op voordat je van apparaat wisselt.";
 "storage.consent.pointAccess" = "Zonder iCloud. Er is geen Yala-wachtwoord en geen herstel via e-mail: verlies je die toegang, exporteer dan eerst je gegevens (Instellingen → Gegevens exporteren).";
 "storage.consent.footer" = "Je kunt op elk moment terug naar de privémodus, zonder iets te verliezen.";
 "storage.consent.privacyLink" = "Bekijk het privacybeleid";
@@ -5380,13 +5380,13 @@
 "groups.freshStartPending.title" = "Er moeten nog groepswijzigingen worden geüpload";
 "groups.freshStartPending.lead" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt (%d), en opnieuw beginnen zou ze meenemen.";
 "groups.freshStartPending.leadUnknown" = "We hebben niets gewist: sommige wijzigingen in je groepen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
-"groups.freshStartPending.lossSessionExpired" = "Ze kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan staat niet meer op deze telefoon. Als je niet opnieuw inlogt met dat account, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossSessionExpired" = "Ze kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan staat niet meer op dit apparaat. Als je niet opnieuw inlogt met dat account, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.lossPermanent" = "Het account dat ze heeft gemaakt kan ze niet meer uploaden, en opnieuw proberen lost dat niet op. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
-"groups.freshStartPending.lossAttest" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, dus ze kunnen niet worden geüpload. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossAttest" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen, dus ze kunnen niet worden geüpload. Je kunt opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.lossAction" = "Opnieuw beginnen en ze verliezen";
 "groups.freshStartPending.lossConfirmTitle" = "Deze wijzigingen verliezen?";
-"groups.freshStartPending.lossConfirmBody" = "Groepswijzigingen die verloren gaan: %d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
-"groups.freshStartPending.lossConfirmBodyUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van deze telefoon gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBody" = "Groepswijzigingen die verloren gaan: %d. Ze worden van dit apparaat gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van dit apparaat gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
 "groups.freshStartPending.lossConfirmAction" = "Ze verliezen en opnieuw beginnen";
 
 /* Título del aviso cuando Restaurar compras no encuentra Yala Pro */
@@ -5635,7 +5635,7 @@
 "welcome.privateICloud.foundTitle" = "Je hebt al gegevens in je iCloud";
 
 /* Private branch iCloud gate: body explaining the two ways out */
-"welcome.privateICloud.foundBody" = "Je hebt ze met hetzelfde Apple Account bewaard. Je kunt ze terughalen of opnieuw beginnen — maar opnieuw beginnen verwijdert ze ook uit iCloud, niet alleen van deze telefoon, en dat kun je niet terugdraaien.";
+"welcome.privateICloud.foundBody" = "Je hebt ze met hetzelfde Apple Account bewaard. Je kunt ze terughalen of opnieuw beginnen — maar opnieuw beginnen verwijdert ze ook uit iCloud, niet alleen van dit apparaat, en dat kun je niet terugdraaien.";
 
 /* Private branch iCloud gate: 'since <month year>' fragment in the counts line */
 "welcome.privateICloud.foundSince" = "sinds %@";
@@ -5725,13 +5725,13 @@
 "groups.fullActivation.reinstallBody" = "Je bent op dit apparaat met Groepen begonnen in een oudere versie van Yala. Verwijder de app en installeer hem opnieuw om te kiezen waar we je financiën bewaren: je groepen blijven in je account en je iCloud-gegevens blijven onaangeroerd.";
 
 /* Vuelta al neutro: progreso mientras se espera al export y se prepara el borrado */
-"welcome.groups.neutralWorking" = "We uploaden je laatste wijzigingen naar iCloud en maken deze telefoon klaar voor je groep…";
+"welcome.groups.neutralWorking" = "We uploaden je laatste wijzigingen naar iCloud en maken dit apparaat klaar voor je groep…";
 
 /* Vuelta al neutro sin copia: titulo del segundo gesto */
 "welcome.groups.neutralNoBackupTitle" = "We hebben geen kopie in iCloud gevonden";
 
 /* Vuelta al neutro sin copia: cuerpo del segundo gesto */
-"welcome.groups.neutralNoBackupBody" = "Om je groep te starten, moet deze telefoon leeg zijn. Wat hier is opgeslagen staat niet in iCloud, dus als je doorgaat gaat het verloren.";
+"welcome.groups.neutralNoBackupBody" = "Om je groep te starten, moet dit apparaat leeg zijn. Wat hier is opgeslagen staat niet in iCloud, dus als je doorgaat gaat het verloren.";
 
 /* Vuelta al neutro sin copia: boton destructivo del segundo gesto */
 "welcome.groups.neutralNoBackupCta" = "Doorgaan en wissen";
@@ -5755,16 +5755,16 @@
 "welcome.groups.neutralBlockedTitle" = "Er moeten nog groepswijzigingen worden geüpload";
 
 /* Vuelta al neutro bloqueada: como desbloquearlo */
-"welcome.groups.neutralBlockedBody" = "Op deze telefoon staan groepswijzigingen die de server nog niet hebben bereikt. Log opnieuw in met dat account zodat ze worden geüpload, daarna kun je hier je groep starten.";
+"welcome.groups.neutralBlockedBody" = "Op dit apparaat staan groepswijzigingen die de server nog niet hebben bereikt. Log opnieuw in met dat account zodat ze worden geüpload, daarna kun je hier je groep starten.";
 
 /* Vuelta al neutro imposible en esta celda: titulo */
-"welcome.groups.neutralUnavailableTitle" = "We kunnen deze telefoon nu niet klaarmaken";
+"welcome.groups.neutralUnavailableTitle" = "We kunnen dit apparaat nu niet klaarmaken";
 
 /* Vuelta al neutro imposible en esta celda: cuerpo */
-"welcome.groups.neutralUnavailableBody" = "Op deze telefoon staat een sessie open die je eerst via Instellingen moet afsluiten voordat je hier een groep start. Ga terug: er is niets aangeraakt.";
+"welcome.groups.neutralUnavailableBody" = "Op dit apparaat staat een sessie open die je eerst via Instellingen moet afsluiten voordat je hier een groep start. Ga terug: er is niets aangeraakt.";
 
 /* Vuelta al neutro parada: el paso de los datos entre iCloud y la nube no está en reposo */
-"welcome.groups.neutralMigrationBody" = "We kunnen nog niet bevestigen dat de overstap van je gegevens tussen iCloud en de cloud is afgerond, en als we deze telefoon nu klaarmaken, kan verloren gaan wat nog geüpload moet worden. Ga terug: er is niets aangeraakt.";
+"welcome.groups.neutralMigrationBody" = "We kunnen nog niet bevestigen dat de overstap van je gegevens tussen iCloud en de cloud is afgerond, en als we dit apparaat nu klaarmaken, kan verloren gaan wat nog geüpload moet worden. Ga terug: er is niets aangeraakt.";
 
 /* Título de la sección Grupos dentro de «Dónde viven tus datos» */
 "storage.groups.title" = "Groepen";
@@ -5826,17 +5826,17 @@
 /* Aviso: sesión caducada al desasociar */
 "storage.groups.detachBlockedSession" = "Je sessie voor groepen is verlopen. Log opnieuw in en probeer het nog eens.";
 "storage.groups.detachBlockedSessionAndCaptureUnfinished" = "Je sessie voor groepen is verlopen en sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Log opnieuw in, sluit Yala en open hem weer (blijft het gebeuren, werk hem dan bij) en probeer het nog eens.";
-"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, en sommige van de laatste konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw om ze voor te bereiden (blijft het gebeuren, werk hem dan bij).";
-"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Sommige groepswijzigingen op deze telefoon zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Bovendien konden sommige groepswijzigingen niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van dat account worden alleen geüpload als je daarmee inlogt.";
+"storage.groups.detachBlockedAttestAndCaptureUnfinished" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen, en sommige van de laatste konden niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw om ze voor te bereiden (blijft het gebeuren, werk hem dan bij).";
+"storage.groups.detachBlockedOtherAccountAndCaptureUnfinished" = "Sommige groepswijzigingen op dit apparaat zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Bovendien konden sommige groepswijzigingen niet worden voorbereid om te uploaden. Er gaat niets verloren. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van dat account worden alleen geüpload als je daarmee inlogt.";
 
 /* Puerta del invitado: vuelta al neutro antes de aceptar una invitación de grupo */
-"welcome.groups.inviteNeutralTitle" = "Voor je meedoet, wordt deze telefoon leeggemaakt";
+"welcome.groups.inviteNeutralTitle" = "Voor je meedoet, wordt dit apparaat leeggemaakt";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "Hier staan gegevens opgeslagen die synchroniseren met een iCloud-account. Zodat jouw groepsuitgaven daar niet terechtkomen, verwijderen we ze van deze telefoon: de kopie in iCloud blijft ongemoeid. Yala start opnieuw op en je gaat verder met je uitnodiging.";
+"welcome.groups.inviteNeutralBody" = "Hier staan gegevens opgeslagen die synchroniseren met een iCloud-account. Zodat jouw groepsuitgaven daar niet terechtkomen, verwijderen we ze van dit apparaat: de kopie in iCloud blijft ongemoeid. Yala start opnieuw op en je gaat verder met je uitnodiging.";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
-"welcome.groups.inviteNeutralBodyNoBackup" = "Hier staan gegevens opgeslagen en we konden geen kopie in iCloud vinden. Zodat jouw groepsuitgaven er niet mee vermengd raken, moeten ze van deze telefoon verwijderd worden, en ze zijn niet terug te halen. Yala start opnieuw op en je gaat verder met je uitnodiging.";
+"welcome.groups.inviteNeutralBodyNoBackup" = "Hier staan gegevens opgeslagen en we konden geen kopie in iCloud vinden. Zodat jouw groepsuitgaven er niet mee vermengd raken, moeten ze van dit apparaat verwijderd worden, en ze zijn niet terug te halen. Yala start opnieuw op en je gaat verder met je uitnodiging.";
 
 /* Puerta del invitado: CTA destructivo que arranca la vuelta al neutro */
 "welcome.groups.inviteNeutralCta" = "Doorgaan en verwijderen";
@@ -5861,19 +5861,19 @@
 "storage.groups.detachBusy" = "Je bent je nu aan het afmelden. Rond dat eerst af en probeer het opnieuw.";
 
 /* Blocked sign-out/detach when the groups channel kill-switch is on (403 yala_groups_disabled): the channel is paused on purpose, nothing is lost */
-"groups.errors.channelPaused" = "Het ligt aan ons: groepen staan even op pauze. Je wijzigingen blijven op deze telefoon en er gaat niets verloren; probeer het straks opnieuw.";
+"groups.errors.channelPaused" = "Het ligt aan ons: groepen staan even op pauze. Je wijzigingen blijven op dit apparaat en er gaat niets verloren; probeer het straks opnieuw.";
 
 /* Private gate: the phone already holds data from a previous stage */
-"welcome.privateICloud.foundDeviceTitle" = "Op deze telefoon staan al gegevens";
+"welcome.privateICloud.foundDeviceTitle" = "Op dit apparaat staan al gegevens";
 
 /* Private gate: body of the on-device data notice */
-"welcome.privateICloud.foundDeviceBody" = "Op deze telefoon staan al gegevens van eerder: wat tot nu toe in Yala werd bijgehouden. Als je opnieuw begint, wordt dat van deze telefoon gehaald zodat jouw Yala schoon start.";
+"welcome.privateICloud.foundDeviceBody" = "Op dit apparaat staan al gegevens van eerder: wat tot nu toe in Yala werd bijgehouden. Als je opnieuw begint, wordt dat van dit apparaat gehaald zodat jouw Yala schoon start.";
 
 /* Private gate: second confirmation for the on-device wipe */
-"welcome.privateICloud.wipeDeviceConfirmBody" = "Alles op deze telefoon wordt gewist: uitgaven, rekeningen, budgetten, categorieën en je groepen. Op de telefoon blijft geen kopie achter.";
+"welcome.privateICloud.wipeDeviceConfirmBody" = "Alles op dit apparaat wordt gewist: uitgaven, rekeningen, budgetten, categorieën en je groepen. Op het apparaat blijft geen kopie achter.";
 
 /* Private gate: progress while wiping the on-device corpus */
-"welcome.privateICloud.wipingDevice" = "We verwijderen wat op deze telefoon stond…";
+"welcome.privateICloud.wipingDevice" = "We verwijderen wat op dit apparaat stond…";
 
 /* Private gate: the on-device wipe failed */
 "welcome.privateICloud.wipeDeviceFailedBody" = "We konden het niet afmaken. Een deel van je gegevens is misschien al weg en de rest staat er nog. Probeer het opnieuw; lukt het weer niet, sluit Yala af en open hem opnieuw.";
@@ -5885,16 +5885,16 @@
 "welcome.privateICloud.wipeRetry" = "Opnieuw proberen";
 
 /* Sign-out blocked: the groups upload failed for a transient reason (network, 5xx, WAF) and this path does not retry */
-"groups.errors.uploadRetryLater" = "Je laatste groepswijzigingen zijn niet op de server aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
+"groups.errors.uploadRetryLater" = "Je laatste groepswijzigingen zijn niet op de server aangekomen. Ze blijven op dit apparaat staan en er gaat niets verloren; probeer het straks opnieuw.";
 
 /* Sign-out, detach and fresh start blocked: this phone cannot prepare some group changes for upload (the groups drain never finishes) */
-"groups.errors.captureUnfinished" = "Sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Ze blijven op deze telefoon staan en er gaat niets verloren. Sluit Yala en open hem opnieuw; blijft het gebeuren, werk hem dan bij.";
+"groups.errors.captureUnfinished" = "Sommige van je laatste groepswijzigingen konden niet worden voorbereid om te uploaden. Ze blijven op dit apparaat staan en er gaat niets verloren. Sluit Yala en open hem opnieuw; blijft het gebeuren, werk hem dan bij.";
 
 /* Alert: el Apple ID del telefono cambio y hay que cerrar la sesion privada */
 "icloud.appleIDChanged.title" = "Je bent van iCloud-account gewisseld";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "De Yala-gegevens op deze telefoon horen bij je vorige iCloud-account en blijven daar bewaard. Om Yala te blijven gebruiken moeten ze hier weg, en wat dat account niet heeft bereikt, kan niet meer worden geüpload.";
+"icloud.appleIDChanged.message" = "De Yala-gegevens op dit apparaat horen bij je vorige iCloud-account en blijven daar bewaard. Om Yala te blijven gebruiken moeten ze hier weg, en wat dat account niet heeft bereikt, kan niet meer worden geüpload.";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "Uitloggen en verwijderen";
@@ -5909,34 +5909,34 @@
 "welcome.privateICloud.discardUnverifiedBack" = "Terug";
 
 /* Estado K de la puerta que VUELVE: iCloud apagado, no se borro nada, y como activarlo */
-"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Op deze telefoon staat iCloud uit, dus we konden niet zien of je eerder iets hebt bewaard en we hebben niets verwijderd. Zet het aan in Instellingen en probeer het opnieuw, of ga terug en beslis wanneer je wilt.";
+"welcome.privateICloud.discardUnverifiedNoAccountBody" = "Op dit apparaat staat iCloud uit, dus we konden niet zien of je eerder iets hebt bewaard en we hebben niets verwijderd. Zet het aan in Instellingen en probeer het opnieuw, of ga terug en beslis wanneer je wilt.";
 
 /* Wipe sheet, cloud row when personal data lives in the user private iCloud: the deletion only reaches devices whose personal data lives in that same iCloud */
 "settings.wipeScopeCloudICloudPersonal" = "Worden uit iCloud verwijderd, dus ze verdwijnen ook van je andere apparaten die je persoonlijke gegevens daar bewaren";
 
 /* Titulo del aviso: el telefono lleva mas de un dia sin pasar la verificacion de seguridad del servidor y no puede sincronizar grupos */
-"groups.errors.attestUnavailableTitle" = "Deze telefoon kan je groepen niet synchroniseren";
+"groups.errors.attestUnavailableTitle" = "Dit apparaat kan je groepen niet synchroniseren";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"groups.errors.attestUnavailableSignOutLoss" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen. Wijzigingen die niet zijn aangekomen: %d. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"groups.errors.attestUnavailableSignOutLoss" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen. Wijzigingen die niet zijn aangekomen: %d. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Aviso al cerrar sesion sin verificacion de seguridad cuando no hay cifra honesta de cambios perdidos */
-"groups.errors.attestUnavailableSignOutLossUnknown" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, en sommige wijzigingen zijn niet aangekomen. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"groups.errors.attestUnavailableSignOutLossUnknown" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen, en sommige wijzigingen zijn niet aangekomen. Als je nu uitlogt, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Boton destructivo: cierra sesion aceptando perder los cambios de grupos sin subir */
 "groups.errors.attestUnavailableSignOutLossButton" = "Uitloggen en ze verliezen";
 
 /* Mensaje sin salida: el telefono no pasa la verificacion de seguridad y los cambios de grupos no suben */
-"groups.errors.attestUnavailable" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, dus wat je wijzigt, bereikt de groep niet. Gebruik zolang een andere telefoon.";
+"groups.errors.attestUnavailable" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen, dus wat je wijzigt, bereikt de groep niet. Gebruik zolang een ander apparaat.";
 
 /* Alert al salir de un grupo: el telefono no puede sincronizar grupos */
-"groups.errors.leaveAttestUnavailable" = "Deze telefoon kan je groepen niet synchroniseren, dus we konden je vertrek uit de groep niet afronden.";
+"groups.errors.leaveAttestUnavailable" = "Dit apparaat kan je groepen niet synchroniseren, dus we konden je vertrek uit de groep niet afronden.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad; la cifra = cambios de grupos que se pierden */
-"welcome.groups.neutralAttestLossBody" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen. Wijzigingen die niet zijn aangekomen: %d. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralAttestLossBody" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen. Wijzigingen die niet zijn aangekomen: %d. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Puerta de Grupos del Welcome sin verificacion de seguridad, sin cifra honesta de cambios perdidos */
-"welcome.groups.neutralAttestLossBodyUnknown" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen, en sommige wijzigingen zijn niet aangekomen. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralAttestLossBodyUnknown" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen, en sommige wijzigingen zijn niet aangekomen. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Boton destructivo del Welcome: continua aceptando perder los cambios de grupos sin subir */
 "welcome.groups.neutralAttestLossContinue" = "Doorgaan en ze verliezen";
@@ -5945,20 +5945,20 @@
 "action.notNow" = "Niet nu";
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
-"settings.signOutAttestTitle" = "Deze telefoon kan je gegevens niet synchroniseren";
-"settings.signOutAttestMessage" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen. Wijzigingen die niet zijn aangekomen: %d. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
-"settings.signOutAttestMessageUnknown" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen, en sommige wijzigingen zijn niet aangekomen. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestTitle" = "Dit apparaat kan je gegevens niet synchroniseren";
+"settings.signOutAttestMessage" = "Dit apparaat kan al een dag geen wijzigingen naar je account in de cloud sturen. Wijzigingen die niet zijn aangekomen: %d. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
+"settings.signOutAttestMessageUnknown" = "Dit apparaat kan al een dag geen wijzigingen naar je account in de cloud sturen, en sommige wijzigingen zijn niet aangekomen. Voordat je beslist, kun je je boekingen naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
 "settings.signOutAttestExportButton" = "Mijn boekingen exporteren";
 "settings.signOutAttestLossButton" = "Uitloggen en ze verliezen";
-"settings.signOutAttestBlocked" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen, dus je wijzigingen kunnen niet worden geüpload.";
+"settings.signOutAttestBlocked" = "Dit apparaat kan al een dag geen wijzigingen naar je account in de cloud sturen, dus je wijzigingen kunnen niet worden geüpload.";
 "settings.signOutAttestExportEmpty" = "Je hebt geen boekingen om te exporteren.";
 "settings.signOutAttestExportFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
-"groups.attestTerminalBanner" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen. Niemand in de groep ziet wat je hier invoert — gebruik een andere telefoon.";
+"groups.attestTerminalBanner" = "Dit apparaat kan al een dag geen wijzigingen naar je groepen sturen. Niemand in de groep ziet wat je hier invoert — gebruik een ander apparaat.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
-"settings.attestTerminalBanner" = "Deze telefoon kan al een dag geen wijzigingen naar je account in de cloud sturen. Wat je hier invoert, wordt op de telefoon bewaard, maar bereikt je account niet — gebruik zolang een andere telefoon.";
+"settings.attestTerminalBanner" = "Dit apparaat kan al een dag geen wijzigingen naar je account in de cloud sturen. Wat je hier invoert, wordt op het apparaat bewaard, maar bereikt je account niet — gebruik zolang een ander apparaat.";
 
 /* Vuelta a iCloud: espera de la subida, cancelación y salida sin llegar (ticket reverse-upload-has-no-ceiling-and-no-exit) */
 "storage.progress.reverseUploading" = "Je gegevens worden naar iCloud geüpload. Je kunt Yala blijven gebruiken.";
@@ -6014,7 +6014,7 @@
 
 /* Aviso cuando el sign-in para retomar la vuelta a iCloud trae una cuenta distinta */
 "storage.errors.reverseSignInOtherAccount" = "Je bent met een ander account aangemeld. Meld je aan met het account waarmee je terug naar iCloud bent gegaan.";
-"storage.errors.syncSignInOtherAccount" = "Je hebt je met een ander account aangemeld, dus we hebben je niet aangemeld gelaten. Meld je aan met het account waarmee je Yala op deze telefoon gebruikt.";
+"storage.errors.syncSignInOtherAccount" = "Je hebt je met een ander account aangemeld, dus we hebben je niet aangemeld gelaten. Meld je aan met het account waarmee je Yala op dit apparaat gebruikt.";
 
 /* Restore: el import de CloudKit no terminó dentro del tope pero SÍ está en marcha — los datos existen y siguen bajando. NO niega que existan (es lo contrario de welcome.restore.notFoundTitle). */
 "welcome.restore.importIncompleteTitle" = "We halen je gegevens nog op";
@@ -6098,7 +6098,7 @@
 
 /* Sign-out blocked: sync stopped because this build can't read the migration record */
 "settings.signOutSyncStoppedNeedsUpdate" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. We konden niet controleren hoe ver de overstap van je gegevens naar de cloud is, dus we kunnen ze nu niet uploaden. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
-"settings.signOutCaptureUnfinished" = "Sommige van je laatste wijzigingen konden niet worden voorbereid om naar de cloud te uploaden. Ze blijven op deze telefoon staan en er gaat niets verloren. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
+"settings.signOutCaptureUnfinished" = "Sommige van je laatste wijzigingen konden niet worden voorbereid om naar de cloud te uploaden. Ze blijven op dit apparaat staan en er gaat niets verloren. Sluit Yala volledig af en open hem opnieuw; verandert er niets, werk hem dan bij via de App Store en probeer het opnieuw.";
 
 /* Sign-out blocked: sync paused because the cloud/iCloud switch didn't finish */
 "settings.signOutSyncStoppedMidMigration" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd omdat de overstap van je gegevens tussen de cloud en iCloud niet is afgerond. Open ‘Waar je gegevens staan’, hier in Instellingen, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
@@ -6107,7 +6107,7 @@
 "settings.signOutSyncStoppedNeedsRelaunch" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Synchroniseren is gepauzeerd tot je Yala opnieuw opent. Sluit hem volledig af (veeg hem weg in de app-kiezer), open hem opnieuw en probeer het nog eens.";
 
 /* Sign-out blocked: the upload of personal changes to the cloud did not reach the server */
-"settings.signOutUploadRetryLater" = "Je laatste wijzigingen zijn niet in de cloud aangekomen. Ze blijven op deze telefoon staan en er gaat niets verloren; probeer het straks opnieuw.";
+"settings.signOutUploadRetryLater" = "Je laatste wijzigingen zijn niet in de cloud aangekomen. Ze blijven op dit apparaat staan en er gaat niets verloren; probeer het straks opnieuw.";
 "settings.signOutCloudSessionExpired" = "Je sessie is verlopen en sommige wijzigingen zijn nog niet naar de cloud geüpload. Er gaat niets verloren: open ‘Waar je gegevens staan’, hier in Instellingen, tik op ‘Aanmelden’ en probeer het daarna opnieuw.";
 "settings.signOutSessionSurvived" = "Je bent nog ingelogd op dit apparaat, dus er is niets verwijderd. Probeer het opnieuw.";
 "settings.signOutMigrationInFlight" = "De overstap van je gegevens tussen iCloud en de cloud is nog niet afgerond, en als je nu uitlogt, kan verloren gaan wat nog geüpload moet worden, dus er is niets verwijderd. Open ‘Waar je gegevens staan’, in Instellingen, en rond het daar af (als het mislukt is, tik op ‘Opnieuw proberen’); probeer het daarna opnieuw.";
@@ -6117,24 +6117,24 @@
 "welcome.privateICloud.leftHalfwayTitle" = "Het verwijderen is maar half gelukt";
 
 /* Body: iCloud already deleted, phone not; the person chooses to finish or keep */
-"welcome.privateICloud.leftHalfwayBody" = "We hebben al verwijderd wat in iCloud stond, maar op deze telefoon konden we het niet afmaken: alles of een deel van wat je had kan hier nog staan. Je kunt houden wat er nog is, of het alsnog verwijderen en opnieuw beginnen.";
+"welcome.privateICloud.leftHalfwayBody" = "We hebben al verwijderd wat in iCloud stond, maar op dit apparaat konden we het niet afmaken: alles of een deel van wat je had kan hier nog staan. Je kunt houden wat er nog is, of het alsnog verwijderen en opnieuw beginnen.";
 
 /* Button: finish the deletion that was left halfway */
 "welcome.privateICloud.leftHalfwayFinish" = "Verwijderen afmaken";
 
 /* Confirm body before finishing a deletion that was left halfway */
-"welcome.privateICloud.leftHalfwayConfirmBody" = "Wat er nog op deze telefoon staat wordt verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie over.";
+"welcome.privateICloud.leftHalfwayConfirmBody" = "Wat er nog op dit apparaat staat wordt verwijderd, ook wat je sindsdien hebt gemaakt, en je begint opnieuw. Er blijft geen kopie over.";
 
 /* Cierre de sesión bloqueado: quedan cambios de grupos de otra cuenta, sin salida que los pierda */
-"groups.errors.groupsChangesFromAnotherAccount" = "Sommige groepswijzigingen op deze telefoon zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Er gaat niets verloren: ze blijven hier bewaard tot je met dat account inlogt.";
+"groups.errors.groupsChangesFromAnotherAccount" = "Sommige groepswijzigingen op dit apparaat zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload. Er gaat niets verloren: ze blijven hier bewaard tot je met dat account inlogt.";
 
 /* Cerrar sesión sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
-"groups.errors.noSessionSignOutLoss" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"groups.errors.noSessionSignOutLoss" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op dit apparaat: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"groups.errors.noSessionSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
-"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Nog niet geüploade groepswijzigingen: %d. Sommige zijn op deze telefoon met een ander account gemaakt en worden alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
-"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op deze telefoon met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"groups.errors.noSessionSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op dit apparaat: log opnieuw in met dat account om ze te uploaden. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLoss" = "Nog niet geüploade groepswijzigingen: %d. Sommige zijn op dit apparaat met een ander account gemaakt en worden alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
+"groups.errors.otherAccountAndCaptureUnfinishedSignOutLossUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op dit apparaat met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Lukt dat niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios de grupos que se pierden */
 "settings.signOutCloudSessionExpiredGroupsLoss" = "Je sessie is verlopen. Nog niet geüploade groepswijzigingen: %d. Open ‘Waar je gegevens staan’, hier in Instellingen, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
@@ -6143,28 +6143,28 @@
 "settings.signOutCloudSessionExpiredGroupsLossUnknown" = "Je sessie is verlopen en sommige groepswijzigingen zijn nog niet geüpload. Open ‘Waar je gegevens staan’, hier in Instellingen, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, log dan toch uit; ze gaan dan verloren en niemand in de groep krijgt ze te zien.";
 
 /* Vuelta al neutro sin la sesión de la cuenta que apuntó los cambios; %d = cambios de grupos que se pierden */
-"welcome.groups.neutralNoSessionLossBody" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralNoSessionLossBody" = "Nog niet geüploade groepswijzigingen: %d. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op dit apparaat. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Lo mismo, sin cifra: el recuento de cambios de grupos falló */
-"welcome.groups.neutralNoSessionLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op deze telefoon. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
-"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Nog niet geüploade groepswijzigingen: %d. Sommige zijn op deze telefoon met een ander account gemaakt en worden alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
-"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op deze telefoon met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralNoSessionLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Ze worden alleen geüpload met het account dat ze heeft gemaakt, en de sessie daarvan is niet open op dit apparaat. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBody" = "Nog niet geüploade groepswijzigingen: %d. Sommige zijn op dit apparaat met een ander account gemaakt en worden alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
+"welcome.groups.neutralOtherAccountAndCaptureUnfinishedLossBodyUnknown" = "Sommige groepswijzigingen zijn nog niet geüpload. Een deel is op dit apparaat met een ander account gemaakt en wordt alleen met dat account geüpload, en sommige konden niet worden voorbereid om te uploaden. Als je nu doorgaat, gaan ze verloren en krijgt niemand in de groep ze te zien.";
 
 /* Empezar de cero con cambios de grupos de otra cuenta: por qué no suben */
-"groups.freshStartPending.lossOtherAccount" = "Ze kunnen alleen worden geüpload door in te loggen met het account dat elk ervan heeft gemaakt, en de sessie op deze telefoon is van een ander account. Als dat niet gaat gebeuren, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
+"groups.freshStartPending.lossOtherAccount" = "Ze kunnen alleen worden geüpload door in te loggen met het account dat elk ervan heeft gemaakt, en de sessie op dit apparaat is van een ander account. Als dat niet gaat gebeuren, kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.lossOtherAccountAndCaptureUnfinished" = "Sommige zijn met een ander account gemaakt en kunnen alleen met dat account worden geüpload, en sommige konden niet worden voorbereid om te uploaden. Sluit Yala en open hem opnieuw (blijft het gebeuren, werk hem dan bij) en probeer het opnieuw; die van het andere account worden alleen geüpload als je daarmee inlogt. Ben je dat niet van plan, dan kun je opnieuw beginnen en ze verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.titleNeutral" = "Er moeten nog groepswijzigingen worden geüpload";
 "groups.freshStartPending.leadNeutral" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt (%d), en opnieuw beginnen zou ze meenemen.";
 "groups.freshStartPending.leadNeutralUnknown" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen.";
 "groups.freshStartPending.leadSplit" = "We hebben niets gewist: sommige groepswijzigingen hebben onze server nog niet bereikt, en opnieuw beginnen zou ze meenemen. Van jou: %1$d. Gemaakt met een ander account: %2$d.";
 "groups.freshStartPending.splitOwnPermanent" = "Je account kan die van jou niet meer uploaden, en opnieuw proberen lost dat niet op.";
-"groups.freshStartPending.splitOwnSessionExpired" = "Die van jou kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan op deze telefoon is niet meer geldig.";
+"groups.freshStartPending.splitOwnSessionExpired" = "Die van jou kunnen alleen worden geüpload met het account dat ze heeft gemaakt, en de sessie daarvan op dit apparaat is niet meer geldig.";
 "groups.freshStartPending.splitAnotherAccount" = "Die gemaakt met een ander account kunnen alleen worden geüpload door in te loggen met het account dat elk ervan heeft gemaakt; wachten of opnieuw proberen uploadt ze niet.";
 "groups.freshStartPending.splitLossTail" = "Je kunt opnieuw beginnen en ze allemaal verliezen: niemand in de groep zal ze zien.";
 "groups.freshStartPending.splitAfterOwnUpload" = "Als die van jou worden geüpload, kun je opnieuw beginnen en alleen die gemaakt met een ander account verliezen.";
-"groups.freshStartPending.lossConfirmBodySplit" = "Groepswijzigingen die verloren gaan — van jou: %1$d; gemaakt met een ander account: %2$d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
-"groups.freshStartPending.lossConfirmBodyNeutral" = "Groepswijzigingen die verloren gaan: %d. Ze worden van deze telefoon gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
-"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van deze telefoon gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodySplit" = "Groepswijzigingen die verloren gaan — van jou: %1$d; gemaakt met een ander account: %2$d. Ze worden van dit apparaat gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyNeutral" = "Groepswijzigingen die verloren gaan: %d. Ze worden van dit apparaat gewist zonder de server te bereiken, niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
+"groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "De groepswijzigingen die de server niet hebben bereikt, worden van dit apparaat gewist. Niemand in de groep zal ze zien en ze kunnen niet worden hersteld.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
 "settings.signOutCloudSessionExpiredPersonalLoss" = "Je sessie is verlopen. Wijzigingen die niet in je account in de cloud zijn aangekomen: %d. Open ‘Waar je gegevens staan’, hier in Instellingen, en tik op ‘Aanmelden’ om ze te uploaden. Lukt aanmelden niet, dan kun je je boekingen eerst naar een bestand exporteren. Als je nu uitlogt, gaan deze wijzigingen verloren.";
@@ -6190,19 +6190,19 @@
 "welcome.groups.inviteRelaunchBody" = "Je cloudaccount wordt verder ingesteld zodra je Yala opnieuw opent. Sluit de app helemaal (veeg hem weg uit de appkiezer) en open hem opnieuw: je uitnodiging is nog opgeslagen en je gaat daar verder.";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: título */
-"welcome.groups.inviteCloudSignInTitle" = "Log eerst in met het account van deze telefoon";
+"welcome.groups.inviteCloudSignInTitle" = "Log eerst in met het account van dit apparaat";
 
 /* Puerta del invitado: datos de una cuenta en la nube con la sesión cerrada: cuerpo */
-"welcome.groups.inviteCloudSignInBody" = "Op deze telefoon staan de gegevens van een cloudaccount dat niet is ingelogd, en je groepsuitgaven zouden daarin terechtkomen. Is het van jou, log er dan mee in via ‘Ik heb al een account’ en ga verder met je uitnodiging. Zo niet, doe dan mee vanaf je eigen telefoon.";
+"welcome.groups.inviteCloudSignInBody" = "Op dit apparaat staan de gegevens van een cloudaccount dat niet is ingelogd, en je groepsuitgaven zouden daarin terechtkomen. Is het van jou, log er dan mee in via ‘Ik heb al een account’ en ga verder met je uitnodiging. Zo niet, doe dan mee vanaf je eigen apparaat.";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos y la puerta no lo reintenta sola: título */
-"welcome.groups.wipeFailedTitle" = "We konden deze telefoon niet klaarmaken";
+"welcome.groups.wipeFailedTitle" = "We konden dit apparaat niet klaarmaken";
 
 /* Puerta de Grupos: el borrado del arranque no pudo borrar los archivos: cuerpo. No dice dónde siguen los datos ni que no se tocó nada: no siempre es verdad. */
-"welcome.groups.wipeFailedBody" = "Bij het opnieuw openen van Yala kon wat op deze telefoon is opgeslagen niet worden gewist, dus hij is niet klaar voor je groep. We proberen het niet zelf opnieuw: ga terug en probeer het later nog eens als je wilt.";
+"welcome.groups.wipeFailedBody" = "Bij het opnieuw openen van Yala kon wat op dit apparaat is opgeslagen niet worden gewist, dus het is niet klaar voor je groep. We proberen het niet zelf opnieuw: ga terug en probeer het later nog eens als je wilt.";
 
 /* Apple ID change notice: extra paragraph, only when the close also removes the groups stored on this phone. Says nothing about whose they are or where else they live: that is not always true. */
-"icloud.appleIDChanged.groupsLine" = "Ook de groepen op deze telefoon worden verwijderd.";
+"icloud.appleIDChanged.groupsLine" = "Ook de groepen op dit apparaat worden verwijderd.";
 
 /* iPad: atajos de teclado y menús contextuales (fase 3 del carril adaptativo) */
 /* Keyboard menu (iPad, hold Cmd): go to a section */
@@ -6536,10 +6536,10 @@
 "insights.aiError.proRequired" = "We konden je Yala Pro niet bevestigen. Probeer het zo opnieuw.";
 
 /* Private gate: reading the data already on this phone failed */
-"welcome.privateICloud.deviceUnreadableTitle" = "We konden deze telefoon niet controleren";
+"welcome.privateICloud.deviceUnreadableTitle" = "We konden dit apparaat niet controleren";
 
 /* Private gate: body when the phone's data could not be read */
-"welcome.privateICloud.deviceUnreadableBody" = "Er ging iets mis bij het bekijken van wat er al op deze telefoon staat, dus we weten niet of er gegevens op staan. Er is niets aangepast. Probeer het zo opnieuw.";
+"welcome.privateICloud.deviceUnreadableBody" = "Er ging iets mis bij het bekijken van wat er al op dit apparaat staat, dus we weten niet of er gegevens op staan. Er is niets aangepast. Probeer het zo opnieuw.";
 
 /* Private gate: secondary button that goes back to the choice */
 "welcome.privateICloud.deviceUnreadableBack" = "Terug";
@@ -6548,7 +6548,7 @@
 "welcome.bornCloud.readyExistingAccountTitle" = "Je had al een account en je bent er nu in ingelogd.";
 
 /* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
-"welcome.privateICloud.noAccountProceedTitle" = "Op deze telefoon staat iCloud uit";
+"welcome.privateICloud.noAccountProceedTitle" = "Op dit apparaat staat iCloud uit";
 
 /* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
 "welcome.mirrorRelaunch.privacyNote" = "Zo maakt Yala verbinding met je privé-iCloud en blijven je gegevens altijd privé: niemand anders kan ze lezen, wij ook niet.";
@@ -6688,8 +6688,8 @@
 /* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
 "storage.revert.prior.checking" = "Je iCloud wordt gecontroleerd…";
 "storage.revert.prior.title" = "Je iCloud heeft al Yala-gegevens";
-"storage.revert.prior.body" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan: %@. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
-"storage.revert.prior.bodyNoCount" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.body" = "De iCloud van dit apparaat heeft Yala-gegevens die niet in je account staan: %@. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.bodyNoCount" = "De iCloud van dit apparaat heeft Yala-gegevens die niet in je account staan. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
 "storage.revert.prior.groupRecords" = "%d groepsrecords";
 "storage.revert.prior.groupsNote" = "Groepsrecords kunnen zonder hun groep binnenkomen.";
 "storage.revert.prior.merge" = "Toevoegen aan mijn gegevens";
@@ -6709,7 +6709,7 @@
 "inbox.hideHere" = "Hier verwijderen";
 
 /* Accessibility hint for the hide-here swipe action */
-"inbox.hideHereHint" = "Verwijdert het alleen op deze telefoon. Als de groep binnenkomt, verschijnt het weer.";
+"inbox.hideHereHint" = "Verwijdert het alleen op dit apparaat. Als de groep binnenkomt, verschijnt het weer.";
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Groepsuitgaven in een andere valuta gaan ongewijzigd mee, zonder omrekening: het bedrag bepaalt de groep.";
@@ -6954,7 +6954,7 @@
 "welcome.restore.row.groups" = "Gedeelde groepen";
 "storage.consent.lead" = "Voordat je verdergaat, drie dingen om te weten:";
 "storage.consent.serversTitle" = "Je gegevens staan op de servers van Yala";
-"storage.consent.photosTitle" = "De foto's van je bonnetjes blijven op deze telefoon";
+"storage.consent.photosTitle" = "De foto's van je bonnetjes blijven op dit apparaat";
 "storage.consent.accessTitle" = "Je logt in met Apple of Google, op elk apparaat";
 "storage.consent.acceptEnter" = "Begrepen, inloggen op mijn account";
 "storage.consent.acceptCreate" = "Begrepen, mijn account maken";
@@ -7572,11 +7572,11 @@
 "uxcs.signOutUpload.title" = "Je wijzigingen worden naar iCloud geüpload…";
 "uxcs.signOutUpload.pending" = "Nog te uploaden wijzigingen: %d";
 "uxcs.migrated.rejoinSentence" = "Deze groep is verhuisd. Meld je opnieuw aan om hem bijgewerkt te zien.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Je Yala-account wordt verwijderd. Wat op deze telefoon staat, blijft.";
+"uxcs.deleteAccount.finalGroupsOnly" = "Je Yala-account wordt verwijderd. Wat op dit apparaat staat, blijft.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Voordat je de cloud aanzet";
-"l20n.sheet.anyPhoneTitle" = "Je logt in vanaf elke telefoon";
+"l20n.sheet.anyPhoneTitle" = "Je logt in vanaf elk apparaat";
 "l20n.sheet.anyPhoneDetail" = "Zonder afhankelijk te zijn van iCloud.";
 "l20n.sheet.seesTitle" = "Yala kan je gegevens zien";
 "l20n.sheet.seesDetail" = "Om je te helpen en voor slimme functies.";
@@ -8082,7 +8082,7 @@
 "image.entry.failure.busy.title" = "Even geduld";
 
 /* card vv0k */
-"image.entry.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van deze telefoon. Wacht een minuut en probeer het opnieuw: de foto is in orde.";
+"image.entry.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van dit apparaat. Wacht een minuut en probeer het opnieuw: de foto is in orde.";
 
 /* card vv0k */
 "image.entry.failure.dailyLimit.title" = "Daglimiet bereikt";
@@ -8094,7 +8094,7 @@
 "voice.failure.busy.title" = "Even geduld";
 
 /* card vv0k */
-"voice.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van deze telefoon. Wacht een minuut en probeer het opnieuw met dezelfde notitie.";
+"voice.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van dit apparaat. Wacht een minuut en probeer het opnieuw met dezelfde notitie.";
 
 /* card vv0k */
 "voice.failure.dailyLimit.title" = "Daglimiet bereikt";
