@@ -181,6 +181,138 @@ final class InboxCrudUITests: XCTestCase {
         )
     }
 
+    /// Deslizamiento corto sobre una fila: deja a la vista sus acciones (Descartar, Eliminar) sin dispararlas.
+    private func revealSwipeActions(of row: XCUIElement) {
+        let start = row.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+        let end = row.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: end)
+    }
+
+    /// Espera del borrado diferido de la Bandeja en estos casos (`-uitest-inbox-removal-delay-seconds`): más larga que lo
+    /// que tarda el test entre dos gestos (en iOS 27.0, más de 4 s), para que el segundo caiga SIEMPRE dentro de la
+    /// espera del primero.
+    private let removalDelaySeconds = 10.0
+
+    /// La app sigue viva y la Bandeja en pantalla pasado el borrado diferido de las filas, con margen.
+    private func assertInboxStillAlive(_ app: XCUIApplication, _ message: String) {
+        let pendingFilter = app.buttons["inbox_filter_pending"]
+        XCTAssertFalse(pendingFilter.waitForNonExistence(timeout: removalDelaySeconds + 2), message)
+        XCTAssertEqual(app.state, .runningForeground, message)
+    }
+
+    /// Crash de TestFlight 2.2 (2), 2026-10-29: borrar dos borradores seguidos cerraba Yala. La retirada de cada fila
+    /// es optimista y el borrado real va 400 ms después; la recarga del primero devolvía a la lista el segundo, aún sin
+    /// borrar, y su fila leía después el `InboxDraft` borrado (SIGTRAP de SwiftData). Card f8rj.
+    func test_deletingTwoDraftsInARow_keepsTheAppAlive() {
+        let app = XCUIApplication()
+        app.launchForUITest(extraArguments: ["-uitest-inbox-removal-delay-seconds", "\(removalDelaySeconds)"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let rowA = app.buttons["inbox_draft_row_\(draftA)"]
+        let rowB = app.buttons["inbox_draft_row_\(draftB)"]
+        XCTAssertTrue(rowA.waitForExistence(timeout: 5), "No apareció el primer draft a borrar.")
+        XCTAssertTrue(rowB.exists, "No apareció el segundo draft a borrar.")
+
+        let delete = app.buttons["inbox_swipe_delete"]
+        revealSwipeActions(of: rowA)
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "El deslizamiento no mostró Eliminar en el primero.")
+        delete.tap()
+
+        revealSwipeActions(of: rowB)
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "El deslizamiento no mostró Eliminar en el segundo.")
+        delete.tap()
+
+        // El primero termina su espera mientras el segundo aún espera la suya: su recarga no puede devolver el segundo
+        // a la lista (era el que se pintaba con su borrador ya borrado).
+        XCTAssertTrue(rowB.waitForNonExistence(timeout: 5), "El segundo borrador no salió de la lista.")
+        XCTAssertFalse(
+            rowB.waitForExistence(timeout: removalDelaySeconds + 1),
+            "Al terminar el primer borrado, el segundo —aún sin borrar— volvió a la lista."
+        )
+        assertInboxStillAlive(app, "Borrar dos borradores seguidos cerró la Bandeja (o la app).")
+        XCTAssertFalse(rowA.exists, "El primer borrador borrado sigue en pendientes.")
+        XCTAssertFalse(rowB.exists, "El segundo borrador borrado sigue en pendientes.")
+
+        app.buttons["inbox_filter_archived"].tap()
+        assertInboxStillAlive(app, "Tras borrar dos seguidos, abrir Archivados cerró la app.")
+        XCTAssertFalse(rowA.exists, "El primer borrador no se borró: está en Archivados.")
+        XCTAssertFalse(rowB.exists, "El segundo borrador no se borró: está en Archivados.")
+    }
+
+    /// Borra un borrador desde su editor: «⋯» → «Eliminar para siempre» → confirmar.
+    private func deleteFromEditor(_ app: XCUIApplication, row: XCUIElement) {
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "No apareció el draft a borrar desde el editor.")
+        row.tap()
+        let more = app.buttons["draft_editor_more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "El editor no tiene el menú «⋯».")
+        more.tap()
+        let deleteForever = app.buttons["draft_editor_delete_forever"]
+        XCTAssertTrue(deleteForever.waitForExistence(timeout: 5), "El menú «⋯» no ofrece Eliminar para siempre.")
+        deleteForever.tap()
+        let confirm = app.alerts.firstMatch.buttons["draft_editor_delete_confirm"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "No se pidió confirmación antes de borrar.")
+        confirm.tap()
+    }
+
+    /// La otra entrada del mismo gesto: borrar dos seguidos desde el editor. El editor borraba el borrador con su fila
+    /// montada debajo de la hoja y sin podarla, y la fila lo leía al volver a pintarse.
+    func test_deletingTwoDraftsInARowFromTheEditor_keepsTheAppAlive() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let rowA = app.buttons["inbox_draft_row_\(draftA)"]
+        let rowB = app.buttons["inbox_draft_row_\(draftB)"]
+        deleteFromEditor(app, row: rowA)
+        XCTAssertTrue(rowA.waitForNonExistence(timeout: 5), "El borrador borrado desde el editor sigue en la lista.")
+        deleteFromEditor(app, row: rowB)
+
+        assertInboxStillAlive(app, "Borrar dos borradores seguidos desde el editor cerró la Bandeja (o la app).")
+        XCTAssertFalse(rowA.exists, "El primer borrador borrado sigue en pendientes.")
+        XCTAssertFalse(rowB.exists, "El segundo borrador borrado sigue en pendientes.")
+    }
+
+    /// La misma pareja con «Deshacer» de por medio: descartar el primero (deslizar del todo), borrar el segundo y
+    /// deshacer el descarte. El primero vuelve a pendientes y la app no se cierra.
+    func test_discardThenDeleteThenUndo_keepsTheAppAlive() {
+        let app = XCUIApplication()
+        app.launchForUITest(extraArguments: [
+            "-uitest-undo-notice-seconds", "30", "-uitest-inbox-removal-delay-seconds", "\(removalDelaySeconds)",
+        ])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let rowA = app.buttons["inbox_draft_row_\(draftA)"]
+        let rowB = app.buttons["inbox_draft_row_\(draftB)"]
+        XCTAssertTrue(rowA.waitForExistence(timeout: 5), "No apareció el draft a descartar.")
+
+        let start = rowA.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+        let end = rowA.coordinate(withNormalizedOffset: CGVector(dx: -0.6, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: end)
+
+        let delete = app.buttons["inbox_swipe_delete"]
+        XCTAssertTrue(rowB.waitForExistence(timeout: 5), "No apareció el draft a borrar.")
+        revealSwipeActions(of: rowB)
+        XCTAssertTrue(delete.waitForExistence(timeout: 5), "El deslizamiento no mostró Eliminar.")
+        delete.tap()
+
+        // El aviso sale cuando el descarte se guarda, al terminar la espera.
+        let undo = app.buttons["draft_discard_undo"]
+        XCTAssertTrue(
+            undo.waitForExistence(timeout: removalDelaySeconds + 5), "Tras descartar no salió el aviso con «Deshacer»."
+        )
+        undo.tap()
+
+        XCTAssertTrue(rowA.waitForExistence(timeout: 5), "«Deshacer» no devolvió el draft descartado a pendientes.")
+        assertInboxStillAlive(app, "Descartar, borrar y deshacer seguidos cerró la Bandeja (o la app).")
+        XCTAssertFalse(rowB.exists, "El borrador borrado volvió a pendientes.")
+    }
+
     /// «Guardar los N listos» guarda de un toque todo lo completo, tras confirmar (auditoría UX 2.2 · lote 4 · L4-7).
     /// Antes eran cuatro toques: ✓, Seleccionar todo, Editar y Aprobar.
     func test_saveReadyButton_savesEveryCompleteDraftAfterConfirming() {

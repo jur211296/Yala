@@ -30,6 +30,16 @@ struct RecordRowView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
+        // Borrar desde el editor deja esta fila montada bajo la hoja hasta que la lista recarga (por `dataVersion`), y
+        // puede volver a pintarse con el registro ya borrado: leerlo aborta la app. Mismo caso que la Bandeja (card f8rj).
+        if record.isDeleted || record.modelContext == nil {
+            EmptyView()
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         Button {
             if isSelectionMode {
                 DS.Haptic.selection()

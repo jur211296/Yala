@@ -703,7 +703,9 @@ final class DraftService {
         }
         let context = try requireContext()
         let skipped = dismissScheduledOccurrence(of: draft, in: context)
-        context.delete(draft)
+        // Poda la fila ANTES de borrar: desde el editor («Eliminar para siempre», lote 4) la fila sigue montada bajo la
+        // hoja, y leía el `InboxDraft` borrado al volver a pintarse (crash de TestFlight 2.2 (2), card f8rj).
+        deleteInboxDraftPruningRow(draft, in: context)
         try context.save()
         if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }
     }
@@ -717,7 +719,8 @@ final class DraftService {
             if draft.sourceType.blocksInboxDismissal || draft.isLiveSettlementApprovalMark
                 || draft.isSettlementAmountChangeNotice { continue }
             if dismissScheduledOccurrence(of: draft, in: context) { skipped = true }
-            context.delete(draft)
+            // La hoja de acciones en lote también deja las filas montadas debajo.
+            deleteInboxDraftPruningRow(draft, in: context)
         }
         try context.save()
         if skipped { ScheduledPaymentNotificationService.shared.requestSummaryReplan() }

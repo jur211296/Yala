@@ -282,6 +282,7 @@ struct InboxDraftEditSheet: View {
                     Button(L10n.Inbox.delete, role: .destructive) {
                         deleteDraftPermanently()
                     }
+                    .accessibilityIdentifier("draft_editor_delete_confirm")
                 } message: {
                     Text(L10n.Inbox.deleteMessage)
                 }
