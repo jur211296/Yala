@@ -60,7 +60,8 @@ final class DataWipeService {
         resetsPreferences: Bool = true,
         remoteWipeCut: RemoteWipeCutLogic.Cut? = nil,
         signalTimestamp: Date? = nil,
-        keepsReminders: Bool = false
+        keepsReminders: Bool = false,
+        signalKeepsSetup: Bool = false
     ) throws {
         #if DEBUG
         // Seam de QA (`-uitest-fail-wipe`): lanza ANTES de tocar nada, así que los datos quedan
@@ -72,7 +73,13 @@ final class DataWipeService {
         // PASO 0: Señalizar wipe a otros dispositivos via iCloud KV
         // ============================================================
         if broadcastSignal {
-            PreferenceSyncService.shared.signalWipeInitiated(at: signalTimestamp ?? .now)
+            // Con `signalKeepsSetup` la señal lleva la marca de que el parque sigue: el otro dispositivo se queda en la app y
+            // conserva sus ajustes, como este (encargo S27i, `signalWipeKeepingSetup`).
+            if signalKeepsSetup {
+                PreferenceSyncService.shared.signalWipeKeepingSetup(at: signalTimestamp ?? .now)
+            } else {
+                PreferenceSyncService.shared.signalWipeInitiated(at: signalTimestamp ?? .now)
+            }
         }
 
         // ============================================================
@@ -127,7 +134,11 @@ final class DataWipeService {
         // Yala completo (card p0iu), que promete que «tus avisos y tus preferencias se quedan»: los avisos no son filas
         // del corpus que se tira, son cómo la persona quiere que Yala le hable.
         if keepsReminders {
-            // Se quedan tal cual.
+            // Las FILAS se quedan; lo programado en el sistema, no. Ahí están también los avisos de los pagos programados y
+            // de los presupuestos que este borrado se lleva, y sin cancelarlos seguían saliendo (encargo S27i: «Vaciar
+            // datos» conserva los recordatorios). Quien llama reprograma lo que se queda
+            // (`rescheduleSurvivingReminders`); la vuelta de «Solo grupos» lo hace en `resumePersonalReminders`.
+            NotificationService.shared.cancelAllNotifications()
         } else if let notifications = rows.notifications {
             NotificationService.shared.deleteNotifications(notifications, context: context)
         } else {
@@ -344,9 +355,11 @@ final class DataWipeService {
     /// vacío y el receptor repone todo. Va antes del borrado: se calcula sobre los grupos, que el borrado conserva, pero un
     /// fallo después dejaría la señal sin reparto.
     ///
-    /// **`keepsPersonSettings`** (card p0iu, «Empezar de cero» al volver de «Solo grupos»): borra las mismas filas pero
-    /// conserva lo que describe a la PERSONA —nombre, divisa, tema, onboarding hecho, avisos— y resiembra las categorías,
-    /// porque no se repite la bienvenida que las sembraría. Es el corte de `resetsPreferences: false`.
+    /// **`keepsPersonSettings`** (card p0iu, «Empezar de cero» al volver de «Solo grupos»; y desde el encargo S27i,
+    /// 2026-10-29, «Vaciar datos» con vida personal): borra las mismas filas pero conserva lo que describe a la PERSONA
+    /// —nombre, divisa, tema, onboarding hecho, avisos— y resiembra las categorías, porque no se repite la bienvenida que
+    /// las sembraría. Es el corte de `resetsPreferences: false`. Si avisa al parque, la señal lleva la marca de que el
+    /// parque sigue (`signalKeepsSetup`), para que el otro dispositivo conserve lo mismo.
     static func wipePersonalDataKeepingGroups(
         in context: ModelContext,
         broadcastSignal: Bool,
@@ -364,7 +377,7 @@ final class DataWipeService {
         }
         try wipeAllUserData(in: context, reseedInitialData: keepsPersonSettings, broadcastSignal: broadcastSignal,
                             resetsPreferences: !keepsPersonSettings, signalTimestamp: signalTimestamp,
-                            keepsReminders: keepsPersonSettings)
+                            keepsReminders: keepsPersonSettings, signalKeepsSetup: keepsPersonSettings)
     }
 
     /// **El «Vaciar datos» de OTRO dispositivo del Apple ID, aplicado aquí: el mismo borrado, sin volver a señalizar, y
@@ -424,9 +437,16 @@ final class DataWipeService {
                 GroupsRemoteWipeDivision.awaitOrigin(signaledAt: cut.signaledAt, defaults: defaults)
             }
         }
+        // **Si el parque siguió, este dispositivo conserva lo de la persona** (encargo S27i). Desde el 2026-10-29 el origen
+        // de «Vaciar datos» no repite la bienvenida: conserva nombre, divisa, tema y recordatorios, y apunta la marca de que
+        // el parque sigue (`signalWipeKeepingSetup`). Resetearlos aquí dejaba a este dispositivo con otra divisa y otro
+        // tema, y borrar sus recordatorios viajaba por el espejo al origen, que los conservaba. Con un origen de antes
+        // —terminó el onboarding después de la señal— la marca dice lo mismo y conservar tampoco miente: sus ajustes los
+        // vuelve a traer el iCloud KV.
         try wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false,
-                            remoteWipeCut: cut)
-        if cut != nil { rescheduleReminders(context) }
+                            resetsPreferences: !fleetStartedOver, remoteWipeCut: cut,
+                            keepsReminders: fleetStartedOver)
+        if cut != nil || fleetStartedOver { rescheduleReminders(context) }
     }
 
     /// Lo que hace el arranque (`AppBootstrapper.ensureNotificationsScheduled`) con los avisos, sobre lo que quedó.
@@ -1252,7 +1272,9 @@ final class DataWipeService {
         defaults.removeObject(forKey: AppPreferences.Keys.tabConfigJSON)  // Layout custom de tabs ("tabBarConfiguration")
         defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
         defaults.removeObject(forKey: "customPeriodEnd")
-        // «Solo grupos» sobre Yala completo (card p0iu): vaciar manda al onboarding personal, que es Yala completo.
+        // «Solo grupos» sobre Yala completo (card p0iu): los borrados que resetean las preferencias (cierre de sesión, el
+        // vaciado de la shell sin sesión privada) devuelven a Yala completo. «Vaciar datos» con vida personal conserva los
+        // ajustes, y con ellos esta marca: la persona sigue en la vista que eligió (encargo S27i).
         GroupsOnlyViewMark.clear(defaults)
 
         // --- Visualización ---

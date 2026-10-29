@@ -2416,7 +2416,6 @@
 "icloud.detail.cta.diagnose" = "检查并修复";
 "icloud.detail.cta.viewTechnical" = "查看技术详情";
 "icloud.remoteOnboardingCompleted" = "你已在另一台设备上完成设置，现在一切都在这里了。";
-"icloud.remoteRestoreCompleted" = "数据已恢复";
 "icloud.remoteWipe.title" = "数据不再可用";
 "icloud.remoteWipe.message" = "你的另一台设备上清空了 Yala。如果是你操作的，请在这里也从头开始；如果不是，请等待：如果是误操作，你的数据可能会回来。";
 "icloud.remoteWipe.confirm" = "重新开始";
@@ -5021,7 +5020,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "此设备上的数据将被删除";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "此设备上的个人数据不受影响";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "此设备和你的 iCloud 中的数据将被删除，因此也会从你的其他设备上消失";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "你的账户和所有数据将被永久删除";
@@ -7572,7 +7571,6 @@
 "uxcs.signOutUpload.title" = "正在将你的更改上传到 iCloud…";
 "uxcs.signOutUpload.pending" = "待上传的更改：%d 项";
 "uxcs.migrated.rejoinSentence" = "这个群组已迁移。请重新登录以查看最新内容。";
-"uxcs.deleteAccount.finalGroupsOnly" = "你的 Yala 账户将被删除。这台设备上的内容会保留。";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "开启云端之前";
@@ -8467,3 +8465,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "iPhone 正在识别的内容";
+"settings.wipeLandingToast" = "好了，一切从头开始。创建你的第一个账户就能记账。";
+"icloud.remoteWipeKeptSetup" = "你已在另一台设备上清空了数据。";

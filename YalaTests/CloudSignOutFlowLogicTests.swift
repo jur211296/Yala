@@ -663,10 +663,19 @@ struct PrivateSignOutWiringTests {
     }
 
     /// Con el espejo montado, borrar FILAS exporta los deletes a iCloud: destruiría la copia que el cierre
-    /// promete conservar. Ningún cierre del coordinador puede llamar al wipe por filas.
+    /// promete conservar. Ningún cierre de SESIÓN del coordinador puede llamar al wipe por filas.
+    ///
+    /// La única excepción es el cierre tras BORRAR la cuenta con sesión privada (encargo S27i, 2026-10-29), que quiere
+    /// justo lo contrario —vaciar también iCloud— y borra las filas DESPUÉS de la zona, para que lo que el espejo exporte
+    /// sean borrados. Lo fija `WipeDataKeepsAccountWiringTests`; aquí, que no haya otro.
     @Test("ningún cierre de sesión borra filas")
     func noRowWipeAnywhere() throws {
-        #expect(!(try Self.source(Self.signOutPath)).contains("wipeAllUserData"))
+        let src = try Self.source(Self.signOutPath)
+        #expect(src.components(separatedBy: "wipeAllUserData").count - 1 == 1)
+        let owner = try #require(src.range(of: "func closeLocalAfterAccountDeletionPrivate("))
+        let next = try #require(src.range(of: "private func pushAllPendingGroupsForSignOut(", range: owner.upperBound..<src.endIndex))
+        #expect(src[owner.upperBound..<next.lowerBound].contains("wipeAllUserData"),
+                "el borrado de filas salió del cierre de la cuenta con sesión privada")
     }
 
     /// Lo que se escribe mientras se cierra la sesión (las suspensiones de `signOut()` y del push token)

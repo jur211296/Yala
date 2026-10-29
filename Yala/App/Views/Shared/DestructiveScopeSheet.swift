@@ -278,8 +278,11 @@ extension DestructiveScopeSheet.Config {
                 return SecondaryAction(
                     label: L10n.Settings.wipeExportBeforeButton,
                     identifier: Self.exportBeforeIdentifier(for: operation),
-                    // En `.cloud` esta puede ser la única copia (§3.3.1).
-                    caption: cloudLabel == .cloudAccount ? L10n.Settings.wipeExportBeforeCloudCaption : nil,
+                    // En `.cloud` esta puede ser la única copia (§3.3.1). La hoja de eliminar la cuenta lleva siempre la
+                    // etiqueta de la cuenta de Yala, también con iCloud privado (D), donde «En modo nube» no es verdad:
+                    // ahí no lleva pie (encargo S27i, que le dio «Exportar antes» a esa celda).
+                    caption: cloudLabel == .cloudAccount && operation != .deleteAccountGroupsOnly
+                        ? L10n.Settings.wipeExportBeforeCloudCaption : nil,
                     handler: onExport)
             }
         }

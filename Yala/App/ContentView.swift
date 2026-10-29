@@ -901,9 +901,7 @@ struct ContentView: View {
             handleAppBecameActive()
         }
 
-        .onChange(of: SessionState.shared.isWipingData) { _, _ in
-            updateContentViewReadiness()
-        }
+        .onChange(of: SessionState.shared.isWipingData) { _, _ in wipingDataChanged() }
         // El arranque asentó → se abre el gate `bootstrapPending` y la cola retenida drena
         // por prioridad (aviso de bandeja antes que paywall). Con el shell libre, `markReady`
         // bumpea revision y el `.onChange(revision)` de abajo hace el drain — NO llamarlo
@@ -1954,6 +1952,17 @@ struct ContentView: View {
         showPositiveToast(L10n.UsageMode.backToast)
     }
 
+    /// La capa de borrado cambió: la matriz se recalcula y, si «Vaciar datos» acaba de terminar en el Panel, sale su aviso
+    /// (encargo S27i). El aviso espera a que la capa BAJE: con ella puesta, el Panel no está montado y el aviso hablaría
+    /// sobre la pantalla de «Vaciando…».
+    private func wipingDataChanged() {
+        updateContentViewReadiness()
+        let session = SessionState.shared
+        guard !session.isWipingData, session.wipeLandingToastPending else { return }
+        session.wipeLandingToastPending = false
+        showPositiveToast(L10n.Settings.wipeLandingToast, seconds: PositiveToastLayout.remoteOnboardingSeconds)
+    }
+
     /// Show a positive confirmation toast for ~3s. Used for remote onboarding
     /// completed and remote restore completed — the only events where a brief
     /// "your data is here" reassurance is worth interrupting the silent sync rule.
@@ -2395,7 +2404,8 @@ struct ContentView: View {
                 // terminó el onboarding después de la señal»: decide qué pasa con lo que no tiene fecha ni lo usa nadie.
                 try DataWipeService.wipeLocallyForRemoteWipeSignal(in: modelContext, signaledAt: signaledAt,
                                                                    fleetStartedOver: skipOnboarding)
-                themeManager.resetToDefaults()
+                // Con el parque en marcha este dispositivo conserva sus ajustes, el tema incluido (encargo S27i).
+                if !skipOnboarding { themeManager.resetToDefaults() }
             } catch {
                 #if DEBUG
                 print("ContentView: Remote wipe failed: \(error)")
@@ -2414,7 +2424,9 @@ struct ContentView: View {
 
             if skipOnboarding {
                 hasCompletedOnboarding = true
-                showPositiveToast(L10n.iCloud.remoteRestoreCompleted)
+                // «Datos restaurados» no decía lo que había pasado: los datos se VACIARON desde otro dispositivo, que siguió
+                // usando Yala (desde el encargo S27i, el caso normal: «Vaciar datos» ya no repite la bienvenida).
+                showPositiveToast(L10n.iCloud.remoteWipeKeptSetup, seconds: PositiveToastLayout.remoteOnboardingSeconds)
             } else {
                 // Reset chooser flag: tras wipe completo, el user vuelve a ver las 3 ramas.
                 hasShownWelcomeChooser = false

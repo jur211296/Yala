@@ -539,7 +539,7 @@ struct RemoteWipeGraceLogicTests {
             desarmada, y en solo-grupos vuelve el aviso a los cinco segundos. Tramo: \(tramo)
             """)
         // Por igualdad, pegada al aterrizaje: un `Task { }` alrededor la difiere sin escribir `await`.
-        #expect(Self.count("applyWipeLanding(landing) " + peticion + " themeManager.resetToDefaults()", in: cuerpo) == 1, """
+        #expect(Self.count("applyWipeLanding(landing) " + peticion + " if keepsPersonSettings {", in: cuerpo) == 1, """
             la petición ya no va pegada al aterrizaje, en la misma vuelta del borrado. Tramo: \(tramo)
             """)
         let fallo = try Self.body(of: "} catch", in: String(cuerpo[try #require(cuerpo.range(of: borrado)).upperBound...]))

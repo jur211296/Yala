@@ -24,7 +24,9 @@ struct AccountDeletionServiceTests {
         var events: [String] = []
         var forgetThrows = false
         var deleteOutcome: DeleteOutcome = .success
-        var closeGroupsResult = true
+        var closePrivateResult = true
+        /// Encargo S27i · D: la zona de iCloud se borra antes del servidor.
+        var wipeICloudResult = true
         var canDelete = true
         var groupsEnabled = false
         var isCloud = true
@@ -49,7 +51,8 @@ struct AccountDeletionServiceTests {
             revokeSIWA: { c.events.append("siwa") },
             revokeGoogle: { c.events.append("google") },
             closeLocalCloud: { c.events.append("closeCloud"); return c.closedInPlace },
-            closeLocalGroupsOnly: { _ in c.events.append("closeGroupsOnly"); return c.closeGroupsResult },
+            wipePrivateICloud: { c.events.append("wipeICloud"); return c.wipeICloudResult },
+            closeLocalPrivate: { _ in c.events.append("closePrivate"); return c.closePrivateResult },
             clearCloudBeacon: { c.events.append("clearBeacon") },
             deleteCloudKitMarker: { _ in
                 c.events.append("deleteMarker")
@@ -96,10 +99,39 @@ struct AccountDeletionServiceTests {
 
         await sut.deleteAccount(context: ctx)
 
+        // Encargo S27i: con sesión privada (D) la zona de iCloud va PRIMERO, antes de tocar el servidor.
         #expect(c.events == [
-            "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeGroupsOnly",
+            "wipeICloud", "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closePrivate",
         ])
         #expect(sut.phase == .awaitingRelaunch)
+    }
+
+    /// Encargo S27i: si la zona de iCloud no se puede borrar, el servidor ni se toca —la cuenta sigue viva y la sesión
+    /// también— y el reintento repite el gesto entero.
+    @Test func privateCell_iCloudZoneFails_stopsBeforeTheServer_andRetries() async throws {
+        let ctx = try makeTestContext()
+        let c = Ctrl(); c.groupsEnabled = true; c.isCloud = false; c.wipeICloudResult = false
+        let sut = makeService(c)
+
+        await sut.deleteAccount(context: ctx)
+        #expect(c.events == ["wipeICloud"])
+        #expect(sut.phase == .failed(step: .personalWipe))
+
+        c.wipeICloudResult = true
+        await sut.deleteAccount(context: ctx)
+        #expect(sut.phase == .awaitingRelaunch)
+        #expect(c.events.filter { $0 == "delete" }.count == 1)
+    }
+
+    /// La nube (E) y solo grupos sin sesión privada (F) no tienen zona de iCloud propia que borrar.
+    @Test(arguments: [(true, true), (false, false)])
+    func noPrivateICloudZone_inTheCloudOrWithoutAPrivateSession(isCloud: Bool, hasPrivateSession: Bool) async throws {
+        let ctx = try makeTestContext()
+        let c = Ctrl(); c.isCloud = isCloud; c.hasPrivateSession = hasPrivateSession
+        let sut = makeService(c)
+
+        await sut.deleteAccount(context: ctx)
+        #expect(!c.events.contains("wipeICloud"))
     }
 
     /// Paso 9: la cuenta de un solo-grupos SIN sesión privada (F) cierra como la nube — su dispositivo no
@@ -115,7 +147,7 @@ struct AccountDeletionServiceTests {
         #expect(c.events == [
             "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeCloud",
         ])
-        #expect(!c.events.contains("closeGroupsOnly"))
+        #expect(!c.events.contains("closePrivate"))
         #expect(sut.phase == .awaitingRelaunch)
     }
 
@@ -158,16 +190,25 @@ struct AccountDeletionServiceTests {
 
     @Test func groupsOnlyClose_quiescenceFails_failedLocalClose() async throws {
         let ctx = try makeTestContext()
-        let c = Ctrl(); c.groupsEnabled = true; c.isCloud = false; c.closeGroupsResult = false
+        let c = Ctrl(); c.groupsEnabled = true; c.isCloud = false; c.closePrivateResult = false
         let sut = makeService(c)
 
         await sut.deleteAccount(context: ctx)
 
         // El borrado server-side YA ocurrió; el cierre local no cerró la sesión → reintentable.
         #expect(c.events == [
-            "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closeGroupsOnly",
+            "wipeICloud", "forget", "teardown", "delete", "clearBeacon", "deleteMarker", "siwa", "google", "closePrivate",
         ])
         #expect(sut.phase == .failed(step: .localClose))
+
+        // Encargo S27i (review adversarial): el reintento va directo al cierre local, sin volver al servidor —la cuenta ya
+        // no existe y el JWT caduca—, y también si el SDK soltó la sesión entre medias.
+        c.closePrivateResult = true
+        c.canDelete = false
+        c.events = []
+        await sut.deleteAccount(context: ctx)
+        #expect(c.events == ["closePrivate"])
+        #expect(sut.phase == .awaitingRelaunch)
     }
 
     // MARK: - Guards / retry

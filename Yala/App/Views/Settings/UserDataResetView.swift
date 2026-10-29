@@ -198,10 +198,9 @@ struct UserDataResetView: View {
 
     // MARK: - Lógica de borrado
 
-    /// Paso 9 del rediseño de sesiones (ticket §7 y fila H de la matriz de escenarios): tras «Vaciar datos»
-    /// la app NO vuelve al Welcome — la sesión en la nube y los grupos, si los hay, siguen puestos, y el
-    /// Welcome le ofrecería «Ya tengo cuenta» a quien sigue dentro. Con esto se retiró la pantalla de
-    /// retención «Seguir con mis grupos»: con «Vaciar datos» sin tocar grupos, no queda nada que retener.
+    /// A dónde aterriza la app tras «Vaciar datos». Desde el encargo S27i (decisión de Jürgen, 2026-10-29) la persona se
+    /// queda dentro: «Vaciar» borra el contenido y conserva la sesión, la cuenta, los grupos y sus ajustes, así que no hay
+    /// bienvenida que repetir —tampoco el onboarding del Paso 9, que esto supera—. Salir es otra fila: «Cerrar sesión».
     ///
     /// Deroga SOLO para este camino el «tras wipe vuelve a mostrarse el chooser» (A4) de
     /// `DataWipeService.removeUserPreferenceKeys`; el vaciado remoto (otro dispositivo) no pasa por aquí.
@@ -209,9 +208,14 @@ struct UserDataResetView: View {
         // El mismo dominio que acaba de barrer el wipe (el de quien pulsa, M1 incluida).
         let defaults = UserDefaults.standard
         switch landing {
-        case .personalOnboarding:
-            // `presentNextOnboardingScreen` salta al onboarding personal cuando el chooser ya se vio.
-            defaults.set(true, forKey: "hasShownWelcomeChooser")
+        case .panel:
+            // Los ajustes se conservaron (`keepsPersonSettings`), `hasCompletedOnboarding` incluido: la app sigue montada.
+            // Todas las ventanas al Panel —la capa de borrado las desmontó—. El aviso de crear la primera cuenta se arma al
+            // bajar la capa (`handleWipeAllData`). Con «Solo grupos» elegido la shell sigue reducida: la marca de esa
+            // vista es un ajuste y se conserva, y ahí no hay Panel (el cambio de pestaña lo descarta la propia shell).
+            for window in SceneRegistry.shared.allNavigations {
+                window.selectMainTab(.panel)
+            }
         case .groupsShell:
             // Solo grupos: la app sigue enseñando los grupos. Se repone el onboarding que el barrido
             // quitó; el perfil y las preferencias, que es lo que se vaciaba, quedan restablecidos.
@@ -230,10 +234,11 @@ struct UserDataResetView: View {
     private func handleWipeAllData() async {
         isProcessing = true
 
-        // Paso 9 · a dónde aterriza la app se decide ANTES del wipe, con el eje 1 leído sobre el
-        // teléfono todavía intacto.
+        // A dónde aterriza la app se decide ANTES del wipe, con el eje 1 leído sobre el teléfono todavía intacto. Y con el
+        // aterrizaje, qué se conserva: quien se queda en el Panel conserva sus ajustes y recordatorios (S27i).
         let landing = DestructiveScopeLogic.wipeLanding(
             hasPrivateSession: PrivateSessionMark.hasPrivateSession())
+        let keepsPersonSettings = DestructiveScopeLogic.wipeKeepsPersonSettings(landing)
         // Y si avisa a los demás dispositivos del Apple ID: solo una sesión privada (ver la decisión pura).
         // `confirmedPrivateSession` y NO `hasPrivateSession`: esta es la única de las tres cuyo `true`
         // sale de este teléfono (ver el docblock de `wipeSignalsAppleIDDevices`).
@@ -264,7 +269,8 @@ struct UserDataResetView: View {
         do {
             try DataWipeService.wipePersonalDataKeepingGroups(
                 in: modelContext,
-                broadcastSignal: signalsOtherDevices
+                broadcastSignal: signalsOtherDevices,
+                keepsPersonSettings: keepsPersonSettings
             )
 
             // 5b. Paso 9 · el aterrizaje, en la MISMA vuelta del main actor que el wipe y antes de cualquier
@@ -277,13 +283,24 @@ struct UserDataResetView: View {
             // (ticket `wipe-data-does-not-cancel-the-remote-wipe-grace`).
             sessionState.requestDeliberateWipeSettle()
 
-            // 6. Ensure @Observable tracks the theme reset
-            themeManager.resetToDefaults()
+            // 6. El tema se restablece solo si se restablecieron las preferencias (shell de grupos); en el Panel se queda.
+            //    Y los recordatorios conservados se vuelven a programar: el borrado canceló todo lo del sistema, también
+            //    los avisos de pagos y presupuestos que se fueron.
+            if keepsPersonSettings {
+                DataWipeService.rescheduleSurvivingReminders(in: modelContext)
+            } else {
+                themeManager.resetToDefaults()
+            }
 
             // 7. Small delay to let SwiftData settle before removing overlay
             try? await Task.sleep(for: .milliseconds(200))
 
             isProcessing = false
+            // El aviso de empezar de cero, solo en el Panel (no en la shell de «Solo grupos», donde no hay cuentas que
+            // crear) y armado pegado a la bajada que lo enseña: si otro flujo hubiera bajado ya la capa, un `false → false`
+            // no dispara el `onChange` y el aviso quedaría colgado para una bajada que no tiene nada que ver.
+            sessionState.wipeLandingToastPending = keepsPersonSettings && !sessionState.isGroupsFocusedShell
+                && sessionState.isWipingData
             sessionState.isWipingData = false
 
             // 7. Load exchange rates directly after wipe (more reliable than flag mechanism)
@@ -296,6 +313,11 @@ struct UserDataResetView: View {
             // También tras un fallo: el borrado guarda por lotes, y uno que lanza a media lista baja la señal igual.
             sessionState.requestDeliberateWipeSettle()
             isProcessing = false
+            // El aviso de empezar de cero, solo en el Panel (no en la shell de «Solo grupos», donde no hay cuentas que
+            // crear) y armado pegado a la bajada que lo enseña: si otro flujo hubiera bajado ya la capa, un `false → false`
+            // no dispara el `onChange` y el aviso quedaría colgado para una bajada que no tiene nada que ver.
+            sessionState.wipeLandingToastPending = keepsPersonSettings && !sessionState.isGroupsFocusedShell
+                && sessionState.isWipingData
             sessionState.isWipingData = false
             errorMessage = error.localizedDescription
         }

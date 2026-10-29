@@ -881,6 +881,11 @@ class SessionState {
     /// When true, ContentView shows a loading overlay to prevent @Query observers from crashing
     var isWipingData: Bool = false
 
+    /// «Vaciar datos» terminó en el Panel y falta su aviso («Listo, empezaste de cero…», encargo S27i). Lo arma
+    /// `UserDataResetView` antes de bajar `isWipingData`, y `ContentView` lo consume al ver caer ese flag: el aviso sale
+    /// con el Panel ya montado, no detrás de la capa de borrado.
+    var wipeLandingToastPending: Bool = false
+
     /// Flag to trigger exchange rate reload after data wipe
     /// Set to true after wipe completes, observed by YalaApp to reload rates
     var needsExchangeRateReload: Bool = false

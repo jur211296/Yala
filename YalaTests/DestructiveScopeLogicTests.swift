@@ -68,7 +68,7 @@ struct DestructiveScopeLogicTests {
             case .wipeDataFull:                   return ([.destructive, .destructive, .preserved], true, [])
             case .wipeDataGroupsOnly:             return ([.destructive, .preserved, .preserved], false, [])
             case .deleteAccountCloud:             return ([.destructive, .destructive, .neutral], false, [.crossRefer, .frozenICloud])
-            case .deleteAccountGroupsOnly:        return ([.preserved, .destructive, .neutral], false, [.crossRefer])
+            case .deleteAccountGroupsOnly:        return ([.destructive, .destructive, .neutral], false, [.crossRefer])
             case .deleteAccountGroupsOnlyNoPrivate: return ([.destructive, .destructive, .neutral], false, [.crossRefer])
             case .signOutPrivate:                 return ([.neutral, .preserved, .preserved], true, [])
             case .signOutPrivateNoCopy:           return ([.destructive, .destructive, .preserved], false, [.noICloudCopy])
@@ -107,8 +107,10 @@ struct DestructiveScopeLogicTests {
             switch op {
             case .wipeDataFull:       return debt ? [.viewGroups, .exportBefore] : [.exportBefore]
             case .wipeDataGroupsOnly: return debt ? [.viewGroups] : []
-            case .deleteAccountCloud: return debt ? [.viewGroups, .exportBefore] : [.exportBefore]
-            case .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+            // S27i (2026-10-29): la cuenta de grupos con sesión privada (D) se lleva también lo personal.
+            case .deleteAccountCloud, .deleteAccountGroupsOnly:
+                                      return debt ? [.viewGroups, .exportBefore] : [.exportBefore]
+            case .deleteAccountGroupsOnlyNoPrivate:
                                       return debt ? [.viewGroups] : []
             case .signOutPrivateNoCopy, .signOutPrivateWithGroupsNoCopy:
                                       return [.exportBefore]
@@ -128,7 +130,7 @@ struct DestructiveScopeLogicTests {
         let offering = Op.allCases.filter {
             DestructiveScopeLogic.model(operation: $0, cloudLabel: .icloud).secondaryActions.contains(.exportBefore)
         }
-        #expect(Set(offering) == [.wipeDataFull, .deleteAccountCloud, .signOutPrivateNoCopy,
+        #expect(Set(offering) == [.wipeDataFull, .deleteAccountCloud, .deleteAccountGroupsOnly, .signOutPrivateNoCopy,
                                   .signOutPrivateWithGroupsNoCopy])
     }
 
@@ -281,9 +283,17 @@ struct DestructiveScopeLogicTests {
 
     // MARK: - A dónde lleva «Vaciar datos»
 
-    @Test func wipeLanding_personalOnboarding_unlessGroupsOnly() {
-        #expect(DestructiveScopeLogic.wipeLanding(hasPrivateSession: true) == .personalOnboarding)
+    /// S27i (2026-10-29): con vida personal se queda en el Panel vacío, sin bienvenida ni Welcome; solo grupos, en su shell.
+    @Test func wipeLanding_panel_unlessGroupsOnly() {
+        #expect(DestructiveScopeLogic.wipeLanding(hasPrivateSession: true) == .panel)
         #expect(DestructiveScopeLogic.wipeLanding(hasPrivateSession: false) == .groupsShell)
+    }
+
+    /// Lo que se queda sale del aterrizaje: quien se queda en el Panel conserva nombre, divisa, tema y recordatorios (no hay
+    /// bienvenida que los vuelva a pedir); la shell de grupos sigue vaciando perfil y preferencias, que es lo que promete.
+    @Test func wipeKeepsPersonSettings_onlyWhenLandingOnThePanel() {
+        #expect(DestructiveScopeLogic.wipeKeepsPersonSettings(.panel))
+        #expect(!DestructiveScopeLogic.wipeKeepsPersonSettings(.groupsShell))
     }
 }
 
@@ -385,7 +395,8 @@ struct SignOutRowIdentifiersTests {
             // Card p0iu: «Empezar de cero» conserva a la persona (`keepsPersonSettings`) por el MISMO cuerpo.
             "try wipeAllUserData" + "(in: context, reseedInitialData: keepsPersonSettings, broadcastSignal: broadcastSignal,",
             "resetsPreferences: !keepsPersonSettings, signalTimestamp: signalTimestamp,",
-            "keepsReminders: keepsPersonSettings)",
+            // Encargo S27i: «Vaciar datos» con vida personal usa el mismo cuerpo, y su señal lleva la marca del parque.
+            "keepsReminders: keepsPersonSettings, signalKeepsSetup: keepsPersonSettings)",
         ], """
             el cuerpo cambió. Las dos peticiones van ANTES del borrado (uno que lanza, o un proceso que muere, después de
             borrar las transacciones dejaría los gastos de grupo sin nadie que los pida) y las liquidaciones ANTES que la

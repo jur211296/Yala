@@ -254,8 +254,8 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 9, """
-            `confirmedPrivateSession` tiene NUEVE lecturas en toda la app, y todas comparten el SIGNO
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 10, """
+            `confirmedPrivateSession` tiene DIEZ lecturas en toda la app, y todas comparten el SIGNO
             de su error: hacia `true` se DAÑA —se borra, o se afirma un hecho falso sobre datos
             ajenos—, hacia `false` solo se conserva de más o se calla. Si aparece una más, decide a
             conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada ni miente, la
@@ -311,6 +311,11 @@ struct PrivateSessionMarkWiringTests {
             ARRANQUE en frío que pide «iCloud no está disponible» cuando el store ya nace vacío
             (`requestColdStartICloudNoticeIfNeeded`, card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`).
             Mismo signo que la gracia: hacia `true` le diría a quien no guarda ahí sus datos que su iCloud no está.
+
+            La DÉCIMA entró el 2026-10-29 (encargo S27i) y es la gemela de la primera: «Eliminar mi cuenta» con sesión
+            privada borra también lo personal y EMITE la señal de vaciado a los demás dispositivos del Apple ID
+            (`CloudSessionSignOut.closeLocalAfterAccountDeletionPrivate`). Mismo signo que `UserDataResetView`: hacia
+            `true` vaciaría el iPad privado del dueño de un móvil prestado.
             """)
     }
 

@@ -2412,7 +2412,6 @@
 "icloud.detail.cta.diagnose" = "Prüfen und reparieren";
 "icloud.detail.cta.viewTechnical" = "Technisches Detail anzeigen";
 "icloud.remoteOnboardingCompleted" = "Du hast die Einrichtung auf deinem anderen Gerät abgeschlossen. Jetzt ist alles hier.";
-"icloud.remoteRestoreCompleted" = "Daten wiederhergestellt";
 "icloud.remoteWipe.title" = "Daten nicht mehr verfügbar";
 "icloud.remoteWipe.message" = "Yala wurde auf einem deiner anderen Geräte geleert. Warst du das, fang auch hier neu an; wenn nicht, warte: War es ein Fehler, können deine Daten zurückkommen.";
 "icloud.remoteWipe.confirm" = "Neu starten";
@@ -5009,7 +5008,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "Deine Daten auf diesem Gerät werden gelöscht";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "Deine persönlichen Daten auf diesem Gerät bleiben unberührt";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Deine Daten auf diesem Gerät und in deiner iCloud werden gelöscht und verschwinden damit auch von deinen anderen Geräten";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Dein Konto und alle deine Daten werden gelöscht, für immer";
@@ -7560,7 +7559,6 @@
 "uxcs.signOutUpload.title" = "Deine Änderungen werden in iCloud hochgeladen …";
 "uxcs.signOutUpload.pending" = "Noch hochzuladende Änderungen: %d";
 "uxcs.migrated.rejoinSentence" = "Diese Gruppe ist umgezogen. Melde dich erneut an, um sie aktuell zu sehen.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Dein Yala-Konto wird gelöscht. Was auf diesem Gerät ist, bleibt.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Bevor du die Cloud einschaltest";
@@ -8455,3 +8453,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "Was das iPhone gerade versteht";
+"settings.wipeLandingToast" = "Fertig, du fängst neu an. Lege dein erstes Konto an, um loszulegen.";
+"icloud.remoteWipeKeptSetup" = "Du hast deine Daten auf einem anderen Gerät gelöscht.";

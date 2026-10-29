@@ -520,8 +520,9 @@ struct SignOutNotificationWiringTests {
         let src = try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift")
         let code = Self.codeOnly(src)
         // **Eran 6 hasta el 2026-09-13**: los dos que faltan son los caminos de salida de la sesión de
-        // visita. El conteo incluye la declaración de la propia función (3 call-sites + 1 `func`).
-        #expect(code.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 4)
+        // visita. El conteo incluye la declaración de la propia función (4 call-sites + 1 `func`): el cuarto es el
+        // borrado de la cuenta con sesión privada, que desde el encargo S27i (2026-10-29) se lleva también lo personal.
+        #expect(code.components(separatedBy: "clearLocalSurfacesForArmedWipe()").count - 1 == 5)
         // El widget vive en el mismo helper A PROPÓSITO: es la otra superficie del SISTEMA que sigue
         // mostrando la cuenta cerrada hasta el relanzamiento, y comparte sus call-sites exactos.
         #expect(code.components(separatedBy: "WidgetDataCache.clearCache()").count - 1 == 1)
@@ -529,11 +530,11 @@ struct SignOutNotificationWiringTests {
         // grupos solo sobrevive en el boot-hook solo-grupos, que es el del cierre tras borrar la cuenta.
         #expect(!code.contains("clearDeliveredGroupNotifications"))
 
-        // La dirección contraria: tras borrar la cuenta de GRUPOS (celda «equipo») lo personal sobrevive,
-        // así que ese cierre NO puede llevar la capa entera.
+        // Tras borrar la cuenta de la celda «equipo» (D) ya NO sobrevive lo personal (encargo S27i, 2026-10-29): el cierre
+        // lleva la capa entera y el borrado de archivos de siempre, no el solo-grupos que conservaba el store personal.
         // Los marcadores se buscan en el fuente ENTERO —uno es un `// MARK:` y `codeOnly` se lo llevaría—;
         // lo que se afirma, sobre el cuerpo sin comentarios.
-        let marker = "func closeLocalAfterAccountDeletionGroupsOnly("
+        let marker = "func closeLocalAfterAccountDeletionPrivate("
         let nextMarker = "// MARK: - Helpers del canal de Grupos"
         guard let start = src.range(of: marker),
               let end = src.range(of: nextMarker, range: start.upperBound..<src.endIndex) else {
@@ -541,9 +542,9 @@ struct SignOutNotificationWiringTests {
             return
         }
         let body = Self.codeOnly(String(src[start.lowerBound..<end.lowerBound]))
-        #expect(body.contains("StorageModePersistence.armGroupsOnlyWipe()"))
-        #expect(!body.contains("clearLocalSurfacesForArmedWipe()"))
-        #expect(!body.contains("armSignOutWipe()"))
+        #expect(!body.contains("StorageModePersistence.armGroupsOnlyWipe()"))
+        #expect(body.contains("clearLocalSurfacesForArmedWipe()"))
+        #expect(body.contains("StorageModePersistence.armSignOutWipe()"))
     }
 
     /// El consent de GRUPOS muere donde muere el store PERSONAL, y SOLO ahí. Vaciar la closure
@@ -551,7 +552,7 @@ struct SignOutNotificationWiringTests {
     /// comportamiento en verde (observan el seam, no el cableado).
     ///
     /// La ASIMETRÍA con el hook solo-grupos es a CONSERVAR, no a "arreglar" por simetría: allí el
-    /// consent ya se limpió in-session en `closeLocalAfterAccountDeletionGroupsOnly` (y en `finalizeGroupsOnlyClose` hasta el paso 9) y el store personal sobrevive.
+    /// consent ya se limpió in-session en `closeLocalAfterAccountDeletionPrivate` (y en `finalizeGroupsOnlyClose` hasta el paso 9) y el store personal sobrevive.
     @Test func consentCleanup_wiredOnlyWherePersonalStoreDies() throws {
         let full = try Self.source("Yala/Utils/SwiftDataConfiguration.swift")
         // El CONTEO va sobre el código sin comentarios; los MARCADORES se buscan en el fuente entero,
@@ -577,7 +578,7 @@ struct SignOutNotificationWiringTests {
     /// en el BOOT-HOOK (ya en `.icloud`) y no aquí.
     @Test func inSessionConsentClears_neverOnCloudModePaths() throws {
         let src = Self.codeOnly(try Self.source("Yala/Services/CloudSync/CloudSessionSignOut.swift"))
-        // finalizeSessionExit (los cierres con grupos: «equipo» y solo grupos) + closeLocalAfterAccountDeletionGroupsOnly.
+        // finalizeSessionExit (los cierres con grupos: «equipo» y solo grupos) + closeLocalAfterAccountDeletionPrivate.
         #expect(src.components(separatedBy: "GroupsConsentState.clear()").count - 1 == 2)
 
         // Cada clear debe vivir en una de esas 3 funciones: la firma `func` más cercana hacia atrás
@@ -585,7 +586,7 @@ struct SignOutNotificationWiringTests {
         // `closeLocalAfterAccountDeletionCloud` pone este test rojo con el nombre del culpable.
         let allowed: Set<String> = [
             "finalizeSessionExit",
-            "closeLocalAfterAccountDeletionGroupsOnly",
+            "closeLocalAfterAccountDeletionPrivate",
         ]
         var searchStart = src.startIndex
         while let hit = src.range(of: "GroupsConsentState.clear()", range: searchStart..<src.endIndex) {
@@ -624,8 +625,9 @@ struct SignOutNotificationWiringTests {
         // del testigo, `heldForAnotherAccount` y `mirrorPendingMutationIDs`. El 10.º, del 2026-10-05
         // (`groups-drain-that-always-aborts-takes-the-loss-exit-away`): la closure `uncapturedChanges`, la sonda del History.
         // El 11.º, del mismo día (`fresh-start-drops-mirror-entries-of-another-identity-without-counting-them`): la closure
-        // `mirrorPendingOfAnotherAccount`, las entradas del espejo de otra cuenta que «Empezar de cero» cuenta.
-        #expect(signOut.components(separatedBy: "CloudSyncFlags.groupsBackendCompiledCapability").count - 1 == 11)
+        // `mirrorPendingOfAnotherAccount`, las entradas del espejo de otra cuenta que «Empezar de cero» cuenta. El 12.º, del
+        // 2026-10-29 (encargo S27i): el marker del borrado de la cuenta con sesión privada, que ahora se lleva lo personal.
+        #expect(signOut.components(separatedBy: "CloudSyncFlags.groupsBackendCompiledCapability").count - 1 == 12)
         #expect(!signOut.contains("CloudSyncFlags.groupsBackendEnabled"))
 
         // La UI que ofrece las filas tiene que resolver el path con la MISMA fuente que el dispatch, o

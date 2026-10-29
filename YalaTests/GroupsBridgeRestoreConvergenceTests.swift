@@ -926,7 +926,9 @@ struct GroupsBridgeRestoreConvergenceBehaviourTests {
             standard.set("Alguien", forKey: "userName")
             GroupsBridgeRestoreConvergenceStore.clear(standard)
 
-            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt, fleetStartedOver: true,
+            // Sin la marca del parque: con ella el receptor conserva las preferencias (encargo S27i), y este caso mide que la
+            // petición sobrevive a su RESET.
+            try DataWipeService.wipeLocallyForRemoteWipeSignal(in: context, signaledAt: signaledAt, fleetStartedOver: false,
                                                                rescheduleReminders: { _ in })
 
             #expect(standard.object(forKey: "userName") == nil,

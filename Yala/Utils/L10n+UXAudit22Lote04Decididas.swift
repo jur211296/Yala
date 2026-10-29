@@ -49,9 +49,5 @@ extension L10n {
 
         static var migratedRejoinSentence: String { l04("uxcs.migrated.rejoinSentence") }
 
-        // MARK: - L20-10 · la alerta final de eliminar la cuenta, por celda
-
-        /// Cuenta de grupos con sesión privada: lo del teléfono se queda.
-        static var deleteAccountFinalGroupsOnly: String { l04("uxcs.deleteAccount.finalGroupsOnly") }
     }
 }

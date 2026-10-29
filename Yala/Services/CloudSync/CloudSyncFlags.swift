@@ -316,6 +316,9 @@ nonisolated enum StorageModePersistence {
     /// `storageMode` (el device sigue en `.icloud`). Se limpia AL FINAL del boot-cleanup (idempotente).
     static let groupsOnlyWipeArmedKey = "cloudSync.groupsOnlyWipeArmed"
 
+    /// **Sin escritor en producción desde el encargo S27i (2026-10-29)**: su único llamador era el cierre tras borrar la
+    /// cuenta de grupos de una sesión privada, que ahora se lleva también lo personal con `armSignOutWipe`. Se conserva, con
+    /// su consumidor del arranque, por la marca que haya dejado armada un build anterior.
     static func armGroupsOnlyWipe(_ defaults: UserDefaults = .standard) {
         defaults.set(true, forKey: groupsOnlyWipeArmedKey)
     }

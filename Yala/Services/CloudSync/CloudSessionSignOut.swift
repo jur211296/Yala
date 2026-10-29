@@ -19,6 +19,7 @@
 //  - `.groupsOnlySignOut` (F): push-all de grupos → cierra la sesión → borra personal + sync-meta + grupos.
 //
 
+import CloudKit
 import Foundation
 import SwiftData
 
@@ -1591,9 +1592,8 @@ final class CloudSessionSignOut {
     /// evalúa en el `add`.
     ///
     /// Exclusivo de los caminos que arman un wipe del store PERSONAL: los cuatro cierres de sesión (C, D, E,
-    /// F), el secundario M1 y el cierre local tras borrar una cuenta en la nube. El cierre local tras borrar
-    /// la cuenta de grupos de una sesión PRIVADA no lo llama: ahí el store personal sobrevive, y tanto sus
-    /// recordatorios como lo que pinta el widget siguen siendo legítimos.
+    /// F), el secundario M1 y los dos cierres locales tras borrar una cuenta: el de la nube y, desde el encargo S27i
+    /// (2026-10-29), el de la cuenta de grupos de una sesión PRIVADA, que hasta ese día conservaba el store personal.
     private func clearLocalSurfacesForArmedWipe() {
         NotificationService.shared.cancelAllNotifications()
         NotificationService.shared.clearDeliveredNotifications()
@@ -2552,16 +2552,62 @@ final class CloudSessionSignOut {
         return true
     }
 
-    /// Cierre LOCAL del camino solo-grupos tras un `delete_personal_account` EXITOSO. Espeja el tail-end de
-    /// `finalizeSessionExit` SIN el push-all (datos muertos server-side). El GATE DE QUIESCENCIA es
-    /// OBLIGATORIO: la purga in-session salva al mainContext COMPARTIDO por los 3 stores (mismo trap de
-    /// SwiftData que en el sign-out solo-grupos). Timeout ⇒ devuelve `false` SIN cerrar la sesión ni armar
-    /// nada — el caller marca fallo y el usuario reintenta (`groups_forget_user`/`/account/delete` son
-    /// idempotentes; los teardowns también). Éxito ⇒ arma `groupsOnlyWipeArmed`, entra en
-    /// `.awaitingRelaunch` (reusa el cover terminal) y devuelve `true`.
-    func closeLocalAfterAccountDeletionGroupsOnly(context: ModelContext) async -> Bool {
+    /// **Encargo S27i · D, ANTES del servidor: la zona de iCloud.** Es el único paso del borrado de la cuenta con sesión
+    /// privada que depende de iCloud y puede fallar por algo que la persona no controla (red, iCloud ocupado), así que va
+    /// primero: con la cuenta todavía viva, un fallo no ha cambiado nada y «Reintentar» repite el gesto entero. Al revés,
+    /// con el servidor ya borrado, el reintento duraba lo que el JWT (el borrado se lleva `auth.users` y su refresh).
+    ///
+    /// Solo la zona, no las filas: si el servidor falla después, el espejo vuelve a subir lo local a una zona nueva y la
+    /// persona no ha perdido nada —«Tus datos siguen intactos» sigue siendo verdad—. Las filas se borran en el cierre, ya
+    /// sin red (`closeLocalAfterAccountDeletionPrivate`).
+    ///
+    /// **Sin cuenta de iCloud en el teléfono no hay zona que alcanzar, y eso no puede bloquear el borrado**
+    /// (`accountDeletionProceedsWithoutICloud`): fallaría en cada reintento y la cuenta no se podría eliminar nunca (review
+    /// adversarial). Se sigue con lo de este dispositivo y queda el canario.
+    func wipeICloudBeforeAccountDeletion() async -> Bool {
+        guard let failure = await ICloudPersonalCorpusProbe.wipe() else { return true }
+        if Self.accountDeletionProceedsWithoutICloud(failure) {
+            MetricsService.canary(.freshStartWipeFailed, detail: "accountDeletePrivateNoICloud:\(failure)")
+            return true
+        }
+        MetricsService.canary(.freshStartWipeFailed, detail: "accountDeletePrivate:\(failure)")
+        return false
+    }
+
+    /// Los fallos de la zona que no dicen «inténtalo luego» sino «aquí no hay iCloud»: sin cuenta, o cuenta gestionada que
+    /// no lo permite. Con ellos el teléfono no alcanza ninguna zona, ni ahora ni en el reintento.
+    nonisolated static func accountDeletionProceedsWithoutICloud(_ failure: String) -> Bool {
+        failure == "CKError.\(CKError.Code.notAuthenticated.rawValue)"
+            || failure == "CKError.\(CKError.Code.managedAccountRestricted.rawValue)"
+    }
+
+    /// Cierre LOCAL de la cuenta de Yala de una sesión PRIVADA («equipo», D) tras un `delete_personal_account` EXITOSO.
+    ///
+    /// **Desde el 2026-10-29 se lleva TODO** (decisión de Jürgen, encargo S27i): la cuenta y sus grupos ya murieron en el
+    /// servidor, la zona de iCloud antes que ellos (`wipeICloudBeforeAccountDeletion`), y aquí se van las finanzas de este
+    /// dispositivo. Hasta ese día lo personal se quedaba (L20-10). El teléfono vuelve al Welcome, como tras borrar la cuenta
+    /// de la nube. Lo único que puede parar es la quiescencia, como antes: la segunda pasada de la zona es best-effort.
+    ///
+    /// **Las FILAS se borran a propósito con el espejo montado.** «Archivos, nunca filas» protege a quien NO quiere tocar
+    /// su iCloud; aquí es al revés: el espejo pudo recrear la zona y re-exportar lo local desde el paso de antes, y lo que
+    /// exporta ahora son borrados. La señal de vaciado avisa a los demás dispositivos del Apple ID (solo desde una sesión
+    /// privada confirmada); sin la marca de que el parque sigue, porque aquí nadie sigue.
+    ///
+    /// **Desde la quiescencia hasta el borrado no hay ni un `await`** (review adversarial): un `save()` a medio import es
+    /// el trap no atrapable de SwiftData, y una espera entre la medida y el borrado la dejaría caducar.
+    func closeLocalAfterAccountDeletionPrivate(context: ModelContext) async -> Bool {
         phase = .working
-        CloudSyncBreadcrumb.signOutStarted(path: "account-delete-groups-only")
+        CloudSyncBreadcrumb.signOutStarted(path: "account-delete-private")
+
+        GroupsSyncClient.shared.teardownForSignOut()
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
+
+        // La capa de borrado desmonta las pestañas para que ningún `@Query` mire filas que se van (molde de «Vaciar datos»).
+        let session = SessionState.shared
+        session.resetToDefaults()
+        session.isWipingData = true
+        defer { session.isWipingData = false }
+        do { try await Task.sleep(for: .milliseconds(500)) } catch {}
 
         guard await Self.awaitPersonalQuiescenceForGroupsSignOut() else {
             let pending = Self.liveGroupsPendingCount(context: context)
@@ -2569,19 +2615,55 @@ final class CloudSessionSignOut {
             phase = .idle  // jamás dejar el coordinador pegado en `.working`; el service marca el fallo.
             return false
         }
-
-        // Teardown del canal (idempotente) → purga in-session (bajo el gate de quiescencia) → consent.
-        GroupsSyncClient.shared.teardownForSignOut()
-        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
+        // ── Desde aquí no hay ni un `await` hasta el borrado. ──
         Self.purgeGroupsSyncState(context: context)
         GroupsConsentState.clear()
+        let signalsOtherDevices = DestructiveScopeLogic.wipeSignalsAppleIDDevices(
+            confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+            storageMode: CloudSyncFlags.storageMode)
+        let signaledAt = Date.now
+        if signalsOtherDevices {
+            // El reparto, VACÍO (dominio cerrado: la cuenta de grupos ya no existe). Sin él, un receptor con grupos propios
+            // esperaría 30 días un reparto que nadie escribe; vacío, repone lo suyo (review adversarial).
+            GroupsRemoteWipeDivision.declare(context: context, signaledAt: signaledAt, domainOpen: false)
+        }
+        do {
+            // Sin resetear preferencias: las retira el boot-wipe, y bajar `hasCompletedOnboarding` aquí encaminaría al
+            // onboarding con el cierre aún en marcha.
+            try DataWipeService.wipeAllUserData(in: context, broadcastSignal: signalsOtherDevices,
+                                                resetsPreferences: false, signalTimestamp: signaledAt)
+            // `wipeAllUserData` no nombra `GroupBridgePreference`, que vive en el store personal y viaja por el espejo: con
+            // la cuenta borrada no queda grupo al que se refiera (molde de `deleteLocalGroupsRows`).
+            for preference in try context.fetch(FetchDescriptor<GroupBridgePreference>()) { context.delete(preference) }
+            try context.save()
+        } catch {
+            // El boot-wipe se lleva los archivos igual: se sigue. Lo que podría quedar es que el espejo re-exporte alguna
+            // fila antes de relanzar, y por eso se deja rastro.
+            context.rollback()
+            MetricsService.canary(.freshStartWipeFailed, detail: "accountDeletePrivateRows:\(type(of: error))")
+        }
+        session.requestDeliberateWipeSettle()
 
-        // No se para si la sesión sobrevive (ver `retireIfSessionSurvived`). Aquí es lo ÚNICO que la retira: el borrado
-        // solo-grupos del arranque no toca el llavero, porque el store personal y su sesión privada siguen.
-        Self.retireIfSessionSurvived(await CloudAuthService.shared.signOut(), path: "account-delete-groups-only")
+        // **Segunda pasada de la zona, ya sin filas** (review adversarial). Entre la primera —antes del servidor— y el
+        // borrado de las filas pasan segundos de red, y el espejo pudo recrear la zona y volver a subir lo local; los
+        // borrados de las filas pueden no exportarse antes de que el arranque se lleve los archivos. Sin filas, el espejo
+        // solo puede subir borrados. Best-effort: la cuenta ya no existe y bloquear aquí no tendría salida.
+        if let failure = await ICloudPersonalCorpusProbe.wipe(), !Self.accountDeletionProceedsWithoutICloud(failure) {
+            MetricsService.canary(.freshStartWipeFailed, detail: "accountDeletePrivateSecondPass:\(failure)")
+        }
 
-        StorageModePersistence.armGroupsOnlyWipe()
-        CloudSyncBreadcrumb.signOutGroupsOnlyWipeArmed()
+        // No se para si la sesión sobrevive (ver `retireIfSessionSurvived`); el retiro va ANTES del arm del borrado.
+        Self.retireIfSessionSurvived(await CloudAuthService.shared.signOut(), path: "account-delete-private")
+
+        // Un marker `includesGroups` huérfano no puede colarse; con la capacidad COMPILADA, el borrado lleva el store de
+        // Grupos (mismo racional que `closeLocalAfterAccountDeletionCloud`).
+        StorageModePersistence.clearSignOutWipeIncludesGroups()
+        if CloudSyncFlags.groupsBackendCompiledCapability {
+            StorageModePersistence.markSignOutWipeIncludesGroups()
+        }
+        StorageModePersistence.armSignOutWipe()
+        CloudSyncBreadcrumb.signOutWipeArmed()
+        clearLocalSurfacesForArmedWipe()
         phase = .awaitingRelaunch
         return true
     }

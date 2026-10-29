@@ -2414,7 +2414,6 @@
 "icloud.detail.cta.diagnose" = "Vérifier et réparer";
 "icloud.detail.cta.viewTechnical" = "Voir le détail technique";
 "icloud.remoteOnboardingCompleted" = "Tu as terminé la configuration sur ton autre appareil. Tout est là maintenant.";
-"icloud.remoteRestoreCompleted" = "Données restaurées";
 "icloud.remoteWipe.title" = "Données indisponibles";
 "icloud.remoteWipe.message" = "Yala a été vidée sur un autre de tes appareils. Si c'était toi, recommence à zéro ici aussi ; sinon, attends : si c'était une erreur, tes données peuvent revenir.";
 "icloud.remoteWipe.confirm" = "Repartir à zéro";
@@ -5010,7 +5009,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "Tes données de cet appareil sont supprimées";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "Tes données personnelles de cet appareil ne sont pas touchées";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Tes données de cet appareil et de ton iCloud sont supprimées, elles disparaissent donc aussi de tes autres appareils";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Ton compte et toutes tes données sont supprimés, pour toujours";
@@ -7561,7 +7560,6 @@
 "uxcs.signOutUpload.title" = "Envoi de tes modifications vers iCloud…";
 "uxcs.signOutUpload.pending" = "Modifications restant à envoyer : %d";
 "uxcs.migrated.rejoinSentence" = "Ce groupe a déménagé. Reconnecte-toi pour le voir à jour.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Ton compte Yala est supprimé. Ce qui est sur cet appareil reste.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Avant d'activer le cloud";
@@ -8456,3 +8454,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "Ce que l’iPhone comprend";
+"settings.wipeLandingToast" = "C’est fait, tu repars de zéro. Crée ton premier compte pour enregistrer.";
+"icloud.remoteWipeKeptSetup" = "Tu as vidé tes données depuis un autre appareil.";

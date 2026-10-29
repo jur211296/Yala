@@ -98,10 +98,10 @@ struct ReopenOnlyForPrivateICloudWiringTests {
         #expect(pos == pos.sorted())
     }
 
-    /// El borrado solo-grupos CON sesión privada monta el espejo: se queda con el relanzamiento, a propósito.
+    /// El borrado de la cuenta CON sesión privada monta el espejo: se queda con el relanzamiento, a propósito.
     @Test func groupsOnlyDeletionWithAPrivateSession_keepsTheRelaunch() throws {
         let src = try Self.source(Self.coordinator)
-        let cuerpo = try #require(Self.body(of: "func closeLocalAfterAccountDeletionGroupsOnly(", in: src))
+        let cuerpo = try #require(Self.body(of: "func closeLocalAfterAccountDeletionPrivate(", in: src))
         #expect(!cuerpo.contains("attemptSignOutSwap"))
     }
 

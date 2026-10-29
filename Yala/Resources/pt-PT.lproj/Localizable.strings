@@ -1605,7 +1605,6 @@
 "icloud.noAccountWarning" = "Para guardares os teus dados no iCloud, inicia sessão com a tua Conta Apple no topo das Definições.";
 "icloud.privacyNote" = "Seus dados são armazenados de forma privada na sua conta pessoal do iCloud. Yala não tem acesso a eles.";
 "icloud.remoteOnboardingCompleted" = "Terminaste a configuração no teu outro dispositivo. Agora está tudo aqui.";
-"icloud.remoteRestoreCompleted" = "Dados restaurados";
 "icloud.remoteWipe.cancel" = "Continuar aguardando";
 "icloud.remoteWipe.confirm" = "Recomeçar";
 "icloud.remoteWipe.message" = "O Yala foi esvaziado noutro dos teus dispositivos. Se foste tu, começa do zero aqui também; se não, espera: se foi um erro, os teus dados podem voltar.";
@@ -4302,7 +4301,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "Apagam-se os teus dados deste dispositivo";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "Os teus dados pessoais deste dispositivo não são alterados";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Apagam-se os teus dados deste dispositivo e do teu iCloud, por isso desaparecem também dos teus outros dispositivos";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Apaga-se a tua conta e todos os teus dados, para sempre";
@@ -6886,7 +6885,6 @@
 "uxcs.signOutUpload.title" = "A enviar as tuas alterações para o iCloud…";
 "uxcs.signOutUpload.pending" = "Alterações por enviar: %d";
 "uxcs.migrated.rejoinSentence" = "Este grupo mudou de sítio. Inicia sessão novamente para o veres atualizado.";
-"uxcs.deleteAccount.finalGroupsOnly" = "A tua conta Yala é eliminada. O que está neste dispositivo fica.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Antes de ativar a nuvem";
@@ -7790,3 +7788,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "O que o iPhone está a perceber";
+"settings.wipeLandingToast" = "Pronto, começaste do zero. Cria a tua primeira conta para registar.";
+"icloud.remoteWipeKeptSetup" = "Apagaste os teus dados noutro dispositivo.";
