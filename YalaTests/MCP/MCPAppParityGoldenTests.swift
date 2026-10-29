@@ -15,6 +15,8 @@
 //    lo que el conector porta), con `GroupBridgeStatsAdjustment.build(from:context:)`;
 //  - gasto de presupuesto: `BudgetsViewModel.calculateSpending` (la pantalla de Presupuestos);
 //  - ajuste de grupos por movimiento: `GroupBridgeStatsAdjustment`;
+//  - el `tipo` de cada movimiento (`buscar_movimientos`): `TransactionClassificationLogic`, con transferencias y ajustes
+//    de saldo aparte;
 //  - conversiones sueltas: `CurrencyConverter.convertChecked(on:)`, con su escalón de filas anteriores y tabla
 //    estática.
 //
@@ -228,6 +230,20 @@ struct MCPAppParityGoldenTests {
             ]
         }
 
+        // El `tipo` de `buscar_movimientos`, con las reglas de la app: la pata de transferencia es transferencia (como
+        // `TransactionDetailSheetLogic.kind`), otro ajuste de saldo es ajuste, y el resto decide
+        // `TransactionClassificationLogic` (sin categoría, el signo).
+        var kinds: [String: Any] = [:]
+        for (id, tx) in txs {
+            if tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer || tx.transferPairID != nil {
+                kinds[id] = "transferencia"
+            } else if tx.balanceAdjustmentType != nil {
+                kinds[id] = "ajuste_de_saldo"
+            } else {
+                kinds[id] = TransactionClassificationLogic.isIncome(tx) ? "ingreso" : "gasto"
+            }
+        }
+
         var conversions: [Any] = []
         for c in scenario.conversions {
             guard let day = dayStartUTC(c.dateKey) else { throw GoldenError.bad("[\(scenario.id)] dateKey \(c.dateKey)") }
@@ -262,6 +278,7 @@ struct MCPAppParityGoldenTests {
                 "recurrentes_mensual": round6(chat.recurring.totals.recurringMonthly),
             ],
             "groups": groups,
+            "kinds": kinds,
             "conversions": conversions,
         ]
     }

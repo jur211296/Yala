@@ -116,7 +116,7 @@ enum ChatTopicAreasLogic {
             // Para Apuntar cuenta cuántas veces se apuntó cada subcategoría, no cuánto sumó. Solo lo apuntado a mano:
             // las patas de un gasto de grupo no son algo que el usuario escriba en el chat.
             var counts: [String: Double] = [:]
-            for tx in txs where tx.category?.isIncome == false && tx.splitExpenseID == nil && tx.splitSettlementID == nil {
+            for tx in txs where !TransactionClassificationLogic.isIncome(tx) && tx.splitExpenseID == nil && tx.splitSettlementID == nil {
                 if let name = tx.subcategory?.name { counts[name, default: 0] += 1 }
             }
             input.frequentExpenseSubcategories = ranked(counts)

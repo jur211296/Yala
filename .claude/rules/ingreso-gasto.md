@@ -41,9 +41,12 @@ por necesidad no tiene trozos por categoría: sin categoría no hay necesidad y 
 que suma lo sin clasificar a Opcional, ahí). El corte del período anterior (`DistributionPreviousPeriodCalculator.currentDates`)
 cuenta el movimiento sin categoría, porque todas sus calculadoras lo cuentan. Un desglose nuevo por categoría sigue la misma forma; lo fija `CategoryBreakdownUncategorizedTests`.
 Pendiente: el ranking de subcategorías del widget de inicio deja fuera lo que no tiene subcategoría, con o sin
-categoría. Yala IA y el conector `mcp/` tampoco siguen aún la regla (ticket
-`yala-ia-classifies-uncategorized-movements-as-expense`): si los tocas, cambia los dos y regenera
-`MCPAppParityGoldenTests`.
+categoría. Yala IA y el conector `mcp/` la siguen desde el 2026-10-29 (ticket
+`yala-ia-classifies-uncategorized-movements-as-expense`): el contexto del chat pone el gasto sin categoría en «Other» de
+categorías, comercios, necesidades, historial y anomalías, y el ingreso sin categoría en «Other» de `income_categories`;
+el bucket `uncategorized` es solo gasto. El `tipo` de `buscar_movimientos` ya no dice `sin_categoria` (`txKindOf`), y el
+golden lo ata (`kinds`). Si tocas uno, cambia el otro y regenera `MCPAppParityGoldenTests`; lo fija
+`YalaIAUncategorizedClassificationTests`.
 
 ## Cómo se suma: con signo
 

@@ -7,7 +7,7 @@ import { buildGroupAdjustment } from "../src/logic/groups";
 import { buildLookup } from "../src/logic/lookup";
 import { canonicalMerchant } from "../src/logic/merchant";
 import { listRecurring, monthlyMultiplier } from "../src/logic/recurring";
-import { summarize } from "../src/logic/summary";
+import { summarize, txKindOf } from "../src/logic/summary";
 import { resolvePeriod } from "../src/logic/dates";
 import { account, budget, category, scheduled, subcategory, tag, tx, uuid } from "./fixtures";
 
@@ -297,6 +297,33 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     });
     expect(r.gastos).toBeCloseTo(34);
     expect(r.aproximado_detalle.gastos).toBe(true);
+  });
+});
+
+describe("tipo de buscar_movimientos (TransactionClassificationLogic)", () => {
+  const row = (amount: number, bat: string | null = null, pair: string | null = null) => ({
+    amount,
+    balance_adjustment_type: bat,
+    transfer_pair_id: pair,
+  });
+  const gasto = { is_income: false };
+  const ingreso = { is_income: true };
+
+  it("sin categoría decide el signo, y el cero es ingreso", () => {
+    expect(txKindOf(row(-40), null)).toBe("gasto");
+    expect(txKindOf(row(70), null)).toBe("ingreso");
+    expect(txKindOf(row(0), null)).toBe("ingreso");
+  });
+
+  it("con categoría manda la categoría, también con el signo contrario", () => {
+    expect(txKindOf(row(20), gasto)).toBe("gasto");
+    expect(txKindOf(row(-20), ingreso)).toBe("ingreso");
+  });
+
+  it("una pata de transferencia es transferencia; otro ajuste de saldo, ajuste", () => {
+    expect(txKindOf(row(-100, "transfer", "T"), null)).toBe("transferencia");
+    expect(txKindOf(row(-100, null, "T"), null)).toBe("transferencia");
+    expect(txKindOf(row(500, "initial_balance"), null)).toBe("ajuste_de_saldo");
   });
 });
 

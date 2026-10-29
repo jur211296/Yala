@@ -1,10 +1,10 @@
 ---
 id: yala-ia-classifies-uncategorized-movements-as-expense
-status: backlog
+status: done
 priority: low
 area: "yala-ia, mcp"
 created: 2026-10-23
-updated: 2026-10-23
+updated: 2026-10-29
 source: "encargo 2026-10-23-cifras-distintas-mismo-dinero-2-2 (card vl1q)"
 ---
 
@@ -25,3 +25,19 @@ ingresos recurrentes, sugerencias) y el `tipo` de `buscar_movimientos` del conec
 ## Hecho cuando
 
 Yala IA y el conector clasifican con la regla de la app, con el golden regenerado y un caso sin categoría de cada signo.
+
+## Hecho (2026-10-29)
+
+- **Yala IA**: el contexto del chat (`FullFinancialContextBuilder`), las anomalías, las áreas de temas y las sugerencias
+  deciden con `TransactionClassificationLogic`. El gasto sin categoría aparece en «Other» de categorías, comercios,
+  necesidades («sin clasificar»), historial y en la línea base de anomalías; el ingreso sin categoría, en «Other» de
+  `income_categories` y en los ingresos de las sugerencias. El bucket `uncategorized` es solo gasto.
+- **Conector**: `buscar_movimientos` da `ingreso`/`gasto` por la misma regla (`txKindOf`, sin `sin_categoria`; `categoria:
+  null` lo sigue diciendo). Una pata de transferencia con `balance_adjustment_type = "transfer"` sale `transferencia`
+  (antes, `ajuste_de_saldo`).
+- **Golden**: gana `kinds` (el `tipo` de cada movimiento, calculado por la app) y el escenario de la tarjeta, un ingreso
+  sin categoría y una transferencia con la forma real. Regenerado.
+- **Tests**: `YalaIAUncategorizedClassificationTests` (8 casos, uno de cada signo; con el código viejo, los 8 en rojo) y
+  `txKindOf` en `mcp/test/logic.test.ts` (con el `tipo` viejo, rojo también el golden).
+- **Fuera**: «Presupuestos en riesgo» de Observaciones (`InsightsCalculator`, ticket propio) y
+  `ChatUnsignedExpenseRepairLogic`, que deja fuera lo sin categoría a propósito.

@@ -70,6 +70,24 @@ export function isIncomeOf(category: { is_income?: boolean | null } | null, tx: 
   return (num(tx.amount) ?? 0) >= 0;
 }
 
+/** El `tipo` de un movimiento en `buscar_movimientos`. */
+export type TxKind = "ajuste_de_saldo" | "transferencia" | "ingreso" | "gasto";
+
+/**
+ * El `tipo` con las reglas de la app: una pata de transferencia (`balance_adjustment_type = "transfer"`, o con par) es
+ * `transferencia`; otro ajuste de saldo (saldo inicial, ajuste), `ajuste_de_saldo`; el resto, ingreso o gasto con
+ * `isIncomeOf` (`TransactionClassificationLogic`): sin categoría decide el signo. Hasta el 2026-10-29 el movimiento sin
+ * categoría salía `sin_categoria` y la transferencia, `ajuste_de_saldo`. `categoria: null` sigue diciendo que no tiene.
+ */
+export function txKindOf(
+  tx: Pick<TxRow, "amount" | "balance_adjustment_type" | "transfer_pair_id">,
+  category: { is_income?: boolean | null } | null,
+): TxKind {
+  if (tx.balance_adjustment_type === "transfer" || tx.transfer_pair_id) return "transferencia";
+  if (tx.balance_adjustment_type) return "ajuste_de_saldo";
+  return isIncomeOf(category, tx) ? "ingreso" : "gasto";
+}
+
 export function storedConversionMissing(tx: Pick<TxRow, "amount" | "amount_in_preferred_currency">): boolean {
   return (num(tx.amount_in_preferred_currency) ?? 0) === 0 && (num(tx.amount) ?? 0) !== 0;
 }

@@ -171,10 +171,10 @@ final class FullFinancialContextBuilder {
         }
 
         let intervals = buildIntervals(now: now, calendar: calendar, endOfToday: cutoff.startOfTomorrow.addingTimeInterval(-1))
-        // `!= true` keeps tx with category=nil in the expense bucket → uncategorized
-        // bucket sees them. Income tx (isIncome==true) are excluded.
+        // Ingreso o gasto con la regla de la app (`TransactionClassificationLogic`): la categoría manda y, sin
+        // categoría, el signo. Un gasto sin categoría cae en el trozo «Other»; un ingreso sin categoría, fuera.
         let currentMonthExpenseTx = statsTx.filter {
-            intervals.currentMonth.contains($0.date) && $0.category?.isIncome != true
+            intervals.currentMonth.contains($0.date) && !TransactionClassificationLogic.isIncome($0)
         }
 
         let metadata = buildMetadata(
@@ -761,10 +761,10 @@ final class FullFinancialContextBuilder {
         converter: CurrencyConverting,
         adjustment: GroupBridgeStatsAdjustment
     ) -> [FullFinancialContext.CategoryEntry] {
-        let currentTx = tx.filter { intervals.currentMonth.contains($0.date) && $0.category?.isIncome == false }
-        let lastMonthTx = tx.filter { intervals.lastMonth.contains($0.date) && $0.category?.isIncome == false }
-        let twoMonthsAgoTx = tx.filter { intervals.twoMonthsAgo.contains($0.date) && $0.category?.isIncome == false }
-        let currentYearTx = tx.filter { intervals.currentYear.contains($0.date) && $0.category?.isIncome == false }
+        let currentTx = tx.filter { intervals.currentMonth.contains($0.date) && !TransactionClassificationLogic.isIncome($0) }
+        let lastMonthTx = tx.filter { intervals.lastMonth.contains($0.date) && !TransactionClassificationLogic.isIncome($0) }
+        let twoMonthsAgoTx = tx.filter { intervals.twoMonthsAgo.contains($0.date) && !TransactionClassificationLogic.isIncome($0) }
+        let currentYearTx = tx.filter { intervals.currentYear.contains($0.date) && !TransactionClassificationLogic.isIncome($0) }
 
         // Totales por periodo de una categoría o subcategoría. `lastToDate` es la parte del mes
         // pasado hasta el día equivalente a hoy (`intervals.lastMonthToDate`, contenido en `last`).
@@ -875,7 +875,7 @@ final class FullFinancialContextBuilder {
         struct Totals { var current = 0.0, last = 0.0, year = 0.0 }
         var catAgg: [String: Totals] = [:]
         var subAgg: [String: [String: Totals]] = [:]
-        for tx in tx where tx.category?.isIncome == true && !adjustment.isSuppressed(tx) {
+        for tx in tx where TransactionClassificationLogic.isIncome(tx) && !adjustment.isSuppressed(tx) {
             let inCurrent = intervals.currentMonth.contains(tx.date)
             let inLast = intervals.lastMonth.contains(tx.date)
             let inYear = intervals.currentYear.contains(tx.date)
@@ -953,9 +953,9 @@ final class FullFinancialContextBuilder {
             for tx in monthTx where !adjustment.isSuppressed(tx) {
                 let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
                 let category = tx.category?.name ?? "Other"
-                if tx.category?.isIncome == true {
+                if TransactionClassificationLogic.isIncome(tx) {
                     incomeBySub[tx.subcategory?.name ?? category, default: 0] += amount
-                } else if tx.category?.isIncome == false {
+                } else {
                     byCategory[category, default: 0] += amount
                     if let sub = tx.subcategory?.name {
                         bySub[sub, default: (category, 0)].total += amount
@@ -1032,8 +1032,8 @@ final class FullFinancialContextBuilder {
         converter: CurrencyConverting,
         adjustment: GroupBridgeStatsAdjustment
     ) -> [FullFinancialContext.MerchantEntry] {
-        let currentTx = tx.filter { intervals.currentMonth.contains($0.date) && $0.category?.isIncome == false }
-        let lastTx = tx.filter { intervals.lastMonth.contains($0.date) && $0.category?.isIncome == false }
+        let currentTx = tx.filter { intervals.currentMonth.contains($0.date) && !TransactionClassificationLogic.isIncome($0) }
+        let lastTx = tx.filter { intervals.lastMonth.contains($0.date) && !TransactionClassificationLogic.isIncome($0) }
 
         var current: [String: (total: Double, count: Int)] = [:]
         var last: [String: Double] = [:]
@@ -1305,7 +1305,7 @@ final class FullFinancialContextBuilder {
     ) -> FullFinancialContext.PatternsSection {
         let last30Start = calendar.date(byAdding: .day, value: -30, to: now) ?? now
         let last30Interval = DateInterval(start: last30Start, end: endOfToday)
-        let last30Tx = tx.filter { last30Interval.contains($0.date) && $0.category?.isIncome == false }
+        let last30Tx = tx.filter { last30Interval.contains($0.date) && !TransactionClassificationLogic.isIncome($0) }
 
         let weekdayData = WeekdaySpendingCalculator.calculate(
             transactions: last30Tx,
@@ -1328,7 +1328,7 @@ final class FullFinancialContextBuilder {
 
         // Needs breakdown for current month expenses
         let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
-        let currentMonthTx = tx.filter { $0.date >= monthStart && $0.date <= endOfToday && $0.category?.isIncome == false }
+        let currentMonthTx = tx.filter { $0.date >= monthStart && $0.date <= endOfToday && !TransactionClassificationLogic.isIncome($0) }
         var essential = 0.0, priority = 0.0, optional = 0.0, unclassified = 0.0
         for tx in currentMonthTx {
             if adjustment.isSuppressed(tx) { continue }
