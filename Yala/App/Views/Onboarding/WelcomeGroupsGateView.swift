@@ -42,12 +42,13 @@
 //  La que NO lo es —el cierre de la nube— hace otro borrado, así que la puerta lo mide
 //  ANTES y enseña una pantalla con salida en vez de arrancar.
 //
-//  **Lo que se lleva el store de Grupos, dicho con precisión:** `forgetsGroups = kind.pushesGroups ||
-//  hasBackendGroupRows(context:)`, así que con `.privateOnly` el marker `includesGroups` **se pone si hay
-//  filas del canal backend en el store** — y `hasBackendGroupRows` devuelve `true` ante un error de fetch,
-//  a propósito. O sea que «el store de Grupos sobrevive» es cierto solo cuando no hay nada del backend
-//  dentro. Es la semántica del cierre privado del paso 9 y no se toca aquí: cambiarla sería una segunda
-//  verdad frente a Ajustes.
+//  **Lo que se lleva el store de Grupos: entero, si tiene algún grupo** (ticket
+//  `welcome-groups-gate-loops-on-legacy-cloudkit-groups`, decisión A de Jürgen del 2026-10-29). Esta vista llama al cierre
+//  con `neutralReturnFromGroupsGate: true`, y la fórmula del arm (`CloudSignOutFlowLogic.wipeForgetsGroups`) marca el
+//  store para borrar aunque sus grupos sean de la era CloudKit y nunca migraran. Hasta ese día, con `.privateOnly` solo lo marcaba si había filas del canal backend:
+//  los grupos viejos sobrevivían, la puerta los volvía a contar al arrancar y pedía el mismo borrado en bucle (caso
+//  Pia). El cierre desde Ajustes conserva la regla de antes, a la espera de su propia decisión
+//  (`private-sign-out-keeps-legacy-cloudkit-groups`).
 //
 //  **Se informa, no se pregunta** (decisión de Jürgen en el ticket padre) — con una excepción que su
 //  propia premisa impone: informar dice «tus datos personales siguen a salvo en iCloud», y eso solo es
@@ -891,7 +892,8 @@ struct WelcomeGroupsGateView: View {
             context: modelContext,
             confirmedPath: celda,
             confirmedWithoutICloudCopy: withoutICloudCopy,
-            destinationOnArm: purpose.destinationAfterNeutralReturn)
+            destinationOnArm: purpose.destinationAfterNeutralReturn,
+            neutralReturnFromGroupsGate: true)
         // Cinturón del cinturón: si el coordinador volvió sin tocar su fase, no arrancó nada. Sin esto la
         // pantalla se queda en un progreso que no avanza y sin botón de volver.
         if CloudSessionSignOut.shared.phase == .idle { phase = .unavailable }

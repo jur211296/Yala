@@ -1103,7 +1103,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | backlog | tickets/backlog/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
 | welcome-groups-back-forgets-first-time-after-invite-screen | backlog | tickets/backlog/welcome-groups-back-forgets-first-time-after-invite-screen.md |
 | welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen | backlog | tickets/backlog/welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen.md |
-| welcome-groups-gate-loops-on-legacy-cloudkit-groups | backlog | tickets/backlog/welcome-groups-gate-loops-on-legacy-cloudkit-groups.md |
+| welcome-groups-gate-loops-on-legacy-cloudkit-groups | qa | tickets/qa/welcome-groups-gate-loops-on-legacy-cloudkit-groups.md |
 | welcome-privacy-branch-has-no-secondary-door | discarded | tickets/discarded/welcome-privacy-branch-has-no-secondary-door.md |
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |
 | welcome-private-fresh-start-skips-icloud-check | done | tickets/done/welcome-private-fresh-start-skips-icloud-check.md |

@@ -107,6 +107,13 @@ final class CloudSessionSignOut {
     /// destino puesto como «este proceso tiene que morir al pasar a segundo plano», aunque el cierre se bloquee.
     private var destinationOnArm: WelcomeMirrorRelaunchLogic.Destination?
 
+    /// **Este cierre es la vuelta al neutro de la puerta de Grupos del Welcome**, y si el store de Grupos tiene algún grupo, su
+    /// borrado se lo lleva entero, también los de la era CloudKit que nunca migraron (`CloudSignOutFlowLogic.wipeForgetsGroups`,
+    /// ticket `welcome-groups-gate-loops-on-legacy-cloudkit-groups`). Vive aquí y no se deduce de `destinationOnArm` porque el
+    /// destino del invitado puede ser `nil`. Viaja con el cierre hasta el arm —también a los que retoman un bloqueo— y se
+    /// retira al armar o al reconocer el bloqueo, como el destino.
+    private var neutralReturnFromGroupsGate = false
+
     /// Vuelve a `.idle` tras un `.blocked` (el usuario cerró el error).
     func acknowledgeBlocked() {
         if case .blocked = phase {
@@ -121,8 +128,9 @@ final class CloudSessionSignOut {
             // retira las dos aceptaciones, porque el cierre que las tenía ya no sigue.
             personalLossExit = nil
             acceptedPersonalLoss = nil
-            // El destino era de este cierre, que ya no sigue.
+            // El destino era de este cierre, que ya no sigue. Y quién lo pidió, por lo mismo.
             destinationOnArm = nil
+            neutralReturnFromGroupsGate = false
         }
         blockedExit = nil
     }
@@ -170,12 +178,18 @@ final class CloudSessionSignOut {
     /// `confirmedWithoutICloudCopy`: la persona confirmó, con el segundo gesto, cerrar una sesión PRIVADA sin
     /// copia en iCloud. Solo entonces se salta la espera del export — no hay a dónde subir, y ya se le dijo
     /// que se pierde (decisión de Jürgen del 2026-09-09). En los demás caminos se ignora.
+    ///
+    /// `neutralReturnFromGroupsGate`: lo pasa SOLO la vuelta al neutro de la puerta de Grupos del Welcome
+    /// (`WelcomeGroupsGateView.returnToNeutral`), y hace que el borrado se lleve el store de Grupos entero si tiene algún grupo. Ajustes y la
+    /// hoja del cambio de Apple ID se quedan con `false`. Ver `self.neutralReturnFromGroupsGate`.
     func signOut(context: ModelContext, confirmedPath: CloudSignOutFlowLogic.Path? = nil,
                  confirmedWithoutICloudCopy: Bool = false,
-                 destinationOnArm: WelcomeMirrorRelaunchLogic.Destination? = nil) async {
+                 destinationOnArm: WelcomeMirrorRelaunchLogic.Destination? = nil,
+                 neutralReturnFromGroupsGate: Bool = false) async {
         // Con la subida de «Empezar de cero» en vuelo tampoco: sube el mismo outbox (`freshStartDrainInFlight`).
         guard phase == .idle, !freshStartDrainInFlight else { return }
         self.destinationOnArm = destinationOnArm
+        self.neutralReturnFromGroupsGate = neutralReturnFromGroupsGate
         // Un gesto nuevo no hereda lo que otro aceptó perder (las salidas del teléfono sin App Attest, la de grupos y la
         // personal).
         groupsLossExit = nil
@@ -853,6 +867,20 @@ final class CloudSessionSignOut {
         }
     }
 
+    /// ¿El store de grupos guarda ALGÚN grupo, del canal que sea? Es el término que cuenta la puerta de Grupos del Welcome
+    /// (`ContentView.checkHasGroupsData`), y lo que decide si su vuelta al neutro se lleva el store
+    /// (`CloudSignOutFlowLogic.wipeForgetsGroups`). Solo lee.
+    static func hasAnyGroupRows(context: ModelContext) -> Bool {
+        do {
+            return try context.fetchCount(FetchDescriptor<SplitGroup>()) > 0
+        } catch {
+            #if DEBUG
+            print("CloudSessionSignOut: Error contando grupos: \(error)")
+            #endif
+            return true  // como la puerta: ante la duda hay grupos, y el borrado que ella pidió se los lleva
+        }
+    }
+
     /// **Cerrar sesión en una sesión PRIVADA (C), en el «equipo» (D) o en solo grupos (F)** — ADR
     /// 2026-09-09 §5: sube lo pendiente, borra lo local, deja iCloud y la cuenta intactos, y vuelve al
     /// Welcome.
@@ -1507,12 +1535,15 @@ final class CloudSessionSignOut {
             Self.noteGroupsDiscarded(pending: CloudSignOutFlowLogic.groupsDiscardedCount(
                 rows: Self.liveGroupsPendingCount(context: context), acceptance: accepted), cause: accepted.cause)
         }
-        // La MISMA fórmula que cuenta la hoja del cambio de Apple ID antes de confirmar.
+        // La MISMA fórmula que cuenta la hoja del cambio de Apple ID antes de confirmar. Con la puerta de Grupos del Welcome
+        // detrás, se lleva también los grupos de la era CloudKit: si se quedaran, la puerta los volvería a contar al arrancar.
         if CloudSignOutFlowLogic.wipeForgetsGroups(
             kind: kind, hasBackendGroupRows: Self.hasBackendGroupRows(context: context),
-            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability) {
+            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability,
+            groupsGateWithGroupRows: neutralReturnFromGroupsGate && Self.hasAnyGroupRows(context: context)) {
             StorageModePersistence.markSignOutWipeIncludesGroups()  // marker ANTES del arm (CR-4)
         }
+        neutralReturnFromGroupsGate = false
         StorageModePersistence.armSignOutWipe()
         CloudSyncBreadcrumb.signOutWipeArmed()
         persistDestinationOnArm()

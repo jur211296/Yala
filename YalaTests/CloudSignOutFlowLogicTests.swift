@@ -126,17 +126,23 @@ struct CloudSignOutFlowLogicTests {
     }
 
     /// La regla que decide si el borrado se lleva el store de grupos, y que cuentan el arm y la hoja del cambio de
-    /// Apple ID (ticket `apple-id-close-notice-does-not-say-what-else-the-close-does`). Tabla ENTERA: 3 × 2 × 2.
-    @Test("MUTACIÓN: el borrado se lleva los grupos si el cierre los sube o quedan filas del canal nuevo, y solo con el canal compilado")
+    /// Apple ID (ticket `apple-id-close-notice-does-not-say-what-else-the-close-does`). Desde el 2026-10-29 también la
+    /// vuelta al neutro de la puerta de Grupos con grupos en el store (`welcome-groups-gate-loops-on-legacy-cloudkit-groups`, decisión A).
+    /// Tabla ENTERA: 3 × 2 × 2 × 2.
+    @Test("MUTACIÓN: el borrado se lleva los grupos si el cierre los sube, quedan filas del canal nuevo o lo pide la puerta con grupos, y solo con el canal compilado")
     func wipeForgetsGroupsTable() {
         typealias Kind = CloudSignOutFlowLogic.ExitKind
         for kind in [Kind.privateOnly, .privateWithGroups, .groupsOnly] {
             for rows in [false, true] {
-                #expect(!CloudSignOutFlowLogic.wipeForgetsGroups(kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: false),
-                        "Sin el canal compilado no hay marca de grupos: \(kind), filas \(rows).")
-                let expected = kind != .privateOnly || rows
-                #expect(CloudSignOutFlowLogic.wipeForgetsGroups(kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: true)
-                        == expected, "\(kind), filas \(rows)")
+                for gate in [false, true] {
+                    #expect(!CloudSignOutFlowLogic.wipeForgetsGroups(
+                        kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: false, groupsGateWithGroupRows: gate),
+                            "Sin el canal compilado no hay marca de grupos: \(kind), filas \(rows), puerta \(gate).")
+                    let expected = kind != .privateOnly || rows || gate
+                    #expect(CloudSignOutFlowLogic.wipeForgetsGroups(
+                        kind: kind, hasBackendGroupRows: rows, groupsBackendCompiled: true, groupsGateWithGroupRows: gate)
+                            == expected, "\(kind), filas \(rows), puerta \(gate)")
+                }
             }
         }
     }
@@ -734,7 +740,8 @@ struct PrivateSignOutWiringTests {
         #expect(arm.contains(
             "if CloudSignOutFlowLogic.wipeForgetsGroups(\n"
             + "            kind: kind, hasBackendGroupRows: Self.hasBackendGroupRows(context: context),\n"
-            + "            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability) {\n"
+            + "            groupsBackendCompiled: CloudSyncFlags.groupsBackendCompiledCapability,\n"
+            + "            groupsGateWithGroupRows: neutralReturnFromGroupsGate && Self.hasAnyGroupRows(context: context)) {\n"
             + "            StorageModePersistence.markSignOutWipeIncludesGroups()"), "El arm dejó de preguntar con sus entradas, o la marca de grupos ya no depende de la respuesta.")
         let tail = finalize + arm
         #expect(!finalize.contains("attemptSignOutSwap"))
@@ -1610,6 +1617,7 @@ struct AttestUnavailableSignOutWiringTests {
                 personalLossExit = nil
                 acceptedPersonalLoss = nil
                 destinationOnArm = nil
+                neutralReturnFromGroupsGate = false
             }
             """)), "`acknowledgeBlocked()` retira lo aceptado fuera del bloqueo")
         // Y el aviso del desasociar NO reconoce la fase (2026-10-02, ticket
