@@ -48,9 +48,13 @@ final class SiriShortcutsScreenUITests: XCTestCase {
 
         let shortcuts = XCUIApplication(bundleIdentifier: "com.apple.shortcuts")
         XCTAssertTrue(shortcuts.wait(for: .runningForeground, timeout: 15), "El botón no abrió Atajos.")
-        // La página de Yala, con sus acciones; no «Todos los atajos».
-        XCTAssertTrue(shortcuts.staticTexts["Anotar con Siri"].waitForExistence(timeout: 15),
-                      "Atajos no se abrió en la página de Yala.")
+        // La página de Yala, con sus acciones; no «Todos los atajos». Atajos rotula las acciones de Yala en el idioma del
+        // SISTEMA, no en el que `launchForUITest` le pone a Yala: en el simulador del CI (inglés) es «Note with Siri», y
+        // el caso caía todas las noches con el botón bien (reproducido en local con el simulador en `en-US`).
+        let yalaAction = shortcuts.staticTexts.matching(
+            NSPredicate(format: "label IN %@", ["Anotar con Siri", "Note with Siri"])
+        ).firstMatch
+        XCTAssertTrue(yalaAction.waitForExistence(timeout: 15), "Atajos no se abrió en la página de Yala.")
         shortcuts.terminate()
     }
 
