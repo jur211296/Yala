@@ -58,6 +58,21 @@ reparto() {
 echo "Árbol real ($REAL)"
 reparto "$REAL" 2 "real en 2"
 reparto "$REAL" 3 "real en 3"
+# El número de tandas lo decide la matriz del job `ui`; las salidas `ui_N` y su lectura en el aviso se
+# escriben a mano (qa.yml, «CUANTAS TANDAS»). Si divergen, una tanda corre y nadie lee su resultado, o
+# el aviso espera una que no existe y grita «no llegó a correr» cada noche.
+QA_YML="$AQUI/../../.github/workflows/qa.yml"
+n_matriz=$(sed -nE 's/^ +tanda: \[([0-9, ]+)\]$/\1/p' "$QA_YML" | tr ',' '\n' | grep -c '[0-9]')
+n_salidas=$(grep -cE '^ +ui_[0-9]+: \$\{\{ steps\.salida\.outputs\.ui_[0-9]+ \}\}' "$QA_YML")
+n_lectura=$(grep -cE '^ +R_UI_[0-9]+: \$\{\{ needs\.ui\.outputs\.ui_[0-9]+ \}\}' "$QA_YML")
+lista=$(sed -nE 's/^ +UI_TANDAS="([0-9 ]+)"$/\1/p' "$QA_YML")
+esperada=$(seq 1 "$n_matriz" | tr '\n' ' ' | sed 's/ $//')
+if [ "$n_matriz" -gt 0 ] && [ "$n_salidas" = "$n_matriz" ] && [ "$n_lectura" = "$n_matriz" ] && [ "$lista" = "$esperada" ]; then
+  ok "qa.yml: $n_matriz tandas en la matriz, en las salidas y en el aviso"
+else
+  mal "qa.yml: matriz $n_matriz, salidas $n_salidas, lectura $n_lectura, UI_TANDAS «${lista}»"
+fi
+[ "$n_matriz" -gt 3 ] && reparto "$REAL" "$n_matriz" "real en $n_matriz"
 n1=$(UI_TESTS_DIR="$REAL" bash "$SCRIPT" 1 2 2>/dev/null | grep -c .)
 if [ "$n1" -gt 0 ]; then ok "real: la tanda 1 lleva $n1 suites"; else mal "real: la tanda 1 sale vacía"; fi
 

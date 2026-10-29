@@ -623,17 +623,6 @@ extension XCUIApplication {
         XCTAssertTrue(filters.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Filtrar'.")
         filters.tap()
     }
-
-    /// Abre el menú (···) de Registros y toca "Seleccionar" → entra en modo selección.
-    /// El botón `records_select_button` vive ahora DENTRO del menú.
-    func openRecordsSelectMode(timeout: TimeInterval = 10) {
-        let menu = recordsOverflowMenu
-        XCTAssertTrue(menu.waitForExistence(timeout: timeout), "No apareció el menú (···) de Registros.")
-        menu.tap()
-        let select = buttons["records_select_button"]
-        XCTAssertTrue(select.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Seleccionar'.")
-        select.tap()
-    }
 }
 
 extension XCUIElement {

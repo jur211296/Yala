@@ -102,7 +102,9 @@ final class GroupsLote19DecididoUITests: XCTestCase {
     /// `grupos-saldado`: Viaje a Cusco queda a mano salvo el residuo de repartir dólares entre tres. Archivar ya no
     /// pregunta por «deudas» (era el residuo), avisa «Lo moviste a Archivados» y «Deshacer» lo devuelve a la lista.
     func test_archiveWithOnlyRoundingResidue_noDebtWarning_noticeAndUndo() {
-        let app = launch(seed: "grupos-saldado")
+        // El aviso dura 5 s y antes de buscarlo se gastan 2 s afirmando que no hubo pregunta: en un runner frío del CI
+        // el aviso ya se había ido (nocturna 40899279330, 3 de 3). Molde: `UXAudit22Lote08UITests`.
+        let app = launch(seed: "grupos-saldado", extra: ["-uitest-undo-notice-seconds", "30"])
         let cards = app.buttons.matching(identifier: "group_card")
         XCTAssertTrue(cards.firstMatch.waitForExistence(timeout: 30))
         let before = cards.count
@@ -167,6 +169,11 @@ final class GroupsLote19DecididoUITests: XCTestCase {
         let showArchived = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "archivados")).firstMatch
         reveal(app, showArchived)
         showArchived.tap()
+        // Archivar deja 5 s el aviso «Lo moviste a Archivados» en su ventana, sobre la franja donde cae la tarjeta
+        // archivada: tocarla antes de que se vaya toca el aviso y no abre nada. En el simulador local caía 4 de 4; en el
+        // runner lento del CI pasaba porque el aviso ya se había ido. El aviso tapa la franja por diseño.
+        XCTAssertTrue(app.descendants(matching: .any)["group_archived_notice"].waitForNonExistence(timeout: 15),
+                      "El aviso de archivado no se retiró.")
         let cards = app.buttons.matching(identifier: "group_card")
         cards.element(boundBy: cards.count - 1).tap()
         XCTAssertTrue(app.descendants(matching: .any)["group_archived_banner"].waitForExistence(timeout: 10),

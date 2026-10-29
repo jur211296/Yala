@@ -121,6 +121,11 @@ jobs:
       # comprueba sobre el árbol real que entre las tandas corren todas, una vez cada una.
       - name: Reparto de la UI en tandas (ci-ui-tandas.sh)
         run: bash qa/scripts/ci-ui-tandas-test.sh
+      # El calentamiento del simulador del job `ui` (2026-10-29) es advisory y nunca falla: si se
+      # rompe, no da error y el primer test de cada tanda vuelve a pagar el arranque en frío. Su
+      # banco simula el orden y los fallos con un `xcrun` falso.
+      - name: Calentar el simulador (ci-calentar-simulador.sh)
+        run: bash qa/scripts/ci-calentar-simulador-test.sh
       # Versión y build de la app y de sus extensiones salen de MARKETING_VERSION y
       # CURRENT_PROJECT_VERSION. El widget llevó su build fijo en 3 de mayo a octubre y nada
       # falló hasta App Store Connect. El banco corre el script sobre el árbol y sobre siete
@@ -646,7 +651,30 @@ jobs:
   # La 2 pesa mas porque el reparto cuenta casos, no minutos: le cayeron `ImageEntryReviewUITests`
   # (9 min, con tres rojos que repiten tres veces cada uno) y `SessionExitsPerCellUITests` (8). Aun
   # asi va a 1,6x de su tope. Si un dia una tanda pasa de ~80 min de UI, la
-  # salida es una cuarta tanda (matriz + `ui_4`), no subir el tope.
+  # salida es otra tanda (matriz + `ui_N`), no subir el tope.
+  #
+  # POR QUE OCHO (2026-10-29, nocturna 40899279330). Con tres, las tres agotaban los 110 min del
+  # paso CADA NOCHE desde al menos el 23-oct, y las suites del final del alfabeto llevaban dias sin
+  # correr. No es un cuelgue: la suite paso de 250 casos (9-oct) a 646 en 159 suites, y en el runner
+  # cada caso cuesta 46 s de media (mediana 41). En 110 min cada tanda cerraba 127-140 casos, ~37 de
+  # sus 53 suites; la suite entera pide ~470 min de UI. Los reintentos de los rojos sumaron ~16 min
+  # entre las tres: arreglarlos no basta. Reparto simulado con los tiempos por suite de esa noche
+  # (las no medidas, a 46 s por caso), tanda mas larga: 3 → 161 min · 5 → 106 · 6 → 90 · 7 → 78 ·
+  # 8 → 66. Ocho deja la mas larga a 1,7x de su tope, como pedia la tabla de octubre, y la suite
+  # crece deprisa.
+  #
+  # `max-parallel: 3`. Tres tandas a la vez, como antes: con el job `tests` son cuatro `macOS` y
+  # queda uno libre para el CI de los PR, que la nocturna pisa porque GitHub la sirve de dia (ver el
+  # cron). Las ocho caben en tres oleadas (~3 h de nocturna en vez de ~2,2). Abrirlas todas a la vez
+  # no la acortaria: el limite de `macOS` simultaneos de la cuenta las pondria en cola igual, y por
+  # delante de los PR.
+  #
+  # CALENTAR EL SIMULADOR. `ci-simulador.sh` deja el device sin arrancar; lo arrancaba el primer
+  # test. Y la primera corrida tras arrancar un simulador de iOS 27 falla de verdad (regla de
+  # `testing.md`): el primer caso de la tanda 1 (`AIConsentAlertUITests`) cayo al menos una vez
+  # cada noche del 23 al 29-oct, el de la tanda 2 (`AccountCardPickersUITests`) cuatro de seis, y
+  # los dos con `Timed out while evaluating UI query` esperando `uitest_ready`, a 130-290 s por
+  # intento. El paso «Calentar el simulador» lo arranca y abre la app una vez antes de los tests.
   ui:
     name: UI tests (tanda ${{ matrix.tanda }})
     # Sin `needs`: arranca a la vez que `tests`. Tercera aparicion de la condicion de UI_TOCABA
@@ -657,8 +685,10 @@ jobs:
     strategy:
       # Una tanda que falla no puede cancelar a las otras: perderiamos su parte de la suite.
       fail-fast: false
+      # Ver «POR QUE OCHO»: tres a la vez deja un `macOS` libre para el CI de los PR.
+      max-parallel: 3
       matrix:
-        tanda: [1, 2, 3]
+        tanda: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
       TEST_RUNNER_TZ: America/Lima
     # Una salida por tanda, con nombre fijo. En una matriz, si dos patas escriben la MISMA salida
@@ -668,6 +698,11 @@ jobs:
       ui_1: ${{ steps.salida.outputs.ui_1 }}
       ui_2: ${{ steps.salida.outputs.ui_2 }}
       ui_3: ${{ steps.salida.outputs.ui_3 }}
+      ui_4: ${{ steps.salida.outputs.ui_4 }}
+      ui_5: ${{ steps.salida.outputs.ui_5 }}
+      ui_6: ${{ steps.salida.outputs.ui_6 }}
+      ui_7: ${{ steps.salida.outputs.ui_7 }}
+      ui_8: ${{ steps.salida.outputs.ui_8 }}
     steps:
       - uses: actions/checkout@v4
       # Mismo paso y mismo porque que en el job `tests`.
@@ -689,6 +724,14 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
             -quiet
+      # Ver «CALENTAR EL SIMULADOR». Advisory como la UI: si falla, los tests arrancan el simulador
+      # ellos mismos, como hasta ahora.
+      - name: Calentar el simulador
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: bash qa/scripts/ci-calentar-simulador.sh
       - name: UI tests (YalaUITests, tanda ${{ matrix.tanda }}) — advisory (flaky en runner frío, ver Lista Negra)
         id: ui
         continue-on-error: true
@@ -788,6 +831,11 @@ jobs:
           R_UI_1: ${{ needs.ui.outputs.ui_1 }}
           R_UI_2: ${{ needs.ui.outputs.ui_2 }}
           R_UI_3: ${{ needs.ui.outputs.ui_3 }}
+          R_UI_4: ${{ needs.ui.outputs.ui_4 }}
+          R_UI_5: ${{ needs.ui.outputs.ui_5 }}
+          R_UI_6: ${{ needs.ui.outputs.ui_6 }}
+          R_UI_7: ${{ needs.ui.outputs.ui_7 }}
+          R_UI_8: ${{ needs.ui.outputs.ui_8 }}
           UI_TOCABA: ${{ needs.tests.outputs.ui_tocaba }}
           RESULTADO_JOB: ${{ needs.tests.result }}
           RESULTADO_UI: ${{ needs.ui.result }}
@@ -821,9 +869,15 @@ jobs:
               fallidos="$fallidos\n- Unit tests (context-based)"
             fi
           fi
-          [ "$R_UI_1" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 1)"
-          [ "$R_UI_2" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 2)"
-          [ "$R_UI_3" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 3)"
+          # Una variable por tanda (`R_UI_<n>`), de la 1 a la ultima de la matriz.
+          UI_TANDAS="1 2 3 4 5 6 7 8"
+          ui_resumen=""
+          for k in $UI_TANDAS; do
+            v="R_UI_$k"
+            r="${!v:-}"
+            ui_resumen="$ui_resumen${ui_resumen:+ / }'$r'"
+            [ "$r" != "failure" ] || fallidos="$fallidos\n- UI tests (YalaUITests, tanda $k)"
+          done
 
           # Un paso advisory que no llego a EJECUTARSE deja `outcome` en `skipped`, no en
           # `failure`: el job murio en un paso ANTERIOR (setup, Secrets, build) y GitHub salto
@@ -850,7 +904,9 @@ jobs:
           # La UI corre en tandas (job `ui`): cada una tiene que haber dejado su resultado. Una
           # salida vacia es una tanda que no corrio o cuyo resultado no llego, y no se da por buena.
           if [ "$UI_TOCABA" = "true" ]; then
-            for r in "$R_UI_1" "$R_UI_2" "$R_UI_3"; do
+            for k in $UI_TANDAS; do
+              v="R_UI_$k"
+              r="${!v:-}"
               case "$r" in
                 success|failure) ;;
                 *) sin_correr="si" ;;
@@ -864,7 +920,7 @@ jobs:
               "CI de $REPO ($RAMA): el job murio antes de los tests y la suite NO llego a correr." \
               "" \
               "Los pasos de test quedaron sin ejecutar (pure-logic: '$R_UNIT_PURE', context-based:" \
-              "'$R_UNIT_CONTEXT', UI: tandas '$R_UI_1' / '$R_UI_2' / '$R_UI_3' — a la UI le tocaba correr:" \
+              "'$R_UNIT_CONTEXT', UI: tandas $ui_resumen — a la UI le tocaba correr:" \
               "'$UI_TOCABA'; el job \`tests\` acabo en '$RESULTADO_JOB', el \`ui\` en '$RESULTADO_UI')." \
               "Un valor vacio significa que el job (o esa tanda) fue CANCELADO y no llego a dejar" \
               "resultado — casi siempre, su tope de tiempo." \

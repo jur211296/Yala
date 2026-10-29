@@ -158,7 +158,9 @@ final class TransactionFormDecided02UITests: XCTestCase {
 
     /// Desde el cuarto: el formulario se cierra y sale el aviso; «Deshacer» devuelve el saldo.
     func test_afterThreeRecords_noticeWithUndo_restoresTheBalance() {
-        let app = launch(seed: "una-cuenta", saved: 5)
+        // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
+        // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
+        let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
         let expensePill = app.buttons["panel_hero_expense_pill"]
         XCTAssertTrue(expensePill.waitForExistence(timeout: 10))
         let emptyLabel = expensePill.label
@@ -183,7 +185,9 @@ final class TransactionFormDecided02UITests: XCTestCase {
 
     /// Review adversarial del 2026-10-22: la franja del aviso caía sobre el formulario siguiente. Abrir otro lo retira.
     func test_afterThreeRecords_openingAnotherFormRetiresTheNotice() {
-        let app = launch(seed: "una-cuenta", saved: 5)
+        // Con el aviso alargado, lo único que puede retirarlo es abrir el otro formulario: el caso no se cumple solo
+        // porque el aviso caduque. Regla del aviso de 5 s en `testing.md`.
+        let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
         openForm(app)
         typeAmount(app, "25")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
@@ -241,7 +245,9 @@ final class TransactionFormDecided02UITests: XCTestCase {
     }
 
     func test_afterThreeRecords_editFromTheNotice_opensTheRecord() {
-        let app = launch(seed: "una-cuenta", saved: 5)
+        // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
+        // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
+        let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
         openForm(app)
         typeAmount(app, "25")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
@@ -394,7 +400,9 @@ final class TransactionFormDecided02UITests: XCTestCase {
     // MARK: - L2-15 · Hacer recurrente
 
     func test_recurring_monthlyRow_createsThePayment_andClosesWithTheNotice() {
-        let app = launch(seed: "una-cuenta")
+        // El aviso de 5 s se busca después de esperar a que se cierre el formulario: en el runner del CI no cabía
+        // (dispatch 40939651475 y nocturna del 24-oct). Regla del aviso de 5 s en `testing.md`.
+        let app = launch(seed: "una-cuenta", noticeSeconds: 30)
         openForm(app)
         typeAmount(app, "40")
         app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")

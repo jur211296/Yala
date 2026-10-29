@@ -24,7 +24,9 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
-    private func openChat(pro: Bool = true, conversation: Bool = false, drafts: Bool = false) -> XCUIApplication {
+    private func openChat(
+        pro: Bool = true, conversation: Bool = false, drafts: Bool = false, undoNoticeSeconds: Int? = nil
+    ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(
             pro: pro,
@@ -32,6 +34,7 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
             aiChatReady: true,
             chatConversation: conversation,
             extraArguments: ["-uitest-chat-suggestions"] + (drafts ? ["-uitest-chat-draft"] : [])
+                + (undoNoticeSeconds.map { ["-uitest-undo-notice-seconds", String($0)] } ?? [])
         )
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
         let chatEntry = app.buttons["fab_chat"]
@@ -75,7 +78,9 @@ final class YalaAILoteDecidido07UITests: XCTestCase {
     // MARK: - L14-7
 
     func test_newConversation_deletesWithoutAsking_andUndoBringsItBack() {
-        let app = openChat(conversation: true)
+        // El aviso dura 5 s y antes de buscarlo se espera a que la conversación se vaya: en un runner frío del CI no cabe.
+        // Molde: `UXAudit22Lote08UITests`.
+        let app = openChat(conversation: true, undoNoticeSeconds: 30)
         let newConversation = app.buttons["chat_new_conversation"]
         XCTAssertTrue(newConversation.waitForExistence(timeout: 10), "Falta «Nueva conversación» bajo la respuesta.")
         XCTAssertEqual(newConversation.label, "Nueva conversación")
