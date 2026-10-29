@@ -1,6 +1,6 @@
 ---
 id: welcome-groups-gate-loops-on-legacy-cloudkit-groups
-status: backlog
+status: qa
 priority: high
 area: "groups, welcome, sign-out"
 created: 2026-10-29
@@ -71,6 +71,46 @@ reportado: Pia.
 
 No hay telemetría que lo cuente: ni la puerta ni el borrado emiten un canario por vuelta. Sin
 medir: cuántas instalaciones de 2.0.x conservan grupos sin migrar.
+
+## Decisión: A (Jürgen, 2026-10-29 05:31)
+
+La vuelta al neutro de la puerta de Grupos se lleva también los grupos de la era CloudKit.
+
+## Hecho (2026-10-29)
+
+- `CloudSessionSignOut.signOut` gana `neutralReturnFromGroupsGate` (por defecto `false`). Lo pasa solo
+  `WelcomeGroupsGateView.returnToNeutral`, que es el único sitio por el que vuelven al neutro las dos puertas
+  (organizador e invitado). El coordinador lo guarda hasta `armAfterCredentials`, también en los cierres que se
+  retoman tras un bloqueo, y lo retira al armar o al reconocer el bloqueo.
+- `CloudSignOutFlowLogic.wipeForgetsGroups` gana el término `groupsGateWithGroupRows`: con la puerta detrás y **algún
+  `SplitGroup` en el store** (lo mismo que cuenta la puerta), el borrado se lleva el store de Grupos entero. Sin grupos no
+  marca: la marca retira además el libro de conservados del desasociar y la cuenta de grupos asociada, y ahí no hay nada
+  que volver a contar (lo cazó la review adversarial). Los grupos que el aviso tardío conservó para la persona también
+  se van: el borrado retira esa marca, y si se quedaran la vuelta siguiente los contaría, el mismo bucle.
+- **Ajustes y la hoja del cambio de Apple ID no cambian** (pasan `false`): siguen esperando la decisión de
+  `private-sign-out-keeps-legacy-cloudkit-groups`. No es la misma línea: comparten la fórmula, no la llamada.
+- Sin cambio de copy: el aviso al organizador con copia en iCloud sigue sin nombrar los grupos viejos (pendiente de
+  decisión, abajo).
+- Tests: `GroupsGateLegacyGroupsWipeTests` recorre la cadena con stores reales en disco para las dos puertas (grupo
+  de la era CloudKit sembrado → la puerta pide el neutro → fórmula del arm → borrado real del arranque → remontar →
+  la puerta deja pasar), con su control (sin el término el grupo sobrevive y la puerta vuelve a pedir el neutro).
+  `GroupsGateLegacyGroupsWipeWiringTests` fija que solo la puerta pide el término y que el coordinador lo lleva al
+  arm (firma con `= false`, recuento exacto de escrituras). Otro par fija que sin grupos el libro de conservados y la
+  cuenta asociada sobreviven, y con grupos se van. La tabla de `wipeForgetsGroupsTable` pasa a 3 × 2 × 2 × 2.
+  Mutantes en rojo: quitar el término de la fórmula, pasar `false` desde la puerta y pasar `false` desde el arm.
+
+## Device-QA (Jürgen)
+
+No se reprodujo en el simulador: ningún seed crea grupos de la era CloudKit y, con `-uitest`, el borrado del
+arranque no corre. Hace falta un teléfono que venga de 2.0 con grupos viejos sin migrar (el de Pia era uno):
+
+1. Instala el TestFlight 2.2 (4) encima, sin borrar la app.
+2. Si la app no está en el Welcome, ciérrale sesión desde Ajustes (ese cierre conserva los grupos viejos: es la ruta
+   del ticket hermano). **Solo en un teléfono de pruebas**: el cierre borra lo personal del teléfono (queda en iCloud).
+3. En el Welcome, toca «Crear mi primer grupo» (o abre una invitación y toca «Continuar y borrar»).
+4. Yala se reinicia **una vez** y te deja crear el grupo (o unirte). Antes volvía a pedir lo mismo sin fin.
+
+Si no hay un teléfono así, el test de la cadena es la prueba y el ticket se cierra con él.
 
 ## Arreglo: barato, pero borra o conserva datos, y eso lo decide Jürgen
 

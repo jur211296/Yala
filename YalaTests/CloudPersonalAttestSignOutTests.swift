@@ -626,6 +626,7 @@ struct CloudPersonalAttestSignOutWiringTests {
                 personalLossExit = nil
                 acceptedPersonalLoss = nil
                 destinationOnArm = nil
+                neutralReturnFromGroupsGate = false
             }
             blockedExit = nil
             """))

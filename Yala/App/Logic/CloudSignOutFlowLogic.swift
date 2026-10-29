@@ -119,9 +119,19 @@ nonisolated enum CloudSignOutFlowLogic {
     ///  - Los cierres que SUBEN grupos (D, F) los olvidan siempre: ya están en la cuenta.
     ///  - La privada sin sesión (C) solo si el store guarda filas del canal backend
     ///    (`CloudSessionSignOut.hasBackendGroupRows`, una sesión de grupos que caducó).
+    ///  - **La vuelta al neutro de la puerta de Grupos del Welcome, si el store tiene algún grupo**
+    ///    (`groupsGateWithGroupRows`; ticket `welcome-groups-gate-loops-on-legacy-cloudkit-groups`, decisión A de Jürgen del
+    ///    2026-10-29). La puerta cuenta TODO `SplitGroup`, también los de la era CloudKit que nunca migraron; si el borrado
+    ///    los dejara, el arranque siguiente los volvería a contar y la puerta pediría el mismo borrado en bucle (caso Pia).
+    ///    No pueden volver: la Fase 3 retiró su transporte. **Sin grupos no se marca**, a propósito: la marca retira además
+    ///    el libro de conservados del desasociar y la cuenta de grupos asociada (`performSignOutWipeIfArmed`), y sin
+    ///    grupos la puerta no tiene nada que volver a contar (review adversarial del 2026-10-29). El cierre desde Ajustes y
+    ///    la hoja del cambio de Apple ID pasan `false`: esperan su propia decisión
+    ///    (`private-sign-out-keeps-legacy-cloudkit-groups`).
     ///  - Sin la capacidad COMPILADA del canal no hay marca, y el store de grupos sobrevive al borrado.
-    static func wipeForgetsGroups(kind: ExitKind, hasBackendGroupRows: Bool, groupsBackendCompiled: Bool) -> Bool {
-        (kind.pushesGroups || hasBackendGroupRows) && groupsBackendCompiled
+    static func wipeForgetsGroups(kind: ExitKind, hasBackendGroupRows: Bool, groupsBackendCompiled: Bool,
+                                  groupsGateWithGroupRows: Bool) -> Bool {
+        (kind.pushesGroups || hasBackendGroupRows || groupsGateWithGroupRows) && groupsBackendCompiled
     }
 
     // D4: `ConfirmMessage`/`confirmMessage(for:)` ELIMINADOS — el copy por-path del sign-out ya no es un

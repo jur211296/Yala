@@ -107,7 +107,7 @@ struct ReopenOnlyForPrivateICloudWiringTests {
 
     @Test func welcomeGroupsGate_handsItsDestinationToTheCoordinator() throws {
         let gate = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
-        #expect(gate.contains("destinationOnArm: purpose.destinationAfterNeutralReturn)"))
+        #expect(gate.contains("destinationOnArm: purpose.destinationAfterNeutralReturn,"))
         let shell = try Self.source("Yala/App/ContentView.swift")
         #expect(shell.contains("if let destination = purpose.destinationAfterNeutralReturn {"),
                 "ContentView debe decidir el destino con la misma regla que el coordinador")
