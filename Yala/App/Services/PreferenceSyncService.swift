@@ -486,6 +486,24 @@ final class PreferenceSyncService {
         #endif
     }
 
+    /// **«Vaciar datos» que se queda en el Panel: la señal, y con ella la marca de que el parque sigue** (encargo S27i,
+    /// 2026-10-29). El origen ya no repite la bienvenida, así que nadie va a escribir `lastOnboardingTimestamp` después del
+    /// vaciado, y sin esa marca el otro dispositivo leía la señal como «empieza de cero»: le reseteaba los ajustes y lo
+    /// mandaba al onboarding. Con la marca entra por la rama de siempre de «otro dispositivo ya siguió» (`skipOnboarding`):
+    /// se queda en la app, corta con `fleetStartedOver` y conserva lo que el origen conserva.
+    ///
+    /// **La marca va un milisegundo por detrás de la señal y se escribe ANTES que ella, en el mismo `synchronize`.** Tiene que
+    /// ser estrictamente mayor (`onboardingAlreadyDone` es `remoteOnboarding > remoteWipe`), y el iCloud KV no garantiza el
+    /// orden de entrega entre claves: si la marca llega sola, el «Caso B» del receptor la ignora (no está a mitad de
+    /// onboarding) y la señal que llega después ya la encuentra; si llega antes la señal sola, el receptor cae al camino
+    /// viejo —onboarding—, que es el residual aceptado.
+    func signalWipeKeepingSetup(at date: Date) {
+        let onboarding = date.timeIntervalSince1970 + 0.001
+        iKV.setDouble(onboarding, forKey: WipeKey.remoteOnboarding)
+        local.set(onboarding, forKey: WipeKey.localOnboarding)
+        signalWipeInitiated(at: date)
+    }
+
     /// Called after onboarding completes — signals other devices that onboarding is done.
     func signalOnboardingCompleted() {
         let timestamp = Date.now.timeIntervalSince1970

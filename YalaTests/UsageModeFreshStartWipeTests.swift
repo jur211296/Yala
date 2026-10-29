@@ -59,8 +59,9 @@ struct UsageModeFreshStartWipeTests {
         }
     }
 
-    /// Control: «Vaciar datos» sigue llevándose los avisos y las preferencias. Sin este caso, el de arriba pasaría
-    /// también si el parámetro no hiciera nada en ningún borrado.
+    /// Control: el borrado sin `keepsPersonSettings` —«Vaciar datos» en la shell de solo grupos— sigue llevándose los avisos
+    /// y las preferencias. Sin este caso, el de arriba pasaría también si el parámetro no hiciera nada en ningún borrado.
+    /// («Vaciar datos» con vida personal conserva ajustes y avisos desde el encargo S27i: es el caso de arriba.)
     @Test func vaciarDatos_sigueLlevandoseAvisosYPreferencias() throws {
         try withProtectedDefaults {
             let context = try makeTestContext()

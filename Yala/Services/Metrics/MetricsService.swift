@@ -372,7 +372,7 @@ enum MetricsCanary: String {
     case groupsDetachSessionSurvived
     /// **Un cierre de sesión soltó la sesión en la nube y la sesión SIGUE guardada** (ticket
     /// `sign-out-exits-do-not-verify-the-cloud-session-closed`). `detail` = `path=<private|private-with-groups|
-    /// icloud-groups-session|cloud-secure|account-delete-cloud|account-delete-groups-only>`, sin PII. En los cuatro cierres
+    /// icloud-groups-session|cloud-secure|account-delete-cloud|account-delete-private>`, sin PII. En los cuatro cierres
     /// voluntarios el gesto se para sin armar el borrado; en los dos tras borrar la cuenta sigue y arma el retiro de la
     /// sesión para el arranque siguiente. Hermano del de arriba y, como él, **es la medición**: nadie sabe si pasa.
     case signOutSessionSurvived

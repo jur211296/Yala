@@ -29,17 +29,20 @@ struct UXAudit22Lote04LogicTests {
         }
     }
 
-    // MARK: - L20-10
+    // MARK: - L20-10, superado el 2026-10-29
 
-    /// La alerta propia solo en la cuenta de grupos con sesión privada; en las demás la genérica es cierta.
-    @Test func deleteAccountFinal_keepsThisDevice_onlyForTheGroupsAccountWithPrivateData() {
-        for op in DestructiveScopeLogic.Operation.allCases {
-            #expect(DestructiveScopeLogic.deleteAccountFinalKeepsThisDevice(op) == (op == .deleteAccountGroupsOnly),
+    /// Desde el encargo S27i «Eliminar mi cuenta» se lleva lo personal en las tres celdas, también en la cuenta de grupos con
+    /// sesión privada (D). Por eso la alerta final es la genérica en todas, la fila 📱 de la hoja es destructiva en las tres y
+    /// «Exportar antes» se ofrece donde hay registros personales que perder (E y D, no F).
+    @Test func deleteAccount_takesThePersonalDataInEveryCell() {
+        let deletes: [DestructiveScopeLogic.Operation] = [
+            .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate]
+        for op in deletes {
+            let model = DestructiveScopeLogic.model(operation: op, cloudLabel: .cloudAccount)
+            #expect(model.rows.first { $0.location == .device }?.tone == .destructive, "operación \(op)")
+            #expect(model.secondaryActions.contains(.exportBefore) == (op != .deleteAccountGroupsOnlyNoPrivate),
                     "operación \(op)")
         }
-        // Y esa celda es la que la hoja pinta con 📱 conservado: si alguien cambia una, la otra mentiría.
-        let model = DestructiveScopeLogic.model(operation: .deleteAccountGroupsOnly, cloudLabel: .cloudAccount)
-        #expect(model.rows.first { $0.location == .device }?.tone == .preserved)
     }
 
     // MARK: - L20-9

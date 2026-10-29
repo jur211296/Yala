@@ -619,8 +619,9 @@ struct RemoteWipeSignalWiringTests {
                                              + "GroupsBridgeRestoreConvergenceStore.markPending(defaults)"),
                                 "el receptor ya no pide la convergencia, o no pide las liquidaciones antes que los gastos")
         let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: false, "
-                                              + "broadcastSignal: false, remoteWipeCut: cut) "
-                                              + "if cut != nil { rescheduleReminders(context) }"),
+                                              + "broadcastSignal: false, resetsPreferences: !fleetStartedOver, "
+                                              + "remoteWipeCut: cut, keepsReminders: fleetStartedOver) "
+                                              + "if cut != nil || fleetStartedOver { rescheduleReminders(context) }"),
                                  "el receptor ya no borra con el corte de la señal, o no reprograma los avisos")
         #expect(pide.upperBound <= borra.lowerBound, "el receptor pide después de borrar: un corte en medio pierde la petición")
         #expect(Self.count("let cut = RemoteWipeCutLogic.cut(signaledAt: signaledAt, fleetStartedOver: fleetStartedOver)",
@@ -653,16 +654,24 @@ struct RemoteWipeSignalWiringTests {
         let borra = try #require(cuerpo.range(of: "try wipeAllUserData" + abre + "in: context, reseedInitialData: "
                                               + "keepsPersonSettings, broadcastSignal: broadcastSignal, resetsPreferences: "
                                               + "!keepsPersonSettings, signalTimestamp: signalTimestamp, keepsReminders: "
-                                              + "keepsPersonSettings)"),
+                                              + "keepsPersonSettings, signalKeepsSetup: keepsPersonSettings)"),
                                  "el vaciado ya no emite la señal con la hora del reparto")
         #expect(reparte.upperBound <= borra.lowerBound, "el reparto se escribe después de la señal y del borrado")
         #expect(fuente.contains("PreferenceSyncService.shared.signalWipeInitiated(at: signalTimestamp ?? .now)"),
                 "la señal ya no sale con la hora que le pasa el vaciado")
+        // Y la del vaciado que se queda en el Panel (encargo S27i), con la misma hora.
+        #expect(fuente.contains("PreferenceSyncService.shared.signalWipeKeepingSetup(at: signalTimestamp ?? .now)"),
+                "la señal del vaciado que conserva los ajustes ya no sale con la hora del reparto")
         let prefs = try Self.code("Yala/App/Services/PreferenceSyncService.swift")
         #expect(prefs.contains("func signalWipeInitiated(at date: Date = .now) { let timestamp = date.timeIntervalSince1970"),
                 "la señal ya no escribe la hora que recibe")
-        #expect(try Self.countInProduction("GroupsRemoteWipeDivision.declare" + abre) == 1,
-                "el reparto se escribe desde más de un sitio, o desde ninguno")
+        // Dos desde el encargo S27i: «Vaciar datos» y el borrado de la cuenta con sesión privada, que declara el reparto
+        // VACÍO (la cuenta de grupos ya no existe) para que el receptor no espere 30 días uno que nadie escribe.
+        #expect(try Self.countInProduction("GroupsRemoteWipeDivision.declare" + abre) == 2,
+                "el reparto se escribe desde otro sitio más, o dejó de escribirse en uno de los dos")
+        let cierre = try Self.code("Yala/Services/CloudSync/CloudSessionSignOut.swift")
+        #expect(cierre.contains("GroupsRemoteWipeDivision.declare(context: context, signaledAt: signaledAt, domainOpen: false)"),
+                "el borrado de la cuenta con sesión privada ya no declara el reparto vacío con la hora de su señal")
     }
 
     /// **El receptor del orden normal apunta que espera el reparto, antes de borrar; el tardío no.** Los casos de

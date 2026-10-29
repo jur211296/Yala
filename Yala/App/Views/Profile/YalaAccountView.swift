@@ -214,13 +214,10 @@ struct YalaAccountView: View {
         }
     }
 
-    /// Qué se lleva «Eliminar mi cuenta», en una línea. En el «equipo» (D) se borra la cuenta de GRUPOS y lo
-    /// personal sigue en iCloud: «Se borra todo, para siempre» contradecía a su propia hoja (review adversarial
-    /// del paso 9). En la nube completa y en solo grupos sí se va todo.
+    /// Qué se lleva «Eliminar mi cuenta», en una línea. Desde el 2026-10-29 se va todo en las tres celdas: también en el
+    /// «equipo» (D), donde hasta ese día lo personal seguía en iCloud y la fila decía solo «Se borra tu cuenta de Yala».
     private var deleteScopeText: String {
-        model.dataLocation == .groupsOnly
-            ? L10n.Settings.deleteAccountScopeCloudGroupsOnly
-            : L10n.Settings.yalaAccountDeleteScope
+        L10n.Settings.yalaAccountDeleteScope
     }
 
     // MARK: - Desenlaces (mapa accionable — cada uno enlaza al flujo existente)

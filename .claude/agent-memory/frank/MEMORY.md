@@ -39,6 +39,7 @@
 - [Tablero: una tanda a la vez](feedback_tablero_una_tanda_a_la_vez.md) — dos tandas se pisan (409); ajustes en pasada final.
 - [Encargo sin simulador y el gate](feedback_encargo_sin_simulador_y_el_gate.md) — el gate lo necesita: se pregunta; aprobó usarlo solo para el gate, en cola.
 - [Revisión por dispositivo sin saltar](feedback_revision_por_dispositivo_sin_saltar.md) — Duo entero primero; lo del iPhone se apunta y va al final.
+- [«Eliminar cuenta» es borrar todo](feedback_eliminar_cuenta_es_borrar_todo.md) — al preguntar qué borra un gesto, di antes dónde vive cada dato.
 ## Cómo mido y cómo entrego
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
 - [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».

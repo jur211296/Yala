@@ -303,7 +303,7 @@ struct UXAudit22Lote6LogicTests {
     func positiveToasts_dropTheCheckmarkGlyph() {
         for locale in SupportedLocale.allCases {
             let strings = StringsFileParser.parseStrings(forLocale: locale.code)
-            for key in ["icloud.remoteOnboardingCompleted", "icloud.remoteRestoreCompleted"] {
+            for key in ["icloud.remoteOnboardingCompleted", "icloud.remoteWipeKeptSetup", "settings.wipeLandingToast"] {
                 #expect(strings[key]?.hasPrefix("✓") == false, "\(key) en \(locale.code) sigue empezando por ✓")
             }
         }

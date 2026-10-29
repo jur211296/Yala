@@ -2416,7 +2416,6 @@
 "icloud.detail.cta.diagnose" = "Controleren en herstellen";
 "icloud.detail.cta.viewTechnical" = "Technisch detail bekijken";
 "icloud.remoteOnboardingCompleted" = "Je hebt de configuratie op je andere apparaat afgerond. Alles staat nu hier.";
-"icloud.remoteRestoreCompleted" = "Gegevens hersteld";
 "icloud.remoteWipe.title" = "Gegevens niet meer beschikbaar";
 "icloud.remoteWipe.message" = "Yala is op een ander apparaat van je leeggemaakt. Was jij het, begin dan ook hier opnieuw; zo niet, wacht: was het een vergissing, dan kunnen je gegevens terugkomen.";
 "icloud.remoteWipe.confirm" = "Opnieuw beginnen";
@@ -5021,7 +5020,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "Je gegevens op dit apparaat worden verwijderd";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "Je persoonlijke gegevens op dit apparaat blijven onaangeroerd";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Je gegevens op dit apparaat en in je iCloud worden verwijderd, dus ze verdwijnen ook van je andere apparaten";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Je account en al je gegevens worden voorgoed verwijderd";
@@ -7572,7 +7571,6 @@
 "uxcs.signOutUpload.title" = "Je wijzigingen worden naar iCloud geüpload…";
 "uxcs.signOutUpload.pending" = "Nog te uploaden wijzigingen: %d";
 "uxcs.migrated.rejoinSentence" = "Deze groep is verhuisd. Meld je opnieuw aan om hem bijgewerkt te zien.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Je Yala-account wordt verwijderd. Wat op dit apparaat staat, blijft.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Voordat je de cloud aanzet";
@@ -8467,3 +8465,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "Wat je iPhone verstaat";
+"settings.wipeLandingToast" = "Klaar, je begint opnieuw. Maak je eerste rekening aan om te registreren.";
+"icloud.remoteWipeKeptSetup" = "Je hebt je gegevens op een ander apparaat gewist.";

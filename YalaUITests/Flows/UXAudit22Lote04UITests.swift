@@ -157,11 +157,12 @@ final class UXAudit22Lote04UITests: XCTestCase {
         XCTAssertTrue(app.buttons["yala_account_data_location"].exists, "«Dónde viven tus datos» no es una fila.")
     }
 
-    // MARK: - L20-10 · la alerta final habla de su celda
+    // MARK: - L20-10, superado el 2026-10-29 (encargo S27i)
 
-    /// Cuenta de grupos con sesión privada (seed `minimal` + sesión fingida): la hoja dice que lo de este teléfono no se
-    /// toca, y la alerta final ya no dice que «tus datos se eliminarán por completo».
-    func test_deleteAccount_groupsAccountWithPrivateData_finalAlertKeepsThisPhone() {
+    /// Cuenta de grupos con sesión privada (seed `minimal` + sesión fingida). Hasta el encargo S27i lo de este teléfono se
+    /// quedaba y la alerta lo decía; desde la decisión de Jürgen del 2026-10-29 «Eliminar cuenta» se lo lleva también (y lo
+    /// de iCloud), así que la hoja y la alerta dicen que se borra todo.
+    func test_deleteAccount_groupsAccountWithPrivateData_finalAlertSaysEverythingGoes() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "minimal", extraArguments: ["-uitest-fake-backend-session"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
@@ -182,12 +183,13 @@ final class UXAudit22Lote04UITests: XCTestCase {
         add(sheet)
         app.buttons["delete_account_continue"].tap()
 
-        let body = app.alerts.staticTexts["Se borra tu cuenta de Yala. Lo de este dispositivo se queda."].firstMatch
+        let body = app.alerts.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS %@", "se eliminarán por completo")).firstMatch
         XCTAssertTrue(body.waitForExistence(timeout: 5), """
-            La alerta final no habla de su celda: en la cuenta de grupos con datos personales, lo de este teléfono se queda.
+            La alerta final no dice que se borra todo: desde el encargo S27i la cuenta con iCloud privado se lleva también \
+            lo de este teléfono.
             """)
-        XCTAssertFalse(app.alerts.staticTexts
-            .matching(NSPredicate(format: "label CONTAINS %@", "se eliminarán por completo")).firstMatch.exists)
+        XCTAssertFalse(app.alerts.staticTexts["Se borra tu cuenta de Yala. Lo de este dispositivo se queda."].firstMatch.exists)
         app.alerts.buttons["Cancelar"].firstMatch.tap()
     }
 }

@@ -2414,7 +2414,6 @@
 "icloud.detail.cta.diagnose" = "Controlla e ripara";
 "icloud.detail.cta.viewTechnical" = "Vedi dettaglio tecnico";
 "icloud.remoteOnboardingCompleted" = "Hai completato la configurazione sull'altro dispositivo. Ora è tutto qui.";
-"icloud.remoteRestoreCompleted" = "Dati ripristinati";
 "icloud.remoteWipe.title" = "Dati non più disponibili";
 "icloud.remoteWipe.message" = "Yala è stata svuotata su un altro dei tuoi dispositivi. Se sei stato tu, ricomincia da zero anche qui; altrimenti aspetta: se è stato un errore, i tuoi dati possono tornare.";
 "icloud.remoteWipe.confirm" = "Ricomincia";
@@ -5019,7 +5018,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "I tuoi dati vengono eliminati da questo dispositivo";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "I tuoi dati personali su questo dispositivo non vengono toccati";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "I tuoi dati vengono eliminati da questo dispositivo e dal tuo iCloud, quindi spariscono anche dagli altri dispositivi";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Il tuo account e tutti i tuoi dati vengono eliminati, per sempre";
@@ -7570,7 +7569,6 @@
 "uxcs.signOutUpload.title" = "Caricamento delle tue modifiche su iCloud…";
 "uxcs.signOutUpload.pending" = "Modifiche ancora da caricare: %d";
 "uxcs.migrated.rejoinSentence" = "Questo gruppo si è trasferito. Accedi di nuovo per vederlo aggiornato.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Il tuo account Yala viene eliminato. Quello che c'è su questo dispositivo resta.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Prima di attivare il cloud";
@@ -8465,3 +8463,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "Quello che l’iPhone sta capendo";
+"settings.wipeLandingToast" = "Fatto, sei ripartito da zero. Crea il tuo primo conto per registrare.";
+"icloud.remoteWipeKeptSetup" = "Hai svuotato i tuoi dati da un altro dispositivo.";

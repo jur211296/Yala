@@ -2412,7 +2412,6 @@
 "icloud.detail.cta.diagnose" = "Revisar e reparar";
 "icloud.detail.cta.viewTechnical" = "Ver detalhe técnico";
 "icloud.remoteOnboardingCompleted" = "Você terminou a configuração no seu outro dispositivo. Agora está tudo aqui.";
-"icloud.remoteRestoreCompleted" = "Dados restaurados";
 "icloud.remoteWipe.title" = "Dados indisponíveis";
 "icloud.remoteWipe.message" = "O Yala foi esvaziado em outro dos seus dispositivos. Se foi você, comece do zero aqui também; se não, espere: se foi um erro, seus dados podem voltar.";
 "icloud.remoteWipe.confirm" = "Recomeçar";
@@ -5009,7 +5008,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "Seus dados deste dispositivo são apagados";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "Seus dados pessoais deste dispositivo não são tocados";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Seus dados deste dispositivo e do seu iCloud são apagados, então também somem dos seus outros dispositivos";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Sua conta e todos os seus dados são apagados, para sempre";
@@ -7560,7 +7559,6 @@
 "uxcs.signOutUpload.title" = "Enviando suas alterações para o iCloud…";
 "uxcs.signOutUpload.pending" = "Alterações a enviar: %d";
 "uxcs.migrated.rejoinSentence" = "Este grupo mudou de lugar. Entre novamente para vê-lo atualizado.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Sua conta Yala é excluída. O que está neste dispositivo fica.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Antes de ativar a nuvem";
@@ -8455,3 +8453,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "O que o iPhone está entendendo";
+"settings.wipeLandingToast" = "Pronto, você começou do zero. Crie sua primeira conta para registrar.";
+"icloud.remoteWipeKeptSetup" = "Você apagou seus dados em outro dispositivo.";

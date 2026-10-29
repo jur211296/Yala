@@ -197,6 +197,12 @@ final class UITestHooks {
     /// cierre siga siendo el privado (`.privateSignOut`) y no el del «equipo» con grupos.
     nonisolated static var fakeBackendSession: Bool { hasArg("-uitest-fake-backend-session") }
 
+    /// `-uitest-fake-account-deletion`: «Eliminar mi cuenta» completa su parte de SERVIDOR sin red —`groups_forget_user` y
+    /// `POST /account/delete` contestan bien sin salir del teléfono, y no se revoca nada— para que un XCUITest recorra el
+    /// cierre LOCAL de verdad hasta su destino (encargo S27i: «Eliminar cuenta → Welcome»). Va con
+    /// `-uitest-fake-cloud-session`, que da la sesión que el borrado exige. Solo DEBUG (inerte en release vía `hasArg`).
+    nonisolated static var fakeAccountDeletion: Bool { hasArg("-uitest-fake-account-deletion") }
+
     /// `-uitest-fake-cloud-session`: fuerza el predicado GLOBAL `CloudAuthService.hasSession` a `true`
     /// (el `#if DEBUG` vive en `CloudAuthService.swift`). Existe porque con `groupsBackendEnabled` ON
     /// —lo que ocurre en TODO XCUITest bajo `Yala Dev`, donde el default-ausente de remote-config es ON—

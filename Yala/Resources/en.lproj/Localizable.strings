@@ -2416,7 +2416,6 @@
 "icloud.detail.cta.diagnose" = "Check and repair";
 "icloud.detail.cta.viewTechnical" = "View technical detail";
 "icloud.remoteOnboardingCompleted" = "You finished setting up on your other device. Everything's here now.";
-"icloud.remoteRestoreCompleted" = "Data restored";
 "icloud.remoteWipe.title" = "Data no longer available";
 "icloud.remoteWipe.message" = "Yala was emptied on another of your devices. If it was you, start fresh here too; if not, wait: if it was a mistake, your data may come back.";
 "icloud.remoteWipe.confirm" = "Start Fresh";
@@ -5015,7 +5014,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "Your data on this device is deleted";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "Your personal data on this device isn’t touched";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Your data on this device and in your iCloud is deleted, so it also disappears from your other devices";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Your account and all your data are deleted, forever";
@@ -7566,7 +7565,6 @@
 "uxcs.signOutUpload.title" = "Uploading your changes to iCloud…";
 "uxcs.signOutUpload.pending" = "Changes left to upload: %d";
 "uxcs.migrated.rejoinSentence" = "This group moved. Sign back in to see it up to date.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Your Yala account is deleted. What's on this device stays.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Before you turn on the cloud";
@@ -8461,3 +8459,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "What your iPhone is picking up";
+"settings.wipeLandingToast" = "Done, you’re starting fresh. Create your first account to start recording.";
+"icloud.remoteWipeKeptSetup" = "You cleared your data from another device.";

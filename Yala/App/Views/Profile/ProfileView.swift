@@ -648,11 +648,11 @@ struct ProfileView: View {
             .padding(.horizontal, DS.Spacing.lg)
     }
 
-    /// L20-10: la alerta final de «Eliminar mi cuenta» dice lo que pasa en SU celda (`DestructiveScopeLogic`).
+    /// La alerta final de «Eliminar mi cuenta». Desde el 2026-10-29 es la misma en las tres celdas: también en la cuenta de
+    /// grupos con sesión privada (D) se van la cuenta y los datos, así que el texto de la celda D que dejó L20-10 («Lo de este
+    /// dispositivo se queda») se retiró.
     private var deleteAccountFinalMessage: String {
-        DestructiveScopeLogic.deleteAccountFinalKeepsThisDevice(deleteAccountScopeOperation)
-            ? L10n.UXCS.deleteAccountFinalGroupsOnly
-            : L10n.Settings.deleteAccountFinalMessage
+        L10n.Settings.deleteAccountFinalMessage
     }
 
     /// §3.2: subtítulo dinámico de la fila "Dónde viven tus datos" — refleja el modo real.

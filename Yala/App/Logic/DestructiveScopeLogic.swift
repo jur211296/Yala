@@ -44,7 +44,9 @@ nonisolated enum DestructiveScopeLogic {
         // MARK: Eliminar mi cuenta — vive dentro de «Tu cuenta de Yala»
         /// Nube completa (E): la vida personal vive en la cuenta de Yala.
         case deleteAccountCloud
-        /// La cuenta de grupos de una sesión PRIVADA (D): lo personal, que vive en iCloud, no se toca.
+        /// La cuenta de grupos de una sesión PRIVADA (D). Desde el 2026-10-29 (decisión de Jürgen, encargo S27i) se lleva
+        /// también lo personal: de este dispositivo y de su iCloud, y el dispositivo vuelve al Welcome. Hasta ese día lo
+        /// personal no se tocaba (L20-10), y quien quería borrar todo tenía que saber que además había que vaciar.
         case deleteAccountGroupsOnly
         /// Solo grupos SIN sesión privada (F): la cuenta, y con ella lo que haya en este dispositivo.
         case deleteAccountGroupsOnlyNoPrivate
@@ -291,8 +293,9 @@ nonisolated enum DestructiveScopeLogic {
     }
 
     /// Operación de «Eliminar mi cuenta»: la cuenta de la nube completa (E), la de grupos de una sesión
-    /// privada (D, lo personal no se toca) o la de un solo-grupos sin sesión privada (F, se va también lo
-    /// local). Misma decisión que el cierre local de `AccountDeletionService`.
+    /// privada (D; desde el encargo S27i se lleva también lo personal, de este dispositivo y de su iCloud) o la de un
+    /// solo-grupos sin sesión privada (F, se va también lo local). Misma decisión que el cierre local de
+    /// `AccountDeletionService`.
     static func deleteAccountOperation(storageMode: StorageMode, hasPrivateSession: Bool) -> Operation {
         if storageMode == .cloud { return .deleteAccountCloud }
         return hasPrivateSession ? .deleteAccountGroupsOnly : .deleteAccountGroupsOnlyNoPrivate
@@ -309,14 +312,6 @@ nonisolated enum DestructiveScopeLogic {
         path == .privateSignOut
     }
 
-    /// UX 2.2 · L20-10 (decisión de Jürgen, 2026-10-18): **la alerta final de «Eliminar mi cuenta» habla de su celda.** La
-    /// genérica («tu cuenta y tus datos se eliminarán por completo») contradecía a la hoja de la cuenta de grupos con sesión
-    /// privada (D), donde lo personal de este teléfono no se toca. En la nube (E) y en solo grupos sin sesión privada (F) la
-    /// genérica es cierta y se queda.
-    static func deleteAccountFinalKeepsThisDevice(_ operation: Operation) -> Bool {
-        operation == .deleteAccountGroupsOnly
-    }
-
     /// ¿La confirmación de la hoja necesita un SEGUNDO gesto? Solo los cierres sin copia en iCloud: son los
     /// únicos «Cerrar sesión» que destruyen algo que no existe en ninguna otra parte (confirmación reforzada,
     /// decisión de Jürgen del 2026-09-09).
@@ -326,17 +321,28 @@ nonisolated enum DestructiveScopeLogic {
 
     // MARK: - A dónde lleva «Vaciar datos»
 
-    /// Dónde aterriza la app tras «Vaciar datos» (ticket §7, fila H de la matriz de escenarios).
+    /// Dónde aterriza la app tras «Vaciar datos».
+    ///
+    /// **Decisión de Jürgen del 2026-10-29 (encargo S27i), que supera la del 28-oct (card `l9rw`, onboarding):** ahora que
+    /// existe «Cerrar sesión», vaciar borra el contenido y nada más. La sesión, la cuenta, los grupos y los ajustes de la
+    /// persona —nombre, divisa, tema, recordatorios— se quedan, y por eso no hay bienvenida que repetir.
     enum WipeLanding: Equatable {
-        /// Con vida personal (C · D · E): directo al onboarding personal, sin pasar por el Welcome — la
-        /// sesión en la nube y los grupos, si los hay, siguen puestos. Al terminar, la celda es la de antes.
-        case personalOnboarding
+        /// Con vida personal (C · D · E): el Panel vacío, con el aviso de crear la primera cuenta. Las categorías de serie
+        /// se vuelven a sembrar en el mismo borrado (`keepsPersonSettings`).
+        case panel
         /// Solo grupos (F): la app sigue enseñando sus grupos. No hay vida personal que volver a crear.
         case groupsShell
     }
 
     static func wipeLanding(hasPrivateSession: Bool) -> WipeLanding {
-        hasPrivateSession ? .personalOnboarding : .groupsShell
+        hasPrivateSession ? .panel : .groupsShell
+    }
+
+    /// ¿El borrado de «Vaciar datos» conserva los ajustes de la persona? Sale del aterrizaje y no de otro predicado: quien se
+    /// queda en el Panel no pasa por la bienvenida que los volvería a pedir, y quien vuelve a la shell de grupos no tiene
+    /// vida personal cuyos ajustes conservar (su vaciado ES el de perfil y preferencias, `wipeDataGroupsOnly`).
+    static func wipeKeepsPersonSettings(_ landing: WipeLanding) -> Bool {
+        landing == .panel
     }
 
     // MARK: - El modelo de la hoja
@@ -386,12 +392,11 @@ nonisolated enum DestructiveScopeLogic {
 
         case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
             let isCloud = (operation == .deleteAccountCloud)
-            // `.cloud`: la vida personal muere en device + cuenta. D: el personal en `.icloud` NO se toca
-            // (📱 preserved). F: no hay vida privada que conservar y el dispositivo vuelve a recién instalado
-            // (📱 destructive). ☁️ muere siempre la cuenta; 👥 = anonimización.
-            let deviceTone: Tone = (operation == .deleteAccountGroupsOnly) ? .preserved : .destructive
+            // `.cloud`: la vida personal muere en device + cuenta. D: desde el 2026-10-29 también (este dispositivo y su
+            // iCloud). F: no hay vida privada que conservar y el dispositivo vuelve a recién instalado. Las tres 📱
+            // destructive; ☁️ muere siempre la cuenta; 👥 = anonimización.
             return Model(
-                rows: [.init(location: .device, tone: deviceTone),
+                rows: [.init(location: .device, tone: .destructive),
                        .init(location: .cloud, tone: .destructive),
                        .init(location: .groups, tone: .neutral)],
                 cloudLabel: cloudLabel,
@@ -404,10 +409,10 @@ nonisolated enum DestructiveScopeLogic {
                     hasOutstandingDebt: hasOutstandingDebt,
                     hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint
                 ).compactMap(Self.mapDeleteAccountLine),
-                // L20-8: la cuenta de la nube se lleva lo personal; «Exportar antes» lo deja en un archivo. Las dos de
-                // grupos no borran registros personales y no lo ofrecen.
+                // L20-8: donde se va lo personal, «Exportar antes» lo deja en un archivo: la nube (E) y, desde el
+                // 2026-10-29, la cuenta de grupos con sesión privada (D). F no tiene registros personales que exportar.
                 secondaryActions: {
-                    let export: [SecondaryKind] = isCloud ? [.exportBefore] : []
+                    let export: [SecondaryKind] = operation == .deleteAccountGroupsOnlyNoPrivate ? [] : [.exportBefore]
                     return (hasOutstandingDebt ? [.viewGroups] : []) + export
                 }())
 

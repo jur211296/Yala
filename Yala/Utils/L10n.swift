@@ -4910,6 +4910,8 @@ enum L10n {
         static var wipeDataSecondConfirmTitle: String {
             ls("settings.wipeDataSecondConfirmTitle", comment: "")
         }
+        /// Aviso tras «Vaciar datos» con la persona en el Panel vacío (encargo S27i, texto de Jürgen del 2026-10-29).
+        static var wipeLandingToast: String { ls("settings.wipeLandingToast", comment: "") }
         /// Fase 1 (§3.2): subtítulos de una línea de las filas de Ajustes.
         static var exportDataSubtitle: String { ls("settings.exportDataSubtitle", comment: "") }
         static var wipeDataSubtitle: String { ls("settings.wipeDataSubtitle", comment: "") }
@@ -8006,7 +8008,8 @@ enum L10n {
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }
         static var remoteOnboardingCompleted: String { ls("icloud.remoteOnboardingCompleted", comment: "") }
-        static var remoteRestoreCompleted: String { ls("icloud.remoteRestoreCompleted", comment: "") }
+        /// Aviso del dispositivo que recibe «Vaciar datos» de otro que siguió usando Yala (encargo S27i).
+        static var remoteWipeKeptSetup: String { ls("icloud.remoteWipeKeptSetup", comment: "") }
         enum SyncIndicator {
             static var failed: String { ls("icloud.syncIndicator.failed", comment: "") }
             static func stalled(_ days: Int) -> String {

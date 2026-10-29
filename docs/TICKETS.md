@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1106)
+## Index (1110)
 
 | id | status | path |
 |---|---|---|
@@ -61,6 +61,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-deletion-can-still-orphan-records-that-arrive-later | done | tickets/done/account-deletion-can-still-orphan-records-that-arrive-later.md |
 | account-deletion-canary-never-arrives | backlog | tickets/backlog/account-deletion-canary-never-arrives.md |
 | account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare | done | tickets/done/account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare.md |
+| account-deletion-private-close-has-no-durable-intent | backlog | tickets/backlog/account-deletion-private-close-has-no-durable-intent.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
 | account-goldens-freeze-read-test-times-out | done | tickets/done/account-goldens-freeze-read-test-times-out.md |
@@ -727,6 +728,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notification-deeplink-accounts-not-parsed | done | tickets/done/notification-deeplink-accounts-not-parsed.md |
 | notification-delegate-assigned-after-launch | done | tickets/done/notification-delegate-assigned-after-launch.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
+| old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | backlog | tickets/backlog/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | onboarding-sigue-los-estilos-del-resto-de-la-app | qa | tickets/qa/onboarding-sigue-los-estilos-del-resto-de-la-app.md |
@@ -1134,11 +1136,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-data-does-not-cancel-the-remote-wipe-grace | done | tickets/done/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
 | wipe-data-group-rows-return-only-on-the-next-cold-launch | backlog | tickets/backlog/wipe-data-group-rows-return-only-on-the-next-cold-launch.md |
 | wipe-data-keeps-groups-but-drops-their-bridged-rows | done | tickets/done/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |
+| wipe-data-keeps-the-account-and-delete-account-wipes-everything | qa | tickets/qa/wipe-data-keeps-the-account-and-delete-account-wipes-everything.md |
 | wipe-division-complement-can-be-bridged-twice | backlog | tickets/backlog/wipe-division-complement-can-be-bridged-twice.md |
 | wipe-division-exclusion-trusts-the-origin-to-converge | done | tickets/done/wipe-division-exclusion-trusts-the-origin-to-converge.md |
 | wipe-division-kv-key-has-no-quota-ceiling | backlog | tickets/backlog/wipe-division-kv-key-has-no-quota-ceiling.md |
 | wipe-division-takeover-can-cross-a-late-origin-before-the-mirror | backlog | tickets/backlog/wipe-division-takeover-can-cross-a-late-origin-before-the-mirror.md |
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
+| wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed | backlog | tickets/backlog/wipe-signal-arriving-before-the-fleet-mark-takes-the-origin-seed.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | done | tickets/done/wire-decoder-accepts-non-finite-money.md |
 | worktree-stamp-depends-on-whether-a-rename-is-staged | done | tickets/done/worktree-stamp-depends-on-whether-a-rename-is-staged.md |

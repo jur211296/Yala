@@ -2416,7 +2416,6 @@
 "icloud.detail.cta.diagnose" = "Sprawdź i napraw";
 "icloud.detail.cta.viewTechnical" = "Zobacz szczegół techniczny";
 "icloud.remoteOnboardingCompleted" = "Konfiguracja została ukończona na Twoim drugim urządzeniu. Wszystko jest już tutaj.";
-"icloud.remoteRestoreCompleted" = "Dane przywrócone";
 "icloud.remoteWipe.title" = "Dane już niedostępne";
 "icloud.remoteWipe.message" = "Yala została wyczyszczona na innym Twoim urządzeniu. Jeśli to Ty, zacznij od zera także tutaj; jeśli nie, poczekaj: jeśli to był błąd, Twoje dane mogą wrócić.";
 "icloud.remoteWipe.confirm" = "Zacznij od nowa";
@@ -5021,7 +5020,7 @@
 "settings.deleteAccountScopeDeviceCloud" = "Twoje dane z tego urządzenia zostają usunięte";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila dispositivo */
-"settings.deleteAccountScopeDeviceGroupsOnly" = "Twoje dane osobiste na tym urządzeniu pozostają nietknięte";
+"settings.deleteAccountScopeDeviceGroupsOnly" = "Twoje dane z tego urządzenia i z iCloud zostają usunięte, więc znikną też z Twoich innych urządzeń";
 
 /* D4 Eliminar cuenta (nube): fila cuenta de Yala */
 "settings.deleteAccountScopeCloudCloud" = "Twoje konto i wszystkie dane zostają usunięte na zawsze";
@@ -7572,7 +7571,6 @@
 "uxcs.signOutUpload.title" = "Wysyłanie Twoich zmian do iCloud…";
 "uxcs.signOutUpload.pending" = "Zmiany do wysłania: %d";
 "uxcs.migrated.rejoinSentence" = "Ta grupa się przeniosła. Zaloguj się ponownie, aby zobaczyć ją na bieżąco.";
-"uxcs.deleteAccount.finalGroupsOnly" = "Twoje konto Yala zostanie usunięte. To, co jest na tym urządzeniu, zostaje.";
 
 /* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
 "l20n.sheet.title" = "Zanim włączysz chmurę";
@@ -8467,3 +8465,5 @@
 
 /* VoiceOver label for the live on-device transcript shown while recording a voice entry */
 "voice.live.transcriptAccessibility" = "Co rozpoznaje iPhone";
+"settings.wipeLandingToast" = "Gotowe, zaczynasz od zera. Utwórz pierwsze konto, aby zapisywać.";
+"icloud.remoteWipeKeptSetup" = "Dane zostały wyczyszczone na innym urządzeniu.";

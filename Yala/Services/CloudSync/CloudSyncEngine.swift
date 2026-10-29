@@ -426,7 +426,7 @@ enum CloudSyncBreadcrumb {
 
     /// El usuario inició el cierre de sesión. `path` = "private" | "private-with-groups" | "cloud-secure" |
     /// "secondary" | "icloud-groups-session" | "account-delete-cloud" |
-    /// "account-delete-groups-only" (valores reales de los call-sites en `CloudSessionSignOut`).
+    /// "account-delete-private" (valores reales de los call-sites en `CloudSessionSignOut`).
     static func signOutStarted(path: String) {
         logger.notice("CloudSignOut started path=\(path, privacy: .public)")
     }
