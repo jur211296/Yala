@@ -21,6 +21,11 @@ struct AccountRemovalSheet: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SessionState.self) private var sessionState
+    /// La lista de cuentas para elegir otro destino (hoja pequeña).
+    @State private var isPickingDestination = false
 
     init(
         account: Account,
@@ -37,7 +42,7 @@ struct AccountRemovalSheet: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle(L10n.Account.Removal.title(viewModel.accountName))
+                .navigationTitle(L10n.Account.delete)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -75,69 +80,41 @@ struct AccountRemovalSheet: View {
         }
     }
 
-    // MARK: - Elegir
+    // MARK: - Elegir (propuesta A de la card rd7z, 2026-10-29)
 
+    /// Una pantalla: la cuenta con lo que tiene, la pregunta y dos tarjetas. La de mover lleva dentro el destino y
+    /// cómo queda su saldo; elegir otro destino abre la lista en una hoja pequeña. Las reglas no cambian.
     private var chooseView: some View {
-        List {
-            Section {
-                Text(L10n.Account.Removal.intro)
-                    .font(DS.Typography.body)
-                    .accessibilityIdentifier("account_removal_intro")
-                ForEach(countRows, id: \.identifier) { row in
-                    LabeledContent(row.label) {
-                        Text("\(row.count)")
-                            .font(DS.Typography.body.monospacedDigit())
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                header
+
+                Text(L10n.Account.Removal.question)
+                    .font(DS.Typography.title3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                    .padding(.top, DS.Spacing.xs)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    moveCard
+                    if viewModel.choice == .move {
+                        notes(moveNotes, identifier: "account_removal_move_notes")
                     }
-                    .accessibilityIdentifier(row.identifier)
                 }
-            }
 
-            Section {
-                optionRow(
-                    title: L10n.Account.Removal.moveTitle,
-                    subtitle: viewModel.canMove
-                        ? L10n.Account.Removal.moveSubtitle
-                        : viewModel.cannotMoveReason,
-                    isSelected: viewModel.choice == .move,
-                    isEnabled: viewModel.canMove,
-                    isDestructive: false,
-                    identifier: "account_removal_option_move"
-                ) { viewModel.choice = .move }
-
-                optionRow(
-                    title: L10n.Account.Removal.deleteTitle,
-                    subtitle: viewModel.canDelete
-                        ? L10n.Account.Removal.deleteSubtitle
-                        : L10n.Account.Removal.deleteBlockedGroups,
-                    isSelected: viewModel.choice == .delete,
-                    isEnabled: viewModel.canDelete,
-                    isDestructive: true,
-                    identifier: "account_removal_option_delete"
-                ) { viewModel.choice = .delete }
-            } header: {
-                Text(L10n.Account.Removal.choiceHeader)
-            } footer: {
-                if viewModel.choice == .delete, let note = deleteFooter {
-                    Text(note)
-                }
-            }
-
-            if viewModel.choice == .move, !viewModel.destinations.isEmpty {
-                Section {
-                    ForEach(viewModel.destinations) { option in
-                        destinationRow(option)
-                    }
-                } header: {
-                    Text(L10n.Account.Removal.destinationHeader)
-                } footer: {
-                    if let note = moveFooter {
-                        Text(note)
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    deleteCard
+                    if viewModel.choice == .delete {
+                        notes(deleteNotes, identifier: "account_removal_delete_notes")
                     }
                 }
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .frame(maxWidth: DS.Adaptive.readableWidth)
+            .frame(maxWidth: .infinity)
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
         .yalaScreenBackground(.subtle)
         .safeAreaInset(edge: .bottom) {
             proceedButton
@@ -145,32 +122,126 @@ struct AccountRemovalSheet: View {
                 .padding(.vertical, DS.Spacing.md)
                 .background(.bar)
         }
+        .sheet(isPresented: $isPickingDestination) {
+            destinationPicker
+        }
     }
 
-    private struct CountRow {
-        let label: String
-        let count: Int
-        let identifier: String
+    // MARK: Cabecera
+
+    private var header: some View {
+        HStack(spacing: DS.Spacing.md) {
+            let color = colorForHex(viewModel.accountColorHex)
+            Image(systemName: viewModel.accountIconName)
+                .font(DS.Typography.headline)
+                .foregroundStyle(theme.onFill(color))
+                .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
+                .background(color, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(viewModel.accountName)
+                    .font(DS.Typography.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(summaryLine)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("account_removal_count_records")
+                if let other = otherCountsLine {
+                    Text(other)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("account_removal_count_other")
+                }
+            }
+            Spacer(minLength: 0)
+        }
     }
 
-    private var countRows: [CountRow] {
-        guard let shape = viewModel.shape else { return [] }
-        let all = [
-            CountRow(label: L10n.Account.Removal.countRecords, count: shape.rows.count,
-                     identifier: "account_removal_count_records"),
-            CountRow(label: L10n.Account.Removal.countScheduled, count: shape.scheduled.count,
-                     identifier: "account_removal_count_scheduled"),
-            CountRow(label: L10n.Account.Removal.countFavorites, count: shape.favoriteCount,
-                     identifier: "account_removal_count_favorites"),
-            CountRow(label: L10n.Account.Removal.countDrafts, count: shape.pendingDraftCount,
-                     identifier: "account_removal_count_drafts"),
-            CountRow(label: L10n.Account.Removal.countBudgets, count: shape.budgetCount,
-                     identifier: "account_removal_count_budgets"),
+    /// «2 registros · S/ −58.00». Sin saldo en «solo gastos», como la lista de cuentas.
+    private var summaryLine: String {
+        var parts = [L10n.Account.Removal.recordCount(viewModel.shape?.rows.count ?? 0)]
+        if !sessionState.isExpensesOnlyMode, let balance = viewModel.sourceBalance {
+            parts.append(appPreferences.currency(
+                (balance as NSDecimalNumber).doubleValue, currencyCode: viewModel.sourceCurrencyCode))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    /// Lo que no es historial (programados, favoritos, borradores, presupuestos), en una línea y solo si hay algo.
+    private var otherCountsLine: String? {
+        guard let shape = viewModel.shape else { return nil }
+        let all: [(String, Int)] = [
+            (L10n.Account.Removal.countScheduled, shape.scheduled.count),
+            (L10n.Account.Removal.countFavorites, shape.favoriteCount),
+            (L10n.Account.Removal.countDrafts, shape.pendingDraftCount),
+            (L10n.Account.Removal.countBudgets, shape.budgetCount),
         ]
-        return all.filter { $0.count > 0 }
+        let present = all.filter { $0.1 > 0 }.map { "\($0.0) \($0.1)" }
+        return present.isEmpty ? nil : present.joined(separator: " · ")
     }
 
-    private func optionRow(
+    // MARK: Tarjetas
+
+    private var moveCard: some View {
+        let isSelected = viewModel.choice == .move
+        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            choiceButton(
+                title: L10n.Account.Removal.moveTitle,
+                subtitle: viewModel.canMove ? L10n.Account.Removal.moveSubtitle : viewModel.cannotMoveReason,
+                isSelected: isSelected,
+                isEnabled: viewModel.canMove,
+                isDestructive: false,
+                identifier: "account_removal_option_move"
+            ) { viewModel.choice = .move }
+
+            if viewModel.canMove, let destination = viewModel.selectedDestination {
+                destinationChooser(destination)
+                if !sessionState.isExpensesOnlyMode, let preview = viewModel.selectedPreview {
+                    Text(balanceChange(destination, preview))
+                        .font(DS.Typography.captionMono)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("account_removal_balance_change")
+                }
+            }
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.card, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .strokeBorder(isSelected ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.clear), lineWidth: 1.5)
+        }
+        .opacity(viewModel.canMove ? 1 : 0.6)
+    }
+
+    private var deleteCard: some View {
+        let isSelected = viewModel.choice == .delete
+        return choiceButton(
+            title: L10n.Account.Removal.deleteTitle,
+            subtitle: viewModel.canDelete
+                ? L10n.Account.Removal.deleteSubtitle
+                : L10n.Account.Removal.deleteBlockedGroups,
+            isSelected: isSelected,
+            isEnabled: viewModel.canDelete,
+            isDestructive: true,
+            identifier: "account_removal_option_delete"
+        ) { viewModel.choice = .delete }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.card, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .strokeBorder(
+                    isSelected ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.clear), lineWidth: 1.5)
+        }
+        .opacity(viewModel.canDelete ? 1 : 0.6)
+    }
+
+    /// El título y el subtítulo de una tarjeta, con la marca de elegida a la derecha.
+    private func choiceButton(
         title: String,
         subtitle: String,
         isSelected: Bool,
@@ -181,31 +252,129 @@ struct AccountRemovalSheet: View {
     ) -> some View {
         Button(action: action) {
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
-                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(title)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(isDestructive && isEnabled ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.primary))
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(isDestructive && isEnabled
+                            ? AnyShapeStyle(DS.Semantic.errorForeground) : AnyShapeStyle(.primary))
                     Text(subtitle)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(isSelected
+                        ? AnyShapeStyle(isDestructive ? DS.Semantic.errorForeground : theme.accent)
+                        : AnyShapeStyle(Color(uiColor: .tertiaryLabel)))
+                    .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
-        .opacity(isEnabled ? 1 : 0.6)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(identifier)
     }
 
+    /// «A Banco QA · Cambiar ›» dentro de la tarjeta de mover. Lleva el id de siempre del destino elegido.
+    private func destinationChooser(_ destination: AccountRemovalViewModel.DestinationOption) -> some View {
+        Button {
+            viewModel.choice = .move
+            isPickingDestination = true
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                Text(L10n.Account.Removal.destinationLine(destination.name))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: DS.Spacing.sm)
+                Text(L10n.Account.Removal.change)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(theme.accentText)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.chevron)
+                    .foregroundStyle(theme.accentText)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(theme.background, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isSelected)
+        .accessibilityIdentifier("account_removal_destination_\(destination.name)")
+    }
+
+    private func balanceChange(
+        _ destination: AccountRemovalViewModel.DestinationOption,
+        _ preview: AccountRemovalService.BalancePreview
+    ) -> String {
+        L10n.Account.Removal.balanceChange(
+            destination.name,
+            appPreferences.currency((preview.before as NSDecimalNumber).doubleValue, currencyCode: destination.currencyCode),
+            appPreferences.currency(
+                (preview.after as NSDecimalNumber).doubleValue,
+                currencyCode: destination.currencyCode,
+                isEstimate: preview.isApproximate))
+    }
+
+    /// Los avisos de hoy, uno por línea bajo su tarjeta.
+    @ViewBuilder
+    private func notes(_ lines: [String], identifier: String) -> some View {
+        if !lines.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                ForEach(lines, id: \.self) { line in
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        Image(systemName: "info.circle")
+                            .font(DS.Typography.caption)
+                            .accessibilityHidden(true)
+                        Text(line)
+                            .font(DS.Typography.caption)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .foregroundStyle(Color(uiColor: .secondaryLabel))
+                }
+            }
+            .padding(.horizontal, DS.Spacing.xs)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(identifier)
+        }
+    }
+
+    // MARK: Elegir otra cuenta
+
+    private var destinationPicker: some View {
+        NavigationStack {
+            List {
+                ForEach(viewModel.destinations) { option in
+                    destinationRow(option)
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .navigationTitle(L10n.Account.Removal.destinationHeader)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.Action.cancel) { isPickingDestination = false }
+                        .accessibilityIdentifier("account_removal_picker_cancel")
+                }
+            }
+        }
+        .yalaScreenBackground(.partialSheet)
+        .yalaSheetDetents([.medium, .large])
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("account_removal_destination_picker")
+    }
+
     private func destinationRow(_ option: AccountRemovalViewModel.DestinationOption) -> some View {
-        Button { viewModel.select(option) } label: {
+        Button {
+            viewModel.select(option)
+            isPickingDestination = false
+        } label: {
             HStack(spacing: DS.Spacing.md) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(option.name)
@@ -213,10 +382,18 @@ struct AccountRemovalSheet: View {
                         .foregroundStyle(.primary)
                     Text(option.isAllowed ? option.currencyCode : L10n.Account.Removal.destinationBlockedCurrency)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
+                if !sessionState.isExpensesOnlyMode, let preview = viewModel.balancePreviews[option.id] {
+                    Text("→ " + appPreferences.currency(
+                        (preview.after as NSDecimalNumber).doubleValue,
+                        currencyCode: option.currencyCode,
+                        isEstimate: preview.isApproximate))
+                        .font(DS.Typography.captionMono)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                }
                 if option.id == viewModel.destinationID {
                     Image(systemName: "checkmark")
                         .foregroundStyle(.thAccentText)
@@ -228,13 +405,14 @@ struct AccountRemovalSheet: View {
         .buttonStyle(.plain)
         .disabled(!option.isAllowed)
         .opacity(option.isAllowed ? 1 : 0.6)
+        .listRowBackground(theme.card)
         .accessibilityAddTraits(option.id == viewModel.destinationID ? .isSelected : [])
-        .accessibilityIdentifier("account_removal_destination_\(option.name)")
+        .accessibilityIdentifier("account_removal_destination_option_\(option.name)")
     }
 
-    private var moveFooter: String? {
+    private var moveNotes: [String] {
         guard let option = viewModel.selectedDestination,
-              case let .allowed(_, convertedRows, collapsed, convertsPlans) = option.verdict else { return nil }
+              case let .allowed(_, convertedRows, collapsed, convertsPlans) = option.verdict else { return [] }
         var lines: [String] = []
         if convertedRows > 0 || convertsPlans {
             lines.append(L10n.Account.Removal.convertNote(option.currencyCode))
@@ -245,24 +423,24 @@ struct AccountRemovalSheet: View {
         if (viewModel.shape?.budgetCount ?? 0) > 0 {
             lines.append(L10n.Account.Removal.budgetsMovedNote(option.name))
         }
-        return lines.isEmpty ? nil : lines.joined(separator: "\n\n")
+        return lines
     }
 
-    private var deleteFooter: String? {
+    private var deleteNotes: [String] {
         guard case let .allowed(_, partnersKept) = viewModel.deleteVerdict,
-              let shape = viewModel.shape else { return nil }
+              let shape = viewModel.shape else { return [] }
         var lines: [String] = []
         if partnersKept > 0 { lines.append(L10n.Account.Removal.partnersNote) }
         if shape.planCount > 0 { lines.append(L10n.Account.Removal.plansNote) }
         if shape.budgetsOnlyThisAccount > 0 { lines.append(L10n.Account.Removal.budgetsOnlyNote) }
-        return lines.isEmpty ? nil : lines.joined(separator: "\n\n")
+        return lines
     }
 
     @ViewBuilder
     private var proceedButton: some View {
         switch viewModel.choice {
         case .move:
-            YalaPrimaryButton(L10n.Account.Removal.moveAction, isDisabled: !viewModel.canProceed) {
+            YalaPrimaryButton(L10n.Account.Removal.moveActionNamed(viewModel.accountName), isDisabled: !viewModel.canProceed) {
                 Task {
                     if await viewModel.proceed(context: modelContext, deleteAccount: deleteAccount) {
                         finish()
@@ -300,10 +478,11 @@ struct AccountRemovalSheet: View {
                 Text(L10n.Account.Removal.confirmDeleteMessage)
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
-                if let note = deleteFooter {
+                ForEach(deleteNotes, id: \.self) { note in
                     Text(note)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .padding(DS.Spacing.xl)

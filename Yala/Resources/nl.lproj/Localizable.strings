@@ -6626,13 +6626,15 @@
 "export.error.fileWriteFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "„%@” verwijderen";
-"account.removal.intro" = "Kies voordat je hem verwijdert wat er met de inhoud moet gebeuren.";
+"account.removal.question" = "Wat doen we met de boekingen?";
+"account.removal.destinationLine" = "Naar %@";
+"account.removal.change" = "Wijzigen";
+"account.removal.balanceChange" = "%1$@: %2$@ → %3$@";
+"account.removal.moveActionNamed" = "Verplaatsen en „%@” verwijderen";
 "account.removal.countRecords" = "Boekingen";
 "account.removal.countScheduled" = "Geplande betalingen";
 "account.removal.countFavorites" = "Favoriete betalingen";
 "account.removal.countDrafts" = "Wachtend in de inbox";
-"account.removal.choiceHeader" = "Wat doen we ermee";
 "account.removal.moveTitle" = "Naar een andere rekening verplaatsen";
 "account.removal.moveSubtitle" = "Aanbevolen. Je geschiedenis en je saldo blijven behouden.";
 "account.removal.noDestination" = "Je hebt geen andere rekening om naartoe te verplaatsen.";
@@ -6645,7 +6647,6 @@
 "account.removal.collapsedNote" = "Overboekingen tussen „%1$@” en „%2$@” worden verwijderd: binnen één rekening verplaatsen ze geen geld.";
 "account.removal.partnersNote" = "Overboekingen met andere rekeningen blijven op die rekeningen staan als gewone boekingen.";
 "account.removal.plansNote" = "Geplande betalingen, favorieten en wachtende items in de inbox blijven zonder rekening: je kiest er een als je ze gebruikt.";
-"account.removal.moveAction" = "Verplaatsen en rekening verwijderen";
 "account.removal.deleteAction" = "Boekingen en rekening verwijderen";
 "account.removal.confirmDeleteTitle" = "De boekingen verwijderen?";
 "account.removal.confirmDeleteCount" = "Te verwijderen boekingen";

@@ -6626,13 +6626,15 @@
 "export.error.fileWriteFailed" = "Nie udało się utworzyć pliku. Spróbuj ponownie.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "Usuń „%@”";
-"account.removal.intro" = "Zanim je usuniesz, wybierz, co zrobić z jego zawartością.";
+"account.removal.question" = "Co zrobić z jego wpisami?";
+"account.removal.destinationLine" = "Na %@";
+"account.removal.change" = "Zmień";
+"account.removal.balanceChange" = "%1$@: %2$@ → %3$@";
+"account.removal.moveActionNamed" = "Przenieś i usuń „%@”";
 "account.removal.countRecords" = "Wpisy";
 "account.removal.countScheduled" = "Zaplanowane płatności";
 "account.removal.countFavorites" = "Ulubione płatności";
 "account.removal.countDrafts" = "Oczekujące w skrzynce";
-"account.removal.choiceHeader" = "Co z tym zrobić";
 "account.removal.moveTitle" = "Przenieść na inne konto";
 "account.removal.moveSubtitle" = "Zalecane. Twoja historia i saldo zostają zachowane.";
 "account.removal.noDestination" = "Nie masz innego konta, na które można je przenieść.";
@@ -6645,7 +6647,6 @@
 "account.removal.collapsedNote" = "Przelewy między „%1$@” a „%2$@” zostaną usunięte: w obrębie jednego konta nie przenoszą pieniędzy.";
 "account.removal.partnersNote" = "Przelewy z innymi kontami zostaną na tych kontach jako zwykłe wpisy.";
 "account.removal.plansNote" = "Zaplanowane płatności, ulubione i oczekujące w skrzynce zostaną bez konta: wybierzesz je, gdy będziesz ich używać.";
-"account.removal.moveAction" = "Przenieś i usuń konto";
 "account.removal.deleteAction" = "Usuń wpisy i konto";
 "account.removal.confirmDeleteTitle" = "Usunąć wpisy?";
 "account.removal.confirmDeleteCount" = "Wpisy do usunięcia";

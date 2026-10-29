@@ -1712,5 +1712,25 @@
 			<string>%d budżetu</string>
 		</dict>
 	</dict>
+	<key>account.removal.recordCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d wpis</string>
+			<key>few</key>
+			<string>%d wpisy</string>
+			<key>many</key>
+			<string>%d wpisów</string>
+			<key>other</key>
+			<string>%d wpisu</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

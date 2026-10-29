@@ -6614,13 +6614,15 @@
 "export.error.fileWriteFailed" = "Wir konnten die Datei nicht erstellen. Versuche es erneut.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "„%@“ löschen";
-"account.removal.intro" = "Bevor du es löschst, wähle, was mit seinem Inhalt passieren soll.";
+"account.removal.question" = "Was machen wir mit ihren Einträgen?";
+"account.removal.destinationLine" = "Nach %@";
+"account.removal.change" = "Ändern";
+"account.removal.balanceChange" = "%1$@: %2$@ → %3$@";
+"account.removal.moveActionNamed" = "Verschieben und „%@“ löschen";
 "account.removal.countRecords" = "Einträge";
 "account.removal.countScheduled" = "Geplante Zahlungen";
 "account.removal.countFavorites" = "Favoritenzahlungen";
 "account.removal.countDrafts" = "Offen im Posteingang";
-"account.removal.choiceHeader" = "Was soll damit passieren";
 "account.removal.moveTitle" = "In ein anderes Konto verschieben";
 "account.removal.moveSubtitle" = "Empfohlen. Dein Verlauf und dein Saldo bleiben erhalten.";
 "account.removal.noDestination" = "Du hast kein anderes Konto, in das du es verschieben kannst.";
@@ -6633,7 +6635,6 @@
 "account.removal.collapsedNote" = "Überweisungen zwischen „%1$@“ und „%2$@“ werden entfernt: Innerhalb eines Kontos bewegen sie kein Geld.";
 "account.removal.partnersNote" = "Überweisungen mit anderen Konten bleiben dort als normale Einträge.";
 "account.removal.plansNote" = "Geplante Zahlungen, Favoriten und offene Einträge im Posteingang bleiben ohne Konto: Du wählst eines, wenn du sie verwendest.";
-"account.removal.moveAction" = "Verschieben und Konto löschen";
 "account.removal.deleteAction" = "Löschen und Konto entfernen";
 "account.removal.confirmDeleteTitle" = "Einträge löschen?";
 "account.removal.confirmDeleteCount" = "Zu löschende Einträge";

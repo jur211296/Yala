@@ -6626,13 +6626,15 @@
 "export.error.fileWriteFailed" = "无法创建文件，请重试。";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "删除“%@”";
-"account.removal.intro" = "删除前，请选择如何处理其中的内容。";
+"account.removal.question" = "这些记录要怎么处理？";
+"account.removal.destinationLine" = "移到 %@";
+"account.removal.change" = "更改";
+"account.removal.balanceChange" = "%1$@：%2$@ → %3$@";
+"account.removal.moveActionNamed" = "移动并删除“%@”";
 "account.removal.countRecords" = "记录";
 "account.removal.countScheduled" = "计划付款";
 "account.removal.countFavorites" = "收藏付款";
 "account.removal.countDrafts" = "收件箱中待处理";
-"account.removal.choiceHeader" = "如何处理";
 "account.removal.moveTitle" = "移到另一个账户";
 "account.removal.moveSubtitle" = "推荐。你的历史记录和余额都会保留。";
 "account.removal.noDestination" = "你没有其他可以移入的账户。";
@@ -6645,7 +6647,6 @@
 "account.removal.collapsedNote" = "“%1$@”与“%2$@”之间的转账将被移除：在同一个账户内它们不会移动资金。";
 "account.removal.partnersNote" = "与其他账户之间的转账会作为普通记录留在那些账户中。";
 "account.removal.plansNote" = "计划付款、收藏和收件箱中待处理的项目将没有账户：使用时再选择账户。";
-"account.removal.moveAction" = "移动并删除账户";
 "account.removal.deleteAction" = "删除记录和账户";
 "account.removal.confirmDeleteTitle" = "删除这些记录？";
 "account.removal.confirmDeleteCount" = "将删除的记录";

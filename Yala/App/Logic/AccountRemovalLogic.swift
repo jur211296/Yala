@@ -117,6 +117,14 @@ enum AccountRemovalLogic {
         return .allowed(rowCount: inventory.rows.count, partnersKept: partners)
     }
 
+    // MARK: - Saldo del destino
+
+    /// El saldo que le queda al destino tras mover: el de antes, más lo que entra (ya en su divisa), menos las patas
+    /// suyas que se quitan con su pareja (transferencias entre las dos cuentas). Propuesta A de la card rd7z.
+    static func balanceAfterMove(_ before: Decimal, incoming: [Decimal], removed: [Decimal]) -> Decimal {
+        before + incoming.reduce(0, +) - removed.reduce(0, +)
+    }
+
     // MARK: - Mover
 
     /// Una cuenta a la que se puede mover.

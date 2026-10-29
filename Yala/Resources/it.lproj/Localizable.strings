@@ -6624,13 +6624,15 @@
 "export.error.fileWriteFailed" = "Non siamo riusciti a creare il file. Riprova.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "Elimina «%@»";
-"account.removal.intro" = "Prima di eliminarlo, scegli cosa fare con ciò che contiene.";
+"account.removal.question" = "Cosa facciamo con le sue registrazioni?";
+"account.removal.destinationLine" = "Su %@";
+"account.removal.change" = "Cambia";
+"account.removal.balanceChange" = "%1$@: %2$@ → %3$@";
+"account.removal.moveActionNamed" = "Sposta ed elimina «%@»";
 "account.removal.countRecords" = "Registrazioni";
 "account.removal.countScheduled" = "Pagamenti pianificati";
 "account.removal.countFavorites" = "Pagamenti preferiti";
 "account.removal.countDrafts" = "In attesa nella posta in arrivo";
-"account.removal.choiceHeader" = "Cosa ne facciamo";
 "account.removal.moveTitle" = "Spostarlo su un altro conto";
 "account.removal.moveSubtitle" = "Consigliato. La tua cronologia e il tuo saldo restano.";
 "account.removal.noDestination" = "Non hai un altro conto su cui spostarlo.";
@@ -6643,7 +6645,6 @@
 "account.removal.collapsedNote" = "I trasferimenti tra «%1$@» e «%2$@» vengono rimossi: all’interno di uno stesso conto non spostano denaro.";
 "account.removal.partnersNote" = "I trasferimenti con altri conti restano in quei conti come registrazioni normali.";
 "account.removal.plansNote" = "I pagamenti pianificati, i preferiti e gli elementi in attesa nella posta in arrivo restano senza conto: lo sceglierai quando li userai.";
-"account.removal.moveAction" = "Sposta ed elimina il conto";
 "account.removal.deleteAction" = "Elimina registrazioni e conto";
 "account.removal.confirmDeleteTitle" = "Eliminare le registrazioni?";
 "account.removal.confirmDeleteCount" = "Registrazioni da eliminare";

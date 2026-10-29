@@ -179,6 +179,82 @@ enum AccountRemovalService {
         }
     }
 
+    // MARK: - Saldos que enseña la hoja
+
+    /// El saldo de una cuenta destino antes de mover y el que le quedaría después.
+    struct BalancePreview: Equatable {
+        let before: Decimal
+        let after: Decimal
+        /// Alguna fila se convirtió sin la tasa exacta de su fecha (arrastrada de otro día o de la tabla estática):
+        /// la cifra es aproximada y la mudanza, que pide las tasas antes, puede dar otra.
+        let isApproximate: Bool
+    }
+
+    /// El saldo de la cuenta que se va y, por cada destino PERMITIDO, cómo quedaría el suyo (propuesta A de la card
+    /// rd7z: «Banco QA: S/ 1,000.00 → S/ 942.00»).
+    ///
+    /// **Repite lo que hace `move` con las filas, sin escribir nada**: la transferencia cuya otra pata está en el
+    /// destino se quita entera (las dos patas), el resto entra en el destino y, si `AccountRemovalLogic.rowConverts`
+    /// lo dice, con su importe reexpresado a la tasa de SU fecha —el mismo `convertChecked` de `convertHistory`—. No
+    /// pide tasas a la red: con las que hay en el store; si alguna no es exacta, la cifra se marca aproximada. El
+    /// saldo es el de `AccountBalanceCalculator`: solo lo fechado hasta hoy.
+    static func balancePreviews(
+        of inventory: Inventory,
+        destinations: [Account],
+        context: ModelContext,
+        now: Date = .now
+    ) throws -> (source: Decimal, byDestination: [PersistentIdentifier: BalancePreview]) {
+        let allTransactions: [TransactionItem]
+        do {
+            allTransactions = try context.fetch(FetchDescriptor<TransactionItem>())
+        } catch {
+            #if DEBUG
+            print("AccountRemovalService: Error: \(error)")
+            #endif
+            throw Failure.unreadable
+        }
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
+        let source = AccountBalanceCalculator.currentBalance(transactions: inventory.transactions, asOf: now)
+        let balances = AccountBalanceCalculator.batchCalculateBalances(
+            accounts: destinations, transactions: allTransactions, asOf: now)
+        let shape = inventory.shape
+        var previews: [PersistentIdentifier: BalancePreview] = [:]
+        for destination in destinations {
+            let destinationID = destination.persistentModelID
+            guard case .allowed = AccountRemovalLogic.moveVerdict(shape, to: destinationShape(destination)) else {
+                continue
+            }
+            let target = normalizeCurrencyCode(destination.currencyCode)
+            var incoming: [Decimal] = []
+            var removed: [Decimal] = []
+            var isApproximate = false
+            for (tx, row) in zip(inventory.transactions, shape.rows) {
+                if row.transferPartnerAccount == destinationID {
+                    if let partner = inventory.outsidePartners[tx.persistentModelID], cutoff.counts(partner.date) {
+                        removed.append(Decimal(partner.amount))
+                    }
+                    continue
+                }
+                guard cutoff.counts(tx.date) else { continue }
+                guard AccountRemovalLogic.rowConverts(row, to: target) else {
+                    incoming.append(Decimal(tx.amount))
+                    continue
+                }
+                let converted = CurrencyConverter.shared.convertChecked(
+                    Decimal(tx.amount), from: tx.currencyCode, to: target, on: tx.date, context: context)
+                // `convertHistory` guarda el importe como `Double`: el saldo se suma desde ahí.
+                incoming.append(Decimal((converted.amount as NSDecimalNumber).doubleValue))
+                if !converted.quality.isExact { isApproximate = true }
+            }
+            let before = balances[destinationID] ?? 0
+            previews[destinationID] = BalancePreview(
+                before: before,
+                after: AccountRemovalLogic.balanceAfterMove(before, incoming: incoming, removed: removed),
+                isApproximate: isApproximate)
+        }
+        return (source, previews)
+    }
+
     // MARK: - Mover
 
     /// Mueve todo a `destination` y elimina la cuenta.

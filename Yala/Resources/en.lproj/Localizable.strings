@@ -6620,13 +6620,15 @@
 "export.error.fileWriteFailed" = "We couldn't create the file. Please try again.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
-"account.removal.title" = "Delete “%@”";
-"account.removal.intro" = "Before deleting it, choose what to do with what it holds.";
+"account.removal.question" = "What should we do with its records?";
+"account.removal.destinationLine" = "To %@";
+"account.removal.change" = "Change";
+"account.removal.balanceChange" = "%1$@: %2$@ → %3$@";
+"account.removal.moveActionNamed" = "Move and delete “%@”";
 "account.removal.countRecords" = "Records";
 "account.removal.countScheduled" = "Planned payments";
 "account.removal.countFavorites" = "Favorite payments";
 "account.removal.countDrafts" = "Pending in the inbox";
-"account.removal.choiceHeader" = "What should we do with it";
 "account.removal.moveTitle" = "Move it to another account";
 "account.removal.moveSubtitle" = "Recommended. Your history and your balance are kept.";
 "account.removal.noDestination" = "You don't have another account to move it to.";
@@ -6639,7 +6641,6 @@
 "account.removal.collapsedNote" = "Transfers between “%1$@” and “%2$@” are removed: within one account they don't move money.";
 "account.removal.partnersNote" = "Transfers with other accounts stay in those accounts as regular records.";
 "account.removal.plansNote" = "Planned payments, favorites and items pending in the inbox are left without an account: you'll choose one when you use them.";
-"account.removal.moveAction" = "Move and delete the account";
 "account.removal.deleteAction" = "Delete and remove the account";
 "account.removal.confirmDeleteTitle" = "Delete the records?";
 "account.removal.confirmDeleteCount" = "Records to delete";
