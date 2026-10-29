@@ -38,13 +38,6 @@ extension L10n {
         // MARK: - Con qué se compara (L11-4)
 
         static func comparedWith(_ range: String) -> String { String(format: l11("stats.l11.compare.with"), range) }
-        static var comparisonHint: String { l11("stats.l11.compare.hint") }
-        static var optionPreviousWeek: String { l11("stats.l11.compare.previousWeek") }
-        static var optionPrevious7Days: String { l11("stats.l11.compare.previous7Days") }
-        static var optionPrevious30Days: String { l11("stats.l11.compare.previous30Days") }
-        static var optionPreviousMonth: String { l11("stats.l11.compare.previousMonth") }
-        static var optionPreviousPeriod: String { l11("stats.l11.compare.previousPeriod") }
-        static var optionPreviousYear: String { l11("stats.l11.compare.previousYear") }
 
         // MARK: - Gasto por día de la semana (L11-11)
 

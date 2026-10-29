@@ -177,13 +177,6 @@ struct ComparisonPhraseLogicTests {
         #expect(!text.contains("2026"))
     }
 
-    @Test func previousOption_saysWeekForAWeek_andMonthForAMonth() {
-        #expect(ComparisonPhraseLogic.previousOptionTitle(for: .thisWeek) == L10n.UXL11.optionPreviousWeek)
-        #expect(ComparisonPhraseLogic.previousOptionTitle(for: .thisMonth) == L10n.UXL11.optionPreviousMonth)
-        #expect(ComparisonPhraseLogic.previousOptionTitle(for: .last7Days) == L10n.UXL11.optionPrevious7Days)
-        #expect(ComparisonPhraseLogic.previousOptionTitle(for: .custom) == L10n.UXL11.optionPreviousPeriod)
-    }
-
     /// «vs Sept 26» se leía como «el 26 de septiembre»: el año va entero.
     @Test func comparisonLabel_writesTheFullYear() throws {
         let calendar = Calendar.current
