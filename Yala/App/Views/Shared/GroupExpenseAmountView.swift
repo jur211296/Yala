@@ -17,9 +17,9 @@ struct GroupExpenseAmountView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        // Como la columna derecha de una fila de Registros (lienzo «Una sola Yala», 1A): la cifra arriba —turquesa si
-        // te deben, en el color del texto si debes: solo se colorea lo que entra— y la relación en la pastilla de
-        // debajo, donde Registros pone la necesidad. Al final de la fila en horizontal; al inicio cuando se apila.
+        // Como la columna derecha de una fila de Registros (lienzo «Una sola Yala», 1A): la cifra arriba —en el color
+        // del texto, te deban o debas: en Grupos los montos no llevan color (Jürgen, 2026-10-30)— y la relación en la
+        // pastilla de debajo, donde Registros pone la necesidad. Al final de la fila en horizontal; al inicio cuando se apila.
         VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
             switch status {
             case .youAreOwed(let amount):
@@ -27,7 +27,7 @@ struct GroupExpenseAmountView: View {
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(Color.amountTint(isIncome: true)),
+                    tint: .primary,
                     forceFullPrecision: true
                 )
                 relationPill(L10n.Groups.Summary.owedToMe, dot: Color.priorityNeed)
@@ -36,7 +36,7 @@ struct GroupExpenseAmountView: View {
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(Color.amountTint(isIncome: false)),
+                    tint: .primary,
                     forceFullPrecision: true
                 )
                 relationPill(L10n.Groups.Summary.iOwe, dot: Color.secondary)

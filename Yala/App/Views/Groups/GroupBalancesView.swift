@@ -323,11 +323,11 @@ struct GroupBalancesView: View {
             .contentShape(Capsule())
     }
 
-    /// Solo se colorea la excepción, y en un tono que vale como texto (`amountTint`, decisión L4-14): lo que te deben, en
-    /// el verde oscurecido; lo que debes, en el color del texto. El rosa y el verde de sistema no llegan al contraste.
+    /// Lo tuyo en el color del texto, te deban o debas (Jürgen, 2026-10-30: en Grupos los montos no llevan color); lo
+    /// que es entre otros, en gris.
     private func amountColor(_ card: GroupBalancesPresentationLogic.DebtCard) -> Color {
         guard card.involvesMe else { return .secondary }
-        return Color.amountTint(isIncome: card.isOwedToMe)
+        return Color.primary
     }
 
     // MARK: - L13-10 · Saldos iniciales

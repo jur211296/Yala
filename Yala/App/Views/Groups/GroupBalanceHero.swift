@@ -6,7 +6,7 @@
 //  debajo), como «Balance del período» en Estadísticas. Lienzo «Una sola Yala», pregunta 3A (Jürgen, 2026-10-19): la
 //  misma cifra en Gastos y en Saldos, para que al cambiar de pestaña no se mueva; y la lista de grupos abre igual.
 //
-//  - Lo que te deben va en turquesa (`amountTint`) y lo que debes en el color del texto: solo se colorea lo que entra.
+//  - La cifra va en el color del texto, te deban o debas: en Grupos los montos no llevan color (Jürgen, 2026-10-30).
 //  - La primera divisa es la cifra grande; las demás y la frase van en la línea de abajo («+ $ 46.67 · Tú no le debes
 //    nada a nadie.»), como «Entró / Salió» bajo el balance.
 //
@@ -57,7 +57,7 @@ struct GroupBalanceHero: View {
                     currencyCode: main.currencyCode,
                     font: DS.Typography.panelHeroAmount,
                     secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    tint: isOwedSide ? .color(Color.amountTint(isIncome: true)) : .primary,
+                    tint: .primary,
                     isEstimate: isEstimate,
                     forceFullPrecision: true
                 )

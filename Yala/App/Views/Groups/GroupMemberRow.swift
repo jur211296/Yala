@@ -7,7 +7,7 @@
 //  Desde el lote 19 decidido (auditoría UX 2.2) vive en la lista agrupada de Miembros: el rol se llama
 //  «Administrador» en todas partes (L19-3), el menú ofrece «Hacer administrador» o «Quitar como administrador»
 //  cuando el servidor puede cambiarlo, y a la derecha va lo que esa persona y tú se deben (lienzo «Una sola Yala»:
-//  en el color de la app, turquesa si te debe).
+//  en el color del texto, te deba o le debas).
 //
 
 import SwiftUI
@@ -182,8 +182,8 @@ struct GroupMemberRow: View {
             )
     }
 
-    /// «Te debe / S/ 80.00» con la cifra en turquesa (lo que entra), o «Le debes / S/ 40.00» en el color del texto:
-    /// la regla de color de la app (solo lo que entra lleva color).
+    /// «Te debe / S/ 80.00» o «Le debes / S/ 40.00», la cifra en el color del texto en los dos casos: en Grupos los
+    /// montos no llevan color (Jürgen, 2026-10-30).
     private func relationView(_ relation: Relation) -> some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.none) {
             Text(relation.direction == .owesYou ? L10n.UXL19.owesYouShort : L10n.UXL19.youOweShort)
@@ -191,7 +191,7 @@ struct GroupMemberRow: View {
                 .foregroundStyle(Color(uiColor: .secondaryLabel))
             Text(relation.amountText)
                 .font(DS.Typography.amountSmall)
-                .foregroundStyle(Color.amountTint(isIncome: relation.direction == .owesYou))
+                .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }

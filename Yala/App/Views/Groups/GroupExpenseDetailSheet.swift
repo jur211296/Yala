@@ -273,14 +273,14 @@ struct GroupExpenseDetailSheet: View {
             yourPartContent(
                 sentence: L10n.Groups.Card.youOwe(payerName),
                 amount: amount,
-                // Lo que debes en el color del texto y lo que te deben en turquesa, como la fila de la lista.
-                tint: Color.amountTint(isIncome: false)
+                // En el color del texto, te deban o debas, como la fila de la lista (Jürgen, 2026-10-30).
+                tint: Color.primary
             )
         case .youAreOwed(let amount):
             yourPartContent(
                 sentence: owedToYouSentence,
                 amount: amount,
-                tint: Color.amountTint(isIncome: true)
+                tint: Color.primary
             )
         case .notIncluded:
             yourPartContent(sentence: L10n.Groups.Expense.notIncluded, amount: nil, tint: .primary)

@@ -95,7 +95,7 @@ struct GroupsContainerView: View {
             listColumn
         } detail: {
             ContentUnavailableView(L10n.Groups.detailPlaceholder, systemImage: ConfigurableTab.groups.iconName)
-                .yalaScreenBackground(.subtle)
+                .yalaScreenBackground(.panel)
                 .accessibilityIdentifier("groups_detail_placeholder")
                 .marksEmptyDetailColumn()
         }
@@ -256,9 +256,7 @@ struct GroupsContainerView: View {
             // observable que cambie. Los dos avisos, en un modificador propio por el presupuesto del type-checker del CI.
             .modifier(GroupsIdentityRevisionObservers(
                 consentRevision: $consentRevision, sessionRevision: $sessionRevision))
-            // Grupos en fondo plano del tema, sin el degradado de las pestañas (Jürgen, 2026-10-30: «blanco nomás en
-            // todo Grupos»). Lo que se empuja desde aquí lo hereda.
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
             .prefersToolbarItemsInVerticalBar()

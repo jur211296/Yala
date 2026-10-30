@@ -544,7 +544,7 @@ struct GroupMembersView: View {
             Spacer()
             Text("\(word) \(amountStr)")
                 .font(DS.Typography.caption)
-                .foregroundStyle(Color.amountTint(isIncome: net > 0))
+                .foregroundStyle(Color.primary)
         }
     }
 

@@ -125,9 +125,9 @@ struct GroupTwoPersonSplitView: View {
         return choice.debtText(otherName: otherName, amountStr: amountStr)
     }
 
-    /// Turquesa si te deben y el color del texto si debes: solo se colorea lo que entra (lienzo «Una sola Yala»).
+    /// El color del texto, te deban o debas: en Grupos los montos no llevan color (Jürgen, 2026-10-30).
     private func debtColor(for choice: TwoPersonSplitOptions.Choice) -> Color {
-        Color.amountTint(isIncome: choice.debtDirection == .theyOweMe)
+        Color.primary
     }
 
     private func accessibilityLabel(for choice: TwoPersonSplitOptions.Choice, subtitle: String?) -> String {
