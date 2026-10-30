@@ -228,6 +228,18 @@ paths:
 
 - **Y al revés: lo que el manejador de un drenaje ENCIENDE tiene que bloquear en esa misma vuelta, no en la del observador (medido el 2026-10-13, CI en iOS 26.5).** `drainNext` sube la `revision`; si el bloqueo que el manejador acaba de encender solo llega a la matriz por un `onChange` de `ReadinessGateObservers`, en 26.5 el `onChange(of: revision)` corre ANTES y drena el siguiente con el consumidor aún listo: la oferta salía encima del aviso de vaciado o del de bandeja en 8 de ~60 arranques, y una de las dos presentaciones se perdía. ⇒ **`drainContentViewIntents` termina con `defer { updateContentViewReadiness() }`**; un consumidor nuevo cuyo manejador encienda un bloqueo publicado por otro hace lo mismo. En iOS 27.0 el orden era el otro y no se reproducía ni con la máquina cargada: un rojo de cola que solo sale en el CI se mide ALLÍ, con `NSLog` y la consola de la app que trae el `.xcresult` (`xcresulttool export diagnostics`). Ticket: `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`.
 
+- **El orden ENTRE consumidores lo da la cola, no quién drena antes (2026-10-30, ticket
+  `notices-come-out-one-after-another-by-priority`).** La matriz y el candado evitan que dos avisos salgan a la vez, pero no
+  eligen cuál sale primero: con uno de `.contentView` y otro de `.mainTab` en cola, ganaba el consumidor cuyo `onChange`
+  corriera antes, y Novedades (`low`) podía salir antes que «Tu prueba terminó» (`high`). ⇒ **los dos drenajes del shell
+  preguntan `AppRouter.shellNoticeAhead(of:in:)`** antes de presentar, y la regla de quién cede es `NoticeOrderLogic`
+  (una hoja de MainTab cede ante lo de `.contentView` que vaya delante; un diferible de `.contentView`, ante una hoja de
+  MainTab; los críticos no ceden). Solo se cede ante un consumidor LISTO en esa ventana: ceder ante uno sin montar
+  colgaría el aviso. **Un consumidor nuevo que presente avisos propios entra en esa regla** (y en sus tests,
+  `NoticeOrderTests`), o vuelve a decidir el orden quien mire antes. Y **el `id` de un aviso que el productor recalcula
+  sobre lo que aún no se vio es FIJO**: la clave por cifras del de la Bandeja dejaba «2 nuevos» y «3 nuevos» en cola, y
+  salían los dos seguidos.
+
 - **El botón destacado de un `.alert` (`.keyboardShortcut(.defaultAction)`) toma el RELLENO del `AccentColor` del catálogo y el TEXTO del tinte de SwiftUI de quien presenta la alerta; si los dos coinciden, el texto sale NEGRO (medido en píxeles el 2026-10-17, iOS 27.0, claro y oscuro).** No elige por contraste: sobre `#3D36B3` también salía negro. Ignora `.tint` y `foregroundStyle` en el propio botón (y `role: .confirm` no cambia nada), y el mismo tinte colorea el texto de los demás botones de la alerta. ⇒ para cambiar ese texto, presenta la alerta desde un ancla con su propio tinte (`content.background { Color.clear.alert(…).tint(…) }`, sin teñir la pantalla de debajo) y recuerda que ese tinte pinta también «Cancelar». Molde: `AIConsentAlertModifier` + `Color.alertActionTint` (blanco en oscuro; en claro, el relleno, así que sale negro: blanco dejaría los otros botones ilegibles sobre el cristal claro). El catálogo y el token están atados por `AlertActionIndigoParityTests`. Ticket: pulido del 2026-10-17 («Activar» con texto oscuro).
 
 - **El molde del ancla propia (`content.background { Color.clear.alert(…).tint(…) }`) NO vale para los avisos de

@@ -45,6 +45,13 @@ final class ScheduledPaymentNotificationService {
         _ todayAlreadyMarked: Bool
     ) async -> NotificationService.SummaryReplaceOutcome)?
 
+    /// Guardas de reentrada: una pasada de cada chequeo a la vez (ver `checkAllPaymentNotifications`).
+    private var isCheckingPayments = false
+    private var isCheckingCreditCards = false
+    /// Una pasada pedida mientras corría otra: se repite al terminar (ver `checkAllPaymentNotifications`).
+    private var paymentsRecheckPending = false
+    private var creditCardsRecheckPending = false
+
     /// Maximum overdue notifications per session to avoid spam
     private let maxOverdueNotifications = 5
 
@@ -80,7 +87,30 @@ final class ScheduledPaymentNotificationService {
     /// Single entry point: checks all scheduled payment notifications (overdue, due today, upcoming).
     /// Fetches payments, paid status, and notification config once to avoid redundant queries.
     func checkAllPaymentNotifications() async {
+        // **Una pasada a la vez** (ticket `notices-come-out-one-after-another-by-priority`). El patrón es leer el tracker,
+        // `await` el envío y marcar después, así que dos pasadas solapadas —el arranque en frío (paso 6.6) y el primer
+        // `.active`, que corre antes de que el arranque escriba `lastNotificationCheckDate`— mandaban el mismo pago dos
+        // veces. Presupuestos, informes y liquidaciones ya tenían su guarda; esta era la que faltaba. La que llega durante
+        // otra no se tira: se apunta y se repite al terminar, porque puede venir de algo que cambió los datos (el borrado
+        // parcial de `DataWipeService` la pide) y la pasada en vuelo ya los leyó.
+        // Card p0iu: la pausa va PRIMERO, antes que la guarda de reentrada (`UsageModeWiringTests`). En pausa no se
+        // apunta repetición, igual que antes de la guarda: la próxima vuelta a primer plano lanza otra pasada.
+        guard !PersonalRemindersPause.isPaused() else { return }
+        guard !isCheckingPayments else {
+            paymentsRecheckPending = true
+            return
+        }
+        isCheckingPayments = true
+        defer { isCheckingPayments = false }
+        repeat {
+            paymentsRecheckPending = false
+            await performPaymentNotificationChecks()
+        } while paymentsRecheckPending
+    }
+
+    private func performPaymentNotificationChecks() async {
         // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        // Se vuelve a mirar en cada pasada: una repetición del `repeat` puede llegar después de activarse la pausa.
         guard !PersonalRemindersPause.isPaused() else { return }
         guard let context = modelContext else { return }
         guard await isAuthorized() else { return }
@@ -508,7 +538,25 @@ final class ScheduledPaymentNotificationService {
     /// cuando el item está activo (era la notif "de las 8am" del ticket) y el fail-closed
     /// ante fetch-error.
     func checkAndNotifyCreditCardPayments() async {
+        // Una pasada a la vez, y la que llega durante otra se repite al terminar: lo mismo que `checkAllPaymentNotifications`.
+        // Card p0iu: la pausa va PRIMERO, antes que la guarda de reentrada (`UsageModeWiringTests`). En pausa no se
+        // apunta repetición, igual que antes de la guarda: la próxima vuelta a primer plano lanza otra pasada.
+        guard !PersonalRemindersPause.isPaused() else { return }
+        guard !isCheckingCreditCards else {
+            creditCardsRecheckPending = true
+            return
+        }
+        isCheckingCreditCards = true
+        defer { isCheckingCreditCards = false }
+        repeat {
+            creditCardsRecheckPending = false
+            await performCreditCardPaymentChecks()
+        } while creditCardsRecheckPending
+    }
+
+    private func performCreditCardPaymentChecks() async {
         // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        // Se vuelve a mirar en cada pasada: una repetición del `repeat` puede llegar después de activarse la pausa.
         guard !PersonalRemindersPause.isPaused() else { return }
         guard let context = modelContext else { return }
         guard await isAuthorized() else { return }

@@ -242,8 +242,12 @@ extension RouterIntent {
     /// collapse inside the queue (last-write-wins for payload).
     var id: String {
         switch self {
-        case .showInboxAlert(let n):
-            return "inboxAlert:\(n.scheduledPayments)-\(n.subscriptions)-\(n.automations)"
+        // **Clave FIJA, no por cifras** (ticket `notices-come-out-one-after-another-by-priority`). El productor
+        // (`checkForPendingInboxDrafts`) recuenta TODOS los borradores aún sin quemar, así que un aviso nuevo
+        // contiene al que esperaba: con la clave por cifras, «2 nuevos» y «3 nuevos» quedaban los dos en cola y
+        // salían seguidos. Con la fija, el nuevo sustituye al viejo en su sitio y sale uno, con las cifras de ahora.
+        case .showInboxAlert:
+            return "inboxAlert"
         case .presentInboxSheet:
             return "inboxSheet"
         case .presentSharedImage(let url):

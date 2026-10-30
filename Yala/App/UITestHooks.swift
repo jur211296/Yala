@@ -848,6 +848,18 @@ final class UITestHooks {
     /// hook explícito es el único camino (escenario paywall + alert en cola).
     nonisolated static var showTrialOffer: Bool { hasArg("-uitest-trial-offer") }
 
+    /// `-uitest-milestone <n>`: tras el seed, encola `.presentMilestoneUpgrade(n)` (hoja de MainTab · `normal`) ANTES que
+    /// los demás avisos de prueba. Junto a `-uitest-inbox-alert` o `-uitest-trial-offer` monta dos avisos de consumidores
+    /// distintos a la vez, que es lo que mide `NoticeOrderUITests` (ticket `notices-come-out-one-after-another-by-priority`).
+    nonisolated static var milestoneUpgrade: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-milestone", from: ProcessInfo.processInfo.arguments).flatMap { Int($0) }
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-trial-offer-armed` (solo con `-uitest-reset`): deja la oferta de prueba ARMADA y sin momento,
     /// como al terminar un alta, SIN pedirla. Es lo que necesita `TrialOfferMomentUITests` para ver que el
     /// arranque no la presenta y que sale tras el primer registro (UX 2.2 · L1-12).

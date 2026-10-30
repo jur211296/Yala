@@ -1417,9 +1417,14 @@ struct ContentView: View {
             updateContentViewReadiness()
             return
         }
-        // Los diferibles esperan a que se cierre la hoja; los críticos que vengan detrás salen igual.
+        // Los diferibles esperan a que se cierre la hoja; los críticos que vengan detrás salen igual. Y un diferible cede
+        // su turno a la hoja de MainTab que vaya delante en la cola (`NoticeOrderLogic`): sin esto salía el del consumidor
+        // que mirase antes, no el de más prioridad. No reprograma nada: MainTab drena la suya, y al cerrarla
+        // `isMainTabModalVisible` libera la matriz y esto vuelve a mirar.
+        let windowID = navigation.id
         guard let intent = AppRouter.shared.drainNext(
-            for: .contentView, in: navigation.id, skipping: heldForForeignPresentation)
+            for: .contentView, in: windowID,
+            skipping: { heldForForeignPresentation($0) || AppRouter.shared.shellNoticeAhead(of: $0, in: windowID) != nil })
         else {
             if AppRouter.shared.peekNext(for: .contentView, in: navigation.id, where: heldForForeignPresentation) != nil {
                 scheduleForeignPresentationRedrain()
@@ -4583,6 +4588,21 @@ struct MainTabView: View {
             #if DEBUG
             print("MainTabView drain hold: \(next.id) por \(navigation.shellModalBlocker ?? "ownModal")")
             #endif
+            return
+        }
+        // **Cede su turno a lo del shell que vaya delante en la cola** (`NoticeOrderLogic`): con un aviso de
+        // `.contentView` por delante, ese sale primero y esta hoja espera a que se cierre. Lo que no presenta hoja
+        // (`navigate`) pasa igual. El re-drenaje es el de siempre: el drenaje de `.contentView` sube la `revision` y
+        // su aviso publica `shellModalBlocker`, que al soltarse vuelve a llamar aquí.
+        if AppRouter.shared.shellNoticeAhead(of: next, in: navigation.id) != nil {
+            #if DEBUG
+            print("MainTabView drain yields: \(next.id) espera a un aviso del shell que va delante")
+            #endif
+            if let passing = AppRouter.shared.drainNext(
+                for: .mainTab, in: navigation.id, skipping: { RouterConsumerGateLogic.presentsModal($0) }) {
+                RouterHoldCanary.shared.noteDrained(intentID: passing.id)
+                handleMainTabIntent(passing)
+            }
             return
         }
         guard let intent = AppRouter.shared.drainNext(for: .mainTab, in: navigation.id) else { return }

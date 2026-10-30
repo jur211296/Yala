@@ -119,6 +119,66 @@ struct ScheduledPaymentNotificationServiceTests {
         #expect(sent.body?.contains(formatted) == true, "cuerpo: \(sent.body ?? "nil") · esperado: \(formatted)")
     }
 
+    // MARK: - Una pasada a la vez (ticket notices-come-out-one-after-another-by-priority)
+
+    /// Dos pasadas solapadas —el arranque en frío y el primer `.active`— leían el tracker antes de que la otra marcara, y el
+    /// mismo pago salía dos veces. El envío falso suspende, así que sin la guarda la segunda pasada entra mientras la
+    /// primera espera su `send` y lo manda otra vez.
+    @Test func twoOverlappingPasses_sendThePaymentOnce() async throws {
+        let context = try makeTestContext()
+        let (service, log) = try makeService(context: context)
+        service.sendOverride = { title, _, deepLink in
+            log.record(title: title, deepLink: deepLink)
+            do {
+                try await Task.sleep(for: .milliseconds(50))
+            } catch {
+                print("Test: Error: \(error)")
+            }
+            return true
+        }
+        try seedDueTodayPaymentWithDraft(context: context)
+
+        async let first: Void = service.checkAllPaymentNotifications()
+        async let second: Void = service.checkAllPaymentNotifications()
+        _ = await (first, second)
+
+        #expect(log.count == 1, "dos pasadas solapadas mandaron \(log.count) avisos del mismo pago")
+
+        // La guarda se suelta: un pago nuevo en una pasada posterior sale.
+        try seedDueTodayPaymentWithDraft(context: context)
+        await service.checkAllPaymentNotifications()
+        #expect(log.count == 2, "tras la pasada solapada la guarda se quedó puesta")
+    }
+
+    /// Review adversarial: la pasada que llega durante otra no se tira, se repite al terminar. Un pago que aparece mientras
+    /// la primera manda el suyo (la primera ya lo leyó) sale en la repetición; sin ella se quedaba para el siguiente
+    /// primer plano (el borrado parcial de `DataWipeService` pide su pasada justo así).
+    @Test func aPassRequestedDuringAnother_runsAfterIt() async throws {
+        let context = try makeTestContext()
+        let (service, log) = try makeService(context: context)
+        var seededDuringTheFirstSend = false
+        service.sendOverride = { title, _, deepLink in
+            log.record(title: title, deepLink: deepLink)
+            if !seededDuringTheFirstSend {
+                seededDuringTheFirstSend = true
+                do {
+                    try self.seedDueTodayPaymentWithDraft(context: context)
+                    try await Task.sleep(for: .milliseconds(50))
+                } catch {
+                    print("Test: Error: \(error)")
+                }
+            }
+            return true
+        }
+        try seedDueTodayPaymentWithDraft(context: context)
+
+        async let first: Void = service.checkAllPaymentNotifications()
+        async let second: Void = service.checkAllPaymentNotifications()
+        _ = await (first, second)
+
+        #expect(log.count == 2, "el pago que apareció durante la primera pasada salió \(log.count - 1) veces")
+    }
+
     // MARK: - (1) markNotified solo con entrega confirmada
 
     @Test func dueToday_sendFails_doesNotMarkDedup() async throws {

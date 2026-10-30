@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1139)
+## Index (1144)
 
 | id | status | path |
 |---|---|---|
@@ -464,6 +464,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | group-joiner-flag-consumers-still-narrow | done | tickets/done/group-joiner-flag-consumers-still-narrow.md |
 | group-notif-credits-payer-not-editor | done | tickets/done/group-notif-credits-payer-not-editor.md |
 | group-presence-predicates-disagree-on-archived-and-hidden | backlog | tickets/backlog/group-presence-predicates-disagree-on-archived-and-hidden.md |
+| group-push-has-no-collapse-id-and-multi-device-duplicates | backlog | tickets/backlog/group-push-has-no-collapse-id-and-multi-device-duplicates.md |
 | group-split-sheet-shows-you-twice | done | tickets/done/group-split-sheet-shows-you-twice.md |
 | groups-account-association-in-storage-row | done | tickets/done/groups-account-association-in-storage-row.md |
 | groups-actions-do-not-retry-a-401-with-a-forced-token-refresh | backlog | tickets/backlog/groups-actions-do-not-retry-a-401-with-a-forced-token-refresh.md |
@@ -742,6 +743,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | done | tickets/done/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
+| notices-come-out-one-after-another-by-priority | qa | tickets/qa/notices-come-out-one-after-another-by-priority.md |
 | notification-day-choice-capitalizes-every-word | backlog | tickets/backlog/notification-day-choice-capitalizes-every-word.md |
 | notification-dedup-deletes-all-custom-reminders-but-one | done | tickets/done/notification-dedup-deletes-all-custom-reminders-but-one.md |
 | notification-deeplink-accounts-not-parsed | done | tickets/done/notification-deeplink-accounts-not-parsed.md |
@@ -753,6 +755,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | onboarding-sigue-los-estilos-del-resto-de-la-app | qa | tickets/qa/onboarding-sigue-los-estilos-del-resto-de-la-app.md |
 | one-off-scheduled-payment-row-says-monthly | done | tickets/done/one-off-scheduled-payment-row-says-monthly.md |
+| one-shot-prompts-burned-before-they-are-seen | backlog | tickets/backlog/one-shot-prompts-burned-before-they-are-seen.md |
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
 | opening-balance-ticks-the-first-expense-step | done | tickets/done/opening-balance-ticks-the-first-expense-step.md |
@@ -795,7 +798,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personalization-shows-two-back-buttons | done | tickets/done/personalization-shows-two-back-buttons.md |
 | phone-with-the-clock-behind-loses-after-seeing-the-row | backlog | tickets/backlog/phone-with-the-clock-behind-loses-after-seeing-the-row.md |
 | pie-header-total-unmarked | backlog | tickets/backlog/pie-header-total-unmarked.md |
+| positive-toast-and-top-banners-are-not-coordinated | backlog | tickets/backlog/positive-toast-and-top-banners-are-not-coordinated.md |
 | post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
+| practice-cleanup-prompt-outside-the-presentation-locks | backlog | tickets/backlog/practice-cleanup-prompt-outside-the-presentation-locks.md |
 | preferred-currency-has-three-different-defaults | backlog | tickets/backlog/preferred-currency-has-three-different-defaults.md |
 | prefs-change-is-dropped-when-the-outbox-cannot-take-it | backlog | tickets/backlog/prefs-change-is-dropped-when-the-outbox-cannot-take-it.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
