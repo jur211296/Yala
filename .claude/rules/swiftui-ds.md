@@ -335,6 +335,7 @@ paths:
 - **`Color.incomeAmount` es adaptativo desde el 2026-10-25**: #0F7A80 en claro y el turquesa de marca (#00C2CB) en
   oscuro, donde el fijo daba 3,3:1. Como RELLENO con texto blanco encima, `Color.incomeFill` (fijo, 5,1:1): el
   adaptativo se aclara en oscuro y el blanco encima dejaría de leerse.
+- **En Grupos los montos no llevan color (Jürgen, 2026-10-30, corrige el «solo lo que entra»).** La cifra del hero, el «te deben» / «debes» de cada grupo, gasto, miembro y saldo van en `Color.primary`, el texto normal del tema; el degradado del tema se queda (`.panel`). La regla de abajo sigue para Registros y el Panel.
 - **Y colorea la excepción, no la norma.** En una lista de movimientos casi todo son gastos: teñirlos pinta la pantalla entera y el color deja de avisar de nada. Solo el ingreso lleva color (`RecentRecordsWidget`, `ScheduledPaymentsWidget`). Decisión del 2026-09-02 en `docs/DECISIONS.md`.
 - **Jerarquía del Panel: sección `title3` (20) › widget `subheadlineEmphasized` (15) › fila.** Hasta el 2026-09-02 la sección y el widget usaban el MISMO token y la fila (`headline`, 17) era el rótulo mayor de la pantalla. Y el aire va al revés que el tamaño: MÁS entre secciones (`xxl`) que del título a su contenido (`sm`), o por proximidad el título se lee como pie del bloque anterior.
 - Tablas DS.Semantic / DS.Gradients en SWIFT-STYLE.md.
@@ -371,7 +372,7 @@ paths:
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
 - NUNCA aplicar `.background(theme.background)`, `.background(.thBackground)` ni default iOS sin background.
 - Forms/Lists dentro de sheet → `.scrollContentBackground(.hidden)` MANUAL antes del modifier (el modifier no lo hace automático para preservar predictibilidad).
-- **Regla SSOT (reestructura 2026-06-08)**: el fondo lo determina el **contenedor de presentación RAÍZ** del stack. Una vista navegada (push) HEREDA el fondo de su stack — dentro de un tab → `.panel`; dentro de un sheet → el del sheet. **Un `.sheet` NUNCA es `.panel`.**
+- **Regla SSOT (reestructura 2026-06-08)**: el fondo lo determina el **contenedor de presentación RAÍZ** del stack. Una vista navegada (push) HEREDA el fondo de su stack — dentro de un tab → `.panel`; dentro de un sheet → el del sheet. **Un `.sheet` NUNCA es `.panel`.** Excepción única: la hoja «Gráficas» del flujo de caja (`CashFlowChartsSheet`, 2026-10-30) va en `.panel`, porque sus tarjetas de gráficas son las de Tendencias (`panelCard`, translúcidas en oscuro) y sobre el fondo plano salían grises.
 - Variantes (`YalaBackgroundVariant`) — 4 (`.compact` eliminada):
   - `.panel` (default) — PanelBackgroundView gradient temático. SOLO vistas COMPLETAS: tab roots, vistas navegadas (push), fullScreenCover normal.
   - `.subtle` — `theme.background` plano. CUALQUIER sheet desde el bottom (sin detents o `[.large]`); TODO el stack del sheet de Profile (los ~20 Settings + sub-navegación); y success/celebración.

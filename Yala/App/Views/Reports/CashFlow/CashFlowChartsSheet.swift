@@ -79,7 +79,10 @@ struct CashFlowChartsSheet: View {
                 .padding(.top, DS.Spacing.md)
                 .yalaSafeBottomPadding()
             }
-            .yalaScreenBackground(.subtle)
+            // Excepción a «una hoja nunca es `.panel`» (2026-10-30, card bvpn): las tarjetas de gráficas son `panelCard`,
+            // translúcidas en los temas oscuros, y sobre el fondo plano de una hoja salían grises; sobre el degradado
+            // salen como las de Tendencias y las del Flujo de caja de debajo («el fondo de las cards es gris», Jürgen).
+            .yalaScreenBackground(.panel)
             .navigationTitle(L10n.CashFlowPlan.chartsTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
