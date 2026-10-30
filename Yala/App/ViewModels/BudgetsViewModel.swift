@@ -442,6 +442,7 @@ final class BudgetsViewModel {
                 return (status: status, budgets: sortedBudgets)
             }
             .sorted { $0.status.sortOrder < $1.status.sortOrder }
+        LoadTimeMarks.ready(.planning)
     }
 
     // MARK: - Summary Builder

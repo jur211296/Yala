@@ -71,6 +71,7 @@ final class InboxViewModel {
         loadAllDrafts()
         loadPendingDrafts()
         loadHideableHere()
+        LoadTimeMarks.ready(.inbox)
     }
 
     /// Qué borradores pendientes se pueden quitar de la Bandeja solo aquí.

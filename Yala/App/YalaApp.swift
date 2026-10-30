@@ -18,6 +18,8 @@ struct YalaApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Tiempo hasta contenido útil (solo DEBUG): el arranque en frío cuenta desde que nace el proceso.
+        MainActor.assumeIsolated { LoadTimeMarks.begin(.coldLaunch) }
         // Clear default gray background for paged TabView
         UIView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear
         UIScrollView.appearance(whenContainedInInstancesOf: [UIPageViewController.self]).backgroundColor = .clear

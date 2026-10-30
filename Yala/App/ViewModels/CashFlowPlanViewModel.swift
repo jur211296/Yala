@@ -619,6 +619,7 @@ final class CashFlowPlanViewModel {
             adjustment: adjustment,
             converter: converter
         )
+        LoadTimeMarks.ready(.cashFlow)
     }
 
     // MARK: - Update Starting Balance

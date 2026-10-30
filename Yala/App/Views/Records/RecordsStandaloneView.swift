@@ -405,6 +405,7 @@ struct RecordsStandaloneView: View {
             context: modelContext,
             currencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
+        LoadTimeMarks.ready(.records)
     }
 
     private func handleEditAction() {
@@ -709,7 +710,10 @@ private struct RecordsSessionObservers2b: ViewModifier {
             .onChange(of: sessionState.searchText) { _, _ in recalculateData() }
             .onChange(of: sessionState.excludedFilterSets) { _, _ in recalculateData() }
             .onChange(of: sessionState.customDateRange) { _, _ in recalculateData() }
-            .onChange(of: dataViewModel.allTransactions) { recalculateData() }
+            // Sin `onChange(of: dataViewModel.allTransactions)` (retirado el 2026-10-30, encargo
+            // `eficiencia-carga-por-vista`): el array solo cambia en `setContext` (el `onAppear`, que calcula justo
+            // después) y en `scheduleRecalculation` (que también), así que pedía un segundo cálculo entero 150 ms más
+            // tarde sobre los mismos datos, y comparaba el histórico entero en cada repintado para saberlo.
     }
 }
 

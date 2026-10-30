@@ -38,19 +38,12 @@ struct PanelDataCountObservers: ViewModifier {
     let sessionState: SessionState
 
     func body(content: Content) -> some View {
+        // Sin observadores de `accounts/transactions/budgets/allSubcategories.count` (retirados el 2026-10-30, encargo
+        // `eficiencia-carga-por-vista`): esos arrays solo los escribe `PanelViewModel.loadData()`, y su único llamador
+        // es `scheduleRecalculation`, que calcula justo después en el mismo turno. Cada cambio de conteo pedía otro
+        // cálculo completo 150 ms más tarde sobre los mismos datos: en cada arranque en frío, uno de más tras el primer
+        // contenido. Si alguien escribe esos arrays por otro camino, que recalcule él.
         content
-            .onChange(of: viewModel.accounts.count) { _, _ in
-                viewModel.recalculateData()
-            }
-            .onChange(of: viewModel.transactions.count) { _, _ in
-                viewModel.recalculateData()
-            }
-            .onChange(of: viewModel.budgets.count) { _, _ in
-                viewModel.recalculateData()
-            }
-            .onChange(of: viewModel.allSubcategories.count) { _, _ in
-                viewModel.recalculateData()
-            }
             .onChange(of: sessionState.needsBudgetsWidgetRefresh) { _, needsRefresh in
                 if needsRefresh {
                     viewModel.recalculateData()

@@ -875,7 +875,10 @@ struct ProfileView: View {
                         .padding(.vertical, DS.Spacing.xxl)
                     }
                     .scrollDisabled(false)
-                    .onAppear { settingsScrollProxy = scrollProxy }
+                    .onAppear {
+                        settingsScrollProxy = scrollProxy
+                        LoadTimeMarks.ready(.settings)
+                    }
                     // iPhone Duo cerrado: la lista ocupa también la columna de la barra vertical y la cabecera se centra en
                     // la pantalla entera, sin el hueco a la derecha. Excepción a la regla A, decidida por Jürgen el
                     // 2026-10-25 viendo también cómo pasan las filas bajo la hora y la X al desplazar.

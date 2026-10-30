@@ -50,9 +50,14 @@ enum LanguageManager {
     /// La lección de verificación que dejó, porque sigue valiendo: un E2E que compruebe el idioma
     /// **puede salir verde sin estar arreglado**, porque `applyRemoteValues` lo restaura desde el
     /// iCloud KV. Un test que pasa por la razón equivocada es una familia de fallo ya pagada aquí.
-    static var sharedDefaults: UserDefaults {
-        return UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
-    }
+    ///
+    /// **Una sola instancia por proceso** (2026-10-30, encargo `eficiencia-carga-por-vista`): `ls()` lo lee en cada
+    /// texto traducido, y crear un `UserDefaults(suiteName:)` en cada lectura costaba ~110 ms del arranque solo en las
+    /// etiquetas de la gráfica de tendencia (perfil de Instruments). El App Group es constante en el proceso y varias
+    /// instancias del mismo dominio ven las mismas escrituras, así que guardarla no cambia ningún valor leído.
+    static var sharedDefaults: UserDefaults { cachedSharedDefaults }
+    private static let cachedSharedDefaults: UserDefaults =
+        UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
 
     /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
     static var supportedLanguages: [SupportedLocale] { SupportedLocale.selectableCases }

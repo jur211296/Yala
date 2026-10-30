@@ -33,6 +33,9 @@ final class SceneNavigation: Identifiable {
     /// Currently selected main tab (Panel, Statistics, etc.)
     var selectedMainTab: AppTab = .panel {
         didSet {
+            if oldValue != selectedMainTab, let screen = LoadTimeMarks.screen(for: selectedMainTab) {
+                LoadTimeMarks.begin(screen)
+            }
             // Al salir de Estadísticas vuelve el período que tenía la persona antes de que un informe pusiera el suyo
             // (UX 2.2 · L11-2). Sin visita en curso no hace nada.
             if oldValue == .statistics && selectedMainTab != .statistics {
@@ -56,7 +59,11 @@ final class SceneNavigation: Identifiable {
 
     /// Currently selected tab within Reports (Comparativa, Flujo de caja).
     /// SSOT de la ventana para que el «Más» del dashboard pueda enlazar a una sub-pestaña de Informes.
-    var selectedReportTab: ReportTab = .comparativa
+    var selectedReportTab: ReportTab = .comparativa {
+        didSet {
+            if oldValue != selectedReportTab, selectedReportTab == .flujoDeCaja { LoadTimeMarks.begin(.cashFlow) }
+        }
+    }
 
     /// Pending Task that finalizes a deferred main tab selection (when the
     /// destination tab is hidden in "More" and we need to mount it via

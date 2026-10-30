@@ -269,6 +269,7 @@ struct PanelView: View {
 
     private var inboxToolbarButton: some View {
         Button {
+            LoadTimeMarks.begin(.inbox)
             sheets.showInbox = true
         } label: {
             ZStack(alignment: .topTrailing) {
@@ -367,6 +368,7 @@ struct PanelView: View {
         }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
+            LoadTimeMarks.begin(.panel)
             // Inject AppPreferences BEFORE setContext so the first performCalculation
             // sees per-widget visibility state (P20-03 guards).
             viewModel.setAppPreferences(appPreferences)
@@ -437,7 +439,9 @@ struct PanelView: View {
                 viewModel.recalculateData()
             }
         }
-        .onChange(of: viewModel.accounts.count) { _, _ in
+        // También al pasar `isReady` a `true`: con cero cuentas el conteo no cambia, y la reconciliación de la primera
+        // carga tiene que correr igual. Un solo `onChange` (el CI tipa peor las cadenas largas: `swiftui-ds.md`).
+        .onChange(of: [viewModel.isReady ? 1 : 0, viewModel.accounts.count]) { _, _ in
             reconcileAccountsSortOrder()
         }
         .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
@@ -473,6 +477,11 @@ struct PanelView: View {
     /// agrega nombres nuevos al final y remueve los de cuentas eliminadas/archivadas.
     /// El guard evita writes no-op (que dispararían didSet + observer async redundante).
     private func reconcileAccountsSortOrder() {
+        // Antes de la primera carga `viewModel.accounts` está vacío porque aún no se ha leído, no porque no haya
+        // cuentas: reconciliar ahí guardaba un orden VACÍO en una preferencia sincronizada y, tras cargar, lo volvía a
+        // escribir entero (dos escrituras y un repintado en cada arranque en frío; medido el 2026-10-30). Se reconcilia
+        // cuando `isReady` pasa a `true` (ver el `onChange` de abajo), con las cuentas de verdad.
+        guard viewModel.isReady else { return }
         let currentOrder = appPreferences.accountsSortOrderNames
         let newOrder = viewModel.ensureAccountsSortOrderConsistency(
             accounts: viewModel.accounts,

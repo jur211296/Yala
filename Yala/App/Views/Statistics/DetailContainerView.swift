@@ -279,9 +279,10 @@ struct DetailContainerView: View {
                     recalculateData()
                 }
             }
-            .onChange(of: dataViewModel.allTransactions) {
-                recalculateData()
-            }
+            // Sin `onChange(of: dataViewModel.allTransactions)` (retirado el 2026-10-30, encargo
+            // `eficiencia-carga-por-vista`): el array solo cambia en `setContext` (el `onAppear`, que calcula justo
+            // después) y en `scheduleRecalculation` (que también). Pedía otro cálculo 150 ms después sobre los mismos
+            // datos y comparaba el histórico entero en cada repintado.
             .onChange(of: sessionState.dataVersion) { _, _ in
                 reloadAndRecalculate()
             }
@@ -709,6 +710,7 @@ struct DetailContainerView: View {
             insights: insightsViewModel,
             context: modelContext
         )
+        LoadTimeMarks.ready(.statistics)
     }
 
     private func handleEditAction() {
