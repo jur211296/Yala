@@ -40,6 +40,7 @@
 - [Encargo sin simulador y el gate](feedback_encargo_sin_simulador_y_el_gate.md) — el gate lo necesita: se pregunta; aprobó usarlo solo para el gate, en cola.
 - [Revisión por dispositivo sin saltar](feedback_revision_por_dispositivo_sin_saltar.md) — Duo entero primero; lo del iPhone se apunta y va al final.
 - [«Eliminar cuenta» es borrar todo](feedback_eliminar_cuenta_es_borrar_todo.md) — al preguntar qué borra un gesto, di antes dónde vive cada dato.
+- [Límite del plan: la persona elige](feedback_limite_del_plan_la_persona_elige.md) — alta masiva sobre el límite Free: elegir qué entra, o pedir Pro; nunca saltarlo.
 ## Cómo mido y cómo entrego
 - [XcodeBuildMCP: la configuración pisa el scheme](feedback_xcodebuildmcp_configuration_pisa_el_scheme.md) — Yala Dev = Debug-Dev; con Debug la nube sale apagada bajo -uitest.
 - [Sentry vacío no descarta un «crash»](feedback_sentry_vacio_no_descarta_un_crash.md) — pantalla muerta o exit(0) primero; .ips en «Necesita de ti».
@@ -150,6 +151,7 @@
 - [El vídeo del simulador no casa con el reloj](feedback_el_video_del_simulador_no_casa_con_el_reloj.md) — solo escribe al cambiar la pantalla: graba el tramo con apretón de manos.
 - [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
 - [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.
+- [El simulador no lee ~/Downloads](reference_el_simulador_no_lee_downloads.md) — test colgado al 0 % sin error: copia a /private/tmp.
 - [SPM sin red en el sandbox](reference_spm_sin_red_en_el_sandbox.md) — el build se cuelga resolviendo paquetes; copia de SourcePackages + `-clonedSourcePackagesDirPath`.
 - [Card que ya falló no va a la tanda](feedback_barrido_una_card_que_ya_fallo_no_va_a_la_tanda.md) — n5zw a la cola; qb1r falló a mano con unit en verde.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números…
