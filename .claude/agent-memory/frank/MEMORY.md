@@ -151,6 +151,7 @@
 - [El vídeo del simulador no casa con el reloj](feedback_el_video_del_simulador_no_casa_con_el_reloj.md) — solo escribe al cambiar la pantalla: graba el tramo con apretón de manos.
 - [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
 - [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.
+- [Importar un archivo en el simulador](reference_importar_un_archivo_en_el_simulador.md) — LocalStorage + XCUITest conductor; store vacío = sin categorías.
 - [El simulador no lee ~/Downloads](reference_el_simulador_no_lee_downloads.md) — test colgado al 0 % sin error: copia a /private/tmp.
 - [SPM sin red en el sandbox](reference_spm_sin_red_en_el_sandbox.md) — el build se cuelga resolviendo paquetes; copia de SourcePackages + `-clonedSourcePackagesDirPath`.
 - [Card que ya falló no va a la tanda](feedback_barrido_una_card_que_ya_fallo_no_va_a_la_tanda.md) — n5zw a la cola; qb1r falló a mano con unit en verde.
