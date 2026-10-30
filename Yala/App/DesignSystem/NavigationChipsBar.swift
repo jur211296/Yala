@@ -40,8 +40,8 @@ extension View {
 ///
 /// El chip pinta `isSelected` tal cual: si cambia dentro de una transacción animada, la cápsula cambia de ancho y los
 /// vecinos se recolocan en el mismo movimiento. Para que eso se vea, la pantalla cambia de chip con
-/// `NavigationChipButton.switchTab` y `animatesSwitch`; sin ellos (Planificación, Reportes, Grupos) el cambio llega sin
-/// animación, como siempre.
+/// `NavigationChipButton.switchTab` y `animatesSwitch` (Estadísticas y el detalle de grupo); sin ellos (Planificación y
+/// Reportes, cuyos chips no cambian de ancho) el cambio llega sin animación, como siempre.
 struct NavigationChipButton: View {
     let title: String
     let icon: String

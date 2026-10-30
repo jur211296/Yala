@@ -282,6 +282,10 @@ paths:
 - **Un cambio que recalcula la pantalla se come la animación que va a la vez**: las animaciones avanzan en el hilo
   principal, y montar una pestaña de Estadísticas lo bloquea 0,12–0,27 s en el iPhone (vídeo de Jürgen, 60 fps). Se anima
   primero lo pequeño y se aplica lo caro al terminar (`NavigationChipButton.switchTab`, `StatisticsPeriodControl.choose`).
+  **Toda fila de chips cuyo chip elegido cambia de ancho (solo el elegido enseña el nombre) cambia con `switchTab`**:
+  Estadísticas y el detalle de grupo (barrido iOS 27, card yc6k, 2026-10-30; en Grupos saltaba en un fotograma). Lo que
+  la pestaña cambie desde fuera de la fila (el saldo, «Ver los saldos») mueve también el chip con un `onChange`.
+  Planificación y Reportes enseñan el nombre en todos y no lo necesitan.
 - **Un `Text` que cambia de valor con animación se funde con el anterior**: los dos quedan uno encima del otro («Este mes»
   sobre «Mes pasado»). Un valor, una vista (`.id(valor)`) con salida `.identity`. Una salida con sentido no sirve: SwiftUI
   la saca con la transición de su último fotograma, que es la del cambio anterior.
