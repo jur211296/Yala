@@ -50,7 +50,8 @@ struct ExportRecordsLogicTests {
 
     /// El caso del informe: una nota olvidada y el modo «Ocultar» tienen que verse.
     @Test func noteAndHiding_areShown() {
-        #expect(active(note: "  taxi ", exclude: true) == [.note("taxi"), .hidingSelected])
+        // En «Ocultar» nada marcado no recorta (card k4iz): solo la nota y el modo.
+        #expect(active(accounts: (0, 3), needs: (0, 4), note: "  taxi ", exclude: true) == [.note("taxi"), .hidingSelected])
         #expect(active(note: "   ").isEmpty, "Una nota en blanco no filtra nada.")
     }
 

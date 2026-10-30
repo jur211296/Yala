@@ -237,12 +237,9 @@ final class ExportFiltersStepViewModel {
 
         let selectedTagObjects = allTags.filter { selectedTags.contains($0.persistentModelID) }
 
-        let selectedTagNames: [String]
-        if !allTags.isEmpty && selectedTagObjects.count == allTags.count {
-            selectedTagNames = []
-        } else {
-            selectedTagNames = selectedTagObjects.map { $0.name }
-        }
+        // Todas marcadas en «Mostrar solo» = sin filtro; en «Ocultar», oculta lo que tenga alguna (card k4iz).
+        let selectedTagNames = ExportRecordsLogic.effectiveMarks(
+            selectedTagObjects.map { $0.name }, allCount: allTags.count, isExcludeMode: isExcludeMode)
 
         // Convert DetailPeriod to date interval
         let dateInterval: DateInterval

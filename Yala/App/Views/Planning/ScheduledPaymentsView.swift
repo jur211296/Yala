@@ -14,6 +14,7 @@ struct ScheduledPaymentsView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -54,6 +55,9 @@ struct ScheduledPaymentsView: View {
                     .transition(.opacity)
             }
         }
+        // El flotante entra y sale fundiéndose al desplazar. Implícita: el `withAnimation` de quien lo enciende no
+        // anima dentro de una pestaña (card 8atf).
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingNew)
         .yalaScreenBackground(.panel)
         .sheet(isPresented: $viewModel.showPaymentEditor, onDismiss: {
             paymentEditorClosedToken += 1

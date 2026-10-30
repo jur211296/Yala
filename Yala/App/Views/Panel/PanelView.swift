@@ -640,6 +640,7 @@ struct PanelView: View {
     private var mainContent: some View {
         let panorama = panoramaVisibility
         let panoramaVisible = panorama.accounts || panorama.health
+        let notices = PanelNoticeQueueLogic.visible(noticeFlags)
         return ZStack {
             PanelBackgroundView()
 
@@ -710,7 +711,7 @@ struct PanelView: View {
                         // Los avisos, de uno en uno con «1 de N» (UX 2.2 · L3-8): apilados empujaban las cuentas a dos
                         // pantallas. El orden lo decide `PanelNoticeQueueLogic`; cada aviso conserva su condición.
                         PanelNoticeCarousel(
-                            notices: PanelNoticeQueueLogic.visible(noticeFlags),
+                            notices: notices,
                             selected: $selectedNotice
                         ) { notice in
                             noticeView(notice)
@@ -757,6 +758,10 @@ struct PanelView: View {
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
                     .readsVerticalFold($headerFold)
+                    // Cerrar un aviso (la oferta de la nube, el de grupos, la guía, la actualización…) lo funde y sube
+                    // lo de debajo. Implícita y no `withAnimation`: `ContentView` apaga la animación de toda
+                    // transacción que cruza las pestañas (card 8atf; regla de `swiftui-ds.md`).
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: notices)
                     .padding(.top, DS.Spacing.lg)
                     // Tocar un registro de «Últimos registros» abre su detalle (UX 2.2 · L3-12).
                     .environment(\.openPanelRecord, OpenPanelRecordAction { record in
@@ -853,6 +858,9 @@ struct PanelView: View {
                 .transition(.opacity)
             }
         }
+        // Los flotantes entran y salen fundiéndose al desplazar, y el título pequeño también. Implícita: el
+        // `withAnimation` del scroll no anima dentro de una pestaña (card 8atf).
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingActions)
     }
 
     private func scrollToProTourRow(_ proxy: ScrollViewProxy) {

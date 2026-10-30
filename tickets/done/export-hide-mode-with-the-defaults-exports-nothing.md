@@ -1,10 +1,10 @@
 ---
 id: export-hide-mode-with-the-defaults-exports-nothing
-status: backlog
+status: done
 priority: medium
 area: "export"
 created: 2026-10-28
-updated: 2026-10-28
+updated: 2026-10-30
 source: "medido en el simulador durante el lote panel-filtros-moneda (2026-10-28), al capturar el monto de Exportar"
 ---
 
@@ -29,3 +29,11 @@ necesidades y monedas.
 
 Decidir el comportamiento al cambiar de modo (vaciar lo marcado al pasar a «Ocultar», o dos listas como Registros).
 Es diseño del asistente: pide a Jürgen antes de tocarlo.
+
+## Cierre (2026-10-30, card k4iz, opción A de Jürgen)
+
+Al pasar a «Ocultar» se vacía lo marcado; al volver a «Mostrar solo», todo marcado como al abrir
+(`ExportRecordsLogic.marks(afterSwitchingToHide:all:)`). En «Ocultar» con nada marcado se puede exportar, se ofrecen
+las monedas de lo que queda a la vista, los estados dicen «Ninguna seleccionada», marcar una cuenta no marca sus
+monedas, y todas las etiquetas o necesidades marcadas ocultan lo que las tiene. Tests: `ExportHideModeStartsEmptyTests`
+y `ExportHiddenCurrencyAmountUITests.test_hideMode_untouched_exportsEverything`.

@@ -26,6 +26,9 @@ struct PanelNoticeCarousel<Content: View>: View {
                     pager(position: position + 1, total: notices.count, current: current)
                 }
             }
+            // «Siguiente» funde un aviso con el otro. Implícita: el `withAnimation` del botón no anima dentro de una
+            // pestaña (card 8atf).
+            .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: current)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("panel_notices")
         }

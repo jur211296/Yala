@@ -370,6 +370,11 @@ enum WidgetDataCache {
         return true
     }
 
+    /// La divisa en la que la caché calcula los widgets: la de `CurrencyDefaults.preferred`, como la app.
+    static func preferredCurrencyCode(defaults: UserDefaults = .standard) -> String {
+        CurrencyDefaults.preferred(in: defaults).rawValue
+    }
+
     // MARK: - Private Helpers
 
     private static func buildSnapshot(context: ModelContext) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
@@ -452,8 +457,9 @@ enum WidgetDataCache {
         // para garantizar AMBAS hermanas del bridge; el consumo usa el subset elegible.
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: context)
 
-        // Get preferred currency from user settings (single source of truth)
-        let preferredCurrency = UserDefaults.standard.string(forKey: CurrencyDefaults.preferredCurrencyKey) ?? "USD"
+        // La divisa principal, con la regla de toda la app si falta (`CurrencyDefaults.preferred`, card 2jj6). Hasta el
+        // 2026-10-30 caía a dólares y reconvertía todo el histórico mientras la app pintaba soles.
+        let preferredCurrency = preferredCurrencyCode()
         // Reconvierte las filas guardadas con otra divisa principal (`CashFlowCalculator.resolvedAmount`).
         // Memoizado para este snapshot: cada fila se resuelve en hasta ~20 superficies (8 períodos,
         // saldo, curva) y cada conversión del converter compartido lee sus tasas del store.

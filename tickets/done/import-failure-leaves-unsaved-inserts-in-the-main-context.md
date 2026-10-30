@@ -1,10 +1,10 @@
 ---
 id: import-failure-leaves-unsaved-inserts-in-the-main-context
-status: backlog
+status: done
 priority: low
 area: "import"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-10-30
 source: "auditoría del import 2.2 (sesión S27j), H6 de docs/import/AUDITORIA-IMPORT-2-2.md"
 ---
 
@@ -29,3 +29,9 @@ Detalle y contexto: `docs/import/AUDITORIA-IMPORT-2-2.md`, H6.
 ## Criterio de hecho
 
 - [ ] Test con un guardado que falla: tras el error, el contexto no tiene cambios pendientes.
+
+## Cierre (2026-10-30, verificado en origin/2.2 @ 41109c35f)
+
+Resuelto en #691: las tres rutas de `ImportIntroSheet` importan por `TransactionCSVImportService.importAndSave`, que hace
+`context.rollback()` en su `catch` (`:1042-1043`). Lo fija `ImportFailureRollbackTests` (un guardado que falla deja el
+contexto sin cambios pendientes y lo de otra pantalla sobrevive).

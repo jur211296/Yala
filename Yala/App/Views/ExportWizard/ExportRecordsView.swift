@@ -95,9 +95,10 @@ struct ExportRecordsView: View {
             noteContains: noteContains,
             isExcludeMode: isExcludeMode
         )
-        // Todas elegidas = sin filtro de necesidad.
-        filters.selectedNeeds = selectedNeeds.count == SubcategoryNeed.allCases.count
-            ? [] : SubcategoryNeed.allCases.filter { selectedNeeds.contains($0) }
+        // Todas elegidas en «Mostrar solo» = sin filtro de necesidad; en «Ocultar», todas se ocultan (card k4iz).
+        filters.selectedNeeds = ExportRecordsLogic.effectiveMarks(
+            SubcategoryNeed.allCases.filter { selectedNeeds.contains($0) },
+            allCount: SubcategoryNeed.allCases.count, isExcludeMode: isExcludeMode)
         return filters
     }
 
@@ -107,11 +108,11 @@ struct ExportRecordsView: View {
     }
 
     /// La moneda del monto (`ExportRecordsLogic.amountCurrency`): nunca una oculta. En «Ocultar» las disponibles son las
-    /// de las cuentas que se exportan, no las de las marcadas (que se ocultan).
+    /// de las cuentas que se exportan, no las de las marcadas (que se ocultan): `availableCurrencies`.
     private var amountCurrencyCode: CurrencyCode? {
         ExportRecordsLogic.amountCurrency(
             marked: selectedCurrencies,
-            available: isExcludeMode ? viewModel.currenciesLeftInView(hiding: selectedAccounts) : availableCurrencies,
+            available: availableCurrencies,
             isExcludeMode: isExcludeMode
         )
     }
@@ -122,12 +123,27 @@ struct ExportRecordsView: View {
 
     private var canExport: Bool {
         guard !isExporting else { return false }
+        let hasAccounts = ExportRecordsLogic.hasAccountsToExport(
+            markedAccounts: selectedAccounts.count, isExcludeMode: isExcludeMode)
         if countFailed {
-            return !selectedAccounts.isEmpty && isAmountValid && exportColumns.hasAtLeastOneActiveColumn
+            return hasAccounts && isAmountValid && exportColumns.hasAtLeastOneActiveColumn
         }
         return ExportRecordsLogic.canExport(
-            count: matchingCount, hasAccountSelected: !selectedAccounts.isEmpty,
+            count: matchingCount, hasAccountSelected: hasAccounts,
             amountIsValid: isAmountValid, hasColumns: exportColumns.hasAtLeastOneActiveColumn)
+    }
+
+    /// Al cambiar de modo (card k4iz, opción A): en «Ocultar» no se marca nada y se exporta todo; al volver a «Mostrar
+    /// solo», todo marcado, como al abrir. Las monedas, de las cuentas a la vista.
+    private func applyMarks(afterSwitchingToHide hiding: Bool) {
+        let accounts = ExportRecordsLogic.marks(afterSwitchingToHide: hiding, all: viewModel.initialAccountSelection)
+        selectedAccounts = accounts
+        selectedSubcategories = []
+        selectedTags = ExportRecordsLogic.marks(
+            afterSwitchingToHide: hiding, all: Set(viewModel.allTags.map(\.persistentModelID)))
+        selectedNeeds = ExportRecordsLogic.marks(afterSwitchingToHide: hiding, all: Set(SubcategoryNeed.allCases))
+        selectedCurrencies = ExportRecordsLogic.marks(
+            afterSwitchingToHide: hiding, all: Set(viewModel.availableCurrencies(selectedAccounts: accounts)))
     }
 
     private var activeFilters: [ExportRecordsLogic.ActiveFilter] {
@@ -397,6 +413,7 @@ struct ExportRecordsView: View {
             .pickerStyle(.segmented)
             .padding(DS.Spacing.lg)
             .accessibilityIdentifier("export_mode_picker")
+            .onChange(of: isExcludeMode) { _, hiding in applyMarks(afterSwitchingToHide: hiding) }
 
             Divider().padding(.leading, DS.Spacing.lg)
             accountsContent
@@ -435,7 +452,8 @@ struct ExportRecordsView: View {
             selectedSubcategories: $selectedSubcategories
         )
         .onAppear {
-            if selectedSubcategories.isEmpty {
+            // En «Ocultar» marcar todas al abrir las ocultaría todas: allí se empieza sin ninguna (card k4iz).
+            if selectedSubcategories.isEmpty && !isExcludeMode {
                 let visibleSubs = viewModel.allSubcategories.filter { $0.isVisible }
                 selectedSubcategories = Set(visibleSubs.map { $0.persistentModelID })
             }
@@ -453,7 +471,9 @@ struct ExportRecordsView: View {
             accountChip(account)
         }
         .onChange(of: selectedAccounts) { _, newAccountIDs in
-            // Las monedas de todo lo que se exporta: elegir la tarjeta ofrece las de todas sus líneas.
+            // Las monedas de todo lo que se exporta: elegir la tarjeta ofrece las de todas sus líneas. En «Ocultar»
+            // marcar una cuenta la oculta, y marcar sus monedas ocultaría además las de las demás (card k4iz).
+            guard !isExcludeMode else { return }
             selectedCurrencies = Set(viewModel.availableCurrencies(selectedAccounts: newAccountIDs))
         }
     }
@@ -486,7 +506,10 @@ struct ExportRecordsView: View {
                 FilterSectionHeader(
                     icon: "tag",
                     title: L10n.Settings.categories,
-                    status: viewModel.selectedCategoriesText(selectedSubcategories: selectedSubcategories)
+                    status: ExportRecordsLogic.showsNoneMarked(
+                        marked: selectedSubcategories.count, isExcludeMode: isExcludeMode)
+                        ? L10n.Filters.noneSelected
+                        : viewModel.selectedCategoriesText(selectedSubcategories: selectedSubcategories)
                 )
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -505,7 +528,10 @@ struct ExportRecordsView: View {
         FilterChipsSection(
             icon: "number",
             title: L10n.Settings.tags,
-            status: viewModel.selectedTagsText(selectedTags: selectedTags),
+            status: !viewModel.allTags.isEmpty
+                && ExportRecordsLogic.showsNoneMarked(marked: selectedTags.count, isExcludeMode: isExcludeMode)
+                ? L10n.Filters.noneSelected
+                : viewModel.selectedTagsText(selectedTags: selectedTags),
             items: viewModel.allTags,
             showEmptyPlaceholder: true
         ) { tag in
@@ -538,12 +564,19 @@ struct ExportRecordsView: View {
         .buttonStyle(.plain)
     }
 
+    /// Las monedas que se ofrecen: en «Mostrar solo», las de las cuentas marcadas; en «Ocultar», las de las que quedan a
+    /// la vista (las marcadas se ocultan). Con nada oculto, las de todas las cuentas, no las 54 (card k4iz).
     private var availableCurrencies: [CurrencyCode] {
-        viewModel.availableCurrencies(selectedAccounts: selectedAccounts)
+        isExcludeMode
+            ? viewModel.currenciesLeftInView(hiding: selectedAccounts)
+            : viewModel.availableCurrencies(selectedAccounts: selectedAccounts)
     }
 
     private var selectedCurrenciesText: String {
         let chosen = availableCurrencies.filter { selectedCurrencies.contains($0) }
+        if ExportRecordsLogic.showsNoneMarked(marked: chosen.count, isExcludeMode: isExcludeMode) {
+            return L10n.Filters.noneSelected
+        }
         if chosen.count == availableCurrencies.count { return L10n.Filters.allCurrencies }
         return chosen.map(\.rawValue).joined(separator: ", ")
     }
@@ -591,6 +624,9 @@ struct ExportRecordsView: View {
     }
 
     private var selectedNeedsText: String {
+        if ExportRecordsLogic.showsNoneMarked(marked: selectedNeeds.count, isExcludeMode: isExcludeMode) {
+            return L10n.Filters.noneSelected
+        }
         if selectedNeeds.count == SubcategoryNeed.allCases.count { return L10n.Filters.allNeeds }
         return L10n.Filters.selectedCount(selectedNeeds.count)
     }

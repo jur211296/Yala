@@ -382,7 +382,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-file-insides-still-say-transacciones | backlog | tickets/backlog/export-file-insides-still-say-transacciones.md |
 | export-filters-reset-when-the-text-size-changes | backlog | tickets/backlog/export-filters-reset-when-the-text-size-changes.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
-| export-hide-mode-with-the-defaults-exports-nothing | backlog | tickets/backlog/export-hide-mode-with-the-defaults-exports-nothing.md |
+| export-hide-mode-with-the-defaults-exports-nothing | done | tickets/done/export-hide-mode-with-the-defaults-exports-nothing.md |
 | export-import-carry-record-kind-and-transfer-pair | backlog | tickets/backlog/export-import-carry-record-kind-and-transfer-pair.md |
 | export-import-lose-time-manual-rate-and-nature | backlog | tickets/backlog/export-import-lose-time-manual-rate-and-nature.md |
 | export-wizard-amount-filter-in-hidden-currency | done | tickets/done/export-wizard-amount-filter-in-hidden-currency.md |
@@ -603,7 +603,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | import-cannot-be-undone | backlog | tickets/backlog/import-cannot-be-undone.md |
 | import-completed-alert-is-sometimes-lost | qa | tickets/qa/import-completed-alert-is-sometimes-lost.md |
-| import-failure-leaves-unsaved-inserts-in-the-main-context | backlog | tickets/backlog/import-failure-leaves-unsaved-inserts-in-the-main-context.md |
+| import-failure-leaves-unsaved-inserts-in-the-main-context | done | tickets/done/import-failure-leaves-unsaved-inserts-in-the-main-context.md |
 | import-guesses-date-order-per-row | backlog | tickets/backlog/import-guesses-date-order-per-row.md |
 | import-has-no-duplicate-detection | backlog | tickets/backlog/import-has-no-duplicate-detection.md |
 | import-name-matching-is-exact | backlog | tickets/backlog/import-name-matching-is-exact.md |
@@ -801,7 +801,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | positive-toast-and-top-banners-are-not-coordinated | backlog | tickets/backlog/positive-toast-and-top-banners-are-not-coordinated.md |
 | post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair | backlog | tickets/backlog/post-pull-reconcilers-read-an-unreadable-table-as-nothing-to-repair.md |
 | practice-cleanup-prompt-outside-the-presentation-locks | backlog | tickets/backlog/practice-cleanup-prompt-outside-the-presentation-locks.md |
-| preferred-currency-has-three-different-defaults | backlog | tickets/backlog/preferred-currency-has-three-different-defaults.md |
+| preferred-currency-has-three-different-defaults | done | tickets/done/preferred-currency-has-three-different-defaults.md |
 | prefs-change-is-dropped-when-the-outbox-cannot-take-it | backlog | tickets/backlog/prefs-change-is-dropped-when-the-outbox-cannot-take-it.md |
 | prefs-domain-per-secondary-session | discarded | tickets/discarded/prefs-domain-per-secondary-session.md |
 | prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it | done | tickets/done/prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it.md |
@@ -1074,7 +1074,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | transaction-service-bulk-block-is-dead-code | backlog | tickets/backlog/transaction-service-bulk-block-is-dead-code.md |
 | transfer-and-adjustment-subcategories-need-a-stable-role | backlog | tickets/backlog/transfer-and-adjustment-subcategories-need-a-stable-role.md |
 | transfer-subcategory-is-looked-up-in-the-current-language | backlog | tickets/backlog/transfer-subcategory-is-looked-up-in-the-current-language.md |
-| transfer-subcategory-unrecognized-in-five-languages | backlog | tickets/backlog/transfer-subcategory-unrecognized-in-five-languages.md |
+| transfer-subcategory-unrecognized-in-five-languages | done | tickets/done/transfer-subcategory-unrecognized-in-five-languages.md |
 | trends-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/trends-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | trends-cards-ignore-an-in-place-amount-edit | done | tickets/done/trends-cards-ignore-an-in-place-amount-edit.md |
 | trends-comparison-kpi-vs-curve | done | tickets/done/trends-comparison-kpi-vs-curve.md |
@@ -1157,7 +1157,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
 | widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-balance-figure-and-curve-count-different-rows-for-accountless-movements | done | tickets/done/widget-balance-figure-and-curve-count-different-rows-for-accountless-movements.md |
-| widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen | backlog | tickets/backlog/widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen.md |
+| widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen | done | tickets/done/widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen.md |
 | widget-cache-rebuild-blocks-the-main-thread | backlog | tickets/backlog/widget-cache-rebuild-blocks-the-main-thread.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |

@@ -283,6 +283,14 @@ paths:
   `.animation` (`AnyTransition.opacity.animation(…)`) también pasan. La barra de chips de Estadísticas, que va en un
   `safeAreaInset`, sí animó con `withTransaction`: la diferencia con el contenido del scroll no está aislada. ⇒ **en una
   pestaña, anima con `.animation(_:value:)` y compruébalo en vídeo**, no con «compila».
+- **El apagado se queda y se anima caso por caso (decisión 1yhi, opción B, 2026-10-30).** La animación va en el
+  CONTENEDOR común de lo que aparece y de lo que se mueve por ello, no en la vista que se va: con el `.animation` en el
+  aviso, el aviso se funde pero lo de debajo sube de golpe. Los sitios animados así (avisos del Panel y de Grupos,
+  flotantes de Panel, Grupos, Presupuestos y Pagos, plegado y cápsulas del flujo de caja) los fija
+  `TabImplicitAnimationsWiringTests`, junto con el apagado de `ContentView`; uno nuevo se añade a su lista.
+  **El apagado no llega a las hojas**: dentro de una hoja presentada desde una pestaña, `withAnimation` sí anima
+  (medido en vídeo el 2026-10-30: «Más opciones» de Exportar se abre en ~10 fotogramas). Los «Más opciones» de los
+  formularios, que van en hoja, no necesitan nada.
 - **`disablesAnimations` no lo deshace una transacción anidada.** El botón de `NavigationChipButton` llama a su acción con
   `disablesAnimations = true` (contra un parpadeo del título grande), y un `withTransaction(Transaction(animation:))`
   dentro no animaba. Por eso existe `animatesSwitch`.

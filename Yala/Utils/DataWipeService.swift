@@ -1268,7 +1268,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "colorfulIcons")          // Default: true
         defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
-        defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: "PEN"
+        defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: la de la región (CurrencyDefaults.preferred)
         defaults.removeObject(forKey: AppPreferences.Keys.tabConfigJSON)  // Layout custom de tabs ("tabBarConfiguration")
         defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
         defaults.removeObject(forKey: "customPeriodEnd")

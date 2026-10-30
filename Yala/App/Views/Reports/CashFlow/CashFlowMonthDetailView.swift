@@ -21,6 +21,7 @@ struct CashFlowMonthDetailView: View {
     let transactions: [TransactionItem]
     var onCellDetailDismiss: (() -> Void)?
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var incomeCollapsed = false
     @State private var expenseCollapsed = false
     @State private var selectedCellLineID: UUID?
@@ -42,6 +43,10 @@ struct CashFlowMonthDetailView: View {
 
             expenseSection
         }
+        // Plegar Ingresos o Gastos recoge sus filas. Implícita: el `withAnimation` del rótulo no anima dentro de una
+        // pestaña (card 8atf; regla de `swiftui-ds.md`).
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: incomeCollapsed)
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.fast), value: expenseCollapsed)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.lg)
         .sheet(isPresented: Binding(

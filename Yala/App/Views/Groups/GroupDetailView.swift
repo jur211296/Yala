@@ -182,6 +182,9 @@ struct GroupDetailView: View {
                 tabContent
                     .yalaSkeleton(!viewModel.isReady)
             }
+            // El aviso de grupos entra y se funde al cerrarlo. Implícita: el `withAnimation` del aviso no anima dentro
+            // de una pestaña (card 8atf).
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
 
             // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras).
             if selectedTab == .records && viewModel.canCurrentUserParticipate && !group.isMigratedFrozen {

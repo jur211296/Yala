@@ -1,10 +1,10 @@
 ---
 id: preferred-currency-has-three-different-defaults
-status: backlog
+status: done
 priority: medium
 area: "currency, preferences"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-10-30
 source: hallazgo de camino de `qa-no-puede-crear-cuenta-en-otra-divisa` (2026-09-09)
 ---
 
@@ -97,3 +97,11 @@ el Panel y Registros enseñan todo en **S/**, pero los gastos «QA-FX VND» se g
 (el detalle dice «≈ € -350,00»). `DevSeedForeignCurrencyAccount` lee la preferida de
 `CurrencyDefaults.currentPreferred` (L104); inferido, sin medir: con `es_ES` esa lectura cae a la región (EUR).
 Un `/qa` de la familia FX con ese fixture mide otra divisa de la que cree medir.
+
+## Cierre (2026-10-30, con la card 2jj6)
+
+Opción A aplicada: los cuatro lectores (`CurrencyDefaults`, `AppPreferences`, `ExchangeRateService`, `WidgetDataCache`)
+caen a la región por `CurrencyDefaults.preferred(storedRaw:regionCode:)`. El source-scan pedido es
+`PreferredCurrencyFallbackParityTests.noReaderHasItsOwnFallback`. La región no peruana: la regla se prueba con `US`/`ES`
+inyectadas y la paridad de lectores corre en el CI con la región del runner (en_US). Fuera: el `?? "USD"` de
+`YalaWidgets/WidgetDataService.preferredCurrencyCode`, que solo actúa sin snapshot (no hay cifra que pintar).
