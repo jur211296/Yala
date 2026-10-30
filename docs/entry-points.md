@@ -40,6 +40,18 @@ tiene cuatro reglas, y ninguna entrada se las salta:
 La cola ordena por prioridad y, dentro de la misma, por llegada (`RouterIntent.priority`). Cada consumidor presenta en
 su anchor, y el de `ContentView` tapa a los demás.
 
+**Entre los dos consumidores del shell manda la cola, no quién mira antes** (desde el 2026-10-30, ticket
+`notices-come-out-one-after-another-by-priority`). Hasta ese día cada consumidor drenaba lo suyo: con Novedades (`low`,
+`contentView`) y «Tu prueba terminó» (`high`, `mainTab`) en cola, salía el del consumidor que mirase primero. Ahora, en una
+misma ventana, una hoja de `MainTabView` cede ante lo de `ContentView` que vaya delante, y un aviso **diferible** de
+`ContentView` (la columna «Espera» de la tabla de abajo) cede ante una hoja de `MainTabView` que vaya delante. Los
+críticos y las respuestas a un toque no ceden nunca, y solo se cede ante un consumidor listo en esa ventana: nadie espera
+a quien no va a drenar. El Panel y Planificación quedan fuera: lo suyo es lo que la persona acaba de pedir y ya espera a
+que el shell esté libre. La regla vive en `NoticeOrderLogic`; quién va delante, en `AppRouter.shellNoticeAhead(of:in:)`.
+
+**Un aviso repetido sustituye al que esperaba, no se suma.** Lo decide el `id` del intent: el aviso de la Bandeja lleva
+clave fija desde el mismo día (antes, por cifras, y «2 nuevos» y «3 nuevos» salían seguidos).
+
 | Prioridad | Qué | Por qué ahí |
 |---|---|---|
 | `critical` | Avisos de sistema que no pueden esperar (`remoteWipe`, `iCloudMismatch`, `appleIDChangedClosePrivate`) y la respuesta a un enlace de invitación que la persona acaba de tocar (`showInviteError`, `showGroupArchivedNotice`) | O protegen datos, o contestan a un toque que está esperando respuesta |
@@ -129,5 +141,8 @@ mirar cada 300 ms mientras haya algo retenido solo por eso.
 
 Con ticket en `tickets/backlog/`:
 
-- `notification-deeplink-accounts-not-parsed`: `ScheduledPaymentNotificationService` manda `deepLink: "accounts"`, que
-  `NotificationService.parseDestination` no reconoce; el toque no lleva a ningún sitio.
+- `practice-cleanup-prompt-outside-the-presentation-locks`: «¿Era de prueba?» se presenta fuera de los candados (en
+  Planificación, sin ninguno).
+- `positive-toast-and-top-banners-are-not-coordinated`: el toast verde caduca debajo de una hoja.
+
+(`notification-deeplink-accounts-not-parsed` figuraba aquí y está cerrado: `accounts/<uuid>` abre la ficha de la cuenta.)

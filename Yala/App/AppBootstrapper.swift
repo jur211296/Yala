@@ -1267,6 +1267,11 @@ final class AppBootstrapper {
         // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
         // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
         // testear el modal sin depender de un evento de CloudKit.
+        // El hito va PRIMERO: con la oferta (misma prioridad) la cola los ordena por llegada, y es lo que mide
+        // `NoticeOrderUITests`.
+        if let milestone = UITestHooks.milestoneUpgrade {
+            RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
+        }
         if let notification = UITestHooks.inboxAlertPayload {
             RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
@@ -2306,6 +2311,9 @@ final class AppBootstrapper {
         // la emisión temprana del bootstrap puede caer en un blip de scenePhase
         // (resetTransients) antes del primer drain — dedup por id cubre duplicados.
         if UITestHooks.isActive {
+            if let milestone = UITestHooks.milestoneUpgrade {
+                RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
+            }
             if let notification = UITestHooks.inboxAlertPayload {
                 RouterEntryGate.shared.submit(.showInboxAlert(notification))
             }

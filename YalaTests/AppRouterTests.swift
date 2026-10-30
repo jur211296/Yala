@@ -221,17 +221,26 @@ struct AppRouterTests {
         }
     }
 
-    @MainActor @Test func inboxAlert_dedupesBySignature() {
+    /// El aviso de la Bandeja es UNO aunque cambien las cifras (ticket `notices-come-out-one-after-another-by-priority`).
+    /// Este test fijaba antes lo contrario —cifras distintas, dos entradas— y eso era el bug: el productor recuenta todos
+    /// los borradores sin quemar, así que el aviso nuevo contiene al viejo y salían los dos seguidos. Ahora el nuevo
+    /// sustituye al que esperaba, en su sitio, con las cifras de ahora.
+    @MainActor @Test func inboxAlert_newerCountsReplaceTheQueuedOne_inPlace() {
         let router = freshRouter()
         let notif1 = PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 0)
-        let notif2 = PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 0)
-        let notif3 = PendingInboxNotification(scheduledPayments: 3, subscriptions: 1, automations: 0)
+        let notif2 = PendingInboxNotification(scheduledPayments: 3, subscriptions: 1, automations: 0)
 
         router.enqueue(.showInboxAlert(notif1))
-        router.enqueue(.showInboxAlert(notif2))  // same signature → dedup
-        router.enqueue(.showInboxAlert(notif3))  // different signature → new entry
+        router.enqueue(.presentLateICloudMirrorNotice(.wipeLeftHalfway))  // misma prioridad, detrás
+        router.enqueue(.showInboxAlert(notif2))
 
         #expect(router._testQueue.count == 2)
+        #expect(router._testQueue.first?.id == "inboxAlert", "conserva su sitio en la cola")
+        guard case .showInboxAlert(let queued) = router._testQueue.first else {
+            Issue.record("el primero de la cola debía ser el aviso de la Bandeja")
+            return
+        }
+        #expect(queued.scheduledPayments == 3, "sale con las cifras del último recuento")
     }
 
     @MainActor @Test func sharedImage_dedupesByFilename() {

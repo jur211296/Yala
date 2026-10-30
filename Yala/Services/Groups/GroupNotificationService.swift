@@ -131,12 +131,44 @@ final class GroupNotificationService {
                 #if DEBUG
                 print("GroupNotif[#16-debug]: scheduling title=\"\(title)\" body=\"\(body)\" deepLink=\(deepLink)")
                 #endif
+                // El genérico del servidor que trajo ESTA tanda ya sonó; el rico lo sustituye, no se suma (ticket
+                // `notices-come-out-one-after-another-by-priority`). Se retira DESPUÉS de que el rico salga: si iOS no lo
+                // acepta (o un borrado lo calla), el genérico es lo único que queda. Y solo el reciente del mismo grupo
+                // (`GroupServerNoticeReplacementLogic.freshWindow`).
+                let groupLinks = GroupServerNoticeReplacementLogic.groupLinks(
+                    groupID: groupID, zoneID: zoneID(ofGroup: groupID))
                 Task {
-                    await NotificationService.shared.sendNotification(
+                    let sent = await NotificationService.shared.sendNotification(
                         title: title, body: body, deepLink: deepLink
                     )
+                    guard sent else { return }
+                    let center = UNUserNotificationCenter.current()
+                    let now = Date.now
+                    let generic = await center.deliveredNotifications()
+                        .filter {
+                            GroupServerNoticeReplacementLogic.isReplacedServerNotice(
+                                $0.request.content.userInfo, deliveredAt: $0.date, now: now, groupLinks: groupLinks)
+                        }
+                        .map(\.request.identifier)
+                    if !generic.isEmpty { center.removeDeliveredNotifications(withIdentifiers: generic) }
                 }
             }
+        }
+    }
+
+    /// El `group_id` del servidor de un grupo local (`SplitGroup.cloudKitZoneID`), o `nil` si no se deja leer: entonces solo
+    /// se retira el genérico que nombre el `id` local, y el otro se queda (avisar de más, no de menos).
+    private func zoneID(ofGroup groupID: UUID) -> String? {
+        guard let modelContext else { return nil }
+        do {
+            var descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == groupID })
+            descriptor.fetchLimit = 1
+            return try modelContext.fetch(descriptor).first?.cloudKitZoneID
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error fetching group zone: \(error)")
+            #endif
+            return nil
         }
     }
 

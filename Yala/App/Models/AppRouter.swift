@@ -122,6 +122,20 @@ final class AppRouter {
         queue.first(where: { matches($0, consumer: consumer, scene: scene) && predicate($0.intent) })?.intent
     }
 
+    /// **¿Cede `intent` su turno a un aviso del OTRO consumidor del shell que va delante en la cola?** Devuelve ese
+    /// aviso, o `nil`. Solo cuenta lo que ese consumidor puede drenar en `scene` y con el consumidor listo ahí: un
+    /// consumidor sin montar o de otra ventana no retiene a nadie. La regla vive en `NoticeOrderLogic`.
+    func shellNoticeAhead(of intent: RouterIntent, in scene: UUID?) -> RouterIntent? {
+        guard let index = queue.firstIndex(where: { $0.intent.id == intent.id }) else { return nil }
+        return queue[..<index].first { queued in
+            let other = queued.intent.handler
+            return other != intent.handler
+                && readyScoped.contains(ScopedConsumer(consumer: other, scene: scene))
+                && matches(queued, consumer: other, scene: scene)
+                && NoticeOrderLogic.yields(intent, to: queued.intent)
+        }?.intent
+    }
+
     /// Marks a consumer ready in window `scene`. Idempotent.
     func markReady(_ consumer: ConsumerID, in scene: UUID?) {
         let scoped = ScopedConsumer(consumer: consumer, scene: scene)

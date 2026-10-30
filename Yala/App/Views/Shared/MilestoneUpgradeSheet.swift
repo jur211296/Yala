@@ -103,6 +103,7 @@ struct MilestoneUpgradeSheet: View {
                     Button(L10n.Milestone.notNow) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("milestone_not_now")
                     .font(DS.Typography.body)
                     .foregroundStyle(.thSecondaryText)
                 }
