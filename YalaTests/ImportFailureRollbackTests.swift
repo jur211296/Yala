@@ -124,13 +124,14 @@ struct ImportFailureRollbackTests {
         #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 2)
     }
 
-    /// La hoja ya no guarda por su cuenta: las dos rutas pasan por `importAndSave`.
-    @Test("ImportIntroSheet importa y guarda por importAndSave en sus dos rutas")
+    /// La hoja ya no guarda por su cuenta: sus tres rutas (una cuenta, por moneda y por columna de cuenta, S27m)
+    /// pasan por `importAndSave`.
+    @Test("ImportIntroSheet importa y guarda por importAndSave en sus tres rutas")
     func importSheet_usesImportAndSave() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let source = try String(
             contentsOf: root.appendingPathComponent("Yala/App/Views/Import/ImportIntroSheet.swift"), encoding: .utf8)
-        #expect(source.components(separatedBy: "TransactionCSVImportService.importAndSave(in: modelContext)").count - 1 == 2)
+        #expect(source.components(separatedBy: "TransactionCSVImportService.importAndSave(in: modelContext)").count - 1 == 3)
         #expect(!source.contains("try modelContext.save()"))
     }
 

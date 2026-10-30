@@ -11,8 +11,44 @@ import SwiftUI
 struct ImportPreviewSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    let preview: ImportPreview
-    let onImport: () -> Void
+    /// Lo que devolvió el import con TODAS las cuentas nuevas.
+    let fullPreview: ImportPreview
+    /// «Importar», con las cuentas nuevas que se crean (sus claves).
+    let onImport: (Set<String>) -> Void
+
+    /// Las cuentas nuevas que se crean. Sin límite, todas; con el plan gratuito lleno, las que la persona elige.
+    @State private var chosenAccounts: Set<String> = []
+    @State private var isShowingProOffer = false
+
+    init(preview: ImportPreview, onImport: @escaping (Set<String>) -> Void) {
+        self.fullPreview = preview
+        self.onImport = onImport
+        let slots = ImportPreviewLogic.newAccountSlots(
+            isPro: FeatureGateService.shared.isProUser, existingBillableAccounts: preview.existingBillableAccounts)
+        _chosenAccounts = State(initialValue: ImportPreviewLogic.defaultChosenAccounts(preview.newAccounts, slots: slots))
+    }
+
+    /// Cuántas cuentas nuevas caben; `nil` sin límite. Se lee en cada pintado: si la persona se hace Pro aquí, cambia.
+    private var slots: Int? {
+        ImportPreviewLogic.newAccountSlots(
+            isPro: FeatureGateService.shared.isProUser, existingBillableAccounts: fullPreview.existingBillableAccounts)
+    }
+
+    /// Las cuentas nuevas que se crean de verdad: sin límite (Pro, también si llegó desde fuera de esta hoja), todas.
+    private var effectiveChosenAccounts: Set<String> {
+        slots == nil ? Set(fullPreview.newAccounts.map(\.key)) : chosenAccounts
+    }
+
+    /// La vista previa con las cuentas elegidas.
+    private var preview: ImportPreview {
+        ImportPreviewLogic.applying(chosen: effectiveChosenAccounts, to: fullPreview)
+    }
+
+    /// El plan gratuito no deja crear todas: la persona elige.
+    private var choosesAccounts: Bool {
+        guard let slots else { return false }
+        return fullPreview.newAccounts.count > slots
+    }
 
     var body: some View {
         NavigationStack {
@@ -20,6 +56,12 @@ struct ImportPreviewSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
                         summaryCard
+                        if !fullPreview.newAccounts.isEmpty {
+                            newAccountsSection
+                        }
+                        if !preview.doubtfulAmounts.isEmpty {
+                            doubtfulSection
+                        }
                         if !preview.sampleRows.isEmpty {
                             sampleSection
                         }
@@ -34,8 +76,9 @@ struct ImportPreviewSheet: View {
                 VStack(spacing: DS.Spacing.sm) {
                     if preview.canImport {
                         YalaPrimaryButton(L10n.UXL7.ImportReview.importButton(preview.count), icon: "square.and.arrow.down") {
+                            let chosen = effectiveChosenAccounts
                             dismiss()
-                            onImport()
+                            onImport(chosen)
                         }
                         .accessibilityIdentifier("import_preview_confirm")
                     }
@@ -56,6 +99,9 @@ struct ImportPreviewSheet: View {
         }
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(false)
+        .proUpgradeSheet(isPresented: $isShowingProOffer, feature: .accounts, context: .limitReached) {
+            chosenAccounts = Set(fullPreview.newAccounts.map(\.key))
+        }
     }
 
     // MARK: - Resumen
@@ -80,6 +126,29 @@ struct ImportPreviewSheet: View {
                         .foregroundStyle(.secondary)
                         .accessibilityIdentifier("import_preview_total")
                 }
+                if !preview.ignoredColumns.isEmpty {
+                    Label(L10n.UXL7.ImportReview.ignoredColumns(preview.ignoredColumns.joined(separator: ", ")),
+                          systemImage: "eye.slash")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("import_preview_ignored_columns")
+                }
+                if let readSheet = preview.readSheet, !preview.skippedSheets.isEmpty {
+                    Label(L10n.UXL7.ImportReview.skippedSheets(readSheet, preview.skippedSheets.joined(separator: ", ")),
+                          systemImage: "tablecells")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("import_preview_skipped_sheets")
+                }
+                if preview.groupRowCount > 0 {
+                    Label(L10n.UXL7.ImportReview.groupRows(preview.groupRowCount), systemImage: "person.2")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("import_preview_group_rows")
+                }
                 Text(L10n.UXL7.ImportReview.reviewHint)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
@@ -97,6 +166,119 @@ struct ImportPreviewSheet: View {
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                 .fill(Color.electricIndigo.opacity(0.12))
+        )
+    }
+
+    // MARK: - Cuentas nuevas (H7)
+
+    private var newAccountsSection: some View {
+        SectionBox(title: L10n.UXL7.ImportReview.newAccountsHeader) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                Text(choosesAccounts
+                     ? L10n.UXL7.ImportReview.newAccountsLimit(slots ?? 0)
+                     : L10n.UXL7.ImportReview.newAccountsHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding()
+                ForEach(fullPreview.newAccounts, id: \.key) { account in
+                    SubsectionDivider()
+                    newAccountRow(account)
+                }
+                if choosesAccounts {
+                    SubsectionDivider()
+                    Button {
+                        isShowingProOffer = true
+                    } label: {
+                        Label(L10n.FeatureGate.upgradeToPro, systemImage: "crown")
+                            .font(DS.Typography.bodyBold)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier("import_preview_new_accounts_pro")
+                }
+            }
+        }
+        .accessibilityIdentifier("import_preview_new_accounts")
+    }
+
+    @ViewBuilder
+    private func newAccountRow(_ account: ImportNewAccountSummary) -> some View {
+        let label = HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
+            if choosesAccounts {
+                Image(systemName: chosenAccounts.contains(account.key) ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(chosenAccounts.contains(account.key) ? AnyShapeStyle(.thAccentText) : AnyShapeStyle(.secondary))
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(account.name)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                Text("\(account.currencyCode) · \(L10n.UXL7.recordsCount(account.rowCount))")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: DS.Spacing.sm)
+        }
+        .padding()
+        .contentShape(Rectangle())
+
+        if choosesAccounts {
+            let isChosen = chosenAccounts.contains(account.key)
+            Button {
+                if isChosen {
+                    chosenAccounts.remove(account.key)
+                } else if ImportPreviewLogic.canChoose(account.key, chosen: chosenAccounts, slots: slots) {
+                    chosenAccounts.insert(account.key)
+                }
+            } label: {
+                label
+            }
+            .buttonStyle(.plain)
+            .disabled(!isChosen && !ImportPreviewLogic.canChoose(account.key, chosen: chosenAccounts, slots: slots))
+            .accessibilityAddTraits(isChosen ? .isSelected : [])
+            .accessibilityHint(isChosen || ImportPreviewLogic.canChoose(account.key, chosen: chosenAccounts, slots: slots)
+                               ? "" : L10n.UXL7.ImportReview.newAccountsLimit(slots ?? 0))
+            .accessibilityIdentifier("import_preview_new_account_\(account.key)")
+        } else {
+            label
+                .accessibilityElement(children: .combine)
+        }
+    }
+
+    // MARK: - Importes dudosos (H1)
+
+    private var doubtfulSection: some View {
+        let listed = Array(preview.doubtfulAmounts.prefix(ImportPreviewLogic.failureListLimit))
+        let hidden = preview.doubtfulAmounts.count - listed.count
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Label(L10n.UXL7.ImportReview.doubtfulHeader, systemImage: "questionmark.circle.fill")
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(DS.Semantic.warningForeground)
+                .accessibilityIdentifier("import_preview_doubtful")
+            Text(L10n.UXL7.ImportReview.doubtfulHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(Array(listed.enumerated()), id: \.offset) { _, item in
+                Text(L10n.UXL7.ImportReview.doubtfulLine(item.rowNumber, item.raw, format(item.amount, item.currencyCode)))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if hidden > 0 {
+                Text(L10n.UXL7.ImportReview.more(hidden))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .fill(DS.Semantic.warningBackground)
         )
     }
 

@@ -1479,14 +1479,20 @@
         "Yala/App/Views/Import/**",
         "Yala/Utils/TransactionCSVImportService.swift",
         "Yala/Utils/XLSXReader.swift",
-        "Yala/App/Logic/ImportAccountChoiceLogic.swift"
+        "Yala/App/Logic/ImportAccountChoiceLogic.swift",
+        "Yala/Utils/ImportFileReader.swift",
+        "Yala/Utils/ImportAmountParser.swift",
+        "Yala/App/Logic/ImportAccountResolver.swift",
+        "Yala/App/Logic/ImportGroupRowFilter.swift",
+        "Yala/App/Logic/ImportPreviewLogic.swift",
+        "Yala/Services/ImportPreviewService.swift"
       ],
       "scenarioIDs": [
         "F-IMP-01",
         "F-IMP-02"
       ],
       "classification": "manual",
-      "coverage": "manual · 2026-10-29 (S27l, H6 a27x): un import que falla tras insertar deshace lo insertado (`importAndSave`). unit:YalaTests/ImportFailureRollbackTests. · 2026-10-17 (UX 2.2 · lote 7): vista previa antes de importar, columnas necesarias, filas malas que se saltan y se listan, errores traducidos. unit:YalaTests/UXAudit22Lote7LogicTests + unit:YalaTests/TransactionCSVImportServiceTests. · 2026-10-22: los selectores no ofrecen la cuenta de Grupos y «Importación completada» sale al cerrarse la hoja (device-qa en iPhone); unit:YalaTests/ImportAccountChoiceAndResultTests.",
+      "coverage": "manual · 2026-10-29 (S27m, H1 jvgc · H3 7wh5 · H4 mnox · H5 l2g9 · H7 34qe): columnas por nombre en cualquier orden (las desconocidas se ignoran y se nombran; duplicada o falta → error que la nombra), Excel sin tabla compartida y con varias hojas, separador decimal por archivo con importes dudosos en la vista previa y «−»/«–» como signo, filas de Grupos fuera con su motivo, cuenta por fila con alta de las que faltan y elección con el plan gratuito. unit:YalaTests/ImportReadingLogicTests (ImportAmountParserTests, ImportHeaderTests, ImportGroupRowFilterTests, ImportAccountResolverTests, ImportNewAccountsChoiceTests) + YalaTests/ImportRoundTripAndAccountsTests (ida y vuelta CSV y Excel del export, .xlsx inlineStr generado en el test). Sin XCUITest del import: la hoja de vista previa con elección de cuentas queda para device-QA. · 2026-10-29 (S27l, H6 a27x): un import que falla tras insertar deshace lo insertado (`importAndSave`). unit:YalaTests/ImportFailureRollbackTests. · 2026-10-17 (UX 2.2 · lote 7): vista previa antes de importar, columnas necesarias, filas malas que se saltan y se listan, errores traducidos. unit:YalaTests/UXAudit22Lote7LogicTests + unit:YalaTests/TransactionCSVImportServiceTests. · 2026-10-22: los selectores no ofrecen la cuenta de Grupos y «Importación completada» sale al cerrarse la hoja (device-qa en iPhone); unit:YalaTests/ImportAccountChoiceAndResultTests.",
       "owner": "",
       "lastVerified": "2026-10-29"
     },

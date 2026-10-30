@@ -157,6 +157,25 @@ extension L10n {
                 String.localizedStringWithFormat(l7("import.preview.importButton"), count)
             }
             static var nothingToImport: String { l7("import.preview.nothingToImport") }
+            static func ignoredColumns(_ columns: String) -> String {
+                String(format: l7("import.preview.ignoredColumns"), columns)
+            }
+            static func groupRows(_ count: Int) -> String {
+                String(format: l7("import.preview.groupRows"), count)
+            }
+            static var doubtfulHeader: String { l7("import.preview.doubtfulHeader") }
+            static var doubtfulHint: String { l7("import.preview.doubtfulHint") }
+            static func doubtfulLine(_ row: Int, _ raw: String, _ reading: String) -> String {
+                String(format: l7("import.preview.doubtfulLine"), row, raw, reading)
+            }
+            static var newAccountsHeader: String { l7("import.preview.newAccountsHeader") }
+            static var newAccountsHint: String { l7("import.preview.newAccountsHint") }
+            static func skippedSheets(_ read: String, _ others: String) -> String {
+                String(format: l7("import.preview.skippedSheets"), read, others)
+            }
+            static func newAccountsLimit(_ slots: Int) -> String {
+                String(format: l7("import.preview.newAccountsLimit"), slots)
+            }
             static func notImported(_ count: Int) -> String {
                 String.localizedStringWithFormat(l7("import.result.notImported"), count)
             }
@@ -198,6 +217,30 @@ extension L10n {
             }
             static func missingAccountForCurrency(_ row: Int, _ currency: String) -> String {
                 String(format: l7("import.error.missingAccount"), row, currency)
+            }
+            static func missingColumns(_ names: String) -> String {
+                String(format: l7("import.error.missingColumns"), names)
+            }
+            static func duplicateColumn(_ name: String) -> String {
+                String(format: l7("import.error.duplicateColumn"), name)
+            }
+            static func groupRow(_ row: Int) -> String {
+                String(format: l7("import.error.groupRow"), row)
+            }
+            static func emptyAccount(_ row: Int) -> String {
+                String(format: l7("import.error.emptyAccount"), row)
+            }
+            static func accountUnavailable(_ row: Int, _ name: String) -> String {
+                String(format: l7("import.error.accountUnavailable"), row, name)
+            }
+            static func ambiguousAccount(_ row: Int, _ name: String) -> String {
+                String(format: l7("import.error.ambiguousAccount"), row, name)
+            }
+            static func namedAccountCurrencyMismatch(_ row: Int, _ file: String, _ name: String, _ account: String) -> String {
+                String(format: l7("import.error.namedAccountCurrencyMismatch"), row, file, name, account)
+            }
+            static func newAccountNotChosen(_ row: Int, _ name: String) -> String {
+                String(format: l7("import.error.newAccountNotChosen"), row, name)
             }
             static var xlsxCannotOpen: String { l7("import.error.xlsxOpen") }
             static var xlsxNoSheets: String { l7("import.error.xlsxNoSheets") }

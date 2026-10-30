@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Lector de archivos Excel (.xlsx) para importación de transacciones.
-//  Utiliza CoreXLSX para parsear archivos Excel y devolver filas crudas.
+//  Utiliza CoreXLSX para parsear archivos Excel y devolver filas crudas, con las columnas por nombre.
 //
 
 import CoreXLSX
@@ -19,32 +19,35 @@ enum XLSXReader {
         case cannotOpenFile
         case noWorksheets
         case cannotParseWorksheet
-        case invalidHeader(found: String)
-        case missingSharedStrings
 
         /// En llano y traducido (auditoría UX 2.2, lote 7, L7-17), sin el encabezado crudo.
         var errorDescription: String? {
             switch self {
-            case .cannotOpenFile, .missingSharedStrings:
+            case .cannotOpenFile:
                 return L10n.UXL7.ImportErrors.xlsxCannotOpen
             case .noWorksheets:
                 return L10n.UXL7.ImportErrors.xlsxNoSheets
             case .cannotParseWorksheet:
                 return L10n.UXL7.ImportErrors.xlsxCannotRead
-            case .invalidHeader:
-                return L10n.UXL7.ImportErrors.invalidHeader
             }
         }
     }
 
     // MARK: - Public API
 
-    /// Lee un archivo XLSX y devuelve las filas como `RawImportRow`.
+    /// Lee un archivo XLSX a filas crudas, con las columnas por nombre (`ImportHeader`).
     ///
-    /// - Parameter url: URL local del archivo XLSX.
-    /// - Returns: Array de filas crudas listas para validación.
-    static func readRows(from url: URL) throws -> [RawImportRow] {
-        // 1. Acceder al recurso con seguridad (requerido para file picker en iOS)
+    /// Desde el 2026-10-29 (H3 de la auditoría del import 2.2, card 7wh5):
+    /// - **Sin tabla de textos compartidos se sigue**: un Excel escrito por un script (openpyxl, el caso real de Jürgen)
+    ///   guarda cada texto DENTRO de su celda (`inlineStr`) y no trae `sharedStrings.xml`. Antes eso era «No pudimos
+    ///   abrir el archivo de Excel» y la cabecera solo se leía de esa tabla.
+    /// - **Con varias hojas, la primera cuya cabecera se reconoce**: una portada o una hoja de notas delante ya no
+    ///   tapan los datos.
+    /// - **La fecha se convierte en la columna `date`**, no en la primera.
+    static func readTable(from url: URL) throws -> ImportTable {
+        guard url.pathExtension.lowercased() == "xlsx" else { throw ImportError.invalidFileExtension }
+
+        // Acceder al recurso con seguridad (requerido para el selector de archivos en iOS).
         let didStartAccessing = url.startAccessingSecurityScopedResource()
         defer {
             if didStartAccessing {
@@ -52,172 +55,147 @@ enum XLSXReader {
             }
         }
 
-        // 2. Abrir archivo XLSX
         guard let xlsxFile = XLSXFile(filepath: url.path) else {
             throw XLSXError.cannotOpenFile
         }
 
-        // 3. Obtener shared strings (texto de celdas)
-        guard let sharedStrings = try xlsxFile.parseSharedStrings() else {
-            throw XLSXError.missingSharedStrings
-        }
+        // Puede no estar: entonces no hay celdas de texto compartido que leer.
+        let sharedStrings = try xlsxFile.parseSharedStrings()
 
-        // 4. Obtener la primera hoja de cálculo
-        let worksheetPaths = try xlsxFile.parseWorksheetPaths()
-        guard let firstPath = worksheetPaths.first else {
+        let sheets = try orderedSheets(of: xlsxFile)
+        guard !sheets.isEmpty else {
             throw XLSXError.noWorksheets
         }
 
-        let worksheet = try xlsxFile.parseWorksheet(at: firstPath)
+        var firstHeaderError: Error?
+        var chosen: ImportTable?
+        var chosenName: String?
+        var skippedWithData: [String] = []
+        for sheet in sheets {
+            let worksheet: Worksheet
+            do {
+                worksheet = try xlsxFile.parseWorksheet(at: sheet.path)
+            } catch {
+                // Una hoja que no se deja leer no tapa a las demás.
+                #if DEBUG
+                print("XLSXReader: Error: hoja \(sheet.path) ilegible: \(error)")
+                #endif
+                if firstHeaderError == nil { firstHeaderError = XLSXError.cannotParseWorksheet }
+                continue
+            }
+            guard let rows = worksheet.data?.rows,
+                  let headerRow = rows.first(where: { row in
+                      row.cells.contains { !cellText($0, sharedStrings: sharedStrings).isEmpty }
+                  })
+            else { continue }
 
-        guard let rows = worksheet.data?.rows, !rows.isEmpty else {
-            throw ImportError.emptyFile
-        }
-
-        // 5. Validar encabezado (primera fila)
-        let headerRow = rows[0]
-        let headerColumns = headerRow.cells.compactMap { cell -> String? in
-            cell.stringValue(sharedStrings)?.lowercased().trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
-        }
-
-        // Validar formato de encabezado
-        let expectedBase = ["date", "amount", "currency", "category", "subcategory"]
-        let expectedWithNote = expectedBase + ["note"]
-        let expectedWithTagsAndNote = expectedBase + ["tags", "note"]
-        let expectedWithTagsOnly = expectedBase + ["tags"]
-
-        let headerMatchesBase = headerColumns == expectedBase
-        let headerMatchesWithNote = headerColumns == expectedWithNote
-        let headerMatchesWithTagsAndNote = headerColumns == expectedWithTagsAndNote
-        let headerMatchesWithTagsOnly = headerColumns == expectedWithTagsOnly
-
-        guard headerMatchesBase || headerMatchesWithNote || headerMatchesWithTagsAndNote || headerMatchesWithTagsOnly else {
-            let foundHeader = headerColumns.joined(separator: ", ")
-            throw XLSXError.invalidHeader(found: foundHeader)
-        }
-
-        let hasTagsColumn = headerMatchesWithTagsAndNote || headerMatchesWithTagsOnly
-        let hasNoteColumn = headerMatchesWithNote || headerMatchesWithTagsAndNote
-
-        // 6. Procesar filas de datos (saltando el encabezado)
-        var rawRows: [RawImportRow] = []
-        rawRows.reserveCapacity(rows.count - 1)
-
-        for (index, row) in rows.dropFirst().enumerated() {
-            let rowNumber = index + 2  // +2 porque saltamos header y Excel empieza en 1
-
-            // Obtener valores de celdas
-            let cellValues = extractCellValues(from: row, sharedStrings: sharedStrings, columnCount: headerColumns.count)
-
-            // Ignorar filas completamente vacías
-            let nonEmptyValues = cellValues.filter { !$0.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).isEmpty }
-            if nonEmptyValues.isEmpty {
+            let headerCells = cellValues(of: headerRow, sharedStrings: sharedStrings, dateColumn: nil)
+            let header: ImportHeader
+            do {
+                header = try ImportHeader.map(headerCells.map(\.text))
+            } catch {
+                if firstHeaderError == nil { firstHeaderError = error }
                 continue
             }
 
-            // Extraer valores por columna
-            let dateValue = cellValues.count > 0 ? cellValues[0] : ""
-            let amountValue = cellValues.count > 1 ? cellValues[1] : ""
-            let currencyValue = cellValues.count > 2 ? cellValues[2] : ""
-            let categoryValue = cellValues.count > 3 ? cellValues[3] : ""
-            let subcategoryValue = cellValues.count > 4 ? cellValues[4] : ""
-
-            let tagsValue: String?
-            let noteValue: String?
-
-            switch (hasTagsColumn, hasNoteColumn) {
-            case (true, true):
-                tagsValue = cellValues.count > 5 ? cellValues[5] : nil
-                noteValue = cellValues.count > 6 ? cellValues[6] : nil
-            case (true, false):
-                tagsValue = cellValues.count > 5 ? cellValues[5] : nil
-                noteValue = nil
-            case (false, true):
-                tagsValue = nil
-                noteValue = cellValues.count > 5 ? cellValues[5] : nil
-            case (false, false):
-                tagsValue = nil
-                noteValue = nil
+            let dateColumn = header.indexByField[.date]
+            let amountColumn = header.indexByField[.amount]
+            var rawRows: [RawImportRow] = []
+            rawRows.reserveCapacity(rows.count)
+            for row in rows where row.reference > headerRow.reference {
+                let cells = cellValues(of: row, sharedStrings: sharedStrings, dateColumn: dateColumn)
+                guard cells.contains(where: { !$0.text.isEmpty }) else { continue }
+                let amountIsNumber = amountColumn.map { $0 < cells.count && cells[$0].isNumber } ?? false
+                rawRows.append(header.row(
+                    number: Int(row.reference), cells: cells.map(\.text), amountIsNumber: amountIsNumber))
             }
-
-            let rawRow = RawImportRow(
-                rowNumber: rowNumber,
-                date: dateValue,
-                amount: amountValue,
-                currency: currencyValue,
-                category: categoryValue,
-                subcategory: subcategoryValue,
-                tags: tagsValue,
-                note: noteValue
-            )
-
-            rawRows.append(rawRow)
+            if chosen == nil {
+                chosen = ImportFileReader.table(rows: rawRows, header: header)
+                chosenName = sheet.name
+            } else if !rawRows.isEmpty {
+                // Otra hoja con movimientos que no se lee: la vista previa lo dice.
+                skippedWithData.append(sheet.name ?? sheet.path)
+            }
         }
 
-        return rawRows
+        if var chosen {
+            if !skippedWithData.isEmpty {
+                chosen.readSheet = chosenName
+                chosen.skippedSheets = skippedWithData
+            }
+            return chosen
+        }
+
+        if let firstHeaderError { throw firstHeaderError }
+        throw ImportError.emptyFile
+    }
+
+    /// Lee un archivo XLSX y devuelve las filas como `RawImportRow`.
+    static func readRows(from url: URL) throws -> [RawImportRow] {
+        try readTable(from: url).rows
     }
 
     /// Escanea un archivo XLSX y devuelve el conjunto de monedas únicas encontradas.
-    ///
-    /// - Parameter url: URL local del archivo XLSX.
-    /// - Returns: Set con los códigos de moneda normalizados encontrados.
     static func scanCurrencies(from url: URL) throws -> Set<String> {
-        let rows = try readRows(from: url)
-
-        var currencies = Set<String>()
-        for row in rows {
-            let normalized = TransactionCSVImportService.normalizeCurrencyInput(row.currency)
-            if !normalized.isEmpty {
-                currencies.insert(normalized)
-            }
-        }
-
-        return currencies
+        try ImportFileReader.scan(url).currencies
     }
 
     // MARK: - Private Helpers
 
-    /// Extrae los valores de todas las celdas de una fila como strings.
-    /// Para la columna de fecha (índice 0), convierte valores numéricos de Excel a formato ISO.
-    private static func extractCellValues(from row: Row, sharedStrings: SharedStrings, columnCount: Int) -> [String] {
-        var values = Array(repeating: "", count: columnCount)
-
-        for cell in row.cells {
-            // Obtener índice de columna (A=0, B=1, etc.)
-            guard let columnIndex = columnIndexFromReference(cell.reference.column.value) else {
-                continue
-            }
-
-            guard columnIndex < columnCount else {
-                continue
-            }
-
-            // Obtener valor de la celda
-            var value: String
-            if let stringValue = cell.stringValue(sharedStrings) {
-                value = stringValue
-            } else if let inlineString = cell.inlineString?.text {
-                value = inlineString
-            } else if let numericValue = cell.value {
-                value = numericValue
-            } else {
-                value = ""
-            }
-
-            value = value.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            // Columna 0 es la fecha - si el valor es un número puro (Excel serial date), convertirlo
-            if columnIndex == 0, !value.isEmpty {
-                // Check if value is a pure number (Excel serial date)
-                // Excel dates are typically 5-digit numbers (e.g., 45658 for dates in 2024+)
-                if let serialDate = Double(value), serialDate > 1000 && serialDate < 100000 {
-                    value = excelSerialDateToISO(serialDate)
-                }
-            }
-
-            values[columnIndex] = value
+    /// Las hojas en el orden de sus PESTAÑAS (el de `workbook.xml`), con su nombre. `parseWorksheetPaths` sigue el
+    /// orden de las relaciones, que no tiene por qué ser el que ve la persona.
+    private static func orderedSheets(of file: XLSXFile) throws -> [(name: String?, path: String)] {
+        guard let workbook = try file.parseWorkbooks().first else {
+            return try file.parseWorksheetPaths().map { (name: nil, path: $0) }
         }
+        let byName = try file.parseWorksheetPathsAndNames(workbook: workbook)
+        let order = workbook.sheets.items.compactMap(\.name)
+        return byName.sorted { lhs, rhs in
+            (lhs.name.flatMap { order.firstIndex(of: $0) } ?? Int.max)
+                < (rhs.name.flatMap { order.firstIndex(of: $0) } ?? Int.max)
+        }
+    }
 
+    /// El texto de una celda: de la tabla compartida (si la hay y el índice existe), del texto en línea o del valor.
+    private static func cellText(_ cell: Cell, sharedStrings: SharedStrings?) -> String {
+        let raw: String?
+        switch cell.type {
+        case .sharedString:
+            if let sharedStrings, let index = cell.value.flatMap(Int.init), sharedStrings.items.indices.contains(index) {
+                let item = sharedStrings.items[index]
+                raw = item.text ?? item.richText.compactMap(\.text).joined()
+            } else {
+                raw = nil
+            }
+        case .inlineStr:
+            raw = cell.inlineString?.text ?? cell.value
+        default:
+            raw = cell.value ?? cell.inlineString?.text
+        }
+        return (raw ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Las celdas de una fila por su columna (A=0, B=1…), con su texto y si eran un número.
+    /// En la columna de la fecha, un número de serie de Excel se convierte a fecha ISO.
+    private static func cellValues(
+        of row: Row, sharedStrings: SharedStrings?, dateColumn: Int?
+    ) -> [(text: String, isNumber: Bool)] {
+        var values: [(text: String, isNumber: Bool)] = []
+        for cell in row.cells {
+            guard let columnIndex = columnIndexFromReference(cell.reference.column.value), columnIndex < 1_000 else {
+                continue
+            }
+            var value = cellText(cell, sharedStrings: sharedStrings)
+            let isNumber = (cell.type == nil || cell.type == .number) && !value.isEmpty && Double(value) != nil
+
+            // Excel guarda las fechas como días desde 1899 (45658 es un día de 2025).
+            if columnIndex == dateColumn, isNumber, let serialDate = Double(value), serialDate > 1000 && serialDate < 100000 {
+                value = excelSerialDateToISO(serialDate)
+            }
+
+            while values.count <= columnIndex { values.append((text: "", isNumber: false)) }
+            values[columnIndex] = (text: value, isNumber: isNumber)
+        }
         return values
     }
 
