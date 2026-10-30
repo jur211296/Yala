@@ -74,6 +74,7 @@ struct GroupDetailView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
     @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Input
 
@@ -91,6 +92,10 @@ struct GroupDetailView: View {
 
     @State private var viewModel: GroupDetailViewModel
     @State private var selectedTab: GroupDetailTab = .records
+    /// El chip que pinta la fila. Va por delante de `selectedTab` mientras la fila se anima: la pestaña se monta al
+    /// terminar (`NavigationChipButton.switchTab`), como en Estadísticas. Sigue a `selectedTab` cuando la cambia otro
+    /// (tocar el saldo, «Ver los saldos» desde Ajustes o Miembros).
+    @State private var chipsSelection: GroupDetailTab = .records
     @State private var showNudgeBanner = false
     @State private var showShareSheet = false
     @State private var wasArchivedOnAppear = false
@@ -186,6 +191,10 @@ struct GroupDetailView: View {
         .yalaScreenBackground(.panel)
         .navigationChipsInset {
             navigationChipsBar
+        }
+        // Un cambio de pestaña que no viene de la fila (el saldo, «Ver los saldos») mueve también el chip.
+        .onChange(of: selectedTab) { _, newTab in
+            if chipsSelection != newTab { chipsSelection = newTab }
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.large)
@@ -488,8 +497,15 @@ struct GroupDetailView: View {
         // Icono en las tres y nombre solo en la elegida, como las pestañas de Estadísticas (UX 2.2 · L12-1, decisión
         // B de Jürgen del 2026-10-18: la solución de L11-1). Con los tres nombres «Estadísticas» salía cortada contra
         // el borde de un iPhone 17 Pro.
-        NavigationChipButton(title: tab.displayName, icon: tab.icon, isSelected: selectedTab == tab) {
-            selectedTab = tab
+        // Cambio en dos tiempos (barrido iOS 27, card yc6k): la fila se anima y la pestaña se monta al terminar. Sin
+        // eso, montar Saldos o Estadísticas se comía la animación y el chip saltaba de ancho en un fotograma, como en
+        // Estadísticas antes del PR #656.
+        NavigationChipButton(
+            title: tab.displayName, icon: tab.icon, isSelected: chipsSelection == tab, animatesSwitch: true
+        ) {
+            NavigationChipButton.switchTab(
+                to: tab, chips: $chipsSelection, content: $selectedTab, reduceMotion: reduceMotion
+            )
         }
         .accessibilityIdentifier("group_detail_tab_\(tab.rawValue)")
     }

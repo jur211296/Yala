@@ -147,6 +147,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label | done | tickets/done/balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label.md |
 | balance-chart-voiceover-reads-base-to-monto | backlog | tickets/backlog/balance-chart-voiceover-reads-base-to-monto.md |
 | balance-figure-counts-future-dated-rows-the-curve-never-draws | done | tickets/done/balance-figure-counts-future-dated-rows-the-curve-never-draws.md |
+| barrido-ios27-animaciones-y-vistas-mal-optimizadas | qa | tickets/qa/barrido-ios27-animaciones-y-vistas-mal-optimizadas.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
