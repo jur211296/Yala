@@ -113,16 +113,16 @@ struct TransferNamesParityTests {
 
     // MARK: - Cableado
 
-    /// Las cuatro rutas (CSV y Excel, una cuenta y varias divisas) llaman a la misma decisión, y ninguna
-    /// vuelve a comparar con el texto del idioma actual.
-    @Test("Las cuatro rutas del import llaman a la misma decisión")
-    func fourImportRoutes_callTheSingleDecision() throws {
+    /// Todas las rutas (CSV y Excel, una cuenta, varias divisas y columna de cuenta) crean el movimiento en un
+    /// solo sitio desde S27m, y ese sitio llama a la decisión; ninguna vuelve a comparar con el idioma actual.
+    @Test("Todas las rutas del import llaman a la misma decisión")
+    func importRoutes_callTheSingleDecision() throws {
         let source = try String(
             contentsOf: Self.repoRoot.appendingPathComponent("Yala/Utils/TransactionCSVImportService.swift"),
             encoding: .utf8)
-        let calls = source.components(
-            separatedBy: "TransactionCSVImportService.systemAdjustmentType(for: draft.subcategory)").count - 1
-        #expect(calls == 4)
+        let calls = source.components(separatedBy: "systemAdjustmentType(for: draft.subcategory)").count - 1
+        #expect(calls == 1)
+        #expect(source.components(separatedBy: "TransactionItem(").count - 1 == 1, "Un solo sitio crea el movimiento.")
         #expect(!source.contains("== L10n.Subcategory.balanceAdjustment"))
         #expect(!source.contains("draft.subcategory.isAnySystem"))
     }

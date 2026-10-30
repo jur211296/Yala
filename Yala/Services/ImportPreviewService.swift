@@ -21,6 +21,9 @@ enum ImportPreviewService {
     enum Target {
         case single(Account)
         case multi([String: Account])
+        /// Cada fila a la cuenta que nombra su columna `account` (H7). `allowedNewAccountKeys` = las cuentas nuevas
+        /// que se crean; `nil` = todas.
+        case accountColumn(allowedNewAccountKeys: Set<String>?)
     }
 
     enum Failure: Error {
@@ -28,6 +31,8 @@ enum ImportPreviewService {
         case accountUnavailable
     }
 
+    /// La vista previa siempre se calcula con TODAS las cuentas nuevas: la elección (plan gratuito) se aplica encima
+    /// sin volver a leer el archivo (`ImportPreviewLogic.applying`).
     static func preview(
         of url: URL,
         target: Target,
@@ -36,23 +41,14 @@ enum ImportPreviewService {
     ) async throws -> ImportPreview {
         let scratch = ModelContext(container)
         scratch.autosaveEnabled = false
-        let isXLSX = url.pathExtension.lowercased() == "xlsx"
 
-        let result: TransactionImportResult
-        let accountNames: [String]
+        let destination: ImportDestination
         switch target {
         case .single(let account):
             guard let local = scratch.model(for: account.persistentModelID) as? Account else {
                 throw Failure.accountUnavailable
             }
-            accountNames = [local.name]
-            result = isXLSX
-                ? try await TransactionCSVImportService.importXLSX(
-                    from: url, into: local, in: scratch,
-                    allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: true)
-                : try await TransactionCSVImportService.importCSV(
-                    from: url, into: local, in: scratch,
-                    allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: true)
+            destination = .account(local)
         case .multi(let map):
             var localMap: [String: Account] = [:]
             for (code, account) in map {
@@ -61,32 +57,18 @@ enum ImportPreviewService {
                 }
                 localMap[code] = local
             }
-            accountNames = localMap.sorted { $0.key < $1.key }.map(\.value.name)
-            result = isXLSX
-                ? try await TransactionCSVImportService.importXLSXMultiCurrency(
-                    from: url, currencyAccountMap: localMap, in: scratch,
-                    allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: true)
-                : try await TransactionCSVImportService.importCSVMultiCurrency(
-                    from: url, currencyAccountMap: localMap, in: scratch,
-                    allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: true)
+            destination = .byCurrency(localMap)
+        case .accountColumn:
+            destination = .accountColumn(allowedNewAccountKeys: nil)
         }
 
+        let existingBillable = try scratch.fetch(FetchDescriptor<Account>()).billableUserAccounts.count
+        let result = try await TransactionCSVImportService.importFile(
+            from: url, destination: destination, in: scratch,
+            allowCreatingNewCategories: allowCreatingNewCategories, skippingInvalidRows: true)
+
         // Se copia a valores ANTES de soltar el contexto: los borradores apuntan a objetos suyos.
-        let rows = result.drafts.map {
-            ImportPreview.Row(
-                date: $0.date,
-                amount: ($0.amount as NSDecimalNumber).doubleValue,
-                currencyCode: $0.normalizedCurrencyCode,
-                categoryName: $0.category.name,
-                subcategoryName: $0.subcategory.name
-            )
-        }
-        let preview = ImportPreviewLogic.make(
-            rows: rows,
-            accountNames: accountNames,
-            failures: result.failures.compactMap(\.errorDescription),
-            ignoredFutureCount: result.ignoredFutureDatesCount
-        )
+        let preview = ImportPreviewLogic.make(result: result, existingBillableAccounts: existingBillable)
         scratch.rollback()
         return preview
     }

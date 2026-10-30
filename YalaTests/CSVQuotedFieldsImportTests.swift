@@ -83,13 +83,11 @@ struct CSVQuotedFieldsImportTests {
         let url = try writeTemplateCSV()
         defer { removeFile(url) }
 
-        var created = 0
         let result = try await TransactionCSVImportService.importCSV(
-            from: url, into: account, in: context, allowCreatingNewCategories: false
-        ) { _, _ in created += 1 }
+            from: url, into: account, in: context, allowCreatingNewCategories: false)
 
         #expect(result.createdCount == 2)
-        #expect(created == 2)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 2)
         #expect(result.drafts.map(\.note) == [nil, "con, coma"])
     }
 

@@ -239,8 +239,8 @@ struct ImportIntroSheet: View {
             }
         }
         .sheet(item: $pendingImport) { pending in
-            ImportPreviewSheet(preview: pending.preview) {
-                runImport(pending)
+            ImportPreviewSheet(preview: pending.preview) { chosenAccounts in
+                runImport(pending, chosenAccounts: chosenAccounts)
             }
         }
         .alert(L10n.Import.templateGenerated, isPresented: $showTemplateAlert) {
@@ -398,23 +398,10 @@ struct ImportIntroSheet: View {
 
     // MARK: - Actions
 
+    /// Abre el selector de archivos. Sin cuentas ya no se para aquí: un archivo con columna `account` crea las suyas
+    /// (H7), así que la falta de cuentas se mira después de leer el archivo.
     private func startImportFlow() {
-        if activeAccounts.isEmpty {
-            // No hay cuentas activas - dismiss and notify parent
-            let result = ImportResult(
-                isSuccess: false,
-                message: L10n.Import.createAccountFirst,
-                count: 0
-            )
-            dismiss()
-            Task {
-                try? await Task.sleep(for: .milliseconds(300))
-                self.onImportCompleted?(result)
-            }
-        } else {
-            // Open file picker first - currencies will be detected after file selection
-            isShowingFileImporter = true
-        }
+        isShowingFileImporter = true
     }
 
     private enum TemplateFormat {
@@ -525,13 +512,19 @@ struct ImportIntroSheet: View {
                 return
             }
 
-            // Scan currencies from file (CSV or XLSX)
+            // Las monedas del archivo y si trae la cuenta de cada fila (CSV o XLSX).
             do {
-                let currencies = try TransactionCSVImportService.scanCurrenciesFromFile(from: url)
+                let scan = try ImportFileReader.scan(url)
+                let currencies = scan.currencies
                 selectedFileURL = url
                 detectedCurrencies = currencies
 
-                if currencies.count == 1, let singleCurrency = currencies.first {
+                if scan.usesAccountColumn {
+                    // Cada fila va a la cuenta que nombra (H7): sin elegir cuenta ni monedas.
+                    requestPreview(of: url, target: .accountColumn(allowedNewAccountKeys: nil))
+                } else if activeAccounts.isEmpty {
+                    finish(with: ImportResult(isSuccess: false, message: L10n.Import.createAccountFirst, count: 0))
+                } else if currencies.count == 1, let singleCurrency = currencies.first {
                     // Single currency - route to account picker or direct import
                     let matchingAccounts = accountsForCurrency(singleCurrency)
 
@@ -633,12 +626,14 @@ struct ImportIntroSheet: View {
     }
 
     /// La persona dijo «Importar» en la vista previa: se importa de verdad, saltando las filas malas.
-    private func runImport(_ pending: PendingImport) {
+    private func runImport(_ pending: PendingImport, chosenAccounts: Set<String>) {
         switch pending.target {
         case .single(let account):
             runSingleImport(from: pending.url, into: account)
         case .multi(let map):
             runMultiImport(from: pending.url, with: map)
+        case .accountColumn:
+            runAccountColumnImport(from: pending.url, chosenAccounts: chosenAccounts)
         }
     }
 
@@ -771,6 +766,61 @@ struct ImportIntroSheet: View {
                     try? await Task.sleep(for: .milliseconds(300))
                     self.onImportCompleted?(errorResult)
                 }
+            }
+        }
+    }
+
+    // MARK: - Import por columna de cuenta (H7)
+
+    /// Cada fila a la cuenta que nombra; se crean solo las cuentas nuevas elegidas en la vista previa.
+    private func runAccountColumnImport(from url: URL, chosenAccounts: Set<String>) {
+        isImporting = true
+        Task {
+            // Una vuelta para que el botón pinte «Importando» antes del trabajo pesado.
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+            } catch {
+                isImporting = false
+                return
+            }
+            do {
+                // Importa y guarda; si algo falla, deshace lo insertado, cuentas nuevas incluidas.
+                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
+                    try await TransactionCSVImportService.importFile(
+                        from: url,
+                        destination: .accountColumn(allowedNewAccountKeys: chosenAccounts),
+                        in: modelContext,
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
+                    )
+                }
+
+                WidgetDataCache.updateCache(context: modelContext)
+                SessionState.shared.incrementDataVersion()
+
+                // Las tasas del rango importado, en segundo plano, como en las otras dos rutas.
+                let importedDates = result.drafts.map(\.date)
+                if let minDate = importedDates.min(), let maxDate = importedDates.max() {
+                    let dateRange = DateInterval(start: minDate, end: maxDate)
+                    Task {
+                        await exchangeRateService.ensureRates(for: dateRange, context: modelContext)
+                        await TransactionUpdateService.updateProvisionalTransactions(context: modelContext)
+                        sessionState.needsExchangeRateWidgetRefresh = true
+                    }
+                }
+
+                finish(with: ImportResult(
+                    isSuccess: true,
+                    message: outcomeMessage(
+                        importedLine: L10n.Import.recordsImported(result.createdCount), failures: result.failures),
+                    count: result.createdCount
+                ))
+            } catch {
+                #if DEBUG
+                print("ImportIntroSheet: Error: import por columna de cuenta: \(error)")
+                #endif
+                isImporting = false
+                finish(with: ImportResult(isSuccess: false, message: error.localizedDescription, count: 0))
             }
         }
     }

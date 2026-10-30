@@ -107,8 +107,7 @@ struct CSVImportCategoryNatureTests {
             do { try FileManager.default.removeItem(at: url) } catch { Issue.record("No se borró el CSV: \(error)") }
         }
         let result = try await TransactionCSVImportService.importCSV(
-            from: url, into: store.account, in: store.context, allowCreatingNewCategories: allowCreating
-        ) { _, _ in }
+            from: url, into: store.account, in: store.context, allowCreatingNewCategories: allowCreating)
         return result.drafts
     }
 

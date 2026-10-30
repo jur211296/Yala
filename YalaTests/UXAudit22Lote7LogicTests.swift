@@ -289,13 +289,11 @@ struct UXAudit22Lote7LogicTests {
         let url = try writeCSV(Self.csvWithABadRowInTheMiddle)
         defer { removeFile(url) }
 
-        var created = 0
         let result = try await TransactionCSVImportService.importCSV(
-            from: url, into: account, in: context, allowCreatingNewCategories: false, skippingInvalidRows: true
-        ) { _, _ in created += 1 }
+            from: url, into: account, in: context, allowCreatingNewCategories: false, skippingInvalidRows: true)
 
         #expect(result.createdCount == 2)
-        #expect(created == 2)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 2)
         #expect(result.failures.map(\.rowNumber) == [3, 4])
     }
 
@@ -306,8 +304,7 @@ struct UXAudit22Lote7LogicTests {
 
         await #expect(throws: ImportError.self) {
             _ = try await TransactionCSVImportService.importCSV(
-                from: url, into: account, in: context, allowCreatingNewCategories: false
-            ) { _, _ in }
+                from: url, into: account, in: context, allowCreatingNewCategories: false)
         }
     }
 
