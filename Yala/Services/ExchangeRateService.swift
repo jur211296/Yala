@@ -702,7 +702,7 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
         var required: Set<String> = []
 
         // 1. Preferred currency (always needed)
-        let preferredCode = UserDefaults.standard.string(forKey: "defaultCurrencyCode") ?? "PEN"
+        let preferredCode = CurrencyDefaults.currentPreferred
         required.insert(preferredCode)
 
         // 2. Secondary currencies (for ExchangeRateWidget)

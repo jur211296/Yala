@@ -1,10 +1,10 @@
 ---
 id: transfer-subcategory-unrecognized-in-five-languages
-status: backlog
+status: done
 priority: high
 area: "import, categories, l10n"
 created: 2026-10-29
-updated: 2026-10-29
+updated: 2026-10-30
 source: "auditoría del import 2.2 (sesión S27j), H2 de docs/import/AUDITORIA-IMPORT-2-2.md"
 ---
 
@@ -31,3 +31,11 @@ Completar `transferNames` y `balanceAdjustmentNames` con los nombres de los 16 `
 - [ ] Un import con «口座間振替», «Transferência entre contas» o «Account transfer» crea movimientos de tipo transferencia.
 - [ ] «Ajustes de saldo» importado con el teléfono en inglés queda como ajuste.
 - [ ] Test de paridad sobre los `.lproj` en verde.
+
+## Cierre (2026-10-30, verificado en origin/2.2 @ 41109c35f)
+
+Resuelto en #691: `Subcategory.transferNames` trae los nombres de los 16 `.lproj`, el ajuste se decide con
+`balanceAdjustmentNames` sin depender del idioma (`TransactionCSVImportService.swift:1007-1012`), y lo fijan
+`TransferNamesParityTests` e `ImportTransfersByLanguageTests`. Cambio sobre el criterio: «Account transfer»,
+«Kontoüberweisung» y «口座振替» (las sembradas con nombre propio) siguen siendo movimientos normales, por decisión de
+Jürgen del 2026-10-29 (`seededNamesThatStayNormal` en el test).

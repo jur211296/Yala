@@ -22,6 +22,7 @@ struct GroupsContainerView: View {
     /// Size class de la VENTANA (se lee fuera del split: dentro, la columna de lista es compacta). Decide si el grupo
     /// abierto va en la columna de detalle o empujado.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - State
 
@@ -206,6 +207,9 @@ struct GroupsContainerView: View {
                         }
                         .padding(.top, DS.Spacing.sm)
                         .padding(.bottom, DS.Spacing.safeBottom)
+                        // El aviso de grupos se funde al cerrarlo y la lista sube. Implícita: el `withAnimation` del
+                        // aviso no anima dentro de una pestaña (card 8atf).
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
                     }
                     .scrollViewGlassEdges()
                     .searchable(
@@ -233,6 +237,9 @@ struct GroupsContainerView: View {
                         .transition(.opacity)
                 }
             }
+            // El flotante entra y sale fundiéndose al desplazar. Implícita: el `withAnimation` de quien lo enciende no
+            // anima dentro de una pestaña (card 8atf).
+            .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingActions)
             .safeAreaInset(edge: .top) { joinIntentBanner }
             .safeAreaInset(edge: .top) { groupsSignOutReentryBanner }
             // El último `safeAreaInset` queda el MÁS ARRIBA, y ahí va: de los tres avisos del tab, este es el

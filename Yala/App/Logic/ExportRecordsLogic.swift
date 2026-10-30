@@ -56,12 +56,15 @@ nonisolated enum ExportRecordsLogic {
         isExcludeMode: Bool
     ) -> [ActiveFilter] {
         var result: [ActiveFilter] = []
-        if offeredAccounts > 0, markedAccounts < offeredAccounts { result.append(.accounts(markedAccounts)) }
+        // En «Ocultar» recorta lo que esté marcado, aunque sea todo; nada marcado no oculta nada (card k4iz).
+        if offeredAccounts > 0, isExcludeMode ? markedAccounts > 0 : markedAccounts < offeredAccounts {
+            result.append(.accounts(markedAccounts))
+        }
         if selectedSubcategories > 0, selectedSubcategories < visibleSubcategories {
             result.append(.categories(selectedSubcategories))
         }
         if selectedTags > 0, selectedTags < allTags { result.append(.tags(selectedTags)) }
-        if selectedNeeds < allNeeds { result.append(.needs(selectedNeeds)) }
+        if isExcludeMode ? selectedNeeds > 0 : selectedNeeds < allNeeds { result.append(.needs(selectedNeeds)) }
         if !selectedCurrencies.isEmpty, selectedCurrencies.count < availableCurrencies {
             result.append(.currencies(selectedCurrencies.sorted()))
         }
@@ -70,6 +73,33 @@ nonisolated enum ExportRecordsLogic {
         if !trimmed.isEmpty { result.append(.note(trimmed)) }
         if isExcludeMode { result.append(.hidingSelected) }
         return result
+    }
+
+    // MARK: - k4iz · Cambiar de modo
+
+    /// Lo marcado al cambiar de modo (card k4iz, opción A de Jürgen, 2026-10-30). El asistente arranca con todo marcado
+    /// en «Mostrar solo». En «Ocultar» lo marcado DESAPARECE, así que con lo de arriba no salía nada: al pasar a
+    /// «Ocultar» se vacía, sin tocar nada se exporta todo y lo que se marque después es lo que se quita. Al volver a
+    /// «Mostrar solo», todo marcado otra vez, como al abrir.
+    static func marks<ID: Hashable>(afterSwitchingToHide hiding: Bool, all: Set<ID>) -> Set<ID> {
+        hiding ? [] : all
+    }
+
+    /// ¿Hay cuentas con las que exportar? En «Mostrar solo» hace falta al menos una marcada; en «Ocultar», ninguna
+    /// marcada es «no ocultes ninguna» y se exportan todas.
+    static func hasAccountsToExport(markedAccounts: Int, isExcludeMode: Bool) -> Bool {
+        isExcludeMode || markedAccounts > 0
+    }
+
+    /// ¿La sección dice «Ninguna seleccionada»? En «Ocultar» con nada marcado: «Todas» diría que se oculta todo.
+    static func showsNoneMarked(marked: Int, isExcludeMode: Bool) -> Bool {
+        isExcludeMode && marked == 0
+    }
+
+    /// Lo que filtra de una lista con «todas» y «ninguna» (necesidades, etiquetas). En «Mostrar solo», todas marcadas no
+    /// recortan nada y viajan vacías. En «Ocultar», todas marcadas ocultan todo lo que tenga alguna: se mandan enteras.
+    static func effectiveMarks<T>(_ marked: [T], allCount: Int, isExcludeMode: Bool) -> [T] {
+        !isExcludeMode && allCount > 0 && marked.count == allCount ? [] : marked
     }
 
     /// La moneda del monto en Exportar: la única que queda a la vista, con la regla de Registros › Filtros

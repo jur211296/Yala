@@ -116,7 +116,11 @@ struct ExportAmountCurrencyTests {
         let code = codeOnly(try source("Yala/App/Views/ExportWizard/ExportRecordsView.swift"))
         #expect(code.contains("ExportRecordsLogic.amountCurrency("))
         // En «Ocultar», las monedas de lo que se exporta, no las de las cuentas marcadas (que se ocultan).
-        #expect(code.contains("available: isExcludeMode ? viewModel.currenciesLeftInView(hiding: selectedAccounts) : availableCurrencies,"))
+        // Desde la card k4iz (2026-10-30) la decisión vive en `availableCurrencies`, que también ofrece los chips.
+        #expect(code.contains("available: availableCurrencies,"))
+        let offered = (code.components(separatedBy: "private var availableCurrencies: [CurrencyCode] {").dropFirst().first ?? "")
+            .prefix(300).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        #expect(offered.contains("isExcludeMode ? viewModel.currenciesLeftInView(hiding: selectedAccounts) : viewModel.availableCurrencies(selectedAccounts: selectedAccounts)"))
         #expect(code.contains("amountCondition: effectiveAmountCondition,"))
         #expect(code.contains("amountIsActive: effectiveAmountCondition.isActive,"))
         #expect(code.contains("currencyCode: amountCurrencyCode,"))

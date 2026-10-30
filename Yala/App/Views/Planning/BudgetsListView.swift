@@ -99,6 +99,9 @@ struct BudgetsListView: View {
                     .transition(.opacity)
             }
         }
+        // El flotante entra y sale fundiéndose al desplazar. Implícita: el `withAnimation` de quien lo enciende no
+        // anima dentro de una pestaña (card 8atf).
+        .animation(reduceMotion ? nil : .easeInOut(duration: DS.Animation.normal), value: showFloatingNew)
         .yalaScreenBackground(.panel)
         .navigationDestination(for: BudgetNavigationID.self) { navID in
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)

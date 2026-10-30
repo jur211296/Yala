@@ -74,7 +74,8 @@ struct AppPreferencesTests {
         let defaults = Self.makeSuite()
         let prefs = AppPreferences(defaults: defaults)
 
-        #expect(prefs.defaultCurrencyCode == .pen)
+        // Sin divisa guardada, la de la región (card 2jj6): en el simulador es_PE, soles; en el CI en_US, dólares.
+        #expect(prefs.defaultCurrencyCode == CurrencyDefaults.preferred(storedRaw: nil))
         #expect(prefs.userName == "Usuario")
         #expect(prefs.colorfulIcons == true)
         #expect(prefs.showVariations == true)
@@ -394,7 +395,7 @@ struct AppPreferencesTests {
 
         let prefs = AppPreferences(defaults: defaults)
 
-        #expect(prefs.defaultCurrencyCode == .pen)         // fallback
+        #expect(prefs.defaultCurrencyCode == CurrencyDefaults.preferred(storedRaw: nil))  // fallback: la región
         #expect(prefs.insightsTone == .normal)             // fallback
         #expect(prefs.voiceLanguage == .system)            // fallback
         #expect(prefs.currencyDisplayFormat == .symbol)    // fallback al default

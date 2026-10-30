@@ -93,7 +93,9 @@ final class AppPreferences {
 
     // MARK: - Currency & Format
 
-    var defaultCurrencyCode: CurrencyCode = .pen {
+    /// Sin divisa guardada, la de la región del dispositivo: la misma que los widgets y el conversor
+    /// (`CurrencyDefaults.preferred`, card 2jj6). Antes, soles.
+    var defaultCurrencyCode: CurrencyCode = CurrencyDefaults.preferred(storedRaw: nil) {
         didSet {
             guard oldValue != defaultCurrencyCode else { return }
             persistString(defaultCurrencyCode.rawValue, forKey: Keys.defaultCurrencyCode, synced: true)
@@ -1048,9 +1050,10 @@ final class AppPreferences {
         defer { isLoadingFromDefaults = false }
 
         // Currency & Format
-        if let raw = defaults.string(forKey: Keys.defaultCurrencyCode), let code = CurrencyCode(rawValue: raw) {
-            defaultCurrencyCode = code
-        }
+        // Esta key se relee TAMBIÉN cuando falta (a diferencia del resto, que se relee por presencia): «Empezar de
+        // cero» la borra con la app abierta, y quedarse con la de antes pintaba otra divisa que los widgets, que caen
+        // a la de la región (card 2jj6). Cargar no escribe (`isLoadingFromDefaults`), así que no planta nada.
+        defaultCurrencyCode = CurrencyDefaults.preferred(storedRaw: defaults.string(forKey: Keys.defaultCurrencyCode))
         if let raw = defaults.string(forKey: Keys.secondaryCurrencies) {
             secondaryCurrencies = raw.isEmpty ? [] : raw.split(separator: ",").map { String($0) }
         }
@@ -1263,7 +1266,7 @@ final class AppPreferences {
         defer { isLoadingFromDefaults = false }
 
         // Currency & Format
-        defaultCurrencyCode = .pen
+        defaultCurrencyCode = CurrencyDefaults.preferred(storedRaw: nil)
         secondaryCurrencies = []
         currencyDisplayFormat = .symbol
         decimalPlaces = 2

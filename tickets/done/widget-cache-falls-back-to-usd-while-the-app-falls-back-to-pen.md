@@ -1,6 +1,6 @@
 ---
 id: widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen
-status: backlog
+status: done
 priority: low
 area: "widgets, currency"
 created: 2026-10-30
@@ -33,3 +33,10 @@ escribir. Es una ventana estrecha, por eso `low`.
 ## Hecho cuando
 
 Los tres lectores caen al mismo valor (lo natural: `CurrencyDefaults.currentPreferred`), con un test de paridad.
+
+## Cierre (2026-10-30, card 2jj6)
+
+Sin divisa guardada los lectores caen a la de la región (criterio de Jürgen del 2026-10-08, card 2h3c), decidida en un
+solo sitio: `CurrencyDefaults.preferred(storedRaw:regionCode:)`. La leen `AppPreferences` (también cuando la key
+desaparece con la app abierta), `WidgetDataCache` y `ExchangeRateService`. Test: `PreferredCurrencyFallbackParityTests`
+(paridad de lectores + source-scan de `?? ` sobre la key en `Yala/`).
