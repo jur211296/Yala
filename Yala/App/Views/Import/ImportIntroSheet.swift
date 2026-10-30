@@ -679,17 +679,18 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT] Calling import for \(isXLSX ? "XLSX" : "CSV")")
                 #endif
 
-                let result: TransactionImportResult
-                if isXLSX {
-                    result = try await TransactionCSVImportService.importXLSX(
-                        from: url,
-                        into: account,
-                        in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories,
-                        skippingInvalidRows: true
-                    )
-                } else {
-                    result = try await TransactionCSVImportService.importCSV(
+                // Importa y guarda; si algo falla, deshace lo insertado (H6 de la auditoría del import).
+                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
+                    if isXLSX {
+                        return try await TransactionCSVImportService.importXLSX(
+                            from: url,
+                            into: account,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories,
+                            skippingInvalidRows: true
+                        )
+                    }
+                    return try await TransactionCSVImportService.importCSV(
                         from: url,
                         into: account,
                         in: modelContext,
@@ -703,8 +704,6 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT] Import complete, count = \(createdCount)")
                 #endif
 
-                // Save to persist transactions
-                try modelContext.save()
                 WidgetDataCache.updateCache(context: modelContext)
                 SessionState.shared.incrementDataVersion()
                 #if DEBUG
@@ -792,17 +791,18 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT-MULTI] Calling import for \(isXLSX ? "XLSX" : "CSV") multi-currency")
                 #endif
 
-                let result: TransactionImportResult
-                if isXLSX {
-                    result = try await TransactionCSVImportService.importXLSXMultiCurrency(
-                        from: url,
-                        currencyAccountMap: currencyAccountMap,
-                        in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories,
-                        skippingInvalidRows: true
-                    )
-                } else {
-                    result = try await TransactionCSVImportService.importCSVMultiCurrency(
+                // Importa y guarda; si algo falla, deshace lo insertado (H6 de la auditoría del import).
+                let result = try await TransactionCSVImportService.importAndSave(in: modelContext) {
+                    if isXLSX {
+                        return try await TransactionCSVImportService.importXLSXMultiCurrency(
+                            from: url,
+                            currencyAccountMap: currencyAccountMap,
+                            in: modelContext,
+                            allowCreatingNewCategories: allowCreatingNewCategories,
+                            skippingInvalidRows: true
+                        )
+                    }
+                    return try await TransactionCSVImportService.importCSVMultiCurrency(
                         from: url,
                         currencyAccountMap: currencyAccountMap,
                         in: modelContext,
@@ -817,8 +817,6 @@ struct ImportIntroSheet: View {
                 print("🔵 [IMPORT-MULTI] Import complete, count = \(createdCount) in \(currencyCount) currencies")
                 #endif
 
-                // Save to persist transactions
-                try modelContext.save()
                 WidgetDataCache.updateCache(context: modelContext)
                 SessionState.shared.incrementDataVersion()
                 #if DEBUG

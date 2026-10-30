@@ -19,3 +19,11 @@ como dato. Y antes de llamar «grande» a una propuesta, mira qué piezas ya exi
 pregunta en vez de elegir. Le di la regla del dominio (contablemente, un saldo a una fecha va al tipo de ESA fecha)
 y eligió esa, la más cara. ⇒ en una decisión de cálculo financiero, la recomendada es la correcta según la regla del
 dominio, no la que ya está hecha; dilo en la primera ronda y te ahorras la segunda.
+
+**El límite (2026-10-29, S27l):** «completa» es completa por PRODUCTO, no por letra del encargo. El encargo pedía meter
+en la lista de transferencias los nombres de las subcategorías sembradas; la review vio que esa lista decide `isAnySystem`
+en toda la app (selectores, Grupos) y que «口座振替» es una domiciliación. Le di la acotada como recomendada, con los tres
+efectos medidos, y la eligió sin más. Y a mitad pensó en voz alta «¿no debería el import dejar fuera todo lo de sistema?»:
+separarle las tres clases (Grupos / transferencias / ajustes) con las cifras de SU archivo bastó para que eligiera la
+recomendada. ⇒ cuando lo literal del encargo tiene efectos fuera de su alcance, pregunta con los efectos medidos y
+recomienda el producto sano; y una duda suya amplia se contesta partiéndola en clases con sus datos.

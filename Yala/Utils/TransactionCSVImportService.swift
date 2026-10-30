@@ -217,14 +217,8 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            if draft.subcategory.isAnySystem {
-                let subcategoryName = draft.subcategory.name
-                if subcategoryName == L10n.Subcategory.balanceAdjustment {
-                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
-                } else {
-                    // All other system subcategories are transfers
-                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
-                }
+            if let systemType = TransactionCSVImportService.systemAdjustmentType(for: draft.subcategory) {
+                transaction.balanceAdjustmentType = systemType
             }
 
             context.insert(transaction)
@@ -1150,14 +1144,8 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            if draft.subcategory.isAnySystem {
-                let subcategoryName = draft.subcategory.name
-                if subcategoryName == L10n.Subcategory.balanceAdjustment {
-                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
-                } else {
-                    // All other system subcategories are transfers
-                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
-                }
+            if let systemType = TransactionCSVImportService.systemAdjustmentType(for: draft.subcategory) {
+                transaction.balanceAdjustmentType = systemType
             }
 
             context.insert(transaction)
@@ -1537,13 +1525,8 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !rateOutcome.quality.isExact
             )
 
-            if draft.subcategory.isAnySystem {
-                let subcategoryName = draft.subcategory.name
-                if subcategoryName == L10n.Subcategory.balanceAdjustment {
-                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
-                } else {
-                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
-                }
+            if let systemType = TransactionCSVImportService.systemAdjustmentType(for: draft.subcategory) {
+                transaction.balanceAdjustmentType = systemType
             }
 
             context.insert(transaction)
@@ -1706,13 +1689,8 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !rateOutcome.quality.isExact
             )
 
-            if draft.subcategory.isAnySystem {
-                let subcategoryName = draft.subcategory.name
-                if subcategoryName == L10n.Subcategory.balanceAdjustment {
-                    transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
-                } else {
-                    transaction.balanceAdjustmentType = TransactionItem.adjustmentTypeTransfer
-                }
+            if let systemType = TransactionCSVImportService.systemAdjustmentType(for: draft.subcategory) {
+                transaction.balanceAdjustmentType = systemType
             }
 
             context.insert(transaction)
@@ -1781,6 +1759,55 @@ enum TransactionCSVImportService {
         for pairing in pairings {
             idMap[pairing.txAID]?.transferPairID = pairing.pairID
             idMap[pairing.txBID]?.transferPairID = pairing.pairID
+        }
+    }
+}
+
+// MARK: - Movimientos de sistema y guardado atómico
+
+extension TransactionCSVImportService {
+
+    /// El ÚNICO sitio donde el import decide si una fila es ajuste de saldo, transferencia o un
+    /// movimiento normal (`nil`). Lo llaman las cuatro rutas (CSV y Excel, una cuenta y varias divisas).
+    ///
+    /// El ajuste se reconoce con los nombres de TODOS los idiomas (`balanceAdjustmentNames`), no con el
+    /// texto del idioma actual: «Ajustes de saldo» sembrado en español e importado con el teléfono en
+    /// inglés sigue siendo ajuste. Cualquier otra subcategoría de sistema es transferencia, como antes.
+    static func systemAdjustmentType(for subcategory: Subcategory) -> String? {
+        guard subcategory.isAnySystem else { return nil }
+        if Subcategory.balanceAdjustmentNames.contains(subcategory.name) {
+            return InitialBalanceService.typeAdjustment
+        }
+        return TransactionItem.adjustmentTypeTransfer
+    }
+
+    /// Importa y guarda en `context`; si la importación o el guardado fallan, deshace lo insertado
+    /// (`rollback()`) antes de relanzar el error. Sin esto, las categorías, etiquetas y movimientos que el
+    /// import ya había insertado se quedaban pendientes en el contexto principal y los guardaba el
+    /// siguiente `save()` de cualquier pantalla.
+    ///
+    /// El rollback solo puede llevarse lo del import: lo que otra pantalla dejó pendiente se guarda
+    /// ANTES de empezar (es lo mismo que haría el `save()` del import si todo sale bien), y el cuerpo del
+    /// import no suspende (todo corre en el main actor), así que nadie más ensucia el contexto entre la
+    /// primera inserción y el rollback. Un `rollback()` a secas tiraría también lo ajeno: es lo que
+    /// `CurrencyChangeService` evita restaurando registro a registro.
+    ///
+    /// - Parameter save: seam de tests para forzar el fallo del guardado; producción usa `context.save()`.
+    @MainActor
+    static func importAndSave<Output>(
+        in context: ModelContext,
+        save: (ModelContext) throws -> Void = { try $0.save() },
+        _ work: () async throws -> Output
+    ) async throws -> Output {
+        // Si este guardado falla, no se ha importado nada y lo pendiente se queda como estaba.
+        if context.hasChanges { try save(context) }
+        do {
+            let result = try await work()
+            try save(context)
+            return result
+        } catch {
+            context.rollback()
+            throw error
         }
     }
 }

@@ -111,14 +111,30 @@ extension Subcategory {
         "Saldo-aanpassing", "Korekta salda", "残高調整", "余额调整",
     ]
 
-    /// Transfer subcategory names (all localizations)
+    /// Transfer subcategory names (all localizations).
+    ///
+    /// Los valores de `transfer.categoryName` de los 16 `.lproj`: el nombre de la subcategoría que Yala crea
+    /// para sus transferencias. Lo exige `TransferNamesParityTests`: un idioma nuevo sin su nombre aquí haría
+    /// que el import contara sus transferencias como gasto e ingreso. «Transferencia entre contas» (sin
+    /// tilde) es un nombre viejo.
+    ///
+    /// **Las subcategorías SEMBRADAS de transferencia (`subcategory.accountTransfer` / `…Other`) no entran
+    /// con su propio nombre** (decisión de Jürgen, 2026-10-29): en en, de, nl, ja y zh son subcategorías
+    /// normales que el usuario elige a mano, y esta lista también decide `isAnySystem` en toda la app
+    /// (selectores, borrado, el puente de Grupos). En ja «口座振替» es además una domiciliación, no una
+    /// transferencia. Donde su texto coincide con `transfer.categoryName` (es, fr, it, pl, pt) ya son de
+    /// sistema por esa coincidencia. Separarlas por papel y no por nombre es el arreglo de fondo.
     static let transferNames: Set<String> = [
         "Transferencia entre cuentas",
         "Transfer between accounts",
         "Überweisung zwischen Konten",
         "Virement entre comptes",
         "Trasferimento tra conti",
-        "Transferencia entre contas",
+        "Transferência entre contas", "Transferencia entre contas",
+        "Overschrijving tussen rekeningen",
+        "Transfer między kontami",
+        "口座間振替",
+        "账户间转账",
     ]
 
     /// System subcategory names that cannot be deleted (all localizations)
