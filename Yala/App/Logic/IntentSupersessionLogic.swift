@@ -25,6 +25,9 @@ struct SupersessionRule {
     let dropsIncoming: Bool
     /// Human-readable tag for telemetry/logs.
     let description: String
+    /// El entrante sobra si en la cola ya espera algo que lo cubre (`nil` = no mira la cola). Es la mitad simétrica de
+    /// `dropsExisting`: aquella tira lo que llegó ANTES; esta, lo que llega DESPUÉS.
+    var dropsIncomingWhenQueued: ((RouterIntent) -> Bool)? = nil
 }
 
 enum IntentSupersessionLogic {
@@ -33,6 +36,7 @@ enum IntentSupersessionLogic {
     /// Active rules (consumed by RouterEntryGate):
     ///   - `.navigate(.inbox)` drops queued `.showInboxAlert`
     ///   - `.presentInboxSheet` drops queued `.showInboxAlert`
+    ///   - an incoming `.showInboxAlert` is dropped while `.navigate(.inbox)` or `.presentInboxSheet` is queued
     ///     (plus a sibling check in the gate consults `SceneNavigation.isInboxSheetVisible`
     ///     to also drop new `.showInboxAlert` arriving AFTER the sheet opened)
     ///   - `.presentTrialExpired` drops queued `.presentTrialOffer`
@@ -49,6 +53,18 @@ enum IntentSupersessionLogic {
             dropsExisting: { if case .showInboxAlert = $0 { return true }; return false },
             dropsIncoming: false,
             description: "presentInboxSheet_supersedes_showInboxAlert"
+        ),
+        // **La otra mitad de las dos reglas de arriba (2026-10-30, ticket
+        // `notification-tap-opens-inbox-then-inbox-notice-pops-after`).** Tocar la notificación de Apple Pay o de Siri
+        // encola `.navigate(.inbox)`, y el mismo primer plano convierte lo encolado en borradores y pide el aviso. Si el
+        // aviso llegaba DESPUÉS de la orden de abrir la Bandeja —con ella o con `.presentInboxSheet` aún en cola—, ninguna
+        // regla lo veía: esperaba detrás de la hoja y salía al cerrarla, contando lo que la persona acababa de ver.
+        SupersessionRule(
+            triggers: { if case .showInboxAlert = $0 { return true }; return false },
+            dropsExisting: { _ in false },
+            dropsIncoming: false,
+            description: "queuedInboxOpening_supersedes_incomingShowInboxAlert",
+            dropsIncomingWhenQueued: opensInbox
         ),
         SupersessionRule(
             triggers: { if case .presentTrialExpired = $0 { return true }; return false },
@@ -84,6 +100,15 @@ enum IntentSupersessionLogic {
         ),
     ]
 
+    /// Lo que abre la hoja de la Bandeja. Con algo así en cola, el aviso de borradores nuevos sobra: si llega, se tira;
+    /// si ya está en pantalla, `ContentView` lo cierra para que la Bandeja salga sin esperar a que lo contesten.
+    nonisolated static func opensInbox(_ intent: RouterIntent) -> Bool {
+        switch intent {
+        case .navigate(.inbox), .presentInboxSheet: return true
+        default: return false
+        }
+    }
+
     /// Returns `(dropIDs, acceptIncoming)` for an incoming intent against a
     /// snapshot of the current queue. `acceptIncoming` is `false` only if any
     /// rule sets `dropsIncoming = true`.
@@ -99,6 +124,7 @@ enum IntentSupersessionLogic {
                 drops.insert(existing.id)
             }
             if rule.dropsIncoming { accept = false }
+            if let covering = rule.dropsIncomingWhenQueued, queued.contains(where: covering) { accept = false }
         }
         return (drops, accept)
     }

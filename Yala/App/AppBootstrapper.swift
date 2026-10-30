@@ -758,6 +758,21 @@ final class AppBootstrapper {
 
         #if DEBUG
         if uiTestActive { await applyUITestSeed(context: context) }
+        // Toque fingido en la notificación de Apple Pay: el pago que la notificación anuncia (los borradores de la semilla
+        // son manuales y el aviso no los cuenta), materializado como en el paso 4, y el paso 5 repetido ahora que hay
+        // cuentas, delante del paso 20 como en producción.
+        if uiTestActive, UITestHooks.inboxNotificationTapMode != nil {
+            if UITestHooks.notificationTapLink == "inbox" {
+                UITestHooks.materializeApplePayPayment(merchant: "Wong", context: context)
+            }
+            checkForPendingInboxDrafts(context: context)
+        }
+        if uiTestActive, UITestHooks.inboxNotificationTapMode == "foreground" {
+            Task { @MainActor in
+                do { try await Task.sleep(for: .seconds(4)) } catch { return }
+                NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil)
+            }
+        }
         #endif
 
         // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
@@ -2286,6 +2301,15 @@ final class AppBootstrapper {
             await refreshSubscriptionStatus()
         }
 
+        #if DEBUG
+        // Toque fingido (warm): el pago de Apple Pay que la automatización encoló con la app fuera, y el toque si llega
+        // antes que el aviso. Solo en la primera vuelta a primer plano.
+        let uitestWarmTap = uitestInboxNotificationWarmTapIfDue()
+        if uitestWarmTap == "warm-tap-first" {
+            NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil)
+        }
+        #endif
+
         // Process due scheduled payments (creates inbox drafts for warm resume)
         // Throttle: skip if bootstrap just ran (< 30 seconds ago) to prevent duplicate drafts
         let shouldProcessPayments = Date.now.timeIntervalSince(lastProcessDuePaymentsDate) > 30.0
@@ -2305,7 +2329,7 @@ final class AppBootstrapper {
         // La re-emisión del hook aquí es load-bearing: el intent es transient y
         // la emisión temprana del bootstrap puede caer en un blip de scenePhase
         // (resetTransients) antes del primer drain — dedup por id cubre duplicados.
-        if UITestHooks.isActive {
+        if UITestHooks.isActive, UITestHooks.inboxNotificationTapMode == nil {
             if let notification = UITestHooks.inboxAlertPayload {
                 RouterEntryGate.shared.submit(.showInboxAlert(notification))
             }
@@ -2315,6 +2339,12 @@ final class AppBootstrapper {
         } else {
             checkForPendingInboxDrafts(context: context)
         }
+        #if DEBUG
+        // El toque que llega después del aviso: `didReceive` lo entrega en otra vuelta del main actor.
+        if uitestWarmTap == "warm-check-first" {
+            Task { @MainActor in NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil) }
+        }
+        #endif
 
         checkForPendingControlAction()
 
@@ -3258,17 +3288,48 @@ final class AppBootstrapper {
         // una re-corrida del productor antes del drain recomputa el mismo set.
         pendingInboxSignaturesToBurn = newSignatures
 
+        // Con la Bandeja abierta en la ventana que está delante, lo nuevo ya se ve en ella: se da por avisado sin pedir
+        // el aviso (la puerta lo tiraría igual y, sin quemar, volvía en el primer plano siguiente con los mismos
+        // borradores). Abierta solo en una ventana de detrás (iPad), no se quema: la puerta lo tira y el aviso vuelve
+        // cuando esa hoja se cierre, como antes.
+        if SceneRegistry.shared.routingNavigation?.isInboxSheetVisible == true {
+            commitPendingInboxAlertSignatures()
+            return
+        }
+
         if !notification.isEmpty {
             // Enqueue — readiness gating handles splash timing.
             RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
     }
 
+    #if DEBUG
+    private var uitestWarmTapDone = false
+    /// Lo enciende `YalaApp.handleScenePhase` al pasar a segundo plano: el `.active` del arranque no es una vuelta.
+    var uitestWentToBackground = false
+
+    /// Devuelve el modo `warm-…` de `-uitest-inbox-notification-tap` la PRIMERA vez que la app vuelve a primer plano (no
+    /// en el `.active` del arranque) y encola antes un pago de Apple Pay en el App Group, como la automatización de
+    /// Wallet con la app fuera. Las vueltas siguientes no hacen nada: sirven para comprobar que el aviso no vuelve.
+    private func uitestInboxNotificationWarmTapIfDue() -> String? {
+        guard let mode = UITestHooks.inboxNotificationTapMode, mode.hasPrefix("warm-"),
+              uitestWentToBackground, isInitialized, !uitestWarmTapDone else { return nil }
+        uitestWarmTapDone = true
+        if UITestHooks.notificationTapLink == "inbox" {
+            ApplePayPendingStore.append(ApplePayPendingExpense(
+                rawAmount: "S/ 25,90", merchant: "Tambo", savedAt: Date.now.timeIntervalSince1970
+            ))
+        }
+        return mode
+    }
+    #endif
+
     /// Quema las firmas del último `checkForPendingInboxDrafts` — llamado por el
-    /// drain de `.showInboxAlert` en ContentView cuando el alert SÍ se presenta.
-    /// Residual aceptado: si el gate dropea el alert (inbox sheet visible /
-    /// supersession por navigate(.inbox)), las firmas no se queman y drafts aún
-    /// `pending` pueden re-alertar en el próximo foreground (molestia > pérdida).
+    /// drain de `.showInboxAlert` en ContentView cuando el alert SÍ se presenta, y
+    /// también cuando la Bandeja aparece (`RouterEntryGate.inboxSheetDidAppear`) o
+    /// el chequeo corre con ella abierta: lo que el aviso contaría ya se vio.
+    /// Si el aviso se tira y la Bandeja no llega a abrirse, las firmas no se queman
+    /// y los borradores aún `pending` re-avisan en el próximo primer plano.
     func commitPendingInboxAlertSignatures() {
         guard !pendingInboxSignaturesToBurn.isEmpty else { return }
         var all = loadProcessedInboxSignatures()

@@ -24,6 +24,12 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         // toque en una notificación se entrega justo después de este método, y sin delegado se pierde. Lo que el toque
         // pida antes de que acabe el arranque se aplaza en `DeferredIntentBuffer` y lo drena el paso 20.
         NotificationService.installAsCenterDelegate()
+        #if DEBUG
+        // Toque fingido con la app cerrada: llega aquí, justo después de instalar el delegado, como el real.
+        if UITestHooks.inboxNotificationTapMode == "cold" {
+            NotificationService.routeTap(deepLink: UITestHooks.notificationTapLink, targetSessionID: nil)
+        }
+        #endif
 
         // CKSyncEngine requires APNs registration for silent push notifications.
         // The engine handles push routing internally via CKDatabaseSubscription.
