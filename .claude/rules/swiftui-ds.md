@@ -371,7 +371,8 @@ paths:
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
 - NUNCA aplicar `.background(theme.background)`, `.background(.thBackground)` ni default iOS sin background.
 - Forms/Lists dentro de sheet → `.scrollContentBackground(.hidden)` MANUAL antes del modifier (el modifier no lo hace automático para preservar predictibilidad).
-- **Regla SSOT (reestructura 2026-06-08)**: el fondo lo determina el **contenedor de presentación RAÍZ** del stack. Una vista navegada (push) HEREDA el fondo de su stack — dentro de un tab → `.panel`; dentro de un sheet → el del sheet. **Un `.sheet` NUNCA es `.panel`.**
+- **Regla SSOT (reestructura 2026-06-08)**: el fondo lo determina el **contenedor de presentación RAÍZ** del stack. Una vista navegada (push) HEREDA el fondo de su stack — dentro de un tab → `.panel`; dentro de un sheet → el del sheet. **Un `.sheet` NUNCA es `.panel`.** Excepción única: la hoja «Gráficas» del flujo de caja (`CashFlowChartsSheet`, 2026-10-30) va en `.panel`, porque sus tarjetas de gráficas son las de Tendencias (`panelCard`, translúcidas en oscuro) y sobre el fondo plano salían grises.
+- **Grupos va en `.subtle`, no en `.panel` (Jürgen, 2026-10-30: «blanco nomás en todo Grupos»)**: lista, columna de detalle y detalle de grupo, sin el degradado de las demás pestañas.
 - Variantes (`YalaBackgroundVariant`) — 4 (`.compact` eliminada):
   - `.panel` (default) — PanelBackgroundView gradient temático. SOLO vistas COMPLETAS: tab roots, vistas navegadas (push), fullScreenCover normal.
   - `.subtle` — `theme.background` plano. CUALQUIER sheet desde el bottom (sin detents o `[.large]`); TODO el stack del sheet de Profile (los ~20 Settings + sub-navegación); y success/celebración.

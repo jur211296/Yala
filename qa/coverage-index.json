@@ -252,9 +252,9 @@
         "F-STA-06"
       ],
       "classification": "agentic",
-      "coverage": "device-qa | 2026-10-16 (lote 18): la leyenda del avance diario dice «Recibido» en una línea de ingreso (decía «Gastado»); verificado en simulador. | 2026-10-21 (L18-12): cada gráfica dice de qué período es, marca «Hoy», el KPI dice qué mide y «Gastos por revisar» usa la fila de Presupuestos con el promedio explicado; el estimado de la gráfica diaria pasa a la izquierda (se pisaba con el eje). Verificado en simulador con capturas. | 2026-10-25 (lote 12.5, cashflow-ai-comment-does-not-check-pro): la frase de IA y el chip encendido exigen Pro (CashFlowAICommentGate). Unit: CashFlowAICommentGateTests.",
+      "coverage": "device-qa | 2026-10-16 (lote 18): la leyenda del avance diario dice «Recibido» en una línea de ingreso (decía «Gastado»); verificado en simulador. | 2026-10-21 (L18-12): cada gráfica dice de qué período es, marca «Hoy», el KPI dice qué mide y «Gastos por revisar» usa la fila de Presupuestos con el promedio explicado; el estimado de la gráfica diaria pasa a la izquierda (se pisaba con el eje). Verificado en simulador con capturas. | 2026-10-25 (lote 12.5, cashflow-ai-comment-does-not-check-pro): la frase de IA y el chip encendido exigen Pro (CashFlowAICommentGate). Unit: CashFlowAICommentGateTests. | 2026-10-30 (card bvpn): la hoja «Gráficas» pasa a fondo `.panel` para que sus tarjetas salgan como las de Tendencias y no grises; capturas antes/después claro y oscuro en el PR.",
       "owner": "",
-      "lastVerified": "2026-10-26"
+      "lastVerified": "2026-10-30"
     },
     {
       "area": "cash-flow-plan",

@@ -191,7 +191,8 @@ struct GroupDetailView: View {
                 newExpenseFAB
             }
         }
-        .yalaScreenBackground(.panel)
+        // Fondo plano del tema, como la lista de grupos (Jürgen, 2026-10-30).
+        .yalaScreenBackground(.subtle)
         .navigationChipsInset {
             navigationChipsBar
         }

@@ -72,11 +72,14 @@ struct WelcomeFormScreen<Content: View>: View {
         }
     }
 
+    /// Centrado, como la cabecera de los pasos del onboarding (Jürgen, 2026-10-30: «mejor centrado todo como el
+    /// onboarding»). Las filas de opción de la tarjeta siguen alineadas a la izquierda, como las del onboarding.
     private var header: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(DS.Typography.welcomeHeadline)
                 .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
 
@@ -88,13 +91,14 @@ struct WelcomeFormScreen<Content: View>: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private func subtitleText(_ text: String) -> some View {
         Text(text)
             .font(DS.Typography.body)
             .foregroundStyle(.white.opacity(0.7))
+            .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -122,8 +126,9 @@ struct WelcomeFormLabel: View {
         Text(text)
             .font(DS.Typography.subheadline)
             .foregroundStyle(.white.opacity(0.7))
+            .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 

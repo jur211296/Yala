@@ -54,19 +54,16 @@ struct WelcomeExistingChooserView: View {
     /// haber entrado con Apple o Google. Fuera de la tarjeta, entre el título y lo que se elige, con un icono que la
     /// marca como ayuda y no como una opción más.
     private var dontRememberHelp: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.sm) {
-            Image(systemName: "questionmark.circle.fill")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(0.85))
-                .accessibilityHidden(true)
-            Text(L10n.UXLote6.existingDontRemember)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(0.85))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("welcome_existing_dont_remember")
+        // El icono va DENTRO del texto: con la frase centrada (2026-10-30), un `HStack` dejaba el icono pegado al borde
+        // y las líneas centradas en el hueco de al lado, corridas respecto al titular. A VoiceOver solo le llega la frase.
+        Text("\(Image(systemName: "questionmark.circle.fill")) \(L10n.UXLote6.existingDontRemember)")
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.white.opacity(0.85))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .accessibilityLabel(L10n.UXLote6.existingDontRemember)
+            .accessibilityIdentifier("welcome_existing_dont_remember")
     }
 
     var body: some View {
@@ -91,8 +88,9 @@ struct WelcomeExistingChooserView: View {
                         Text(L10n.Settings.yalaAccountLinkingNote)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .accessibilityIdentifier("welcome_existing_provider_note")
                     }
                 }
