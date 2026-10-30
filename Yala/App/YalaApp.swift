@@ -244,6 +244,9 @@ struct YalaApp: App {
             // Drop transient router intents. Persistence-backed intents
             // re-emit on next .active via handleBecameActive().
             AppRouter.shared.resetTransients()
+            #if DEBUG
+            if UITestHooks.isActive { bootstrapper.uitestWentToBackground = true }
+            #endif
         }
     }
 }

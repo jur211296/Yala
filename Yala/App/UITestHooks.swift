@@ -11,6 +11,7 @@
 
 import Foundation
 import Observation
+import SwiftData
 
 @MainActor
 @Observable
@@ -692,6 +693,50 @@ final class UITestHooks {
         return nil
         #endif
     }
+
+    /// `-uitest-inbox-notification-tap <cold|warm-tap-first|warm-check-first|foreground>`: finge el toque en una
+    /// notificación por el mismo `NotificationService.routeTap` que el toque real, con el aviso de la Bandeja pedido por
+    /// su productor de verdad (`checkForPendingInboxDrafts`), no por la muestra de `-uitest-inbox-alert`. El simulador no
+    /// deja tocar el banner (`simctl push` sin permiso no llega). El destino es `-uitest-notification-tap-link <deepLink>`
+    /// (por defecto `inbox`, el de la notificación de Apple Pay).
+    /// - `cold`: el toque llega en `didFinishLaunching` (se aplaza hasta el paso 20, como con la app cerrada).
+    /// - `warm-…`: en la primera vuelta a primer plano. Con `inbox`, además, un pago de Apple Pay encolado en el App
+    ///   Group mientras la app estaba fuera; el toque llega antes (`tap-first`) o después (`check-first`) del aviso: en
+    ///   el iPhone el orden de `didReceive` y del `.active` no está medido, y los dos tienen que acabar igual.
+    /// - `foreground`: con la app delante y quieta, unos segundos después del arranque (banner de `willPresent`).
+    /// Ticket `notification-tap-opens-inbox-then-inbox-notice-pops-after`.
+    nonisolated static var inboxNotificationTapMode: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-inbox-notification-tap", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// El `deepLink` del toque fingido de `-uitest-inbox-notification-tap`.
+    nonisolated static var notificationTapLink: String {
+        #if DEBUG
+        guard isActive else { return "inbox" }
+        return parseValue(after: "-uitest-notification-tap-link", from: ProcessInfo.processInfo.arguments) ?? "inbox"
+        #else
+        return "inbox"
+        #endif
+    }
+
+    #if DEBUG
+    /// El pago de Apple Pay que anuncia la notificación fingida: encolado en el App Group como lo deja la automatización
+    /// de Wallet y materializado por el mismo helper que el arranque (los borradores de la semilla son manuales y el aviso
+    /// de la Bandeja no los cuenta). Aquí y no en `AppBootstrapper`: `PrivateExitInboundCaptureTests` cuenta los tres
+    /// drenajes de producción de ese fichero.
+    @MainActor
+    static func materializeApplePayPayment(merchant: String, context: ModelContext) {
+        ApplePayPendingStore.append(ApplePayPendingExpense(
+            rawAmount: "S/ 18,50", merchant: merchant, savedAt: Date.now.timeIntervalSince1970
+        ))
+        InboundCaptureDrain.drain(context: context)
+    }
+    #endif
 
     /// Lo que encola el aviso de la Bandeja simulado, o `nil` sin ninguno de los dos args.
     static var inboxAlertPayload: PendingInboxNotification? {
