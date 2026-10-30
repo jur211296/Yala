@@ -93,6 +93,9 @@ final class ScheduledPaymentNotificationService {
         // veces. Presupuestos, informes y liquidaciones ya tenían su guarda; esta era la que faltaba. La que llega durante
         // otra no se tira: se apunta y se repite al terminar, porque puede venir de algo que cambió los datos (el borrado
         // parcial de `DataWipeService` la pide) y la pasada en vuelo ya los leyó.
+        // Card p0iu: la pausa va PRIMERO, antes que la guarda de reentrada (`UsageModeWiringTests`). En pausa no se
+        // apunta repetición, igual que antes de la guarda: la próxima vuelta a primer plano lanza otra pasada.
+        guard !PersonalRemindersPause.isPaused() else { return }
         guard !isCheckingPayments else {
             paymentsRecheckPending = true
             return
@@ -107,6 +110,7 @@ final class ScheduledPaymentNotificationService {
 
     private func performPaymentNotificationChecks() async {
         // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        // Se vuelve a mirar en cada pasada: una repetición del `repeat` puede llegar después de activarse la pausa.
         guard !PersonalRemindersPause.isPaused() else { return }
         guard let context = modelContext else { return }
         guard await isAuthorized() else { return }
@@ -535,6 +539,9 @@ final class ScheduledPaymentNotificationService {
     /// ante fetch-error.
     func checkAndNotifyCreditCardPayments() async {
         // Una pasada a la vez, y la que llega durante otra se repite al terminar: lo mismo que `checkAllPaymentNotifications`.
+        // Card p0iu: la pausa va PRIMERO, antes que la guarda de reentrada (`UsageModeWiringTests`). En pausa no se
+        // apunta repetición, igual que antes de la guarda: la próxima vuelta a primer plano lanza otra pasada.
+        guard !PersonalRemindersPause.isPaused() else { return }
         guard !isCheckingCreditCards else {
             creditCardsRecheckPending = true
             return
@@ -549,6 +556,7 @@ final class ScheduledPaymentNotificationService {
 
     private func performCreditCardPaymentChecks() async {
         // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
+        // Se vuelve a mirar en cada pasada: una repetición del `repeat` puede llegar después de activarse la pausa.
         guard !PersonalRemindersPause.isPaused() else { return }
         guard let context = modelContext else { return }
         guard await isAuthorized() else { return }
