@@ -1486,9 +1486,9 @@
         "F-IMP-02"
       ],
       "classification": "manual",
-      "coverage": "manual · 2026-10-17 (UX 2.2 · lote 7): vista previa antes de importar, columnas necesarias, filas malas que se saltan y se listan, errores traducidos. unit:YalaTests/UXAudit22Lote7LogicTests + unit:YalaTests/TransactionCSVImportServiceTests. · 2026-10-22: los selectores no ofrecen la cuenta de Grupos y «Importación completada» sale al cerrarse la hoja (device-qa en iPhone); unit:YalaTests/ImportAccountChoiceAndResultTests.",
+      "coverage": "manual · 2026-10-29 (S27l, H6 a27x): un import que falla tras insertar deshace lo insertado (`importAndSave`). unit:YalaTests/ImportFailureRollbackTests. · 2026-10-17 (UX 2.2 · lote 7): vista previa antes de importar, columnas necesarias, filas malas que se saltan y se listan, errores traducidos. unit:YalaTests/UXAudit22Lote7LogicTests + unit:YalaTests/TransactionCSVImportServiceTests. · 2026-10-22: los selectores no ofrecen la cuenta de Grupos y «Importación completada» sale al cerrarse la hoja (device-qa en iPhone); unit:YalaTests/ImportAccountChoiceAndResultTests.",
       "owner": "",
-      "lastVerified": "2026-10-22"
+      "lastVerified": "2026-10-29"
     },
     {
       "area": "inbox-convert-to-group",
@@ -2678,9 +2678,9 @@
         "F-IMP-02"
       ],
       "classification": "manual",
-      "coverage": "manual || 2026-10-25 (lote 12.6, d4od): la fila importada va a la categoría de la naturaleza de su signo; reembolsos y transferencias de «Otros» se quedan donde está su subcategoría. unit:YalaTests/CategoryImportNatureLogicTests + YalaTests/CSVImportCategoryNatureTests.",
+      "coverage": "manual || 2026-10-29 (S27l, H2 ynsq): transferencias y ajustes importados se reconocen con los nombres de los 16 idiomas en las cuatro rutas (`systemAdjustmentType`), y el ajuste ya no depende del idioma actual. unit:YalaTests/TransferNamesParityTests + YalaTests/ImportTransfersByLanguageTests. | 2026-10-25 (lote 12.6, d4od): la fila importada va a la categoría de la naturaleza de su signo; reembolsos y transferencias de «Otros» se quedan donde está su subcategoría. unit:YalaTests/CategoryImportNatureLogicTests + YalaTests/CSVImportCategoryNatureTests.",
       "owner": "",
-      "lastVerified": "2026-10-25"
+      "lastVerified": "2026-10-29"
     },
     {
       "area": "transactions-quick-actions-favorites",
