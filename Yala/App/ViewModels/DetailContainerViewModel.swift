@@ -172,10 +172,17 @@ final class DetailContainerViewModel {
     }
 
     /// Compute date range of all transactions (for custom period picker limits)
+    ///
+    /// Una pasada (mínimo y máximo), no un `sorted()`: Registros y Estadísticas lo leen en su `body`, así que corre en
+    /// cada repintado sobre todo el histórico (2026-10-30, encargo `eficiencia-carga-por-vista`). Mismo resultado.
     func computeTransactionDateRange() -> (start: Date, end: Date) {
-        let sortedDates = allTransactions.map(\.date).sorted()
-        let start = sortedDates.first ?? Date.now
-        let end = sortedDates.last ?? Date.now
+        guard var start = allTransactions.first?.date else { return (Date.now, Date.now) }
+        var end = start
+        for tx in allTransactions.dropFirst() {
+            let date = tx.date
+            if date < start { start = date }
+            if date > end { end = date }
+        }
         return (start, end)
     }
 }

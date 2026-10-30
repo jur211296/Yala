@@ -2661,6 +2661,10 @@ final class PanelViewModel {
                 loadData()
             }
             performCalculation()
+            if isReady {
+                LoadTimeMarks.ready(.coldLaunch)
+                LoadTimeMarks.ready(.panel)
+            }
         }
     }
 

@@ -257,6 +257,7 @@ final class GroupsViewModel {
             currentUserMemberIDs: archivedMemberIDs
         )
         if newArchivedSummary != archivedSummary { archivedSummary = newArchivedSummary }
+        LoadTimeMarks.ready(.groups)
     }
 
     /// Fuerza un fetch remoto y recarga la lista (refresh acotado a Grupos, no un bump global de

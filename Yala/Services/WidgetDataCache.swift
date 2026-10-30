@@ -286,7 +286,8 @@ enum WidgetDataCache {
             return
         }
 
-        let built = buildSnapshot(context: context)
+        // Lo que tarda en estar la foto que leen los widgets (y Siri): la extensión solo la decodifica.
+        let built = LoadTimeMarks.measure(.widgetCache) { buildSnapshot(context: context) }
         saveSnapshot(built.widget)
         lastBuiltAt = Date.now
         // La foto de Siri sale de los MISMOS números, en su propia clave (`SiriFinanceSnapshot`): así Siri y los widgets

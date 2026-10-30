@@ -40,7 +40,10 @@ struct ProfileToolbarButton: View {
     // MARK: - Body
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            LoadTimeMarks.begin(.settings)
+            action()
+        } label: {
             avatar
         }
         .buttonStyle(.plain)

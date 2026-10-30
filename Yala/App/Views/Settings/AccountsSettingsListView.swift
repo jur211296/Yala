@@ -125,8 +125,10 @@ struct AccountsSettingsListView: View {
             viewModel.isPresentingCreateAccount = true
         }
         .onAppear {
+            LoadTimeMarks.begin(.settingsAccounts)
             viewModel.setContext(modelContext)
             viewModel.accountsSortOrderNames = appPreferences.accountsSortOrderNames
+            LoadTimeMarks.ready(.settingsAccounts)
         }
         .onChange(of: appPreferences.accountsSortOrderNames) { _, newValue in
             viewModel.accountsSortOrderNames = newValue

@@ -108,6 +108,10 @@ enum DevSeedProfile: String {
     /// El formulario de registro con favoritos: las dos cuentas de siempre, sin registros, y cuatro favoritos (un gasto, un
     /// ingreso, una transferencia con destino y una transferencia vieja sin destino). UX 2.2 · L2-13 y L2-14.
     case formulario
+    /// Medir los tiempos de carga con datos realistas: la vida personal de `.realista` (730 días, varias monedas,
+    /// presupuestos, pagos planificados, borradores en la Bandeja) más los grupos de `.grupos` y un plan de flujo de caja
+    /// (`DevSeedCashFlow`). Es el corpus de `LoadTimesUITests`.
+    case rendimiento
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -121,7 +125,7 @@ enum DevSeedProfile: String {
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
              .tarjetaDosLineas, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
-        case .realista, .ficha: return 730
+        case .realista, .ficha, .rendimiento: return 730
         case .pesado: return 3650
         }
     }
@@ -130,7 +134,7 @@ enum DevSeedProfile: String {
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
             || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
-            || self == .fichaMX || self == .fichaMXVida || self == .ficha
+            || self == .fichaMX || self == .fichaMXVida || self == .ficha || self == .rendimiento
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
@@ -382,6 +386,14 @@ final class DevSeedService {
             } catch {
                 print("DevSeedService: Error removing user categories for solo-grupos-tras-aviso: \(error)")
             }
+        }
+
+        // Step 10-ter: el plan de flujo de caja del perfil de medida (sin plan, Flujo de caja no proyecta nada).
+        if profile == .rendimiento {
+            do { try context.save() } catch {
+                print("DevSeedService: rendimiento pre-cashflow save error: \(error)")
+            }
+            DevSeedCashFlow.create(in: context, currencyCode: CurrencyDefaults.currentPreferred)
         }
 
         // Final save

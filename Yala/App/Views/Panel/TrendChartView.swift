@@ -109,19 +109,25 @@ struct TrendChartView: View {
             let interpolation: InterpolationMethod = .monotone
             let solidLineWidth: CGFloat = compact ? 3 : 2
 
+            // Los rótulos de los ejes, traducidos UNA vez por repintado y no en cada punto: con «Todo» son cientos de
+            // puntos y seis búsquedas de `L10n` por punto (2026-10-30, encargo `eficiencia-carga-por-vista`).
+            let dateLabel = L10n.Common.date
+            let amountLabel = L10n.Common.amount
+            let baseLabel = L10n.Common.base
+
             // Past & Today: Solid Line & Area
             ForEach(pastPoints, id: \.date) { point in
                 AreaMark(
-                    x: .value(L10n.Common.date, point.date),
-                    yStart: .value(L10n.Common.base, yBase),
-                    yEnd: .value(L10n.Common.amount, point.value)
+                    x: .value(dateLabel, point.date),
+                    yStart: .value(baseLabel, yBase),
+                    yEnd: .value(amountLabel, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .foregroundStyle(areaGradient.opacity(dimOpacity))
 
                 LineMark(
-                    x: .value(L10n.Common.date, point.date),
-                    y: .value(L10n.Common.amount, point.value)
+                    x: .value(dateLabel, point.date),
+                    y: .value(amountLabel, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: solidLineWidth))
@@ -130,8 +136,8 @@ struct TrendChartView: View {
                 // DATA ANNOTATIONS FOR WEEK VIEW
                 if period == .thisWeek || period == .last7Days {
                     PointMark(
-                        x: .value(L10n.Common.date, point.date),
-                        y: .value(L10n.Common.amount, point.value)
+                        x: .value(dateLabel, point.date),
+                        y: .value(amountLabel, point.value)
                     )
                     .symbolSize(0)  // Invisible point just for annotation context
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
@@ -144,8 +150,8 @@ struct TrendChartView: View {
                 // Visible markers per point (short series, e.g. group months)
                 if showPointMarks {
                     PointMark(
-                        x: .value(L10n.Common.date, point.date),
-                        y: .value(L10n.Common.amount, point.value)
+                        x: .value(dateLabel, point.date),
+                        y: .value(amountLabel, point.value)
                     )
                     .symbolSize(30)
                     .foregroundStyle(primaryLineColor.opacity(dimOpacity))
@@ -154,8 +160,8 @@ struct TrendChartView: View {
                 // Value labels on selected dates (smart subset to avoid clutter)
                 if dataLabelDates.contains(point.date) {
                     PointMark(
-                        x: .value(L10n.Common.date, point.date),
-                        y: .value(L10n.Common.amount, point.value)
+                        x: .value(dateLabel, point.date),
+                        y: .value(amountLabel, point.value)
                     )
                     .symbolSize(0)  // Invisible point just for annotation context
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
@@ -169,8 +175,8 @@ struct TrendChartView: View {
             // Future: Dashed Line (Overlaps at Today to connect)
             ForEach(futurePoints, id: \.date) { point in
                 LineMark(
-                    x: .value(L10n.Common.date, point.date),
-                    y: .value(L10n.Common.amount, point.value)
+                    x: .value(dateLabel, point.date),
+                    y: .value(amountLabel, point.value)
                 )
                 .interpolationMethod(interpolation)
                 .lineStyle(StrokeStyle(lineWidth: solidLineWidth, dash: [5, 5]))
