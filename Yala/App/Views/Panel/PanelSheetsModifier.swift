@@ -176,7 +176,10 @@ struct PanelSheetsModifier: ViewModifier {
                 InboxView(onNavigateToRecords: {
                     viewModel.navigateToStatistics(.records, in: navigation)
                 })
-                .onAppear { navigation.isInboxSheetVisible = true }
+                .onAppear {
+                    navigation.isInboxSheetVisible = true
+                    RouterEntryGate.shared.inboxSheetDidAppear()
+                }
                 // Si quien la presenta se desmonta (una ventana que pasa a esperar o asciende a líder), `onDismiss` no
                 // está garantizado: el flag no debe quedarse puesto (tiraría los avisos de bandeja de TODAS las ventanas).
                 .onDisappear { navigation.isInboxSheetVisible = false }

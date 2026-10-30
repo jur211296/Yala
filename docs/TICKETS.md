@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1143)
+## Index (1144)
 
 | id | status | path |
 |---|---|---|
@@ -748,6 +748,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notification-dedup-deletes-all-custom-reminders-but-one | done | tickets/done/notification-dedup-deletes-all-custom-reminders-but-one.md |
 | notification-deeplink-accounts-not-parsed | done | tickets/done/notification-deeplink-accounts-not-parsed.md |
 | notification-delegate-assigned-after-launch | done | tickets/done/notification-delegate-assigned-after-launch.md |
+| notification-tap-opens-inbox-then-inbox-notice-pops-after | qa | tickets/qa/notification-tap-opens-inbox-then-inbox-notice-pops-after.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | old-receivers-of-a-keeping-wipe-delete-the-origin-reminders | backlog | tickets/backlog/old-receivers-of-a-keeping-wipe-delete-the-origin-reminders.md |
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |

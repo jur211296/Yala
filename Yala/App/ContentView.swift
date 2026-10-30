@@ -972,7 +972,7 @@ struct ContentView: View {
             recompute: updateContentViewReadiness
         )
         .onChange(of: AppRouter.shared.revision) { _, _ in
-            drainContentViewIntents()
+            routerRevisionChanged()
         }
         // .remoteOnboardingCompleted: dual-path. The intent goes through
         // RouterEntryGate too, but the readiness gate blocks .contentView
@@ -1368,6 +1368,18 @@ struct ContentView: View {
         // Las guardas de los otros que lo llaman: con el Welcome o la invitación ya puestos, ellos mandan.
         guard !hasCompletedOnboarding, !showWelcomeFlow, !showGroupInviteOnboarding else { return }
         presentNextOnboardingScreen()
+    }
+
+    /// Cada cambio de la cola. Antes de drenar, si el aviso de borradores nuevos está en pantalla y en la cola espera la
+    /// orden de abrir la Bandeja (el toque en la notificación de Apple Pay llegó con el aviso ya presentado), el aviso se
+    /// cierra como con «Más tarde»: la Bandeja sale en su lugar y enseña lo mismo (ticket
+    /// `notification-tap-opens-inbox-then-inbox-notice-pops-after`). Las firmas ya se quemaron al presentarlo.
+    private func routerRevisionChanged() {
+        if !activeInboxNotification.isEmpty,
+           AppRouter.shared.contains(where: IntentSupersessionLogic.opensInbox) {
+            activeInboxNotification = .init()
+        }
+        drainContentViewIntents()
     }
 
     /// Drains one `.contentView` intent per revision bump. Single-intent

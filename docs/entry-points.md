@@ -117,12 +117,41 @@ mirar cada 300 ms mientras haya algo retenido solo por eso.
 | Centro de Control: voz e imagen (`ControlCenterIntents`, escriben `pendingControlAction` en el App Group) | `.active` → `checkForPendingControlAction` | Como `voice-entry` / `image-entry`: lleva al Panel | No se consume; la lee el paso 21b | Sí, la clave del App Group; ya leída, se aparca como `voice-entry` |
 | Enlace de invitación `https://yala-app.pe/invite` | `onOpenURL` → `handleInviteLink` (y `YalaAppDelegate.application(_:continue:)`) | `.showInviteError` (critical), pantallas de unirse (contentView · normal), `.showGroupSyncError` (high) | El camino backend persiste en `PendingJoinStore` y lo retoma el reconciliador | Sí, `PendingJoinStore` |
 | Vuelta de Google Sign-In | `onOpenURL` → `GIDSignIn.handle` | Nada | — | — |
-| Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `routeTap` con el `deepLink` del `userInfo`. El delegado lo asigna `YalaAppDelegate.didFinishLaunching` (`installAsCenterDelegate`), antes de que termine el lanzamiento: así llega también el toque que abre la app cerrada | `.navigate(destino)`; `inbox` acaba en la hoja de la Bandeja | Se aplaza | Sí, serializable |
+| Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `routeTap` con el `deepLink` del `userInfo`. El delegado lo asigna `YalaAppDelegate.didFinishLaunching` (`installAsCenterDelegate`), antes de que termine el lanzamiento: así llega también el toque que abre la app cerrada | `.navigate(destino)` (tabla «Tocar una notificación», abajo); `inbox` acaba en la hoja de la Bandeja y el aviso de borradores nuevos no sale detrás | Se aplaza | Sí, serializable |
 | Apple Pay y Siri en lenguaje natural (no abren la app) | Cola del App Group → `InboundCaptureDrain` en el arranque y en cada `.active` | Borradores en la Bandeja → `.showInboxAlert` (contentView · high) | Se encola sin aplazar | Sí, los borradores |
 | Atajos de teclado | `.commands` → `RootCommandPerformer` | ⌘N → `.navigate(.panel)` + `.presentNewTransaction`; el resto, flags de la ventana | Solo en caliente | ⌘N, sí (se aparca como `new-transaction`); el resto, no |
 | Ventana nueva o restaurada (iPad) | `SceneRoot.land()` | Flags de la ventana (`pendingGroupID`, `pendingRecordID`) | — | — |
 | Push remoto | `YalaAppDelegate` | Nada: sync silencioso | — | — |
 | Spotlight, Handoff, accesos rápidos del icono | **No existen** en el código ni en el `Info.plist` | — | — | — |
+
+## Tocar una notificación: a dónde lleva cada una
+
+Medido en el código el 2026-10-30 (ticket `notification-tap-opens-inbox-then-inbox-notice-pops-after`). El destino lo
+decide el `deepLink` del `userInfo` (`NotificationService.parseDestination`); lo que lleva id lo apunta `routeTap` antes de
+navegar y lo abre la vista al llegar. En los tres estados (cerrada, en segundo plano, delante) entra por el mismo
+`routeTap`: cerrada, el `.navigate` se aplaza y lo drena el paso 20 del arranque.
+
+| Notificación | `deepLink` | Abre |
+|---|---|---|
+| Recordatorio diario (fin del día, almuerzo, personalizado) | `recordsStandalone` | Registros |
+| Resumen diario de pagos planificados | `scheduledPayments` | Planificación › Pagos |
+| Pago vence hoy · en N días · vencido | `scheduledPayments/<uuid>` | El detalle de ese pago |
+| Pago de la tarjeta de crédito | `accounts/<shortcutID>` | Panel con la ficha de esa cuenta |
+| Alerta de presupuesto | `budgets/<uuid>` | Ese presupuesto, en su período |
+| Informe diario, semanal o mensual | `statistics/<pestaña>/<período>` | Estadísticas en esa pestaña y período |
+| Actividad, «Ya estás en X», presupuesto y liquidación de un grupo; push de un grupo | `groups/<uuid>` | El detalle de ese grupo |
+| Push de varios grupos | `groups` | La lista de Grupos |
+| Pago de Apple Pay · dictado de Siri | `inbox` | Panel con la Bandeja abierta, **sin el aviso de borradores nuevos detrás** |
+| Apple Pay o Siri con Yala solo en grupos | `activate-full` | La vuelta a Yala completo o su activación |
+| Fallo de Apple Pay · «Probar» del editor de recordatorios | — | La app donde estaba |
+
+**La Bandeja y su aviso no salen los dos.** El mismo primer plano que trae el toque convierte lo encolado por Apple Pay o
+Siri en borradores y pide `.showInboxAlert`. Cuatro piezas, una por orden de llegada: el aviso que esperaba en cola lo tira
+la orden de abrir (`navigateInbox_supersedes_showInboxAlert`); el que llega con la orden ya en cola se tira al entrar
+(`queuedInboxOpening_supersedes_incomingShowInboxAlert`); el que ya estaba en pantalla lo cierra `ContentView` antes de
+drenar (`routerRevisionChanged`), y el que esperaba detrás de la hoja lo retira la hoja al aparecer
+(`RouterEntryGate.inboxSheetDidAppear`). Al aparecer, la Bandeja da además por avisados esos borradores: el aviso no vuelve
+en el primer plano siguiente.
 
 ## Avisos que la app saca sola al entrar
 
