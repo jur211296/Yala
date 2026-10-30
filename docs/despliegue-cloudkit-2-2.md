@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-22
+updated: 2026-10-27
 tags: [cloudkit, despliegue, owner, v2.2]
 ---
 
@@ -49,6 +49,28 @@ Solo son tres altas. No se borra ni se cambia nada.
 
 15. Arriba a la izquierda, cambia al contenedor **`iCloud.com.jurgenschmidt.yala.dev`**.
 16. Repite los pasos 3 a 14.
+
+## Añadido el 2026-10-27: el día de corte de la tarjeta (card nmtk)
+
+Dos campos más en `CD_Account`, los dos **Int(64)**, sin índices. La build de 2.2 los escribe al guardar una tarjeta de
+crédito con día de corte o con el aviso «1, 3 o 5 días antes». Sin ellos, iCloud rechaza esa cuenta sin avisar.
+
+| Record type | Campo | Tipo | Índices |
+|---|---|---|---|
+| `CD_Account` | `CD_creditCardStatementDay` | Int(64) | ninguno |
+| `CD_Account` | `CD_creditCardReminderDaysBefore` | Int(64) | ninguno |
+
+En cada contenedor (`iCloud.com.jurgenschmidt.yala` y luego `iCloud.com.jurgenschmidt.yala.dev`):
+
+1. Selector de entorno en **Development**. **Schema → Record Types → `CD_Account`**.
+2. Si falta `CD_creditCardStatementDay`: **+**, nombre `CD_creditCardStatementDay`, tipo **Int(64)**, **Save**.
+3. Si falta `CD_creditCardReminderDaysBefore`: **+**, nombre `CD_creditCardReminderDaysBefore`, tipo **Int(64)**, **Save**.
+4. **Schema → Deploy Schema Changes…** La lista trae solo altas, entre ellas «Add field `CD_creditCardStatementDay` to
+   `CD_Account`» y «Add field `CD_creditCardReminderDaysBefore` to `CD_Account`». Con un «Remove» o «Change», **Cancel**
+   y avisa a Frank.
+5. **Deploy**. Cambia a **Production**, abre `CD_Account` y comprueba los dos campos como **Int(64)**.
+
+Si haces esta pasada junto con la de arriba, basta un solo **Deploy** por contenedor.
 
 ## Cuando acabes
 

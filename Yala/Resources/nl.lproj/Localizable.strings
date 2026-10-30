@@ -1434,7 +1434,7 @@
 "account.changeInitialBalanceName" = "Beginsaldo wijzigen";
 "account.changeInitialBalanceDesc" = "Vul in met hoeveel de rekening begon en we berekenen het saldo van vandaag opnieuw uit je boekingen. Handig als het beginsaldo niet klopte.";
 "account.creditCard.sectionTitle" = "Creditcard";
-"account.creditCard.paymentReminder" = "Herinneren op betaaldatum";
+"account.creditCard.paymentReminder" = "Herinner me voor het betalen";
 "account.creditCard.paymentDay" = "Betaaldag";
 "account.creditCard.paymentNotification" = "Tijd om je creditcard %@ te betalen 💳";
 "category.others" = "Overige";
@@ -8484,3 +8484,28 @@
 "voice.live.transcriptAccessibility" = "Wat je iPhone verstaat";
 "settings.wipeLandingToast" = "Klaar, je begint opnieuw. Maak je eerste rekening aan om te registreren.";
 "icloud.remoteWipeKeptSetup" = "Je hebt je gegevens op een ander apparaat gewist.";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "Afsluitdag";
+"account.creditCard.statementDayNone" = "Niet ingesteld";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "Wat je tot de %1$de uitgeeft, betaal je op de %2$de van de volgende maand.";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "Wat je tot de %1$de uitgeeft, betaal je op de %2$de van dezelfde maand.";
+"account.creditCard.cycleFooterNoStatement" = "Met de afsluitdag laat de kaartpagina zien wat al gefactureerd is en wat op het volgende overzicht komt.";
+"account.creditCard.reminderSection" = "Herinnering";
+"account.creditCard.reminderWhen" = "Wanneer";
+"account.creditCard.reminderSameDay" = "Op de dag zelf";
+"account.creditCard.reminderOneDayBefore" = "1 dag ervoor";
+"account.creditCard.reminderDaysBefore %d" = "%d dagen ervoor";
+"account.creditCard.reminderFooterNext %@" = "We herinneren je op %@ aan het bedrag dat je moet betalen.";
+"account.creditCard.reminderFooterNoStatement" = "Zonder afsluitdag herinneren we je op de betaaldag, zonder bedrag.";
+"creditCardStatement.title %@" = "Overzicht · afgesloten %@";
+"creditCardStatement.billed" = "Gefactureerd";
+"creditCardStatement.unbilled" = "Nog te factureren";
+"creditCardStatement.payBy %@" = "Betalen vóór %@";
+"creditCardStatement.overdue %@" = "Verlopen op %@";
+"creditCardStatement.nothingDue" = "Niets meer te betalen";
+"creditCardStatement.nextStatement %@" = "Komt op het overzicht van %@";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "Betaal %1$@ vóór %2$@.";
+"creditCardStatement.reminderDueToday %@" = "Vandaag te betalen: %@.";
+"creditCardStatement.reminderPayByNoAmount %@" = "Betaal je kaart vóór %@.";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Betaling %1$@ · %2$@";
+"cashFlowPlan.cardPaymentNote" = "Staat al in je uitgaven van de maand waarin je kocht: wordt niet nog eens afgetrokken.";

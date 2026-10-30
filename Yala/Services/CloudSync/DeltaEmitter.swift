@@ -69,6 +69,16 @@ enum DeltaEmitter {
            let favorite = model as? FavoritePayment, favorite.destinationAccount != nil, let syncID = favorite.syncID {
             SyncCapability.noteSuppressedFavoriteDestination(syncID)
         }
+        // Y con el día de corte y los días de aviso de una tarjeta (v5, card nmtk): solo las que no están en su valor por
+        // defecto, que es el NULL con el que nacen en el servidor.
+        if capabilityLevel < SyncCapability.creditCardCycleSince,
+           !changedColumns.isDisjoint(with: SyncCapability.creditCardCycleColumns),
+           let account = model as? Account {
+            var withValue: Set<String> = []
+            if account.creditCardStatementDay != nil { withValue.insert("credit_card_statement_day") }
+            if account.creditCardReminderDaysBefore != 0 { withValue.insert("credit_card_reminder_days_before") }
+            SyncCapability.noteSuppressedCreditCardCycle(account.shortcutID, columns: withValue.intersection(changedColumns))
+        }
         // 1) Índices de grupo desde los emisores: group_key → [columnas], y columna → group_key.
         var columnsByGroup: [String: [String]] = [:]
         var groupByColumn: [String: String] = [:]

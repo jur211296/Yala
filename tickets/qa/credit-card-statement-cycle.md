@@ -1,17 +1,17 @@
 ---
 id: credit-card-statement-cycle
-status: backlog
+status: qa
 priority: high
 area: accounts-crud
 created: 2026-10-26
-updated: 2026-10-26
+updated: 2026-10-27
 source: tablero-tarjeta-de-credito-fecha-de-corte-fecha-nmtk
 ---
 # Tarjeta de crédito: fecha de corte, facturado / por facturar y aviso antes de pagar
 
 Card `nmtk`. Jürgen, 19-oct: **no es una función nueva**, son ajustes sobre la tarjeta de crédito que Yala ya tiene.
 Paridad primero (corte + pago + facturado / por facturar + aviso N días antes), mejor UI después. Referencia de
-competencia: Pablo (usapablo.com). Estado: **spec + propuesta visual aprobados; listo para implementar.** Jürgen eligió el 26-oct la variante A
+competencia: Pablo (usapablo.com). Estado: **implementado (2026-10-27); falta el device-QA del aviso en el iPhone y los despliegues de abajo.** Jürgen eligió el 26-oct la variante A
 en las cuatro decisiones (D1-D4, abajo).
 
 ## Medido hoy (árbol `origin/2.2` @ 393459ddb)
@@ -104,3 +104,38 @@ despliegue cuesta casi lo mismo.
   tiene. Candidatos para «mejor UI» tras la paridad.
 - Límite de crédito / disponible.
 - Días de corte 29-31 («último día del mes»).
+
+## Implementado (2026-10-27)
+
+Lo que cambia para quien usa la app:
+
+- **Formulario:** «Día de corte» (con «Sin definir») y «Día de pago» siempre a la vista, con un pie que dice cuándo se paga
+  lo gastado. El aviso va en su sección «Aviso»: «Avisarme antes de pagar» y, con día de corte, «Cuándo» (el mismo día, 1,
+  3 o 5 días antes) con la fecha del próximo aviso.
+- **Ficha:** bajo el saldo, «Estado de cuenta · corte del …» con **Facturado** («Paga antes del jueves 5 nov», «Venció el …»
+  o «Nada pendiente de este corte») y **Por facturar** («Entra en el corte del …»). Con varias divisas, una cifra por
+  divisa. En «solo gastos» no sale.
+- **Aviso:** programado en iOS, llega aunque no se abra Yala, a la hora del resumen de pagos planificados (9:00 si está
+  apagado), con lo facturado: «Paga S/ 1,240.00 antes del jueves 5.». Lo ya pagado no se avisa; el del corte que aún no
+  cerró va sin importe. Tocarlo abre la ficha. El canal viejo «al abrir el día de pago» se retiró.
+- **Flujo de caja:** en el mes del pago, «Pago de Visa · 5 nov · S/ 1,240.00 — Ya está en tus gastos del mes en que
+  compraste: no se resta otra vez.». No suma.
+
+Decisiones de implementación: `encargos/lanzados/2026-10-27-tarjeta-credito-implementar.md`, «Paso 0».
+
+### Pendiente de Jürgen
+
+1. **CloudKit Production**: los dos campos de `CD_Account` en los dos contenedores, antes de cualquier TestFlight que los
+   escriba. Pasos: `docs/despliegue-cloudkit-2-2.md`, «Añadido el 2026-10-27».
+2. **Modo Nube**: `qa/cloud/g26_01_credit_card_cycle.sql` (después de g24_01) y el Worker v5. Pasos:
+   `docs/RUNBOOK-staging-ddl.md`, sección g26_01. La app puede salir antes: con un Worker v4 no emite las columnas.
+
+### Guion de device-QA (iPhone, Yala Dev)
+
+1. Ajustes › Cuentas › una tarjeta de crédito. Pon **Día de corte** = el día de hace 3 días, **Día de pago** = dentro de 2
+   días y **Cuándo** = «1 día antes». Guarda.
+2. Ajustes › Notificaciones › Pagos planificados: pon la hora a 2 minutos de ahora (o apágalo y espera a las 9:00).
+3. Ten un gasto en la tarjeta antes del corte. **Cierra Yala del todo** (deslizar hacia arriba) y espera a la hora.
+4. Tiene que llegar «<tarjeta>: Paga S/ … antes del <día>.» con lo facturado. Tócalo: abre la ficha de esa tarjeta, con el
+   bloque «Estado de cuenta».
+5. Registra una transferencia que pague todo lo facturado. Vuelve a programar el aviso para mañana (paso 2): ya no llega.

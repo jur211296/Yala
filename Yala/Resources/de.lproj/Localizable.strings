@@ -1435,7 +1435,7 @@
 "account.changeInitialBalanceName" = "Anfangssaldo ändern";
 "account.changeInitialBalanceDesc" = "Gib ein, mit wie viel das Konto angefangen hat, und wir berechnen den heutigen Saldo aus deinen Einträgen neu. Verwende dies, wenn der Anfangssaldo falsch war.";
 "account.creditCard.sectionTitle" = "Kreditkarte";
-"account.creditCard.paymentReminder" = "Am Zahlungstag erinnern";
+"account.creditCard.paymentReminder" = "Vor der Zahlung erinnern";
 "account.creditCard.paymentDay" = "Zahlungstag";
 "account.creditCard.paymentNotification" = "Heute ist Zahltag für deine Kreditkarte %@ 💳";
 "category.others" = "Sonstige";
@@ -8472,3 +8472,28 @@
 "voice.live.transcriptAccessibility" = "Was das iPhone gerade versteht";
 "settings.wipeLandingToast" = "Fertig, du fängst neu an. Lege dein erstes Konto an, um loszulegen.";
 "icloud.remoteWipeKeptSetup" = "Du hast deine Daten auf einem anderen Gerät gelöscht.";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "Abrechnungstag";
+"account.creditCard.statementDayNone" = "Nicht festgelegt";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "Was du bis zum %1$d. ausgibst, zahlst du am %2$d. des Folgemonats.";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "Was du bis zum %1$d. ausgibst, zahlst du am %2$d. desselben Monats.";
+"account.creditCard.cycleFooterNoStatement" = "Mit dem Abrechnungstag trennt die Kartenansicht das Abgerechnete von dem, was in die nächste Abrechnung kommt.";
+"account.creditCard.reminderSection" = "Erinnerung";
+"account.creditCard.reminderWhen" = "Wann";
+"account.creditCard.reminderSameDay" = "Am selben Tag";
+"account.creditCard.reminderOneDayBefore" = "1 Tag vorher";
+"account.creditCard.reminderDaysBefore %d" = "%d Tage vorher";
+"account.creditCard.reminderFooterNext %@" = "Wir erinnern dich am %@ mit dem Betrag, den du zahlen musst.";
+"account.creditCard.reminderFooterNoStatement" = "Ohne Abrechnungstag erinnern wir dich am Zahlungstag, ohne Betrag.";
+"creditCardStatement.title %@" = "Abrechnung · Stichtag %@";
+"creditCardStatement.billed" = "Abgerechnet";
+"creditCardStatement.unbilled" = "Noch nicht abgerechnet";
+"creditCardStatement.payBy %@" = "Zahlen bis %@";
+"creditCardStatement.overdue %@" = "Fällig seit %@";
+"creditCardStatement.nothingDue" = "Nichts mehr offen";
+"creditCardStatement.nextStatement %@" = "Kommt in die Abrechnung vom %@";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "Zahle %1$@ bis %2$@.";
+"creditCardStatement.reminderDueToday %@" = "Heute fällig: %@.";
+"creditCardStatement.reminderPayByNoAmount %@" = "Zahle deine Karte bis %@.";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Zahlung %1$@ · %2$@";
+"cashFlowPlan.cardPaymentNote" = "Steht schon in den Ausgaben des Monats, in dem du gekauft hast: wird nicht noch einmal abgezogen.";

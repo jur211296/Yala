@@ -39,7 +39,7 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 4
+    static let clientManifestVersion = 5
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
@@ -52,12 +52,20 @@ nonisolated enum SyncCapability {
     /// de transferencia, UX 2.2 · L2-14).
     static let favoriteDestinationSince = 4
 
+    /// Versión del manifest que estrena `accounts.credit_card_statement_day` y `accounts.credit_card_reminder_days_before`
+    /// (card nmtk: el día de corte de una tarjeta y los días de antelación de su aviso).
+    static let creditCardCycleSince = 5
+
+    /// Las dos columnas de la v5, juntas: se apuntan y se reemiten a la vez.
+    static let creditCardCycleColumns: Set<String> = ["credit_card_statement_day", "credit_card_reminder_days_before"]
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
     static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
     static let suppressedAccountLinksKey = "cloudSync.accountLinksSuppressed"
     static let suppressedCashFlowAmountChangesKey = "cloudSync.cashFlowAmountChangesSuppressed"
     static let suppressedFavoriteDestinationsKey = "cloudSync.favoriteDestinationsSuppressed"
+    static let suppressedCreditCardCyclesKey = "cloudSync.creditCardCyclesSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -185,6 +193,50 @@ nonisolated enum SyncCapability {
         let remaining = suppressedFavoriteDestinations.subtracting(syncIDs)
         if remaining.isEmpty { defaults.removeObject(forKey: suppressedFavoriteDestinationsKey) }
         else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedFavoriteDestinationsKey) }
+    }
+
+    // MARK: - Día de corte y aviso de tarjetas que no subieron (v5)
+
+    /// Las columnas de la v5 que este teléfono cambió o subió, por cuenta (`shortcutID`), mientras hablaba una versión
+    /// que no las conoce: la emisión las quitó y el servidor no las tiene. POR COLUMNA, no por cuenta: reemitir las dos
+    /// con HLC fresco pisaría por LWW la que cambió otro teléfono (lo cazó la review).
+    static var suppressedCreditCardCycles: [UUID: Set<String>] {
+        var result: [UUID: Set<String>] = [:]
+        for entry in defaults.stringArray(forKey: suppressedCreditCardCyclesKey) ?? [] {
+            let parts = entry.split(separator: "|", maxSplits: 1).map(String.init)
+            guard parts.count == 2, let id = UUID(uuidString: parts[0]), creditCardCycleColumns.contains(parts[1])
+            else { continue }
+            result[id, default: []].insert(parts[1])
+        }
+        return result
+    }
+
+    private static func storeSuppressedCreditCardCycles(_ value: [UUID: Set<String>]) {
+        let entries = value.flatMap { id, columns in columns.map { "\(id.uuidString)|\($0)" } }.sorted()
+        if entries.isEmpty { defaults.removeObject(forKey: suppressedCreditCardCyclesKey) }
+        else { defaults.set(entries, forKey: suppressedCreditCardCyclesKey) }
+    }
+
+    /// Lo llama quien filtró las columnas por la versión, con las que filtró. Apuntar de más es inocuo: la reemisión sube
+    /// el valor de ese momento.
+    static func noteSuppressedCreditCardCycle(_ shortcutID: UUID, columns: Set<String>) {
+        let columns = columns.intersection(creditCardCycleColumns)
+        guard !columns.isEmpty else { return }
+        var current = suppressedCreditCardCycles
+        let before = current[shortcutID] ?? []
+        guard !columns.isSubset(of: before) else { return }
+        current[shortcutID] = before.union(columns)
+        storeSuppressedCreditCardCycles(current)
+    }
+
+    /// Retira las que ya se encolaron. Solo esas: una que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedCreditCardCycles(_ done: [UUID: Set<String>]) {
+        var current = suppressedCreditCardCycles
+        for (id, columns) in done {
+            let remaining = (current[id] ?? []).subtracting(columns)
+            current[id] = remaining.isEmpty ? nil : remaining
+        }
+        storeSuppressedCreditCardCycles(current)
     }
 
     private static func makeDefaults() -> UserDefaults {

@@ -1192,15 +1192,27 @@ struct AccountFormView: View {
         .accessibilityIdentifier("account_balance_fix_\(mode == .byEntry ? "entry" : "initial")")
     }
 
+    /// Tarjeta de crédito (card nmtk, D1-A de Jürgen): día de corte y día de pago siempre a la vista, y el aviso en su
+    /// propia sección. Antes el día de pago solo salía con el aviso encendido: quien no quería aviso no podía guardarlo.
     private var creditCardSection: some View {
-        SectionBox(title: L10n.Account.CreditCard.sectionTitle) {
-            VStack(spacing: DS.Spacing.none) {
-                Toggle(isOn: $viewModel.creditCardPaymentReminder) {
-                    Text(L10n.Account.CreditCard.paymentReminder)
-                }
-                .padding()
+        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+            SectionBox(title: L10n.Account.CreditCard.sectionTitle) {
+                VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                    HStack {
+                        Text(L10n.Account.CreditCard.statementDay)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Picker(L10n.Account.CreditCard.statementDay, selection: $viewModel.creditCardStatementDay) {
+                            Text(L10n.Account.CreditCard.statementDayNone).tag(Int?.none)
+                            ForEach(CreditCardStatementLogic.dayRange, id: \.self) { day in
+                                Text("\(day)").tag(Int?.some(day))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .accessibilityIdentifier("account_cc_statement_day")
+                    }
+                    .padding()
 
-                if viewModel.creditCardPaymentReminder {
                     SubsectionDivider()
 
                     HStack {
@@ -1208,15 +1220,93 @@ struct AccountFormView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         Picker(L10n.Account.CreditCard.paymentDay, selection: $viewModel.creditCardPaymentDay) {
-                            ForEach(1...28, id: \.self) { day in
+                            ForEach(CreditCardStatementLogic.dayRange, id: \.self) { day in
                                 Text("\(day)").tag(day)
                             }
                         }
                         .pickerStyle(.menu)
+                        .accessibilityIdentifier("account_cc_payment_day")
                     }
                     .padding()
+
+                    Text(cycleFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_cc_cycle_footer")
                 }
             }
+
+            SectionBox(title: L10n.Account.CreditCard.reminderSection) {
+                VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                    Toggle(isOn: $viewModel.creditCardPaymentReminder) {
+                        Text(L10n.Account.CreditCard.paymentReminder)
+                    }
+                    .padding()
+                    .accessibilityIdentifier("account_cc_reminder_toggle")
+
+                    if viewModel.creditCardPaymentReminder {
+                        if viewModel.creditCardStatementDay != nil {
+                            SubsectionDivider()
+
+                            HStack {
+                                Text(L10n.Account.CreditCard.reminderWhen)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Picker(L10n.Account.CreditCard.reminderWhen,
+                                       selection: $viewModel.creditCardReminderDaysBefore) {
+                                    ForEach(viewModel.creditCardReminderLeadOptions, id: \.self) { days in
+                                        Text(Self.reminderLeadLabel(days)).tag(days)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .accessibilityIdentifier("account_cc_reminder_when")
+                            }
+                            .padding()
+                        }
+
+                        if let footer = reminderFooter {
+                            Text(footer)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal)
+                                .padding(.bottom)
+                                .accessibilityIdentifier("account_cc_reminder_footer")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// «Lo que gastes hasta el 15 lo pagas el 5 del mes siguiente.», o qué da el día de corte si no lo hay.
+    private var cycleFooter: String {
+        guard let statementDay = viewModel.creditCardStatementDay else {
+            return L10n.Account.CreditCard.cycleFooterNoStatement
+        }
+        let payment = viewModel.creditCardPaymentDay
+        return payment > statementDay
+            ? L10n.Account.CreditCard.cycleFooterSameMonth(statementDay, payment)
+            : L10n.Account.CreditCard.cycleFooterNextMonth(statementDay, payment)
+    }
+
+    /// «Te avisamos el lunes 2 de noviembre con lo que tienes que pagar.»; sin día de corte, que avisa el mismo día y sin
+    /// importe.
+    private var reminderFooter: String? {
+        guard viewModel.creditCardStatementDay != nil else { return L10n.Account.CreditCard.reminderFooterNoStatement }
+        guard let day = viewModel.nextCreditCardReminderDay() else { return nil }
+        return L10n.Account.CreditCard.reminderFooterNext(
+            day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(AppLocale.current)))
+    }
+
+    static func reminderLeadLabel(_ days: Int) -> String {
+        switch days {
+        case 0: return L10n.Account.CreditCard.reminderSameDay
+        case 1: return L10n.Account.CreditCard.reminderOneDayBefore
+        default: return L10n.Account.CreditCard.reminderDaysBefore(days)
         }
     }
 

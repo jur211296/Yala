@@ -1434,7 +1434,7 @@
 "account.changeInitialBalanceName" = "Cambiar saldo inicial";
 "account.changeInitialBalanceDesc" = "Escribe con cuánto empezó la cuenta y recalculamos su saldo de hoy con tus registros. Úsalo si el saldo de partida estaba mal.";
 "account.creditCard.sectionTitle" = "Tarjeta de crédito";
-"account.creditCard.paymentReminder" = "Avisar en fecha de pago";
+"account.creditCard.paymentReminder" = "Avisarme antes de pagar";
 "account.creditCard.paymentDay" = "Día de pago";
 "account.creditCard.paymentNotification" = "Hoy toca pagar tu tarjeta %@ 💳";
 "category.others" = "Otros";
@@ -8498,3 +8498,28 @@
 "voice.live.transcriptAccessibility" = "Lo que va entendiendo el iPhone";
 "settings.wipeLandingToast" = "Listo, empezaste de cero. Crea tu primera cuenta para registrar.";
 "icloud.remoteWipeKeptSetup" = "Vaciaste tus datos desde otro dispositivo.";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "Día de corte";
+"account.creditCard.statementDayNone" = "Sin definir";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "Lo que gastes hasta el %1$d lo pagas el %2$d del mes siguiente.";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "Lo que gastes hasta el %1$d lo pagas el %2$d del mismo mes.";
+"account.creditCard.cycleFooterNoStatement" = "Con el día de corte, la ficha de la tarjeta separa lo facturado de lo que entra en el siguiente corte.";
+"account.creditCard.reminderSection" = "Aviso";
+"account.creditCard.reminderWhen" = "Cuándo";
+"account.creditCard.reminderSameDay" = "El mismo día";
+"account.creditCard.reminderOneDayBefore" = "1 día antes";
+"account.creditCard.reminderDaysBefore %d" = "%d días antes";
+"account.creditCard.reminderFooterNext %@" = "Te avisamos el %@ con lo que tienes que pagar.";
+"account.creditCard.reminderFooterNoStatement" = "Sin día de corte te avisamos el mismo día del pago, sin el importe.";
+"creditCardStatement.title %@" = "Estado de cuenta · corte del %@";
+"creditCardStatement.billed" = "Facturado";
+"creditCardStatement.unbilled" = "Por facturar";
+"creditCardStatement.payBy %@" = "Paga antes del %@";
+"creditCardStatement.overdue %@" = "Venció el %@";
+"creditCardStatement.nothingDue" = "Nada pendiente de este corte";
+"creditCardStatement.nextStatement %@" = "Entra en el corte del %@";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "Paga %1$@ antes del %2$@.";
+"creditCardStatement.reminderDueToday %@" = "Hoy vence el pago: %@.";
+"creditCardStatement.reminderPayByNoAmount %@" = "Paga tu tarjeta antes del %@.";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Pago de %1$@ · %2$@";
+"cashFlowPlan.cardPaymentNote" = "Ya está en tus gastos del mes en que compraste: no se resta otra vez.";

@@ -63,7 +63,7 @@ noche (S27f): las decisiones abiertas se tomaron por la opción conservadora y e
 | Recordatorio personalizado con días | `<item.id>-<1…7>` semanal | Igual | Id fijo |
 | Resumen diario de pagos | `spDailySummary_<yyyyMMdd>` | `replanSummaries` en cada arranque/primer plano y tras cambiar pagos | Id fijo + retirada del prefijo |
 | Pago vence hoy · en N días · vencido | `notification-<UUID>` | `checkAllPaymentNotifications` en arranque/primer plano | Tracker por pago y día; **una pasada a la vez (nuevo)** |
-| Pago de tarjeta de crédito | `notification-<UUID>` | `checkAndNotifyCreditCardPayments` | Tracker por tarjeta y día; **una pasada a la vez (nuevo)** |
+| Pago de tarjeta de crédito | `creditCardReminder_*` (programado) o `notification-<UUID>` (el de hoy sin programar) | `CreditCardReminderScheduler.replan` (card nmtk, sustituye a `checkAndNotifyCreditCardPayments`) | Tracker por tarjeta y día; **una pasada a la vez** (`inFlight` + repetición) |
 | Alerta de presupuesto personal | `notification-<UUID>` | `checkBudgetsAndNotify` (arranque, alta de movimiento, borrador, puente de grupo) | `isChecking` + tracker por umbral y período |
 | Informe diario/semanal/mensual | `notification-<UUID>` | `sendDueReports` (arranque, primer plano, BGTask) | `isSendingReports` + `lastNotifiedDate` |
 | Actividad de grupo (gastos, liquidaciones, miembros, solicitudes) | `notification-<UUID>` | `processRemoteChanges` tras cada página del pull | 1 por grupo cada 5 min; **retira el genérico del servidor del mismo grupo (nuevo)** |

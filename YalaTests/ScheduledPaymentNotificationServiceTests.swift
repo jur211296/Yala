@@ -213,24 +213,6 @@ struct ScheduledPaymentNotificationServiceTests {
         #expect(log.count == 1, "el dedup del día suprime el segundo pass")
     }
 
-    @Test func creditCard_sendFails_doesNotMarkDedup() async throws {
-        let context = try makeTestContext()
-        let (service, log) = try makeService(context: context, sendResult: false)
-        let account = Account(name: "Visa", currencyCode: "USD", colorHex: "#4A90D9", iconName: "creditcard", type: AccountType.creditCard.rawValue)
-        account.creditCardPaymentReminder = true
-        account.creditCardPaymentDay = Calendar.current.component(.day, from: .now)
-        context.insert(account)
-        try context.save()
-
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(log.count == 1)
-        #expect(!service.tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: .now))
-
-        service.sendOverride = { _, _, _ in true }
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(service.tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: .now))
-    }
-
     // MARK: - (2) Quiescencia: difiere sin marcar
 
     @Test func notQuiescent_defersWithoutSendingOrMarking() async throws {
@@ -307,7 +289,9 @@ struct ScheduledPaymentNotificationServiceTests {
 
     // MARK: - Gate honesto en el service
 
-    @Test func masterToggleOff_silencesPaymentLoop_butNotCreditCard() async throws {
+    /// El aviso de la tarjeta ya no pasa por aquí (card nmtk, `CreditCardReminderSchedulerTests`): el toggle maestro
+    /// sigue silenciando los pagos planificados.
+    @Test func masterToggleOff_silencesPaymentLoop() async throws {
         let context = try makeTestContext()
         let (service, log) = try makeService(context: context, seedActiveItem: false)
         let item = NotificationItem(
@@ -315,43 +299,10 @@ struct ScheduledPaymentNotificationServiceTests {
         )
         context.insert(item)
         try seedDueTodayPaymentWithDraft(context: context)
-
-        let account = Account(name: "Visa", currencyCode: "USD", colorHex: "#4A90D9", iconName: "creditcard", type: AccountType.creditCard.rawValue)
-        account.creditCardPaymentReminder = true
-        account.creditCardPaymentDay = Calendar.current.component(.day, from: .now)
-        context.insert(account)
         try context.save()
 
         await service.checkAllPaymentNotifications()
         #expect(log.count == 0, "toggle maestro OFF = silencio de pagos")
-
-        // La tarjeta tiene opt-in propio per-account: el toggle de pagos no la silencia.
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(log.count == 1)
-        // Lleva el id de la tarjeta: tocarlo abre su ficha (UX 2.2 · L10-14).
-        #expect(log.entries.last?.deepLink == AlertDeepLink.account.deepLink(for: account.shortcutID))
-    }
-
-    @Test func activeItemWithFutureHour_defersCreditCardToo() async throws {
-        let context = try makeTestContext()
-        let (service, log) = try makeService(context: context, seedActiveItem: false)
-        // Hora 23:59 — salvo que el test corra exactamente a medianoche, la ventana está cerrada.
-        let item = NotificationItem(
-            name: "Pagos", text: "", hour: 23, minute: 59, type: .scheduledPayments, isActive: true
-        )
-        context.insert(item)
-
-        let account = Account(name: "Visa", currencyCode: "USD", colorHex: "#4A90D9", iconName: "creditcard", type: AccountType.creditCard.rawValue)
-        account.creditCardPaymentReminder = true
-        account.creditCardPaymentDay = Calendar.current.component(.day, from: .now)
-        context.insert(account)
-        try context.save()
-
-        // Guard de flakiness: si el reloj real ya pasó las 23:59, el caso no aplica.
-        guard service.gateDecision(context: context) == .waitForHour else { return }
-
-        await service.checkAndNotifyCreditCardPayments()
-        #expect(log.count == 0, "con item activo, la tarjeta espera la ventana horaria")
     }
 
     // MARK: - (4) Flip one-shot del toggle maestro

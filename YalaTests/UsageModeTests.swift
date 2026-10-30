@@ -266,7 +266,6 @@ struct UsageModeWiringTests {
     @Test(arguments: [
         ("Yala/Services/ReportNotificationService.swift", "func sendDueReports(context: ModelContext) async {"),
         ("Yala/Services/ScheduledPaymentNotificationService.swift", "func checkAllPaymentNotifications() async {"),
-        ("Yala/Services/ScheduledPaymentNotificationService.swift", "func checkAndNotifyCreditCardPayments() async {"),
         ("Yala/Services/BudgetAlertService.swift", "func checkBudgetsAndNotify() async {"),
         ("Yala/App/Services/ScheduledPaymentDraftService.swift",
          "static func processDuePayments(context: ModelContext) -> Int {"),
@@ -288,6 +287,15 @@ struct UsageModeWiringTests {
         #expect(dynamic < pause, "la pausa iría antes de la salida de los avisos de grupos")
         #expect(schedule[pause + 1] == "await cancelNotification(for: item)")
         #expect(src.contains("if PersonalRemindersPause.isPaused() { effectivePlans = [] }"))
+    }
+
+    /// El aviso de la tarjeta (card nmtk) es agendado, como los resúmenes: con la pausa su plan es vacío (retira lo
+    /// programado sin mandar nada) y la ida y la vuelta lo replanifican.
+    @Test func avisoDeLaTarjeta_respetaLaPausa() throws {
+        let scheduler = try Self.source("Yala/Services/CreditCardReminderScheduler.swift")
+        #expect(scheduler.contains("for card in PersonalRemindersPause.isPaused() ? [] : Self.remindableCards(accounts) {"))
+        let usage = try Self.source("Yala/App/Services/UsageModeService.swift")
+        #expect(usage.components(separatedBy: "await CreditCardReminderScheduler.shared.replan()").count - 1 == 2)
     }
 
     /// Los avisos de grupos NO leen la pausa: siguen igual (lienzo, ida).

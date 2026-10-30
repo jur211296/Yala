@@ -915,6 +915,9 @@ class SessionState {
         dataVersion += 1
         // El primer registro en una moneda nueva cambia lo que queda a la vista sin tocar el filtro.
         revalidateAmountCurrency()
+        // El aviso de la tarjeta lleva lo facturado: un pago, un gasto o editar la tarjeta lo cambian (card nmtk). Sin
+        // contexto (antes del arranque, o en tests) no hace nada; con él, un replan single-flight en segundo plano.
+        CreditCardReminderScheduler.shared.requestReplan()
     }
 
     /// Peticiones de asentamiento tras un borrado DELIBERADO hecho fuera de `ContentView` —hoy, «Vaciar datos»—. Lo

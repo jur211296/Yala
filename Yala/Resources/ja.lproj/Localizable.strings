@@ -1434,7 +1434,7 @@
 "account.changeInitialBalanceName" = "初期残高を変更";
 "account.changeInitialBalanceDesc" = "口座の開始時の金額を入力すると、記録から今日の残高を再計算します。開始残高が間違っていた場合に使ってください。";
 "account.creditCard.sectionTitle" = "クレジットカード";
-"account.creditCard.paymentReminder" = "支払日に通知";
+"account.creditCard.paymentReminder" = "支払い前に通知";
 "account.creditCard.paymentDay" = "支払日";
 "account.creditCard.paymentNotification" = "クレジットカード%@の支払い時期です 💳";
 "category.others" = "その他";
@@ -8484,3 +8484,28 @@
 "voice.live.transcriptAccessibility" = "iPhoneが聞き取っている内容";
 "settings.wipeLandingToast" = "リセットしました。最初の口座を作成して記録を始めましょう。";
 "icloud.remoteWipeKeptSetup" = "別の端末でデータを消去しました。";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "締め日";
+"account.creditCard.statementDayNone" = "未設定";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "%1$d日までの利用分は翌月%2$d日に支払います。";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "%1$d日までの利用分は同月%2$d日に支払います。";
+"account.creditCard.cycleFooterNoStatement" = "締め日を設定すると、カードの画面で請求確定分と次回請求分が分かれて表示されます。";
+"account.creditCard.reminderSection" = "通知";
+"account.creditCard.reminderWhen" = "タイミング";
+"account.creditCard.reminderSameDay" = "当日";
+"account.creditCard.reminderOneDayBefore" = "1日前";
+"account.creditCard.reminderDaysBefore %d" = "%d日前";
+"account.creditCard.reminderFooterNext %@" = "%@に支払額をお知らせします。";
+"account.creditCard.reminderFooterNoStatement" = "締め日がない場合は、支払日当日に金額なしでお知らせします。";
+"creditCardStatement.title %@" = "明細 · %@締め";
+"creditCardStatement.billed" = "請求確定";
+"creditCardStatement.unbilled" = "未請求";
+"creditCardStatement.payBy %@" = "%@までに支払い";
+"creditCardStatement.overdue %@" = "%@に期限切れ";
+"creditCardStatement.nothingDue" = "支払い残高なし";
+"creditCardStatement.nextStatement %@" = "%@締めの明細に計上";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "%2$@までに%1$@を支払ってください。";
+"creditCardStatement.reminderDueToday %@" = "本日が支払期限です：%@。";
+"creditCardStatement.reminderPayByNoAmount %@" = "%@までにカードの支払いをしてください。";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "%1$@の支払い · %2$@";
+"cashFlowPlan.cardPaymentNote" = "購入した月の支出にすでに含まれているため、再度差し引かれません。";

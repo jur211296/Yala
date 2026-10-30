@@ -457,6 +457,78 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         return SummaryReplaceOutcome(scheduledDayKeys: scheduledKeys, attemptedDayKeys: attempted, removedPendingDayKeys: removedDayKeys)
     }
 
+    // MARK: - Aviso antes de pagar la tarjeta (card nmtk)
+
+    /// Un aviso de tarjeta listo para programar (`CreditCardReminderScheduler`).
+    struct CreditCardReminderRequest: Equatable {
+        let identifier: String
+        let accountID: UUID
+        /// Inicio del día del aviso: la marca del tracker va por día.
+        let day: Date
+        let title: String
+        let body: String
+        let deepLink: String
+        let fireDate: Date
+        let calendar: Calendar
+    }
+
+    struct CreditCardReplaceOutcome: Equatable {
+        /// Los que el centro conserva tras programar (el límite de 64 pendientes es silencioso).
+        let scheduled: Set<String>
+        /// Los que estaban PENDIENTES (sin disparar) y se retiraron: su marca de dedup ya no dice la verdad.
+        let removedPending: Set<String>
+    }
+
+    /// Retira TODOS los avisos de tarjeta programados y programa `requests`. Con plan vacío solo limpia: tarjeta borrada,
+    /// aviso apagado o ya pagado.
+    func replaceCreditCardReminders(_ requests: [CreditCardReminderRequest]) async -> CreditCardReplaceOutcome {
+        let prefix = CreditCardReminderScheduler.identifierPrefix
+        let stale = await notificationCenter.pendingNotificationRequests()
+            .map(\.identifier)
+            .filter { $0.hasPrefix(prefix) }
+        if !stale.isEmpty {
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: stale)
+        }
+        guard !requests.isEmpty, await isAuthorized() else {
+            return CreditCardReplaceOutcome(scheduled: [], removedPending: Set(stale))
+        }
+
+        for request in requests {
+            // §5.2.1 — el mismo choke point que `sendNotification`, en el instante de cada `add`; y la pausa de «Solo
+            // grupos» (card p0iu), como en los resúmenes.
+            guard !isPersonalWipeArmed, !PersonalRemindersPause.isPaused() else { break }
+            // Un trigger con fecha pasada se acepta y no dispara nunca: el aviso de hoy ya pasado lo manda el
+            // programador al momento.
+            guard request.fireDate > Date.now else { continue }
+
+            let content = UNMutableNotificationContent()
+            content.title = request.title
+            content.body = request.body
+            content.sound = .default
+            content.userInfo = ["deepLink": request.deepLink]
+
+            // Con año: un trigger que no se repite no puede volver a casar el mismo día de otro año.
+            let components = request.calendar.dateComponents(
+                [.year, .month, .day, .hour, .minute], from: request.fireDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            do {
+                try await notificationCenter.add(
+                    UNNotificationRequest(identifier: request.identifier, content: content, trigger: trigger))
+            } catch {
+                #if DEBUG
+                print("NotifService: Error scheduling credit card reminder \(request.identifier): \(error)")
+                #endif
+            }
+        }
+
+        let retained = Set(await notificationCenter.pendingNotificationRequests().map(\.identifier))
+        #if DEBUG
+        print("NotifService: credit card reminders replaced — removed=\(stale.count) scheduled=\(retained.filter { $0.hasPrefix(prefix) }.count)/\(requests.count)")
+        #endif
+        return CreditCardReplaceOutcome(scheduled: Set(requests.map(\.identifier)).intersection(retained),
+                                        removedPending: Set(stale))
+    }
+
     /// dayKeys de las summaries actualmente pendientes en el center (identifier = prefijo
     /// + dayKey, biyectivo por construcción).
     private func pendingSummaryDayKeys() async -> [String] {
@@ -531,7 +603,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         let personal = pending
             .filter { ($0.content.userInfo["deepLink"] as? String)?.hasPrefix("groups/") != true }
             .map(\.identifier)
-            .filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) }
+            // Los resúmenes y el aviso de la tarjeta los retira su replan con la pausa puesta (`UsageModeService`): así
+            // sus marcas del tracker quedan al día.
+            .filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) && !$0.hasPrefix(CreditCardReminderScheduler.identifierPrefix) }
         guard !personal.isEmpty else { return }
         notificationCenter.removePendingNotificationRequests(withIdentifiers: personal)
     }
@@ -577,7 +651,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// FRONTERAS DE CUENTA, que sí deben barrer todo.
     func rescheduleAllNotifications(items: [NotificationItem]) async {
         let pending = await notificationCenter.pendingNotificationRequests()
-        let nonSummaryIDs = pending.map(\.identifier).filter { !$0.hasPrefix(Self.summaryIdentifierPrefix) }
+        // Tampoco el aviso de la tarjeta (`creditCardReminder_*`, card nmtk): este método no lo vuelve a programar, y
+        // su marca de dedup se puso al programarlo, así que borrarlo aquí perdía el aviso del día.
+        let nonSummaryIDs = pending.map(\.identifier).filter {
+            !$0.hasPrefix(Self.summaryIdentifierPrefix) && !$0.hasPrefix(CreditCardReminderScheduler.identifierPrefix)
+        }
         if !nonSummaryIDs.isEmpty {
             notificationCenter.removePendingNotificationRequests(withIdentifiers: nonSummaryIDs)
         }

@@ -1434,7 +1434,7 @@
 "account.changeInitialBalanceName" = "更改初始余额";
 "account.changeInitialBalanceDesc" = "输入账户最初的金额,我们会根据你的记录重新计算今天的余额。如果起始余额有误,请用此方式。";
 "account.creditCard.sectionTitle" = "信用卡";
-"account.creditCard.paymentReminder" = "在还款日提醒";
+"account.creditCard.paymentReminder" = "还款前提醒我";
 "account.creditCard.paymentDay" = "还款日";
 "account.creditCard.paymentNotification" = "该还信用卡 %@ 啦 💳";
 "category.others" = "其他";
@@ -8484,3 +8484,28 @@
 "voice.live.transcriptAccessibility" = "iPhone 正在识别的内容";
 "settings.wipeLandingToast" = "好了，一切从头开始。创建你的第一个账户就能记账。";
 "icloud.remoteWipeKeptSetup" = "你已在另一台设备上清空了数据。";
+/* Tarjeta de crédito: corte, facturado y aviso (card nmtk) */
+"account.creditCard.statementDay" = "账单日";
+"account.creditCard.statementDayNone" = "未设置";
+"account.creditCard.cycleFooterNextMonth %1$d %2$d" = "%1$d 日前的消费，在次月 %2$d 日还款。";
+"account.creditCard.cycleFooterSameMonth %1$d %2$d" = "%1$d 日前的消费，在当月 %2$d 日还款。";
+"account.creditCard.cycleFooterNoStatement" = "设置账单日后，卡片页面会分开显示已出账和下期账单的金额。";
+"account.creditCard.reminderSection" = "提醒";
+"account.creditCard.reminderWhen" = "时间";
+"account.creditCard.reminderSameDay" = "当天";
+"account.creditCard.reminderOneDayBefore" = "提前 1 天";
+"account.creditCard.reminderDaysBefore %d" = "提前 %d 天";
+"account.creditCard.reminderFooterNext %@" = "我们会在 %@ 提醒你需要还多少。";
+"account.creditCard.reminderFooterNoStatement" = "未设置账单日时，我们会在还款日当天提醒你，不含金额。";
+"creditCardStatement.title %@" = "账单 · %@ 出账";
+"creditCardStatement.billed" = "已出账";
+"creditCardStatement.unbilled" = "未出账";
+"creditCardStatement.payBy %@" = "请在 %@ 前还款";
+"creditCardStatement.overdue %@" = "已于 %@ 到期";
+"creditCardStatement.nothingDue" = "本期已还清";
+"creditCardStatement.nextStatement %@" = "计入 %@ 的账单";
+"creditCardStatement.reminderPayBy %1$@ %2$@" = "请在 %2$@ 前还款 %1$@。";
+"creditCardStatement.reminderDueToday %@" = "今天到期：%@。";
+"creditCardStatement.reminderPayByNoAmount %@" = "请在 %@ 前还信用卡。";
+"cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "%1$@ 还款 · %2$@";
+"cashFlowPlan.cardPaymentNote" = "已计入消费当月的支出，不会再次扣除。";

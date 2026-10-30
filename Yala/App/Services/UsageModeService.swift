@@ -30,6 +30,8 @@ enum UsageModeService {
         await NotificationService.shared.cancelPendingPersonalNotifications()
         // Los resúmenes de pagos los retira su replan, con la pausa puesta: así sus marcas del tracker quedan al día.
         await ScheduledPaymentNotificationService.shared.replanSummaries()
+        // Y el aviso de la tarjeta (card nmtk), por lo mismo.
+        await CreditCardReminderScheduler.shared.replan()
     }
 
     // MARK: - Vuelta
@@ -98,6 +100,9 @@ enum UsageModeService {
         }
         ScheduledPaymentNotificationService.shared.setContext(context)
         await ScheduledPaymentNotificationService.shared.replanSummaries()
+        // El aviso de la tarjeta (card nmtk) es agendado: vuelve aquí, como los resúmenes.
+        CreditCardReminderScheduler.shared.setContext(context)
+        await CreditCardReminderScheduler.shared.replan()
     }
 
     // MARK: - «Empezar de cero»

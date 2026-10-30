@@ -12,6 +12,7 @@
 //    de la app con su total en blanco a la derecha, y cada línea es una tarjeta como un presupuesto (2A).
 //
 
+import SwiftData
 import SwiftUI
 
 struct CashFlowMonthDetailView: View {
@@ -31,6 +32,8 @@ struct CashFlowMonthDetailView: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    /// Para el pago de las tarjetas del mes (card nmtk): todas, porque qué es línea lo decide `AccountLineLogic` con todas.
+    @Query private var accounts: [Account]
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xl) {
@@ -42,6 +45,8 @@ struct CashFlowMonthDetailView: View {
             incomeSection
 
             expenseSection
+
+            cardPayments
         }
         // Plegar Ingresos o Gastos recoge sus filas. Implícita: el `withAnimation` del rótulo no anima dentro de una
         // pestaña (card 8atf; regla de `swiftui-ds.md`).
@@ -221,6 +226,22 @@ struct CashFlowMonthDetailView: View {
                 )
                 addLineButton(isIncome: false)
                     .coachMarkAnchor("cfTableAdd")
+            }
+        }
+    }
+
+    // MARK: - Pago de tarjetas (D4-A)
+
+    /// El pago de lo facturado de cada tarjeta cuya fecha de pago cae en este mes. Informa, no suma.
+    @ViewBuilder
+    private var cardPayments: some View {
+        let payments = CreditCardStatementSummary.payments(
+            accounts: accounts, inMonthOf: month.date, now: .now, calendar: .current)
+        if !payments.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                ForEach(payments, id: \.accountID) { card in
+                    CashFlowCardPaymentRow(card: card)
+                }
             }
         }
     }

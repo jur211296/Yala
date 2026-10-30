@@ -109,6 +109,33 @@ final class AccountFormViewModel {
     // Credit card
     var creditCardPaymentReminder: Bool = false
     var creditCardPaymentDay: Int = 1
+    /// Día de corte (card nmtk). `nil` = «Sin definir».
+    var creditCardStatementDay: Int?
+    /// Días antes del pago para el aviso (0, 1, 3 o 5). Sin día de corte el aviso es el mismo día.
+    var creditCardReminderDaysBefore: Int = 0
+
+    /// Las antelaciones que ofrece el selector «Cuándo»: solo con día de corte (sin corte no hay importe que adelantar).
+    var creditCardReminderLeadOptions: [Int] {
+        creditCardStatementDay == nil ? [0] : CreditCardStatementLogic.reminderLeadOptions
+    }
+
+    /// La antelación que vale de verdad: sin día de corte, el mismo día.
+    var effectiveCreditCardReminderDaysBefore: Int {
+        creditCardStatementDay == nil ? 0 : CreditCardStatementLogic.validLead(creditCardReminderDaysBefore)
+    }
+
+    /// El próximo día de aviso con lo elegido, para el pie de la sección («Te avisamos el lunes 2 de noviembre…»). Solo
+    /// con día de corte: sin él, el pie dice que avisa el mismo día del pago y sin importe.
+    func nextCreditCardReminderDay(now: Date = .now, calendar: Calendar = .current) -> Date? {
+        guard creditCardPaymentReminder, let statementDay = creditCardStatementDay else { return nil }
+        return CreditCardStatementLogic.reminders(
+            statementDay: statementDay, paymentDay: creditCardPaymentDay,
+            leadDays: effectiveCreditCardReminderDaysBefore,
+            hour: CreditCardStatementLogic.defaultReminderHour, minute: CreditCardStatementLogic.defaultReminderMinute,
+            now: now, calendar: calendar
+        ) { _ in [.init(amount: 1, currencyCode: "")] }
+            .first { calendar.startOfDay(for: $0.day) >= calendar.startOfDay(for: now) }?.day
+    }
 
     // MARK: - Tarjeta con varias divisas (entrega 2)
 
@@ -268,6 +295,8 @@ final class AccountFormViewModel {
         let isArchived: Bool
         let creditCardPaymentReminder: Bool
         let creditCardPaymentDay: Int
+        let creditCardStatementDay: Int?
+        let creditCardReminderDaysBefore: Int
     }
 
     private var baseline: FormSnapshot?
@@ -281,7 +310,8 @@ final class AccountFormViewModel {
             balanceValue: ((parsedBalanceAmount ?? 0) * 100).rounded() / 100, currency: selectedCurrency, mode: selectedAdjustmentMode,
             adjustmentDate: adjustmentDate, colorHex: selectedColorHex,
             excludeFromStatistics: excludeFromStatistics, isArchived: isArchived,
-            creditCardPaymentReminder: creditCardPaymentReminder, creditCardPaymentDay: creditCardPaymentDay
+            creditCardPaymentReminder: creditCardPaymentReminder, creditCardPaymentDay: creditCardPaymentDay,
+            creditCardStatementDay: creditCardStatementDay, creditCardReminderDaysBefore: creditCardReminderDaysBefore
         )
     }
 
@@ -400,6 +430,8 @@ final class AccountFormViewModel {
             self.isArchived = account.isArchived
             self.creditCardPaymentReminder = account.creditCardPaymentReminder
             self.creditCardPaymentDay = account.creditCardPaymentDay
+            self.creditCardStatementDay = CreditCardStatementLogic.validDay(account.creditCardStatementDay)
+            self.creditCardReminderDaysBefore = CreditCardStatementLogic.validLead(account.creditCardReminderDaysBefore)
 
             // Don't pre-fill balance here - will be done in initializeBalanceIfNeeded()
             // after transactions are loaded
@@ -777,6 +809,8 @@ final class AccountFormViewModel {
             if selectedType == .creditCard {
                 newAccount.creditCardPaymentReminder = creditCardPaymentReminder
                 newAccount.creditCardPaymentDay = creditCardPaymentDay
+                newAccount.creditCardStatementDay = creditCardStatementDay
+                newAccount.creditCardReminderDaysBefore = effectiveCreditCardReminderDaysBefore
             }
             context.insert(newAccount)
             created = newAccount
@@ -1115,6 +1149,8 @@ final class AccountFormViewModel {
         account.isArchived = isArchived
         account.creditCardPaymentReminder = selectedType == .creditCard ? creditCardPaymentReminder : false
         account.creditCardPaymentDay = selectedType == .creditCard ? creditCardPaymentDay : 1
+        account.creditCardStatementDay = selectedType == .creditCard ? creditCardStatementDay : nil
+        account.creditCardReminderDaysBefore = selectedType == .creditCard ? effectiveCreditCardReminderDaysBefore : 0
     }
 
     /// Tras guardar en una moneda que no es la principal: ofrece verla en el Panel. Con las dos secundarias

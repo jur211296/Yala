@@ -45,12 +45,10 @@ final class ScheduledPaymentNotificationService {
         _ todayAlreadyMarked: Bool
     ) async -> NotificationService.SummaryReplaceOutcome)?
 
-    /// Guardas de reentrada: una pasada de cada chequeo a la vez (ver `checkAllPaymentNotifications`).
+    /// Guarda de reentrada: una pasada del chequeo a la vez (ver `checkAllPaymentNotifications`).
     private var isCheckingPayments = false
-    private var isCheckingCreditCards = false
     /// Una pasada pedida mientras corría otra: se repite al terminar (ver `checkAllPaymentNotifications`).
     private var paymentsRecheckPending = false
-    private var creditCardsRecheckPending = false
 
     /// Maximum overdue notifications per session to avoid spam
     private let maxOverdueNotifications = 5
@@ -309,6 +307,12 @@ final class ScheduledPaymentNotificationService {
     }
 
     private func fetchItemState(context: ModelContext) -> ScheduledPaymentNotificationGateLogic.ItemState {
+        Self.fetchSummaryItemState(context: context)
+    }
+
+    /// El estado del ajuste «Pagos planificados» de Notificaciones: activo con su hora, apagado, sin crear o ilegible. Lo
+    /// lee también el aviso de la tarjeta, que usa su hora (`CreditCardReminderScheduler`).
+    static func fetchSummaryItemState(context: ModelContext) -> ScheduledPaymentNotificationGateLogic.ItemState {
         let typeRaw = "scheduledPayments"
         let descriptor = FetchDescriptor<NotificationItem>(
             predicate: #Predicate { $0.typeRaw == typeRaw }
@@ -529,96 +533,8 @@ final class ScheduledPaymentNotificationService {
 
     // MARK: - Credit Card Payment Notifications
 
-    /// Check accounts with credit card payment reminders and notify if today is payment day.
-    ///
-    /// Asimetría DELIBERADA con el toggle maestro: el opt-in de la tarjeta es per-account
-    /// (editor de cuentas), independiente del item `scheduledPayments` — con el item
-    /// `inactive`/`absent` la tarjeta SIGUE notificando (silenciarla rompería un opt-in que
-    /// el usuario configuró en otra superficie). Lo que SÍ comparte es la VENTANA HORARIA
-    /// cuando el item está activo (era la notif "de las 8am" del ticket) y el fail-closed
-    /// ante fetch-error.
-    func checkAndNotifyCreditCardPayments() async {
-        // Una pasada a la vez, y la que llega durante otra se repite al terminar: lo mismo que `checkAllPaymentNotifications`.
-        // Card p0iu: la pausa va PRIMERO, antes que la guarda de reentrada (`UsageModeWiringTests`). En pausa no se
-        // apunta repetición, igual que antes de la guarda: la próxima vuelta a primer plano lanza otra pasada.
-        guard !PersonalRemindersPause.isPaused() else { return }
-        guard !isCheckingCreditCards else {
-            creditCardsRecheckPending = true
-            return
-        }
-        isCheckingCreditCards = true
-        defer { isCheckingCreditCards = false }
-        repeat {
-            creditCardsRecheckPending = false
-            await performCreditCardPaymentChecks()
-        } while creditCardsRecheckPending
-    }
-
-    private func performCreditCardPaymentChecks() async {
-        // Card p0iu: con «Solo grupos» elegido sobre Yala completo, los avisos personales esperan (`PersonalRemindersPause`).
-        // Se vuelve a mirar en cada pasada: una repetición del `repeat` puede llegar después de activarse la pausa.
-        guard !PersonalRemindersPause.isPaused() else { return }
-        guard let context = modelContext else { return }
-        guard await isAuthorized() else { return }
-
-        switch gateDecision(context: context) {
-        case .waitForHour, .deferFetchError:
-            return
-        case .send, .silenced:
-            break
-        }
-
-        let accounts = remindableAccounts(fetchCreditCardAccounts(context: context), context: context)
-        let today = Date.now
-        let dayOfMonth = Calendar.current.component(.day, from: today)
-
-        for account in accounts {
-            guard account.creditCardPaymentDay == dayOfMonth else { continue }
-
-            guard !tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: today) else { continue }
-
-            let message = L10n.Account.CreditCard.paymentNotification(account.name)
-            // Lleva el id de la tarjeta: tocarlo abre su ficha, con el saldo a pagar (L10-14).
-            guard await send(title: account.name, body: message, deepLink: AlertDeepLink.account.deepLink(for: account.shortcutID)) else { continue }
-
-            tracker.markNotifiedCreditCard(accountID: account.shortcutID, date: today)
-        }
-    }
-
-    /// Tarjeta con varias divisas: el recordatorio es de la tarjeta, así que una LÍNEA no avisa aunque lleve el ajuste
-    /// encendido (lo traía de antes de vincularse); si no, la notificación llegaría duplicada. Una línea rota se ve
-    /// suelta y avisa (`AccountCardLogic.ownsCardSettings`). Si no se pueden leer todas las cuentas, ninguna cuenta con
-    /// enlace avisa: mejor un aviso de menos que uno doble.
-    func remindableAccounts(_ candidates: [Account], context: ModelContext) -> [Account] {
-        guard candidates.contains(where: { $0.parentAccountID != nil }) else { return candidates }
-        do {
-            let roles = try context.fetch(FetchDescriptor<Account>()).lineRoles
-            return candidates.filter { AccountCardLogic.ownsCardSettings(roles[$0.shortcutID]) }
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentNotificationService: Error fetching accounts for card lines: \(error)")
-            #endif
-            return candidates.filter { $0.parentAccountID == nil }
-        }
-    }
-
-    private func fetchCreditCardAccounts(context: ModelContext) -> [Account] {
-        let creditCardType = AccountType.creditCard.rawValue
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate {
-                $0.type == creditCardType && $0.creditCardPaymentReminder == true
-            }
-        )
-
-        do {
-            return try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("ScheduledPaymentNotificationService: Error fetching credit card accounts: \(error)")
-            #endif
-            return []
-        }
-    }
+    // Desde 2.2 (card nmtk) el aviso de la tarjeta es PROGRAMADO y vive en `CreditCardReminderScheduler`: comparte la hora
+    // del resumen de pagos (`fetchSummaryItemState`) y el tracker de dedup, nada más.
 
     private func fetchActivePayments(context: ModelContext) -> [ScheduledPayment] {
         let descriptor = FetchDescriptor<ScheduledPayment>(
