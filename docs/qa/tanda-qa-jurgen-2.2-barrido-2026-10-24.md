@@ -1,5 +1,7 @@
 # Tanda de QA de Jürgen — 2.2, barrido del 2026-10-24
 
+> **Sustituida el 2026-10-30** por `tanda-qa-jurgen-2.2-barrido-2026-10-30.md` (criterio estricto): lo que sigue vivo está allí.
+
 Barrido con `/barrido-qa` (card `barrido-de-qa-2-2-dejar-en-qa-solo-lo-qu-fzmv`) sobre `origin/2.2` en `03fa38a03`
 (#615). Para lo que sigue en «in qa», sustituye a la tanda del 18-oct (`tanda-qa-jurgen-2.2.md`): las pruebas de esa
 tanda que siguen vivas están aquí, y las que se cerraron hoy ya no. Los guiones detallados de Grupos siguen en las
