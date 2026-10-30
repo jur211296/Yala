@@ -583,7 +583,9 @@ entorno, va primero (su sección, arriba).
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
 
-## `g26_01_credit_card_cycle.sql` — el día de corte y el aviso de la tarjeta (PREPARADA, sin aplicar)
+## `g26_01_credit_card_cycle.sql` — el día de corte y el aviso de la tarjeta (aplicada según la card nmtk)
+
+**Nombre:** se escribió como `g25_01` y se renombró a `g26_01` al rebasar sobre 2.2 (2026-10-30): `g25_01` ya era `groups_forget_user` (`g25_01_forget_user_keeps_an_admin.sql`) y los dos traían un `g25_01_rollback.sql`. **Estado:** la card nmtk dice que se aplicó con el Worker v5 el 2026-10-27; medido el 2026-10-30, `/config` de staging y de producción da `"sync":{"manifestVersion":5,"groupsManifestVersion":2}`. Re-aplicarla es un no-op (salvo el comentario de las columnas, que pasaría a decir g26_01).
 
 **Ni staging ni producción.** La sesión que lo escribió (card nmtk) no despliega backend. **Lo aplica Jürgen** o una sesión
 de despliegues autorizada. **Va después de g24_01**: el Worker v5 pide también la columna de g24_01.

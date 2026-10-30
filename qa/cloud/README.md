@@ -1855,7 +1855,9 @@ gateway devuelve 502 `yala_unavailable`; sin Worker, 404 `unknown rpc`; la app e
 
 ## g26_01 — `accounts.credit_card_statement_day` y `credit_card_reminder_days_before`: el corte de la tarjeta (2026-10-27)
 
-**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`, como g24_01). Fichero:
+**Nombre:** se escribió como `g25_01` y se renombró a `g26_01` al rebasar sobre 2.2 (2026-10-30): `g25_01` ya era `groups_forget_user` (`g25_01_forget_user_keeps_an_admin.sql`) y los dos traían un `g25_01_rollback.sql`. **Estado:** la card nmtk dice que se aplicó con el Worker v5 el 2026-10-27; medido el 2026-10-30, `/config` de staging y de producción da `"sync":{"manifestVersion":5,"groupsManifestVersion":2}`. Re-aplicarla es un no-op (salvo el comentario de las columnas, que pasaría a decir g26_01).
+
+Los pasos, en `docs/RUNBOOK-staging-ddl.md`, como g24_01. Fichero:
 `qa/cloud/g26_01_credit_card_cycle.sql`; marcha atrás `qa/cloud/g26_01_rollback.sql` (idempotente, solo sin valores,
 bajo lock). Card nmtk.
 
