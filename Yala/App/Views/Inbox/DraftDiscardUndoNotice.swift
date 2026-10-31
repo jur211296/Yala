@@ -17,29 +17,27 @@ import UIKit
 /// queda debajo de la hoja que siga abierta. Una `UIWindow` de la misma escena queda por encima de todo lo que esa
 /// ventana presente (el mismo recurso que `LeaderSignOutBusyOverlay`).
 ///
-/// **La ventana solo ocupa la franja del aviso**, no la pantalla: fuera de ella los toques llegan a la app como
-/// siempre. No se hace `key`: no le quita el teclado a nadie.
+/// **La ventana ocupa la escena entera, pero solo recoge los toques que caen en la cápsula** (`NoticePassthroughWindow`):
+/// el resto llega a la app como siempre, también el «+» que asoma por encima del aviso. Hasta el 2026-10-31 la ventana
+/// era una franja del alto que medía `sizeThatFits`, y la cápsula se pintaba ~36 pt por DEBAJO de ella: la franja
+/// invisible tapaba el «+» entero y la mitad de abajo de «Deshacer» no recibía el toque. No se hace `key`: no le quita
+/// el teclado a nadie.
 @MainActor
 enum DraftDiscardUndoNotice {
     /// Lo que dura el aviso en pantalla. Cinco segundos: lo que da tiempo a leerlo y a tocar «Deshacer».
     /// Un XCUITest puede alargarlo (`UITestHooks.undoNoticeSeconds`).
     static let visibleDuration: Duration = UITestHooks.undoNoticeSeconds.map { .milliseconds(Int($0 * 1000)) } ?? .seconds(5)
 
-    /// Hueco libre bajo el aviso: por encima de la barra de pestañas flotante y de los botones de pie de una hoja.
-    private static let tabBarClearance: CGFloat = 72
+    /// Hueco libre bajo el aviso, sobre el borde inferior del área segura: justo encima de la barra de pestañas
+    /// flotante, donde salen siempre estos avisos, en todas las pantallas. Es la altura a la que se veía hasta el 28-oct
+    /// (medida en el iPhone 17 Pro: el aviso acaba 3 pt por encima de los botones de la barra).
+    ///
+    /// Del 28 al 31-oct subía además por encima de la pila de botones flotantes (Yala IA y «+») para no tapar el «+», y
+    /// donde no hay botones quedaba a media pantalla. Jürgen lo devolvió abajo el 2026-10-31 (card d3qq): que pise la parte
+    /// baja del «+» unos segundos no importa. Si se vuelve a subir, `UndoNoticePlacementUITests` se pone rojo.
+    static let bottomClearance: CGFloat = 44
 
-    /// Hueco libre bajo el aviso, por encima también de los botones flotantes de la página: Jürgen eligió el 2026-10-22
-    /// que el aviso vaya más arriba que el «+», en todas las pantallas (ticket
-    /// `saved-record-notice-covers-the-panel-plus-button`). Con 72 pt la franja caía sobre el «+» del Panel y su primer
-    /// toque no llegaba. Cuenta la pila más alta, Yala IA encima del «+» (`FABStackView`); con poco alto los dos van en
-    /// fila (UX 2.2 · L15-14) y basta uno. Medido en el iPhone 17 Pro: con 72 pt el aviso acaba casi en el borde de la
-    /// barra, así que la pila entera (`fabStackClearance`, con su margen inferior y aire) va encima: 11 pt sobre Yala IA.
-    static func bottomClearance(sceneHeight: CGFloat) -> CGFloat {
-        let buttons = DS.Adaptive.isShortContainer(height: sceneHeight) ? 1 : 2
-        return tabBarClearance + DS.Button.fabStackClearance(buttons: buttons)
-    }
-
-    private static var window: UIWindow?
+    private static var window: NoticePassthroughWindow?
     private static var hideTask: Task<Void, Never>?
     /// El «Deshacer» del aviso de un borrado en pantalla: ⌘Z lo pulsa mientras dura (UX 2.2 · L15-13).
     private static var activeUndo: (@MainActor () -> Void)?
@@ -82,8 +80,9 @@ enum DraftDiscardUndoNotice {
         hide()
         guard let scene = targetScene() else { return }
 
+        let window = NoticePassthroughWindow(windowScene: scene)
         let host = UIHostingController(
-            rootView: DraftDiscardUndoToast(
+            rootView: DraftDiscardUndoNoticeLayer(hitArea: window.hitArea, toast: DraftDiscardUndoToast(
                 message: message,
                 systemImage: systemImage,
                 undoTitle: undoTitle ?? L10n.Inbox.undoDiscard,
@@ -93,7 +92,7 @@ enum DraftDiscardUndoNotice {
                 secondaryIdentifier: secondaryIdentifier,
                 onSecondary: onSecondary.map { action in { action(); hide() } },
                 onUndo: onUndo.map { action in { action(); hide() } }
-            )
+            ))
         )
         host.view.backgroundColor = .clear
         // ⌘Z deshace el último BORRADO mientras dura su aviso (UX 2.2 · L15-13). Los avisos que no deshacen un borrado
@@ -106,18 +105,13 @@ enum DraftDiscardUndoNotice {
             UndoNoticeState.shared.isActive = true
         }
 
-        let bounds = scene.effectiveGeometry.coordinateSpace.bounds
-        let safeArea = scene.windows.first { $0.isKeyWindow }?.safeAreaInsets ?? .zero
-        let size = host.sizeThatFits(in: CGSize(width: bounds.width, height: .greatestFiniteMagnitude))
-        let window = UIWindow(windowScene: scene)
-        window.frame = CGRect(
-            x: 0,
-            y: bounds.height - safeArea.bottom - bottomClearance(sceneHeight: bounds.height) - size.height,
-            width: bounds.width,
-            height: size.height
-        )
         // Por encima de la ventana de la app (y de sus hojas), por debajo de una alerta del sistema.
         window.windowLevel = .normal + 1
+        // El tema claro u oscuro de Yala, no el del sistema: la app lo elige con `preferredColorScheme` solo en su ventana,
+        // y esta, a pantalla completa y encima, es la que decide el color de la barra de estado mientras dura el aviso.
+        if let appStyle = scene.keyWindow?.traitCollection.userInterfaceStyle {
+            window.overrideUserInterfaceStyle = appStyle
+        }
         window.rootViewController = host
         window.isHidden = false
         self.window = window
@@ -160,6 +154,45 @@ enum DraftDiscardUndoNotice {
         return UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }
+    }
+}
+
+/// La ventana del aviso: ocupa la escena (y la sigue al girar o redimensionar), pero solo se queda los toques que caen
+/// dentro de la cápsula. Fuera de ella devuelve `nil` y el toque sigue a la ventana de la app.
+@MainActor
+final class NoticePassthroughWindow: UIWindow {
+    /// Dónde quedó la cápsula; la vista la apunta al medirse. Va en una caja aparte y no en la ventana para que la vista
+    /// no retenga a la ventana que la retiene a ella.
+    let hitArea = NoticeHitArea()
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard hitArea.frame.contains(point) else { return nil }
+        return super.hitTest(point, with: event)
+    }
+}
+
+/// Marco de la cápsula del aviso en coordenadas de su ventana.
+@MainActor
+final class NoticeHitArea {
+    var frame: CGRect = .zero
+}
+
+/// Coloca el aviso abajo, sobre el área segura, y le cuenta a su ventana dónde quedó para recoger solo esos toques.
+struct DraftDiscardUndoNoticeLayer: View {
+    let hitArea: NoticeHitArea
+    let toast: DraftDiscardUndoToast
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            toast
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                    hitArea.frame = frame
+                }
+                .padding(.bottom, DraftDiscardUndoNotice.bottomClearance)
+        }
+        // El teclado no lo sube: hasta ahora el aviso no se movía con él.
+        .ignoresSafeArea(.keyboard)
     }
 }
 

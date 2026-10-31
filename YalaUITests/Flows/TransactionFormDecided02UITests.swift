@@ -206,9 +206,11 @@ final class TransactionFormDecided02UITests: XCTestCase {
         XCTAssertTrue(notice.waitForNonExistence(timeout: 3), "Con otro formulario abierto, el aviso debía retirarse.")
     }
 
-    /// Jürgen eligió A el 2026-10-22 (ticket `saved-record-notice-covers-the-panel-plus-button`): el aviso va por encima
-    /// de los botones flotantes. Con el aviso en pantalla, el «+» del Panel responde al PRIMER toque y su menú se puede
-    /// usar. El aviso se alarga a 30 s para que el plazo no decida el caso (`testing.md`).
+    /// Con el aviso en pantalla, el «+» del Panel responde al primer toque y abrir su menú retira el aviso. El aviso ya no
+    /// sube por encima de los botones flotantes: Jürgen lo devolvió abajo el 2026-10-31 (card d3qq), aunque pise la parte
+    /// baja del «+», y su ventana solo recoge los toques de la cápsula (`NoticePassthroughWindow`); la posición la fija
+    /// `UndoNoticePlacementUITests`. El aviso se alarga a 30 s para que el
+    /// plazo no decida el caso (`testing.md`).
     func test_afterThreeRecords_thePlusTakesTheFirstTapWithTheNoticeVisible() {
         let app = launch(seed: "una-cuenta", saved: 5, noticeSeconds: 30)
         openForm(app)
@@ -226,16 +228,8 @@ final class TransactionFormDecided02UITests: XCTestCase {
         shot.lifetime = .keepAlways
         add(shot)
 
-        // Ningún botón flotante queda bajo la franja del aviso.
-        var floating = [plus]
-        let chat = app.buttons["fab_chat"]
-        if chat.exists { floating.append(chat) }
-        for button in floating {
-            XCTAssertLessThanOrEqual(notice.frame.maxY, button.frame.minY,
-                                     "El aviso tapa «\(button.identifier)»: va por encima de los botones flotantes.")
-        }
-
-        plus.tap()
+        // La parte que asoma por encima del aviso: el aviso pisa la mitad baja del «+», centro incluido.
+        plus.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
         let manual = app.buttons["fab_manual"]
         XCTAssertTrue(manual.waitForHittable(timeout: 3), "El primer toque al «+» no abrió su menú con el aviso visible.")
         XCTAssertTrue(notice.waitForNonExistence(timeout: 3),
