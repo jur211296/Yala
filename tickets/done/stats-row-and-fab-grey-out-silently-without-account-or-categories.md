@@ -1,10 +1,10 @@
 ---
 id: stats-row-and-fab-grey-out-silently-without-account-or-categories
-status: backlog
+status: done
 area: panel
 priority: medium
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-31
 source: hallazgo de panel-new-record-greyed-out-silently-after-a-fresh-onboarding (card omw5); card 7jfp del tablero
 ---
 
@@ -16,3 +16,7 @@ que en los dos casos se queda apagada sin explicación. El botón flotante (`FAB
 por qué, en el Panel al desplazar y en Registros.
 
 Hecho cuando: los dos dicen qué falta y ofrecen la salida, como el Panel, con XCUITest del caso.
+
+## Cierre (2026-10-31, PR #711)
+
+La fila de Estadísticas y el flotante (Panel, Estadísticas, Registros) enseñan «Crea tu primera cuenta» / «Crear categorías» y abren la salida, con la regla del Panel. XCUITest: `StatisticsMissingStepUITests`.
