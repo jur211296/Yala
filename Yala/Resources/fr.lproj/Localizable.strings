@@ -4478,7 +4478,7 @@
 "groups.openingBalance.approvalPromptBody" = "Si cette personne devait déjà quelque chose avant de rejoindre le groupe, ou si on lui devait, ajoute-le pour que les soldes tombent juste.";
 "groups.openingBalance.approvalPromptAdd" = "Oui, l'ajouter";
 "groups.openingBalance.approvalPromptSkip" = "Non, commencer à zéro";
-"groups.openingBalance.errorNotOwner" = "Seul le créateur du groupe peut gérer les soldes initiaux.";
+"groups.openingBalance.errorNotAdmin" = "Seul un administrateur du groupe peut gérer les soldes initiaux.";
 "groups.openingBalance.errorSameMember" = "Choisissez deux membres différents.";
 
 // MARK: groups header balance bar
@@ -8193,11 +8193,11 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.makeAdminTitle" = "Nommer %@ admin ?";
 /* Qué podrá hacer; %@ = nombre */
-"groups.l19.member.makeAdminBody" = "%@ pourra accepter ou refuser les demandes pour rejoindre le groupe, retirer des membres, changer le nom et le budget du groupe, l’archiver et nommer d’autres admins.";
+"groups.l19.member.makeAdminBody" = "%@ pourra accepter ou refuser les demandes pour rejoindre le groupe, retirer des membres, changer le nom, le budget et les soldes initiaux du groupe, l’archiver et nommer d’autres admins.";
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeAdminTitle" = "Retirer le rôle d’admin à %@ ?";
 /* Qué deja de poder hacer; %@ = nombre */
-"groups.l19.member.removeAdminBody" = "%@ reste dans le groupe, mais ne peut plus accepter les demandes, retirer des membres, changer le nom et le budget ni archiver le groupe.";
+"groups.l19.member.removeAdminBody" = "%@ reste dans le groupe, mais ne peut plus accepter les demandes, retirer des membres, changer le nom, le budget et les soldes initiaux ni archiver le groupe.";
 /* Menú y botón: quitar a alguien del grupo */
 "groups.l19.member.remove" = "Retirer du groupe";
 /* Confirmación; %@ = nombre */

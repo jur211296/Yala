@@ -4489,7 +4489,7 @@
 "groups.openingBalance.approvalPromptBody" = "Jeśli przed dołączeniem ta osoba już coś była winna albo miała coś do odebrania, dodaj to, żeby salda się zgadzały.";
 "groups.openingBalance.approvalPromptAdd" = "Tak, dodaj";
 "groups.openingBalance.approvalPromptSkip" = "Nie, zaczyna od zera";
-"groups.openingBalance.errorNotOwner" = "Tylko twórca grupy może zarządzać saldami początkowymi.";
+"groups.openingBalance.errorNotAdmin" = "Tylko administrator grupy może zarządzać saldami początkowymi.";
 "groups.openingBalance.errorSameMember" = "Wybierz dwóch różnych członków.";
 
 // MARK: groups header balance bar
@@ -8204,11 +8204,11 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.makeAdminTitle" = "Nadać %@ uprawnienia administratora?";
 /* Qué podrá hacer; %@ = nombre */
-"groups.l19.member.makeAdminBody" = "%@ będzie mógł przyjmować lub odrzucać prośby o dołączenie, usuwać członków, zmieniać nazwę i budżet grupy, archiwizować ją i nadawać innym uprawnienia administratora.";
+"groups.l19.member.makeAdminBody" = "%@ będzie mógł przyjmować lub odrzucać prośby o dołączenie, usuwać członków, zmieniać nazwę, budżet i salda początkowe grupy, archiwizować ją i nadawać innym uprawnienia administratora.";
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeAdminTitle" = "Odebrać %@ uprawnienia administratora?";
 /* Qué deja de poder hacer; %@ = nombre */
-"groups.l19.member.removeAdminBody" = "%@ zostaje w grupie, ale nie może już przyjmować próśb, usuwać członków, zmieniać nazwy i budżetu ani archiwizować grupy.";
+"groups.l19.member.removeAdminBody" = "%@ zostaje w grupie, ale nie może już przyjmować próśb, usuwać członków, zmieniać nazwy, budżetu i sald początkowych ani archiwizować grupy.";
 /* Menú y botón: quitar a alguien del grupo */
 "groups.l19.member.remove" = "Usuń z grupy";
 /* Confirmación; %@ = nombre */

@@ -4489,7 +4489,7 @@
 "groups.openingBalance.approvalPromptBody" = "如果对方加入前就欠了钱或被欠钱，请记下来，让余额对得上。";
 "groups.openingBalance.approvalPromptAdd" = "是，记下来";
 "groups.openingBalance.approvalPromptSkip" = "否，从零开始";
-"groups.openingBalance.errorNotOwner" = "只有群组创建者可以管理初始余额。";
+"groups.openingBalance.errorNotAdmin" = "只有群组管理员可以管理初始余额。";
 "groups.openingBalance.errorSameMember" = "请选择两位不同的成员。";
 
 // MARK: groups header balance bar
@@ -8204,11 +8204,11 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.makeAdminTitle" = "将%@设为管理员？";
 /* Qué podrá hacer; %@ = nombre */
-"groups.l19.member.makeAdminBody" = "%@将可以同意或拒绝加入请求、移除成员、修改群组名称和预算、归档群组，并把其他人设为管理员。";
+"groups.l19.member.makeAdminBody" = "%@将可以同意或拒绝加入请求、移除成员、修改群组名称、预算和初始余额、归档群组，并把其他人设为管理员。";
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeAdminTitle" = "取消%@的管理员身份？";
 /* Qué deja de poder hacer; %@ = nombre */
-"groups.l19.member.removeAdminBody" = "%@仍在群组中，但不能再同意请求、移除成员、修改名称和预算或归档群组。";
+"groups.l19.member.removeAdminBody" = "%@仍在群组中，但不能再同意请求、移除成员、修改名称、预算和初始余额或归档群组。";
 /* Menú y botón: quitar a alguien del grupo */
 "groups.l19.member.remove" = "移出群组";
 /* Confirmación; %@ = nombre */

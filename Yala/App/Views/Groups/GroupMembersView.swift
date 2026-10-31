@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Sheet dedicada de Miembros — lista, roles, aprobar/rechazar, invitar por enlace
-//  y saldos iniciales (owner). Se abre desde el botón "Miembros" del toolbar del detalle.
+//  y saldos iniciales (dueño o admin, card yd2w). Se abre desde el botón "Miembros" del toolbar del detalle.
 //  Separada de GroupSettingsView para que cada botón del toolbar tenga un significado
 //  nítido: personas (este) vs configuración del grupo (engranaje).
 //
@@ -113,8 +113,8 @@ struct GroupMembersView: View {
 
                 membersSection
 
-                // Saldos iniciales (deuda de apertura) — owner-only.
-                if group.isOwner {
+                // Saldos iniciales (deuda de apertura) — el dueño o un admin (card yd2w).
+                if viewModel.isOpeningBalanceManager {
                     openingBalanceSection
                 }
             }
@@ -126,6 +126,7 @@ struct GroupMembersView: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("group_members_close")
                 }
             }
             .sheet(item: $shareItem) { item in
@@ -297,7 +298,8 @@ struct GroupMembersView: View {
                         showRejectConfirm = true
                     } : nil,
                     // Card t3fq: el saldo inicial de esta persona, en cualquier momento, desde su menú.
-                    onOpeningBalance: group.isOwner && canActAsAdmin && member.isActive ? {
+                    // Card yd2w: cualquier admin, no solo el dueño (`canActAsAdmin` ya lo exige activo y sin congelar).
+                    onOpeningBalance: canActAsAdmin && viewModel.isOpeningBalanceManager && member.isActive ? {
                         openOpeningBalance(for: member)
                     } : nil
                 )
@@ -410,8 +412,8 @@ struct GroupMembersView: View {
                 try await GroupService.shared.approveMember(member, in: group)
                 viewModel.loadData()
                 pendingActionMember = nil
-                // Atajo (owner-only): ofrecer crear un saldo inicial para el miembro recién aprobado.
-                if group.isOwner {
+                // Atajo (dueño o admin, card yd2w): ofrecer crear un saldo inicial para el miembro recién aprobado.
+                if viewModel.isOpeningBalanceManager {
                     openingBalancePrefillDebtor = memberID
                     approvedMemberName = memberName
                     showOpeningBalanceApprovalPrompt = true

@@ -20,7 +20,8 @@ struct GroupOpeningBalanceDetailSheet: View {
     /// memberID del deudor (la única share del saldo inicial).
     let debtorMemberID: String?
     let memberNameLookup: [String: String]
-    let isOwner: Bool
+    /// El dueño o un admin que puede escribir en el grupo (card yd2w): enseña Editar y Eliminar.
+    let canManage: Bool
     let onEdit: () -> Void
     let onDelete: () -> Void
 
@@ -67,14 +68,14 @@ struct GroupOpeningBalanceDetailSheet: View {
         expense: SplitExpense,
         debtorMemberID: String?,
         memberNameLookup: [String: String],
-        isOwner: Bool,
+        canManage: Bool,
         onEdit: @escaping () -> Void,
         onDelete: @escaping () -> Void
     ) {
         self.expense = expense
         self.debtorMemberID = debtorMemberID
         self.memberNameLookup = memberNameLookup
-        self.isOwner = isOwner
+        self.canManage = canManage
         self.onEdit = onEdit
         self.onDelete = onDelete
         _shownAtOpen = State(initialValue: Shown(reading: expense))
@@ -104,7 +105,7 @@ struct GroupOpeningBalanceDetailSheet: View {
                 VStack(spacing: DS.Spacing.lg) {
                     hero
                     detailsCard
-                    if isOwner {
+                    if canManage {
                         deleteButton
                     }
                 }
@@ -121,7 +122,7 @@ struct GroupOpeningBalanceDetailSheet: View {
                     }
                     .accessibilityIdentifier("group_opening_balance_detail_close")
                 }
-                if isOwner {
+                if canManage {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(L10n.Action.edit) {
                             onEdit()
@@ -142,6 +143,7 @@ struct GroupOpeningBalanceDetailSheet: View {
                     onDelete()
                     dismiss()
                 }
+                .accessibilityIdentifier("group_opening_balance_detail_delete_confirm")
                 // Lote 13: sin esta salida el diálogo solo se cerraba tocando fuera. Sin `role: .cancel`: con él,
                 // el diálogo (sale como popover en iOS 26) no la pinta (.claude/rules/swiftui-ds.md).
                 Button(L10n.Common.cancel) {}

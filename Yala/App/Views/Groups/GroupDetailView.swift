@@ -429,7 +429,7 @@ struct GroupDetailView: View {
                 expense: expense,
                 debtorMemberID: sharesForExpenseSheet(expense).first?.memberID,
                 memberNameLookup: viewModel.memberNameLookup,
-                isOwner: group.isOwner,
+                canManage: viewModel.canManageOpeningBalances,
                 onEdit: { viewModel.requestEditFromDetail(expense) },
                 onDelete: { viewModel.removeOpeningBalance(expense) }
             )
@@ -569,8 +569,8 @@ struct GroupDetailView: View {
                 onConfirmSettlement: viewModel.canCurrentUserParticipate ? { viewModel.confirmSettlement($0) } : nil,
                 onRejectSettlement: viewModel.canCurrentUserParticipate ? { viewModel.rejectSettlement($0) } : nil,
                 onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil,
-                // Solo quien creó el grupo gestiona los saldos iniciales (el servicio lo exige; Miembros ya lo filtra).
-                onAddOpeningBalance: group.isOwner && viewModel.canCurrentUserParticipate
+                // El dueño o un admin gestiona los saldos iniciales (card yd2w; el servicio decide igual).
+                onAddOpeningBalance: viewModel.canManageOpeningBalances
                     ? { viewModel.activeSheet = .newOpeningBalance } : nil
             )
 
