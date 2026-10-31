@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1147)
+## Index (1148)
 
 | id | status | path |
 |---|---|---|
@@ -60,8 +60,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
 | account-deletion-can-still-orphan-records-that-arrive-later | done | tickets/done/account-deletion-can-still-orphan-records-that-arrive-later.md |
 | account-deletion-canary-never-arrives | backlog | tickets/backlog/account-deletion-canary-never-arrives.md |
+| account-deletion-cloud-close-has-no-durable-intent | backlog | tickets/backlog/account-deletion-cloud-close-has-no-durable-intent.md |
 | account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare | done | tickets/done/account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare.md |
-| account-deletion-private-close-has-no-durable-intent | backlog | tickets/backlog/account-deletion-private-close-has-no-durable-intent.md |
+| account-deletion-private-close-has-no-durable-intent | done | tickets/done/account-deletion-private-close-has-no-durable-intent.md |
 | account-edit-multi-currency-lines | qa | tickets/qa/account-edit-multi-currency-lines.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
