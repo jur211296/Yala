@@ -275,6 +275,8 @@ struct GroupDetailView: View {
                 }
             } else {
                 viewModel.loadData()
+                // Card 6n1o: un rechazo del servidor que llegó con la hoja delante sale ahora, sin otra hoja detrás.
+                OpeningBalanceServerRejectionObserver.present(viewModel, windowID: navigation.id)
             }
         }) { sheet in
             sheetContent(for: sheet)
@@ -289,11 +291,12 @@ struct GroupDetailView: View {
                     url: url)])
                 }
         }
-        .alert(L10n.Common.error, isPresented: $viewModel.showActionError) {
+        .alert(viewModel.actionErrorTitle ?? L10n.Common.error, isPresented: $viewModel.showActionError) {
             Button(L10n.Common.ok) {}
         } message: {
             Text(viewModel.actionErrorMessage ?? L10n.Groups.Errors.actionFailed)
         }
+        .modifier(OpeningBalanceServerRejectionObserver(viewModel: viewModel))
         .appliesPendingRemoteChanges(sessionState)
         .task { await openSettingsIfRequested() }
         .onAppear {

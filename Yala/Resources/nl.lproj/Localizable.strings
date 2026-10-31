@@ -4491,6 +4491,10 @@
 "groups.openingBalance.approvalPromptSkip" = "Nee, begin bij nul";
 "groups.openingBalance.errorNotAdmin" = "Alleen een beheerder van de groep kan beginsaldi beheren.";
 "groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";
+"groups.openingBalance.serverRejected.title" = "Je wijziging is niet bij de groep aangekomen";
+"groups.openingBalance.serverRejected.notAdmin" = "Alleen de eigenaar of een beheerder van de groep kan beginsaldi wijzigen, en dat ben je nu niet. De andere leden zien deze wijziging niet.";
+"groups.openingBalance.serverRejected.locked" = "De personen in dit beginsaldo hebben al bevestigde betalingen, dus het kan niet meer worden gewijzigd. De andere leden zien deze wijziging niet.";
+"groups.openingBalance.serverRejected.groupClosed" = "Deze groep accepteert geen wijzigingen meer. De andere leden zien deze wijziging niet.";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "Jouw saldo";

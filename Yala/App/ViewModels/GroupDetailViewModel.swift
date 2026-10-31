@@ -495,10 +495,34 @@ final class GroupDetailViewModel {
     /// muestra en un alert — antes estos fallos solo se logueaban en DEBUG y en Release el botón
     /// "no hacía nada".
     var actionErrorMessage: String?
+    /// Título del aviso; `nil` = «Error» de siempre. Solo lo pone el rechazo del servidor (card 6n1o).
+    var actionErrorTitle: String?
     var showActionError = false
 
-    private func surfaceActionError(_ message: String) {
+    /// `internal` para el test del título (card 6n1o): un error de después no puede heredar el del rechazo.
+    func surfaceActionError(_ message: String) {
+        actionErrorTitle = nil
         actionErrorMessage = message
+        showActionError = true
+        DS.Haptic.warning()
+    }
+
+    /// Card 6n1o: si el servidor rechazó un saldo inicial de ESTE grupo, lo cuenta con el aviso de errores. Solo con la
+    /// ventana libre: una hoja del ViewModel, otro aviso o cualquier presentación de UIKit en esta ventana
+    /// (`windowIsPresenting`, la sonda `ModalPresentationProbe`: cubre la hoja de compartir y, en el iPad, las de la columna
+    /// de la lista). Un `.alert` pedido con algo delante no sale y `showActionError` se queda en `true`, que bloquea los
+    /// avisos siguientes; por eso con algo delante el motivo NO se consume y espera al siguiente disparo
+    /// (`OpeningBalanceServerRejectionObserver`).
+    func presentOpeningBalanceServerRejectionIfAny(
+        notices: OpeningBalanceServerRejectionNotices? = nil,
+        windowIsPresenting: Bool,
+        now: Date = .now
+    ) {
+        let notices = notices ?? .shared
+        guard activeSheet == nil, !showActionError, !windowIsPresenting else { return }
+        guard let reason = notices.consume(groupID: group.cloudKitZoneID, now: now) else { return }
+        actionErrorTitle = OpeningBalanceServerRejectionNotices.title()
+        actionErrorMessage = OpeningBalanceServerRejectionNotices.message(for: reason)
         showActionError = true
         DS.Haptic.warning()
     }

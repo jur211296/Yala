@@ -1018,6 +1018,19 @@ final class UITestHooks {
     /// sigue siéndolo). Es el caso de la card yd2w: cualquier admin gestiona los saldos iniciales, no solo el dueño.
     nonisolated static var inviteeIsAdmin: Bool { hasArg("-uitest-invitee-admin") }
 
+    /// Valor de `-uitest-opening-balance-server-rejection <código>` (`yala_opening_balance_not_admin|…_locked|
+    /// …_group_closed`): al abrir un grupo, deja en el buzón ese rechazo del servidor como si acabara de volver de una
+    /// subida (card 6n1o). Solo pone la ENTRADA: el código pasa por `OpeningBalanceServerRejectionLogic` y el aviso,
+    /// por el mismo camino que en producción. El servidor de verdad no está en el simulador.
+    nonisolated static var openingBalanceServerRejectionSlug: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-opening-balance-server-rejection", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// Valor de `-uitest-join-phase <waitingForZone|creatingMember|pendingApproval|active|failed>`:
     /// congela la fase del tracker para los XCUI del onboarding de invitación.
     nonisolated static var joinPhaseOverride: String? {
