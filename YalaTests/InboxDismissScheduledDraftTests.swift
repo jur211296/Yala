@@ -331,14 +331,17 @@ struct InboxDismissScheduledDraftTests {
         payment.lastPaidDate = yesterday
         ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
         try context.save()
-        let next = payment.nextDueDate
 
         let advanced = try #require(ScheduledPaymentDraftService.createAdvancedDraft(from: payment, context: context))
         #expect(calendar.isDate(try #require(advanced.date), inSameDayAs: today))
         advanced.status = .approved
         ScheduledPaymentDraftService.handleDraftApproved(draft: advanced, context: context)
+        // Dos meses desde la ocurrencia de HOY, no un mes desde la siguiente: el pago se ancla al día del mes
+        // (`dayOfMonth`) y encadenar sumas arrastra el recorte de fin de mes. Un 31-oct, la siguiente es el 30-nov
+        // y la de después el 31-dic; «30-nov + 1 mes» da 30-dic y el test salía rojo cada día 29-31 seguido de un
+        // mes más corto (CI del 2026-10-31). El contrato con fechas fijas: `singleVsDoubleAdvance_monthEndClamping`.
         #expect(calendar.isDate(payment.nextDueDate,
-                                inSameDayAs: try #require(calendar.date(byAdding: .month, value: 1, to: next))),
+                                inSameDayAs: try #require(calendar.date(byAdding: .month, value: 2, to: today))),
                 "el adelanto no avanzó y la siguiente se pagaría dos veces")
     }
 
