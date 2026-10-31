@@ -179,11 +179,11 @@ struct AccountSelectorSheet: View {
         dismiss()
     }
 
-    /// Una línea tocada a propósito se guarda tal cual; la tarjeta se enruta por la divisa del importe.
+    /// Una línea tocada a propósito se guarda tal cual; la tarjeta se enruta por la divisa del importe, salvo desde una de
+    /// sus propias líneas, que vuelve a la principal (`AccountSelectorViewModel.selection`).
     private func choose(_ account: Account) {
-        let roles = AccountLineLogic.resolve(viewModel.accounts.map { AccountLineNode($0) })
-        let isLine = roles[account.shortcutID]?.isLine ?? false
-        selectedAccount = isLine ? account : viewModel.resolvedSelection(for: account, routingCurrency: routingCurrency)
+        selectedAccount = viewModel.selection(
+            for: account, current: selectedAccount?.persistentModelID, routingCurrency: routingCurrency)
         dismiss()
     }
 

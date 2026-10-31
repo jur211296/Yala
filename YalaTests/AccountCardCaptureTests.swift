@@ -143,6 +143,69 @@ struct AccountCardCaptureTests {
         #expect(try f.context.fetch(FetchDescriptor<Account>()).count == 3)
     }
 
+    /// Card y1z6 (Jürgen, 2026-10-30): en Yala IA, tras pasar a la línea en dólares, volver a tocar la tarjeta no hacía
+    /// nada. El borrador ya iba en USD y la tarjeta se enrutaba con esa divisa, así que volvía a la misma línea.
+    @Test func chat_fromTheUSDLine_choosingTheCardAgain_goesBackToThePrincipal() throws {
+        let f = try makeFixture()
+        let draft = ChatTransactionDraft(
+            amount: 80, currencyCode: "PEN", isExpense: true, note: "Hotel",
+            date: Date.now, accountID: f.card.persistentModelID, subcategoryID: f.subcategory.persistentModelID)
+        let message = ChatMessage(role: .assistant, text: "Te propongo esto", timestamp: Date.now,
+                                  attachments: [.drafts([draft])])
+        let defaults = makeIsolatedDefaults()
+        defaults.set(try JSONEncoder().encode(ChatPersistedSession(messages: [message], allTurns: [])),
+                     forKey: "chat_session_" + DayKeyFormatter.string(from: Date.now))
+        let vm = ChatAssistantViewModel(defaults: defaults)
+        vm.setContext(f.context, autoLoadSuggestions: false)
+
+        func current() throws -> ChatTransactionDraft {
+            let drafts = vm.messages.flatMap { msg in
+                (msg.attachments ?? []).flatMap { attachment -> [ChatTransactionDraft] in
+                    if case .drafts(let list) = attachment { return list }
+                    return []
+                }
+            }
+            return try #require(drafts.first { $0.id == draft.id })
+        }
+
+        vm.updateDraft(messageID: message.id, draftID: draft.id, accountID: .some(f.line.persistentModelID))
+        #expect(try current().accountID == f.line.persistentModelID)
+        #expect(try current().currencyCode == "USD")
+
+        // La tarjeta otra vez: la principal, en soles.
+        vm.updateDraft(messageID: message.id, draftID: draft.id, accountID: .some(f.card.persistentModelID))
+        #expect(try current().accountID == f.card.persistentModelID)
+        #expect(try current().currencyCode == "PEN")
+
+        // Y de ahí, cualquier otra cuenta y vuelta a la línea, las veces que haga falta.
+        vm.updateDraft(messageID: message.id, draftID: draft.id, accountID: .some(f.savings.persistentModelID))
+        #expect(try current().accountID == f.savings.persistentModelID)
+        vm.updateDraft(messageID: message.id, draftID: draft.id, accountID: .some(f.line.persistentModelID))
+        #expect(try current().accountID == f.line.persistentModelID)
+        vm.updateDraft(messageID: message.id, draftID: draft.id, accountID: .some(f.card.persistentModelID))
+        #expect(try current().accountID == f.card.persistentModelID)
+    }
+
+    /// Card y1z6 en el selector compartido (Nuevo registro, edición, Bandeja): con el importe ya en dólares y la línea
+    /// elegida, tocar la tarjeta la enrutaba a la misma línea y la hoja se cerraba sin cambiar nada.
+    @Test func selector_fromTheUSDLine_choosingTheCard_givesThePrincipal() throws {
+        let f = try makeFixture()
+        let selector = AccountSelectorViewModel()
+        selector.setContext(f.context)
+        // Desde su propia línea: la principal.
+        #expect(selector.selection(for: f.card, current: f.line.persistentModelID, routingCurrency: "USD")
+            .shortcutID == f.card.shortcutID)
+        // Lo demás no cambia: desde otra cuenta, la tarjeta sigue enrutándose por la divisa del importe…
+        #expect(selector.selection(for: f.card, current: f.savings.persistentModelID, routingCurrency: "USD")
+            .shortcutID == f.line.shortcutID)
+        #expect(selector.selection(for: f.card, current: nil, routingCurrency: "USD").shortcutID == f.line.shortcutID)
+        // …la línea tocada a propósito se guarda tal cual, y sin divisa de enrutado, la cuenta tocada.
+        #expect(selector.selection(for: f.line, current: f.card.persistentModelID, routingCurrency: "PEN")
+            .shortcutID == f.line.shortcutID)
+        #expect(selector.selection(for: f.card, current: f.line.persistentModelID, routingCurrency: nil)
+            .shortcutID == f.card.shortcutID)
+    }
+
     // MARK: - Voz, imagen y Siri
 
     @Test func voice_dictatedInDollars_picksTheUSDLine() throws {
@@ -190,7 +253,8 @@ struct AccountCardCaptureTests {
         f.context.insert(draft)
         try f.context.save()
 
-        // La hoja abre el selector con la divisa del borrador; tocar la tarjeta vuelve a la línea en dólares.
+        // El enrutado por la divisa del borrador lleva la tarjeta a su línea en dólares. (En la hoja, tocar la tarjeta desde
+        // esa misma línea da la principal: `selector_fromTheUSDLine_choosingTheCard_givesThePrincipal`.)
         let selector = AccountSelectorViewModel()
         selector.setContext(f.context)
         let chosen = selector.resolvedSelection(for: f.card, routingCurrency: f.line.currencyCode)
