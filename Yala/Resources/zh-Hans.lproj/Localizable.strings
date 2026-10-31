@@ -8521,3 +8521,7 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "请在 %@ 前还信用卡。";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "%1$@ 还款 · %2$@";
 "cashFlowPlan.cardPaymentNote" = "已计入消费当月的支出，不会再次扣除。";
+"groups.hero.netOwedToMe" = "按你的主货币（%1$@）计算，别人共欠你 %2$@。";
+"groups.hero.netIOwe" = "按你的主货币（%1$@）计算，你共欠 %2$@。";
+"groups.hero.netEven" = "按你的主货币（%@）计算，你欠的和别人欠你的正好抵消。";
+"groups.card.andMore" = "还有 %d 项";

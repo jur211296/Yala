@@ -137,6 +137,29 @@ struct ThemeTokenContrastTests {
         #expect(abs(old.g - now.g) > 0.1, "Color.incomeAmount en oscuro sigue siendo #0F7A80")
     }
 
+    // MARK: - Grupos · «debes» y «te deben» (decisión de Jürgen, 2026-10-30)
+
+    @Test("«Debes» y «te deben» de Grupos llegan a AA sobre fondo y tarjeta de cada tema", arguments: allThemes.map(\.0))
+    func groupAmounts_areAA_inEveryTheme(name: String) throws {
+        let theme = try #require(Self.allThemes.first { $0.0 == name }?.1)
+        let dark = theme.baseColorScheme == .dark
+        for (token, color) in [("debes", Color.groupOweAmount), ("te deben", Color.groupOwedAmount)] {
+            for (surface, base) in Self.surfaces(of: theme) {
+                let value = Self.ratio(Self.rgb(color, dark: dark), base)
+                #expect(value >= 4.5, "\(name), \(token) sobre \(surface): \(String(format: "%.2f", value)):1")
+            }
+        }
+    }
+
+    @Test("«Debes» no es naranja: el rojo manda sobre el verde y el azul en los dos modos")
+    func groupOweAmount_isNotOrange() {
+        for dark in [false, true] {
+            let c = Self.rgb(.groupOweAmount, dark: dark)
+            // El naranja de las propuestas (#C2410C / #FF7A59) tiene el verde por encima del azul.
+            #expect(c.b >= c.g, "\(dark ? "oscuro" : "claro"): \(c)")
+        }
+    }
+
     @Test("El relleno turquesa con blanco encima sigue en AA (no cambia con el modo)")
     func incomeFill_withWhite_isAA() {
         for dark in [false, true] {

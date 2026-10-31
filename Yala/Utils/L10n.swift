@@ -2601,6 +2601,26 @@ enum L10n {
             static func youOwe(_ name: String) -> String {
                 String(format: ls("groups.card.youOwe", comment: ""), name)
             }
+            /// «y %d más» — las personas que no caben en las tres filas de la tarjeta.
+            static func andMore(_ count: Int) -> String {
+                String(format: ls("groups.card.andMore", comment: ""), count)
+            }
+        }
+
+        /// El aviso morado del resumen de la lista con el neto en tu moneda principal (Yala completo, 2026-10-30).
+        enum Hero {
+            /// «En tu moneda principal (S/), esto significa un saldo de S/ 50.00 que te deben.»
+            static func netOwedToMe(_ symbol: String, _ amount: String) -> String {
+                String(format: ls("groups.hero.netOwedToMe", comment: ""), symbol, amount)
+            }
+            /// «En tu moneda principal (S/), esto significa un saldo de S/ 50.00 que debes.»
+            static func netIOwe(_ symbol: String, _ amount: String) -> String {
+                String(format: ls("groups.hero.netIOwe", comment: ""), symbol, amount)
+            }
+            /// «En tu moneda principal (S/), lo que debes y lo que te deben se compensan.»
+            static func netEven(_ symbol: String) -> String {
+                String(format: ls("groups.hero.netEven", comment: ""), symbol)
+            }
         }
 
         enum Member {

@@ -8510,3 +8510,7 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "Paie ta carte avant le %@.";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Paiement %1$@ · %2$@";
 "cashFlowPlan.cardPaymentNote" = "Déjà compté dans les dépenses du mois de l'achat : il n'est pas déduit une deuxième fois.";
+"groups.hero.netOwedToMe" = "Dans ta devise principale (%1$@), cela fait un solde de %2$@ qu’on te doit.";
+"groups.hero.netIOwe" = "Dans ta devise principale (%1$@), cela fait un solde de %2$@ que tu dois.";
+"groups.hero.netEven" = "Dans ta devise principale (%@), ce que tu dois et ce qu’on te doit s’équilibrent.";
+"groups.card.andMore" = "et %d de plus";

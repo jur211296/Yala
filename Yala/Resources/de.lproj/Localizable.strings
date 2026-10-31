@@ -8509,3 +8509,7 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "Zahle deine Karte bis %@.";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Zahlung %1$@ · %2$@";
 "cashFlowPlan.cardPaymentNote" = "Steht schon in den Ausgaben des Monats, in dem du gekauft hast: wird nicht noch einmal abgezogen.";
+"groups.hero.netOwedToMe" = "In deiner Hauptwährung (%1$@) ergibt das ein Guthaben von %2$@, das man dir schuldet.";
+"groups.hero.netIOwe" = "In deiner Hauptwährung (%1$@) ergibt das %2$@, die du schuldest.";
+"groups.hero.netEven" = "In deiner Hauptwährung (%@) gleichen sich deine Schulden und Guthaben aus.";
+"groups.card.andMore" = "und %d weitere";

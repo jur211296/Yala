@@ -265,6 +265,27 @@ extension Color {
     static let incomeAmountLight = Color(hex: incomeAmountLightHex)
     static let incomeAmountDark = Color(hex: incomeAmountDarkHex)
 
+    // MARK: - Lo que debes y lo que te deben en Grupos (decisión de Jürgen, 2026-10-30)
+
+    /// «Debes» en la lista de Grupos: rosa rojizo, sin naranja, que combina con los temas índigo y rosa. Como TEXTO
+    /// llega a AA sobre fondo y tarjeta de los diez temas (lo fija `ThemeTokenContrastTests`).
+    static let groupOweAmount = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: groupOweAmountDarkHex)) : UIColor(Color(hex: groupOweAmountLightHex))
+    })
+    static let groupOweAmountLightHex = "BE123C"
+    static let groupOweAmountDarkHex = "FB7185"
+
+    /// «Te deben» en la lista de Grupos: verde. Mismo peso que `groupOweAmount` y la misma medida AA.
+    static let groupOwedAmount = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: groupOwedAmountDarkHex)) : UIColor(Color(hex: groupOwedAmountLightHex))
+    })
+    static let groupOwedAmountLightHex = "15803D"
+    static let groupOwedAmountDarkHex = "4ADE80"
+
+    /// El tinte morado del aviso de cristal con el neto en tu moneda principal. Es fondo, no texto: encima va el
+    /// texto normal del tema.
+    static let groupsNetNoticeTint = Color(hex: "7C3AED").opacity(0.28)
+
     /// Turquesa de RELLENO sólido con texto o icono blanco encima (5,1:1), igual en claro y en oscuro: la píldora de
     /// ingresos del hero, la ficha de categorías y el consentimiento de Yala IA. Hasta el 2026-10-25 usaban
     /// `incomeAmount`, que desde entonces se aclara en oscuro y con blanco encima no llegaría a AA.

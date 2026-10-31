@@ -7839,3 +7839,7 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "Pay your card by %@.";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "%1$@ payment · %2$@";
 "cashFlowPlan.cardPaymentNote" = "Already in your expenses for the month you bought: it isn't subtracted again.";
+"groups.hero.netOwedToMe" = "In your main currency (%1$@), that’s a balance of %2$@ owed to you.";
+"groups.hero.netIOwe" = "In your main currency (%1$@), that’s a balance of %2$@ you owe.";
+"groups.hero.netEven" = "In your main currency (%@), what you owe and what you’re owed even out.";
+"groups.card.andMore" = "and %d more";

@@ -7844,3 +7844,7 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "Paga o teu cartão até %@.";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Pagamento de %1$@ · %2$@";
 "cashFlowPlan.cardPaymentNote" = "Já está nos gastos do mês em que compraste: não é descontado outra vez.";
+"groups.hero.netOwedToMe" = "Na sua moeda principal (%1$@), isto significa um saldo de %2$@ que lhe devem.";
+"groups.hero.netIOwe" = "Na sua moeda principal (%1$@), isto significa um saldo de %2$@ que deve.";
+"groups.hero.netEven" = "Na sua moeda principal (%@), o que deve e o que lhe devem compensam-se.";
+"groups.card.andMore" = "e mais %d";
