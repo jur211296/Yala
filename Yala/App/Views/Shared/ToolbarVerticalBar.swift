@@ -48,14 +48,14 @@ extension ToolbarContent {
 }
 
 extension View {
-    /// Opción 2 de Jürgen (2026-10-24) para las páginas de pestaña del Duo cerrado: cuando la barra vertical no da para
-    /// todo, ceden las pestañas —se pliegan a un botón— y no los botones de la página (avatar, bandeja, Filtros…). Sin
-    /// esto, en el Panel cerrado el avatar no cabía y Filtros acababa en «···». Va en la página, dentro de su pila: puesto
-    /// en la `TabView` o en el contenido de cada `Tab`, no hacía nada (medido).
+    /// Opción 2 de Jürgen (2026-10-24) para las páginas de pestaña del Duo: cuando la barra vertical no da para todo,
+    /// ceden las pestañas —se pliegan a un botón— y no los botones de la página (avatar, bandeja, Filtros…). Sin esto, en
+    /// el Panel cerrado el avatar no cabía y Filtros acababa en «···». Va en la página, dentro de su pila: puesto en la
+    /// `TabView` o en el contenido de cada `Tab`, no hacía nada (medido).
     ///
-    /// Solo en ancho compacto. Abierto en horizontal (ancho regular, siete pestañas) también plegaba las pestañas del
-    /// Panel, y el abierto no se rediseña: ahí se queda el comportamiento del sistema. Se pasa siempre un valor, sin `if`,
-    /// para que la página no cambie de identidad al plegar o abrir. Sin barra vertical no cambia nada.
+    /// En el Duo cerrado y, desde el 2026-10-30 (card a5kf), también abierto en horizontal: ahí, con siete pestañas, el
+    /// avatar no cabía, y Jürgen pidió las mismas reglas que en el cerrado. Sin condición: solo actúa donde hay barra
+    /// vertical, y en el iPhone, el iPad y el Duo abierto en vertical no cambia nada.
     func prefersToolbarItemsInVerticalBar() -> some View {
         modifier(PrefersToolbarItemsInVerticalBar())
     }
@@ -304,11 +304,9 @@ private struct HiddenInVerticalBar271: ViewModifier {
 }
 
 private struct PrefersToolbarItemsInVerticalBar: ViewModifier {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
     func body(content: Content) -> some View {
         if #available(iOS 27.1, *) {
-            content.toolbarVerticalCompressionBehavior(horizontalSizeClass == .compact ? .prefersToolbarItems : .automatic)
+            content.toolbarVerticalCompressionBehavior(.prefersToolbarItems)
         } else {
             content
         }

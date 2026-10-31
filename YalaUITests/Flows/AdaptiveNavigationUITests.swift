@@ -417,6 +417,29 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
+    /// iPhone Duo (card a5kf, 2026-10-30): el avatar va en la MISMA barra que la bandeja del Panel. Con barras
+    /// horizontales (iPhone, iPad, Duo abierto en vertical) comparten fila; con barra vertical (Duo cerrado, abierto en
+    /// horizontal o a medio plegar) comparten columna, y arriba no queda una franja aparte con el avatar. Antes, en el
+    /// Duo abierto en horizontal, la bandeja bajaba a la barra vertical y el avatar se quedaba arriba a la derecha: ni
+    /// misma fila ni misma columna. En el iPhone del CI pasa por la fila; la postura del Duo se pone en Device Hub y el
+    /// caso se corre por UDID en el Duo.
+    func test_profileAvatar_sharesTheInboxBar() {
+        let app = launch(deeplink: "panel")
+        let inbox = app.buttons["panel_inbox_button"].firstMatch
+        let avatar = app.buttons["profile_avatar"].firstMatch
+        XCTAssertTrue(inbox.waitForExistence(timeout: 15), "No está la bandeja del Panel.")
+        XCTAssertTrue(avatar.waitForExistence(timeout: 5), "No está el avatar del Panel.")
+        // En el Duo la bandeja puede pintarse un instante fuera de su sitio en el primer arranque: se lee quieta.
+        XCTAssertTrue(app.waitForSettledLayout(of: inbox), "La bandeja no dejó de moverse.")
+        XCTAssertTrue(app.waitForSettledLayout(of: avatar), "El avatar no dejó de moverse.")
+        let sameRow = abs(inbox.frame.midY - avatar.frame.midY) < 4
+        let sameColumn = abs(inbox.frame.midX - avatar.frame.midX) < 4
+        XCTAssertTrue(
+            sameRow || sameColumn,
+            "El avatar no va en la barra de la bandeja (bandeja \(inbox.frame), avatar \(avatar.frame)): "
+                + "quedó en una barra aparte.")
+    }
+
     /// Fase 2b: Estadísticas › Resumen en pares en ancho: «Tu salud financiera» y «Resumen con IA» en la misma
     /// fila. En iPhone, uno debajo de otro.
     func test_statisticsSummary_pairsTheCards_inWideWindow() {
