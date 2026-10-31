@@ -21,6 +21,9 @@ struct MemberPickerView: View {
 
     @Binding var selectedMemberID: String
 
+    /// Abre a media altura con el fondo de «Configurar panel»: glass del sistema; `.subtle` al estirarla.
+    @State private var selectedDetent: PresentationDetent = .medium
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -47,7 +50,7 @@ struct MemberPickerView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(selectedDetent == .large ? .subtle : .transparent)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -58,6 +61,7 @@ struct MemberPickerView: View {
                 }
             }
         }
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Row

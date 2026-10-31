@@ -60,12 +60,12 @@ struct GroupExpenseComposerView: View {
             GroupPickerSheet(
                 groups: groups,
                 selectedGroupID: selectedGroup.id,
-                memberCount: memberCount
+                memberCount: memberCount,
+                opensAtMediumHeight: true
             ) { picked in
                 selectedGroup = picked
                 showGroupPicker = false
             }
-            .yalaSheetDetents([.medium, .large])
         }
     }
 

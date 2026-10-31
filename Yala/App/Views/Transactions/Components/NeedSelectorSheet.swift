@@ -14,8 +14,8 @@ struct NeedSelectorSheet: View {
     @Environment(\.yalaTheme) private var theme
     @Binding var selectedNeed: SubcategoryNeed
 
-    /// Desde el formulario de registro abre con `SelectorSheetSizing` (UX 2.2 · L2-22): material grueso a media altura, el
-    /// mismo criterio que cuenta, categoría y etiquetas. `nil` = quien presenta pone los detents, como antes.
+    /// Desde el formulario de registro abre con `SelectorSheetSizing` : glass del sistema a media altura, como «Configurar
+    /// panel», el mismo criterio que cuenta, categoría y etiquetas. `nil` = quien presenta pone los detents, como antes.
     var sizing: SelectorSheetSizing?
     @State private var selectedDetent: PresentationDetent = .medium
     @Environment(\.usesLargeSheets) private var usesLargeSheets

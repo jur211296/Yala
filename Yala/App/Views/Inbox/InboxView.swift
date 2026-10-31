@@ -447,7 +447,8 @@ struct InboxView: View {
                 GroupPickerSheet(
                     groups: data.groups,
                     selectedGroupID: nil,
-                    memberCount: { data.memberCounts[$0.id] ?? 0 }
+                    memberCount: { data.memberCounts[$0.id] ?? 0 },
+                    opensAtMediumHeight: true
                 ) { picked in
                     let draft = data.draft
                     conversionPicker = nil
@@ -457,7 +458,6 @@ struct InboxView: View {
                         conversionContext = buildConversionContext(draft: draft, group: picked)
                     }
                 }
-                .yalaSheetDetents([.medium, .large])
             }
             .sheet(item: $conversionContext, onDismiss: {
                 viewModel.loadData()

@@ -12,6 +12,7 @@ struct SaveAsFavoriteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.usesLargeSheets) private var usesLargeSheets
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = SaveAsFavoriteViewModel()
@@ -47,6 +48,8 @@ struct SaveAsFavoriteSheet: View {
     @State private var showAccountSelector = false
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
+    /// Detent de la hoja de etiquetas: glass del sistema a media altura, `.subtle` al estirarla (como «Configurar panel»).
+    @State private var tagSheetDetent: PresentationDetent = .medium
 
     @FocusState private var isNameFocused: Bool
 
@@ -324,13 +327,13 @@ struct SaveAsFavoriteSheet: View {
             Spacer()
 
             if selectedTags.isEmpty {
-                Button { showTagSelector = true } label: {
+                Button { tagSheetDetent = .medium; showTagSelector = true } label: {
                     Text(L10n.Common.select)
                         .foregroundStyle(.thAccentText)
                 }
                 .buttonStyle(.plain)
             } else {
-                Button { showTagSelector = true } label: {
+                Button { tagSheetDetent = .medium; showTagSelector = true } label: {
                     Text("\(selectedTags.count)")
                         .foregroundStyle(.secondary)
                 }
@@ -469,7 +472,7 @@ struct SaveAsFavoriteSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(tagSheetDetent == .large || usesLargeSheets ? .subtle : .transparent)
             .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -484,7 +487,7 @@ struct SaveAsFavoriteSheet: View {
             }
         }
 
-        .yalaSheetDetents([.medium, .large])
+        .yalaSheetDetents([.medium, .large], selection: $tagSheetDetent)
     }
 
     // MARK: - Save
