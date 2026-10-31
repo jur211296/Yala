@@ -8525,3 +8525,10 @@
 "groups.hero.netIOwe" = "メイン通貨（%1$@）に換算すると、あなたが支払う残高は %2$@ です。";
 "groups.hero.netEven" = "メイン通貨（%@）に換算すると、支払う分と受け取る分は相殺されます。";
 "groups.card.andMore" = "ほか %d 件";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "編集する通貨";
+"account.lines.lineBalanceFooter %@" = "%@ の明細の開始残高です。保存すると、今日の残高がここから再計算されます。";
+"account.lines.delete %@" = "%@ の明細を削除";
+"account.lines.deleteConfirmTitle %@" = "%@ の明細を削除しますか？";
+"account.lines.deleteConfirmMessage" = "記録はありません。カードのほかの通貨はそのまま残ります。元に戻せません。";

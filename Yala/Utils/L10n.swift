@@ -3916,6 +3916,18 @@ enum L10n {
             static func isLineOf(currencyCode: String, cardName: String) -> String {
                 String(format: ls("account.lines.isLineOf %@ %@", comment: ""), currencyCode, cardName)
             }
+            /// Editar cuenta con varias divisas (S30): el selector de moneda, el pie del saldo de una línea y eliminarla.
+            static var currencyPicker: String { ls("account.lines.currencyPicker", comment: "VoiceOver label of the currency segmented control in Edit account") }
+            static func lineBalanceFooter(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.lineBalanceFooter %@", comment: "Footer under a line's initial balance. %@ = ISO code"), currencyCode)
+            }
+            static func delete(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.delete %@", comment: "Button that deletes one currency line. %@ = ISO code"), currencyCode)
+            }
+            static func deleteConfirmTitle(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.deleteConfirmTitle %@", comment: "Title of the confirmation to delete an empty line. %@ = ISO code"), currencyCode)
+            }
+            static var deleteConfirmMessage: String { ls("account.lines.deleteConfirmMessage", comment: "") }
             static var unlink: String { ls("account.lines.unlink", comment: "") }
             static var unlinkFooter: String { ls("account.lines.unlinkFooter", comment: "") }
             static var broken: String { ls("account.lines.broken", comment: "") }

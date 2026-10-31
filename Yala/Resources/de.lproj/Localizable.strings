@@ -8513,3 +8513,10 @@
 "groups.hero.netIOwe" = "In deiner Hauptwährung (%1$@) ergibt das %2$@, die du schuldest.";
 "groups.hero.netEven" = "In deiner Hauptwährung (%@) gleichen sich deine Schulden und Guthaben aus.";
 "groups.card.andMore" = "und %d weitere";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "Bearbeitete Währung";
+"account.lines.lineBalanceFooter %@" = "Der Startsaldo der Linie in %@. Beim Speichern wird der heutige Saldo daraus neu berechnet.";
+"account.lines.delete %@" = "Linie in %@ löschen";
+"account.lines.deleteConfirmTitle %@" = "Linie in %@ löschen?";
+"account.lines.deleteConfirmMessage" = "Sie hat keine Buchungen. Die Karte behält ihre anderen Währungen. Das lässt sich nicht rückgängig machen.";

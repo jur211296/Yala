@@ -7843,3 +7843,10 @@
 "groups.hero.netIOwe" = "In your main currency (%1$@), that’s a balance of %2$@ you owe.";
 "groups.hero.netEven" = "In your main currency (%@), what you owe and what you’re owed even out.";
 "groups.card.andMore" = "and %d more";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "Currency you're editing";
+"account.lines.lineBalanceFooter %@" = "The balance your %@ line started with. When you save, today's balance is recalculated from it.";
+"account.lines.delete %@" = "Delete the %@ line";
+"account.lines.deleteConfirmTitle %@" = "Delete the %@ line?";
+"account.lines.deleteConfirmMessage" = "It has no records. The card keeps its other currencies. This can't be undone.";

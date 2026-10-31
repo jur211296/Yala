@@ -45,14 +45,22 @@ struct AccountFormView: View {
     /// hoja saca su contenido de este estado (`swiftui-ds.md`, hojas vacías).
     @State private var lineOfferTarget: AccountLineOfferTarget?
     @FocusState private var focusedField: Field?
-    /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
-    @State private var selectedDetent: PresentationDetent = .medium
+    /// Crear abre a media altura (ticket `account-form-as-medium-detent-sheet`) y se puede tirar hacia arriba; editar abre
+    /// a pantalla completa (S30, Jürgen 2026-10-30): ahí se revisa todo lo de la cuenta, no un solo campo.
+    @State private var selectedDetent: PresentationDetent
+    /// Eliminar una línea desde el selector de moneda (S30): la línea vacía que espera su confirmación corta, y la que
+    /// se está eliminando con la hoja de «¿Qué hacemos con lo que hay dentro?» (al cerrarse, el formulario sigue abierto).
+    @State private var lineAwaitingDeleteConfirmation: Account?
+    @State private var lineAwaitingDeleteCurrency: String = ""
+    @State private var showsLineDeleteConfirmation: Bool = false
+    @State private var lineBeingRemoved: UUID?
     @Environment(\.usesLargeSheets) private var usesLargeSheets
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    /// Con un tamaño de texto de accesibilidad, media altura enseña un solo campo: la hoja abre grande.
+    /// Editar abre grande (S30). Al crear, con un tamaño de texto de accesibilidad, media altura enseña un solo campo: la
+    /// hoja también abre grande.
     private var sheetDetents: Set<PresentationDetent> {
-        dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
+        viewModel.isEditing || dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large]
     }
 
     /// Grande si el usuario la arrastró o si no hay medium que mostrar: la ventana ancha
@@ -67,6 +75,7 @@ struct AccountFormView: View {
     }
 
     init(existingNames: [String], accountToEdit: Account? = nil) {
+        _selectedDetent = State(initialValue: accountToEdit == nil ? .medium : .large)
         _viewModel = State(
             initialValue: AccountFormViewModel(
                 accountToEdit: accountToEdit,
@@ -219,6 +228,9 @@ struct AccountFormView: View {
         ))
         .modifier(DiscardAccountChangesAlert(isPresented: $showDiscardChangesAlert) { dismiss() })
         .modifier(AccountLinesAlerts(viewModel: viewModel))
+        .modifier(AccountLineDeleteConfirmation(
+            isPresented: $showsLineDeleteConfirmation, line: lineAwaitingDeleteConfirmation,
+            currencyCode: lineAwaitingDeleteCurrency, onConfirm: deleteEmptyLine))
         .alert(
             viewModel.pendingCurrencyConversion.map { Self.currencyConversionTitle($0) } ?? "",
             isPresented: Binding(
@@ -313,7 +325,24 @@ struct AccountFormView: View {
                         if viewModel.selectedType == .creditCard && viewModel.ownsCardSettings {
                             creditCardSection
                         }
-                        if usesBalanceEditor {
+                        // Una tarjeta con líneas: un segmento por divisa, y cada línea con su saldo inicial (S30).
+                        if viewModel.showsLineCurrencyPicker {
+                            lineCurrencyPicker
+                        }
+                        if let line = viewModel.selectedLine {
+                            // Sin borrador no se pinta nada: el bloque de la principal bajo el segmento de una línea
+                            // haría que lo escrito fuera a la cuenta equivocada.
+                            if let draft = viewModel.lineDraft(for: line) {
+                                AccountLineBalanceEditor(
+                                    draft: draft,
+                                    currencyCode: normalizeCurrencyCode(line.currencyCode),
+                                    isCreditCard: viewModel.selectedType == .creditCard,
+                                    onDelete: { requestDeleteLine(line) }
+                                )
+                                // Una vista por línea: con la misma, el foco y lo escrito pasaban de USD a EUR.
+                                .id(line.shortcutID)
+                            }
+                        } else if usesBalanceEditor {
                             // «Editar el saldo» (pantalla 8 del rediseño, auditoría UX 2.2, L7-6).
                             balanceEditSection
                         } else {
@@ -1411,6 +1440,7 @@ struct AccountFormView: View {
     /// que contradice a la primera.
     private func requestDelete() {
         guard let account = viewModel.accountToEdit else { return }
+        lineBeingRemoved = nil
         do {
             let inventory = try AccountRemovalService.inventory(of: account, context: modelContext)
             if inventory.shape.needsQuestion {
@@ -1471,6 +1501,15 @@ struct AccountFormView: View {
     /// La hoja se cerró. Si eliminó la cuenta, se cierra también el formulario; si no (cancelar, o un error que
     /// deshizo todo), el formulario vuelve a leer sus filas, que soltó antes de guardar.
     private func removalSheetDismissed() {
+        // Era una línea (S30): la tarjeta sigue, así que el formulario se queda abierto con lo que haya ahora.
+        if lineBeingRemoved != nil {
+            // Cancelar deja la divisa que estaba elegida; eliminar vuelve a la de la cuenta.
+            let removed = accountWasRemoved
+            lineBeingRemoved = nil
+            accountWasRemoved = false
+            viewModel.afterLineRemoved(keepingSelection: !removed)
+            return
+        }
         if accountWasRemoved {
             accountWasRemoved = false
             dismiss()
@@ -1478,6 +1517,71 @@ struct AccountFormView: View {
             viewModel.loadAccounts()
             viewModel.loadTransactions()
             viewModel.loadPlans()
+        }
+    }
+
+    // MARK: - Editar cuenta con varias divisas (S30)
+
+    /// Un segmento por divisa: la de la cuenta primero, luego sus líneas.
+    private var lineCurrencyPicker: some View {
+        Picker(L10n.Account.Lines.currencyPicker, selection: $viewModel.selectedLineID) {
+            Text(currencySegmentLabel(viewModel.selectedCurrency.rawValue)).tag(UUID?.none)
+            ForEach(viewModel.cardLines, id: \.shortcutID) { line in
+                Text(currencySegmentLabel(line.currencyCode)).tag(UUID?.some(line.shortcutID))
+            }
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: viewModel.selectedLineID) { focusedField = nil }
+        .accessibilityIdentifier("account_line_currency_picker")
+    }
+
+    private func currencySegmentLabel(_ rawCode: String) -> String {
+        let code = normalizeCurrencyCode(rawCode)
+        guard let currency = CurrencyCode(rawValue: code) else { return code }
+        return "\(currencyInfo(for: currency).flag) \(code)"
+    }
+
+    /// «Eliminar la línea»: con algo dentro abre la hoja que pregunta qué hacer con ello (la misma de eliminar una
+    /// cuenta); vacía, la confirmación corta. Un fallo al leer no se toma por «vacía».
+    private func requestDeleteLine(_ line: Account) {
+        focusedField = nil
+        do {
+            if try viewModel.lineRemovalNeedsQuestion(line) {
+                accountWasRemoved = false
+                lineBeingRemoved = line.shortcutID
+                removalTarget = AccountRemovalTarget(account: line, name: line.name, currencyCode: line.currencyCode)
+            } else {
+                lineAwaitingDeleteConfirmation = line
+                lineAwaitingDeleteCurrency = normalizeCurrencyCode(line.currencyCode)
+                showsLineDeleteConfirmation = true
+            }
+        } catch {
+            #if DEBUG
+            print("AccountFormView: Error reading line inventory: \(error)")
+            #endif
+            viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
+            viewModel.isShowingDeleteError = true
+        }
+    }
+
+    /// La línea vacía, confirmada: se elimina y el formulario vuelve a la divisa de la cuenta.
+    private func deleteEmptyLine(_ line: Account) {
+        lineAwaitingDeleteConfirmation = nil
+        deletionService.setContext(modelContext)
+        do {
+            try deletionService.deleteAccount(line)
+            viewModel.afterLineRemoved()
+        } catch {
+            #if DEBUG
+            print("AccountFormView: Error deleting line: \(error)")
+            #endif
+            // Una vuelta del main actor después: se pide desde el botón de la confirmación, y dos alertas encadenadas en
+            // el mismo ancla pierden la segunda (`swiftui-ds.md`).
+            let message = error.localizedDescription
+            Task { @MainActor in
+                viewModel.deleteErrorMessage = message
+                viewModel.isShowingDeleteError = true
+            }
         }
     }
 
@@ -1627,6 +1731,29 @@ private struct AccountLinesAlerts: ViewModifier {
             } message: {
                 Text(viewModel.lineActionError ?? "")
             }
+    }
+}
+
+// MARK: - Confirmación de eliminar una línea vacía (S30)
+
+/// «¿Eliminar la línea en USD?» para una línea sin nada dentro. Botones literales: el builder de `actions` de un `.alert`
+/// no admite etiquetas que dependan del estado (`swiftui-ds.md`); el título y el mensaje sí pueden variar.
+private struct AccountLineDeleteConfirmation: ViewModifier {
+    @Binding var isPresented: Bool
+    /// La línea y su divisa, leídas al tocar «Eliminar»: el aviso se sigue pintando mientras se cierra.
+    let line: Account?
+    let currencyCode: String
+    let onConfirm: (Account) -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(
+            L10n.Account.Lines.deleteConfirmTitle(currencyCode), isPresented: $isPresented, presenting: line
+        ) { target in
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Action.delete, role: .destructive) { onConfirm(target) }
+        } message: { _ in
+            Text(L10n.Account.Lines.deleteConfirmMessage)
+        }
     }
 }
 

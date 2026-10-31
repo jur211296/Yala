@@ -7848,3 +7848,10 @@
 "groups.hero.netIOwe" = "Na sua moeda principal (%1$@), isto significa um saldo de %2$@ que deve.";
 "groups.hero.netEven" = "Na sua moeda principal (%@), o que deve e o que lhe devem compensam-se.";
 "groups.card.andMore" = "e mais %d";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "Moeda que está a editar";
+"account.lines.lineBalanceFooter %@" = "O saldo com que a linha em %@ começou. Ao guardar, o saldo de hoje é recalculado a partir dele.";
+"account.lines.delete %@" = "Eliminar a linha em %@";
+"account.lines.deleteConfirmTitle %@" = "Eliminar a linha em %@?";
+"account.lines.deleteConfirmMessage" = "Não tem registos. O cartão mantém as outras moedas. Não é possível desfazer.";

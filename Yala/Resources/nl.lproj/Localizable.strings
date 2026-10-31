@@ -8525,3 +8525,10 @@
 "groups.hero.netIOwe" = "In je hoofdvaluta (%1$@) is dat een saldo van %2$@ dat je schuldig bent.";
 "groups.hero.netEven" = "In je hoofdvaluta (%@) heffen wat je schuldig bent en wat je tegoed hebt elkaar op.";
 "groups.card.andMore" = "en nog %d";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "Valuta die je bewerkt";
+"account.lines.lineBalanceFooter %@" = "Het beginsaldo van de lijn in %@. Bij opslaan wordt het saldo van vandaag hiermee opnieuw berekend.";
+"account.lines.delete %@" = "Lijn in %@ verwijderen";
+"account.lines.deleteConfirmTitle %@" = "Lijn in %@ verwijderen?";
+"account.lines.deleteConfirmMessage" = "Deze lijn heeft geen boekingen. De kaart houdt haar andere valuta. Dit kan niet ongedaan worden gemaakt.";
