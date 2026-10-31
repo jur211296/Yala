@@ -212,9 +212,13 @@ struct GroupsContainerView: View {
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
                     }
                     .scrollViewGlassEdges()
+                    // El buscador se queda siempre a la vista (card de Jürgen, 2026-10-30). Con `.automatic`, al volver a
+                    // la pestaña la barra reservaba el alto del cajón vacío ~0,5 s y luego lo plegaba: el resumen, los
+                    // botones y la lista saltaban hacia arriba de golpe. Es la única página de pestaña con buscador y
+                    // las demás pantallas con uno ya lo llevan fijo. Lo fija `GroupsSearchDrawerWiringTests`.
                     .searchable(
                         text: $viewModel.searchText,
-                        placement: .navigationBarDrawer(displayMode: .automatic),
+                        placement: .navigationBarDrawer(displayMode: .always),
                         prompt: L10n.Common.search
                     )
                     // Pull-to-refresh SOLO en el ScrollView de la lista (no en el

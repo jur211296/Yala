@@ -16,4 +16,9 @@ Receta medida el 2026-10-13 (variantes L1UI, 72 capturas en ~6 min de simulador)
 salió idéntica al «antes»): pásalo por `extraArguments:`. `app.keyboards.count` no vio el teclado del sheet: ciérralo
 tocando contenido tras subir arriba. El Chrome sin cabeza no baja de 500 px: para ver 390, la página en un iframe.
 
+**Medido el 2026-10-30 (propuestas de Grupos, PR #703):** una maqueta en `.overlay` sobre la lista real deja ver la lista
+por debajo en los temas claros y cambia el tamaño del título: va DENTRO del mismo `ScrollView`
+(`if let v = Mock.variant { Maqueta } else { real }`). El tema se fija por lanzamiento con `extraArguments: ["-userTheme", "1"]`
+(gana al dominio guardado): un solo `test-without-building` saca los cuatro temas.
+
 Relacionado: [[capturar-widgets-por-galeria]], [[auditoria-ui-glass-se-queda-jerarquiza]].

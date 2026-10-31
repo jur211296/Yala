@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1144)
+## Index (1146)
 
 | id | status | path |
 |---|---|---|
@@ -403,6 +403,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | first-panel-says-available-zero-next-to-the-opening-balance | done | tickets/done/first-panel-says-available-zero-next-to-the-opening-balance.md |
 | first-photo-after-install-fails-on-a-shared-burst-limit | done | tickets/done/first-photo-after-install-fails-on-a-shared-burst-limit.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
+| floating-plus-flashes-when-entering-a-tab | backlog | tickets/backlog/floating-plus-flashes-when-entering-a-tab.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
@@ -503,6 +504,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-equal-split-shows-not-participating-on-peer | done | tickets/done/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | done | tickets/done/groups-expense-notif-only-on-foreground.md |
 | groups-fab-group-with-only-pending-groups-says-nothing | done | tickets/done/groups-fab-group-with-only-pending-groups-says-nothing.md |
+| groups-first-entry-after-launch-slides-content | backlog | tickets/backlog/groups-first-entry-after-launch-slides-content.md |
 | groups-form-and-settings-name-the-same-options-differently | done | tickets/done/groups-form-and-settings-name-the-same-options-differently.md |
 | groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing | backlog | tickets/backlog/groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing.md |
 | groups-gate-wipe-failed-notice-can-outlive-its-attempt | backlog | tickets/backlog/groups-gate-wipe-failed-notice-can-outlive-its-attempt.md |
