@@ -30,12 +30,19 @@ struct TagFormView: View {
 
     // Delete confirmation
     @State private var isShowingDeleteConfirmation: Bool = false
+    /// Cuántos registros llevan la etiqueta, contado al pedir eliminarla. El mensaje de la alerta se vuelve a evaluar al
+    /// cerrarse, con la etiqueta ya borrada: leer su relación ahí aborta en iOS 27.x (card 1w89).
+    @State private var deleteDialogRecordCount = 0
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
 
     init(tagToEdit: Tag? = nil, existingTags: [Tag] = []) {
-        let vm = TagFormViewModel(tagToEdit: tagToEdit, initialExistingTags: existingTags)
+        // Mira antes de leer: quien presenta el formulario puede volver a crearlo con la etiqueta ya borrada (manda el
+        // `@State` de la primera vez, pero el ViewModel se construye igual y la lee), y en iOS 27.x leer un modelo borrado
+        // aborta (card 1w89). Esa construcción se descarta.
+        let readableTag = tagToEdit.flatMap { !$0.isDeleted && $0.modelContext != nil ? $0 : nil }
+        let vm = TagFormViewModel(tagToEdit: readableTag, initialExistingTags: existingTags)
         _viewModel = State(initialValue: vm)
         _customColor = State(initialValue: colorForHex(vm.selectedColorHex))
     }
@@ -102,7 +109,7 @@ struct TagFormView: View {
                 }
             } message: {
                 // Qué pasa con los registros que la llevan: se quedan, solo pierden la etiqueta (L7-13).
-                Text(L10n.UXL7.Tags.deleteMessage(viewModel.tagToEdit?.transactions?.count ?? 0))
+                Text(L10n.UXL7.Tags.deleteMessage(deleteDialogRecordCount))
             }
             .sheet(isPresented: $isPresentingIconPicker) {
                 IconColorPickerSheet(
@@ -253,6 +260,7 @@ struct TagFormView: View {
     private var deleteSection: some View {
         SectionBox(title: L10n.Common.actions) {
             Button(role: .destructive) {
+                deleteDialogRecordCount = viewModel.tagToEdit?.transactions?.count ?? 0
                 isShowingDeleteConfirmation = true
             } label: {
                 HStack {
@@ -308,6 +316,7 @@ struct TagFormView: View {
         deletionService.setContext(modelContext)
         do {
             try deletionService.deleteTag(tag)
+            viewModel.releaseDeletedTag()
             dismiss()
         } catch {
             #if DEBUG

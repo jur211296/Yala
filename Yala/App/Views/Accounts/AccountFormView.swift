@@ -21,6 +21,9 @@ struct AccountFormView: View {
     @State private var showBalanceCalculator: Bool = false
     /// «Eliminar cuenta» pregunta antes de borrar (ticket `deleting-an-account-asks-nothing`).
     @State private var showDeleteConfirmation: Bool = false
+    /// El nombre de la cuenta, copiado al pedir eliminarla. El título de la alerta se vuelve a evaluar al cerrarse, con la
+    /// cuenta ya eliminada y el formulario aún presentado: leerla ahí aborta en iOS 27.x (card 1w89).
+    @State private var deleteDialogAccountName = ""
     @State private var calcFieldState = BalanceCalculatorFieldState()
     /// La hoja «¿Qué hacemos con lo que hay dentro?» de eliminar una cuenta con movimientos: la cuenta, con su
     /// nombre y su divisa leídos al tocar «Eliminar» (la hoja se sigue pintando con la cuenta ya eliminada).
@@ -76,9 +79,13 @@ struct AccountFormView: View {
 
     init(existingNames: [String], accountToEdit: Account? = nil) {
         _selectedDetent = State(initialValue: accountToEdit == nil ? .medium : .large)
+        // Mira antes de leer: quien presenta el formulario puede volver a crearlo con la cuenta ya eliminada mientras se
+        // cierra (manda el `@State` de la primera vez, pero el ViewModel se construye igual y lee la cuenta), y en iOS
+        // 27.x leer un modelo borrado aborta (card 1w89). Esa construcción se descarta: da igual que sea un alta.
+        let readableAccount = accountToEdit.flatMap { !$0.isDeleted && $0.modelContext != nil ? $0 : nil }
         _viewModel = State(
             initialValue: AccountFormViewModel(
-                accountToEdit: accountToEdit,
+                accountToEdit: readableAccount,
                 existingNames: existingNames
             ))
     }
@@ -287,7 +294,7 @@ struct AccountFormView: View {
         )
         .modifier(AccountDeleteConfirmation(
             isPresented: $showDeleteConfirmation,
-            accountName: viewModel.accountToEdit?.name ?? viewModel.name,
+            accountName: deleteDialogAccountName,
             recordCount: viewModel.accountTransactions.count,
             onConfirm: handleDeleteTapped
         ))
@@ -1448,6 +1455,7 @@ struct AccountFormView: View {
                 removalTarget = AccountRemovalTarget(
                     account: account, name: account.name, currencyCode: account.currencyCode)
             } else {
+                deleteDialogAccountName = account.name
                 showDeleteConfirmation = true
             }
         } catch {
@@ -1476,6 +1484,7 @@ struct AccountFormView: View {
                 return
             }
             try deletionService.deleteAccount(account)
+            viewModel.releaseDeletedAccount()
             dismiss()
         } catch AccountRemovalService.Failure.unreadable {
             viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
@@ -1493,9 +1502,16 @@ struct AccountFormView: View {
     /// Antes suelta las filas que el formulario tenía cargadas: sigue montado mientras la hoja se cierra, y su
     /// `body` no debe leer filas ya borradas.
     private func removeAccount(_ account: Account) throws {
+        // Una línea (S30) se elimina con la tarjeta delante: el formulario sigue editándola. Se mira ANTES de eliminar.
+        let removesTheEditedAccount = lineBeingRemoved == nil
         viewModel.releaseLoadedRows()
         deletionService.setContext(modelContext)
         try deletionService.deleteAccount(account)
+        // Eliminada la cuenta del formulario, la hoja de eliminar sigue encima hasta cerrarse y el formulario debajo se
+        // repinta: lo suelta para no leerla (card 1w89).
+        if removesTheEditedAccount {
+            viewModel.releaseDeletedAccount()
+        }
     }
 
     /// La hoja se cerró. Si eliminó la cuenta, se cierra también el formulario; si no (cancelar, o un error que

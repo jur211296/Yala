@@ -90,8 +90,10 @@ final class BudgetsViewModel {
     var groupedBudgets: [(status: BudgetStatus, budgets: [BudgetSummary])] = []
 
     /// Count of active budgets (for Pro tier limit checking)
+    /// Sin los ya borrados: la lista lo lee en su `body` y, tras borrar un presupuesto, se repinta antes de recargar
+    /// `allBudgets`. En iOS 27.x leer uno borrado aborta.
     var activeBudgetsCount: Int {
-        allBudgets.count(where: { $0.isActive })
+        allBudgets.count(where: { !$0.isDeleted && $0.modelContext != nil && $0.isActive })
     }
 
     // MARK: - Initialization

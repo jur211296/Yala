@@ -38,7 +38,12 @@ struct CategoryDetailView: View {
     @FocusState private var isNameFieldFocused: Bool
 
     init(category: Category, isNewCategory: Bool = false) {
-        _viewModel = State(initialValue: CategoryDetailViewModel(category: category, isNewCategory: isNewCategory))
+        // Mira antes de leer: la lista vuelve a crear esta pantalla en su `NavigationLink` con la categoría ya borrada
+        // mientras se cierra (manda el `@State` de la primera vez, pero el ViewModel se construye igual), y en iOS 27.x
+        // leer un modelo borrado aborta (card 1w89).
+        _viewModel = State(initialValue: CategoryDetailViewModel(
+            category: category, isNewCategory: isNewCategory,
+            readsCategory: !category.isDeleted && category.modelContext != nil))
     }
 
     private func handleBack() {
@@ -131,6 +136,8 @@ struct CategoryDetailView: View {
         }
         .sheet(isPresented: $showMoveRecordsSheet) {
             CategoryMoveRecordsSheet(category: viewModel.category) {
+                // Mover sus registros la elimina: se suelta lo cargado antes de cerrar (card 1w89).
+                viewModel.releaseDeletedCategory()
                 dismiss()
             }
             .presentationDetents([.large])
@@ -462,7 +469,7 @@ struct CategoryDetailView: View {
                 .fill(Color(hex: viewModel.colorHex))
                 .frame(width: 36, height: 36)
                 .overlay(
-                    Image(systemName: subcategory.iconName ?? viewModel.category.iconName ?? "tag")
+                    Image(systemName: subcategory.iconName ?? viewModel.readableCategory?.iconName ?? "tag")
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.white)
                 )

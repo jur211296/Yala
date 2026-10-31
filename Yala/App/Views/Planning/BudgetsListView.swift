@@ -251,8 +251,9 @@ struct BudgetsListView: View {
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
 
-                    // Budget cards
-                    ForEach(section.budgets) { summary in
+                    // Budget cards. Sin los ya borrados: la lista recarga 150 ms después de borrar y, mientras, leer uno
+                    // aborta en iOS 27.x (`BudgetRowView`).
+                    ForEach(section.budgets.filter { !$0.budget.isDeleted && $0.budget.modelContext != nil }) { summary in
                         BudgetRowView(
                             summary: summary,
                             currencyCode: summary.budget.currencyCode

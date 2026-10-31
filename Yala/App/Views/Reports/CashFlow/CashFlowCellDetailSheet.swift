@@ -52,6 +52,59 @@ struct CashFlowCellDetailSheet: View {
     @State private var detailTransaction: TransactionItem?
     @State private var editingTransaction: TransactionItem?
     @State private var recordAwaitingEditor: TransactionItem?
+    /// Icono y color de la categoría de la línea, copiados al abrir. «Eliminar línea» la borra y la hoja sigue presentada
+    /// mientras baja: en iOS 27.x leer un modelo borrado aborta (card 1w89).
+    @State private var lineIconAtOpen: LineIcon
+
+    /// Icono y color de la subcategoría o la categoría de la línea.
+    struct LineIcon {
+        let iconName: String?
+        let colorHex: String?
+
+        static let none = LineIcon(iconName: nil, colorHex: nil)
+
+        init(iconName: String?, colorHex: String?) {
+            self.iconName = iconName
+            self.colorHex = colorHex
+        }
+
+        init(reading line: CashFlowLine) {
+            self.init(
+                iconName: line.subcategory?.iconName ?? line.category?.iconName,
+                colorHex: line.subcategory?.colorHex ?? line.category?.colorHex)
+        }
+    }
+
+    init(
+        lineResult: CashFlowLineResult,
+        line: CashFlowLine?,
+        month: CashFlowMonth,
+        currencyCode: String,
+        transactions: [TransactionItem],
+        viewModel: CashFlowPlanViewModel
+    ) {
+        self.lineResult = lineResult
+        self.line = line
+        self.month = month
+        self.currencyCode = currencyCode
+        self.transactions = transactions
+        self.viewModel = viewModel
+        // Mira antes de leer: quien presenta la hoja la vuelve a crear mientras sigue abierta.
+        _lineIconAtOpen = State(initialValue: Self.readable(line).map { LineIcon(reading: $0) } ?? .none)
+    }
+
+    private static func readable(_ line: CashFlowLine?) -> CashFlowLine? {
+        guard let line, !line.isDeleted, line.modelContext != nil else { return nil }
+        return line
+    }
+
+    /// La línea mientras se puede leer: lo que el `body` lee de ella pasa por aquí.
+    private var readableLine: CashFlowLine? { Self.readable(line) }
+
+    /// El icono vivo mientras la línea se puede leer; borrada, la copia.
+    private var lineIcon: LineIcon {
+        readableLine.map { LineIcon(reading: $0) } ?? lineIconAtOpen
+    }
 
     // Derived from activeMonthKey
     private var activeMonth: CashFlowMonth? {
@@ -67,14 +120,18 @@ struct CashFlowCellDetailSheet: View {
     private var activeTransactions: [TransactionItem] {
         guard let m = activeMonth else { return [] }
         let calendar = Calendar.current
+        // Sin los registros ya borrados: borrar uno desde su detalle o su editor (hojas sobre ésta) lo deja en
+        // `transactions`, que llega del padre, y esta hoja se repinta antes de recibir la lista nueva.
+        let lineToMatch = readableLine
         return transactions
+            .filter { !$0.isDeleted && $0.modelContext != nil }
             .filter { tx in
                 let txKey = CashFlowProjectionCalculator.monthKey(for: tx.date, calendar: calendar)
                 guard txKey == m.monthKey else { return false }
-                if let sub = line?.subcategory {
+                if let sub = lineToMatch?.subcategory {
                     return tx.subcategory?.persistentModelID == sub.persistentModelID
                 }
-                if let cat = line?.category {
+                if let cat = lineToMatch?.category {
                     return tx.category?.persistentModelID == cat.persistentModelID
                 }
                 return false
@@ -202,8 +259,8 @@ struct CashFlowCellDetailSheet: View {
     }
 
     private var categoryIcon: some View {
-        let iconName = line?.subcategory?.iconName ?? line?.category?.iconName
-        let colorHex = line?.subcategory?.colorHex ?? line?.category?.colorHex
+        let iconName = lineIcon.iconName
+        let colorHex = lineIcon.colorHex
         let hasIcon = iconName != nil && colorHex != nil
 
         return ZStack {

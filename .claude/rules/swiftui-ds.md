@@ -174,6 +174,23 @@ paths:
   esconde lo que espera en cada recarga (`InboxViewModel.beginRemoval`, `RecordPendingDeletion`). Pin:
   `DeletedModelRowGuardWiringTests`, `InboxPendingRemovalTests`. Un `.ips` de TestFlight sin dSYM no se simboliza
   recompilando el commit: sale otro UUID y las direcciones caen en código sin relación (medido).
+  **Un formulario que borra SU modelo y llama a `dismiss()` tiene el mismo problema** (card 1w89, 2026-10-31): sigue
+  presentado durante el cierre y su `body` se vuelve a evaluar al cerrarse la confirmación. El título de una alerta o
+  de un `confirmationDialog` que nombra lo borrado se copia al abrirla; lo demás que el `body` lea pasa por un accesor
+  que mire `isDeleted || modelContext == nil` (`NewTransactionView.readableTransactionToEdit`); y **su ViewModel cuenta**:
+  `NewTransactionViewModel.amountCurrencyCode` leía el registro para pintar el importe, así que tras guardar el borrado
+  lo suelta (`releaseDeletedRecord`). Mira también al PADRE que presenta la hoja: puede repintar con el modelo borrado
+  antes de recargar. Pin: `DeletedModelFormGuardWiringTests`. **Los otros diez casos (card gxa9, 2026-10-31)** dejaron
+  dos cosas medidas: (1) **`modelContext == nil` también es verdad en un modelo que nunca se insertó**, y los tests de
+  ViewModel construyen así sus modelos: con la guarda dentro del `init` o de un cálculo del ViewModel cayeron 22 tests
+  (`AccountFormViewModelTests`, `CategoryDetailViewModelTests`…). ⇒ la guarda «mira antes de leer» va en la VISTA, que
+  siempre recibe modelos de un contexto (`AccountFormView.init`, `TagFormView.init`, `CategoryDetailView.init` con
+  `readsCategory:`), y el ViewModel suelta con una marca o vaciando lo cargado (`releaseDeletedAccount`,
+  `releaseDeletedCategory`, `releaseDeletedTag`); (2) **la lista que presenta el formulario filtra lo borrado en el
+  array que pinta**, como `AccountsSettingsListViewModel.accounts` (presupuestos, categorías, etiquetas). Ajustes del
+  grupo, cuyo `body` lee el grupo en decenas de filas, no pinta filas con él borrado (molde de
+  `BudgetDetailView.isBudgetValid`). Pin: `DeletedModelMoreFormsGuardWiringTests` + `DeletedModelMoreFormsReleaseTests`.
+  Queda fuera el `body` de `GroupDetailView` tras salir del grupo: ticket `group-detail-reads-the-group-after-leaving-it`.
 
 - **En una página de pestaña, el buscador va en `.navigationBarDrawer(displayMode: .always)`, nunca `.automatic` (medido
   el 2026-10-30, iOS 27.0, PR #703).** Las páginas siguen montadas al cambiar de pestaña. Con `.automatic`, al volver a

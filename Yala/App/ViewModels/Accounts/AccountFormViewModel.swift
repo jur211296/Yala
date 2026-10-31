@@ -24,6 +24,9 @@ final class AccountFormViewModel {
     /// El contexto, para la extensión de las líneas (`AccountFormViewModel+Lines.swift`).
     var modelContextForLines: ModelContext? { modelContext }
     var accountToEdit: Account?
+    /// El formulario borró la cuenta que editaba y la soltó (`releaseDeletedAccount`): sigue siendo una edición, pero ya
+    /// no hay cuenta que leer ni que guardar.
+    private(set) var releasedDeletedAccount = false
     var existingNames: [String] = []
     private(set) var allTransactions: [TransactionItem] = []
 
@@ -500,6 +503,15 @@ final class AccountFormViewModel {
         pendingInboxDrafts = []
     }
 
+    /// Suelta la cuenta que el formulario acaba de eliminar, con sus filas. El formulario sigue presentado mientras se
+    /// cierra y su `body` la lee por todas partes (`canSave`, `lineRole`, el saldo…): en iOS 27.x leer un modelo borrado
+    /// aborta (card 1w89). Sigue contando como edición, para que la pantalla no cambie de forma mientras baja.
+    func releaseDeletedAccount() {
+        releaseLoadedRows()
+        accountToEdit = nil
+        releasedDeletedAccount = true
+    }
+
     func loadTransactions() {
         guard let context = modelContext else { return }
         let descriptor = FetchDescriptor<TransactionItem>()
@@ -614,7 +626,7 @@ final class AccountFormViewModel {
     }
 
     var isEditing: Bool {
-        accountToEdit != nil
+        accountToEdit != nil || releasedDeletedAccount
     }
 
     // MARK: - Computed Properties (cambio de divisa)
@@ -747,7 +759,8 @@ final class AccountFormViewModel {
     /// (`pendingCurrencyConversion`, `isShowingCurrencyChangeBlocked`) y la vista, que ya distinguía
     /// entre cerrar y no cerrar, se limita a no cerrar — igual que hacía con `canSave == false`.
     func saveAccount(context: ModelContext) -> Bool {
-        guard canSave else { return false }
+        // Sin cuenta tras eliminarla, guardar CREARÍA una nueva.
+        guard !releasedDeletedAccount, canSave else { return false }
         guard passesCurrencyChangeGate() else { return false }
 
         let trimmedAccountNumber = accountNumber.trimmingCharacters(in: .whitespacesAndNewlines)
