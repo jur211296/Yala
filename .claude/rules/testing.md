@@ -143,8 +143,9 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
   **En el runner del CI no hace falta encadenar dos gestos (medido el 2026-10-29):** allí cada consulta cuesta 1-3 s, y
   dos esperas seguidas antes de tocar «Deshacer» ya pasan de 5 s. Seis tests caían así cada noche y en local pasaban.
   ⇒ **todo caso que lea o toque el aviso después de otra espera lleva el seam**, no solo el que encadena gestos.
-  **Y la carrera al revés:** el aviso vive en su propia ventana y tapa su franja (72 pt + la pila de botones flotantes
-  sobre la barra de pestañas). Lo que quede debajo no recibe el toque mientras dura: en una máquina rápida el test toca el
+  **Y la carrera al revés:** el aviso vive en su propia ventana y se queda los toques de su cápsula (abajo, encima de la
+  barra de pestañas; desde el 2026-10-31 pisa la parte baja del «+», y lo que asoma del «+» sí responde). Lo que quede
+  bajo la cápsula no recibe el toque mientras dura: en una máquina rápida el test toca el
   aviso; en el runner lento, el aviso ya se ha ido y pasa. ⇒ antes de tocar algo en esa franja tras un aviso, espera a
   que se retire (`waitForNonExistence` del `noticeIdentifier`). Molde:
   `GroupsLote19DecididoUITests.test_archivedGroup_showsTheBanner_andTheListKeepsItsDebt`.
