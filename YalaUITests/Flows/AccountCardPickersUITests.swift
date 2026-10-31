@@ -66,6 +66,31 @@ final class AccountCardPickersUITests: XCTestCase {
         XCTAssertEqual(accountChip.label, card, "Elegir la divisa no puede cambiar el nombre de la tarjeta.")
     }
 
+    /// Card y1z6: con la pastilla de dólares elegida, el importe va en dólares, y tocar la tarjeta en el selector la
+    /// enrutaba a la misma línea: la hoja se cerraba sin cambiar nada. Desde su propia línea, la tarjeta es la principal.
+    func test_selector_fromTheUSDLine_choosingTheCardGoesBackToThePrincipal() {
+        let app = launch()
+        app.buttons["panel_action_new"].tap()
+        _ = app.openSelectorFirstRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
+        let cardRow = app.buttons["account_selector_row_\(card)"]
+        XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "No está la fila de la tarjeta.")
+        cardRow.tap()
+
+        let usdPill = app.buttons["new_transaction_card_currency_USD"]
+        let penPill = app.buttons["new_transaction_card_currency_PEN"]
+        XCTAssertTrue(usdPill.waitForExistence(timeout: 5), "No salieron las pastillas de divisa de la tarjeta.")
+        usdPill.tap()
+        XCTAssertTrue(usdPill.waitForSelected(), "La pastilla de dólares no quedó elegida.")
+
+        let accountChip = app.buttons["new_transaction_account_chip"]
+        accountChip.tap()
+        XCTAssertTrue(cardRow.waitForExistence(timeout: 5), "El selector no volvió a abrir con la tarjeta.")
+        cardRow.tap()
+        XCTAssertTrue(cardRow.waitForNonExistence(timeout: 5), "El selector no se cerró al tocar la tarjeta.")
+        XCTAssertTrue(penPill.waitForSelected(), "Tocar la tarjeta desde su línea en dólares no volvió a la principal.")
+        XCTAssertFalse(usdPill.isSelected)
+    }
+
     // MARK: - Filtro
 
     /// El filtro ofrece la tarjeta y no la línea, y elegir la tarjeta trae también el gasto en dólares.

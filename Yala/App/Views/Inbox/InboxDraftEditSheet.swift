@@ -424,7 +424,8 @@ struct InboxDraftEditSheet: View {
         AccountSelectorSheet(
             selectedAccount: $selectedAccount,
             title: L10n.Transaction.account,
-            // Elegir la tarjeta conserva la divisa que ya tenía el borrador (entrega 3).
+            // Elegir otra tarjeta conserva la divisa que ya tenía el borrador (entrega 3); la tarjeta de la propia línea
+            // vuelve a su principal (card y1z6, `AccountSelectorViewModel.selection`).
             routingCurrency: selectedAccount?.currencyCode
         )
     }

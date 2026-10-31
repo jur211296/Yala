@@ -935,7 +935,15 @@ final class ChatAssistantViewModel {
 
     /// La cuenta de la tarjeta de `account` en `dictatedCurrency` si `account` es la cabeza de una tarjeta con líneas
     /// (`AccountCardLogic.route`); si es una línea, una cuenta sin líneas o el fetch falla, `account` tal cual.
-    static func cardAccount(for account: Account, dictatedCurrency: String, in context: ModelContext) -> Account {
+    ///
+    /// `currentAccountID` es la cuenta que el borrador tenía antes de este cambio. Si el enrutado devuelve justo esa cuenta
+    /// —una línea de esta tarjeta—, tocar la tarjeta es pedir la principal y se respeta tal cual (card y1z6): al elegir la
+    /// línea, `draft.currencyCode` pasa a su divisa, y enrutar la tarjeta con ella devolvía la misma línea, así que el
+    /// selector parecía no responder y no había forma de volver a la principal.
+    static func cardAccount(
+        for account: Account, dictatedCurrency: String, currentAccountID: PersistentIdentifier? = nil,
+        in context: ModelContext
+    ) -> Account {
         do {
             let all = try context.fetch(FetchDescriptor<Account>())
             let nodes = all.map { AccountLineNode($0) }
@@ -944,6 +952,10 @@ final class ChatAssistantViewModel {
                   let route = AccountCardLogic.route(
                     chosenID: account.shortcutID, currencyCode: dictatedCurrency, nodes: nodes),
                   let target = all.first(where: { $0.shortcutID == route.accountID }) else { return account }
+            if let currentAccountID, currentAccountID != account.persistentModelID,
+               target.persistentModelID == currentAccountID {
+                return account
+            }
             return target
         } catch {
             #if DEBUG
@@ -985,6 +997,7 @@ final class ChatAssistantViewModel {
         }
         // Double-optional permite distinguir "no cambies" (nil-outer) de "set a nil" (.some(nil)).
         if case .some(let value) = accountID {
+            let previousAccountID = draft.accountID
             draft.accountID = value
             // La divisa VIAJA con la cuenta. `updateDraft` no acepta `currencyCode` y no debe: la
             // divisa no es un campo que el usuario edite aparte, es una consecuencia de la cuenta
@@ -1006,7 +1019,9 @@ final class ChatAssistantViewModel {
                 // Tarjeta con varias divisas (entrega 3, decisión 6 de Jürgen): si se eligió la TARJETA, la divisa dictada
                 // decide la línea, y el borrador apunta a esa cuenta concreta. Sin línea en esa divisa, la principal y su
                 // divisa, como con cualquier cuenta. Una línea elegida a propósito se respeta.
-                let target = Self.cardAccount(for: account, dictatedCurrency: draft.currencyCode, in: context)
+                let target = Self.cardAccount(
+                    for: account, dictatedCurrency: draft.currencyCode,
+                    currentAccountID: previousAccountID, in: context)
                 draft.accountID = target.persistentModelID
                 draft.currencyCode = target.currencyCode
             }

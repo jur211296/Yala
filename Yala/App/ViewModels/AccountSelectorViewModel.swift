@@ -47,6 +47,20 @@ final class AccountSelectorViewModel {
         return target
     }
 
+    /// Lo que guarda la hoja al tocar `account` con `current` elegida. Una línea tocada a propósito se guarda tal cual; la
+    /// tarjeta, por `resolvedSelection`. Salvo cuando ese enrutado devuelve justo `current`, una línea de esa tarjeta (card
+    /// y1z6): la divisa del importe ya iba en la de la línea, la hoja se cerraba sin cambiar nada y no había forma de volver a
+    /// la principal. Tocar la tarjeta nunca deja las cosas igual: ahí es la principal.
+    func selection(for account: Account, current: PersistentIdentifier?, routingCurrency: String?) -> Account {
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        if roles[account.shortcutID]?.isLine ?? false { return account }
+        let routed = resolvedSelection(for: account, routingCurrency: routingCurrency)
+        if let current, current != account.persistentModelID, routed.persistentModelID == current {
+            return account
+        }
+        return routed
+    }
+
     // MARK: - Context Injection
 
     func setContext(_ context: ModelContext) {
