@@ -136,7 +136,11 @@ struct GroupsContainerView: View {
                             // Global summary
                             if let summary = viewModel.globalSummary {
                                 VStack(spacing: DS.Spacing.xs) {
-                                    GroupSummaryHeader(summary: summary)
+                                    GroupSummaryHeader(
+                                        summary: summary,
+                                        // El neto en tu moneda principal solo en Yala completo: en solo grupos no se
+                                        // elige moneda principal.
+                                        showsNetInMainCurrency: !sessionState.isGroupsFocusedShell)
                                     // L19-9: lo que se debe en los archivados, bajo el total, para que archivar no
                                     // parezca saldar.
                                     if let archived = viewModel.archivedSummary {
@@ -183,8 +187,7 @@ struct GroupsContainerView: View {
 
                             // LazyVStack sólo alrededor de las TARJETAS: con VStack, SwiftUI
                             // construye la de todos los grupos aunque no quepan en pantalla, y las
-                            // rehace enteras en cada invalidación del body — una por tecla del
-                            // buscador, porque `searchText` vive en el propio ViewModel.
+                            // rehace enteras en cada invalidación del body.
                             //
                             // El resumen y el nudge se quedan FUERA a propósito, no por descuido:
                             // `GroupNudgeBanner` se auto-descarta con un `.task` de 10 s cuyo
@@ -195,7 +198,7 @@ struct GroupsContainerView: View {
                             // solo y puede reaparecer. Eager, su reloj sigue siendo un reloj.
                             LazyVStack(spacing: DS.Spacing.lg) {
                                 // Group cards
-                                ForEach(viewModel.filteredGroups, id: \.id) { group in
+                                ForEach(viewModel.activeGroups, id: \.id) { group in
                                     groupCardRow(group: group)
                                 }
 
@@ -212,15 +215,9 @@ struct GroupsContainerView: View {
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
                     }
                     .scrollViewGlassEdges()
-                    // El buscador se queda siempre a la vista (card de Jürgen, 2026-10-30). Con `.automatic`, al volver a
-                    // la pestaña la barra reservaba el alto del cajón vacío ~0,5 s y luego lo plegaba: el resumen, los
-                    // botones y la lista saltaban hacia arriba de golpe. Es la única página de pestaña con buscador y
-                    // las demás pantallas con uno ya lo llevan fijo. Lo fija `GroupsSearchDrawerWiringTests`.
-                    .searchable(
-                        text: $viewModel.searchText,
-                        placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: L10n.Common.search
-                    )
+                    // Sin buscador propio (Jürgen, 2026-10-30): la búsqueda vive en la pestaña Buscar. Tampoco hay cajón
+                    // en la barra, así que no vuelve el salto del resumen al entrar (el alto del cajón que se plegaba,
+                    // PR #703). Lo fija `GroupsSearchDrawerWiringTests`.
                     // Pull-to-refresh SOLO en el ScrollView de la lista (no en el
                     // ZStack/NavigationStack): así su RefreshAction no se hereda por
                     // environment al detalle ni a los sheets — iOS 26 la captaba en el

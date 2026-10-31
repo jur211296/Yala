@@ -24,7 +24,6 @@ struct GroupsViewModelTests {
         #expect(vm.globalSummary == nil)
         #expect(vm.showCreateGroup == false)
         #expect(vm.selectedGroup == nil)
-        #expect(vm.searchText.isEmpty)
         #expect(vm.showArchived == false)
         // Regresión Problema 1: arranca false para que el tab muestre spinner (no el empty state
         // incorrecto) hasta la primera carga con éxito. Si se inicializa true, el bug reaparece.
@@ -35,7 +34,6 @@ struct GroupsViewModelTests {
         let vm = GroupsViewModel()
         #expect(vm.activeGroups.isEmpty)
         #expect(vm.archivedGroups.isEmpty)
-        #expect(vm.filteredGroups.isEmpty)
     }
 
     // MARK: - Navigation State

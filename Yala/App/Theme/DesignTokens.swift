@@ -678,6 +678,10 @@ enum DS {
 
         // MARK: Captions
         /// Descriptions, helper text
+        /// «↗ Debes» / «↙ Te deben» del resumen de Grupos: gris y ligera, para que manden los montos.
+        static let groupsHeroSideLabel = Font.subheadline.weight(.light)
+        /// Los montos de cada lado del resumen de Grupos: regular y algo menores que la cifra del Panel (22 pt).
+        static let groupsHeroSideAmount = Font.title2
         static let caption = Font.caption
         /// Smallest text
         static let captionSmall = Font.caption2

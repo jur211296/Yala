@@ -178,7 +178,8 @@ paths:
 - **En una página de pestaña, el buscador va en `.navigationBarDrawer(displayMode: .always)`, nunca `.automatic` (medido
   el 2026-10-30, iOS 27.0, PR #703).** Las páginas siguen montadas al cambiar de pestaña. Con `.automatic`, al volver a
   Grupos la barra reservaba el alto del cajón vacío ~0,4 s y luego lo plegaba, y el contenido saltaba ~45 pt de golpe
-  (vídeo de Jürgen). Lo fija `GroupsSearchDrawerWiringTests`, que prohíbe el `.automatic` en `Yala/App/Views`.
+  (vídeo de Jürgen). Lo fija `GroupsSearchDrawerWiringTests`, que prohíbe el `.automatic` en `Yala/App/Views`. Desde el
+  2026-10-30 Grupos no tiene buscador (la búsqueda es la pestaña Buscar), y el mismo test fija que no vuelva.
 
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
@@ -340,7 +341,7 @@ paths:
 - **`Color.incomeAmount` es adaptativo desde el 2026-10-25**: #0F7A80 en claro y el turquesa de marca (#00C2CB) en
   oscuro, donde el fijo daba 3,3:1. Como RELLENO con texto blanco encima, `Color.incomeFill` (fijo, 5,1:1): el
   adaptativo se aclara en oscuro y el blanco encima dejaría de leerse.
-- **En Grupos los montos no llevan color (Jürgen, 2026-10-30, corrige el «solo lo que entra»).** La cifra del hero, el «te deben» / «debes» de cada grupo, gasto, miembro y saldo van en `Color.primary`, el texto normal del tema; el degradado del tema se queda (`.panel`). La regla de abajo sigue para Registros y el Panel.
+- **En la LISTA de Grupos, lo que debes va en `Color.groupOweAmount` (rosa rojizo) y lo que te deben en `Color.groupOwedAmount` (verde), sin naranja (Jürgen, 2026-10-30, sustituye al «en Grupos los montos no llevan color»).** Vale para el resumen de arriba y las filas por persona de cada tarjeta; los dos tokens pasan AA en los diez temas (`ThemeTokenContrastTests`). Dentro de un grupo (su cifra, gasto, miembro y saldo) los montos siguen en `Color.primary`: la decisión fue de la lista. El degradado del tema se queda (`.panel`). La regla de abajo sigue para Registros y el Panel.
 - **Y colorea la excepción, no la norma.** En una lista de movimientos casi todo son gastos: teñirlos pinta la pantalla entera y el color deja de avisar de nada. Solo el ingreso lleva color (`RecentRecordsWidget`, `ScheduledPaymentsWidget`). Decisión del 2026-09-02 en `docs/DECISIONS.md`.
 - **Jerarquía del Panel: sección `title3` (20) › widget `subheadlineEmphasized` (15) › fila.** Hasta el 2026-09-02 la sección y el widget usaban el MISMO token y la fila (`headline`, 17) era el rótulo mayor de la pantalla. Y el aire va al revés que el tamaño: MÁS entre secciones (`xxl`) que del título a su contenido (`sm`), o por proximidad el título se lee como pie del bloque anterior.
 - Tablas DS.Semantic / DS.Gradients en SWIFT-STYLE.md.

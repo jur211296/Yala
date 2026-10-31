@@ -2,10 +2,10 @@
 //  GroupCardView.swift
 //  Yala
 //
-//  Card de un grupo en la lista principal — icono, nombre, miembros, deudas perspectiva.
-//
-//  Trailing: deudas del current user agrupadas por sentido — "Te deben: S/47.50 + $5.30 +1 más"
-//  (verde) y "Debes: S/1.00" (hot pink). Suma por moneda, hasta 2 monedas + overflow por sentido.
+//  Card de un grupo en la lista principal — icono, nombre y miembros arriba; debajo, una fila por persona
+//  (decisión de Jürgen, 2026-10-30, propuesta 1 de `docs/disenos/grupos-rediseno-2-2/`): «Le debes a Maria P.» /
+//  «Maria P. te debe» a la izquierda y el monto en color a la derecha, rosa rojizo lo que debes y verde lo que te
+//  deben. Primero lo que debes; como mucho tres filas y el resto en «y N más» (`GroupsListBalanceLogic.personRows`).
 //
 
 import SwiftUI
@@ -15,9 +15,9 @@ struct GroupCardView: View {
     let group: SplitGroup
     let memberCount: Int
     let pendingCount: Int
-    /// Deudas simplificadas perspectiva del current user (se agrupan por sentido en el trailing).
+    /// Deudas simplificadas perspectiva del current user: una fila por persona y divisa.
     let debts: [GroupsViewModel.DebtRow]
-    /// Drives chip pending/rejected en lugar del balance trailing.
+    /// Drives chip pending/rejected en lugar de las filas por persona.
     let displayMode: GroupCardDisplayMode
     let action: () -> Void
     /// Disparado cuando current user `.rejected` toca la card. El padre
@@ -56,38 +56,12 @@ struct GroupCardView: View {
 
     var body: some View {
         Button(action: handleTap) {
-            // A tamaños de accesibilidad las deudas bajan bajo el nombre (`AdaptiveRowStack`): en fila
-            // el importe se cortaba («S/ 190…»). Apilada, icono y nombre quedan juntos en su propia fila.
-            AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
-                // Icon
-                groupIcon
-
-                // Name + member count
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(group.name)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
-
-                    HStack(spacing: DS.Spacing.xs) {
-                        Text(L10n.Groups.Member.activeCount(memberCount))
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-
-                        if visiblePendingCount > 0 {
-                            Text("·")
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                            Text(L10n.Groups.Member.pendingCount(visiblePendingCount))
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(DS.Semantic.warningForeground)
-                        }
-                    }
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                header
+                if displayMode == .active, !personRows.shown.isEmpty {
+                    Divider()
+                    personList
                 }
-            } trailing: {
-                trailingArea
             }
             .listRowCard()
         }
@@ -101,48 +75,81 @@ struct GroupCardView: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    /// Área derecha con el alto del caso PEOR ya reservado (ver `trailingHeightReserve`),
-    /// para que todas las filas de la lista midan igual.
-    private var trailingArea: some View {
-        ZStack(alignment: Alignment(horizontal: .trailingUnlessStacked(dynamicTypeSize), vertical: .center)) {
-            trailingHeightReserve
-            trailingContent
+    /// Icono, nombre y miembros; a la derecha, el chip de estado cuando el grupo no está activo.
+    private var header: some View {
+        // A tamaños de accesibilidad el chip baja bajo el nombre (`AdaptiveRowStack`).
+        AdaptiveRowStack(spacing: DS.ListRow.spacing, stackedSpacing: DS.Spacing.sm) {
+            groupIcon
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(group.name)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.primary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(L10n.Groups.Member.activeCount(memberCount))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+
+                    if visiblePendingCount > 0 {
+                        Text("·")
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                        Text(L10n.Groups.Member.pendingCount(visiblePendingCount))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(DS.Semantic.warningForeground)
+                    }
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            }
+        } trailing: {
+            statusChip
         }
     }
 
-    /// Reserva el alto del caso peor —los DOS sentidos de deuda a la vez, cuatro
-    /// líneas— porque sin ella una fila con «te deben» y «debes» mide el doble que
-    /// una con un solo sentido, y la lista queda dispareja (decisión owner: parejas,
-    /// aunque sea al alto del caso peor).
-    ///
-    /// Es un espejo OCULTO de dos `directionBlock`, NO una medida. El máximo es
-    /// conocido y constante: el número de monedas nunca cambia el alto (se unen en
-    /// una sola línea con " + " y overflow «+N más»), sólo lo cambia tener uno o dos
-    /// sentidos. Por eso no hace falta `GeometryReader`/`onGeometryChange` — nada de
-    /// ciclo de layout ni saltos al filtrar la lista. Frente a un `minHeight` en
-    /// puntos gana en que ESCALA con Dynamic Type igual que el contenido real.
-    private var trailingHeightReserve: some View {
-        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
-            reserveBlock
-            reserveBlock
+    /// Una fila por persona y, si no caben, «y N más».
+    private var personList: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            ForEach(personRows.shown) { row in
+                personRow(row)
+            }
+            if personRows.hiddenCount > 0 {
+                Text(L10n.Groups.Card.andMore(personRows.hiddenCount))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
-        .hidden()
-        .accessibilityHidden(true)
     }
 
-    /// Un `directionBlock` en hueco: mismas dos líneas y mismas fuentes (label +
-    /// monto), con un glifo cualquiera para que cada línea mida su alto real.
-    private var reserveBlock: some View {
-        VStack(alignment: .trailing, spacing: DS.Spacing.none) {
-            Text(verbatim: "0")
-                .font(DS.Typography.captionSmall)
-            Text(verbatim: "0")
+    private func personRow(_ row: GroupsViewModel.DebtRow) -> some View {
+        AdaptiveRowStack(spacing: DS.Spacing.sm, stackedSpacing: DS.Spacing.xxs) {
+            Text(personLabel(row))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+        } trailing: {
+            Text(appPreferences.currency(row.amount, currencyCode: row.currencyCode, forceFullPrecision: true))
                 .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(row.perspective == .iOwe ? Color.groupOweAmount : Color.groupOwedAmount)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+    }
+
+    private func personLabel(_ row: GroupsViewModel.DebtRow) -> String {
+        row.perspective == .iOwe
+            ? L10n.Groups.Card.youOwe(row.counterpartyName)
+            : L10n.Groups.Card.theyOweYou(row.counterpartyName)
+    }
+
+    private var personRows: GroupsListBalanceLogic.PersonRows {
+        GroupsListBalanceLogic.personRows(debts)
     }
 
     @ViewBuilder
-    private var trailingContent: some View {
+    private var statusChip: some View {
         switch displayMode {
         case .pendingApproval:
             StatusChip(
@@ -182,100 +189,8 @@ struct GroupCardView: View {
                 backgroundColor: DS.Semantic.warningBackground
             )
         case .active:
-            debtsTrailing
-        }
-    }
-
-    /// Deudas agrupadas por sentido (te deben / debes), montos sumados por moneda.
-    @ViewBuilder
-    private var debtsTrailing: some View {
-        let grouped = GroupsViewModel.groupDebtsByDirection(debts)
-        if grouped.isEmpty {
             EmptyView()
-        } else {
-            VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xs) {
-                if !grouped.owedToMe.isEmpty {
-                    directionBlock(
-                        label: L10n.Groups.Summary.owedToMe,
-                        amounts: grouped.owedToMe,
-                        overflow: grouped.owedToMeOverflow,
-                        // En el color del texto, como lo que debes: en Grupos los montos no llevan color (Jürgen, 2026-10-30).
-                        color: Color.primary
-                    )
-                }
-                if !grouped.iOwe.isEmpty {
-                    directionBlock(
-                        label: L10n.Groups.Summary.iOwe,
-                        amounts: grouped.iOwe,
-                        overflow: grouped.iOweOverflow,
-                        color: Color.primary
-                    )
-                }
-            }
         }
-    }
-
-    private func directionBlock(
-        label: String,
-        amounts: [GroupsViewModel.GroupedDebtAmount],
-        overflow: Int,
-        color: Color
-    ) -> some View {
-        VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: 0) {
-            Text("\(label):")
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-            // A tamaños de accesibilidad, sin tope de líneas: con dos monedas («S/ 190.00 + $ 46.67») la suma no
-            // cabe en una línea del iPhone SE y se cortaba el segundo importe (medido el 2026-09-28).
-            Text(attributedAmounts(amounts, overflow: overflow, color: color))
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
-                .minimumScaleFactor(0.8)
-        }
-    }
-
-    /// Montos por moneda con jerarquía symbol/decimal (entero grande, símbolo y decimales
-    /// pequeños y tenues) igual que la banda; unidos con " + " y "+N más" si hay overflow.
-    private func attributedAmounts(
-        _ amounts: [GroupsViewModel.GroupedDebtAmount],
-        overflow: Int,
-        color: Color
-    ) -> AttributedString {
-        let integerFont = Font.subheadline.weight(.semibold)
-        let secondaryFont = Font.caption
-        var result = AttributedString()
-        for (index, item) in amounts.enumerated() {
-            if index > 0 {
-                var plus = AttributedString(" + ")
-                plus.font = integerFont
-                plus.foregroundColor = color
-                result.append(plus)
-            }
-            result.append(AmountText.attributedAmount(
-                value: item.amount,
-                currencyCode: item.currencyCode,
-                prefs: appPreferences,
-                integerFont: integerFont,
-                secondaryFont: secondaryFont,
-                tintColor: color,
-                forceFullPrecision: true
-            ))
-        }
-        if overflow > 0 {
-            var more = AttributedString(" \(L10n.Groups.Card.moreDebts(overflow))")
-            more.font = secondaryFont
-            more.foregroundColor = color.opacity(0.7)
-            result.append(more)
-        }
-        return result
-    }
-
-    /// Texto plano de los montos para accesibilidad (VoiceOver lee el monto completo).
-    private func amountsText(_ amounts: [GroupsViewModel.GroupedDebtAmount], overflow: Int) -> String {
-        let joined = amounts
-            .map { appPreferences.currency($0.amount, currencyCode: $0.currencyCode) }
-            .joined(separator: " + ")
-        guard overflow > 0 else { return joined }
-        return "\(joined) \(L10n.Groups.Card.moreDebts(overflow))"
     }
 
     private func handleTap() {
@@ -318,13 +233,11 @@ struct GroupCardView: View {
         case .migratedPaused:
             parts.append(L10n.Groups.Card.movedPausedChip)
         case .active:
-            let grouped = GroupsViewModel.groupDebtsByDirection(debts)
-            if !grouped.owedToMe.isEmpty {
-                parts.append("\(L10n.Groups.Summary.owedToMe): \(amountsText(grouped.owedToMe, overflow: grouped.owedToMeOverflow))")
+            let rows = personRows
+            for row in rows.shown {
+                parts.append("\(personLabel(row)) \(appPreferences.currency(row.amount, currencyCode: row.currencyCode, forceFullPrecision: true))")
             }
-            if !grouped.iOwe.isEmpty {
-                parts.append("\(L10n.Groups.Summary.iOwe): \(amountsText(grouped.iOwe, overflow: grouped.iOweOverflow))")
-            }
+            if rows.hiddenCount > 0 { parts.append(L10n.Groups.Card.andMore(rows.hiddenCount)) }
         }
         return parts.joined(separator: ", ")
     }

@@ -8521,3 +8521,7 @@
 "creditCardStatement.reminderPayByNoAmount %@" = "Betaal je kaart vóór %@.";
 "cashFlowPlan.cardPaymentTitle %1$@ %2$@" = "Betaling %1$@ · %2$@";
 "cashFlowPlan.cardPaymentNote" = "Staat al in je uitgaven van de maand waarin je kocht: wordt niet nog eens afgetrokken.";
+"groups.hero.netOwedToMe" = "In je hoofdvaluta (%1$@) is dat een saldo van %2$@ dat je tegoed hebt.";
+"groups.hero.netIOwe" = "In je hoofdvaluta (%1$@) is dat een saldo van %2$@ dat je schuldig bent.";
+"groups.hero.netEven" = "In je hoofdvaluta (%@) heffen wat je schuldig bent en wat je tegoed hebt elkaar op.";
+"groups.card.andMore" = "en nog %d";

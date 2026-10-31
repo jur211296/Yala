@@ -55,9 +55,9 @@ final class GroupsViewModel {
     ///
     /// Evitar el fetch por render (M6 D3) no evitaba el CÁLCULO: `currentUserDebts(for:)` corría
     /// `calculateDebts` (gastos × repartos) en el body de cada tarjeta, así que cualquier
-    /// invalidación de `GroupsContainerView` lo repetía una vez POR GRUPO. Y `searchText` vive en
-    /// este `@Observable`, de modo que cada tecla del buscador invalidaba ese body. Medido con
-    /// 30 grupos × 6 miembros × 50 gastos: ~25 ms por tecla, en el hilo principal — más que el
+    /// invalidación de `GroupsContainerView` lo repetía una vez POR GRUPO (con el buscador que tuvo la
+    /// lista hasta el 2026-10-30, una por tecla). Medido con 30 grupos × 6 miembros × 50 gastos: ~25 ms por
+    /// invalidación, en el hilo principal — más que el
     /// frame entero de 16,7 ms. Precalcularlo en `recalculate()` lo deja en un cálculo por
     /// recarga de datos y un lookup por tarjeta.
     ///
@@ -89,7 +89,6 @@ final class GroupsViewModel {
     var showCreateGroup: Bool = false
     /// Detalle pusheado vía `navigationDestination(item:)` en GroupsContainerView.
     var selectedGroup: SplitGroup?
-    var searchText: String = ""
 
     // MARK: - Computed
 
@@ -99,13 +98,6 @@ final class GroupsViewModel {
 
     var archivedGroups: [SplitGroup] {
         groups.filter { $0.isArchived && !$0.isHiddenForAll }
-    }
-
-    var filteredGroups: [SplitGroup] {
-        let base = activeGroups
-        guard !searchText.isEmpty else { return base }
-        let query = searchText.lowercased()
-        return base.filter { $0.name.lowercased().contains(query) }
     }
 
     var showArchived: Bool = false

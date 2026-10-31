@@ -7,8 +7,8 @@
 //  plegaba, y el resumen, los botones y la lista saltaban hacia arriba de golpe. Medido en el simulador (iOS 27.0) con
 //  `simctl io recordVideo`; con `.always` el hero queda en su sitio desde el primer fotograma (vídeos del PR).
 //
-//  Source-scan: la lista de Grupos lleva el cajón fijo, y ninguna vista vuelve al `.automatic`: las páginas de pestaña
-//  siguen montadas al cambiar de pestaña, que es donde salta.
+//  Source-scan: la lista de Grupos no lleva buscador (Jürgen, 2026-10-30: ya está la pestaña Buscar), y ninguna vista
+//  vuelve al `.automatic`: las páginas de pestaña siguen montadas al cambiar de pestaña, que es donde salta.
 //
 
 import Foundation
@@ -27,14 +27,13 @@ struct GroupsSearchDrawerWiringTests {
             .filter { !$0.hasPrefix("//") }
     }
 
-    @Test func groupsList_keepsTheSearchDrawerAlwaysVisible() throws {
+    /// Desde el 2026-10-30 (Jürgen) la lista no tiene buscador: la búsqueda vive en la pestaña Buscar. Sin cajón en la
+    /// barra no hay alto que reservar y plegar, que era el salto del resumen.
+    @Test func groupsList_hasNoSearchDrawer() throws {
         let code = try Self.codeLines(Self.repoRoot.appending(path: "Yala/App/Views/Groups/GroupsContainerView.swift"))
-        let searchable = try #require(code.firstIndex { $0.hasPrefix(".searchable(") },
-                                      "La lista de Grupos ya no tiene buscador: revisa este test.")
-        let placement = code[searchable..<min(searchable + 4, code.count)]
-            .first { $0.contains("placement:") }
-        #expect(placement == "placement: .navigationBarDrawer(displayMode: .always),",
-                "El buscador de Grupos tiene que ir fijo: con otro modo el hero salta al volver a la pestaña.")
+        #expect(code.count > 200, "No se leyó la lista de Grupos: el scan no estaría mirando nada.")
+        #expect(!code.contains { $0.contains(".searchable(") },
+                "La lista de Grupos vuelve a tener buscador: si es a propósito, va fijo (`.always`) o el resumen salta.")
     }
 
     @Test func noView_usesTheAutomaticDrawer() throws {

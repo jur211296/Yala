@@ -36,7 +36,7 @@ enum GroupDetailDismissDecision {
     ///
     /// **Sin equivalente a `wasArchivedOnAppear`, a propósito.** Un grupo archivado es un destino
     /// legítimo (tiene su sección en la lista); uno soft-deleted no lo es: las cuatro puertas al
-    /// push del detalle salen de `activeGroups`/`filteredGroups`, que filtran `!isHiddenForAll`,
+    /// push del detalle salen de `activeGroups`/`archivedGroups`, que filtran `!isHiddenForAll`,
     /// así que no existe el caso "entré a propósito a un grupo oculto" que haya que respetar.
     static func shouldDismiss(
         contextIsNil: Bool,
