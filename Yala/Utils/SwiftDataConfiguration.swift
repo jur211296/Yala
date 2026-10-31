@@ -730,6 +730,10 @@ extension SwiftDataConfiguration {
         // converge: el arranque siguiente compara la cuenta nueva contra el testigo del humano anterior y
         // vuelve a pedir un cierre ya hecho.
         PrivateSessionMark.clear(defaults)
+        // Y la marca de una «Eliminar cuenta» de la celda D que faltaba cerrar en local: este borrado ES ese cierre. El
+        // servicio la retira al armar; esta línea cubre el kill entre el arm y ese retiro. Va tras el guard abort-S3 a
+        // propósito: si el store sobrevive, el cierre no ocurrió y el arranque tiene que retomarlo.
+        StorageModePersistence.clearAccountDeletedAwaitingLocalClose(defaults)
         // Y la marca de los grupos que conservó el aviso tardío: el cierre se lleva la sesión y el teléfono vuelve a
         // «recién instalado» (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
         LateNoticeKeptGroupsMark.clear(defaults)

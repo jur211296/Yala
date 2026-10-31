@@ -190,6 +190,48 @@ nonisolated enum StorageModePersistence {
         defaults.removeObject(forKey: signOutWipeIncludesGroupsKey)
     }
 
+    /// **«La cuenta de Yala ya se borró en el servidor y falta el cierre local de la sesión privada (D)».** Ticket
+    /// `account-deletion-private-close-has-no-durable-intent`. La escribe `AccountDeletionService` justo tras el `200` de
+    /// `POST /account/delete`, y solo en la celda D: es la que tiene un cierre local que puede no llegar (la quiescencia del
+    /// import) y la única con una zona de iCloud que el espejo puede volver a poblar. Sin ella, una app cerrada entre el
+    /// servidor y el arm se quedaba como una celda C con todo lo local: la sesión moría en el primer refresh (el servidor se
+    /// llevó `auth.users`) y la fila de «Eliminar mi cuenta» desaparecía.
+    ///
+    /// La consume el arranque y cada vuelta a primer plano (`AccountDeletionService.resumePendingPrivateClose`), que retoma
+    /// el cierre local sin volver al servidor ni pedir nada. **Se retira en dos sitios**: el servicio, cuando el cierre arma
+    /// el borrado, y el boot-wipe (`performSignOutWipeIfArmed`), por el kill entre el arm y ese retiro. Si el boot-wipe
+    /// aborta en `.icloud` (desarma: «el cierre no ocurrió»), la marca se queda y el cierre se retoma.
+    ///
+    /// `cloudSync.*` a propósito: el barrido de preferencias lo excluye, así que no la retira ningún borrado de filas.
+    static let accountDeletedAwaitingLocalCloseKey = "cloudSync.accountDeletedAwaitingLocalClose"
+
+    /// **De QUÉ cuenta es la marca** (review adversarial): el `sub` de la sesión que se borró. Si el SDK suelta la sesión y
+    /// la persona entra con OTRA cuenta en este teléfono, el cierre retomado no puede llevarse la sesión y los cambios de
+    /// grupos sin subir de esa cuenta. Sin `sub` conocido al marcar (sesión fingida de XCUITest) no se ata a ninguna.
+    static let accountDeletedAwaitingLocalCloseOwnerKey = "cloudSync.accountDeletedAwaitingLocalCloseOwner"
+
+    static func markAccountDeletedAwaitingLocalClose(owner: String? = nil, _ defaults: UserDefaults = .standard) {
+        if let owner {
+            defaults.set(owner, forKey: accountDeletedAwaitingLocalCloseOwnerKey)
+        } else {
+            defaults.removeObject(forKey: accountDeletedAwaitingLocalCloseOwnerKey)
+        }
+        defaults.set(true, forKey: accountDeletedAwaitingLocalCloseKey)
+    }
+
+    static func accountDeletedAwaitingLocalCloseOwner(_ defaults: UserDefaults = .standard) -> String? {
+        defaults.string(forKey: accountDeletedAwaitingLocalCloseOwnerKey)
+    }
+
+    static func isAccountDeletedAwaitingLocalClose(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: accountDeletedAwaitingLocalCloseKey)
+    }
+
+    static func clearAccountDeletedAwaitingLocalClose(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: accountDeletedAwaitingLocalCloseKey)
+        defaults.removeObject(forKey: accountDeletedAwaitingLocalCloseOwnerKey)
+    }
+
     /// **R4 · el NEUTRO DURABLE.** Marca "este device no ha elegido nada y debe montar el store personal
     /// NEUTRO (`cloudKitDatabase: .none` explícito)". Lo escribe el wipe de cierre de sesión —el mismo
     /// código en sus DOS caminos, el boot-hook y el swap in-process— justo después de reponer el par a

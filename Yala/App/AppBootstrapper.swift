@@ -895,6 +895,9 @@ final class AppBootstrapper {
             //    cerrar sesión y de vaciar cambian de celda, y el arranque MANUAL de Yala Dev en ese
             //    simulador queda igual de envenenado — la víctima que nadie mira.
             PrivateSessionMark.clear()
+            //  · la marca de una «Eliminar cuenta» a medias (`cloudSync.*`, fuera del barrido): pegada, la corrida siguiente
+            //    retomaría un cierre que borra el store sin que nadie lo pidiera.
+            StorageModePersistence.clearAccountDeletedAwaitingLocalClose()
             //  · y su PAREJA, la marca del mount neutro solo-grupos. Limpiar el eje sin limpiar esto es
             //    peor que no limpiar ninguno de los dos, porque el backfill del arranque DERIVA el eje de
             //    esta marca: una corrida que arme el mount neutro —«Activar Yala completo» y las dos altas
@@ -1316,6 +1319,10 @@ final class AppBootstrapper {
         // El resultado de un borrado de arranque que abortó tras armarlo la puerta de Grupos. Ver el seam.
         if UITestHooks.groupsGateWipeFailed {
             GroupsGateWipeFailureMarker.mark()
+        }
+        // La «Eliminar cuenta» de la celda D que se cerró entre el servidor y el arm. Ver el seam.
+        if UITestHooks.accountDeletionPendingClose {
+            StorageModePersistence.markAccountDeletedAwaitingLocalClose()
         }
         // Hoja del cambio de Apple ID simulada en uitest: la detección real sale a CloudKit y está apagada
         // bajo test, así que se encola el intent. De ahí en adelante —la cola, la hoja y el cierre del

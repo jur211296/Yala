@@ -110,4 +110,31 @@ final class WipeAndDeleteAccountLandingUITests: XCTestCase {
         XCTAssertTrue(welcome.waitForExistence(timeout: 30), "Tras eliminar la cuenta la app no llegó al Welcome.")
         XCTAssertFalse(app.buttons["profile_avatar"].exists, "Tras eliminar la cuenta sigue el Panel debajo del Welcome.")
     }
+
+    /// «Eliminar mi cuenta» con iCloud privado (celda D) y la app cerrada entre el borrado del servidor y el cierre local
+    /// (ticket `account-deletion-private-close-has-no-durable-intent`). El seam siembra la marca durable que deja el `200`
+    /// —un test no puede matar la app en esa ventana— sobre un teléfono con sus finanzas y sin sesión (el servidor se la
+    /// llevó). Sin tocar nada, el arranque termina el cierre: pide reabrir o llega al Welcome, y reabierta, el Welcome.
+    ///
+    /// **Qué discrimina, medido contra la base:** sin el arreglo nada lee la marca y la app se queda en el Panel con todo lo
+    /// local, que es el bug del ticket.
+    func test_deleteAccount_privateCell_appClosedHalfway_relaunchFinishesTheLocalClose() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", accountDeletionPendingClose: true)
+
+        let welcome = app.buttons["welcome_hero_cta"]
+        let reopen = app.descendants(matching: .any)["signout_relaunch_screen"]
+        let deadline = Date().addingTimeInterval(60)
+        while !welcome.exists && !reopen.exists && Date() < deadline {
+            _ = welcome.waitForExistence(timeout: 1)
+        }
+        if !welcome.exists {
+            XCTAssertTrue(reopen.exists, "Con la cuenta ya borrada en el servidor, el arranque no retomó el cierre local.")
+            app.terminate()
+            // El arranque siguiente de la misma instalación, sin el seam: el borrado armado se hace aquí.
+            app.launchForUITest(reset: false, skipOnboarding: false, seed: nil)
+        }
+        XCTAssertTrue(welcome.waitForExistence(timeout: 30), "Tras retomar el cierre la app no llegó al Welcome.")
+        XCTAssertFalse(app.buttons["profile_avatar"].exists, "Tras retomar el cierre sigue el Panel debajo del Welcome.")
+    }
 }

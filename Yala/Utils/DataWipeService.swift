@@ -1090,6 +1090,9 @@ final class DataWipeService {
     @MainActor
     static func clearHandoverPrivateSessionMark(from defaults: UserDefaults) {
         PrivateSessionMark.clear(defaults)
+        // Y la «Eliminar cuenta» a medias de la persona anterior (review adversarial del 2026-10-31): este relevo no pasa por
+        // el boot-wipe, que es quien la retira, y viva borraría lo de la persona nueva en la siguiente vuelta a primer plano.
+        StorageModePersistence.clearAccountDeletedAwaitingLocalClose(defaults)
         SessionState.shared.refreshPrivateSessionMirror()
     }
 

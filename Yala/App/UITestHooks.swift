@@ -204,6 +204,12 @@ final class UITestHooks {
     /// `-uitest-fake-cloud-session`, que da la sesión que el borrado exige. Solo DEBUG (inerte en release vía `hasArg`).
     nonisolated static var fakeAccountDeletion: Bool { hasArg("-uitest-fake-account-deletion") }
 
+    /// `-uitest-account-deletion-pending-close`: siembra al arrancar la marca durable de una «Eliminar cuenta» de la celda D
+    /// cuyo servidor ya se borró y cuyo cierre local no llegó (la app se cerró a medias; ticket
+    /// `account-deletion-private-close-has-no-durable-intent`). Es el estado exacto del relanzamiento: un XCUITest no puede
+    /// matar la app entre el `200` y el arm. `-uitest-reset` la retira antes, así que no sobrevive a la corrida siguiente.
+    nonisolated static var accountDeletionPendingClose: Bool { hasArg("-uitest-account-deletion-pending-close") }
+
     /// `-uitest-fake-cloud-session`: fuerza el predicado GLOBAL `CloudAuthService.hasSession` a `true`
     /// (el `#if DEBUG` vive en `CloudAuthService.swift`). Existe porque con `groupsBackendEnabled` ON
     /// —lo que ocurre en TODO XCUITest bajo `Yala Dev`, donde el default-ausente de remote-config es ON—

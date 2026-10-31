@@ -174,7 +174,10 @@ struct WipeDataKeepsAccountWiringTests {
         let service = try Self.source("Yala/Services/CloudSync/AccountDeletionService.swift")
         let flow = try #require(Self.body(of: "func deleteAccount(context: ModelContext) async", in: service))
         let marks = [
-            "if !deps.storageModeIsCloud() && deps.hasPrivateSession() {",
+            // La celda se decide con la cuenta viva; con la marca de un cierre a medias es la D (ticket
+            // `account-deletion-private-close-has-no-durable-intent`).
+            "let privateCell = pendingPrivateClose || (!deps.storageModeIsCloud() && deps.hasPrivateSession())",
+            "if privateCell {",
             "guard await deps.wipePrivateICloud() else {",
             "phase = .failed(step: .personalWipe)",
             "try await deps.forgetGroupsUser()",
@@ -193,7 +196,9 @@ struct WipeDataKeepsAccountWiringTests {
     @Test func accountDeletion_routesThePrivateCellToTheFullClose() throws {
         let src = try Self.source("Yala/Services/CloudSync/AccountDeletionService.swift")
         #expect(src.contains("closeLocalPrivate: { await CloudSessionSignOut.shared.closeLocalAfterAccountDeletionPrivate(context: $0) },"))
-        #expect(src.contains("if deps.storageModeIsCloud() || !deps.hasPrivateSession() {"))
+        #expect(src.contains("let privateCell = pendingPrivateClose || (!deps.storageModeIsCloud() && deps.hasPrivateSession())"))
+        #expect(src.contains("private func closeLocally(context: ModelContext, privateCell: Bool) async {"))
+        #expect(src.contains("if !privateCell {"))
         #expect(src.contains("if await deps.closeLocalPrivate(context) {"))
     }
 }
