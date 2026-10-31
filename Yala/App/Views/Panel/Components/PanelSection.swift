@@ -29,6 +29,9 @@ struct PanelSection<Content: View, Footer: View>: View {
     var onSeeMore: (() -> Void)? = nil
     var seeMoreAccessibilityLabel: String? = nil
     var seeMoreAccessibilityHint: String? = nil
+    /// Pieza pequeña junto al título, antes del chevron: el «?» de «Últimos registros», cuya tarjeta no lleva cabecera
+    /// propia (card gisw).
+    var titleAccessory: AnyView? = nil
 
     /// Modo compacto: reduce los spacings de la section a la mitad. Útil
     /// cuando la section es secundaria (ej. "Filtros aplicados" en Records).
@@ -71,6 +74,9 @@ struct PanelSection<Content: View, Footer: View>: View {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(title)
                         .font(DS.Typography.title3)
+                    if let titleAccessory {
+                        titleAccessory
+                    }
                     if let onSeeMore {
                         seeMoreButton(action: onSeeMore)
                     }
@@ -133,6 +139,7 @@ extension PanelSection where Footer == EmptyView {
         onSeeMore: (() -> Void)? = nil,
         seeMoreAccessibilityLabel: String? = nil,
         seeMoreAccessibilityHint: String? = nil,
+        titleAccessory: AnyView? = nil,
         compact: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
@@ -142,6 +149,7 @@ extension PanelSection where Footer == EmptyView {
         self.onSeeMore = onSeeMore
         self.seeMoreAccessibilityLabel = seeMoreAccessibilityLabel
         self.seeMoreAccessibilityHint = seeMoreAccessibilityHint
+        self.titleAccessory = titleAccessory
         self.compact = compact
         self.content = content
         self.footer = { EmptyView() }

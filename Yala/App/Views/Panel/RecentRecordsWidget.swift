@@ -23,8 +23,9 @@ struct RecentRecordsWidget: View {
 
     /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
     var headerInfoButton: AnyView? = nil
-    /// En el Panel la sección de encima ya se llama «Últimos registros»: el widget no repite el título y deja solo el
-    /// «?» (UX 2.2 · L3-12). En la vista previa del «?» sí lo lleva.
+    /// En el Panel la sección de encima ya se llama «Últimos registros»: el widget no lleva cabecera y empieza en su
+    /// primera fila; el «?» va en la fila del título de la sección (UX 2.2 · L3-12, card gisw). En la vista previa
+    /// del «?» sí la lleva.
     var showsTitle: Bool = true
     /// Tocar una fila abre el registro (UX 2.2 · L3-12). `nil` = filas que no se tocan (vista previa).
     var onOpenRecord: ((TransactionItem) -> Void)? = nil
@@ -47,7 +48,9 @@ struct RecentRecordsWidget: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            headerSection
+            if showsTitle {
+                headerSection
+            }
 
             if records.isEmpty {
                 emptyState
@@ -63,14 +66,10 @@ struct RecentRecordsWidget: View {
 
     private var headerSection: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-            if showsTitle {
-                Text(L10n.Records.latest)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-            } else {
-                Spacer()
-            }
+            Text(L10n.Records.latest)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
 
             WidgetHeaderInfoSlot(
                 injected: headerInfoButton,
@@ -78,11 +77,7 @@ struct RecentRecordsWidget: View {
                 legacyMessage: L10n.Widget.Hint.recentRecords
             )
 
-            // Sin título, el «?» va a la derecha, como en las tarjetas vecinas: con un Spacer a cada lado quedaba
-            // suelto en el centro.
-            if showsTitle {
-                Spacer()
-            }
+            Spacer()
         }
     }
 

@@ -170,4 +170,45 @@ final class PanelDashboardUITests: XCTestCase {
             "Distribución no debería verse en el Panel de fábrica."
         )
     }
+
+    /// Card gisw (2026-10-31): la tarjeta de «Últimos registros» no lleva cabecera propia y su «?» va en la fila del
+    /// título de la sección, justo antes del chevron, y abre la misma ayuda. Antes quedaba solo en una franja vacía
+    /// arriba a la derecha de la tarjeta, lejos del chevron: con ese molde este caso cae en el primer aserto de posición.
+    func test_latestRecordsHelpSitsBeforeTheTitleChevron_andOpensItsHelp() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "realista")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let section = element(app, "panel_section_latestRecords")
+        let info = section.buttons["widget_info_recentRecords"].firstMatch
+        // Se arrastra por el borde izquierdo: en el centro la gráfica de Tendencias se queda el gesto.
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.8))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.3))
+        var drags = 0
+        while !(info.exists && info.isHittable) && drags < 8 {
+            start.press(forDuration: 0.05, thenDragTo: end)
+            drags += 1
+        }
+        XCTAssertTrue(info.waitForExistence(timeout: 5) && info.isHittable, "No apareció el «?» de Últimos registros.")
+
+        let chevron = section.buttons["chevron.right"].firstMatch
+        XCTAssertTrue(chevron.waitForExistence(timeout: 5), "No apareció el chevron de la sección Últimos registros.")
+        XCTAssertLessThanOrEqual(
+            info.frame.maxX, chevron.frame.minX,
+            "El «?» debería ir antes del chevron (\(info.frame) vs \(chevron.frame))."
+        )
+        XCTAssertLessThan(
+            abs(info.frame.midY - chevron.frame.midY), 8,
+            "El «?» debería ir en la fila del título, a la altura del chevron (\(info.frame) vs \(chevron.frame))."
+        )
+        let firstRow = section.buttons["panel_latest_record_row"].firstMatch
+        XCTAssertTrue(firstRow.waitForExistence(timeout: 5), "No apareció la primera fila de Últimos registros.")
+        XCTAssertLessThan(info.frame.maxY, firstRow.frame.minY, "El «?» debería quedar encima de la tarjeta.")
+
+        info.tap()
+        XCTAssertTrue(
+            app.buttons["widget_info_close"].waitForExistence(timeout: 5),
+            "El «?» no abrió la ayuda de Últimos registros."
+        )
+    }
 }
