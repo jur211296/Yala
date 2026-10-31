@@ -320,6 +320,8 @@ struct ContentView: View {
             }
         }
         .task {
+            // Una «Eliminar cuenta» de la celda D que se cerró a medias se termina ya, sin esperar al splash.
+            Task { await resumeAccountDeletionCloseIfPending() }
             await checkInitialSyncState()
             // Forzado de actualización (min-version): recomputa desde el snapshot de remote-config
             // + build local. DARK en prod (sin snapshot → false). El fetch de /config lo dispara
@@ -1254,6 +1256,8 @@ struct ContentView: View {
         }
         // GC-08: Recalculate user segment on each foreground activation
         UserSegmentService.shared.recalculate()
+        // Si el cierre de una «Eliminar cuenta» retomado al arrancar no llegó (la quiescencia), se reintenta aquí.
+        Task { await resumeAccountDeletionCloseIfPending() }
         // Cinturón del join intent: cubre "grupo ya local pero el reconcile
         // de boot se difirió por quiescencia". El propio reconciler gatea
         // por quiescencia y hace no-op sin intents.
@@ -1761,6 +1765,24 @@ struct ContentView: View {
         showWelcomeRestore = false
         showInviteRecovery = false
         MetricsService.routingWelcomeChainSuperseded(intentID: intentID)
+    }
+
+    /// **El cierre local de una «Eliminar cuenta» de la celda D que la app no llegó a terminar** (ticket
+    /// `account-deletion-private-close-has-no-durable-intent`). El servidor ya borró la cuenta y su `200` dejó una marca
+    /// durable; si la app se cerró antes de armar el borrado, aquí se retoma sin volver a pedir nada. Espera al bootstrap
+    /// antes de mirar la marca: el cierre usa el store montado y los servicios del arranque, y el seam de XCUITest la siembra
+    /// durante el bootstrap. Sin marca, el servicio no hace nada; con un borrado ya en curso, tampoco.
+    ///
+    /// No corre sin el arranque ASENTADO (`isBootstrapSettled`, el `defer` de `bootstrap()`): `isInitialized` se pone antes
+    /// de las siembras de XCUITest, y `waitForBootstrap` se rinde a los 10 s y sigue. Si no llega, la siguiente vuelta a
+    /// primer plano lo retoma.
+    private func resumeAccountDeletionCloseIfPending() async {
+        for _ in 0..<120 where !SessionState.shared.isBootstrapSettled {
+            do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
+        }
+        guard SessionState.shared.isBootstrapSettled,
+              StorageModePersistence.isAccountDeletedAwaitingLocalClose() else { return }
+        await AccountDeletionService.shared.resumePendingPrivateClose(context: modelContext)
     }
 
     /// Wait for AppBootstrapper to finish (StoreKit products, exchange rates, etc.)

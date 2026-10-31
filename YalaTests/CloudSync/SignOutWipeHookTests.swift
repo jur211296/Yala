@@ -112,6 +112,40 @@ struct SignOutWipeHookTests {
         #expect(!StorageModePersistence.isSignOutWipeArmed(defaults))
     }
 
+    /// Ticket `account-deletion-private-close-has-no-durable-intent`: el borrado del arranque ES el cierre local que la
+    /// marca de «Eliminar cuenta» esperaba. Un kill entre el arm del cierre y el retiro de la marca por el servicio la dejaría
+    /// viva sobre un teléfono que ya está en el Welcome; este hook la retira.
+    @Test func wipe_clearsTheAccountDeletionAwaitingLocalCloseMark() {
+        let defaults = makeIsolatedDefaults(prefix: "sowipe.acctdel")
+        StorageModePersistence.write(.icloud, defaults: defaults)
+        StorageModePersistence.markAccountDeletedAwaitingLocalClose(defaults)
+        StorageModePersistence.armSignOutWipe(defaults)
+        SwiftDataConfiguration.performSignOutWipeIfArmed(
+            defaults: defaults,
+            deleteFiles: { _, _ in true },
+            resetPrefs: {},
+            cancelNotifications: {})
+        #expect(!StorageModePersistence.isAccountDeletedAwaitingLocalClose(defaults))
+        #expect(!StorageModePersistence.isSignOutWipeArmed(defaults))
+    }
+
+    /// Y al revés: si el store no se deja borrar en `.icloud`, el hook desarma («el cierre no ocurrió»). La cuenta, en
+    /// cambio, ya no existe: la marca se queda para que el arranque retome el cierre local en vez de dejar el teléfono a
+    /// medias.
+    @Test func baseDeleteFails_inICloudMode_keepsTheAccountDeletionMark() {
+        let defaults = makeIsolatedDefaults(prefix: "sowipe.acctdel.abort")
+        StorageModePersistence.write(.icloud, defaults: defaults)
+        StorageModePersistence.markAccountDeletedAwaitingLocalClose(defaults)
+        StorageModePersistence.armSignOutWipe(defaults)
+        SwiftDataConfiguration.performSignOutWipeIfArmed(
+            defaults: defaults,
+            deleteFiles: { _, _ in false },
+            resetPrefs: {},
+            cancelNotifications: {})
+        #expect(!StorageModePersistence.isSignOutWipeArmed(defaults))
+        #expect(StorageModePersistence.isAccountDeletedAwaitingLocalClose(defaults))
+    }
+
     // MARK: - Orden completo
 
     @Test func armed_runsFullOrder_cancelsOnce_armClearedLast() {

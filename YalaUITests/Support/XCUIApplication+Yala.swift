@@ -46,6 +46,9 @@ extension XCUIApplication {
         cloudSession: Bool = false,
         // S27i: «Eliminar mi cuenta» completa su parte de servidor sin red (`-uitest-fake-account-deletion`).
         fakeAccountDeletion: Bool = false,
+        // «Eliminar cuenta» (D) con el servidor ya borrado y la app cerrada antes del cierre local
+        // (`-uitest-account-deletion-pending-close`).
+        accountDeletionPendingClose: Bool = false,
         // nve0: la sesión fingida aparece N segundos después de que la pestaña pinte «Crea tu cuenta».
         cloudSessionAfterSeconds: Int? = nil,
         // apsn: el arranque tarda N segundos más en asentar, como en un iPhone recién instalado.
@@ -205,6 +208,7 @@ extension XCUIApplication {
         // daría un rojo MUDO — el arg desconocido se ignora en silencio.
         if cloudSession { args.append("-uitest-fake-cloud-session") }
         if fakeAccountDeletion { args.append("-uitest-fake-account-deletion") }
+        if accountDeletionPendingClose { args.append("-uitest-account-deletion-pending-close") }
         if let cloudSessionAfterSeconds {
             args += ["-uitest-fake-cloud-session-after", String(cloudSessionAfterSeconds)]
         }
