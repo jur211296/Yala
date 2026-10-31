@@ -38,6 +38,9 @@
 --   Then — 2026-10-07, staging AND production — hlc01_cap_future_hlc (§10): the future-HLC cap, a BEFORE INSERT OR
 --   UPDATE trigger `cap_future_hlc` on the 5 groups tables (+ 17 personal ones in supabase-staging.ddl). New section,
 --   nothing woven in-place: no RPC body changes.
+--   Then — 2026-10-31, staging AND production — g27_01_opening_balance_managers (§11): BEFORE INSERT OR UPDATE trigger
+--   `opening_balance_guard` on split_expenses and split_shares (only the owner or an active admin writes opening
+--   balances; closed group and confirmed-payment lock). New section; no policy and no RPC body changes.
 --   ⚠️ STAGING IS THREE MIGRATIONS BEHIND: g13_04, g13_05 and g14_01 are applied in PRODUCTION only —
 --   there is no staging DDL credential (re-measured 2026-09-07). This mold therefore describes PRODUCTION;
 --   staging matches it only after those three are applied, in order.
@@ -2033,3 +2036,122 @@ create trigger cap_future_hlc before insert or update on public.split_shares
   for each row execute function public.cap_future_hlc();
 create trigger cap_future_hlc before insert or update on public.split_settlements
   for each row execute function public.cap_future_hlc();
+
+
+-- ============================================================================
+-- §11 — g27_01_opening_balance_managers (saldos iniciales: solo el dueño o un admin activo, card 6n1o)
+-- ============================================================================
+-- APLICADA EN LOS DOS ENTORNOS el 2026-10-31 (staging y producción), md5(prosrc) fd098cc2e37a7b69746e973b04017d79.
+-- Verbatim de `qa/cloud/g27_01_opening_balance_managers.sql` (la cabecera con la regla y el porqué vive allí).
+-- Batería: `qa/cloud/g27_01-battery.sql` (banco local, staging y prod). Marcha atrás: `qa/cloud/g27_01_rollback.sql`.
+
+create or replace function public.opening_balance_guard() returns trigger
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare
+  v_uid         uuid;              -- se lee solo para filas de saldo inicial (abajo, paso 4)
+  v_gid         text := new.group_id;
+  v_is_ob       boolean := false;  -- la fila es de un saldo inicial
+  v_lock_exps   uuid[] := array[]::uuid[];  -- saldos vivos que esta escritura edita o borra (sujetos al bloqueo)
+  v_extra       text[] := array[]::text[];  -- gente de la fila que se escribe (el `member_key` de antes de un reparto)
+  v_exp         uuid;
+  v_members     text[];
+  v_owner       uuid;
+  v_gdeleted    boolean;
+  -- El gasto de destino (NEW.expense_id) y el de origen (OLD.expense_id, si cambia) de un reparto.
+  v_new_ob      boolean;
+  v_new_del     boolean;
+  v_old_ob      boolean;
+  v_old_del     boolean;
+begin
+  -- 0. Borrar lo ya borrado: reenvío de un tombstone, sin juicio.
+  if tg_op = 'UPDATE' and old.deleted and new.deleted then
+    return new;
+  end if;
+
+  -- 1. ¿Es una fila de saldo inicial?
+  if tg_table_name = 'split_expenses' then
+    v_is_ob := coalesce(new.is_opening_balance, false)
+               or (tg_op = 'UPDATE' and coalesce(old.is_opening_balance, false));
+    if not v_is_ob then
+      return new;
+    end if;
+    if tg_op = 'UPDATE' and coalesce(old.is_opening_balance, false) and not old.deleted then
+      v_lock_exps := array[new.sync_id];
+    end if;
+  elsif tg_table_name = 'split_shares' then
+    if new.expense_id is not null then
+      select e.is_opening_balance, e.deleted into v_new_ob, v_new_del
+        from split_expenses e where e.group_id = new.group_id and e.sync_id = new.expense_id;
+    end if;
+    if tg_op = 'UPDATE' and old.expense_id is not null and old.expense_id is distinct from new.expense_id then
+      select e.is_opening_balance, e.deleted into v_old_ob, v_old_del
+        from split_expenses e where e.group_id = old.group_id and e.sync_id = old.expense_id;
+    end if;
+    v_is_ob := coalesce(v_new_ob, false) or coalesce(v_old_ob, false);
+    if not v_is_ob then
+      return new;
+    end if;
+    -- Editar: cambiar un reparto que ya existe, o añadir uno a un gasto que ya tuvo alguno (crear su primer reparto
+    -- no es editar). Un reparto que cambia de gasto edita los dos.
+    if coalesce(v_new_ob, false) and not coalesce(v_new_del, true)
+       and (tg_op = 'UPDATE'
+            or exists (select 1 from split_shares s
+                        where s.group_id = new.group_id and s.expense_id = new.expense_id
+                          and s.sync_id <> new.sync_id)) then
+      v_lock_exps := v_lock_exps || new.expense_id;
+    end if;
+    if coalesce(v_old_ob, false) and not coalesce(v_old_del, true) then
+      v_lock_exps := v_lock_exps || old.expense_id;
+    end if;
+    if tg_op = 'UPDATE' then
+      v_extra := array[old.member_key];
+    end if;
+  else
+    return new;
+  end if;
+
+  -- 2. Quien no es miembro activo (ni nadie sin sesión): lo rechaza la RLS de siempre, sin contarle nada.
+  if not is_group_writer(v_gid) then
+    return new;
+  end if;
+
+  -- 3. Grupo cerrado en el servidor.
+  select g.owner_user_id, g.deleted into v_owner, v_gdeleted from split_groups g where g.group_id = v_gid;
+  if not found or v_gdeleted then
+    raise exception 'yala_opening_balance_group_closed' using errcode = 'P0001';
+  end if;
+
+  -- 4. Dueño o admin activo. `auth.uid()` se lee aquí y no al declarar: el trigger corre en TODA escritura de las dos
+  -- tablas (también las de mantenimiento, como la normalización de hlc01) y lo de fuera de un saldo no lo necesita.
+  v_uid := (select auth.uid());
+  if not (v_owner is not distinct from v_uid or is_group_admin(v_gid)) then
+    raise exception 'yala_opening_balance_not_admin' using errcode = 'P0001';
+  end if;
+
+  -- 5. Bloqueo por pago confirmado, con la arista que cada saldo YA TIENE en el servidor.
+  foreach v_exp in array v_lock_exps loop
+    v_members := v_extra
+      || coalesce((select array[e.paid_by_member_key] from split_expenses e
+                    where e.group_id = v_gid and e.sync_id = v_exp), array[]::text[])
+      || coalesce((select array_agg(s.member_key) from split_shares s
+                    where s.group_id = v_gid and s.expense_id = v_exp and s.deleted = false), array[]::text[]);
+    if exists (select 1 from split_settlements st
+                where st.group_id = v_gid and st.deleted = false and st.is_confirmed is true
+                  and (st.from_member_key = any (v_members) or st.to_member_key = any (v_members))) then
+      raise exception 'yala_opening_balance_locked' using errcode = 'P0001';
+    end if;
+  end loop;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.opening_balance_guard() from public, anon, authenticated;
+
+drop trigger if exists opening_balance_guard on public.split_expenses;
+create trigger opening_balance_guard before insert or update on public.split_expenses
+  for each row execute function public.opening_balance_guard();
+
+drop trigger if exists opening_balance_guard on public.split_shares;
+create trigger opening_balance_guard before insert or update on public.split_shares
+  for each row execute function public.opening_balance_guard();

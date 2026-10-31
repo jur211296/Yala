@@ -4480,6 +4480,10 @@
 "groups.openingBalance.approvalPromptSkip" = "Non, commencer à zéro";
 "groups.openingBalance.errorNotAdmin" = "Seul un administrateur du groupe peut gérer les soldes initiaux.";
 "groups.openingBalance.errorSameMember" = "Choisissez deux membres différents.";
+"groups.openingBalance.serverRejected.title" = "Ta modification n'a pas atteint le groupe";
+"groups.openingBalance.serverRejected.notAdmin" = "Seul le propriétaire ou un administrateur du groupe peut modifier les soldes initiaux, et ce n'est plus ton cas. Les autres membres ne verront pas cette modification.";
+"groups.openingBalance.serverRejected.locked" = "Les personnes de ce solde initial ont déjà des paiements confirmés, il ne peut donc plus être modifié. Les autres membres ne verront pas cette modification.";
+"groups.openingBalance.serverRejected.groupClosed" = "Ce groupe n'accepte plus de modifications. Les autres membres ne verront pas cette modification.";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "Votre solde";

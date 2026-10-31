@@ -4491,6 +4491,10 @@
 "groups.openingBalance.approvalPromptSkip" = "Nie, zaczyna od zera";
 "groups.openingBalance.errorNotAdmin" = "Tylko administrator grupy może zarządzać saldami początkowymi.";
 "groups.openingBalance.errorSameMember" = "Wybierz dwóch różnych członków.";
+"groups.openingBalance.serverRejected.title" = "Twoja zmiana nie dotarła do grupy";
+"groups.openingBalance.serverRejected.notAdmin" = "Salda początkowe może zmieniać tylko właściciel lub administrator grupy, a ty teraz nim nie jesteś. Pozostali członkowie nie zobaczą tej zmiany.";
+"groups.openingBalance.serverRejected.locked" = "Osoby z tego salda początkowego mają już potwierdzone płatności, więc nie można go już zmienić. Pozostali członkowie nie zobaczą tej zmiany.";
+"groups.openingBalance.serverRejected.groupClosed" = "Ta grupa nie przyjmuje już zmian. Pozostali członkowie nie zobaczą tej zmiany.";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "Twój bilans";

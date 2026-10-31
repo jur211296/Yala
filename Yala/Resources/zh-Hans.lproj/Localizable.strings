@@ -4491,6 +4491,10 @@
 "groups.openingBalance.approvalPromptSkip" = "否，从零开始";
 "groups.openingBalance.errorNotAdmin" = "只有群组管理员可以管理初始余额。";
 "groups.openingBalance.errorSameMember" = "请选择两位不同的成员。";
+"groups.openingBalance.serverRejected.title" = "你的更改没有同步到群组";
+"groups.openingBalance.serverRejected.notAdmin" = "只有群组的所有者或管理员才能更改初始余额，而你现在不是。其他成员看不到这项更改。";
+"groups.openingBalance.serverRejected.locked" = "这笔初始余额涉及的人已经有确认的付款，因此无法再更改。其他成员看不到这项更改。";
+"groups.openingBalance.serverRejected.groupClosed" = "这个群组已不再接受更改。其他成员看不到这项更改。";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "你的余额";

@@ -4479,6 +4479,10 @@
 "groups.openingBalance.approvalPromptSkip" = "Não, começa do zero";
 "groups.openingBalance.errorNotAdmin" = "Só um administrador do grupo pode gerenciar os saldos iniciais.";
 "groups.openingBalance.errorSameMember" = "Escolha dois membros diferentes.";
+"groups.openingBalance.serverRejected.title" = "Sua alteração não chegou ao grupo";
+"groups.openingBalance.serverRejected.notAdmin" = "Só o dono ou um administrador do grupo pode alterar os saldos iniciais, e agora você não é. Os outros membros não vão ver esta alteração.";
+"groups.openingBalance.serverRejected.locked" = "As pessoas desse saldo inicial já têm pagamentos confirmados, então ele não pode mais ser alterado. Os outros membros não vão ver esta alteração.";
+"groups.openingBalance.serverRejected.groupClosed" = "Este grupo não aceita mais alterações. Os outros membros não vão ver esta alteração.";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "Seu saldo";

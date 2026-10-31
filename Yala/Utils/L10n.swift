@@ -2230,6 +2230,11 @@ enum L10n {
             // Errores
             static var errorNotAdmin: String { ls("groups.openingBalance.errorNotAdmin", comment: "") }
             static var errorSameMember: String { ls("groups.openingBalance.errorSameMember", comment: "") }
+            // El servidor rechazó la subida (card 6n1o, g27_01): aviso en el detalle del grupo.
+            static var serverRejectedTitle: String { ls("groups.openingBalance.serverRejected.title", comment: "") }
+            static var serverRejectedNotAdmin: String { ls("groups.openingBalance.serverRejected.notAdmin", comment: "") }
+            static var serverRejectedLocked: String { ls("groups.openingBalance.serverRejected.locked", comment: "") }
+            static var serverRejectedGroupClosed: String { ls("groups.openingBalance.serverRejected.groupClosed", comment: "") }
         }
 
         enum Bridge {

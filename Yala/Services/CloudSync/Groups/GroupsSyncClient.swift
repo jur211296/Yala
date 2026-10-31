@@ -2380,6 +2380,8 @@ final class GroupsSyncClient {
         for row in rows { byMutation[row.clientMutationID.uuidString.lowercased()] = row }
 
         var groupNotFoundPurged = 0
+        // Card 6n1o: saldos iniciales que el servidor rechazó (g27_01), por grupo; se avisan tras el save.
+        var openingBalanceRejections: [(groupID: String, reason: OpeningBalanceServerRejectionLogic.Reason)] = []
         // B2: pares (syncID, hlc) cuyo archivo espejo debe borrarse — purgas (applied/noop) Y dead-letters
         // (excluidas del espejo). Se borra DESPUÉS del save exitoso (orden fila-primero, molde
         // `confirmUploaded` del personal); si el save falla, el espejo queda consistente con el store.
@@ -2418,6 +2420,9 @@ final class GroupsSyncClient {
                             let stored = slug.map { "upstream_400:\($0)" } ?? "upstream_400"
                             markDeadLetter(row, reason: stored, telemetryReason: slug ?? "upstream_400")
                             mirrorRemovals.append((row.syncID, row.hlc))
+                            if let rejection = OpeningBalanceServerRejectionLogic.reason(forSlug: slug) {
+                                openingBalanceRejections.append((row.groupID, rejection))
+                            }
                         } else if reason.hasPrefix("upstream_") {
                             // 5xx / 429: transitorio (reintento en el próximo push). El espejo se conserva.
                             continue
@@ -2438,6 +2443,9 @@ final class GroupsSyncClient {
         }
         for removal in mirrorRemovals {
             outboxMirror?.remove(syncID: removal.syncID, hlc: removal.hlc)
+        }
+        for rejection in openingBalanceRejections {
+            OpeningBalanceServerRejectionNotices.shared.record(groupID: rejection.groupID, reason: rejection.reason)
         }
         if groupNotFoundPurged > 0 {
             GroupsSyncBreadcrumb.groupsMetaPurgedGroupNotFound(count: groupNotFoundPurged)
