@@ -1017,8 +1017,6 @@
 
 "comparison.month" = "Maand";
 "comparison.year" = "Jaar";
-"comparison.monthShort" = "P-1";
-"comparison.yearShort" = "Y-1";
 
 "statistics.noRecordsFiltered" = "Geen boekingen met deze filters";
 "statistics.noRecordsDescription" = "Wanneer je boekingen toevoegt, verschijnen ze hier.";
@@ -2134,7 +2132,7 @@
 "tipkit.next" = "Volgende";
 "tipkit.done" = "Klaar";
 "tipkit.comparison.title" = "Vergelijk en leer";
-"tipkit.comparison.message" = "%1$@ vergelijkt met de vorige periode; %2$@ met dezelfde periode vorig jaar.";
+"tipkit.comparison.message" = "Kies waarmee je je cijfers vergelijkt: de vorige periode of dezelfde periode vorig jaar.";
 
 // Group D: Settings Tour
 "tipkit.settings.accounts.title" = "Je rekeningen";

@@ -155,6 +155,9 @@ struct PlanningView: View {
             .padding(.horizontal, DS.Spacing.lg)
         }
         .fadesTowardVerticalBar()
+        // Al pulsar, el cristal del chip se hincha por encima de su cápsula y el scroll lo recortaba en recto arriba y
+        // abajo (card nawy). Cabe en el aire de `navigationChipsInset`, como en Estadísticas.
+        .scrollClipDisabled()
     }
 
     private func navigationChipButton(for tab: PlanningTab) -> some View {

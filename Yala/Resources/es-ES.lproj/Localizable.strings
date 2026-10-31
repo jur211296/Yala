@@ -1124,9 +1124,7 @@
 "common.updatingRecords" = "Actualizando registros...";
 "common.useThisColor" = "Usar este color";
 "comparison.month" = "Mes";
-"comparison.monthShort" = "P-1";
 "comparison.year" = "Año";
-"comparison.yearShort" = "A-1";
 "contextualGuide.dismiss" = "Entendido";
 "continent.africa" = "África";
 "continent.asia" = "Asia";
@@ -3188,7 +3186,7 @@
 "tipkit.cfTable.available.title" = "Lo que te queda";
 "tipkit.cfTable.cell.message" = "Toca cualquier monto para ver de dónde viene y cómo se calculó.";
 "tipkit.cfTable.cell.title" = "Toca para ver más";
-"tipkit.comparison.message" = "%1$@ compara con el periodo anterior; %2$@, con el mismo periodo del año pasado.";
+"tipkit.comparison.message" = "Elige con qué comparar tus cifras: con el periodo anterior o con el mismo periodo del año pasado.";
 "tipkit.comparison.title" = "Compara y aprende";
 "tipkit.done" = "Listo";
 "tipkit.next" = "Siguiente";

@@ -84,7 +84,7 @@ struct PanelQuickActionsRow: View {
             title: L10n.Panel.createFirstAccount,
             icon: "creditcard.fill",
             hint: L10n.Panel.createFirstAccountHint,
-            identifier: "panel_create_first_account",
+            identifier: "\(identifierPrefix)_create_first_account",
             action: onCreateFirstAccount
         )
     }

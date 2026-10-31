@@ -50,6 +50,8 @@ struct DetailContainerView: View {
     @State private var showDeleteConfirmation = false
     @State private var showBulkEditSheet = false
     @State private var isPresentingSettings = false
+    /// La salida de lo que falta para registrar, pedida por la fila del hero o por el flotante (card 7jfp).
+    @State private var missingStepExit: MissingStepExit?
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
     @State private var isInBackground = false
@@ -103,6 +105,9 @@ struct DetailContainerView: View {
     private var statsQuickActions: StatsQuickActions {
         StatsQuickActions(
             canCreateRecords: canUseVoiceInput,
+            missingStep: dataViewModel.visibleMissingStep,
+            onCreateFirstAccount: { missingStepExit = .createAccount },
+            onCreateCategories: { createCategories() },
             isVoiceLocked: isVoiceLocked,
             isImageLocked: isImageLocked,
             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
@@ -113,6 +118,23 @@ struct DetailContainerView: View {
             onChatTap: { startChat() },
             showsFloating: $showFloatingActions
         )
+    }
+
+    /// Lo que falta para registrar, desde el flotante: la misma salida que la fila (card 7jfp).
+    private func resolveMissingStep() {
+        switch dataViewModel.quickActionsState {
+        case .needsAccount: missingStepExit = .createAccount
+        case .needsCategories: createCategories()
+        case .ready: break
+        }
+    }
+
+    /// «Crear categorías»: crea las de siempre, o abre Ajustes › Categorías si ya hay propias (como el Panel).
+    private func createCategories() {
+        switch dataViewModel.createCategoriesAction() {
+        case .seedDefaults: DS.Haptic.success()
+        case .openCategoriesSettings: missingStepExit = .categoriesSettings
+        }
     }
 
     /// Voz y foto desde la fila: Pro → permiso de IA → la entrada. El mismo orden que `FABStackView` y que
@@ -352,6 +374,8 @@ struct DetailContainerView: View {
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                             chatFABVisible: appPreferences.chatFABVisible,
                             isShortContainer: fabShortContainer,
+                            missingStep: dataViewModel.visibleMissingStep,
+                            onResolveMissingStep: { resolveMissingStep() },
                             onVoiceTap: { showVoiceRecording = true },
                             onImageTap: { showImageSelection = true },
                             onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -393,6 +417,11 @@ struct DetailContainerView: View {
             }
         }
         .yalaScreenBackground()
+        .missingStepExitSheet(
+            $missingStepExit,
+            existingAccountNames: { dataViewModel.accounts.map(\.name) },
+            onDismiss: { reloadAndRecalculate() }
+        )
     }
 
     @ViewBuilder

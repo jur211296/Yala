@@ -1017,8 +1017,6 @@
 
 "comparison.month" = "月";
 "comparison.year" = "年";
-"comparison.monthShort" = "P-1";
-"comparison.yearShort" = "Y-1";
 
 "statistics.noRecordsFiltered" = "在这些筛选条件下没有记录";
 "statistics.noRecordsDescription" = "添加记录后,它们将显示在这里。";
@@ -2134,7 +2132,7 @@
 "tipkit.next" = "下一步";
 "tipkit.done" = "完成";
 "tipkit.comparison.title" = "对比并学习";
-"tipkit.comparison.message" = "%1$@ 与上一时段对比；%2$@ 与去年同期对比。";
+"tipkit.comparison.message" = "选择要对比的对象：上一时段，或去年同期。";
 
 // Group D: Settings Tour
 "tipkit.settings.accounts.title" = "你的账户";

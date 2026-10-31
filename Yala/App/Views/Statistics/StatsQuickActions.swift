@@ -15,6 +15,11 @@ import SwiftUI
 /// Lo que la fila necesita del contenedor de Estadísticas.
 struct StatsQuickActions {
     let canCreateRecords: Bool
+    /// Qué falta para registrar (card 7jfp): sin cuenta o sin categorías, la fila dice qué falta y ofrece la salida,
+    /// como la del Panel, en vez de quedarse apagada sin explicación.
+    let missingStep: PanelQuickActionsGateLogic.State
+    let onCreateFirstAccount: () -> Void
+    let onCreateCategories: () -> Void
     let isVoiceLocked: Bool
     let isImageLocked: Bool
     let isChatLocked: Bool
@@ -40,6 +45,10 @@ struct StatsQuickActionsSlot: View {
         if let actions {
             PanelQuickActionsRow(
                 canCreateRecords: actions.canCreateRecords,
+                hasAccounts: actions.missingStep != .needsAccount,
+                onCreateFirstAccount: actions.onCreateFirstAccount,
+                needsCategories: actions.missingStep == .needsCategories,
+                onCreateCategories: actions.onCreateCategories,
                 isVoiceLocked: actions.isVoiceLocked,
                 isImageLocked: actions.isImageLocked,
                 isChatLocked: actions.isChatLocked,

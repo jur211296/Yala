@@ -5737,8 +5737,6 @@ enum L10n {
     enum Comparison {
         static var month: String { ls("comparison.month", comment: "Month comparison") }
         static var year: String { ls("comparison.year", comment: "Year comparison") }
-        static var monthShort: String { ls("comparison.monthShort", comment: "Short for previous period") }
-        static var yearShort: String { ls("comparison.yearShort", comment: "Short for previous year") }
     }
 
     // MARK: - Validation
@@ -8747,9 +8745,10 @@ enum L10n {
         }
         // TipKit standalone tips
         static var comparison: String { ls("tipkit.comparison.title", comment: "") }
-        /// Dice qué es cada círculo del selector, con sus mismas etiquetas (UX 2.2 · L5-11).
+        /// Dice para qué sirven los dos chips de la comparación (card g6nw, 2026-10-31). Hasta entonces explicaba «P-1» y
+        /// «A-1», los círculos retirados en L11-4; no nombra los chips porque su texto cambia con el período.
         static var comparisonMessage: String {
-            String(format: ls("tipkit.comparison.message", comment: "P-1 / A-1 explained"), L10n.Comparison.monthShort, L10n.Comparison.yearShort)
+            ls("tipkit.comparison.message", comment: "Comparison tip: what the two chips compare with")
         }
         // AI Charts tips
         static var aiChartsPro: String { ls("tipkit.aiCharts.pro.title", comment: "") }

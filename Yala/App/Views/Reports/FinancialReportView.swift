@@ -178,6 +178,9 @@ struct FinancialReportView: View {
                 }
                 .fadesTowardVerticalBar()
                 .scrollTargetBehavior(.viewAligned)
+                // El cristal del chip pulsado se hinchaba fuera del scroll y salía cortado en recto (card nawy). Cabe en
+                // el `DS.Spacing.sm` de arriba y abajo, el mismo aire que `navigationChipsInset` da en Estadísticas.
+                .scrollClipDisabled()
             }
             .padding(.vertical, DS.Spacing.sm)
         }
