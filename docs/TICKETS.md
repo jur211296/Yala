@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1146)
+## Index (1148)
 
 | id | status | path |
 |---|---|---|
@@ -408,7 +408,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
-| forms-read-their-deleted-model-while-closing | backlog | tickets/backlog/forms-read-their-deleted-model-while-closing.md |
+| forms-read-their-deleted-model-while-closing | done | tickets/done/forms-read-their-deleted-model-while-closing.md |
 | forward-identity-capture-advances-when-it-could-not-read-any-row | backlog | tickets/backlog/forward-identity-capture-advances-when-it-could-not-read-any-row.md |
 | forward-migration-steps-have-no-ceiling-and-no-exit | done | tickets/done/forward-migration-steps-have-no-ceiling-and-no-exit.md |
 | forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass | backlog | tickets/backlog/forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass.md |
@@ -728,6 +728,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
 | month-year-titles-capitalize-every-word | backlog | tickets/backlog/month-year-titles-capitalize-every-word.md |
+| more-forms-read-their-deleted-model-while-closing | backlog | tickets/backlog/more-forms-read-their-deleted-model-while-closing.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
 | multi-currency-accounts | qa | tickets/qa/multi-currency-accounts.md |
 | multi-currency-accounts-1-model-and-sync | done | tickets/done/multi-currency-accounts-1-model-and-sync.md |
@@ -964,6 +965,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
+| scheduled-early-payment-test-fails-on-the-31st | backlog | tickets/backlog/scheduled-early-payment-test-fails-on-the-31st.md |
 | scheduled-payment-identical-drafts-in-the-inbox | done | tickets/done/scheduled-payment-identical-drafts-in-the-inbox.md |
 | scheduled-payment-once-labeled-monthly | done | tickets/done/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payment-pending-deletion-loses-undo-on-a-second-delete | done | tickets/done/scheduled-payment-pending-deletion-loses-undo-on-a-second-delete.md |

@@ -35,6 +35,8 @@ struct NewTransactionView: View {
     @State private var isCreatingAnother = false
     @State private var isEditingFromSuccess = false
     @State private var isDuplicating = false
+    /// Título y mensaje de la pregunta de borrado, copiados al abrirla (`askToDelete`).
+    @State private var deleteConfirmationText: (title: String, message: String)?
 
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
@@ -127,6 +129,15 @@ struct NewTransactionView: View {
         transactionToEdit != nil && !isDuplicating
     }
 
+    /// El registro en edición mientras se puede leer. «Eliminar» lo borra y el formulario sigue presentado durante el
+    /// cierre, con el `body` evaluándose otra vez al cerrarse la alerta: en iOS 27.x leer una propiedad de un modelo
+    /// borrado aborta (card 1w89, molde de #687). Todo lo que el `body` lea del registro pasa por aquí; comparar
+    /// `transactionToEdit` con `nil` no lo lee y puede seguir directo.
+    private var readableTransactionToEdit: TransactionItem? {
+        guard let tx = transactionToEdit, !tx.isDeleted, tx.modelContext != nil else { return nil }
+        return tx
+    }
+
     /// True si la TX en edición viene del bridge de grupos (no editable manualmente).
     ///
     /// **Exige que el puntero RESUELVA, no solo que exista.** Mirar solo `!= nil` es lo que convertía
@@ -135,7 +146,7 @@ struct NewTransactionView: View {
     /// ofrece abrir un grupo donde ya no hay nada. Si mañana se abre otro hueco, el usuario puede
     /// arreglarlo él en vez de quedarse sin salida.
     private var isBridgedReadOnly: Bool {
-        guard let tx = transactionToEdit, bridgedPointerResolves else { return false }
+        guard let tx = readableTransactionToEdit, bridgedPointerResolves else { return false }
         return tx.splitExpenseID != nil || tx.splitSettlementID != nil
     }
 
@@ -147,7 +158,7 @@ struct NewTransactionView: View {
     /// el atrapamiento: su motivo declarado —«reaparece como draft vía el próximo sync»— deja de ser
     /// cierto justo cuando el `SplitExpense` ya no existe. De ahí el mismo guard del puntero.
     private var isBridgedCasoA: Bool {
-        guard let tx = transactionToEdit,
+        guard let tx = readableTransactionToEdit,
               bridgedPointerResolves,
               tx.splitExpenseID != nil,
               let account = tx.account,
@@ -158,7 +169,7 @@ struct NewTransactionView: View {
 
     /// Forma de la TX en edición para `BridgedEditPolicy` (qué campos son editables + banner).
     private var bridgedPolicyShape: BridgedEditPolicy.TxShape {
-        let tx = transactionToEdit
+        let tx = readableTransactionToEdit
         return BridgedEditPolicy.TxShape(
             hasSplitExpenseID: tx?.splitExpenseID != nil,
             hasSplitSettlementID: tx?.splitSettlementID != nil,
@@ -477,10 +488,10 @@ struct NewTransactionView: View {
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
                     title: L10n.Transaction.account,
-                    currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil,
+                    currencyFilter: isBridgedCasoA ? readableTransactionToEdit?.currencyCode : nil,
                     // Tarjeta con varias divisas (entrega 3): elegir la tarjeta guarda su línea en la divisa del importe. En
                     // un gasto de grupo (Caso A) la divisa es la del grupo.
-                    routingCurrency: isBridgedCasoA ? transactionToEdit?.currencyCode : viewModel.currencyCode,
+                    routingCurrency: isBridgedCasoA ? readableTransactionToEdit?.currencyCode : viewModel.currencyCode,
                     sizing: .mediumFirst
                 )
             }
@@ -587,15 +598,16 @@ struct NewTransactionView: View {
             }
             // La misma pregunta que el menú de la fila y el detalle: nombra el registro (L8-7).
             .alert(
-                deleteConfirmationTitle,
+                deleteConfirmationText?.title ?? L10n.Alert.confirmDelete,
                 isPresented: $viewModel.showDeleteConfirmation
             ) {
                 Button(L10n.Action.cancel, role: .cancel) {}
                 Button(L10n.Action.delete, role: .destructive) {
                     deleteTransaction()
                 }
+                .accessibilityIdentifier("new_transaction_delete_confirm")
             } message: {
-                Text(deleteConfirmationMessage)
+                Text(deleteConfirmationText?.message ?? L10n.Common.cannotUndo)
             }
             .alert(
                 L10n.Validation.futureDateTitle,
@@ -709,13 +721,17 @@ struct NewTransactionView: View {
         return isEditingSavedRecord ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
     }
 
-    private var deleteConfirmationTitle: String {
-        guard let transaction = transactionToEdit else { return L10n.Alert.confirmDelete }
-        return RecordDeleteConfirmationText.title(for: transaction, preferences: appPreferences)
-    }
-
-    private var deleteConfirmationMessage: String {
-        transactionToEdit.map { RecordDeleteConfirmationText.message(for: $0) } ?? L10n.Common.cannotUndo
+    /// Copia el título y el mensaje de la pregunta de borrado y la abre. Se copian aquí, con el registro vivo, porque la
+    /// alerta se vuelve a evaluar al cerrarse, cuando el registro ya está borrado (`readableTransactionToEdit`). Si un
+    /// borrado anterior no llegó a guardarse, el registro ya no se puede leer: se pregunta con la copia de entonces.
+    private func askToDelete() {
+        if let transaction = readableTransactionToEdit {
+            deleteConfirmationText = (
+                title: RecordDeleteConfirmationText.title(for: transaction, preferences: appPreferences),
+                message: RecordDeleteConfirmationText.message(for: transaction)
+            )
+        }
+        viewModel.showDeleteConfirmation = true
     }
 
     // MARK: - Transaction Type Selector
@@ -873,7 +889,7 @@ struct NewTransactionView: View {
                         }
                     }
 
-                    if isEditingSavedRecord, transactionToEdit?.scheduledPaymentID != nil {
+                    if isEditingSavedRecord, readableTransactionToEdit?.scheduledPaymentID != nil {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(.purple)
@@ -1035,7 +1051,7 @@ struct NewTransactionView: View {
                     icon: "trash",
                     label: L10n.Action.delete
                 ) {
-                    viewModel.showDeleteConfirmation = true
+                    askToDelete()
                 }
                 .accessibilityIdentifier("new_transaction_delete_action")
             }
@@ -2100,8 +2116,11 @@ struct NewTransactionView: View {
                 }
             }
 
+            // La divisa que se enseña, leída ANTES de borrar: después el ViewModel suelta el registro y la conserva.
+            let shownAmountCurrency = viewModel.amountCurrencyCode
             modelContext.delete(transaction)
             try modelContext.save()
+            viewModel.releaseDeletedRecord(keepingAmountCurrency: shownAmountCurrency)
             WidgetDataCache.updateCache(context: modelContext)
             SessionState.shared.incrementDataVersion()
             dismiss()

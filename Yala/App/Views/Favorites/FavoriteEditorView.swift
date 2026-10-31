@@ -65,6 +65,7 @@ struct FavoriteEditorView: View {
 
     init(favorite: FavoritePayment? = nil) {
         self.favorite = favorite
+        _isTransfer = State(initialValue: Self.isTransferFavorite(favorite))
     }
 
     var body: some View {
@@ -236,8 +237,16 @@ struct FavoriteEditorView: View {
     }
 
     /// El favorito que se edita es una transferencia (card 93ta). Se lee del FAVORITO y no del estado: un favorito de
-    /// transferencia no se convierte en gasto o ingreso desde aquí.
-    private var isTransfer: Bool { favorite?.type == .transfer }
+    /// transferencia no se convierte en gasto o ingreso desde aquí. Copiado al crear la vista: «Eliminar» borra el
+    /// favorito y el editor sigue presentado mientras se cierra, y en iOS 27.x leer un modelo borrado aborta (card 1w89).
+    @State private var isTransfer: Bool
+
+    /// Mira antes de leer: si quien presenta el editor lo vuelve a crear con el favorito ya borrado, el valor se ignora
+    /// (manda el `@State` de la primera vez), pero la lectura correría igual.
+    private static func isTransferFavorite(_ favorite: FavoritePayment?) -> Bool {
+        guard let favorite, !favorite.isDeleted, favorite.modelContext != nil else { return false }
+        return favorite.type == .transfer
+    }
 
     @ViewBuilder
     private var transactionTypeSelector: some View {

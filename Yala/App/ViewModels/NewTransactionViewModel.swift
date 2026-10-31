@@ -222,6 +222,17 @@ final class NewTransactionViewModel {
             : AmountCurrencyOverride(currencyCode: normalized, accountID: account.persistentModelID)
     }
 
+    /// Suelta el registro (y su pareja de transferencia) que el formulario acaba de borrar. El formulario sigue presentado
+    /// mientras se cierra y su `body` lee `amountCurrencyCode`, que leía el registro: en iOS 27.x leer un modelo borrado
+    /// aborta (card 1w89). La divisa que se enseñaba —leída ANTES de borrar— se conserva, como al duplicar.
+    func releaseDeletedRecord(keepingAmountCurrency code: String) {
+        if !isTransfer {
+            keepAmountCurrency(code, for: selectedAccount)
+        }
+        editingTransaction = nil
+        editingTransferPair = nil
+    }
+
     // MARK: - Context Setup
 
     func setContext(_ context: ModelContext) {
