@@ -230,10 +230,10 @@ paths:
   sobre una hoja (medido el 2026-10-27, iOS 27.0).** En «Detalles» de un registro de Yala IA (hoja sobre la hoja del
   chat), Categoría, Cuenta y Etiquetas —los tres selectores con `SelectorSheetSizing.mediumFirst`— no abrían: SwiftUI
   construía el selector y UIKit no lo mostraba. Fecha, sin ese modificador, sí. Sin error ni aviso en el log. Desde
-  Nuevo registro (un nivel menos) abrían bien, y por eso #602 lo metió sin que nadie lo viera. ⇒ **el material va como
-  VISTA: `.presentationBackground { Rectangle().fill(.thickMaterial) }`**, que pinta lo mismo (diferencia medida de
-  ≤ 8/255 en la cabecera) y presenta en los tres niveles. Lo fijan los cuatro casos `test_draftDetails_*` de
-  `ChatMessagingLayoutUITests`.
+  Nuevo registro (un nivel menos) abrían bien, y por eso #602 lo metió sin que nadie lo viera. Como VISTA
+  (`.presentationBackground { Rectangle().fill(.thickMaterial) }`) sí presentaba. **Desde el 2026-10-31 los selectores
+  no pintan fondo de presentación** (regla «Ninguna hoja con fondo gris», en «Backgrounds de vista»), y presentan en los
+  tres niveles igual que Fecha. Lo fijan los cuatro casos `test_draftDetails_*` de `ChatMessagingLayoutUITests`.
 
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
@@ -405,7 +405,20 @@ paths:
 - **El tamaño de una hoja lo decide la VENTANA, no el aparato (2026-09-28).** Una hoja con detent parcial que en ventana ancha deba ser grande usa `.yalaSheetDetents(_:)` (o `(_:selection:)`) en vez de `.presentationDetents`: en ventana de ancho regular (iPad a pantalla completa, iPhone Duo abierto) o en Mac fuerza `.large`; en compacta (iPhone, iPad en ventana estrecha o Split View) deja los detents. Hoy **19 hojas con detent parcial siguen con `.presentationDetents` a secas** y salen iguales en todas partes (Panel, Flujo de caja, puente de grupos…; ticket `partial-sheets-that-never-adapted-to-the-window`); una hoja nueva que las copie hereda eso. Una vista que necesite el booleano lee `@Environment(\.usesLargeSheets)`. **Nunca** `UIDevice.current.userInterfaceIdiom` para layout, y **nunca** el `horizontalSizeClass` leído dentro de la hoja: ahí lo fija la presentación y no tiene por qué ser el de la ventana que la presenta. Por eso `\.usesLargeSheets` se calcula UNA vez, en la raíz (`YalaApp.rootView` → `.sizesSheetsByWindow()`), y los valores propios del entorno sí llegan intactos a las hojas. Una escena nueva sin ese modificador deja todas sus hojas con los detents de iPhone. Test: `YalaTests/AdaptiveSheetSizingTests.swift`.
 - Param `ignoredEdges: Edge.Set?`: si `nil`, default `.all`. Para vistas con `safeAreaInset` pasar edges específicos (`[.top]`, `[.bottom]`).
 - OUT: WelcomeFlow/onboarding (`DS.Gradients.heroIndigoBlack` especializado), InboxAlertModal (custom modal Color.black backdrop), popovers (iOS nativo).
-- `GlassSheetModifier.glassSheet()` se mantiene como helper de sheets que SÍ quieren material (`.presentationBackground(.ultraThinMaterial)` + drag indicator). `.transparent` NO usa material (es desnudo).
+- **Ninguna hoja con fondo gris: el patrón es el de «Configurar panel» (Jürgen, 2026-10-30, card g1uw).** A media
+  altura la hoja enseña el Liquid Glass del sistema; al estirarla a grande, `.subtle`. Se consigue **no pintando**:
+  ningún `.presentationBackground` (ni material ni color: el `.thickMaterial` de L2-22 salía gris sólido en los
+  selectores de Cuenta y Categoría) y la raíz con `isLargeDetent ? .subtle : .transparent` (con `selection`) o
+  `.partialSheet` (sin ella). Nada opaco a pantalla completa en la raíz (`.background(.thCard)` sobre la `List` tapaba
+  el glass en los selectores de período); las tarjetas de dentro sí llevan su `theme.card`. **`.partialSheet` sin
+  `selection` NO pasa a `.subtle` al estirarla** (solo lo resuelve la ventana): para que el detent elegido cambie el
+  fondo, la hoja lleva su `@State selectedDetent` y los detents con `selection:`. Una vista que se presenta grande en un
+  sitio y a media altura en otro pone ella misma los detents parciales cuando se le pide
+  (`GroupPickerSheet(opensAtMediumHeight:)`). Molde: `PanelSectionsConfigView`; lo fija
+  `SheetGlassBackgroundWiringTests`, que prohíbe `.presentationBackground` en `Yala/App` (salvo el `.clear` del aviso
+  de Bandeja y la definición de `glassSheet()`) y cualquier llamada a `.glassSheet()`.
+- `GlassSheetModifier.glassSheet()` (`.presentationBackground(.ultraThinMaterial)`) no tiene usos y **no se usa en
+  hojas**: tapa el glass del sistema, lo contrario de la regla de arriba. `.transparent` NO usa material (es desnudo).
 
 #### Patrones aceptados temporalmente (deuda incremental, migrar al tocar el archivo)
 

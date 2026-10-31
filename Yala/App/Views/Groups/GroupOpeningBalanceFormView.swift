@@ -144,7 +144,6 @@ struct GroupOpeningBalanceFormView: View {
                     groupColorHex: group.colorHex,
                     selectedMemberID: $debtorMemberID
                 )
-                .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showCreditorPicker) {
                 MemberPickerView(
@@ -153,7 +152,6 @@ struct GroupOpeningBalanceFormView: View {
                     groupColorHex: group.colorHex,
                     selectedMemberID: $creditorMemberID
                 )
-                .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showCurrencyPicker) {
                 NavigationStack {

@@ -981,7 +981,7 @@ private struct ExportCustomPeriodPickerSheet: View {
             }
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
-            .background(.thCard)
+            .yalaScreenBackground(.partialSheet)
             .navigationTitle(L10n.Period.custom)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
