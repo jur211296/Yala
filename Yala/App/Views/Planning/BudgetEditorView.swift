@@ -61,6 +61,9 @@ struct BudgetEditorView: View {
     // Sheet states
     @State private var showCategoriesSheet = false
     @State private var showDeleteConfirmation = false
+    /// El nombre del presupuesto, copiado al tocar «Eliminar». El título de la alerta se vuelve a evaluar al cerrarse,
+    /// con el presupuesto ya borrado y el editor aún presentado: leerlo ahí aborta en iOS 27.x (card 1w89).
+    @State private var deleteDialogBudgetName = ""
     @State private var showCustomThreshold = false
     @State private var customThresholdText: String = ""
 
@@ -128,7 +131,7 @@ struct BudgetEditorView: View {
             .yalaScreenBackground(.subtle)
             // Nombra el presupuesto y dice que los gastos se quedan (UX 2.2 · L9-14).
             .alert(
-                L10n.UXL9.deleteTitle(budget?.name ?? name),
+                L10n.UXL9.deleteTitle(deleteDialogBudgetName),
                 isPresented: $showDeleteConfirmation
             ) {
                 Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
@@ -824,6 +827,7 @@ struct BudgetEditorView: View {
 
     private var deleteSection: some View {
         Button(role: .destructive) {
+            deleteDialogBudgetName = budget?.name ?? name
             showDeleteConfirmation = true
         } label: {
             HStack {

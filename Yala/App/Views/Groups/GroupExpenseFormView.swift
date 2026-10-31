@@ -130,6 +130,9 @@ struct GroupExpenseFormView: View {
 
     // Borrado del gasto desde el toolbar (solo en modo edición).
     @State private var showDeleteConfirmation = false
+    /// El nombre del gasto, copiado al tocar la papelera. El título del diálogo se vuelve a evaluar al cerrarse, con el
+    /// gasto ya borrado y el formulario aún presentado: leerlo ahí aborta en iOS 27.x (card 1w89, molde de #687).
+    @State private var deleteDialogExpenseName = ""
 
     // Red: presenta cualquier `viewModel.saveError` que hoy moriría mudo (grupo congelado
     // por migración, carrera pull-congela-mientras-guardas, o cualquier otro throw del save).
@@ -271,6 +274,7 @@ struct GroupExpenseFormView: View {
                 if viewModel.isEditMode, onDelete != nil {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
+                            deleteDialogExpenseName = expenseToEdit?.expenseDescription ?? ""
                             showDeleteConfirmation = true
                         } label: {
                             Image(systemName: "trash")
@@ -306,7 +310,7 @@ struct GroupExpenseFormView: View {
                     : L10n.Groups.Errors.actionFailed)
             }
             .confirmationDialog(
-                L10n.Groups.Expense.deleteTitle(expenseToEdit?.expenseDescription ?? ""),
+                L10n.Groups.Expense.deleteTitle(deleteDialogExpenseName),
                 isPresented: $showDeleteConfirmation,
                 titleVisibility: .visible
             ) {
