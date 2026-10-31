@@ -487,29 +487,32 @@ private struct PanelRecentRecordsSection: View {
     let currencyCode: String
 
     var body: some View {
-        // Sin título propio (UX 2.2 · L3-12): la sección ya se llama «Últimos registros» justo encima.
+        // Sin cabecera propia: la sección ya se llama «Últimos registros» justo encima (UX 2.2 · L3-12) y su «?» va en
+        // esa fila, antes del chevron (`PanelRecentRecordsInfoButton`, card gisw).
         RecentRecordsWidget(
             records: viewModel.latestRecords,
             currencyCode: currencyCode,
             onShowMore: { viewModel.navigateToStatistics(.records, in: navigation) },
-            headerInfoButton: recentRecordsInfoButton,
             showsTitle: false,
             onOpenRecord: openPanelRecord.map { action in { action($0) } }
         )
     }
+}
 
-    /// Botón info pedagógico inyectado en el header. Reusa el VM real
-    /// (TransactionItem @Model) — empty state visual si el VM no tiene datos.
-    private var recentRecordsInfoButton: AnyView? {
-        AnyView(
-            WidgetInfoButton(kind: .recentRecords, viewModel: viewModel) { _ in
-                RecentRecordsWidget(
-                    records: viewModel.latestRecords,
-                    currencyCode: currencyCode,
-                    onShowMore: nil
-                )
-            }
-        )
+/// Botón info pedagógico de «Últimos registros», en la fila del título de la sección. Reusa el VM real
+/// (TransactionItem @Model) — empty state visual si el VM no tiene datos.
+struct PanelRecentRecordsInfoButton: View {
+    let viewModel: PanelViewModel
+    let currencyCode: String
+
+    var body: some View {
+        WidgetInfoButton(kind: .recentRecords, viewModel: viewModel) { _ in
+            RecentRecordsWidget(
+                records: viewModel.latestRecords,
+                currencyCode: currencyCode,
+                onShowMore: nil
+            )
+        }
     }
 }
 

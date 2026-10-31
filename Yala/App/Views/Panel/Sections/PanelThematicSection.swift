@@ -38,6 +38,7 @@ struct PanelThematicSection: View {
                 onSeeMore: seeMoreAction,
                 seeMoreAccessibilityLabel: seeMoreAccessibilityLabel,
                 seeMoreAccessibilityHint: seeMoreAccessibilityHint,
+                titleAccessory: titleAccessory,
                 content: { contentView(widgets: widgets) },
                 footer: { footerView() }
             )
@@ -47,6 +48,19 @@ struct PanelThematicSection: View {
             // `panel_exchange_rate_widget`. Ticket: qa_cloud-fx-rates-blob-dos-caras.
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("panel_section_\(kind.rawValue)")
+        }
+    }
+
+    // MARK: - Junto al título
+
+    /// El «?» de «Últimos registros» va en la fila del título, antes del chevron: la tarjeta empieza directo en su
+    /// primera fila (card gisw). Abre la misma ayuda que antes llevaba la tarjeta arriba a la derecha.
+    private var titleAccessory: AnyView? {
+        switch kind {
+        case .latestRecords:
+            return AnyView(PanelRecentRecordsInfoButton(viewModel: viewModel, currencyCode: defaultCurrencyCodeRaw))
+        case .tendencias, .distribucion, .planificacion, .tools, .health, .accounts:
+            return nil
         }
     }
 
