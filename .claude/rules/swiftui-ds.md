@@ -611,10 +611,14 @@ paths:
   caben, ceden las pestañas.** El avatar (`ProfileToolbarItem`) lleva `.joinsVerticalBar` desde el propio componente,
   así ninguna página se queda con el avatar arriba. Y cada página de pestaña lleva `.prefersToolbarItemsInVerticalBar()`
   **dentro de su pila, junto a su `.toolbar`**: puesto en la `TabView` o en el contenido de cada `Tab` no hace nada
-  (medido). Las dos cosas, **solo en ancho compacto**: abierto en horizontal, con siete pestañas, la compresión plegaba
-  las pestañas del Panel y el avatar no cabía y se iba a «···», donde una vista propia no se pinta. Ahí queda el
-  comportamiento del sistema. Una página de pestaña nueva lleva el modificador; un botón de barra de vista propia
-  nuevo, `.joinsVerticalBar`.
+  (medido). **Desde el 2026-10-30 (card a5kf) también en el Duo abierto en horizontal y a medio plegar**, sin condición
+  de ancho: las dos cosas solo actúan donde hay barra vertical. Abierto, con siete pestañas, el avatar se quedaba
+  arriba en una franja propia que le quitaba alto a la página; ahora las pestañas del Panel se pliegan a un botón y
+  bandeja, Filtros, Configurar y avatar caben. En las páginas con lista y detalle (Grupos, Registros, Planificación) el
+  avatar va en la barra de la columna de lista, que el sistema deja horizontal: ahí no cambia. **No lo ates al ancho**:
+  la condición de ancho compacto era lo que dejaba la franja. El iPad no tiene barra vertical (27.0 ni con el SDK 27.1:
+  es del Duo), y su barra lateral es la de pestañas. Una página de pestaña nueva lleva el modificador; un botón de
+  barra de vista propia nuevo, `.joinsVerticalBar`.
 - **Un botón de barra de solo texto que ya está en el menú de la página se retira con `.hiddenInVerticalBar()`**
   («Seleccionar» de Registros). Darle icono cambiaría el iPhone (su barra horizontal prefiere el icono: «Cancelar»
   sería una ✕), y `.axisBehavior(.horizontalOnly)` no basta: la barra del título grande es horizontal y lo deja ahí.

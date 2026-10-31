@@ -242,8 +242,8 @@ struct PanelView: View {
         Button {
             sheets.showFilters = true
         } label: {
-            // Con título además del icono: con el iPhone Duo abierto en horizontal no cabe en la barra vertical y se va
-            // al menú «···», que enseña el título; con solo el icono desaparecía. En una barra se ve el icono, como antes.
+            // Con título además del icono: si no cabe en la barra vertical del iPhone Duo se va al menú «···», que enseña
+            // el título; con solo el icono desaparecía. En una barra se ve el icono, como antes.
             Label(L10n.Accessibility.filters, systemImage: "line.3.horizontal.decrease")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
@@ -258,7 +258,7 @@ struct PanelView: View {
             DS.Haptic.light()
             sheets.showSectionsConfig = true
         } label: {
-            // Con título además del icono, como Filtros: con el iPhone Duo abierto en horizontal se va al menú «···».
+            // Con título además del icono, como Filtros: si no cabe en la barra vertical del iPhone Duo, va al menú «···».
             Label(L10n.Accessibility.sectionsConfig, systemImage: "square.grid.2x2")
                 .font(DS.Typography.body).fontWeight(.medium)
                 .foregroundStyle(.thToolbarIcon)
@@ -326,8 +326,8 @@ struct PanelView: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         sectionsConfigButton
                     }
-                    // Con el Duo abierto en horizontal (siete pestañas) la barra vertical solo deja sitio para la bandeja
-                    // y «···»: ordenar las secciones es lo que menos se toca.
+                    // Si la barra vertical del Duo no da para todo, ordenar las secciones es lo que menos se toca: lo
+                    // primero en irse a «···».
                     .overflowsFirst()
                     ProfileToolbarItem {
                         sheets.isPresentingSettings = true
