@@ -144,6 +144,8 @@ struct GroupSettingsView: View {
     /// histórico local del grupo al salir — el usuario perdía de vista quién le debía sin que nadie se lo
     /// hubiera dicho.
     private var transferConfirmMessage: String {
+        // Con el grupo ya borrado (salió con «Transferir y salir») sus miembros también lo están: no se leen (card gxa9).
+        guard isGroupReadable else { return L10n.Groups.Settings.transferAndLeaveConfirmUnknownHeir }
         // La llamada va explícita y no como referencia a función (`.map(L10n…transferAndLeaveConfirm)`):
         // pasarla como valor la saca del contexto `@MainActor` y el compilador avisa.
         let base: String
@@ -158,43 +160,59 @@ struct GroupSettingsView: View {
 
     // MARK: - Body
 
+    /// El grupo se puede leer. Salir de él (y «Transferir y salir») lo borra del todo tras un `await`, y la hoja sigue
+    /// presentada mientras se cierra: el `defer` que baja el «saliendo» la repinta, y en iOS 27.x leer un modelo borrado
+    /// aborta (card 1w89). Molde de `BudgetDetailView.isBudgetValid`.
+    private var isGroupReadable: Bool {
+        !group.isDeleted && group.modelContext != nil
+    }
+
+    /// Las filas de la lista, fuera del `body` para pintarlas solo con el grupo vivo (`isGroupReadable`).
+    @ViewBuilder
+    private var settingsSections: some View {
+        infoSection
+
+        // Opciones — visibles para todos los miembros activos. Simplificar y el reparto los cambia
+        // cualquiera; la moneda única, quien creó el grupo; el presupuesto, un administrador.
+        if viewModel.canCurrentUserParticipate {
+            optionsSections
+        }
+
+        // Integración personal (F4): visible solo para members .isActive.
+        if viewModel.canCurrentUserParticipate {
+            personalIntegrationSection
+        }
+
+        // Resumen compartible («cierre del viaje»). Va FUERA de la guarda de participación a propósito:
+        // es de solo lectura y no enseña nada que quien abre esta pantalla no esté viendo ya en el
+        // detalle, así que quien salió del grupo conserva la foto de cómo quedaron las cuentas.
+        if hasShareableSummary {
+            shareableSummarySection
+        }
+
+        // Leave group (non-owner)
+        if currentOffer.showsLeave {
+            leaveGroupSection
+        }
+
+        // Transferir y salir — la salida del DUEÑO. Va antes de «Archivar o eliminar» a propósito: es la
+        // acción reversible para el grupo (sigue vivo, con sus saldos), y el bloqueo de eliminar apunta aquí.
+        if currentOffer.showsTransferAndLeave {
+            transferAndLeaveSection
+        }
+
+        // L19-5: archivar y eliminar en una tarjeta, cada una con el peso de lo que hace.
+        if viewModel.isCurrentUserAdmin || currentOffer.showsDelete {
+            exitsSection
+        }
+    }
+
     var body: some View {
         NavigationStack {
             YalaSettingsList {
-                infoSection
-
-                // Opciones — visibles para todos los miembros activos. Simplificar y el reparto los cambia
-                // cualquiera; la moneda única, quien creó el grupo; el presupuesto, un administrador.
-                if viewModel.canCurrentUserParticipate {
-                    optionsSections
-                }
-
-                // Integración personal (F4): visible solo para members .isActive.
-                if viewModel.canCurrentUserParticipate {
-                    personalIntegrationSection
-                }
-
-                // Resumen compartible («cierre del viaje»). Va FUERA de la guarda de participación a propósito:
-                // es de solo lectura y no enseña nada que quien abre esta pantalla no esté viendo ya en el
-                // detalle, así que quien salió del grupo conserva la foto de cómo quedaron las cuentas.
-                if hasShareableSummary {
-                    shareableSummarySection
-                }
-
-                // Leave group (non-owner)
-                if currentOffer.showsLeave {
-                    leaveGroupSection
-                }
-
-                // Transferir y salir — la salida del DUEÑO. Va antes de «Archivar o eliminar» a propósito: es la
-                // acción reversible para el grupo (sigue vivo, con sus saldos), y el bloqueo de eliminar apunta aquí.
-                if currentOffer.showsTransferAndLeave {
-                    transferAndLeaveSection
-                }
-
-                // L19-5: archivar y eliminar en una tarjeta, cada una con el peso de lo que hace.
-                if viewModel.isCurrentUserAdmin || currentOffer.showsDelete {
-                    exitsSection
+                // Con el grupo ya borrado la lista no pinta filas mientras la hoja baja: todas lo leen.
+                if isGroupReadable {
+                    settingsSections
                 }
             }
             // `dismissKeyboardOnTap()` no va aquí: su `onTapGesture` sobre una `List` se come los toques de las filas.
@@ -653,6 +671,8 @@ struct GroupSettingsView: View {
     /// proxy y producía una tarjeta con la cabecera, la fecha y el pie, y nada en medio: la imagen
     /// en blanco que el propio gate decía querer evitar.
     private func recomputeShareableSummary() {
+        // Un recálculo que llega con el grupo ya borrado (salir de él) lo leería: la hoja se está cerrando (card gxa9).
+        guard isGroupReadable else { return }
         // Un grupo migrado y congelado enseña una COPIA de cuando se movió, y la app lo dice en su
         // banner («puede que no esté al día»). El resumen no tiene dónde poner ese aviso y encima
         // fecha la imagen HOY, así que sería un documento con pinta de autoritativo sobre datos que
@@ -743,7 +763,9 @@ struct GroupSettingsView: View {
 
     /// «Debes S/ 270.00 a Ana. Si sales, dejas de ver este grupo y esa deuda; Ana la seguirá viendo.» (L19-11).
     private var leaveWithDebtMessage: String {
-        guard let me = viewModel.currentMemberID, !myDebts.isEmpty else {
+        // El `body` lo evalúa en cada pase (va en `LeavePresentations`, fuera de las filas), también tras salir del grupo:
+        // con el grupo borrado sus miembros también lo están, y leerlos aborta en iOS 27.x (card gxa9).
+        guard isGroupReadable, let me = viewModel.currentMemberID, !myDebts.isEmpty else {
             return L10n.Groups.Settings.leaveGroupWithDebtWarning
         }
         let sentences = GroupDebtCopyLogic.relationSentences(
@@ -1049,6 +1071,8 @@ struct GroupSettingsView: View {
     /// el offer DEPENDE de la deuda: calcularlos por separado dejaría un frame en el que el botón de
     /// eliminar y su texto discrepan sobre si hay saldos.
     private func recomputeOwnerExit() {
+        // Un recálculo que llega con el grupo ya borrado (salir de él) lo leería: la hoja se está cerrando (card gxa9).
+        guard isGroupReadable else { return }
         recomputeOutstandingDebt()
         do {
             let result = try GroupService.shared.ownerExitOffer(
@@ -1106,6 +1130,8 @@ struct GroupSettingsView: View {
     // MARK: - Actions
 
     private func saveIdentity() {
+        // Al salir del grupo la hoja desaparece con él ya borrado (`onDisappear`): no hay nada que guardar ni que leer.
+        guard isGroupReadable else { return }
         let trimmedName = editName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
         let nameChanged = trimmedName != group.name

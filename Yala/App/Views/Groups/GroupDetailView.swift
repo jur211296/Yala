@@ -417,7 +417,7 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 groupChip: .readOnly,
                 expenseToEdit: expense,
-                existingShares: viewModel.sharesForExpense(expense),
+                existingShares: sharesForExpenseSheet(expense),
                 onSave: {},
                 onDelete: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil
             )
@@ -427,7 +427,7 @@ struct GroupDetailView: View {
         case .openingBalanceDetail(let expense):
             GroupOpeningBalanceDetailSheet(
                 expense: expense,
-                debtorMemberID: viewModel.sharesForExpense(expense).first?.memberID,
+                debtorMemberID: sharesForExpenseSheet(expense).first?.memberID,
                 memberNameLookup: viewModel.memberNameLookup,
                 isOwner: group.isOwner,
                 onEdit: { viewModel.requestEditFromDetail(expense) },
@@ -657,8 +657,18 @@ struct GroupDetailView: View {
         }
     }
 
+    /// Los repartos del gasto de una hoja que lo borra: con él ya borrado, ninguno (se fueron con él). La hoja se vuelve a
+    /// construir mientras se cierra, y leer `expense.id` de un modelo borrado puede abortar en iOS 27.x (card gxa9).
+    private func sharesForExpenseSheet(_ expense: SplitExpense) -> [SplitShare] {
+        guard !expense.isDeleted, expense.modelContext != nil else { return [] }
+        return viewModel.sharesForExpense(expense)
+    }
+
     private func membersForExpenseForm(_ expense: SplitExpense) -> [SplitMember] {
-        let referencedMemberIDs = Set([expense.paidByMemberID] + viewModel.sharesForExpense(expense).map(\.memberID))
+        // Con el gasto ya borrado (la hoja de edición se está cerrando tras «Eliminar»), los activos: leerlo aborta en
+        // iOS 27.x (card 1w89).
+        guard !expense.isDeleted, expense.modelContext != nil else { return viewModel.activeMembers }
+        let referencedMemberIDs = Set([expense.paidByMemberID] + sharesForExpenseSheet(expense).map(\.memberID))
         return viewModel.members.filter { member in
             member.isActive || referencedMemberIDs.contains(member.id.uuidString)
         }

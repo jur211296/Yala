@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
@@ -74,13 +75,13 @@ struct GroupDetailViewModelTests {
     @Test func activeSheet_settingsID() {
         let vm = GroupDetailViewModel(group: makeGroup())
         vm.activeSheet = .settings
-        #expect(vm.activeSheet?.id == "settings")
+        #expect(vm.activeSheet?.id == GroupSheet.ID(kind: "settings"))
     }
 
     @Test func activeSheet_addExpenseID() {
         let vm = GroupDetailViewModel(group: makeGroup())
         vm.activeSheet = .addExpense
-        #expect(vm.activeSheet?.id == "addExpense")
+        #expect(vm.activeSheet?.id == GroupSheet.ID(kind: "addExpense"))
     }
 
     // MARK: - loadData without context
@@ -110,7 +111,7 @@ struct GroupDetailViewModelTests {
         let vm = GroupDetailViewModel(group: makeGroup())
         let expense = SplitExpense(groupZoneID: "z", amount: 10, paidByMemberID: "a")
         vm.activeSheet = .expenseDetail(expense)
-        #expect(vm.activeSheet?.id == "expenseDetail-\(expense.id)")
+        #expect(vm.activeSheet?.id == GroupSheet.ID(kind: "expenseDetail", expense: expense.persistentModelID))
     }
 
     @Test func requestEditFromDetail_closesDetailAndConsumesExpenseOnce() {

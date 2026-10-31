@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1148)
+## Index (1149)
 
 | id | status | path |
 |---|---|---|
@@ -459,6 +459,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke | backlog | tickets/backlog/google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke.md |
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
+| group-detail-reads-the-group-after-leaving-it | backlog | tickets/backlog/group-detail-reads-the-group-after-leaving-it.md |
 | group-expense-detail-like-record-detail | backlog | tickets/backlog/group-expense-detail-like-record-detail.md |
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |
@@ -730,7 +731,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
 | month-year-titles-capitalize-every-word | backlog | tickets/backlog/month-year-titles-capitalize-every-word.md |
-| more-forms-read-their-deleted-model-while-closing | backlog | tickets/backlog/more-forms-read-their-deleted-model-while-closing.md |
+| more-forms-read-their-deleted-model-while-closing | done | tickets/done/more-forms-read-their-deleted-model-while-closing.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
 | multi-currency-accounts | qa | tickets/qa/multi-currency-accounts.md |
 | multi-currency-accounts-1-model-and-sync | done | tickets/done/multi-currency-accounts-1-model-and-sync.md |

@@ -1,6 +1,6 @@
 ---
 id: more-forms-read-their-deleted-model-while-closing
-status: backlog
+status: done
 priority: medium
 area: "accounts, categories, groups, cashflow"
 created: 2026-10-31
@@ -52,3 +52,40 @@ El molde de S31 por formulario: copia previa de lo que se pinta (título de aler
 `isDeleted || modelContext == nil` para lo que el `body` lea, y que el ViewModel suelte el modelo tras borrarlo. En
 `GroupSettingsView`, revisar con review adversarial: es el borrado de un grupo. Red de test: el molde de
 `DeletedModelFormGuardWiringTests`.
+
+## Hecho (2026-10-31, encargo S34b `formularios-modelo-borrado-b`, card gxa9)
+
+Para quien usa la app no cambia nada: el riesgo era un cierre de Yala en iOS 27.x al borrar desde estos formularios, que
+el simulador 27.0 no reproduce. Lo que cambió, caso por caso:
+
+- **Cuenta:** la alerta corta pinta el nombre copiado al pedir eliminar; tras eliminar (alerta u hoja de mover o borrar),
+  el ViewModel suelta la cuenta y sus filas (`releaseDeletedAccount`) y sigue siendo una edición, sin poder guardar otra.
+  El `init` del formulario no toma una cuenta ya borrada. La lista de Ajustes › Cuentas, que lo presenta, no lee la
+  cuenta borrada al rehacer la hoja ni recorre registros borrados para los saldos.
+- **Categoría:** el ViewModel ofrece la categoría por `readableCategory` y la suelta al eliminarla, descartarla o mover sus
+  registros (`releaseDeletedCategory`); la lista de subcategorías salta las borradas; la vista no la lee al crear el
+  ViewModel si ya está borrada (`readsCategory:`). La lista de Categorías filtra las borradas.
+- **Subcategoría y traspaso:** el `init` mira antes de leer la subcategoría y la categoría padre; el traspaso pinta el
+  nombre copiado y no calcula destinos con la subcategoría borrada.
+- **Saldo inicial de grupo:** la hoja pinta el saldo vivo y, borrado, la copia tomada al abrir.
+- **Línea del flujo de caja:** título y categoría vivos o copiados al abrir; el resto (ajustes, previsiones, histórico)
+  pasa por `readableLine`. La celda del mes copia el icono y salta los registros borrados.
+- **Ajustes del grupo al salir:** con el grupo borrado la lista no pinta filas mientras la hoja baja, no guarda la
+  identidad, no recalcula, y los textos de salir no leen miembros. Es el único cambio que puede verse, solo en los
+  fotogramas de cierre (molde de `BudgetDetailView.isBudgetValid`).
+- **Lista de presupuestos:** la fila y la lista saltan el presupuesto borrado durante los 150 ms antes de recalcular, y el
+  conteo del límite de Free tampoco lo cuenta.
+- **Detalle de grupo (hojas de editar gasto y de saldo inicial):** repartos y miembros con el gasto borrado no lo leen;
+  `GroupSheet.id` usa `persistentModelID` en vez de `id`.
+- **Etiqueta (dudoso):** recuento de la alerta copiado; tras eliminar, el ViewModel suelta la lista que recorría la
+  unicidad del nombre (`releaseDeletedTag`); la lista de Etiquetas filtra las borradas.
+
+Red: `DeletedModelMoreFormsReleaseTests` (mecanismos de ViewModel y listas) y `DeletedModelMoreFormsGuardWiringTests`
+(cableado de las vistas), con mutantes medidos.
+
+Queda fuera, con ticket: `group-detail-reads-the-group-after-leaving-it` (el `body` del detalle de grupo tras salir).
+Dudosos sin tocar: `Tag.id` en el `sheet(item:)` de Etiquetas y `expense.id` en las hojas de detalle de gasto y de
+editar saldo inicial, solo alcanzables con un borrado por sync; y `readableCategory` mira `isDeleted` pero no
+`modelContext == nil` (los tests de ViewModel construyen modelos sin contexto), así que un borrado de categoría por sync
+con el detalle abierto sigue sin cubrir.
+

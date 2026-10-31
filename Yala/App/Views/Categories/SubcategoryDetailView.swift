@@ -21,7 +21,14 @@ struct SubcategoryDetailView: View {
 
     /// Las subcategorías sistema (bridge de grupos + legacy "Ajuste de saldo"/
     /// "Transferencia") son read-only: no se pueden eliminar.
-    private var isSystemSubcategory: Bool { subcategoryToEdit?.isAnySystem ?? false }
+    private var isSystemSubcategory: Bool { readableSubcategoryToEdit?.isAnySystem ?? false }
+
+    /// La subcategoría en edición mientras se puede leer. «Eliminar» la borra y la pantalla sigue presentada mientras se
+    /// cierra: en iOS 27.x leer un modelo borrado aborta (card 1w89). Comparar `subcategoryToEdit` con `nil` no la lee.
+    private var readableSubcategoryToEdit: Subcategory? {
+        guard let sub = subcategoryToEdit, !sub.isDeleted, sub.modelContext != nil else { return nil }
+        return sub
+    }
 
     @State private var name: String
     @State private var selectedNeed: SubcategoryNeed
@@ -49,29 +56,36 @@ struct SubcategoryDetailView: View {
         self.parentCategory = parentCategory
         self.subcategoryToEdit = subcategoryToEdit
 
-        if let sub = subcategoryToEdit {
+        // Mira antes de leer: el detalle de la categoría vuelve a crear esta pantalla en sus `NavigationLink` con la
+        // subcategoría —o la categoría entera— ya borrada mientras se cierra (manda el `@State` de la primera vez, pero el
+        // `init` corre igual), y en iOS 27.x leer un modelo borrado aborta (card 1w89).
+        let parentIsReadable = !parentCategory.isDeleted && parentCategory.modelContext != nil
+        let parentColorHex = parentIsReadable ? parentCategory.colorHex : AppConstants.defaultColorHex
+        let parentIconName = parentIsReadable ? parentCategory.iconName : nil
+
+        if let sub = subcategoryToEdit, !sub.isDeleted, sub.modelContext != nil {
             self.initialName = sub.name
             self.initialNeed = sub.need
             self.initialIsVisible = sub.isVisible
-            self.initialColorHex = sub.colorHex ?? parentCategory.colorHex
-            self.initialIconName = sub.iconName ?? parentCategory.iconName ?? "tag"
+            self.initialColorHex = sub.colorHex ?? parentColorHex
+            self.initialIconName = sub.iconName ?? parentIconName ?? "tag"
             _name = State(initialValue: sub.name)
             _selectedNeed = State(initialValue: sub.need)
             _isVisible = State(initialValue: sub.isVisible)
-            _selectedColorHex = State(initialValue: sub.colorHex ?? parentCategory.colorHex)
+            _selectedColorHex = State(initialValue: sub.colorHex ?? parentColorHex)
             _selectedIconName = State(
-                initialValue: sub.iconName ?? parentCategory.iconName ?? "tag")
+                initialValue: sub.iconName ?? parentIconName ?? "tag")
         } else {
             self.initialName = ""
             self.initialNeed = .unclassified
             self.initialIsVisible = true
-            self.initialColorHex = parentCategory.colorHex
-            self.initialIconName = parentCategory.iconName ?? "tag"
+            self.initialColorHex = parentColorHex
+            self.initialIconName = parentIconName ?? "tag"
             _name = State(initialValue: "")
             _selectedNeed = State(initialValue: .unclassified)
             _isVisible = State(initialValue: true)
-            _selectedColorHex = State(initialValue: parentCategory.colorHex)
-            _selectedIconName = State(initialValue: parentCategory.iconName ?? "tag")
+            _selectedColorHex = State(initialValue: parentColorHex)
+            _selectedIconName = State(initialValue: parentIconName ?? "tag")
         }
     }
 

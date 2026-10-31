@@ -17,6 +17,17 @@ struct BudgetRowView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
+        // Borrar un presupuesto desde su editor o su detalle deja esta fila montada hasta que la lista recalcula (150 ms
+        // después, `BudgetsViewModel.scheduleRecalculation`), y puede volver a pintarse con él ya borrado: en iOS 27.x
+        // leerlo aborta la app. Molde de `RecordRowView` (card f8rj).
+        if summary.budget.isDeleted || summary.budget.modelContext == nil {
+            EmptyView()
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         NavigationLink(value: BudgetNavigationID(id: summary.budget.persistentModelID)) {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 // Top row: Icon + Name + Amount. A tamaños de accesibilidad el importe baja bajo el

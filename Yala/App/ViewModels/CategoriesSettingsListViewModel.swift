@@ -21,7 +21,10 @@ final class CategoriesSettingsListViewModel {
 
     // MARK: - Data
 
-    private(set) var categories: [Category] = []
+    /// Sin las categorías ya borradas: Eliminar una categoría desde su detalle deja la lista debajo, que puede repintarse con ella antes de
+    /// recargar, y en iOS 27.x leer un modelo borrado aborta (card 1w89). Molde de `AccountsSettingsListViewModel.accounts`.
+    var categories: [Category] { loadedCategories.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedCategories: [Category] = []
 
     // MARK: - UI State
 
@@ -81,12 +84,12 @@ final class CategoriesSettingsListViewModel {
         guard let context = modelContext else { return }
         let descriptor = FetchDescriptor<Category>(sortBy: [SortDescriptor(\Category.name)])
         do {
-            categories = try context.fetch(descriptor)
+            loadedCategories = try context.fetch(descriptor)
         } catch {
             #if DEBUG
             print("CategoriesSettingsListViewModel: Error loading categories: \(error)")
             #endif
-            categories = []
+            loadedCategories = []
         }
     }
 

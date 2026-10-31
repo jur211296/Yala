@@ -20,6 +20,27 @@ struct SubcategoryTransferSheet: View {
 
     @State private var showingPicker: Bool = false
     @State private var showingDeleteConfirmation: Bool = false
+    /// El nombre de la subcategoría, copiado al crear la hoja. Quien la presenta la borra en `onComplete`, justo tras el
+    /// `dismiss()`, y la hoja se vuelve a pintar mientras baja: en iOS 27.x leer un modelo borrado aborta (card 1w89).
+    @State private var subcategoryName: String
+
+    init(subcategoryToDelete: Subcategory, onComplete: @escaping () -> Void) {
+        self.subcategoryToDelete = subcategoryToDelete
+        self.onComplete = onComplete
+        // Mira antes de leer: quien la presenta puede volver a crearla con la subcategoría ya borrada (manda el `@State`
+        // de la primera vez, pero el `init` corre igual).
+        _subcategoryName = State(initialValue: Self.isReadable(subcategoryToDelete) ? subcategoryToDelete.name : "")
+    }
+
+    private static func isReadable(_ subcategory: Subcategory) -> Bool {
+        !subcategory.isDeleted && subcategory.modelContext != nil
+    }
+
+    /// Los destinos, mientras la subcategoría que se elimina se puede leer: el selector los calcula leyéndola.
+    private var destinations: [(category: Category, subcategories: [Subcategory])] {
+        guard Self.isReadable(subcategoryToDelete) else { return [] }
+        return viewModel.availableDestinations(excluding: subcategoryToDelete)
+    }
 
     /// Calculated transaction count for this subcategory
     private var transactionCount: Int {
@@ -90,7 +111,7 @@ struct SubcategoryTransferSheet: View {
                     .font(DS.Typography.headline)
                     .multilineTextAlignment(.center)
 
-                Text(L10n.Subcategory.transferDescription(transactionCount, subcategoryToDelete.name))
+                Text(L10n.Subcategory.transferDescription(transactionCount, subcategoryName))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -185,7 +206,7 @@ struct SubcategoryTransferSheet: View {
         NavigationStack {
             ScrollView {
                     VStack(spacing: DS.Spacing.lg) {
-                        ForEach(viewModel.availableDestinations(excluding: subcategoryToDelete), id: \.category.persistentModelID) { group in
+                        ForEach(destinations, id: \.category.persistentModelID) { group in
                             SectionBox(title: group.category.name) {
                                 VStack(spacing: DS.Spacing.none) {
                                     ForEach(

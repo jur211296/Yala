@@ -26,14 +26,61 @@ struct CashFlowLineConfigSheet: View {
     @State private var newOverrideAmount: String = ""
     @State private var newOverrideNote: String = ""
     @State private var selectedDetent: PresentationDetent = .medium
+    /// El título y la categoría de la línea, copiados al abrir. «Eliminar» la borra y la hoja sigue presentada mientras
+    /// baja: en iOS 27.x leer un modelo borrado aborta (card 1w89).
+    @State private var shownAtOpen: Shown
+
+    /// Lo que la hoja nombra de la línea.
+    struct Shown {
+        let name: String
+        /// Nombre, icono y color de su subcategoría o categoría; `nil` si no tiene ninguna.
+        let context: (name: String, iconName: String?, colorHex: String)?
+        let hasScheduledPayment: Bool
+
+        static let empty = Shown(name: "", context: nil, hasScheduledPayment: false)
+
+        init(name: String, context: (name: String, iconName: String?, colorHex: String)?, hasScheduledPayment: Bool) {
+            self.name = name
+            self.context = context
+            self.hasScheduledPayment = hasScheduledPayment
+        }
+
+        init(reading line: CashFlowLine) {
+            let context: (name: String, iconName: String?, colorHex: String)?
+            if line.subcategory != nil || line.category != nil {
+                context = (
+                    name: line.subcategory?.name ?? line.category?.name ?? line.name,
+                    iconName: line.subcategory?.iconName ?? line.category?.iconName,
+                    colorHex: line.subcategory?.colorHex ?? line.category?.colorHex ?? AppConstants.defaultColorHex
+                )
+            } else {
+                context = nil
+            }
+            self.init(name: line.name, context: context, hasScheduledPayment: line.scheduledPayment != nil)
+        }
+    }
 
     init(viewModel: CashFlowPlanViewModel, line: CashFlowLine, currencyCode: String, transactions: [TransactionItem] = []) {
         self.viewModel = viewModel
         self.line = line
         self.currencyCode = currencyCode
         self.transactions = transactions
-        _selectedMethod = State(initialValue: line.method)
-        _manualAmount = State(initialValue: line.manualAmount.map { String(format: "%.0f", $0) } ?? "")
+        // Mira antes de leer: la tabla vuelve a crear la hoja mientras `selectedLine` siga puesto, también con la línea
+        // ya borrada (manda el `@State` de la primera vez, pero el `init` corre igual).
+        let readable = !line.isDeleted && line.modelContext != nil
+        _selectedMethod = State(initialValue: readable ? line.method : .average6m)
+        _manualAmount = State(initialValue: readable ? (line.manualAmount.map { String(format: "%.0f", $0) } ?? "") : "")
+        _shownAtOpen = State(initialValue: readable ? Shown(reading: line) : .empty)
+    }
+
+    /// La línea mientras se puede leer: lo que el `body` lee de ella pasa por aquí.
+    private var readableLine: CashFlowLine? {
+        line.isDeleted || line.modelContext == nil ? nil : line
+    }
+
+    /// La línea viva mientras se puede leer (un cambio que llega por sync se sigue viendo); borrada, la copia.
+    private var shown: Shown {
+        readableLine.map { Shown(reading: $0) } ?? shownAtOpen
     }
 
     private var isPro: Bool {
@@ -63,7 +110,7 @@ struct CashFlowLineConfigSheet: View {
                 .scrollDismissesKeyboard(.interactively)
             }
             .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
-            .navigationTitle(line.name)
+            .navigationTitle(shown.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -100,10 +147,10 @@ struct CashFlowLineConfigSheet: View {
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
 
-            if line.subcategory != nil || line.category != nil {
-                let displayName = line.subcategory?.name ?? line.category?.name ?? line.name
-                let iconName = line.subcategory?.iconName ?? line.category?.iconName
-                let colorHex = line.subcategory?.colorHex ?? line.category?.colorHex ?? AppConstants.defaultColorHex
+            if let context = shown.context {
+                let displayName = context.name
+                let iconName = context.iconName
+                let colorHex = context.colorHex
 
                 HStack(spacing: DS.Spacing.md) {
                     if let iconName {
@@ -202,7 +249,7 @@ struct CashFlowLineConfigSheet: View {
                 if selectedMethod == .manual {
                     manualAmountField
                 }
-                if line.scheduledPayment != nil {
+                if shown.hasScheduledPayment {
                     Divider().padding(.leading, DS.Spacing.xxl)
                     methodRow(.scheduled, label: L10n.CashFlowPlan.scheduled)
                 }
@@ -267,7 +314,7 @@ struct CashFlowLineConfigSheet: View {
     // MARK: - Overrides
 
     private var overrides: [CashFlowOverride] {
-        line.shownMonthOverrides
+        readableLine?.shownMonthOverrides ?? []
     }
 
     private var overridesSection: some View {
@@ -403,6 +450,7 @@ struct CashFlowLineConfigSheet: View {
     }
 
     private func previewForMethod(_ method: EstimationMethod) -> Double {
+        guard let line = readableLine else { return 0 }
         let suggestedLine = SuggestedLine(
             category: line.category,
             subcategory: line.subcategory,
@@ -425,6 +473,9 @@ struct CashFlowLineConfigSheet: View {
     }
 
     private func computeHistoricalStats() -> HistoricalStats {
+        guard let line = readableLine else {
+            return HistoricalStats(trendDirection: 0, minAmount: 0, maxAmount: 0, monthsActive: 0)
+        }
         let calendar = Calendar.current
         var monthlyTotals: [String: Double] = [:]
 

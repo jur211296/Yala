@@ -25,7 +25,11 @@ final class AccountsSettingsListViewModel {
     /// (`swiftui-ds.md`, filas con un `@Model` borrado).
     var accounts: [Account] { loadedAccounts.filter { !$0.isDeleted && $0.modelContext != nil } }
     private var loadedAccounts: [Account] = []
-    private(set) var transactions: [TransactionItem] = []
+    /// Sin los registros ya borrados: «Eliminar» con la hoja de mover o borrar puede borrar los de la cuenta con el
+    /// formulario aún abierto, y la lista de debajo —que los recorre para el saldo de cada fila— se repinta antes de
+    /// recargar (card gxa9).
+    var transactions: [TransactionItem] { loadedTransactions.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedTransactions: [TransactionItem] = []
 
     // MARK: - UI State
 
@@ -138,12 +142,12 @@ final class AccountsSettingsListViewModel {
         )
         do {
             // Lo que espera su borrado con «Deshacer» no cuenta en el saldo de cada cuenta (`RecordPendingDeletion`).
-            transactions = RecordPendingDeletion.shared.visible(try context.fetch(transactionDescriptor))
+            loadedTransactions = RecordPendingDeletion.shared.visible(try context.fetch(transactionDescriptor))
         } catch {
             #if DEBUG
             print("AccountsSettingsListViewModel: Error loading transactions: \(error)")
             #endif
-            transactions = []
+            loadedTransactions = []
         }
     }
 
@@ -189,7 +193,10 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Helper for Edit
 
+    /// La hoja de editar vuelve a crear el formulario con esto mientras se cierra, también con la cuenta ya eliminada:
+    /// entonces no se lee su nombre (iOS 27.x aborta al leer un modelo borrado, card gxa9) y `accounts` ya no la trae.
     func existingNamesExcluding(_ account: Account) -> [String] {
-        accounts.map { $0.name }.filter { $0 != account.name }
+        guard !account.isDeleted, account.modelContext != nil else { return accounts.map(\.name) }
+        return accounts.map { $0.name }.filter { $0 != account.name }
     }
 }

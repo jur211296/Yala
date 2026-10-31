@@ -557,17 +557,26 @@ enum GroupSheet: Identifiable {
     case newOpeningBalance
     case settlement(Debt)
 
-    var id: String {
+    /// La identidad de la hoja. La de un gasto va por su `persistentModelID`, no por `id`: SwiftUI la vuelve a leer
+    /// mientras la hoja se cierra, con el gasto ya borrado, y en iOS 27.x leer una propiedad de un modelo borrado aborta
+    /// (card 1w89). Que `id` lleve `.preserveValueOnDeletion` no está medido que haga seguro su getter.
+    struct ID: Hashable {
+        let kind: String
+        var expense: PersistentIdentifier?
+        var debt: String?
+    }
+
+    var id: ID {
         switch self {
-        case .settings: "settings"
-        case .members: "members"
-        case .addExpense: "addExpense"
-        case .expenseDetail(let e): "expenseDetail-\(e.id)"
-        case .editExpense(let e): "editExpense-\(e.id)"
-        case .openingBalanceDetail(let e): "openingBalanceDetail-\(e.id)"
-        case .editOpeningBalance(let e): "editOpeningBalance-\(e.id)"
-        case .newOpeningBalance: "newOpeningBalance"
-        case .settlement(let d): "settlement-\(d.id)"
+        case .settings: ID(kind: "settings")
+        case .members: ID(kind: "members")
+        case .addExpense: ID(kind: "addExpense")
+        case .expenseDetail(let e): ID(kind: "expenseDetail", expense: e.persistentModelID)
+        case .editExpense(let e): ID(kind: "editExpense", expense: e.persistentModelID)
+        case .openingBalanceDetail(let e): ID(kind: "openingBalanceDetail", expense: e.persistentModelID)
+        case .editOpeningBalance(let e): ID(kind: "editOpeningBalance", expense: e.persistentModelID)
+        case .newOpeningBalance: ID(kind: "newOpeningBalance")
+        case .settlement(let d): ID(kind: "settlement", debt: d.id)
         }
     }
 }

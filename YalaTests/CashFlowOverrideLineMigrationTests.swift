@@ -499,7 +499,9 @@ struct CashFlowOverrideLineMigrationTests {
         // La inversa legado también pone `line` al escribirse.
         let inverse = /\.overrides\s*(=(?!=)|\?*\.append|\?*\.insert)/
         // Las únicas `self.line =` legítimas: vistas que reciben una `CashFlowLine`, no un ajuste.
-        let viewsHoldingALine: Set<String> = ["CashFlowLineConfigSheet.swift", "CashFlowSetupView.swift"]
+        let viewsHoldingALine: Set<String> = [
+            "CashFlowLineConfigSheet.swift", "CashFlowSetupView.swift", "CashFlowCellDetailSheet.swift",
+        ]
         for case let url as URL in enumerator where url.pathExtension == "swift" {
             let text = try String(contentsOf: url, encoding: .utf8)
             for line in text.split(separator: "\n") where !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
