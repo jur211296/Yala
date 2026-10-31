@@ -2228,7 +2228,7 @@ enum L10n {
             static var approvalPromptAdd: String { ls("groups.openingBalance.approvalPromptAdd", comment: "") }
             static var approvalPromptSkip: String { ls("groups.openingBalance.approvalPromptSkip", comment: "") }
             // Errores
-            static var errorNotOwner: String { ls("groups.openingBalance.errorNotOwner", comment: "") }
+            static var errorNotAdmin: String { ls("groups.openingBalance.errorNotAdmin", comment: "") }
             static var errorSameMember: String { ls("groups.openingBalance.errorSameMember", comment: "") }
         }
 

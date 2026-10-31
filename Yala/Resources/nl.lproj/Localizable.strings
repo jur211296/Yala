@@ -4489,7 +4489,7 @@
 "groups.openingBalance.approvalPromptBody" = "Was diegene vóór het meedoen al iets schuldig, of had die nog iets tegoed? Voeg het toe zodat de saldi kloppen.";
 "groups.openingBalance.approvalPromptAdd" = "Ja, toevoegen";
 "groups.openingBalance.approvalPromptSkip" = "Nee, begin bij nul";
-"groups.openingBalance.errorNotOwner" = "Alleen de maker van de groep kan beginsaldi beheren.";
+"groups.openingBalance.errorNotAdmin" = "Alleen een beheerder van de groep kan beginsaldi beheren.";
 "groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";
 
 // MARK: groups header balance bar
@@ -8204,11 +8204,11 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.makeAdminTitle" = "%@ beheerder maken?";
 /* Qué podrá hacer; %@ = nombre */
-"groups.l19.member.makeAdminBody" = "%@ kan dan verzoeken om lid te worden accepteren of weigeren, leden verwijderen, de naam en het budget van de groep wijzigen, de groep archiveren en anderen beheerder maken.";
+"groups.l19.member.makeAdminBody" = "%@ kan dan verzoeken om lid te worden accepteren of weigeren, leden verwijderen, de naam, het budget en de beginsaldi van de groep wijzigen, de groep archiveren en anderen beheerder maken.";
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeAdminTitle" = "%@ verwijderen als beheerder?";
 /* Qué deja de poder hacer; %@ = nombre */
-"groups.l19.member.removeAdminBody" = "%@ blijft in de groep, maar kan geen verzoeken meer accepteren, geen leden verwijderen, de naam en het budget niet meer wijzigen en de groep niet archiveren.";
+"groups.l19.member.removeAdminBody" = "%@ blijft in de groep, maar kan geen verzoeken meer accepteren, geen leden verwijderen, de naam, het budget en de beginsaldi niet meer wijzigen en de groep niet archiveren.";
 /* Menú y botón: quitar a alguien del grupo */
 "groups.l19.member.remove" = "Uit de groep verwijderen";
 /* Confirmación; %@ = nombre */

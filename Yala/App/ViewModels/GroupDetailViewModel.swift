@@ -110,6 +110,21 @@ final class GroupDetailViewModel {
         return me.isAdmin
     }
 
+    /// Card yd2w: gestiona los saldos iniciales el dueño o cualquier admin activo. La misma decisión que
+    /// `GroupExpenseService` aplica al guardar (`OpeningBalancePermissionLogic`).
+    var isOpeningBalanceManager: Bool {
+        OpeningBalancePermissionLogic.canManage(
+            groupIsOwner: group.isOwner,
+            currentMemberIsActive: currentUserMember?.isActive ?? false,
+            currentMemberIsAdmin: currentUserMember?.isAdmin ?? false
+        )
+    }
+
+    /// Lo que se puede tocar ahora mismo: además de gestionarlos, poder escribir en el grupo (no congelado, activo).
+    var canManageOpeningBalances: Bool {
+        canCurrentUserParticipate && isOpeningBalanceManager
+    }
+
     /// members awaiting admin approval — visible solo en sección "Solicitudes pendientes" para admins.
     var pendingApprovalMembers: [SplitMember] {
         members.filter { $0.isPendingApproval }

@@ -51,8 +51,8 @@ struct GroupsLote13FixesTests {
     // MARK: - B5 · Ningún error de desarrollo en inglés llega a la persona
 
     @Test func userFacingError_knownErrorsKeepTheirLocalizedText() {
-        #expect(GroupsUserFacingErrorLogic.message(for: GroupExpenseServiceError.notOwner)
-                == L10n.Groups.OpeningBalance.errorNotOwner)
+        #expect(GroupsUserFacingErrorLogic.message(for: GroupExpenseServiceError.notAdmin)
+                == L10n.Groups.OpeningBalance.errorNotAdmin)
         #expect(GroupsUserFacingErrorLogic.message(for: DraftServiceError.missingAccount)
                 == L10n.Inbox.errorNoAccount)
     }

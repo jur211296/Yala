@@ -3764,7 +3764,7 @@
 "groups.openingBalance.approvalPromptBody" = "If they already owed something before joining, or were owed, add it so the balances add up.";
 "groups.openingBalance.approvalPromptAdd" = "Yes, add it";
 "groups.openingBalance.approvalPromptSkip" = "No, start at zero";
-"groups.openingBalance.errorNotOwner" = "Only the group creator can manage opening balances.";
+"groups.openingBalance.errorNotAdmin" = "Only a group admin can manage opening balances.";
 "groups.openingBalance.errorSameMember" = "Choose two different members.";
 
 // MARK: groups header balance bar
@@ -7517,11 +7517,11 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.makeAdminTitle" = "Make %@ an admin?";
 /* Qué podrá hacer; %@ = nombre */
-"groups.l19.member.makeAdminBody" = "%@ will be able to accept or decline join requests, remove members, change the group’s name and budget, archive it and make others admins.";
+"groups.l19.member.makeAdminBody" = "%@ will be able to accept or decline join requests, remove members, change the group’s name, budget and opening balances, archive it and make others admins.";
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeAdminTitle" = "Remove %@ as admin?";
 /* Qué deja de poder hacer; %@ = nombre */
-"groups.l19.member.removeAdminBody" = "%@ stays in the group but can no longer accept requests, remove members, change the name and budget, or archive the group.";
+"groups.l19.member.removeAdminBody" = "%@ stays in the group but can no longer accept requests, remove members, change the name, budget or opening balances, or archive the group.";
 /* Menú y botón: quitar a alguien del grupo */
 "groups.l19.member.remove" = "Remove from group";
 /* Confirmación; %@ = nombre */

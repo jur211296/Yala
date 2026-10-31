@@ -1014,6 +1014,10 @@ final class UITestHooks {
     /// tenía cuentas pendientes con el grupo?», L19-2). Aceptar de verdad pide el servidor, que en el simulador no está.
     nonisolated static var openingBalancePrompt: Bool { hasArg("-uitest-opening-balance-prompt") }
 
+    /// `-uitest-invitee-admin` (con el perfil `grupos-invitado`): «Tú» entra como ADMIN del grupo sin ser su dueño (Ana
+    /// sigue siéndolo). Es el caso de la card yd2w: cualquier admin gestiona los saldos iniciales, no solo el dueño.
+    nonisolated static var inviteeIsAdmin: Bool { hasArg("-uitest-invitee-admin") }
+
     /// Valor de `-uitest-join-phase <waitingForZone|creatingMember|pendingApproval|active|failed>`:
     /// congela la fase del tracker para los XCUI del onboarding de invitación.
     nonisolated static var joinPhaseOverride: String? {

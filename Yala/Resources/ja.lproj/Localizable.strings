@@ -4489,7 +4489,7 @@
 "groups.openingBalance.approvalPromptBody" = "参加前から貸し借りがあった場合は、残高が合うように記録してください。";
 "groups.openingBalance.approvalPromptAdd" = "はい、記録する";
 "groups.openingBalance.approvalPromptSkip" = "いいえ、ゼロから始める";
-"groups.openingBalance.errorNotOwner" = "グループの作成者のみが開始残高を管理できます。";
+"groups.openingBalance.errorNotAdmin" = "開始残高を管理できるのはグループの管理者のみです。";
 "groups.openingBalance.errorSameMember" = "異なるメンバーを2人選んでください。";
 
 // MARK: groups header balance bar
@@ -8204,11 +8204,11 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.makeAdminTitle" = "%@を管理者にしますか？";
 /* Qué podrá hacer; %@ = nombre */
-"groups.l19.member.makeAdminBody" = "%@は参加リクエストの承認・拒否、メンバーの削除、グループ名と予算の変更、アーカイブ、ほかの人を管理者にすることができるようになります。";
+"groups.l19.member.makeAdminBody" = "%@は参加リクエストの承認・拒否、メンバーの削除、グループ名・予算・開始残高の変更、アーカイブ、ほかの人を管理者にすることができるようになります。";
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeAdminTitle" = "%@を管理者から外しますか？";
 /* Qué deja de poder hacer; %@ = nombre */
-"groups.l19.member.removeAdminBody" = "%@はグループに残りますが、リクエストの承認、メンバーの削除、名前と予算の変更、グループのアーカイブはできなくなります。";
+"groups.l19.member.removeAdminBody" = "%@はグループに残りますが、リクエストの承認、メンバーの削除、名前・予算・開始残高の変更、グループのアーカイブはできなくなります。";
 /* Menú y botón: quitar a alguien del grupo */
 "groups.l19.member.remove" = "グループから外す";
 /* Confirmación; %@ = nombre */

@@ -3764,7 +3764,7 @@
 "groups.openingBalance.approvalPromptBody" = "Si antes de unirse ya debía algo, o le debían, apuntalo para que los saldos cuadren.";
 "groups.openingBalance.approvalPromptAdd" = "Sí, apuntarlo";
 "groups.openingBalance.approvalPromptSkip" = "No, empieza en cero";
-"groups.openingBalance.errorNotOwner" = "Solo quien creó el grupo puede gestionar los saldos iniciales.";
+"groups.openingBalance.errorNotAdmin" = "Solo un administrador del grupo puede gestionar los saldos iniciales.";
 "groups.openingBalance.errorSameMember" = "Elegí dos miembros distintos.";
 
 // MARK: groups header balance bar
@@ -7526,11 +7526,11 @@
 /* Confirmación; %@ = nombre */
 "groups.l19.member.makeAdminTitle" = "¿Hacer administrador a %@?";
 /* Qué podrá hacer; %@ = nombre */
-"groups.l19.member.makeAdminBody" = "%@ va a poder aceptar o rechazar a quien quiera unirse, quitar miembros, cambiar el nombre y el presupuesto del grupo, archivarlo y hacer administradores a otros.";
+"groups.l19.member.makeAdminBody" = "%@ va a poder aceptar o rechazar a quien quiera unirse, quitar miembros, cambiar el nombre, el presupuesto y los saldos iniciales del grupo, archivarlo y hacer administradores a otros.";
 /* Confirmación; %@ = nombre */
 "groups.l19.member.removeAdminTitle" = "¿Quitar a %@ como administrador?";
 /* Qué deja de poder hacer; %@ = nombre */
-"groups.l19.member.removeAdminBody" = "%@ sigue en el grupo, pero deja de poder aceptar solicitudes, quitar miembros, cambiar el nombre y el presupuesto, y archivar el grupo.";
+"groups.l19.member.removeAdminBody" = "%@ sigue en el grupo, pero deja de poder aceptar solicitudes, quitar miembros, cambiar el nombre, el presupuesto y los saldos iniciales, y archivar el grupo.";
 /* Menú y botón: quitar a alguien del grupo */
 "groups.l19.member.remove" = "Quitar del grupo";
 /* Confirmación; %@ = nombre */

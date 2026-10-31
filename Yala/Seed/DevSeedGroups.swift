@@ -545,9 +545,11 @@ enum DevSeedGroups {
             cloudKitUserRecordID: "uitest-member-ana",
             role: "admin", status: .active, isGroupOwner: true
         )
+        // Con `-uitest-invitee-admin`, admin sin ser dueño (card yd2w).
         let me = SplitMember(
             groupZoneID: zoneID, displayName: "Tú",
             cloudKitUserRecordID: "uitest-current-user",
+            role: UITestHooks.inviteeIsAdmin ? "admin" : "member",
             status: .active, isCurrentUser: true
         )
         let beto = SplitMember(
