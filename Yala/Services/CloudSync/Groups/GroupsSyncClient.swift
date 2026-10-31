@@ -2191,7 +2191,16 @@ final class GroupsSyncClient {
             return .transient
         }
 
-        let body = wireBody(deltas)
+        // Card sztn: los textos en claro del aviso a los demás miembros (quién, qué grupo, concepto, importe). El
+        // Worker los combina con lo que aplicó y no los guarda. Mejor esfuerzo: sin ellos, el aviso genérico.
+        let notice = GroupPushNoticeBuilder.noticeJSON(GroupPushNoticeBuilder.notice(
+            for: chunk.map {
+                GroupPushNoticeBuilder.Row(
+                    entityType: $0.entityType, groupID: $0.groupID, syncID: $0.syncID,
+                    isTombstone: SyncOutboxOp(rawValue: $0.opRaw) == .tombstone)
+            },
+            context: context))
+        let body = Self.wireBody(deltas, notice: notice)
 
         // Cierre interno con la request YA construida (body/attest/deviceToken idénticos): solo cambia el
         // bearer, para poder RE-EMITIR el chunk con un token fresco tras un 401. Mapeo de status EXACTO.
@@ -2468,9 +2477,10 @@ final class GroupsSyncClient {
 
     // MARK: - Wire body (RawJSON crudo, molde SyncPushClient)
 
-    private func wireBody(_ deltas: [GroupSyncDelta]) -> Data {
+    static func wireBody(_ deltas: [GroupSyncDelta], notice: String? = nil) -> Data {
         let joined = deltas.map(Self.encodeDelta).joined(separator: ",")
-        return Data("{\"deltas\":[\(joined)]}".utf8)
+        guard let notice else { return Data("{\"deltas\":[\(joined)]}".utf8) }
+        return Data("{\"deltas\":[\(joined)],\"notice\":\(notice)}".utf8)
     }
 
     static func encodeDelta(_ d: GroupSyncDelta) -> String {

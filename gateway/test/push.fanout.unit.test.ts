@@ -105,6 +105,88 @@ describe("fanOutGroupPush — units offline", () => {
     expect(args.p_exclude_device_token).toBe(emitter);
   });
 
+  it("sztn: los otros devices del autor reciben solo el eco silencioso; el emisor, nada, ni a nombre de otra cuenta", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    const emitter = "e".repeat(64);
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_push_tokens")) {
+        return tokensResponse([
+          { user_id: "u-a", device_token: "a".repeat(64), platform: "ios-prod" }, // otro device del autor
+          { user_id: "u-old", device_token: emitter, platform: "ios-prod" }, // el emisor, registrado con otra cuenta
+          { user_id: "u-b", device_token: "b".repeat(64), platform: "ios-prod" },
+        ]);
+      }
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1"], emitter);
+
+    const apple = calls.filter((c) => c.url.includes("push.apple.com"));
+    expect(apple.length).toBe(2);
+    expect(apple.some((c) => c.url.includes(emitter))).toBe(false);
+    const toB = apple.find((c) => c.url.includes("b".repeat(64)))!;
+    const toOwnIpad = apple.find((c) => c.url.includes("a".repeat(64)))!;
+    // B: alerta con banner.
+    expect((toB.init?.headers as Record<string, string>)["apns-push-type"]).toBe("alert");
+    expect(JSON.parse(toB.init?.body as string).aps.alert).toBeDefined();
+    // El otro device del autor: background, sin `alert` (sin banner ni sonido), con el eco para sincronizar.
+    expect((toOwnIpad.init?.headers as Record<string, string>)["apns-push-type"]).toBe("background");
+    const own = JSON.parse(toOwnIpad.init?.body as string);
+    expect(own.aps).toEqual({ "content-available": 1 });
+    expect(own.yala.kind).toBe("groups-sync");
+  });
+
+  it("sztn: con aviso compuesto para el grupo, el payload lleva título, loc-key y loc-args concretos", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_push_tokens")) {
+        return tokensResponse([{ user_id: "u-b", device_token: "b".repeat(64), platform: "ios-prod" }]);
+      }
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1"], null, { kind: "coMembers" }, undefined, {
+      "g-1": {
+        title: "Jurpi ❤️",
+        locKey: "notifications.groups.push.expenseAdded",
+        locArgs: ["María P.", "Foppy Pet Store", "S/ 40.60"],
+      },
+    });
+
+    const apple = calls.filter((c) => c.url.includes("push.apple.com"));
+    const payload = JSON.parse(apple[0].init?.body as string);
+    expect(payload.aps.alert).toEqual({
+      title: "Jurpi ❤️",
+      "loc-key": "notifications.groups.push.expenseAdded",
+      "loc-args": ["María P.", "Foppy Pet Store", "S/ 40.60"],
+    });
+    expect(payload.aps["content-available"]).toBe(1);
+  });
+
+  it("sztn: un device que recibe de DOS grupos en la tanda lleva el genérico aunque haya aviso de uno", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_push_tokens")) {
+        return tokensResponse([{ user_id: "u-b", device_token: "b".repeat(64), platform: "ios-prod" }]);
+      }
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1", "g-2"], null, { kind: "coMembers" }, undefined, {
+      "g-1": { title: "Jurpi", locKey: "notifications.groups.push.expenseDeleted", locArgs: ["Ana"] },
+    });
+
+    const payload = JSON.parse(calls.filter((c) => c.url.includes("push.apple.com"))[0].init?.body as string);
+    expect(payload.aps.alert["loc-key"]).toBe("notifications.groups.remoteActivity");
+    expect(payload.aps.alert["title-loc-key"]).toBe("notifications.groups.name");
+  });
+
   it("G8-3: sin device emisor → p_exclude_device_token null (fallback G8-1: excluye TODOS los devices del autor)", async () => {
     const pem = await makePem();
     const calls: Recorded[] = [];

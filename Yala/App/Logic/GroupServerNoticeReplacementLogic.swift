@@ -25,11 +25,40 @@ import Foundation
 
 enum GroupServerNoticeReplacementLogic {
 
-    /// Las `loc-key` de los dos genéricos que el aviso rico de actividad cubre: gastos/liquidaciones/miembros y solicitudes.
-    static let replacedLocKeys: Set<String> = [
+    /// Las `loc-key` concretas que el servidor compone desde la card sztn (2026-10-30): quién, qué, concepto e importe
+    /// (`gateway/src/groups/notice.ts`, `GROUP_NOTICE_LOC_KEYS`). Con su número de huecos (`loc-args`): el test de
+    /// contrato las cruza con el Worker y con los 16 `.lproj`, que es donde iOS las resuelve.
+    static let pushNoticeLocKeys: [String: Int] = [
+        "notifications.groups.push.expenseAdded": 3,
+        "notifications.groups.push.expenseAddedNoConcept": 2,
+        "notifications.groups.push.expenseEdited": 3,
+        "notifications.groups.push.expenseEditedNoConcept": 2,
+        "notifications.groups.push.expenseDeleted": 1,
+        "notifications.groups.push.openingAdded": 2,
+        "notifications.groups.push.openingEdited": 2,
+        "notifications.groups.push.settlementAdded": 4,
+        "notifications.groups.push.settlementEdited": 4,
+        "notifications.groups.push.settlementDeleted": 1,
+        "notifications.groups.push.groupUpdated": 1,
+        "notifications.groups.push.several": 2,
+    ]
+
+    /// Los concretos que el aviso rico NO cubre: borrar un gasto o un pago y cambiar los ajustes del grupo no entran en
+    /// `RemoteChangeSet`, así que un aviso rico de OTRO cambio del mismo grupo los retiraba sin contarlos (review
+    /// adversarial de la card sztn). Se quedan.
+    static let notReplacedPushNoticeLocKeys: Set<String> = [
+        "notifications.groups.push.expenseDeleted",
+        "notifications.groups.push.settlementDeleted",
+        "notifications.groups.push.groupUpdated",
+    ]
+
+    /// Las `loc-key` de los avisos del servidor que el aviso rico de actividad cubre: los dos genéricos (gastos/liquidaciones/
+    /// miembros y solicitudes) y, desde la card sztn, los concretos de altas y ediciones. El rico los sustituye cuando la app
+    /// decide avisar (con «te toca X», que el servidor no sabe); cuando decide no avisar, el concreto del servidor se queda.
+    static let replacedLocKeys: Set<String> = Set([
         "notifications.groups.remoteActivity",
         "notifications.groups.remotePendingRequest",
-    ]
+    ]).union(Set(pushNoticeLocKeys.keys).subtracting(notReplacedPushNoticeLocKeys))
 
     /// Los `deepLink` con que el servidor y la app nombran a un grupo. El servidor usa el `group_id` tal cual
     /// (`SplitGroup-<uuid>`); se acepta también el `id` local por si un grupo de la era CloudKit los tiene iguales.

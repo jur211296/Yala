@@ -19,6 +19,8 @@ export interface GroupSyncDelta extends Omit<SyncDelta, "sync_id"> {
 /** POST /groups/push — request. */
 export interface GroupPushRequest {
   deltas: GroupSyncDelta[];
+  /** Card sztn: textos en claro para el aviso a los demás miembros (`groups/notice.ts`). Opcional; no se guarda. */
+  notice?: unknown;
 }
 /** POST /groups/push — response (mismo shape por-delta que el personal). */
 export interface GroupPushResponse {
