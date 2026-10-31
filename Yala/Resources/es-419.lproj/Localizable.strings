@@ -1017,8 +1017,6 @@
 
 "comparison.month" = "Mes";
 "comparison.year" = "Año";
-"comparison.monthShort" = "P-1";
-"comparison.yearShort" = "A-1";
 
 "statistics.noRecordsFiltered" = "No hay registros con estos filtros";
 "statistics.noRecordsDescription" = "Cuando tengas registros, aparecerán aquí";
@@ -2132,7 +2130,7 @@
 "tipkit.next" = "Siguiente";
 "tipkit.done" = "Listo";
 "tipkit.comparison.title" = "Compara y aprende";
-"tipkit.comparison.message" = "%1$@ compara con el periodo anterior; %2$@, con el mismo periodo del año pasado.";
+"tipkit.comparison.message" = "Elige con qué comparar tus cifras: con el periodo anterior o con el mismo periodo del año pasado.";
 
 // Grupo D: Tour de Settings
 "tipkit.settings.accounts.title" = "Tus cuentas";

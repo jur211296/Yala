@@ -21,6 +21,11 @@ struct FABStackView: View {
     /// El contenedor tiene poco alto (iPhone girado, ventana baja): Yala IA y «+» van en fila abajo a la derecha en vez
     /// de uno encima del otro (UX 2.2 · L15-14, opción B). Lo mide quien monta los botones (`measuresShortContainer`).
     var isShortContainer: Bool = false
+    /// Qué falta para registrar cuando `canUseVoiceInput` es `false` (card 7jfp). Sin cuenta o sin categorías, el botón
+    /// dice qué falta y lleva a la salida —el mismo botón rosa de la fila del Panel— en vez del «+» gris y mudo.
+    var missingStep: PanelQuickActionsGateLogic.State = .ready
+    /// «Crea tu primera cuenta» o «Crear categorías» del botón; lo resuelve quien lo monta, como en su fila.
+    var onResolveMissingStep: () -> Void = {}
 
     // MARK: - Callbacks
 
@@ -117,6 +122,8 @@ struct FABStackView: View {
                 case .image: onImageTap()
                 }
             }
+        } else if missingStep != .ready {
+            missingStepFAB
         } else {
             disabledFAB(background: fabBackground)
         }
@@ -273,6 +280,43 @@ struct FABStackView: View {
             #endif
             return false
         }
+    }
+
+    // MARK: - Lo que falta (card 7jfp)
+
+    /// Sin cuenta o sin categorías: la salida, flotando, con el acabado de la fila del Panel (relleno rosa de marca,
+    /// `emphasisPinkFill`, AA con blanco; sin degradado ni brillo). La línea de explicación de la fila va como pista de
+    /// VoiceOver: flotando taparía el contenido.
+    private var missingStepFAB: some View {
+        let needsAccount = missingStep == .needsAccount
+        let title = needsAccount ? L10n.Panel.createFirstAccount : L10n.Empty.activateCategoriesAction
+        let hint = needsAccount ? L10n.Panel.createFirstAccountHint : L10n.Panel.createCategoriesHint
+        return Button {
+            DS.Haptic.selection()
+            onResolveMissingStep()
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: needsAccount ? "creditcard.fill" : "tag.fill")
+                    .font(DS.Typography.label)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(DS.Typography.label)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(Color.white)
+            .padding(.horizontal, DS.Spacing.lg)
+            .frame(minHeight: DS.Button.fabSize)
+            .background(Capsule().fill(Color.emphasisPinkFill))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .dsFloatingShadow()
+        .coachMarkAnchor("fab")
+        .padding(.trailing, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.xxl)
+        .accessibilityHint(hint)
+        .accessibilityIdentifier(needsAccount ? "fab_create_first_account" : "fab_create_categories")
     }
 
     // MARK: - Disabled FAB

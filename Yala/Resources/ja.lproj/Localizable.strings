@@ -1017,8 +1017,6 @@
 
 "comparison.month" = "月";
 "comparison.year" = "年";
-"comparison.monthShort" = "P-1";
-"comparison.yearShort" = "Y-1";
 
 "statistics.noRecordsFiltered" = "このフィルターに該当する記録はありません";
 "statistics.noRecordsDescription" = "記録を追加すると、ここに表示されます。";
@@ -2134,7 +2132,7 @@
 "tipkit.next" = "次へ";
 "tipkit.done" = "完了";
 "tipkit.comparison.title" = "比較して理解する";
-"tipkit.comparison.message" = "%1$@は前の期間と、%2$@は前年の同じ期間と比べます。";
+"tipkit.comparison.message" = "数字を何と比べるか選べます：前の期間、または前年の同じ期間。";
 
 // Group D: Settings Tour
 "tipkit.settings.accounts.title" = "口座";

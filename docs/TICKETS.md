@@ -1048,7 +1048,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stats-filter-segment-tap-should-ask-include-or-exclude | done | tickets/done/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-hero-detail-row-truncates-at-accessibility-text | done | tickets/done/stats-hero-detail-row-truncates-at-accessibility-text.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
-| stats-row-and-fab-grey-out-silently-without-account-or-categories | backlog | tickets/backlog/stats-row-and-fab-grey-out-silently-without-account-or-categories.md |
+| stats-row-and-fab-grey-out-silently-without-account-or-categories | done | tickets/done/stats-row-and-fab-grey-out-silently-without-account-or-categories.md |
 | step-flows-should-match-the-sep15-reference | done | tickets/done/step-flows-should-match-the-sep15-reference.md |
 | storage-actions-release-the-working-flag-under-a-running-resume | discarded | tickets/discarded/storage-actions-release-the-working-flag-under-a-running-resume.md |
 | storage-groups-copy-says-iphone-on-ipad | done | tickets/done/storage-groups-copy-says-iphone-on-ipad.md |

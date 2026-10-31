@@ -22,13 +22,6 @@ enum ComparisonMode: String, CaseIterable, Identifiable {
         case .year: return L10n.Comparison.year
         }
     }
-
-    var shortName: String {
-        switch self {
-        case .month: return L10n.Comparison.monthShort
-        case .year: return L10n.Comparison.yearShort
-        }
-    }
 }
 
 // MARK: - Previous Period Helper

@@ -1015,8 +1015,6 @@
 
 "comparison.month" = "Monat";
 "comparison.year" = "Jahr";
-"comparison.monthShort" = "P-1";
-"comparison.yearShort" = "J-1";
 
 "statistics.noRecordsFiltered" = "Keine Einträge mit den angewandten Filtern gefunden.";
 "statistics.noRecordsDescription" = "Wenn du Einträge erfasst, erscheinen sie hier.";
@@ -2130,7 +2128,7 @@
 "tipkit.next" = "Weiter";
 "tipkit.done" = "Fertig";
 "tipkit.comparison.title" = "Vergleichen und lernen";
-"tipkit.comparison.message" = "%1$@ vergleicht mit dem Vorzeitraum, %2$@ mit demselben Zeitraum im Vorjahr.";
+"tipkit.comparison.message" = "Wähle, womit du deine Zahlen vergleichst: mit dem Vorzeitraum oder mit demselben Zeitraum im Vorjahr.";
 
 // Gruppe D: Einstellungen-Tour
 "tipkit.settings.accounts.title" = "Deine Konten";

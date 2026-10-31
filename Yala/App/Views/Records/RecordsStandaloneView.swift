@@ -37,6 +37,8 @@ struct RecordsStandaloneView: View {
     @State private var showDeleteConfirmation = false
     @State private var showBulkEditSheet = false
     @State private var isPresentingSettings = false
+    /// La salida de lo que falta para registrar, pedida por el flotante (card 7jfp).
+    @State private var missingStepExit: MissingStepExit?
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
     @Environment(\.scenePhase) private var scenePhase
@@ -81,6 +83,12 @@ struct RecordsStandaloneView: View {
 
     var body: some View {
         mainContent
+            // De la pantalla, no de la columna de lista: en el iPad la lista puede apartarse (`swiftui-ds.md`).
+            .missingStepExitSheet(
+                $missingStepExit,
+                existingAccountNames: { dataViewModel.accounts.map(\.name) },
+                onDismiss: { reloadAndRecalculate() }
+            )
             .modifier(RecordsStandaloneSheets(
                 recordsViewModel: recordsViewModel,
                 showDeleteConfirmation: $showDeleteConfirmation,
@@ -265,6 +273,8 @@ struct RecordsStandaloneView: View {
                                     isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                                     chatFABVisible: appPreferences.chatFABVisible,
                                     isShortContainer: fabShortContainer,
+                                    missingStep: dataViewModel.visibleMissingStep,
+                                    onResolveMissingStep: { resolveMissingStep() },
                                     onVoiceTap: { showVoiceRecording = true },
                                     onImageTap: { showImageSelection = true },
                                     onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -314,6 +324,21 @@ struct RecordsStandaloneView: View {
                 }
             }
             .navigationBarBackButtonHidden(recordsViewModel.isSelectionMode)
+    }
+
+    /// Sin cuenta o sin categorías, el flotante lleva a la salida, como la fila del Panel (card 7jfp).
+    private func resolveMissingStep() {
+        switch dataViewModel.quickActionsState {
+        case .needsAccount:
+            missingStepExit = .createAccount
+        case .needsCategories:
+            switch dataViewModel.createCategoriesAction() {
+            case .seedDefaults: DS.Haptic.success()
+            case .openCategoriesSettings: missingStepExit = .categoriesSettings
+            }
+        case .ready:
+            break
+        }
     }
 
     // MARK: - Normal Mode Toolbar

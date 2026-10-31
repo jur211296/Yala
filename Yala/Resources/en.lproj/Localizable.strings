@@ -1017,8 +1017,6 @@
 
 "comparison.month" = "Month";
 "comparison.year" = "Year";
-"comparison.monthShort" = "P-1";
-"comparison.yearShort" = "Y-1";
 
 "statistics.noRecordsFiltered" = "No records with these filters";
 "statistics.noRecordsDescription" = "When you add records, they will appear here.";
@@ -2134,7 +2132,7 @@
 "tipkit.next" = "Next";
 "tipkit.done" = "Done";
 "tipkit.comparison.title" = "Compare and learn";
-"tipkit.comparison.message" = "%1$@ compares with the previous period; %2$@, with the same period last year.";
+"tipkit.comparison.message" = "Choose what to compare your figures with: the previous period or the same period last year.";
 
 // Group D: Settings Tour
 "tipkit.settings.accounts.title" = "Your accounts";

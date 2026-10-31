@@ -1017,8 +1017,6 @@
 
 "comparison.month" = "Miesiąc";
 "comparison.year" = "Rok";
-"comparison.monthShort" = "P-1";
-"comparison.yearShort" = "Y-1";
 
 "statistics.noRecordsFiltered" = "Brak wpisów dla tych filtrów";
 "statistics.noRecordsDescription" = "Gdy dodasz wpisy, pojawią się tutaj.";
@@ -2134,7 +2132,7 @@
 "tipkit.next" = "Dalej";
 "tipkit.done" = "Gotowe";
 "tipkit.comparison.title" = "Porównuj i ucz się";
-"tipkit.comparison.message" = "%1$@ porównuje z poprzednim okresem, a %2$@ z tym samym okresem rok wcześniej.";
+"tipkit.comparison.message" = "Wybierz, z czym porównać swoje liczby: z poprzednim okresem czy z tym samym okresem rok wcześniej.";
 
 // Group D: Settings Tour
 "tipkit.settings.accounts.title" = "Twoje konta";

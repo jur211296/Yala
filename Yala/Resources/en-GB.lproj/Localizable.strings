@@ -1177,9 +1177,7 @@
 "common.unknownError" = "Something went wrong";
 "common.updatingRecords" = "Updating records...";
 "comparison.month" = "Month";
-"comparison.monthShort" = "P-1";
 "comparison.year" = "Year";
-"comparison.yearShort" = "Y-1";
 "contextualGuide.dismiss" = "Got it";
 "continent.africa" = "Africa";
 "continent.asia" = "Asia";
@@ -3208,7 +3206,7 @@
 "tipkit.cfTable.available.title" = "What's left";
 "tipkit.cfTable.cell.message" = "Tap any amount to see where it comes from and how it was calculated.";
 "tipkit.cfTable.cell.title" = "Tap for details";
-"tipkit.comparison.message" = "%1$@ compares with the previous period; %2$@, with the same period last year.";
+"tipkit.comparison.message" = "Choose what to compare your figures with: the previous period or the same period last year.";
 "tipkit.comparison.title" = "Compare and learn";
 "tipkit.done" = "Done";
 "tipkit.next" = "Next";

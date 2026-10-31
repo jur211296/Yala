@@ -537,6 +537,15 @@ struct PanelView: View {
         return flags
     }
 
+    /// El flotante sin cuenta o sin categorías lleva a la misma salida que la fila del hero (card 7jfp).
+    private func resolveMissingStepFromFAB() {
+        switch viewModel.quickActionsState {
+        case .needsAccount: sheets.accountFormSheet = AccountFormSheet(account: nil)
+        case .needsCategories: createCategoriesFromPanel()
+        case .ready: break
+        }
+    }
+
     /// «Crear categorías» de la fila (card omw5): sin categorías propias las crea aquí mismo y la fila vuelve; con
     /// categorías pero ninguna subcategoría visible, abre Ajustes › Categorías.
     private func createCategoriesFromPanel() {
@@ -839,6 +848,8 @@ struct PanelView: View {
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                             chatFABVisible: appPreferences.chatFABVisible,
                             isShortContainer: fabShortContainer,
+                            missingStep: viewModel.quickActionsState,
+                            onResolveMissingStep: { resolveMissingStepFromFAB() },
                             onVoiceTap: { sheets.showVoiceRecording = true },
                             onImageTap: { sheets.showImageSelection = true },
                             onManualTap: { sheets.showNewTransaction = true },

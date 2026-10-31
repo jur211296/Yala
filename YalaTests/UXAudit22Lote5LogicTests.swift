@@ -101,13 +101,16 @@ struct UXAudit22Lote5LogicTests {
         #expect(WhatsNewConfig.current(version: "9.9") == nil, "sin entrada, la fila no se pinta")
     }
 
-    // MARK: - L5-11 · el globo dice qué es P-1 y A-1
+    // MARK: - L5-11 / card g6nw · el globo habla de los chips, no de «P-1» y «A-1»
 
-    @Test func comparisonTip_namesBothCircles() {
+    /// Los círculos «P-1» / «A-1» se retiraron en L11-4 y el globo los seguía explicando. Ahora dice con qué compara
+    /// cada chip, sin etiquetas que ya no existen y sin formato a medio rellenar.
+    @Test func comparisonTip_describesTheChips_notTheRetiredCircles() {
         let message = L10n.TipKit.comparisonMessage
-        #expect(message.contains(L10n.Comparison.monthShort))
-        #expect(message.contains(L10n.Comparison.yearShort))
+        #expect(!message.contains("P-1"))
+        #expect(!message.contains("A-1"))
         #expect(!message.contains("%"))
+        #expect(!message.isEmpty && message != "tipkit.comparison.message", "la clave no resuelve")
     }
 
     // MARK: - L5-12 · el tour Pro señala la fila de arriba

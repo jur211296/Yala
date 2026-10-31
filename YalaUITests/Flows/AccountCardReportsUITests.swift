@@ -126,11 +126,9 @@ final class AccountCardReportsUITests: XCTestCase {
 
         let byAccount = app.buttons["cashflow_view_byAccount"]
         XCTAssertTrue(byAccount.waitForExistence(timeout: 10), "No está la vista por cuenta del flujo de caja.")
-        var swipes = 0
-        while !byAccount.isHittable && swipes < 10 {
-            app.swipeUp()
-            swipes += 1
-        }
+        // A media pantalla, no «hasta que sea hittable»: el `swipeUp` lo dejaba bajo la barra de chips con
+        // `isHittable == true` y el toque caía en el chip de encima (`testing.md`, L158). Rojo en `origin/2.2` limpio.
+        bringToMiddle(app, byAccount)
         byAccount.tap()
 
         let picker = element(app, "account_card_grouping_picker")

@@ -40,6 +40,8 @@ final class DetailContainerViewModel {
     /// guardar o al volver de segundo plano. Avanzar en cada una recalcularía Distribución más veces por gesto que el
     /// `.count` al que sustituye (medido: el Sankey pasaba de 1 a 2 por alta).
     private(set) var dataGeneration = 0
+    /// Ya hubo una carga del store. Antes de ella no hay cuentas en memoria y «lo que falta» no se puede afirmar.
+    private(set) var hasLoadedOnce = false
 
     /// `dataVersion` de la última recarga: lo que permite saber si la siguiente trae una mutación nueva.
     private var lastLoadedDataVersion: Int?
@@ -160,15 +162,41 @@ final class DetailContainerViewModel {
             changed = true
         }
         if changed { dataGeneration &+= 1 }
+        if !hasLoadedOnce { hasLoadedOnce = true }
     }
 
     // MARK: - Computed Properties
 
-    /// Check if voice input can be used (requires accounts and subcategories)
+    /// Se puede registrar: hay cuenta y alguna subcategoría que elegir. La misma regla que el Panel.
     var canUseVoiceInput: Bool {
-        let hasActiveAccounts = accounts.contains { !$0.isArchived }
-        let hasVisibleSubcategories = allSubcategories.contains { $0.isVisible }
-        return hasActiveAccounts && hasVisibleSubcategories
+        quickActionsState == .ready
+    }
+
+    /// Qué falta para registrar (card 7jfp): la regla del Panel, `PanelQuickActionsGateLogic`. Antes contaba también las
+    /// subcategorías de sistema de Grupos, que el selector no ofrece, y el «+» salía activo sin nada que elegir.
+    var quickActionsState: PanelQuickActionsGateLogic.State {
+        PanelQuickActionsGateLogic.state(
+            hasActiveAccount: accounts.contains { !$0.isArchived },
+            hasVisibleSubcategory: PanelQuickActionsGateLogic.hasPickableSubcategory(allSubcategories)
+        )
+    }
+
+    /// Lo que la fila y el flotante enseñan como «falta»: nada hasta la primera carga, para no hacer destellar «Crea tu
+    /// primera cuenta» antes de leer las cuentas (mientras, salen apagados, como antes).
+    var visibleMissingStep: PanelQuickActionsGateLogic.State {
+        hasLoadedOnce ? quickActionsState : .ready
+    }
+
+    /// «Crear categorías» fuera del Panel: crea las de siempre si no hay ninguna propia, o pide abrir Ajustes ›
+    /// Categorías. Igual que `PanelViewModel.createCategoriesAction()`.
+    func createCategoriesAction() -> PanelQuickActionsGateLogic.CreateCategoriesAction {
+        let action = PanelQuickActionsGateLogic.createCategoriesAction(
+            userCategoryCount: categories.filter { !$0.isSystem }.count)
+        guard action == .seedDefaults, let context = modelContext else { return action }
+        if seedDefaultCategoriesOnUserRequest(in: context) {
+            SessionState.shared.incrementDataVersion()
+        }
+        return action
     }
 
     /// Compute date range of all transactions (for custom period picker limits)
