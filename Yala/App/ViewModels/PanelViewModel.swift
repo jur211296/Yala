@@ -264,7 +264,11 @@ final class PanelViewModel {
 
     // MARK: - Loaded Data
 
-    private(set) var accounts: [Account] = []
+    /// Sin las cuentas ya borradas: Editar cuenta elimina una línea y sigue abierto (S30), así que la lista de debajo puede
+    /// repintarse con la línea borrada antes de recargar, y leer un modelo borrado aborta en el iPhone 27.x
+    /// (`swiftui-ds.md`, filas con un `@Model` borrado).
+    var accounts: [Account] { loadedAccounts.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedAccounts: [Account] = []
     private(set) var tags: [Tag] = []
     private(set) var categories: [Category] = []
     private(set) var allSubcategories: [Subcategory] = []
@@ -414,7 +418,7 @@ final class PanelViewModel {
         accountsDesc.fetchLimit = 100
         do {
             let fetched = try context.fetch(accountsDesc)
-            if fetched != accounts { accounts = fetched }
+            if fetched != loadedAccounts { loadedAccounts = fetched }
         } catch {
             #if DEBUG
             print("PanelViewModel: Error loading accounts: \(error)")

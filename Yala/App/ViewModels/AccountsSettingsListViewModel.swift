@@ -20,7 +20,11 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Data
 
-    private(set) var accounts: [Account] = []
+    /// Sin las cuentas ya borradas: Editar cuenta elimina una línea y sigue abierto (S30), así que la lista de debajo puede
+    /// repintarse con la línea borrada antes de recargar, y leer un modelo borrado aborta en el iPhone 27.x
+    /// (`swiftui-ds.md`, filas con un `@Model` borrado).
+    var accounts: [Account] { loadedAccounts.filter { !$0.isDeleted && $0.modelContext != nil } }
+    private var loadedAccounts: [Account] = []
     private(set) var transactions: [TransactionItem] = []
 
     // MARK: - UI State
@@ -119,12 +123,12 @@ final class AccountsSettingsListViewModel {
         // Load accounts
         let accountDescriptor = FetchDescriptor<Account>(sortBy: [SortDescriptor(\Account.name)])
         do {
-            accounts = try context.fetch(accountDescriptor)
+            loadedAccounts = try context.fetch(accountDescriptor)
         } catch {
             #if DEBUG
             print("AccountsSettingsListViewModel: Error loading accounts: \(error)")
             #endif
-            accounts = []
+            loadedAccounts = []
         }
 
         // Perf-note: fetches all transactions for per-account balance calculation.

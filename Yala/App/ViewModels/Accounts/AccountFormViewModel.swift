@@ -150,6 +150,10 @@ final class AccountFormViewModel {
     /// Un añadir, vincular o desvincular que falló, con su motivo ya traducido.
     var lineActionError: String?
     var isShowingLineActionError: Bool = false
+    /// Editar cuenta con varias divisas (S30): la línea elegida en el selector de moneda (`nil` = la propia cuenta) y
+    /// un borrador del saldo inicial por línea, que se guarda con el «Guardar» del formulario.
+    var selectedLineID: UUID?
+    var lineDrafts: [LineBalanceDraft] = []
 
     // MARK: - UI State
     var isShowingDeleteError: Bool = false
@@ -322,7 +326,7 @@ final class AccountFormViewModel {
     /// `init` contaría como cambio lo que el propio formulario rellenó solo.
     var hasUnsavedChanges: Bool {
         guard let baseline else { return false }
-        return snapshot != baseline
+        return snapshot != baseline || lineDraftsHaveChanges
     }
 
     // MARK: - Computed Balance Properties
@@ -455,6 +459,7 @@ final class AccountFormViewModel {
         loadTransactions()
         loadPlans()
         initializeBalanceIfNeeded()
+        syncLineDrafts()
         if baseline == nil { baseline = snapshot }
     }
 
@@ -605,6 +610,7 @@ final class AccountFormViewModel {
 
     var canSave: Bool {
         isNameValid && isNameUnique && isCurrencyValid && isBalanceValid && currencyCollidingLine == nil
+            && lineDraftsAreValid
     }
 
     var isEditing: Bool {
@@ -751,6 +757,7 @@ final class AccountFormViewModel {
         // otra cifra de la que la pantalla prometía («Al guardar, queda en…», review de UX 2.2 · L7-6). Si ni así
         // aparece, no se cierra: se avisa.
         let writesBalanceRow = parsedBalanceAmount != nil && (accountToEdit == nil || needsAdjustment)
+            || (accountToEdit != nil && lineDraftsHaveChanges)
         let subcategory = writesBalanceRow
             ? InitialBalanceService.ensureBalanceAdjustmentSubcategoryExists(context: context) : nil
         if writesBalanceRow && subcategory == nil {
@@ -760,13 +767,18 @@ final class AccountFormViewModel {
 
         var created: Account?
         if let account = accountToEdit {
+            // El saldo inicial de cada línea, desde el selector de moneda (S30). Antes de archivarlas: archivadas ya no
+            // son líneas vivas y lo escrito se perdería sin aviso.
+            if let sub = subcategory { applyLineDrafts(subcategory: sub, in: context) }
             // Archivar la tarjeta con «también las líneas»: se leen ANTES de escribir `isArchived` en la principal (con
             // ella archivada sus líneas se leerían sueltas), y van en el mismo guardado.
             if isArchived, !account.isArchived, archiveLinesChoice == true {
                 AccountLineService.archiveLines(of: account, among: allAccounts, excludeFromStatistics: true)
             }
-            // Update account properties
+            // Update account properties. El nombre de antes, para que sus líneas lo sigan (S30).
+            let previousName = account.name
             applyBaseAccountProperties(to: account, trimmedAccountNumber: trimmedAccountNumber)
+            AccountLineService.renameLines(of: account, from: previousName, among: allAccounts)
 
             // Handle balance adjustment if specified
             if let balanceValue = parsedBalanceAmount, needsAdjustment, let sub = subcategory {
@@ -833,6 +845,9 @@ final class AccountFormViewModel {
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
         } catch {
+            // Lo escrito sigue en el contexto (es compartido: no se deshace). Releerlo hace que un segundo «Guardar» vea
+            // las filas de saldo inicial que este dejó y las sustituya, en vez de añadir otra al lado (review S30).
+            loadTransactions()
             isShowingSaveError = true
             return false
         }

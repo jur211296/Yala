@@ -8523,3 +8523,10 @@
 "groups.hero.netIOwe" = "Nella tua valuta principale (%1$@), è un saldo di %2$@ che devi.";
 "groups.hero.netEven" = "Nella tua valuta principale (%@), quello che devi e quello che ti devono si compensano.";
 "groups.card.andMore" = "e altri %d";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "Valuta che modifichi";
+"account.lines.lineBalanceFooter %@" = "Il saldo con cui è partita la linea in %@. Al salvataggio, il saldo di oggi viene ricalcolato da qui.";
+"account.lines.delete %@" = "Elimina la linea in %@";
+"account.lines.deleteConfirmTitle %@" = "Eliminare la linea in %@?";
+"account.lines.deleteConfirmMessage" = "Non ha movimenti. La carta mantiene le altre valute. L'operazione non si può annullare.";

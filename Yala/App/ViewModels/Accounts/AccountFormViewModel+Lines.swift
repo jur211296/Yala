@@ -219,6 +219,80 @@ extension AccountFormViewModel {
         archiveLinesChoice = choice
     }
 
+    // MARK: - S30: cada línea con su saldo inicial
+
+    /// Las divisas del selector de Editar cuenta: solo en una tarjeta con líneas vivas.
+    var showsLineCurrencyPicker: Bool {
+        isEditing && !isCurrencyLockedAsLine && !cardLines.isEmpty
+    }
+
+    /// La línea elegida en el selector; `nil` = la divisa de la propia cuenta. Una línea que ya no está (se eliminó,
+    /// se desvinculó en otro teléfono) cae a la cuenta.
+    var selectedLine: Account? {
+        guard let selectedLineID else { return nil }
+        return cardLines.first { $0.shortcutID == selectedLineID }
+    }
+
+    /// El borrador del saldo inicial de `line`.
+    func lineDraft(for line: Account) -> LineBalanceDraft? {
+        lineDrafts.first { $0.lineID == line.shortcutID }
+    }
+
+    /// Un borrador por línea viva, con su saldo inicial de hoy. Los que ya existen se conservan (lo escrito no se pierde
+    /// al recargar) y los de las líneas que ya no están se retiran.
+    func syncLineDrafts() {
+        let lines = cardLines
+        let ids = Set(lines.map(\.shortcutID))
+        lineDrafts.removeAll { !ids.contains($0.lineID) }
+        for line in lines where lineDraft(for: line) == nil {
+            lineDrafts.append(LineBalanceDraft(lineID: line.shortcutID, initialBalance: lineInitialBalance(of: line)))
+        }
+        if selectedLineID != nil && selectedLine == nil { selectedLineID = nil }
+    }
+
+    /// El saldo de partida que tiene hoy la línea (0 si no tiene).
+    private func lineInitialBalance(of line: Account) -> Double {
+        let id = line.persistentModelID
+        return allTransactions
+            .filter { $0.account?.persistentModelID == id && $0.balanceAdjustmentType == InitialBalanceService.typeInitialBalance }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    /// Algún borrador de línea cambió: cerrar lo tiraría.
+    var lineDraftsHaveChanges: Bool { lineDrafts.contains(where: \.hasChanges) }
+
+    /// Todos los borradores se pueden guardar.
+    var lineDraftsAreValid: Bool { lineDrafts.allSatisfy(\.isValid) }
+
+    /// Escribe el saldo inicial de las líneas que cambiaron. No guarda: va en el guardado del formulario.
+    func applyLineDrafts(subcategory: Subcategory, in context: ModelContext) {
+        for draft in lineDrafts where draft.hasChanges {
+            guard let amount = draft.parsedAmount,
+                  let line = cardLines.first(where: { $0.shortcutID == draft.lineID }) else { continue }
+            _ = InitialBalanceService.setInitialBalance(
+                amount: amount, for: line, subcategory: subcategory, allTransactions: allTransactions, context: context)
+        }
+    }
+
+    // MARK: - S30: eliminar una línea
+
+    /// ¿La línea tiene algo dentro (movimientos, programados, favoritos, borradores)? Entonces se elimina con la hoja que
+    /// pregunta qué hacer con ello; vacía, basta una confirmación. Lanza si no se puede leer: no se toma por «vacía».
+    func lineRemovalNeedsQuestion(_ line: Account) throws -> Bool {
+        guard let context = modelContextForLines else { throw AccountRemovalService.Failure.unreadable }
+        return try AccountRemovalService.inventory(of: line, context: context).shape.needsQuestion
+    }
+
+    /// Tras eliminar una línea (o cancelar la hoja de eliminarla): el formulario sigue abierto. Eliminada, vuelve a la
+    /// divisa de la cuenta; cancelada, se queda en la línea, que sigue ahí.
+    func afterLineRemoved(keepingSelection: Bool = false) {
+        if !keepingSelection { selectedLineID = nil }
+        loadAccounts()
+        loadTransactions()
+        loadPlans()
+        syncLineDrafts()
+    }
+
     // MARK: - Privado
 
     /// El motivo de un fallo. Añadir y vincular lo enseñan en su hoja (la del formulario quedaría tapada por ella:
@@ -230,7 +304,49 @@ extension AccountFormViewModel {
 
     private func afterLineChange(_ context: ModelContext) {
         loadAccounts()
+        // Una línea añadida o vinculada desde aquí sale en el selector: necesita su borrador, o su segmento enseñaría el
+        // saldo de la principal y lo escrito iría a la cuenta equivocada (review S30).
+        loadTransactions()
+        syncLineDrafts()
         WidgetDataCache.updateCache(context: context)
         SessionState.shared.incrementDataVersion()
+    }
+}
+
+// MARK: - Borrador del saldo inicial de una línea (S30)
+
+/// Lo que se escribe en el saldo inicial de una línea antes de guardar. Una clase observable por línea para que la vista
+/// la edite con `@Bindable` (sin `Binding(get:set:)` sobre un diccionario). Vacío = sin saldo inicial (0).
+@MainActor
+@Observable
+final class LineBalanceDraft {
+    let lineID: UUID
+    /// El saldo inicial al abrir, a céntimos.
+    let originalAmount: Double
+    var text: String
+    var isPositive: Bool
+
+    init(lineID: UUID, initialBalance: Double) {
+        self.lineID = lineID
+        self.originalAmount = (initialBalance * 100).rounded() / 100
+        self.isPositive = initialBalance >= 0
+        self.text = initialBalance == 0 ? "" : AmountInputHelper.formatWithGrouping(abs(initialBalance))
+    }
+
+    /// El importe con su signo; `nil` si lo escrito no es un número.
+    var parsedAmount: Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return 0 }
+        let magnitude = AmountInputHelper.parseDecimal(trimmed)
+        if magnitude == 0 && trimmed != "0" && !trimmed.hasPrefix("0") { return nil }
+        return isPositive ? magnitude : -magnitude
+    }
+
+    var isValid: Bool { parsedAmount != nil }
+
+    /// Distinto de lo que había al abrir (a céntimos). Uno inválido cuenta como cambio: cerrar lo tiraría.
+    var hasChanges: Bool {
+        guard let parsedAmount else { return true }
+        return (parsedAmount * 100).rounded() / 100 != originalAmount
     }
 }

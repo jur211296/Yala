@@ -8514,3 +8514,10 @@
 "groups.hero.netIOwe" = "Dans ta devise principale (%1$@), cela fait un solde de %2$@ que tu dois.";
 "groups.hero.netEven" = "Dans ta devise principale (%@), ce que tu dois et ce qu’on te doit s’équilibrent.";
 "groups.card.andMore" = "et %d de plus";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "Devise modifiée";
+"account.lines.lineBalanceFooter %@" = "Le solde de départ de la ligne en %@. À l'enregistrement, le solde du jour est recalculé à partir de celui-ci.";
+"account.lines.delete %@" = "Supprimer la ligne en %@";
+"account.lines.deleteConfirmTitle %@" = "Supprimer la ligne en %@ ?";
+"account.lines.deleteConfirmMessage" = "Elle n'a aucune opération. La carte garde ses autres devises. Action irréversible.";

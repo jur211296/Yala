@@ -233,6 +233,14 @@ final class AppBootstrapper {
             await migrateToLiveBalanceIfNeeded(context: context)
         }
 
+        // 2.55. Nombres de línea que se quedaron con el nombre viejo de su tarjeta (S30): renombrar la tarjeta no
+        //       arrastraba sus líneas («BCP Débito Soles · USD» bajo «BCP Débito»). Idempotente y en cada arranque, así
+        //       que arregla también la línea que llega tarde por sincronización. Guarda `Account` del store personal:
+        //       detrás de la quiescencia del import, como el resto de escrituras del arranque.
+        Task { @MainActor in
+            await repairStaleLineNamesIfNeeded(context: context)
+        }
+
         // 2.6. Barrido one-shot del signo del chat. Devuelve a negativo los gastos que
         //      `ChatAssistantViewModel.saveDraft` guardó con la magnitud sin firmar entre el
         //      2026-04-27 y el arreglo (PR #102). Diferido por el mismo motivo que el de arriba
@@ -3076,6 +3084,30 @@ final class AppBootstrapper {
         #if DEBUG
         print("[AppBootstrapper] Cleaned up orphaned biometric keychain items")
         #endif
+    }
+
+    /// S30: las líneas con el nombre automático de una tarjeta que ya se llama de otra forma pasan al nombre de hoy
+    /// (`AccountLineService.repairStaleLineNames`). Sin flag: sin nada que arreglar no escribe, y así alcanza a las líneas
+    /// que llegan después por sincronización. Si el import no se asienta, espera al próximo arranque.
+    private func repairStaleLineNamesIfNeeded(context: ModelContext) async {
+        guard await awaitPersonalStoreReady() else {
+            SaveBreadcrumb.deferred("AppBootstrapper.repairStaleLineNames", "import not quiescent")
+            return
+        }
+        do {
+            let repaired = try AccountLineService.repairStaleLineNames(in: context)
+            if repaired > 0 {
+                WidgetDataCache.updateCache(context: context)
+                SessionState.shared.incrementDataVersion()
+            }
+            #if DEBUG
+            print("AppBootstrapper: repairStaleLineNames renamed \(repaired) line(s)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: repairStaleLineNames failed: \(error) — will retry next launch")
+            #endif
+        }
     }
 
     private static let liveBalanceMigrationKey = "hasMigratedToLiveBalance"

@@ -176,4 +176,67 @@ enum AccountLineService {
         }
         return archived
     }
+
+    // MARK: - S30: el nombre de las líneas sigue al de la tarjeta
+
+    /// Renombra las líneas de `principal` cuyo nombre empezaba por `oldName` (`AccountCardLogic.renamedLineName`). Va
+    /// después de escribir el nombre nuevo en la principal y no guarda: entra en el guardado del formulario. Recorre
+    /// todas las que apuntan a ella, archivadas incluidas (el nombre es de la tarjeta), en orden de `shortcutID` para que
+    /// la numeración de un nombre repetido salga igual en cada teléfono. Devuelve cuántas renombró.
+    @discardableResult
+    static func renameLines(of principal: Account, from oldName: String, among accounts: [Account]) -> Int {
+        let lines = accounts
+            .filter { $0.parentAccountID == principal.shortcutID && $0.shortcutID != principal.shortcutID
+                && !$0.isSystemAccount }
+            .sorted { $0.shortcutID.uuidString < $1.shortcutID.uuidString }
+        guard !lines.isEmpty else { return 0 }
+        var renamed = 0
+        for line in lines {
+            let taken = accounts.filter { $0 !== line }.map(\.name)
+            guard let name = AccountCardLogic.renamedLineName(
+                current: line.name, oldCardName: oldName, newCardName: principal.name,
+                currencyCode: normalizeCurrencyCode(line.currencyCode), taken: taken) else { continue }
+            line.name = name
+            renamed += 1
+        }
+        return renamed
+    }
+
+    /// La reparación del arranque (S30): las líneas válidas que conservan el nombre automático de una tarjeta que ya se
+    /// llama de otra forma («BCP Débito Soles · USD» bajo «BCP Débito») pasan al nombre de hoy
+    /// (`AccountCardLogic.repairedLineName`, que exige la relación de prefijo). Idempotente: una línea ya
+    /// arreglada no vuelve a escribirse, así que puede correr en cada arranque y arregla también la que llega tarde por
+    /// sincronización. Solo con UNA principal posible para el enlace (con un `shortcutID` colapsado no se elige). Guarda
+    /// si cambió algo; con el guardado fallido deshace solo lo suyo. Devuelve cuántas renombró.
+    @discardableResult
+    static func repairStaleLineNames(in context: ModelContext) throws -> Int {
+        let accounts = try context.fetch(FetchDescriptor<Account>())
+        let byID = Dictionary(grouping: accounts, by: \.shortcutID)
+        // Solo las líneas que la app trata como tales: un enlace roto se lee como cuenta suelta y su nombre es suyo.
+        let roles = AccountLineLogic.resolve(accounts.map { AccountLineNode($0) })
+        let lines = accounts
+            .filter { $0.parentAccountID != nil && !$0.isSystemAccount }
+            .sorted { $0.shortcutID.uuidString < $1.shortcutID.uuidString }
+        var changes: [(account: Account, previous: String)] = []
+        for line in lines {
+            guard let parentID = line.parentAccountID, parentID != line.shortcutID,
+                  let candidates = byID[parentID], candidates.count == 1, let principal = candidates.first,
+                  !principal.isSystemAccount, roles[line.shortcutID] == .line(principalID: parentID) else { continue }
+            let taken = accounts.filter { $0 !== line }.map(\.name)
+            guard let name = AccountCardLogic.repairedLineName(
+                current: line.name, cardName: principal.name,
+                currencyCode: normalizeCurrencyCode(line.currencyCode), taken: taken)
+            else { continue }
+            changes.append((line, line.name))
+            line.name = name
+        }
+        guard !changes.isEmpty else { return 0 }
+        do {
+            try context.save()
+        } catch {
+            for change in changes { change.account.name = change.previous }
+            throw error
+        }
+        return changes.count
+    }
 }

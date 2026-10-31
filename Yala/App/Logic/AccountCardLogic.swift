@@ -124,6 +124,56 @@ nonisolated enum AccountCardLogic {
         return "\(base) \(index)"
     }
 
+    // MARK: - Nombre de las líneas al renombrar la tarjeta (S30)
+
+    /// Renombrar la tarjeta arrastra el nombre de su línea: «BCP Débito Soles · USD» pasa a «BCP Débito · USD» cuando la
+    /// tarjeta se llamaba «BCP Débito Soles». Solo si el nombre de la línea empieza por «<nombre viejo> · »: uno que la
+    /// persona cambió a mano no se toca. `taken` = los nombres de las demás cuentas, sin esta línea. `nil` = no cambia.
+    static func renamedLineName(
+        current: String, oldCardName: String, newCardName: String, currencyCode: String, taken: [String]
+    ) -> String? {
+        let old = oldCardName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let new = newCardName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !old.isEmpty, !new.isEmpty, old != new, current.hasPrefix("\(old) · ") else { return nil }
+        let renamed = lineName(cardName: new, currencyCode: isoCode(currencyCode), taken: taken)
+        return renamed == current ? nil : renamed
+    }
+
+    /// La reparación de las líneas que se quedaron con el nombre de antes de renombrar la tarjeta: una línea con el nombre
+    /// automático («X · USD», o «X · USD 2») cuyo X ya no es el nombre de su tarjeta, pero lo fue en una versión más larga
+    /// o más corta («BCP Débito Soles» bajo «BCP Débito», o al revés). Esa relación de prefijo es lo único que prueba que X
+    /// salió de la tarjeta: «Viajes · USD» (renombrada a mano) o «Interbank · USD» (vinculada con su nombre) no la tienen
+    /// y no se tocan. Con X igual al de la tarjeta (sin distinguir mayúsculas) tampoco. `nil` = no cambia.
+    static func repairedLineName(current: String, cardName: String, currencyCode: String, taken: [String]) -> String? {
+        let card = cardName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !card.isEmpty, let prefix = automaticLinePrefix(of: current, currencyCode: currencyCode) else { return nil }
+        let old = prefix.lowercased()
+        let current = card.lowercased()
+        guard old != current, old.hasPrefix(current + " ") || current.hasPrefix(old + " ") else { return nil }
+        let repaired = lineName(cardName: card, currencyCode: isoCode(currencyCode), taken: taken)
+        return repaired == current ? nil : repaired
+    }
+
+    /// El código tal como va en el nombre (en mayúsculas). Quien llama ya lo normalizó (alias incluidos): aquí no se
+    /// puede llamar a `normalizeCurrencyCode`, que es del main actor.
+    private static func isoCode(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
+    /// El X de un nombre con la forma automática «X · <divisa>» o «X · <divisa> N». `nil` si no la tiene.
+    static func automaticLinePrefix(of name: String, currencyCode: String) -> String? {
+        let code = isoCode(currencyCode)
+        let separator = " · "
+        guard !code.isEmpty, let range = name.range(of: separator, options: .backwards) else { return nil }
+        let prefix = String(name[..<range.lowerBound])
+        let tail = name[range.upperBound...]
+        guard !prefix.trimmingCharacters(in: .whitespaces).isEmpty, tail.hasPrefix(code) else { return nil }
+        let rest = tail.dropFirst(code.count)
+        if rest.isEmpty { return prefix }
+        guard rest.first == " ", let number = Int(rest.dropFirst()), number >= 2 else { return nil }
+        return prefix
+    }
+
     // MARK: - Archivar
 
     /// Las líneas vivas que se archivan con la principal. Se resuelve como si la principal NO estuviera archivada:

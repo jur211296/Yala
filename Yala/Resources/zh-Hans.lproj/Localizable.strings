@@ -8525,3 +8525,10 @@
 "groups.hero.netIOwe" = "按你的主货币（%1$@）计算，你共欠 %2$@。";
 "groups.hero.netEven" = "按你的主货币（%@）计算，你欠的和别人欠你的正好抵消。";
 "groups.card.andMore" = "还有 %d 项";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "正在编辑的币种";
+"account.lines.lineBalanceFooter %@" = "%@ 子账户的初始余额。保存后，将据此重新计算今天的余额。";
+"account.lines.delete %@" = "删除 %@ 子账户";
+"account.lines.deleteConfirmTitle %@" = "删除 %@ 子账户？";
+"account.lines.deleteConfirmMessage" = "它没有任何记录。卡片的其他币种保持不变。此操作无法撤销。";

@@ -8525,3 +8525,10 @@
 "groups.hero.netIOwe" = "W twojej walucie głównej (%1$@) to saldo %2$@, które jesteś winien.";
 "groups.hero.netEven" = "W twojej walucie głównej (%@) to, co jesteś winien, i to, co ci są winni, się równoważy.";
 "groups.card.andMore" = "i %d więcej";
+
+// Editar cuenta con varias divisas (S30)
+"account.lines.currencyPicker" = "Edytowana waluta";
+"account.lines.lineBalanceFooter %@" = "Saldo początkowe linii w %@. Po zapisaniu dzisiejsze saldo zostanie przeliczone od niego.";
+"account.lines.delete %@" = "Usuń linię w %@";
+"account.lines.deleteConfirmTitle %@" = "Usunąć linię w %@?";
+"account.lines.deleteConfirmMessage" = "Ta linia nie ma wpisów. Karta zachowuje pozostałe waluty. Tej operacji nie można cofnąć.";
