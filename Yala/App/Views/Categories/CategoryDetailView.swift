@@ -116,6 +116,7 @@ struct CategoryDetailView: View {
         .alert(L10n.Category.deleteConfirmTitle, isPresented: $showDeleteConfirmation) {
             Button(L10n.Category.delete, role: .destructive) {
                 if viewModel.deleteCategory() {
+                    DS.Haptic.warning()
                     dismiss()
                 }
             }
@@ -511,9 +512,11 @@ struct CategoryDetailView: View {
     private func saveCategory() {
         if viewModel.isNewCategory && viewModel.subcategories.isEmpty {
             showMissingSubcategoriesAlert = true
+            DS.Haptic.error()
             return
         }
         if viewModel.saveCategory() {
+            DS.Haptic.success()
             dismiss()
         }
     }

@@ -1095,6 +1095,7 @@ struct NewTransactionView: View {
                         showRecurringQuickSheet = true
                     } else {
                         viewModel.showValidationErrors = true
+                        DS.Haptic.error()
                         showToast(L10n.Validation.completeFieldsFirst)
                     }
                 }

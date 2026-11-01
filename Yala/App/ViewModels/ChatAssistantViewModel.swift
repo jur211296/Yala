@@ -718,8 +718,13 @@ final class ChatAssistantViewModel {
     /// Guarda uno tras otro, por el mismo camino que el «Guardar» de cada tarjeta. `saveDraft` marca `.saving` antes de
     /// su primer `await`, así que un segundo toque mientras corre salta los que ya están en vuelo y no duplica nada.
     func saveAllReadyDrafts(messageID: UUID) async {
-        for draft in draftsReadyToSave(messageID: messageID) {
-            await saveDraft(messageID: messageID, draftID: draft.id)
+        let ready = draftsReadyToSave(messageID: messageID)
+        for draft in ready {
+            await saveDraft(messageID: messageID, draftID: draft.id, vibrates: false)
+        }
+        // Un toque, una vibración: con cinco listos vibraba cinco veces seguidas (card pjum).
+        if ready.contains(where: { locateDraft(messageID: messageID, draftID: $0.id)?.draft.status == .saved }) {
+            DS.Haptic.success()
         }
     }
 
@@ -728,7 +733,8 @@ final class ChatAssistantViewModel {
     /// Save de un draft → crea TransactionItem real, mark `.saved`, persistSession.
     /// Es bloqueante visualmente: durante `.saving` el card debe deshabilitar Save/Edit.
     /// Permite retry desde `.failed` (resetea a `.saving`).
-    func saveDraft(messageID: UUID, draftID: UUID) async {
+    /// `vibrates`: el éxito vibra aquí salvo que lo guarde «Guardar los N», que vibra una vez al final.
+    func saveDraft(messageID: UUID, draftID: UUID, vibrates: Bool = true) async {
         guard let context = modelContext else { return }
         guard let location = locateDraft(messageID: messageID, draftID: draftID) else { return }
         var draft = location.draft
@@ -887,6 +893,7 @@ final class ChatAssistantViewModel {
 
         do {
             try TransactionService.shared.create(transaction)
+            if vibrates { DS.Haptic.success() }
             draft.status = .saved
             draft.savedTransactionID = transaction.persistentModelID
             // La divisa que REALMENTE se estampó, congelada en el borrador. La tarjeta ya guardada

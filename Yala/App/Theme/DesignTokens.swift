@@ -131,12 +131,33 @@ enum DS {
 
         /// Delay between staggered items
         static let staggerDelay: Double = 0.05
+
+        // MARK: Curvas con nombre (card pjum, 2026-10-31)
+        //
+        // Una curva por intención, para que la misma cosa se mueva igual en toda la app. Dentro de una pestaña se
+        // aplican con `.animation(_:value:)` (o `dsAnimation`), nunca con `withAnimation`: `ContentView` apaga las
+        // transacciones que cruzan la `TabView`. Con Reducir movimiento, `nil` (lo resuelve `dsAnimation`).
+
+        /// Cambio de selección: chips, segmentos, píldoras, pestañas internas. Rápida y sin rebote.
+        static let selection: SwiftUI.Animation = .snappy(duration: normal)
+
+        /// Algo que aparece o se va dentro de la pantalla: avisos, secciones plegables, flotantes, esqueleto → datos.
+        static let appear: SwiftUI.Animation = .easeInOut(duration: normal)
+
+        /// Una cifra que cambia de valor, con `.contentTransition(.numericText(value:))`.
+        static let number: SwiftUI.Animation = .snappy(duration: slow)
     }
 
     // MARK: - Haptic Feedback
 
     /// Centralized haptic feedback helpers.
     /// Usage: `DS.Haptic.success()`, `DS.Haptic.selection()`
+    ///
+    /// Mapa (card pjum, 2026-10-31): **selección** → `selection()` (chip, segmento, opción de una lista);
+    /// **éxito** → `success()` (guardar, aprobar, confirmar, deshacer que repone); **aviso** → `error()` (validación que
+    /// no deja seguir, error al guardar); **borrado** → `warning()` (golpe rígido, al confirmar que se borra). `light()` y
+    /// `medium()`, para acciones sin resultado (enviar, empezar a grabar). Uno por gesto: si el ViewModel ya vibra, la
+    /// vista no repite. No dependen de Reducir movimiento: los gobierna el ajuste de vibraciones del sistema.
     enum Haptic {
         /// Success feedback - use after completing important actions (save, confirm)
         static func success() {
@@ -161,6 +182,11 @@ enum DS {
         /// Warning/rigid impact - use for destructive actions (delete)
         static func warning() {
             UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        }
+
+        /// Aviso: algo no se pudo hacer (falta un campo obligatorio, el guardado falló). Notificación `.error`.
+        static func error() {
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
     }
 

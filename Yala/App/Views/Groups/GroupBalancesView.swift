@@ -176,7 +176,8 @@ struct GroupBalancesView: View {
     @ViewBuilder
     private func pendingButtons(_ settlement: SplitSettlement) -> some View {
         Button {
-            DS.Haptic.success()
+            // El éxito lo vibra `GroupDetailViewModel.confirmSettlement` cuando el servicio confirma: aquí vibraba dos
+            // veces, y también si fallaba (card pjum).
             onConfirmSettlement?(settlement)
         } label: {
             Text(L10n.UXL13.pendingYes)

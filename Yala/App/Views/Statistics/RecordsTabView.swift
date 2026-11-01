@@ -285,7 +285,8 @@ struct RecordsTabView: View {
                     value: expensesOnly ? recordsSummary.expense : recordsSummary.balance,
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
-                    isEstimate: expensesOnly ? recordsSummary.expenseIsApproximate : recordsSummary.balanceIsApproximate
+                    isEstimate: expensesOnly ? recordsSummary.expenseIsApproximate : recordsSummary.balanceIsApproximate,
+                    animatesValue: true
                 )
                 .accessibilityIdentifier("records_summary_balance")
             }
@@ -343,7 +344,8 @@ struct RecordsTabView: View {
                             currencyCode: defaultCurrencyCode,
                             font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                             tint: .secondary,
-                            isEstimate: recordsSummary.incomeIsApproximate
+                            isEstimate: recordsSummary.incomeIsApproximate,
+                            animatesValue: true
                         )
                         .accessibilityIdentifier("records_summary_income")
                     }
@@ -382,7 +384,8 @@ struct RecordsTabView: View {
                         currencyCode: defaultCurrencyCode,
                         font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                         tint: .secondary,
-                        isEstimate: recordsSummary.expenseIsApproximate
+                        isEstimate: recordsSummary.expenseIsApproximate,
+                        animatesValue: true
                     )
                     .accessibilityIdentifier("records_summary_expense")
                 }

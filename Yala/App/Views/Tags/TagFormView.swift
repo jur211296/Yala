@@ -307,6 +307,7 @@ struct TagFormView: View {
 
     private func saveTag() {
         if viewModel.saveTag() {
+            DS.Haptic.success()
             dismiss()
         }
     }
@@ -316,6 +317,7 @@ struct TagFormView: View {
         deletionService.setContext(modelContext)
         do {
             try deletionService.deleteTag(tag)
+            DS.Haptic.warning()
             viewModel.releaseDeletedTag()
             dismiss()
         } catch {

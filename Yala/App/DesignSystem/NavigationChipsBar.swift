@@ -39,17 +39,17 @@ extension View {
 /// L12-1: con todos los nombres el último se cortaba). Con `true`, en todos (Planificación y Reportes, donde caben).
 ///
 /// El chip pinta `isSelected` tal cual: si cambia dentro de una transacción animada, la cápsula cambia de ancho y los
-/// vecinos se recolocan en el mismo movimiento. Para que eso se vea, la pantalla cambia de chip con
-/// `NavigationChipButton.switchTab` y `animatesSwitch` (Estadísticas y el detalle de grupo); sin ellos (Planificación y
-/// Reportes, cuyos chips no cambian de ancho) el cambio llega sin animación, como siempre.
+/// vecinos se recolocan en el mismo movimiento. Para que eso se vea, la pantalla monta sus páginas con
+/// `StagedTabPages` y pone `animatesSwitch` (Estadísticas y el detalle de grupo); sin ellos (Planificación y Reportes,
+/// cuyos chips no cambian de ancho) el cambio llega sin animación, como siempre.
 struct NavigationChipButton: View {
     let title: String
     let icon: String
     let isSelected: Bool
     var showsTitleWhenUnselected = false
-    /// `true` si la pantalla cambia de chip con `NavigationChipButton.switchTab`, que pone su propia animación. Con
+    /// `true` si la pantalla anima la fila ella misma (`StagedTabPages` + `.animation(_:value:)` en la fila). Con
     /// `false`, el toque llega con las animaciones apagadas; y apagadas así, ninguna transacción anidada las enciende
-    /// (medido en el simulador, iOS 27.0: con `switchTab` dentro, la fila seguía saltando).
+    /// (medido en el simulador, iOS 27.0).
     var animatesSwitch = false
     let action: () -> Void
 
@@ -66,6 +66,8 @@ struct NavigationChipButton: View {
 
     var body: some View {
         Button {
+            // Háptico de selección al cambiar de chip, en las cuatro filas (card pjum). Tocar el que ya está, nada.
+            if !isSelected { DS.Haptic.selection() }
             if animatesSwitch {
                 action()
             } else {
@@ -103,42 +105,5 @@ struct NavigationChipButton: View {
 }
 
 extension NavigationChipButton {
-    static let switchAnimation: Animation = .snappy(duration: DS.Animation.normal)
-
-    /// Cambia de chip en dos tiempos: primero se anima la fila (`chips`) y, cuando la animación termina, se monta la
-    /// pestaña (`content`), sin animación.
-    ///
-    /// **Por qué en dos tiempos.** Montar una pestaña de Estadísticas bloquea el hilo principal: medido en el vídeo de
-    /// Jürgen del 2026-10-27 (iPhone, 60 fps), la pantalla se queda quieta 0,12–0,27 s tras cada toque, y en el
-    /// simulador 0,67 s. Las animaciones de SwiftUI avanzan en ese mismo hilo, así que si la fila se anima a la vez que
-    /// se monta la pestaña, la animación transcurre entera durante el bloqueo y al volver a pintar ya ha terminado: el
-    /// chip nuevo aparece ancho y el viejo estrecho de un fotograma al siguiente, «a tirones». Con el montaje detrás,
-    /// el bloqueo cae cuando la fila ya está quieta.
-    ///
-    /// El contenido sigue sin animarse (con animación parpadeaba el título grande). Con Reducir movimiento, las dos
-    /// cosas cambian a la vez y sin animación, como antes. Un segundo toque antes de que acabe gana: la pestaña del
-    /// primero ya no se monta.
-    static func switchTab<Tab: Equatable>(
-        to tab: Tab,
-        chips: Binding<Tab>,
-        content: Binding<Tab>,
-        reduceMotion: Bool
-    ) {
-        guard chips.wrappedValue != tab || content.wrappedValue != tab else { return }
-        var quiet = Transaction()
-        quiet.disablesAnimations = true
-        guard !reduceMotion else {
-            withTransaction(quiet) {
-                chips.wrappedValue = tab
-                content.wrappedValue = tab
-            }
-            return
-        }
-        var animated = Transaction(animation: switchAnimation)
-        animated.addAnimationCompletion(criteria: .logicallyComplete) {
-            guard chips.wrappedValue == tab, content.wrappedValue != tab else { return }
-            withTransaction(quiet) { content.wrappedValue = tab }
-        }
-        withTransaction(animated) { chips.wrappedValue = tab }
-    }
+    static let switchAnimation: Animation = DS.Animation.selection
 }

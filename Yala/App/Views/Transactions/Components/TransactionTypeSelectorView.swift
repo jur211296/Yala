@@ -11,6 +11,8 @@ import SwiftUI
 
 struct TransactionTypeSelectorView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// La cápsula elegida se desliza de un tipo al otro en vez de fundirse (card pjum).
+    @Namespace private var selectionNamespace
     @Binding var selectedType: TransactionType
     var availableTypes: [TransactionType] = TransactionType.allCases
     var onTypeChange: ((TransactionType) -> Void)?
@@ -33,7 +35,8 @@ struct TransactionTypeSelectorView: View {
                     // de más sobre «Gasto» dejaba el formulario sin categoría y «Guardar» apagado.
                     // Auditoría UX 2.2, lote 2, B2.
                     guard type != selectedType else { return }
-                    dsWithAnimation(reduceMotion) {
+                    DS.Haptic.selection()
+                    dsWithAnimation(reduceMotion, DS.Animation.selection) {
                         selectedType = type
                         onTypeChange?(type)
                     }
@@ -46,10 +49,13 @@ struct TransactionTypeSelectorView: View {
                         .foregroundStyle(selectedType == type ? .white : .secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Chip.paddingV)
-                        .background(
-                            Capsule()
-                                .fill(selectedType == type ? type.color : Color.clear)
-                        )
+                        .background {
+                            if selectedType == type {
+                                Capsule()
+                                    .fill(type.color)
+                                    .matchedGeometryEffect(id: "selection", in: selectionNamespace)
+                            }
+                        }
                 }
                 .accessibilityAddTraits(selectedType == type ? .isSelected : [])
                 .accessibilityIdentifier("new_transaction_type_\(type.rawValue)")

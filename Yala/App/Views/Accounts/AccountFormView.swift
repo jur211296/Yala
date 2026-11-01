@@ -1373,6 +1373,7 @@ struct AccountFormView: View {
 
     private func saveAccount() {
         if viewModel.saveAccount(context: modelContext) {
+            DS.Haptic.success()
             if viewModel.secondaryCurrencySuggestion == nil {
                 closeOrOfferLine()
             }

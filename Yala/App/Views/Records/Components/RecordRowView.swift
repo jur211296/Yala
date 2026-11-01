@@ -42,7 +42,8 @@ struct RecordRowView: View {
     private var row: some View {
         Button {
             if isSelectionMode {
-                DS.Haptic.selection()
+                // Sin háptico aquí: ya vibra el `sensoryFeedback(.selection, trigger: isSelected)` de la marca.
+                // Con los dos, cada toque vibraba dos veces (card pjum).
                 onToggleSelection()
             } else {
                 onTap()

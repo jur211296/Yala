@@ -114,9 +114,9 @@ struct ScheduledPaymentsListView: View {
             AmountText(
                 value: hero.pending,
                 currencyCode: currencyCode,
-                font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary
+                font: DS.Typography.panelHeroAmount, secondaryFont: DS.Typography.panelHeroAmountSecondary,
+                animatesValue: true
             )
-            .contentTransition(.numericText())
             .accessibilityIdentifier("scheduled_hero_pending")
 
             if !hero.isEmpty {
