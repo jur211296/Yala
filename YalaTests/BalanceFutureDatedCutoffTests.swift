@@ -226,9 +226,11 @@ struct BalanceFutureDatedCutoffTests {
         let cache = try String(contentsOf: root.appendingPathComponent("Yala/Services/WidgetDataCache.swift"), encoding: .utf8)
         let boot = try String(contentsOf: root.appendingPathComponent("Yala/App/AppBootstrapper.swift"), encoding: .utf8)
         let update = try #require(cache.range(of: "static func updateCache(context: ModelContext) {"))
-        let body = String(cache[update.upperBound...].prefix(600))
+        let body = String(cache[update.upperBound...].prefix(900))
         let gate = try #require(body.range(of: "guard !isWipeArmed else"))
-        let stamp = try #require(body.range(of: "lastBuiltAt = Date.now"))
+        // La hora de la FOTO, no la del reloj al terminar: una foto de las 23:59:59 guardada pasada la medianoche es de ayer.
+        let stamp = try #require(body.range(of: "lastBuiltAt = built.widget.lastUpdated"))
+        #expect(!body.contains("lastBuiltAt = Date.now"))
         #expect(gate.upperBound < stamp.lowerBound)
         let active = try #require(boot.range(of: "func handleBecameActive(context: ModelContext) {"))
         #expect(boot[active.upperBound...].prefix(2500).contains("WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)"))
