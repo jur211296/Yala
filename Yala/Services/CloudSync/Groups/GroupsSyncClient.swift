@@ -312,6 +312,11 @@ final class GroupsSyncClient {
     // MARK: Guard del token de History (molde HALLAZGO 2)
 
     private(set) var historyTokenValidated = false
+    /// Las entidades cuyo índice cargó la última vuelta del drain. Testigo de YALA-IOS-2: una vuelta sin nada que
+    /// traducir no lee ningún modelo. Expuesto para tests.
+    private(set) var lastDrainIndexedEntities: Set<String> = []
+    /// Si la última vuelta leyó la cola entera para deduplicar (solo cuando hay algo que traducir). Expuesto para tests.
+    private(set) var lastDrainReadOutboxKeys = false
     private static let historyTokenSlack: TimeInterval = 60
     private(set) var historyTokenIncomparableCount = 0
     private(set) var historyTokenRecoveredCount = 0
@@ -1072,6 +1077,8 @@ final class GroupsSyncClient {
 
     private func performDrain(context: ModelContext) -> Bool {
         defer { drainSignInLog = nil }
+        lastDrainIndexedEntities = []
+        lastDrainReadOutboxKeys = false
         do {
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)
@@ -1082,7 +1089,6 @@ final class GroupsSyncClient {
             drainSignInLog = signInLog
             adoptOwnersForUnownedRows(context: context, log: signInLog)
 
-            let lookups = try buildLookups(context)
             // C2-bis (CRÍTICO #1): partición POR-GRUPO simétrica del push. Solo los grupos del canal BACKEND
             // (`isBackendGroup`) drenan al outbox — sin este muro, editar un grupo CloudKit bajo flag ON
             // drenaría sus filas al backend (`group_id` inexistente server-side → dead-letters permanentes +
@@ -1095,8 +1101,17 @@ final class GroupsSyncClient {
                 cursor: cursor, tokenTxns: tokenTxns, context: context)
             if tokenGuard.validatedByCompare { historyTokenValidated = true }
             let txns = tokenGuard.txns
+            // Índices persistentID→modelo SOLO de las entidades que esta ventana va a traducir (YALA-IOS-2): cargar
+            // las cuatro tablas de Grupos en cada vuelta, en el hilo principal, costaba segundos con muchos gastos aunque
+            // no hubiera nada nuevo. Mismo filtro que el bucle de abajo (autor y muro), y cada índice solo lo lee su
+            // propia entidad. El índice no escribe nada, así que leerlo después del History no cambia lo que ve.
+            let indexed = Self.entitiesToTranslate(authorsAndEntities: txns.map { tx in
+                (author: tx.author, entities: tx.changes.map { $0.changedPersistentIdentifier.entityName })
+            })
+            let lookups = try buildLookups(context, only: indexed)
 
-            var seen = try existingOutboxKeys(context)
+            // `seen` solo lo lee la traducción: con la ventana sin nada que traducir no se carga la cola entera (YALA-IOS-2).
+            var seen = indexed.isEmpty ? Set<String>() : try existingOutboxKeys(context)
 
             var rows: [PendingGroupRow] = []
             var advancedToken: DefaultHistoryToken?
@@ -1584,12 +1599,29 @@ final class GroupsSyncClient {
 
     // MARK: - Lookups
 
-    private func buildLookups(_ context: ModelContext) throws -> Lookups {
+    /// Las entidades que la traducción del drain va a consultar: cambios de transacciones que NO escribió el canal, de
+    /// entidades del store de Grupos. El MISMO filtro que el bucle del drain: una entidad sin índice se leería como
+    /// «borrada» y su cambio no saldría. Sin efectos, para tests.
+    static func entitiesToTranslate(authorsAndEntities: [(author: String?, entities: [String])]) -> Set<String> {
+        var names = Set<String>()
+        for tx in authorsAndEntities where tx.author != outboxSaveAuthor {
+            names.formUnion(tx.entities.filter { groupEntityNames.contains($0) })
+        }
+        return names
+    }
+
+    private func buildLookups(_ context: ModelContext, only entities: Set<String>) throws -> Lookups {
+        // El testigo apunta lo que de verdad se carga (YALA-IOS-2), no el conjunto pedido.
+        func wants(_ entityName: String) -> Bool {
+            guard entities.contains(entityName) else { return false }
+            lastDrainIndexedEntities.insert(entityName)
+            return true
+        }
         var lookups = Lookups()
-        lookups.splitGroup = try index(SplitGroup.self, context: context)
-        lookups.splitExpense = try index(SplitExpense.self, context: context)
-        lookups.splitShare = try index(SplitShare.self, context: context)
-        lookups.splitSettlement = try index(SplitSettlement.self, context: context)
+        if wants(GroupSyncEntityType.splitGroup) { lookups.splitGroup = try index(SplitGroup.self, context: context) }
+        if wants(GroupSyncEntityType.splitExpense) { lookups.splitExpense = try index(SplitExpense.self, context: context) }
+        if wants(GroupSyncEntityType.splitShare) { lookups.splitShare = try index(SplitShare.self, context: context) }
+        if wants(GroupSyncEntityType.splitSettlement) { lookups.splitSettlement = try index(SplitSettlement.self, context: context) }
         return lookups
     }
 
@@ -1731,7 +1763,8 @@ final class GroupsSyncClient {
     }
 
     private func existingOutboxKeys(_ context: ModelContext) throws -> Set<String> {
-        try Self.outboxKeys(context)
+        lastDrainReadOutboxKeys = true  // testigo de YALA-IOS-2: lo que de verdad se leyó, no la condición
+        return try Self.outboxKeys(context)
     }
 
     private static func outboxKeys(_ context: ModelContext) throws -> Set<String> {

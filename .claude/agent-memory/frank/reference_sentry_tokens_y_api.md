@@ -15,3 +15,9 @@ iniciada (pide login): se lee por API.
   usarlo, comprueba que existe; si no, pídelo una vez ([[feedback-credencial-pendiente-se-aparca]]).
 - Leer un evento entero: `GET /api/0/projects/yala-is/<proyecto>/events/?statsPeriod=1h` y luego `/events/<id>/`.
   Para comprobar la limpieza, busca los datos falsos en el JSON ENTERO, no solo en el mensaje.
+
+**Simbolizar sin dSYM no sale (medido el 2026-10-31, YALA-IOS-2, build 2.2 (5)).** Los frames de Yala llegan sin nombre
+porque nadie sube dSYM a Sentry. `asc builds dsyms --build-id …` contestó «No dSYM files available» y no quedaba
+`.xcarchive` en la Mini; recompilar Release del mismo commit dio otro UUID y otro tamaño de `__TEXT`, y `atos` devolvió
+basura. No repetirlo: diagnosticar por la forma del stack (qué framework, qué executor) y medir en local. El token con
+escritura y la subida de dSYM esperan a Jürgen (card «Sentry: token con escritura…», 2026-10-31).
