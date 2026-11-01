@@ -2,7 +2,7 @@
 //  ControlCenterIntents.swift
 //  Shared
 //
-//  App Intents for Control Center widgets (Voice + Image entry).
+//  App Intents for Control Center widgets (Nuevo registro, voz y foto).
 //  Target membership: YalaWidgetsExtension only (excluded from Yala main).
 //
 
@@ -57,6 +57,33 @@ struct OpenImageEntryIntent: AppIntent {
             defaults.synchronize()
             #if DEBUG
             print("🎯 Wrote 'image-entry' to App Group: \(appGroupID)")
+            #endif
+        }
+        return .result()
+    }
+}
+
+/// «Nuevo registro» del Centro de Control (tanda 3 del rediseño de los widgets, S35f2): deja `new-transaction` como
+/// acción pendiente y abre Yala, el mismo camino que voz y foto. La app lo atiende al abrirse en
+/// `AppBootstrapper.checkForPendingControlAction` y presenta el formulario por el router, como el widget y el atajo.
+struct OpenNewTransactionIntent: AppIntent {
+    static var title: LocalizedStringResource = "widget.control.newRecord"
+    static var description = IntentDescription("widget.control.newRecord.desc")
+    static var openAppWhenRun: Bool = true
+
+    func perform() async throws -> some IntentResult {
+        guard let appGroupID = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String else {
+            #if DEBUG
+            print("🎯 ERROR: APP_GROUP_IDENTIFIER not found in Info.plist")
+            #endif
+            return .result()
+        }
+
+        if let defaults = UserDefaults(suiteName: appGroupID) {
+            defaults.set("new-transaction", forKey: "pendingControlAction")
+            defaults.synchronize()
+            #if DEBUG
+            print("🎯 Wrote 'new-transaction' to App Group: \(appGroupID)")
             #endif
         }
         return .result()

@@ -143,6 +143,8 @@
 "widget.control.voiceExpense.desc" = "Podyktuj wpis do Yala";
 "widget.control.photoExpense" = "Zdjęcie lub plik";
 "widget.control.photoExpense.desc" = "Zapisz ze zdjęcia lub pliku w Yala";
+"widget.control.newRecord" = "Nowy wpis";
+"widget.control.newRecord.desc" = "Zapisz wydatek lub wpływ ręcznie";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Inne";

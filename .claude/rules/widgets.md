@@ -10,9 +10,9 @@ paths:
 Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que el yo-futuro no debe romper:
 
 - **Tokens: solo `WidgetDS` y `WidgetColors`.** `WidgetDS` es el espejo de `DS` (mismos nombres y valores) y lo fija
-  `WidgetDesignSystemParityTests`; `WidgetDS.Chart` es lo único propio del widget. El `WDS` viejo queda en los widgets
-  que aún no se rediseñaron (Categorías y Subcategorías, tanda 3); un widget que se toque
-  pasa entero a `WidgetDS`, con rellenos sólidos y el fondo por token, y entra en la lista del mismo test.
+  `WidgetDesignSystemParityTests`; `WidgetDS.Chart` es lo único propio del widget. El `WDS` viejo se retiró en la tanda 3
+  (S35f2) y `elWDSViejoNoVuelve` lo vigila en todo el target. Un widget nuevo usa `WidgetDS`, rellenos sólidos y el fondo
+  por token, y entra en la lista de `losRedisenadosSoloUsanWidgetDS`.
 - **Color de texto, solo los tres AA**: `incomeText`, `alertText`, `accentText` (espejos de `Color.incomeAmount`,
   `overBudgetText` e índigo/`indigoTextOnDark`). La paleta (`hotPink`, `yalaTeal`, colores de categoría) va en rellenos,
   barras y gráficas. En una lista solo el ingreso lleva color.
@@ -44,8 +44,21 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   borra con las demás en `DataWipeService` y `GroupsOnlySignUpPreferenceReset` (`WidgetShowVariationsMirrorTests`).
 - **Una gráfica de barras sin ejes fija su escala con lo que APILA cada día** (`WidgetInsightsLogic.flowChartRange`):
   una devolución da un lado negativo y su barra va al otro lado; con el máximo de cada lado se salía de la gráfica.
+- **Una tarta con leyenda agrupa con `WidgetInsightsLogic.pieLegend`** (hasta 5 filas; con más, 4 y «Otros») y el aro
+  pinta las MISMAS filas: si el aro lee los trozos sueltos y la leyenda los agrupados, no dicen lo mismo. **Lo que los
+  trozos no cubren del total del centro también va a «Otros»**: las subcategorías de la foto solo cuentan lo que tiene
+  subcategoría, y sin eso cinco filas sumaban el 95 % del centro y ningún arco medía su porcentaje (review de S35f2). Si
+  los trozos suman MÁS que el total (una devolución resta del total y no de su trozo), el aro normaliza y los porcentajes
+  pasan del 100: es de la foto, card `widget-category-percentages-use-the-signed-total`. Una fila que no
+  sale de un hex de la foto lleva su color en `WidgetBreakdownItem.fixedColor`: con el hex vacío, `WidgetColors.fill`
+  devuelve el índigo de marca (así salió «Otros» índigo en el aro y gris en la leyenda, lo cazó el banco).
+- **Una acción nueva del Centro de Control** escribe su valor en `pendingControlAction` (`Yala/Shared/ControlCenterIntents.swift`)
+  y necesita su `case` en `AppBootstrapper.checkForPendingControlAction`: un valor sin caso se borra sin hacer nada.
+  Lo fija `ControlCenterNewRecordWiringTests`.
 - **Refresco**: `WidgetRefresh.nextDate(after:)` (medianoche o +4 h). Los datos nuevos llegan antes: la app recarga
   todos los widgets en cada `WidgetDataCache.updateCache`.
 - **Movimiento**: las cifras cambian con `widgetNumericTransition`, que respeta Reducir movimiento.
 - **Capturas antes/después**: `qa/widget-render/` (ver su README). Un cambio visual de un widget se pinta con la foto
-  congelada de `fixtures/` antes y después; el tintado del banco es aproximado.
+  congelada de `fixtures/` antes y después; el tintado del banco es aproximado. Mira también el tamaño del iPhone SE
+  (`m-se`, `l-se`): es donde se corta. Un widget con una pieza de alto fijo (un aro) deja que la leyenda pida su alto y
+  la pieza encoja (`WidgetPieBreakdown`).

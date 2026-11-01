@@ -8,9 +8,8 @@
 //
 //  Lo fija `WidgetDesignSystemParityTests`, que compara cada token con el de `DS`. Si cambias uno allí, cámbialo aquí.
 //
-//  El `WDS` viejo (`WidgetDesignTokens.swift`) sigue para los widgets que aún no se rediseñaron (Categorías y
-//  Subcategorías): cambiar sus valores los movería sin capturas. Lo retira la última
-//  tanda del rediseño.
+//  El `WDS` viejo (`WidgetDesignTokens.swift`) se retiró en la tanda 3 del rediseño (S35f2), con los últimos widgets
+//  que lo usaban (Categorías y Subcategorías).
 //
 
 import SwiftUI
@@ -90,8 +89,12 @@ enum WidgetDS {
         static let donutSize: CGFloat = 104
         static let donutInnerRatio: CGFloat = 0.62
         static let donutAngularInset: CGFloat = 1.5
+        /// Donut de las tartas de Categorías y Subcategorías (grande del iPhone, con el total en el centro).
+        static let donutSizeLarge: CGFloat = 156
         /// Punto de color de una leyenda.
         static let legendDot: CGFloat = 8
+        /// Columna del porcentaje en una leyenda o un ranking: los «%» quedan alineados («8 %» y «31 %»).
+        static let legendPercentWidth: CGFloat = 34
     }
 
     // MARK: - Typography (= DS.Typography)

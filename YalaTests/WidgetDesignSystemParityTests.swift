@@ -125,6 +125,11 @@ struct WidgetDesignSystemParityTests {
         // Tanda 2 (S35f1): Entradas y salidas y Resumen del mes.
         "YalaWidgets/Widgets/CashFlowWidget.swift", "YalaWidgets/Widgets/CashFlowPortraitView.swift",
         "YalaWidgets/Widgets/MonthSummaryWidget.swift", "YalaWidgets/Widgets/MonthSummaryPortraitView.swift",
+        // Tanda 3 (S35f2): Categorías y Subcategorías (ranking y tarta), sus piezas y las dos invitaciones.
+        "YalaWidgets/Widgets/TopCategoriesWidget.swift", "YalaWidgets/Widgets/TopSubcategoriesWidget.swift",
+        "YalaWidgets/Widgets/CategoriesPieWidget.swift", "YalaWidgets/Widgets/SubcategoriesPieWidget.swift",
+        "YalaWidgets/Views/WidgetCategoryBreakdown.swift",
+        "YalaWidgets/Views/WidgetNoDataInviteView.swift", "YalaWidgets/Views/GroupsOnlyInviteView.swift",
     ])
     func losRedisenadosSoloUsanWidgetDS(path: String) throws {
         let code = try Self.source(path).split(separator: "\n")
@@ -135,5 +140,36 @@ struct WidgetDesignSystemParityTests {
                 "\(path) tiene un espaciado, radio o grosor suelto.")
         #expect(!code.contains("Color(.secondarySystemGroupedBackground)"), "\(path) pinta el fondo sin el token.")
         #expect(!code.contains(".gradient"), "\(path) vuelve a los degradados.")
+    }
+
+    /// La tanda 3 (S35f2) retiró el `WDS` viejo: ni su fichero ni una sola llamada en el target de los widgets. Un widget
+    /// nuevo que copie de uno viejo (de otra rama, de un stash) lo vuelve a traer sin que nadie lo vea.
+    @Test func elWDSViejoNoVuelve() throws {
+        let widgets = Self.root.appending(path: "YalaWidgets")
+        #expect(!FileManager.default.fileExists(atPath: widgets.appending(path: "Theme/WidgetDesignTokens.swift").path))
+        let files = try #require(FileManager.default.enumerator(at: widgets, includingPropertiesForKeys: nil))
+        var offenders: [String] = []
+        for case let url as URL in files where url.pathExtension == "swift" {
+            let code = try String(contentsOf: url, encoding: .utf8).split(separator: "\n")
+                .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+                .joined(separator: "\n")
+            if code.contains("WDS.") { offenders.append(url.lastPathComponent) }  // «WidgetDS.» no casa: es «tDS.»
+        }
+        #expect(offenders.isEmpty, "Vuelven al WDS viejo: \(offenders.sorted())")
+    }
+
+    /// La tarta de Categorías y Subcategorías (S35f2) pinta en el aro las MISMAS filas que en la leyenda —agrupadas por
+    /// `pieLegend` con el total del centro— y «Otros» con su gris. Con los trozos sueltos en el aro, o sin el gris
+    /// (`WidgetColors.fill` de un hex vacío da índigo), aro y leyenda dejan de decir lo mismo: lo cazó el banco.
+    @Test func laTartaPintaEnElAroLasFilasDeSuLeyenda() throws {
+        let code = try Self.source("YalaWidgets/Views/WidgetCategoryBreakdown.swift")
+        let body = try #require(code.range(of: "struct WidgetPieBreakdown: View {"))
+        let end = code.range(of: "\nstruct ", range: body.upperBound..<code.endIndex)?.lowerBound ?? code.endIndex
+        let pie = String(code[body.upperBound..<end])
+        #expect(pie.contains("maxRows: Self.maxLegendRows, total: total,"), "La leyenda no agrupa contra el total del centro.")
+        #expect(pie.contains("WidgetDonut(slices: rows.map {"), "El aro no pinta las filas de la leyenda.")
+        #expect(pie.contains("ForEach(rows) { row in"), "La leyenda no pinta las filas agrupadas.")
+        #expect(pie.contains("fixedColor: WidgetColors.othersFill"), "«Otros» pierde su gris.")
+        #expect(code.contains("var color: Color { fixedColor ?? WidgetColors.fill(hex: colorHex) }"))
     }
 }

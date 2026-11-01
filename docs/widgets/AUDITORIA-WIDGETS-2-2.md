@@ -52,7 +52,7 @@ Tanda: **1** = este PR · **2** = card S35f1 · **3** = card S35f2.
 | **Resumen del mes** | XL (iPad) · XLV | Los `Link` tiñen de **azul** los nombres de categorías y presupuestos y los títulos de sección; donut sin importes. | Recomponer con las piezas de la tanda 1; enlaces sin tinte. | 2 |
 | **Categorías / Subcategorías que más gastas** | M | Título truncado («Categorías que más gas…»); porcentaje en el color de la categoría (no pasa AA). | Ranking con barras sólidas e importes legibles. | 3 |
 | **Categorías / Subcategorías (tarta)** | L | Burbujas que se solapan y se cortan («0 %», «38 %» fuera del widget); sin leyenda con importes. | Donut con el total en el centro y leyenda con importe y %. | 3 |
-| **Controles** (voz, foto) | Centro de Control | Correctos. Falta «Nuevo registro» como control. | Sin cambios en esta tanda (ver propuestas). | — |
+| **Controles** (voz, foto) | Centro de Control | Correctos. Falta «Nuevo registro» como control. | Control «Nuevo registro» nuevo. | 3 |
 
 > El formato de los importes en las filas («S/ -150 .00»: símbolo, signo, entero y decimales en gris más pequeños) es el
 > de `AmountText` en toda la app, y los widgets lo copian con `WidgetAmountText`. No es un fallo del widget y se deja.
@@ -71,7 +71,7 @@ Tanda: **1** = este PR · **2** = card S35f1 · **3** = card S35f2.
   nuevos en `WidgetDataSnapshot` (molde de `paymentsMonth`).
 - **Acciones en el sitio con App Intents** (marcar un pago como pagado, repetir un favorito): escriben datos de la app
   — decisión de Jürgen.
-- **Control «Nuevo registro»** en el Centro de Control.
+- ~~**Control «Nuevo registro»** en el Centro de Control.~~ Hecho en la tanda 3.
 
 ## Tanda 1: cómo quedó
 
@@ -111,3 +111,24 @@ Tanda: **1** = este PR · **2** = card S35f1 · **3** = card S35f2.
   el período; la frase de VoiceOver de la comparación sonaba al neto del mes; el signo iba en dos sitios distintos;
   «Todo el tiempo» arrancaba en otro día que Gastos y su promedio diario no coincidía; y faltaban tests de los meses a
   partir de mitad de mes.
+
+## Tanda 3: cómo quedó (S35f2)
+
+- **Categorías / Subcategorías que más gastan** (M): ranking con la insignia sólida de cada una, el importe a tamaño fijo
+  (lo que cede es el nombre), el porcentaje en gris y una barra sólida con su parte del gasto; en tintado se tiñen las
+  barras. El título largo sale si cabe junto al período y, si no, el corto («Categorías»): con «Este mes» cabe «Categorías
+  que más gastan», no cabe «Subcategorías que más gastan» ni el alemán, y con «Todo el tiempo» tampoco el de categorías.
+- **Categorías / Subcategorías en círculo** (L): aro sólido con el total en el centro (primario, con la marca «≈», lo único
+  teñido) y leyenda de hasta cinco filas con importe y porcentaje; con más, las cuatro primeras y «Otros», y el aro se
+  agrupa igual. Lo que las filas no cubren del total también va a «Otros» (en Subcategorías, el gasto sin subcategoría),
+  así que aro, leyenda y centro suman lo mismo. «Sin categoría» es un trozo más. Pie «Actualizado ayer» si la foto no es
+  de hoy. En el grande del iPhone SE el aro encoge y la leyenda entera cabe.
+- **Control «Nuevo registro»** en el Centro de Control: deja `new-transaction` pendiente en el App Group y la app abre el
+  formulario al abrirse, por el mismo camino que el widget y el atajo (hasta hoy esa acción no tenía caso en la app).
+- **Retirado el `WDS` viejo** con `WidgetKPI`, `WidgetHeader`, `WidgetProgressBar`, `MiniTrendChart` y
+  `WidgetSectorChart`; las dos invitaciones pasan a `WidgetDS` con la misma letra.
+- **Lo que cazó la review adversarial y se arregló**: el centro era todo el gasto y las filas de Subcategorías solo lo
+  que tiene subcategoría (cinco filas, el 95 %); la tarta no cabía en el grande del iPhone SE ni el ranking en su
+  mediano; y ningún test fijaba que el aro pinte las filas de la leyenda.
+- **Capturas**: `antes/`, `despues/` (con `m-se` y `l-se`), `despues-frescura/` y `real/` (pantalla de inicio del simulador iPhone 17 Pro,
+  iOS 27.0, y el formulario abierto por la acción del control) en la carpeta de capturas de la sesión.

@@ -143,6 +143,8 @@
 "widget.control.voiceExpense.desc" = "Dictez votre saisie à Yala";
 "widget.control.photoExpense" = "Photo ou fichier";
 "widget.control.photoExpense.desc" = "Enregistre avec une photo ou un fichier dans Yala";
+"widget.control.newRecord" = "Nouvelle entrée";
+"widget.control.newRecord.desc" = "Enregistre une dépense ou un revenu à la main";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Autres";

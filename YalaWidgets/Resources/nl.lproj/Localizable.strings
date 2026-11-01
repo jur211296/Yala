@@ -143,6 +143,8 @@
 "widget.control.voiceExpense.desc" = "Dicteer je boeking aan Yala";
 "widget.control.photoExpense" = "Foto of bestand";
 "widget.control.photoExpense.desc" = "Boek met een foto of bestand in Yala";
+"widget.control.newRecord" = "Nieuwe boeking";
+"widget.control.newRecord.desc" = "Boek een uitgave of inkomst met de hand";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Overige";

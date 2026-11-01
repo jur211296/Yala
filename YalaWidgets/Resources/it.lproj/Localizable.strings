@@ -143,6 +143,8 @@
 "widget.control.voiceExpense.desc" = "Detta la tua registrazione a Yala";
 "widget.control.photoExpense" = "Foto o file";
 "widget.control.photoExpense.desc" = "Registra con una foto o un file in Yala";
+"widget.control.newRecord" = "Nuova registrazione";
+"widget.control.newRecord.desc" = "Registra una spesa o un'entrata a mano";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Altri";

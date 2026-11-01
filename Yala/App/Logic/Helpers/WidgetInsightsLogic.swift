@@ -4,8 +4,8 @@
 //
 //  Lo que los widgets rediseñados en 2.2 deducen de la foto del App Group sin pedirle nada nuevo a la app
 //  (`docs/widgets/AUDITORIA-WIDGETS-2-2.md`, G1): cuánto cambió el saldo en el período, cuánto se gastó contra el
-//  período anterior a la misma altura, cuánto del período de un presupuesto ya pasó, cuándo vence un pago y cómo se
-//  escribe una cifra en la pantalla bloqueada.
+//  período anterior a la misma altura, cuánto del período de un presupuesto ya pasó, cuándo vence un pago, cómo se
+//  escribe una cifra en la pantalla bloqueada y qué filas lleva la leyenda de una tarta.
 //
 //  Membership: Yala (para los tests, `WidgetInsightsLogicTests`) + YalaWidgetsExtension (vía exception set en el
 //  pbxproj, como `WidgetAmountSplitter`). Solo trabaja con fechas y números: los DTO del widget viven duplicados en
@@ -238,6 +238,51 @@ nonisolated enum WidgetInsightsLogic {
         case 1: return .yesterday
         default: return .date
         }
+    }
+
+    // MARK: - Reparto en tarta
+
+    /// Lo que suma la fila «Otros» de una leyenda: importe, porcentaje del total y cuántos trozos junta.
+    struct PieOthers: Equatable {
+        let amount: Double
+        let percentage: Double
+        let count: Int
+    }
+
+    /// Lo que enseña una tarta con leyenda: los trozos con fila propia y, si no caben todos, «Otros».
+    struct PieLegend<Item> {
+        let shown: [Item]
+        let others: PieOthers?
+    }
+
+    /// Hasta `maxRows` filas. Con más trozos, los `maxRows - 1` primeros y una fila «Otros» con la suma del resto, como
+    /// la tarta del Panel. El aro se agrupa igual, así que aro y leyenda dicen lo mismo. Los trozos llegan ordenados de
+    /// mayor a menor (así los escribe la app) y aquí no se reordenan; el «Sin categoría» es uno más.
+    ///
+    /// `total` es la cifra que el widget enseña en el centro (el gasto del período). Lo que los trozos no cubren va
+    /// también a «Otros»: en Subcategorías, el gasto sin subcategoría; en Categorías, lo que pasa del tope de filas que
+    /// escribe la app. Sin eso el aro repartía el círculo entre una parte del total y sus arcos no medían su porcentaje
+    /// (lo cazó la review de S35f2: cinco filas que sumaban el 95 % del centro). El porcentaje de «Otros» se mide contra
+    /// `total`, como el de los trozos.
+    static func pieLegend<Item>(
+        _ items: [Item], maxRows: Int, total: Double, amount: (Item) -> Double, percentage: (Item) -> Double
+    ) -> PieLegend<Item> {
+        let rows = max(maxRows, 2)
+        let covered = items.reduce(0) { $0 + amount($1) }
+        // Una milésima del total es redondeo de la app, no gasto sin trozo.
+        let uncovered = total - covered > total * 0.001 ? total - covered : 0
+        let needsOthers = items.count > rows || (uncovered > 0 && items.count >= rows)
+        let shown = needsOthers ? Array(items.prefix(rows - 1)) : items
+        let rest = items.dropFirst(shown.count)
+        let othersAmount = rest.reduce(0) { $0 + amount($1) } + uncovered
+        guard othersAmount > 0 else { return PieLegend(shown: shown, others: nil) }
+        let othersPercentage = total > 0
+            ? othersAmount / total * 100
+            : rest.reduce(0) { $0 + percentage($1) }
+        return PieLegend(
+            shown: shown,
+            others: PieOthers(amount: othersAmount, percentage: othersPercentage, count: rest.count)
+        )
     }
 
     // MARK: - Pantalla bloqueada

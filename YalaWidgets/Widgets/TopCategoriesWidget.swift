@@ -2,8 +2,7 @@
 //  TopCategoriesWidget.swift
 //  YalaWidgets
 //
-//  Widget showing top 3 expense categories.
-//  Supports Medium size with progress bars.
+//  Mediano: las tres categorías que más gastan, en ranking con barras.
 //
 
 import WidgetKit
@@ -68,11 +67,8 @@ struct TopCategoriesWidgetProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: TopCategoriesWidgetIntent, in context: Context) async -> Timeline<TopCategoriesEntry> {
         let entry = createEntry(for: configuration)
-
-        // Refresh every 4 hours
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        // La política común (medianoche o +4 h): a medianoche «Este mes» puede pasar a ser otro.
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry(for configuration: TopCategoriesWidgetIntent) -> TopCategoriesEntry {
@@ -97,130 +93,36 @@ struct TopCategoriesWidgetProvider: AppIntentTimelineProvider {
 
 // MARK: - Widget View
 
+/// Las tres que más gastan, en ranking: insignia sólida, nombre, importe y porcentaje, y la barra de su parte del gasto
+/// (tanda 3 del rediseño 2.2; las piezas, en `WidgetCategoryBreakdown.swift`).
 struct TopCategoriesWidgetView: View {
     var entry: TopCategoriesEntry
 
+    private var items: [WidgetBreakdownItem] {
+        entry.categories.map {
+            WidgetBreakdownItem(id: $0.id, name: $0.name, iconName: $0.iconName, colorHex: $0.colorHex,
+                                amount: $0.amount, percentage: $0.percentage)
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
-            // Header
-            HStack {
-                WidgetHeader(
-                    title: String(localized: "widget.ui.topCategories", bundle: .main),
-                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
-                    icon: "chart.bar.fill",
-                    inline: true
-                )
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+            WidgetBreakdownHeader(
+                title: String(localized: "widget.ui.topCategories", bundle: .main),
+                shortTitle: String(localized: "widget.ui.categories", bundle: .main),
+                systemImage: "chart.bar.fill",
+                period: entry.period.toWidgetPeriod.localizedDisplayName
+            )
 
             if entry.categories.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: WDS.Spacing.xs) {
-                        Image(systemName: "tray")
-                            .font(.title2) // A11Y-DT: widget empty state icon
-                            .foregroundStyle(.tertiary)
-                        Text("widget.ui.noExpenses", bundle: .main)
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.tertiary)
-                    }
-                    Spacer()
-                }
-                Spacer()
+                WidgetBreakdownEmpty()
             } else {
-                // Category list
-                ForEach(entry.categories, id: \.id) { category in
-                    CategoryRow(
-                        category: category,
-                        currencyCode: entry.currencyCode,
-                        displayFormat: entry.currencyDisplayFormat
-                    )
-                }
-
-                Spacer(minLength: 0)
+                WidgetRankingList(items: items, currencyCode: entry.currencyCode, displayFormat: entry.currencyDisplayFormat)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: "statistics/categories"))
     }
-}
-
-// MARK: - Category Row
-
-struct CategoryRow: View {
-    let category: WidgetCategory
-    let currencyCode: String
-    let displayFormat: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-            // Single line: Icon + Name + Amount + %
-            HStack(spacing: WDS.Spacing.sm) {
-                // Compact icon badge
-                ZStack {
-                    Circle()
-                        .fill(categoryColor.opacity(0.2))
-                        .frame(width: WDS.ListItem.iconSizeCompact,
-                               height: WDS.ListItem.iconSizeCompact)
-
-                    Image(systemName: category.iconName)
-                        .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
-                        .foregroundStyle(categoryColor)
-                        .widgetAccentable()
-                }
-
-                // Name
-                Text(category.name)
-                    .font(WDS.Typography.label)
-                    .lineLimit(1)
-
-                Spacer()
-
-                // Amount — SIN marca «≈» a propósito: es un SUBCONJUNTO del gasto del período
-                // y su calculador (`buildTopCategories`) no acumula la calidad de las conversiones
-                // que lo forman. Heredar la señal del total diría que ESTA categoría es dudosa sin
-                // haberlo medido, y la incertidumbre puede estar entera en otra.
-                // Ticket: `fx-category-totals-unmarked`.
-                WidgetAmountText(
-                    value: category.amount,
-                    currencyCode: currencyCode,
-                    displayFormat: displayFormat,
-                    font: WDS.Typography.value,
-                    secondaryFont: WDS.Typography.valueSecondary,
-                    tint: .secondary
-                )
-
-                // Percentage inline
-                Text("\(Int(category.percentage))%")
-                    .font(WDS.Typography.labelSmall)
-                    .foregroundStyle(categoryColor)
-                    .frame(width: WDS.ListItem.percentageWidth, alignment: .trailing)
-                    .widgetAccentable()
-            }
-
-            // Progress bar aligned with text (left padding = iconSize + spacing)
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                        .fill(Color.gray.opacity(0.15))
-
-                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                        .fill(categoryColor)
-                        .frame(width: geo.size.width * CGFloat(min(category.percentage, 100) / 100))
-                        .widgetAccentable()
-                }
-            }
-            .frame(height: WDS.Progress.heightCompact)
-            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
-        }
-    }
-
-    private var categoryColor: Color {
-        Color(hex: category.colorHex)
-    }
-
 }
 
 // MARK: - Widget Definition
@@ -237,7 +139,7 @@ struct TopCategoriesWidget: Widget {
             TopCategoriesWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(WidgetColors.cardBackground, for: .widget)
         }
         .configurationDisplayName("widget.gallery.topCategories")
         .description("widget.gallery.topCategories.desc")

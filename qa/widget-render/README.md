@@ -34,7 +34,7 @@ que la base no tiene, compílala con el catálogo de esa base.
 
 ## Nombres
 
-`<widget>-<tamaño>-<modo>.png` · tamaño `s m l xl xlv circ rect` · modo `claro oscuro standby tintado`.
+`<widget>-<tamaño>-<modo>.png` · tamaño `s m l xl xlv circ rect`, y `m-se l-se` (iPhone SE, 321 × 148 y 321 × 324) en los de Categorías · modo `claro oscuro standby tintado`.
 
 ## Lo que imita y lo que no
 
