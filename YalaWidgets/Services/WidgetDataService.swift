@@ -299,8 +299,15 @@ enum WidgetDataService {
             return nil
         }
 
+        // Un proveedor pregunta a la foto varias veces por entrada (saldo, curva, divisa, formato, fecha…) y cada
+        // pregunta la decodificaba entera. Se decodifica una vez por contenido: si los bytes no cambiaron, la de antes.
+        if let cached = SnapshotMemo.value(for: data) {
+            return cached
+        }
         do {
-            return try JSONDecoder().decode(WidgetDataSnapshot.self, from: data)
+            let snapshot = try JSONDecoder().decode(WidgetDataSnapshot.self, from: data)
+            SnapshotMemo.store(snapshot, for: data)
+            return snapshot
         } catch {
             #if DEBUG
             print("WidgetDataService: Error decoding snapshot: \(error)")
@@ -423,17 +430,19 @@ enum WidgetDataService {
     /// Returns trend data appropriate for the given period
     /// - Parameter period: The period to get trend data for
     /// - Returns: Array of trend points at appropriate granularity
-    static func getTrendData(for period: WidgetPeriod) -> [WidgetTrendPoint] {
+    /// - Parameter asOf: el «ahora» del período; `nil` = el reloj. Los widgets de 2.2 pasan la hora de la foto, que es
+    ///   cuando se calcularon los puntos.
+    static func getTrendData(for period: WidgetPeriod, asOf: Date? = nil) -> [WidgetTrendPoint] {
         guard let trendData = getTrendData() else { return [] }
 
         switch period {
         case .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
             // Short/medium periods: use daily points
-            return filterPoints(trendData.dailyPoints, for: period)
+            return filterPoints(trendData.dailyPoints, for: period, asOf: asOf)
 
         case .thisYear, .lastYear:
             // Long periods: use weekly points
-            return filterPoints(trendData.weeklyPoints, for: period)
+            return filterPoints(trendData.weeklyPoints, for: period, asOf: asOf)
 
         case .allTime:
             // All time: use monthly points
@@ -442,8 +451,8 @@ enum WidgetDataService {
     }
 
     /// Filter points to match the requested period
-    private static func filterPoints(_ points: [WidgetTrendPoint], for period: WidgetPeriod) -> [WidgetTrendPoint] {
-        let interval = period.dateInterval()
+    private static func filterPoints(_ points: [WidgetTrendPoint], for period: WidgetPeriod, asOf: Date?) -> [WidgetTrendPoint] {
+        let interval = asOf.map { period.dateInterval(now: $0) } ?? period.dateInterval()
         return points.filter { interval.contains($0.date) }
     }
 
@@ -731,6 +740,30 @@ enum WidgetDataService {
     }
 }
 
+// MARK: - Memo de la foto
+
+/// La última foto decodificada y los bytes de los que salió. Compara los bytes enteros (unos cientos de KB, mucho más
+/// barato que decodificarlos): con otra foto en el App Group, se vuelve a decodificar. Los proveedores pueden correr a la
+/// vez, de ahí el candado.
+private enum SnapshotMemo {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var data: Data?
+    nonisolated(unsafe) private static var snapshot: WidgetDataSnapshot?
+
+    static func value(for bytes: Data) -> WidgetDataSnapshot? {
+        lock.lock()
+        defer { lock.unlock() }
+        return data == bytes ? snapshot : nil
+    }
+
+    static func store(_ value: WidgetDataSnapshot, for bytes: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        data = bytes
+        snapshot = value
+    }
+}
+
 // MARK: - Filter Types
 
 enum ScheduledPaymentFilter: String, CaseIterable {
@@ -780,9 +813,12 @@ enum WidgetPeriod: String, CaseIterable, Codable {
 
     /// Returns the date interval for this period
     /// Matches DetailPeriod.dateInterval() exactly for consistency with main app
-    func dateInterval() -> DateInterval {
+    ///
+    /// `now`: por defecto, el reloj. Los widgets rediseñados en 2.2 pasan la hora de la FOTO (`lastUpdated`): las cifras
+    /// que leen se calcularon entonces, y medir el período con el reloj de ahora las descuadraba en cuanto la foto era de
+    /// ayer (a medianoche del día 1, «Este mes» era el mes nuevo y la cifra la del anterior).
+    func dateInterval(now: Date = Date()) -> DateInterval {
         let calendar = WidgetDataService.widgetConfiguredCalendar()
-        let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
         // 23:59:59 de hoy, como `DetailPeriod.dateInterval()`: con la medianoche de mañana, lo fechado mañana a las 00:00
         // contaba en el período en curso (`DateInterval` es cerrado).

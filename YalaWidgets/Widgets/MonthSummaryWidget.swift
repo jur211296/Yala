@@ -257,7 +257,7 @@ struct MonthSummaryWidgetView: View {
                 MonthSummaryEmptyState(icon: "chart.pie", text: "widget.ui.noBudgets")
             } else {
                 ForEach(entry.budgets.prefix(MonthSummaryEntry.budgetLimit), id: \.id) { budget in
-                    BudgetRowView(budget: budget, displayFormat: entry.currencyDisplayFormat)
+                    MonthSummaryBudgetRow(budget: budget, displayFormat: entry.currencyDisplayFormat)
                 }
             }
 
@@ -267,6 +267,90 @@ struct MonthSummaryWidgetView: View {
 }
 
 // MARK: - Piezas compartidas por los dos tamaños
+
+
+/// La fila de presupuesto de ANTES del rediseño 2.2, que solo usa el Resumen del mes hasta su tanda (S35f1): así ese
+/// widget no cambia sin sus capturas. La retira esa tanda.
+struct MonthSummaryBudgetRow: View {
+    let budget: WidgetBudget
+    let displayFormat: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
+            // Row 1: Icon + Name + %
+            HStack(spacing: WDS.Spacing.sm) {
+                // Icon badge compacto
+                ZStack {
+                    Circle()
+                        .fill(budgetColor.opacity(0.2))
+                        .frame(width: WDS.ListItem.iconSizeCompact,
+                               height: WDS.ListItem.iconSizeCompact)
+
+                    Image(systemName: budget.iconName ?? "chart.pie.fill")
+                        .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
+                        .foregroundStyle(budgetColor)
+                        .widgetAccentable()
+                }
+
+                Text(budget.name)
+                    .font(WDS.Typography.label)
+                    .lineLimit(1)
+
+                Spacer()
+
+                // Spent/Limit compact con jerarquía visual: símbolo subordinado.
+                // Caso especial — el formato compuesto "S/720/800" no encaja en
+                // WidgetAmountText (que asume un solo número). HStack manual de 2 runs.
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text(currencySymbol)
+                        .font(WDS.Typography.valueSecondary)
+                        .foregroundStyle(.tertiary)
+                    Text(amountRatio)
+                        .font(WDS.Typography.tiny)
+                        .foregroundStyle(.secondary)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+
+                Text("\(Int(budget.percentUsed))%")
+                    .font(WDS.Typography.labelSmall)
+                    .foregroundStyle(progressColor)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .widgetAccentable()
+            }
+
+            // Row 2: Progress bar alineada con texto
+            WidgetProgressBar.budget(
+                percentUsed: budget.percentUsed,
+                height: WDS.Progress.heightCompact
+            )
+            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
+        }
+    }
+
+    private var budgetColor: Color {
+        Color(hex: budget.colorHex ?? "#6366F1")
+    }
+
+    private var progressColor: Color {
+        WidgetColors.forBudget(percentUsed: budget.percentUsed)
+    }
+
+    private var currencySymbol: String {
+        displayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: budget.currencyCode)
+            : budget.currencyCode
+    }
+
+    private var amountRatio: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        let spent = formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
+        let limit = formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
+        return "\(spent)/\(limit)"
+    }
+}
+
 
 /// Una categoría de la leyenda: punto de color, nombre y porcentaje.
 struct MonthSummaryCategoryRow: View {

@@ -1,6 +1,6 @@
 ---
 name: capturar-widgets-por-galeria
-description: Capturar widgets en la galería/inicio del simulador cuesta ~15 swipes por widget y la galería vuelve a la página 1 en cada «Agregar»; planificar el recorrido antes.
+description: Para el antes/después de un widget, el banco qa/widget-render (sin galería); la galería real solo para comprobar unos pocos, con un script que busca por etiqueta y proporción.
 metadata:
   type: feedback
 ---
@@ -17,3 +17,11 @@ Añadir widgets de Yala Dev en el simulador (iOS 27) pasa por la galería, que p
 - **Los swipes del pager saltan páginas (1 o 2 al azar)**: contar swipes o títulos añadió un widget equivocado. Lo fiable es leer el botón de la vista previa (`Button` con label «Yala Dev, <título>»): su alto distingue el tamaño (164 pequeño, 146 mediano, 325 grande, **329 extragrande vertical**). Script de ida y vuelta por título + alto: así se llega siempre.
 - **Reinstalar el `.app` (o relanzar la app con otros argumentos) BORRÓ los widgets de la pantalla de inicio** dos veces. Compila lo definitivo antes de añadirlos y captura sin reinstalar entre medias.
 - Un swipe que cae sobre un widget lo abre: la app arranca sin `-uitest` (Welcome) y reescribe la foto. Swipea por encima o por debajo del widget.
+
+**Desde el 2026-10-31 (S35f) el antes/después NO pasa por la galería**: `qa/widget-render/` pinta todos los widgets
+fuera de WidgetKit con la foto congelada (90 capturas en ~1 min). La galería queda para comprobar unos pocos en la
+pantalla de inicio real (tintado de verdad): un script con `axe` que pulsa largo en un hueco, «Editar» → «Agregar
+widget», busca «Yala» y recorre el pager leyendo la etiqueta «Yala Dev, <título>» y la PROPORCIÓN de la vista previa
+(va escalada: pequeño 164 × 164, mediano 312 × 147, grande 312 × 326), con swipes de 360→60 en y=560: ~20 s por
+widget y sin errores. El panel «Personalizar» (Original/Obscuro/Transparente/Teñido) se toca por coordenadas: no sale
+en `describe-ui`.

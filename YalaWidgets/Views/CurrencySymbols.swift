@@ -10,6 +10,11 @@ import Foundation
 
 /// Helper to get currency symbols without pulling in full CurrencyUtils
 enum CurrencySymbols {
+    /// Lo que va delante de una cifra según la preferencia de la persona: el símbolo («S/») o el código («PEN»).
+    static func display(for code: String, format: String) -> String {
+        format == "symbol" ? symbol(for: code) : code
+    }
+
     /// Returns the symbol for a currency code
     static func symbol(for code: String) -> String {
         switch code.uppercased() {

@@ -171,3 +171,26 @@
 "widget.ui.net" = "Netto";
 "widget.ui.byAccount" = "Według konta";
 "widget.ui.leftToPayThisMonth" = "Do zapłaty w tym miesiącu";
+
+/* Rediseño de los widgets 2.2 (S35f, docs/widgets/AUDITORIA-WIDGETS-2-2.md) */
+"widget.budgets.remaining" = "Zostało";
+"widget.budgets.over" = "Przekroczono o";
+"widget.budgets.spentOfLimit" = "%1$@ z %2$@";
+"widget.freshness.yesterday" = "Zaktualizowano wczoraj";
+"widget.freshness.onDate" = "Zaktualizowano %@";
+"widget.balance.change.a11y" = "Zmiana salda, %2$@: %1$@";
+"widget.expense.vsPrevious" = "vs %@";
+"widget.expense.previousToDate" = "Do tego dnia (%1$@): %2$@";
+"widget.expense.previousToDate.year" = "Do tego dnia (%1$@): %2$@";
+"widget.expense.perDay" = "%@ dziennie";
+"widget.expense.comparison.a11y" = "%1$@ w porównaniu z %2$@ do tego dnia";
+"widget.budgets.exceeded.one" = "1 przekroczony";
+"widget.budgets.exceeded.other" = "Przekroczone: %d";
+"widget.payments.inDays" = "Za %d dni";
+"widget.payments.leftShort" = "Pozostało %@";
+"widget.ui.yesterday" = "Wczoraj";
+"widget.records.emptyHint" = "Stuknij +, aby dodać pierwszy";
+"widget.quick.title" = "Dodaj";
+"widget.quick.manual" = "Ręcznie";
+"widget.quick.voice" = "Głosem";
+"widget.quick.photo" = "Zdjęciem";

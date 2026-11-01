@@ -12,40 +12,45 @@ import AppIntents
 
 // MARK: - Shared Helpers
 
-/// Compact amount formatting for Lock Screen widgets
+/// La cifra compacta de la pantalla bloqueada («79,4K» / «79.4K»), con el separador decimal del idioma
+/// (`WidgetInsightsLogic.compactAmount`; hasta 2.2 salía siempre un punto).
 ///
-/// **Sin marca «≈» a propósito.** No imprime divisa —devuelve «3,2K», «1,5M» o la cifra pelada— y
-/// el «≈» del repo se antepone al SÍMBOLO de la divisa, no al número. En un widget de pantalla de
-/// bloqueo, donde el ancho es de dos o tres glifos y el propio formato ya redondea a un decimal de
-/// millar, un «≈» delante se lee como parte de la cifra y compite por el espacio con ella. Que el
+/// **Sin marca «≈» a propósito.** No imprime divisa y el «≈» del repo se antepone al SÍMBOLO de la divisa, no al número.
+/// En un aro de dos o tres glifos, un «≈» delante se lee como parte de la cifra y compite por el espacio con ella. Que el
 /// número sea aproximado se ve en el widget grande del mismo dato, que sí trae divisa.
 private func formatCompact(_ value: Double) -> String {
-    let absValue = abs(value)
-    let sign = value < 0 ? "-" : ""
-    if absValue >= 1_000_000 {
-        return String(format: "%@%.1fM", sign, absValue / 1_000_000)
-    }
-    if absValue >= 1000 {
-        return String(format: "%@%.1fK", sign, absValue / 1000)
-    }
-    return String(format: "%@%.0f", sign, absValue)
+    WidgetInsightsLogic.compactAmount(value, locale: .current)
 }
 
-/// Relative date label for payments
-private func relativeDateLabel(for date: Date, isOverdue: Bool) -> String {
-    if isOverdue {
-        return String(localized: "widget.ui.overdue", bundle: .main)
+/// El aro de la pantalla bloqueada: fondo del sistema, icono arriba, la cifra y su rótulo.
+private struct AccessoryFigure: View {
+    let systemImage: String
+    let value: String
+    let label: String
+
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: WidgetDS.Spacing.none) {
+                Image(systemName: systemImage)
+                    .font(WidgetDS.Typography.captionSmall)
+                Text(value)
+                    .font(WidgetDS.Typography.headline)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .widgetNumericTransition()
+                    .widgetAccentable()
+                Text(label)
+                    .font(WidgetDS.Typography.labelTiny)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .padding(.horizontal, WidgetDS.Spacing.xs)
+        }
+        .accessibilityElement(children: .combine)
     }
-    let calendar = Calendar.current
-    if calendar.isDateInToday(date) {
-        return String(localized: "widget.ui.today", bundle: .main)
-    }
-    if calendar.isDateInTomorrow(date) {
-        return String(localized: "widget.ui.tomorrow", bundle: .main)
-    }
-    let formatter = DateFormatter()
-    formatter.setLocalizedDateFormatFromTemplate("dMMM")
-    return formatter.string(from: date)
 }
 
 // MARK: - 1. Accessory Balance Widget (Circular)
@@ -78,8 +83,7 @@ struct AccessoryBalanceProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<AccessoryBalanceEntry> {
         let entry = createEntry()
-        let refresh = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-        return Timeline(entries: [entry], policy: .after(refresh))
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry() -> AccessoryBalanceEntry {
@@ -101,19 +105,13 @@ struct AccessoryBalanceWidgetView: View {
     let entry: AccessoryBalanceEntry
 
     var body: some View {
-        VStack(spacing: 0) {
-            Image(systemName: "creditcard.fill")
-                .font(WDS.Typography.subtitle)
-            Text(formatCompact(entry.amount))
-                .font(.system(.title3, design: .rounded).bold())
-                .minimumScaleFactor(0.5)
-                .widgetAccentable()
-            Text(entry.isExpensesOnly
-                 ? String(localized: "widget.ui.expenses", bundle: .main)
-                 : String(localized: "widget.ui.available", bundle: .main))
-                .font(.system(.caption2))
-                .foregroundStyle(.secondary)
-        }
+        AccessoryFigure(
+            systemImage: entry.isExpensesOnly ? "arrow.down.right" : "wallet.bifold.fill",
+            value: formatCompact(entry.amount),
+            label: entry.isExpensesOnly
+                ? String(localized: "widget.ui.expenses", bundle: .main)
+                : String(localized: "widget.ui.available", bundle: .main)
+        )
         .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 }
@@ -163,8 +161,7 @@ struct AccessoryExpenseProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<AccessoryExpenseEntry> {
         let entry = createEntry()
-        let refresh = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-        return Timeline(entries: [entry], policy: .after(refresh))
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry() -> AccessoryExpenseEntry {
@@ -178,17 +175,11 @@ struct AccessoryExpenseWidgetView: View {
     let entry: AccessoryExpenseEntry
 
     var body: some View {
-        VStack(spacing: 0) {
-            Image(systemName: "arrow.down.circle.fill")
-                .font(WDS.Typography.subtitle)
-            Text(formatCompact(entry.expense))
-                .font(.system(.title3, design: .rounded).bold())
-                .minimumScaleFactor(0.5)
-                .widgetAccentable()
-            Text(String(localized: "widget.ui.expenses", bundle: .main))
-                .font(.system(.caption2))
-                .foregroundStyle(.secondary)
-        }
+        AccessoryFigure(
+            systemImage: "arrow.down.right",
+            value: formatCompact(entry.expense),
+            label: String(localized: "widget.ui.expenses", bundle: .main)
+        )
         .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.expenses))
     }
 }
@@ -221,9 +212,16 @@ struct AccessoryBudgetEntry: TimelineEntry {
     let budgetName: String?
     let percentUsed: Double
     let isPlaceholder: Bool
+    /// Lo que queda (negativo = te pasaste), en la divisa del presupuesto.
+    var remaining: Double = 0
+    var currencyCode: String = "PEN"
+    var currencyDisplayFormat: String = "symbol"
+    var periodType: String = "monthly"
+    var iconName: String? = nil
 
     static var placeholder: AccessoryBudgetEntry {
-        AccessoryBudgetEntry(date: Date(), budgetName: "Comida", percentUsed: 75, isPlaceholder: true)
+        AccessoryBudgetEntry(date: Date(), budgetName: "Comida", percentUsed: 75, isPlaceholder: true,
+                             remaining: 200, iconName: "fork.knife")
     }
 }
 
@@ -239,8 +237,7 @@ struct AccessoryBudgetProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<AccessoryBudgetEntry> {
         let entry = createEntry()
-        let refresh = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-        return Timeline(entries: [entry], policy: .after(refresh))
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry() -> AccessoryBudgetEntry {
@@ -248,31 +245,70 @@ struct AccessoryBudgetProvider: AppIntentTimelineProvider {
         guard let top = budgets.first else {
             return AccessoryBudgetEntry(date: Date(), budgetName: nil, percentUsed: 0, isPlaceholder: false)
         }
-        return AccessoryBudgetEntry(date: Date(), budgetName: top.name, percentUsed: top.percentUsed, isPlaceholder: false)
+        return AccessoryBudgetEntry(
+            date: Date(),
+            budgetName: top.name,
+            percentUsed: top.percentUsed,
+            isPlaceholder: false,
+            remaining: WidgetInsightsLogic.budgetRemaining(limit: top.limitAmount, spent: top.spentAmount),
+            currencyCode: top.currencyCode,
+            currencyDisplayFormat: WidgetDataService.getCurrencyDisplayFormat(),
+            periodType: top.periodType,
+            iconName: top.iconName
+        )
     }
 }
 
 struct AccessoryBudgetWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     let entry: AccessoryBudgetEntry
+
+    private var isOver: Bool { entry.remaining < 0 }
+    private var percentText: String { (entry.percentUsed / 100).formatted(.percent.precision(.fractionLength(0))) }
 
     var body: some View {
         if let name = entry.budgetName {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .font(.headline)
-                    .lineLimit(1)
-                ProgressView(value: min(entry.percentUsed / 100, 1.0))
-                    .widgetAccentable()
-                Text("\(Int(entry.percentUsed))%")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            if family == .accessoryCircular {
+                Gauge(value: min(max(entry.percentUsed / 100, 0), 1)) {
+                    Image(systemName: entry.iconName ?? "chart.pie.fill")
+                } currentValueLabel: {
+                    Text(percentText)
+                        .monospacedDigit()
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                .widgetAccentable()
+                .accessibilityLabel(Text(name))
+            } else {
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.xxs) {
+                    Text(name)
+                        .font(WidgetDS.Typography.headline)
+                        .lineLimit(1)
+                    Text((isOver ? String(localized: "widget.budgets.over", bundle: .main)
+                                 : String(localized: "widget.budgets.remaining", bundle: .main))
+                         + " " + WidgetAmountSplitter.split(
+                            value: abs(entry.remaining),
+                            symbol: CurrencySymbols.display(for: entry.currencyCode, format: entry.currencyDisplayFormat),
+                            fractionDigits: 0).accessibilityFormatted)
+                        .font(WidgetDS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    WidgetMeterBar(
+                        fraction: entry.percentUsed / 100,
+                        color: .primary,
+                        pace: isOver ? nil : WidgetInsightsLogic.elapsedFraction(
+                            periodType: entry.periodType, now: entry.date, calendar: .current)
+                    )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         } else {
             // Ninguno creado: lo dice y el toque abre uno nuevo (UX 2.2 · L15-2).
             Text(String(localized: "widget.empty.noBudgetsYet", bundle: .main))
-                .font(.headline)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
+                .font(family == .accessoryCircular ? WidgetDS.Typography.labelTiny : WidgetDS.Typography.headline)
+                .lineLimit(family == .accessoryCircular ? 3 : 2)
+                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(family == .accessoryCircular ? .center : .leading)
                 .foregroundStyle(.secondary)
         }
     }
@@ -294,7 +330,7 @@ struct AccessoryBudgetWidget: Widget {
         }
         .configurationDisplayName("widget.gallery.accessoryBudget")
         .description("widget.gallery.accessoryBudget.desc")
-        .supportedFamilies([.accessoryRectangular])
+        .supportedFamilies([.accessoryRectangular, .accessoryCircular])
     }
 }
 
@@ -306,7 +342,7 @@ struct AccessoryNextPaymentIntent: WidgetConfigurationIntent {
 }
 
 struct AccessoryNextPaymentEntry: TimelineEntry {
-    let date: Date
+    var date: Date
     let paymentName: String?
     let amount: Double
     let currencyCode: String
@@ -314,6 +350,9 @@ struct AccessoryNextPaymentEntry: TimelineEntry {
     let isOverdue: Bool
     let iconName: String?
     let isPlaceholder: Bool
+    var isIncome: Bool = false
+    var isVariableAmount: Bool = false
+    var currencyDisplayFormat: String = "symbol"
 
     static var placeholder: AccessoryNextPaymentEntry {
         AccessoryNextPaymentEntry(
@@ -341,8 +380,12 @@ struct AccessoryNextPaymentProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: Intent, in context: Context) async -> Timeline<AccessoryNextPaymentEntry> {
         let entry = createEntry()
-        let refresh = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-        return Timeline(entries: [entry], policy: .after(refresh))
+        // A medianoche cambian «Hoy», «Mañana» y «En N días».
+        return WidgetRefresh.dayAwareTimeline(entry) { midnight in
+            var next = entry
+            next.date = midnight
+            return next
+        }
     }
 
     private func createEntry() -> AccessoryNextPaymentEntry {
@@ -361,7 +404,10 @@ struct AccessoryNextPaymentProvider: AppIntentTimelineProvider {
             nextDueDate: next.nextDueDate,
             isOverdue: next.isOverdue,
             iconName: next.iconName,
-            isPlaceholder: false
+            isPlaceholder: false,
+            isIncome: next.isIncome,
+            isVariableAmount: next.isVariableAmount ?? false,
+            currencyDisplayFormat: WidgetDataService.getCurrencyDisplayFormat()
         )
     }
 }
@@ -371,31 +417,37 @@ struct AccessoryNextPaymentWidgetView: View {
 
     var body: some View {
         if let name = entry.paymentName {
-            HStack(spacing: 4) {
-                Image(systemName: entry.iconName ?? "calendar.badge.clock")
-                    .font(.title3)
+            HStack(spacing: WidgetDS.Spacing.xs) {
+                Image(systemName: entry.iconName ?? "calendar")
+                    .font(WidgetDS.Typography.headline)
                     .widgetAccentable()
 
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
                     Text(name)
-                        .font(.headline)
+                        .font(WidgetDS.Typography.headline)
                         .lineLimit(1)
-                    HStack(spacing: 4) {
-                        Text(formatCompact(entry.amount))
-                            .font(.body)
-                        Text("·")
-                            .foregroundStyle(.secondary)
-                        Text(relativeDateLabel(for: entry.nextDueDate, isOverdue: entry.isOverdue))
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.secondary)
-                    }
-                    .lineLimit(1)
+                    Text(WidgetAmountSplitter.split(
+                        value: entry.isIncome ? abs(entry.amount) : -abs(entry.amount),
+                        symbol: CurrencySymbols.display(for: entry.currencyCode, format: entry.currencyDisplayFormat),
+                        fractionDigits: 2,
+                        forceSign: true,
+                        isEstimate: entry.isVariableAmount).accessibilityFormatted)
+                        .font(WidgetDS.Typography.caption)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(WidgetDateText.due(entry.nextDueDate, isOverdue: entry.isOverdue, now: entry.date))
+                        .font(WidgetDS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
+                Spacer(minLength: 0)
             }
+            .accessibilityElement(children: .combine)
         } else {
             // Ninguno creado: «Sin pagos pendientes» se leía como «estás al día» (UX 2.2 · L15-2).
             Text(String(localized: "widget.empty.noPaymentsYet", bundle: .main))
-                .font(.headline)
+                .font(WidgetDS.Typography.headline)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .foregroundStyle(.secondary)

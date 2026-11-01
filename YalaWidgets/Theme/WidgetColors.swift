@@ -90,4 +90,45 @@ enum WidgetColors {
 
     /// Expense trend line
     static let trendExpense = expense
+
+    // MARK: - Rediseño 2.2 (espejo de la app, `WidgetDesignSystemParityTests`)
+    //
+    // La paleta de arriba es para RELLENOS (barras, gráficas, insignias): como texto sobre la tarjeta blanca no llega
+    // al AA. El texto con color usa los tres de abajo, los mismos de la app.
+
+    /// Fondo de la tarjeta: el `card` del tema por defecto de la app (blanco en claro, #1C1C1E en oscuro), que es
+    /// exactamente el gris agrupado secundario del sistema.
+    static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground) // A11Y-DM: color de sistema, adapta claro/oscuro
+
+    /// Ingreso como TEXTO (`Color.incomeAmount`): #0F7A80 en claro (5,1:1 sobre blanco) y el turquesa de marca en oscuro.
+    static let incomeText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "00C2CB")) : UIColor(Color(hex: "0F7A80"))
+    })
+
+    /// «Te pasaste» y lo que avisa como TEXTO (`Color.overBudgetText`): #D6006B en claro (5,2:1), el rosa de marca en
+    /// oscuro.
+    static let alertText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "FF0080")) : UIColor(Color(hex: "D6006B"))
+    })
+
+    /// Índigo como TEXTO o icono sobre la tarjeta (`Color.electricIndigo` en claro, 4,61:1) y, en oscuro, el índigo
+    /// claro de los temas oscuros (#818CF8): el de marca da 3,2:1 sobre #1C1C1E.
+    static let accentText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color(hex: "818CF8")) : UIColor(Color(hex: "6063F1"))
+    })
+
+    /// Rellenos sólidos con texto blanco encima (los de la app): índigo profundo (`selectedIndigoFill`, 8,8:1), rosa
+    /// profundo (`emphasisPinkFill`, 5,2:1) y turquesa profundo (`incomeFill`, 5,1:1).
+    static let indigoFill = Color(hex: "3D36B3")
+    static let pinkFill = Color(hex: "D6006B")
+    static let tealFill = Color(hex: "0F7A80")
+
+    /// El carril de una barra o de un aro: el primario muy tenue, para que se vea igual en claro y en oscuro.
+    static let track = Color.primary.opacity(WidgetDS.Opacity.subtle)
+
+    /// Color de un hex que puede faltar o venir mal: el índigo de marca por defecto.
+    static func fill(hex: String?) -> Color {
+        guard let hex, !hex.isEmpty else { return electricIndigo }
+        return Color(hex: hex)
+    }
 }

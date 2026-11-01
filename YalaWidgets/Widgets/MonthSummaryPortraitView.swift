@@ -140,7 +140,7 @@ struct MonthSummaryPortraitView: View {
                 MonthSummaryEmptyState(icon: "chart.pie", text: "widget.ui.noBudgets")
             } else {
                 ForEach(entry.budgets.prefix(Self.budgetLimit), id: \.id) { budget in
-                    BudgetRowView(budget: budget, displayFormat: entry.currencyDisplayFormat)
+                    MonthSummaryBudgetRow(budget: budget, displayFormat: entry.currencyDisplayFormat)
                 }
             }
         }

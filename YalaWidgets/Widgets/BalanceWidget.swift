@@ -82,6 +82,11 @@ struct BalanceEntry: TimelineEntry {
     /// Marca «≈» del saldo. Al final y con default: placeholders y previews traen cifras
     /// inventadas y exactas.
     var balanceIsApproximate: Bool = false
+    /// Cuánto subió o bajó el saldo en el período (`WidgetInsightsLogic.balanceChange`); `nil` en «Todo el tiempo» o
+    /// si la curva no llega a antes del inicio.
+    var change: Double? = nil
+    /// Cuándo escribió la app la foto: si no es de hoy, el widget lo dice.
+    var lastUpdated: Date? = nil
 
     static var placeholder: BalanceEntry {
         BalanceEntry(
@@ -89,10 +94,21 @@ struct BalanceEntry: TimelineEntry {
             balance: 12500.00,
             currencyCode: "PEN",
             currencyDisplayFormat: "symbol",
-            trendData: [],
+            trendData: Self.sampleTrend(ending: 12_500),
             isPlaceholder: true,
-            period: .thisMonth
+            period: .thisMonth,
+            change: 640
         )
+    }
+
+    /// Curva de ejemplo para la galería: tres semanas que acaban en `ending`.
+    static func sampleTrend(ending: Double) -> [WidgetTrendPoint] {
+        let deltas: [Double] = [0, -120, -80, 40, -260, -30, 900, -140, -60, -20, 310, -90, -45, -180, 20, -60, 450, -70, -20, -40, 95]
+        var value = ending - deltas.reduce(0, +)
+        return deltas.enumerated().map { index, delta in
+            value += delta
+            return WidgetTrendPoint(date: Date().addingTimeInterval(Double(index - deltas.count + 1) * 86400), balance: value)
+        }
     }
 }
 
@@ -115,31 +131,42 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: BalanceWidgetIntent, in context: Context) async -> Timeline<BalanceEntry> {
         let entry = createEntry(for: configuration)
-
-        // Refresh every 4 hours
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry(for configuration: BalanceWidgetIntent) -> BalanceEntry {
+        let now = Date()
         let period = configuration.period.toWidgetPeriod
         let balance = WidgetDataService.getBalance(for: period)
         let currency = WidgetDataService.getPreferredCurrency()
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
-
-        // Get trend data for the selected period
-        let trendData = WidgetDataService.getTrendData(for: period)
+        let lastUpdated = WidgetDataService.getLastUpdated()
+        // Las cifras de la foto se calcularon cuando la app la escribió: el período se mide a esa hora, no a la de ahora.
+        let asOf = lastUpdated ?? now
 
         return BalanceEntry(
-            date: Date(),
+            date: now,
             balance: balance,
             currencyCode: currency,
             currencyDisplayFormat: displayFormat,
-            trendData: trendData,
+            trendData: WidgetDataService.getTrendData(for: period, asOf: asOf),
             isPlaceholder: false,
             period: configuration.period,
-            balanceIsApproximate: WidgetDataService.getBalanceIsApproximate(for: period)
+            balanceIsApproximate: WidgetDataService.getBalanceIsApproximate(for: period),
+            change: Self.change(for: period, balance: balance, asOf: asOf),
+            lastUpdated: lastUpdated
+        )
+    }
+
+    /// La variación del período contra el cierre anterior a su inicio: curva diaria para semanas y meses, mensual para
+    /// los años (la semanal empieza en lunes y su cierre puede caer dentro del año).
+    static func change(for period: WidgetPeriod, balance: Double, asOf: Date) -> Double? {
+        guard period != .allTime, let data = WidgetDataService.getTrendData() else { return nil }
+        let closings = (period == .thisYear || period == .lastYear) ? data.monthlyPoints : data.dailyPoints
+        return WidgetInsightsLogic.balanceChange(
+            balance: balance,
+            closings: closings.map { (date: $0.date, balance: $0.balance) },
+            periodStart: period.dateInterval(now: asOf).start
         )
     }
 }
@@ -152,8 +179,6 @@ struct BalanceWidgetView: View {
 
     var body: some View {
         switch family {
-        case .systemSmall:
-            SmallBalanceView(entry: entry)
         case .systemMedium:
             MediumBalanceView(entry: entry)
         default:
@@ -162,31 +187,44 @@ struct BalanceWidgetView: View {
     }
 }
 
+/// Lo que comparten los dos tamaños: el título, la variación y su tono.
+private extension BalanceEntry {
+    var title: String { String(localized: "widget.ui.available", bundle: .main) }
+    var periodName: String { period.toWidgetPeriod.localizedDisplayName }
+
+    /// Subir es bueno (índigo) y bajar, malo (rosa): los colores de la app para un saldo.
+    var changeTone: WidgetTone {
+        guard let change, abs(change) >= 0.5 else { return .neutral }
+        return change > 0 ? .good : .bad
+    }
+}
+
 struct SmallBalanceView: View {
     let entry: BalanceEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
-            WidgetHeader(
-                title: String(localized: "widget.ui.available", bundle: .main),
-                subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
-                icon: "creditcard.fill"
-            )
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
+            WidgetCardHeader(title: entry.title, systemImage: "wallet.bifold.fill", tint: WidgetColors.electricIndigo)
 
-            Spacer()
+            Spacer(minLength: WidgetDS.Spacing.xs)
 
-            WidgetKPI(
-                amount: entry.balance,
+            WidgetHeroAmount(
+                value: entry.balance,
                 currencyCode: entry.currencyCode,
                 displayFormat: entry.currencyDisplayFormat,
-                color: .primary,
-                size: .large,
                 isEstimate: entry.balanceIsApproximate
             )
+
+            BalanceChangeLine(entry: entry)
+                .padding(.top, WidgetDS.Spacing.xxs)
+
+            if entry.trendData.count >= 2 {
+                BalanceTrendChart(points: entry.trendData)
+                    .frame(height: WidgetDS.Chart.sparklineHeight)
+                    .padding(.top, WidgetDS.Spacing.sm)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 }
@@ -194,164 +232,117 @@ struct SmallBalanceView: View {
 struct MediumBalanceView: View {
     let entry: BalanceEntry
 
-    /// Line color based on balance (electric indigo for positive, expense for negative)
-    private var lineColor: Color {
-        entry.balance >= 0 ? WidgetColors.electricIndigo : WidgetColors.expense
-    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.sm) {
+            WidgetCardHeader(title: entry.title, systemImage: "wallet.bifold.fill", tint: WidgetColors.electricIndigo) {
+                WidgetHeaderDetail(text: entry.periodName)
+            }
 
-    /// Area gradient matching PanelView TrendChartView exactly
-    private var areaGradient: LinearGradient {
-        LinearGradient(
-            colors: [lineColor.opacity(0.1), lineColor.opacity(0.05)],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
+            HStack(alignment: .bottom, spacing: WidgetDS.Spacing.lg) {
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+                    Spacer(minLength: 0)
+                    WidgetHeroAmount(
+                        value: entry.balance,
+                        currencyCode: entry.currencyCode,
+                        displayFormat: entry.currencyDisplayFormat,
+                        isEstimate: entry.balanceIsApproximate
+                    )
+                    BalanceChangeLine(entry: entry, showsPeriod: false)
+                    WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-    /// Y-axis domain with padding
-    private var yDomain: ClosedRange<Double> {
-        guard !entry.trendData.isEmpty else { return 0...100 }
-        let values = entry.trendData.map(\.balance)
-        let minVal = values.min() ?? 0
-        let maxVal = values.max() ?? 100
-        let padding = max((maxVal - minVal) * 0.1, 1)
-        return (minVal - padding)...(maxVal + padding)
-    }
-
-    /// X-axis domain based on data range
-    private var xDomain: ClosedRange<Date> {
-        guard let first = entry.trendData.first?.date,
-              let last = entry.trendData.last?.date else {
-            return Date()...Date()
+                if entry.trendData.count >= 2 {
+                    BalanceTrendChart(points: entry.trendData)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    Text("widget.ui.noData", bundle: .main)
+                        .font(WidgetDS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
         }
-        let span = last.timeIntervalSince(first)
-        let padding = max(span * 0.05, 86400)
-        return first.addingTimeInterval(-padding)...last.addingTimeInterval(padding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
+}
 
-    /// Smart axis dates using SmartAxisHelper
-    private var smartAxisDates: [Date] {
-        guard let first = entry.trendData.first?.date,
-              let last = entry.trendData.last?.date else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(from: first, to: last)
-    }
+/// «▲ S/ 320 · Este mes»: cuánto subió o bajó el saldo en el período. Sin variación (todo el tiempo, o sin datos de
+/// antes), solo el período; en el mediano el período ya va en la cabecera (`showsPeriod: false`).
+private struct BalanceChangeLine: View {
+    let entry: BalanceEntry
+    var showsPeriod: Bool = true
 
-    /// Format axis label using SmartAxisHelper
-    private func smartAxisLabel(for date: Date) -> String {
-        guard let first = entry.trendData.first?.date,
-              let last = entry.trendData.last?.date else { return "" }
-        return SmartAxisHelper.formatAxisLabel(for: date, startDate: first, endDate: last)
-    }
-
-    /// Format Y value as K
-    private func formatK(_ value: Double) -> String {
-        let absValue = abs(value)
-        let sign = value < 0 ? "-" : ""
-        if absValue >= 1000 {
-            return String(format: "%@%.0fK", sign, absValue / 1000.0)
+    var body: some View {
+        HStack(spacing: WidgetDS.Spacing.xs) {
+            if let change = entry.change {
+                let runs = WidgetAmountSplitter.split(
+                    value: abs(change),
+                    symbol: CurrencySymbols.display(for: entry.currencyCode, format: entry.currencyDisplayFormat),
+                    fractionDigits: 0
+                )
+                WidgetPill(
+                    text: runs.accessibilityFormatted,
+                    systemImage: entry.changeTone == .neutral ? "equal" : (change > 0 ? "arrow.up" : "arrow.down"),
+                    tone: entry.changeTone
+                )
+                .accessibilityLabel(Text(String(format: String(localized: "widget.balance.change.a11y", bundle: .main),
+                                                 (change > 0 ? "+" : change < 0 ? "-" : "") + runs.accessibilityFormatted,
+                                                 entry.periodName)))
+            }
+            if showsPeriod {
+                Text(entry.periodName)
+                    .font(WidgetDS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
         }
-        return String(format: "%@%.0f", sign, absValue)
+    }
+}
+
+/// La curva del saldo en el período: línea índigo con su área tenue y el punto de hoy. Sin ejes: la cifra y la píldora
+/// ya dicen cuánto; la curva dice cómo se llegó. En tintado NO se tiñe: lo teñido es la cifra (una cosa por widget).
+struct BalanceTrendChart: View {
+    let points: [WidgetTrendPoint]
+
+    private var domain: ClosedRange<Double> {
+        let values = points.map(\.balance)
+        let low = values.min() ?? 0
+        let high = values.max() ?? 0
+        let pad = max((high - low) * 0.15, 1)
+        return (low - pad)...(high + pad)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
-            // Header row: title+subtitle left, KPI right
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                    Text("widget.ui.available", bundle: .main)
-                        .font(WDS.Typography.title)
-                        .foregroundStyle(.primary)
-                    Text(entry.period.toWidgetPeriod.localizedDisplayName)
-                        .font(WDS.Typography.subtitle)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                WidgetKPI(
-                    amount: entry.balance,
-                    currencyCode: entry.currencyCode,
-                    displayFormat: entry.currencyDisplayFormat,
-                    color: .primary,
-                    size: .small,
-                    isEstimate: entry.balanceIsApproximate
+        let floor = domain.lowerBound
+        Chart {
+            ForEach(points, id: \.date) { point in
+                AreaMark(
+                    x: .value("Fecha", point.date),
+                    yStart: .value("Base", floor),
+                    yEnd: .value("Saldo", point.balance)
                 )
+                .interpolationMethod(.monotone)
+                .foregroundStyle(WidgetColors.electricIndigo.opacity(WidgetDS.Opacity.subtle))
+
+                LineMark(x: .value("Fecha", point.date), y: .value("Saldo", point.balance))
+                    .interpolationMethod(.monotone)
+                    .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.lineWidth, lineCap: .round, lineJoin: .round))
+                    .foregroundStyle(WidgetColors.electricIndigo)
             }
-
-            // Full-width trend chart
-            if entry.trendData.count >= 2 {
-                Chart {
-                    let yBase = min(max(yDomain.lowerBound, 0), yDomain.upperBound)
-
-                    ForEach(entry.trendData, id: \.date) { point in
-                        // Area fill
-                        AreaMark(
-                            x: .value("Date", point.date),
-                            yStart: .value("Base", yBase),
-                            yEnd: .value("Balance", point.balance)
-                        )
-                        .interpolationMethod(.monotone)
-                        .foregroundStyle(areaGradient)
-
-                        // Line
-                        LineMark(
-                            x: .value("Date", point.date),
-                            y: .value("Balance", point.balance)
-                        )
-                        .interpolationMethod(.monotone)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .foregroundStyle(lineColor)
-                    }
-                }
-                .widgetAccentable()
-                .chartXScale(domain: xDomain)
-                .chartYScale(domain: yDomain)
-                .chartXAxis {
-                    AxisMarks(values: smartAxisDates) { value in
-                        AxisGridLine()
-                            .foregroundStyle(Color.secondary.opacity(0.1))
-                        if let date = value.as(Date.self) {
-                            let isFirst = date == smartAxisDates.first
-                            let isLast = date == smartAxisDates.last
-                            let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
-
-                            AxisValueLabel(anchor: anchor) {
-                                Text(smartAxisLabel(for: date))
-                                    .font(WDS.Typography.axis)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-                .chartYAxis {
-                    AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
-                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                            .foregroundStyle(Color.secondary.opacity(0.1))
-                        if let doubleValue = value.as(Double.self) {
-                            AxisValueLabel {
-                                Text(formatK(doubleValue))
-                                    .font(WDS.Typography.axisRegular)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Empty state
-                VStack(spacing: WDS.Spacing.xs) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.title2) // A11Y-DT: widget empty state icon
-                        .foregroundStyle(.tertiary)
-                    Text("widget.ui.noData", bundle: .main)
-                        .font(WDS.Typography.tiny)
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let last = points.last {
+                PointMark(x: .value("Fecha", last.date), y: .value("Saldo", last.balance))
+                    .symbolSize(WidgetDS.Chart.pointArea)
+                    .foregroundStyle(WidgetColors.electricIndigo)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "panel"))
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartYScale(domain: domain)
+        .chartLegend(.hidden)
+        .accessibilityHidden(true)
     }
 }
 
@@ -369,7 +360,7 @@ struct BalanceWidget: Widget {
             BalanceWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder, message: "widget.empty.openYalaBalance")
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(WidgetColors.cardBackground, for: .widget)
         }
         .configurationDisplayName("widget.gallery.balance")
         .description("widget.gallery.balance.desc")
@@ -387,9 +378,10 @@ struct BalanceWidget: Widget {
         balance: 15420.50,
         currencyCode: "PEN",
         currencyDisplayFormat: "symbol",
-        trendData: [],
+        trendData: BalanceEntry.sampleTrend(ending: 15_420.50),
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        change: 820
     )
 }
 
@@ -411,7 +403,8 @@ struct BalanceWidget: Widget {
             WidgetTrendPoint(date: Date(), balance: 15420),
         ],
         isPlaceholder: false,
-        period: .thisWeek
+        period: .thisWeek,
+        change: 1_420
     )
 }
 
@@ -423,8 +416,9 @@ struct BalanceWidget: Widget {
         balance: -2350.00,
         currencyCode: "PEN",
         currencyDisplayFormat: "symbol",
-        trendData: [],
+        trendData: BalanceEntry.sampleTrend(ending: -2_350),
         isPlaceholder: false,
-        period: .thisMonth
+        period: .thisMonth,
+        change: -1_180
     )
 }
