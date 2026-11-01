@@ -53,3 +53,7 @@ que la base no tiene, compílala con el catálogo de esa base.
 6 presupuestos, 8 pagos, dos años de movimientos), con `defaultPeriod = thisMonth`. Se congela a propósito: antes y
 después de un cambio se pintan con los mismos datos y el mismo «ahora» (31-oct-2026, 20:06 de Lima). Para sacar otra:
 `export-snapshot.sh <salida.plist>` con Yala Dev sembrada y relanzada sin semilla.
+
+`fixtures/grupos-2026-11-01.plist` (S35f3, widget de Grupos): la de `-uitest-seed grupos` con
+`-uitest-fake-cloud-session -uitest-groups-consent` (dos grupos, te deben S/ 330 + $ 46.67), relanzada sin semilla. La
+foto de `realista` no trae grupos: con ella el widget de Grupos dice «Abre Yala para ver tus grupos».

@@ -201,3 +201,15 @@
 "widget.flow.previousToDate" = "Net à la même date en %1$@ : %2$@";
 "widget.flow.previousToDate.year" = "Net à la même date en %1$@ : %2$@";
 "widget.flow.comparison.a11y" = "Écart avec %2$@ à la même date : %1$@";
+
+/* Widget de Grupos 2.2 (S35f3): debes / te deben, como la lista de Grupos */
+"widget.gallery.groups" = "Groupes";
+"widget.gallery.groups.desc" = "Ce que tu dois et ce qu'on te doit dans tes groupes. Touche un groupe pour l'ouvrir.";
+"widget.groups.iOwe" = "Vous devez";
+"widget.groups.owedToMe" = "On vous doit";
+"widget.groups.allSettled" = "Tout est réglé !";
+"widget.groups.rowSettled" = "Réglé";
+"widget.empty.noGroupsYet" = "Pas encore de groupe";
+"widget.empty.openYalaGroups" = "Ouvre Yala pour voir tes groupes";
+"widget.groups.archivedOwedLine" = "+ %@ qu’on vous doit dans des groupes archivés";
+"widget.groups.archivedOweLine" = "+ %@ que vous devez dans des groupes archivés";

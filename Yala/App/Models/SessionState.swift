@@ -918,6 +918,9 @@ class SessionState {
         // El aviso de la tarjeta lleva lo facturado: un pago, un gasto o editar la tarjeta lo cambian (card nmtk). Sin
         // contexto (antes del arranque, o en tests) no hace nada; con él, un replan single-flight en segundo plano.
         CreditCardReminderScheduler.shared.requestReplan()
+        // Un saldo de grupo que cambia rehace la foto del widget «Grupos» (los escritores de Grupos no llaman a
+        // `WidgetDataCache.updateCache`). Sin contexto no hace nada; si los grupos no cambiaron, tampoco.
+        WidgetGroupsRefresh.shared.requestCheck()
     }
 
     /// Peticiones de asentamiento tras un borrado DELIBERADO hecho fuera de `ContentView` —hoy, «Vaciar datos»—. Lo

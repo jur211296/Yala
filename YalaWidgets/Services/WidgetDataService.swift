@@ -146,6 +146,38 @@ struct WidgetPaymentsMonth: Codable {
     let remainingToPay: Double
 }
 
+/// Una divisa y lo pendiente en ella, siempre en positivo: el lado (debes o te deben) lo dice quien lo lleva.
+struct WidgetGroupAmount: Codable {
+    let currencyCode: String
+    let amount: Double
+}
+
+/// Un grupo de la lista de Grupos que enseña saldos, con lo que debes o te deben en él por divisa: lo mismo que la
+/// cabecera de su detalle, que es lo que abre la fila. Sin saldo, los dos lados van vacíos. `id` es el `SplitGroup.id`
+/// que entiende `groups/<id>`.
+struct WidgetGroupBalance: Codable {
+    let id: String
+    let name: String
+    let iconName: String
+    let colorHex: String
+    let iOwe: [WidgetGroupAmount]
+    let owedToMe: [WidgetGroupAmount]
+}
+
+/// Lo que enseña el widget «Grupos» (2.2): el resumen de arriba de la lista (debes / te deben por divisa, sin netear, como
+/// `GroupSummaryHeader`), cuántos grupos activos hay y sus filas. Lo calcula la app (`WidgetGroupsSnapshotBuilder`) con
+/// las mismas funciones que la lista: el widget no tiene los gastos ni los repartos.
+struct WidgetGroupsSummary: Codable {
+    let iOwe: [WidgetGroupAmount]
+    let owedToMe: [WidgetGroupAmount]
+    let activeGroupCount: Int
+    let groups: [WidgetGroupBalance]
+    /// Lo pendiente en los grupos ARCHIVADOS (la línea de debajo del total en la lista, L19-9). Opcionales por si una
+    /// versión de la foto no los trae.
+    var archivedIOwe: [WidgetGroupAmount]? = nil
+    var archivedOwedToMe: [WidgetGroupAmount]? = nil
+}
+
 /// Precalculated summary for a period
 struct WidgetPeriodSummary: Codable {
     let totalIncome: Double
@@ -208,6 +240,10 @@ struct WidgetDataSnapshot: Codable {
     /// El mes de los pagos planificados (extragrande vertical de «Pagos planificados»). **Opcional y con default**,
     /// por la misma razón que `accountFlows`: una clave obligatoria nueva apagaría todos los widgets.
     var paymentsMonth: WidgetPaymentsMonth? = nil
+
+    /// Los grupos (widget «Grupos», 2.2). **Opcional y con default**, como `paymentsMonth`: una foto anterior no lo trae
+    /// y el widget dice «Abre Yala para ver tus grupos».
+    var groups: WidgetGroupsSummary? = nil
 }
 
 // MARK: - WidgetDataService
@@ -429,6 +465,11 @@ enum WidgetDataService {
     /// con una foto anterior a 2.2.
     static func getPaymentsMonth() -> WidgetPaymentsMonth? {
         loadSnapshot()?.paymentsMonth
+    }
+
+    /// Los grupos que calculó la app (widget «Grupos»). `nil` sin foto o con una foto anterior a 2.2.
+    static func getGroups() -> WidgetGroupsSummary? {
+        loadSnapshot()?.groups
     }
 
     /// Returns trend data for chart (full structure with all granularities)

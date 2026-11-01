@@ -201,3 +201,15 @@
 "widget.flow.previousToDate" = "%1$@同期净额：%2$@";
 "widget.flow.previousToDate.year" = "%1$@同期净额：%2$@";
 "widget.flow.comparison.a11y" = "与%2$@同期的差额：%1$@";
+
+/* Widget de Grupos 2.2 (S35f3): debes / te deben, como la lista de Grupos */
+"widget.gallery.groups" = "群组";
+"widget.gallery.groups.desc" = "你在群组里欠多少、别人欠你多少。轻点群组即可打开。";
+"widget.groups.iOwe" = "你欠";
+"widget.groups.owedToMe" = "别人欠你";
+"widget.groups.allSettled" = "全部已结清!";
+"widget.groups.rowSettled" = "已结清";
+"widget.empty.noGroupsYet" = "还没有群组";
+"widget.empty.openYalaGroups" = "打开 Yala 查看你的群组";
+"widget.groups.archivedOwedLine" = "+ 已归档群组中别人欠你的%@";
+"widget.groups.archivedOweLine" = "+ 你在已归档群组中欠的%@";

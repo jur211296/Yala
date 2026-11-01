@@ -285,6 +285,35 @@ nonisolated enum WidgetInsightsLogic {
         )
     }
 
+    // MARK: - Grupos
+
+    /// El lado de una fila del widget «Grupos».
+    enum GroupSide: Int, Equatable {
+        case iOwe = 0
+        case owedToMe = 1
+        case settled = 2
+    }
+
+    /// Qué lado enseña un grupo. Con los dos lados (una divisa a favor y otra en contra), «debes»: primero lo que debes,
+    /// como en la lista (decisión de Jürgen, 2026-10-30).
+    static func groupSide(owes: Bool, isOwed: Bool) -> GroupSide {
+        if owes { return .iOwe }
+        if isOwed { return .owedToMe }
+        return .settled
+    }
+
+    /// Las filas del widget: primero los grupos en los que debes, luego en los que te deben y al final los que están al
+    /// día; dentro de cada lado, el orden en que llegan (el de la lista, por nombre). Como mucho `limit`.
+    static func orderedGroupRows<Row>(_ rows: [Row], limit: Int, side: (Row) -> GroupSide) -> [Row] {
+        rows.enumerated()
+            .sorted { lhs, rhs in
+                let (left, right) = (side(lhs.element).rawValue, side(rhs.element).rawValue)
+                return left != right ? left < right : lhs.offset < rhs.offset
+            }
+            .prefix(max(0, limit))
+            .map(\.element)
+    }
+
     // MARK: - Pantalla bloqueada
 
     /// Una cifra en dos o tres glifos: «79,4K» en es-ES, «79.4K» en es-PE y en-US, «1,2M», «950». Con el separador

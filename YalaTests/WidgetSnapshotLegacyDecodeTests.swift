@@ -55,6 +55,9 @@ struct WidgetSnapshotLegacyDecodeTests {
         #expect(decoded.thisMonthSummary.periodBalance == nil, """
             Ausente y no 0: el snapshot viejo no traía este campo, y el decode tiene que sobrevivirlo.
             """)
+        #expect(decoded.groups == nil, """
+            Ausente: una foto anterior al widget de Grupos (2.2) no los trae, y el widget dice «Abre Yala».
+            """)
     }
 
     /// El mismo compromiso, un escalón más abajo: un snapshot legacy **con transacciones dentro** y sin

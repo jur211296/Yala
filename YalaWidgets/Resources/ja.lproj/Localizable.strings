@@ -201,3 +201,15 @@
 "widget.flow.previousToDate" = "%1$@の同じ日までの純額：%2$@";
 "widget.flow.previousToDate.year" = "%1$@の同じ日までの純額：%2$@";
 "widget.flow.comparison.a11y" = "%2$@の同じ日との差：%1$@";
+
+/* Widget de Grupos 2.2 (S35f3): debes / te deben, como la lista de Grupos */
+"widget.gallery.groups" = "グループ";
+"widget.gallery.groups.desc" = "グループでの支払分と受取分。グループをタップすると開きます。";
+"widget.groups.iOwe" = "支払分";
+"widget.groups.owedToMe" = "受取分";
+"widget.groups.allSettled" = "すべて精算済み！";
+"widget.groups.rowSettled" = "精算済み";
+"widget.empty.noGroupsYet" = "まだグループがありません";
+"widget.empty.openYalaGroups" = "Yalaを開いてグループを表示";
+"widget.groups.archivedOwedLine" = "+ アーカイブ済みのグループで貸している%@";
+"widget.groups.archivedOweLine" = "+ アーカイブ済みのグループで借りている%@";
