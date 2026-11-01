@@ -55,6 +55,17 @@ final class GroupDetailViewModel {
 
     // MARK: - Computed
 
+    /// El nombre del grupo en la última carga. El detalle lo pinta como título mientras se cierra con el grupo ya borrado
+    /// (salir de él, o un borrado por sync): leer `group.name` ahí abortaría en iOS 27.x.
+    private(set) var groupName: String = ""
+
+    /// El grupo se borró y el detalle lo soltó (`releaseDeletedGroup`): nada vuelve a leerlo.
+    private(set) var isGroupReleased: Bool = false
+
+    /// El grupo ya no se puede leer. `isDeleted` se lee sin riesgo en un modelo borrado. La otra mitad
+    /// (`modelContext == nil`) la mira la VISTA: también es verdad en un grupo que nunca se insertó, como los de los tests.
+    private var isGroupGone: Bool { isGroupReleased || group.isDeleted }
+
     /// memberID.uuidString → displayName (rebuilt in loadData)
     private(set) var memberNameLookup: [String: String] = [:]
 
@@ -101,6 +112,7 @@ final class GroupDetailViewModel {
     var canCurrentUserParticipate: Bool {
         // G6-3 (C4): grupo migrado y CONGELADO → sin escrituras (oculta FAB/editar/borrar/liquidar/confirmar
         // de un golpe — la UX primaria del freeze; el guard service-level es la RED).
+        if isGroupGone { return false }
         if group.isMigratedFrozen { return false }
         return currentUserMember?.isActive == true
     }
@@ -113,7 +125,8 @@ final class GroupDetailViewModel {
     /// Card yd2w: gestiona los saldos iniciales el dueño o cualquier admin activo. La misma decisión que
     /// `GroupExpenseService` aplica al guardar (`OpeningBalancePermissionLogic`).
     var isOpeningBalanceManager: Bool {
-        OpeningBalancePermissionLogic.canManage(
+        guard !isGroupGone else { return false }
+        return OpeningBalancePermissionLogic.canManage(
             groupIsOwner: group.isOwner,
             currentMemberIsActive: currentUserMember?.isActive ?? false,
             currentMemberIsAdmin: currentUserMember?.isAdmin ?? false
@@ -160,6 +173,21 @@ final class GroupDetailViewModel {
     func setContext(_ context: ModelContext) {
         self.modelContext = context
         loadData()
+    }
+
+    /// Suelta el grupo borrado (salir de él, «Transferir y salir», o un borrado que llega por sync): cancela la recarga
+    /// con freno pendiente y vacía lo cargado, cuyos miembros, gastos y repartos se borraron con él. Así lo que se lea del
+    /// ViewModel mientras el detalle y sus Ajustes se cierran no toca nada borrado (ticket
+    /// `group-detail-reads-the-group-after-leaving-it`). Molde de `releaseDeletedAccount`.
+    func releaseDeletedGroup() {
+        isGroupReleased = true
+        debouncer.cancel()
+        members = []
+        expenses = []
+        shares = []
+        settlements = []
+        txBridgeMap = [:]
+        mySharesByExpense = [:]
     }
 
     /// Fuerza un fetch remoto y recarga (refresh acotado, no bump global de dataVersion).
@@ -223,6 +251,8 @@ final class GroupDetailViewModel {
     /// NO calcula balances/debts.
     private func fetchData() {
         guard let context = modelContext else { return }
+        // Una recarga que llega con el grupo ya borrado (la del freno, la de cerrar una hoja) lo leería.
+        guard !isGroupGone else { return }
         // Con contexto presente, tras el INTENTO marcamos listo (mostrar contenido/estado, no un
         // skeleton eterno si un fetch falla) — espeja el diseño temprano de `hasLoadedOnce` en
         // GroupsViewModel. Sin contexto (carrera de bootstrap) NO se marca → sigue el skeleton.
@@ -238,6 +268,7 @@ final class GroupDetailViewModel {
             let fetchedSettlements = try GroupExpenseService.shared.fetchSettlements(for: group)
 
             members = fetchedMembers
+            groupName = group.name
             memberNameLookup = Dictionary(
                 fetchedMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
                 uniquingKeysWith: { first, _ in first }
@@ -258,6 +289,7 @@ final class GroupDetailViewModel {
     /// cacheados por `fetchData()` (sin fetch nuevo). Equality guards para no churnear `@Observable`.
     private func recalculate() {
         guard modelContext != nil else { return }
+        guard !isGroupGone else { return }
 
         let rawBalances = GroupBalanceService.calculateBalances(
             expenses: expenses,
@@ -520,6 +552,7 @@ final class GroupDetailViewModel {
     ) {
         let notices = notices ?? .shared
         guard activeSheet == nil, !showActionError, !windowIsPresenting else { return }
+        guard !isGroupGone else { return }
         guard let reason = notices.consume(groupID: group.cloudKitZoneID, now: now) else { return }
         actionErrorTitle = OpeningBalanceServerRejectionNotices.title()
         actionErrorMessage = OpeningBalanceServerRejectionNotices.message(for: reason)
@@ -529,6 +562,7 @@ final class GroupDetailViewModel {
 
     func createShareLink() async {
         guard !isCreatingShare else { return }
+        guard !isGroupGone else { return }
         guard group.isOwner, isCurrentUserAdmin else { return }
         if shareURL != nil { return }
         isCreatingShare = true

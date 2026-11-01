@@ -246,6 +246,62 @@ struct DeletedModelMoreFormsGuardWiringTests {
                              after: "private var transferConfirmMessage: String {", in: source)
     }
 
+    /// Salir del grupo (o un borrado por sync) lo borra con el detalle debajo, y su `body` se vuelve a evaluar antes de que
+    /// el `onChange` lo cierre (ticket `group-detail-reads-the-group-after-leaving-it`). El `body` solo lee el grupo por
+    /// su accesor guardado, o en `onAppear` (con él vivo) y en la decisión de cierre, que mira primero si sigue.
+    @Test func detalleDeGrupo_conElGrupoBorradoNoLeeElGrupo_niLoQueLoAbre() throws {
+        let view = try Self.readSource(of: "Yala/App/Views/Groups/GroupDetailView.swift")
+        #expect(view.contains("!group.isDeleted && group.modelContext != nil"))
+        let squash: (String) -> String = { $0.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
+
+        let body = try Self.body(of: "    var body: some View {", in: view)
+        // El contenido (avisos, pestañas, botón de nuevo gasto) solo con el grupo vivo.
+        #expect(squash(try Self.body(of: "ZStack {", in: body)) == "if isGroupReadable { groupContent }")
+        #expect(squash(body).contains("if isGroupReadable { groupToolbarItems }"))
+        #expect(body.contains(".navigationTitle(groupTitle)"))
+        #expect(body.contains("presentedSheet(for: sheet)"))
+        // Fuera de `onAppear` y de la decisión de cierre, el `body` no lee el grupo directamente.
+        let rest = try Self.code(body, without: [".onAppear {", ".onChange(of: sessionState.dataVersion) {"])
+        #expect(Self.matches(#"\bgroup\."#, in: rest).isEmpty, "El `body` lee el grupo sin mirar si sigue.")
+
+        // Al cerrarse la hoja de Ajustes tras salir, ni recarga ni pregunta por avisos.
+        try Self.expectOrder("guard isGroupReadable else {", before: "viewModel.loadData()",
+                             after: ".sheet(item: $viewModel.activeSheet, onDismiss: {", in: view)
+        try Self.expectOrder("viewModel.releaseDeletedGroup()", before: "consumePendingEditFromDetail()",
+                             after: ".sheet(item: $viewModel.activeSheet, onDismiss: {", in: view)
+        // La decisión de cierre suelta el grupo antes de cerrar.
+        try Self.expectOrder("if !isGroupReadable { viewModel.releaseDeletedGroup() }", before: "close()",
+                             after: ".onChange(of: sessionState.dataVersion) {", in: view)
+        #expect(squash(try Self.body(of: "private var groupTitle: String {", in: view))
+                == "isGroupReadable ? group.name : viewModel.groupName")
+        #expect(view.contains("if isGroupReadable || Self.isSettings(sheet) {"))
+        // El `init` se vuelve a evaluar cada vez que quien lo abre se repinta, también con el grupo ya borrado.
+        let initBody = try Self.body(of: "init(group: SplitGroup, presentation: Presentation", in: view)
+        #expect(Self.matches(#"\bgroup\."#, in: initBody).isEmpty, "El `init` del detalle lee el grupo.")
+
+        // La decisión de cierre no evalúa nada del grupo borrado: lo diferido va tras `isDeleted`.
+        let decision = try Self.readSource(of: "Yala/App/Logic/GroupDetailDismissDecision.swift")
+        #expect(decision.contains("isHiddenForAll: @autoclosure () -> Bool"))
+        #expect(decision.contains("isArchived: @autoclosure () -> Bool"))
+
+        // Quien lo abre solo lee su identidad, que no toca las propiedades del modelo.
+        let container = try Self.readSource(of: "Yala/App/Views/Groups/GroupsContainerView.swift")
+        let destination = try Self.body(of: ".navigationDestination(item: $viewModel.selectedGroup) { group in", in: container)
+        #expect(Self.matches(#"\bgroup\.(?!persistentModelID\b)"#, in: destination).isEmpty,
+                "Quien abre el detalle lee el grupo más allá de su identidad.")
+
+        // El ViewModel mira antes de recargar, de calcular y de enseñar un aviso.
+        let vm = try Self.readSource(of: "Yala/App/ViewModels/GroupDetailViewModel.swift")
+        try Self.expectOrder("guard !isGroupGone else { return }", before: "fetchMembers(for: group)",
+                             after: "private func fetchData() {", in: vm)
+        try Self.expectOrder("guard !isGroupGone else { return }", before: "group.simplifyDebts",
+                             after: "private func recalculate() {", in: vm)
+        try Self.expectOrder("guard !isGroupGone else { return }", before: "group.cloudKitZoneID",
+                             after: "func presentOpeningBalanceServerRejectionIfAny(", in: vm)
+        try Self.expectOrder("if isGroupGone { return false }", before: "group.isMigratedFrozen",
+                             after: "var canCurrentUserParticipate: Bool {", in: vm)
+    }
+
     // MARK: - Flujo de caja
 
     @Test func lineaDelFlujo_laHojaLeeLaLineaSoloPorSuAccesor() throws {

@@ -459,7 +459,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke | backlog | tickets/backlog/google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke.md |
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
-| group-detail-reads-the-group-after-leaving-it | backlog | tickets/backlog/group-detail-reads-the-group-after-leaving-it.md |
+| group-detail-reads-the-group-after-leaving-it | qa | tickets/qa/group-detail-reads-the-group-after-leaving-it.md |
 | group-expense-detail-like-record-detail | backlog | tickets/backlog/group-expense-detail-like-record-detail.md |
 | group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone | done | tickets/done/group-expense-draft-is-deleted-with-its-sheet-open-when-the-expense-is-gone.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |

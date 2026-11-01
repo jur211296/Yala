@@ -190,7 +190,11 @@ paths:
   array que pinta**, como `AccountsSettingsListViewModel.accounts` (presupuestos, categorías, etiquetas). Ajustes del
   grupo, cuyo `body` lee el grupo en decenas de filas, no pinta filas con él borrado (molde de
   `BudgetDetailView.isBudgetValid`). Pin: `DeletedModelMoreFormsGuardWiringTests` + `DeletedModelMoreFormsReleaseTests`.
-  Queda fuera el `body` de `GroupDetailView` tras salir del grupo: ticket `group-detail-reads-the-group-after-leaving-it`.
+  **El detalle del grupo tras salir de él (2026-11-01, ticket `group-detail-reads-the-group-after-leaving-it`)** dejó una
+  tercera: (3) **una lógica pura que recibe propiedades del modelo YA LEÍDAS las lee antes de decidir**:
+  `GroupDetailDismissDecision.shouldDismiss` recibía `isHiddenForAll` e `isArchived`, y el `onChange` que cerraba el detalle
+  los leía del grupo borrado. ⇒ lo que solo vale con el modelo vivo va `@autoclosure` y detrás de `isDeleted`. El detalle
+  guarda su `body` con `isGroupReadable` (título de `viewModel.groupName`) y el ViewModel suelta con `releaseDeletedGroup`.
 
 - **En una página de pestaña, el buscador va en `.navigationBarDrawer(displayMode: .always)`, nunca `.automatic` (medido
   el 2026-10-30, iOS 27.0, PR #703).** Las páginas siguen montadas al cambiar de pestaña. Con `.automatic`, al volver a

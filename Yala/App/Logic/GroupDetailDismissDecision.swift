@@ -38,15 +38,21 @@ enum GroupDetailDismissDecision {
     /// legítimo (tiene su sección en la lista); uno soft-deleted no lo es: las cuatro puertas al
     /// push del detalle salen de `activeGroups`/`archivedGroups`, que filtran `!isHiddenForAll`,
     /// así que no existe el caso "entré a propósito a un grupo oculto" que haya que respetar.
+    ///
+    /// **`isHiddenForAll` e `isArchived` van diferidos (`@autoclosure`), y el orden importa.** Quien llama los lee del
+    /// grupo, y con el grupo ya borrado (salir de él, o un borrado por sync) leerlos aborta en iOS 27.x. Así solo se leen
+    /// cuando `contextIsNil` e `isDeleted` (que sí se leen sin riesgo en un modelo borrado) dicen que sigue vivo (ticket
+    /// `group-detail-reads-the-group-after-leaving-it`).
     static func shouldDismiss(
         contextIsNil: Bool,
         isDeleted: Bool,
-        isHiddenForAll: Bool,
-        isArchived: Bool,
+        isHiddenForAll: @autoclosure () -> Bool,
+        isArchived: @autoclosure () -> Bool,
         wasArchivedOnAppear: Bool
     ) -> Bool {
-        if contextIsNil || isDeleted || isHiddenForAll { return true }
-        if isArchived && !wasArchivedOnAppear { return true }
+        if contextIsNil || isDeleted { return true }
+        if isHiddenForAll() { return true }
+        if isArchived() && !wasArchivedOnAppear { return true }
         return false
     }
 }
