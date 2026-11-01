@@ -387,10 +387,17 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     /// Lo señaló la review adversarial del 2026-09-09.
     @Test("Los componentes intermedios reenvían la marca a quien la pinta")
     func passthroughComponentsForwardTheMark() throws {
-        let kpi = try Self.source("YalaWidgets/Views/WidgetKPI.swift")
-        #expect(kpi.contains("isEstimate: isEstimate"), """
-            `WidgetKPI` reenvía la marca. Desde la tanda 2 del rediseño (S35f1) ningún widget lo usa: lo
-            retira la última tanda, con el `WDS` viejo.
+        // `WidgetKPI` era el cuello de botella de los widgets viejos; se retiró con el `WDS` en la tanda 3 (S35f2). El
+        // total de las tartas de Categorías y Subcategorías va ahora por `WidgetPieBreakdown`.
+        let breakdown = try Self.source("YalaWidgets/Views/WidgetCategoryBreakdown.swift")
+        let pieBody = try #require(breakdown.range(of: "struct WidgetPieBreakdown: View {"))
+        // Hasta el struct siguiente: la marca tiene que ir en ESTE cuerpo, no en otra pieza del fichero.
+        let pieEnd = breakdown.range(of: "\nstruct ", range: pieBody.upperBound..<breakdown.endIndex)?.lowerBound
+            ?? breakdown.endIndex
+        let pieScope = String(breakdown[pieBody.upperBound..<pieEnd])
+        #expect(pieScope.contains("isEstimate: isEstimate"), """
+            `WidgetPieBreakdown` es el camino de la marca hacia el total del centro de las dos tartas: si deja de
+            reenviarla, pierden el «≈» con `isEstimate: entry.expenseIsApproximate` en verde en sus callsites.
             """)
 
         // Desde el rediseño 2.2 la cifra de Saldo y Gastos va por `WidgetHeroAmount`.

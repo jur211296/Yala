@@ -2,8 +2,7 @@
 //  TopSubcategoriesWidget.swift
 //  YalaWidgets
 //
-//  Widget showing top 3 expense subcategories.
-//  Supports Medium size with progress bars.
+//  Mediano: las tres subcategorías que más gastan, en ranking con barras.
 //
 
 import WidgetKit
@@ -68,11 +67,8 @@ struct TopSubcategoriesWidgetProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: TopSubcategoriesWidgetIntent, in context: Context) async -> Timeline<TopSubcategoriesEntry> {
         let entry = createEntry(for: configuration)
-
-        // Refresh every 4 hours
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        // La política común (medianoche o +4 h): a medianoche «Este mes» puede pasar a ser otro.
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry(for configuration: TopSubcategoriesWidgetIntent) -> TopSubcategoriesEntry {
@@ -97,130 +93,36 @@ struct TopSubcategoriesWidgetProvider: AppIntentTimelineProvider {
 
 // MARK: - Widget View
 
+/// Las tres que más gastan, en ranking: insignia sólida, nombre, importe y porcentaje, y la barra de su parte del gasto
+/// (tanda 3 del rediseño 2.2; las piezas, en `WidgetCategoryBreakdown.swift`).
 struct TopSubcategoriesWidgetView: View {
     var entry: TopSubcategoriesEntry
 
+    private var items: [WidgetBreakdownItem] {
+        entry.subcategories.map {
+            WidgetBreakdownItem(id: $0.id, name: $0.name, iconName: $0.iconName ?? "tag.fill", colorHex: $0.colorHex,
+                                amount: $0.amount, percentage: $0.percentage)
+        }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
-            // Header
-            HStack {
-                WidgetHeader(
-                    title: String(localized: "widget.ui.topSubcategories", bundle: .main),
-                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
-                    icon: "list.bullet.indent",
-                    inline: true
-                )
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+            WidgetBreakdownHeader(
+                title: String(localized: "widget.ui.topSubcategories", bundle: .main),
+                shortTitle: String(localized: "widget.ui.subcategories", bundle: .main),
+                systemImage: "list.bullet.indent",
+                period: entry.period.toWidgetPeriod.localizedDisplayName
+            )
 
             if entry.subcategories.isEmpty {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: WDS.Spacing.xs) {
-                        Image(systemName: "tray")
-                            .font(.title2) // A11Y-DT: widget empty state icon
-                            .foregroundStyle(.tertiary)
-                        Text("widget.ui.noExpenses", bundle: .main)
-                            .font(WDS.Typography.body)
-                            .foregroundStyle(.tertiary)
-                    }
-                    Spacer()
-                }
-                Spacer()
+                WidgetBreakdownEmpty()
             } else {
-                // Subcategory list
-                ForEach(entry.subcategories, id: \.id) { subcategory in
-                    SubcategoryRow(
-                        subcategory: subcategory,
-                        currencyCode: entry.currencyCode,
-                        displayFormat: entry.currencyDisplayFormat
-                    )
-                }
-
-                Spacer(minLength: 0)
+                WidgetRankingList(items: items, currencyCode: entry.currencyCode, displayFormat: entry.currencyDisplayFormat)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.subcategories))
     }
-}
-
-// MARK: - Subcategory Row
-
-struct SubcategoryRow: View {
-    let subcategory: WidgetSubcategory
-    let currencyCode: String
-    let displayFormat: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-            // Single line: Icon + Name + Amount + %
-            HStack(spacing: WDS.Spacing.sm) {
-                // Icon badge (same style as categories)
-                ZStack {
-                    Circle()
-                        .fill(subcategoryColor.opacity(0.2))
-                        .frame(width: WDS.ListItem.iconSizeCompact,
-                               height: WDS.ListItem.iconSizeCompact)
-
-                    Image(systemName: subcategory.iconName ?? "tag.fill")
-                        .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
-                        .foregroundStyle(subcategoryColor)
-                        .widgetAccentable()
-                }
-
-                // Only subcategory name (no parent category)
-                Text(subcategory.name)
-                    .font(WDS.Typography.label)
-                    .lineLimit(1)
-
-                Spacer()
-
-                // Amount — SIN marca «≈» a propósito: es un SUBCONJUNTO del gasto del período
-                // y su calculador (`buildTopCategories`) no acumula la calidad de las conversiones
-                // que lo forman. Heredar la señal del total diría que ESTA categoría es dudosa sin
-                // haberlo medido, y la incertidumbre puede estar entera en otra.
-                // Ticket: `fx-category-totals-unmarked`.
-                WidgetAmountText(
-                    value: subcategory.amount,
-                    currencyCode: currencyCode,
-                    displayFormat: displayFormat,
-                    font: WDS.Typography.value,
-                    secondaryFont: WDS.Typography.valueSecondary,
-                    tint: .secondary
-                )
-
-                // Percentage inline
-                Text("\(Int(subcategory.percentage))%")
-                    .font(WDS.Typography.labelSmall)
-                    .foregroundStyle(subcategoryColor)
-                    .frame(width: WDS.ListItem.percentageWidth, alignment: .trailing)
-                    .widgetAccentable()
-            }
-
-            // Progress bar aligned with text
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                        .fill(Color.gray.opacity(0.15))
-
-                    RoundedRectangle(cornerRadius: WDS.Progress.heightCompact / 2)
-                        .fill(subcategoryColor)
-                        .frame(width: geo.size.width * CGFloat(min(subcategory.percentage, 100) / 100))
-                        .widgetAccentable()
-                }
-            }
-            .frame(height: WDS.Progress.heightCompact)
-            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
-        }
-    }
-
-    private var subcategoryColor: Color {
-        Color(hex: subcategory.colorHex)
-    }
-
 }
 
 // MARK: - Widget Definition
@@ -237,7 +139,7 @@ struct TopSubcategoriesWidget: Widget {
             TopSubcategoriesWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(WidgetColors.cardBackground, for: .widget)
         }
         .configurationDisplayName("widget.gallery.topSubcategories")
         .description("widget.gallery.topSubcategories.desc")

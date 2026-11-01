@@ -37,6 +37,7 @@ struct YalaWidgetsBundle: WidgetBundle {
 
         // Control Center widgets (iOS 18+)
         if #available(iOS 18.0, *) {
+            NewRecordControl()
             VoiceEntryControl()
             ImageEntryControl()
         }

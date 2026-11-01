@@ -2437,6 +2437,10 @@ final class AppBootstrapper {
         switch action {
         case "panel":
             setOrDeferDeepLink(.panel)
+        case "new-transaction":
+            // El control «Nuevo registro» del Centro de Control (S35f2). Hasta entonces la clave solo podía traer voz,
+            // foto o el Panel, y una acción desconocida se borraba sin hacer nada.
+            executeAction(.newTransaction)
         case "voice-entry":
             executeAction(.voiceEntry)
         case "image-entry":

@@ -48,19 +48,23 @@ enum Catalog {
             })
         }
 
-        // Categorías y subcategorías
-        items.append(RenderItem(slug: "top-categorias", spec: .medium) {
-            AnyView(TopCategoriesWidgetView(entry: TopCategoriesWidgetProvider().createEntry(for: TopCategoriesWidgetIntent())))
-        })
-        items.append(RenderItem(slug: "top-subcategorias", spec: .medium) {
-            AnyView(TopSubcategoriesWidgetView(entry: TopSubcategoriesWidgetProvider().createEntry(for: TopSubcategoriesWidgetIntent())))
-        })
-        items.append(RenderItem(slug: "tarta-categorias", spec: .large) {
-            AnyView(CategoriesPieWidgetView(entry: CategoriesPieWidgetProvider().createEntry(for: CategoriesPieWidgetIntent())))
-        })
-        items.append(RenderItem(slug: "tarta-subcategorias", spec: .large) {
-            AnyView(SubcategoriesPieWidgetView(entry: SubcategoriesPieWidgetProvider().createEntry(for: SubcategoriesPieWidgetIntent())))
-        })
+        // Categorías y subcategorías (también en el iPhone SE, el tamaño más justo)
+        for spec in [FamilySpec.medium, .mediumSE] {
+            items.append(RenderItem(slug: "top-categorias", spec: spec) {
+                AnyView(TopCategoriesWidgetView(entry: TopCategoriesWidgetProvider().createEntry(for: TopCategoriesWidgetIntent())))
+            })
+            items.append(RenderItem(slug: "top-subcategorias", spec: spec) {
+                AnyView(TopSubcategoriesWidgetView(entry: TopSubcategoriesWidgetProvider().createEntry(for: TopSubcategoriesWidgetIntent())))
+            })
+        }
+        for spec in [FamilySpec.large, .largeSE] {
+            items.append(RenderItem(slug: "tarta-categorias", spec: spec) {
+                AnyView(CategoriesPieWidgetView(entry: CategoriesPieWidgetProvider().createEntry(for: CategoriesPieWidgetIntent())))
+            })
+            items.append(RenderItem(slug: "tarta-subcategorias", spec: spec) {
+                AnyView(SubcategoriesPieWidgetView(entry: SubcategoriesPieWidgetProvider().createEntry(for: SubcategoriesPieWidgetIntent())))
+            })
+        }
 
         // Últimos registros
         for spec in [FamilySpec.medium, .large] {

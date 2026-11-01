@@ -143,6 +143,8 @@
 "widget.control.voiceExpense.desc" = "Yalaに音声で入力";
 "widget.control.photoExpense" = "写真・ファイル";
 "widget.control.photoExpense.desc" = "Yalaに写真やファイルで記録";
+"widget.control.newRecord" = "新規入力";
+"widget.control.newRecord.desc" = "支出や収入を手で入力します";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "その他";

@@ -350,4 +350,78 @@ struct WidgetInsightsLogicTests {
         #expect(WidgetInsightsLogic.compactAmount(999.6, locale: Locale(identifier: "en_US")) == "1K")
         #expect(WidgetInsightsLogic.compactAmount(999.4, locale: Locale(identifier: "en_US")) == "999")
     }
+
+    // MARK: - Reparto en tarta
+
+    private struct Slice { let id: String; let amount: Double; let percentage: Double }
+
+    private static func legend(
+        _ slices: [Slice], maxRows: Int = 5, total: Double? = nil
+    ) -> WidgetInsightsLogic.PieLegend<Slice> {
+        WidgetInsightsLogic.pieLegend(
+            slices, maxRows: maxRows, total: total ?? slices.reduce(0) { $0 + $1.amount },
+            amount: \.amount, percentage: \.percentage
+        )
+    }
+
+    /// Con los trozos justos para la leyenda, van todos y no hay «Otros».
+    @Test func laTartaConCincoTrozosLosEnsenaTodos() {
+        let slices = (1...5).map { Slice(id: "\($0)", amount: Double(10 * $0), percentage: Double($0)) }
+        let result = Self.legend(slices)
+        #expect(result.shown.map(\.id) == ["1", "2", "3", "4", "5"])
+        #expect(result.others == nil)
+    }
+
+    /// Con uno más, los cuatro primeros y «Otros» con el quinto y el sexto: la leyenda no pasa de cinco filas.
+    @Test func laTartaConSeisTrozosJuntaElRestoEnOtros() {
+        let slices = [
+            Slice(id: "a", amount: 400, percentage: 40), Slice(id: "b", amount: 250, percentage: 25),
+            Slice(id: "c", amount: 150, percentage: 15), Slice(id: "d", amount: 100, percentage: 10),
+            Slice(id: "sin", amount: 60, percentage: 6), Slice(id: "f", amount: 40, percentage: 4),
+        ]
+        let result = Self.legend(slices)
+        #expect(result.shown.map(\.id) == ["a", "b", "c", "d"])
+        #expect(result.others == WidgetInsightsLogic.PieOthers(amount: 100, percentage: 10, count: 2))
+        // Lo que enseña suma el total: nada se pierde al agrupar.
+        let total = result.shown.reduce(0) { $0 + $1.amount } + (result.others?.amount ?? 0)
+        #expect(total == 1_000)
+    }
+
+    /// Sin trozos, nada; y un tope absurdo no deja la leyenda sin filas propias.
+    @Test func laTartaVaciaOConTopeMinimo() {
+        #expect(Self.legend([]).shown.isEmpty)
+        #expect(Self.legend([]).others == nil)
+        let slices = (1...3).map { Slice(id: "\($0)", amount: 1, percentage: 1) }
+        let result = Self.legend(slices, maxRows: 0)
+        #expect(result.shown.map(\.id) == ["1"])
+        #expect(result.others?.count == 2)
+    }
+
+    /// Subcategorías: el centro es todo el gasto y las filas solo lo que tiene subcategoría. Lo que falta va a «Otros»,
+    /// y así aro, leyenda y centro suman lo mismo (la review de S35f2 vio cinco filas que sumaban el 95 %).
+    @Test func laTartaLlevaAOtrosLoQueLosTrozosNoCubren() {
+        let slices = [
+            Slice(id: "alquiler", amount: 220, percentage: 22), Slice(id: "super", amount: 210, percentage: 21),
+            Slice(id: "resto", amount: 60, percentage: 6),
+        ]
+        let result = Self.legend(slices, total: 1_000)
+        #expect(result.shown.map(\.id) == ["alquiler", "super", "resto"])
+        #expect(result.others == WidgetInsightsLogic.PieOthers(amount: 510, percentage: 51, count: 0))
+
+        // Con cinco trozos y algo sin cubrir ya son seis filas: cuatro y «Otros» con el quinto y lo que falta.
+        let five = (1...5).map { Slice(id: "\($0)", amount: 100, percentage: 10) }
+        let crowded = Self.legend(five, total: 1_000)
+        #expect(crowded.shown.map(\.id) == ["1", "2", "3", "4"])
+        #expect(crowded.others == WidgetInsightsLogic.PieOthers(amount: 600, percentage: 60, count: 1))
+        let shownTotal = crowded.shown.reduce(0) { $0 + $1.amount } + (crowded.others?.amount ?? 0)
+        #expect(shownTotal == 1_000)
+    }
+
+    /// Lo que la app redondea no es gasto sin trozo: no sale un «Otros» de céntimos. Y si los trozos suman MÁS que el
+    /// centro (una devolución resta del total y no del trozo), no se inventa un resto negativo.
+    @Test func laTartaNoInventaRestosDeRedondeoNiNegativos() {
+        let slices = [Slice(id: "a", amount: 600, percentage: 60), Slice(id: "b", amount: 399.6, percentage: 40)]
+        #expect(Self.legend(slices, total: 1_000).others == nil)
+        #expect(Self.legend(slices, total: 900).others == nil)
+    }
 }

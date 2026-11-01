@@ -13,6 +13,22 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
+// MARK: - New Record Control
+
+/// «Nuevo registro»: abre Yala con el formulario, como el widget pequeño del mismo nombre (tanda 3, S35f2).
+@available(iOS 18.0, *)
+struct NewRecordControl: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: "com.yala.control.newRecord") {
+            ControlWidgetButton(action: OpenNewTransactionIntent()) {
+                Label("widget.control.newRecord", systemImage: "square.and.pencil")
+            }
+        }
+        .displayName("widget.control.newRecord")
+        .description("widget.control.newRecord.desc")
+    }
+}
+
 // MARK: - Voice Entry Control
 
 @available(iOS 18.0, *)

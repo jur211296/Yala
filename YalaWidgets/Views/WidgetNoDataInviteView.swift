@@ -62,26 +62,26 @@ struct WidgetNoDataInviteView: View {
             .accessibilityLabel(Text(message))
         case .accessoryRectangular:
             Text(message)
-                .font(WDS.Typography.label)
+                .font(WidgetDS.Typography.labelSmall)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
         case .accessoryInline:
             Text("widget.empty.openYalaShort", bundle: .main)
         default:
-            VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: WidgetDS.Spacing.sm) {
                 Image(systemName: "arrow.up.forward.app")
                     .font(.title2) // A11Y-DT: mismo tamaño que la invitación de solo grupos
                     .foregroundStyle(WidgetColors.primary)
                 Spacer(minLength: 0)
                 Text(message)
-                    .font(WDS.Typography.title)
+                    .font(WidgetDS.Typography.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(3)
                     .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .padding(WDS.Spacing.xs)
+            .padding(WidgetDS.Spacing.xs)
         }
     }
 }
@@ -94,18 +94,18 @@ struct WidgetCreateFirstView: View {
     let message: LocalizedStringResource
 
     var body: some View {
-        VStack(spacing: WDS.Spacing.xs) {
+        VStack(spacing: WidgetDS.Spacing.xs) {
             Image(systemName: icon)
                 .font(.title2) // A11Y-DT: widget empty state icon
                 .foregroundStyle(WidgetColors.primary)
             Text(message)
-                .font(WDS.Typography.body)
+                .font(WidgetDS.Typography.caption)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             Text("widget.empty.createOne", bundle: .main)
-                .font(WDS.Typography.label)
+                .font(WidgetDS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }

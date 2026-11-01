@@ -143,6 +143,8 @@
 "widget.control.voiceExpense.desc" = "向 Yala 口述你的记录";
 "widget.control.photoExpense" = "照片或文件";
 "widget.control.photoExpense.desc" = "在 Yala 中用照片或文件记录";
+"widget.control.newRecord" = "新条目";
+"widget.control.newRecord.desc" = "手动记录一笔支出或收入";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "其他";

@@ -68,6 +68,10 @@ struct FamilySpec {
     static let small = FamilySpec(code: "s", family: .systemSmall, size: CGSize(width: 164, height: 164), margins: 16, cornerRadius: 23)
     static let medium = FamilySpec(code: "m", family: .systemMedium, size: CGSize(width: 344, height: 164), margins: 16, cornerRadius: 23)
     static let large = FamilySpec(code: "l", family: .systemLarge, size: CGSize(width: 344, height: 364), margins: 16, cornerRadius: 23)
+    /// El iPhone SE (375 de ancho): el sitio más justo para un widget. Los widgets de Categorías (S35f2) se pintan también
+    /// aquí para ver que nada se corta.
+    static let mediumSE = FamilySpec(code: "m-se", family: .systemMedium, size: CGSize(width: 321, height: 148), margins: 16, cornerRadius: 23)
+    static let largeSE = FamilySpec(code: "l-se", family: .systemLarge, size: CGSize(width: 321, height: 324), margins: 16, cornerRadius: 23)
     static let extraLarge = FamilySpec(code: "xl", family: .systemExtraLarge, size: CGSize(width: 715, height: 330), margins: 16, cornerRadius: 23)
     static var extraLargePortrait: FamilySpec? {
         if #available(iOS 27.0, *) {

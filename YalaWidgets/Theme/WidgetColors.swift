@@ -126,6 +126,9 @@ enum WidgetColors {
     /// El carril de una barra o de un aro: el primario muy tenue, para que se vea igual en claro y en oscuro.
     static let track = Color.primary.opacity(WidgetDS.Opacity.subtle)
 
+    /// El gris de la fila «Otros» de una tarta: `AppConstants.othersColorHex`, el de la tarta del Panel.
+    static let othersFill = Color(hex: "8E8E93")
+
     /// Color de un hex que puede faltar o venir mal: el índigo de marca por defecto.
     static func fill(hex: String?) -> Color {
         guard let hex, !hex.isEmpty else { return electricIndigo }
