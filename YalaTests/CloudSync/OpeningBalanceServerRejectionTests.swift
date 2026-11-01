@@ -4,7 +4,8 @@
 //
 //  Card 6n1o (2026-10-31) · el servidor rechaza un saldo inicial (g27_01) y la app lo cuenta con un mensaje claro:
 //   (1) el código del servidor → motivo (`OpeningBalanceServerRejectionLogic`), y la prioridad cuando hay varios;
-//   (2) la subida deja en el buzón UN motivo por grupo, solo para esos tres códigos y no para el resto de rechazos;
+//   (2) la subida y el descarte (card e6fd) dejan en el buzón UN motivo por grupo, solo para esos tres códigos y no para el
+//       resto de rechazos; desde e6fd el aviso sale al descartar, porque dice que el saldo volvió a como está en el grupo;
 //   (3) el detalle del grupo lo enseña con su título y su texto, y espera si hay una hoja o un aviso delante.
 //  El servidor, sus códigos y sus casos viven en `qa/cloud/g27_01-*` (banco local, staging y producción).
 //
@@ -81,6 +82,10 @@ struct OpeningBalanceServerRejectionTests {
         let reasons = Set(try context.fetch(FetchDescriptor<GroupSyncOutbox>()).compactMap(\.rejectedReason))
         #expect(reasons == ["upstream_400:yala_opening_balance_locked", "upstream_400:yala_opening_balance_not_admin",
                             "upstream_400:yala_opening_balance_group_closed", "upstream_400:yala_not_authorized"])
+        // La subida sola todavía no avisa: el saldo sigue en el teléfono hasta que el descarte lo quita.
+        #expect(notices.peek(groupID: "SplitGroup-A") == nil)
+
+        client.settleRejectedOpeningBalances(context: context)
         // Un aviso por grupo, con el motivo que más explica; nada para los demás rechazos ni para lo aplicado.
         #expect(notices.peek(groupID: "SplitGroup-A") == .notAdmin)
         #expect(notices.peek(groupID: "SplitGroup-B") == .groupClosed)
@@ -101,6 +106,7 @@ struct OpeningBalanceServerRejectionTests {
 
         let client = makeClient(session: StubSession("{\"results\":[\(rejected(mid, "yala_not_authorized"))]}"))
         _ = await client.pushPending(context: context)
+        client.settleRejectedOpeningBalances(context: context)
 
         #expect(notices.peek(groupID: "SplitGroup-A") == nil)
         #expect(notices.revision == 0)

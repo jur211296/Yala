@@ -45,7 +45,7 @@ final class OpeningBalanceServerRejectionUITests: XCTestCase {
         add(attachment)
     }
 
-    /// Pago confirmado: el aviso nombra el motivo y que los demás no verán el cambio; «OK» lo cierra y no vuelve.
+    /// Pago confirmado: el aviso nombra el motivo y que el saldo vuelve a como está en el grupo; «OK» lo cierra y no vuelve.
     func test_lockedRejection_showsItsReason_andGoesAwayForGood() {
         let app = openGroup(rejection: "yala_opening_balance_locked")
         let alert = app.alerts["Tu cambio no llegó al grupo"]
@@ -53,6 +53,12 @@ final class OpeningBalanceServerRejectionUITests: XCTestCase {
         XCTAssertTrue(
             alert.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "ya tienen pagos confirmados")).firstMatch.exists,
             "El aviso no explica el motivo del pago confirmado."
+        )
+        // Card e6fd: el aviso dice que el saldo vuelve a como está en el grupo (el descarte lo fijan los unit de
+        // `OpeningBalanceRejectionSettleTests`; aquí el seam solo deja el código en el buzón).
+        XCTAssertTrue(
+            alert.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "vuelve a quedar como está en el grupo")).firstMatch.exists,
+            "El aviso no dice que el saldo vuelve a como está en el grupo."
         )
         attachScreenshot("aviso-pago-confirmado")
         alert.buttons.firstMatch.tap()

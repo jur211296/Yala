@@ -128,6 +128,7 @@ final class GroupsSyncClient {
     private var drainSignInLog: SessionSignInLog?
     /// Card u8cl: grupos que la subida de versión vuelve a bajar desde 0. Mientras dure ese re-pull no avisan de «gasto
     /// modificado». En memoria a propósito: un kill a mitad deja el resto del re-pull con avisos, que es lo de antes.
+    /// Desde la card e6fd lo llena también el descarte de un saldo inicial rechazado (`settleRejectedOpeningBalances`).
     private(set) var capabilityRepullZones: Set<String> = []
     private var isDraining = false
     private var pendingDrain = false
@@ -335,6 +336,10 @@ final class GroupsSyncClient {
     /// es la única forma de ejercitar el `catch` —y por tanto su `rollback()`— sin un fallo real de
     /// SwiftData. Molde de `CloudSyncEngine._testThrowOnApplySave`, el mirror declarado de esa función.
     var _testThrowOnApplySave = false
+
+    /// Lo mismo para el save de `settleRejectedOpeningBalances` (card e6fd): fija que su `rollback()` no deja el borrado del
+    /// saldo sucio en el contexto compartido. SOLO tests.
+    var _testThrowOnSettleSave = false
 
     /// Hace que el `save` de las filas nuevas del drain lance, como un store que no puede escribir. Para fijar que
     /// `drainOnce` lo devuelve como captura sin terminar (ticket `groups-drain-failure-reads-as-nothing-pending`). SOLO tests.
@@ -723,6 +728,10 @@ final class GroupsSyncClient {
         let push = await pushPending(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push
         if let stop = GroupsSyncCadence.stopOutcome(push: push) { return stop }
+        // Card e6fd: un saldo inicial que el servidor rechazó para siempre se descarta aquí y su grupo vuelve a bajar en el
+        // pull de abajo. Entre los dos, síncrono: ninguna página en vuelo pisa el cursor que pone a 0. Vuelve a drenar dentro
+        // (lo editado mientras el push volaba), así que no depende del `drained` de arriba.
+        settleRejectedOpeningBalances(context: context)
         let pull = await pullUntilExhausted(context: context)
         guard generation == teardownGeneration else { return .coalesced }  // teardown durante el pull
 
@@ -2413,8 +2422,6 @@ final class GroupsSyncClient {
         for row in rows { byMutation[row.clientMutationID.uuidString.lowercased()] = row }
 
         var groupNotFoundPurged = 0
-        // Card 6n1o: saldos iniciales que el servidor rechazó (g27_01), por grupo; se avisan tras el save.
-        var openingBalanceRejections: [(groupID: String, reason: OpeningBalanceServerRejectionLogic.Reason)] = []
         // B2: pares (syncID, hlc) cuyo archivo espejo debe borrarse — purgas (applied/noop) Y dead-letters
         // (excluidas del espejo). Se borra DESPUÉS del save exitoso (orden fila-primero, molde
         // `confirmUploaded` del personal); si el save falla, el espejo queda consistente con el store.
@@ -2453,9 +2460,8 @@ final class GroupsSyncClient {
                             let stored = slug.map { "upstream_400:\($0)" } ?? "upstream_400"
                             markDeadLetter(row, reason: stored, telemetryReason: slug ?? "upstream_400")
                             mirrorRemovals.append((row.syncID, row.hlc))
-                            if let rejection = OpeningBalanceServerRejectionLogic.reason(forSlug: slug) {
-                                openingBalanceRejections.append((row.groupID, rejection))
-                            }
+                            // Card 6n1o/e6fd: un rechazo de saldo inicial se avisa cuando `settleRejectedOpeningBalances`
+                            // lo descarta del teléfono, no aquí: el aviso dice que el saldo volvió a como está en el grupo.
                         } else if reason.hasPrefix("upstream_") {
                             // 5xx / 429: transitorio (reintento en el próximo push). El espejo se conserva.
                             continue
@@ -2476,9 +2482,6 @@ final class GroupsSyncClient {
         }
         for removal in mirrorRemovals {
             outboxMirror?.remove(syncID: removal.syncID, hlc: removal.hlc)
-        }
-        for rejection in openingBalanceRejections {
-            OpeningBalanceServerRejectionNotices.shared.record(groupID: rejection.groupID, reason: rejection.reason)
         }
         if groupNotFoundPurged > 0 {
             GroupsSyncBreadcrumb.groupsMetaPurgedGroupNotFound(count: groupNotFoundPurged)
@@ -2502,6 +2505,117 @@ final class GroupsSyncClient {
         row.rejectedAt = now()
         GroupsSyncBreadcrumb.groupsPushDeadLettered(reason: reason)
         MetricsService.canary(.groupPushRejected, detail: telemetryReason)
+    }
+
+    /// Card e6fd (2026-11-01) · descarta en el teléfono los saldos iniciales que el servidor rechazó para siempre
+    /// (`OpeningBalanceServerRejectionLogic.settlesDeadLetter`) y devuelve ese grupo a lo que tiene el servidor.
+    ///
+    /// Hasta este día la fila se quedaba en dead-letter para siempre: el teléfono enseñaba su versión (el servidor no vuelve
+    /// a mandar una fila que no cambió) y el Merkle del grupo se saltaba mientras existiera (guard 2 de
+    /// `verifyGroupIntegrity`). Ahora, en UN save con el autor del canal —el drain no lo captura, así que nada vuelve a
+    /// subir—: se borra la fila del outbox, se borra la copia local del gasto o reparto (si el servidor lo tiene, vuelve con
+    /// el re-pull; si era nuevo, no vuelve) y el cursor de ese grupo vuelve a 0.
+    ///
+    /// Corre entre el push y el pull del MISMO ciclo, síncrono, como la subida de versión de u8cl: no hay página en vuelo
+    /// que pise el reset, y solo toca grupos donde ESTA sesión escribió (la regla del cursor de `swiftdata-cloudkit.md`).
+    /// Lee dead-letters, no resultados del push, así que cura también las que dejó una versión anterior.
+    /// Devuelve cuántas filas descartó.
+    @discardableResult
+    func settleRejectedOpeningBalances(context: ModelContext) -> Int {
+        let sessionOwner = currentUserIDProvider()
+        let candidates: [GroupSyncOutbox]
+        do {
+            candidates = try context.fetch(FetchDescriptor<GroupSyncOutbox>(predicate: #Predicate { $0.rejectedReason != nil }))
+                .filter {
+                    OpeningBalanceServerRejectionLogic.settlesDeadLetter(
+                        rejectedReason: $0.rejectedReason, rowOwner: $0.ownerUserID, sessionOwner: sessionOwner)
+                }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: settleRejectedOpeningBalances fetch falló: \(error)")
+            #endif
+            return 0
+        }
+        guard !candidates.isEmpty else { return 0 }
+
+        // El re-pull desde 0 pisa la fila entera de CADA gasto del grupo, y una edición que siga en el History sin traducir
+        // no tiene HLC nuevo: se perdería (review adversarial del 2026-11-01, el mismo daño que u8cl evita con `drained`).
+        // Y el push del ciclo suelta el hilo: lo editado mientras volaba solo vive en el History. ⇒ se vuelve a drenar aquí,
+        // pegado al reset, y un grupo con algo VIVO en el outbox espera al ciclo siguiente, cuando su push lo haya subido.
+        guard drainOnce(context: context) else {
+            GroupsSyncBreadcrumb.groupsOpeningBalanceRejectionDeferred(reason: "drain-unfinished")
+            return 0
+        }
+        var rows: [GroupSyncOutbox] = []
+        var deferredGroups: Set<String> = []
+        for groupID in Set(candidates.map(\.groupID)) {
+            let live: Int
+            do { live = try liveOutboxCount(groupID: groupID, context: context) }
+            catch { deferredGroups.insert(groupID); continue }
+            if live > 0 { deferredGroups.insert(groupID) } else { rows += candidates.filter { $0.groupID == groupID } }
+        }
+        if !deferredGroups.isEmpty {
+            GroupsSyncBreadcrumb.groupsOpeningBalanceRejectionDeferred(reason: "live-outbox:\(deferredGroups.count)")
+        }
+        guard !rows.isEmpty else { return 0 }
+        // Se leen ANTES del save: después, las filas están borradas y leerlas es leer un modelo sin respaldo.
+        let notices: [(groupID: String, reason: OpeningBalanceServerRejectionLogic.Reason)] = rows.compactMap { row in
+            guard let stored = row.rejectedReason,
+                  let reason = OpeningBalanceServerRejectionLogic.reason(
+                      forSlug: String(stored.dropFirst(OpeningBalanceServerRejectionLogic.storedPrefix.count)))
+            else { return nil }
+            return (row.groupID, reason)
+        }
+        let settledCount = rows.count
+
+        var unbridgeExpenseIDs: Set<UUID> = []
+        var resetGroupIDs: Set<String> = []
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            try saveWithAuthor(context) {
+                var map = decodeCursors(cursor.groupCursorsJSON)
+                for row in rows {
+                    let id = row.syncID
+                    let groupID = row.groupID
+                    switch row.entityType {
+                    case GroupSyncEntityType.splitExpense:
+                        if let expense = try fetchSplitExpense(id: id, context: context) { context.delete(expense) }
+                        // El puente se deshace como en un tombstone remoto; el re-pull lo rehace si el gasto existe.
+                        unbridgeExpenseIDs.insert(id)
+                    case GroupSyncEntityType.splitShare:
+                        if let share = try fetchSplitShare(id: id, context: context) { context.delete(share) }
+                    default:
+                        break  // los tres códigos solo salen de gastos y repartos (g27_01)
+                    }
+                    context.delete(row)
+                    if let seq = map[groupID], seq != 0 {
+                        map[groupID] = 0
+                        resetGroupIDs.insert(groupID)
+                    }
+                }
+                if !resetGroupIDs.isEmpty { cursor.groupCursorsJSON = encodeCursors(map) }
+                if _testThrowOnSettleSave { throw GroupsApplyTestCrash.suppressed }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: settleRejectedOpeningBalances save falló: \(error)")
+            #endif
+            // Obligatorio, como en el apply: un borrado que se quede sucio en el contexto compartido lo guardaría otro save
+            // con el autor por defecto, el drain lo capturaría y subiría un tombstone del saldo.
+            context.rollback()
+            return 0
+        }
+        drainUnbridge(expenseIDs: unbridgeExpenseIDs, settlementIDs: [])
+        // El re-pull vuelve a bajar todos los gastos de esos grupos: sin esto, cada uno avisaría de «gasto modificado».
+        capabilityRepullZones.formUnion(resetGroupIDs)
+        // El aviso (card 6n1o) sale aquí y no en `applyResults`: dice que el saldo volvió a como está en el grupo, y eso solo
+        // es verdad tras este save. También avisa de lo que descarta de una versión anterior: el saldo cambia en pantalla y
+        // la persona tiene que saber por qué.
+        for notice in notices {
+            OpeningBalanceServerRejectionNotices.shared.record(groupID: notice.groupID, reason: notice.reason)
+        }
+        GroupsSyncBreadcrumb.groupsOpeningBalanceRejectionSettled(rows: settledCount, groupsReset: resetGroupIDs.count)
+        return settledCount
     }
 
     /// Decodifica el `outcome` de cada resultado del push APARTE (el `SyncDeltaResult` local lo descarta),
@@ -4012,8 +4126,9 @@ extension GroupsSyncClient {
 
     /// Verifica la integridad Merkle de UN grupo. Guards EN ORDEN (molde `CloudSyncEngine.verifyIntegrity`,
     /// adaptado por-grupo): (1) outbox VIVO del grupo == 0; (2) dead-letters del grupo == 0 ([R7]: un
-    /// dead-letter PERMANENTE deshabilita el Merkle de ESE grupo para siempre — aceptado; solo
-    /// `yala_not_authorized` revive vía re-drive al aprobar al member); (3) último pull del canal completado;
+    /// dead-letter PERMANENTE deshabilita el Merkle de ESE grupo para siempre — aceptado; `yala_not_authorized`
+    /// revive vía re-drive al aprobar al member, y desde la card e6fd los tres rechazos de saldo inicial se descartan en
+    /// `settleRejectedOpeningBalances`, así que tampoco lo apagan); (3) último pull del canal completado;
     /// (4) canon `c2`; (5) árbol LOCAL legible — una tabla que no se deja leer es skip, nunca tabla vacía;
     /// ([R4]) corpus-vacío-remoto + local no-vacío → remoción de membership (skip, sin canario). Divergencia real →
     /// `.diverged` (el canario/remediación los agrega el caller). Los `reason` salen de `GroupMerkleSkipReason`.

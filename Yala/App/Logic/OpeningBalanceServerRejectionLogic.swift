@@ -32,6 +32,20 @@ nonisolated enum OpeningBalanceServerRejectionLogic {
         return rank(incoming) > rank(current) ? incoming : current
     }
 
+    /// Card e6fd (2026-11-01) · ¿Esta fila del outbox es un saldo inicial que el servidor rechazó para siempre y que este
+    /// teléfono tiene que descartar? Solo los tres códigos (`rejectedReason` tal como lo guarda `applyResults`) y solo filas
+    /// de la sesión: una dead-letter de otra cuenta no se toca, y sin sesión no se toca ninguna. El resto de rechazos sigue
+    /// como estaba (`yala_not_authorized` revive al aprobar al miembro; 5xx/429 nunca llegan a dead-letter).
+    static func settlesDeadLetter(rejectedReason: String?, rowOwner: String?, sessionOwner: String?) -> Bool {
+        guard let rejectedReason, rejectedReason.hasPrefix(storedPrefix),
+              reason(forSlug: String(rejectedReason.dropFirst(storedPrefix.count))) != nil else { return false }
+        guard let sessionOwner, !sessionOwner.isEmpty else { return false }
+        return rowOwner == sessionOwner
+    }
+
+    /// Prefijo con que `GroupsSyncClient.applyResults` guarda un rechazo P0001 del servidor (`upstream_400:<código>`).
+    static let storedPrefix = "upstream_400:"
+
     private static func rank(_ reason: Reason) -> Int {
         switch reason {
         case .groupClosed: 3

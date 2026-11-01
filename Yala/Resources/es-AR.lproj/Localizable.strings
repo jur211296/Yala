@@ -3768,9 +3768,9 @@
 "groups.openingBalance.errorNotAdmin" = "Solo un administrador del grupo puede gestionar los saldos iniciales.";
 "groups.openingBalance.errorSameMember" = "Elegí dos miembros distintos.";
 "groups.openingBalance.serverRejected.title" = "Tu cambio no llegó al grupo";
-"groups.openingBalance.serverRejected.notAdmin" = "Solo el dueño o un administrador del grupo puede cambiar los saldos iniciales, y ahora no lo sos. Los demás miembros no van a ver este cambio.";
-"groups.openingBalance.serverRejected.locked" = "Quienes están en ese saldo inicial ya tienen pagos confirmados, así que ya no se puede cambiar. Los demás miembros no van a ver este cambio.";
-"groups.openingBalance.serverRejected.groupClosed" = "Este grupo ya no admite cambios. Los demás miembros no van a ver este cambio.";
+"groups.openingBalance.serverRejected.notAdmin" = "Solo el dueño o un administrador del grupo puede cambiar los saldos iniciales, y ahora no lo sos. El saldo vuelve a quedar como está en el grupo.";
+"groups.openingBalance.serverRejected.locked" = "Quienes están en ese saldo inicial ya tienen pagos confirmados, así que ya no se puede cambiar. El saldo vuelve a quedar como está en el grupo.";
+"groups.openingBalance.serverRejected.groupClosed" = "Este grupo ya no admite cambios. El saldo vuelve a quedar como está en el grupo.";
 
 // MARK: groups header balance bar
 "groups.detail.yourBalance" = "Tu balance";
