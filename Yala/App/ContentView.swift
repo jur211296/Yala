@@ -4521,6 +4521,7 @@ struct MainTabView: View {
                 navigation.isMainTabModalVisible = false
                 navigation.isEditingTabBarLayout = false
                 cancelForeignPresentationRedrain()
+                UITestHooks.shared.noteLifecycle(.shellUnmounted)
             }
             .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: showTrialExpired) { _, _ in publishMainTabModalVisibilityAndRedrain() }

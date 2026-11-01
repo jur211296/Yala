@@ -16,9 +16,22 @@
 import XCTest
 
 final class ExternalEntryForeignSheetUITests: XCTestCase {
+    /// El ciclo de vida de la app recién arrancada (`uitest_lifecycle`), antes de abrir el formulario: leerlo entre el
+    /// tecleo e Inicio metería 1-3 s del runner justo en la ventana que se diagnostica. Si el formulario no sobrevive, el
+    /// mensaje de fallo lo compara con el de la vuelta (card 5xj4): en verde, la vuelta da `formularios=1`. «Sin
+    /// marcador» a la vuelta quiere decir que el proceso murió: SpringBoard relanza Yala sin `-uitest`.
+    private var lifecycleBeforeLeaving = ""
+
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
+    }
+
+    /// `pid=… escenas=+…/-… shell=… formularios=…` (`UITestHooks.lifecycleSummary`).
+    private func lifecycle(_ app: XCUIApplication) -> String {
+        let marker = app.descendants(matching: .any)["uitest_lifecycle"]
+        guard marker.exists else { return "sin marcador" }
+        return (marker.value as? String) ?? "sin valor"
     }
 
     /// Abre `url` por el sistema. Si SpringBoard pregunta «¿Abrir en …?», se acepta (molde de `SharedImageEntryUITests`).
@@ -39,6 +52,7 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         // Con precios: la oferta de prueba solo sale si se sabe que la cuenta aún la tiene (UX 2.2 · L17-5).
         app.launchForUITest(pro: true, aiConsent: true, fakePrices: true, extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        lifecycleBeforeLeaving = lifecycle(app)
 
         // Estadísticas es el 2.º tab del config default [panel, statistics, planning].
         let statsTab = app.tabBars.buttons.element(boundBy: 1)
@@ -82,12 +96,15 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         shot.name = capture
         shot.lifetime = .keepAlways
         add(shot)
+        let typed = waited == .timedOut ? ((amountField.value as? String) ?? "") : ""
+        let survived = waited == .timedOut && (typed.contains("1234") || typed.contains("1.234") || typed.contains("1,234"))
+        // El marcador de la vuelta solo se lee si algo falló: en verde no añade otra consulta (1-3 s en el runner).
+        let lifecycleNote = survived ? "" : " Ciclo de vida — al arrancar: \(lifecycleBeforeLeaving); al volver: \(lifecycle(app))."
         XCTAssertEqual(waited, .timedOut,
-                       "La entrada desde fuera cerró el Nuevo registro que estaba a medias en Estadísticas.",
+                       "La entrada desde fuera cerró el Nuevo registro que estaba a medias en Estadísticas.\(lifecycleNote)",
                        file: file, line: line)
-        let typed = (amountField.value as? String) ?? ""
-        XCTAssertTrue(typed.contains("1234") || typed.contains("1.234") || typed.contains("1,234"),
-                      "El importe escrito se perdió (valor: «\(typed)»).", file: file, line: line)
+        XCTAssertTrue(survived,
+                      "El importe escrito se perdió (valor: «\(typed)»).\(lifecycleNote)", file: file, line: line)
     }
 
     private func closeForm(_ app: XCUIApplication) {

@@ -345,6 +345,48 @@ struct InboxDismissScheduledDraftTests {
                 "el adelanto no avanzó y la siguiente se pagaría dos veces")
     }
 
+    /// El mismo adelanto con fechas FIJAS, en los días en que el oráculo encadenado fallaba (card 8hs2): pagos de fin de
+    /// mes cuya ocurrencia ya cubrió una transacción del día anterior. Aprobar el adelanto salta a la ocurrencia que va
+    /// después de la siguiente, anclada al día del pago (`dayOfMonth`), no «siguiente + 1 mes»: el 31-oct pasa del
+    /// 30-nov al 31-dic, y el 31-ene del 28-feb al 31-mar. El caso de arriba lo prueba con la fecha de hoy; este, en los
+    /// días 28, 29, 30 y 31 aunque se corra a mitad de mes. Con el avance encadenado (sin `dayOfMonth`) sale el 30-dic.
+    @Test(arguments: [
+        (occurrence: [2026, 10, 31], next: [2026, 11, 30], afterNext: [2026, 12, 31]),
+        (occurrence: [2027, 1, 31], next: [2027, 2, 28], afterNext: [2027, 3, 31]),
+        (occurrence: [2028, 1, 31], next: [2028, 2, 29], afterNext: [2028, 3, 31]),
+        (occurrence: [2027, 1, 30], next: [2027, 2, 28], afterNext: [2027, 3, 30]),
+        (occurrence: [2027, 2, 28], next: [2027, 3, 28], afterNext: [2027, 4, 28])
+    ])
+    func payingEarlyAMonthEndOccurrence_landsOnThePaymentsDay(
+        occurrence: [Int], next: [Int], afterNext: [Int]
+    ) throws {
+        func day(_ ymd: [Int]) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: ymd[0], month: ymd[1], day: ymd[2])))
+        }
+        let context = try makeTestContext()
+        let occurrenceDay = try day(occurrence)
+        let payment = ScheduledPayment(name: "Alquiler", amount: 1200, currencyCode: "PEN", nextDueDate: occurrenceDay,
+                                       dayOfMonth: occurrence[2], paymentCategory: Category.recurring.rawValue,
+                                       isActive: true)
+        context.insert(payment)
+        let dayBefore = try #require(calendar.date(byAdding: .day, value: -1, to: occurrenceDay))
+        let tx = TransactionItem(date: dayBefore, amount: -1200, currencyCode: "PEN")
+        tx.scheduledPaymentID = payment.id.uuidString
+        context.insert(tx)
+        payment.lastPaidDate = dayBefore
+        ScheduledPaymentDraftService.advanceToNextDueDate(payment: payment)
+        try context.save()
+        #expect(calendar.isDate(payment.nextDueDate, inSameDayAs: try day(next)))
+
+        let advanced = ScheduledPaymentDraftService.createDraftForOccurrence(
+            from: payment, date: occurrenceDay, context: context
+        )
+        advanced.status = .approved
+        ScheduledPaymentDraftService.handleDraftApproved(draft: advanced, context: context)
+        #expect(calendar.isDate(payment.nextDueDate, inSameDayAs: try day(afterNext)),
+                "el adelanto de la ocurrencia del \(occurrence) tenía que dejar la próxima en el \(afterNext)")
+    }
+
     @Test func deletingAnArchivedDraft_doesNotSkipAnotherOccurrence() throws {
         let context = try makeTestContext()
         let payment = insertDuePayment(context, dueDaysAgo: 45)

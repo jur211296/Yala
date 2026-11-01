@@ -315,6 +315,14 @@ func dateOffset(months: Int) -> Date {
     Calendar.current.date(byAdding: .month, value: months, to: Date()) ?? Date()
 }
 
+/// «Hace un momento», sin salir de HOY: `now − 60 s`, salvo en el primer minuto del día, que se queda en las 00:00.
+/// Para los tests cuyo código lee el reloj real por dentro (sin `now:` que inyectar) y filtra por el día, el mes o el año
+/// en curso. Con `now − 60 s` a secas, de 00:00:00 a 00:00:59 del día 1 la fila caía en el mes anterior (barrido de la
+/// card tyzh, 2026-11-01). Donde el código acepte `now:`, mejor una fecha fija.
+func aMomentAgoToday(now: Date = Date()) -> Date {
+    max(now.addingTimeInterval(-60), Calendar.current.startOfDay(for: now))
+}
+
 // MARK: - Context-Free Factories (no ModelContext needed)
 
 func makeBudget(

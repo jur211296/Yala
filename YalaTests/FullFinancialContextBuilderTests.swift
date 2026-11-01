@@ -96,23 +96,24 @@ struct FullFinancialContextBuilderTests {
         return budget
     }
 
+    /// «Ahora» de toda la suite: el 15-oct-2026 a mediodía, fijo. Con el reloj real, la primera hora del día 1 dejaba
+    /// las filas «de este mes» en el mes anterior y caían 12 casos (CI del 1-nov a las 00:30, card tyzh). A mitad de mes
+    /// caben los desplazamientos de los casos (−50 días, +3 días) sin cruzar al mes de al lado.
+    private let now: Date = Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 12))
+        ?? Date(timeIntervalSince1970: 1_792_083_600)
+
+    /// Un día de este mes (el de `now`), anterior a `now`: `offset` días después del día 1, a medianoche.
     private func currentMonthDate(offset: Int = 1) -> Date {
         let cal = Calendar.current
-        let monthStart = cal.dateInterval(of: .month, for: Date.now)?.start ?? Date.now
-        let candidate = cal.date(byAdding: .day, value: offset, to: monthStart) ?? Date.now
-        // El builder filtra `tx.date > now` (drafts en futuro). Cuando el día actual
-        // es <= offset (p. ej. correr el test el día 3 con offset 3), la fecha cae
-        // en mañana y la tx queda fuera de aggregates. Clampar a `now - 1h` mantiene
-        // ordenamiento estable por amount sin perder transacciones.
-        let safeMax = Date.now.addingTimeInterval(-3600)
-        return min(candidate, safeMax)
+        let monthStart = cal.dateInterval(of: .month, for: now)?.start ?? now
+        return cal.date(byAdding: .day, value: offset, to: monthStart) ?? now
     }
 
     private func lastMonthDate(offset: Int = 1) -> Date {
         let cal = Calendar.current
-        let monthStart = cal.dateInterval(of: .month, for: Date.now)?.start ?? Date.now
-        let lastMonthStart = cal.date(byAdding: .month, value: -1, to: monthStart) ?? Date.now
-        return cal.date(byAdding: .day, value: offset, to: lastMonthStart) ?? Date.now
+        let monthStart = cal.dateInterval(of: .month, for: now)?.start ?? now
+        let lastMonthStart = cal.date(byAdding: .month, value: -1, to: monthStart) ?? now
+        return cal.date(byAdding: .day, value: offset, to: lastMonthStart) ?? now
     }
 
     @MainActor
@@ -124,7 +125,7 @@ struct FullFinancialContextBuilderTests {
         scheduledPayments: [ScheduledPayment] = [],
         currencyCode: String = "USD",
         includeAnomalies: Bool = false,
-        now: Date = .now
+        now: Date? = nil
     ) -> FullFinancialContext {
         FullFinancialContextBuilder().buildFromArrays(
             transactions: transactions,
@@ -138,7 +139,7 @@ struct FullFinancialContextBuilderTests {
             language: "es",
             country: "US",
             includeAnomalies: includeAnomalies,
-            now: now
+            now: now ?? self.now
         )
     }
 
@@ -234,7 +235,6 @@ struct FullFinancialContextBuilderTests {
         // Reproduce el bug: una tx a medianoche exacta del día 1 del mes actual
         // no debe contarse en AMBOS periods.currentMonth Y periods.lastMonth.
         let cal = Calendar.current
-        let now = Date.now
         let monthStart = cal.dateInterval(of: .month, for: now)?.start ?? now
         let food = makeCategory(name: "Food")
         let tx = makeTx(amount: -100, date: monthStart, category: food)
@@ -306,7 +306,7 @@ struct FullFinancialContextBuilderTests {
         let cal = Calendar.current
         var txs: [TransactionItem] = []
         for i in 1...10 {
-            let d = cal.date(byAdding: .day, value: -(20 + i * 3), to: Date.now) ?? Date.now
+            let d = cal.date(byAdding: .day, value: -(20 + i * 3), to: now) ?? now
             txs.append(makeTx(amount: -20, date: d, category: food))
         }
         txs.append(makeTx(amount: -250, date: currentMonthDate(), category: food, note: "Big"))
@@ -339,7 +339,7 @@ struct FullFinancialContextBuilderTests {
     @MainActor @Test func weekdayPattern_singleLargeTx_lowSampleSize() {
         let transport = makeCategory(name: "Transport")
         let cal = Calendar.current
-        let recent = cal.date(byAdding: .day, value: -3, to: Date.now) ?? Date.now
+        let recent = cal.date(byAdding: .day, value: -3, to: now) ?? now
         let txs = [makeTx(amount: -3400, date: recent, category: transport, note: "Bus")]
 
         let result = buildContext(transactions: txs)
@@ -433,7 +433,6 @@ struct FullFinancialContextBuilderTests {
         let secondTxs = firstTxs + [makeTx(amount: -100, date: currentMonthDate(), category: food)]
 
         let builder = FullFinancialContextBuilder()
-        let now = Date.now
         let first = builder.buildFromArrays(
             transactions: firstTxs,
             budgets: [],
