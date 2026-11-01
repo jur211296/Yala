@@ -579,7 +579,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
 | guest-decline-has-no-screen | done | tickets/done/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
-| half-filled-form-loses-its-amount-after-an-external-entry-on-ci | backlog | tickets/backlog/half-filled-form-loses-its-amount-after-an-external-entry-on-ci.md |
+| half-filled-form-loses-its-amount-after-an-external-entry-on-ci | in-progress | tickets/in-progress/half-filled-form-loses-its-amount-after-an-external-entry-on-ci.md |
 | handover-leaves-the-storage-mode-without-a-session | backlog | tickets/backlog/handover-leaves-the-storage-mode-without-a-session.md |
 | health-score-income-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/health-score-income-sums-stored-amounts-from-other-preferred-currencies.md |
 | hero-estadisticas-stock-vs-flujo-entre-pestanas | done | tickets/done/hero-estadisticas-stock-vs-flujo-entre-pestanas.md |

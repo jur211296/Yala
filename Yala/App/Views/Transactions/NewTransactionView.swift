@@ -675,6 +675,7 @@ struct NewTransactionView: View {
             // también la primera aparición: ahí cuenta la apertura para la pista de los atajos (L2-8), solo en uno nuevo.
             if formBaseline == nil {
                 formBaseline = viewModel.formSnapshot
+                UITestHooks.shared.noteLifecycle(.freshForm)
                 if transactionToEdit == nil {
                     descriptionHint = DescriptionShortcutHintLogic.registerOpening()
                 }

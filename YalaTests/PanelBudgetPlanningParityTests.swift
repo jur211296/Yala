@@ -27,7 +27,7 @@ struct PanelBudgetPlanningParityTests {
         let food = Yala.Category(name: "Comida", colorHex: "#000", isIncome: false)
         let others = Yala.Category(name: "Otros", colorHex: "#000", isIncome: false)
         let salaryCat = Yala.Category(name: "Sueldo", colorHex: "#000", isIncome: true)
-        let date = Date.now.addingTimeInterval(-60)
+        let date = aMomentAgoToday()
         func tx(_ amount: Double, _ category: Yala.Category?) -> TransactionItem {
             TransactionItem(
                 date: date, amount: amount, currencyCode: "PEN", category: category, account: account,

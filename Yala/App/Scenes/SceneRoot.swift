@@ -40,6 +40,9 @@ struct SceneRoot<Content: View>: View {
     var body: some View {
         content()
             .environment(navigation)
+            .overlay(alignment: .topLeading) {
+                if UITestHooks.isActive { UITestLifecycleMarker() }
+            }
             .background {
                 WindowSceneProbe(
                     onResolve: { scene in SceneRegistry.shared.attach(scene, to: navigation.id) },
@@ -73,6 +76,20 @@ struct SceneRoot<Content: View>: View {
             navigation.pendingRecordID = id
             navigation.selectMainTab(.records)
         }
+    }
+}
+
+/// El ciclo de vida del proceso como valor de accesibilidad (`uitest_lifecycle`), solo con `-uitest`. Un punto
+/// transparente que no recibe toques; vive en la raíz de la ventana, fuera de la barra de pestañas, para seguir ahí si
+/// la barra se desmonta. Ver `UITestHooks.lifecycleSummary`.
+private struct UITestLifecycleMarker: View {
+    var body: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .allowsHitTesting(false)
+            .accessibilityElement()
+            .accessibilityIdentifier("uitest_lifecycle")
+            .accessibilityValue(UITestHooks.shared.lifecycleSummary)
     }
 }
 

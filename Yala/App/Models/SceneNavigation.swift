@@ -96,6 +96,7 @@ final class SceneNavigation: Identifiable {
             stored: stored,
             reduceToGroupsOnly: isGroupsFocusedShell)
         let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
+        UITestHooks.shared.traceLifecycle("pestaña \(decision.selectedTab)")
 
         pendingTabSelectionTask?.cancel()
         if decision.requiresDelay, let temp = decision.temporaryTab {

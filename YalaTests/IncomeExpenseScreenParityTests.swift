@@ -96,7 +96,7 @@ struct IncomeExpenseScreenParityTests {
         try withRecordsState(period: period) {
             let context = try makeTestContext()
             let now = Date.now
-            let f = try fixture(context, date: now.addingTimeInterval(-60))
+            let f = try fixture(context, date: aMomentAgoToday(now: now))
             let interval = period.dateInterval(now: now)
             let converter = MockCurrencyConverter()
 
@@ -165,7 +165,7 @@ struct IncomeExpenseScreenParityTests {
     )
     func pivotDimensionsAgree(dimension: ReportGroupingDimension) throws {
         let context = try makeTestContext()
-        let f = try fixture(context, date: Date.now.addingTimeInterval(-60))
+        let f = try fixture(context, date: aMomentAgoToday())
         let nodes = PivotTableCalculator.buildTree(
             currentTransactions: f.txs, previousTransactions: [], hierarchy: [dimension], preferredCurrency: "PEN",
             allTags: [], converter: MockCurrencyConverter()
@@ -181,7 +181,7 @@ struct IncomeExpenseScreenParityTests {
     @Test("Los filtros Ingresos y Gastos no esconden el movimiento sin categoría")
     func natureFiltersPartitionEveryMovement() throws {
         let context = try makeTestContext()
-        let f = try fixture(context, date: Date.now.addingTimeInterval(-60))
+        let f = try fixture(context, date: aMomentAgoToday())
         func matching(_ nature: TransactionNature) -> Set<PersistentIdentifier> {
             var criteria = FilterCriteria()
             criteria.selectedTransactionNatures = [nature]
@@ -201,7 +201,7 @@ struct IncomeExpenseScreenParityTests {
     func netIsTheSumOfAmounts() throws {
         let context = try makeTestContext()
         let now = Date.now
-        let f = try fixture(context, date: now.addingTimeInterval(-60))
+        let f = try fixture(context, date: aMomentAgoToday(now: now))
         let net = f.txs.reduce(0) { $0 + $1.amount }
         #expect(close(net, expectedIncome - expectedExpense))
         let interval = DetailPeriod.thisMonth.dateInterval(now: now)
@@ -228,7 +228,7 @@ struct IncomeExpenseScreenParityTests {
     @Test("La regla con datos sueltos coincide con la del movimiento")
     func looseDataRuleMatchesTheTransactionRule() throws {
         let context = try makeTestContext()
-        let f = try fixture(context, date: Date.now.addingTimeInterval(-60))
+        let f = try fixture(context, date: aMomentAgoToday())
         for tx in f.txs {
             #expect(
                 TransactionClassificationLogic.isIncome(tx)
@@ -253,7 +253,7 @@ struct IncomeExpenseScreenParityTests {
         let context = try makeTestContext()
         let account = makeTestAccount(context: context, name: "Main", currencyCode: "PEN")
         let food = makeTestCategory(context: context, name: "Comida", isIncome: false)
-        let date = Date.now.addingTimeInterval(-60)
+        let date = aMomentAgoToday()
         func tx(_ amount: Double, provisional: Bool) -> TransactionItem {
             let item = TransactionItem(
                 date: date, amount: amount, currencyCode: "PEN", note: "", category: food, account: account,
@@ -292,7 +292,7 @@ struct IncomeExpenseScreenParityTests {
         let account = makeTestAccount(context: context, name: "Main", currencyCode: "PEN")
         let food = makeTestCategory(context: context, name: "Comida", isIncome: false)
         let clothes = makeTestCategory(context: context, name: "Ropa", isIncome: false)
-        let date = Date.now.addingTimeInterval(-60)
+        let date = aMomentAgoToday()
         let txs = [(-100.0, food), (-50, clothes), (50, clothes)].map { amount, category in
             let item = TransactionItem(
                 date: date, amount: amount, currencyCode: "PEN", note: "", category: category, account: account,
@@ -317,7 +317,7 @@ struct IncomeExpenseScreenParityTests {
         let context = try makeTestContext()
         let account = makeTestAccount(context: context, name: "Main", currencyCode: "PEN")
         let food = makeTestCategory(context: context, name: "Comida", isIncome: false)
-        let date = Date.now.addingTimeInterval(-60)
+        let date = aMomentAgoToday()
         let txs = [-50.0, 50].map { amount in
             let item = TransactionItem(
                 date: date, amount: amount, currencyCode: "PEN", note: "", category: food, account: account,

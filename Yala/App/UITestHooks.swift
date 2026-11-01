@@ -12,12 +12,26 @@
 import Foundation
 import Observation
 import SwiftData
+import UIKit
 
 @MainActor
 @Observable
 final class UITestHooks {
     static let shared = UITestHooks()
-    private init() {}
+    private init() {
+        guard Self.isActive else { return }
+        let center = NotificationCenter.default
+        lifecycleObservers.append(center.addObserver(
+            forName: UIScene.willConnectNotification, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { UITestHooks.shared.noteLifecycle(.sceneConnected) }
+        })
+        lifecycleObservers.append(center.addObserver(
+            forName: UIScene.didDisconnectNotification, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { UITestHooks.shared.noteLifecycle(.sceneDisconnected) }
+        })
+    }
 
     // MARK: - Flags (false en release)
 
@@ -1369,5 +1383,49 @@ final class UITestHooks {
     var rootIdentifier: String {
         guard Self.isActive else { return "" }
         return isReady ? "uitest_ready" : "uitest_loading"
+    }
+
+    // MARK: - Ciclo de vida (diagnóstico de un rojo que solo sale en el CI, card 5xj4)
+
+    /// Lo que puede rehacer un formulario a medias mientras Yala está en segundo plano. Un XCUITest lo lee del marcador
+    /// `uitest_lifecycle` (`UITestLifecycleMarker`) antes de salir de Yala y al volver, y lo cita en su mensaje de fallo:
+    /// así la nocturna dice si iOS mató el proceso (otro `pid`), descartó la escena (`escenas`), desmontó la barra de
+    /// pestañas (`shell`) o rehízo el formulario sin nada de eso (`formularios`). Solo cuenta con `-uitest`.
+    enum LifecycleEvent {
+        case sceneConnected, sceneDisconnected, shellUnmounted, freshForm
+    }
+
+    private(set) var lifecycleSceneConnects = 0
+    private(set) var lifecycleSceneDisconnects = 0
+    private(set) var lifecycleShellUnmounts = 0
+    private(set) var lifecycleFreshForms = 0
+    @ObservationIgnored private var lifecycleObservers: [NSObjectProtocol] = []
+
+    func noteLifecycle(_ event: LifecycleEvent) {
+        guard Self.isActive else { return }
+        switch event {
+        case .sceneConnected: lifecycleSceneConnects += 1
+        case .sceneDisconnected: lifecycleSceneDisconnects += 1
+        case .shellUnmounted: lifecycleShellUnmounts += 1
+        case .freshForm: lifecycleFreshForms += 1
+        }
+        traceLifecycle(String(describing: event))
+    }
+
+    /// Los últimos sucesos, en orden, con las hojas presentadas en ese instante (`d=`): pestaña elegida, fase de la
+    /// escena, hoja que se cierra. Los contadores dicen QUÉ se rehízo; la traza, después de QUÉ.
+    private(set) var lifecycleTrace: [String] = []
+
+    func traceLifecycle(_ event: @autoclosure () -> String) {
+        guard Self.isActive else { return }
+        lifecycleTrace.append("\(event()) d=\(ModalPresentationProbe.presentationDepth(in: nil))")
+        if lifecycleTrace.count > 14 { lifecycleTrace.removeFirst(lifecycleTrace.count - 14) }
+    }
+
+    /// `pid=… escenas=+…/-… shell=… formularios=… · traza: …`: el valor del marcador.
+    var lifecycleSummary: String {
+        "pid=\(ProcessInfo.processInfo.processIdentifier) escenas=+\(lifecycleSceneConnects)/-\(lifecycleSceneDisconnects)"
+            + " shell=\(lifecycleShellUnmounts) formularios=\(lifecycleFreshForms)"
+            + " · traza: \(lifecycleTrace.joined(separator: ", "))"
     }
 }

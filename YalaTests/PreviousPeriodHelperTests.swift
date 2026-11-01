@@ -179,13 +179,23 @@ struct PreviousPeriodHelperTests {
         #expect(intervalEndComponents.day == currentEndComponents.day)
     }
 
-    @Test func previousInterval_thisWeek_year_sameWeekLastYear() {
-        let interval = PreviousPeriodHelper.previousInterval(for: .thisWeek, mode: .year)
+    /// `now` fijo: el año que se compara es el del INICIO de la semana, y la de los primeros días de enero empieza en
+    /// diciembre. Con `Date()` el caso salía rojo del 1 al 3 de enero de 2027 (esperaba 2026 y la semana anterior de
+    /// hace un año empieza en 2025). Barrido de la card tyzh, 2026-11-01.
+    @Test(arguments: [
+        (year: 2026, month: 6, day: 17, expectedYear: 2025),
+        (year: 2027, month: 1, day: 2, expectedYear: 2025)
+    ])
+    func previousInterval_thisWeek_year_sameWeekLastYear(
+        year: Int, month: Int, day: Int, expectedYear: Int
+    ) throws {
         let cal = Calendar.current
-        // Year component should be previous year
-        let yearComponent = cal.component(.year, from: interval.start)
-        let currentYear = cal.component(.year, from: Date())
-        #expect(yearComponent == currentYear - 1)
+        let now = try #require(cal.date(from: DateComponents(year: year, month: month, day: day, hour: 12)))
+        let interval = PreviousPeriodHelper.previousInterval(for: .thisWeek, mode: .year, now: now)
+        let currentWeekStart = DetailPeriod.thisWeek.dateInterval(now: now).start
+        let expectedStart = try #require(cal.date(byAdding: .year, value: -1, to: currentWeekStart))
+        #expect(interval.start == expectedStart)
+        #expect(cal.component(.year, from: interval.start) == expectedYear)
     }
 
     @Test func previousInterval_thisMonth_year_sameMonthLastYear() {

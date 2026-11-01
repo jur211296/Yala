@@ -257,6 +257,7 @@ struct DetailContainerView: View {
                 recordsViewModel.exitDuplicateMode()   // modo efímero
             }
             .onChange(of: scenePhase) { _, newPhase in
+                UITestHooks.shared.traceLifecycle("fase \(newPhase)")
                 switch newPhase {
                 case .background, .inactive:
                     isInBackground = true
@@ -810,7 +811,10 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $recordsViewModel.showNewTransaction) {
                 NewTransactionView()
                     .presentationDetents([.large])
-                    .onDisappear { reloadAndRecalculate() }
+                    .onDisappear {
+                        UITestHooks.shared.traceLifecycle("formulario fuera abierto=\(recordsViewModel.showNewTransaction)")
+                        reloadAndRecalculate()
+                    }
             }
             .sheet(isPresented: $showVoiceRecording) {
                 VoiceRecordingView()
