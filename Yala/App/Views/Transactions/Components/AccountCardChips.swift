@@ -8,7 +8,9 @@
 //  la pastilla de cuenta de siempre y nada más.
 //
 //  Lo usa la hoja de aprobar un borrador de la Bandeja. El formulario de transacción hace lo mismo con su ViewModel
-//  (`NewTransactionViewModel.cardMembers`), que ya tiene las cuentas cargadas.
+//  (`NewTransactionViewModel.cardMembers`), que ya tiene las cuentas cargadas. Las dos pintan igual (registro unificado,
+//  opción A): pastillas rellenas, y la última divisa cierra su fila en `RecordSelectorChips`, así que la categoría
+//  empieza fila debajo de la tarjeta.
 //
 
 import SwiftData
@@ -18,6 +20,10 @@ struct AccountCardChips: View {
     @Environment(\.modelContext) private var modelContext
 
     @Binding var selectedAccount: Account?
+    /// Falta la cuenta para poder guardar: la pastilla lleva la marca de las que faltan (borde de acento).
+    var isMissing: Bool = false
+    /// Identificador de la pastilla de cuenta, para XCUITest.
+    var accountIdentifier: String = "card_account_chip"
     /// Abre el selector de cuentas.
     let onOpenSelector: () -> Void
 
@@ -31,8 +37,10 @@ struct AccountCardChips: View {
                 text: members.first?.name ?? selectedAccount?.name ?? L10n.Transaction.account,
                 isSelected: selectedAccount != nil,
                 color: selectedAccount.map { Color(hex: $0.colorHex) },
+                isMissing: isMissing,
                 action: onOpenSelector
             )
+            .accessibilityIdentifier(accountIdentifier)
 
             ForEach(members, id: \.persistentModelID) { member in
                 let isChosen = member.persistentModelID == selectedAccount?.persistentModelID
@@ -46,6 +54,7 @@ struct AccountCardChips: View {
                 }
                 .accessibilityLabel(L10n.Account.Lines.cardCurrencyChip(member.currencyCode))
                 .accessibilityIdentifier("card_currency_chip_\(member.currencyCode)")
+                .endsSelectorRow(member.persistentModelID == members.last?.persistentModelID)
             }
         }
         .task(id: selectedAccount?.persistentModelID) { loadMembers() }

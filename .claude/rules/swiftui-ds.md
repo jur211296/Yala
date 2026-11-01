@@ -205,6 +205,15 @@ paths:
 - **Anidar dos hijos de un `HStack` en otro `HStack` NO es neutro cuando la fila va justa (medido 2026-09-28).** `HStack { icono; texto; Spacer(); importe }` y `HStack { HStack { icono; texto }; Spacer(); importe }` pintan igual con holgura, pero con compresión reparten el ancho distinto: en un iPhone SE la tarjeta de grupo pasó a truncar el nombre («Viaje a Cu…») para no encoger el importe, que antes cedía con su `minimumScaleFactor`. Lo cazó un diff píxel a píxel antes/después a tamaño por defecto; a simple vista en el ProMax no se veía. ⇒ **para reorganizar una fila con el tamaño de texto, `AdaptiveRowStack(leading:trailing:)`**, que a tamaño normal pinta la fila plana de siempre y solo anida al apilar. `AnyLayout` obliga a una sola jerarquía para las dos formas, y por eso aquí no sirve.
 
 - **Una pantalla que reparte su alto con `Spacer`s y no tiene scroll no cabe en un iPhone SE (medido 2026-09-28).** Nuevo registro y las pantallas de éxito tras guardar y tras aprobar un borrador se salían por arriba y por abajo **a tamaño normal**: con el teclado abierto en el formulario, y sin él en las de éxito. A AX5, «Guardar» quedaba fuera de alcance, también en el ProMax. ⇒ **envuélvela en `GeometryReader { proxy in ScrollView { VStack { … }.frame(minHeight: proxy.size.height) }.scrollBounceBehavior(.basedOnSize) }`**: cuando cabe, los `Spacer`s reparten igual y no hay scroll (medido píxel a píxel en el ProMax); cuando no, se desplaza. Si la pantalla tiene botones de salida, esos quedan fuera del scroll (molde de `GroupExpenseSuccessView`).
+  **Con un `.safeAreaInset(edge: .bottom)` por fuera y el teclado puesto, el `minHeight` del molde tapa lo de abajo
+  (medido el 2026-11-01, Nuevo gasto de Grupos, iOS 27.0):** el alto que mide el `GeometryReader` deja de descontar la
+  barra del inset, el contenido «cabe» y lo último queda debajo de «Guardar». ⇒ mientras haya un campo con foco, sin
+  alto mínimo (`.frame(minHeight: focusedField == nil ? proxy.size.height : nil)`), o el molde de Nuevo registro
+  (`SaveAreaPlacement`, que mete «Guardar» en el contenido con el teclado).
+- **Cambiar el `foregroundStyle` de un `TextField` mientras tiene el foco no se ve hasta que lo pierde (medido el
+  2026-11-01, iOS 27.0).** Un monto que pasaba de gris a rosa al escribir el primer dígito se quedó gris con «240»
+  escrito. ⇒ el gris de «sin monto» va en el `prompt` (`Text(verbatim: "0.00").foregroundStyle(.tertiary)`) y el texto
+  lleva su color fijo, como Nuevo registro.
 
 - **`.fixedSize()` en un control ensancha la columna ENTERA cuando el control no cabe (medido 2026-09-28).** La píldora del período (`PeriodSelectorLabel`) con ancho fijo mide más que un iPhone SE a AX5, y su `VStack` padre crece con ella: el Panel y Registros perdían los márgenes y todo el contenido se cortaba contra los dos bordes, no solo la píldora. ⇒ **a tamaños de accesibilidad, `.fixedSize(horizontal: false, vertical: true)`**, para que el texto pase a dos líneas. El síntoma engaña: parece un problema de cada fila, y es de una sola pieza de arriba.
 

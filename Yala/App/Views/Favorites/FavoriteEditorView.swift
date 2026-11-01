@@ -70,39 +70,47 @@ struct FavoriteEditorView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: DS.Spacing.none) {
-                // Transaction type selector (without transfer)
-                transactionTypeSelector
-                    .padding(.top, DS.Spacing.sm)
+            // Con los selectores en filas que bajan (registro unificado) el editor puede crecer: va en el molde del scroll
+            // con alto mínimo (`swiftui-ds.md`), que cuando cabe reparte igual con los `Spacer`s y no desplaza.
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: DS.Spacing.none) {
+                        // Transaction type selector (without transfer)
+                        transactionTypeSelector
+                            .padding(.top, DS.Spacing.sm)
 
-                Spacer()
+                        Spacer()
 
-                // Central content
-                centralContent
+                        // Central content
+                        centralContent
 
-                Spacer()
+                        Spacer()
 
-                // Bottom selection chips
-                bottomChips
-                    .padding(.bottom, favorite == nil ? DS.Spacing.lg : DS.Spacing.sm)
+                        // Bottom selection chips
+                        bottomChips
+                            .padding(.bottom, favorite == nil ? DS.Spacing.lg : DS.Spacing.sm)
 
-                // «Eliminar favorito» al fondo del editor, donde se busca (L7-14): antes solo se borraba
-                // deslizando la fila o desde «Editar».
-                if favorite != nil {
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Text(L10n.UXL7.Favorites.delete)
-                            .font(DS.Typography.bodyBold)
-                            .foregroundStyle(DS.Semantic.errorForeground)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, DS.Spacing.md)
-                            .contentShape(Rectangle())
+                        // «Eliminar favorito» al fondo del editor, donde se busca (L7-14): antes solo se borraba
+                        // deslizando la fila o desde «Editar».
+                        if favorite != nil {
+                            Button(role: .destructive) {
+                                showDeleteConfirmation = true
+                            } label: {
+                                Text(L10n.UXL7.Favorites.delete)
+                                    .font(DS.Typography.bodyBold)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, DS.Spacing.md)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.bottom, DS.Spacing.lg)
+                            .accessibilityIdentifier("favorite_editor_delete")
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .padding(.bottom, DS.Spacing.lg)
-                    .accessibilityIdentifier("favorite_editor_delete")
+                    .frame(minHeight: proxy.size.height)
                 }
+                .scrollBounceBehavior(.basedOnSize)
             }
             .dismissKeyboardOnTap()
             .yalaScreenBackground(.subtle)
@@ -369,18 +377,17 @@ struct FavoriteEditorView: View {
 
     // MARK: - Bottom Chips
 
+    /// El contenedor de los formularios de registro (registro unificado, 2026-10-31): filas que bajan cuando no caben, en
+    /// vez de una fila con desplazamiento lateral, y lo elegido relleno (`SelectionChip`).
     private var bottomChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) { // DS: intentional non-token value
-                if isTransfer {
-                    transferChips
-                } else {
-                    expenseIncomeChips
-                }
+        RecordSelectorChips(spacing: DS.Spacing.sm) {
+            if isTransfer {
+                transferChips
+            } else {
+                expenseIncomeChips
             }
-            .padding(.horizontal, DS.Spacing.xl)
         }
-        .fadesTowardVerticalBar()
+        .padding(.horizontal, DS.Spacing.xl)
     }
 
     /// Origen y destino, con los mismos colores e iconos que el formulario de registro (`NewTransactionView`). Sin

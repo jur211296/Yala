@@ -110,6 +110,11 @@ final class UITestHooks {
     /// (`DevSeedUncategorizedExpense`), para ver el trozo «Sin categoría» de la tarta. Aditivo al perfil de `-uitest-seed`.
     nonisolated static var seedUncategorizedExpense: Bool { hasArg("-uitest-seed-uncategorized-expense") }
 
+    /// `-uitest-seed-registro-unificado`: añade un borrador pendiente en la tarjeta «Visa QA», en «Restaurantes» y con la
+    /// etiqueta «Trabajo» (`DevSeedRecordForms`), para ver los selectores de la aprobación como los de Nuevo registro.
+    /// Aditivo al perfil de `-uitest-seed`.
+    nonisolated static var seedRecordForms: Bool { hasArg("-uitest-seed-registro-unificado") }
+
     /// `-uitest-last-seen-version <valor>`: qué `lastSeenAppVersion` deja el arranque uitest. Sin el flag, la versión
     /// actual (las Novedades no tapan el primer tap de ningún XCUITest). Con una versión (`2.0.4`), esa: el
     /// dispositivo «viene de actualizar». `none` borra la key; `keep` no la toca, para medir lo que dejó el

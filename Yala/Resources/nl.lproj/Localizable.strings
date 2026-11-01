@@ -8534,3 +8534,9 @@
 "account.lines.delete %@" = "Lijn in %@ verwijderen";
 "account.lines.deleteConfirmTitle %@" = "Lijn in %@ verwijderen?";
 "account.lines.deleteConfirmMessage" = "Deze lijn heeft geen boekingen. De kaart houdt haar andere valuta. Dit kan niet ongedaan worden gemaakt.";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "Er gaat %1$@ van je rekening af en je krijgt %2$@ terug";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "Er gaat %@ van je rekening af";

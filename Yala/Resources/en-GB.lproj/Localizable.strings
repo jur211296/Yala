@@ -7852,3 +7852,9 @@
 "account.lines.delete %@" = "Delete the %@ line";
 "account.lines.deleteConfirmTitle %@" = "Delete the %@ line?";
 "account.lines.deleteConfirmMessage" = "It has no records. The card keeps its other currencies. This can't be undone.";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "%1$@ leaves your account and you're owed %2$@";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "%@ leaves your account";

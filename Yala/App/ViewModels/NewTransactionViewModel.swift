@@ -140,9 +140,14 @@ final class NewTransactionViewModel {
         return formatter.string(from: NSNumber(value: amount)) ?? "0.00"
     }
 
-    /// Color del monto según el tipo de transacción
+    /// Color del monto según el tipo: el de los tres formularios de registro (`Color.recordFormAmount`, registro
+    /// unificado). La transferencia, en el gris de su tipo.
     var amountColor: Color {
-        transactionType.color
+        switch transactionType {
+        case .expense: return Color.recordFormAmount(isIncome: false)
+        case .income: return Color.recordFormAmount(isIncome: true)
+        case .transfer: return transactionType.color
+        }
     }
 
     /// Indica si es una transferencia

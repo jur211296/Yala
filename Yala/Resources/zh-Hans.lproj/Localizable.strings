@@ -8534,3 +8534,9 @@
 "account.lines.delete %@" = "删除 %@ 子账户";
 "account.lines.deleteConfirmTitle %@" = "删除 %@ 子账户？";
 "account.lines.deleteConfirmMessage" = "它没有任何记录。卡片的其他币种保持不变。此操作无法撤销。";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "从你的账户支出 %1$@，别人欠你 %2$@";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "从你的账户支出 %@";

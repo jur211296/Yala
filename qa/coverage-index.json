@@ -3730,6 +3730,25 @@
       "classification": "manual",
       "coverage": "manual — medición opt-in: LoadTimesUITests con YALA_PERF=1 (siembra `rendimiento` y recorre 10 pantallas); los arreglos que midió los fijan YalaTests/LoadTimesFixesTests. 2026-10-30, encargo eficiencia-carga-por-vista.",
       "lastVerified": "2026-10-30"
+    },
+    {
+      "area": "registro-unificado",
+      "codeGlobs": [
+        "Yala/App/Views/Transactions/Components/RecordFormPieces.swift",
+        "Yala/App/Views/Transactions/Components/AccountCardChips.swift",
+        "Yala/App/Views/Transactions/Components/SelectionChip.swift",
+        "Yala/App/Logic/GroupExpenseOutflowLineLogic.swift",
+        "Yala/Seed/DevSeedRecordForms.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Views/Inbox/InboxDraftEditSheet.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Favorites/FavoriteEditorView.swift",
+        "Yala/App/Views/Inbox/GroupDraftFinalizationScaffold.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:RegistroUnificadoUITests#test_nuevoRegistro_tarjetaConDosLineas_categoriaEnLaFilaDeDebajo, RegistroUnificadoUITests#test_aprobacion_mismasDosFilasQueNuevoRegistro_yLaEtiquetaALaVista, RegistroUnificadoUITests#test_grupos_cuentaJuntoALaCategoria_grupoEncimaDeLaFecha_yLaLineaDeLoQueSale + YalaTests/RegistroUnificadoTests (filas de los selectores, línea de Grupos, color del monto, cableado). Opción A de Jürgen, 2026-10-31; encargo registro-unificado-implementar.",
+      "lastVerified": "2026-11-01"
     }
   ]
 }

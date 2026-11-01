@@ -19,8 +19,10 @@ struct SelectionChip: View {
     /// Falta para poder guardar (UX 2.2 · L2-2): borde del color de acento.
     var isMissing: Bool = false
     /// Lo elegido va relleno con su color y texto blanco AA, con un rebote del icono y el relleno animado (UX 2.2 · L2-19
-    /// y L2-21). Solo el formulario de registro lo pide; los demás formularios siguen con el tinte de siempre.
-    var fillsWhenSelected: Bool = false
+    /// y L2-21). Desde el registro unificado (opción A, 2026-10-31) es lo de siempre: la aprobación de la Bandeja, Grupos,
+    /// el editor de favoritos y las hojas que completan un borrador de grupo pintaban lo elegido solo teñido, y una línea
+    /// de moneda elegida apenas se distinguía de la otra. `false` deja el tinte, y hoy nadie lo pide.
+    var fillsWhenSelected: Bool = true
     let action: () -> Void
 
     private var baseColor: Color { color ?? theme.accent }
@@ -80,7 +82,7 @@ struct SelectionChip: View {
 #Preview {
     HStack {
         SelectionChip(icon: "creditcard", text: "Cuenta", isSelected: false) {}
-        SelectionChip(icon: "tag", text: "Comida", isSelected: true, color: .orange, fillsWhenSelected: true) {}
+        SelectionChip(icon: "tag", text: "Comida", isSelected: true, color: .orange) {}
     }
     .padding()
 }

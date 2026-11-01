@@ -8522,3 +8522,9 @@
 "account.lines.delete %@" = "Linie in %@ löschen";
 "account.lines.deleteConfirmTitle %@" = "Linie in %@ löschen?";
 "account.lines.deleteConfirmMessage" = "Sie hat keine Buchungen. Die Karte behält ihre anderen Währungen. Das lässt sich nicht rückgängig machen.";
+
+/* Group expense form, under the selectors when you paid: the whole amount leaves your account and the others owe you their part */
+"groups.expense.outflowLine" = "%1$@ gehen von deinem Konto ab und man schuldet dir %2$@";
+
+/* Group expense form, under the selectors when you paid and nobody owes you */
+"groups.expense.outflowLineNoDebt" = "%@ gehen von deinem Konto ab";

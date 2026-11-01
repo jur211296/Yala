@@ -223,30 +223,53 @@ struct GroupExpenseFormView: View {
 
     private var formView: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    if let notice {
-                        noticeBanner(notice)
+            // Registro unificado (opción A, 2026-10-31): el mismo molde que Nuevo registro. Arriba, en el sitio del control
+            // segmentado, el grupo; en medio, fecha, descripción, monto y la frase de quién paga; abajo, los selectores. El
+            // alto se reparte con `Spacer`s dentro de un scroll con alto mínimo: cuando cabe no desplaza y no queda el
+            // hueco de abajo que dejaba el formulario de antes.
+            GeometryReader { proxy in
+                ScrollViewReader { scroller in
+                ScrollView {
+                    VStack(spacing: DS.Spacing.none) {
+                        if let notice {
+                            noticeBanner(notice)
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.bottom, DS.Spacing.lg)
+                            // Card fptw (opción B de Jürgen, 2026-10-23): quien crea su primer grupo desde «Grupo» del
+                            // Panel (L13-8) llega aquí en vez de a «está listo», y ésa era la pantalla que pedía los avisos.
+                            GroupNotificationsOptInCard()
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.bottom, DS.Spacing.lg)
+                        }
+
+                        groupContextChip
+                            .padding(.top, DS.Spacing.sm)
+
+                        Spacer(minLength: DS.Spacing.xl)
+
+                        centralContent
                             .padding(.horizontal, DS.Spacing.lg)
-                        // Card fptw (opción B de Jürgen, 2026-10-23): quien crea su primer grupo desde «Grupo» del Panel
-                        // (L13-8) llega aquí en vez de a «está listo», y ésa era la pantalla que pedía los avisos.
-                        GroupNotificationsOptInCard()
-                            .padding(.horizontal, DS.Spacing.lg)
+
+                        Spacer(minLength: DS.Spacing.xl)
+
+                        bottomChips
+                            .padding(.bottom, DS.Spacing.lg)
+                            .id(Self.bottomChipsAnchor)
                     }
-
-                    centralContent
-                        .padding(.horizontal, DS.Spacing.lg)
-
-                    whoPaysCard
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.xl)
-
-                    bottomChips
+                    .padding(.top, DS.Spacing.md)
+                    // Con el teclado puesto, sin alto mínimo: el alto que mide el `GeometryReader` no descuenta entonces
+                    // la barra de «Guardar», el contenido «cabía» y no se podía bajar hasta los selectores, que quedaban
+                    // debajo de ella (medido el 2026-11-01 en XCUITest). Con su alto natural, el scroll baja hasta ellos.
+                    .frame(minHeight: focusedField == nil ? proxy.size.height : nil)
                 }
-                .padding(.top, DS.Spacing.md)
-                .padding(.bottom, DS.Spacing.lg)
+                .scrollBounceBehavior(.basedOnSize)
+                // La cuenta es una pastilla de abajo: si es lo que falta al tocar «Guardar» y queda fuera de la vista
+                // (con el reparto desplegado, por ejemplo), se baja hasta ella para que se vea su marca.
+                .onChange(of: markedMissingField) { _, missing in
+                    scrollToAccountIfMissing(missing, with: scroller)
+                }
+                }
             }
-            .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
             .dismissKeyboardOnTap()
             .safeAreaInset(edge: .bottom) {
@@ -355,7 +378,7 @@ struct GroupExpenseFormView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
-                }
+            }
             .sheet(isPresented: $showCurrencyPicker) {
                 // NavigationStack para que el .toolbar con la "X" de CurrencySelectorView
                 // se renderice (sin barra de navegación no hay dónde colocarlo).
@@ -398,42 +421,23 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Central Content
 
+    /// Fecha, descripción y monto en el orden, el tamaño y el aire de Nuevo registro; debajo, quién paga y cómo se reparte.
     private var centralContent: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Grupo y fecha en una sola línea pequeña: son contexto, no lo que se edita.
-            HStack(spacing: DS.Spacing.sm) {
-                groupContextChip
-                dateChip
-            }
-            .padding(.top, DS.Spacing.lg)
+        VStack(spacing: DS.Spacing.xxl) {
+            dateChip
             descriptionField
-                .padding(.top, DS.Spacing.sm)
             amountDisplay
+            whoPaysCard
         }
     }
 
     // MARK: - Date Chip
 
+    /// La pastilla de fecha de los tres formularios (registro unificado); antes iba en letra pequeña junto al grupo.
     private var dateChip: some View {
-        Button {
+        RecordPillButton(icon: "calendar", text: dateChipText) {
             showDatePicker = true
-        } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "calendar")
-                    .font(DS.Typography.caption)
-                Text(dateChipText)
-                    .font(DS.Typography.subheadline)
-            }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, DS.Spacing.md)
-            .padding(.vertical, DS.Spacing.xs)
-            .contentShape(Capsule())
-            .background(
-                Capsule()
-                    .fill(Color.primary.opacity(0.08))
-            )
         }
-        .buttonStyle(.plain)
         // El chip no era alcanzable desde XCUITest, y sin él la FECHA del prellenado no se podía
         // afirmar: es el campo del bug que `GroupExpensePrefillTemplate.date` existe para impedir
         // (un borrador de hace tres días convirtiéndose en un gasto fechado HOY). El label expone
@@ -452,14 +456,9 @@ struct GroupExpenseFormView: View {
 
     private var descriptionField: some View {
         TextField(L10n.Groups.Expense.descriptionPlaceholder, text: $viewModel.expenseDescription)
-            .font(DS.Typography.title)
-            .foregroundStyle(.primary)
-            .multilineTextAlignment(.center)
-            .textContentType(.none)
+            .recordDescriptionStyle()
             .autocorrectionDisabled(false)
             .focused($focusedField, equals: .description)
-            .frame(maxWidth: 280)
-            .tint(Color.primary)
             .accessibilityLabel(L10n.Groups.Expense.descriptionPlaceholder)
             .accessibilityIdentifier("group_expense_description")
             .overlay(alignment: .bottom) { missingMark(for: .description) }
@@ -484,9 +483,12 @@ struct GroupExpenseFormView: View {
         HStack(alignment: .center, spacing: DS.Spacing.md) {
             currencyChip
 
-            TextField("0.00", text: $viewModel.amountString)
+            // El rosa del gasto de los tres formularios de registro (registro unificado); antes, el acento del tema. Sin
+            // monto, el «0.00» es el ejemplo gris de Nuevo registro, no una cifra escrita. (Cambiar el color de un campo
+            // mientras se escribe no se aplica hasta salir de él: por eso el gris va en el ejemplo y no en el texto.)
+            TextField("", text: $viewModel.amountString, prompt: Text(verbatim: "0.00").foregroundStyle(.tertiary))
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
-                .foregroundStyle(theme.accentText)
+                .foregroundStyle(Color.recordFormAmount(isIncome: false))
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($focusedField, equals: .amount)
@@ -499,8 +501,9 @@ struct GroupExpenseFormView: View {
                         viewModel.amountString = ""
                     }
                     if newFocus != .amount {
-                        if viewModel.amountString.isEmpty {
-                            viewModel.amountString = "0.00"
+                        // Vacío o en cero se queda vacío y enseña el ejemplo gris (antes se escribía «0.00» de verdad).
+                        if viewModel.amountString.isEmpty || viewModel.amount == 0 {
+                            viewModel.amountString = ""
                         } else {
                             viewModel.amountString = AmountInputHelper.formatWithGrouping(viewModel.amount)
                         }
@@ -550,8 +553,8 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Group Context Chip
 
-    /// Chip debajo del segmented control que muestra (y opcionalmente cambia) el grupo
-    /// del gasto. Editable al crear desde el FAB del tab; solo lectura dentro del detalle.
+    /// El grupo del gasto, arriba, en el sitio que en Nuevo registro ocupa el control segmentado (registro unificado,
+    /// Jürgen 2026-10-31): Grupos no tiene tipos. Editable al crear desde el FAB del tab; solo lectura dentro del detalle.
     @ViewBuilder
     private var groupContextChip: some View {
         switch groupChip {
@@ -575,24 +578,17 @@ struct GroupExpenseFormView: View {
         }
     }
 
+    /// El grupo al tamaño de la pastilla de la fecha, con su icono y su color. Solo lleva cápsula cuando se puede tocar
+    /// (con chevron): dentro del detalle es contexto y no responde, y con cápsula parecería un botón. El a11y label
+    /// conserva «Grupo: <nombre>».
     private func groupChipLabel(showsChevron: Bool) -> some View {
-        // Sin cápsula: es contexto. El a11y label conserva «Grupo: <nombre>».
-        HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: group.iconName)
-                .font(DS.Typography.caption)
-                .foregroundStyle(Color(hex: group.colorHex))
-            Text(group.name)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-            if showsChevron {
-                Image(systemName: "chevron.down")
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, DS.Spacing.xs)
-        .contentShape(Rectangle())
+        RecordPillLabel(
+            icon: group.iconName,
+            iconColor: Color(hex: group.colorHex),
+            text: group.name,
+            showsChevron: showsChevron,
+            filled: showsChevron
+        )
     }
 
     // MARK: - Pagado por · Reparto (frase + secciones plegables)
@@ -612,8 +608,8 @@ struct GroupExpenseFormView: View {
     /// 2026-10-04: menos ruido a primera vista). En grupos de 3+, «Pagado por [Ana] y dividido
     /// [en partes iguales]» con las dos piezas tocables; cada una abre su parte debajo. En grupos
     /// de 2, una sola pastilla con la frase entera que abre las cuatro opciones rápidas; «Más
-    /// opciones» despliega el reparto completo. La cuenta del Caso A va siempre a la vista: es lo
-    /// único que deja Guardar apagado en un gasto que pagaste tú.
+    /// opciones» despliega el reparto completo. La cuenta del Caso A ya no va aquí: es una pastilla de abajo,
+    /// junto a la subcategoría, como en Nuevo registro (registro unificado).
     private var whoPaysCard: some View {
         let colors = memberColors
         return VStack(spacing: DS.Spacing.lg) {
@@ -621,22 +617,6 @@ struct GroupExpenseFormView: View {
                 twoPersonSentence
             } else {
                 splitSentence
-            }
-
-            if viewModel.isAccountRequired {
-                accountRow
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                            .fill(.thCard)
-                    )
-                    .overlay {
-                        if markedMissingField == .account {
-                            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                                .stroke(DS.Semantic.errorForeground, lineWidth: 2)
-                        }
-                    }
             }
 
             if expandedSection == .payer {
@@ -836,45 +816,6 @@ struct GroupExpenseFormView: View {
         .accessibilityIdentifier("group_expense_payer_\(member.resolvedDisplayName)")
     }
 
-    /// Cuenta de la que salió el pago. Sin cuenta, la fila lo pide en el color de aviso:
-    /// es lo único que deja Guardar apagado en un gasto que pagaste tú.
-    private var accountRow: some View {
-        let account = viewModel.selectedAccount
-        let isMissing = account == nil
-        return Button {
-            dismissKeyboard()
-            showAccountSelector = true
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "creditcard")
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(account.map { Color(hex: $0.colorHex) } ?? Color.secondary)
-                    .accessibilityHidden(true)
-                Text(L10n.Transaction.account)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: DS.Spacing.sm)
-                if isMissing {
-                    Image(systemName: "exclamationmark.circle.fill")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(Color.hotPink)
-                        .accessibilityHidden(true)
-                }
-                Text(account?.name ?? L10n.Validation.selectAccount)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("group_expense_account_row")
-    }
 
     /// «Tú» para el usuario actual (sin paréntesis: aquí es el nombre); el resto, su nombre.
     private func payerDisplayName(_ member: SplitMember) -> String {
@@ -884,11 +825,28 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Bottom Chips
 
+    /// Los selectores de abajo, con las pastillas y el contenedor de Nuevo registro (registro unificado, opción A): la
+    /// cuenta, cuando pagas tú (Caso A con el puente activo), y la subcategoría, que es opcional. Sin líneas de moneda: la
+    /// moneda va en el signo del monto y el selector de cuentas ya se filtra a ella. La cuenta conserva el identificador
+    /// de la fila que sustituye (`group_expense_account_row`) y la marca de las pastillas cuando falta. Debajo, lo que de
+    /// verdad pasa en tus registros cuando pagas tú.
     private var bottomChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                // La cuenta (Caso A) vive en la tarjeta «Pagado por»; aquí queda la subcategoría,
-                // que es opcional.
+        VStack(spacing: DS.Spacing.sm) {
+            RecordSelectorChips(spacing: DS.Spacing.sm) {
+                if viewModel.isAccountRequired {
+                    SelectionChip(
+                        icon: "creditcard",
+                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
+                        isSelected: viewModel.selectedAccount != nil,
+                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) },
+                        isMissing: markedMissingField == .account
+                    ) {
+                        dismissKeyboard()
+                        showAccountSelector = true
+                    }
+                    .accessibilityIdentifier("group_expense_account_row")
+                }
+
                 SelectionChip(
                     icon: "tag",
                     text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
@@ -898,10 +856,44 @@ struct GroupExpenseFormView: View {
                     dismissKeyboard()
                     showSubcategorySelector = true
                 }
+                .accessibilityIdentifier("group_expense_subcategory_chip")
             }
             .padding(.horizontal, DS.Spacing.xl)
+
+            outflowLine
         }
-        .fadesTowardVerticalBar()
+    }
+
+    /// «Salen S/ 240.00 de tu cuenta y te deben S/ 160.00»: solo al crear, cuando pagas tú y el reparto cuadra
+    /// (`GroupExpenseOutflowLineLogic`). No dice «tu parte»: lo que sale de la cuenta es el gasto entero.
+    @ViewBuilder
+    private var outflowLine: some View {
+        if let line = GroupExpenseOutflowLineLogic.line(
+            accountRequired: viewModel.isAccountRequired,
+            isEditing: viewModel.isEditMode,
+            amount: viewModel.amount,
+            hasParticipants: viewModel.hasSelectedMembers,
+            sharesBalanced: viewModel.isSharesBalanced,
+            myShare: GroupExpenseOutflowLineLogic.myStoredShare(
+                viewModel.calculatedShares, myMemberID: viewModel.currentUserMemberID)
+        ) {
+            let paidOut = appPreferences.currency(line.paidOut, currencyCode: viewModel.currencyCode, forceFullPrecision: true)
+            let text = line.owedToYou.map {
+                L10n.Groups.Expense.outflowLine(
+                    paidOut,
+                    appPreferences.currency($0, currencyCode: viewModel.currencyCode, forceFullPrecision: true)
+                )
+            } ?? L10n.Groups.Expense.outflowLineNoDebt(paidOut)
+            Label(text, systemImage: "arrow.left.arrow.right.circle")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Spacing.xl)
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("group_expense_outflow_line")
+        }
     }
 
     private var subcategoryChipColor: Color? {
@@ -1219,6 +1211,15 @@ struct GroupExpenseFormView: View {
     /// Lo que se marca: el primer campo que falta, solo después de haber tocado «Guardar».
     private var markedMissingField: GroupExpenseMissingField? {
         showsMissingField ? viewModel.firstMissingField : nil
+    }
+
+    private static let bottomChipsAnchor = "group_expense_bottom_chips"
+
+    private func scrollToAccountIfMissing(_ missing: GroupExpenseMissingField?, with scroller: ScrollViewProxy) {
+        guard missing == .account else { return }
+        dsWithAnimation(reduceMotion) {
+            scroller.scrollTo(Self.bottomChipsAnchor, anchor: .bottom)
+        }
     }
 
     private func showMissingField(_ missing: GroupExpenseMissingField) {
