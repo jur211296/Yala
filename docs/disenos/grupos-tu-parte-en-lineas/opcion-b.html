@@ -1,0 +1,556 @@
+<title>La B, escenario por escenario</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: columna de lectura de 760px; las maquetas de teléfono rompen a un carril más ancho y se apilan en móvil. */
+:root{
+  --bg:#F6F6FB; --surface:#FFFFFF; --ink:#16162A; --muted:#5E5E78; --line:#E2E2EE;
+  --accent:#4B48D6; --accent-soft:#ECEBFF; --good:#127A52; --warn:#9A5B00; --warn-soft:#FFF4E0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --body:"Onest",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  /* tokens de la app (maquetas) */
+  --app-bg:#FAFBFF; --app-ink:#111; --app-2:#8A8A96; --app-chip:#E9E8FB; --app-indigo:#5E5CE6;
+  --app-pink:#F0147C; --app-green:#1F7A3E; --app-teal:#0F7A80; --app-teal-fill:#00A9B2; --app-card:#FFFFFF; --app-line:#ECECF3;
+  --app-grey-pill:#EFEFF4;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101018; --surface:#191924; --ink:#ECECF6; --muted:#A3A3BC; --line:#2C2C3C;
+  --accent:#9C9AFF; --accent-soft:#25244A; --good:#5BD3A0; --warn:#F2B254; --warn-soft:#2E2414;
+  --app-bg:#0C0C10; --app-ink:#F2F2F7; --app-2:#8E8E99; --app-chip:#2A2950; --app-indigo:#8C8AFF;
+  --app-pink:#FF4DA6; --app-green:#3FB46B; --app-teal:#00C2CB; --app-teal-fill:#00A9B2; --app-card:#1C1C22; --app-line:#2A2A33; --app-grey-pill:#26262E;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101018; --surface:#191924; --ink:#ECECF6; --muted:#A3A3BC; --line:#2C2C3C;
+  --accent:#9C9AFF; --accent-soft:#25244A; --good:#5BD3A0; --warn:#F2B254; --warn-soft:#2E2414;
+  --app-bg:#0C0C10; --app-ink:#F2F2F7; --app-2:#8E8E99; --app-chip:#2A2950; --app-indigo:#8C8AFF;
+  --app-pink:#FF4DA6; --app-green:#3FB46B; --app-teal:#00C2CB; --app-teal-fill:#00A9B2; --app-card:#1C1C22; --app-line:#2A2A33; --app-grey-pill:#26262E;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+.read{max-width:760px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(30px,5vw,44px);font-weight:800;letter-spacing:-.02em}
+h2{font-size:26px;font-weight:700;letter-spacing:-.01em}
+h3{font-size:19px;font-weight:700}
+p{margin:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font:600 12px/1 var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.lede{font-size:18px;color:var(--muted)}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--accent-soft);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.verdict{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;display:grid;grid-template-columns:1fr;gap:16px}
+.verdict .pick{font-family:var(--display);font-size:22px;font-weight:800}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font:600 13px/1.4 var(--body);background:var(--accent-soft);color:var(--accent)}
+.pill.good{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;font-size:15px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.money{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.mcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.mcard .n{font:700 22px/1.2 var(--display);font-variant-numeric:tabular-nums}
+.mcard .l{color:var(--muted);font-size:14px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.3 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.proposal{display:flex;flex-direction:column;gap:22px;border-top:2px solid var(--ink);padding-top:22px}
+.proposal header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 16px}
+.proposal .tag{font:800 15px/1 var(--display);background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:8px}
+.pros{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.pros h4{margin:0 0 6px;font:600 13px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* carril de teléfonos */
+.rail{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 14px;scroll-snap-type:x proximity}
+.shot{flex:0 0 auto;width:250px;display:flex;flex-direction:column;gap:10px;scroll-snap-align:start}
+.shot figcaption{font-size:13.5px;line-height:1.45;color:var(--muted)}
+.shot figcaption b{color:var(--ink);font-weight:600}
+figure{margin:0}
+.real{width:250px;border-radius:30px;border:1px solid var(--line);display:block;background:#fff}
+.badge{align-self:flex-start;font:600 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-radius:6px}
+.badge.real-b{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.badge.mock-b{background:var(--accent-soft);color:var(--accent)}
+/* maqueta de teléfono */
+.phone{width:250px;height:540px;border-radius:30px;border:1px solid var(--line);background:var(--app-bg);color:var(--app-ink);
+  font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.p-bar{display:flex;align-items:center;justify-content:center;position:relative;padding:22px 12px 8px;font-weight:600;font-size:13.5px}
+.p-x{position:absolute;left:12px;top:15px;width:28px;height:28px;border-radius:50%;background:var(--app-card);border:1px solid var(--app-line);display:grid;place-items:center;font-size:13px}
+.p-body{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;padding:4px 14px 12px;min-height:0}
+.p-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:99px;background:var(--app-grey-pill);font-size:11.5px;font-weight:500}
+.p-group{font-size:12px;font-weight:500;color:var(--app-ink)}
+.p-title{font-weight:700;font-size:15px}
+.p-amt{font:700 34px/1.05 -apple-system,"SF Pro Display",system-ui,sans-serif;letter-spacing:-.01em;color:var(--app-pink);font-variant-numeric:tabular-nums}
+.p-amt.teal{color:var(--app-teal)}
+.p-amt small{font-size:15px;color:var(--app-2);font-weight:600;margin-right:4px}
+.p-sent{font-size:11.5px;color:var(--app-2);text-align:center;line-height:1.9}
+.p-sent span{background:var(--app-chip);color:var(--app-indigo);padding:2px 8px;border-radius:99px;font-weight:500}
+.p-card{width:100%;background:var(--app-card);border:1px solid var(--app-line);border-radius:14px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.p-card-h{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--app-2);font-weight:600;padding-bottom:3px}
+.p-row{display:flex;align-items:center;gap:7px;font-size:11.5px;padding:5px 0;border-top:1px solid var(--app-line)}
+.p-row:first-of-type{border-top:0}
+.p-ico{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;color:#fff;flex:0 0 auto}
+.p-row .t{flex:1;min-width:0;line-height:1.25}
+.p-row .t i{display:block;font-style:normal;color:var(--app-2);font-size:10px}
+.p-row .v{font-variant-numeric:tabular-nums;font-weight:600}
+.p-row .v.neg{color:var(--app-ink)} .p-row .v.pos{color:var(--app-teal)} .p-row .v.neu{color:var(--app-2)}
+.p-add{font-size:11px;color:var(--app-indigo);font-weight:600;display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--app-line)}
+.p-add .ok{color:var(--app-green)}
+.p-pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.p-pill{display:inline-flex;align-items:center;gap:4px;padding:6px 11px;border-radius:99px;font-size:11.5px;font-weight:600;color:#fff;background:var(--app-indigo)}
+.p-pill.green{background:var(--app-green)} .p-pill.teal{background:var(--app-teal-fill)} .p-pill.ghost{background:var(--app-grey-pill);color:var(--app-ink)}
+.p-foot{font-size:10.5px;color:var(--app-2);text-align:center}
+.p-btn{margin:auto 14px 16px;padding:11px;border-radius:99px;background:var(--app-indigo);color:#fff;font-weight:600;text-align:center;font-size:13.5px}
+.p-btns{margin:auto 14px 16px;display:flex;gap:8px}
+.p-btns div{flex:1;padding:10px 6px;border-radius:99px;text-align:center;font-size:12.5px;font-weight:600}
+.p-btns .sec{background:var(--app-chip);color:var(--app-indigo)} .p-btns .pri{background:var(--app-indigo);color:#fff}
+.p-seg{display:flex;background:var(--app-grey-pill);border-radius:99px;padding:3px;width:100%;font-size:12px;font-weight:600}
+.p-seg div{flex:1;text-align:center;padding:5px 0;border-radius:99px;color:var(--app-2)}
+.p-seg .on{background:var(--app-pink);color:#fff} .p-seg .on.teal{background:var(--app-teal-fill)} .p-seg .on.ind{background:var(--app-indigo)}
+.p-banner{width:100%;font-size:11px;line-height:1.4;background:var(--app-chip);color:var(--app-indigo);border-radius:12px;padding:8px 10px}
+.p-toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;padding:4px 0 6px}
+.sw{width:34px;height:20px;border-radius:99px;background:#34C759;position:relative;flex:0 0 auto}
+.sw::after{content:"";position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.28)}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:62%;background:var(--app-bg);border-radius:24px 24px 30px 30px;display:flex;flex-direction:column;align-items:center;gap:9px;padding:8px 14px 0}
+.grab{width:36px;height:5px;border-radius:9px;background:var(--app-line);margin-bottom:4px}
+.list{width:100%;display:flex;flex-direction:column}
+.lrow{display:flex;align-items:center;gap:8px;padding:9px 2px;border-bottom:1px solid var(--app-line);font-size:12px}
+.lrow .t{flex:1;min-width:0;line-height:1.3}.lrow .t i{display:block;font-style:normal;color:var(--app-2);font-size:10.5px}
+.lrow .v{font-weight:600;font-variant-numeric:tabular-nums}
+.p-h{align-self:flex-start;font-weight:800;font-size:22px;letter-spacing:-.01em}
+.p-sub{align-self:flex-start;font-size:11px;color:var(--app-2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:6px}
+.notif{width:100%;background:color-mix(in srgb,var(--app-card) 88%,transparent);border:1px solid var(--app-line);border-radius:16px;padding:9px 11px;font-size:11.5px;line-height:1.35}
+.notif b{display:block;font-size:11px;color:var(--app-2);font-weight:600;margin-bottom:2px}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:14.5px;display:flex;flex-direction:column;gap:4px}
+.step b{font-family:var(--display)}
+.note{border-left:3px solid var(--warn);background:var(--warn-soft);padding:12px 16px;border-radius:0 12px 12px 0;font-size:15px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:520px){ .kv{grid-template-columns:1fr} .kv dt{margin-top:6px} }
+</style>
+<style>
+.scen{display:flex;flex-direction:column;gap:20px;border-top:2px solid var(--ink);padding-top:22px}
+.scen header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px}
+.scen .tag{font:800 15px/1 var(--display);background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:8px}
+.steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:8px;max-width:760px}
+.steps li::marker{font-weight:700;color:var(--accent)}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.result .mcard .n.pos{color:var(--good)}
+.result .mcard .n.mut{color:var(--muted)}
+.decided{display:flex;flex-direction:column;gap:12px;max-width:760px}
+.decided .item{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.decided .item b{font-family:var(--display);font-size:16px}
+.decided .item .who{color:var(--muted);font-size:14px}
+.lock{font:300 52px/1 -apple-system,"SF Pro Display",system-ui,sans-serif;letter-spacing:-.02em}
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{text-decoration:none;font-size:14px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.s-check{width:46px;height:46px;border-radius:50%;background:var(--app-green);color:#fff;display:grid;place-items:center;font-size:22px;margin-top:6px}
+.s-info{width:100%;display:flex;flex-direction:column;gap:2px;background:var(--app-card);border:1px solid var(--app-line);border-radius:14px;padding:6px 10px}
+.s-row{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-top:1px solid var(--app-line);font-size:11.5px;line-height:1.3}
+.s-row:first-child{border-top:0}
+.s-row .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10px;color:#fff;flex:0 0 auto}
+.s-row i{display:block;font-style:normal;color:var(--app-2);font-size:10px}
+.s-link{color:var(--app-indigo);font-weight:600;font-size:11.5px;display:inline-flex;gap:4px;margin-top:2px}
+.new{outline:2px dashed var(--app-indigo);outline-offset:3px;border-radius:10px}
+.legend{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.legend span{width:22px;height:14px;border:2px dashed var(--accent);border-radius:5px;display:inline-block}
+</style>
+
+<div class="wrap">
+
+<header class="stack read">
+  <span class="eyebrow">Yala 2.2 · Grupos · Versión acordada con Jürgen el 1-nov</span>
+  <h1>La B, escenario por escenario</h1>
+  <p class="lede">Tu parte de un gasto de grupo se puede partir en líneas, y un gasto de grupo puede llevar una categoría de ingreso. El formulario de Nuevo gasto sigue siendo el de hoy, y quien usa Grupos sin conectar sus cuentas no ve nada nuevo.</p>
+  <p class="legend"><span></span>Lo marcado así es lo único que cambia en cada pantalla.</p>
+  <nav class="toc" aria-label="Escenarios">
+    <a href="#e1">1 · Pía apunta la recarga</a>
+    <a href="#e2">2 · Tú apuntas la recarga</a>
+    <a href="#e3">3 · Pagas tú y partes</a>
+    <a href="#e4">4 · Le vendes algo a Ana</a>
+    <a href="#e5">5 · Ana te paga</a>
+    <a href="#e6">6 · Pagos a medias</a>
+    <a href="#e7">7 · Cambios y borrados</a>
+    <a href="#e8">8 · Alguien con 2.1</a>
+    <a href="#final">Versión final</a>
+  </nav>
+</header>
+
+<section class="stack read">
+  <h2>Qué cambia y dónde</h2>
+  <div class="grid2">
+    <div class="box">
+      <h3>Partir tu parte en líneas</h3>
+      <p>Cada línea es un <b>gasto</b> con su categoría o una <b>recarga</b> a una cuenta tuya. Las líneas tienen que sumar tu parte. Se parte en dos sitios, fuera del formulario:</p>
+      <ul>
+        <li><b>La Bandeja</b>, si el gasto lo apuntó otro.</li>
+        <li><b>La pantalla de éxito</b>, al guardar un gasto que apuntaste tú, o más tarde desde el registro.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Categorías de ingreso</h3>
+      <p>El selector de categoría del gasto de grupo ofrece también las de ingreso. Lo que te deben por una venta queda <b>por cobrar</b> y no cuenta como ingreso. Cuenta el día en que te pagan.</p>
+      <p>No hay un tipo «Cobro»: Ana ve un gasto normal, y el servidor de Grupos no cambia.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ESCENARIO 1 ============ -->
+<section class="scen" id="e1">
+  <header><span class="tag">1</span><h2>Pía apunta la recarga y tú la partes en la Bandeja</h2><span class="pill good">El camino más común</span></header>
+  <p class="read">Pía paga S/ 510 para recargar tu tarjeta Sip y lo apunta en «Pía y yo» como un gasto, todo para ti. En realidad son S/ 500 que pasan a Sip y S/ 10 de comisión.</p>
+  <ol class="steps">
+    <li>Pía apunta «Recarga Sip», S/ 510, pagado por ella, todo para ti, con su formulario de siempre.</li>
+    <li>Te llega el aviso de siempre y un borrador en la Bandeja.</li>
+    <li>La hoja es la de hoy, con un botón nuevo: «Partir». Si no lo tocas, eliges categoría y apruebas como siempre.</li>
+    <li>Tocas «Partir». Cambias la primera línea a <b>Recarga</b>, eliges Sip y pones 500. Añades una línea de gasto en Comisiones por 10.</li>
+    <li>La tarjeta dice «Cuadra ✓» y «Aprobar» se enciende.</li>
+  </ol>
+  <div class="rail">
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-body" style="padding-top:44px;gap:10px">
+        <div style="font-size:12px;color:var(--app-2)">domingo, 1 de noviembre</div><div class="lock">9:41</div>
+        <div class="notif" style="margin-top:14px"><b>YALA · ahora</b>🧾 Pía agregó «Recarga Sip» en Pía y yo · S/ 510.00</div>
+      </div></div>
+      <figcaption><b>1 · El aviso.</b> El de hoy.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Gasto de grupo</div><div class="p-body">
+        <div class="p-banner">Pía apuntó «Recarga Sip» en Pía y yo. Elige cómo entra tu parte en tus cuentas.</div>
+        <span class="p-title">Recarga Sip</span>
+        <div class="p-amt"><small>S/</small>510.00</div>
+        <div class="p-pills"><span class="p-pill ghost">Elige categoría</span><span class="p-pill ghost new">✂︎ Partir</span></div>
+        <div class="p-foot">Debes S/ 510.00 a Pía</div>
+      </div><div class="p-btns"><div class="sec">Dejar para después</div><div class="pri" style="opacity:.45">Aprobar</div></div></div>
+      <figcaption><b>2 · La hoja de hoy, más «Partir».</b> Sin tocarlo, todo funciona como siempre.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Gasto de grupo</div><div class="p-body">
+        <span class="p-title">Recarga Sip</span><div class="p-amt"><small>S/</small>510.00</div>
+        <div class="dim"></div>
+        <div class="sheet"><div class="grab"></div>
+          <span class="p-title">Línea</span>
+          <div class="p-seg"><div>Gasto</div><div class="on ind">Recarga</div></div>
+          <div class="p-amt teal" style="font-size:30px"><small>S/</small>500.00</div>
+          <div class="p-pills"><span class="p-pill ghost">desde Grupos</span><span class="p-pill teal">💳 Sip</span></div>
+          <div class="p-foot">Pasa a tu cuenta Sip. No cuenta como gasto ni como ingreso, y lo que debes a Pía no cambia.</div>
+          <div class="p-btn" style="margin:auto 0 16px;width:100%">Guardar línea</div>
+        </div>
+      </div></div>
+      <figcaption><b>3 · Una línea.</b> Dos tipos: Gasto o Recarga. Recarga pide la cuenta a la que va.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Gasto de grupo</div><div class="p-body">
+        <div class="p-banner">Pía apuntó «Recarga Sip» en Pía y yo. Elige cómo entra tu parte en tus cuentas.</div>
+        <span class="p-title">Recarga Sip</span><div class="p-amt"><small>S/</small>510.00</div>
+        <div class="p-card new"><div class="p-card-h"><span>TU PARTE · S/ 510.00</span><span>2 líneas</span></div>
+          <div class="p-row"><span class="p-ico" style="background:var(--app-teal-fill)">⇄</span><span class="t">Recarga a Sip<i>No es gasto ni ingreso</i></span><span class="v neu">500.00</span></div>
+          <div class="p-row"><span class="p-ico" style="background:#E0663A">%</span><span class="t">Comisiones<i>Gasto</i></span><span class="v neg">10.00</span></div>
+          <div class="p-add"><span>＋ Añadir línea</span><span class="ok">Cuadra ✓</span></div>
+        </div>
+        <div class="p-foot">Debes S/ 510.00 a Pía · Sip sube S/ 500.00</div>
+      </div><div class="p-btns"><div class="sec">Dejar para después</div><div class="pri">Aprobar</div></div></div>
+      <figcaption><b>4 · Partido.</b> Si no sumara, diría «Faltan S/ 10.00» y «Aprobar» seguiría apagado.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-body" style="align-items:stretch;padding-top:26px">
+        <div class="p-h">Registros</div><div class="p-sub">Hoy</div>
+        <div class="list">
+          <div class="lrow"><span class="p-ico" style="background:var(--app-teal-fill)">⇄</span><span class="t">Recarga Sip<i>Grupos → Sip · Transferencia</i></span><span class="v">S/ 500.00</span></div>
+          <div class="lrow"><span class="p-ico" style="background:#E0663A">%</span><span class="t">Recarga Sip<i>Comisiones · Pía y yo</i></span><span class="v">−S/ 10.00</span></div>
+        </div>
+        <div class="p-sub">Saldos</div>
+        <div class="list">
+          <div class="lrow"><span class="t">Sip</span><span class="v" style="color:var(--app-green)">+S/ 500.00</span></div>
+          <div class="lrow"><span class="t">Grupos<i>Debes a Pía</i></span><span class="v">−S/ 510.00</span></div>
+        </div>
+        <div class="p-sub">Estadísticas · gasto del mes</div>
+        <div class="list"><div class="lrow"><span class="t">Comisiones</span><span class="v">S/ 10.00</span></div></div>
+      </div></div>
+      <figcaption><b>5 · Lo que queda.</b> La recarga y la comisión.</figcaption></figure>
+  </div>
+  <div class="result">
+    <div class="mcard"><span class="l">Sip</span><span class="n pos">+S/ 500.00</span><span class="l">Recarga, no es ingreso</span></div>
+    <div class="mcard"><span class="l">Grupos (debes a Pía)</span><span class="n">−S/ 510.00</span><span class="l">Igual que hoy</span></div>
+    <div class="mcard"><span class="l">Gasto en Estadísticas</span><span class="n">S/ 10.00</span><span class="l">Hoy saldrían S/ 510.00</span></div>
+  </div>
+</section>
+
+<!-- ============ ESCENARIO 2 ============ -->
+<section class="scen" id="e2">
+  <header><span class="tag">2</span><h2>Tú apuntas la recarga que pagó Pía</h2></header>
+  <p class="read">El mismo caso, pero lo apuntas tú en el momento.</p>
+  <ol class="steps">
+    <li>En Grupos tocas «＋». <b>Nuevo gasto es el de hoy</b>: S/ 510, «Recarga Sip», pagado por Pía, todo para ti.</li>
+    <li>Guardas. Sale la pantalla de éxito de hoy. En el bloque que explica qué apuntó Yala en tus finanzas hay un enlace nuevo: «Partir tu parte».</li>
+    <li>Lo tocas y se abre la misma tarjeta de la Bandeja. Partes en recarga 500 a Sip y Comisiones 10.</li>
+    <li>Si te lo saltas, más tarde lo partes desde el registro, en Registros.</li>
+    <li>A Pía le llega «Jürgen agregó “Recarga Sip”». Ve un gasto de S/ 510 que pagó ella. Tus líneas son solo tuyas.</li>
+  </ol>
+  <div class="rail">
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Nuevo gasto</div><div class="p-body">
+        <span class="p-chip">🏠 Pía y yo</span>
+        <span class="p-chip">📅 Hoy</span>
+        <span class="p-title">Recarga Sip</span>
+        <div class="p-amt"><small>S/</small>510.00</div>
+        <div class="p-sent">Pagado por <span>Pía</span> y dividido <span>todo para ti</span></div>
+        <div class="p-pills"><span class="p-pill ghost">Categoría</span></div>
+      </div><div class="p-btn">✓ Guardar</div></div>
+      <figcaption><b>1 · Nuevo gasto, el de hoy.</b> Nada nuevo aquí.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-body" style="padding-top:22px">
+        <div class="s-check">✓</div>
+        <span class="p-title">¡Gasto agregado!</span>
+        <div class="p-amt" style="font-size:28px"><small>S/</small>510.00</div>
+        <div class="s-info">
+          <div class="s-row"><span class="ic" style="background:var(--app-pink)">!</span><span>Debes S/ 510.00<i>Se lo debes a Pía</i></span></div>
+          <div class="s-row"><span class="ic" style="background:var(--app-indigo)">✓</span><span>Tu parte, S/ 510.00, en tus finanzas<i>La apuntamos como gasto de grupo, sin tocar tus cuentas.</i><span class="s-link new">✂︎ Partir tu parte</span></span></div>
+        </div>
+      </div><div class="p-btn">Aceptar</div></div>
+      <figcaption><b>2 · La pantalla de éxito.</b> Solo añade el enlace, y solo para quien tiene sus cuentas conectadas.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Tu parte</div><div class="p-body">
+        <span class="p-title">Recarga Sip</span><div class="p-amt"><small>S/</small>510.00</div>
+        <div class="p-card"><div class="p-card-h"><span>TU PARTE · S/ 510.00</span><span>2 líneas</span></div>
+          <div class="p-row"><span class="p-ico" style="background:var(--app-teal-fill)">⇄</span><span class="t">Recarga a Sip<i>No es gasto ni ingreso</i></span><span class="v neu">500.00</span></div>
+          <div class="p-row"><span class="p-ico" style="background:#E0663A">%</span><span class="t">Comisiones<i>Gasto</i></span><span class="v neg">10.00</span></div>
+          <div class="p-add"><span>＋ Añadir línea</span><span class="ok">Cuadra ✓</span></div>
+        </div>
+        <div class="p-foot">Debes S/ 510.00 a Pía · Sip sube S/ 500.00</div>
+      </div><div class="p-btn">Guardar</div></div>
+      <figcaption><b>3 · La tarjeta, en su hoja.</b> La misma de la Bandeja.</figcaption></figure>
+  </div>
+  <p class="read">El resultado en tus cuentas es el del escenario 1.</p>
+</section>
+
+<!-- ============ ESCENARIO 3 ============ -->
+<section class="scen" id="e3">
+  <header><span class="tag">3</span><h2>Pagas tú y partes tu parte en dos categorías</h2></header>
+  <p class="read">Pagas S/ 200 en el súper con tu tarjeta BCP. Es mitad y mitad con Pía. Tus S/ 100 son S/ 80 de comida y S/ 20 de cosas de la casa.</p>
+  <ol class="steps">
+    <li>Nuevo gasto, el de hoy: S/ 200, pagado por ti desde BCP, a partes iguales.</li>
+    <li>En la pantalla de éxito tocas «Partir tu parte» y la partes en Supermercado 80 y Hogar 20.</li>
+    <li>De BCP salen 200, como hoy. Pía te debe 100.</li>
+  </ol>
+  <div class="rail">
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-body" style="padding-top:22px">
+        <div class="s-check">✓</div>
+        <span class="p-title">¡Gasto agregado!</span>
+        <div class="p-amt" style="font-size:28px"><small>S/</small>200.00</div>
+        <div class="s-info">
+          <div class="s-row"><span class="ic" style="background:var(--app-green)">↙</span><span>Te deben S/ 100.00<i>Pía</i></span></div>
+          <div class="s-row"><span class="ic" style="background:var(--app-indigo)">✓</span><span>−S/ 200.00 en BCP<i>Lo apuntamos en tus finanzas porque lo pagaste tú.</i><span class="s-link new">✂︎ Partir tu parte</span></span></div>
+        </div>
+      </div><div class="p-btn">Aceptar</div></div>
+      <figcaption><b>1 · Al guardar.</b> El mismo enlace.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Tu parte</div><div class="p-body">
+        <span class="p-title">Súper Wong</span><div class="p-amt"><small>S/</small>200.00</div>
+        <div class="p-card"><div class="p-card-h"><span>TU PARTE · S/ 100.00</span><span>2 líneas</span></div>
+          <div class="p-row"><span class="p-ico" style="background:#2E9E5B">🛒</span><span class="t">Supermercado<i>Gasto</i></span><span class="v neg">80.00</span></div>
+          <div class="p-row"><span class="p-ico" style="background:#8A6BD6">🏠</span><span class="t">Hogar<i>Gasto</i></span><span class="v neg">20.00</span></div>
+          <div class="p-add"><span>＋ Añadir línea</span><span class="ok">Cuadra ✓</span></div>
+        </div>
+        <div class="p-foot">La parte de Pía no se toca: sigue siendo lo que te debe.</div>
+      </div><div class="p-btn">Guardar</div></div>
+      <figcaption><b>2 · Tu parte, en dos categorías.</b></figcaption></figure>
+  </div>
+  <div class="result">
+    <div class="mcard"><span class="l">BCP</span><span class="n">−S/ 200.00</span><span class="l">Lo que pagaste</span></div>
+    <div class="mcard"><span class="l">Grupos (Pía te debe)</span><span class="n pos">+S/ 100.00</span><span class="l">Igual que hoy</span></div>
+    <div class="mcard"><span class="l">Gasto en Estadísticas</span><span class="n">S/ 100.00</span><span class="l">Supermercado 80 · Hogar 20</span></div>
+  </div>
+  <p class="note read">Si una línea es una recarga y pagaste tú, el dinero sale de la cuenta con la que pagaste: BCP → Sip.</p>
+</section>
+
+<!-- ============ ESCENARIO 4 ============ -->
+<section class="scen" id="e4">
+  <header><span class="tag">4</span><h2>Le vendes algo a Ana y te lo paga después</h2></header>
+  <p class="read">Le vendes unas zapatillas a Ana por S/ 120 y te las paga la semana que viene. Lo apuntas en el grupo «Ventas con Ana».</p>
+  <ol class="steps">
+    <li>Nuevo gasto, el de hoy: S/ 120, «Venta de zapatillas», pagado por ti, todo para Ana.</li>
+    <li>En Categoría eliges <b>Ventas</b>. El selector ahora muestra también las categorías de ingreso.</li>
+    <li>Al elegir una de ingreso desaparece la cuenta: no salió dinero de ningún lado. Debajo, Yala dice qué va a pasar.</li>
+    <li>Guardas. Tu cuenta «Grupos» sube S/ 120 <b>por cobrar</b>. En Estadísticas no entra ningún ingreso todavía.</li>
+    <li>A Ana le llega «Jürgen agregó “Venta de zapatillas”». Para ella es un gasto normal que pagaste tú.</li>
+  </ol>
+  <div class="rail">
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Nuevo gasto</div><div class="p-body">
+        <span class="p-chip">👟 Ventas con Ana</span>
+        <span class="p-chip">📅 Hoy</span>
+        <span class="p-title">Venta de zapatillas</span>
+        <div class="p-amt"><small>S/</small>120.00</div>
+        <div class="p-sent">Pagado por <span>ti</span> y dividido <span>todo para Ana</span></div>
+        <div class="p-pills"><span class="p-pill green new">↗ Ventas</span></div>
+        <div class="p-foot new" style="padding:4px 6px">Ana te debe S/ 120.00. Cuenta como ingreso cuando te pague.</div>
+      </div><div class="p-btn">✓ Guardar</div></div>
+      <figcaption><b>1 · Una categoría de ingreso.</b> Sin la pastilla de cuenta. La frase de abajo ya existe; cambia lo que dice.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Categoría</div><div class="p-body" style="align-items:stretch">
+        <div class="p-seg new"><div class="on ind">Gasto</div><div>Ingreso</div></div>
+        <div class="list">
+          <div class="lrow"><span class="p-ico" style="background:#2E9E5B">↗</span><span class="t">Ventas</span></div>
+          <div class="lrow"><span class="p-ico" style="background:#3B82C4">💼</span><span class="t">Sueldo</span></div>
+          <div class="lrow"><span class="p-ico" style="background:#8A6BD6">🎁</span><span class="t">Regalos recibidos</span></div>
+          <div class="lrow"><span class="p-ico" style="background:#E0663A">🍳</span><span class="t">Clases</span></div>
+        </div>
+      </div></div>
+      <figcaption><b>2 · El selector de categoría.</b> Las de gasto y, ahora, también las de ingreso.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-body" style="align-items:stretch;padding-top:26px">
+        <div class="p-h">Registros</div><div class="p-sub">Hoy · los tuyos</div>
+        <div class="list">
+          <div class="lrow"><span class="p-ico" style="background:#8A8A96">↗</span><span class="t">Venta de zapatillas<i>Ventas · por cobrar · Ventas con Ana</i></span><span class="v" style="color:var(--app-2)">+S/ 120.00</span></div>
+        </div>
+        <div class="p-sub">Saldos</div>
+        <div class="list"><div class="lrow"><span class="t">Grupos<i>Ana te debe</i></span><span class="v" style="color:var(--app-green)">+S/ 120.00</span></div></div>
+        <div class="p-sub">Estadísticas · ingreso del mes</div>
+        <div class="list"><div class="lrow"><span class="t">Ventas</span><span class="v">S/ 0.00</span></div></div>
+      </div></div>
+      <figcaption><b>3 · Lo tuyo.</b> Por cobrar, en gris. «Grupos» coincide con lo que dice el grupo.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-body" style="padding-top:44px;gap:10px">
+        <div style="font-size:12px;color:var(--app-2)">domingo, 1 de noviembre</div><div class="lock">9:41</div>
+        <div class="notif" style="margin-top:14px"><b>YALA · ahora</b>🧾 Jürgen agregó «Venta de zapatillas» en Ventas con Ana · S/ 120.00</div>
+      </div></div>
+      <figcaption><b>4 · Lo que recibe Ana.</b> El aviso de siempre. Ella lo clasifica como cualquier gasto.</figcaption></figure>
+  </div>
+  <div class="result">
+    <div class="mcard"><span class="l">Tus cuentas reales</span><span class="n mut">Sin cambios</span><span class="l">No salió ni entró dinero</span></div>
+    <div class="mcard"><span class="l">Grupos (Ana te debe)</span><span class="n pos">+S/ 120.00</span><span class="l">Por cobrar</span></div>
+    <div class="mcard"><span class="l">Ingreso en Estadísticas</span><span class="n mut">S/ 0.00</span><span class="l">Hasta que te pague</span></div>
+  </div>
+</section>
+
+<!-- ============ ESCENARIO 5 ============ -->
+<section class="scen" id="e5">
+  <header><span class="tag">5</span><h2>Ana te paga</h2></header>
+  <p class="read">Una semana después Ana te manda los S/ 120 por Yape. Es la liquidación de siempre. Lo nuevo es lo que pasa en tus cuentas.</p>
+  <ol class="steps">
+    <li>Ana marca en el grupo que te pagó S/ 120 (o lo marcas tú con «Saldar»).</li>
+    <li>Te llega a la Bandeja «Pago de Ana», con su monto. Eliges la cuenta donde entró: Yape.</li>
+    <li>Yape sube 120 y «Grupos» vuelve a cero.</li>
+    <li>La venta deja de estar por cobrar: los S/ 120 de Ventas <b>cuentan como ingreso hoy</b>, el día del pago.</li>
+  </ol>
+  <div class="rail">
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Pago recibido</div><div class="p-body">
+        <div class="p-banner">Ana registró que te pagó en Ventas con Ana. Elige la cuenta donde entró.</div>
+        <span class="p-title">Pago de Ana</span><div class="p-amt teal"><small>S/</small>120.00</div>
+        <div class="p-pills"><span class="p-pill">💳 Yape</span></div>
+        <div class="p-foot new" style="padding:4px 6px">Cobras «Venta de zapatillas»: S/ 120.00 de Ventas cuentan como ingreso hoy.</div>
+      </div><div class="p-btns"><div class="sec">Dejar para después</div><div class="pri">Aprobar</div></div></div>
+      <figcaption><b>1 · La hoja de pago de hoy.</b> Añade una frase que dice qué ingreso se cobra.</figcaption></figure>
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-body" style="align-items:stretch;padding-top:26px">
+        <div class="p-h">Registros</div><div class="p-sub">8 de noviembre</div>
+        <div class="list">
+          <div class="lrow"><span class="p-ico" style="background:#2E9E5B">↗</span><span class="t">Venta de zapatillas<i>Ventas · cobrado · Ventas con Ana</i></span><span class="v" style="color:var(--app-green)">+S/ 120.00</span></div>
+          <div class="lrow"><span class="p-ico" style="background:var(--app-teal-fill)">⇄</span><span class="t">Pago de Ana<i>Grupos → Yape · Liquidación recibida</i></span><span class="v">S/ 120.00</span></div>
+        </div>
+        <div class="p-sub">Saldos</div>
+        <div class="list">
+          <div class="lrow"><span class="t">Yape</span><span class="v" style="color:var(--app-green)">+S/ 120.00</span></div>
+          <div class="lrow"><span class="t">Grupos</span><span class="v">S/ 0.00</span></div>
+        </div>
+        <div class="p-sub">Estadísticas · ingreso de noviembre</div>
+        <div class="list"><div class="lrow"><span class="t">Ventas</span><span class="v">S/ 120.00</span></div></div>
+      </div></div>
+      <figcaption><b>2 · Lo que queda.</b> El ingreso, con fecha del pago, y la liquidación de siempre.</figcaption></figure>
+  </div>
+  <div class="result">
+    <div class="mcard"><span class="l">Yape</span><span class="n pos">+S/ 120.00</span><span class="l">El dinero que entró</span></div>
+    <div class="mcard"><span class="l">Grupos</span><span class="n">S/ 0.00</span><span class="l">Ana ya no te debe</span></div>
+    <div class="mcard"><span class="l">Ingreso en Estadísticas</span><span class="n pos">S/ 120.00</span><span class="l">Ventas, el día del pago</span></div>
+  </div>
+  <p class="note read">Si en el mismo pago Ana te devuelve también gastos que le adelantaste, esa parte entra como hoy: es una devolución y no cuenta como ingreso.</p>
+</section>
+
+<!-- ============ ESCENARIO 6 ============ -->
+<section class="scen" id="e6">
+  <header><span class="tag">6</span><h2>Pagos a medias y deudas cruzadas</h2></header>
+  <p class="read">Un pago cubre primero lo más antiguo. Lo que es venta cuenta como ingreso cuando el pago llega a cubrirla.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Caso</th><th>Lo que te deben</th><th>Lo que pasa</th><th>Ingreso en Estadísticas</th></tr></thead>
+    <tbody>
+      <tr><td><b>Pago parcial</b></td><td>Cena de enero, S/ 100, que adelantaste (devolución).<br>Venta de marzo, S/ 120 (Ventas).</td><td>En abril Ana paga S/ 100: cubre la cena. La venta sigue por cobrar.<br>En mayo paga S/ 120: cubre la venta.</td><td class="num">Abril: S/ 0<br>Mayo: S/ 120</td></tr>
+      <tr><td><b>Venta cubierta a medias</b></td><td>Solo la venta, S/ 120.</td><td>Ana paga S/ 50. Quedan S/ 70 por cobrar.</td><td class="num">Hoy: S/ 50<br>Al pagar el resto: S/ 70</td></tr>
+      <tr><td><b>Deudas cruzadas</b></td><td>Venta, S/ 120. Tú le debes S/ 64 de un almuerzo que pagó ella.</td><td>El grupo dice que Ana te debe S/ 56. Te paga 56 y el saldo queda en cero: la venta está cubierta entera (56 en efectivo + 64 que ya no le debes).</td><td class="num">S/ 120</td></tr>
+      <tr><td><b>Simplificar deudas</b></td><td>Beto te debe una venta, pero el grupo le dice que le pague a Ana.</td><td>Cuenta tu saldo, no quién paga a quién. Cuando tu saldo en el grupo baja, la venta se va cubriendo.</td><td class="num">Al bajar tu saldo</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ ESCENARIO 7 ============ -->
+<section class="scen" id="e7">
+  <header><span class="tag">7</span><h2>Cambios y borrados</h2></header>
+  <div class="grid2">
+    <div class="box">
+      <h3>Pía corrige el monto a S/ 520</h3>
+      <p>Tus líneas sumaban 510 y ya no cuadran. Yala no reparte la diferencia por su cuenta: te vuelve un borrador a la Bandeja con tus líneas y «Faltan S/ 10.00». Mientras no lo apruebes, tus registros siguen como estaban.</p>
+    </div>
+    <div class="box">
+      <h3>Pía borra el gasto</h3>
+      <p>Desaparecen tus registros de ese gasto, la recarga a Sip incluida, como hoy desaparece el gasto. Lo que debías a Pía también se va.</p>
+    </div>
+    <div class="box">
+      <h3>Cambias el monto de una venta por cobrar</h3>
+      <p>Lo por cobrar pasa al monto nuevo. Nada cuenta como ingreso hasta el pago.</p>
+    </div>
+    <div class="box">
+      <h3>Borras una venta por cobrar</h3>
+      <p>Se va lo por cobrar y Ana deja de deberla. No había ingreso, así que Estadísticas no cambia.</p>
+    </div>
+  </div>
+  <div class="rail">
+    <figure class="shot"><span class="badge mock-b">Maqueta</span>
+      <div class="phone"><div class="p-bar"><span class="p-x">✕</span>Gasto de grupo</div><div class="p-body">
+        <div class="p-banner">Pía cambió «Recarga Sip» de S/ 510.00 a S/ 520.00. Ajusta tu parte.</div>
+        <span class="p-title">Recarga Sip</span><div class="p-amt"><small>S/</small>520.00</div>
+        <div class="p-card"><div class="p-card-h"><span>TU PARTE · S/ 520.00</span><span>2 líneas</span></div>
+          <div class="p-row"><span class="p-ico" style="background:var(--app-teal-fill)">⇄</span><span class="t">Recarga a Sip<i>No es gasto ni ingreso</i></span><span class="v neu">500.00</span></div>
+          <div class="p-row"><span class="p-ico" style="background:#E0663A">%</span><span class="t">Comisiones<i>Gasto</i></span><span class="v neg">10.00</span></div>
+          <div class="p-add"><span>＋ Añadir línea</span><span style="color:var(--warn)">Faltan S/ 10.00</span></div>
+        </div>
+      </div><div class="p-btns"><div class="sec">Dejar para después</div><div class="pri" style="opacity:.45">Aprobar</div></div></div>
+      <figcaption><b>1 · Vuelve a la Bandeja.</b> Con tus líneas puestas y lo que falta.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ ESCENARIO 8 ============ -->
+<section class="scen" id="e8">
+  <header><span class="tag">8</span><h2>Alguien con la versión 2.1</h2></header>
+  <div class="grid2">
+    <div class="box">
+      <h3>Ana o Pía tienen 2.1</h3>
+      <p>No notan nada: tus líneas y tus categorías de ingreso son solo tuyas, y lo que viaja al grupo es lo de siempre.</p>
+    </div>
+    <div class="box">
+      <h3>Tu iPad tiene 2.1</h3>
+      <p>No conoce tus líneas ni lo por cobrar. Si reprocesa un gasto partido, lo deja en una sola línea hasta que abres Yala en un aparato con 2.2, que rehace tus líneas. Con una venta por cobrar, el iPad te pide una cuenta en la Bandeja: ahí no hay que aprobarla. Se acaba subiendo la versión mínima cuando salga 2.2.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL ============ -->
+<section class="stack" id="final">
+  <h2>Versión final</h2>
+  <div class="decided">
+    <div class="item"><b>El formulario de Nuevo gasto no cambia</b><span>Solo el selector de categoría ofrece también las de ingreso, y con una de ingreso no se pide cuenta.</span></div>
+    <div class="item"><b>Tu parte se parte fuera del formulario</b><span>En la Bandeja si lo apuntó otro; en la pantalla de éxito o desde el registro si lo apuntaste tú. Líneas de gasto o de recarga, que tienen que sumar tu parte.</span></div>
+    <div class="item"><b>Solo para quien combina Grupos con sus cuentas</b><span>Quien usa Grupos sin conectar sus cuentas no ve nada nuevo.</span></div>
+    <div class="item"><b>No hay «Cobro»</b><span>Una venta es un gasto de grupo con categoría de ingreso. Los demás ven un gasto normal. El servidor de Grupos no cambia.</span></div>
+    <div class="item"><b>Lo que te deben por una venta queda por cobrar</b><span>Tu cuenta «Grupos» lo muestra, y coincide con lo que dice el grupo. No cuenta como ingreso.</span><span class="who">Decidido: 1 · a</span></div>
+    <div class="item"><b>El ingreso cuenta el día que te pagan</b><span>Un pago cubre primero lo más antiguo. Lo que no es venta entra como devolución, igual que hoy.</span><span class="who">Decidido: 2 · a</span></div>
+    <div class="item"><b>Fuera: vender algo a medias y cobrar tú todo</b><span>El sofá de los dos que cobras tú: se apunta con dos registros si hace falta.</span><span class="who">Decidido: el sofá queda fuera</span></div>
+  </div>
+</section>
+
+</div>

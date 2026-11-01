@@ -577,6 +577,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-tab-missing-panel-perf | done | tickets/done/groups-tab-missing-panel-perf.md |
 | groups-tab-stays-empty-after-signing-in-to-a-groups-only-account | done | tickets/done/groups-tab-stays-empty-after-signing-in-to-a-groups-only-account.md |
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
+| grupos-tu-parte-en-lineas | in-progress | tickets/in-progress/grupos-tu-parte-en-lineas.md |
 | guest-decline-has-no-screen | done | tickets/done/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
 | half-filled-form-loses-its-amount-after-an-external-entry-on-ci | in-progress | tickets/in-progress/half-filled-form-loses-its-amount-after-an-external-entry-on-ci.md |
