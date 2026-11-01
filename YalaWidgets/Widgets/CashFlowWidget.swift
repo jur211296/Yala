@@ -2,9 +2,13 @@
 //  CashFlowWidget.swift
 //  YalaWidgets
 //
-//  Widget showing net cash flow (income - expenses).
-//  Supports Small (KPI), Medium (KPI + bars), Large (KPI + bidirectional chart) and, on iPhone with
-//  iOS 27, the extra-large portrait (`CashFlowPortraitView`: KPIs + chart + by account + net).
+//  «Entradas y salidas»: lo que entró, lo que salió y lo que queda (el neto) en el período elegido. Rediseño 2.2,
+//  tanda 2 (`docs/widgets/AUDITORIA-WIDGETS-2-2.md`): el neto es la cifra grande, con la comparación con el período
+//  anterior a la misma fecha; ingresos y gastos van en dos barras sólidas (turquesa y rosa de marca) y, en el grande y en
+//  el extragrande vertical (`CashFlowPortraitView`), lo de cada día (o mes) en barras sin ejes: lo que entró hacia
+//  arriba y lo que salió hacia abajo.
+//
+//  En «Solo gastos» la cifra grande es lo gastado y no hay ingresos ni comparación del neto: va el promedio diario.
 //
 
 import WidgetKit
@@ -24,6 +28,24 @@ struct CashFlowWidgetIntent: WidgetConfigurationIntent {
 }
 
 // MARK: - Timeline Entry
+
+/// Lo que entró y salió en un día (o un mes) del período: una barra de la gráfica.
+struct WidgetFlowBucket: Identifiable {
+    let index: Int
+    let income: Double
+    let expense: Double
+    var id: Int { index }
+    /// La banda de la gráfica.
+    var key: String { String(index) }
+}
+
+/// El neto del período anterior a la misma fecha y la diferencia (`WidgetInsightsLogic.flowComparison`).
+struct CashFlowComparison {
+    /// «setiembre», «2025»: cómo se nombra el período anterior.
+    let previousLabel: String
+    var previousIsYear: Bool = false
+    let result: WidgetInsightsLogic.FlowComparison
+}
 
 struct CashFlowEntry: TimelineEntry {
     let date: Date
@@ -46,6 +68,15 @@ struct CashFlowEntry: TimelineEntry {
     var isExpensesOnly: Bool = false
     /// El reparto por cuenta del período (solo lo pinta el extragrande vertical). `nil` con una foto anterior a 2.2.
     var accountFlows: [WidgetAccountFlow]? = nil
+    /// Las barras de la gráfica: el período entero, un día (o un mes en los períodos de un año o más) por barra.
+    var buckets: [WidgetFlowBucket] = []
+    /// Comparación del neto con el período anterior a la misma fecha. `nil` fuera de «Este mes» y «Este año», sin datos
+    /// del anterior, en «Solo gastos» o con «Comparar con el período anterior» apagado en la app.
+    var comparison: CashFlowComparison? = nil
+    /// Promedio diario de lo gastado: lo que se enseña en «Solo gastos».
+    var dailyAverage: Double = 0
+    /// Cuándo escribió la app la foto.
+    var lastUpdated: Date? = nil
 
     /// El rótulo de la cifra grande: `fallbackKey` (flujo neto o flujo de caja, según el tamaño) o «Gastado».
     func kpiTitle(fallbackKey: String.LocalizationValue) -> String {
@@ -55,7 +86,12 @@ struct CashFlowEntry: TimelineEntry {
     }
 
     static var placeholder: CashFlowEntry {
-        CashFlowEntry(
+        let expenses: [Double] = [120, 60, 540, 60, 60, 140, 450, 70, 90, 180, 370, 90, 90, 360, 100, 60, 70, 290, 130]
+        var buckets = expenses.enumerated().map { WidgetFlowBucket(index: $0.offset, income: 0, expense: $0.element) }
+        buckets[0] = WidgetFlowBucket(index: 0, income: 4_200, expense: 120)
+        buckets[14] = WidgetFlowBucket(index: 14, income: 800, expense: 100)
+        buckets += (expenses.count..<30).map { WidgetFlowBucket(index: $0, income: 0, expense: 0) }
+        return CashFlowEntry(
             date: Date(),
             totalIncome: 5000.00,
             totalExpense: 3250.00,
@@ -70,7 +106,13 @@ struct CashFlowEntry: TimelineEntry {
                 WidgetAccountFlow(id: "1", name: "Cuenta principal", income: 5000, expense: 2590, net: 2410),
                 WidgetAccountFlow(id: "2", name: "Tarjeta", income: 0, expense: 515, net: -515),
                 WidgetAccountFlow(id: "3", name: "Efectivo", income: 0, expense: 145, net: -145)
-            ]
+            ],
+            buckets: buckets,
+            comparison: CashFlowComparison(
+                previousLabel: WidgetDateText.monthName(
+                    Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()),
+                result: WidgetInsightsLogic.FlowComparison(previousNetToDate: 1_320, change: 430)),
+            dailyAverage: 171
         )
     }
 }
@@ -80,6 +122,9 @@ struct CashFlowEntry: TimelineEntry {
 struct CashFlowWidgetProvider: AppIntentTimelineProvider {
     typealias Entry = CashFlowEntry
     typealias Intent = CashFlowWidgetIntent
+
+    /// Meses que pinta «Todo el tiempo»: los últimos dos años. Más barras no caben con un ancho que se lea.
+    static let allTimeMonthLimit = 24
 
     func placeholder(in context: Context) -> CashFlowEntry {
         .placeholder
@@ -94,11 +139,7 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
 
     func timeline(for configuration: CashFlowWidgetIntent, in context: Context) async -> Timeline<CashFlowEntry> {
         let entry = createEntry(for: configuration)
-
-        // Refresh every 4 hours
-        let refreshDate = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-
-        return Timeline(entries: [entry], policy: .after(refreshDate))
+        return Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date)))
     }
 
     private func createEntry(for configuration: CashFlowWidgetIntent) -> CashFlowEntry {
@@ -106,12 +147,34 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
         let period = configuration.period.toWidgetPeriod
         let isExpensesOnly = WidgetDataService.isExpensesOnlyMode
+        let now = Date()
+        let lastUpdated = WidgetDataService.getLastUpdated()
+        // Las cifras de la foto se calcularon cuando la app la escribió: período, días y comparación se miden a esa hora.
+        let asOf = lastUpdated ?? now
+        let calendar = WidgetDataService.widgetConfiguredCalendar()
 
         // Get summary for the period
         let summary = WidgetDataService.calculateSummary(for: period)
+        let netCashFlow = isExpensesOnly ? (summary?.totalExpense ?? 0) : (summary?.netCashFlow ?? 0)
+
+        let interval = period.dateInterval(now: asOf)
+        let daily = (summary?.cashFlowPoints ?? []).map {
+            (date: $0.date, income: isExpensesOnly ? 0 : $0.income, expense: $0.expense)
+        }
+        // «Todo el tiempo» empieza diez años atrás: las barras arrancan en el primer movimiento.
+        // El mismo arranque que Gastos (`ExpenseWidgetProvider`), para que el promedio diario de los dos coincida.
+        let start = period == .allTime
+            ? (daily.map(\.date).min().map { calendar.startOfDay(for: $0) } ?? interval.start)
+            : interval.start
+        let byMonth = [.thisYear, .lastYear, .allTime].contains(period)
+        var buckets = WidgetInsightsLogic.flowBuckets(
+            daily, start: start,
+            end: ExpenseWidgetProvider.fullPeriodEnd(for: period, interval: interval, asOf: asOf, calendar: calendar),
+            byMonth: byMonth, calendar: calendar)
+        if period == .allTime { buckets = Array(buckets.suffix(Self.allTimeMonthLimit)) }
 
         return CashFlowEntry(
-            date: Date(),
+            date: now,
             totalIncome: isExpensesOnly ? 0 : (summary?.totalIncome ?? 0),
             totalExpense: summary?.totalExpense ?? 0,
             netCashFlow: isExpensesOnly ? (summary?.totalExpense ?? 0) : (summary?.netCashFlow ?? 0),
@@ -129,9 +192,271 @@ struct CashFlowWidgetProvider: AppIntentTimelineProvider {
                 ? (summary?.expenseIsApproximate ?? false)
                 : (summary?.netCashFlowIsApproximate ?? false),
             isExpensesOnly: isExpensesOnly,
-            accountFlows: summary?.accountFlows
+            accountFlows: summary?.accountFlows,
+            buckets: buckets.enumerated().map { WidgetFlowBucket(index: $0.offset, income: $0.element.income, expense: $0.element.expense) },
+            comparison: isExpensesOnly || !WidgetDataService.showsVariations
+                ? nil
+                : Self.comparison(for: period, currentNet: netCashFlow, asOf: asOf, calendar: calendar),
+            dailyAverage: WidgetInsightsLogic.dailyAverage(
+                total: summary?.totalExpense ?? 0, start: start, end: interval.end, now: asOf, calendar: calendar),
+            lastUpdated: lastUpdated
         )
     }
+
+    /// Solo los períodos en curso con un «anterior» en la foto: el mes y el año (como Gastos).
+    static func comparison(for period: WidgetPeriod, currentNet: Double, asOf: Date, calendar: Calendar) -> CashFlowComparison? {
+        let previousPeriod: WidgetPeriod
+        switch period {
+        case .thisMonth: previousPeriod = .lastMonth
+        case .thisYear: previousPeriod = .lastYear
+        default: return nil
+        }
+        guard let previous = WidgetDataService.calculateSummary(for: previousPeriod) else { return nil }
+        let previousInterval = previousPeriod.dateInterval(now: asOf)
+        guard let result = WidgetInsightsLogic.flowComparison(
+            currentNet: currentNet,
+            previousDaily: previous.cashFlowPoints.map { (date: $0.date, income: $0.income, expense: $0.expense) },
+            previousStart: previousInterval.start,
+            currentStart: period.dateInterval(now: asOf).start,
+            now: asOf,
+            calendar: calendar
+        ) else { return nil }
+        let isYear = period == .thisYear
+        return CashFlowComparison(
+            previousLabel: isYear ? WidgetDateText.year(previousInterval.start) : WidgetDateText.monthName(previousInterval.start),
+            previousIsYear: isYear,
+            result: result
+        )
+    }
+}
+
+// MARK: - Lo común a los tamaños
+
+extension CashFlowEntry {
+    var periodName: String { period.toWidgetPeriod.localizedDisplayName }
+
+    /// Subir el neto es bueno (índigo), bajarlo malo (rosa). Menos de medio sol es «igual».
+    var changeTone: WidgetTone {
+        guard let change = comparison?.result.change, abs(change) >= 0.5 else { return .neutral }
+        return change > 0 ? .good : .bad
+    }
+
+    func amountText(_ value: Double, forceSign: Bool = false) -> String {
+        WidgetAmountSplitter.split(
+            value: value,
+            symbol: CurrencySymbols.display(for: currencyCode, format: currencyDisplayFormat),
+            fractionDigits: 0,
+            forceSign: forceSign
+        ).accessibilityFormatted
+    }
+
+    /// Una cifra con signo dentro de una frase, en el orden de la cifra grande (`WidgetAmountText`: símbolo, signo y
+    /// número, «S/ +3,334»), para que las dos formas no convivan en el mismo widget.
+    func signedText(_ value: Double) -> String {
+        let runs = WidgetAmountSplitter.split(
+            value: value,
+            symbol: CurrencySymbols.display(for: currencyCode, format: currencyDisplayFormat),
+            fractionDigits: 0,
+            forceSign: true
+        )
+        return runs.symbol + " " + runs.sign + runs.integer
+    }
+
+    /// Hay algo que pintar en la gráfica.
+    var hasMovements: Bool { buckets.contains { $0.income != 0 || $0.expense != 0 } }
+}
+
+/// La cifra grande: el neto con su signo («S/ +1,750»), o lo gastado en «Solo gastos».
+struct CashFlowHero: View {
+    let entry: CashFlowEntry
+
+    var body: some View {
+        WidgetHeroAmount(
+            value: entry.netCashFlow,
+            currencyCode: entry.currencyCode,
+            displayFormat: entry.currencyDisplayFormat,
+            isEstimate: entry.netCashFlowIsApproximate,
+            forceSign: !entry.isExpensesOnly
+        )
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+    }
+}
+
+/// «▲ S/ 430 vs. setiembre» (el neto, a la misma fecha), o «S/ 171 al día» en «Solo gastos». Sin comparación, nada.
+struct CashFlowComparisonLine: View {
+    let entry: CashFlowEntry
+
+    var body: some View {
+        if let comparison = entry.comparison {
+            let change = comparison.result.change
+            HStack(spacing: WidgetDS.Spacing.xs) {
+                WidgetPill(
+                    text: entry.amountText(abs(change)),
+                    systemImage: entry.changeTone == .neutral ? "equal" : (change > 0 ? "arrow.up" : "arrow.down"),
+                    tone: entry.changeTone
+                )
+                Text(String(format: String(localized: "widget.expense.vsPrevious", bundle: .main), comparison.previousLabel))
+                    .font(WidgetDS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(String(
+                format: String(localized: "widget.flow.comparison.a11y", bundle: .main),
+                entry.amountText(change, forceSign: true), comparison.previousLabel)))
+        } else if entry.isExpensesOnly {
+            Text(String(format: String(localized: "widget.expense.perDay", bundle: .main), entry.amountText(entry.dailyAverage)))
+                .font(WidgetDS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+    }
+}
+
+/// «Neto en setiembre a esta fecha: S/ +1,320».
+struct CashFlowPreviousNote: View {
+    let entry: CashFlowEntry
+
+    var body: some View {
+        if let comparison = entry.comparison {
+            Text(String(
+                format: comparison.previousIsYear
+                    ? String(localized: "widget.flow.previousToDate.year", bundle: .main)
+                    : String(localized: "widget.flow.previousToDate", bundle: .main),
+                comparison.previousLabel, entry.signedText(comparison.result.previousNetToDate)))
+                .font(WidgetDS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+        }
+    }
+}
+
+/// Ingresos y gastos del período: rótulo, importe y una barra sólida proporcional al mayor de los dos. El ingreso es lo
+/// único con color en el texto (`incomeText`); las barras llevan los colores de marca como relleno. En «Solo gastos»,
+/// solo la de gastos.
+struct CashFlowTotals: View {
+    let entry: CashFlowEntry
+    var compact: Bool = false
+
+    private var scale: Double { max(entry.totalIncome, entry.totalExpense, 1) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: compact ? WidgetDS.Spacing.xs : WidgetDS.Spacing.sm) {
+            if !entry.isExpensesOnly {
+                row(label: String(localized: "widget.ui.income", bundle: .main),
+                    value: entry.totalIncome, isEstimate: entry.incomeIsApproximate,
+                    fill: WidgetColors.yalaTeal, tint: .color(WidgetColors.incomeText))
+            }
+            row(label: String(localized: "widget.ui.expenses", bundle: .main),
+                value: entry.totalExpense, isEstimate: entry.expenseIsApproximate,
+                fill: WidgetColors.hotPink, tint: .primary)
+        }
+    }
+
+    private func row(label: String, value: Double, isEstimate: Bool, fill: Color, tint: WidgetAmountText.Tint) -> some View {
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.xxs) {
+            HStack(alignment: .firstTextBaseline, spacing: WidgetDS.Spacing.xs) {
+                Text(label)
+                    .font(compact ? WidgetDS.Typography.captionSmall : WidgetDS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: WidgetDS.Spacing.xs)
+                WidgetAmountText(
+                    value: value,
+                    currencyCode: entry.currencyCode,
+                    displayFormat: entry.currencyDisplayFormat,
+                    font: compact ? WidgetDS.Typography.labelSmall : WidgetDS.Typography.subheadlineEmphasized,
+                    secondaryFont: WidgetDS.Typography.captionSmall,
+                    tint: tint,
+                    isEstimate: isEstimate
+                )
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            }
+            CashFlowTotalBar(fraction: value / scale, color: fill,
+                             height: compact ? WidgetDS.Sizing.progressBarHeight : WidgetDS.Chart.totalBarHeight)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Carril tenue y relleno sólido. No se tiñe: en tintado lo teñido es la cifra.
+struct CashFlowTotalBar: View {
+    let fraction: Double
+    let color: Color
+    let height: CGFloat
+
+    var body: some View {
+        Capsule()
+            .fill(WidgetColors.track)
+            .frame(height: height)
+            .overlay(alignment: .leading) {
+                GeometryReader { geo in
+                    Capsule()
+                        .fill(color)
+                        .frame(width: max(height, geo.size.width * min(max(fraction, 0), 1)))
+                }
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+/// Lo de cada día (o mes) del período: lo que entró hacia arriba, en turquesa, y lo que salió hacia abajo, en rosa, sobre
+/// una línea de cero. Sin ejes: la escala la dan las cifras de arriba. En «Solo gastos», solo lo gastado y hacia arriba.
+struct CashFlowBarsChart: View {
+    let entry: CashFlowEntry
+
+    private var expenseSign: Double { entry.isExpensesOnly ? 1 : -1 }
+
+    private var yDomain: ClosedRange<Double> {
+        WidgetInsightsLogic.flowChartRange(entry.buckets.map { (income: $0.income, expense: $0.expense) },
+                                           expensesUp: entry.isExpensesOnly)
+    }
+
+    var body: some View {
+        if entry.hasMovements {
+            Chart {
+                // Sin `if` dentro de la gráfica (un `if/else` de `ChartContent` solo compila en iOS 27): una barra que vale
+                // cero no pinta nada, y en «Solo gastos» el ingreso ya llega a cero.
+                ForEach(entry.buckets) { bucket in
+                    BarMark(x: .value("día", bucket.key), y: .value("entró", bucket.income),
+                            width: .ratio(WidgetDS.Chart.dayBarWidthRatio))
+                        .foregroundStyle(WidgetColors.yalaTeal)
+                        .cornerRadius(WidgetDS.Radius.xs)
+                    BarMark(x: .value("día", bucket.key), y: .value("salió", expenseSign * bucket.expense),
+                            width: .ratio(WidgetDS.Chart.dayBarWidthRatio))
+                        .foregroundStyle(WidgetColors.hotPink)
+                        .cornerRadius(WidgetDS.Radius.xs)
+                }
+                RuleMark(y: .value("cero", 0))
+                    .foregroundStyle(WidgetColors.track)
+                    .lineStyle(StrokeStyle(lineWidth: WidgetDS.Chart.referenceLineWidth))
+            }
+            // Eje por categorías (un día, una banda): el ancho `.ratio` de una barra solo existe en un eje de bandas.
+            .chartXScale(domain: entry.buckets.map(\.key))
+            .chartYScale(domain: yDomain)
+            .clipped()
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .chartLegend(.hidden)
+            .accessibilityHidden(true)
+        } else {
+            Text("widget.ui.notEnoughData", bundle: .main)
+                .font(WidgetDS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
+/// La insignia de la cabecera: dos flechas en turquesa profundo (el relleno AA con blanco encima).
+enum CashFlowBadge {
+    static let systemImage = "arrow.left.arrow.right"
+    static let tint = WidgetColors.tealFill
 }
 
 // MARK: - Widget Views
@@ -165,642 +490,112 @@ struct CashFlowWidgetView: View {
 
 // MARK: - Small View
 
+/// Cabecera, el neto y las dos barras (en «Solo gastos», lo gastado y el promedio diario).
 struct SmallCashFlowView: View {
     let entry: CashFlowEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.xs) {
-            WidgetHeader(
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
+            WidgetCardHeader(
                 title: entry.kpiTitle(fallbackKey: "widget.ui.netFlow"),
-                subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
-                icon: "arrow.left.arrow.right"
+                systemImage: CashFlowBadge.systemImage,
+                tint: CashFlowBadge.tint
             )
 
-            Spacer()
+            Spacer(minLength: WidgetDS.Spacing.xs)
 
-            WidgetKPI(
-                amount: entry.netCashFlow,
-                currencyCode: entry.currencyCode,
-                displayFormat: entry.currencyDisplayFormat,
-                color: .primary,
-                size: .large,
-                isEstimate: entry.netCashFlowIsApproximate
-            )
+            CashFlowHero(entry: entry)
 
-            // Small income/expense summary (vertical layout to avoid truncation)
-            VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                if entry.totalIncome > 0 {
-                    summaryRow(
-                        icon: "arrow.up",
-                        amount: entry.totalIncome,
-                        color: WidgetColors.income,
-                        isEstimate: entry.incomeIsApproximate
-                    )
-                }
+            // El período: la cabecera del pequeño no tiene sitio para él.
+            WidgetHeaderDetail(text: entry.periodName)
 
-                summaryRow(
-                    icon: "arrow.down",
-                    amount: entry.totalExpense,
-                    color: WidgetColors.expense,
-                    isEstimate: entry.expenseIsApproximate
-                )
+            if entry.isExpensesOnly {
+                CashFlowComparisonLine(entry: entry)
+                    .padding(.top, WidgetDS.Spacing.xxs)
+            } else {
+                CashFlowTotals(entry: entry, compact: true)
+                    .padding(.top, WidgetDS.Spacing.xs)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.inAndOut))
-    }
-
-    /// Compact income/expense summary row con icon + amount jerarquizado.
-    /// Reemplaza el Label nativo para tener control sobre los foregroundStyles
-    /// internos del WidgetAmountText (symbol/decimal subordinated).
-    private func summaryRow(
-        icon: String, amount: Double, color: Color, isEstimate: Bool
-    ) -> some View {
-        HStack(spacing: WDS.Spacing.xs) {
-            Image(systemName: icon)
-                .font(WDS.Typography.barValue)
-                .foregroundStyle(color)
-            WidgetAmountText(
-                value: amount,
-                currencyCode: entry.currencyCode,
-                displayFormat: entry.currencyDisplayFormat,
-                font: WDS.Typography.tiny,
-                secondaryFont: WDS.Typography.tinySecondary,
-                tint: .color(color),
-                isEstimate: isEstimate
-            )
-        }
-        .widgetAccentable()
     }
 }
 
 // MARK: - Medium View
 
+/// El neto y su comparación a la izquierda; ingresos y gastos en barras a la derecha.
 struct MediumCashFlowView: View {
     let entry: CashFlowEntry
 
-    private var maxValue: Double {
-        max(entry.totalIncome, entry.totalExpense, 1)
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
-            // Header row: title+subtitle left, KPI right
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                    Text(entry.kpiTitle(fallbackKey: "widget.ui.netFlow"))
-                        .font(WDS.Typography.title)
-                        .foregroundStyle(.primary)
-                    Text(entry.period.toWidgetPeriod.localizedDisplayName)
-                        .font(WDS.Typography.subtitle)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                WidgetKPI(
-                    amount: entry.netCashFlow,
-                    currencyCode: entry.currencyCode,
-                    displayFormat: entry.currencyDisplayFormat,
-                    color: .primary,
-                    size: .small,
-                    isEstimate: entry.netCashFlowIsApproximate
-                )
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.sm) {
+            WidgetCardHeader(
+                title: entry.kpiTitle(fallbackKey: "widget.ui.cashFlow"),
+                systemImage: CashFlowBadge.systemImage,
+                tint: CashFlowBadge.tint
+            ) {
+                WidgetHeaderDetail(text: entry.periodName)
             }
 
-            Spacer(minLength: WDS.Spacing.xs)
-
-            // Bars section - identical to PanelView compact
-            VStack(spacing: WDS.Spacing.md) {
-                // Income bar (hidden in expenses-only mode)
-                if entry.totalIncome > 0 {
-                    VStack(spacing: WDS.Spacing.xxs) {
-                        HStack {
-                            Text("widget.ui.income", bundle: .main)
-                                .font(WDS.Typography.label)
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            WidgetAmountText(
-                                value: entry.totalIncome,
-                                currencyCode: entry.currencyCode,
-                                displayFormat: entry.currencyDisplayFormat,
-                                font: WDS.Typography.value,
-                                secondaryFont: WDS.Typography.valueSecondary,
-                                tint: .primary,
-                                isEstimate: entry.incomeIsApproximate
-                            )
-                        }
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                // Track
-                                Capsule()
-                                    .fill(Color.primary.opacity(0.05))
-                                    .frame(height: WDS.Spacing.md)
-                                // Fill
-                                Capsule()
-                                    .fill(WidgetColors.income)
-                                    .frame(width: max(geo.size.width * CGFloat(entry.totalIncome / maxValue), 6), height: WDS.Spacing.md)
-                                    .widgetAccentable()
-                            }
-                        }
-                        .frame(height: WDS.Spacing.md)
-                    }
+            HStack(alignment: .bottom, spacing: WidgetDS.Spacing.lg) {
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+                    Spacer(minLength: 0)
+                    CashFlowHero(entry: entry)
+                    CashFlowComparisonLine(entry: entry)
+                    WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Expense bar
-                VStack(spacing: WDS.Spacing.xxs) {
-                    HStack {
-                        Text("widget.ui.expenses", bundle: .main)
-                            .font(WDS.Typography.label)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        WidgetAmountText(
-                            value: entry.totalExpense,
-                            currencyCode: entry.currencyCode,
-                            displayFormat: entry.currencyDisplayFormat,
-                            font: WDS.Typography.value,
-                            secondaryFont: WDS.Typography.valueSecondary,
-                            tint: .primary,
-                            isEstimate: entry.expenseIsApproximate
-                        )
-                    }
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            // Track
-                            Capsule()
-                                .fill(Color.primary.opacity(0.05))
-                                .frame(height: WDS.Spacing.md)
-                            // Fill
-                            Capsule()
-                                .fill(WidgetColors.expense)
-                                .frame(width: max(geo.size.width * CGFloat(entry.totalExpense / maxValue), 6), height: WDS.Spacing.md)
-                                .widgetAccentable()
-                        }
-                    }
-                    .frame(height: WDS.Spacing.md)
+                if entry.isExpensesOnly {
+                    // Lo gastado de cada día: la cifra grande ya es el total.
+                    CashFlowBarsChart(entry: entry)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    CashFlowTotals(entry: entry)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 }
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.inAndOut))
     }
 }
 
 // MARK: - Large View
 
+/// El neto con su comparación, las dos barras de totales y las barras de cada día.
 struct LargeCashFlowView: View {
     let entry: CashFlowEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
-            // Header row
-            HStack {
-                WidgetHeader(
-                    title: entry.kpiTitle(fallbackKey: "widget.ui.cashFlow"),
-                    subtitle: entry.period.toWidgetPeriod.localizedDisplayName,
-                    icon: "arrow.left.arrow.right"
-                )
-
-                Spacer()
-
-                WidgetKPI(
-                    amount: entry.netCashFlow,
-                    currencyCode: entry.currencyCode,
-                    displayFormat: entry.currencyDisplayFormat,
-                    color: .primary,
-                    size: .small,
-                    isEstimate: entry.netCashFlowIsApproximate
-                )
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.md) {
+            WidgetCardHeader(
+                title: entry.kpiTitle(fallbackKey: "widget.ui.cashFlow"),
+                systemImage: CashFlowBadge.systemImage,
+                tint: CashFlowBadge.tint
+            ) {
+                WidgetHeaderDetail(text: entry.periodName)
             }
 
-            // Summary row
-            HStack(spacing: WDS.Spacing.xl) {
-                if entry.totalIncome > 0 {
-                    HStack(spacing: WDS.Spacing.xs) {
-                        Circle()
-                            .fill(WidgetColors.income)
-                            .frame(width: WDS.Spacing.md, height: WDS.Spacing.md)
-                            .widgetAccentable()
-                        Text("\(String(localized: "widget.ui.income", bundle: .main)): \(formatAmount(entry.totalIncome))")
-                            .font(WDS.Typography.label)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                HStack(spacing: WDS.Spacing.xs) {
-                    Circle()
-                        .fill(WidgetColors.expense)
-                        .frame(width: WDS.Spacing.md, height: WDS.Spacing.md)
-                        .widgetAccentable()
-                    Text("\(String(localized: "widget.ui.expenses", bundle: .main)): \(formatAmount(entry.totalExpense))")
-                        .font(WDS.Typography.label)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
+            VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+                CashFlowHero(entry: entry)
+                CashFlowComparisonLine(entry: entry)
+                CashFlowPreviousNote(entry: entry)
             }
 
-            // Cash flow chart
-            if entry.cashFlowPoints.count >= 2 {
-                BidirectionalCashFlowChart(
-                    points: entry.cashFlowPoints,
-                    period: entry.period,
-                    resolvedPeriod: entry.period.toWidgetPeriod,
-                    expensesOnly: entry.totalIncome == 0
-                )
-            } else {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        VStack(spacing: WDS.Spacing.xs) {
-                            Image(systemName: "chart.bar")
-                                .font(.title)
-                                .foregroundStyle(.tertiary)
-                            Text("widget.ui.notEnoughData", bundle: .main)
-                                .font(WDS.Typography.body)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                    }
-                    Spacer()
-                }
+            // En «Solo gastos» la fila de gastos repetiría la cifra grande con la barra llena.
+            if !entry.isExpensesOnly {
+                CashFlowTotals(entry: entry)
             }
+
+            CashFlowBarsChart(entry: entry)
+                .frame(maxHeight: .infinity)
+
+            WidgetFreshnessNote(lastUpdated: entry.lastUpdated, now: entry.date)
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.inAndOut))
-    }
-
-    /// Formateador de la leyenda del `.large`. **Sin marca a propósito, y no por descuido**: no
-    /// imprime divisa —solo la cifra desnuda, junto a un punto de color y la palabra
-    /// «Ingresos»/«Gastos»— y el «≈» del repo se antepone al SÍMBOLO, no al número. Un «≈ 3250»
-    /// suelto, sin divisa al lado, se lee como parte de la cifra. El mismo par de números ya va
-    /// marcado en las barras de arriba, que sí traen divisa.
-    private func formatAmount(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "0"
-    }
-}
-
-// MARK: - Supporting Views
-
-/// Horizontal comparison bars for income vs expense
-struct CashFlowBars: View {
-    let income: Double
-    let expense: Double
-
-    private var maxValue: Double {
-        max(income, expense, 1)
-    }
-
-    var body: some View {
-        VStack(spacing: WDS.Spacing.md) {
-            // Income bar
-            VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                HStack {
-                    Image(systemName: "arrow.up")
-                        .font(WDS.Typography.barLabel)
-                    Text("widget.ui.income", bundle: .main)
-                        .font(WDS.Typography.tiny)
-                }
-                .foregroundStyle(WidgetColors.income)
-
-                GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: WDS.Radius.xs)
-                        .fill(WidgetColors.income)
-                        .frame(width: geo.size.width * CGFloat(income / maxValue))
-                }
-                .frame(height: WDS.Spacing.lg)
-                .background(
-                    RoundedRectangle(cornerRadius: WDS.Radius.xs)
-                        .fill(Color.gray.opacity(0.15))
-                )
-            }
-
-            // Expense bar
-            VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-                HStack {
-                    Image(systemName: "arrow.down")
-                        .font(WDS.Typography.barLabel)
-                    Text("widget.ui.expenses", bundle: .main)
-                        .font(WDS.Typography.tiny)
-                }
-                .foregroundStyle(WidgetColors.expense)
-
-                GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: WDS.Radius.xs)
-                        .fill(WidgetColors.expense)
-                        .frame(width: geo.size.width * CGFloat(expense / maxValue))
-                }
-                .frame(height: WDS.Spacing.lg)
-                .background(
-                    RoundedRectangle(cornerRadius: WDS.Radius.xs)
-                        .fill(Color.gray.opacity(0.15))
-                )
-            }
-        }
-    }
-}
-
-/// Bidirectional bar chart showing income/expense using Swift Charts
-/// Groups data according to period: week/month→day, year+→month (matches PanelView)
-struct BidirectionalCashFlowChart: View {
-    let points: [WidgetCashFlowPoint]
-    let period: WidgetPeriodOption
-    let resolvedPeriod: WidgetPeriod
-    var expensesOnly: Bool = false
-
-    /// Grouping type based on period (day or month only, matches PanelView)
-    private enum Grouping {
-        case day
-        case month
-
-        var calendarUnit: Calendar.Component {
-            switch self {
-            case .day: return .day
-            case .month: return .month
-            }
-        }
-    }
-
-    /// Determine grouping based on resolved period (not WidgetPeriodOption)
-    /// Matches PanelViewModel logic: day for week/month periods, month for year+
-    private var grouping: Grouping {
-        switch resolvedPeriod {
-        case .thisWeek, .last7Days, .last30Days, .thisMonth, .lastMonth:
-            return .day  // Daily bars for week and month periods
-        case .thisYear, .lastYear, .allTime:
-            return .month  // Monthly bars for year+ periods
-        }
-    }
-
-    /// Group points according to the grouping strategy
-    private var groupedPoints: [WidgetCashFlowPoint] {
-        let calendar = Calendar.current
-
-        // Group by the appropriate granularity
-        var grouped: [Date: (income: Double, expense: Double)] = [:]
-
-        for point in points {
-            let groupDate: Date
-            switch grouping {
-            case .day:
-                groupDate = calendar.startOfDay(for: point.date)
-            case .month:
-                let components = calendar.dateComponents([.year, .month], from: point.date)
-                groupDate = calendar.date(from: components) ?? point.date
-            }
-
-            var existing = grouped[groupDate] ?? (income: 0, expense: 0)
-            existing.income += point.income
-            existing.expense += point.expense
-            grouped[groupDate] = existing
-        }
-
-        return grouped
-            .map { date, data in
-                WidgetCashFlowPoint(
-                    date: date,
-                    income: data.income,
-                    expense: data.expense,
-                    net: data.income - data.expense
-                )
-            }
-            .filter { $0.income > 0 || $0.expense > 0 }
-            .sorted { $0.date < $1.date }
-    }
-
-    /// Detect if chart only has income (no expenses at all)
-    private var hasOnlyIncome: Bool {
-        let totalIncome = groupedPoints.reduce(0) { $0 + $1.income }
-        let totalExpense = groupedPoints.reduce(0) { $0 + $1.expense }
-        return totalExpense == 0 && totalIncome > 0
-    }
-
-    /// Waterfall mode: daily grouping + bidirectional data (not expenses-only or income-only)
-    private var isWaterfallMode: Bool {
-        grouping == .day && !expensesOnly && !hasOnlyIncome
-    }
-
-    /// Filtered data for waterfall: exclude points where net is exactly zero
-    private var waterfallPoints: [WidgetCashFlowPoint] {
-        groupedPoints.filter { $0.net != 0 }
-    }
-
-    /// Cumulative waterfall bars: each bar starts where the previous ended
-    private var waterfallBars: [(date: Date, net: Double, yStart: Double, yEnd: Double)] {
-        var cumulative = 0.0
-        return waterfallPoints.map { point in
-            let start = cumulative
-            cumulative += point.net
-            return (date: point.date, net: point.net, yStart: start, yEnd: cumulative)
-        }
-    }
-
-    /// Y-axis domain with bidirectional scale (or positive-only in expenses-only mode)
-    private var yDomain: ClosedRange<Double> {
-        // Waterfall: domain based on cumulative yStart/yEnd values
-        if isWaterfallMode {
-            let bars = waterfallBars
-            let allValues = bars.flatMap { [$0.yStart, $0.yEnd] }
-            let maxVal = allValues.max() ?? 0
-            let minVal = allValues.min() ?? 0
-            let top = max(maxVal * 1.1, 0)
-            let bottom = min(minVal * 1.1, 0)
-            if top == bottom { return -1...1 }
-            return bottom...top
-        }
-
-        let maxExpense = groupedPoints.map(\.expense).max() ?? 0
-        if expensesOnly {
-            let maxValue = maxExpense * 1.1
-            if maxValue == 0 { return 0...1 }
-            return 0...maxValue
-        }
-        let maxIncome = groupedPoints.map(\.income).max() ?? 0
-        if hasOnlyIncome {
-            let maxValue = maxIncome * 1.1
-            if maxValue == 0 { return 0...1 }
-            return 0...maxValue
-        }
-        let incomeTop = maxIncome * 1.1
-        let expenseBottom = -maxExpense * 1.1
-        return expenseBottom...incomeTop
-    }
-
-    /// X-axis domain with extended padding for few data points
-    private var xDomain: ClosedRange<Date> {
-        guard let firstDate = groupedPoints.first?.date,
-              let lastDate = groupedPoints.last?.date else {
-            return Date()...Date()
-        }
-        return SmartAxisHelper.extendedXDomain(
-            dataPoints: groupedPoints.count,
-            firstDate: firstDate,
-            lastDate: lastDate,
-            grouping: grouping.calendarUnit
-        )
-    }
-
-    /// Smart axis dates using SmartAxisHelper (up to 5 labels)
-    /// Uses actual data dates to prevent duplicate labels (e.g., "ene", "ene", "feb")
-    private var smartAxisDates: [Date] {
-        guard !groupedPoints.isEmpty else { return [] }
-        return SmartAxisHelper.calculateSmartAxisDates(
-            forDataDates: groupedPoints.map(\.date),
-            grouping: grouping.calendarUnit
-        )
-    }
-
-    /// Format axis label using SmartAxisHelper with grouping
-    private func smartAxisLabel(for date: Date) -> String {
-        guard let first = groupedPoints.first?.date,
-              let last = groupedPoints.last?.date else { return "" }
-        // Use forceGrouping to ensure correct format for the grouping type
-        let forceGrouping: Calendar.Component? = grouping == .month ? .month : nil
-        return SmartAxisHelper.formatAxisLabel(
-            for: date,
-            startDate: first,
-            endDate: last,
-            forceGrouping: forceGrouping
-        )
-    }
-
-    /// Format Y value as K
-    private func formatK(_ value: Double) -> String {
-        let absValue = abs(value)
-        let sign = value < 0 ? "-" : ""
-        if absValue >= 1000 {
-            return String(format: "%@%.0fK", sign, absValue / 1000.0)
-        }
-        return String(format: "%@%.0f", sign, absValue)
-    }
-
-    var body: some View {
-        Chart {
-            // Zero baseline (dashed line) - only for bidirectional chart
-            if !expensesOnly {
-                RuleMark(y: .value("Zero", 0))
-                    .foregroundStyle(Color.gray.opacity(WDS.Opacity.overlay))
-                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
-            }
-
-            // Mode-exclusive series rendered via empty-array ForEach guards
-            // (an if/else here emits _ConditionalContent, which only conforms
-            // to ChartContent on iOS 27+).
-
-            // WATERFALL: cumulative bars — each starts where previous ended
-            ForEach(isWaterfallMode ? Array(waterfallBars.enumerated()) : [], id: \.offset) { _, bar in
-                BarMark(
-                    x: .value("Date", bar.date, unit: grouping.calendarUnit),
-                    yStart: .value("Start", bar.yStart),
-                    yEnd: .value("End", bar.yEnd)
-                )
-                .foregroundStyle(
-                    bar.net >= 0 ? WidgetColors.income.gradient : WidgetColors.expense.gradient
-                )
-                .cornerRadius(WDS.Radius.xs)
-            }
-
-            // Income-only mode: bars upward (teal)
-            ForEach((!isWaterfallMode && hasOnlyIncome) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
-                BarMark(
-                    x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Income", point.income)
-                )
-                .foregroundStyle(WidgetColors.income.gradient)
-                .cornerRadius(WDS.Radius.xs)
-            }
-
-            // Bidirectional mode (monthly)
-            ForEach((!isWaterfallMode && !hasOnlyIncome && !expensesOnly) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
-                BarMark(
-                    x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Income", point.income)
-                )
-                .foregroundStyle(WidgetColors.income.gradient)
-                .cornerRadius(WDS.Radius.xs)
-
-                BarMark(
-                    x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Expense", -point.expense)
-                )
-                .foregroundStyle(WidgetColors.expense.gradient)
-                .cornerRadius(WDS.Radius.xs)
-
-                // Net trend line only for monthly grouping
-                if grouping == .month {
-                    LineMark(
-                        x: .value("Date", point.date, unit: grouping.calendarUnit),
-                        y: .value("Net", point.net)
-                    )
-                    .foregroundStyle(WidgetColors.electricIndigo)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-                    .interpolationMethod(.monotone)
-
-                    PointMark(
-                        x: .value("Date", point.date, unit: grouping.calendarUnit),
-                        y: .value("Net", point.net)
-                    )
-                    .foregroundStyle(WidgetColors.electricIndigo)
-                    .symbolSize(20)
-                }
-            }
-
-            // Expenses-only mode: bars upward
-            ForEach((!isWaterfallMode && !hasOnlyIncome && expensesOnly) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
-                BarMark(
-                    x: .value("Date", point.date, unit: grouping.calendarUnit),
-                    y: .value("Expense", point.expense)
-                )
-                .foregroundStyle(WidgetColors.expense.gradient)
-                .cornerRadius(WDS.Radius.xs)
-            }
-        }
-        .widgetAccentable()
-        .chartXScale(domain: xDomain)
-        .chartYScale(domain: yDomain)
-        .chartXAxis {
-            // Center axis dates within calendar unit to align with BarMark centers
-            let centeredDates = SmartAxisHelper.centerDatesInCalendarUnit(smartAxisDates, unit: grouping.calendarUnit)
-
-            AxisMarks(values: centeredDates) { value in
-                AxisGridLine()
-                    .foregroundStyle(Color.secondary.opacity(0.1))
-                if let date = value.as(Date.self) {
-                    let anchor = SmartAxisHelper.axisLabelAnchor(
-                        for: date,
-                        in: centeredDates,
-                        dataPointCount: groupedPoints.count
-                    )
-
-                    AxisValueLabel(anchor: anchor) {
-                        Text(smartAxisLabel(for: date))
-                            .font(WDS.Typography.axis)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.secondary.opacity(0.1))
-                if let doubleValue = value.as(Double.self) {
-                    AxisValueLabel {
-                        Text(formatK(doubleValue))
-                            .font(WDS.Typography.axisRegular)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -818,7 +613,7 @@ struct CashFlowWidget: Widget {
             CashFlowWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(WidgetColors.cardBackground, for: .widget)
         }
         .configurationDisplayName("widget.gallery.cashFlow")
         .description("widget.gallery.cashFlow.desc")
@@ -831,71 +626,17 @@ struct CashFlowWidget: Widget {
 #Preview("Small", as: .systemSmall) {
     CashFlowWidget()
 } timeline: {
-    CashFlowEntry(
-        date: Date(),
-        totalIncome: 5000.00,
-        totalExpense: 3250.00,
-        netCashFlow: 1750.00,
-        currencyCode: "PEN",
-        currencyDisplayFormat: "symbol",
-        cashFlowPoints: [],
-        isPlaceholder: false,
-        period: .thisMonth
-    )
-}
-
-#Preview("Small Negative", as: .systemSmall) {
-    CashFlowWidget()
-} timeline: {
-    CashFlowEntry(
-        date: Date(),
-        totalIncome: 2000.00,
-        totalExpense: 3500.00,
-        netCashFlow: -1500.00,
-        currencyCode: "PEN",
-        currencyDisplayFormat: "symbol",
-        cashFlowPoints: [],
-        isPlaceholder: false,
-        period: .thisMonth
-    )
+    CashFlowEntry.placeholder
 }
 
 #Preview("Medium", as: .systemMedium) {
     CashFlowWidget()
 } timeline: {
-    CashFlowEntry(
-        date: Date(),
-        totalIncome: 5000.00,
-        totalExpense: 3250.00,
-        netCashFlow: 1750.00,
-        currencyCode: "PEN",
-        currencyDisplayFormat: "symbol",
-        cashFlowPoints: [],
-        isPlaceholder: false,
-        period: .thisMonth
-    )
+    CashFlowEntry.placeholder
 }
 
 #Preview("Large", as: .systemLarge) {
     CashFlowWidget()
 } timeline: {
-    CashFlowEntry(
-        date: Date(),
-        totalIncome: 5000.00,
-        totalExpense: 3250.00,
-        netCashFlow: 1750.00,
-        currencyCode: "PEN",
-        currencyDisplayFormat: "symbol",
-        cashFlowPoints: [
-            WidgetCashFlowPoint(date: Date().addingTimeInterval(-6 * 86400), income: 1000, expense: 400, net: 600),
-            WidgetCashFlowPoint(date: Date().addingTimeInterval(-5 * 86400), income: 0, expense: 600, net: -600),
-            WidgetCashFlowPoint(date: Date().addingTimeInterval(-4 * 86400), income: 500, expense: 300, net: 200),
-            WidgetCashFlowPoint(date: Date().addingTimeInterval(-3 * 86400), income: 2000, expense: 800, net: 1200),
-            WidgetCashFlowPoint(date: Date().addingTimeInterval(-2 * 86400), income: 0, expense: 450, net: -450),
-            WidgetCashFlowPoint(date: Date().addingTimeInterval(-1 * 86400), income: 1500, expense: 500, net: 1000),
-            WidgetCashFlowPoint(date: Date(), income: 0, expense: 200, net: -200),
-        ],
-        isPlaceholder: false,
-        period: .thisWeek
-    )
+    CashFlowEntry.placeholder
 }

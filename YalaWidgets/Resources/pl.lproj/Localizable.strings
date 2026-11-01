@@ -194,3 +194,8 @@
 "widget.quick.manual" = "Ręcznie";
 "widget.quick.voice" = "Głosem";
 "widget.quick.photo" = "Zdjęciem";
+
+/* Rediseño de los widgets 2.2, tanda 2 (S35f1): comparación del neto en Entradas y salidas */
+"widget.flow.previousToDate" = "Netto do tego dnia (%1$@): %2$@";
+"widget.flow.previousToDate.year" = "Netto do tego dnia (%1$@): %2$@";
+"widget.flow.comparison.a11y" = "Różnica względem %2$@ do tego dnia: %1$@";

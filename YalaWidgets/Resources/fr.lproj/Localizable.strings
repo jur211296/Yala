@@ -194,3 +194,8 @@
 "widget.quick.manual" = "À la main";
 "widget.quick.voice" = "À la voix";
 "widget.quick.photo" = "Photo";
+
+/* Rediseño de los widgets 2.2, tanda 2 (S35f1): comparación del neto en Entradas y salidas */
+"widget.flow.previousToDate" = "Net à la même date en %1$@ : %2$@";
+"widget.flow.previousToDate.year" = "Net à la même date en %1$@ : %2$@";
+"widget.flow.comparison.a11y" = "Écart avec %2$@ à la même date : %1$@";

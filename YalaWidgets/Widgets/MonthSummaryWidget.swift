@@ -2,9 +2,10 @@
 //  MonthSummaryWidget.swift
 //  YalaWidgets
 //
-//  Widget extragrande: el mes en una pieza — balance, gasto del mes repartido por categoría y los
+//  Widget extragrande: el mes en una pieza — disponible, gasto del mes repartido por categoría y los
 //  presupuestos más apretados. En iPad, el apaisado (`systemExtraLarge`); en el iPhone con iOS 27, el
-//  vertical (`systemExtraLargePortrait`, `MonthSummaryPortraitView`), que suma ingresos y neto.
+//  vertical (`systemExtraLargePortrait`, `MonthSummaryPortraitView`), que suma ingresos y neto. Rediseño 2.2,
+//  tanda 2: piezas de la tanda 1, aro sólido con importes en la leyenda y enlaces sin el tinte azul de `Link`.
 //
 //  No añade nada al DTO del App Group: todo sale de campos que ya viajan
 //  (`periodSummaries` / `thisMonthSummary`, `budgets`). Así un widget nuevo no puede apagar a los
@@ -35,10 +36,12 @@ struct MonthSummaryEntry: TimelineEntry {
     var netCashFlowIsApproximate: Bool = false
     /// Modo «Solo gastos»: el vertical no enseña ingresos ni neto, como el resto de widgets.
     var isExpensesOnly: Bool = false
+    /// Cuándo escribió la app la foto: el ritmo de los presupuestos se mide a esa hora.
+    var lastUpdated: Date? = nil
 
     /// Categorías que caben en la leyenda; el resto se agrupa en «Otros».
     static let categoryLimit = 5
-    /// Presupuestos que caben en su columna a la altura del extragrande.
+    /// Presupuestos que caben en su columna a la altura del extragrande de iPad.
     static let budgetLimit = 4
 
     static var placeholder: MonthSummaryEntry {
@@ -79,10 +82,8 @@ struct MonthSummaryProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<MonthSummaryEntry>) -> Void) {
         let entry = createEntry()
-        // Cada 4 horas, y a medianoche: el día 1 el mes cambia y el resumen tiene que cambiar con él.
-        let midnight = Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))
-        let fourHours = Calendar.current.date(byAdding: .hour, value: 4, to: Date()) ?? Date()
-        completion(Timeline(entries: [entry], policy: .after(min(midnight, fourHours))))
+        // Medianoche o +4 h: el día 1 el mes cambia y el resumen tiene que cambiar con él.
+        completion(Timeline(entries: [entry], policy: .after(WidgetRefresh.nextDate(after: entry.date))))
     }
 
     private func createEntry() -> MonthSummaryEntry {
@@ -98,7 +99,8 @@ struct MonthSummaryProvider: TimelineProvider {
             expenseIsApproximate: summary?.expenseIsApproximate ?? false,
             categories: Self.groupCategories(summary?.topCategories ?? [], totalExpense: totalExpense),
             budgets: Array(
-                WidgetDataService.getBudgets(sortByCritical: true).prefix(MonthSummaryEntry.budgetLimit)
+                WidgetDataService.getBudgets(sortByCritical: true)
+                    .prefix(max(MonthSummaryEntry.budgetLimit, MonthSummaryPortraitView.budgetLimit))
             ),
             currencyCode: WidgetDataService.getPreferredCurrency(),
             currencyDisplayFormat: WidgetDataService.getCurrencyDisplayFormat(),
@@ -107,7 +109,8 @@ struct MonthSummaryProvider: TimelineProvider {
             incomeIsApproximate: isExpensesOnly ? false : (summary?.incomeIsApproximate ?? false),
             netCashFlow: summary?.netCashFlow ?? 0,
             netCashFlowIsApproximate: summary?.netCashFlowIsApproximate ?? false,
-            isExpensesOnly: isExpensesOnly
+            isExpensesOnly: isExpensesOnly,
+            lastUpdated: WidgetDataService.getLastUpdated()
         )
     }
 
@@ -147,251 +150,187 @@ struct MonthSummaryWidgetView: View {
 
     /// El de iPad (`systemExtraLarge`): dos columnas, gasto a la izquierda y presupuestos a la derecha.
     private var landscape: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.lg) {
-            WidgetHeader(
-                title: String(localized: "widget.ui.monthSummary", bundle: .main),
-                subtitle: WidgetPeriod.thisMonth.localizedDisplayName,
-                icon: "calendar"
-            )
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.md) {
+            MonthSummaryHeader()
 
-            HStack(alignment: .top, spacing: WDS.Spacing.xl) {
-                Link(destination: MonthSummaryLinks.url("statistics/categories")) {
-                    spendingColumn
+            HStack(alignment: .top, spacing: WidgetDS.Spacing.xl) {
+                WidgetPlainLink(destination: MonthSummaryLinks.url("statistics/categories")) {
+                    VStack(alignment: .leading, spacing: WidgetDS.Spacing.md) {
+                        HStack(alignment: .top, spacing: WidgetDS.Spacing.xl) {
+                            MonthSummaryFigure(label: "widget.ui.available", value: entry.balance,
+                                               entry: entry, isEstimate: entry.balanceIsApproximate)
+                            MonthSummaryFigure(label: "widget.ui.spent", value: entry.totalExpense,
+                                               entry: entry, isEstimate: entry.expenseIsApproximate)
+                            Spacer(minLength: 0)
+                        }
+                        MonthSummaryCategories(entry: entry)
+                        Spacer(minLength: 0)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                 Divider()
 
-                Link(destination: MonthSummaryLinks.url("budgets")) {
-                    budgetsColumn
+                WidgetPlainLink(destination: MonthSummaryLinks.url("budgets")) {
+                    MonthSummaryBudgets(entry: entry, limit: MonthSummaryEntry.budgetLimit)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
-        .padding(WDS.Spacing.xs)
-        .clipped()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .widgetURL(WidgetURLHelper.url(for: "panel"))
-    }
-
-    // MARK: Columna izquierda: balance, gasto y su reparto
-
-    private var spendingColumn: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.lg) {
-            HStack(alignment: .top, spacing: WDS.Spacing.xl) {
-                kpi(
-                    label: "widget.ui.balance",
-                    value: entry.balance,
-                    tint: .primary,
-                    isEstimate: entry.balanceIsApproximate
-                )
-                kpi(
-                    label: "widget.ui.expenses",
-                    value: entry.totalExpense,
-                    tint: WidgetColors.expense,
-                    isEstimate: entry.expenseIsApproximate
-                )
-                Spacer(minLength: 0)
-            }
-
-            if entry.categories.isEmpty {
-                MonthSummaryEmptyState(icon: "chart.pie", text: "widget.ui.noExpenses")
-            } else {
-                HStack(alignment: .center, spacing: WDS.Spacing.lg) {
-                    WidgetSectorChart(
-                        segments: entry.categories.map { category in
-                            WidgetSectorSegment(
-                                id: category.id,
-                                name: category.name,
-                                iconName: category.iconName,
-                                amount: category.amount,
-                                percentage: category.percentage,
-                                colorHex: category.colorHex
-                            )
-                        },
-                        innerRadiusRatio: 0.55,
-                        showBubbles: false
-                    )
-                    .aspectRatio(1, contentMode: .fit)
-                    .frame(maxWidth: 130, maxHeight: 130)
-
-                    VStack(alignment: .leading, spacing: WDS.Spacing.sm) {
-                        ForEach(entry.categories, id: \.id) { category in
-                            MonthSummaryCategoryRow(category: category)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
-    }
-
-    private func kpi(label: LocalizedStringKey, value: Double, tint: Color, isEstimate: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(label, bundle: .main)
-                .font(WDS.Typography.tiny)
-                .foregroundStyle(.secondary)
-            WidgetKPI(
-                amount: value,
-                currencyCode: entry.currencyCode,
-                displayFormat: entry.currencyDisplayFormat,
-                color: tint,
-                size: .medium,
-                isEstimate: isEstimate
-            )
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-        }
-    }
-
-    // MARK: Columna derecha: presupuestos
-
-    private var budgetsColumn: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.md) {
-            Text("widget.ui.budgets", bundle: .main)
-                .font(WDS.Typography.label)
-                .foregroundStyle(.secondary)
-
-            if entry.budgets.isEmpty {
-                MonthSummaryEmptyState(icon: "chart.pie", text: "widget.ui.noBudgets")
-            } else {
-                ForEach(entry.budgets.prefix(MonthSummaryEntry.budgetLimit), id: \.id) { budget in
-                    MonthSummaryBudgetRow(budget: budget, displayFormat: entry.currencyDisplayFormat)
-                }
-            }
-
-            Spacer(minLength: 0)
-        }
     }
 }
 
 // MARK: - Piezas compartidas por los dos tamaños
 
-
-/// La fila de presupuesto de ANTES del rediseño 2.2, que solo usa el Resumen del mes hasta su tanda (S35f1): así ese
-/// widget no cambia sin sus capturas. La retira esa tanda.
-struct MonthSummaryBudgetRow: View {
-    let budget: WidgetBudget
-    let displayFormat: String
-
+/// Insignia del calendario, «Resumen del mes» y el mes.
+struct MonthSummaryHeader: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
-            // Row 1: Icon + Name + %
-            HStack(spacing: WDS.Spacing.sm) {
-                // Icon badge compacto
-                ZStack {
-                    Circle()
-                        .fill(budgetColor.opacity(0.2))
-                        .frame(width: WDS.ListItem.iconSizeCompact,
-                               height: WDS.ListItem.iconSizeCompact)
-
-                    Image(systemName: budget.iconName ?? "chart.pie.fill")
-                        .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
-                        .foregroundStyle(budgetColor)
-                        .widgetAccentable()
-                }
-
-                Text(budget.name)
-                    .font(WDS.Typography.label)
-                    .lineLimit(1)
-
-                Spacer()
-
-                // Spent/Limit compact con jerarquía visual: símbolo subordinado.
-                // Caso especial — el formato compuesto "S/720/800" no encaja en
-                // WidgetAmountText (que asume un solo número). HStack manual de 2 runs.
-                HStack(alignment: .firstTextBaseline, spacing: 0) {
-                    Text(currencySymbol)
-                        .font(WDS.Typography.valueSecondary)
-                        .foregroundStyle(.tertiary)
-                    Text(amountRatio)
-                        .font(WDS.Typography.tiny)
-                        .foregroundStyle(.secondary)
-                }
-                .fixedSize(horizontal: true, vertical: false)
-
-                Text("\(Int(budget.percentUsed))%")
-                    .font(WDS.Typography.labelSmall)
-                    .foregroundStyle(progressColor)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .widgetAccentable()
-            }
-
-            // Row 2: Progress bar alineada con texto
-            WidgetProgressBar.budget(
-                percentUsed: budget.percentUsed,
-                height: WDS.Progress.heightCompact
-            )
-            .padding(.leading, WDS.ListItem.iconSizeCompact + WDS.Spacing.sm)
+        WidgetCardHeader(
+            title: String(localized: "widget.ui.monthSummary", bundle: .main),
+            systemImage: "calendar",
+            tint: WidgetColors.electricIndigo
+        ) {
+            WidgetHeaderDetail(text: WidgetPeriod.thisMonth.localizedDisplayName)
         }
-    }
-
-    private var budgetColor: Color {
-        Color(hex: budget.colorHex ?? "#6366F1")
-    }
-
-    private var progressColor: Color {
-        WidgetColors.forBudget(percentUsed: budget.percentUsed)
-    }
-
-    private var currencySymbol: String {
-        displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: budget.currencyCode)
-            : budget.currencyCode
-    }
-
-    private var amountRatio: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        let spent = formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
-        let limit = formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
-        return "\(spent)/\(limit)"
     }
 }
 
+/// Una cifra del mes con su rótulo gris encima. Solo el ingreso lleva color de texto (`incomeText`).
+struct MonthSummaryFigure: View {
+    let label: LocalizedStringKey
+    let value: Double
+    let entry: MonthSummaryEntry
+    var isEstimate: Bool = false
+    var tint: WidgetAmountText.Tint = .primary
+    var forceSign: Bool = false
 
-/// Una categoría de la leyenda: punto de color, nombre y porcentaje.
+    var body: some View {
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.none) {
+            Text(label, bundle: .main)
+                .font(WidgetDS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            WidgetAmountText(
+                value: value,
+                currencyCode: entry.currencyCode,
+                displayFormat: entry.currencyDisplayFormat,
+                font: WidgetDS.Typography.title2,
+                secondaryFont: WidgetDS.Typography.caption,
+                tint: tint,
+                forceSign: forceSign,
+                isEstimate: isEstimate
+            )
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .widgetNumericTransition(value)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// El gasto del mes por categoría: el aro y, al lado, cada categoría con su importe y su porcentaje.
+struct MonthSummaryCategories: View {
+    let entry: MonthSummaryEntry
+
+    var body: some View {
+        if entry.categories.isEmpty {
+            Text("widget.ui.noExpenses", bundle: .main)
+                .font(WidgetDS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            HStack(alignment: .center, spacing: WidgetDS.Spacing.md) {
+                WidgetDonut(slices: entry.categories.map {
+                    WidgetDonutSlice(id: $0.id, value: $0.amount, color: WidgetColors.fill(hex: $0.colorHex))
+                }) {
+                    EmptyView()
+                }
+                .frame(width: WidgetDS.Chart.donutSize, height: WidgetDS.Chart.donutSize)
+
+                VStack(alignment: .leading, spacing: WidgetDS.Spacing.xs) {
+                    ForEach(entry.categories, id: \.id) { category in
+                        MonthSummaryCategoryRow(category: category, entry: entry)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+}
+
+/// Una categoría de la leyenda: punto de su color, nombre, importe y porcentaje.
 struct MonthSummaryCategoryRow: View {
     let category: WidgetCategory
+    let entry: MonthSummaryEntry
 
     var body: some View {
-        HStack(spacing: WDS.Spacing.sm) {
+        HStack(alignment: .firstTextBaseline, spacing: WidgetDS.Spacing.xs) {
             Circle()
-                .fill(Color(hex: category.colorHex))
-                .frame(width: 8, height: 8)
-                .widgetAccentable()
+                .fill(WidgetColors.fill(hex: category.colorHex))
+                .frame(width: WidgetDS.Chart.legendDot, height: WidgetDS.Chart.legendDot)
+                .accessibilityHidden(true)
 
             Text(category.name)
-                .font(WDS.Typography.label)
+                .font(WidgetDS.Typography.labelSmall)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.85)
 
-            Spacer(minLength: WDS.Spacing.xs)
+            Spacer(minLength: WidgetDS.Spacing.xs)
 
-            Text("\(Int(category.percentage.rounded()))%")
-                .font(WDS.Typography.labelSmall)
+            WidgetAmountText(
+                value: category.amount,
+                currencyCode: entry.currencyCode,
+                displayFormat: entry.currencyDisplayFormat,
+                font: WidgetDS.Typography.labelSmall,
+                secondaryFont: WidgetDS.Typography.captionSmall
+            )
+            .lineLimit(1)
+            .fixedSize()
+
+            Text((category.percentage / 100).formatted(.percent.precision(.fractionLength(0))))
+                .font(WidgetDS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+                .lineLimit(1)
                 .fixedSize()
         }
+        .accessibilityElement(children: .combine)
     }
 }
 
-struct MonthSummaryEmptyState: View {
-    let icon: String
-    let text: LocalizedStringKey
+/// Los presupuestos más apretados, con la fila de Presupuestos (`BudgetRowView`): «Te quedan / Te pasaste por», la
+/// barra y la marca del ritmo del mes.
+struct MonthSummaryBudgets: View {
+    let entry: MonthSummaryEntry
+    let limit: Int
+    /// En la columna del iPad, la sección ocupa el alto y deja el hueco abajo; en el vertical, mide lo suyo.
+    var fillsHeight: Bool = true
 
     var body: some View {
-        VStack(spacing: WDS.Spacing.xs) {
-            Image(systemName: icon)
-                .font(.title2) // A11Y-DT: widget empty state icon
-                .foregroundStyle(.tertiary)
-            Text(text, bundle: .main)
-                .font(WDS.Typography.body)
-                .foregroundStyle(.tertiary)
+        VStack(alignment: .leading, spacing: WidgetDS.Spacing.md) {
+            Text("widget.ui.budgets", bundle: .main)
+                .font(WidgetDS.Typography.labelSmall)
+                .foregroundStyle(.secondary)
+
+            if entry.budgets.isEmpty {
+                Text("widget.ui.noBudgets", bundle: .main)
+                    .font(WidgetDS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(entry.budgets.prefix(limit), id: \.id) { budget in
+                    BudgetRowView(
+                        budget: budget,
+                        displayFormat: entry.currencyDisplayFormat,
+                        asOf: entry.lastUpdated ?? entry.date
+                    )
+                }
+            }
+
+            if fillsHeight { Spacer(minLength: 0) }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -415,7 +354,7 @@ struct MonthSummaryWidget: Widget {
             MonthSummaryWidgetView(entry: entry)
                 .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
-                .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
+                .containerBackground(WidgetColors.cardBackground, for: .widget)
         }
         .configurationDisplayName("widget.gallery.monthSummary")
         .description("widget.gallery.monthSummary.desc")

@@ -11,7 +11,7 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
 
 - **Tokens: solo `WidgetDS` y `WidgetColors`.** `WidgetDS` es el espejo de `DS` (mismos nombres y valores) y lo fija
   `WidgetDesignSystemParityTests`; `WidgetDS.Chart` es lo único propio del widget. El `WDS` viejo queda en los widgets
-  que aún no se rediseñaron (Entradas y salidas, Resumen del mes, Categorías y Subcategorías); un widget que se toque
+  que aún no se rediseñaron (Categorías y Subcategorías, tanda 3); un widget que se toque
   pasa entero a `WidgetDS`, con rellenos sólidos y el fondo por token, y entra en la lista del mismo test.
 - **Color de texto, solo los tres AA**: `incomeText`, `alertText`, `accentText` (espejos de `Color.incomeAmount`,
   `overBudgetText` e índigo/`indigoTextOnDark`). La paleta (`hotPink`, `yalaTeal`, colores de categoría) va en rellenos,
@@ -35,6 +35,15 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   `getTrendData(for:asOf:)`; con el reloj, una foto de ayer cruzaba meses a medianoche (lo cazó la review de S35f). Lo
   que habla de HOY («Hoy», «Mañana», «En 3 días», «Ayer») sí usa el reloj, con `WidgetRefresh.dayAwareTimeline`: una
   entrada más a medianoche, porque la recarga pedida es solo una petición.
+- **Un `Link` dentro del widget es `WidgetPlainLink`.** `Link` pinta su contenido con el tinte y los estilos jerárquicos
+  de dentro (`.secondary`) derivan de él: los nombres y títulos del Resumen del mes salían azules. `WidgetPlainLink` fija
+  `Color.primary` (no el `.primary` jerárquico, que también deriva).
+- **Una variación nueva obedece «Comparar con el período anterior»** (`WidgetDataService.showsVariations`, ausente =
+  activada): con ella apagada no sale, como `VariationChip` en la app. Hoy la miran Saldo, Gastos y Entradas y salidas
+  en su proveedor; la copia al App Group la hacen el `didSet` de `AppPreferences.showVariations` y `saveSnapshot`, y se
+  borra con las demás en `DataWipeService` y `GroupsOnlySignUpPreferenceReset` (`WidgetShowVariationsMirrorTests`).
+- **Una gráfica de barras sin ejes fija su escala con lo que APILA cada día** (`WidgetInsightsLogic.flowChartRange`):
+  una devolución da un lado negativo y su barra va al otro lado; con el máximo de cada lado se salía de la gráfica.
 - **Refresco**: `WidgetRefresh.nextDate(after:)` (medianoche o +4 h). Los datos nuevos llegan antes: la app recarga
   todos los widgets en cada `WidgetDataCache.updateCache`.
 - **Movimiento**: las cifras cambian con `widgetNumericTransition`, que respeta Reducir movimiento.

@@ -65,6 +65,80 @@ nonisolated enum WidgetInsightsLogic {
         return SpendingComparison(previousToDate: previousToDate, change: current - previousToDate)
     }
 
+    // MARK: - Entradas y salidas
+
+    /// Lo que quedaba (entró menos salió) en el período anterior hasta el mismo punto, y la diferencia con lo de ahora.
+    struct FlowComparison: Equatable {
+        let previousNetToDate: Double
+        /// Neto de ahora menos el de entonces: positivo = este período va mejor.
+        let change: Double
+    }
+
+    /// Compara el neto del período en curso con el que llevaba el anterior al MISMO día del período, con el mismo corte
+    /// que `spendingComparison`. `nil` si el anterior no tiene ningún movimiento (la app rellena con ceros cada día).
+    static func flowComparison(
+        currentNet: Double,
+        previousDaily: [(date: Date, income: Double, expense: Double)],
+        previousStart: Date,
+        currentStart: Date,
+        now: Date,
+        calendar: Calendar
+    ) -> FlowComparison? {
+        guard previousDaily.contains(where: { $0.income != 0 || $0.expense != 0 }) else { return nil }
+        let elapsedDays = daysElapsed(from: currentStart, to: now, calendar: calendar)
+        guard let cutoff = calendar.date(byAdding: .day, value: elapsedDays, to: calendar.startOfDay(for: previousStart)) else {
+            return nil
+        }
+        let previousNet = previousDaily.filter { $0.date < cutoff }.reduce(0) { $0 + $1.income - $1.expense }
+        return FlowComparison(previousNetToDate: previousNet, change: currentNet - previousNet)
+    }
+
+    /// Lo que entró y salió en cada día (o en cada mes) del período ENTERO, de `start` a `end` incluidos: lo que pinta la
+    /// gráfica de barras de «Entradas y salidas». Los días aún por llegar valen cero, así que la gráfica ocupa el período
+    /// y lo de hoy cae en su sitio. Ingreso y gasto van con signo, como los totales.
+    static func flowBuckets(
+        _ daily: [(date: Date, income: Double, expense: Double)],
+        start: Date,
+        end: Date,
+        byMonth: Bool,
+        calendar: Calendar
+    ) -> [(income: Double, expense: Double)] {
+        let component: Calendar.Component = byMonth ? .month : .day
+        let first = byMonth
+            ? (calendar.dateInterval(of: .month, for: start)?.start ?? calendar.startOfDay(for: start))
+            : calendar.startOfDay(for: start)
+        let last = byMonth
+            ? (calendar.dateInterval(of: .month, for: end)?.start ?? calendar.startOfDay(for: end))
+            : calendar.startOfDay(for: end)
+        let count = (calendar.dateComponents([component], from: first, to: last).value(for: component) ?? 0) + 1
+        guard count > 0 else { return [] }
+        var buckets = Array(repeating: (income: 0.0, expense: 0.0), count: count)
+        for point in daily {
+            let anchor = byMonth
+                ? (calendar.dateInterval(of: .month, for: point.date)?.start ?? point.date)
+                : calendar.startOfDay(for: point.date)
+            let index = calendar.dateComponents([component], from: first, to: anchor).value(for: component) ?? -1
+            guard index >= 0 && index < count else { continue }
+            buckets[index].income += point.income
+            buckets[index].expense += point.expense
+        }
+        return buckets
+    }
+
+    /// La escala vertical de esas barras: lo que se apila hacia arriba y hacia abajo en cada día. Lo que entró va hacia
+    /// arriba y lo que salió hacia abajo (o hacia arriba, `expensesUp`, en «Solo gastos»); una devolución da un lado
+    /// negativo y su barra va al otro lado, así que se mira cada signo, no el máximo de cada lado. Sin nada, -1…1.
+    static func flowChartRange(_ buckets: [(income: Double, expense: Double)], expensesUp: Bool) -> ClosedRange<Double> {
+        var upper = 0.0
+        var lower = 0.0
+        for bucket in buckets {
+            let values = [bucket.income, expensesUp ? bucket.expense : -bucket.expense]
+            upper = max(upper, values.filter { $0 > 0 }.reduce(0, +))
+            lower = min(lower, values.filter { $0 < 0 }.reduce(0, +))
+        }
+        return upper == lower ? -1...1 : lower...upper
+    }
+
     /// Días de calendario desde `start` hasta `now`, contando los dos (el día 1 a cualquier hora es 1).
     static func daysElapsed(from start: Date, to now: Date, calendar: Calendar) -> Int {
         let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: start), to: calendar.startOfDay(for: now)).day ?? 0

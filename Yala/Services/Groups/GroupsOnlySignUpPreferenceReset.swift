@@ -70,9 +70,9 @@ enum GroupsOnlySignUpPreferenceReset {
     /// - El centinela del Panel (`panelPrefsMigratedV2`), per-device, porque su valor tiene que CASAR con las 8 keys
     ///   del Panel: con ellas fuera y el centinela puesto, el Panel leería «enséñalo todo» en vez del curado de una
     ///   instalación nueva (`AppPreferences.isAwaitingDefaultsSeed`).
-    /// - Los espejos del App Group que esas keys alimentan: `expensesOnlyMode` y `firstWeekday` (los que limpia el
-    ///   borrado de preferencias de `DataWipeService`) y `defaultPeriod`, que escribe la foto de los widgets
-    ///   (`WidgetDataCache.saveSnapshot`) y el widget lee.
+    /// - Los espejos del App Group que esas keys alimentan: `expensesOnlyMode`, `firstWeekday` y `showVariations` (los
+    ///   que limpia el borrado de preferencias de `DataWipeService`) y `defaultPeriod`, que escribe la foto de los
+    ///   widgets (`WidgetDataCache.saveSnapshot`) y el widget lee.
     ///
     /// - Returns: las keys que estaban presentes, para que quien llama sepa qué copias en memoria avisar.
     @discardableResult
@@ -87,6 +87,7 @@ enum GroupsOnlySignUpPreferenceReset {
         stores.appGroup?.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
         stores.appGroup?.removeObject(forKey: "firstWeekday")
         stores.appGroup?.removeObject(forKey: "defaultPeriod")
+        stores.appGroup?.removeObject(forKey: WidgetDataCache.showVariationsKey)
         return removed
     }
 
@@ -109,7 +110,8 @@ enum GroupsOnlySignUpPreferenceReset {
         let removed = removeLocal(from: .live)
 
         // 3 · Las copias que NO escriben. `AppPreferences` relee por presencia, así que una key quitada no le
-        // devuelve su valor de fábrica: hay que dárselo.
+        // devuelve su valor de fábrica: hay que dárselo. Salvo el espejo de `showVariations` en el App Group, que vuelve
+        // a escribir `true`: para el widget es lo mismo que la key ausente.
         AppBootstrapper.shared.appPreferences.resetSyncedMirrorToFactoryDefaults()
         session.formattingVersion += 1
         if removed.contains(.appLanguageOverride) {

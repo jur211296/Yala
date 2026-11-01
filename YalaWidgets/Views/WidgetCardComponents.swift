@@ -15,6 +15,7 @@
 //  Movimiento: las cifras cambian con `numericText` y nada se mueve con Reducir movimiento (`WidgetMotion`).
 //
 
+import Charts
 import SwiftUI
 import WidgetKit
 
@@ -130,6 +131,8 @@ struct WidgetHeroAmount: View {
     let displayFormat: String
     var isEstimate: Bool = false
     var tint: WidgetAmountText.Tint = .primary
+    /// «+» delante de una cifra positiva: el neto de Entradas y salidas.
+    var forceSign: Bool = false
 
     var body: some View {
         WidgetAmountText(
@@ -139,6 +142,7 @@ struct WidgetHeroAmount: View {
             font: WidgetDS.Typography.panelHeroAmount,
             secondaryFont: WidgetDS.Typography.panelHeroAmountSecondary,
             tint: tint,
+            forceSign: forceSign,
             isEstimate: isEstimate,
             fractionDigits: 0
         )
@@ -233,6 +237,53 @@ struct WidgetMeterBar: View {
                     .accessibilityHidden(true)
                 }
             }
+    }
+}
+
+// MARK: - Enlace sin tinte
+
+/// Una zona del widget que abre otra pantalla que la del widget entero. Un `Link` pinta su contenido con el tinte (azul)
+/// y los estilos jerárquicos de dentro (`.secondary`, `.tertiary`) se derivan de ese tinte: así salían azules los nombres
+/// y los títulos del Resumen del mes (auditoría 2.2). Fijar `Color.primary` (no el `.primary` jerárquico, que también
+/// deriva) devuelve el gris de la app a todo lo de dentro.
+struct WidgetPlainLink<Content: View>: View {
+    let destination: URL
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        Link(destination: destination) {
+            content.foregroundStyle(Color.primary)
+        }
+    }
+}
+
+// MARK: - Donut
+
+/// Una porción del donut: su color y lo que vale.
+struct WidgetDonutSlice: Identifiable {
+    let id: String
+    let value: Double
+    let color: Color
+}
+
+/// Aro de porciones sólidas con lo que se le ponga en el centro (el total). Sin burbujas ni rótulos: los nombres, los
+/// importes y los porcentajes van en la leyenda de al lado. En tintado no se tiñe (lo teñido es la cifra).
+struct WidgetDonut<Center: View>: View {
+    let slices: [WidgetDonutSlice]
+    @ViewBuilder var center: Center
+
+    var body: some View {
+        Chart(slices) { slice in
+            SectorMark(
+                angle: .value("valor", max(slice.value, 0)),
+                innerRadius: .ratio(WidgetDS.Chart.donutInnerRatio),
+                angularInset: WidgetDS.Chart.donutAngularInset
+            )
+            .foregroundStyle(slice.color)
+        }
+        .chartLegend(.hidden)
+        .chartBackground { _ in center }
+        .accessibilityHidden(true)
     }
 }
 
