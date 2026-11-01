@@ -98,4 +98,23 @@ struct GroupDetailDismissDecisionTests {
             contextIsNil: false, isDeleted: false, isHiddenForAll: false,
             isArchived: true, wasArchivedOnAppear: true) == false)
     }
+
+    /// Con el grupo ya borrado (salir de él, un borrado por sync) leer `isHiddenForAll` o `isArchived` aborta en iOS
+    /// 27.x: la decisión cierra sin evaluarlos (ticket `group-detail-reads-the-group-after-leaving-it`).
+    @Test func goneGroup_dismissesWithoutReadingTheRest() {
+        var reads = 0
+        func read() -> Bool { reads += 1; return false }
+        #expect(GroupDetailDismissDecision.shouldDismiss(
+            contextIsNil: false, isDeleted: true, isHiddenForAll: read(),
+            isArchived: read(), wasArchivedOnAppear: false) == true)
+        #expect(GroupDetailDismissDecision.shouldDismiss(
+            contextIsNil: true, isDeleted: false, isHiddenForAll: read(),
+            isArchived: read(), wasArchivedOnAppear: false) == true)
+        #expect(reads == 0)
+        // Control: con el grupo vivo, sí los lee.
+        #expect(GroupDetailDismissDecision.shouldDismiss(
+            contextIsNil: false, isDeleted: false, isHiddenForAll: read(),
+            isArchived: read(), wasArchivedOnAppear: false) == false)
+        #expect(reads == 2)
+    }
 }

@@ -110,91 +110,32 @@ struct GroupDetailView: View {
 
     // MARK: - Body
 
+    /// El grupo se puede leer. Salir de él (y «Transferir y salir») lo borra del todo y sube `dataVersion`, y un borrado
+    /// por sync hace lo mismo con el detalle abierto: el `body` se vuelve a evaluar ANTES de que el `onChange` de abajo
+    /// lo cierre, y en iOS 27.x leer un modelo borrado aborta (ticket `group-detail-reads-the-group-after-leaving-it`).
+    /// Molde de `GroupSettingsView.isGroupReadable`. Con él borrado, el detalle no pinta contenido mientras se va.
+    private var isGroupReadable: Bool {
+        !group.isDeleted && group.modelContext != nil
+    }
+
+    /// El título: con el grupo borrado, el nombre de la última carga (`viewModel.groupName`), sin leerlo.
+    private var groupTitle: String {
+        isGroupReadable ? group.name : viewModel.groupName
+    }
+
     var body: some View {
         ZStack {
-            VStack(spacing: 0) {
-                if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
-                    GroupNudgeBanner(
-                        nudge: nudge,
-                        message: NudgeService.shared.currentNudgeMessage ?? "",
-                        onAction: {
-                            NudgeService.shared.recordInteracted(nudge)
-                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                            handleNudgeAction(nudge)
-                        },
-                        onDismiss: {
-                            NudgeService.shared.recordDismissed(nudge)
-                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                        },
-                        onAutoDismiss: {
-                            NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                        }
-                    )
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.sm)
-                }
-
-                // banner pending/rejected/migrado. Refresh ya cubierto por onChange(dataVersion) abajo.
-                // C-10: los tres estados congelados muestran banner. Un grupo congelado JAMÁS queda mudo.
-                if group.migrationState == .frozenRejoinable {
-                    // G6-3: grupo congelado por migración → banner "se movió" + CTA re-join (la RED es el guard
-                    // service-level; esto es la UX primaria — los botones de escritura se ocultan abajo).
-                    MigratedGroupBanner(mode: .rejoin, onAction: { handleMigratedRejoin() })
-                } else if group.migrationState == .frozenNeedsUpdate {
-                    // C-10: este build no puede volver a entrar nunca → la salida real es el App Store.
-                    MigratedGroupBanner(mode: .needsUpdate, onAction: { openAppStoreForRejoin() })
-                } else if group.migrationState == .frozenPaused {
-                    // C-10: kill remoto del canal. Sin CTA: no hay nada que el usuario pueda hacer, y
-                    // decirle que actualice sería falso (su app está perfecta).
-                    MigratedGroupBanner(mode: .paused, onAction: nil)
-                } else if viewModel.currentUserMember?.isPendingApproval == true {
-                    PendingApprovalBanner(state: .pending, onLeave: nil)
-                } else if viewModel.currentUserMember?.isRejected == true {
-                    PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })
-                }
-
-                // UX 2.2 · L19-9 (decisión B de Jürgen, 18-oct): un grupo archivado lo dice dentro. Antes se veía igual que
-                // uno activo y nada avisaba de que estaba en Archivados. Desarchivar es de administrador
-                // (`GroupService.setArchived`); a un miembro se le dice quién puede.
-                if group.isArchived && !group.isMigratedFrozen {
-                    ArchivedGroupBanner(
-                        onUnarchive: viewModel.isCurrentUserAdmin ? { unarchiveFromBanner() } : nil
-                    )
-                }
-
-                // L19-1 · alguien pidió unirse: se ve sin abrir Miembros, y «Revisar» lleva a su tarjeta. Solo para quien
-                // puede aceptar, y no en un grupo congelado (ahí aprobar no llega a ningún sitio).
-                if let requestTitle = GroupJoinRequestsLogic.bannerTitle(
-                    pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
-                    canReview: viewModel.isCurrentUserAdmin && !group.isMigratedFrozen
-                ) {
-                    GroupJoinRequestsBanner(
-                        pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
-                        title: requestTitle,
-                        onReview: { viewModel.activeSheet = .members }
-                    )
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.sm)
-                }
-
-                tabContent
-                    .yalaSkeleton(!viewModel.isReady)
-            }
-            // El aviso de grupos entra y se funde al cerrarlo. Implícita: el `withAnimation` del aviso no anima dentro
-            // de una pestaña (card 8atf).
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
-
-            // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras).
-            if selectedTab == .records && viewModel.canCurrentUserParticipate && !group.isMigratedFrozen {
-                newExpenseFAB
+            // Con el grupo ya borrado no se pinta nada encima del fondo mientras la pantalla se cierra: los avisos, las
+            // pestañas y el botón de nuevo gasto leen el grupo y sus miembros, que se borraron con él.
+            if isGroupReadable {
+                groupContent
             }
         }
         .yalaScreenBackground(.panel)
         .navigationChipsInset {
             navigationChipsBar
         }
-        .navigationTitle(group.name)
+        .navigationTitle(groupTitle)
         .navigationBarTitleDisplayMode(.large)
         // Empujado (compacta): push nativo con swipe-back desde el borde izquierdo + chevron custom, y tab bar
         // oculto para conservar el look inmersivo que tenía como fullScreenCover. En columna (ventana ancha)
@@ -210,53 +151,17 @@ struct GroupDetailView: View {
                 }
             }
 
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
-
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    viewModel.activeSheet = .members
-                } label: {
-                    ZStack(alignment: .topTrailing) {
-                        HStack(spacing: DS.Spacing.xxs) {
-                            Image(systemName: "person.2.fill")
-                            Text("\(viewModel.activeMembers.count)")
-                                .font(DS.Typography.subheadline)
-                        }
-                        .fontWeight(.medium)
-                        .foregroundStyle(Color.primary)
-
-                        // Badge de solicitudes pendientes — movido del engranaje: las solicitudes
-                        // son de personas y se aprueban/rechazan en la sheet de Miembros.
-                        if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
-                            Circle()
-                                .fill(DS.Semantic.errorForeground)
-                                .frame(width: 8, height: 8)
-                                .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
-                        }
-                    }
-                }
-                .accessibilityLabel(membersButtonA11yLabel)
-                .accessibilityIdentifier("group_members_button")
-            }
-
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    viewModel.activeSheet = .settings
-                } label: {
-                    Image(systemName: "gearshape")
-                        .fontWeight(.medium)
-                        .foregroundStyle(Color.primary)
-                }
-                .accessibilityLabel(L10n.Groups.Settings.title)
-                // Sin identifier, la única forma de alcanzar Ajustes del grupo desde un XCUITest era
-                // el label localizado, que está prohibido — así que ningún test llegaba a esa
-                // pantalla. Lo añade el resumen compartible porque es lo que necesita para probar su
-                // punto de entrada; el botón no cambia en nada más.
-                .accessibilityIdentifier("group_settings_button")
-                .buttonBorderShape(.circle)
+            // Miembros y Ajustes leen los miembros del grupo: con él borrado se van con el contenido.
+            if isGroupReadable {
+                groupToolbarItems
             }
         }
         .sheet(item: $viewModel.activeSheet, onDismiss: {
+            // Al cerrarse Ajustes tras salir del grupo, el grupo ya está borrado: se suelta y no se recarga nada.
+            guard isGroupReadable else {
+                viewModel.releaseDeletedGroup()
+                return
+            }
             // Reemplazo de sheet: si el detalle pidió editar, sube el editor
             // (conserva el gasto); si no, cierre normal (recarga datos).
             if let expense = viewModel.consumePendingEditFromDetail() {
@@ -274,7 +179,7 @@ struct GroupDetailView: View {
                 OpeningBalanceServerRejectionObserver.present(viewModel, windowID: navigation.id)
             }
         }) { sheet in
-            sheetContent(for: sheet)
+            presentedSheet(for: sheet)
         }
         .sheet(isPresented: $showShareSheet) {
             if let url = viewModel.shareURL {
@@ -282,7 +187,7 @@ struct GroupDetailView: View {
                 ActivityView(activityItems: [GroupInviteShareMessage.text(
                     inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
                     defaultName: L10n.Profile.defaultName,
-                    groupName: group.name,
+                    groupName: groupTitle,
                     url: url)])
                 }
         }
@@ -336,11 +241,96 @@ struct GroupDetailView: View {
                 isArchived: group.isArchived,
                 wasArchivedOnAppear: wasArchivedOnAppear
             ) {
+                // Con el grupo borrado (salir de él, «Transferir y salir», un borrado por sync), el ViewModel lo suelta
+                // antes de cerrar: ni la recarga con freno pendiente ni el cierre de la hoja de Ajustes vuelven a leerlo.
+                if !isGroupReadable { viewModel.releaseDeletedGroup() }
                 close()
                 return
             }
             // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
             viewModel.reloadAndRecalculate()
+        }
+    }
+
+    /// Lo que se ve del grupo: avisos, pestañas y el botón de nuevo gasto. Solo con el grupo vivo (`isGroupReadable`).
+    @ViewBuilder
+    private var groupContent: some View {
+        VStack(spacing: 0) {
+            if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                GroupNudgeBanner(
+                    nudge: nudge,
+                    message: NudgeService.shared.currentNudgeMessage ?? "",
+                    onAction: {
+                        NudgeService.shared.recordInteracted(nudge)
+                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        handleNudgeAction(nudge)
+                    },
+                    onDismiss: {
+                        NudgeService.shared.recordDismissed(nudge)
+                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                    },
+                    onAutoDismiss: {
+                        NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                    }
+                )
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+            }
+
+            // banner pending/rejected/migrado. Refresh ya cubierto por onChange(dataVersion) abajo.
+            // C-10: los tres estados congelados muestran banner. Un grupo congelado JAMÁS queda mudo.
+            if group.migrationState == .frozenRejoinable {
+                // G6-3: grupo congelado por migración → banner "se movió" + CTA re-join (la RED es el guard
+                // service-level; esto es la UX primaria — los botones de escritura se ocultan abajo).
+                MigratedGroupBanner(mode: .rejoin, onAction: { handleMigratedRejoin() })
+            } else if group.migrationState == .frozenNeedsUpdate {
+                // C-10: este build no puede volver a entrar nunca → la salida real es el App Store.
+                MigratedGroupBanner(mode: .needsUpdate, onAction: { openAppStoreForRejoin() })
+            } else if group.migrationState == .frozenPaused {
+                // C-10: kill remoto del canal. Sin CTA: no hay nada que el usuario pueda hacer, y
+                // decirle que actualice sería falso (su app está perfecta).
+                MigratedGroupBanner(mode: .paused, onAction: nil)
+            } else if viewModel.currentUserMember?.isPendingApproval == true {
+                PendingApprovalBanner(state: .pending, onLeave: nil)
+            } else if viewModel.currentUserMember?.isRejected == true {
+                PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })
+            }
+
+            // UX 2.2 · L19-9 (decisión B de Jürgen, 18-oct): un grupo archivado lo dice dentro. Antes se veía igual que
+            // uno activo y nada avisaba de que estaba en Archivados. Desarchivar es de administrador
+            // (`GroupService.setArchived`); a un miembro se le dice quién puede.
+            if group.isArchived && !group.isMigratedFrozen {
+                ArchivedGroupBanner(
+                    onUnarchive: viewModel.isCurrentUserAdmin ? { unarchiveFromBanner() } : nil
+                )
+            }
+
+            // L19-1 · alguien pidió unirse: se ve sin abrir Miembros, y «Revisar» lleva a su tarjeta. Solo para quien
+            // puede aceptar, y no en un grupo congelado (ahí aprobar no llega a ningún sitio).
+            if let requestTitle = GroupJoinRequestsLogic.bannerTitle(
+                pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                canReview: viewModel.isCurrentUserAdmin && !group.isMigratedFrozen
+            ) {
+                GroupJoinRequestsBanner(
+                    pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                    title: requestTitle,
+                    onReview: { viewModel.activeSheet = .members }
+                )
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.sm)
+            }
+
+            tabContent
+                .yalaSkeleton(!viewModel.isReady)
+        }
+        // El aviso de grupos entra y se funde al cerrarlo. Implícita: el `withAnimation` del aviso no anima dentro
+        // de una pestaña (card 8atf).
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: showNudgeBanner)
+
+        // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras).
+        if selectedTab == .records && viewModel.canCurrentUserParticipate && !group.isMigratedFrozen {
+            newExpenseFAB
         }
     }
 
@@ -371,6 +361,21 @@ struct GroupDetailView: View {
     }
 
     // MARK: - Sheet Content
+
+    /// La hoja presentada. Con el grupo borrado, solo Ajustes se sigue construyendo (no lee el grupo borrado: card gxa9),
+    /// porque es desde donde se sale y sigue presentada mientras se cierra. Las demás leen el grupo, sus miembros o sus
+    /// gastos, borrados con él (un borrado por sync puede pillar cualquiera abierta): no pintan nada mientras bajan.
+    @ViewBuilder
+    private func presentedSheet(for sheet: GroupSheet) -> some View {
+        if isGroupReadable || Self.isSettings(sheet) {
+            sheetContent(for: sheet)
+        }
+    }
+
+    private static func isSettings(_ sheet: GroupSheet) -> Bool {
+        if case .settings = sheet { return true }
+        return false
+    }
 
     @ViewBuilder
     private func sheetContent(for sheet: GroupSheet) -> some View {
@@ -468,6 +473,57 @@ struct GroupDetailView: View {
     }
 
     // MARK: - Members Button
+
+    /// Miembros y Ajustes del grupo, en la barra. Fuera del `body` para pintarlos solo con el grupo vivo (`isGroupReadable`).
+    @ToolbarContentBuilder
+    private var groupToolbarItems: some ToolbarContent {
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                viewModel.activeSheet = .members
+            } label: {
+                ZStack(alignment: .topTrailing) {
+                    HStack(spacing: DS.Spacing.xxs) {
+                        Image(systemName: "person.2.fill")
+                        Text("\(viewModel.activeMembers.count)")
+                            .font(DS.Typography.subheadline)
+                    }
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.primary)
+
+                    // Badge de solicitudes pendientes — movido del engranaje: las solicitudes
+                    // son de personas y se aprueban/rechazan en la sheet de Miembros.
+                    if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+                        Circle()
+                            .fill(DS.Semantic.errorForeground)
+                            .frame(width: 8, height: 8)
+                            .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
+                    }
+                }
+            }
+            .accessibilityLabel(membersButtonA11yLabel)
+            .accessibilityIdentifier("group_members_button")
+        }
+
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                viewModel.activeSheet = .settings
+            } label: {
+                Image(systemName: "gearshape")
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.primary)
+            }
+            .accessibilityLabel(L10n.Groups.Settings.title)
+            // Sin identifier, la única forma de alcanzar Ajustes del grupo desde un XCUITest era
+            // el label localizado, que está prohibido — así que ningún test llegaba a esa
+            // pantalla. Lo añade el resumen compartible porque es lo que necesita para probar su
+            // punto de entrada; el botón no cambia en nada más.
+            .accessibilityIdentifier("group_settings_button")
+            .buttonBorderShape(.circle)
+        }
+    }
+
 
     private var membersButtonA11yLabel: String {
         let base = L10n.Groups.Detail.memberCount(viewModel.activeMembers.count)

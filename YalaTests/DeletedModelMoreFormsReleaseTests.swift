@@ -187,4 +187,52 @@ struct DeletedModelMoreFormsReleaseTests {
         #expect(vm.existingTags.isEmpty, "El ViewModel sigue apuntando a la etiqueta borrada.")
         _ = viaje
     }
+
+    // MARK: - Detalle del grupo
+
+    /// Salir del grupo lo borra con sus miembros. El detalle suelta el grupo antes de cerrarse: lo que se lea del ViewModel
+    /// mientras baja (miembros, permisos, el aviso de un saldo inicial rechazado, una recarga) ya no toca nada borrado, y el
+    /// título conserva el nombre de la última carga (ticket `group-detail-reads-the-group-after-leaving-it`).
+    @Test func grupo_trasSalir_elDetalleLoSuelta_yNoVuelveALeerlo() throws {
+        let context = try makeTestContext()
+        GroupService.shared.setContext(context)
+        GroupExpenseService.shared.setContext(context)
+        defer {
+            GroupService.shared._testResetContext()
+            GroupExpenseService.shared._testResetContext()
+        }
+        let group = SplitGroup(name: "Viaje a Cusco", currencyCode: "PEN")
+        context.insert(group)
+        let zoneID = group.cloudKitZoneID
+        let me = SplitMember(groupZoneID: zoneID, displayName: "Yo", isCurrentUser: true)
+        context.insert(me)
+        try context.save()
+
+        let vm = GroupDetailViewModel(group: group)
+        vm.setContext(context)
+        #expect(vm.members.count == 1)
+        #expect(vm.groupName == "Viaje a Cusco")
+        #expect(vm.canCurrentUserParticipate)
+
+        // Lo que hace `GroupService.leaveGroup` (`performLocalCleanupAndDelete`) y, detrás, el detalle al verlo.
+        context.delete(me)
+        context.delete(group)
+        try context.save()
+        vm.releaseDeletedGroup()
+
+        #expect(vm.isGroupReleased)
+        #expect(vm.members.isEmpty, "El ViewModel sigue apuntando a los miembros borrados.")
+        #expect(!vm.canCurrentUserParticipate)
+        #expect(!vm.isOpeningBalanceManager)
+        #expect(vm.groupName == "Viaje a Cusco", "El título se queda sin el nombre mientras la pantalla baja.")
+
+        // Ni una recarga ni el aviso de un rechazo que llega tarde vuelven a leer el grupo.
+        vm.loadData()
+        #expect(vm.members.isEmpty)
+        let notices = OpeningBalanceServerRejectionNotices()
+        notices.record(groupID: zoneID, reason: .locked)
+        vm.presentOpeningBalanceServerRejectionIfAny(notices: notices, windowIsPresenting: false)
+        #expect(!vm.showActionError)
+        #expect(notices.peek(groupID: zoneID) == .locked)
+    }
 }
