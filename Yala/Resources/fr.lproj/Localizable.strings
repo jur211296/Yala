@@ -4472,6 +4472,7 @@
 "groups.openingBalance.sectionTitle" = "Soldes initiaux";
 "groups.openingBalance.addButton" = "Ajouter un solde initial";
 "groups.openingBalance.emptyState" = "Aucun solde initial pour l'instant.";
+"groups.openingBalance.frozenNote" = "Ce groupe a été déplacé vers le cloud de Yala. Tu peux voir ses soldes initiaux, mais pas les modifier ici.";
 "groups.openingBalance.rollupOwes" = "doit";
 "groups.openingBalance.rollupOwed" = "on lui doit";
 "groups.openingBalance.approvalPromptTitle" = "%@ avait-il déjà des comptes à régler avec le groupe ?";

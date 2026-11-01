@@ -1037,6 +1037,12 @@ final class UITestHooks {
     /// sigue siéndolo). Es el caso de la card yd2w: cualquier admin gestiona los saldos iniciales, no solo el dueño.
     nonisolated static var inviteeIsAdmin: Bool { hasArg("-uitest-invitee-admin") }
 
+    /// `-uitest-invitee-frozen` (con el perfil `grupos-invitado`): «Viaje a Cusco» nace CONGELADO por la migración —
+    /// `movedToBackendAt` puesto y fuera del canal backend—, como lo ve en producción un miembro que aún no volvió a entrar.
+    /// Solo pone la ENTRADA: el freeze lo sigue decidiendo `GroupFreezeLogic.isFrozen`. Existe para el XCUITest de la
+    /// card jqgy: en un grupo congelado, «Saldos iniciales» se ve pero no deja guardar.
+    nonisolated static var inviteeGroupFrozen: Bool { hasArg("-uitest-invitee-frozen") }
+
     /// Valor de `-uitest-opening-balance-server-rejection <código>` (`yala_opening_balance_not_admin|…_locked|
     /// …_group_closed`): al abrir un grupo, deja en el buzón ese rechazo del servidor como si acabara de volver de una
     /// subida (card 6n1o). Solo pone la ENTRADA: el código pasa por `OpeningBalanceServerRejectionLogic` y el aviso,

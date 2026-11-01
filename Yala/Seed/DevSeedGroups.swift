@@ -536,6 +536,11 @@ enum DevSeedGroups {
             isOwner: false
         )
         group.isBackendGroup = true  // C3: ver el porqué en `create(in:)`.
+        // Card jqgy: con `-uitest-invitee-frozen`, el grupo se movió a la nube y «Tú» aún no volvió a entrar.
+        if UITestHooks.inviteeGroupFrozen {
+            group.isBackendGroup = false
+            group.movedToBackendAt = Date.now
+        }
         context.insert(group)
         let zoneID = group.cloudKitZoneID
 
@@ -585,6 +590,22 @@ enum DevSeedGroups {
                 )
                 context.insert(share)
             }
+        }
+
+        // Card jqgy: en el grupo congelado ya había un saldo inicial de antes de la migración (Beto le debe 50 a Ana),
+        // para ver que la sección lo enseña pero no deja tocarlo.
+        if UITestHooks.inviteeGroupFrozen {
+            let opening = SplitExpense(
+                groupZoneID: zoneID, amount: 50, currencyCode: "PEN",
+                expenseDescription: L10n.Groups.OpeningBalance.entryDescription,
+                paidByMemberID: ana.id.uuidString, splitType: "exact",
+                isOpeningBalance: true
+            )
+            context.insert(opening)
+            context.insert(SplitShare(
+                expenseID: opening.id, memberID: beto.id.uuidString, amount: 50,
+                isPaid: false, groupZoneID: zoneID
+            ))
         }
 
         do {

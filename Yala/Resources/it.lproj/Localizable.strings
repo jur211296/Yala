@@ -4481,6 +4481,7 @@
 "groups.openingBalance.sectionTitle" = "Saldi iniziali";
 "groups.openingBalance.addButton" = "Aggiungi saldo iniziale";
 "groups.openingBalance.emptyState" = "Ancora nessun saldo iniziale.";
+"groups.openingBalance.frozenNote" = "Questo gruppo è stato spostato nel cloud di Yala. Puoi vedere i saldi iniziali, ma non modificarli qui.";
 "groups.openingBalance.rollupOwes" = "deve";
 "groups.openingBalance.rollupOwed" = "ha un credito";
 "groups.openingBalance.approvalPromptTitle" = "%@ aveva già dei conti in sospeso con il gruppo?";

@@ -4483,6 +4483,7 @@
 "groups.openingBalance.sectionTitle" = "初始余额";
 "groups.openingBalance.addButton" = "添加初始余额";
 "groups.openingBalance.emptyState" = "暂无初始余额。";
+"groups.openingBalance.frozenNote" = "该群组已迁移到 Yala 云端。初始余额可以查看，但无法在这里更改。";
 "groups.openingBalance.rollupOwes" = "欠";
 "groups.openingBalance.rollupOwed" = "应收";
 "groups.openingBalance.approvalPromptTitle" = "%@ 和群组之间是否已有未结清的账？";

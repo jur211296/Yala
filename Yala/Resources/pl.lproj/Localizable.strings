@@ -4483,6 +4483,7 @@
 "groups.openingBalance.sectionTitle" = "Salda początkowe";
 "groups.openingBalance.addButton" = "Dodaj saldo początkowe";
 "groups.openingBalance.emptyState" = "Brak sald początkowych.";
+"groups.openingBalance.frozenNote" = "Ta grupa została przeniesiona do chmury Yala. Salda początkowe możesz zobaczyć, ale nie zmienisz ich tutaj.";
 "groups.openingBalance.rollupOwes" = "jest winien";
 "groups.openingBalance.rollupOwed" = "ma do otrzymania";
 "groups.openingBalance.approvalPromptTitle" = "Czy %@ miał(a) już jakieś rozliczenia z grupą?";

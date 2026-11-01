@@ -4471,6 +4471,7 @@
 "groups.openingBalance.sectionTitle" = "Saldos iniciais";
 "groups.openingBalance.addButton" = "Adicionar saldo inicial";
 "groups.openingBalance.emptyState" = "Ainda não há saldos iniciais.";
+"groups.openingBalance.frozenNote" = "Este grupo foi movido para a nuvem da Yala. Os saldos iniciais podem ser vistos, mas não alterados aqui.";
 "groups.openingBalance.rollupOwes" = "deve";
 "groups.openingBalance.rollupOwed" = "tem a receber";
 "groups.openingBalance.approvalPromptTitle" = "%@ já tinha contas pendentes com o grupo?";

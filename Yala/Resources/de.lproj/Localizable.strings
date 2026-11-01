@@ -4471,6 +4471,7 @@
 "groups.openingBalance.sectionTitle" = "Anfangssalden";
 "groups.openingBalance.addButton" = "Anfangssaldo hinzufügen";
 "groups.openingBalance.emptyState" = "Noch keine Anfangssalden.";
+"groups.openingBalance.frozenNote" = "Diese Gruppe ist in die Yala-Cloud umgezogen. Du kannst die Anfangssalden sehen, aber hier nicht ändern.";
 "groups.openingBalance.rollupOwes" = "schuldet";
 "groups.openingBalance.rollupOwed" = "hat Guthaben";
 "groups.openingBalance.approvalPromptTitle" = "Hatte %@ schon offene Beträge mit der Gruppe?";

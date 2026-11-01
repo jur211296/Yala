@@ -133,6 +133,11 @@ final class GroupDetailViewModel {
         )
     }
 
+    /// Card jqgy: cómo se pinta la sección «Saldos iniciales» de Miembros. En un grupo congelado se ve sin dejar cambiar.
+    var openingBalanceSectionMode: OpeningBalanceSectionLogic.Mode {
+        OpeningBalanceSectionLogic.mode(isManager: isOpeningBalanceManager, isFrozen: group.isMigratedFrozen)
+    }
+
     /// Lo que se puede tocar ahora mismo: además de gestionarlos, poder escribir en el grupo (no congelado, activo).
     var canManageOpeningBalances: Bool {
         canCurrentUserParticipate && isOpeningBalanceManager

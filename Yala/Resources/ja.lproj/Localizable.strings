@@ -4483,6 +4483,7 @@
 "groups.openingBalance.sectionTitle" = "開始残高";
 "groups.openingBalance.addButton" = "開始残高を追加";
 "groups.openingBalance.emptyState" = "まだ開始残高はありません。";
+"groups.openingBalance.frozenNote" = "このグループはYalaのクラウドに移動しました。開始残高は見られますが、ここでは変更できません。";
 "groups.openingBalance.rollupOwes" = "借りています";
 "groups.openingBalance.rollupOwed" = "受け取ります";
 "groups.openingBalance.approvalPromptTitle" = "%@さんには、グループとの未精算の貸し借りがありましたか？";
