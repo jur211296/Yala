@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1149)
+## Index (1152)
 
 | id | status | path |
 |---|---|---|
@@ -1166,6 +1166,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-balance-figure-and-curve-count-different-rows-for-accountless-movements | done | tickets/done/widget-balance-figure-and-curve-count-different-rows-for-accountless-movements.md |
 | widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen | done | tickets/done/widget-cache-falls-back-to-usd-while-the-app-falls-back-to-pen.md |
 | widget-cache-rebuild-blocks-the-main-thread | backlog | tickets/backlog/widget-cache-rebuild-blocks-the-main-thread.md |
+| widget-category-percentages-use-the-signed-total | backlog | tickets/backlog/widget-category-percentages-use-the-signed-total.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
