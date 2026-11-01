@@ -194,3 +194,8 @@
 "widget.quick.manual" = "手动";
 "widget.quick.voice" = "语音";
 "widget.quick.photo" = "照片";
+
+/* Rediseño de los widgets 2.2, tanda 2 (S35f1): comparación del neto en Entradas y salidas */
+"widget.flow.previousToDate" = "%1$@同期净额：%2$@";
+"widget.flow.previousToDate.year" = "%1$@同期净额：%2$@";
+"widget.flow.comparison.a11y" = "与%2$@同期的差额：%1$@";

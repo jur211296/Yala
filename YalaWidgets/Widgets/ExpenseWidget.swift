@@ -151,7 +151,10 @@ struct ExpenseWidgetProvider: AppIntentTimelineProvider {
             isPlaceholder: false,
             period: configuration.period,
             expenseIsApproximate: summary?.expenseIsApproximate ?? false,
-            comparison: Self.comparison(for: period, current: totalExpense, asOf: asOf, calendar: calendar),
+            // «Comparar con el período anterior» apagado en la app: sin comparación, y la línea enseña el promedio diario.
+            comparison: WidgetDataService.showsVariations
+                ? Self.comparison(for: period, current: totalExpense, asOf: asOf, calendar: calendar)
+                : nil,
             dailyAverage: WidgetInsightsLogic.dailyAverage(
                 total: totalExpense, start: start, end: interval.end, now: asOf, calendar: calendar),
             periodDays: periodDays,

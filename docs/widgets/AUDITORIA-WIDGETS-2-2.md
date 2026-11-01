@@ -69,8 +69,6 @@ Tanda: **1** = este PR · **2** = card S35f1 · **3** = card S35f2.
 
 - **Widget de Grupos** (saldos por grupo): los grupos no viajan en la foto del App Group; necesita campos opcionales
   nuevos en `WidgetDataSnapshot` (molde de `paymentsMonth`).
-- **«Mostrar variaciones» no llega a los widgets**: la preferencia no se copia al App Group, así que la comparación de
-  Gastos sale aunque esté apagada en la app.
 - **Acciones en el sitio con App Intents** (marcar un pago como pagado, repetir un favorito): escriben datos de la app
   — decisión de Jürgen.
 - **Control «Nuevo registro»** en el Centro de Control.
@@ -92,3 +90,24 @@ Tanda: **1** = este PR · **2** = card S35f1 · **3** = card S35f2.
   la gráfica es el período entero, el aviso «N se pasaron» cuenta todos los presupuestos, «Hoy/Mañana» cambian a
   medianoche con una entrada propia, la pantalla bloqueada respeta «símbolo o código», y el Resumen del mes conserva
   su fila de presupuesto hasta su tanda.
+
+## Tanda 2: cómo quedó (S35f1)
+
+- **Entradas y salidas** (S · M · L · XLV): el neto es la cifra grande, con signo; en «Este mes» y «Este año», la
+  diferencia con el neto del período anterior a la misma fecha («↓ S/ 4,394 vs. setiembre» y «Neto en setiembre a esta
+  fecha: S/ +3,334»). Ingresos y gastos en dos barras sólidas (turquesa y rosa de marca); en el grande y el vertical, lo
+  de cada día (o mes) en barras sin ejes, lo que entró hacia arriba y lo que salió hacia abajo. En «Solo gastos», lo
+  gastado, su promedio diario y sus barras, sin repetir la cifra. El pequeño dice el período bajo la cifra.
+- **Resumen del mes** (XL de iPad · XLV): cabecera e insignia de la tanda 1, cifras en `title2`, aro sólido con la leyenda
+  con importe y porcentaje, y los presupuestos con la fila de Presupuestos («Te quedan / Te pasaste por» y el ritmo). Sin
+  azul: los enlaces pasan por `WidgetPlainLink`. El vertical reparte el alto y enseña hasta cinco presupuestos.
+- **«Comparar con el período anterior» llega a los widgets**: apagada en la app, Saldo pierde su píldora, Gastos enseña
+  el promedio diario y Entradas y salidas no compara.
+- **Capturas**: `antes/`, `despues/`, `sin-variaciones/`, `solo-gastos/` y `real/` (pantalla de inicio del simulador
+  iPhone 17 Pro, iOS 27.0: Entradas y salidas grande en claro, oscuro y Teñido; Resumen del mes vertical en claro y
+  Teñido), en la carpeta de capturas de la sesión.
+- **Lo que cazó la review adversarial y se arregló**: la escala de las barras no contaba las devoluciones ni lo apilado
+  de un día (se salían de la gráfica); «Solo gastos» repetía lo gastado con una barra siempre llena; el pequeño no decía
+  el período; la frase de VoiceOver de la comparación sonaba al neto del mes; el signo iba en dos sitios distintos;
+  «Todo el tiempo» arrancaba en otro día que Gastos y su promedio diario no coincidía; y faltaban tests de los meses a
+  partir de mitad de mes.

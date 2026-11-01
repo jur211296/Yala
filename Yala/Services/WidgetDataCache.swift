@@ -259,6 +259,26 @@ enum WidgetDataCache {
     /// El lector espejo es `WidgetDataService.groupsOnlySessionKey`, y `WidgetGroupsOnlyInviteParityTests` los compara.
     nonisolated static let groupsOnlySessionKey = "widget_groupsOnlySession"
 
+    /// **«Comparar con el período anterior»** (`AppPreferences.showVariations`) para los widgets, que con ella apagada no
+    /// enseñan variaciones (la píldora de Saldo, la comparación de Gastos y la de Entradas y salidas), como la app apaga
+    /// sus `VariationChip`. Ausente = activada, su default. El lector es `WidgetDataService.showsVariations`.
+    nonisolated static let showVariationsKey = AppPreferences.Keys.showVariations
+
+    /// Copia la preferencia al App Group si cambió. Devuelve si escribió.
+    @discardableResult
+    nonisolated static func publishShowVariations(_ value: Bool, in defaults: UserDefaults?) -> Bool {
+        guard let defaults, defaults.object(forKey: showVariationsKey) as? Bool != value else { return false }
+        defaults.set(value, forKey: showVariationsKey)
+        return true
+    }
+
+    /// Al cambiarla en la app: la copia y recarga los widgets, que no esperan a la próxima foto.
+    static func mirrorShowVariations(_ value: Bool) {
+        if publishShowVariations(value, in: sharedDefaults) {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
+
     /// Shared UserDefaults for App Group
     private static var sharedDefaults: UserDefaults? {
         UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)
@@ -870,6 +890,10 @@ enum WidgetDataCache {
             // Sync defaultPeriod preference for "Same as app" option in widgets
             let defaultPeriod = UserDefaults.standard.string(forKey: "defaultPeriod") ?? "allTime"
             defaults.set(defaultPeriod, forKey: "defaultPeriod")
+
+            // Y «Comparar con el período anterior», por si cambió sin pasar por `AppPreferences` (o antes de 2.2).
+            let showVariations = UserDefaults.standard.object(forKey: AppPreferences.Keys.showVariations) as? Bool ?? true
+            publishShowVariations(showVariations, in: defaults)
         } catch {
             #if DEBUG
             print("WidgetDataCache: Error encoding snapshot: \(error)")

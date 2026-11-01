@@ -194,3 +194,8 @@
 "widget.quick.manual" = "手入力";
 "widget.quick.voice" = "音声";
 "widget.quick.photo" = "写真";
+
+/* Rediseño de los widgets 2.2, tanda 2 (S35f1): comparación del neto en Entradas y salidas */
+"widget.flow.previousToDate" = "%1$@の同じ日までの純額：%2$@";
+"widget.flow.previousToDate.year" = "%1$@の同じ日までの純額：%2$@";
+"widget.flow.comparison.a11y" = "%2$@の同じ日との差：%1$@";

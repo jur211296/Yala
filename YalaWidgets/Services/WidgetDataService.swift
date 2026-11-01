@@ -259,6 +259,15 @@ enum WidgetDataService {
         return period
     }
 
+    // MARK: - Comparar con el período anterior
+
+    /// «Comparar con el período anterior» de la app (`AppPreferences.showVariations`, copiada por
+    /// `WidgetDataCache.publishShowVariations`). Apagada, los widgets no enseñan variaciones. Ausente = activada, su
+    /// default: una foto de antes de 2.2 no la trae.
+    static var showsVariations: Bool {
+        sharedDefaults?.object(forKey: "showVariations") as? Bool ?? true
+    }
+
     // MARK: - Expenses Only Mode
 
     /// Whether the app is in expenses-only mode (synced via App Group UserDefaults)

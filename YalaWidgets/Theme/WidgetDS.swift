@@ -8,8 +8,8 @@
 //
 //  Lo fija `WidgetDesignSystemParityTests`, que compara cada token con el de `DS`. Si cambias uno allí, cámbialo aquí.
 //
-//  El `WDS` viejo (`WidgetDesignTokens.swift`) sigue para los widgets que aún no se rediseñaron (Entradas y salidas,
-//  Resumen del mes, Categorías y Subcategorías): cambiar sus valores los movería sin capturas. Lo retira la última
+//  El `WDS` viejo (`WidgetDesignTokens.swift`) sigue para los widgets que aún no se rediseñaron (Categorías y
+//  Subcategorías): cambiar sus valores los movería sin capturas. Lo retira la última
 //  tanda del rediseño.
 //
 
@@ -81,6 +81,17 @@ enum WidgetDS {
         static let pointArea: CGFloat = 36
         /// Alto de la mini curva del tamaño pequeño.
         static let sparklineHeight: CGFloat = 24
+        /// Barras de «Entradas y salidas»: alto de una barra de total y hueco entre las barras de cada día (en
+        /// proporción del ancho del día).
+        static let totalBarHeight: CGFloat = 8
+        static let dayBarWidthRatio: CGFloat = 0.6
+        /// Donut del Resumen del mes: diámetro en el iPad y en el extragrande vertical, grosor del aro (proporción del
+        /// radio) y separación entre porciones (grados).
+        static let donutSize: CGFloat = 104
+        static let donutInnerRatio: CGFloat = 0.62
+        static let donutAngularInset: CGFloat = 1.5
+        /// Punto de color de una leyenda.
+        static let legendDot: CGFloat = 8
     }
 
     // MARK: - Typography (= DS.Typography)
@@ -94,6 +105,9 @@ enum WidgetDS {
         static let labelSmall = Font.caption.weight(.medium)
         static let labelTiny = Font.caption2.weight(.medium)
         static let headline = Font.headline.weight(.semibold)
+        /// Cifras de un resumen con varias (Resumen del mes).
+        static let title2 = Font.title2.weight(.semibold)
+        static let title3 = Font.title3.weight(.semibold)
         static let caption = Font.caption
         static let captionSmall = Font.caption2
         /// Píldoras y marcas («Vencido», «−12 %»).

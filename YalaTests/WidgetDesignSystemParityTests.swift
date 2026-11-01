@@ -122,6 +122,9 @@ struct WidgetDesignSystemParityTests {
         "YalaWidgets/Widgets/ScheduledPaymentsPortraitView.swift", "YalaWidgets/Widgets/LatestRecordsWidget.swift",
         "YalaWidgets/Widgets/QuickEntryWidgets.swift", "YalaWidgets/Widgets/AccessoryWidgets.swift",
         "YalaWidgets/Views/WidgetCardComponents.swift",
+        // Tanda 2 (S35f1): Entradas y salidas y Resumen del mes.
+        "YalaWidgets/Widgets/CashFlowWidget.swift", "YalaWidgets/Widgets/CashFlowPortraitView.swift",
+        "YalaWidgets/Widgets/MonthSummaryWidget.swift", "YalaWidgets/Widgets/MonthSummaryPortraitView.swift",
     ])
     func losRedisenadosSoloUsanWidgetDS(path: String) throws {
         let code = try Self.source(path).split(separator: "\n")

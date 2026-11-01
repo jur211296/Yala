@@ -153,7 +153,8 @@ struct BalanceWidgetProvider: AppIntentTimelineProvider {
             isPlaceholder: false,
             period: configuration.period,
             balanceIsApproximate: WidgetDataService.getBalanceIsApproximate(for: period),
-            change: Self.change(for: period, balance: balance, asOf: asOf),
+            // Con «Comparar con el período anterior» apagado en la app, sin la píldora (como el hero del Panel).
+            change: WidgetDataService.showsVariations ? Self.change(for: period, balance: balance, asOf: asOf) : nil,
             lastUpdated: lastUpdated
         )
     }

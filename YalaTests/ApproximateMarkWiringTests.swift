@@ -389,17 +389,31 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     func passthroughComponentsForwardTheMark() throws {
         let kpi = try Self.source("YalaWidgets/Views/WidgetKPI.swift")
         #expect(kpi.contains("isEstimate: isEstimate"), """
-            `WidgetKPI` es el camino de la marca hacia el neto de Flujo de caja y el Resumen del mes:
-            si deja de reenviarla, pierden el «≈» y sus callsites siguen pasándola tan campantes.
+            `WidgetKPI` reenvía la marca. Desde la tanda 2 del rediseño (S35f1) ningún widget lo usa: lo
+            retira la última tanda, con el `WDS` viejo.
             """)
 
         // Desde el rediseño 2.2 la cifra de Saldo y Gastos va por `WidgetHeroAmount`.
         let hero = try Self.source("YalaWidgets/Views/WidgetCardComponents.swift")
         let heroBody = try #require(hero.range(of: "struct WidgetHeroAmount: View {"))
         #expect(String(hero[heroBody.upperBound...].prefix(900)).contains("isEstimate: isEstimate"), """
-            `WidgetHeroAmount` es el camino de la marca hacia `BalanceWidget` y `ExpenseWidget`: si
-            deja de reenviarla, los dos pierden el «≈» con sus callsites en verde.
+            `WidgetHeroAmount` es el camino de la marca hacia `BalanceWidget`, `ExpenseWidget` y
+            `CashFlowWidget`: si deja de reenviarla, los tres pierden el «≈» con sus callsites en verde.
             """)
+
+        // Y la cifra del Resumen del mes (S35f1), que pinta sus cuatro cifras con `MonthSummaryFigure`.
+        let summary = try Self.source("YalaWidgets/Widgets/MonthSummaryWidget.swift")
+        let figureBody = try #require(summary.range(of: "struct MonthSummaryFigure: View {"))
+        #expect(String(summary[figureBody.upperBound...].prefix(1_200)).contains("isEstimate: isEstimate"), """
+            `MonthSummaryFigure` es el camino de la marca hacia las cifras del Resumen del mes.
+            """)
+        for campo in ["entry.balanceIsApproximate", "entry.expenseIsApproximate"] {
+            #expect(summary.contains("isEstimate: \(campo)"), "El Resumen del mes no pasa \(campo).")
+        }
+        let portrait = try Self.source("YalaWidgets/Widgets/MonthSummaryPortraitView.swift")
+        for campo in ["entry.incomeIsApproximate", "entry.netCashFlowIsApproximate"] {
+            #expect(portrait.contains("isEstimate: \(campo)"), "El Resumen del mes vertical no pasa \(campo).")
+        }
 
         let row = try Self.source("Yala/App/Views/Panel/Components/PanelSmallBarRow.swift")
         #expect(row.contains("isEstimate: isEstimate"), """

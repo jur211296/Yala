@@ -208,6 +208,11 @@ final class AppPreferences {
         didSet {
             guard oldValue != showVariations else { return }
             persistBool(showVariations, forKey: Keys.showVariations, synced: true)
+            // Los widgets la leen del App Group. Solo con el almacén real (`publishesToSync`): un test con su almacén
+            // aislado no escribe en el App Group del simulador. Va también durante `loadFromDefaults` (a propósito: así
+            // llega a los widgets un cambio de otro dispositivo), así que un seam que la registre como efímera la
+            // dejaría escrita en el App Group: hoy no la registra ninguno (`UITestEphemeralDefaults`).
+            if publishesToSync { WidgetDataCache.mirrorShowVariations(showVariations) }
         }
     }
 
@@ -1251,7 +1256,9 @@ final class AppPreferences {
     // MARK: - Reset del espejo (alta solo-grupos)
 
     /// Devuelve a su valor de fábrica las propiedades de las preferencias SINCRONIZADAS, y el centinela del Panel que
-    /// va con ellas. **No escribe**: corre bajo el mismo `isLoadingFromDefaults` que la carga.
+    /// va con ellas. **No escribe en sus almacenes**: corre bajo el mismo `isLoadingFromDefaults` que la carga. La única
+    /// excepción es el espejo de `showVariations` en el App Group (S35f1), que se copia también al cargar para que un
+    /// cambio de otro dispositivo llegue a los widgets; aquí escribe `true`, que el widget lee igual que la key ausente.
     ///
     /// Existe porque `loadFromDefaults` relee por PRESENCIA: cuando una key desaparece, la propiedad se queda con el
     /// valor que tenía. Lo usa `GroupsOnlySignUpPreferenceReset`, que retira en local las 36 del Apple ID al empezar

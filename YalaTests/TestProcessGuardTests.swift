@@ -63,9 +63,11 @@ struct TestProcessGuardTests {
     /// que lo publicaban las fronteras de la sesión de visita. Se fue con ella.
     ///
     /// **Y la cuarta, desde el 2026-10-08**: la clave de «sesión solo grupos» que el widget lee aparte del snapshot.
+    /// **Y la quinta, desde el 2026-10-31**: «Comparar con el período anterior», que la foto copia para los widgets.
     @Test func protege_lasClavesDelEspejoDelWidget() {
         #expect(Set(TestProcessGuard.protectedKeys) == [
             "widget_data_cache", "firstWeekday", "defaultPeriod", WidgetDataCache.groupsOnlySessionKey,
+            WidgetDataCache.showVariationsKey,
         ])
     }
 

@@ -133,6 +133,132 @@ struct WidgetInsightsLogicTests {
         #expect(result.fraction == nil)
     }
 
+    // MARK: - Entradas y salidas
+
+    /// Setiembre: cobro el 1 y gastos el 2, el 10 y el 20 (este último, después del corte del día 15).
+    private static var septemberFlow: [(date: Date, income: Double, expense: Double)] {
+        [
+            (date: day(2026, 9, 1, hour: 0), income: 5_000, expense: 0),
+            (date: day(2026, 9, 2, hour: 0), income: 0, expense: 300),
+            (date: day(2026, 9, 10, hour: 0), income: -100, expense: 700),  // una devolución resta de su lado
+            (date: day(2026, 9, 20, hour: 0), income: 0, expense: 2_000),
+        ]
+    }
+
+    @Test func flowComparison_cuentaElNetoDelAnteriorHastaElMismoDia() throws {
+        let result = try #require(WidgetInsightsLogic.flowComparison(
+            currentNet: 3_000,
+            previousDaily: Self.septemberFlow,
+            previousStart: Self.calendar.startOfDay(for: Self.day(2026, 9, 1)),
+            currentStart: Self.calendar.startOfDay(for: Self.day(2026, 10, 1)),
+            now: Self.day(2026, 10, 15, hour: 20),
+            calendar: Self.calendar))
+        // Hasta el 15 de setiembre incluido: 5000 − 100 − 300 − 700 = 3900. El gasto del 20 no entra.
+        #expect(result.previousNetToDate == 3_900)
+        #expect(result.change == -900)
+    }
+
+    @Test func flowComparison_elUltimoDiaDelCorteEntra_yElSiguienteNo() throws {
+        let previous = [
+            (date: Self.day(2026, 9, 15, hour: 0), income: 0.0, expense: 100.0),
+            (date: Self.day(2026, 9, 16, hour: 0), income: 0.0, expense: 1_000.0),
+        ]
+        let result = try #require(WidgetInsightsLogic.flowComparison(
+            currentNet: 0, previousDaily: previous,
+            previousStart: Self.calendar.startOfDay(for: Self.day(2026, 9, 1)),
+            currentStart: Self.calendar.startOfDay(for: Self.day(2026, 10, 1)),
+            now: Self.day(2026, 10, 15, hour: 0), calendar: Self.calendar))
+        #expect(result.previousNetToDate == -100)
+        #expect(result.change == 100)
+    }
+
+    @Test func flowComparison_unAnteriorRellenoDeCeros_noCompara() {
+        let zeros = (1...30).map { (date: Self.day(2026, 9, $0, hour: 0), income: 0.0, expense: 0.0) }
+        #expect(WidgetInsightsLogic.flowComparison(
+            currentNet: 100, previousDaily: zeros,
+            previousStart: Self.day(2026, 9, 1), currentStart: Self.day(2026, 10, 1),
+            now: Self.day(2026, 10, 10), calendar: Self.calendar) == nil)
+    }
+
+    @Test func flowComparison_soloConIngresosEntonces_siCompara() throws {
+        let previous = [(date: Self.day(2026, 9, 1, hour: 0), income: 800.0, expense: 0.0)]
+        let result = try #require(WidgetInsightsLogic.flowComparison(
+            currentNet: 1_000, previousDaily: previous,
+            previousStart: Self.day(2026, 9, 1), currentStart: Self.day(2026, 10, 1),
+            now: Self.day(2026, 10, 10), calendar: Self.calendar))
+        #expect(result.change == 200)
+    }
+
+    @Test func flowBuckets_porDia_ocupaElPeriodoEnteroConLosDiasPorLlegarEnCero() {
+        let buckets = WidgetInsightsLogic.flowBuckets(
+            Self.septemberFlow,
+            start: Self.calendar.startOfDay(for: Self.day(2026, 9, 1)),
+            end: Self.day(2026, 9, 30, hour: 23),
+            byMonth: false, calendar: Self.calendar)
+        #expect(buckets.count == 30)
+        #expect(buckets[0].income == 5_000)
+        #expect(buckets[9].income == -100 && buckets[9].expense == 700)
+        #expect(buckets[19].expense == 2_000)
+        #expect(buckets[29].income == 0 && buckets[29].expense == 0)
+    }
+
+    @Test func flowBuckets_porMes_sumaCadaMesYDejaFueraLoDeOtroAnio() {
+        let points = [
+            (date: Self.day(2025, 12, 31, hour: 0), income: 9.0, expense: 9.0),
+            (date: Self.day(2026, 1, 3, hour: 0), income: 100.0, expense: 10.0),
+            (date: Self.day(2026, 1, 31, hour: 0), income: 0.0, expense: 40.0),
+            (date: Self.day(2026, 3, 1, hour: 0), income: 0.0, expense: 5.0),
+        ]
+        let buckets = WidgetInsightsLogic.flowBuckets(
+            points,
+            start: Self.calendar.startOfDay(for: Self.day(2026, 1, 1)),
+            end: Self.day(2026, 12, 31, hour: 23),
+            byMonth: true, calendar: Self.calendar)
+        #expect(buckets.count == 12)
+        #expect(buckets[0].income == 100 && buckets[0].expense == 50)
+        #expect(buckets[1].income == 0 && buckets[1].expense == 0)
+        #expect(buckets[2].expense == 5)
+    }
+
+    @Test func flowBuckets_porMes_desdeMitadDeMes_cuentaElMesDelInicio() {
+        // «Todo el tiempo» arranca el día del primer movimiento: del 15 de marzo al 1 de octubre son 8 meses, no 7.
+        let points = [
+            (date: Self.day(2026, 3, 20, hour: 0), income: 10.0, expense: 0.0),
+            (date: Self.day(2026, 4, 2, hour: 0), income: 20.0, expense: 0.0),
+            (date: Self.day(2026, 10, 1, hour: 0), income: 0.0, expense: 30.0),
+        ]
+        let buckets = WidgetInsightsLogic.flowBuckets(
+            points, start: Self.calendar.startOfDay(for: Self.day(2026, 3, 15)), end: Self.day(2026, 10, 1, hour: 20),
+            byMonth: true, calendar: Self.calendar)
+        #expect(buckets.count == 8)
+        #expect(buckets[0].income == 10)
+        #expect(buckets[1].income == 20)
+        #expect(buckets[7].expense == 30)
+    }
+
+    @Test func flowBuckets_loPosteriorAlFinNoEntra() {
+        let points = [
+            (date: Self.day(2026, 9, 30, hour: 0), income: 0.0, expense: 5.0),
+            (date: Self.day(2026, 10, 1, hour: 0), income: 0.0, expense: 999.0),
+        ]
+        let buckets = WidgetInsightsLogic.flowBuckets(
+            points, start: Self.calendar.startOfDay(for: Self.day(2026, 9, 1)), end: Self.day(2026, 9, 30, hour: 23),
+            byMonth: false, calendar: Self.calendar)
+        #expect(buckets.count == 30)
+        #expect(buckets.reduce(0) { $0 + $1.expense } == 5)
+    }
+
+    @Test func flowChartRange_apilaCadaDiaYMiraLasDevoluciones() {
+        // Día 1: cobro 800 y devolución de 600 (gasto −600: su barra sube y se apila sobre el ingreso).
+        // Día 2: gasto 300. Día 3: devolución sin ingresos.
+        let buckets = [(income: 800.0, expense: -600.0), (income: 0.0, expense: 300.0), (income: 0.0, expense: -50.0)]
+        #expect(WidgetInsightsLogic.flowChartRange(buckets, expensesUp: false) == -300...1_400)
+        // En «Solo gastos» lo gastado sube y la devolución baja.
+        #expect(WidgetInsightsLogic.flowChartRange(
+            [(income: 0, expense: 300), (income: 0, expense: -50)], expensesUp: true) == -50...300)
+        #expect(WidgetInsightsLogic.flowChartRange([], expensesUp: false) == -1...1)
+    }
+
     @Test func daysElapsed_cuentaLosDosExtremos() {
         let start = Self.calendar.startOfDay(for: Self.day(2026, 10, 1))
         #expect(WidgetInsightsLogic.daysElapsed(from: start, to: Self.day(2026, 10, 1, hour: 0), calendar: Self.calendar) == 1)

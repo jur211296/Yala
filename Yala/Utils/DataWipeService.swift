@@ -1145,6 +1145,7 @@ final class DataWipeService {
         if let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
             appGroup.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)   // espejo del didSet de SessionState (widgets)
             appGroup.removeObject(forKey: "firstWeekday")                         // espejo de PreferenceSyncService (widgets)
+            appGroup.removeObject(forKey: WidgetDataCache.showVariationsKey)      // espejo de AppPreferences (widgets)
             appGroup.removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)  // shortcutID de una Account ya borrada
             appGroup.removeObject(forKey: ApplePayCurrencyHint.storageKey)        // su moneda, para la notificación de Apple Pay
         }
