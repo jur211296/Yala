@@ -39,7 +39,8 @@ struct WidgetDTOParityTests {
         "WidgetTransaction", "WidgetBudget", "WidgetScheduledPayment", "WidgetTrendPoint",
         "WidgetTrendData", "WidgetAccountBalance", "WidgetCategory", "WidgetSubcategory",
         "WidgetCashFlowPoint", "WidgetPeriodSummary", "WidgetDataSnapshot",
-        "WidgetAccountFlow", "WidgetPaymentsMonth"
+        "WidgetAccountFlow", "WidgetPaymentsMonth",
+        "WidgetGroupAmount", "WidgetGroupBalance", "WidgetGroupsSummary"
     ]
 
     static let writerPath = "Yala/Services/WidgetDataCache.swift"
@@ -181,7 +182,13 @@ struct WidgetDTOParityTests {
             thisMonthSummary: summary,
             allTimeSummary: summary,
             periodSummaries: ["thisMonth": summary],
-            paymentsMonth: WidgetPaymentsMonth(monthStart: date, pendingDays: [1], paidDays: [], remainingToPay: 1)
+            paymentsMonth: WidgetPaymentsMonth(monthStart: date, pendingDays: [1], paidDays: [], remainingToPay: 1),
+            // Opcional en las dos copias, con un elemento en cada array para que el recorrido pase por sus structs.
+            groups: WidgetGroupsSummary(
+                iOwe: [WidgetGroupAmount(currencyCode: "PEN", amount: 1)], owedToMe: [], activeGroupCount: 1,
+                groups: [WidgetGroupBalance(id: "g", name: "G", iconName: "i", colorHex: "#000000",
+                                            iOwe: [], owedToMe: [WidgetGroupAmount(currencyCode: "USD", amount: 1)])]
+            )
         )
     }
 

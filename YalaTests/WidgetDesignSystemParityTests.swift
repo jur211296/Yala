@@ -103,6 +103,14 @@ struct WidgetDesignSystemParityTests {
         #expect((try Self.hex("indigoFill", in: widget)) == (try Self.hex("selectedIndigoFill", in: app)))
         #expect((try Self.hex("pinkFill", in: widget)) == (try Self.hex("emphasisPinkFill", in: app)))
         #expect((try Self.hex("tealFill", in: widget)) == Color.incomeAmountLightHex.uppercased())
+
+        // «Debes» y «Te deben» de Grupos: los de la lista (`Color.groupOweAmount` / `groupOwedAmount`).
+        let owe = try Self.adaptiveHex("groupOweText", in: widget)
+        #expect(owe.light == Color.groupOweAmountLightHex.uppercased())
+        #expect(owe.dark == Color.groupOweAmountDarkHex.uppercased())
+        let owed = try Self.adaptiveHex("groupOwedText", in: widget)
+        #expect(owed.light == Color.groupOwedAmountLightHex.uppercased())
+        #expect(owed.dark == Color.groupOwedAmountDarkHex.uppercased())
     }
 
     /// El fondo de la tarjeta del widget es el `card` del tema por defecto: blanco y #1C1C1E, que es el gris agrupado
@@ -130,6 +138,8 @@ struct WidgetDesignSystemParityTests {
         "YalaWidgets/Widgets/CategoriesPieWidget.swift", "YalaWidgets/Widgets/SubcategoriesPieWidget.swift",
         "YalaWidgets/Views/WidgetCategoryBreakdown.swift",
         "YalaWidgets/Views/WidgetNoDataInviteView.swift", "YalaWidgets/Views/GroupsOnlyInviteView.swift",
+        // S35f3: Grupos.
+        "YalaWidgets/Widgets/GroupsWidget.swift",
     ])
     func losRedisenadosSoloUsanWidgetDS(path: String) throws {
         let code = try Self.source(path).split(separator: "\n")

@@ -90,6 +90,13 @@ enum Catalog {
             })
         }
 
+        // Grupos (S35f3)
+        for spec in [FamilySpec.medium, .large] {
+            items.append(RenderItem(slug: "grupos", spec: spec) {
+                AnyView(GroupsWidgetView(entry: GroupsWidgetProvider().createEntry()))
+            })
+        }
+
         // Resumen del mes
         for spec in [FamilySpec.extraLarge] + (xlv.map { [$0] } ?? []) {
             items.append(RenderItem(slug: "resumen-del-mes", spec: spec) {
@@ -139,6 +146,16 @@ enum Catalog {
         items.append(RenderItem(slug: "vacio-registros", spec: .medium, modes: [.claro]) {
             AnyView(LatestRecordsWidgetView(entry: LatestRecordsEntry(
                 date: RenderClock.now, transactions: [], currencyDisplayFormat: "symbol", isPlaceholder: false)))
+        })
+        items.append(RenderItem(slug: "vacio-grupos", spec: .medium, modes: [.claro]) {
+            AnyView(GroupsWidgetView(entry: GroupsWidgetEntry(
+                date: RenderClock.now,
+                groups: WidgetGroupsSummary(iOwe: [], owedToMe: [], activeGroupCount: 0, groups: []),
+                currencyDisplayFormat: "symbol", isPlaceholder: false)))
+        })
+        items.append(RenderItem(slug: "grupos-sin-foto-de-grupos", spec: .medium, modes: [.claro]) {
+            AnyView(GroupsWidgetView(entry: GroupsWidgetEntry(
+                date: RenderClock.now, groups: nil, currencyDisplayFormat: "symbol", isPlaceholder: false)))
         })
         items.append(RenderItem(slug: "sin-datos-de-yala", spec: .small, modes: [.claro]) {
             AnyView(WidgetNoDataInviteView(message: "widget.empty.openYalaBalance"))

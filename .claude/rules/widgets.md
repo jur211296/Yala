@@ -15,7 +15,9 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   por token, y entra en la lista de `losRedisenadosSoloUsanWidgetDS`.
 - **Color de texto, solo los tres AA**: `incomeText`, `alertText`, `accentText` (espejos de `Color.incomeAmount`,
   `overBudgetText` e índigo/`indigoTextOnDark`). La paleta (`hotPink`, `yalaTeal`, colores de categoría) va en rellenos,
-  barras y gráficas. En una lista solo el ingreso lleva color.
+  barras y gráficas. En una lista solo el ingreso lleva color. **Excepción: el widget de Grupos** pinta «debes» y «te
+  deben» con `groupOweText` / `groupOwedText`, espejos de los tokens de la lista de Grupos (los fija el mismo test), y
+  pone una flecha a cada lado para que no dependa del color.
 - **Fondo**: `.containerBackground(WidgetColors.cardBackground, for: .widget)` (el `card` del tema por defecto). Entrada
   rápida pequeña es la excepción: relleno sólido (`indigoFill`/`pinkFill`/`tealFill`) con blanco encima.
 - **Tintado y transparente** (`widgetRenderingMode == .accented`): el sistema pinta todo en blanco conservando la
@@ -57,6 +59,17 @@ Desde el rediseño 2.2 (S35f, `docs/widgets/AUDITORIA-WIDGETS-2-2.md`). Lo que e
   Lo fija `ControlCenterNewRecordWiringTests`.
 - **Refresco**: `WidgetRefresh.nextDate(after:)` (medianoche o +4 h). Los datos nuevos llegan antes: la app recarga
   todos los widgets en cada `WidgetDataCache.updateCache`.
+- **Los grupos de la foto los calcula `WidgetGroupsSnapshotBuilder` con las funciones de la app**, nunca una cuenta
+  propia: el resumen y los archivados con `globalSummary`, como arriba de la lista; cada fila, con la cabecera del
+  detalle de su grupo (`computeGroupHeaderBalance`), que es lo que abre al tocarla, porque la tarjeta de la lista va por
+  persona; y solo los grupos cuya tarjeta enseña saldos (`GroupCardDisplayLogic`). Lo fija `WidgetGroupsSnapshotTests`
+  contra `GroupsViewModel` y `GroupDetailViewModel`. Lee con el `context` que recibe, no por `GroupService.shared` (el paso 9 del arranque va
+  antes de que los servicios de grupos tengan contexto). **Los escritores de Grupos no llaman a `updateCache`**: la
+  foto se rehace por `WidgetGroupsRefresh.requestCheck()`, colgado de `SessionState.incrementDataVersion`, que solo
+  la reconstruye si la parte de grupos cambió (y no recalcula si un `updateCache` posterior a la petición ya la cubrió).
+  Tras `clearCache` el primer cambio la rehace: «Vaciar datos» conserva los grupos. No llega con un push silencioso en
+  segundo plano (iOS suspende antes de la espera). Un dato nuevo del widget que cambie sin pasar por `updateCache` sigue
+  ese molde, no añade llamadas en cada escritor.
 - **Movimiento**: las cifras cambian con `widgetNumericTransition`, que respeta Reducir movimiento.
 - **Capturas antes/después**: `qa/widget-render/` (ver su README). Un cambio visual de un widget se pinta con la foto
   congelada de `fixtures/` antes y después; el tintado del banco es aproximado. Mira también el tamaño del iPhone SE

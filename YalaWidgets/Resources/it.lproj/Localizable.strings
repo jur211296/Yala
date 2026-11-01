@@ -201,3 +201,15 @@
 "widget.flow.previousToDate" = "Netto alla stessa data di %1$@: %2$@";
 "widget.flow.previousToDate.year" = "Netto alla stessa data del %1$@: %2$@";
 "widget.flow.comparison.a11y" = "Differenza rispetto a %2$@ alla stessa data: %1$@";
+
+/* Widget de Grupos 2.2 (S35f3): debes / te deben, como la lista de Grupos */
+"widget.gallery.groups" = "Gruppi";
+"widget.gallery.groups.desc" = "Quanto devi e quanto ti devono nei tuoi gruppi. Tocca un gruppo per aprirlo.";
+"widget.groups.iOwe" = "Devi";
+"widget.groups.owedToMe" = "Ti devono";
+"widget.groups.allSettled" = "Tutto in pari!";
+"widget.groups.rowSettled" = "In pari";
+"widget.empty.noGroupsYet" = "Ancora nessun gruppo";
+"widget.empty.openYalaGroups" = "Apri Yala per vedere i tuoi gruppi";
+"widget.groups.archivedOwedLine" = "+ %@ che ti devono in gruppi archiviati";
+"widget.groups.archivedOweLine" = "+ %@ che devi in gruppi archiviati";

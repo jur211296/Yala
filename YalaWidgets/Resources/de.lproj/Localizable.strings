@@ -201,3 +201,15 @@
 "widget.flow.previousToDate" = "Netto bis zu diesem Tag im %1$@: %2$@";
 "widget.flow.previousToDate.year" = "Netto im Jahr %1$@ bis zu diesem Tag: %2$@";
 "widget.flow.comparison.a11y" = "Unterschied zu %2$@ bis zu diesem Tag: %1$@";
+
+/* Widget de Grupos 2.2 (S35f3): debes / te deben, como la lista de Grupos */
+"widget.gallery.groups" = "Gruppen";
+"widget.gallery.groups.desc" = "Was du schuldest und was dir geschuldet wird, in deinen Gruppen. Tippe auf eine Gruppe, um sie zu öffnen.";
+"widget.groups.iOwe" = "Du schuldest";
+"widget.groups.owedToMe" = "Dir geschuldet";
+"widget.groups.allSettled" = "Alles ausgeglichen!";
+"widget.groups.rowSettled" = "Ausgeglichen";
+"widget.empty.noGroupsYet" = "Noch keine Gruppen";
+"widget.empty.openYalaGroups" = "Öffne Yala, um deine Gruppen zu sehen";
+"widget.groups.archivedOwedLine" = "+ %@, die man dir in archivierten Gruppen schuldet";
+"widget.groups.archivedOweLine" = "+ %@, die du in archivierten Gruppen schuldest";

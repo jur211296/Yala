@@ -484,6 +484,7 @@ final class AppBootstrapper {
         GroupService.shared.setContext(context)
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
+        WidgetGroupsRefresh.shared.setContext(context)
         BridgeModeResolver.shared.setAppPreferences(appPreferences)
 
         // 16.4. Cleanup duplicate SplitGroups from CloudKit sync race.
@@ -1438,6 +1439,7 @@ final class AppBootstrapper {
         GroupService.shared.setContext(nil)
         GroupExpenseService.shared.setContext(nil)
         GroupTransactionBridge.shared.setContext(nil)
+        WidgetGroupsRefresh.shared.setContext(nil)
         GroupNotificationService.shared.setContext(nil)
         // Los dos contextos que alimentan a los observers de proceso (los observers NO se retiran: son
         // por-proceso y leen estas propiedades, que el re-bootstrap repone).
